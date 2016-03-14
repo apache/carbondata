@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin
+   id="MolapGroupBy"
+   iconfile="icon.png"
+   description="Molap Group By"
+   tooltip="Molap Group By"
+   category="Molap"
+   classname="com.huawei.unibi.molap.groupby.step.MolapGroupByStepMeta">
+		<libraries>
+		<library name="molap-core-3.70.0.jar"/>
+    	<library name="molap-dataprocessor-3.70.0.jar"/>
+		</libraries>
+		
+</plugin>

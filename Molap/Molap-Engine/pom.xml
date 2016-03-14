@@ -1,0 +1,139 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.huawei.datasight</groupId>
+  <artifactId>molap-engine</artifactId>
+  <version>1.2.10</version>
+  <packaging>jar</packaging>
+  <name>"Molap-Engine"</name>
+   <parent>
+	     <groupId>com.huawei.datasight</groupId>
+	     <version>1.2.10</version>
+	     <artifactId>spark-cube-parent</artifactId>
+  </parent>
+  
+  <repositories>
+  </repositories>
+
+  <pluginRepositories>
+  </pluginRepositories>
+
+  <properties>
+		<prebuild.path>${basedir}/../../libraries/Unibi_Prebuild</prebuild.path>
+		<tpjars.path>${basedir}/../../libraries/TPJars</tpjars.path>
+		<buildjars.path>${basedir}/../../libraries/build_tools</buildjars.path>
+  </properties>
+  
+  <dependencies>
+
+	<dependency>
+		<groupId>unibi</groupId> 
+		<artifactId>com.kettlecore</artifactId> 
+		<version>4.2.1-GA</version> 
+		<scope>system</scope>
+		<systemPath>${prebuild.path}/kettle-core-4.2.1-GA.jar</systemPath>
+	</dependency>
+	<dependency>
+		<groupId>unibi</groupId> 
+		<artifactId>com.kettleengine</artifactId> 
+		<version>4.2.1-GA</version> 
+		<scope>system</scope>
+		<systemPath>${prebuild.path}/kettle-engine-4.2.1-GA.jar</systemPath>
+	</dependency>
+	<dependency>
+		<groupId>unibi</groupId> 
+		<artifactId>com.kettledb</artifactId> 
+		<version>4.2.1-GA</version> 
+		<scope>system</scope>
+		<systemPath>${prebuild.path}/kettle-db-4.2.1-GA.jar</systemPath>
+	</dependency>
+    <dependency>
+		<groupId>com.huawei.datasight</groupId>  
+		<artifactId>molap-logging-service</artifactId>  
+		<version>3.60.2</version> 
+	</dependency>
+	<!-- <dependency>
+		<groupId>sparkjar</groupId>  
+		<artifactId>com.sparkjar</artifactId>  
+		<version>1.2.2</version> 
+		<scope>system</scope>
+		<systemPath>${prebuild.path}/spark-assembly-1.5.0-hadoop2.7.2.jar</systemPath>
+	</dependency> -->
+
+	<dependency>
+	  <groupId>eigenbase</groupId>
+	  <artifactId>eigenbase-xom</artifactId>
+	  <version>1.3.0.13768</version>
+	  <scope>system</scope>
+	  <systemPath>${tpjars.path}/eigenbase-xom-1.3.0.13768.jar</systemPath>
+	</dependency>
+	<dependency>
+	  <groupId>eigenbase</groupId>
+	  <artifactId>eigenbase-properties</artifactId>
+	  <version>1.1.0.10924</version>
+	  <scope>system</scope>
+	  <systemPath>${tpjars.path}/eigenbase-properties-1.1.0.10924.jar</systemPath>
+	</dependency>
+	<dependency>
+	  <groupId>eigenbase</groupId>
+	  <artifactId>eigenbase-resgen</artifactId>
+	  <version>1.3.0.13768</version>
+	  <scope>system</scope>
+	  <systemPath>${tpjars.path}/eigenbase-resgen-1.3.0.13768.jar</systemPath>
+	</dependency>
+	<dependency>
+		<groupId>fastutil</groupId>  
+		<artifactId>com.fastutil</artifactId>  
+		<version>6.5.0</version> 
+		<scope>system</scope>
+		<systemPath>${tpjars.path}/fastutil-6.5.0.jar</systemPath>
+	</dependency>
+
+	<dependency>
+		<groupId>com.huawei.datasight</groupId>  
+		<artifactId>molap-interface</artifactId>  
+		<version>1.2.10</version> 
+	</dependency>
+	<dependency>
+		<groupId>com.huawei.datasight</groupId>
+		<artifactId>molap-core</artifactId>
+		<version>1.2.10</version> 
+	</dependency>
+	<dependency>
+		<groupId>junit</groupId>
+		<artifactId>junit</artifactId>
+		<version>4.11</version>
+		<scope>test</scope>
+	</dependency>
+	<dependency>
+		<groupId>jmockit</groupId>  
+		<artifactId>jmockit</artifactId>  
+		<version>1.10</version> 
+		<scope>system</scope>
+		<systemPath>${buildjars.path}/jmockit-1.10.jar</systemPath>
+	</dependency>
+
+  </dependencies>
+
+  <build>
+	<sourceDirectory>src</sourceDirectory>
+	<testSourceDirectory>test</testSourceDirectory>
+	<resources>
+      <resource>
+        <directory>.</directory>
+		<includes>
+                <include>MOLAP_ENGINELogResource.properties</include>
+        </includes>
+      </resource>
+    </resources>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <source>1.7</source>
+          <target>1.7</target>
+        </configuration>
+      </plugin>
+    </plugins>  
+  </build>
+
+</project>

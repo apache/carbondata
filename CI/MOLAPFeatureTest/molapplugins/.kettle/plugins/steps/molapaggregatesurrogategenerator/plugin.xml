@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin
+   id="MolapAggSurrogateGenerator"
+   iconfile="icon.png"
+   description="Molap Agg Surrogate Generator"
+   tooltip="Molap Agg Surrogate Generator"
+   category="Molap"
+   classname="com.huawei.unibi.molap.aggregatesurrogategenerator.step.MolapAggregateSurrogateGeneratorMeta">
+		<libraries>
+		<library name="molap-core-3.70.0.jar"/>
+    	<library name="molap-dataprocessor-3.70.0.jar"/>
+		</libraries>
+		
+</plugin>

@@ -1,0 +1,26 @@
+<Schema name="default">
+	<Cube name="timestamptypecube" visible="true" cache="true" enabled="true">
+		<Table name="timestamptypecube" alias="">
+		</Table>
+		<Dimension type="StandardDimension" visible="true" highCardinality="false" name="doj">
+			<Hierarchy name="doj" hasAll="true" normalized="false">
+				<Level name="doj" column="doj" type="Timestamp" levelType="Regular">
+				</Level>
+			</Hierarchy>
+		</Dimension>
+		<Dimension type="StandardDimension" visible="true" highCardinality="false" name="projectjoindate">
+			<Hierarchy name="projectjoindate" hasAll="true" normalized="false">
+				<Level name="projectjoindate" column="projectjoindate" type="Timestamp" levelType="Regular">
+				</Level>
+			</Hierarchy>
+		</Dimension>
+		<Dimension type="StandardDimension" visible="true" highCardinality="false" name="projectenddate">
+			<Hierarchy name="projectenddate" hasAll="true" normalized="false">
+				<Level name="projectenddate" column="projectenddate" type="Timestamp" levelType="Regular">
+				</Level>
+			</Hierarchy>
+		</Dimension>
+		<Measure name="default_dummy_measure" column="default_dummy_measure" datatype="Numeric" aggregator="sum" visible="false">
+		</Measure>
+	</Cube>
+</Schema>

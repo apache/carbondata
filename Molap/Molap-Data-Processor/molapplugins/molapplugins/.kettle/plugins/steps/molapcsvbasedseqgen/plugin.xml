@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin
+
+   id="MolapCSVBasedSurrogateGen"
+   iconfile="icon.png"
+   description="Molap CSV Based Surrogate Key Generator"
+   tooltip="Molap CSV based Surrogate Key Generator"
+   category="Molap"
+   classname="com.huawei.unibi.molap.surrogatekeysgenerator.csvbased.MolapCSVBasedSeqGenMeta">
+		<libraries>
+		<library name="molap-core-3.70.0.jar"/>
+    	<library name="molap-dataprocessor-3.70.0.jar"/>
+		</libraries>
+		
+</plugin>

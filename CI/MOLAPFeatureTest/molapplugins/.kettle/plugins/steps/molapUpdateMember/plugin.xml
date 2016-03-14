@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin
+
+   id="MolapMemberUpdate"
+   iconfile="icon.png"
+   description="Molap Member Update"
+   tooltip="Molap Member Update"
+   category="Molap"
+   classname="com.huawei.unibi.molap.memberupdate.step.MolapMemberUpdateMeta">
+		<libraries>
+		<library name="molap-core-3.70.0.jar"/>
+    	<library name="molap-dataprocessor-3.70.0.jar"/>
+		</libraries>
+		
+</plugin>

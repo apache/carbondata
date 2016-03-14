@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin
+
+   id="MolapMDKeyGen"
+   iconfile="icon.png"
+   description="Molap MDKey Generator"
+   tooltip="Molap MDKey Generator"
+   category="Molap"
+   classname="com.huawei.unibi.molap.mdkeygen.MolapMDKeyGenStepMeta">
+		<libraries>
+			<library name="molap-core-3.70.0.jar"/>
+    		<library name="molap-dataprocessor-3.70.0.jar"/>
+		</libraries>
+		
+</plugin>

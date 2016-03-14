@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project default="codedownload">
+    <target name="codedownload" description="Download the code">
+	
+
+	
+	 <exec dir = "./../" executable = "cmd"  failifexecutionfails="true" failonerror="true">
+  	  	<arg value = "/c git stash"/>
+  	</exec>
+	<exec dir = "./../" executable = "cmd"  failifexecutionfails="true" failonerror="true">
+  	  	<arg value = "/c git clean -f -d"/>
+  	</exec>
+	<exec dir = "./../" executable = "cmd"  failifexecutionfails="true" failonerror="true">
+  	  	<arg value = "/c git clean -f"/>
+  	</exec>
+	
+	 <exec dir = "./../" executable = "cmd"  failifexecutionfails="true" failonerror="true">
+  	  	<arg value = "/c git checkout Carbon_V1R2C20_Development"/>
+  	</exec>
+	<exec dir = "./../" executable = "cmd"  failifexecutionfails="true" failonerror="true">
+  	  	<arg value = "/c git pull origin Carbon_V1R2C20_Development"/>
+  	</exec>
+    
+  </target>
+
+
+	
+</project>

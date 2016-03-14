@@ -1,0 +1,52 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.huawei.datasight</groupId>
+  <artifactId>molap-spark-interface</artifactId>
+  <version>1.2.10</version>
+  <packaging>jar</packaging>
+  <name>"Molap-Spark-Interface"</name>
+  
+  <build>
+
+  <testSourceDirectory>test</testSourceDirectory>
+    <plugins>
+      <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <executions>
+                <execution>
+                    <id>abc</id>
+                    <!--phase>process-resources</phase-->
+					                    <phase>validate</phase>
+                    <configuration>
+                        <tasks>
+                            <delete dir="scalaCheckstyleReport"/>
+                            <mkdir dir="scalaCheckstyleReport"/>
+                        </tasks>
+                    </configuration>
+                    <goals>
+                        <goal>run</goal>
+                    </goals>
+                </execution>
+            </executions>
+         </plugin>
+	  <plugin>
+            <groupId>org.scalastyle</groupId>
+            <artifactId>scalastyle-maven-plugin</artifactId>
+            <version>0.6.0</version>
+            <configuration>
+              <verbose>false</verbose>
+              <failOnViolation>false</failOnViolation>
+              <includeTestSourceDirectory>true</includeTestSourceDirectory>
+              <failOnWarning>false</failOnWarning>
+              <sourceDirectory>src/main/scala</sourceDirectory>
+              <configLocation>${basedir}/scalastyle_config.xml</configLocation>
+              <outputFile>scalaCheckstyleReport/scalastyle-output.xml</outputFile>
+              <outputEncoding>UTF-8</outputEncoding>
+            </configuration>
+          
+          </plugin>
+    </plugins>  
+  </build>
+
+</project>

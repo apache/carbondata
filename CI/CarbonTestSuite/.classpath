@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src/main/scala"/>
+	<classpathentry kind="con" path="org.scala-ide.sdt.launching.SCALA_CONTAINER"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="/libraries/TPJars/commons-vfs-1.0.jar"/>
+	<classpathentry kind="lib" path="/libraries/TPJars/eigenbase-properties-1.1.0.10924.jar"/>
+	<classpathentry kind="lib" path="/libraries/TPJars/eigenbase-resgen-1.3.0.13768.jar"/>
+	<classpathentry kind="lib" path="/libraries/TPJars/eigenbase-xom-1.3.0.13768.jar"/>
+	<classpathentry kind="lib" path="/libraries/TPJars/fastutil-6.5.0.jar"/>
+	<classpathentry kind="lib" path="/libraries/TPJars/pentaho-hdfs-vfs-1.0.0.jar"/>
+	<classpathentry kind="lib" path="/libraries/TPJars/scannotation-1.0.2.jar"/>
+	<classpathentry kind="lib" path="/libraries/Unibi_Prebuild/kettle-core-4.2.1-GA.jar"/>
+	<classpathentry kind="lib" path="/libraries/Unibi_Prebuild/kettle-db-4.2.1-GA.jar"/>
+	<classpathentry kind="lib" path="/libraries/Unibi_Prebuild/kettle-engine-4.2.1-GA.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Molap-Core"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Molap-Data-Processor"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Molap-Engine"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Molap-Interface"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/AutoAggregation"/>
+	<classpathentry kind="lib" path="/libraries/build_tools/datanucleus-api-jdo-3.2.1.jar"/>
+	<classpathentry kind="lib" path="/libraries/build_tools/datanucleus-core-3.2.2.jar"/>
+	<classpathentry kind="lib" path="/libraries/build_tools/datanucleus-rdbms-3.2.1.jar"/>
+	<classpathentry kind="lib" path="/libraries/build_tools/guava-12.0.1.jar"/>
+	<classpathentry kind="lib" path="/libraries/build_tools/jetty-security-9.0.4.v20130625.jar"/>
+	<classpathentry kind="lib" path="/libraries/build_tools/jetty-server-9.3.1.v20150714.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/libraries"/>
+	<classpathentry kind="lib" path="/libraries/Unibi_Prebuild/spark-csv_2.10-1.2.0.jar"/>
+	<classpathentry kind="lib" path="/libraries/TPJars/commons-csv-1.2.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Molap-Aggregation"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/dummy-encryption-util"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Molap-Logging-Service"/>
+	<classpathentry kind="lib" path="/libraries/Unibi_Prebuild/CryptProvider.jar-1.0.0-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="/libraries/Unibi_Prebuild/spark-assembly-1.5.1-hadoop2.7.2.jar"/>
+	<classpathentry kind="lib" path="lib/scalatest_2.10-2.2.1.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Molap-Spark-Interface"/>
+	<classpathentry kind="lib" path="/libraries/build_tools/scalatest_2.10-2.2.1.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

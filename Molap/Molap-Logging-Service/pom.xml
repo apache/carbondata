@@ -1,0 +1,53 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.huawei.datasight</groupId>
+  <artifactId>molap-logging-service</artifactId>
+  <version>3.60.2</version>
+  <packaging>jar</packaging>
+  <name>"Molap-Logging-Service"</name>
+   <parent>
+	     <groupId>com.huawei.datasight</groupId>
+	     <version>1.2.10</version>
+	     <artifactId>spark-cube-parent</artifactId>
+  </parent>
+  
+  <repositories>
+  </repositories>
+
+  <pluginRepositories>
+  </pluginRepositories>
+
+  <properties>
+		<prebuild.path>${basedir}/../../libraries/Unibi_Prebuild</prebuild.path>
+		<tpjars.path>${basedir}/../../libraries/TPJars</tpjars.path>
+  </properties>
+  
+  <dependencies>
+		<dependency>
+			<groupId>log4j</groupId>
+		    <artifactId>log4j</artifactId>
+		    <version>1.2.12</version>
+		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+		    <artifactId>junit</artifactId>
+		    <version>3.8.2</version>
+		    <scope>test</scope>
+		</dependency>
+  </dependencies>
+
+  <build>
+	<sourceDirectory>src</sourceDirectory>
+	<testSourceDirectory>test</testSourceDirectory>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <source>1.7</source>
+          <target>1.7</target>
+        </configuration>
+      </plugin>
+    </plugins>  
+  </build>
+
+</project>

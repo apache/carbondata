@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin
+   id="MolapSortKeyGroupBy"
+   iconfile="icon.png"
+   description="Molap Sort And Group By"
+   tooltip="Molap Sort And Group By"
+   category="Molap"
+   classname="com.huawei.unibi.molap.sortandgroupby.step.MolapSortKeyAndGroupByStepMeta">
+		<libraries>
+		<library name="molap-core-3.70.0.jar"/>
+    	<library name="molap-dataprocessor-3.70.0.jar"/>
+		</libraries>
+		
+</plugin>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin
+   id="MolapDataWriter"
+   iconfile="Binary-icon.png"
+   description="Molap Data Writer"
+   tooltip="Molap Data Writer"
+   category="Molap"
+   classname="com.huawei.unibi.molap.store.MolapDataWriterStepMeta">
+		<libraries>
+			<library name="mondrian-3.3.0.14703.jar"/>
+    		<library name="eigenbase-xom-1.3.0.13768.jar"/>
+    		<library name="eigenbase-resgen-1.3.0.13768.jar"/>
+    		<library name="eigenbase-properties-1.1.0.10924"/>
+    		<library name="snappy-java-1.0.4.1.jar"/>
+			<library name="molap-core-3.70.0.jar"/>
+    		<library name="molap-dataprocessor-3.70.0.jar"/>
+		</libraries>
+</plugin>

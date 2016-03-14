@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project default="main">
+    <target name="main" description="do nothing">
+	
+    
+  </target>
+  <target name="clean" description="Clean the build">
+	 <exec dir = "./../Molap/" executable = "sh"  failifexecutionfails="true" failonerror="true">
+  	  	<arg line="-c 'mvn clean install -Dmaven.test.skip=true'"/>
+  	</exec>
+  </target>
+
+  <target name="testAutoAggregation" description="testAutoAggregation">
+	 <exec dir = "./../Molap/AutoAggregation" executable = "sh"  failifexecutionfails="true" failonerror="true">
+		<arg line="-c 'mvn test'"/>
+  	</exec>
+  </target>
+   <target name="testMolap-Core" description="testMolap-Core">
+	 <exec dir = "./../Molap/Molap-Core" executable = "sh"  failifexecutionfails="true" failonerror="true">
+  	  <arg line="-c 'mvn test'"/>
+  	</exec>
+  </target>
+   <target name="testMolap-Data-Processor" description="testMolap-Data-Processor">
+	 <exec dir = "./../Molap/Molap-Data-Processor" executable = "sh"  failifexecutionfails="true" failonerror="true">
+		<arg line="-c 'mvn test'"/>
+  	</exec>
+  </target>
+   <target name="testMolap-Engine" description="testMolap-Engine">
+	 <exec dir = "./../Molap/Molap-Engine" executable = "sh"  failifexecutionfails="true" failonerror="true">
+  	  <arg line="-c 'mvn test'"/>
+  	</exec>
+  </target>
+   <target name="testMolap-Interface" description="testMolap-Interface">
+	 <exec dir = "./../Molap/Molap-Interface" executable = "sh"  failifexecutionfails="true" failonerror="true">
+		<arg line="-c 'mvn test'"/>
+  	</exec>
+  </target>
+   <target name="testMolap-Spark-Interface" description="testMolap-Spark-Interface">
+	 <exec dir = "./../Molap/Molap-Spark-Interface" executable = "sh"  failifexecutionfails="true" failonerror="true">
+  	  <arg line="-c 'mvn test'"/>
+  	</exec>
+  </target>
+  <target name="testMolap-Aggregation" description="testMolap-Aggregation">
+	 <exec dir = "./../Molap/Molap-Aggregation" executable = "sh"  failifexecutionfails="true" failonerror="true">
+  	  <arg line="-c 'mvn test'"/>
+  	</exec>
+  </target>
+
+  
+
+
+
+
+
+  <target name="coverage_Molap" description="coverage_Molap">
+	 <exec dir = "./../Molap/" executable = "sh"  failifexecutionfails="true" failonerror="true">
+  	  <arg line="-c 'mvn clean cobertura:cobertura'"/>
+  	</exec>
+  </target>
+
+
+  <target name="buildmolapfeaturetest" description="run the functional test cases">
+	 
+	 <exec dir = "./../CI/MOLAPFeatureTest/" executable = "sh"  failifexecutionfails="true" failonerror="true">
+  	  <arg line="-c 'mvn clean install'"/>
+  	</exec>	
+  </target>
+  
+  <target name="buildmolaptest" description="run the functional test cases">
+	 
+	<exec dir = "./../CI/MolapTestSuite/" executable = "sh"  failifexecutionfails="true" failonerror="true">
+  	  <arg line="-c 'mvn clean install'"/>
+  	</exec>	
+  </target>
+  <target name="buildcarbontest" description="run the functional test cases">
+	 
+	<exec dir = "./../CI/CarbonTestSuite/" executable = "sh"  failifexecutionfails="true" failonerror="true">
+  	  <arg line="-c 'mvn clean install'"/>
+  	</exec>	
+  </target>
+	<!--clean, Build Molap jars, build MolapFeatureTest jar-->
+   <target name="cleanandbuild" description="run the functional test cases">
+	 <antcall target="clean"/>
+	 <antcall target="buildmolapfeaturetest"/>
+  </target>
+	<!--Run Vmall Scenario test-->
+   <target name="runvmalltest" description="run the functional test cases">
+	<exec dir = "./../CI/CarbonFT/" executable = "sh"  failifexecutionfails="true" failonerror="true">
+	  <env key="JAVA_TOOL_OPTIONS" value="-Xmx1024m -XX:MaxPermSize=256m -Xms512m"/>
+  	  <arg line="-c 'mvn -Dtest=VmallTest test'"/>
+  	</exec>
+  </target>
+   
+   <!--Run Vmall Scenario test-->
+   <target name="SmartCareTest" description="run the functional test cases">
+	<exec dir = "./../CI/CarbonFT/" executable = "sh"  failifexecutionfails="true" failonerror="true">
+	  <env key="JAVA_TOOL_OPTIONS" value="-Xmx1024m -XX:MaxPermSize=256m -Xms512m"/>
+  	  <arg line="-c 'mvn -Dtest=SmartCareTest test'"/>
+  	</exec>
+  </target>
+	
+
+	<target name="windowsCompile" description="compiles the MOlap projects">
+	<exec dir = "./../Molap" executable = "cmd"  failifexecutionfails="true" failonerror="true">
+		  <arg value = "/c mvn clean package -Dmaven.test.skip=true"/>
+  	</exec>
+  </target>
+</project>

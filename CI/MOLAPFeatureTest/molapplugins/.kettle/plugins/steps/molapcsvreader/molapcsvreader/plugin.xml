@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin
+
+   id="CSVReader"
+   iconfile="icon.png"
+   description="Molap CSVReader"
+   tooltip="Molap CSVReader"
+   category="Molap"
+   classname="com.huawei.unibi.molap.csvreader.CsvReaderMeta">
+		<libraries>
+		<library name="molap-core-3.70.0.jar"/>
+    	<library name="molap-dataprocessor-3.70.0.jar"/>
+		</libraries>
+		
+</plugin>

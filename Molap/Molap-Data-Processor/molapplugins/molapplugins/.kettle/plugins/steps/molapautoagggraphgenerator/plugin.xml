@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin
+   id="MolapAutoAggGraphGenerator"
+   iconfile="icon.png"
+   description="Molap Auto Agg Graph Generator"
+   tooltip="Molap Auto Agg Graph Generator"
+   category="Molap"
+   classname="com.huawei.unibi.molap.autoaggregategraphgenerator.step.MolapAutoAGGGraphGeneratorMeta">
+		<libraries>
+		<library name="molap-core-3.70.0.jar"/>
+    	<library name="molap-dataprocessor-3.70.0.jar"/>
+		</libraries>
+		
+</plugin>

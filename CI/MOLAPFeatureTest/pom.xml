@@ -1,0 +1,122 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.huawei.datasight</groupId>
+  <artifactId>molap-feature-test</artifactId>
+  <version>1.2.10</version>
+  <packaging>jar</packaging>
+  <name>"Molap-Feature-Test"</name>
+  
+  <repositories>
+  </repositories>
+
+  <pluginRepositories>
+  </pluginRepositories>
+
+  <properties>
+    <scala.version>2.10.4</scala.version>
+	<prebuild.path>${basedir}/../../libraries/Unibi_Prebuild</prebuild.path>
+	<tpjars.path>${basedir}/../../libraries/TPJars</tpjars.path>
+<!-- 	<buildjars.path>${basedir}/../../libraries/build_tools</buildjars.path> -->
+  </properties>
+  
+  <dependencies>
+	<dependency>
+		<groupId>com.huawei.datasight</groupId>
+		<artifactId>molap-core</artifactId>
+		<version>1.2.10</version>
+	</dependency>
+	<dependency>
+		<groupId>com.huawei.datasight</groupId>
+		<artifactId>molap-engine</artifactId>
+		<version>1.2.10</version>
+	</dependency>
+	<dependency>
+		<groupId>com.huawei.datasight</groupId>
+		<artifactId>molap-data-processor</artifactId>
+		<version>1.2.10</version>
+	</dependency>
+	<dependency>
+		<groupId>com.huawei.datasight</groupId>  
+		<artifactId>molap-interface</artifactId>  
+		<version>1.2.10</version> 
+	</dependency>
+	<dependency>
+		<groupId>com.huawei.datasight</groupId>  
+		<artifactId>molap-autoaggregation</artifactId>  
+		<version>1.2.10</version>
+	</dependency>
+	<dependency>
+		<groupId>com.huawei.datasight</groupId>  
+		<artifactId>molap-interface</artifactId>  
+		<version>1.2.10</version>
+	</dependency>
+	<dependency>
+		<groupId>com.huawei.datasight</groupId>  
+		<artifactId>molap-spark-interface</artifactId>  
+		<version>1.2.10</version>
+	</dependency>
+	
+	<!-- <dependency>
+		<groupId>sparkjar</groupId>  
+		<artifactId>com.sparkjar</artifactId>  
+		<version>1.2.2</version> 
+		<scope>system</scope>
+		<systemPath>${prebuild.path}/spark-assembly-1.5.0-hadoop2.7.2.jar</systemPath>
+	</dependency> -->
+	<!-- <dependency>
+		<groupId>datanucleus</groupId>  
+		<artifactId>datanucleus.api</artifactId>  
+		<version>3.2.1</version> 
+		<scope>system</scope>
+		<systemPath>${buildjars.path}/datanucleus-api-jdo-3.2.1.jar</systemPath>
+	</dependency>
+	<dependency>
+		<groupId>datanucleus</groupId>  
+		<artifactId>datanucleus.core</artifactId>  
+		<version>3.2.2</version> 
+		<scope>system</scope>
+		<systemPath>${buildjars.path}/datanucleus-core-3.2.2.jar</systemPath>
+	</dependency>
+	<dependency>
+		<groupId>datanucleus</groupId>  
+		<artifactId>datanucleus.rdbms</artifactId>  
+		<version>3.2.1</version> 
+		<scope>system</scope>
+		<systemPath>${buildjars.path}/datanucleus-rdbms-3.2.1.jar</systemPath>
+	</dependency> -->
+
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.scala-tools</groupId>
+        <artifactId>maven-scala-plugin</artifactId>
+		<version>2.15.2</version>
+        <executions>
+          <execution>
+			<id>compile</id>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+			<phase>compile</phase>
+          </execution>
+		  <execution>
+			<phase>process-resources</phase>
+			<goals>
+			  <goal>compile</goal>
+			</goals>
+		  </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <source>1.7</source>
+          <target>1.7</target>
+        </configuration>
+      </plugin>
+    </plugins>  
+  </build>
+
+</project>

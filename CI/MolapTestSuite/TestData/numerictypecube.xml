@@ -1,0 +1,20 @@
+<Schema name="default">
+	<Cube name="numerictypecube" visible="true" cache="true" enabled="true">
+		<Table name="numerictypecube" alias="">
+		</Table>
+		<Dimension type="StandardDimension" visible="true" highCardinality="false" name="utilization">
+			<Hierarchy name="utilization" hasAll="true" normalized="false">
+				<Level name="utilization" column="utilization" type="Numeric" levelType="Regular">
+				</Level>
+			</Hierarchy>
+		</Dimension>
+		<Dimension type="StandardDimension" visible="true" highCardinality="false" name="salary">
+			<Hierarchy name="salary" hasAll="true" normalized="false">
+				<Level name="salary" column="salary" type="Numeric" levelType="Regular">
+				</Level>
+			</Hierarchy>
+		</Dimension>
+		<Measure name="default_dummy_measure" column="default_dummy_measure" datatype="Numeric" aggregator="sum" visible="false">
+		</Measure>
+	</Cube>
+</Schema>

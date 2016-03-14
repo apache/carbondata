@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin
+
+   id="MolapSliceMerger"
+   iconfile="icon.png"
+   description="Molap Slice Merger"
+   tooltip="Molap Slice Merger"
+   category="Molap"
+   classname="com.huawei.unibi.molap.merger.step.MolapSliceMergerStepMeta">
+		<libraries>
+		<library name="molap-core-3.70.0.jar"/>
+    	<library name="molap-dataprocessor-3.70.0.jar"/>
+		</libraries>
+		
+</plugin>

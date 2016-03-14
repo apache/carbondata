@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src/main/scala"/>
+	<classpathentry kind="src" path="src/main/java"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Molap-Engine"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Molap-Spark-Interface"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Molap-Core"/>
+	<classpathentry kind="con" path="org.scala-ide.sdt.launching.SCALA_CONTAINER"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Molap-Data-Processor"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Molap-Interface"/>
+	<classpathentry kind="lib" path="/libraries/Unibi_Prebuild/spark-assembly-1.5.1-hadoop2.7.2.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springsource.org/dtd/spring-beans.dtd">
+
+<!--+
+	| Application context containing JDBC UserRoleListService 
+	| implementation.
+	+-->
+
+<beans>
+
+	<bean id="httpInvokerProxy" class="org.springframework.remoting.httpinvoker.HttpInvokerProxyFactoryBean">
+	    <property name="serviceUrl" value="https://localhost:8443/unibi/remoting/MolapExecutor"/>
+	    <property name="serviceInterface" value="com.huawei.unibi.molap.queryexecutor.MolapQueryInternalExecutor"/>
+	</bean>
+	
+	<bean id="simple" class="Simple">
+    	<property name="internalExecutor" ref="httpInvokerProxy"/>
+	</bean>
+
+</beans>

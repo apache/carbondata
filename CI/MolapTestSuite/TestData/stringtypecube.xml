@@ -1,0 +1,32 @@
+<Schema name="default">
+	<Cube name="stringtypecube" visible="true" cache="true" enabled="true">
+		<Table name="stringtypecube" alias="">
+		</Table>
+		<Dimension type="StandardDimension" visible="true" highCardinality="false" name="empname">
+			<Hierarchy name="empname" hasAll="true" normalized="false">
+				<Level name="empname" column="empname" type="String" levelType="Regular">
+				</Level>
+			</Hierarchy>
+		</Dimension>
+		<Dimension type="StandardDimension" visible="true" highCardinality="false" name="designation">
+			<Hierarchy name="designation" hasAll="true" normalized="false">
+				<Level name="designation" column="designation" type="String" levelType="Regular">
+				</Level>
+			</Hierarchy>
+		</Dimension>
+		<Dimension type="StandardDimension" visible="true" highCardinality="false" name="workgroupcategoryname">
+			<Hierarchy name="workgroupcategoryname" hasAll="true" normalized="false">
+				<Level name="workgroupcategoryname" column="workgroupcategoryname" type="String" levelType="Regular">
+				</Level>
+			</Hierarchy>
+		</Dimension>
+		<Dimension type="StandardDimension" visible="true" highCardinality="false" name="deptname">
+			<Hierarchy name="deptname" hasAll="true" normalized="false">
+				<Level name="deptname" column="deptname" type="String" levelType="Regular">
+				</Level>
+			</Hierarchy>
+		</Dimension>
+		<Measure name="default_dummy_measure" column="default_dummy_measure" datatype="Numeric" aggregator="sum" visible="false">
+		</Measure>
+	</Cube>
+</Schema>

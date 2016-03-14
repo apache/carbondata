@@ -1,0 +1,10 @@
+<project name="Build_MolapCore" basedir="." default="jar">
+<property name="path" value="."/>
+<property file="${path}/build.properties"/>
+
+<!-- Import the common_build.xml file which contains all the default tasks -->
+<import file="build-res/subfloor.xml"/>
+
+
+	
+</project>

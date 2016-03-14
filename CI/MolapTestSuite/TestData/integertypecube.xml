@@ -1,0 +1,32 @@
+<Schema name="default">
+	<Cube name="integertypecube" visible="true" cache="true" enabled="true">
+		<Table name="integertypecube" alias="">
+		</Table>
+		<Dimension type="StandardDimension" visible="true" highCardinality="false" name="empno">
+			<Hierarchy name="empno" hasAll="true" normalized="false">
+				<Level name="empno" column="empno" type="Integer" levelType="Regular">
+				</Level>
+			</Hierarchy>
+		</Dimension>
+		<Dimension type="StandardDimension" visible="true" highCardinality="false" name="workgroupcategory">
+			<Hierarchy name="workgroupcategory" hasAll="true" normalized="false">
+				<Level name="workgroupcategory" column="workgroupcategory" type="Integer" levelType="Regular">
+				</Level>
+			</Hierarchy>
+		</Dimension>
+		<Dimension type="StandardDimension" visible="true" highCardinality="false" name="deptno">
+			<Hierarchy name="deptno" hasAll="true" normalized="false">
+				<Level name="deptno" column="deptno" type="Integer" levelType="Regular">
+				</Level>
+			</Hierarchy>
+		</Dimension>
+		<Dimension type="StandardDimension" visible="true" highCardinality="false" name="projectcode">
+			<Hierarchy name="projectcode" hasAll="true" normalized="false">
+				<Level name="projectcode" column="projectcode" type="Integer" levelType="Regular">
+				</Level>
+			</Hierarchy>
+		</Dimension>
+		<Measure name="attendance" column="attendance" datatype="Integer" aggregator="sum" visible="true">
+		</Measure>
+	</Cube>
+</Schema>

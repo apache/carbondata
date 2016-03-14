@@ -1,0 +1,61 @@
+<!--===========================================================================
+  This is the build file for the Pentaho BI Platform Engine Core project.
+  
+  This build file will use the common_build.xml file as the default build
+  process and should only override the tasks that need to differ from
+  the common build file.
+  
+  See common_build.xml for more details
+============================================================================-->
+<project default="copyToUnibi" 
+	xmlns:ivy="antlib:org.apache.ivy.ant" >
+
+ 
+
+ <import file="build.xml"/>
+
+ <scriptdef name="hastarget" language="javascript"> 
+         <attribute name="targetname" /> 
+         <attribute name="property" /> 
+         <![CDATA[ 
+           var targetname = attributes.get("targetname"); 
+   if(project.getTargets().containsKey(targetname)) { 
+project.setProperty(attributes.get("property"), "true"); 
+   }            
+         ]]> 
+</scriptdef> 
+ <path id="classpath">
+
+  </path>
+<target name="resolve">
+<echo>FAKE RESOLVE </echo>
+</target>
+<target name="check-clean-all">
+<hastarget targetname="clean-all" property="CleanAlltargetExists"/> 
+<condition property="cleanAll.target.found.yes">
+      <equals arg1="${CleanAlltargetExists}" arg2="true"/>
+ </condition>
+</target>
+
+
+<target name="new-clean-all" depends="check-clean-all" if="cleanAll.target.found.yes" >
+	<antcall target="clean-all" />
+</target>
+
+<target name="new-clean" depends="check-clean-all" if="!cleanAll.target.found.yes" >
+	<antcall target="clean" />
+</target>
+
+
+<target name="distWithClean" depends="new-clean-all,new-clean,dist" /> 
+
+<target name="copyToUnibi" depends="distWithClean" >
+<copy todir="../../libraries/Unibi_Prebuild" overwrite="true">
+    <fileset dir="${dist.dir}">
+      <include name="**/*.jar"/>
+    </fileset>
+  </copy>
+</target>
+
+
+</project>

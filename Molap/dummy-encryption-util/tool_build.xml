@@ -1,0 +1,85 @@
+<project name="Build_Encryption_Util" basedir="." default="zip creation">
+<property name="base" value="../Encryption-Util" />
+
+<path id="lib">
+    <fileset dir="./lib">
+      <include name="*.jar"/>
+    </fileset>	
+</path>  
+
+<target name="compile" depends="clean">	
+	<mkdir dir="${base}/target/classes"/>
+	<javac destdir="${base}/target/classes" source="1.6" target="1.6" srcdir="${base}" debug="true">	
+	<classpath refid="lib"/>
+	</javac>
+	<javac destdir="${base}/target/classes" srcdir="./src/">
+	<classpath refid="lib"/>
+	</javac>
+
+</target>
+
+<target name="clean">
+	<delete dir="${base}/target"/>
+	<delete file="${base}/EncryptUtilReversible.jar"/>
+	<delete file="${base}/EncryptUtilIrreversible.jar"/>
+	<delete file="${base}/DecryptUtil.jar"/>
+	<mkdir dir="${base}/target/classes"/>
+</target>
+
+
+<target name="copysun" depends="compile,unzipping">
+ 
+</target>
+
+<target name="jar creation" depends="copysun">
+<jar destfile="${base}/EncryptUtilReversible.jar">
+    <fileset dir="${base}/target/classes" excludes="**/*Test_UT.class,**/Mock*.class,**/UniBIDecryptUtil.class"/>
+   <manifest>
+      <attribute name="Main-Class"
+            value="com.huawei.unibi.util.UniBIReversibleEncryptUtil"/>
+			<attribute name="Bundle-ClassPath" value="."/>
+    </manifest>
+
+  </jar>
+  <jar destfile="${base}/EncryptUtilIrreversible.jar">
+    <fileset dir="${base}/target/classes" excludes="**/*Test_UT.class,**/Mock*.class,**/UniBIDecryptUtil.class"/>
+   <manifest>
+      <attribute name="Main-Class"
+            value="com.huawei.unibi.util.UniBIIrreversibleEncryptUtil"/>
+			<attribute name="Bundle-ClassPath" value="."/>
+    </manifest>
+
+  </jar>
+ <jar destfile="${base}/DecryptUtil.jar">
+    <fileset dir="${base}/target/classes" excludes="**/*Test_UT.class,**/Mock*.class,**/UniBIIrreversibleEncryptUtil*.class"/>
+   <manifest>
+      <attribute name="Main-Class"
+            value="com.huawei.unibi.util.UniBIDecryptUtil"/>
+			<attribute name="Bundle-ClassPath" value="."/>
+    </manifest>
+
+  </jar> 
+</target>
+
+<target name="unzipping">
+<mkdir dir="${base}/lib"/>
+<!-- <unzip src="./lib/sunjce_provider-1.8.01.jar" dest="${base}/lib" /> -->
+
+</target>
+
+
+<target name="zip creation" depends="jar creation">
+  <zip destfile="${base}/EncryptUtil.zip">
+    <fileset dir="${base}" includes="EncryptUtilReversible.jar"/>
+    <fileset dir="${base}" includes="EncryptUtilIrreversible.jar"/>
+    <fileset dir="${base}" includes="DecryptUtil.jar"/>
+    <fileset dir="./" includes="ReadMe.txt"/>
+    <fileset dir="./" includes="encryptreversible.sh"/>
+    <fileset dir="./" includes="encryptirreversible.sh"/>
+	<fileset dir="./" includes="decryptutil.sh"/> 
+	<fileset dir="./" includes="encryptreversible.bat"/>
+    <fileset dir="./" includes="encryptirreversible.bat"/>
+	<fileset dir="./" includes="decryptutil.bat"/>
+  </zip>
+</target>
+</project>

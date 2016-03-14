@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin
+   id="HadoopFileInputPlugin"
+   iconfile="HDI.png"
+   description="Process files from an HDFS location"
+   tooltip="Process files from an HDFS location"
+   category="Hadoop"
+   classname="org.pentaho.di.trans.steps.hadoopfileinput.HadoopFileInputMeta">
+		<libraries>
+		<library name="molap-core-3.70.0.jar"/>
+    	<library name="molap-dataprocessor-3.70.0.jar"/>
+		</libraries>
+		
+</plugin>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin
+
+   id="MolapCSVReaderStep"
+   iconfile="icon.png"
+   description="Molap CSV Reader Step"
+   tooltip="Molap CSV Reader Step"
+   category="Molap"
+   classname="com.huawei.unibi.molap.csvreaderstep.CsvInputMeta">
+		<libraries>
+		<library name="molap-core-3.70.0.jar"/>
+    	<library name="molap-dataprocessor-3.70.0.jar"/>
+		</libraries>
+		
+</plugin>
