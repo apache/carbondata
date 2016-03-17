@@ -109,11 +109,11 @@
 		<artifactId>molap-interface</artifactId>  
 		<version>1.2.10</version> 
 	</dependency>
-	<dependency>
+	<!--dependency>
 		<groupId>com.huawei.datasight</groupId>  
 		<artifactId>molap-autoaggregation</artifactId>  
 		<version>1.2.10</version>
-	</dependency>
+	</dependency-->
 	<dependency>
 		<groupId>com.huawei.datasight</groupId>  
 		<artifactId>molap-aggregation</artifactId>  

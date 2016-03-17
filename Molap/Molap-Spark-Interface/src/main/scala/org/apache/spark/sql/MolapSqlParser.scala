@@ -4,76 +4,64 @@
 package org.apache.spark.sql
 
 import scala.language.implicitConversions
-import scala.util.parsing.combinator.lexical.StdLexical
-import scala.util.parsing.combinator.syntactical.StandardTokenParsers
-import scala.util.parsing.combinator.PackratParsers
-import scala.util.parsing.input.CharArrayReader.EofCh
 import org.apache.spark.sql.catalyst.analysis._
-import org.apache.spark.sql.catalyst.expressions._
-import org.apache.spark.sql.catalyst.plans._
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.SqlLexical
-import org.apache.spark.sql.hive.acl.ControlCommand
-import org.apache.spark.sql.hive.acl.PrivObject
-import org.apache.spark.sql.hive.acl.ObjectType
-import org.apache.spark.sql.hive.acl.PrivType
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.catalyst.SqlParser
-import com.huawei.datasight.spark.agg._
 import org.apache.spark.sql.cubemodel.DimensionRelation
 import org.apache.spark.sql.catalyst._
 import org.apache.spark.sql.cubemodel._
 import org.apache.spark.Logging
-import org.apache.spark.sql.execution.datasources.DDLException
-import org.apache.spark.sql.execution.datasources.DescribeCommand
+import org.apache.spark.sql.execution.datasources.{DDLException, DescribeCommand}
 
-/**
-  * TODO: This parser will be no longer required as only DDL parser is used
-  * in Unified context
-  */
-class MolapSqlParser(fallback: String => LogicalPlan) extends SqlParserTrait {
-
-  override def parse(input: String): LogicalPlan = {
-    try {
-      super.parse(input)
-    } catch {
-      case ddlException: DDLException => throw ddlException
-      case _ => fallback(input)
-      case x: Throwable => throw x
-    }
-  }
-
-  private lazy val others: Parser[LogicalPlan] =
-    wholeInput ^^ {
-      case input => fallback(input)
-    }
-}
+///**
+//  * TODO: This parser will be no longer required as only DDL parser is used
+//  * in Unified context
+//  */
+//class MolapSqlParser(fallback: String => LogicalPlan) extends AbstractSparkSQLParser {
+//
+//  override def parse(input: String): LogicalPlan = {
+//    try {
+//      super.parse(input)
+//    } catch {
+//      case ddlException: DDLException => throw ddlException
+//      case _ => fallback(input)
+//      case x: Throwable => throw x
+//    }
+//  }
+//
+//  private lazy val others: Parser[LogicalPlan] =
+//    wholeInput ^^ {
+//      case input => fallback(input)
+//    }
+//}
 
 /**
   * Parser for All Carbon DDL, DML cases in Unified context
   */
-class MolapSqlDDLParser
-  extends SqlParserTrait with DataTypeParser with Logging {
+class MolapSqlDDLParser()
+  extends AbstractSparkSQLParser  with Logging {
   //Vinod to recheck this commented part 
-  /*protected implicit def asParser(k: Keyword): Parser[String] =
-    lexical.allCaseVersions(k.str).map(x => x : Parser[String]).reduce(_ | _)
+//  protected implicit def asParser(k: Keyword): Parser[String] =
+//    lexical.allCaseVersions(k.str).map(x => x : Parser[String]).reduce(_ | _)
 
-    override def parse(input: String, exceptionOnError: Boolean): LogicalPlan = {
-    try {
-      super.parse(input)
-    } catch {
-      case ddlException: DDLException => throw ddlException
-      case _ if !exceptionOnError => fallback(input)
-      case x: Throwable => throw x
-    }
-  } 
-  */
+//    override def parse(input: String): LogicalPlan = {
+//    try {
+//      super.parse(input)
+//    } catch {
+//      case ddlException: DDLException => throw ddlException
+//      case _ => fallback(input)
+//      case x: Throwable => throw x
+//    }
+//  }
+
   protected val AGGREGATE = Keyword("AGGREGATE")
-  override protected val AS = Keyword("AS")
+  protected val AS = Keyword("AS")
   protected val AGGREGATION = Keyword("AGGREGATION")
+  protected val ALL = Keyword("ALL")
   protected val HIGH_CARDINALITY_DIMS = Keyword("HIGH_CARDINALITY_DIMS")
   protected val BEFORE = Keyword("BEFORE")
-  override protected val BY = Keyword("BY")
+  protected val BY = Keyword("BY")
   protected val CARDINALITY = Keyword("CARDINALITY")
   protected val CLASS = Keyword("CLASS")
   protected val CLEAN = Keyword("CLEAN")
@@ -87,7 +75,7 @@ class MolapSqlDDLParser
   protected val DELETE = Keyword("DELETE")
   protected val DELIMITER = Keyword("DELIMITER")
   protected val DESCRIBE = Keyword("DESCRIBE")
-  override protected val DESC = Keyword("DESC")
+  protected val DESC = Keyword("DESC")
   protected val DETAIL = Keyword("DETAIL")
   protected val DIMENSIONS = Keyword("DIMENSIONS")
   protected val DIMFOLDERPATH = Keyword("DIMFOLDERPATH")
@@ -101,16 +89,16 @@ class MolapSqlDDLParser
   protected val FIELDS = Keyword("FIELDS")
   protected val FILEHEADER = Keyword("FILEHEADER")
   protected val FILES = Keyword("FILES")
-  override protected val FROM = Keyword("FROM")
+  protected val FROM = Keyword("FROM")
   protected val HIERARCHIES = Keyword("HIERARCHIES")
-  override protected val IN = Keyword("IN")
+  protected val IN = Keyword("IN")
   protected val INCLUDE = Keyword("INCLUDE")
   protected val INPATH = Keyword("INPATH")
   protected val INT = Keyword("INT")
   protected val INTEGER = Keyword("INTEGER")
-  override protected val INTO = Keyword("INTO")
+  protected val INTO = Keyword("INTO")
   protected val LEVELS = Keyword("LEVELS")
-  override protected val LIKE = Keyword("LIKE")
+  protected val LIKE = Keyword("LIKE")
   protected val LOAD = Keyword("LOAD")
   protected val LOADS = Keyword("LOADS")
   protected val LOCAL = Keyword("LOCAL")
@@ -125,7 +113,7 @@ class MolapSqlDDLParser
   protected val STRUCT = Keyword("STRUCT")
   protected val OPTIONS = Keyword("OPTIONS")
   protected val OUTPATH = Keyword("OUTPATH")
-  override protected val OVERWRITE = Keyword("OVERWRITE")
+  protected val OVERWRITE = Keyword("OVERWRITE")
   protected val PARTITION_COUNT = Keyword("PARTITION_COUNT")
   protected val PARTITIONDATA = Keyword("PARTITIONDATA")
   protected val PARTITIONER = Keyword("PARTITIONER")
@@ -135,20 +123,20 @@ class MolapSqlDDLParser
   protected val SHOW = Keyword("SHOW")
   protected val STRING = Keyword("STRING")
   protected val TABLES = Keyword("TABLES")
-  override protected val TABLE = Keyword("TABLE")
+  protected val TABLE = Keyword("TABLE")
   protected val TERMINATED = Keyword("TERMINATED")
   protected val TIMESTAMP = Keyword("TIMESTAMP")
   protected val TYPE = Keyword("TYPE")
   protected val USE = Keyword("USE")
-  override protected val WHERE = Keyword("WHERE")
-  override protected val WITH = Keyword("WITH")
+  protected val WHERE = Keyword("WHERE")
+  protected val WITH = Keyword("WITH")
   protected val AGGREGATETABLE = Keyword("AGGREGATETABLE")
   protected val SUM = Keyword("sum")
   protected val COUNT = Keyword("count")
   protected val AVG = Keyword("avg")
   protected val MAX = Keyword("max")
   protected val MIN = Keyword("min")
-  override protected val DISTINCT = Keyword("distinct")
+  protected val DISTINCT = Keyword("distinct")
   protected val DISTINCT_COUNT = Keyword("distinct-count")
   protected val SUM_DISTINCT = Keyword("sum-distinct")
   protected val ABS = Keyword("abs")
@@ -160,13 +148,13 @@ class MolapSqlDDLParser
   protected val DATA_STATS = Keyword("DATA_STATS")
   protected val SCRIPTS = Keyword("SCRIPTS")
   protected val USING = Keyword("USING")
-  override protected val LIMIT = Keyword("LIMIT")
+  protected val LIMIT = Keyword("LIMIT")
   protected val DEFAULTS = Keyword("DEFAULTS")
   protected val ALTER = Keyword("ALTER")
   protected val ADD = Keyword("ADD")
 
   protected val IF = Keyword("IF")
-  override protected val NOT = Keyword("NOT")
+  protected val NOT = Keyword("NOT")
   protected val EXISTS = Keyword("EXISTS")
   protected val DIMENSION = Keyword("DIMENSION")
 
@@ -231,7 +219,7 @@ class MolapSqlDDLParser
       )
 
   protected lazy val defaultExpr =
-    (ident | stringLit) ~ ("=" ~> (ident | stringLit | numericLiteral)) ^^ {
+    (ident | stringLit) ~ ("=" ~> (ident | stringLit | numericLit)) ^^ {
       case e1 ~ e2 => {
         Default(e1, e2.toString())
       }
@@ -619,30 +607,10 @@ class MolapSqlDDLParser
             Seq(tbl)
         }
         if (ef.isDefined && "FORMATTED".equalsIgnoreCase(ef.get)) {
-          new DescribeFormattedCommand("describe formatted " + tblIdentifier.mkString("."), tblIdentifier) with ControlCommand {
-            override def getControlPrivileges(sqlContext: SQLContext): Set[PrivObject] = {
-              // SELECT privilege @ table level // TODO: handle owner case
-              Set(new PrivObject(
-                ObjectType.TABLE,
-                getDB.getDatabaseName(db, sqlContext),
-                tbl,
-                null,
-                Set(PrivType.SELECT_NOGRANT)))
-            }
-          }
+          new DescribeFormattedCommand("describe formatted " + tblIdentifier.mkString("."), tblIdentifier)
         }
         else {
-          new DescribeCommand(UnresolvedRelation(tblIdentifier, None), ef.isDefined) with ControlCommand {
-            override def getControlPrivileges(sqlContext: SQLContext): Set[PrivObject] = {
-              // SELECT privilege @ table level // TODO: handle owner case
-              Set(new PrivObject(
-                ObjectType.TABLE,
-                getDB.getDatabaseName(db, sqlContext),
-                tbl,
-                null,
-                Set(PrivType.SELECT_NOGRANT)))
-            }
-          }
+          new DescribeCommand(UnresolvedRelation(tblIdentifier, None), ef.isDefined)
         }
     }
 

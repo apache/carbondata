@@ -1,6 +1,7 @@
 package org.apache.spark.sql
 
 import org.apache.spark.Logging
+import org.apache.spark.sql.hive.{OlapMetastoreTypes, CubeMeta, OlapMetaData}
 import org.apache.spark.sql.sources.BaseRelation
 import org.apache.spark.sql.sources.RelationProvider
 import org.apache.spark.sql.catalyst.plans.logical.LeafNode

@@ -24,7 +24,6 @@ import com.huawei.datasight.spark.KeyValImpl
 import com.huawei.datasight.spark.MergeResultImpl
 import com.huawei.datasight.spark.RestructureResultImpl
 import com.huawei.datasight.spark.ResultImpl
-import com.huawei.datasight.spark.processors.OlapUtil
 import com.huawei.iweb.platform.logging.LogServiceFactory
 import com.huawei.unibi.molap.constants.MolapCommonConstants
 import com.huawei.unibi.molap.engine.scanner.impl.MolapKey
@@ -642,67 +641,67 @@ object MolapDataRDDFactory extends Logging {
   //  }
 
 
-  def main(args: Array[String]) {
-
-	    val d = SparkContext.jarOfClass(this.getClass)
-	    val ar = new Array[String](d.size)
-	    var i = 0
-    d.foreach {
-      p => ar(i) = p;
-        i = i + 1
-    }
-
-    //	    val sc = new SparkContext("spark://master:7077", "Big Data Direct App", "/opt/spark-1.0.0-rc3/",ar)
-
-
-	        val confs = new SparkConf()
-      //      .setMaster("spark://master:7077")
-      .setMaster("local")
-      .setJars(ar)
-      .setAppName("Molap Spark Query")
-      .setSparkHome("/opt/spark-1.0.0-rc3/")
-      .set("spark.scheduler.mode", "FAIR")
-      val sc = new SparkContext(confs)
-    //	      val sc = new SparkContext("local", "Big Data App", "G:/spark-1.0.0-rc3",ar)
-
-	    val conf = new Configuration();
-
-    //        val schemaPath = "/opt/ravi/PCC_Java.xml"
-    //        val schemaPath = "G:/mavenlib/PCC_Java.xml"
-        val schemaPath = "G:\\bibin issues\\SmokeData\\schema\\steelwheels.molap.xml"
-    val olapContext = new OlapContext(sc, schemaPath)
-    //        val dataPath = "hdfs://master:54310/opt/ravi/store"
-        val dataPath = "F:/TRPSVN/store"
-
-        Thread.sleep(5000)
-
-    //        intializeMolap(sc, schemaPath,dataPath,"ODM","PCC")
-        val schema = MolapSchemaParser.loadXML(schemaPath)
-    intializeMolap(sc, schema, dataPath, "SteelWheelsSales", "MOLAPSteelWheels", null, false)
-	    import olapContext._
-
-    val holder = OlapUtil.createBaseRDD(olapContext, MolapMetadata.getInstance().getCubeWithCubeName("SteelWheelsSales", "MOLAPSteelWheels"))
-	//    var dd = holder.rdd.asInstanceOf[DataFrame].select('Territory,'Country,'City,'Quantity).groupBy('Territory,'Country)('Territory,'Country,'City,SumMolap('Quantity).as('Q1))
-    //
-    //	    dd = dd.topN(3, 'Country, 'Q1)
-
-    //	    val dd1 = dd.as('j1)
-
-    //        val dd2 = dd1.groupBy('Territory,'Country)('Territory,'Country,SumMolap('Q1)).as('j2)
-
-    //	    val dd3 = dd1.join(dd2,Inner,Some("j1.Territory".attr === "j2.Territory".attr))//.where("j1.Country".attr === "j2.Country".attr)
-    //	    val schemaPath = "/opt/ravi/steelwheels.molap.xml"
-    //	    val dataPath = "G:/imlib/store"
-
-
-    //	    val rdd = olapContext.hSql(sql)
-
-    //	    dd.collect foreach(println(_))
-    //        dd2.collect foreach(println(_))
-    //	    newMolapDataDirectSqlRDD(sc, sql, conf,schemaPath).foreach(println(_))
-
-
-    }
+//  def main(args: Array[String]) {
+//
+//	    val d = SparkContext.jarOfClass(this.getClass)
+//	    val ar = new Array[String](d.size)
+//	    var i = 0
+//    d.foreach {
+//      p => ar(i) = p;
+//        i = i + 1
+//    }
+//
+//    //	    val sc = new SparkContext("spark://master:7077", "Big Data Direct App", "/opt/spark-1.0.0-rc3/",ar)
+//
+//
+//	        val confs = new SparkConf()
+//      //      .setMaster("spark://master:7077")
+//      .setMaster("local")
+//      .setJars(ar)
+//      .setAppName("Molap Spark Query")
+//      .setSparkHome("/opt/spark-1.0.0-rc3/")
+//      .set("spark.scheduler.mode", "FAIR")
+//      val sc = new SparkContext(confs)
+//    //	      val sc = new SparkContext("local", "Big Data App", "G:/spark-1.0.0-rc3",ar)
+//
+//	    val conf = new Configuration();
+//
+//    //        val schemaPath = "/opt/ravi/PCC_Java.xml"
+//    //        val schemaPath = "G:/mavenlib/PCC_Java.xml"
+//        val schemaPath = "G:\\bibin issues\\SmokeData\\schema\\steelwheels.molap.xml"
+//    val olapContext = new OlapContext(sc, schemaPath)
+//    //        val dataPath = "hdfs://master:54310/opt/ravi/store"
+//        val dataPath = "F:/TRPSVN/store"
+//
+//        Thread.sleep(5000)
+//
+//    //        intializeMolap(sc, schemaPath,dataPath,"ODM","PCC")
+//        val schema = MolapSchemaParser.loadXML(schemaPath)
+//    intializeMolap(sc, schema, dataPath, "SteelWheelsSales", "MOLAPSteelWheels", null, false)
+//	    import olapContext._
+//
+//    val holder = OlapUtil.createBaseRDD(olapContext, MolapMetadata.getInstance().getCubeWithCubeName("SteelWheelsSales", "MOLAPSteelWheels"))
+//	//    var dd = holder.rdd.asInstanceOf[DataFrame].select('Territory,'Country,'City,'Quantity).groupBy('Territory,'Country)('Territory,'Country,'City,SumMolap('Quantity).as('Q1))
+//    //
+//    //	    dd = dd.topN(3, 'Country, 'Q1)
+//
+//    //	    val dd1 = dd.as('j1)
+//
+//    //        val dd2 = dd1.groupBy('Territory,'Country)('Territory,'Country,SumMolap('Q1)).as('j2)
+//
+//    //	    val dd3 = dd1.join(dd2,Inner,Some("j1.Territory".attr === "j2.Territory".attr))//.where("j1.Country".attr === "j2.Country".attr)
+//    //	    val schemaPath = "/opt/ravi/steelwheels.molap.xml"
+//    //	    val dataPath = "G:/imlib/store"
+//
+//
+//    //	    val rdd = olapContext.hSql(sql)
+//
+//    //	    dd.collect foreach(println(_))
+//    //        dd2.collect foreach(println(_))
+//    //	    newMolapDataDirectSqlRDD(sc, sql, conf,schemaPath).foreach(println(_))
+//
+//
+//    }
 
   def deleteLoadsAndUpdateMetadata(molapLoadModel: MolapLoadModel, cube: Cube, partitioner: Partitioner,
                                    hdfsStoreLocation: String, isForceDeletion: Boolean, currentRestructNumber: Integer) {

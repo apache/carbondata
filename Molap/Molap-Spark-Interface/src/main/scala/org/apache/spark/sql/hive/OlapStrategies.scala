@@ -39,7 +39,6 @@ import org.apache.spark.sql.Strategy
 import scala.math.BigInt.int2bigInt
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.sql.SQLContext
-import org.apache.spark.sql.hive.huawei.HuaweiStrategies
 import org.apache.spark.sql.hive.execution.DescribeHiveTableCommand
 import org.apache.spark.sql.execution.Project
 import org.apache.spark.sql.catalyst.expressions.AttributeSet
@@ -59,9 +58,6 @@ import org.apache.spark.sql.cubemodel.LoadCube
 import org.apache.spark.sql.QueryStatsLogicalPlan
 import org.apache.spark.sql.QueryStatsSparkPlan
 import org.apache.spark.sql.sources.BaseRelation
-import org.apache.spark.sql.hive.acl.PrivObject
-import org.apache.spark.sql.hive.acl.ObjectType
-import org.apache.spark.sql.hive.acl.PrivType
 import org.apache.spark.sql.AnalysisException
 
 class OlapStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
@@ -82,7 +78,7 @@ class OlapStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
 
     def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
       case PhysicalOperation(projectList, predicates, l@LogicalRelation(carbonRelation: CarbonRelation, _)) =>
-        checkSelectPrivilege(projectList, predicates, carbonRelation)
+//        checkSelectPrivilege(projectList, predicates, carbonRelation))
         olapScan(projectList, predicates, carbonRelation.olapRelation, None, None, None, false, true) :: Nil
 
       //       case Top(count,topOrBottom,dim,msr, child) =>
@@ -121,7 +117,7 @@ class OlapStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
       groupingExpressions,
       partialComputation,
       PhysicalOperation(projectList, predicates, l@LogicalRelation(carbonRelation: CarbonRelation, _))))) =>
-        checkSelectPrivilege(projectList, predicates, carbonRelation)
+//        checkSelectPrivilege(projectList, predicates, carbonRelation)
       val aggPlan = handleAggregation(plan, p, projectList, predicates, carbonRelation,
             partialComputation, groupingExpressions, namedGroupingAttributes, rewrittenAggregateExpressions)
       org.apache.spark.sql.execution.TakeOrderedAndProject(limit,
@@ -136,7 +132,7 @@ class OlapStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
       groupingExpressions,
       partialComputation,
       PhysicalOperation(projectList, predicates, l@LogicalRelation(carbonRelation: CarbonRelation, _)))) =>
-        checkSelectPrivilege(projectList, predicates, carbonRelation)
+//        checkSelectPrivilege(projectList, predicates, carbonRelation)
       val aggPlan = handleAggregation(plan, p, projectList, predicates, carbonRelation,
             partialComputation, groupingExpressions, namedGroupingAttributes, rewrittenAggregateExpressions)
       org.apache.spark.sql.execution.Limit(limit, aggPlan(0)) :: Nil
@@ -147,13 +143,13 @@ class OlapStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
       groupingExpressions,
       partialComputation,
       PhysicalOperation(projectList, predicates, l@LogicalRelation(carbonRelation: CarbonRelation, _))) =>
-        checkSelectPrivilege(projectList, predicates, carbonRelation)
+//        checkSelectPrivilege(projectList, predicates, carbonRelation)
         handleAggregation(plan, plan, projectList, predicates, carbonRelation,
             partialComputation, groupingExpressions, namedGroupingAttributes, rewrittenAggregateExpressions)
 
       case Limit(IntegerLiteral(limit),
       PhysicalOperation(projectList, predicates, l@LogicalRelation(carbonRelation: CarbonRelation, _))) =>
-        checkSelectPrivilege(projectList, predicates, carbonRelation)
+//        checkSelectPrivilege(projectList, predicates, carbonRelation)
         val (_, _, _, aliases, groupExprs, substitutesortExprs, limitExpr) = extractPlan(plan)
         val s = olapScan(projectList, predicates, carbonRelation.olapRelation, groupExprs, substitutesortExprs, limitExpr, false, true)
         org.apache.spark.sql.execution.Limit(limit, s) :: Nil
@@ -162,7 +158,7 @@ class OlapStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
       case Limit(IntegerLiteral(limit),
       Sort(order, _,
       PhysicalOperation(projectList, predicates, l@LogicalRelation(carbonRelation: CarbonRelation, _)))) =>
-        checkSelectPrivilege(projectList, predicates, carbonRelation)
+//        checkSelectPrivilege(projectList, predicates, carbonRelation)
         val (_, _, _, aliases, groupExprs, substitutesortExprs, limitExpr) = extractPlan(plan)
         val s = olapScan(projectList, predicates, carbonRelation.olapRelation, groupExprs, substitutesortExprs, limitExpr, false, true)
         org.apache.spark.sql.execution.TakeOrderedAndProject(limit,
@@ -173,7 +169,7 @@ class OlapStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
 
       case ExtractEquiJoinKeys(Inner, leftKeys, rightKeys, condition, PhysicalOperation(projectList, predicates, l@LogicalRelation(carbonRelation: CarbonRelation, _)), right)
         if (canPushDownJoin(right, condition)) =>
-          checkSelectPrivilege(projectList, predicates, carbonRelation)
+//          checkSelectPrivilege(projectList, predicates, carbonRelation)
         LOGGER.info(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, s"pushing down for ExtractEquiJoinKeys:right")
         val olap = olapScan(projectList, predicates, carbonRelation.olapRelation, None, None, None, false, true)
         val pushedDownJoin = FilterPushJoin(
@@ -188,7 +184,7 @@ class OlapStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
 
       case ExtractEquiJoinKeys(Inner, leftKeys, rightKeys, condition, left, PhysicalOperation(projectList, predicates, l@LogicalRelation(carbonRelation: CarbonRelation, _)))
         if (canPushDownJoin(left, condition)) =>
-          checkSelectPrivilege(projectList, predicates, carbonRelation)
+//          checkSelectPrivilege(projectList, predicates, carbonRelation)
         LOGGER.info(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, s"pushing down for ExtractEquiJoinKeys:left")
         val olap = olapScan(projectList, predicates, carbonRelation.olapRelation, None, None, None, false, true)
 
@@ -285,7 +281,7 @@ class OlapStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
           groupingExpressions,
           partialComputation,
           PhysicalOperation(projectList, predicates, l@LogicalRelation(carbonRelation: CarbonRelation, _))) =>
-            checkSelectPrivilege(projectList, predicates, carbonRelation)
+//            checkSelectPrivilege(projectList, predicates, carbonRelation)
             val (_, _, _, aliases, groupExprs, substitutesortExprs, limitExpr) = extractPlan(plan)
 
 
@@ -399,25 +395,25 @@ class OlapStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
       }
       (a, b, c, aliases, groupExprs, substitutesortExprs, limitExpr)
     }
-    def checkSelectPrivilege(
-        projectList: Seq[NamedExpression],
-        predicates: Seq[org.apache.spark.sql.catalyst.expressions.Expression],
-        relation: BaseRelation) {
-      val aclInterface = sqlContext.asInstanceOf[HiveContext].aclInterface
-      val (dbName, tblName) = (relation.getDatabaseName(), relation.getTableName())
-      if (!aclInterface.checkPrivilege(Set(new PrivObject(ObjectType.TABLE, dbName, tblName, null,
-        Set(PrivType.SELECT_NOGRANT))))) {
-        val projectSet = AttributeSet(projectList.flatMap(_.references))
-        val filterSet = AttributeSet(predicates.flatMap(_.references))
-        (projectSet ++ filterSet).foreach { att =>
-          if (!aclInterface.checkPrivilege(
-            Set(new PrivObject(ObjectType.COLUMN, dbName, tblName, att.name,
-              Set(PrivType.SELECT_NOGRANT))))) {
-            throw new AnalysisException("Missing Privileges")
-          }
-        }
-      }
-    }
+//    def checkSelectPrivilege(
+//        projectList: Seq[NamedExpression],
+//        predicates: Seq[org.apache.spark.sql.catalyst.expressions.Expression],
+//        relation: BaseRelation) {
+//      val aclInterface = sqlContext.asInstanceOf[HiveContext].aclInterface
+//      val (dbName, tblName) = (relation.getDatabaseName(), relation.getTableName())
+//      if (!aclInterface.checkPrivilege(Set(new PrivObject(ObjectType.TABLE, dbName, tblName, null,
+//        Set(PrivType.SELECT_NOGRANT))))) {
+//        val projectSet = AttributeSet(projectList.flatMap(_.references))
+//        val filterSet = AttributeSet(predicates.flatMap(_.references))
+//        (projectSet ++ filterSet).foreach { att =>
+//          if (!aclInterface.checkPrivilege(
+//            Set(new PrivObject(ObjectType.COLUMN, dbName, tblName, att.name,
+//              Set(PrivType.SELECT_NOGRANT))))) {
+//            throw new AnalysisException("Missing Privileges")
+//          }
+//        }
+//      }
+//    }
   }
 
 }

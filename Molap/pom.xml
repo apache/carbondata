@@ -11,7 +11,7 @@
 	<checkstyle.config.location>../build/checkstyle.xml</checkstyle.config.location>
 	<checkstyle.excludes>**/MolapDef.java</checkstyle.excludes>
 	<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-	<spark.version>1.5.1</spark.version>
+	<spark.version>1.5.2</spark.version>
 	<scala.binary.version>2.10</scala.binary.version>
   </properties>
 
@@ -20,7 +20,7 @@
     <module>Molap-Logging-Service</module>
     <module>Molap-Core</module>
 	<module>Molap-Interface</module>
-	<module>AutoAggregation</module>
+	<!--module>AutoAggregation</module-->
     <module>Molap-Engine</module>
 	<module>Molap-Data-Processor</module>
 	<module>Molap-Spark-Interface </module>
@@ -62,11 +62,11 @@
 <artifactId>spark-repl_${scala.binary.version}</artifactId>
 <version>${spark.version}</version>
 </dependency>
-<dependency>
+<!--dependency>
 <groupId>org.apache.spark</groupId>
 <artifactId>spark-om</artifactId>
 <version>${spark.version}</version>
-</dependency>
+</dependency-->
 <dependency>
 <groupId>org.apache.spark</groupId>
 <artifactId>spark-hive-thriftserver_${scala.binary.version}</artifactId>

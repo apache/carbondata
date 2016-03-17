@@ -5,6 +5,8 @@ package com.huawei.datasight.spark.processors
 
 import java.util.List
 
+import org.apache.spark.sql.hive.OlapMetaData
+
 import scala.Array.canBuildFrom
 import scala.collection.JavaConversions.asScalaBuffer
 import scala.collection.JavaConversions.asScalaSet
@@ -17,7 +19,6 @@ import scala.collection.mutable.MutableList
 import org.apache.spark.sql.CarbonEnv
 import org.apache.spark.sql.Column
 import org.apache.spark.sql.OlapContext
-import org.apache.spark.sql.OlapMetaData
 import org.apache.spark.sql.OlapRelation
 import org.apache.spark.sql.SchemaRDD
 import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute

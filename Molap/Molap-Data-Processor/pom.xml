@@ -54,6 +54,13 @@
 		<scope>system</scope>
 		<systemPath>${prebuild.path}/kettle-db-4.2.1-GA.jar</systemPath>
 	</dependency>
+	  <dependency>
+		  <groupId>unibi</groupId>
+		  <artifactId>com.encryprt</artifactId>
+		  <version>1.0.0-SNAPSHOT</version>
+		  <scope>system</scope>
+		  <systemPath>${prebuild.path}/CryptProvider.jar-1.0.0-SNAPSHOT.jar</systemPath>
+	  </dependency>
 	<!-- <dependency>
 		<groupId>sparkjar</groupId>  
 		<artifactId>com.sparkjar</artifactId>  

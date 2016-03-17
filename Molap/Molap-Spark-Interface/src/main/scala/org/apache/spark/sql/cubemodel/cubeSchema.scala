@@ -21,8 +21,6 @@ import org.apache.spark.sql.OlapRelation
 import com.huawei.datasight.spark.rdd.MolapDataRDDFactory
 import scala.collection.mutable.OpenHashMap
 import scala.collection.mutable.ArrayBuffer
-import org.apache.spark.sql.OlapMetastoreCatalog
-import com.huawei.unibi.molap.metadata.MolapMetadata
 import scala.collection.JavaConversions._
 import org.apache.spark.sql.CarbonEnv
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, GenericRow}
@@ -55,11 +53,7 @@ import com.huawei.datasight.molap.autoagg.util.CommonUtil
 import com.huawei.unibi.molap.olap.MolapDef._
 import com.huawei.unibi.molap.metadata.MolapMetadata
 import scala.collection.mutable.ListBuffer
-import org.apache.spark.sql.hive.HiveContext
-import org.apache.spark.sql.hive.acl.ControlCommand
-import org.apache.spark.sql.hive.acl.PrivObject
-import org.apache.spark.sql.hive.acl.ObjectType
-import org.apache.spark.sql.hive.acl.PrivType
+import org.apache.spark.sql.hive.{OlapMetastoreCatalog, HiveContext}
 import org.apache.spark.sql.execution.SparkPlan
 import com.huawei.unibi.molap.locks.MetadataLock
 import org.apache.spark.sql.execution.datasources.CreateTempTableUsing
@@ -752,16 +746,16 @@ private[sql] case class ShowCreateCube(cm: CubeModel, override val output: Seq[A
 private[sql] case class AlterCube(
                                    cm: CubeModel,
                                    dropCols: Seq[String],
-                                   defaultVals: Seq[Default]) extends RunnableCommand with ControlCommand {
+                                   defaultVals: Seq[Default]) extends RunnableCommand {
 
-  override def getControlPrivileges(sqlContext: SQLContext): Set[PrivObject] = {
-    Set(new PrivObject(
-      ObjectType.TABLE,
-      getDB.getDatabaseName(cm.schemaNameOp, sqlContext),
-      cm.cubeName,
-      null,
-      Set(PrivType.OWNER_PRIV)))
-  }
+//  override def getControlPrivileges(sqlContext: SQLContext): Set[PrivObject] = {
+//    Set(new PrivObject(
+//      ObjectType.TABLE,
+//      getDB.getDatabaseName(cm.schemaNameOp, sqlContext),
+//      cm.cubeName,
+//      null,
+//      Set(PrivType.OWNER_PRIV)))
+//  }
 
   def run(sqlContext: SQLContext) = {
     val LOGGER = LogServiceFactory.getLogService("org.apache.spark.sql.cubemodel.cubeSchema")
@@ -1255,17 +1249,17 @@ private[sql] case class AlterCube(
 }
 
 
-private[sql] case class CreateCube(cm: CubeModel) extends RunnableCommand with ControlCommand {
+private[sql] case class CreateCube(cm: CubeModel) extends RunnableCommand {
 
-  override def getControlPrivileges(sqlContext: SQLContext): Set[PrivObject] = {
-    //CREATE privilege@ database level
-    Set(new PrivObject(
-      ObjectType.DATABASE,
-      getDB.getDatabaseName(cm.schemaNameOp, sqlContext),
-      null,
-      null,
-      Set(PrivType.OWNER_PRIV)))
-  }
+//  override def getControlPrivileges(sqlContext: SQLContext): Set[PrivObject] = {
+//    //CREATE privilege@ database level
+//    Set(new PrivObject(
+//      ObjectType.DATABASE,
+//      getDB.getDatabaseName(cm.schemaNameOp, sqlContext),
+//      null,
+//      null,
+//      Set(PrivType.OWNER_PRIV)))
+//  }
 
   def run(sqlContext: SQLContext) = {
     val LOGGER = LogServiceFactory.getLogService("org.apache.spark.sql.cubemodel.cubeSchema");
@@ -1436,17 +1430,17 @@ private[sql] case class CreateCube(cm: CubeModel) extends RunnableCommand with C
 private[sql] case class DeleteLoadsById(
                                          loadids: Seq[String],
                                          schemaNameOp: Option[String],
-                                         cubeName: String) extends RunnableCommand with ControlCommand {
-
-  override def getControlPrivileges(sqlContext: SQLContext): Set[PrivObject] = {
-    //DELETE privilege @ table level
-    Set(new PrivObject(
-      ObjectType.TABLE,
-      getDB.getDatabaseName(schemaNameOp, sqlContext),
-      cubeName,
-      null,
-      Set(PrivType.DELETE_NOGRANT)))
-  }
+                                         cubeName: String) extends RunnableCommand {
+//
+//  override def getControlPrivileges(sqlContext: SQLContext): Set[PrivObject] = {
+//    //DELETE privilege @ table level
+//    Set(new PrivObject(
+//      ObjectType.TABLE,
+//      getDB.getDatabaseName(schemaNameOp, sqlContext),
+//      cubeName,
+//      null,
+//      Set(PrivType.DELETE_NOGRANT)))
+//  }
 
   val LOGGER = LogServiceFactory.getLogService("org.apache.spark.sql.cubemodel.cubeSchema");
 
@@ -1591,25 +1585,25 @@ private[sql] case class LoadCube(
                                   cubeName: String,
                                   factPathFromUser: String,
                                   dimFilesPath: Seq[DataLoadTableFileMapping],
-                                  partionValues: Map[String, String]) extends RunnableCommand with ControlCommand {
+                                  partionValues: Map[String, String]) extends RunnableCommand {
 
   val LOGGER = LogServiceFactory.getLogService("org.apache.spark.sql.cubemodel.cubeSchema")
 
-  override def getControlPrivileges(sqlContext: SQLContext): Set[PrivObject] = {
-
-    val partitionsFiles = new ArrayList[String]();
-    val loadFilesPath = MolapUtil.checkAndAppendHDFSUrl(factPathFromUser)
-    MolapQueryUtil.getAllFiles(loadFilesPath, partitionsFiles, FileFactory.getFileType(loadFilesPath))
-    val fileList = dimFilesPath.map(_.loadPath).toSeq ++ partitionsFiles.toSeq
-
-    // INSERT privilege at table level is required
-    Set(new PrivObject(
-      ObjectType.TABLE,
-      getDB.getDatabaseName(schemaNameOp, sqlContext),
-      cubeName,
-      null,
-      Set(PrivType.INSERT_NOGRANT)))
-  }
+//  override def getControlPrivileges(sqlContext: SQLContext): Set[PrivObject] = {
+//
+//    val partitionsFiles = new ArrayList[String]();
+//    val loadFilesPath = MolapUtil.checkAndAppendHDFSUrl(factPathFromUser)
+//    MolapQueryUtil.getAllFiles(loadFilesPath, partitionsFiles, FileFactory.getFileType(loadFilesPath))
+//    val fileList = dimFilesPath.map(_.loadPath).toSeq ++ partitionsFiles.toSeq
+//
+//    // INSERT privilege at table level is required
+//    Set(new PrivObject(
+//      ObjectType.TABLE,
+//      getDB.getDatabaseName(schemaNameOp, sqlContext),
+//      cubeName,
+//      null,
+//      Set(PrivType.INSERT_NOGRANT)))
+//  }
 
   def run(sqlContext: SQLContext) = {
 
@@ -1780,19 +1774,19 @@ private[sql] case class AddAggregatesToCube(
                                              schemaNameOp: Option[String],
                                              cubeName: String,
                                              aggregateAttributes: Seq[AggregateTableAttributes])
-  extends RunnableCommand with ControlCommand {
+  extends RunnableCommand {
 
   val LOGGER = LogServiceFactory.getLogService("org.apache.spark.sql.cubemodel.cubeSchema")
 
-  override def getControlPrivileges(sqlContext: SQLContext): Set[PrivObject] = {
-    // OWNER privilege@table level
-    Set(new PrivObject(
-      ObjectType.TABLE,
-      getDB.getDatabaseName(schemaNameOp, sqlContext),
-      cubeName,
-      null,
-      Set(PrivType.OWNER_PRIV)))
-  }
+//  override def getControlPrivileges(sqlContext: SQLContext): Set[PrivObject] = {
+//    // OWNER privilege@table level
+//    Set(new PrivObject(
+//      ObjectType.TABLE,
+//      getDB.getDatabaseName(schemaNameOp, sqlContext),
+//      cubeName,
+//      null,
+//      Set(PrivType.OWNER_PRIV)))
+//  }
 
   def run(sqlContext: SQLContext) = {
     val schemaName = getDB.getDatabaseName(schemaNameOp, sqlContext)
@@ -1925,17 +1919,17 @@ private[sql] case class LoadAggregationTable(
 private[sql] case class ShowAllCubesInSchema(
                                               schemaNameOp: Option[String],
                                               override val output: Seq[Attribute]
-                                            ) extends RunnableCommand with ControlCommand {
-
-  override def getControlPrivileges(sqlContext: SQLContext): Set[PrivObject] = {
-    //SELECT privilege @ database level // TODO: handle use database case
-    Set(new PrivObject(
-      ObjectType.DATABASE,
-      getDB.getDatabaseName(schemaNameOp, sqlContext),
-      null,
-      null,
-      Set(PrivType.SELECT_NOGRANT)))
-  }
+                                            ) extends RunnableCommand  {
+//
+//  override def getControlPrivileges(sqlContext: SQLContext): Set[PrivObject] = {
+//    //SELECT privilege @ database level // TODO: handle use database case
+//    Set(new PrivObject(
+//      ObjectType.DATABASE,
+//      getDB.getDatabaseName(schemaNameOp, sqlContext),
+//      null,
+//      null,
+//      Set(PrivType.SELECT_NOGRANT)))
+//  }
 
   override def run(sqlContext: SQLContext): Seq[Row] = {
     val schemaName = getDB.getDatabaseName(schemaNameOp, sqlContext)
@@ -2094,17 +2088,17 @@ private[sql] case class MergeCube(schemaName: String, cubeName: String, tableNam
 }
 
 private[sql] case class DropCubeCommand(ifExistsSet: Boolean, schemaNameOp: Option[String], cubeName: String)
-  extends RunnableCommand with ControlCommand {
+  extends RunnableCommand {
 
-  override def getControlPrivileges(sqlContext: SQLContext): Set[PrivObject] = {
-    // drop privilege at table level is required
-    Set(new PrivObject(
-      ObjectType.TABLE,
-      getDB.getDatabaseName(schemaNameOp, sqlContext),
-      cubeName,
-      null,
-      Set(PrivType.OWNER_PRIV)))
-  }
+//  override def getControlPrivileges(sqlContext: SQLContext): Set[PrivObject] = {
+//    // drop privilege at table level is required
+//    Set(new PrivObject(
+//      ObjectType.TABLE,
+//      getDB.getDatabaseName(schemaNameOp, sqlContext),
+//      cubeName,
+//      null,
+//      Set(PrivType.OWNER_PRIV)))
+//  }
 
   def run(sqlContext: SQLContext) = {
     val LOGGER = LogServiceFactory.getLogService("org.apache.spark.sql.cubemodel.cubeSchema");
@@ -2167,17 +2161,17 @@ private[sql] case class DropCubeCommand(ifExistsSet: Boolean, schemaNameOp: Opti
 
 private[sql] case class DropAggregateTableCommand(ifExistsSet: Boolean,
                                                   schemaNameOp: Option[String],
-                                                  tableName: String) extends RunnableCommand with ControlCommand {
-
-  override def getControlPrivileges(sqlContext: SQLContext): Set[PrivObject] = {
-    // ALTER_METADATA privilege@table level // TODO: Make the owner privilege
-    Set(new PrivObject(
-      ObjectType.TABLE,
-      getDB.getDatabaseName(schemaNameOp, sqlContext),
-      tableName,
-      null,
-      Set(PrivType.OWNER_PRIV)))
-  }
+                                                  tableName: String) extends RunnableCommand  {
+//
+//  override def getControlPrivileges(sqlContext: SQLContext): Set[PrivObject] = {
+//    // ALTER_METADATA privilege@table level // TODO: Make the owner privilege
+//    Set(new PrivObject(
+//      ObjectType.TABLE,
+//      getDB.getDatabaseName(schemaNameOp, sqlContext),
+//      tableName,
+//      null,
+//      Set(PrivType.OWNER_PRIV)))
+//  }
 
   def run(sqlContext: SQLContext) = {
     val schemaName = getDB.getDatabaseName(schemaNameOp, sqlContext)
@@ -2382,19 +2376,19 @@ private[sql] case class DeleteLoadByDate(
                                           cubeName: String,
                                           dateField: String,
                                           dateValue: String
-                                        ) extends RunnableCommand with ControlCommand {
+                                        ) extends RunnableCommand {
 
   val LOGGER = LogServiceFactory.getLogService("org.apache.spark.sql.cubemodel.cubeSchema");
 
-  override def getControlPrivileges(sqlContext: SQLContext): Set[PrivObject] = {
-    //DELETE privilege @ table level
-    Set(new PrivObject(
-      ObjectType.TABLE,
-      getDB.getDatabaseName(schemaNameOp, sqlContext),
-      cubeName,
-      null,
-      Set(PrivType.DELETE_NOGRANT)))
-  }
+//  override def getControlPrivileges(sqlContext: SQLContext): Set[PrivObject] = {
+//    //DELETE privilege @ table level
+//    Set(new PrivObject(
+//      ObjectType.TABLE,
+//      getDB.getDatabaseName(schemaNameOp, sqlContext),
+//      cubeName,
+//      null,
+//      Set(PrivType.DELETE_NOGRANT)))
+//  }
 
   def run(sqlContext: SQLContext) = {
 
@@ -2439,19 +2433,19 @@ private[sql] case class DeleteLoadByDate(
 
 private[sql] case class CleanFiles(
                                     schemaNameOp: Option[String],
-                                    cubeName: String) extends RunnableCommand with ControlCommand {
+                                    cubeName: String) extends RunnableCommand  {
 
   val LOGGER = LogServiceFactory.getLogService("org.apache.spark.sql.cubemodel.cubeSchema");
-
-  override def getControlPrivileges(sqlContext: SQLContext): Set[PrivObject] = {
-    //DELETE privilege @ table level
-    Set(new PrivObject(
-      ObjectType.TABLE,
-      getDB.getDatabaseName(schemaNameOp, sqlContext),
-      cubeName,
-      null,
-      Set(PrivType.DELETE_NOGRANT)))
-  }
+//
+//  override def getControlPrivileges(sqlContext: SQLContext): Set[PrivObject] = {
+//    //DELETE privilege @ table level
+//    Set(new PrivObject(
+//      ObjectType.TABLE,
+//      getDB.getDatabaseName(schemaNameOp, sqlContext),
+//      cubeName,
+//      null,
+//      Set(PrivType.DELETE_NOGRANT)))
+//  }
 
   def run(sqlContext: SQLContext) = {
     LOGGER.audit("The clean files request has been received.");
