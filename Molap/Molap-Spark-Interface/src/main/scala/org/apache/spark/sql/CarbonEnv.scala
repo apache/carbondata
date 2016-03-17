@@ -1,7 +1,7 @@
 package org.apache.spark.sql
 
 import org.apache.spark.Logging
-import org.apache.spark.sql.hive.HiveContext
+import org.apache.spark.sql.hive.{OlapMetastoreCatalog, HiveContext}
 import com.huawei.unibi.molap.util.MolapProperties
 import com.huawei.unibi.molap.metadata.MolapMetadata
 import com.huawei.datasight.molap.load.MolapLoaderUtil
@@ -17,46 +17,54 @@ class CarbonEnv extends Logging {
   var carbonCatalog: OlapMetastoreCatalog = _
   val FS_DEFAULT_FS = "fs.defaultFS"
   val HDFSURL_PREFIX = "hdfs://"
-  def init(context: HiveContext): Unit = {
-    if (null == carbonContext) {
-      carbonContext = context
-      initCarbonCatalog(context);
-    }
-  }
-
-  def initCarbonCatalog(context: HiveContext): Unit = {
-    if (null == carbonCatalog) {
-      var storeLocation = MolapProperties.getInstance().getProperty("carbon.storelocation")
-      var conf:Configuration = new Configuration(true)
-      var hdfsPath:String =conf.get(FS_DEFAULT_FS)
-      if (storeLocation == null) {
-        storeLocation = context.sparkContext.conf.get("carbon.storelocation", "/opt/carbon/store");
-      }
-      if(hdfsPath.startsWith(HDFSURL_PREFIX))
-      {
-        storeLocation=hdfsPath+storeLocation;
-      }
-      carbonCatalog = new OlapMetastoreCatalog(context.sparkContext, storeLocation)
-      if (MolapProperties.getInstance.getProperty(MolapCommonConstants.LOADCUBE_STARTUP, "false") == "true") {
-        val thread = new Thread {
-          override def run {
-            CarbonEnv.loadCarbonCubes(context, carbonCatalog)
-          }
-        }
-        thread.start
-
-      }
-    }
-  }
+//  def init(context: HiveContext): Unit = {
+//    if (null == carbonContext) {
+//      carbonContext = context
+//      initCarbonCatalog(context);
+//    }
+//  }
+//
+//  def initCarbonCatalog(context: HiveContext): Unit = {
+//    if (null == carbonCatalog) {
+//      var storeLocation = MolapProperties.getInstance().getProperty("carbon.storelocation")
+//      var conf:Configuration = new Configuration(true)
+//      var hdfsPath:String =conf.get(FS_DEFAULT_FS)
+//      if (storeLocation == null) {
+//        storeLocation = context.sparkContext.conf.get("carbon.storelocation", "/opt/carbon/store");
+//      }
+//      if(hdfsPath.startsWith(HDFSURL_PREFIX))
+//      {
+//        storeLocation=hdfsPath+storeLocation;
+//      }
+//      carbonCatalog = new OlapMetastoreCatalog(context.sparkContext, storeLocation)
+//      if (MolapProperties.getInstance.getProperty(MolapCommonConstants.LOADCUBE_STARTUP, "false") == "true") {
+//        val thread = new Thread {
+//          override def run {
+//            CarbonEnv.loadCarbonCubes(context, carbonCatalog)
+//          }
+//        }
+//        thread.start
+//
+//      }
+//    }
+//  }
 
   
 }
 
 object CarbonEnv {
   val className = classOf[CarbonEnv].getCanonicalName
+  var carbonEnv: CarbonEnv = _
 
   def getInstance(sqlContext: SQLContext): CarbonEnv = {
-    sqlContext.registerEnv[CarbonEnv](CarbonEnv.className)
+    if(carbonEnv == null)
+    {
+      carbonEnv = new CarbonEnv
+      carbonEnv.carbonContext = sqlContext.asInstanceOf[OlapContext]
+      carbonEnv.carbonCatalog = sqlContext.asInstanceOf[OlapContext].catalog
+    }
+    //sqlContext.registerEnv[CarbonEnv](CarbonEnv.className)
+    carbonEnv
   }
 
   var isloaded = false

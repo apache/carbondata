@@ -8,15 +8,13 @@ import org.apache.spark.sql.catalyst.expressions.NamedExpression
 import org.apache.spark.sql.catalyst.expressions.AttributeSet
 import org.apache.spark.sql.catalyst.expressions.PredicateHelper
 import org.apache.spark.sql.catalyst.expressions.SplitEvaluation
-import org.apache.spark.sql.catalyst.trees.`package`.TreeNodeRef
+import org.apache.spark.sql.catalyst.trees.TreeNodeRef
 import org.apache.spark.sql.catalyst.expressions.Alias
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.expressions.AttributeReference
-import org.apache.spark.sql.catalyst.expressions.PartialAggregate1
 import org.apache.spark.sql.catalyst.expressions.AggregateExpression1
-import org.apache.spark.sql.catalyst.expressions.ExtractValue
-import org.apache.spark.sql.types.{StringType, IntegerType, TimestampType}
+import org.apache.spark.sql.types.{StringType, TimestampType}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.expressions.SortOrder
 import org.apache.spark.sql.types.BooleanType
@@ -24,17 +22,8 @@ import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.expressions.PartialAggregate1
 import com.huawei.datasight.spark.agg._
 import scala.collection.mutable.MutableList
-import org.apache.spark.sql.hive.acl.ControlCommand
-import org.apache.spark.sql.hive.acl.PrivObject
-import org.apache.spark.sql.hive.acl.ObjectType
-import org.apache.spark.sql.hive.acl.PrivType
-import org.apache.spark.sql.cubemodel.DataLoadTableFileMapping
 import org.apache.spark.sql.cubemodel.CubeModel
 import org.apache.spark.sql.hive.HiveContext
-import com.huawei.unibi.molap.datastorage.store.impl.FileFactory
-import com.huawei.datasight.molap.spark.util.MolapQueryUtil
-import com.huawei.unibi.molap.util.MolapUtil
-import java.util.ArrayList
 
 /**
   * Top command
@@ -68,75 +57,75 @@ case class ShowSchemaCommand(cmd: Option[String]) extends LogicalPlan with Comma
 /**
   * Shows AggregateTables of a schema
   */
-case class ShowCreateCubeCommand(cm: CubeModel) extends LogicalPlan with Command with ControlCommand {
+case class ShowCreateCubeCommand(cm: CubeModel) extends LogicalPlan with Command {
   override def children: Seq[LogicalPlan] = Seq.empty
 
   override def output =
     Seq(AttributeReference("createCubeCmd", StringType, nullable = false)())
 
-  override def getControlPrivileges(sqlContext: SQLContext): Set[PrivObject] = {
-    val factSource = if (cm.source.isInstanceOf[String]) Seq(cm.source.asInstanceOf[String]) else Seq()
-    val dimSources = cm.dimRelations.map(dimRelation => dimRelation.dimSource).filter(_.isInstanceOf[String]).map(_.asInstanceOf[String])
-    val partitionsFiles = new ArrayList[String]();
-    val fileList = factSource ++ dimSources;
-
-    val filePermissionChecks = fileList.map(path => {
-      val file = MolapUtil.checkAndAppendHDFSUrl(path)
-      new PrivObject(ObjectType.FILE,
-        null,
-        MolapUtil.checkAndAppendHDFSUrl(path),
-        null,
-        Set(PrivType.OWNER_PRIV))
-    })
-
-    Set(new PrivObject(
-      ObjectType.DATABASE,
-      getDB.getDatabaseName(cm.schemaNameOp, sqlContext),
-      null,
-      null,
-      Set(PrivType.OWNER_PRIV))) ++ filePermissionChecks
-  }
+//  override def getControlPrivileges(sqlContext: SQLContext): Set[PrivObject] = {
+//    val factSource = if (cm.source.isInstanceOf[String]) Seq(cm.source.asInstanceOf[String]) else Seq()
+//    val dimSources = cm.dimRelations.map(dimRelation => dimRelation.dimSource).filter(_.isInstanceOf[String]).map(_.asInstanceOf[String])
+//    val partitionsFiles = new ArrayList[String]();
+//    val fileList = factSource ++ dimSources;
+//
+//    val filePermissionChecks = fileList.map(path => {
+//      val file = MolapUtil.checkAndAppendHDFSUrl(path)
+//      new PrivObject(ObjectType.FILE,
+//        null,
+//        MolapUtil.checkAndAppendHDFSUrl(path),
+//        null,
+//        Set(PrivType.OWNER_PRIV))
+//    })
+//
+//    Set(new PrivObject(
+//      ObjectType.DATABASE,
+//      getDB.getDatabaseName(cm.schemaNameOp, sqlContext),
+//      null,
+//      null,
+//      Set(PrivType.OWNER_PRIV))) ++ filePermissionChecks
+//  }
 }
 
 /**
   * Shows AggregateTables of a schema
   */
-case class ShowAggregateTablesCommand(schemaNameOp: Option[String]) extends LogicalPlan with Command with ControlCommand {
+case class ShowAggregateTablesCommand(schemaNameOp: Option[String]) extends LogicalPlan with Command {
   override def children: Seq[LogicalPlan] = Seq.empty
 
   override def output =
     Seq(AttributeReference("tableName", StringType, nullable = false)())
 
-  override def getControlPrivileges(sqlContext: SQLContext): Set[PrivObject] = {
-    //SELECT privilege @ database level // TODO: this privilege is wrong
-    Set(new PrivObject(
-      ObjectType.DATABASE,
-      getDB.getDatabaseName(schemaNameOp, sqlContext),
-      null,
-      null,
-      Set(PrivType.OWNER_PRIV)))
-  }
+//  override def getControlPrivileges(sqlContext: SQLContext): Set[PrivObject] = {
+//    //SELECT privilege @ database level // TODO: this privilege is wrong
+//    Set(new PrivObject(
+//      ObjectType.DATABASE,
+//      getDB.getDatabaseName(schemaNameOp, sqlContext),
+//      null,
+//      null,
+//      Set(PrivType.OWNER_PRIV)))
+//  }
 }
 
 /**
   * Shows cubes in schema
   */
-case class ShowCubeCommand(schemaNameOp: Option[String]) extends LogicalPlan with Command with ControlCommand {
+case class ShowCubeCommand(schemaNameOp: Option[String]) extends LogicalPlan with Command {
   override def children: Seq[LogicalPlan] = Seq.empty
 
   override def output =
     Seq(AttributeReference("cubeName", StringType, nullable = false)(),
       AttributeReference("isRegisteredWithSpark", BooleanType, nullable = false)())
 
-  override def getControlPrivileges(sqlContext: SQLContext): Set[PrivObject] = {
-    //SELECT privilege @ database level // TODO: this privilege is wrong
-    Set(new PrivObject(
-      ObjectType.DATABASE,
-      getDB.getDatabaseName(schemaNameOp, sqlContext),
-      null,
-      null,
-      Set(PrivType.SELECT_NOGRANT)))
-  }
+//  override def getControlPrivileges(sqlContext: SQLContext): Set[PrivObject] = {
+//    //SELECT privilege @ database level // TODO: this privilege is wrong
+//    Set(new PrivObject(
+//      ObjectType.DATABASE,
+//      getDB.getDatabaseName(schemaNameOp, sqlContext),
+//      null,
+//      null,
+//      Set(PrivType.SELECT_NOGRANT)))
+//  }
 }
 
 
@@ -176,22 +165,22 @@ case class SuggestAggregateCommand(
                                     script: Option[String],
                                     sugType: Option[String],
                                     schemaName: Option[String],
-                                    cubeName: String) extends LogicalPlan with Command with ControlCommand {
+                                    cubeName: String) extends LogicalPlan with Command {
   override def children: Seq[LogicalPlan] = Seq.empty
 
   override def output =
     Seq(AttributeReference("SuggestionType", StringType, nullable = false)(),
       AttributeReference("Suggestion", StringType, nullable = false)())
 
-  override def getControlPrivileges(sqlContext: SQLContext): Set[PrivObject] = {
-    //OWNER privilege @ table level // TODO: handle use database case
-    Set(new PrivObject(
-      ObjectType.TABLE,
-      getDB.getDatabaseName(schemaName, sqlContext),
-      cubeName,
-      null,
-      Set(PrivType.OWNER_PRIV)))
-  }
+//  override def getControlPrivileges(sqlContext: SQLContext): Set[PrivObject] = {
+//    //OWNER privilege @ table level // TODO: handle use database case
+//    Set(new PrivObject(
+//      ObjectType.TABLE,
+//      getDB.getDatabaseName(schemaName, sqlContext),
+//      cubeName,
+//      null,
+//      Set(PrivType.OWNER_PRIV)))
+//  }
 }
 
 /**
@@ -212,7 +201,7 @@ case class ShowTablesDetailedCommand(schemaNameOp: Option[String]) extends Logic
   * Shows Loads  in a cube
   */
 case class ShowLoadsCommand(schemaNameOp: Option[String], cube: String, limit: Option[String])
-  extends LogicalPlan with Command with ControlCommand {
+  extends LogicalPlan with Command {
 
   override def children: Seq[LogicalPlan] = Seq.empty
 
@@ -222,15 +211,15 @@ case class ShowLoadsCommand(schemaNameOp: Option[String], cube: String, limit: O
       AttributeReference("Load Start Time", TimestampType, nullable = false)(),
       AttributeReference("Load End Time", TimestampType, nullable = false)())
 
-  override def getControlPrivileges(sqlContext: SQLContext): Set[PrivObject] = {
-    // SELECT privilege @ table level
-    Set(new PrivObject(
-      ObjectType.TABLE,
-      getDB.getDatabaseName(schemaNameOp, sqlContext),
-      cube,
-      null,
-      Set(PrivType.SELECT_NOGRANT)))
-  }
+//  override def getControlPrivileges(sqlContext: SQLContext): Set[PrivObject] = {
+//    // SELECT privilege @ table level
+//    Set(new PrivObject(
+//      ObjectType.TABLE,
+//      getDB.getDatabaseName(schemaNameOp, sqlContext),
+//      cube,
+//      null,
+//      Set(PrivType.SELECT_NOGRANT)))
+//  }
 }
 
 /**
@@ -468,7 +457,7 @@ object PartialAggregation {
   def unapply(combinedPlan: (LogicalPlan, Boolean)): Option[ReturnType] = combinedPlan._1 match {
     case Aggregate(groupingExpressions, aggregateExpressionsOrig, child) =>
 
-      //if detailed query dont convert aggregate expressions to MOlap Aggregate expressions 
+      //if detailed query dont convert aggregate expressions to MOlap Aggregate expressions
       val aggregateExpressions =
         if (combinedPlan._2) aggregateExpressionsOrig
         else convertAggregatesForPushdown(false, aggregateExpressionsOrig)

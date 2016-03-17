@@ -63,7 +63,13 @@
 	  <version>1.3.0.13768</version>
 	  <scope>system</scope>
 	  <systemPath>${tpjars.path}/eigenbase-resgen-1.3.0.13768.jar</systemPath>
-	</dependency>        
+	</dependency>
+	<dependency>
+		<groupId>com.google.code.gson</groupId>
+		<artifactId>gson</artifactId>
+		<version>2.3.1</version>
+	</dependency>
+        
 	<dependency>
 		<groupId>commonvfs</groupId>  
 		<artifactId>com.commonvfs</artifactId>  

@@ -1,55 +1,29 @@
 package org.apache.spark.sql
 
-import java.sql.DriverManager
-import java.sql.ResultSet
-import scala.language.implicitConversions
-import scala.collection.mutable.ArrayBuffer
+import java.sql.{DriverManager, ResultSet}
+
+import com.huawei.datasight.molap.spark.util.MolapSparkInterFaceLogEvent
+import com.huawei.datasight.spark.agg.FlattenExpr
+import com.huawei.datasight.spark.rdd.{CubeSchemaRDD, MolapDataFrameRDD, SchemaRDDExt}
+import com.huawei.iweb.platform.logging.LogServiceFactory
+import com.huawei.unibi.molap.engine.aggregator.MeasureAggregator
+import com.huawei.unibi.molap.engine.querystats.{QueryDetail, QueryStatsCollector}
 import org.apache.spark.SparkContext
 import org.apache.spark.annotation.DeveloperApi
-import org.apache.spark.rdd.JdbcRDDExt
-import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.catalyst.ScalaReflection
-import org.apache.spark.sql.catalyst.analysis.Analyzer
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
+import org.apache.spark.rdd.{JdbcRDDExt, RDD}
+import org.apache.spark.sql.catalyst.analysis.{Analyzer, OverrideCatalog, UnresolvedAttribute}
 import org.apache.spark.sql.catalyst.expressions.AttributeReference
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.catalyst.{InternalRow, ParserDialect}
 import org.apache.spark.sql.csv.CsvRDD
-import org.apache.spark.sql.cubemodel.LoadAggregationTable
-import org.apache.spark.sql.cubemodel.LoadCube
-import org.apache.spark.sql.cubemodel.PartitionData
-import org.apache.spark.sql.cubemodel.Partitioner
+import org.apache.spark.sql.cubemodel.{LoadCubeAPI, MergeCube, PartitionData, Partitioner}
 import org.apache.spark.sql.execution.LogicalRDD
-import org.apache.spark.sql.execution.RDDConversions
-import org.apache.spark.sql.execution.SparkPlan
+import org.apache.spark.sql.execution.datasources.DDLException
+import org.apache.spark.sql.hive._
 import org.apache.spark.sql.jdbc.JdbcResultSetRDD
 import org.apache.spark.sql.types.StructType
-import com.huawei.datasight.spark.rdd.CubeSchemaRDD
-import com.huawei.datasight.spark.rdd.SchemaRDDExt
-import com.huawei.datasight.spark.agg.FlattenExpr
-import com.huawei.unibi.molap.engine.aggregator.MeasureAggregator
-import scala.reflect.runtime.universe.{TypeTag, typeTag}
-import org.apache.spark.sql.execution.joins.HashJoin
-import org.apache.spark.sql.execution.joins.BroadcastNestedLoopJoin
-import org.apache.spark.sql.execution.joins.CartesianProduct
-import org.apache.spark.sql.hive.CarbonStrategy
-import org.apache.spark.sql.hive.HiveContext
-import org.apache.spark.sql.hive.thriftserver._
-import org.apache.spark.sql.catalyst.analysis.OverrideCatalog
-import org.apache.spark.sql.catalyst.analysis.Catalog
-import org.apache.spark.sql.hive.CompositeMetastoreCatalog
-import org.apache.spark.sql.hive.OlapStrategies
-import org.apache.spark.sql.cubemodel.MergeCube
-import org.apache.spark.sql.hive.HiveStrategies
-import org.apache.spark.sql.hive.huawei.HuaweiStrategies
-import org.apache.spark.sql.cubemodel.LoadCubeAPI
-import com.huawei.datasight.spark.rdd.MolapDataFrameRDD
-import org.apache.spark.sql.execution.datasources.DataSourceStrategy
-import org.apache.spark.sql.execution.joins.HashJoin
-import org.apache.spark.sql.catalyst.InternalRow
-import com.huawei.iweb.platform.logging.LogServiceFactory
-import com.huawei.datasight.molap.spark.util.MolapSparkInterFaceLogEvent
-import com.huawei.unibi.molap.engine.querystats.QueryStatsCollector
-import com.huawei.unibi.molap.engine.querystats.QueryDetail
+
+import scala.language.implicitConversions
 
 //import org.apache.spark.sql.execution.SparkStrategies.CommandStrategy
 //import org.apache.spark.sql.SQLContext.SparkPlanner
@@ -67,36 +41,41 @@ class OlapContext(val sc: SparkContext, metadataPath: String) extends HiveContex
 
   //CarbonEnv.initCarbonCatalog(this)
 
-  override lazy val catalog = {
-    val catalogs = new ArrayBuffer[Catalog]
-    //catalogs += CarbonEnv.carbonCatalog
-    new CompositeMetastoreCatalog(conf, catalogs, metadataHive, this) with OverrideCatalog
-  }
+  override lazy val catalog = new OlapMetastoreCatalog(this, metadataPath, metadataHive) with OverrideCatalog
+
+//  {
+//    val catalogs = new ArrayBuffer[Catalog]
+//    //catalogs += CarbonEnv.carbonCatalog
+//    new CompositeMetastoreCatalog(conf, catalogs, metadataHive, this) with OverrideCatalog
+//  }
 
   @transient
   override protected[sql] lazy val analyzer =
     new Analyzer(catalog, functionRegistry, conf)
 
-  @transient
-  protected[sql] val sqlDDLParser = new MolapSqlDDLParser()
+  override protected[sql] def dialectClassName = classOf[CarbonSQLDialect].getCanonicalName
+//  protected[sql] val carbonParser = new MolapSqlDDLParser(sqlParser.parse(_))
+  //  protected[sql] override lazy val conf: SQLConf = new CarbonSQLConf
 
-  @transient
+  experimental.extraStrategies = CarbonStrategy.getStrategy(self) :: Nil
+
+//  @transient
   //protected[sql] val molapSQLParser = new MolapSqlParser(HiveSupport.hiveParseSql(_))
-  protected[sql] val molapSQLParser = new MolapSqlParser(getSQLDialect().parse(_))
+//  protected[sql] val molapSQLParser = new MolapSqlParser(getSQLDialect().parse(_))
 
   //  /* An analyzer that uses the Hive metastore. */
   //  @transient
   //  override protected[sql] lazy val analyzer =
   //    new Analyzer(catalog, EmptyFunctionRegistry, caseSensitive = false)
 
-  override def parseSql(sql: String): LogicalPlan = molapSQLParser.parse(sql)
+//  override def parseSql(sql: String): LogicalPlan = carbonParser.parse(sql)
 
-  def parseSqlDDL(sql: String): LogicalPlan = sqlDDLParser.parse(sql)
+//  def parseSqlDDL(sql: String): LogicalPlan = carbonParser.parse(sql)
 
-  override def executeSql(sql: String): this.QueryExecution = executePlan(parseSql(sql))
+//  override def executeSql(sql: String): this.QueryExecution = executePlan(parseSql(sql))
 
-  override def executePlan(plan: LogicalPlan): this.QueryExecution =
-    new this.QueryExecution(plan)
+//  override def executePlan(plan: LogicalPlan): this.QueryExecution =
+//    new this.QueryExecution(plan)
 
   def loadSchema(schemaPath: String, encrypted: Boolean = true, aggTablesGen: Boolean = true, partitioner: Partitioner = null) {
     OlapContext.updateMolapPorpertiesPath(this)
@@ -236,23 +215,23 @@ class OlapContext(val sc: SparkContext, metadataPath: String) extends HiveContex
     new SchemaRDDExt(rdd.sqlContext, rdd.logicalPlan)
 
 
-  def mSql(sql: String): SchemaRDD = {
-    OlapContext.updateMolapPorpertiesPath(this)
-    val result = {
-      if (sql.toUpperCase.startsWith("CREATE ") || sql.toUpperCase.startsWith("LOAD ")) {
-        new SchemaRDD(this, parseSqlDDL(sql))
-      } else {
-        new SchemaRDD(this, parseSql(sql))
-      }
-    }
-
-
-    // We force query optimization to happen right away instead of letting it happen lazily like
-    // when using the query DSL.  This is so DDL commands behave as expected.  This is only
-    // generates the RDD lineage for DML queries, but do not perform any execution.
-    result.queryExecution.toRdd
-    result
-  }
+//  def mSql(sql: String): SchemaRDD = {
+//    OlapContext.updateMolapPorpertiesPath(this)
+//    val result = {
+//      if (sql.toUpperCase.startsWith("CREATE ") || sql.toUpperCase.startsWith("LOAD ")) {
+//        new SchemaRDD(this, parseSqlDDL(sql))
+//      } else {
+//        new SchemaRDD(this, parseSql(sql))
+//      }
+//    }
+//
+//
+//    // We force query optimization to happen right away instead of letting it happen lazily like
+//    // when using the query DSL.  This is so DDL commands behave as expected.  This is only
+//    // generates the RDD lineage for DML queries, but do not perform any execution.
+//    result.queryExecution.toRdd
+//    result
+//  }
 
   override def sql(sql: String): SchemaRDD = {
 
@@ -268,7 +247,7 @@ class OlapContext(val sc: SparkContext, metadataPath: String) extends HiveContex
     val sqlString = sql.toUpperCase
     val LOGGER = LogServiceFactory.getLogService(OlapContext.getClass().getName())
     LOGGER.info(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, s"Query [$sqlString]")
-    val logicPlan: LogicalPlan = parseSqlDDL(sql)
+    val logicPlan: LogicalPlan = parseSql(sql)
     //val result = new SchemaRDD(this,logicPlan)
     val result = new MolapDataFrameRDD(sql: String, this, logicPlan)
     //    {
@@ -321,72 +300,6 @@ class OlapContext(val sc: SparkContext, metadataPath: String) extends HiveContex
   override def cacheTable(tableName: String): Unit = {
     //todo:
   }
-
-  experimental.extraStrategies = CarbonStrategy.getStrategy(self) :: Nil
-
-  @transient
-  val olapPlanner = new SparkPlanner with HuaweiStrategies {
-    val olapContext = self
-    val hiveContext = self
-
-    //    override val strategies: Seq[Strategy] = Seq(
-    //      CommandStrategy(self),
-    //      TakeOrdered,
-    //      ParquetOperations,
-    //      OlapCubeScans,
-    //      HashAggregation,
-    //      LeftSemiJoin,
-    //      HashJoin,
-    //      InMemoryScans,
-    //      BasicOperators,
-    //      CartesianProduct,
-    //      BroadcastNestedLoopJoin
-    //    )
-
-    experimental.extraStrategies = CarbonStrategy.getStrategy(self) :: Nil
-    //    override val strategies: Seq[Strategy] =
-    //      experimental.extraStrategies ++ Seq(
-    //      DataSourceStrategy,
-    //      DummySparkPlanner.getStrategy(self),
-    //      HiveCommandStrategy(self),
-    //      HiveDDLStrategy,
-    //      DDLStrategy,
-    //      TakeOrderedAndProject,
-    ////      ParquetOperations,
-    //      InMemoryScans,
-    ////      ParquetConversion, // Must be before HiveTableScans
-    //      HiveTableScans,
-    //      DataSinks,
-    //      Scripts,
-    //      HashAggregation,
-    //      LeftSemiJoin,
-    //      EquiJoinSelection,
-    //      BasicOperators,
-    //      HuaweiStrategy,
-    //      CartesianProduct,
-    //      BroadcastNestedLoopJoin)
-  }
-  //    val strategies1: Seq[Strategy] =
-  //      experimental.extraStrategies ++ (
-  //      //CommandStrategy(self) ::
-  //      DataSourceStrategy ::
-  //      OlapCubeScans ::
-  //      TakeOrdered ::
-  //      HashAggregation ::
-  //      LeftSemiJoin ::
-  //      HashJoin ::
-  //      InMemoryScans ::
-  //      ParquetOperations ::
-  //      BasicOperators ::
-  //      CartesianProduct ::
-  //      BroadcastNestedLoopJoin :: Nil)
-  //  }
-
-  //  @transient
-  //  override protected[sql] val planner  = olapPlanner
-
-  //  abstract class QueryExecution extends super.QueryExecution {
-  //  }
 
   /**
     * Loads from JDBC, returning the ResultSet as a [[SchemaRDD]].
@@ -495,3 +408,10 @@ object OlapContext {
   }
 
 }
+
+//private[spark] class CarbonSQLConf extends SQLConf {
+//parse
+//  private[spark] override def dialect: String = getConf(SQLConf.DIALECT,
+//    classOf[CarbonSQLDialect].getCanonicalName)
+//}
+
