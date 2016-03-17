@@ -2,12 +2,12 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.huawei.datasight</groupId>
   <artifactId>molap-core</artifactId>
-  <version>1.2.10</version>
+  <version>0.1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>"Molap-Core"</name>
    <parent>
 	     <groupId>com.huawei.datasight</groupId>
-	     <version>1.2.10</version>
+	     <version>0.1.0-SNAPSHOT</version>
 	     <artifactId>spark-cube-parent</artifactId>
   </parent>
   
