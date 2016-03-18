@@ -9,19 +9,14 @@ import org.apache.spark.sql.OlapContext
 import com.huawei.unibi.molap.util.MolapProperties
 import org.apache.spark.sql.hive.thriftserver.HiveThriftServer2
 
-/**
-  * @author R00900208
-  *
-  */
 object MolapThriftServer {
 
   def main(args: Array[String]): Unit = {
     args.foreach(println)
     var conf = new SparkConf()
-
-      .setMaster(args(0)) //.setMaster("spark://master:7077")
+      .setMaster(args(0))
       .set("spark.executor.memory", args(1))
-      .set("spark.cores.max", args(2)) //.set("spark.ui.port", MolapProperties.getInstance().getProperty("spark.ui.port", "4045"))
+      .set("spark.cores.max", args(2))
       .set("spark.eventLog.enabled", "false")
       .setAppName("Molap Thrift Server")
       .set("spark.hadoop.dfs.client.domain.socket.data.traffic", "false")
@@ -29,7 +24,6 @@ object MolapThriftServer {
       .set("spark.hadoop.dfs.domain.socket.path", "/var/lib/hadoop-hdfs/dn_socket")
       .set("spark.hadoop.dfs.block.local-path-access.user", "root,hadoop")
       .set("spark.hadoop.fs.hdfs.impl", "org.apache.hadoop.hdfs.DistributedFileSystem")
-      //.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
       .set("spark.kryo.registrator", "com.huawei.datasight.spark.MyRegistrator")
       .set("spark.sql.useSerializer2", "false")
       .set("spark.kryoserializer.buffer", "100k")
@@ -45,8 +39,7 @@ object MolapThriftServer {
     println("Sleeping for millisecs:" + warmUpTime);
     try {
       Thread.sleep(Integer.parseInt(warmUpTime));
-    }
-    catch {
+    } catch {
       case _ => {
         println("Wrong value for molap.spark.warmUpTime " + warmUpTime + "Using default Value and proceeding"); Thread.sleep(30000);
       }

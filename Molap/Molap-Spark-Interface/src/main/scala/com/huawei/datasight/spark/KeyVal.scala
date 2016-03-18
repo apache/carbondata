@@ -2,18 +2,13 @@
 /**
  * It is just Key value class. I don't get any other alternate to make the RDD class to work with my minimum knowledge in scala.
  * May be I will remove later once I gain good knowledge :)
-  *
- * @author R00900208
  *
  */
 
 package com.huawei.datasight.spark
 
-import com.huawei.unibi.molap.engine.scanner.impl.MolapKey
-import com.huawei.unibi.molap.engine.scanner.impl.MolapValue
 import com.huawei.datasight.molap.core.load.LoadMetadataDetails
-import com.huawei.datasight.molap.load.DeletedLoadMetadata
-
+import com.huawei.unibi.molap.engine.scanner.impl.{MolapKey, MolapValue}
 
 trait KeyVal[K, V] extends Serializable {
   def getKey(key: MolapKey, value: MolapValue): (K, V)

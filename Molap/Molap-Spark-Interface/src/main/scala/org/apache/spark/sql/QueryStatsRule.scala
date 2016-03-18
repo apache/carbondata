@@ -1,17 +1,10 @@
 package org.apache.spark.sql
 
-import org.apache.hadoop.hive.ql.exec.spark.SparkPlan
-
-import org.apache.spark.sql.catalyst.expressions.IntegerLiteral
-import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project, Filter, Aggregate, Subquery, Limit, Sort, Join}
+import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, Filter, Join, Limit, LogicalPlan, Project, Sort, Subquery}
 import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.hive.HiveContext
-
 
 /**
   * This rule will get registed to unified context. This will be parrent for all logical plan related to select queries
-  *
-  * @author A00902717
   */
 class QueryStatsRule extends Rule[LogicalPlan] {
   def apply(plan: LogicalPlan): LogicalPlan = {
@@ -32,8 +25,6 @@ class QueryStatsRule extends Rule[LogicalPlan] {
         case _ => plan
       }
     }
-
-
   }
 
   /**
@@ -50,8 +41,7 @@ class QueryStatsRule extends Rule[LogicalPlan] {
         case Aggregate(groupingExpressions, aggregateExpressions, child) => true
         case _ => false
       }
-    }
-    else {
+    } else {
       false
     }
   }
@@ -62,9 +52,7 @@ class QueryStatsRule extends Rule[LogicalPlan] {
     plan transform {
       case QueryStatsLogicalPlan(child) => child
     }
-
   }
-
 }
 
 case class QueryStatsLogicalPlan(plan: LogicalPlan) extends LogicalPlan {

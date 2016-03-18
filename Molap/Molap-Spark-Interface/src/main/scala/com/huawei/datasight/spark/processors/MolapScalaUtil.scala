@@ -52,24 +52,5 @@ object MolapScalaUtil {
       case MolapCommonConstants.DATE_TYPE => Seq(Level(field._1, field._1, Int.MaxValue, MolapCommonConstants.STRING))
       case MolapCommonConstants.BOOLEAN_TYPE => Seq(Level(field._1, field._1, Int.MaxValue, MolapCommonConstants.STRING))
       case MolapCommonConstants.TIMESTAMP_TYPE => Seq(Level(field._1, field._1, Int.MaxValue, MolapCommonConstants.TIMESTAMP))
-//      case MolapCommonConstants.ARRAY_TYPE => Seq(Level(field._1, field._1, Int.MaxValue, MolapCommonConstants.ARRAY))
-//      case MolapCommonConstants.STRUCT_TYPE => Seq(Level(field._1, field._1, Int.MaxValue, MolapCommonConstants.STRUCT))
-//      case _ => MolapCommonConstants.NUMERIC
   	}
-  //  def toSparkType(obj : Any): Any = obj match {
-  //      case s: String => UTF8String(s)
-  //      case i: Integer=> IntegerType(i)
-  //      case _ => obj
-  //    }
-
-  //  def convertMolapToSparkDataType(dataType:MolapDataType): org.apache.spark.sql.types.DataType =
-  //    dataType match {
-  //
-  //      case MolapDataType.StringType => StringType
-  //      case MolapDataType.IntegerType => IntegerType
-  //      case MolapDataType.LongType => LongType
-  //      case MolapDataType.DoubleType => DoubleType
-  //      case MolapDataType.FloatType => FloatType
-  //      case MolapDataType.DateType => DateType
-  //    }
 }

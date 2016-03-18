@@ -54,13 +54,13 @@ private[spark] class JdbcPartition(idx: Int, val lower: Long, val upper: Long) e
   *                      The default maps a ResultSet to an array of Object.
   */
 class JdbcRDDExt[T: ClassTag](
-                               sc: SparkContext,
-                               getConnection: () => Connection,
-                               sql: String,
-                               lowerBound: Long,
-                               upperBound: Long,
-                               numPartitions: Int,
-                               mapRow: (ResultSet) => T = JdbcRDDExt.resultSetToObjectArray _)
+    sc: SparkContext,
+    getConnection: () => Connection,
+    sql: String,
+    lowerBound: Long,
+    upperBound: Long,
+    numPartitions: Int,
+    mapRow: (ResultSet) => T = JdbcRDDExt.resultSetToObjectArray _)
   extends RDD[T](sc, Nil) with Logging {
 
   private var schema: Seq[(String, Int, Boolean)] = null

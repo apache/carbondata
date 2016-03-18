@@ -14,46 +14,11 @@ import org.apache.spark.sql.cubemodel._
 import org.apache.spark.Logging
 import org.apache.spark.sql.execution.datasources.{DDLException, DescribeCommand}
 
-///**
-//  * TODO: This parser will be no longer required as only DDL parser is used
-//  * in Unified context
-//  */
-//class MolapSqlParser(fallback: String => LogicalPlan) extends AbstractSparkSQLParser {
-//
-//  override def parse(input: String): LogicalPlan = {
-//    try {
-//      super.parse(input)
-//    } catch {
-//      case ddlException: DDLException => throw ddlException
-//      case _ => fallback(input)
-//      case x: Throwable => throw x
-//    }
-//  }
-//
-//  private lazy val others: Parser[LogicalPlan] =
-//    wholeInput ^^ {
-//      case input => fallback(input)
-//    }
-//}
-
 /**
   * Parser for All Carbon DDL, DML cases in Unified context
   */
 class MolapSqlDDLParser()
   extends AbstractSparkSQLParser  with Logging {
-  //Vinod to recheck this commented part 
-//  protected implicit def asParser(k: Keyword): Parser[String] =
-//    lexical.allCaseVersions(k.str).map(x => x : Parser[String]).reduce(_ | _)
-
-//    override def parse(input: String): LogicalPlan = {
-//    try {
-//      super.parse(input)
-//    } catch {
-//      case ddlException: DDLException => throw ddlException
-//      case _ => fallback(input)
-//      case x: Throwable => throw x
-//    }
-//  }
 
   protected val AGGREGATE = Keyword("AGGREGATE")
   protected val AS = Keyword("AS")
@@ -174,7 +139,6 @@ class MolapSqlDDLParser()
   override protected lazy val start: Parser[LogicalPlan] =
     createCube | showCreateCube | loadManagement | createAggregateTable | describeTable |
       suggestAggregates | showCube | showLoads | alterCube | showAllCubes
-  // | others | showAggregateTables | use
 
   protected lazy val loadManagement: Parser[LogicalPlan] = loadData | dropCubeOrTable |
     deleteLoadsByID | deleteLoadsByDate | cleanFiles
@@ -416,18 +380,6 @@ class MolapSqlDDLParser()
       case _ => ("", "")
     }
 
-  //  protected lazy val use: Parser[LogicalPlan] =
-  //    USE ~> ident <~ opt(";") ^^ {
-  //      case db =>
-  //        UseDB(db)
-  //  }
-
-  //  protected lazy val showSchema: Parser[LogicalPlan] =
-  //    SHOW ~> (DATABASES | SCHEMAS) ~> (LIKE ~> stringLit).? <~ opt(";") ^^ {
-  //      case like =>
-  //        ShowSchemaCommand(like)
-  //  }
-
   protected lazy val showAggregateTables: Parser[LogicalPlan] =
     SHOW ~> AGGREGATE ~> TABLES ~> (IN ~> ident).? <~ opt(";") ^^ {
       case schema =>
@@ -651,11 +603,6 @@ class MolapSqlDDLParser()
       case _ => field
     }
   }
-
-  //  private lazy val others: Parser[LogicalPlan] =
-  //    wholeInput ^^ {
-  //      case input => fallback(input)
-  //    }
 
   protected lazy val showLoads: Parser[LogicalPlan] =
     SHOW ~> LOADS ~> FOR ~> CUBE ~> (ident <~ ".").? ~ ident ~ (LIMIT ~> numericLit).? <~ opt(";") ^^ {

@@ -62,29 +62,6 @@ case class ShowCreateCubeCommand(cm: CubeModel) extends LogicalPlan with Command
 
   override def output =
     Seq(AttributeReference("createCubeCmd", StringType, nullable = false)())
-
-//  override def getControlPrivileges(sqlContext: SQLContext): Set[PrivObject] = {
-//    val factSource = if (cm.source.isInstanceOf[String]) Seq(cm.source.asInstanceOf[String]) else Seq()
-//    val dimSources = cm.dimRelations.map(dimRelation => dimRelation.dimSource).filter(_.isInstanceOf[String]).map(_.asInstanceOf[String])
-//    val partitionsFiles = new ArrayList[String]();
-//    val fileList = factSource ++ dimSources;
-//
-//    val filePermissionChecks = fileList.map(path => {
-//      val file = MolapUtil.checkAndAppendHDFSUrl(path)
-//      new PrivObject(ObjectType.FILE,
-//        null,
-//        MolapUtil.checkAndAppendHDFSUrl(path),
-//        null,
-//        Set(PrivType.OWNER_PRIV))
-//    })
-//
-//    Set(new PrivObject(
-//      ObjectType.DATABASE,
-//      getDB.getDatabaseName(cm.schemaNameOp, sqlContext),
-//      null,
-//      null,
-//      Set(PrivType.OWNER_PRIV))) ++ filePermissionChecks
-//  }
 }
 
 /**
@@ -95,16 +72,6 @@ case class ShowAggregateTablesCommand(schemaNameOp: Option[String]) extends Logi
 
   override def output =
     Seq(AttributeReference("tableName", StringType, nullable = false)())
-
-//  override def getControlPrivileges(sqlContext: SQLContext): Set[PrivObject] = {
-//    //SELECT privilege @ database level // TODO: this privilege is wrong
-//    Set(new PrivObject(
-//      ObjectType.DATABASE,
-//      getDB.getDatabaseName(schemaNameOp, sqlContext),
-//      null,
-//      null,
-//      Set(PrivType.OWNER_PRIV)))
-//  }
 }
 
 /**
@@ -116,16 +83,6 @@ case class ShowCubeCommand(schemaNameOp: Option[String]) extends LogicalPlan wit
   override def output =
     Seq(AttributeReference("cubeName", StringType, nullable = false)(),
       AttributeReference("isRegisteredWithSpark", BooleanType, nullable = false)())
-
-//  override def getControlPrivileges(sqlContext: SQLContext): Set[PrivObject] = {
-//    //SELECT privilege @ database level // TODO: this privilege is wrong
-//    Set(new PrivObject(
-//      ObjectType.DATABASE,
-//      getDB.getDatabaseName(schemaNameOp, sqlContext),
-//      null,
-//      null,
-//      Set(PrivType.SELECT_NOGRANT)))
-//  }
 }
 
 
@@ -139,26 +96,6 @@ case class ShowAllCubeCommand() extends LogicalPlan with Command /*with ControlC
     Seq(AttributeReference("schemaName", StringType, nullable = false)(),
       AttributeReference("cubeName", StringType, nullable = false)(),
       AttributeReference("isRegisteredWithSpark", BooleanType, nullable = false)())
-
-  /*lazy val allowedDatabases: Option[Seq[String]] = None*/
-
- /* override def getControlPrivileges(sqlContext: SQLContext): Set[PrivObject] = {
-    //SELECT privilege @ database level // TODO: handle use database case
-    allowedDatabases =
-      Some(CarbonEnv.getInstance(sqlContext).carbonCatalog.getAllCubes()(sqlContext)
-        .groupBy(_._1)
-        .filter(x =>
-          sqlContext.asInstanceOf[HiveContext].catalog.client.checkPrivilege(
-            Set(new PrivObject(
-              ObjectType.DATABASE,
-              x._1,
-              null,
-              null,
-              Set(PrivType.SELECT_NOGRANT))))
-        ).map(_._1).toSeq)
-
-    Set.empty
-  }*/
 }
 
 case class SuggestAggregateCommand(
@@ -171,16 +108,6 @@ case class SuggestAggregateCommand(
   override def output =
     Seq(AttributeReference("SuggestionType", StringType, nullable = false)(),
       AttributeReference("Suggestion", StringType, nullable = false)())
-
-//  override def getControlPrivileges(sqlContext: SQLContext): Set[PrivObject] = {
-//    //OWNER privilege @ table level // TODO: handle use database case
-//    Set(new PrivObject(
-//      ObjectType.TABLE,
-//      getDB.getDatabaseName(schemaName, sqlContext),
-//      cubeName,
-//      null,
-//      Set(PrivType.OWNER_PRIV)))
-//  }
 }
 
 /**
@@ -198,7 +125,7 @@ case class ShowTablesDetailedCommand(schemaNameOp: Option[String]) extends Logic
 }
 
 /**
-  * Shows Loads  in a cube
+  * Shows Loads in a cube
   */
 case class ShowLoadsCommand(schemaNameOp: Option[String], cube: String, limit: Option[String])
   extends LogicalPlan with Command {
@@ -210,20 +137,10 @@ case class ShowLoadsCommand(schemaNameOp: Option[String], cube: String, limit: O
       AttributeReference("Status", StringType, nullable = false)(),
       AttributeReference("Load Start Time", TimestampType, nullable = false)(),
       AttributeReference("Load End Time", TimestampType, nullable = false)())
-
-//  override def getControlPrivileges(sqlContext: SQLContext): Set[PrivObject] = {
-//    // SELECT privilege @ table level
-//    Set(new PrivObject(
-//      ObjectType.TABLE,
-//      getDB.getDatabaseName(schemaNameOp, sqlContext),
-//      cube,
-//      null,
-//      Set(PrivType.SELECT_NOGRANT)))
-//  }
 }
 
 /**
-  * Describe formatted  for hive table
+  * Describe formatted for hive table
   */
 case class DescribeFormattedCommand(sql: String, tblIdentifier: Seq[String]) extends LogicalPlan with Command {
   override def children: Seq[LogicalPlan] = Seq.empty
@@ -279,21 +196,12 @@ object PhysicalOperation1 extends PredicateHelper {
       case Aggregate(groupingExpressions, aggregateExpressions, child) =>
         val (fields, filters, other, aliases, _, sortOrder, limit) = collectProjectsAndFilters(child)
 
-        //        //if aggregate query with expression like (avg(msr)+10)
         var aggExps: Seq[AggregateExpression1] = Nil
         aggregateExpressions.foreach(v => {
           val list = findAggreagateExpression(v)
           aggExps = aggExps ++ list
         })
 
-        //        val aggExps = aggregateExpressions.map{
-        //          case Alias(ref, name)=> ref
-        //          case other => other
-        //          }.filter{
-        //        TODO: handle push down for query like "select sum(col1)+10 from cube", currently this is ignored here
-        //        case d:AggregateExpression=>true
-        //        case _=> false
-        //        }
         (fields, filters, other, aliases ++ collectAliases(aggregateExpressions), Some(aggregateExpressions), sortOrder, limit)
       case Sort(order, _, child) =>
         val (fields, filters, other, aliases, groupby, _, limit) = collectProjectsAndFilters(child)
@@ -317,7 +225,6 @@ object PhysicalOperation1 extends PredicateHelper {
           val list = findAggreagateExpression(v)
           listout = listout ++ list
         })
-
         listout
       }
     }
@@ -437,10 +344,6 @@ object PartialAggregation {
             case attr: AttributeReference => CountDistinctMolap(makePositionLiteral(attr, index))
             case _ => a
           }
-
-        //        case a @ CountDistinct(cast @ Cast(attr: AttributeReference, _)) => CountDistinctMolap(childSeq)
-        //        case a @ CountDistinct(childSeq) => CountDistinctMolap(childSeq)
-
         case a@Count(s@Literal(_, _)) =>
           CountMolap(makePositionLiteral(s, index))
         case a@Count(attr: AttributeReference) =>
