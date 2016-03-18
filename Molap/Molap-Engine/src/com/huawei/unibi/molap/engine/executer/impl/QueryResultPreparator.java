@@ -133,7 +133,7 @@ public class QueryResultPreparator
                     GenericQueryType complexType = queryModel.getComplexDimensionsMap().get(queryModel.getDims()[i].getColName());
 	                if(complexType == null)
 	                {
-	                    resultData[currentRow][i] = (int)keyArray[queryModel.getDims()[i].getOrdinal()];
+	                    resultData[currentRow][i] = (int)keyArray[executerProperties.hybridStoreModel.getMdKeyOrdinal(queryModel.getDims()[i].getOrdinal())];
 	                }
 	                else
 	                {

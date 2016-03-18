@@ -521,6 +521,7 @@ import org.eigenbase.xom.NodeDef;
             dimension.setHierName(levHolder.molapHierName);
             dimension.setActualTableName(levHolder.actualTableName);
             dimension.setDimName(levHolder.molapDimName);
+            dimension.setColumnar(levHolder.rolapLevel.columnar);
             dimension.setDataBlockIndex(blockIndex++);
             boolean hasNameColumn = hasNameColumn(lev);
 
@@ -1302,6 +1303,8 @@ import org.eigenbase.xom.NodeDef;
          * dataBlockIndexs
          */
         private int dataBlockIndexs;
+        
+        private boolean isColumnar;
 
         /**
          * dataBlockIndexs
@@ -1331,6 +1334,7 @@ import org.eigenbase.xom.NodeDef;
         public int[] getAllApplicableDataBlockIndexs() {
             return allApplicableDataBlockIndexs;
         }
+        
 
         public void setAllApplicableDataBlockIndexs(int[] allApplicableDataBlockIndexs) {
             this.allApplicableDataBlockIndexs = allApplicableDataBlockIndexs;
@@ -1338,6 +1342,15 @@ import org.eigenbase.xom.NodeDef;
 
         public int getDataBlockIndex() {
             return dataBlockIndexs;
+        }
+        public boolean isColumnar()
+        {
+            return isColumnar;
+        }
+
+        public void setColumnar(boolean isColumnar)
+        {
+            this.isColumnar = isColumnar;
         }
 
         public void setDataBlockIndex(int dataBlockIndexs) {
@@ -1481,6 +1494,7 @@ import org.eigenbase.xom.NodeDef;
             copy.actualTableName = this.actualTableName;
             copy.isQueryForDistinctCount = this.isQueryForDistinctCount;
             copy.queryOrder = queryOrder;
+            copy.isColumnar=isColumnar;
             return copy;
         }
 

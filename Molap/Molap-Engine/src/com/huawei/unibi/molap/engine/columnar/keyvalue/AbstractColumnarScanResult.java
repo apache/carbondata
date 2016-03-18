@@ -126,6 +126,13 @@ public abstract class AbstractColumnarScanResult
                         columnarKeyStoreDataHolder[selectedDimensionIndex[i]].getColumnarKeyStoreMetadata()
                                 .getEachRowSize());
             }
+            else if(!columnarKeyStoreDataHolder[selectedDimensionIndex[i]].getColumnarKeyStoreMetadata().isSorted())
+            {
+                //handleRowStore(columnarKeyStoreDataHolder[selectedDimensionIndex[i]].getKeyBlockData(),columnarKeyStoreDataHolder[selectedDimensionIndex[i]].getColumnarKeyStoreMetadata().getEachRowSize(),row);
+                System.arraycopy(columnarKeyStoreDataHolder[selectedDimensionIndex[i]].getKeyBlockData(), ((columnIndex) * columnarKeyStoreDataHolder[selectedDimensionIndex[i]].getColumnarKeyStoreMetadata().getEachRowSize()), completeKeyArray, destinationPosition,
+                        columnarKeyStoreDataHolder[selectedDimensionIndex[i]].getColumnarKeyStoreMetadata().getEachRowSize());
+                
+            }
             else
             {
 

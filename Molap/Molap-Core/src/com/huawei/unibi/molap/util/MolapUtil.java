@@ -25,7 +25,13 @@ import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.security.PrivilegedExceptionAction;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -49,6 +55,7 @@ import com.huawei.unibi.molap.keygenerator.mdkey.NumberCompressor;
 import com.huawei.unibi.molap.metadata.LeafNodeInfo;
 import com.huawei.unibi.molap.metadata.LeafNodeInfoColumnar;
 import com.huawei.unibi.molap.metadata.SliceMetaData;
+import com.huawei.unibi.molap.vo.HybridStoreModel;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.pentaho.di.core.exception.KettleException;
@@ -342,7 +349,185 @@ public final class MolapUtil {
         }
         return newDimsC;
     }
+    
+    public static int getIncrementedCardinality(int dimCardinality)
+    {
+        // get the cardinality incr factor
+        final int incrValue = Integer.parseInt(MolapProperties.getInstance().getProperty(
+                MolapCommonConstants.CARDINALITY_INCREMENT_VALUE,
+                MolapCommonConstants.CARDINALITY_INCREMENT_VALUE_DEFAULT_VAL));
 
+        int perIncr = 0;
+        int remainder = 0;
+        int newDimsC = 0;
+
+        // get the incr
+        perIncr = (dimCardinality * incrValue) / CONST_HUNDRED;
+
+        // if per incr is more than one the add to cardinality
+        if(perIncr > 0)
+        {
+            newDimsC = dimCardinality + perIncr;
+        }
+        else
+        {
+            // else add one
+            newDimsC = dimCardinality + 1;
+        }
+        // check whether its in boundary condition
+        remainder = newDimsC % CONST_EIGHT;
+        if(remainder == CONST_SEVEN)
+        {
+            // then incr cardinality by 1
+            newDimsC = dimCardinality + 1;
+        }
+        newDimsC = Long.toBinaryString(newDimsC).length();
+        // get the log bits of cardinality
+
+        return newDimsC;
+    }
+
+      /**
+     *  
+     * @param dimCardinality : dimension cardinality
+     * @param dimensionStoreType : dimension store type: true->columnar, false->row
+     * @param highCardDimOrdinals 
+     * @param columnarStoreColumns->columns for columnar store
+     * @param rowStoreColumns -> columns for row store
+     * @return
+     */
+    public static HybridStoreModel getHybridStoreMeta(int[] dimCardinality,boolean[] dimensionStoreType, List<Integer> highCardDimOrdinals)
+    {
+        //get dimension store type
+        HybridStoreModel hybridStoreMeta=new HybridStoreModel();
+      
+        List<Integer> columnarStoreOrdinalsList = new ArrayList<Integer>(dimensionStoreType.length);
+        List<Integer> columnarDimcardinalityList =new ArrayList<Integer>(dimensionStoreType.length);
+        List<Integer> rowStoreOrdinalsList = new ArrayList<Integer>(dimensionStoreType.length);
+        List<Integer> rowDimCardinalityList= new ArrayList<Integer>(dimensionStoreType.length);
+        boolean isHybridStore=false;
+        for (int i = 0; i < dimensionStoreType.length; i++)
+        {
+            if (dimensionStoreType[i])
+            {
+                columnarStoreOrdinalsList.add(i);
+                columnarDimcardinalityList.add(dimCardinality[i]);
+                
+            }
+            else
+            {
+                rowStoreOrdinalsList.add(i);
+                rowDimCardinalityList.add(dimCardinality[i]);
+               
+            }
+        }
+        if(rowStoreOrdinalsList.size()>0)
+        {
+            isHybridStore=true;
+        }
+        int[] columnarStoreOrdinal=convertToIntArray(columnarStoreOrdinalsList);
+        int[] columnarDimcardinality = convertToIntArray(columnarDimcardinalityList);
+        
+        int[] rowStoreOrdinal=convertToIntArray(rowStoreOrdinalsList);
+        int[] rowDimCardinality=convertToIntArray(rowDimCardinalityList);
+        
+        Map<Integer,Integer> dimOrdinalMDKeymapping=new HashMap<Integer,Integer>();
+        Map<Integer,Integer> dimOrdinalStoreIndexMapping=new HashMap<Integer,Integer>();
+        int dimCount=0;
+        int storeIndex=0;
+        for(int i=0;i<rowStoreOrdinal.length;i++)
+        {
+            //dimOrdinalMDKeymapping.put(dimCount++, rowStoreOrdinal[i]);
+            dimOrdinalMDKeymapping.put(rowStoreOrdinal[i],dimCount++);
+            //row stores will be stored at 0th inex
+            dimOrdinalStoreIndexMapping.put(rowStoreOrdinal[i], storeIndex);
+        }
+        storeIndex++;
+        for(int i=0;i<columnarStoreOrdinal.length;i++)
+        {
+            //dimOrdinalMDKeymapping.put(dimCount++,columnarStoreOrdinal[i] );
+            dimOrdinalMDKeymapping.put(columnarStoreOrdinal[i],dimCount++);
+            dimOrdinalStoreIndexMapping.put(columnarStoreOrdinal[i], storeIndex++);
+        }
+       
+        //updating with highcardinality dimension store detail
+        if(null!=highCardDimOrdinals)
+        {
+            for(Integer highCardDimOrdinal:highCardDimOrdinals)
+            {
+                dimOrdinalStoreIndexMapping.put(highCardDimOrdinal, storeIndex++);
+            }    
+        }
+        
+        
+        //This split is used while splitting mdkey's into columns
+        //1,1,1,3 -> it means first 3 dimension will be alone and next 3 dimension will be in single column
+        
+        //here in index +1 means total no of split will be all dimension,part of columnar store, and one column which
+        //will have all dimension in single column as row
+        int[] mdKeyPartioner=null;
+        int[][] dimensionPartitioner=null;
+        // no of dimension stored as column.. this inculdes one complete set of row store
+        int noOfColumnsStore=columnarStoreOrdinal.length;
+        if(isHybridStore)
+        {
+            noOfColumnsStore++;
+            mdKeyPartioner=new int[columnarStoreOrdinal.length+1];
+            dimensionPartitioner=new int[columnarDimcardinality.length+1][];
+            
+            //row
+            mdKeyPartioner[0]=rowDimCardinality.length;
+            dimensionPartitioner[0]=new int[rowDimCardinality.length];
+            for(int i=0;i<rowDimCardinality.length;i++)
+            {
+                dimensionPartitioner[0][i]=rowDimCardinality[i];
+               
+            }
+            //columnar
+            //dimensionPartitioner[1]=new int[columnarDimcardinality.length];
+            for(int i=0;i<columnarDimcardinality.length;i++)
+            {
+                dimensionPartitioner[i+1]=new int[]{columnarDimcardinality[i]};
+                mdKeyPartioner[i+1]=1;
+            }
+        }
+        else
+        {
+            mdKeyPartioner=new int[columnarStoreOrdinal.length];
+            dimensionPartitioner=new int[columnarDimcardinality.length][];
+            //columnar
+            dimensionPartitioner[0]=new int[columnarDimcardinality.length];
+            for(int i=0;i<columnarDimcardinality.length;i++)
+            {
+                dimensionPartitioner[i]=new int[]{columnarDimcardinality[i]};
+                mdKeyPartioner[i]=1;
+            }
+        }
+        
+       
+        hybridStoreMeta.setNoOfColumnStore(noOfColumnsStore);
+        hybridStoreMeta.setDimOrdinalMDKeyMapping(dimOrdinalMDKeymapping);
+        hybridStoreMeta.setColumnStoreOrdinals(columnarStoreOrdinal);
+        hybridStoreMeta.setRowStoreOrdinals(rowStoreOrdinal);
+        hybridStoreMeta.setDimensionPartitioner(dimensionPartitioner);
+        hybridStoreMeta.setColumnSplit(mdKeyPartioner);
+        hybridStoreMeta.setDimOrdinalStoreIndexMapping(dimOrdinalStoreIndexMapping);
+        //this is no
+        
+        
+        //get Key generator for each columnar and row store
+        int[] completeCardinality=new int[rowDimCardinality.length+columnarDimcardinality.length];
+        System.arraycopy(rowDimCardinality, 0, completeCardinality, 0, rowDimCardinality.length);
+        System.arraycopy(columnarDimcardinality, 0, completeCardinality,rowDimCardinality.length, columnarDimcardinality.length);
+        
+        hybridStoreMeta.setHybridCardinality(completeCardinality);
+       
+        hybridStoreMeta.setHybridStore(isHybridStore);
+        
+         
+        
+        return hybridStoreMeta;
+    }
     /**
      * This method will be used to update the dimension cardinality
      *
@@ -370,6 +555,63 @@ public final class MolapUtil {
         return newDimsC;
     }
 
+    private static int getBitLengthFullyFilled(int dimlens)
+    {
+        int bitsLength=Long.toBinaryString(dimlens).length();
+        int div=bitsLength/8;
+        int mod=bitsLength%8;
+        if(mod>0)
+        {
+            return 8 * (div + 1);
+        }
+        else
+        {
+            return bitsLength;
+        }
+    }
+     /**
+     * This method will return bit length required for each dimension based on splits
+     * @param dimension
+     * @param dimPartitioner : this will partition few dimension to be stored at row level. If it is row level than data is store in bits 
+     * @return
+     */
+    public static int[] getDimensionBitLength(int[] dimCardinality, int[][] dimPartitioner)
+    {
+        int[] newdims=new int[dimCardinality.length];
+        int dimCounter=0;
+        for(int i=0;i<dimPartitioner.length;i++)
+        {
+            if(dimCardinality[i] == 0)
+            {
+                //Array or struct type may have higher value 
+                newdims[i]=64;
+            }
+            else if(dimPartitioner[i].length==1)
+            {
+                //for columnar store
+                newdims[dimCounter]=getBitLengthFullyFilled(dimCardinality[dimCounter]);
+                dimCounter++;
+            }
+            else
+            {
+                // for row store
+                int totalSize=0;
+                for(int j=0;j<dimPartitioner[i].length;j++)
+                {
+                    newdims[dimCounter]=MolapUtil.getIncrementedCardinality(dimCardinality[dimCounter]);
+                    totalSize+=newdims[dimCounter];
+                    dimCounter++;
+                }
+                //need to check if its required
+                int mod=totalSize%8;
+                if(mod>0)
+                {
+                    newdims[dimCounter-1]=newdims[dimCounter-1]+(8-mod);
+                }
+            }
+        }
+        return newdims;
+    }
     /**
      * This method will be used to update the dimension cardinality
      *
@@ -974,9 +1216,9 @@ public final class MolapUtil {
         }
         return UnBlockIndexer.uncompressIndex(indexData, indexMap);
     }
-
-    public static ColumnarKeyStoreInfo getColumnarKeyStoreInfo(LeafNodeInfoColumnar leafNodeInfo,
-            int[] eachBlockSize) {
+    
+    public static ColumnarKeyStoreInfo getColumnarKeyStoreInfo(LeafNodeInfoColumnar leafNodeInfo, int[] eachBlockSize,HybridStoreModel hybridStoreMeta)
+    {
         ColumnarKeyStoreInfo columnarKeyStoreInfo = new ColumnarKeyStoreInfo();
         columnarKeyStoreInfo.setFilePath(leafNodeInfo.getFileName());
         columnarKeyStoreInfo.setIsSorted(leafNodeInfo.getIsSortedKeyColumn());
@@ -992,6 +1234,7 @@ public final class MolapUtil {
         columnarKeyStoreInfo.setAggKeyBlock(leafNodeInfo.getAggKeyBlock());
         columnarKeyStoreInfo.setDataIndexMapLength(leafNodeInfo.getDataIndexMapLength());
         columnarKeyStoreInfo.setDataIndexMapOffsets(leafNodeInfo.getDataIndexMapOffsets());
+        columnarKeyStoreInfo.setHybridStoreModel(hybridStoreMeta);
         return columnarKeyStoreInfo;
     }
 

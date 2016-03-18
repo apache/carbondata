@@ -54,7 +54,7 @@ public class FactDataNode
 		this.maxKeys = maxKeys;
 		
 		ColumnarKeyStoreInfo columnarStoreInfo = MolapUtil
-				.getColumnarKeyStoreInfo(leafNodeInfo, eachBlockSize);
+				.getColumnarKeyStoreInfo(leafNodeInfo, eachBlockSize,null);
 		keyStore = StoreFactory.createColumnarKeyStore(columnarStoreInfo,
 				fileHolder, isFileStore);
 

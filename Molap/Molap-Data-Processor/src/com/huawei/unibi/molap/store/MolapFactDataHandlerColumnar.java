@@ -66,6 +66,7 @@ import com.huawei.unibi.molap.keygenerator.KeyGenException;
 import com.huawei.unibi.molap.keygenerator.KeyGenerator;
 import com.huawei.unibi.molap.keygenerator.columnar.ColumnarSplitter;
 import com.huawei.unibi.molap.keygenerator.columnar.impl.MultiDimKeyVarLengthEquiSplitGenerator;
+import com.huawei.unibi.molap.keygenerator.columnar.impl.MultiDimKeyVarLengthVariableSplitGenerator;
 import com.huawei.unibi.molap.keygenerator.factory.KeyGeneratorFactory;
 import com.huawei.unibi.molap.store.writer.MolapFactDataWriter;
 import com.huawei.unibi.molap.store.writer.MolapFactDataWriterImpl;
@@ -79,6 +80,7 @@ import com.huawei.unibi.molap.util.MolapProperties;
 import com.huawei.unibi.molap.util.MolapUtil;
 import com.huawei.unibi.molap.util.RemoveDictionaryUtil;
 import com.huawei.unibi.molap.util.ValueCompressionUtil;
+import com.huawei.unibi.molap.vo.HybridStoreModel;
 
 
 /**
@@ -304,7 +306,7 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
 
     private int highCardCount;
     
-    private int[] primitiveDimLens;
+    private HybridStoreModel hybridStoreModel;
     
 //    private String[] aggregator;
  
@@ -329,12 +331,12 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
             String[] aggregatorClass, String storeLocation, int[] factDimLens,
             boolean isMergingRequestForCustomAgg, boolean isUpdateMemberRequest,  int[] dimLens, String[] factLevels,
             String[] aggLevels, boolean isDataWritingRequest, int currentRestructNum, int highCardCount, 
-            int dimensionCount, Map<Integer,GenericDataType> complexIndexMap, int[] primitiveDimLens)
+            int dimensionCount, Map<Integer,GenericDataType> complexIndexMap, int[] primitiveDimLens, HybridStoreModel hybridStoreModel)
     {
     	this(schemaName, cubeName, tableName, isGroupByEnabled, measureCount, 
     			mdkeyLength, mdKeyIndex, aggregators, aggregatorClass, storeLocation, 
     			factDimLens, isMergingRequestForCustomAgg, isUpdateMemberRequest, 
-    			dimLens, factLevels, aggLevels, isDataWritingRequest, currentRestructNum, highCardCount);
+    			dimLens, factLevels, aggLevels, isDataWritingRequest, currentRestructNum, highCardCount,hybridStoreModel);
     	this.dimensionCount = dimensionCount;
     	this.complexIndexMap = complexIndexMap;
     	this.primitiveDimLens = primitiveDimLens;
@@ -394,7 +396,7 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
             int mdkeyLength, int mdKeyIndex, String[] aggregators,
             String[] aggregatorClass, String storeLocation, int[] factDimLens,
             boolean isMergingRequestForCustomAgg, boolean isUpdateMemberRequest,  int[] dimLens, String[] factLevels,
-            String[] aggLevels, boolean isDataWritingRequest, int currentRestructNum, int highCardCount)
+            String[] aggLevels, boolean isDataWritingRequest, int currentRestructNum, int highCardCount,HybridStoreModel hybridStoreModel)
     {
         this.schemaName = schemaName;
         this.cubeName = cubeName;
@@ -409,10 +411,36 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
         this.factDimLens=factDimLens;
         this.highCardCount = highCardCount;
         this.isMergingRequestForCustomAgg=isMergingRequestForCustomAgg;
+        this.hybridStoreModel=hybridStoreModel;
 //        this.isUpdateMemberRequest=isUpdateMemberRequest;
-        this.dimLens=dimLens;
+        this.dimLens=hybridStoreModel.getHybridCardinality();
         
-        this.aggKeyBlock= new boolean[dimLens.length+highCardCount];
+        //row store dimensions will be stored first and than other columnar store dimension will be stored in fact file
+        int aggIndex=0;
+        int noDictStartIndex=0;
+        if(this.hybridStoreModel.isHybridStore())
+        {
+        	this.aggKeyBlock=new boolean[this.hybridStoreModel.getColumnStoreOrdinals().length+highCardCount+1];
+           //hybrid store related changes, row store dimension will not get sorted and hence run length encoding alls will not be applied
+            //thus setting aggKeyBlock for row store index as false
+        	this.aggKeyBlock[aggIndex++]=false;
+        	this.isNoDictionary=new boolean[this.hybridStoreModel.getColumnStoreOrdinals().length+highCardCount+1];
+        	noDictStartIndex=this.hybridStoreModel.getColumnStoreOrdinals().length+1;
+        }
+        else
+        {
+        	//if not hybrid store than as usual
+        	this.aggKeyBlock=new boolean[this.hybridStoreModel.getColumnStoreOrdinals().length+highCardCount];	
+        	this.isNoDictionary=new boolean[this.hybridStoreModel.getColumnStoreOrdinals().length+highCardCount+1];
+        	noDictStartIndex=this.hybridStoreModel.getColumnStoreOrdinals().length;
+        }
+       // setting true value for dims of high card
+      
+        for(int i = noDictStartIndex;i < isNoDictionary.length ; i++)
+        {
+        	this.isNoDictionary[i] = true;
+        }
+        
         this.currentRestructNumber = currentRestructNum;
         isIntBasedIndexer = Boolean
                 .parseBoolean(MolapCommonConstants.IS_INT_BASED_INDEXER_DEFAULTVALUE);
@@ -424,12 +452,15 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
             int highCardinalityValue = Integer.parseInt(MolapProperties.getInstance().getProperty(
                 MolapCommonConstants.HIGH_CARDINALITY_VALUE,
                 MolapCommonConstants.HIGH_CARDINALITY_VALUE_DEFAULTVALUE));
-            for(int i = 0;i < dimLens.length;i++)
+            //since row store index is already set to false, below aggKeyBlock is initialised for remanining dimension
+            for(int i=this.hybridStoreModel.getRowStoreOrdinals().length;i<dimLens.length;i++)
             {
                 if(dimLens[i]<highCardinalityValue)
                 {
-                    this.aggKeyBlock[i]=true;
+                    this.aggKeyBlock[aggIndex++]=true;
+                    continue;
                 }
+            	aggIndex++;
             }
         }
         
@@ -856,6 +887,7 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
         
         private boolean isHighCardinality;
         
+        private boolean isRowBlock;
         
         private BlockSortThread(int index, byte[][] data, boolean isSortRequired)
         {
@@ -863,6 +895,11 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
             this.data=data;
             isCompressionReq = aggKeyBlock[this.index];
             this.isSortRequired = isSortRequired;
+            if(hybridStoreModel.isHybridStore() && this.index==0)
+            {
+            	isRowBlock=true;
+            }
+            
         }
         public BlockSortThread(int index, byte[][] data, boolean b, boolean isHighCardinality, boolean isSortRequired)
         {
@@ -871,11 +908,15 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
             isCompressionReq = b;
             this.isHighCardinality = isHighCardinality;
             this.isSortRequired = isSortRequired;
+            if(hybridStoreModel.isHybridStore() && this.index==0)
+            {
+            	isRowBlock=true;
+            }
         }
         @Override
         public IndexStorage call() throws Exception
         {
-            return new BlockIndexerStorageForInt(this.data,isCompressionReq,isHighCardinality, isSortRequired);
+            return new BlockIndexerStorageForInt(this.data,isCompressionReq,isHighCardinality, isSortRequired,isRowBlock);
             
         }
         
@@ -1241,7 +1282,12 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
         int[] keyBlockSize = null;
         if(dimLens.length > 0)
         {
-            this.columnarSplitter= new MultiDimKeyVarLengthEquiSplitGenerator(MolapUtil.getIncrementedCardinalityFullyFilled(primitiveDimLens.clone()),(byte)dimSet);
+        	//Using Variable length variable split generator
+        	//This will help in splitting mdkey to columns. variable split is required because all columns which are part of
+        	//row store will be in single column store
+        	//e.g if {0,1,2,3,4,5} is dimension and {0,1,2) is row store dimension 
+        	//than below splitter will return column as {0,1,2}{3}{4}{5}
+        	this.columnarSplitter = new MultiDimKeyVarLengthVariableSplitGenerator(MolapUtil.getDimensionBitLength(hybridStoreModel.getHybridCardinality(),hybridStoreModel.getDimensionPartitioner()),hybridStoreModel.getColumnSplit());
             this.keyBlockHolder= new MolapKeyBlockHolder [this.columnarSplitter.getBlockKeySize().length];
             keyBlockSize = columnarSplitter.getBlockKeySize();
             this.complexKeyGenerator = new KeyGenerator[dimLens.length];

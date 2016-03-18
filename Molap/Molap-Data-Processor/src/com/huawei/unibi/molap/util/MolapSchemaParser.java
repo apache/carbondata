@@ -1011,6 +1011,130 @@ public final class MolapSchemaParser {
         return fields;
     }
 
+   /**
+     * This method will give dimensions store type i.e either its columnar or row based
+     * e.g dimname!@#true
+     * it means dimension dimname is columnar store type
+     * @param cube
+     * @param schema
+     * @return
+     */
+    public static String getDimensionsStoreType(Cube cube,Schema schema)
+    {
+    	StringBuffer buffer =new StringBuffer();
+         MolapDef.CubeDimension[] dimensions = cube.dimensions;
+         int dimCounter=0;
+         for(CubeDimension cDimension : dimensions)
+         {
+             //
+             Hierarchy[] hierarchies = null;
+             hierarchies = extractHierarchies(schema, cDimension);
+             for(Hierarchy hierarchy : hierarchies)
+             {
+                 for(Level level : hierarchy.levels)
+                 {
+                	// buffer.append(level.column+"!@#"+level.columnar);
+                	 buffer.append(level.columnar);
+                     //
+                 }
+             }
+             if(dimCounter<dimensions.length-1)
+             {
+            	 buffer.append(",");	 
+             }
+             dimCounter++;
+         }
+        return buffer.toString();
+    }
+    
+    
+    /**
+     * @param cube
+     * @return
+     */
+    public static Map<String,GenericDataType> getComplexDimensions(Cube cube,Schema schema)
+    {  
+    	MolapDef.CubeDimension[] dimensions = cube.dimensions;
+    	Map<String,GenericDataType> complexTypeMap = new HashMap<String,GenericDataType>();
+    	for(CubeDimension cDimension : dimensions)
+    	{
+    		//
+    		Hierarchy[] hierarchies = null;
+    		hierarchies = extractHierarchies(schema, cDimension);
+    		for(Hierarchy hierarchy : hierarchies)
+    		{
+    			if(hierarchy.levels.length > 1 && (hierarchy.levels[0].type.equals("Array") 
+    					|| hierarchy.levels[0].type.equals("Struct")))
+    			{
+    				Level levelZero = hierarchy.levels[0];
+    				GenericDataType g = levelZero.type.equals("Array")?
+    						new ArrayDataType(levelZero.name, ""):new StructDataType(levelZero.name, "");
+    				complexTypeMap.put(levelZero.name, g);
+    				boolean isFirst = true;
+	    			for(Level level : hierarchy.levels)
+	    			{
+	    				if(isFirst)
+	    				{
+	    					isFirst = false;
+	    					continue;
+	    				}
+	    				else
+	    				{
+		    				switch(level.type)
+		    				{
+		    					case "Array" : 
+		    						g.addChildren(new ArrayDataType(level.name, level.parentname));
+		    						break;
+		    					case "Struct" : 
+		    						g.addChildren(new StructDataType(level.name, level.parentname));
+		    						break;
+		    					default :
+		    						g.addChildren(new PrimitiveDataType(level.name, level.parentname));
+		    				}
+	    				}
+	    			}
+    			}
+    		}
+    	}
+    	return complexTypeMap;
+    }
+    
+    
+    /**
+     * @param cube
+     * @return
+     */
+    public static String[] getDimensionTables(Cube cube,Schema schema)
+    {  //
+        List<String> list = new ArrayList<String>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+        MolapDef.CubeDimension[] dimensions = cube.dimensions;
+        for(CubeDimension cDimension : dimensions)
+        {
+            //
+            Hierarchy[] hierarchies = null;
+            hierarchies = extractHierarchies(schema, cDimension);
+            for(Hierarchy hierarchy : hierarchies)
+            {
+               // String tableName = hierarchy.relation.toString();
+                RelationOrJoin relation = hierarchy.relation;
+                String dimName = cDimension.name;
+                dimName = dimName.replaceAll(" ", "_");
+                
+                String tableName = relation == null ? getFactTableName(cube)
+                        : ((Table)hierarchy.relation).name;
+                list.add(tableName);
+            }
+        }
+        String[] fields = new String[list.size()];
+        fields= list.toArray(fields);
+        return fields;
+    }
+    
+    public static String getDimensionTable(Cube cube, Schema schema,
+            CubeDimension cDimension, String hierarchyName)
+    {
+        String tableName = null;
+
     public static AggregateTable[] getAggregateTable(Cube cube, Schema schema) {
         MolapDef.Table table = (MolapDef.Table) cube.fact;
         MolapDef.AggTable[] aggTables = table.aggTables;

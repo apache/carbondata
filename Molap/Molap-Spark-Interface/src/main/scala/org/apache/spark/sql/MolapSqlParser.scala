@@ -499,8 +499,8 @@ class MolapSqlDDLParser()
   }
   
   protected lazy val measureCol: Parser[Field] =
-    (ident | stringLit) ~ (INTEGER | NUMERIC).? ~ (AS ~> (ident | stringLit)).? ^^ {
-      case e1 ~ e2 ~ e3 => Field(e1, e2, e3, Some(null))
+    (ident | stringLit) ~ (INTEGER | NUMERIC).? ~ (AS ~> (ident | stringLit)).? ~ (IN ~>(ident|stringLit)).? ^^ {
+      case e1 ~ e2 ~ e3 ~ e4 => Field(e1, e2, e3, Some(null))
     }
 
   protected lazy val dimCols: Parser[Seq[Field]] = rep1sep(dimCol, ",")
@@ -587,22 +587,22 @@ class MolapSqlDDLParser()
 
   private def normalizeType(field: Field): Field = {
     field.dataType.getOrElse("NIL") match {
-      case "string" => Field(field.column, Some("String"), field.name, Some(null))
-      case "integer" => Field(field.column, Some("Integer"), field.name, Some(null))
-      case "long" => Field(field.column, Some("Long"), field.name, Some(null))
-      case "double" => Field(field.column, Some("Double"), field.name, Some(null))
-      case "timestamp" => Field(field.column, Some("Timestamp"), field.name, Some(null))
-      case "numeric" => Field(field.column, Some("Numeric"), field.name, Some(null))
-      case "array" => Field(field.column, Some("Array"), field.name, field.children.map(f => f.map(normalizeType(_))))
-      case "struct" => Field(field.column, Some("Struct"), field.name, field.children.map(f => f.map(normalizeType(_))))
+      case "string" => Field(field.column, Some("String"), field.name, Some(null),field.parent,field.storeType)
+      case "integer" => Field(field.column, Some("Integer"), field.name, Some(null),field.parent,field.storeType)
+      case "long" => Field(field.column, Some("Long"), field.name, Some(null),field.parent,field.storeType)
+      case "double" => Field(field.column, Some("Double"), field.name, Some(null),field.parent,field.storeType)
+      case "timestamp" => Field(field.column, Some("Timestamp"), field.name, Some(null),field.parent,field.storeType)
+      case "numeric" => Field(field.column, Some("Numeric"), field.name, Some(null),field.parent,field.storeType)
+      case "array" => Field(field.column, Some("Array"), field.name, field.children.map(f => f.map(normalizeType(_))),field.parent,field.storeType)
+      case "struct" => Field(field.column, Some("Struct"), field.name, field.children.map(f => f.map(normalizeType(_))),field.parent,field.storeType)
       case _ => field
     }
   }
   
   private def addParent(field: Field): Field = {
     field.dataType.getOrElse("NIL") match {
-      case "Array" => Field(field.column, Some("Array"), field.name, field.children.map(f => f.map(appendParentForEachChild(_, field.column))))
-      case "Struct" => Field(field.column, Some("Struct"), field.name, field.children.map(f => f.map(appendParentForEachChild(_, field.column))))
+      case "Array" => Field(field.column, Some("Array"), field.name, field.children.map(f => f.map(appendParentForEachChild(_, field.column))),field.parent,field.storeType)
+      case "Struct" => Field(field.column, Some("Struct"), field.name, field.children.map(f => f.map(appendParentForEachChild(_, field.column))),field.parent,field.storeType)
       case _ => field
     }
   }

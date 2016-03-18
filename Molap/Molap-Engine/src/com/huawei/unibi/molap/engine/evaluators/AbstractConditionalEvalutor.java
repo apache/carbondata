@@ -31,6 +31,7 @@ import com.huawei.unibi.molap.engine.expression.conditional.ConditionalExpressio
 import com.huawei.unibi.molap.engine.filters.measurefilter.util.FilterUtil;
 import com.huawei.unibi.molap.engine.schema.metadata.FilterEvaluatorInfo;
 import com.huawei.unibi.molap.olap.SqlStatement.Type;
+import com.huawei.unibi.molap.vo.HybridStoreModel;
 
 public abstract class AbstractConditionalEvalutor implements FilterEvaluator
 {
@@ -84,15 +85,16 @@ public abstract class AbstractConditionalEvalutor implements FilterEvaluator
                     }
                     else
                     {
-                        dimColumnEvaluatorInfo.setColumnIndex(columnExpression.getDim().getOrdinal());
+                        dimColumnEvaluatorInfo.setColumnIndex(getColumnStoreIndex(columnExpression.getDim().getOrdinal(), info.getHybridStoreModel()));
                         if(!columnExpression.getDim().isHighCardinalityDim())
                         {
                         dimColumnEvaluatorInfo.setNeedCompressedData(info.getSlices().get(info.getCurrentSliceIndex())
-                                .getDataCache(info.getFactTableName()).getAggKeyBlock()[columnExpression.getDim()
-                                .getOrdinal()]);
+                                .getDataCache(info.getFactTableName()).getAggKeyBlock()[getColumnStoreIndex(columnExpression.getDim()
+                                .getOrdinal(),info.getHybridStoreModel())]);
                         }
                         dimColumnEvaluatorInfo.setFilterValues(FilterUtil.getFilterList(info, rightExp, columnExpression,
                                 this.isIncludeFilter));
+                        dimColumnEvaluatorInfo.setDims(columnExpression.getDim());
                     }
                 }
             }
@@ -123,6 +125,7 @@ public abstract class AbstractConditionalEvalutor implements FilterEvaluator
                         }
                         dimColumnEvaluatorInfo.setFilterValues(FilterUtil.getFilterList(info, leftExp, columnExpression,
                                 isIncludeFilter));
+                        dimColumnEvaluatorInfo.setDims(columnExpression.getDim());
                     }
                 }
             }
@@ -154,7 +157,38 @@ public abstract class AbstractConditionalEvalutor implements FilterEvaluator
         dimColEvaluatorInfoList.add(dimColumnEvaluatorInfo);
     }
 
- 
+    protected int getColumnStoreIndex(int ordinal, HybridStoreModel hybridStoreModel)
+    {
+        if(!hybridStoreModel.isHybridStore())
+        {
+            return ordinal;
+        }
+        return hybridStoreModel.getStoreIndex(ordinal);
+        
+    }
+  
+    /**
+     * This method will check if a given expression contains a column expression recursively.
+     * 
+     * @param right
+     * @return
+     */
+    private boolean checkIfExpressionContainsColumn(Expression expression)
+    {
+        if(expression instanceof ColumnExpression)
+        {
+            return true;
+        }
+        for(Expression child: expression.getChildren())
+        {
+            if(checkIfExpressionContainsColumn(child))
+            {
+                return true;
+            }
+        }
+        
+        return false;
+    }
 
     public FilterEvaluator getLeft()
     {

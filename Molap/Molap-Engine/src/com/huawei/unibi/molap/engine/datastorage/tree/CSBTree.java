@@ -40,6 +40,7 @@ import com.huawei.unibi.molap.metadata.LeafNodeInfo;
 import com.huawei.unibi.molap.metadata.LeafNodeInfoColumnar;
 import com.huawei.unibi.molap.metadata.MolapMetadata.Cube;
 import com.huawei.unibi.molap.util.MolapProperties;
+import com.huawei.unibi.molap.vo.HybridStoreModel;
 
 /**
  * Cache Sensitive B+-Tree to implement a search structure that is stored
@@ -154,6 +155,8 @@ public class CSBTree implements DataStore
     private int[] keyBlockSize;
     
     private boolean [] aggKeyBlock;
+
+    private HybridStoreModel hybridStoreModel;
     
     // private String dataFolderLoc;
     /**
@@ -164,13 +167,14 @@ public class CSBTree implements DataStore
     
 
     // Constructor
-    public CSBTree(KeyGenerator keyGenerator, int valueCount, String tableName , boolean isFileStore,int[] keyBlockSize,boolean [] aggKeyBlock)
+    public CSBTree(HybridStoreModel hybridStoreModel,KeyGenerator keyGenerator, int valueCount, String tableName , boolean isFileStore,int[] keyBlockSize,boolean [] aggKeyBlock)
     {
         super();
 
        // this.valueCount = valueCount;
         this.keyGenerator = keyGenerator;
         this.tableName = tableName;
+        this.hybridStoreModel = hybridStoreModel;
 
         // TODO Need to account for page headers and other fields
         upperMaxEntry = Integer.parseInt(MolapProperties.getInstance().getProperty(
@@ -337,7 +341,7 @@ private void setRangeSplitvalue()
                             fileHolder = FileFactory.getFileHolder(FileFactory.getFileType(leafNodeInfo.getFileName()));
                         }
                         curNode = new CSBTreeColumnarLeafNode(leafNodeInfo.getNumberOfKeys(), keyBlockSize, isFileStore, fileHolder,
-                                leafNodeInfo, compressionModel,nodeNumber++,metaCube);
+                                leafNodeInfo, compressionModel,nodeNumber++,metaCube,hybridStoreModel);
                         nLeaf++;
     
                         if(prevNode != null)

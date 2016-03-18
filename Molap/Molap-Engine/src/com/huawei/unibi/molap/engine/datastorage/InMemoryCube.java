@@ -42,10 +42,12 @@ import com.huawei.unibi.molap.engine.util.MolapEngineLogEvent;
 import com.huawei.unibi.molap.keygenerator.KeyGenerator;
 import com.huawei.unibi.molap.keygenerator.factory.KeyGeneratorFactory;
 import com.huawei.unibi.molap.metadata.MolapMetadata.Cube;
+import com.huawei.unibi.molap.metadata.MolapMetadata.Dimension;
 import com.huawei.unibi.molap.metadata.MolapSchemaReader;
 import com.huawei.unibi.molap.olap.MolapDef;
 import com.huawei.unibi.molap.util.MolapUtil;
 import com.huawei.unibi.molap.util.MolapUtilException;
+import com.huawei.unibi.molap.vo.HybridStoreModel;
 
 public class InMemoryCube implements Comparable<InMemoryCube>
 {
@@ -144,7 +146,8 @@ public class InMemoryCube implements Comparable<InMemoryCube>
     private MolapLRULevelCache levelCache;
     
     private Cube metaCube;
-    
+
+    private HybridStoreModel hybridStoreModel;   
     /**
      * Attribute for Molap LOGGER
      */
@@ -256,6 +259,25 @@ public class InMemoryCube implements Comparable<InMemoryCube>
         if(file.isDirectory())
         {
             getDimensionCardinality(file, tableName);
+            List<Dimension> dimensions=metaCube.getDimensions(tableName);
+            
+            boolean[] dimensionStoreType=new boolean[dimensionCardinality.length];
+            List<Integer> highCardDimOrdinals=new ArrayList<Integer>();
+            for(Dimension dimension:dimensions)
+            {
+                if(dimension.isHighCardinalityDim())
+                {
+                    highCardDimOrdinals.add(dimension.getOrdinal());
+                    continue;
+                }
+                if(dimension.isColumnar())
+                {
+                    dimensionStoreType[dimension.getOrdinal()]=dimension.isColumnar();    
+                }
+            }
+            hybridStoreModel= MolapUtil.getHybridStoreMeta(dimensionCardinality, dimensionStoreType,highCardDimOrdinals);
+            //TO -DO  : need finalise on keygenerator
+            keyGenerator = KeyGeneratorFactory.getKeyGenerator(hybridStoreModel.getHybridCardinality(),hybridStoreModel.getDimensionPartitioner());
 //            keyGenerator = KeyGeneratorFactory.getKeyGenerator(dimensionCardinality);
             keyGenerator = KeyGeneratorFactory.getKeyGenerator(findRequiredDimensionForStartAndEndKey());
             int startAndEndKeySizeWithPrimitives = KeyGeneratorFactory.getKeyGenerator(findRequiredDimensionForStartAndEndKey()).getKeySizeInBytes();
@@ -270,7 +292,7 @@ public class InMemoryCube implements Comparable<InMemoryCube>
                 {
                     continue;
                 }
-                CubeDataStore dataCache = new CubeDataStore(table, metaCube, rsStore.getSliceMetaCache(table),keyGenerator, dimensionCardinality);
+                CubeDataStore dataCache = new CubeDataStore(table, metaCube, rsStore.getSliceMetaCache(table),keyGenerator, dimensionCardinality,hybridStoreModel);
                 //add start and end key size with only primitives
                 if(dataCache.loadDataFromFile(fileStore, keyGenerator.getStartAndEndKeySizeWithOnlyPrimitives()))
                 {
@@ -628,5 +650,10 @@ public class InMemoryCube implements Comparable<InMemoryCube>
              return true;
          }
         return false;
+    }
+
+    public HybridStoreModel getHybridStoreModel()
+    {
+        return this.hybridStoreModel;
     }
 }

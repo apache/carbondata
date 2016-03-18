@@ -205,13 +205,10 @@ public class MolapColumnarLeafNodeIterator implements MolapIterator<AbstractColu
 
     private void getNewLeafData() {
         LeafNodeInfoColumnar leafNodeInfo = leafNodeInfoList.get(currentCount++);
-        keyStore = StoreFactory.createColumnarKeyStore(
-                MolapUtil.getColumnarKeyStoreInfo(leafNodeInfo, blockKeySize), fileHolder, true);
-        this.dataStore = StoreFactory
-                .createDataStore(true, compressionModel, leafNodeInfo.getMeasureOffset(),
-                        leafNodeInfo.getMeasureLength(), leafNodeInfo.getFileName(), fileHolder)
-                .getBackData(null, fileHolder);
-        this.entryCount = leafNodeInfo.getNumberOfKeys();
+        keyStore = StoreFactory.createColumnarKeyStore(MolapUtil.getColumnarKeyStoreInfo(leafNodeInfo, blockKeySize,null), fileHolder,true);
+        this.dataStore = StoreFactory.createDataStore(true, compressionModel, leafNodeInfo.getMeasureOffset(),
+                leafNodeInfo.getMeasureLength(), leafNodeInfo.getFileName(), fileHolder).getBackData(null, fileHolder);
+        this.entryCount=leafNodeInfo.getNumberOfKeys();
         this.keyValue.reset();
         this.keyValue.setNumberOfRows(this.entryCount);
         this.keyValue.setMeasureBlock(this.dataStore.getValues());

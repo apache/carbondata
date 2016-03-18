@@ -78,7 +78,7 @@ public class RowLevelFilterEvalutor extends AbstractConditionalEvalutor
                 if(columnExpression.isDimension())
                 {
                     dimColumnEvaluatorInfo = new DimColumnEvaluatorInfo();
-                    dimColumnEvaluatorInfo.setColumnIndex(columnExpression.getDim().getOrdinal());
+                    dimColumnEvaluatorInfo.setColumnIndex(getColumnStoreIndex(columnExpression.getDim().getOrdinal(),info.getHybridStoreModel()));
                     dimColumnEvaluatorInfo.setNeedCompressedData(false);
                     dimColumnEvaluatorInfo.setRowIndex(index++);
                     dimColumnEvaluatorInfo.setSlices(info.getSlices());

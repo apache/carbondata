@@ -22,6 +22,7 @@ package com.huawei.unibi.molap.engine.cache;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -49,6 +50,7 @@ import com.huawei.unibi.molap.metadata.MolapMetadata.Cube;
 import com.huawei.unibi.molap.metadata.MolapMetadata.Dimension;
 //import mondrian.rolap.SqlStatement;
 import com.huawei.unibi.molap.olap.SqlStatement;
+import com.huawei.unibi.molap.vo.HybridStoreModel;
 
 /**
  * Util class
@@ -2497,7 +2499,7 @@ public final class QueryExecutorUtil
      * @param integers
      * @return
      */
-    public static int[] convertIntegerListToIntArray(List<Integer> integers)
+    public static int[] convertIntegerListToIntArray(Collection<Integer> integers)
     {
         int[] ret = new int[integers.size()];
         Iterator<Integer> iterator = integers.iterator();
@@ -2556,6 +2558,70 @@ public final class QueryExecutorUtil
 
         return byteIndexs;
     }
+    
+    public static int[] getMaskedByte(Dimension[] queryDimensions, KeyGenerator generator,HybridStoreModel hybridStoreModel)
+    {
+
+        Set<Integer> integers = new TreeSet<Integer>();
+        boolean isRowAdded=false;
+        //
+        for(int i = 0;i < queryDimensions.length;i++)
+        {
+            if(queryDimensions[i].isHighCardinalityDim())
+            {
+                continue;
+            }
+         	else if(queryDimensions[i].getDataType() == SqlStatement.Type.ARRAY)
+            {
+                continue;
+            }
+            else if(queryDimensions[i].getDataType() == SqlStatement.Type.STRUCT)
+                continue;
+            else if(queryDimensions[i].getParentName() != null)
+                continue;
+         
+            //if querydimension is row store based, than add all row store ordinal in mask, because row store ordinal rangesare overalapped
+            //for e.g its possible
+            //dimension1 range: 0-1
+            //dimension2 range: 1-2
+            //hence to read only dimension2, you have to mask dimension1 also
+            if(!queryDimensions[i].isColumnar())
+            {
+                //if all row store ordinal is already added in range than no need to consider it again
+                if(!isRowAdded)
+                {
+                    isRowAdded=true;
+                    int[] rowOrdinals=hybridStoreModel.getRowStoreOrdinals();
+                    for(int r=0;r<rowOrdinals.length;r++)
+                    {
+                        int[] range = generator
+                                .getKeyByteOffsets(hybridStoreModel.getMdKeyOrdinal(rowOrdinals[r]));
+                        for(int j = range[0];j <= range[1];j++)
+                        {
+                            integers.add(j);
+                        }
+                        
+                    }
+                }
+                continue;
+                
+            }
+            int[] range = generator
+                    .getKeyByteOffsets(hybridStoreModel.getMdKeyOrdinal(queryDimensions[i].getOrdinal()));
+            for(int j = range[0];j <= range[1];j++)
+            {
+                integers.add(j);
+            }
+
+        }
+        //
+        int[] byteIndexs = convertIntegerListToIntArray(integers);
+        return byteIndexs;
+    }
+    
+    
+    
+    
     
     /**
      * getMaskedByte

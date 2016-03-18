@@ -20,6 +20,7 @@
 package com.huawei.unibi.molap.datastorage.store.columnar;
 
 import com.huawei.unibi.molap.keygenerator.mdkey.NumberCompressor;
+import com.huawei.unibi.molap.vo.HybridStoreModel;
 
 public class ColumnarKeyStoreInfo {
     private int numberOfKeys;
@@ -44,6 +45,8 @@ public class ColumnarKeyStoreInfo {
 
     private NumberCompressor[] keyBlockUnCompressor;
 
+    private HybridStoreModel hybridStoreModel;
+    
     /**
      * dataIndexMap
      */
@@ -248,4 +251,15 @@ public class ColumnarKeyStoreInfo {
     public void setCardinality(int[] cardinality) {
         this.cardinality = cardinality;
     }
+
+    public HybridStoreModel getHybridStoreModel()
+    {
+        return hybridStoreModel;
+    }
+
+    public void setHybridStoreModel(HybridStoreModel hybridStoreModel)
+    {
+        this.hybridStoreModel = hybridStoreModel;
+    }
+    
 }

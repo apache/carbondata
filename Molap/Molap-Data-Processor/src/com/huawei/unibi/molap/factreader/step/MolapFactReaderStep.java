@@ -52,6 +52,7 @@ import com.huawei.unibi.molap.iterator.MolapIterator;
 import com.huawei.unibi.molap.keygenerator.KeyGenException;
 import com.huawei.unibi.molap.keygenerator.KeyGenerator;
 import com.huawei.unibi.molap.keygenerator.columnar.impl.MultiDimKeyVarLengthEquiSplitGenerator;
+import com.huawei.unibi.molap.keygenerator.columnar.impl.MultiDimKeyVarLengthVariableSplitGenerator;
 import com.huawei.unibi.molap.keygenerator.factory.KeyGeneratorFactory;
 import com.huawei.unibi.molap.metadata.MolapMetadata;
 import com.huawei.unibi.molap.metadata.MolapMetadata.Cube;
@@ -341,14 +342,18 @@ public class MolapFactReaderStep extends BaseStep implements StepInterface {
         int[][] maskedByteRangeForSorting = QueryExecutorUtility
                 .getMaskedByteRangeForSorting(queryDimensions, globalKeyGenerator, maskByteRanges);
         info.setMaskedByteRangeForSorting(maskedByteRangeForSorting);
-        info.setDimensionMaskKeys(QueryExecutorUtility
-                .getMaksedKeyForSorting(queryDimensions, globalKeyGenerator,
-                        maskedByteRangeForSorting, maskByteRanges));
-        info.setColumnarSplitter(new MultiDimKeyVarLengthEquiSplitGenerator(MolapUtil
-                .getIncrementedCardinalityFullyFilled(
-                        slice.getDataCache(cube.getFactTableName()).getDimCardinality()),
-                (byte) 1));
-        info.setQueryDimOrdinal(QueryExecutorUtility.getSelectedDimnesionIndex(queryDimensions));
+        info.setDimensionMaskKeys(QueryExecutorUtility.getMaksedKeyForSorting(queryDimensions,
+                globalKeyGenerator, maskedByteRangeForSorting, maskByteRanges));
+        info.setColumnarSplitter(new MultiDimKeyVarLengthVariableSplitGenerator(MolapUtil.getDimensionBitLength(slice.getHybridStoreModel().getHybridCardinality(),slice.getHybridStoreModel().getDimensionPartitioner()),slice.getHybridStoreModel().getColumnSplit()));
+        if(slice.getHybridStoreModel().isHybridStore())
+        {
+        	 info.setQueryDimOrdinal(QueryExecutorUtility.getSelectedDimensionStoreIndex(queryDimensions,info.getHybridStoreMeta()));
+        }
+        else
+        {
+        	info.setQueryDimOrdinal(QueryExecutorUtility.getSelectedDimnesionIndex(queryDimensions));
+        }
+        
         List<Dimension> customDim =
                 new ArrayList<Dimension>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
         info.setAllSelectedDimensions(QueryExecutorUtility

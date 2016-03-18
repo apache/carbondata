@@ -344,6 +344,28 @@ public class MolapFactDataHandlerColumnarMerger implements MolapFactHandler {
         }
     }
 
+    private final class BlockSortThread implements Callable<IndexStorage>
+    {
+        private int index;
+
+        private byte[][] data;
+
+        private BlockSortThread(int index, byte[][] data)
+        {
+            this.index = index;
+            this.data = data;
+        }
+
+        @Override
+        public IndexStorage call() throws Exception
+        {
+            return new BlockIndexerStorageForInt(this.data,
+                    aggKeyBlock[this.index], true,false,false);
+
+        }
+
+    }
+
     /**
      * below method will be used to finish the data handler
      *

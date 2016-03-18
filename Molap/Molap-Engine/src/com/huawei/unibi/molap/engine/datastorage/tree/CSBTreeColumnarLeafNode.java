@@ -34,6 +34,7 @@ import com.huawei.unibi.molap.metadata.LeafNodeInfoColumnar;
 import com.huawei.unibi.molap.metadata.MolapMetadata.Cube;
 import com.huawei.unibi.molap.olap.MolapDef.CubeDimension;
 import com.huawei.unibi.molap.util.MolapUtil;
+import com.huawei.unibi.molap.vo.HybridStoreModel;
 
 public class CSBTreeColumnarLeafNode extends CSBNode
 {
@@ -73,10 +74,10 @@ public class CSBTreeColumnarLeafNode extends CSBNode
     private byte[][] columnMaxData;
     
     public CSBTreeColumnarLeafNode(int maxKeys, int[] eachBlockSize, boolean isFileStore, FileHolder fileHolder,
-            LeafNodeInfoColumnar leafNodeInfo, ValueCompressionModel compressionModel, long nodeNumber,Cube metaCube)
+            LeafNodeInfoColumnar leafNodeInfo, ValueCompressionModel compressionModel, long nodeNumber,Cube metaCube,HybridStoreModel hybridStoreModel)
     {
         nKeys = leafNodeInfo.getNumberOfKeys();
-        keyStore = StoreFactory.createColumnarKeyStore(MolapUtil.getColumnarKeyStoreInfo(leafNodeInfo, eachBlockSize), fileHolder,isFileStore);
+        keyStore = StoreFactory.createColumnarKeyStore(MolapUtil.getColumnarKeyStoreInfo(leafNodeInfo, eachBlockSize,hybridStoreModel), fileHolder,isFileStore);
         dataStore = StoreFactory.createDataStore(isFileStore,
                 compressionModel, leafNodeInfo.getMeasureOffset(), leafNodeInfo.getMeasureLength(),
                 leafNodeInfo.getFileName(),fileHolder);

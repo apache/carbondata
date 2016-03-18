@@ -27,6 +27,7 @@ import com.huawei.unibi.molap.engine.datastorage.InMemoryCube;
 import com.huawei.unibi.molap.keygenerator.KeyGenerator;
 import com.huawei.unibi.molap.metadata.MolapMetadata.Dimension;
 import com.huawei.unibi.molap.metadata.MolapMetadata.Measure;
+import com.huawei.unibi.molap.vo.HybridStoreModel;
 
 public class QueryExecuterProperties
 {
@@ -152,5 +153,12 @@ public class QueryExecuterProperties
     protected byte[] sortDimIndexes;
 
     protected boolean[] isHighCardinality;
+    
+    
+    /**
+     * Hybrid store model, it will have detail about columnar and row stores
+     */
+    protected HybridStoreModel hybridStoreModel;
+
     
 }

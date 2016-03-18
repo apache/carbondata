@@ -36,6 +36,7 @@ import java.util.TreeSet;
 
 import com.huawei.unibi.molap.constants.MolapCommonConstants;
 import com.huawei.unibi.molap.engine.aggregator.dimension.DimensionAggregatorInfo;
+import com.huawei.unibi.molap.engine.cache.QueryExecutorUtil;
 import com.huawei.unibi.molap.engine.complex.querytypes.ArrayQueryType;
 import com.huawei.unibi.molap.engine.complex.querytypes.GenericQueryType;
 import com.huawei.unibi.molap.engine.complex.querytypes.PrimitiveQueryType;
@@ -54,6 +55,13 @@ import com.huawei.unibi.molap.metadata.MolapMetadata.Dimension;
 import com.huawei.unibi.molap.metadata.MolapMetadata.Measure;
 import com.huawei.unibi.molap.metadata.SliceMetaData;
 import com.huawei.unibi.molap.olap.SqlStatement;
+import com.huawei.unibi.molap.vo.HybridStoreModel;
+import com.huawei.unibi.molap.olap.MolapDef;
+import com.huawei.unibi.molap.olap.MolapDef.Cube;
+import com.huawei.unibi.molap.olap.MolapDef.CubeDimension;
+import com.huawei.unibi.molap.olap.MolapDef.Hierarchy;
+import com.huawei.unibi.molap.olap.MolapDef.Level;
+import com.huawei.unibi.molap.olap.MolapDef.Schema;
 import com.huawei.unibi.molap.olap.SqlStatement.Type;
 import com.huawei.unibi.molap.util.MolapUtil;
 
@@ -357,6 +365,56 @@ public final class QueryExecutorUtility
         
         return dimensionCompareIndex;
     }
+    public static int[][] getMaskedByteRangeForSorting(Dimension[] queryDimensions, KeyGenerator generator,int[] maskedRanges,HybridStoreModel hybridStoreModel)
+    {
+      
+            int[][] dimensionCompareIndex= new int[queryDimensions.length][];
+            int index=0;
+            for(int i = 0;i < queryDimensions.length;i++)
+            {
+                if(queryDimensions[i].isHighCardinalityDim())
+                {
+                    continue;
+                }
+                Set<Integer> integers = new TreeSet<Integer>();
+                
+                int[] range = generator.getKeyByteOffsets(hybridStoreModel.getMdKeyOrdinal(queryDimensions[i].getOrdinal()));
+                
+                for(int j = range[0];j <= range[1];j++)
+                {
+                    integers.add(j);
+                }
+                dimensionCompareIndex[index]=new int[integers.size()];
+                int j = 0;
+                for(Iterator<Integer> iterator = integers.iterator();iterator.hasNext();)
+                {
+                    Integer integer = (Integer)iterator.next();
+                     dimensionCompareIndex[index][j++] = integer.intValue();
+                }
+                index++;
+            }
+            
+            for(int i = 0;i < dimensionCompareIndex.length;i++)
+            {
+                int[] range = dimensionCompareIndex[i];
+                for(int j = 0;j < range.length;j++)
+                {
+                    for(int k = 0;k < maskedRanges.length;k++)
+                    {
+                        if(range[j] == maskedRanges[k])
+                        {
+                            range[j] = k;
+                            break;
+                        }
+                    }
+                }
+            }
+            return dimensionCompareIndex;
+       
+        
+        
+       
+    }
     
     public static byte[][] getMaksedKeyForSorting(Dimension[] queryDimensions, KeyGenerator generator,
             int[][] dimensionCompareIndex, int[] maskedRanges) throws QueryExecutionException
@@ -551,6 +609,41 @@ public final class QueryExecutorUtility
         
         return complexTypeMap;
     }
+
+     /**
+     * This method will get store index for each ordinal
+     * by default all dimension part of row store, their index will be 0
+     * 
+     * @param queryDims
+     * @param hybridStoreModel
+     * @return
+     */
+    public static int[] getSelectedDimensionStoreIndex(Dimension[] queryDims,HybridStoreModel hybridStoreModel)
+    {
+        //it can be possible that multiple queryDim will be part of row store and hence .if row store index is already added then its not required to add again.
+        Set<Integer> selectedDimensionList=new HashSet<Integer>(queryDims.length);
+        int highCardStartIndex=hybridStoreModel.getColumnStoreOrdinals().length+1;
+        for(Dimension dimension:queryDims)
+        {
+            if(dimension.isHighCardinalityDim())
+            {
+                selectedDimensionList.add(highCardStartIndex++);
+            }
+            else
+            {
+                int storeIndex=hybridStoreModel.getStoreIndex(dimension.getOrdinal());
+                selectedDimensionList.add(storeIndex);
+            }
+        }
+        for(int i = 0;i < queryDims.length;i++)
+        {
+            int storeIndex=hybridStoreModel.getStoreIndex(queryDims[i].getOrdinal());
+            selectedDimensionList.add(storeIndex);
+        }
+        int[] selectedDimsIndex=QueryExecutorUtil.convertIntegerListToIntArray(selectedDimensionList);
+        Arrays.sort(selectedDimsIndex);
+        return selectedDimsIndex;
+    }
     
     public static void getComplexDimensionsKeySize(Map<String, GenericQueryType> complexDimensionsMap, int[] dimensionCardinality)
     {
@@ -641,6 +734,28 @@ public final class QueryExecutorUtility
             {
                 allQueryDimension.add(fromCustomExps.get(i).getOrdinal());
             }
+        }
+        return convertIntegerArrayToInt(allQueryDimension.toArray(new Integer[allQueryDimension.size()]));
+    }
+
+   public static int[] getAllSelectedDiemnsionStoreIndex(Dimension[] queryDims, List<DimensionAggregatorInfo> dimAggInfo, List<Dimension> fromCustomExps,HybridStoreModel hybridStoreModel)
+    {
+        Set<Integer> allQueryDimension = new HashSet<Integer>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+        for(int i = 0;i < queryDims.length;i++)
+        {
+            allQueryDimension.add(hybridStoreModel.getStoreIndex(queryDims[i].getOrdinal()));
+        }
+        for(int i=0;i<dimAggInfo.size();i++)
+        {
+            if(dimAggInfo.get(i).isDimensionPresentInCurrentSlice())
+            {
+                allQueryDimension.add(hybridStoreModel.getStoreIndex(dimAggInfo.get(i).getDim().getOrdinal()));
+            }
+        }
+        
+        for(int i=0;i<fromCustomExps.size();i++)
+        {
+            allQueryDimension.add(hybridStoreModel.getStoreIndex(fromCustomExps.get(i).getOrdinal()));
         }
         return convertIntegerArrayToInt(allQueryDimension.toArray(new Integer[allQueryDimension.size()]));
     }

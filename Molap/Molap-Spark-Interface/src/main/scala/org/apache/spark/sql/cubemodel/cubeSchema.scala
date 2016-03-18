@@ -66,7 +66,7 @@ case class CubeModel(
                       partitioner: Option[Partitioner])
 
 
-case class Field(column: String, dataType: Option[String], name: Option[String], children : Option[List[Field]], parent: String = null)
+case class Field(column: String, dataType: Option[String], name: Option[String], children : Option[List[Field]], parent: String = null,storeType: Option[String]=Some("columnar"))
 
 case class ArrayDataType(dataType: String)
 
@@ -92,7 +92,7 @@ case class DimensionRelation(tableName: String, dimSource: Object, relation: Rel
 
 case class Relation(leftColumn: String, rightColumn: String)
 
-case class Level(name: String, val column: String, cardinality: Int, dataType: String, parent: String = null, levelType: String = "Regular")
+case class Level(name: String, val column: String, cardinality: Int, dataType: String, parent: String = null, storeType: String ="Columnar",levelType: String = "Regular")
 
 case class Measure(name: String, column: String, dataType: String, aggregator: String = "SUM", visible: Boolean = true)
 
@@ -123,9 +123,9 @@ class CubeProcessor(cm: CubeModel, sqlContext: SQLContext) {
 	   fieldChildren.map(fields => {
 	        fields.map(field => {
 	        	  if(field.parent != null)
-		    		 levels ++= Seq(Level(field.name.getOrElse(field.column), field.column, Int.MaxValue, field.dataType.getOrElse(MolapCommonConstants.STRING), field.parent))
+		    		 levels ++= Seq(Level(field.name.getOrElse(field.column), field.column, Int.MaxValue, field.dataType.getOrElse(MolapCommonConstants.STRING), field.parent,field.storeType.getOrElse("Columnar")))
 		    	 else
-		    		 levels ++= Seq(Level(field.name.getOrElse(field.column), field.column, Int.MaxValue, field.dataType.getOrElse(MolapCommonConstants.STRING)))
+		    		 levels ++= Seq(Level(field.name.getOrElse(field.column), field.column, Int.MaxValue, field.dataType.getOrElse(MolapCommonConstants.STRING),field.storeType.getOrElse("Columnar")))
 	        	  if(field.children.get != null)
 	        		  levels ++= getAllChildren(field.children)
 	      	})

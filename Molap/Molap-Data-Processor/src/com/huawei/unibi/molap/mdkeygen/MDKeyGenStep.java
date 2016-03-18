@@ -59,6 +59,7 @@ import com.huawei.unibi.molap.util.MolapProperties;
 import com.huawei.unibi.molap.util.MolapUtil;
 import com.huawei.unibi.molap.util.MolapUtilException;
 import com.huawei.unibi.molap.util.RemoveDictionaryUtil;
+import com.huawei.unibi.molap.vo.HybridStoreModel;
 
 /**
  * Project Name 	: Carbon 
@@ -121,6 +122,8 @@ public class MDKeyGenStep extends BaseStep
      * dataHandler
      */
     private MolapFactHandler dataHandler;
+
+	private HybridStoreModel hybridStoreModel;
     
     /**
      * MolapMDKeyGenStep
@@ -321,7 +324,15 @@ public class MDKeyGenStep extends BaseStep
                     "Cardinality could not determined. Nothing to process further in MDKeyGenstep");
 			return false;
 		}
-  
+        String[] dimStoreType = meta.getDimensionsStoreType().split(",");
+		boolean[] dimensionStoreType = new boolean[dimLens.length];
+		for(int i=0;i<dimLens.length;i++)
+		{
+			dimensionStoreType[i]=Boolean.parseBoolean(dimStoreType[i]);
+		}
+		this.hybridStoreModel = MolapUtil.getHybridStoreMeta(dimLens,
+				dimensionStoreType,null);
+        dimLens=hybridStoreModel.getHybridCardinality();
 		data.generator = new KeyGenerator[dimLens.length + 1];
 		for(int i=0;i<dimLens.length;i++)
 		{
@@ -339,6 +350,7 @@ public class MDKeyGenStep extends BaseStep
       }
       
       //Actual primitive dimension used to generate start & end key 
+      
       data.generator[dimLens.length] = KeyGeneratorFactory.getKeyGenerator(simpleDimsLen);
       
       //To Set MDKey Index of each primitive type in complex type 
@@ -384,7 +396,7 @@ public class MDKeyGenStep extends BaseStep
                     measureCount + 1, null, null, storeLocation, dimLens,
                     false, false, dimLens, null, null, true,
                     meta.getCurrentRestructNumber(),
-                    meta.getHighCardinalityCount(), dimensionCount, complexIndexMap, simpleDimsLen);
+                    meta.getHighCardinalityCount(), dimensionCount, complexIndexMap, simpleDimsLen,this.hybridStoreModel);
         }
         else
         {
@@ -394,7 +406,7 @@ public class MDKeyGenStep extends BaseStep
                     measureCount, null, null, storeLocation, dimLens,
                     false, false, dimLens, null, null, true,
                     meta.getCurrentRestructNumber(),
-                    meta.getHighCardinalityCount(), dimensionCount, complexIndexMap, simpleDimsLen);
+                    meta.getHighCardinalityCount(), dimensionCount, complexIndexMap, simpleDimsLen,this.hybridStoreModel);
         }
         return true;
     }

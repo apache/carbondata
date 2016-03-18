@@ -47,12 +47,14 @@ import com.huawei.unibi.molap.engine.util.MolapDataInputStreamFactory;
 import com.huawei.unibi.molap.engine.util.MolapEngineLogEvent;
 import com.huawei.unibi.molap.keygenerator.KeyGenerator;
 import com.huawei.unibi.molap.keygenerator.columnar.impl.MultiDimKeyVarLengthEquiSplitGenerator;
+import com.huawei.unibi.molap.keygenerator.columnar.impl.MultiDimKeyVarLengthVariableSplitGenerator;
 import com.huawei.unibi.molap.metadata.MolapMetadata.Cube;
 import com.huawei.unibi.molap.metadata.MolapMetadata.Dimension;
 import com.huawei.unibi.molap.metadata.MolapMetadata.Measure;
 import com.huawei.unibi.molap.metadata.SliceMetaData;
 import com.huawei.unibi.molap.util.MolapProperties;
 import com.huawei.unibi.molap.util.MolapUtil;
+import com.huawei.unibi.molap.vo.HybridStoreModel;
 
 public class CubeDataStore
 {
@@ -128,6 +130,8 @@ public class CubeDataStore
     private boolean[] aggKeyBlock;
     
     private int[] dimCardinality;
+
+    private HybridStoreModel hybridStoreModel;
     
 
     /**
@@ -152,8 +156,9 @@ public class CubeDataStore
         return factTableColumn != null && factTableColumn.length() > 0;
     }
 
-    public CubeDataStore(String table, Cube metaCube, SliceMetaData smd,KeyGenerator keyGenerator, int[] dimCardinality)
+    public CubeDataStore(String table, Cube metaCube, SliceMetaData smd,KeyGenerator keyGenerator, int[] dimCardinality,HybridStoreModel hybridStoreModel)
     {
+        this.hybridStoreModel =hybridStoreModel;
         factTableColumn = metaCube.getFactCountColMapping(table);
         tableName = table;
         this.metaCube = metaCube;
@@ -250,7 +255,7 @@ public class CubeDataStore
                 + "as mode=" + (isFileStore?"file":"In-Memory"));
         if(isColumnar)
         {
-            return new CSBTree(keyGen, msrCount, tableName,isFileStore,keyblockSize,aggKeyBlock);
+            return new CSBTree(this.hybridStoreModel,keyGen, msrCount, tableName,isFileStore,keyblockSize,aggKeyBlock);
         }
         else
         {
@@ -464,29 +469,36 @@ public class CubeDataStore
             // if there is no single dims present (i.e only high card dims is present.)
             if(this.dimCardinality.length > 0)
             {
-                keyBlockSize = new MultiDimKeyVarLengthEquiSplitGenerator(
-                        MolapUtil.getIncrementedCardinalityFullyFilled(this.dimCardinality.clone()), (byte)dimSet)
+                keyBlockSize = new MultiDimKeyVarLengthVariableSplitGenerator(MolapUtil.getDimensionBitLength(this.hybridStoreModel.getHybridCardinality(),this.hybridStoreModel.getDimensionPartitioner()),this.hybridStoreModel.getColumnSplit())
                         .getBlockKeySize();
 
-                aggKeyBlock = new boolean[dimCardinality.length];
+           // aggKeyBlock = new boolean[dimCardinality.length];
                 boolean isAggKeyBlock = Boolean
                         .parseBoolean(MolapCommonConstants.AGGREAGATE_COLUMNAR_KEY_BLOCK_DEFAULTVALUE);
                 if(isAggKeyBlock)
                 {
                     int highCardinalityValue = Integer.parseInt(MolapProperties.getInstance().getProperty(
-                            MolapCommonConstants.HIGH_CARDINALITY_VALUE,
-                            MolapCommonConstants.HIGH_CARDINALITY_VALUE_DEFAULTVALUE));
-                    for(int i = 0;i < dimCardinality.length;i++)
+                        MolapCommonConstants.HIGH_CARDINALITY_VALUE,
+                        MolapCommonConstants.HIGH_CARDINALITY_VALUE_DEFAULTVALUE));
+                    int aggIndex=0;
+                    if(this.hybridStoreModel.isHybridStore())
                     {
-						//Array or Struct column will not be compressed using run-length as cardinality does not apply
-	                    if(dimCardinality[i] == 0)
-						{
-                        	aggKeyBlock[i] = false;
-						}
-                        else if(dimCardinality[i] < highCardinalityValue)
+                        this.aggKeyBlock=new boolean[this.hybridStoreModel.getColumnStoreOrdinals().length+1];
+                        this.aggKeyBlock[aggIndex++]=false;
+                    }
+                    else
+                    {
+                        this.aggKeyBlock=new boolean[this.hybridStoreModel.getColumnStoreOrdinals().length]; 
+                    }
+                    
+                    for(int i=hybridStoreModel.getRowStoreOrdinals().length;i<dimCardinality.length;i++)
+                    {
+                        if(dimCardinality[i]<highCardinalityValue)
                         {
-                            aggKeyBlock[i] = true;
+                            this.aggKeyBlock[aggIndex++]=true;
+                            continue;
                         }
+                        aggIndex++;
                     }
                 }
 
