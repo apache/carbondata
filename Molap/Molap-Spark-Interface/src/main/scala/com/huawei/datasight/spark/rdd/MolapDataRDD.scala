@@ -4,39 +4,24 @@
 package com.huawei.datasight.spark.rdd
 
 import java.text.SimpleDateFormat
-import java.util.ArrayList
-import java.util.HashMap
-import java.util.Map
 import java.util.Date
-import scala.collection.JavaConversions._
-import org.apache.hadoop.conf.Configuration
-import org.apache.spark.Logging
-import org.apache.spark.Partition
-import org.apache.spark.SerializableWritable
-import org.apache.spark.SparkContext
-import org.apache.spark.TaskContext
-import org.apache.spark.rdd.RDD
+
 import com.huawei.datasight.molap.spark.splits.TableSplit
-import com.huawei.datasight.molap.spark.util.MolapQueryUtil
+import com.huawei.datasight.molap.spark.util.{MolapQueryUtil, MolapSparkInterFaceLogEvent}
 import com.huawei.datasight.spark.KeyVal
-import com.huawei.unibi.molap.engine.executer.MolapQueryExecutorModel
-import com.huawei.unibi.molap.engine.scanner.impl.MolapKey
-import com.huawei.unibi.molap.engine.scanner.impl.MolapValue
-import com.huawei.unibi.molap.metadata.MolapMetadata
-import com.huawei.unibi.molap.olap.MolapDef
-import com.huawei.unibi.molap.util.MolapProperties
-import com.huawei.unibi.molap.engine.executer
-import com.huawei.unibi.molap.iterator.MolapIterator
-import com.huawei.unibi.molap.engine.result.RowResult
-import com.huawei.unibi.molap.engine.querystats.{PartitionStatsCollector, PartitionDetail}
-import com.huawei.unibi.molap.util.MolapUtil
-import com.huawei.iweb.platform.logging.impl.StandardLogService
-import com.huawei.datasight.molap.spark.util.MolapSparkInterFaceLogEvent
 import com.huawei.iweb.platform.logging.LogServiceFactory
 import com.huawei.unibi.molap.engine.datastorage.InMemoryCubeStore
-import com.huawei.datasight.molap.spark.util.MolapQueryUtil
+import com.huawei.unibi.molap.engine.executer.MolapQueryExecutorModel
+import com.huawei.unibi.molap.engine.querystats.{PartitionDetail, PartitionStatsCollector}
+import com.huawei.unibi.molap.engine.result.RowResult
+import com.huawei.unibi.molap.iterator.MolapIterator
+import com.huawei.unibi.molap.olap.MolapDef
+import com.huawei.unibi.molap.util.{MolapProperties, MolapUtil}
+import org.apache.hadoop.conf.Configuration
+import org.apache.spark.{Logging, Partition, SerializableWritable, SparkContext, TaskContext}
+import org.apache.spark.rdd.RDD
 
-
+import scala.collection.JavaConversions._
 
 class MolapPartition(rddId: Int, val index: Int, @transient val tableSplit: TableSplit)
   extends Partition {
@@ -47,47 +32,28 @@ class MolapPartition(rddId: Int, val index: Int, @transient val tableSplit: Tabl
 }
 
 /**
-  * This RDD class is used to  create splits as per the region servers of Hbase  and compute each split in the respective node located in the same server by
-  * using co-processor of Hbase.
-  *
-  * @author R00900208
+  * This RDD is used to perform query.
   */
 class MolapDataRDD[K, V](
-                          sc: SparkContext,
-                          molapQueryModel: MolapQueryExecutorModel,
-                          schema: MolapDef.Schema,
-                          dataPath: String,
-                          keyClass: KeyVal[K, V],
-                          @transient conf: Configuration,
-                          splits: Array[TableSplit],
-                          columinar: Boolean,
-                          cubeCreationTime: Long,
-                          schemaLastUpdatedTime: Long,
-                          baseStoreLocation: String)
-  extends RDD[(K, V)](sc, Nil)
-    with Logging {
-
-  // A Hadoop Configuration can be about 10 KB, which is pretty big, so broadcast it
-  //  private val confBroadcast = sc.broadcast(new SerializableWritable(conf))
-  // private val serializableConf = new SerializableWritable(conf)
+    sc: SparkContext,
+    molapQueryModel: MolapQueryExecutorModel,
+    schema: MolapDef.Schema,
+    dataPath: String,
+    keyClass: KeyVal[K, V],
+    @transient conf: Configuration,
+    splits: Array[TableSplit],
+    columinar: Boolean,
+    cubeCreationTime: Long,
+    schemaLastUpdatedTime: Long,
+    baseStoreLocation: String)
+  extends RDD[(K, V)](sc, Nil) with Logging {
 
   private val jobtrackerId: String = {
     val formatter = new SimpleDateFormat("yyyyMMddHHmm")
     formatter.format(new Date())
   }
 
-
-  /**
-    * Create the split for each region server.
-    */
   override def getPartitions: Array[Partition] = {
-
-    //    val executor = MolapQueryUtil.getExecutor(molapQueryModel)
-    //
-    //    val aggModel = executor.getAggModels(molapQueryModel)
-
-    //    val splits = MolapQueryUtil.getTableSplits(molapQueryModel.getFactTable())
-    //
     val result = new Array[Partition](splits.length)
     for (i <- 0 until result.length) {
       result(i) = new MolapPartition(id, i, splits(i))
@@ -95,10 +61,6 @@ class MolapDataRDD[K, V](
     result
   }
 
-  /**
-    * It fires the query of respective co-processor and get the data and form the iterator.So here all the will be present to iterator physically.So
-    * if co-processor returns big data then it may have memory issues.
-    */
   override def compute(theSplit: Partition, context: TaskContext) = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass().getName());
     var cubeUniqueName: String = ""
@@ -142,7 +104,7 @@ class MolapDataRDD[K, V](
           if (InMemoryCubeStore.getInstance.isLevelCacheEnabled()) {
             levelCacheKeys = MolapQueryUtil.validateAndLoadRequiredSlicesInMemory(molapQueryModel, listOfAllLoadFolders, cubeUniqueName).toList
           }
-          //          if (columinar) {
+
           logInfo("IF Columnar: " + columinar)
           MolapProperties.getInstance().addProperty("molap.is.columnar.storage", "true");
           MolapProperties.getInstance().addProperty("molap.dimension.split.value.in.columnar", "1");
@@ -152,28 +114,26 @@ class MolapDataRDD[K, V](
           MolapProperties.getInstance().addProperty("high.cardinality.value", "100000");
           MolapProperties.getInstance().addProperty("is.compressed.keyblock", "false");
           MolapProperties.getInstance().addProperty("molap.leaf.node.size", "120000");
-          
-          //          }
 
           molapQueryModel.setCube(cube)
           molapQueryModel.setOutLocation(dataPath)
         }
-     MolapQueryUtil.updateDimensionWithHighCardinalityVal(schema,molapQueryModel)
+        MolapQueryUtil.updateDimensionWithHighCardinalityVal(schema,molapQueryModel)
         
-     if(MolapQueryUtil.isQuickFilter(molapQueryModel)){
-         rowIterator = MolapQueryUtil.getQueryExecuter(molapQueryModel.getCube(), molapQueryModel.getFactTable()).executeDimension(molapQueryModel);
+        if(MolapQueryUtil.isQuickFilter(molapQueryModel)) {
+          rowIterator = MolapQueryUtil.getQueryExecuter(molapQueryModel.getCube(), molapQueryModel.getFactTable()).executeDimension(molapQueryModel);
         }else{
-        rowIterator = MolapQueryUtil.getQueryExecuter(molapQueryModel.getCube(), molapQueryModel.getFactTable()).execute(molapQueryModel);
+          rowIterator = MolapQueryUtil.getQueryExecuter(molapQueryModel.getCube(), molapQueryModel.getFactTable()).execute(molapQueryModel);
         }
-      }
-      catch {
+      } catch {
         case e: Exception =>
           LOGGER.error(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, e)
           updateCubeAndLevelCacheStatus(levelCacheKeys)
-          if (null != e.getMessage)
+          if (null != e.getMessage) {
             sys.error("Exception occurred in query execution :: " + e.getMessage)
-          else
+          } else {
             sys.error("Exception occurred in query execution.Please check logs.")
+          }
       }
 
       def updateCubeAndLevelCacheStatus(levelCacheKeys: scala.collection.immutable.List[String]) = {
@@ -182,12 +142,6 @@ class MolapDataRDD[K, V](
         }
       }
 
-      //Create iterators for key and value.
-      //      val iter1 = {if(molapQueryModel.gethIterator().getKeys() == null) new ArrayList[MolapKey]().iterator() else molapQueryModel.gethIterator().getKeys().iterator()};
-      //      val iter2 = {if(molapQueryModel.gethIterator().getValues() == null)  new ArrayList[MolapValue]().iterator() else molapQueryModel.gethIterator().getValues().iterator()}
-
-      // Register an on-task-completion callback to close the input stream.
-      context.addOnCompleteCallback(() => close())
       var havePair = false
       var finished = false
 
@@ -218,32 +172,18 @@ class MolapDataRDD[K, V](
       val partAcc = molapQueryModel.getPartitionAccumulator
       partAcc.add(partitionDetail)
       partitionStatsCollector.removePartitionDetail(molapQueryModel.getQueryId)
-      println("*************************** Total Time Taken to execute the query in Molap Side: " + (System.currentTimeMillis - queryStartTime));
-
-      private def close() {
-        try {
-          //          reader.close()
-        } catch {
-          case e: Exception => logWarning("Exception in RecordReader.close()", e)
-        }
-      }
+      println("*************************** Total Time Taken to execute the query in Molap Side: " +
+        (System.currentTimeMillis - queryStartTime))
     }
     iter
   }
 
 
   /**
-    * Get the preferred locations where to lauch this task.
+    * Get the preferred locations where to launch this task.
     */
   override def getPreferredLocations(split: Partition): Seq[String] = {
     val theSplit = split.asInstanceOf[MolapPartition]
     theSplit.serializableHadoopSplit.value.getLocations.filter(_ != "localhost")
-    //    theSplit.serializableHadoopSplit.value.getLocations.filter(_ != "localhost")
-
-
   }
-
-  //  def getConf: Configuration = confBroadcast.value.value
-
-
 }

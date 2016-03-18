@@ -1,6 +1,5 @@
 package com.huawei.datasight.spark.rdd
 
-import org.apache.spark.SparkContext
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 
@@ -11,9 +10,6 @@ trait CubeSchemaRDDLike {
   def getDimensions: Array[String]
 }
 
-/*
- * Check the possibility of using implicit to convert any SchemaRDD into Cube RDD
- * */
 class CubeSchemaRDD(sqlContext: SQLContext,
                     logicalPlan: LogicalPlan) extends SchemaRDD(sqlContext, logicalPlan) with CubeSchemaRDDLike {
   override def getMeasures: Array[String] = {

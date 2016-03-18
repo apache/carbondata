@@ -1,17 +1,10 @@
 package com.huawei.datasight.spark.rdd
 
-import org.apache.spark.sql.catalyst.analysis.UnresolvedException
-import org.apache.spark.sql.catalyst.expressions.Attribute
-import org.apache.spark.sql.catalyst.expressions.BinaryArithmetic
-import org.apache.spark.sql.catalyst.expressions.Expression
-import org.apache.spark.sql.catalyst.expressions.GenericRow
-import org.apache.spark.sql.catalyst.expressions.UnaryExpression
 import com.huawei.unibi.molap.engine.aggregator.MeasureAggregator
-import org.apache.spark.sql.catalyst.expressions.AttributeSet
-import org.apache.spark.sql.types.StringType
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.expressions.GenericMutableRow
+import org.apache.spark.sql.catalyst.expressions.{AttributeSet, Expression, GenericMutableRow}
 import org.apache.spark.sql.catalyst.expressions.codegen.CodegenFallback
+import org.apache.spark.sql.types.StringType
 
 case class SqlUdf(fn: (InternalRow) => Any, exprs: Expression*) extends Expression with CodegenFallback {
   self: Product =>
@@ -21,8 +14,7 @@ case class SqlUdf(fn: (InternalRow) => Any, exprs: Expression*) extends Expressi
   override def dataType = StringType
 
   override def nullable = true
-
-  // exprs.last.nullable
+  
   override def references = AttributeSet(exprs.flatMap(_.references.iterator))
 
   override def foldable = !children.exists(!_.foldable)

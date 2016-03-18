@@ -20,12 +20,6 @@ import com.huawei.unibi.molap.engine.executer.impl.topn.TopNModel
 import org.apache.spark.sql.Top
 import org.apache.spark.sql.catalyst.analysis.UnresolvedStar
 
-/**
-  * @author v71149
-  *
-  */
-
-
 /*
  * TODO: Check the possibility of using implicit to convert any SchemaRDD into Cube RDD
  * */
@@ -92,19 +86,15 @@ class SchemaRDDExt(sqlContext: SQLContext,
     * @return Joined RDD with column added
     */
   def addColumnByJoin(
-                       otherPlan: SchemaRDDExt,
-                       expr: Expression,
-                       joinType: JoinType = Inner)(detailedExprs: Expression): SchemaRDD = {
+      otherPlan: SchemaRDDExt,
+      expr: Expression,
+      joinType: JoinType = Inner)(detailedExprs: Expression): SchemaRDD = {
 
     val aliasedExprs = detailedExprs match {
       case ne: NamedExpression => ne
       case e => Alias(e, e.toString)()
     }
-
-    //new SchemaRDD(sqlContext, JoinExt(logicalPlan, otherPlan.logicalPlan, joinType, on, List(aliasedExprs)))
-    //Project(projectList, Join(left, right, joinType, condition))
     new SchemaRDDExt(sqlContext, Project(List(UnresolvedStar(Some("curr")), aliasedExprs), Join(logicalPlan, otherPlan.logicalPlan, joinType, Some(expr))))
-    //new SchemaRDD(sqlContext, Join(logicalPlan, otherPlan.logicalPlan, joinType, on))
   }
 
 
@@ -121,9 +111,9 @@ class SchemaRDDExt(sqlContext: SQLContext,
     * @return RDD
     */
   def filterByJoin(
-                    otherPlan: SchemaRDDExt,
-                    expr: Expression,
-                    joinType: JoinType = Inner): SchemaRDD = {
+      otherPlan: SchemaRDDExt,
+      expr: Expression,
+      joinType: JoinType = Inner): SchemaRDD = {
 
     new SchemaRDDExt(sqlContext, Project(List(UnresolvedStar(Some("curr"))), Join(logicalPlan, otherPlan.logicalPlan, joinType, Some(expr))))
   }
