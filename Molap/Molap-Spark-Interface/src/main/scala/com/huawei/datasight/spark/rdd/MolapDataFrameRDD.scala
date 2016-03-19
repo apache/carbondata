@@ -19,25 +19,10 @@
 
 package com.huawei.datasight.spark.rdd
 
-import org.apache.spark.sql.DataFrame
-import org.apache.spark.sql.OlapContext
-import org.apache.spark.sql.Row
+import com.huawei.unibi.molap.engine.querystats.{QueryDetail, QueryStatsCollector}
+import org.apache.spark.sql.{DataFrame, OlapContext, Row}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.DataFrame
-import org.apache.spark.sql.SQLContext
-import com.huawei.unibi.molap.engine.querystats.QueryStatsCollector
-import com.huawei.unibi.molap.engine.querystats.QueryDetail
-import com.huawei.unibi.molap.engine.querystats.PartitionDetail
-import com.huawei.unibi.molap.engine.querystats.PartitionAccumulator
-import com.huawei.unibi.molap.engine.querystats.PartitionStatsCollector
-import org.apache.spark.Accumulator
-import java.util.ArrayList
 
-/**
-  * This class wraps DataFrame
-  *
-  * @author A00902717
-  */
 class MolapDataFrameRDD(val sql: String, val sc: OlapContext, logicalPlan: LogicalPlan) extends DataFrame(sc, logicalPlan) {
 
   override def collect(): Array[Row] = {

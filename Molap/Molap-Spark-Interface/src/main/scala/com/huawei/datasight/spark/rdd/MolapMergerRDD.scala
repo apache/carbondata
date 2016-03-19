@@ -20,56 +20,39 @@
 package com.huawei.datasight.spark.rdd
 
 import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.List
-import org.apache.hadoop.conf.Configuration
-import org.apache.spark.Logging
-import org.apache.spark.Partition
-import org.apache.spark.SerializableWritable
-import org.apache.spark.SparkContext
-import org.apache.spark.TaskContext
-import org.apache.spark.rdd.RDD
-import com.huawei.unibi.molap.engine.executer.MolapQueryExecutorModel
-import com.huawei.datasight.spark.{KeyVal,Result}
-import com.huawei.datasight.molap.spark.util.MolapQueryUtil
-import com.huawei.datasight.molap.spark.splits.TableSplit
-import com.huawei.unibi.molap.util.MolapProperties
-import com.huawei.unibi.molap.engine.scanner.impl.MolapKey
-import com.huawei.unibi.molap.engine.scanner.impl.MolapValue
-import com.huawei.datasight.molap.partition.api.impl.QueryPartitionHelper
-import scala.collection.JavaConversions._
-import com.huawei.datasight.molap.load.MolapLoadModel
-import com.huawei.datasight.molap.load.MolapLoaderUtil
-import org.apache.spark.sql.cubemodel.Partitioner
+import java.util.{Date, List}
+
+import com.huawei.datasight.molap.load.{MolapLoadModel, MolapLoaderUtil}
 import com.huawei.datasight.molap.merger.MolapDataMergerUtil
-import com.huawei.unibi.molap.datastorage.store.filesystem.MolapFile
+import com.huawei.datasight.molap.spark.splits.TableSplit
+import com.huawei.datasight.molap.spark.util.MolapQueryUtil
 import com.huawei.datasight.spark.MergeResult
 import com.huawei.unibi.molap.constants.MolapCommonConstants
 import com.huawei.unibi.molap.olap.MolapDef
-import com.huawei.unibi.molap.util.MolapUtil
+import com.huawei.unibi.molap.util.{MolapProperties, MolapUtil}
+import org.apache.spark.{Logging, Partition, SerializableWritable, SparkContext, TaskContext}
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.cubemodel.Partitioner
+
+import scala.collection.JavaConversions._
 
 class MolapMergerRDD[K, V](
-  sc: SparkContext,
-  result: MergeResult[K,V],
-  molapLoadModel: MolapLoadModel,
-  storeLocation: String,
-  hdfsStoreLocation: String,
-  partitioner: Partitioner,
-  currentRestructNumber: Integer,
-  metadataFilePath:String,
-  loadsToMerge:List[String],
-  mergedLoadName:String,
-  kettleHomePath:String,
-  cubeCreationTime:Long)
-  extends RDD[(K, V)](sc, Nil)
-  with Logging {
+    sc: SparkContext,
+    result: MergeResult[K,V],
+    molapLoadModel: MolapLoadModel,
+    storeLocation: String,
+    hdfsStoreLocation: String,
+    partitioner: Partitioner,
+    currentRestructNumber: Integer,
+    metadataFilePath:String,
+    loadsToMerge:List[String],
+    mergedLoadName:String,
+    kettleHomePath:String,
+    cubeCreationTime:Long)
+  extends RDD[(K, V)](sc, Nil) with Logging {
 
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
-  
-  /**
-   * It fires the query of respective co-processor and get the data and form the iterator.So here all the will be present to iterator physically.So
-   * if co-processor returns big data then it may have memory issues.
-   */
+
   override def compute(theSplit: Partition, context: TaskContext) = {
       val iter = new Iterator[(K, V)] {
         var dataloadStatus = MolapCommonConstants.STORE_LOADSTATUS_FAILURE
@@ -145,23 +128,22 @@ class MolapMergerRDD[K, V](
               // remove the current slice from memory not the cube
               MolapLoaderUtil.removeSliceFromMemory(model.getSchemaName, model.getCubeName, newSlice)
               logInfo(s"Aggregate table creation failed")
-            }
-            else {
+            } else {
               logInfo("Aggregate tables creation successfull")
             }
           }
-          return dataloadStatus
+          dataloadStatus
         }
          
           
          def loadCubeSlices(listOfLoadFolders: java.util.List[String], listOfUpdatedLoadFolders: java.util.List[String]) = {
           MolapProperties.getInstance().addProperty("molap.cache.used", "false");
           MolapQueryUtil.createDataSource(currentRestructNumber, model.getSchema, null,partitionId, listOfLoadFolders, listOfUpdatedLoadFolders, model.getTableName, hdfsStoreLocation,cubeCreationTime)
-        } 
+         }
           
          def iterateOverAggTables(aggTables: Array[MolapDef.AggTable], listOfLoadFolders: java.util.List[String], listOfUpdatedLoadFolders: java.util.List[String], loadFolders: Array[String]):String = {
-          model.setAggLoadRequest(true)
-          aggTables.foreach { aggTable =>
+           model.setAggLoadRequest(true)
+           aggTables.foreach { aggTable =>
               val aggTableName = MolapLoaderUtil.getAggregateTableName(aggTable)
               model.setAggTableName(aggTableName)
               dataloadStatus = loadAggregationTable(listOfLoadFolders, listOfUpdatedLoadFolders, loadFolders)
@@ -170,7 +152,7 @@ class MolapMergerRDD[K, V](
                 return MolapCommonConstants.STORE_LOADSTATUS_FAILURE
               }
             }
-          return MolapCommonConstants.STORE_LOADSTATUS_SUCCESS
+          MolapCommonConstants.STORE_LOADSTATUS_SUCCESS
         }
           
         def loadAggregationTable(listOfLoadFolders: java.util.List[String], listOfUpdatedLoadFolders: java.util.List[String], loadFolders: Array[String]): String = {
@@ -204,9 +186,6 @@ class MolapMergerRDD[K, V](
       iter
     }
 
-  /**
-   * Get the preferred locations where to lauch this task.
-   */
   override def getPreferredLocations(split: Partition): Seq[String] = {
     val theSplit = split.asInstanceOf[MolapLoadPartition]
     val s = theSplit.serializableHadoopSplit.value.getLocations //.filter(_ != "localhost")
@@ -218,20 +197,15 @@ class MolapMergerRDD[K, V](
     val formatter = new SimpleDateFormat("yyyyMMddHHmm")
     formatter.format(new Date())
   }
-  
-  
-  /**
-   * Create the split for each region server.
-   */
-  override def getPartitions: Array[Partition] = {
 
-      val splits = MolapQueryUtil.getTableSplits(molapLoadModel.getSchemaName(), molapLoadModel.getCubeName(), null, partitioner)
-      val result = new Array[Partition](splits.length)
-      for (i <- 0 until result.length) {
-        result(i) = new MolapLoadPartition(id, i, splits(i))
-      }
-      result
+  override def getPartitions: Array[Partition] = {
+    val splits = MolapQueryUtil.getTableSplits(molapLoadModel.getSchemaName(), molapLoadModel.getCubeName(), null, partitioner)
+    val result = new Array[Partition](splits.length)
+    for (i <- 0 until result.length) {
+      result(i) = new MolapLoadPartition(id, i, splits(i))
     }
+    result
+  }
 
   override def checkpoint() {
     // Do nothing. Hadoop RDD should not be checkpointed.

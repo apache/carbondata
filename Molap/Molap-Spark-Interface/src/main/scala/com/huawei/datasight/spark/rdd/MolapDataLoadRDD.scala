@@ -18,47 +18,25 @@
  */
 
 
-
-
 package com.huawei.datasight.spark.rdd
 
-import java.text.SimpleDateFormat
-import java.util.Date
-import org.apache.hadoop.conf.Configuration
-import org.apache.spark.Logging
-import org.apache.spark.Partition
-import org.apache.spark.SerializableWritable
-import org.apache.spark.SparkContext
-import org.apache.spark.TaskContext
-import org.apache.spark.rdd.RDD
-import com.huawei.unibi.molap.engine.executer.MolapQueryExecutorModel
-import com.huawei.datasight.spark.{KeyVal, Result}
-import com.huawei.datasight.molap.spark.util.MolapQueryUtil
-import com.huawei.datasight.molap.spark.splits.TableSplit
-import com.huawei.unibi.molap.util.MolapProperties
-import com.huawei.unibi.molap.engine.scanner.impl.MolapKey
-import com.huawei.unibi.molap.engine.scanner.impl.MolapValue
-import com.huawei.datasight.molap.partition.api.impl.QueryPartitionHelper
-import scala.collection.JavaConversions._
-import com.huawei.datasight.molap.load.MolapLoadModel
-import com.huawei.datasight.molap.load.MolapLoaderUtil
-import org.apache.spark.sql.cubemodel.Partitioner
 import com.huawei.datasight.molap.core.load.LoadMetadataDetails
-import com.huawei.unibi.molap.constants.MolapCommonConstants
-import com.huawei.unibi.molap.etl.DataLoadingException
-import com.huawei.unibi.molap.locks.MolapLock
-import com.huawei.unibi.molap.locks.LoadFileBasedLock
-import com.huawei.unibi.molap.locks.MetadataLock
-import com.huawei.unibi.molap.constants.DataProcessorConstants
+import com.huawei.datasight.molap.load.{MolapLoadModel, MolapLoaderUtil}
+import com.huawei.datasight.molap.spark.splits.TableSplit
+import com.huawei.datasight.molap.spark.util.{MolapQueryUtil, MolapSparkInterFaceLogEvent}
+import com.huawei.datasight.spark.Result
 import com.huawei.iweb.platform.logging.LogServiceFactory
-import com.huawei.unibi.molap.engine.util.MolapEngineLogEvent
 import com.huawei.iweb.platform.logging.impl.StandardLogService
-import com.huawei.unibi.molap.util.MolapUtil
-import com.huawei.unibi.molap.olap.MolapDef
-import com.huawei.unibi.molap.metadata.MolapMetadata
-import com.huawei.datasight.molap.spark.util.MolapSparkInterFaceLogEvent
+import com.huawei.unibi.molap.constants.{DataProcessorConstants, MolapCommonConstants}
 import com.huawei.unibi.molap.engine.datastorage.InMemoryCubeStore
+import com.huawei.unibi.molap.etl.DataLoadingException
+import com.huawei.unibi.molap.olap.MolapDef
+import com.huawei.unibi.molap.util.{MolapProperties, MolapUtil}
+import org.apache.spark.{Logging, Partition, SerializableWritable, SparkContext, TaskContext}
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.cubemodel.Partitioner
 
+import scala.collection.JavaConversions._
 
 class MolapLoadPartition(rddId: Int, val idx: Int, @transient val tableSplit: TableSplit)
   extends Partition {
@@ -70,38 +48,23 @@ class MolapLoadPartition(rddId: Int, val idx: Int, @transient val tableSplit: Ta
   override val index: Int = idx
 }
 
-/**
-  * This RDD class is used to  create splits as per the region servers of Hbase  and compute each split in the respective node located in the same server by
-  * using co-processor of Hbase.
-  *
-  * @author R00900208
-  */
 class MolapDataLoadRDD[K, V](
-                              sc: SparkContext,
-                              result: Result[K, V], molapLoadModel: MolapLoadModel,
-                              var storeLocation: String,
-                              hdfsStoreLocation: String,
-                              kettleHomePath: String,
-                              partitioner: Partitioner,
-                              columinar: Boolean,
-                              currentRestructNumber: Integer,
-                              loadCount: Integer,
-                              cubeCreationTime: Long,
-                              schemaLastUpdatedTime: Long)
-  extends RDD[(K, V)](sc, Nil)
-    with Logging {
+    sc: SparkContext,
+    result: Result[K, V], molapLoadModel: MolapLoadModel,
+    var storeLocation: String,
+    hdfsStoreLocation: String,
+    kettleHomePath: String,
+    partitioner: Partitioner,
+    columinar: Boolean,
+    currentRestructNumber: Integer,
+    loadCount: Integer,
+    cubeCreationTime: Long,
+    schemaLastUpdatedTime: Long)
+  extends RDD[(K, V)](sc, Nil) with Logging {
 
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
-  /* @transient val LOGGER = LogServiceFactory.getLogService("com.huawei.datasight.spark.rdd.MolapDataLoadRDD");*/
-  /**
-    * Create the split for each region server.
-    */
-  override def getPartitions: Array[Partition] = {
 
-    //    val executor = MolapQueryUtil.getExecutor(molapQueryModel)
-    //
-    //    val aggModel = executor.getAggModels(molapQueryModel)
-    //    println(partitioner.nodeList)
+  override def getPartitions: Array[Partition] = {
     var splits = Array[com.huawei.datasight.molap.spark.splits.TableSplit]();
     if (molapLoadModel.isDirectLoad()) {
       splits = MolapQueryUtil.getTableSplitsForDirectLoad(molapLoadModel.getFactFilePath(), partitioner.nodeList, partitioner.partitionCount)
@@ -121,11 +84,6 @@ class MolapDataLoadRDD[K, V](
     // Do nothing. Hadoop RDD should not be checkpointed.
   }
 
-
-  /**
-    * It fires the query of respective co-processor and get the data and form the iterator.So here all the will be present to iterator physically.So
-    * if co-processor returns big data then it may have memory issues.
-    */
   override def compute(theSplit: Partition, context: TaskContext) = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass().getName());
 
@@ -218,7 +176,6 @@ class MolapDataLoadRDD[K, V](
           dataloadStatus = MolapCommonConstants.STORE_LOADSTATUS_FAILURE
           logInfo("DataLoad failure")
       }
-
 
       def checkAndLoadAggregationTable(): String = {
         val schema = model.getSchema
@@ -361,11 +318,6 @@ class MolapDataLoadRDD[K, V](
           InMemoryCubeStore.getInstance.updateLevelAccessCountInLRUCache(key)
         }
       }
-
-      //  MolapLoaderUtil.recordLoadInfoInMetadata(model,true)
-
-      // Register an on-task-completion callback to close the input stream.
-      context.addOnCompleteCallback(() => close())
       var finished = false
 
       override def hasNext: Boolean = {
@@ -377,41 +329,23 @@ class MolapDataLoadRDD[K, V](
         else {
           !finished
         }
-
       }
 
       override def next(): (K, V) = {
-
         val loadMetadataDetails = new LoadMetadataDetails()
         loadMetadataDetails.setPartitionCount(partitionID)
         loadMetadataDetails.setLoadStatus(dataloadStatus.toString())
         result.getKey(loadCount, loadMetadataDetails)
       }
-
-      private def close() {
-        try {
-          //          reader.close()
-        } catch {
-          case e: Exception => logWarning("Exception in RecordReader.close()", e)
-        }
-      }
     }
     iter
   }
 
-
-  /**
-    * Get the preferred locations where to lauch this task.
-    */
   override def getPreferredLocations(split: Partition): Seq[String] = {
     val theSplit = split.asInstanceOf[MolapLoadPartition]
     val s = theSplit.serializableHadoopSplit.value.getLocations //.filter(_ != "localhost")
     logInfo("Prefered Location for split : " + s(0))
     s
   }
-
-  //  def getConf: Configuration = confBroadcast.value.value
-
-
 }
 

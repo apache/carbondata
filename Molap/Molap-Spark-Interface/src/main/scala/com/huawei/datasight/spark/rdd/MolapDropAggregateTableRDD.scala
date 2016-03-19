@@ -19,36 +19,26 @@
 
 package com.huawei.datasight.spark.rdd
 
-import scala.collection.JavaConversions.asScalaBuffer
-
-import org.apache.spark.Logging
-import org.apache.spark.Partition
-import org.apache.spark.SparkContext
-import org.apache.spark.TaskContext
+import com.huawei.datasight.molap.spark.util.MolapQueryUtil
+import com.huawei.datasight.spark.KeyVal
+import com.huawei.unibi.molap.engine.scanner.impl.{MolapKey, MolapValue}
+import org.apache.spark.{Logging, Partition, SparkContext, TaskContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.cubemodel.Partitioner
 
-import com.huawei.datasight.molap.load.MolapLoadModel
-import com.huawei.datasight.molap.spark.util.MolapQueryUtil
-import com.huawei.datasight.spark.KeyVal
-import com.huawei.unibi.molap.engine.scanner.impl.MolapKey
-import com.huawei.unibi.molap.engine.scanner.impl.MolapValue
+import scala.collection.JavaConversions.asScalaBuffer
 
 
 class MolapDropAggregateTableRDD[K, V](
-                                        sc: SparkContext,
-                                        keyClass: KeyVal[K, V],
-                                        schemaName: String,
-                                        cubeName: String,
-                                        partitioner: Partitioner)
-  extends RDD[(K, V)](sc, Nil)
-    with Logging {
+    sc: SparkContext,
+    keyClass: KeyVal[K, V],
+    schemaName: String,
+    cubeName: String,
+    partitioner: Partitioner)
+  extends RDD[(K, V)](sc, Nil) with Logging {
   
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
 
-  /**
-    * Create the split for each region server.
-    */
   override def getPartitions: Array[Partition] = {
     println(partitioner.nodeList)
     val splits = MolapQueryUtil.getTableSplits(schemaName, cubeName, null, partitioner)
@@ -100,9 +90,6 @@ class MolapDropAggregateTableRDD[K, V](
     iter
   }
 
-  /**
-    * Get the preferred locations where to lauch this task.
-    */
   override def getPreferredLocations(split: Partition): Seq[String] = {
     val theSplit = split.asInstanceOf[MolapLoadPartition]
     val s = theSplit.serializableHadoopSplit.value.getLocations //.filter(_ != "localhost")

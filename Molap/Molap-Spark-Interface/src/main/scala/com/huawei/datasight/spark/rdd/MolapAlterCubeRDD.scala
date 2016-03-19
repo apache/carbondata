@@ -19,55 +19,40 @@
 
 package com.huawei.datasight.spark.rdd
 
-import scala.collection.JavaConversions._
-import org.apache.spark.Logging
-import org.apache.spark.Partition
-import org.apache.spark.SparkContext
-import org.apache.spark.TaskContext
-import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.cubemodel.Partitioner
-import com.huawei.datasight.molap.load.MolapLoadModel
-import com.huawei.datasight.molap.spark.util.MolapQueryUtil
-import com.huawei.datasight.spark.KeyVal
-import com.huawei.unibi.molap.engine.scanner.impl.MolapKey
-import com.huawei.unibi.molap.engine.scanner.impl.MolapValue
-import com.huawei.datasight.spark.DeletedLoadResultImpl
-import com.huawei.datasight.spark.DeletedLoadResult
-import com.huawei.datasight.molap.load.DeletedLoadMetadata
-import com.huawei.unibi.molap.constants.MolapCommonConstants
-import com.huawei.unibi.molap.dataprocessor.dataretention.DataRetentionHandler
-import com.huawei.unibi.molap.olap.MolapDef
-import com.huawei.unibi.molap.restructure.SchemaRestructurer
-import com.huawei.datasight.spark.RestructureResult
-import com.huawei.unibi.molap.util.MolapUtil
 import java.io.File
 
-import scala.collection.mutable.ArrayBuffer
+import com.huawei.datasight.molap.spark.util.MolapQueryUtil
+import com.huawei.datasight.spark.RestructureResult
 import com.huawei.unibi.molap.engine.datastorage.InMemoryCubeStore
+import com.huawei.unibi.molap.olap.MolapDef
+import com.huawei.unibi.molap.restructure.SchemaRestructurer
+import com.huawei.unibi.molap.util.MolapUtil
+import org.apache.spark.{Logging, Partition, SparkContext, TaskContext}
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.cubemodel.Partitioner
+
+import scala.collection.JavaConversions._
+import scala.collection.mutable.ArrayBuffer
 
 class MolapAlterCubeRDD[K, V](
-                               sc: SparkContext,
-                               origUnModifiedSchema: MolapDef.Schema,
-                               schema: MolapDef.Schema,
-                               schemaName: String,
-                               cubeName: String,
-                               hdfsStoreLocation: String,
-                               addedDimensions: Seq[MolapDef.CubeDimension],
-                               addedMeasures: Seq[MolapDef.Measure],
-                               validDropDimList: ArrayBuffer[String],
-                               validDropMsrList: ArrayBuffer[String],
-                               curTime: Long,
-                               defaultVals: Map[String, String],
-                               currentRestructNumber: Integer,
-                               metaDataPath: String,
-                               partitioner: Partitioner,
-                               result: RestructureResult[K, V])
-  extends RDD[(K, V)](sc, Nil)
-    with Logging {
+    sc: SparkContext,
+    origUnModifiedSchema: MolapDef.Schema,
+    schema: MolapDef.Schema,
+    schemaName: String,
+    cubeName: String,
+    hdfsStoreLocation: String,
+    addedDimensions: Seq[MolapDef.CubeDimension],
+    addedMeasures: Seq[MolapDef.Measure],
+    validDropDimList: ArrayBuffer[String],
+    validDropMsrList: ArrayBuffer[String],
+    curTime: Long,
+    defaultVals: Map[String, String],
+    currentRestructNumber: Integer,
+    metaDataPath: String,
+    partitioner: Partitioner,
+    result: RestructureResult[K, V])
+  extends RDD[(K, V)](sc, Nil) with Logging {
 
-  /**
-    * Create the split for each region server.
-    */
   override def getPartitions: Array[Partition] = {
     val splits = MolapQueryUtil.getTableSplits(schemaName, cubeName, null, partitioner)
     val result = new Array[Partition](splits.length)
@@ -124,12 +109,9 @@ class MolapAlterCubeRDD[K, V](
     iter
   }
 
-  /**
-    * Get the preferred locations where to lauch this task.
-    */
   override def getPreferredLocations(split: Partition): Seq[String] = {
     val theSplit = split.asInstanceOf[MolapLoadPartition]
-    val s = theSplit.serializableHadoopSplit.value.getLocations //.filter(_ != "localhost")
+    val s = theSplit.serializableHadoopSplit.value.getLocations
     logInfo("Host Name : " + s(0) + s.length)
     s
   }
