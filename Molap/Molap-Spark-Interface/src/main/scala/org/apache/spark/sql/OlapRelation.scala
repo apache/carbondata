@@ -19,25 +19,19 @@
 
 package org.apache.spark.sql
 
-import org.apache.spark.Logging
-import org.apache.spark.sql.hive.{OlapMetastoreTypes, CubeMeta, OlapMetaData}
-import org.apache.spark.sql.sources.BaseRelation
-import org.apache.spark.sql.sources.RelationProvider
-import org.apache.spark.sql.catalyst.plans.logical.LeafNode
-import org.apache.spark.sql.catalyst.analysis.MultiInstanceRelation
-import org.apache.spark.sql.catalyst.plans.logical.Statistics
-import org.apache.spark.sql.catalyst.expressions.AttributeReference
-import com.huawei.unibi.molap.olap.MolapDef
-import scala.collection.JavaConversions.asScalaBuffer
-import scala.collection.JavaConversions.asScalaSet
-import scala.collection.JavaConversions.bufferAsJavaList
-import scala.collection.JavaConversions.seqAsJavaList
-import scala.language.implicitConversions
 import java.util.LinkedHashSet
-import org.apache.spark.sql.types.StructType
-import java.util.HashMap
-import org.apache.spark.sql.types.DataType
-import org.apache.spark.sql.types.StringType
+
+import com.huawei.unibi.molap.olap.MolapDef
+import org.apache.spark.Logging
+import org.apache.spark.sql.catalyst.analysis.MultiInstanceRelation
+import org.apache.spark.sql.catalyst.expressions.AttributeReference
+import org.apache.spark.sql.catalyst.plans.logical.{LeafNode, Statistics}
+import org.apache.spark.sql.hive.{CubeMeta, OlapMetaData, OlapMetastoreTypes}
+import org.apache.spark.sql.sources.{BaseRelation, RelationProvider}
+import org.apache.spark.sql.types.{DataType, StructType}
+
+import scala.collection.JavaConversions.{asScalaBuffer, asScalaSet, seqAsJavaList}
+import scala.language.implicitConversions
 
 
 /**
@@ -126,13 +120,12 @@ case class OlapRelation(schemaName: String,
     metaData.cube.getChildren(dimName).map(childDim => {
 		childDim.getDataType().toString.toLowerCase match {
 		    case "array" => s"${childDim.getColName().substring(childDim.getParentName.length()+1)}:array<${getArrayChildren(childDim.getColName())}>"
-			case "struct" => s"struct<${metaData.cube.getChildren(childDim.getColName).map(f => s"${recursiveMethod(f.getColName)}")}>"
-			case dType => s"${childDim.getColName.substring(childDim.getParentName.length()+1)}:${dType}"
-		}
-	}).mkString(",")
+        case "struct" => s"struct<${metaData.cube.getChildren(childDim.getColName).map(f => s"${recursiveMethod(f.getColName)}")}>"
+        case dType => s"${childDim.getColName.substring(childDim.getParentName.length()+1)}:${dType}"
+      }
+	  }).mkString(",")
   }
-  
-  //  def getSchemaPath = schemaPath
+
   override def newInstance() = OlapRelation(schemaName, cubeName, metaData, cubeMeta, alias)(sqlContext).asInstanceOf[this.type]
 
   val dimensionsAttr = {
@@ -148,16 +141,13 @@ case class OlapRelation(schemaName: String,
     	  case "array" => OlapMetastoreTypes.toDataType(s"array<${getArrayChildren(dim.name)}>")
     	  case "struct" => OlapMetastoreTypes.toDataType(s"struct<${getStructChildren(dim.name)}>")
     	  case dType => OlapMetastoreTypes.toDataType(dType)
-    	}
-    	
-//          println(OlapMetastoreTypes.toMetastoreType(output))
-    	  AttributeReference(
-    		  dim.name,
-//    		  OlapMetastoreTypes.toDataType(metaData.cube.getDimension(dim.name).getDataType().toString.toLowerCase),
-    		  output,
-    		  nullable = true)(qualifiers = tableName +: alias.toSeq)
-      }
-    )
+    	  }
+
+      AttributeReference(
+        dim.name,
+        output,
+        nullable = true)(qualifiers = tableName +: alias.toSeq)
+    })
   }
 
   val measureAttr = {

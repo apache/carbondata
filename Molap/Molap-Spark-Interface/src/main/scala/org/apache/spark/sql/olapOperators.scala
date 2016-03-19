@@ -19,100 +19,45 @@
 
 package org.apache.spark.sql
 
-import scala.Array.canBuildFrom
-import scala.collection.JavaConversions.asScalaBuffer
-import scala.collection.JavaConversions.bufferAsJavaList
-import scala.collection.JavaConversions.mapAsScalaMap
-import scala.collection.mutable.ArrayBuffer
-import scala.collection.mutable.ListBuffer
-import scala.collection.mutable.MutableList
-import org.apache.hadoop.conf.Configuration
-import org.apache.spark.SparkContext
-import org.apache.spark.sql.catalyst.expressions._
-import org.apache.spark.sql.execution.BinaryNode
-import org.apache.spark.sql.execution.LeafNode
-import org.apache.spark.sql.execution.SparkPlan
-import org.apache.spark.sql.execution.UnaryNode
-import org.apache.spark.sql.execution.joins.BuildSide
-import org.apache.spark.sql.execution.joins.HashJoin
-import org.apache.spark.sql.types.BooleanType
-import org.apache.spark.unsafe.types.UTF8String
-import com.huawei.datasight.molap.query.MolapQueryPlan
-import com.huawei.datasight.molap.query.metadata.MolapDimension
-import com.huawei.datasight.molap.query.metadata.MolapDimensionFilter
-import com.huawei.datasight.molap.query.metadata.MolapLikeFilter
-import com.huawei.datasight.molap.query.metadata.MolapMeasure
-import com.huawei.datasight.molap.query.metadata.MolapMeasureFilter
-import com.huawei.datasight.molap.query.metadata.SortOrderType
-import com.huawei.datasight.molap.spark.util.MolapQueryUtil
-import com.huawei.datasight.spark.KeyVal
-import com.huawei.datasight.spark.KeyValImpl
-import com.huawei.datasight.spark.agg.AverageMolap
-import com.huawei.datasight.spark.agg.CountDistinctMolap
-import com.huawei.datasight.spark.agg.CountMolap
-import com.huawei.datasight.spark.agg.SumMolap
-import com.huawei.datasight.spark.processors.MolapScalaUtil
-import com.huawei.datasight.spark.processors.SparkTopNProcessor
-import com.huawei.datasight.spark.rdd.MolapDataRDD
-import com.huawei.unibi.molap.engine.aggregator.MeasureAggregator
-import com.huawei.unibi.molap.engine.aggregator.impl.SumAggregator
-import com.huawei.unibi.molap.engine.executer.impl.topn.TopNModel.MolapTopNType
-import com.huawei.unibi.molap.engine.expression.{ColumnExpression => MolapColumnExpression}
-import com.huawei.unibi.molap.engine.expression.{Expression => MolapExpression}
-import com.huawei.unibi.molap.engine.expression.{LiteralExpression => MolapLiteralExpression}
-import com.huawei.unibi.molap.engine.expression.arithmetic.AddExpression
-import com.huawei.unibi.molap.engine.expression.arithmetic.DivideExpression
-import com.huawei.unibi.molap.engine.expression.arithmetic.MultiplyExpression
-import com.huawei.unibi.molap.engine.expression.arithmetic.SubstractExpression
-import com.huawei.unibi.molap.engine.expression.conditional.EqualToExpression
-import com.huawei.unibi.molap.engine.expression.conditional.NotEqualsExpression
-import com.huawei.unibi.molap.engine.expression.logical.AndExpression
-import com.huawei.unibi.molap.engine.expression.logical.NotExpression
-import com.huawei.unibi.molap.engine.expression.logical.OrExpression
-import com.huawei.unibi.molap.engine.molapfilterinterface.RowImpl
-import com.huawei.unibi.molap.engine.scanner.impl.MolapKey
-import com.huawei.unibi.molap.engine.scanner.impl.MolapValue
-import com.huawei.unibi.molap.engine.expression.conditional._
-import scala.collection.JavaConverters._
-import com.huawei.unibi.molap.util.MolapProperties
-import com.huawei.unibi.molap.constants.MolapCommonConstants
-import com.huawei.datasight.spark.agg.PositionLiteral
-import org.apache.spark.sql.catalyst.InternalRow
-import com.huawei.datasight.spark.agg.MinMolap
-import com.huawei.datasight.spark.agg.MaxMolap
-import com.huawei.datasight.molap.query.metadata.MolapQueryExpression
-import com.huawei.unibi.molap.engine.aggregator.impl.CountAggregator
-import com.huawei.datasight.molap.query.metadata.MolapColumn
-import com.huawei.unibi.molap.engine.querystats.QueryDetail
-import com.huawei.unibi.molap.engine.querystats.QueryStatsCollector
-import com.huawei.unibi.molap.engine.expression.ColumnExpression
-import com.huawei.datasight.spark.agg.AverageMolap
-import com.huawei.datasight.spark.agg.CountMolap
-import com.huawei.datasight.spark.agg.SumMolap
-import com.huawei.datasight.spark.agg.CountDistinctMolap
-import com.huawei.datasight.spark.agg.PositionLiteral
-import com.huawei.datasight.spark.agg.SumDistinctMolap
-import org.apache.spark.sql.execution.joins.HashedRelation
 import java.util.ArrayList
+
+import com.huawei.datasight.molap.query.MolapQueryPlan
+import com.huawei.datasight.molap.query.metadata.{MolapDimension, MolapMeasure, SortOrderType}
+import com.huawei.datasight.molap.spark.util.MolapQueryUtil
+import com.huawei.datasight.spark.{KeyVal, KeyValImpl}
+import com.huawei.datasight.spark.agg.{AverageMolap, CountDistinctMolap, CountMolap, MaxMolap, MinMolap, PositionLiteral, SumDistinctMolap, SumMolap}
+import com.huawei.datasight.spark.processors.MolapScalaUtil
+import com.huawei.datasight.spark.rdd.MolapDataRDD
+import com.huawei.unibi.molap.constants.MolapCommonConstants
 import com.huawei.unibi.molap.engine.executer.MolapQueryExecutorModel
-import org.apache.spark.sql.CarbonEnv
+import com.huawei.unibi.molap.engine.expression.arithmetic.{AddExpression, DivideExpression, MultiplyExpression, SubstractExpression}
+import com.huawei.unibi.molap.engine.expression.conditional.{EqualToExpression, NotEqualsExpression, _}
+import com.huawei.unibi.molap.engine.expression.logical.{AndExpression, OrExpression}
+import com.huawei.unibi.molap.engine.expression.ColumnExpression
+import com.huawei.unibi.molap.engine.expression.{ColumnExpression => MolapColumnExpression, Expression => MolapExpression, LiteralExpression => MolapLiteralExpression}
+import com.huawei.unibi.molap.engine.querystats.{QueryDetail, QueryStatsCollector}
+import com.huawei.unibi.molap.engine.scanner.impl.{MolapKey, MolapValue}
+import com.huawei.unibi.molap.util.MolapProperties
+import org.apache.hadoop.conf.Configuration
+import org.apache.spark.sql.catalyst.expressions._
+import org.apache.spark.sql.execution.LeafNode
+import org.apache.spark.unsafe.types.UTF8String
+
+import scala.Array.canBuildFrom
+import scala.collection.JavaConversions.{asScalaBuffer, bufferAsJavaList}
+import scala.collection.JavaConverters._
+import scala.collection.mutable.ArrayBuffer
 
 
-/**
-  * Created by w00228970 on 2014/5/24.
-  * Modified by r00900208
-  */
 case class OlapCubeScan(
-                         var attributes: Seq[Attribute],
-                         relation: OlapRelation,
-                         dimensionPredicates: Seq[Expression],
-                         aggExprs: Option[Seq[Expression]],
-                         sortExprs: Option[Seq[SortOrder]],
-                         limitExpr: Option[Expression],
-                         isGroupByPresent: Boolean,
-                         detailQuery: Boolean = false
-                       )(
-                         @transient val oc: SQLContext) // guolv chaozuo zai limian ma?
+    var attributes: Seq[Attribute],
+    relation: OlapRelation,
+    dimensionPredicates: Seq[Expression],
+    aggExprs: Option[Seq[Expression]],
+    sortExprs: Option[Seq[SortOrder]],
+    limitExpr: Option[Expression],
+    isGroupByPresent: Boolean,
+    detailQuery: Boolean = false)(@transient val oc: SQLContext)
   extends LeafNode {
 
   val cubeName = relation.cubeName
@@ -334,12 +279,6 @@ case class OlapCubeScan(
             outputColumns += par.toAttribute
             queryOrder = processAggregateExpr(plan, par.children(0).asInstanceOf[AggregateExpression1], queryOrder)
           }
-          //Following case is not expected
-          //          case par: AggregateExpression1 =>
-          //            {
-          //              queryOrder = processAggregateExpr(plan, par, queryOrder)
-          //              outputColumns += par.flatMap(_.references)(0)
-          //            }
 
           case _ => forceDetailedQuery = true
         }
@@ -397,24 +336,12 @@ case class OlapCubeScan(
     plan.setOutLocationPath(MolapProperties.getInstance().getProperty(MolapCommonConstants.STORE_LOCATION_HDFS));
     plan.setQueryId(System.nanoTime() + "");
     if (!dimensionPredicates.isEmpty) {
-      //println("Tranform" + transformExpression(dimensionPredicates.head))
       val exps = preProcessExpressions(dimensionPredicates)
       val expressionVal = transformExpression(exps.head)
       //adding dimension used in expression in querystats
       expressionVal.getChildren.filter { x => x.isInstanceOf[ColumnExpression] }.map { y => allDims += y.asInstanceOf[ColumnExpression].getColumnName }
-      plan.setFilterExpression(expressionVal);
-      //      println(expressionVal.getString())
-      //      expressionVal.evaluate(new RowImpl())
-      //      println(expressionVal.getString())
+      plan.setFilterExpression(expressionVal)
     }
-
-    //    if (!msrPredicates.isEmpty) {
-    //      addPredicates(plan,msrPredicates,true)
-    //    }
-    //    extraPreds match {
-    //      case Some(exps: Seq[Expression]) =>
-    //      case _=>
-    //    }
     plan
   }
 
@@ -478,16 +405,6 @@ case class OlapCubeScan(
     } else {
       buffer.get(0)
     }
-    //   val cond = conditions match {
-    //   case Some(e:Expression) => buffer.fold(e)(And(_,_))
-    //   case _=>
-    //   if(buffer.size > 1) {
-    //       val e = buffer.remove(0)
-    //               buffer.fold(e)(And(_,_))
-    //   } else {
-    //       buffer.get(0)
-    //   }
-    //   }
 
     extraPreds = Seq(cond)
   }
@@ -569,8 +486,6 @@ case class OlapCubeScan(
   }
 
   def doExecute() = {
-
-    import oc._
     def toType(obj: Any): Any = obj match {
       case s: String => UTF8String.fromString(s)
       case _ => obj
@@ -578,120 +493,14 @@ case class OlapCubeScan(
 
     inputRdd.map { row =>
       val dims = row._1.getKey.map(toType).toArray
-      //       val meas = if(detailQuery)row._2.getValues.map(_.getValue) else row._2.getValues
       val values = dims
       new GenericMutableRow(values.asInstanceOf[Array[Any]])
     }
   }
 
   def output = {
-    //    val dims = MutableList[Attribute]()
-    //    val msrs = MutableList[Attribute]()
-
-    //    attributes.map(
-    //    attr => {
-    //      val molapDimension = MolapQueryUtil.getMolapDimension(cube.getDimensions(cube.getFactTableName()), attr.name);
-    //      if(molapDimension != null){
-    //        dims += attr
-    //      }
-    //      else
-    //      {
-    //        val molapMeasure = MolapQueryUtil.getMolapMeasure(attr.name, cube.getMeasures(cube.getFactTableName()));
-    //        if(molapMeasure != null)
-    //        {
-    //        	msrs += attr
-    //        }
-    //      }
-    //    })
-    //    dims++msrs
     attributes
   }
 
 }
 
-
-//case class TopN(count:Int,topOrBottom:Int,dim:Attribute,msr:Attribute,
-//    child: SparkPlan)(@transient sc: SparkContext)
-//  extends UnaryNode {
-//
-//  override def otherCopyArgs = sc :: Nil
-//  override def doExecute() = sc.makeRDD(executeCollect(), 1)
-//  
-//  override def executeCollect() = {
-//    val out =  child.output
-//    val dims = new MutableList[Attribute]()
-//    val msrs = new MutableList[Attribute]()
-//    val dimPositions = new MutableList[Int]()
-//    val msrPositions = new MutableList[Int]()
-//    val first = child.execute().first
-//    for(j<-0 until first.numFields)
-//    {
-//      first.apply(j) match {
-//    	      case m:MeasureAggregator => { msrPositions += j ;msrs += out(j) }
-//    	      case m1:Double => { msrPositions += j ;msrs += out(j) }
-//    	      case others => {dimPositions += j; dims += out(j) }
-//      }
-//    }
-//    
-//    val s = child.execute()
-//      .mapPartitions(
-//        iterator => iterator.map{x=>
-//          val key = new MutableList[Object]()
-//          val value = new MutableList[MeasureAggregator]()
-//          for(j<-0 until x.numFields)
-//    	  {
-//    	    x.apply(j) match {
-//    	      case m:MeasureAggregator => value += m
-//    	      case m1:Double => {
-//    	        val sumAggregator = new SumAggregator()
-//    	        sumAggregator.setNewValue(m1)
-//    	        value += sumAggregator
-//    	        }
-//    	      case others => key += x.apply(j).asInstanceOf[Object]
-//    	    }
-//    	  }
-//          (new MolapKey(key.toArray),new MolapValue(value.toArray))
-//        },
-//        preservesPartitioning = true)
-//        var topType = MolapTopNType.TOP
-//        if(topOrBottom == 1)
-//        {
-//          topType = MolapTopNType.BOTTOM
-//        }
-//        var dimIndex = 0;
-//        var msrIndex = 0;
-//        var index = 0;
-//        dims.map{x=>
-//          if(x.name.equals(dim.name))
-//          {
-//            dimIndex = index
-//          }
-//          index = index+1
-//        }
-//        index = 0;
-//        msrs.map{x=>  
-//          if(x.name.equals(msr.name))
-//          {
-//            msrIndex = index
-//          }
-//          index = index+1
-//        }
-//        val result = new SparkTopNProcessor().process(s, count,dimIndex,msrIndex,topType)
-//        result.map{k => 
-//                 val finaldims = k._1.getKey.toArray
-//                 val finalmsrs = k._2.getValues.map(_.getValue).toArray
-//                 
-//                 val values = new Array[Any](dimPositions.length+msrPositions.length) 
-//                   
-//                 for(i <- 0 until dims.length){
-//                   values(dimPositions(i)) = finaldims(i)
-//                 }
-//                 for(i <- 0 until msrs.length){
-//                   values(msrPositions(i)) = finalmsrs(i)
-//                 }
-//                 new GenericRow(values)
-//          }
-//  }
-//
-//  override def output = child.output
-//}

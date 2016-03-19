@@ -19,18 +19,14 @@
 
 package org.apache.spark.sql
 
-import scala.collection.JavaConverters._
-import org.apache.spark.sql.catalyst.expressions.{Expression => SparkExpression}
-import org.apache.spark.sql.catalyst.expressions.GenericRow
 import com.huawei.datasight.spark.processors.MolapScalaUtil
-import com.huawei.unibi.molap.engine.expression.ColumnExpression
-import com.huawei.unibi.molap.engine.expression.Expression
-import com.huawei.unibi.molap.engine.expression.ExpressionResult
-import com.huawei.unibi.molap.engine.molapfilterinterface.ExpressionType
-import com.huawei.unibi.molap.engine.molapfilterinterface.RowIntf
+import com.huawei.unibi.molap.engine.expression.{ColumnExpression, Expression, ExpressionResult}
 import com.huawei.unibi.molap.engine.expression.conditional.ConditionalExpression
 import com.huawei.unibi.molap.engine.expression.exception.FilterUnsupportedException
-import org.apache.spark.sql.catalyst.expressions.GenericMutableRow
+import com.huawei.unibi.molap.engine.molapfilterinterface.{ExpressionType, RowIntf}
+import org.apache.spark.sql.catalyst.expressions.{Expression => SparkExpression, GenericMutableRow}
+
+import scala.collection.JavaConverters._
 
 class SparkUnknownExpression(sparkExp: SparkExpression) extends Expression with ConditionalExpression {
 
@@ -73,7 +69,6 @@ class SparkUnknownExpression(sparkExp: SparkExpression) extends Expression with 
   }
 
   def getAllColumnList(): java.util.List[ColumnExpression] = {
-
     val lst = new java.util.ArrayList[ColumnExpression]()
     getAllColumnListFromExpressionTree(sparkExp, lst)
     lst
@@ -98,11 +93,8 @@ class SparkUnknownExpression(sparkExp: SparkExpression) extends Expression with 
         if (foundExp.isEmpty) {
           molapBoundRef.colExp.setColIndex(list.size)
           list.add(molapBoundRef.colExp)
-        }
-        else {
+        } else {
           molapBoundRef.colExp.setColIndex(foundExp.get.getColIndex())
-
-
         }
       }
       case _ => sparkCurrentExp.children.foreach(getColumnListFromExpressionTree(_, list))
@@ -115,7 +107,6 @@ class SparkUnknownExpression(sparkExp: SparkExpression) extends Expression with 
     sparkCurrentExp match {
       case molapBoundRef: MolapBoundReference => list.add(molapBoundRef.colExp)
       case _ => sparkCurrentExp.children.foreach(getColumnListFromExpressionTree(_, list))
-
     }
     list
   }

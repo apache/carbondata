@@ -17,33 +17,14 @@
 
 package com.huawei.datasight.spark.agg
 
-import org.apache.spark.sql.types._
-import org.apache.spark.sql.catalyst.trees
-import org.apache.spark.sql.catalyst.errors.TreeNodeException
 import com.huawei.unibi.molap.engine.aggregator.MeasureAggregator
-import org.apache.spark.sql.catalyst.expressions.Expression
-import org.apache.spark.sql.catalyst.expressions.PartialAggregate1
-import org.apache.spark.sql.catalyst.expressions.SplitEvaluation
-import org.apache.spark.sql.catalyst.expressions.Alias
-import org.apache.spark.sql.catalyst.expressions.AggregateExpression
-import org.apache.spark.sql.catalyst.expressions.AggregateFunction1
-import org.apache.spark.sql.catalyst.expressions.Cast
-import org.apache.spark.sql.catalyst.expressions.Divide
-import org.apache.spark.sql.catalyst.expressions.AttributeSet
 import com.huawei.unibi.molap.engine.aggregator.impl._
-import scala.language.implicitConversions
-import org.apache.spark.sql.catalyst.expressions.Literal
-import org.apache.spark.sql.catalyst.expressions.LeafExpression
-import org.apache.spark.sql.catalyst.expressions.UnaryExpression
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.expressions.AggregateExpression1
-import com.huawei.unibi.molap.engine.aggregator.MeasureAggregator
+import org.apache.spark.sql.catalyst.expressions.{AggregateExpression1, AggregateFunction1, Alias, AttributeSet, BoundReference, Cast, Expression, LeafExpression, Literal, PartialAggregate1, SplitEvaluation, UnaryExpression}
 import org.apache.spark.sql.catalyst.expressions.codegen.CodegenFallback
-import org.apache.spark.sql.catalyst.expressions.BoundReference
-import org.apache.spark.sql.catalyst.expressions.MutableLiteral
-import com.huawei.unibi.molap.engine.aggregator.CustomMeasureAggregator
-import org.apache.spark.sql.catalyst.expressions.AttributeReference
-import scala.collection.mutable.MutableList
+import org.apache.spark.sql.types._
+
+import scala.language.implicitConversions
 
 case class CountMolap(child: Expression) extends UnaryExpression with PartialAggregate1 {
   override def references = child.references
@@ -97,16 +78,6 @@ case class CountDistinctMolap(child: Expression) extends PartialAggregate1 {
 
   override def newInstance() = new CountDistinctFunctionMolap(child, this)
 }
-
-//case class CollectHashSet(expressions: Seq[Expression]) extends AggregateExpression {
-//  def this() = this(null)
-//
-//  override def children = expressions
-//  override def nullable = false
-//  override def dataType = ArrayType(expressions.head.dataType)
-//  override def toString = s"AddToHashSet(${expressions.mkString(",")})"
-//  override def newInstance() = new CountDistinctFunctionMolap(expressions, this)
-//}
 
 case class CountDistinctMolapFinal(inputSet: Expression, origDataType: DataType) extends AggregateExpression1 {
   override def children = inputSet :: Nil
@@ -315,7 +286,6 @@ case class AverageFunctionMolap(expr: Expression, base: AggregateExpression1, fi
 
   def this() = this(null, null, false) // Required for serialization.
 
-  //  var count: Int = _
   private var avg: MeasureAggregator = null
 
   override def update(input: InternalRow): Unit = {
@@ -338,12 +308,12 @@ case class AverageFunctionMolap(expr: Expression, base: AggregateExpression1, fi
   }
 
   override def eval(input: InternalRow): Any =
-    if (finalAgg)
-      if (avg.isFirstTime())
-        null
-      else
-        Cast(Literal(avg.getValue), base.dataType).eval(null)
-    else avg
+    if (finalAgg) {
+      if (avg.isFirstTime()) null
+      else Cast(Literal(avg.getValue), base.dataType).eval(null)
+    } else {
+      avg
+    }
 }
 
 case class CountFunctionMolap(expr: Expression, base: AggregateExpression1, finalAgg: Boolean) extends AggregateFunction1 {
@@ -365,7 +335,6 @@ case class CountFunctionMolap(expr: Expression, base: AggregateExpression1, fina
         val agg1: MeasureAggregator = new CountAggregator
         if (others != null) {
           agg1.agg(0, null, 0, 0)
-          //agg1.setNewValue(others.toString.toDouble)
         }
         agg1
     }
@@ -373,17 +342,13 @@ case class CountFunctionMolap(expr: Expression, base: AggregateExpression1, fina
   }
 
   override def eval(input: InternalRow): Any = if (finalAgg && count != null) if (count.isFirstTime()) 0L else Cast(Literal(count.getValue), base.dataType).eval(null) else count
-
-  //override def eval(input: Row): Any = if(finalAgg) if(count.isFirstTime()) 0 else count.getValue.toLong else count
 }
 
 
 case class SumFunctionMolap(expr: Expression, base: AggregateExpression1, finalAgg: Boolean) extends AggregateFunction1 {
   def this() = this(null, null, false) // Required for serialization.
 
-  private var sum: MeasureAggregator = null //MutableLiteral(Cast(Literal(0), expr.dataType).eval(null))
-
-  //  private val addFunction = Add(sum, expr)
+  private var sum: MeasureAggregator = null
 
   override def update(input: InternalRow): Unit = {
     val br = expr.collectFirst({ case a@BoundReference(_, _, _) => a })
@@ -416,9 +381,7 @@ case class SumFunctionMolap(expr: Expression, base: AggregateExpression1, finalA
 case class MaxFunctionMolap(expr: Expression, base: AggregateExpression1, finalAgg: Boolean) extends AggregateFunction1 {
   def this() = this(null, null, false) // Required for serialization.
 
-  private var max: MeasureAggregator = null //MutableLiteral(Cast(Literal(0), expr.dataType).eval(null))
-
-  //  private val addFunction = Add(sum, expr)
+  private var max: MeasureAggregator = null
 
   override def update(input: InternalRow): Unit = {
     val br = expr.collectFirst({ case a@BoundReference(_, _, _) => a })
@@ -440,15 +403,12 @@ case class MaxFunctionMolap(expr: Expression, base: AggregateExpression1, finalA
   }
 
   override def eval(input: InternalRow): Any = if (finalAgg && max != null) if (max.isFirstTime()) null else Cast(Literal(max.getValueObject), base.dataType).eval(null) else max //.eval(null)
-  //override def eval(input: Row): Any = if(finalAgg) if(max.isFirstTime()) null else max.getValue else max//.eval(null)
 }
 
 case class MinFunctionMolap(expr: Expression, base: AggregateExpression1, finalAgg: Boolean) extends AggregateFunction1 {
   def this() = this(null, null, false) // Required for serialization.
 
-  private var min: MeasureAggregator = null //MutableLiteral(Cast(Literal(0), expr.dataType).eval(null))
-
-  //  private val addFunction = Add(sum, expr)
+  private var min: MeasureAggregator = null
 
   override def update(input: InternalRow): Unit = {
     val br = expr.collectFirst({ case a@BoundReference(_, _, _) => a })
@@ -461,21 +421,25 @@ case class MinFunctionMolap(expr: Expression, base: AggregateExpression1, finalA
     val agg = resolution match {
       case s: MeasureAggregator => s
       case s => {
-        val dc = new MinAggregator; if (s != null) {
-          dc.agg(s.toString.toDouble, null, 0, 0); dc.setNewValue(s.toString.toDouble)
-        }; dc
+        val dc = new MinAggregator;
+        if (s != null) {
+          dc.agg(s.toString.toDouble, null, 0, 0);
+          dc.setNewValue(s.toString.toDouble)
+        };
+        dc
       }
     }
     if (min == null) min = agg else min.merge(agg)
   }
 
-  //override def eval(input: Row): Any = if(finalAgg) if(min.isFirstTime()) null else min.getValue else min//.eval(null)
-  override def eval(input: InternalRow): Any =
-    if (finalAgg && min != null)
+  override def eval(input: InternalRow): Any = {
+    if (finalAgg && min != null) {
       if (min.isFirstTime()) null
-      else
-        Cast(Literal(min.getValueObject), base.dataType).eval(null)
-    else min //.eval(null)
+      else Cast(Literal(min.getValueObject), base.dataType).eval(null)
+    } else {
+      min
+    }
+  }
 }
 
 case class SumDisctinctFunctionMolap(expr: Expression, base: AggregateExpression1, isFinal: Boolean)

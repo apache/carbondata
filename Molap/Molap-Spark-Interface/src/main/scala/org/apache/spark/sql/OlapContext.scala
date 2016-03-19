@@ -30,71 +30,33 @@ import com.huawei.unibi.molap.engine.querystats.{QueryDetail, QueryStatsCollecto
 import org.apache.spark.SparkContext
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.rdd.{JdbcRDDExt, RDD}
+import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.analysis.{Analyzer, OverrideCatalog, UnresolvedAttribute}
 import org.apache.spark.sql.catalyst.expressions.AttributeReference
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.catalyst.{InternalRow, ParserDialect}
 import org.apache.spark.sql.csv.CsvRDD
 import org.apache.spark.sql.cubemodel.{LoadCubeAPI, MergeCube, PartitionData, Partitioner}
 import org.apache.spark.sql.execution.LogicalRDD
-import org.apache.spark.sql.execution.datasources.DDLException
 import org.apache.spark.sql.hive._
 import org.apache.spark.sql.jdbc.JdbcResultSetRDD
 import org.apache.spark.sql.types.StructType
 
 import scala.language.implicitConversions
 
-//import org.apache.spark.sql.execution.SparkStrategies.CommandStrategy
-//import org.apache.spark.sql.SQLContext.SparkPlanner
-
-/**
-  * Created by w00228970 on 2014/5/16.
-  */
 class OlapContext(val sc: SparkContext, metadataPath: String) extends HiveContext(sc) {
   self =>
 
-  //  @transient
-  // lazy val catalog2 = new OlapMetastoreCatalog(this,metadataPath)
-
   var lastSchemaUpdatedTime = System.currentTimeMillis()
 
-  //CarbonEnv.initCarbonCatalog(this)
-
   override lazy val catalog = new OlapMetastoreCatalog(this, metadataPath, metadataHive) with OverrideCatalog
-
-//  {
-//    val catalogs = new ArrayBuffer[Catalog]
-//    //catalogs += CarbonEnv.carbonCatalog
-//    new CompositeMetastoreCatalog(conf, catalogs, metadataHive, this) with OverrideCatalog
-//  }
 
   @transient
   override protected[sql] lazy val analyzer =
     new Analyzer(catalog, functionRegistry, conf)
 
   override protected[sql] def dialectClassName = classOf[CarbonSQLDialect].getCanonicalName
-//  protected[sql] val carbonParser = new MolapSqlDDLParser(sqlParser.parse(_))
-  //  protected[sql] override lazy val conf: SQLConf = new CarbonSQLConf
 
   experimental.extraStrategies = CarbonStrategy.getStrategy(self) :: Nil
-
-//  @transient
-  //protected[sql] val molapSQLParser = new MolapSqlParser(HiveSupport.hiveParseSql(_))
-//  protected[sql] val molapSQLParser = new MolapSqlParser(getSQLDialect().parse(_))
-
-  //  /* An analyzer that uses the Hive metastore. */
-  //  @transient
-  //  override protected[sql] lazy val analyzer =
-  //    new Analyzer(catalog, EmptyFunctionRegistry, caseSensitive = false)
-
-//  override def parseSql(sql: String): LogicalPlan = carbonParser.parse(sql)
-
-//  def parseSqlDDL(sql: String): LogicalPlan = carbonParser.parse(sql)
-
-//  override def executeSql(sql: String): this.QueryExecution = executePlan(parseSql(sql))
-
-//  override def executePlan(plan: LogicalPlan): this.QueryExecution =
-//    new this.QueryExecution(plan)
 
   def loadSchema(schemaPath: String, encrypted: Boolean = true, aggTablesGen: Boolean = true, partitioner: Partitioner = null) {
     OlapContext.updateMolapPorpertiesPath(this)
@@ -105,17 +67,6 @@ class OlapContext(val sc: SparkContext, metadataPath: String) extends HiveContex
     CarbonEnv.getInstance(this).carbonCatalog.updateCube(schemaPath, encrypted, aggTablesGen)(this)
   }
 
-
-  //  def addAggregatesToCube(schemaName: String = null, cubeName: String, aggTableColumns: Seq[String]) {
-  //    updateMolapPorpertiesPath
-  //    val relation = this.asInstanceOf[OlapContext].catalog2.lookupRelation1(Option(schemaName), cubeName, None).asInstanceOf[OlapRelation]
-  //    if (relation == null) sys.error(s"Cube $schemaName.$cubeName does not exist")
-  //    val aggTableName = catalog2.getAggregateTableName(schemaName, cubeName)
-  //    catalog2.updateCubeWithAggregates(relation.cubeMeta.schema, schemaName, cubeName, aggTableName, aggTableColumns)
-  //    val seqOfTableName = Seq(aggTableName)
-  //    this.loadAggregation(schemaName, cubeName, seqOfTableName)
-  //
-  //  }
   def cubeExists(schemaName: String, cubeName: String): Boolean = {
     CarbonEnv.getInstance(this).carbonCatalog.cubeExists(Seq(schemaName, cubeName))(this)
   }
@@ -141,16 +92,6 @@ class OlapContext(val sc: SparkContext, metadataPath: String) extends HiveContex
     MergeCube(schemaNameLocal, cubeName, tableName).run(this)
   }
 
-
-  //  def loadAggregation(schemaName: String = null, cubeName: String, aggTableNames: Seq[String]) {
-  //    updateMolapPorpertiesPath
-  //    var schemaNameLocal = schemaName
-  //    if (schemaNameLocal == null) {
-  //      schemaNameLocal = "default"
-  //    }
-  //    LoadAggregationTable(schemaNameLocal, cubeName, aggTableNames).run(this)
-  //  }
-
   @DeveloperApi
   implicit def toAggregates(aggregate: MeasureAggregator): Double = aggregate.getValue()
 
@@ -170,11 +111,11 @@ class OlapContext(val sc: SparkContext, metadataPath: String) extends HiveContex
     *                  (default is false)
     */
   def csvFile(
-               path: String,
-               delimiter: String = ",",
-               quote: Char = '"',
-               schema: StructType = null,
-               header: Boolean = false): SchemaRDD = {
+      path: String,
+      delimiter: String = ",",
+      quote: Char = '"',
+      schema: StructType = null,
+      header: Boolean = false): SchemaRDD = {
     val csv = sparkContext.textFile(path)
     csvRDD(csv, delimiter, quote, schema, header)
   }
@@ -208,53 +149,10 @@ class OlapContext(val sc: SparkContext, metadataPath: String) extends HiveContex
     *
     * @group userf
     */
-
-  /*  override implicit def createDataFrame[A <: Product: TypeTag](rdd: RDD[A]) = {
-      SparkPlan.currentContext.set(self)
-      val attributeSeq = ScalaReflection.attributesFor[A]
-      val schema = StructType.fromAttributes(attributeSeq)
-      val rowRDD = RDDConversions.productToRowRdd(rdd, schema.map(_.dataType))
-      new SchemaRDDExt(this,
-          LogicalRDD(attributeSeq, rowRDD)(self))
-    }
-    override implicit def createDataFrame[A <: Product : TypeTag](rdd: RDD[A]): DataFrame = {
-      SparkPlan.currentContext.set(self)
-      val schema = ScalaReflection.schemaFor[A].dataType.asInstanceOf[StructType]
-      val attributeSeq = schema.toAttributes
-      val rowRDD = RDDConversions.productToRowRdd(rdd, schema.map(_.dataType))
-      DataFrame(self, LogicalRDD(attributeSeq, rowRDD)(self))
-    }*/
-
-  /**
-    * Creates a SchemaRDD from an RDD of case classes.
-    *
-    * @group userf
-    */
   implicit def createSchemaExtRDD(rdd: SchemaRDD) =
     new SchemaRDDExt(rdd.sqlContext, rdd.logicalPlan)
 
-
-//  def mSql(sql: String): SchemaRDD = {
-//    OlapContext.updateMolapPorpertiesPath(this)
-//    val result = {
-//      if (sql.toUpperCase.startsWith("CREATE ") || sql.toUpperCase.startsWith("LOAD ")) {
-//        new SchemaRDD(this, parseSqlDDL(sql))
-//      } else {
-//        new SchemaRDD(this, parseSql(sql))
-//      }
-//    }
-//
-//
-//    // We force query optimization to happen right away instead of letting it happen lazily like
-//    // when using the query DSL.  This is so DDL commands behave as expected.  This is only
-//    // generates the RDD lineage for DML queries, but do not perform any execution.
-//    result.queryExecution.toRdd
-//    result
-//  }
-
   override def sql(sql: String): SchemaRDD = {
-
-
     //queryId will be unique for each query, creting query detail holder
     val queryStatsCollector: QueryStatsCollector = QueryStatsCollector.getInstance
     val queryId: String = System.nanoTime() + ""
@@ -269,23 +167,12 @@ class OlapContext(val sc: SparkContext, metadataPath: String) extends HiveContex
     val logicPlan: LogicalPlan = parseSql(sql)
     //val result = new SchemaRDD(this,logicPlan)
     val result = new MolapDataFrameRDD(sql: String, this, logicPlan)
-    //    {
-    //      if(sqlString.startsWith("CREATE ") || sqlString.startsWith("LOAD ")
-    //          || sqlString.startsWith("USE ") || sqlString.startsWith("SHOW ")
-    //          || sqlString.startsWith("DESCRIBE ") || sqlString.startsWith("DESC ")) {
-    //        new SchemaRDD(this, parseSqlDDL(sql))
-    //      } else {
-    //        new SchemaRDD(this, parseSql(sql))
-    //      }
-    //    }
 
     // We force query optimization to happen right away instead of letting it happen lazily like
     // when using the query DSL.  This is so DDL commands behave as expected.  This is only
     // generates the RDD lineage for DML queries, but do not perform any execution.
     //    result.queryExecution.toRdd
     result
-
-    //    flattenRDD(result)
   }
 
   /**
@@ -299,12 +186,6 @@ class OlapContext(val sc: SparkContext, metadataPath: String) extends HiveContex
     println(fields)
     rdd.as(Symbol("olap_flatten")).select(fields: _*)
   }
-
-  /** Returns the specified table as a SchemaRDD ,
-    * it can be used to test the performance of olapspark and sparksql
-    * */
-  //  override def table(tableName: String): SchemaRDD =
-  //    new SchemaRDD(this, catalog.lookupRelation(None, tableName))
 
   implicit def dataset(name: String): SchemaRDDExt = {
     table(name).as(Symbol(name))
@@ -427,10 +308,3 @@ object OlapContext {
   }
 
 }
-
-//private[spark] class CarbonSQLConf extends SQLConf {
-//parse
-//  private[spark] override def dialect: String = getConf(SQLConf.DIALECT,
-//    classOf[CarbonSQLDialect].getCanonicalName)
-//}
-

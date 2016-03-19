@@ -77,10 +77,6 @@ import com.huawei.unibi.molap.metadata.MolapMetadata
 import com.huawei.unibi.molap.metadata.MolapMetadata.Cube
 import com.huawei.unibi.molap.query.metadata.DSLTransformation
 
-/**
-  * @author R00900208
-  *
-  */
 trait Transform {
   def transform(trans: TransformHolder): TransformHolder
 
@@ -345,7 +341,6 @@ case class DoOperation(olapContext: OlapContext, rdd: SchemaRDD, exprType: Any, 
 case class TransformHolder(rdd: Any, mataData: OlapMetaData)
 
 case class MolapDerivedInfo(extraDimColNames: Buffer[String], extraMsrColNames: Buffer[String])
-
 
 object OlapUtil {
   def createSparkMeta(cube: Cube): OlapMetaData = {

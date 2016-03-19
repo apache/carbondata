@@ -19,24 +19,13 @@
 
 package org.apache.spark.sql
 
-import org.apache.spark.sql.execution.Project
-import org.apache.spark.sql.catalyst.expressions.NamedExpression
-import org.apache.spark.rdd.{PartitionwiseSampledRDD, RDD, ShuffledRDD}
-import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.execution.SparkPlan
-import org.apache.spark.sql.catalyst.expressions.SortOrder
-import org.apache.spark.sql.execution.UnaryNode
-import org.apache.spark.sql.catalyst.expressions.Attribute
-import org.apache.spark.sql.execution.metric.SQLMetrics
-
-import com.huawei.unibi.molap.engine.querystats.QueryStatsCollector
-import com.huawei.unibi.molap.engine.querystats.QueryDetail
-import org.apache.spark.sql.catalyst.errors.attachTree
 import com.huawei.iweb.platform.logging.LogServiceFactory
-
-/**
-  * @author A00902717
-  */
+import com.huawei.unibi.molap.engine.querystats.{QueryDetail, QueryStatsCollector}
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.errors.attachTree
+import org.apache.spark.sql.catalyst.expressions.{Attribute, SortOrder}
+import org.apache.spark.sql.execution.{SparkPlan, UnaryNode}
 
 /**
   * This plan is used by select queries to collect statistics for each query

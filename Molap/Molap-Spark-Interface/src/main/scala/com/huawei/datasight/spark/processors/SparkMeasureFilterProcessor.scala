@@ -22,36 +22,20 @@
   */
 package com.huawei.datasight.spark.processors
 
-import org.apache.spark.rdd.RDD
-import com.huawei.unibi.molap.engine.filters.measurefilter.MeasureFilterModel
+import com.huawei.unibi.molap.engine.filters.measurefilter.{MeasureFilter, MeasureFilterModel}
 import com.huawei.unibi.molap.engine.filters.measurefilter.util.MeasureFilterFactory
-import org.apache.spark.SparkContext._
-import com.huawei.unibi.molap.engine.filters.measurefilter.MeasureFilter
-import scala.collection.immutable.List
+import com.huawei.unibi.molap.engine.scanner.impl.{MolapKey, MolapKeyValueGroup, MolapValue}
+import com.huawei.unibi.molap.metadata.MolapMetadata.Measure
+import org.apache.spark.rdd.RDD
+
 import scala.collection.mutable.MutableList
 import scala.util.control.Breaks._
-import com.huawei.unibi.molap.engine.scanner.impl.MolapKey
-import com.huawei.unibi.molap.engine.scanner.impl.MolapValue
-import com.huawei.unibi.molap.engine.scanner.impl.MolapKeyValueGroup
-import com.huawei.unibi.molap.metadata.MolapMetadata.Measure
 
-/**
-  * @author R00900208
-  *
-  */
 class SparkMeasureFilterProcessor {
 
   def process(rdd: RDD[(MolapKey, MolapValue)], model: Array[Array[MeasureFilterModel]], dimIndex: Int, queryMsrs: java.util.List[Measure]): RDD[(MolapKey, MolapValue)] = {
     var filters = new Array[Array[MeasureFilter]](model.length)
-
-    //	 for(i <- 0 until filters.length)
-    //	 {
-    //        if(model(i) != null)
-    //        {
-    filters = MeasureFilterFactory.getMeasureFilter(model, queryMsrs);
-    //        }
-    //	 }
-
+    filters = MeasureFilterFactory.getMeasureFilter(model, queryMsrs)
     val idxs = getMsrFilterIndexes(filters);
     val len = idxs.length;
     if (dimIndex < 0) {
@@ -73,16 +57,11 @@ class SparkMeasureFilterProcessor {
       return s
     }
     else {
-
       val s = rdd.map { key =>
-
         val value: MolapValue = new MolapKeyValueGroup(key._2.getValues().clone)
-        value.addGroup(key._1, key._2);
-        (key._1.getSubKey(dimIndex + 1), value)
-      }
-
+        value.addGroup(key._1, key._2)
+        (key._1.getSubKey(dimIndex + 1), value) }
         .reduceByKey((v1, v2) => v1.mergeKeyVal(v2))
-
         .filter { key =>
           var filtered = false
           breakable {
@@ -97,9 +76,7 @@ class SparkMeasureFilterProcessor {
             }
           }
           filtered
-        }
-
-        .flatMap { key =>
+        }.flatMap { key =>
 
           val next = key._2.asInstanceOf[MolapKeyValueGroup]
           val list = new MutableList[(MolapKey, MolapValue)]()
@@ -116,12 +93,6 @@ class SparkMeasureFilterProcessor {
     null
   }
 
-
-  /**
-    *
-    * @param measureFilters
-    * @return
-    */
   private def getMsrFilterIndexes(measureFilters: Array[Array[MeasureFilter]]): Array[Int] = {
 
     val msrIndexes = new MutableList[Int]();
@@ -133,7 +104,6 @@ class SparkMeasureFilterProcessor {
     }
 
     msrIndexes.toArray[Int];
-
   }
 
 }
