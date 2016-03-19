@@ -17,17 +17,6 @@
  * under the License.
  */
 
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2012
- * =====================================
- *
- */
 package com.huawei.iweb.platform.logging;
 
 import java.io.File;
@@ -51,9 +40,6 @@ import org.apache.log4j.spi.LoggingEvent;
 /**
  * Copied from log4j to remove the hard coding for the file name from it Copied
  * form log4j and modified for renaming files
- * 
- * @author A00900294
- * 
  */
 public class ExtendedRollingFileAppender extends RollingFileAppender
 {
@@ -178,13 +164,6 @@ public class ExtendedRollingFileAppender extends RollingFileAppender
         cleanUpLogs(startName, folderPath);
     }
 
-    /**
-     * 
-     * 
-     * @param startName
-     * @param folderPath
-     * 
-     */
     private void cleanUpLogs(final String startName, final String folderPath)
     {
         if(maxBackupIndex > 0)
@@ -225,14 +204,8 @@ public class ExtendedRollingFileAppender extends RollingFileAppender
     }
 
     /**
-     * 
      * Total number of files at any point of time should be Backup number of
      * files + current file
-     * 
-     * 
-     * @param fileStartName
-     * @param folderPath
-     * 
      */
     private static void cleanLogs(final String startName,
             final String folderPath, int maxBackupIndex)
@@ -302,12 +275,6 @@ public class ExtendedRollingFileAppender extends RollingFileAppender
         }
     }
 
-    /**
-     *
-     *
-     * @see org.apache.log4j.RollingFileAppender#subAppend(org.apache.log4j.spi.LoggingEvent)
-     *
-     */
     protected void subAppend(LoggingEvent event)
     {
         if(event.getLevel().toInt() <= currentLevel)

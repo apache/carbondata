@@ -17,17 +17,6 @@
  * under the License.
  */
 
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 1997
- * =====================================
- *
- */
 package com.huawei.iweb.platform.logging;
 
 import org.apache.log4j.Level;
