@@ -17,24 +17,10 @@
  * under the License.
  */
 
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 1997
- * =====================================
- *
- */
 package com.huawei.unibi.molap.query.metadata;
 
 /**
- * Represents DSL transformation which can be added to <code>MolapQuery<code> 
- * 
- * @author K00900207
- *
+ * Represents DSL transformation which can be added to <code>MolapQuery<code>
  */
 public class DSLTransformation
 {

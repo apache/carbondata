@@ -17,44 +17,20 @@
  * under the License.
  */
 
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.query.metadata;
 
 import java.io.Serializable;
 import java.util.Arrays;
 
-
 /**
  * MolapTuple class , it contains the each row or column information of query result.
- * @author R00900208
- *
  */
 public class MolapTuple implements Serializable
 {
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 6432454407461679716L;
-	
-	/**
-	 * tuple
-	 */
+
 	private MolapMember[] tuple;
-	
-	/**
-	 * Constructor
-	 * @param tuple
-	 */
+
 	public MolapTuple(MolapMember[] tuple)
 	{
 		this.tuple = tuple;
@@ -78,9 +54,6 @@ public class MolapTuple implements Serializable
 		return tuple;
 	}
 
-	/* (non-Javadoc)
-	 * @see java.lang.Object#hashCode()
-	 */
 	@Override
 	public int hashCode() 
 	{
@@ -90,9 +63,6 @@ public class MolapTuple implements Serializable
 		return result;
 	}
 
-	/* (non-Javadoc)
-	 * @see java.lang.Object#equals(java.lang.Object)
-	 */
 	@Override
 	public boolean equals(Object obj) 
 	{
@@ -102,7 +72,6 @@ public class MolapTuple implements Serializable
 	        {
 	            return true;
 	        }
-	                
 	        MolapTuple other = (MolapTuple) obj;
 	        if (!Arrays.equals(tuple, other.tuple))
 	        {
@@ -111,8 +80,6 @@ public class MolapTuple implements Serializable
 	        return true;
             
         }
-	    
 	    return false;
-		
 	}
 }

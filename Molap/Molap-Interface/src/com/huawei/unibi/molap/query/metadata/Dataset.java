@@ -17,38 +17,17 @@
  * under the License.
  */
 
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 1997
- * =====================================
- *
- */
 package com.huawei.unibi.molap.query.metadata;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * 
- * @author K00900207
- *
- */
 public class Dataset
 {
-    
     public static final String DATA_SET_NAME = "DATA_SET_NAME";
-    
-    
     public static final String DP_EXTENSION = ".dpxanalyzer";
     public static final String DATA_SET_EXTENSION = ".csv";
-    
-    
     /**
      * SQL connection parameters
      */
@@ -57,9 +36,7 @@ public class Dataset
     public static final String DB_URL = "DB_URL";
     public static final String DB_USER_NAME = "DB_USER_NAME";
     public static final String DB_PASSWORD = "DB_PASSWORD";
-    
-    
-    
+
     /**
      * Type of the data set from the supported enumeration 
      */
@@ -103,35 +80,14 @@ public class Dataset
         DB_SQL;
     }
     
-    
     public static class Column
     {
         private String name;
-//        private String type;
-//        private String description;
-        
         public Column(String name, String type, String description)
         {
             this.name = name;
-//            this.type = type;
-//            this.description = description;
         }
 
-        /*public String getName()
-        {
-            return name;
-        }*/
-
-        /*public String getType()
-        {
-            return type;
-        }*/
-        
-        /*public String getDescription()
-        {
-            return description;
-        }*/
-        
         @Override
         public String toString()
         {
@@ -174,5 +130,4 @@ public class Dataset
     {
         return "<DS: Name= "+ name +", Columns= " + columns.toString() + '>';
     }
-  
 }

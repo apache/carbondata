@@ -17,26 +17,13 @@
  * under the License.
  */
 
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.queryexecutor;
 
 import com.huawei.unibi.molap.query.MolapQuery;
 import com.huawei.unibi.molap.query.result.MolapResultStream;
 
 /**
- * Implementation class for  MolapQueryExecutor class
- * @author R00900208
- *
+ * Implementation class for MolapQueryExecutor class
  */
 public class MolapQueryExecutorImpl implements MolapQueryExecutor 
 {

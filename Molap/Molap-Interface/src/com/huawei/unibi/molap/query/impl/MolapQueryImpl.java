@@ -17,17 +17,6 @@
  * under the License.
  */
 
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.query.impl;
 
 import java.util.ArrayList;
@@ -46,15 +35,9 @@ import com.huawei.unibi.molap.query.metadata.TopCount.TopNType;
 
 /**
  * It is the implementation class for MolapQuery interface.
- * @author R00900208
- *
  */
 public class MolapQueryImpl implements MolapQuery 
 {
-
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = -1565369538375956018L;
 	
 	/**

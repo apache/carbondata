@@ -17,17 +17,6 @@
  * under the License.
  */
 
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.query.result.impl;
 
 import java.util.ArrayList;
@@ -38,24 +27,13 @@ import com.huawei.unibi.molap.query.result.MolapResultChunk;
 
 /**
  * Implementation class for MolapResultChunk interface.
- * @author R00900208
- *
  */
 public class MolapResultChunkImpl implements MolapResultChunk 
 {
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = -8170271559294139918L;
-	
-	/**
-	 * rowTuples
-	 */
+
 	private List<MolapTuple> rowTuples = new ArrayList<MolapTuple>(10);
-	
-	/**
-	 * data
-	 */
+
 	private Object[][] data; 
 
 	/**
@@ -73,7 +51,6 @@ public class MolapResultChunkImpl implements MolapResultChunk
 	@Override
 	public Object getCell(int columnIndex, int rowIndex) 
 	{
-	
 		return data[rowIndex][columnIndex];
 	}
 

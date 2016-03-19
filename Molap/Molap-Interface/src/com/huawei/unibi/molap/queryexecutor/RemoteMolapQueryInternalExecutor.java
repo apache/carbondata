@@ -17,17 +17,6 @@
  * under the License.
  */
 
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.queryexecutor;
 
 import java.rmi.Remote;
@@ -39,8 +28,6 @@ import com.huawei.unibi.molap.query.result.MolapResultStreamHolder;
 
 /**
  * It is the remote interface of Spring for executor interface
- * @author R00900208
- *
  */
 public interface RemoteMolapQueryInternalExecutor extends Remote
 {

@@ -17,32 +17,13 @@
  * under the License.
  */
 
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.query.metadata;
-
-
 
 /**
  * Molap Measure class
- * @author R00900208
- *
  */
 public class MolapMeasure extends AbstractMolapLevel
 {
-
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 4257185028603048687L;
 	
 	/**
@@ -51,11 +32,7 @@ public class MolapMeasure extends AbstractMolapLevel
 	private String measureName;
 	
 	private MolapDimensionLevel dimensionLevel;
-	/**
-	 * 
-	 */
-//	private String aggregateName;
-	
+
 	/**
 	 * Constructor 
 	 * @param measureName
@@ -74,7 +51,6 @@ public class MolapMeasure extends AbstractMolapLevel
 	public MolapMeasure(String measureName, String aggregateName) 
 	{
 	    this.measureName = measureName;
-	  //  this.aggregateName = aggregateName;
 	}
 
 	/**
@@ -107,5 +83,4 @@ public class MolapMeasure extends AbstractMolapLevel
 	public void setDimensionLevel(MolapDimensionLevel dimensionLevel) {
 		this.dimensionLevel = dimensionLevel;
 	}
-
 }

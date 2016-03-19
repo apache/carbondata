@@ -23,30 +23,19 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-
 public class MolapFilterInfo implements Serializable
 {
-
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = -6835223191506253050L;
-	/**
-	 * excludedMembers.
-	 */
+
     protected List<String> excludedMembers;
-    /**
-     * includedMembers.
-     */
+
     protected List<String> includedMembers;
-    
 
     /**
      * includedMembers or .
      */
     protected List<String> includedOrMembers;
-    
-    
+
     /**
      * getExcludedMembers.
      * @return List<String>.
@@ -210,6 +199,4 @@ public class MolapFilterInfo implements Serializable
 	public List<String> getIncludedOrMembers() {
 		return includedOrMembers;
 	}
-
-
 }
