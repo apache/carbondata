@@ -45,9 +45,9 @@ public class AuditExtendedRollingFileAppender extends ExtendedRollingFileAppende
 
     /**
      * Call RollingFileAppender method to append the log...
-     * 
+     *
      * @see org.apache.log4j.RollingFileAppender#subAppend(org.apache.log4j.spi.LoggingEvent)
-     * 
+     *
      */
     protected void subAppend(LoggingEvent event)
     {

@@ -32,24 +32,11 @@ package com.huawei.iweb.platform.logging;
 
 import org.apache.log4j.Level;
 
-/**
- * 
- * Custom Level logging service
- * 
- * @author A00900294
- * 
- */
 public class AuditLevel extends Level
 {
 
-    /**
-     * Aug 29, 2012
-     */
     private static final long serialVersionUID = -209614723183147373L;
 
-    /**
-     * AUDIT
-     */
     public static final AuditLevel AUDIT = new AuditLevel(55000, "AUDIT", 0);
 
     /**
@@ -70,7 +57,7 @@ public class AuditLevel extends Level
 
     /**
      * Returns custom level for debug type log message
-     * 
+     *
      * @param val
      *            value
      * @param defaultLevel
@@ -84,7 +71,7 @@ public class AuditLevel extends Level
 
     /**
      * Returns custom level for debug type log message
-     * 
+     *
      * @param sArg
      *            sArg
      * @param defaultLevel

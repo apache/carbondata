@@ -43,7 +43,6 @@ import java.util.Properties;
 import org.apache.log4j.Logger;
 import org.apache.log4j.MDC;
 
-import com.huawei.iweb.platform.logging.AlarmLevel;
 import com.huawei.iweb.platform.logging.AuditLevel;
 import com.huawei.iweb.platform.logging.Level;
 import com.huawei.iweb.platform.logging.LocaleLogMessageFinder;
@@ -52,10 +51,6 @@ import com.huawei.iweb.platform.logging.LogService;
 
 /**
  * Default Implementation of the <code>LogService</code>
- * 
- * @author S72079
- * @version 1.0
- * @created 17-Oct-2015 10:37:41
  */
 public final class StandardLogService implements LogService
 {
@@ -152,84 +147,35 @@ public final class StandardLogService implements LogService
     {
     	this("Carbon");
     }
-    
-    /*
-     * (non-Javadoc)
-     * 
-     * @see com.huawei.iweb.platform.logging.LogService#isDebugEnabled()
-     */
+
     public boolean isDebugEnabled()
     {
         return logger.isDebugEnabled();
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see com.huawei.iweb.platform.logging.LogService#isDebugEnabled()
-     */
     public boolean isWarnEnabled()
     {
         return logger.isEnabledFor(org.apache.log4j.Level.WARN);
     }
 
-    /**
-     * (non-Javadoc)
-     * 
-     * @see com.huawei.iweb.platform.logging.LogService#secure(com.huawei.iweb.platform
-     *      .logging.LogEvent, java.lang.Object[])
-     * @param event events
-     * @param inserts inserts
-     */
     public void secure(LogEvent event , Object... inserts)
     {
         logMessage(SECURE , event , null , inserts);
     }
 
-    /**
-     * (non-Javadoc)
-     * 
-     * @see com.huawei.iweb.platform.logging.LogService#audit(com.huawei.iweb.platform
-     *      .logging.LogEvent, java.lang.Object[])
-     * 
-     * @param event events
-     * @param inserts inserts
-     */
     public void audit(LogEvent event , Object... inserts)
     {
         logMessage(AUDIT , event , null , inserts);
     }
 
-    /**
-     * (non-Javadoc)
-     * 
-     * @see com.huawei.iweb.platform.logging.LogService#debug(com.huawei.iweb.platform
-     *      .logging.LogEvent, java.lang.Object[])
-     * @param event events
-     * @param inserts inserts
-     * 
-     */
     public void debug(LogEvent event , Object... inserts)
     {
-
         if (logger.isDebugEnabled())
         {
             logMessage(DEBUG , event , null , inserts);
         }
-
     }
 
-    /**
-     * (non-Javadoc)
-     * 
-     * @see com.huawei.iweb.platform.logging.LogService#debug(com.huawei.iweb.platform
-     *      .logging.LogEvent, java.lang.Throwable, java.lang.Object[])
-     * 
-     * @param event events
-     * @param throwable exception to be logged
-     * @param inserts inserts
-     * 
-     */
     public void debug(LogEvent event , Throwable throwable , Object... inserts)
     {
 
@@ -239,43 +185,16 @@ public final class StandardLogService implements LogService
         }
     }
 
-    /**
-     * (non-Javadoc)
-     * 
-     * @see com.huawei.iweb.platform.logging.LogService#error(com.huawei.iweb.platform
-     *      .logging.LogEvent, java.lang.Object[])
-     * 
-     * @param event events
-     * @param inserts inserts
-     * 
-     */
     public void error(LogEvent event , Object... inserts)
     {
         logMessage(ERROR , event , null , inserts);
     }
 
-    /**
-     * (non-Javadoc)
-     * 
-     * @see com.huawei.iweb.platform.logging.LogService#error(com.huawei.iweb.platform
-     *      .logging.LogEvent, java.lang.Throwable, java.lang.Object[])
-     * @param event events
-     * @param throwable exception to be logged
-     * @param inserts inserts
-     */
     public void error(LogEvent event , Throwable throwable , Object... inserts)
     {
         logMessage(ERROR , event , throwable , inserts);
     }
 
-    /**
-     * (non-Javadoc)
-     * 
-     * @see com.huawei.iweb.platform.logging.LogService#info(com.huawei.iweb.platform
-     *      .logging.LogEvent, java.lang.Object[])
-     * @param event events
-     * @param inserts inserts
-     */
     public void info(LogEvent event , Object... inserts)
     {
         if (logger.isInfoEnabled())
@@ -284,15 +203,6 @@ public final class StandardLogService implements LogService
         }
     }
 
-    /**
-     * (non-Javadoc)
-     * 
-     * @see com.huawei.iweb.platform.logging.LogService#info(com.huawei.iweb.platform
-     *      .logging.LogEvent, java.lang.Throwable, java.lang.Object[])
-     * @param event events
-     * @param throwable exception to be logged
-     * @param inserts inserts
-     */
     public void info(LogEvent event , Throwable throwable , Object... inserts)
     {
         if (logger.isInfoEnabled())
@@ -312,7 +222,6 @@ public final class StandardLogService implements LogService
     private void logMessage(Level logLevel , LogEvent event ,
             Throwable throwable , Object... inserts)
     {
-
         if (StandardLogService.doLog)
         {
             try
@@ -356,18 +265,11 @@ public final class StandardLogService implements LogService
             }
             catch (Throwable t)
             {
-                // t.printStackTrace();
                 logger.error(t);
             }
         }
     }
 
-    /**
-     * 
-     * @Description : logErrorMessage
-     * @param throwable
-     * @param message
-     */
     private void logErrorMessage(Throwable throwable , String message)
     {
 
@@ -381,12 +283,6 @@ public final class StandardLogService implements LogService
         }
     }
 
-    /**
-     * 
-     * @Description : logDebugMessage
-     * @param throwable
-     * @param message
-     */
     private void logInfoMessage(Throwable throwable , String message)
     {
 
@@ -400,12 +296,6 @@ public final class StandardLogService implements LogService
         }
     }
 
-    /**
-     * 
-     * @Description : logDebugMessage
-     * @param throwable
-     * @param message
-     */
     private void logDebugMessage(Throwable throwable , String message)
     {
 
@@ -419,13 +309,6 @@ public final class StandardLogService implements LogService
         }
     }
 
-
-    /**
-     * 
-     * @Description : logWarnMessage
-     * @param throwable
-     * @param message
-     */
     private void logWarnMessage(Throwable throwable , String message)
     {
 
@@ -439,26 +322,13 @@ public final class StandardLogService implements LogService
         }
     }
 
-    /**
-     * return Message
-     * 
-     * @param event
-     * @return String
-     */
     private String getMessage(LogEvent event)
     {
         String message = MESSAGE_RESOLVER.findLogEventMessage(event);
         return message;
     }
 
-    /**
-     * returns Message created for Event
-     * 
-     * @param event
-     * @param inserts
-     * @return
-     */
-    private String createMessageForMissingEntry(LogEvent event ,
+    private String createMessageForMissingEntry(LogEvent event,
             Object... inserts)
     {
         StringBuilder messageBuilder = new StringBuilder();
@@ -483,25 +353,11 @@ public final class StandardLogService implements LogService
         return messageBuilder.toString();
     }
 
-    /**
-     * (non-Javadoc)
-     * 
-     * @see com.huawei.iweb.platform.logging.LogService#isInfoEnabled()
-     * @return boolean
-     */
     public boolean isInfoEnabled()
     {
         return logger.isInfoEnabled();
     }
 
-    /**
-     * (non-Javadoc)
-     * 
-     * @see com.huawei.iweb.platform.logging.LogService#warn(com.huawei.iweb.platform
-     *      .logging.LogEvent, java.lang.Object[])
-     * @param event events
-     * @param inserts ..
-     */
     public void warn(LogEvent event , Object... inserts)
     {
         if (isWarnEnabled())
@@ -510,12 +366,6 @@ public final class StandardLogService implements LogService
         }
     }
 
-    /**
-     * sets Events Properties.
-     * 
-     * @param propertyName property Name
-     * @param propertyValue property Value
-     */
     public void setEventProperties(String propertyName , String propertyValue)
     {
         MDC.put(propertyName , propertyValue);
@@ -563,17 +413,6 @@ public final class StandardLogService implements LogService
         logger.log(AuditLevel.AUDIT , "[" + hostName + "]" + msg);
     }
 
-
-    /**
-     * 
-     * @see com.huawei.iweb.platform.logging.LogService#audit(java.lang.String)
-     * 
-     */
-    @Override
-    public void alarm(String msg)
-    {
-        logger.log(AlarmLevel.ALARM , msg);
-    }
     public static String getPartitionID(String cubeName)
     {
         return cubeName.substring(cubeName.lastIndexOf('_')+1,cubeName.length());

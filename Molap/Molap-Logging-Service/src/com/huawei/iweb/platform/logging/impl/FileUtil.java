@@ -42,18 +42,12 @@ import org.apache.log4j.Logger;
 
 /**
  * Provides file Utility
- * 
- * @author S00900484
- * 
  */
 public final class FileUtil
 {
 
     private static final Logger LOG = Logger.getLogger(FileUtil.class.getName());
-    
-    /**
-     * porpeties .
-     */
+
     private static Properties molapProperties;
     
     public static final String MOLAP_PROPERTIES_FILE_PATH = "../../../conf/molap.properties";

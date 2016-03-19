@@ -303,10 +303,10 @@ public class ExtendedRollingFileAppender extends RollingFileAppender
     }
 
     /**
-     * 
-     * 
+     *
+     *
      * @see org.apache.log4j.RollingFileAppender#subAppend(org.apache.log4j.spi.LoggingEvent)
-     * 
+     *
      */
     protected void subAppend(LoggingEvent event)
     {

@@ -33,10 +33,6 @@ package com.huawei.iweb.platform.logging;
 
 /**
  * Interface for Log Event
- * 
- * @author R72411
- * @version 1.0
- * @created 08-Oct-2008 10:37:40
  */
 public interface LogEvent
 {

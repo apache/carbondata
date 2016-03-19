@@ -34,14 +34,8 @@ package com.huawei.iweb.platform.logging;
 import com.huawei.iweb.platform.logging.impl.StandardLogService;
 
 /**
- * 
- * Log Service factory.
- * 
- * @author R72411
- * @version 1.0
- * @created 08-Oct-2008 10:37:40
+ * Log Service factory
  */
-
 public final class LogServiceFactory
 {
 	private LogServiceFactory()
@@ -52,7 +46,7 @@ public final class LogServiceFactory
     /**
      * return Logger Service.
      * 
-     * @param clazzName
+     * @param className
      *            provides class name
      * @return LogService
      * 
