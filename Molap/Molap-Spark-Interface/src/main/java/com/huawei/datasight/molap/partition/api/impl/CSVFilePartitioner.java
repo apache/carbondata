@@ -64,8 +64,6 @@ import com.huawei.unibi.molap.util.MolapUtil;
 /**
  * Split the CSV file into the number of partitions using the given partition information
  * 
- * @author K00900207
- * 
  */
 public class CSVFilePartitioner
 {
@@ -111,7 +109,7 @@ public class CSVFilePartitioner
      * @param i 
      * 
      */
-    @SuppressWarnings("deprecation")
+	@Deprecated
     public void splitFile(String schemaName, String cubeName, List<String> sourceFilePath, String targetFolder, List<String> nodes, int partitionCount, String[] partitionColumn, String[] requiredColumns, String delimiter, String quoteChar, String fileHeader, String escapeChar, boolean multiLine) throws Exception
     {
     	LOGGER.info(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, "Processing file split: " + sourceFilePath);
@@ -134,9 +132,6 @@ public class CSVFilePartitioner
         
         CSVParser customParser = getCustomParser(delimiter, quoteChar,
 				escapeChar);
-        //CSVParser(char separator, char quotechar, char escape, boolean strictQuotes, boolean ignoreLeadingWhiteSpace,
-        //boolean ignoreQuotations)
-        
          
         for(int i = 0;i < sourceFilePath.size();i++)
         {
@@ -148,20 +143,20 @@ public class CSVFilePartitioner
                 // File file = new File(sourceFilePath);
                 String fileAbsolutePath = file.getAbsolutePath();
                 String fileName = null;
-               if(!sourceFilesBasePath.endsWith(".csv") && fileAbsolutePath.startsWith(sourceFilesBasePath))
-               {
-                	if(sourceFilesBasePath.endsWith(File.separator))
-                	{
-                		fileName = fileAbsolutePath.substring(sourceFilesBasePath.length()).replace(File.separator, "_");
-                	}
-                	else
-                	{
-                		fileName = fileAbsolutePath.substring(sourceFilesBasePath.length() + 1).replace(File.separator, "_");
-                	}
+                if(!sourceFilesBasePath.endsWith(".csv") && fileAbsolutePath.startsWith(sourceFilesBasePath))
+                {
+                    if(sourceFilesBasePath.endsWith(File.separator))
+                    {
+                        fileName = fileAbsolutePath.substring(sourceFilesBasePath.length()).replace(File.separator, "_");
+                    }
+                    else
+                    {
+                        fileName = fileAbsolutePath.substring(sourceFilesBasePath.length() + 1).replace(File.separator, "_");
+                    }
                 }
                 else
                 {
-                	fileName = file.getName();
+                    fileName = file.getName();
                 }
 
                 // Read and prepare columns from first row in file
@@ -243,7 +238,6 @@ public class CSVFilePartitioner
             }
             catch(IOException e)
             {
-                // e.printStackTrace();
                 LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, e,
                         e.getMessage());
             }
@@ -260,22 +254,6 @@ public class CSVFilePartitioner
         }
     }
 
-	/**
-	 * @param targetFolder
-	 * @param nodes
-	 * @param partitionCount
-	 * @param partitionColumn
-	 * @param headerColumns
-	 * @param outputStreamsMap
-	 * @param dataInputStream
-	 * @param recordCounter
-	 * @param fileName
-	 * @param indexes
-	 * @throws InstantiationException
-	 * @throws IllegalAccessException
-	 * @throws ClassNotFoundException
-	 * @throws IOException
-	 */
 	private void partitionData(String targetFolder, List<String> nodes,
 			int partitionCount, String[] partitionColumn,
 			String[] headerColumns,
@@ -288,10 +266,7 @@ public class CSVFilePartitioner
 		
 		//Get partitions and create output streams
 		List<Partition> allPartitions = dataPartitioner.getAllPartitions();
-		
-		// Distribute partitions to nodes using load balancer
-//            DefaultLoadBalancer loadBalancer = new DefaultLoadBalancer(nodes, allPartitions);
-		
+
 		loopPartitionsAndPopulateOutStreamMap(outputStreamsMap, fileName,
 				allPartitions);
 
@@ -307,12 +282,6 @@ public class CSVFilePartitioner
 		LOGGER.info(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, "Processed Record count: " + recordCounter);
 	}
 
-	/**
-	 * @param delimiter
-	 * @param quoteChar
-	 * @param escapeChar
-	 * @return
-	 */
 	private CSVParser getCustomParser(String delimiter, String quoteChar,
 			String escapeChar) {
 		CSVParser customParser=null; 
@@ -323,13 +292,11 @@ public class CSVFilePartitioner
         if(quoteChar == null || quoteChar.isEmpty() || quoteChar.trim().isEmpty())
         {
             ignoreQuote = true;
-//        	customParser = new CSVParser(delimiter.charAt(0),CSVParser.DEFAULT_QUOTE_CHARACTER,CSVParser.DEFAULT_ESCAPE_CHARACTER,CSVParser.DEFAULT_STRICT_QUOTES,CSVParser.DEFAULT_IGNORE_LEADING_WHITESPACE,true);
         }
         else
         {
             ignoreQuote = false;
             defaultQuoteChar = quoteChar.charAt(0);
-//        	customParser = new CSVParser(delimiter.charAt(0),quoteChar.charAt(0),CSVParser.DEFAULT_ESCAPE_CHARACTER,CSVParser.DEFAULT_STRICT_QUOTES,CSVParser.DEFAULT_IGNORE_LEADING_WHITESPACE,false);
         }
         if(escapeChar == null || escapeChar.isEmpty() || escapeChar.trim().isEmpty())
         {
@@ -345,17 +312,6 @@ public class CSVFilePartitioner
 		return customParser;
 	}
 
-	/**
-	 * @param targetFolder
-	 * @param nodes
-	 * @param partitionCount
-	 * @param partitionColumn
-	 * @param headerColumns
-	 * @return
-	 * @throws InstantiationException
-	 * @throws IllegalAccessException
-	 * @throws ClassNotFoundException
-	 */
 	private DataPartitioner getDataPartitioner(String targetFolder,
 			List<String> nodes, int partitionCount, String[] partitionColumn,
 			String[] headerColumns) throws InstantiationException,
@@ -372,15 +328,6 @@ public class CSVFilePartitioner
 		return dataPartitioner;
 	}
 
-	/**
-	 * @param outputStreamsMap
-	 * @param dataInputStream
-	 * @param recordCounter
-	 * @param indexes
-	 * @param dataPartitioner
-	 * @return
-	 * @throws IOException
-	 */
 	private long writeTargetStream(
 			HashMap<Partition, CSVWriter> outputStreamsMap,
 			CSVReader dataInputStream, long recordCounter, int[] indexes,
@@ -444,12 +391,7 @@ public class CSVFilePartitioner
 		}
 		return recordCounter;
 	}
-	
-	/**
-	 * @param headerColumns
-	 * @param firstRecord
-	 * @return
-	 */
+
 	private boolean compareHeaderColumnWithFirstRecordInCSV(String[] headerColumns, String[] firstRecord)
 	{
 		String header = StringUtils.join(headerColumns, ',');
@@ -461,29 +403,14 @@ public class CSVFilePartitioner
 		return false;
 	}
 
-	/**
-	 * @param outputStreamsMap
-	 * @param fileName
-	 * @param allPartitions
-	 * @throws IOException
-	 */
 	private void loopPartitionsAndPopulateOutStreamMap(
 			HashMap<Partition, CSVWriter> outputStreamsMap, String fileName,
 			List<Partition> allPartitions) throws IOException {
 		for(Partition partition : allPartitions)
 		{
 		    String targetFolderPath = partition.getFilePath();
-//                if(useNodeNameInPath)
-//                {
-//                    String nodeName = loadBalancer.getNodeForPartitions(partition);
-//                    targetFolderPath = targetFolderPath + "_" +nodeName;
-//                }
-		    
 		    FileType fileType = FileFactory.getFileType(targetFolderPath);
-		    
 		    FileFactory.mkdirs(targetFolderPath, fileType);
-//                new File(targetFolderPath).mkdirs();
-		    
             outputStreamsMap.put(
                     partition,
                     new CSVWriter(new OutputStreamWriter(FileFactory
@@ -537,163 +464,4 @@ public class CSVFilePartitioner
         
         return badLogStoreLocation;
     }
-
-    /**
-     * 
-     * @param args
-     * 
-     */
-//    public static void main(String[] args) throws Exception
-//    {
-//        
-//        final Properties properties = loadProperties();
-//        
-//        final String nodeList = properties.getProperty("nodeList", "master,slave1,slave2,slave3");
-//        final String sourceFile = properties.getProperty("sourceFile", "D:\\f\\SVN\\TRP\\2014\\SparkOLAP");
-//        final String outputFolder = properties.getProperty("outputFolder", "D:\\f\\SVN\\TRP\\2014\\SparkOLAP\\output\\");
-////        final String useNodeNameInPath = properties.getProperty("useNodeNameInPath", "true");
-//        final String threadsCountConfig = properties.getProperty("threadCount", "10");
-//        final String partitionerClass= properties.getProperty("partitionerClass", "com.huawei.datasight.molap.partition.api.impl.SampleDataPartitionerImpl");
-//        
-//        System.out.println("CSVFilePartitioner is using following configurations.");
-//        
-//        System.out.println("partitionerClass : " + partitionerClass);
-//        System.out.println("sourceFile : " + sourceFile);
-//        System.out.println("outputFolder : " + outputFolder);
-////        System.out.println("useNodeNameInPath : " + useNodeNameInPath);
-//        System.out.println("threadCount : " + threadsCountConfig);
-//        
-//        
-//        final String[] nodesArray = nodeList.split(",");
-//        
-//        int threaCount = Integer.parseInt(threadsCountConfig);
-//        
-//        ExecutorService threadPoolExecutor = 
-//                new ThreadPoolExecutor(
-//                        threaCount,
-//                        threaCount,
-//                        10,
-//                        TimeUnit.HOURS,
-//                        new LinkedBlockingQueue<Runnable>()
-//                        );
-//
-//        List<Future<?>> tasks = new ArrayList<Future<?>>();
-//        
-//        MolapFile[]  fileNames = null;
-//        
-//        FileType fileType = FileFactory.getFileType(sourceFile);
-//        
-//        if(!FileFactory.isFileExist(sourceFile, fileType, false))
-//        {
-//            throw new Exception("Source file doesn't exist at path: " + sourceFile);
-//        }
-//        
-//        MolapFile file = FileFactory.getMolapFile(sourceFile, fileType); 
-//        
-//        if(file.isDirectory())
-//        {
-//            fileNames = file.listFiles(new MolapFileFilter()
-//            {
-//                @Override
-//                public boolean accept(MolapFile pathname)
-//                {
-//                    return !pathname.isDirectory() && pathname.getName().endsWith(".csv");
-//                }
-//            });
-//        }
-//        else
-//        {
-//            fileNames = new MolapFile[]{file};
-//        }
-//        
-//        //For all the files listed to process, create a task to process the file.
-//        for(MolapFile oneFile : fileNames)
-//        {
-//            final String currentFilePath = oneFile.getAbsolutePath();
-//            Future<?> task = threadPoolExecutor.submit(new Runnable()
-//            {
-//                @Override
-//                public void run()
-//                {
-//                    try
-//                    {
-//                        final CSVFilePartitioner csvFilePartitioner = new CSVFilePartitioner(partitionerClass);
-//                        csvFilePartitioner.splitFile(currentFilePath, outputFolder, Arrays.asList(nodesArray), Integer.parseInt(properties.getProperty("partitionCount", "1")), new String[]{properties.getProperty("partitionColumn","")}, null,",",null,null, null, false);
-//                    }
-//                    catch(Exception e)
-//                    {
-//                        e.printStackTrace();
-//                    }
-//                }
-//            });
-//            tasks.add(task);
-//        }
-//        
-//        //Call shut down on the pool as its created locally
-//        threadPoolExecutor.shutdown();
-//        
-//        //Wait for all the old tasks to be finish
-//        while(tasks.size() > 0)
-//        {
-//            Iterator<Future<?>>  iterator = tasks.iterator();
-//            while(iterator.hasNext())
-//            {
-//                Future<?> oneTask = iterator.next();
-//                if( oneTask.isCancelled() || oneTask.isDone())
-//                {
-//                    tasks.remove(oneTask);
-//                    break;
-//                }
-//            }
-//            
-//            // Wait for some time before next check
-//            Thread.sleep(100);
-//        }
-//        
-//       
-////        splitFile("D:\\f\\SVN\\TRP\\2014\\SparkOLAP\\SDR_PCC_USER_ALL_INFO_1DAY_16119_2771.csv", "D:\\f\\SVN\\TRP\\2014\\SparkOLAP\\output\\", nodes, true, nodes.size()*2);
-//    }
-
-    /**
-     * 
-     * Read the properties from CSVFilePartitioner.properties
-     */
-//    private static Properties loadProperties()
-//    {
-//        Properties properties = new Properties();
-//
-//        File file = new File("DataPartitioner.properties");
-//        FileInputStream fis = null;
-//        try
-//        {
-//            if(file.exists())
-//            {
-//                fis = new FileInputStream(file);
-//
-//                properties.load(fis);
-//            }
-//        }
-//        catch(Exception e)
-//        {
-//            e.printStackTrace();
-//        }
-//        finally
-//        {
-//            if(null != fis)
-//            {
-//                try
-//                {
-//                    fis.close();
-//                }
-//                catch(IOException e)
-//                {
-//                    e.printStackTrace();
-//                }
-//            }
-//        }
-//        
-//        return properties;
-//
-//    }
-    
 }

@@ -29,10 +29,6 @@ import java.io.Serializable;
 
 import org.apache.hadoop.io.Writable;
 
-/**
- * @author R00900208
- *
- */
 public class PartitionSplit implements Serializable,Writable 
 {
 

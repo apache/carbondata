@@ -23,9 +23,7 @@
 package com.huawei.datasight.molap.query.metadata;
 
 /**
- * Type of sort order like asc,dsc or none 
- * @author R00900208
- *
+ * Type of sort order like asc,dsc or none
  */
 public enum SortOrderType 
 {

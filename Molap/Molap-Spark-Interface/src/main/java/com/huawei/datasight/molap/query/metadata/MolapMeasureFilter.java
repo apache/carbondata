@@ -26,8 +26,6 @@ import java.io.Serializable;
 
 /**
  * This class represents Molap measure filter.
- * @author R00900208
- *
  */
 public class MolapMeasureFilter implements Serializable
 {
@@ -89,37 +87,8 @@ public class MolapMeasureFilter implements Serializable
 	 */
 	public MolapMeasureFilter(double operandOne,double operandTwo,MolapMeasureFilterType filterType)
 	{
-//		this.operandOne = operandOne;
-//		this.operandTwo = operandTwo;
 		this.filterType = filterType;
 	}
-	
-	/**
-	 * On which dimension this measure filter is applied.
-	 * If user does not set the dimension it takes the last query dimension as default.
-	 * @param dimension
-	 */
-	/*public void setDimension(MolapDimension dimension)
-	{
-		this.dimension = dimension;
-	}*/
-	
-	
-	/**
-	 * @return the operandOne
-	 *//*
-	public double getOperandOne() 
-	{
-		return operandOne;
-	}*/
-
-	/**
-	 * @return the operandTwo
-	 *//*
-	public double getOperandTwo() 
-	{
-		return operandTwo;
-	}*/
 
 	/**
 	 * @return the filterType
@@ -164,13 +133,5 @@ public class MolapMeasureFilter implements Serializable
         
 		BETWEEN;
 	}
-
-
-	/**
-	 * @return the dimension
-	 */
-	/*public MolapDimension getDimension() {
-		return dimension;
-	}*/
 
 }

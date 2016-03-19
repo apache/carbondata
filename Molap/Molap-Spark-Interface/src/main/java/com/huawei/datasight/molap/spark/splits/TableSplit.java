@@ -44,22 +44,15 @@ import com.huawei.unibi.molap.engine.util.MolapEngineLogEvent;
 
 /**
  * It represents one region server as one split.
- * @author R00900208
- *
  */
 public class TableSplit implements Serializable,Writable
 {
-	
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = -8058151330863145575L;
 
 	private static final LogService LOGGER = LogServiceFactory.getLogService(TableSplit.class.getName());	
 	private List<String> locations = new ArrayList<String>(MolapCommonConstants.CONSTANT_SIZE_TEN);
 	
 	private Partition partition;
-
 
 	/**
 	 * @return the locations
@@ -120,7 +113,6 @@ public class TableSplit implements Serializable,Writable
         }
         catch(ClassNotFoundException e)
         {
-//            e.printStackTrace();
         	 LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e, e.getMessage());
         }
 		ois.close();

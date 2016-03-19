@@ -41,10 +41,6 @@ import com.huawei.iweb.platform.logging.LogService;
 import com.huawei.iweb.platform.logging.LogServiceFactory;
 import com.huawei.unibi.molap.metadata.MolapMetadata.Cube;
 
-/**
- * @author R00900208
- *
- */
 public class LoadSplit implements Serializable,Writable
 {
 	
@@ -131,8 +127,6 @@ public class LoadSplit implements Serializable,Writable
 		} 
 		catch (ClassNotFoundException e) 
 		{
-			// TODO Auto-generated catch block
-//			e.printStackTrace();
 			LOGGER.error(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, e, e.getMessage());
 		}
 		return obj;

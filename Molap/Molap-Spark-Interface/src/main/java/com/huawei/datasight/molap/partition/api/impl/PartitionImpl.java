@@ -38,18 +38,8 @@ import com.huawei.datasight.molap.partition.api.Partition;
 import com.huawei.unibi.molap.constants.MolapCommonConstants;
 import com.huawei.unibi.molap.query.metadata.MolapDimensionLevelFilter;
 
-/**
- * 
- * @author K00900207
- *
- */
 public class PartitionImpl implements Partition
 {
-    /**
-     * 
-     * Comment for <code>serialVersionUID</code>
-     * 
-     */
     private static final long serialVersionUID = 3020172346383028547L;
     private String uniqueID;
     private String folderPath;

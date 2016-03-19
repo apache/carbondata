@@ -52,8 +52,6 @@ import com.huawei.unibi.molap.query.metadata.MolapDimensionLevelFilter;
  * 
  * Sample partition based on MSISDN.
  * 
- * @author K00900207
- * 
  */
 public class SampleDataPartitionerImpl implements DataPartitioner
 {
@@ -74,9 +72,6 @@ public class SampleDataPartitionerImpl implements DataPartitioner
 
     private String baseLocation;
 
-    /**
-     * 
-     */
     public void initialize(String basePath, String[] columns, Partitioner partitioner)
     {
     	this.partitioner = partitioner;
@@ -88,12 +83,7 @@ public class SampleDataPartitionerImpl implements DataPartitioner
         LOGGER.info(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, "partitionColumn: "+partitionColumn);
         LOGGER.info(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, "basePath: "+basePath);
         LOGGER.info(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, "columns: "+Arrays.toString(columns));
-//        System.out.println("SampleDataPartitionerImpl initializing with following properties.");
-//        System.out.println("partitionCount: "+numberOfPartitions);
-//        System.out.println("partitionColumn: "+partitionColumn);
-//        System.out.println("basePath: "+basePath);
-//        System.out.println("columns: "+Arrays.toString(columns));
-        
+
         this.baseLocation = basePath;
         allPartitions = new ArrayList<Partition>(MolapCommonConstants.CONSTANT_SIZE_TEN);
 
@@ -133,7 +123,6 @@ public class SampleDataPartitionerImpl implements DataPartitioner
         {
         	try
         	{
-            	//hashCode = hashCode(Long.parseLong((String)tuple[partionColumnIndex]));
         		hashCode = hashCode(((String)tuple[partionColumnIndex]).hashCode());
         	}
         	catch(NumberFormatException e)
@@ -187,21 +176,12 @@ public class SampleDataPartitionerImpl implements DataPartitioner
             //Check if the partition is serving any of the hash code generated for include filter of query 
             for(String includeFilter: msisdnFilter.getIncludeFilters())
             {
-//                try
-//                {
-                	int hashCode = hashCode(includeFilter.hashCode());
-                    if(partitionFilterDetails.getIncludeFilter().contains(hashCode))
-                    {
-                        allowedPartitions.add(aPartition);
-                        break;
-                    }
-//                }
-//                catch(Exception e)
-//                {
-//                    //Exception means we can't find the partitions due to problem in hascode indetification for filters
-//                    return allPartitions;
-//                }
-               
+                int hashCode = hashCode(includeFilter.hashCode());
+                if(partitionFilterDetails.getIncludeFilter().contains(hashCode))
+                {
+                    allowedPartitions.add(aPartition);
+                    break;
+                }
             }
         }
         
@@ -236,21 +216,12 @@ public class SampleDataPartitionerImpl implements DataPartitioner
             //Check if the partition is serving any of the hash code generated for include filter of query 
             for(Object includeFilter: msisdnFilter.getIncludeFilter())
             {
-//                try
-//                {
-                	int hashCode = hashCode(((String)includeFilter).hashCode());
-                    if(partitionFilterDetails.getIncludeFilter().contains(hashCode))
-                    {
-                        allowedPartitions.add(aPartition);
-                        break;
-                    }
-//                }
-//                catch(Exception e)
-//                {
-//                    //Exception means we can't find the partitions due to problem in hascode indetification for filters
-//                    return allPartitions;
-//                }
-               
+                int hashCode = hashCode(((String)includeFilter).hashCode());
+                if(partitionFilterDetails.getIncludeFilter().contains(hashCode))
+                {
+                    allowedPartitions.add(aPartition);
+                    break;
+                }
             }
         }
         

@@ -48,14 +48,7 @@ import com.huawei.datasight.molap.spark.util.MolapSparkInterFaceLogEvent;
 import com.huawei.iweb.platform.logging.LogService;
 import com.huawei.iweb.platform.logging.LogServiceFactory;
 import com.huawei.unibi.molap.constants.MolapCommonConstants;
-//import com.huawei.unibi.molap.engine.executer.impl.QueryExecutorUtil;
-//import com.huawei.unibi.molap.engine.util.MolapEngineLogEvent;
 
-/**
- * 
- * @author K00900207
- *
- */
 public final class QueryPartitionHelper
 {
 	  private static final LogService LOGGER = LogServiceFactory.getLogService(QueryPartitionHelper.class.getName());	   
@@ -72,10 +65,7 @@ public final class QueryPartitionHelper
     private Map<String, DataPartitioner> partitionerMap = new HashMap<String, DataPartitioner>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
     
     private Map<String, DefaultLoadBalancer> loadBalancerMap = new HashMap<String, DefaultLoadBalancer>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
-    
-    /**
-     * Private constructor
-     */
+
     private QueryPartitionHelper()
     {
         
@@ -96,11 +86,7 @@ public final class QueryPartitionHelper
           
             LOGGER.info(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, this.getClass().getSimpleName() + " is using following configurations.");
             LOGGER.info(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, "partitionerClass : " + defaultPartitionerClass);
-          
             LOGGER.info(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,"nodeList : " + Arrays.toString(partitioner.nodeList()));
-//            System.out.println(this.getClass().getSimpleName() + " is using following configurations.");            
-//            System.out.println("partitionerClass : " + defaultPartitionerClass);
-//            System.out.println("nodeList : " + nodeListString);
         }
         
         if(partitionerMap.get(cubeUniqueName)==null)
@@ -108,24 +94,6 @@ public final class QueryPartitionHelper
             DataPartitioner dataPartitioner;
             try
             {
-              /*  if(partitioner == null)
-                {
-                	String cubePartitionerClass = properties.getProperty("partitionerClass."+cubeUniqueName);
-                    if(cubePartitionerClass == null)
-                    {
-                    	  LOGGER.info(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,"Using default partitioner class as no specific partitionerClass configured for " + cubeUniqueName);
-//                        System.out.println("Using default partitioner class as no specific partitionerClass configured for " + cubeUniqueName);
-                        cubePartitionerClass = defaultPartitionerClass;
-                    }
-                    String[]  nodes	=null;
-                    nodes = partitioner.nodeList();
-                    Arrays.sort(nodes);
-                	partitioner = new Partitioner(cubePartitionerClass,
-                			new String[]{properties.getProperty("partitionColumn","")},
-                			Integer.parseInt(properties.getProperty("partitionCount", "1")),
-                			nodes);
-                }*/
-                
                 dataPartitioner = (DataPartitioner) Class.forName(partitioner.partitionClass()).newInstance();
                 dataPartitioner.initialize("", new String[0], partitioner);
                 
@@ -136,8 +104,7 @@ public final class QueryPartitionHelper
             }
             catch(ClassNotFoundException e)
             {
-//                e.printStackTrace();
-            	 LOGGER.error(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, e, e.getMessage());	
+                LOGGER.error(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, e, e.getMessage());
             }catch(InstantiationException e){
             	LOGGER.error(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, e, e.getMessage());	
             }catch (IllegalAccessException e) {
@@ -149,9 +116,6 @@ public final class QueryPartitionHelper
     
     /**
      * Get partitions applicable for query based on filters applied in query
-     * 
-     * @param queryPlan
-     * @return
      * 
      */
     public List<Partition> getPartitionsForQuery(MolapQueryPlan queryPlan, Partitioner partitioner)
@@ -183,12 +147,6 @@ public final class QueryPartitionHelper
     
     /**
      * Get the node name where the partition is assigned to.
-     * 
-     * @param partition
-     * @param schemaName
-     * @param cubeName
-     * @return
-     * 
      */
     public String getLocation(Partition partition, String schemaName, String cubeName, Partitioner partitioner)
     {
@@ -206,28 +164,8 @@ public final class QueryPartitionHelper
         DataPartitioner dataPartitioner = partitionerMap.get(cubeUniqueName);
         return dataPartitioner.getPartitionedColumns();
     }
-    
-  /*  public Partitioner getPartitioner(String schemaName, String cubeName)
-    {
-        String cubeUniqueName = schemaName + '_' + cubeName;
-        checkInitialization(cubeUniqueName, null);
-        DataPartitioner dataPartitioner = partitionerMap.get(cubeUniqueName);
-        return dataPartitioner.getPartitioner();
-    }*/
-    
-//    /**
-//     * 
-//     * @param partition
-//     * @return
-//     * 
-//     */
-//    public String getStorePath(Partition partition)
-//    {
-//        return properties.getProperty("basePath")+"_"+partition.getUniqueID();
-//    }
-    
+
     /**
-     * 
      * Read the properties from CSVFilePartitioner.properties
      */
     private static Properties loadProperties()
@@ -247,7 +185,6 @@ public final class QueryPartitionHelper
         }
         catch(Exception e)
         {
-//            e.printStackTrace();
             LOGGER.error(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, e, e.getMessage());	
         }
         finally
@@ -260,7 +197,6 @@ public final class QueryPartitionHelper
                 }
                 catch(IOException e)
                 {
-//                    e.printStackTrace();
                 	 LOGGER.error(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, e, e.getMessage());	
                 }
             }
@@ -269,13 +205,4 @@ public final class QueryPartitionHelper
         return properties;
 
     }
-    
-    /**
-     * @param args
-     */
-  /*  public static void main(String[] args)
-    {
-        // TODO Auto-generated method stub
-    }
-*/
 }

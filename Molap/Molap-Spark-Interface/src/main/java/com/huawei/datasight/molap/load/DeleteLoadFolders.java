@@ -47,12 +47,6 @@ import com.huawei.unibi.molap.datastorage.store.impl.FileFactory;
 import com.huawei.unibi.molap.util.MolapCoreLogEvent;
 import com.huawei.unibi.molap.util.MolapProperties;
 
-/**
- * 
- * Project Name : Carbon Module Name : MOLAP Data Processor Author : R00903928
- * Created Date : 24-Sep-2015 FileName : DeleteLoadFolders.java Description :
- * Class Version : 1.0
- */
 public final class DeleteLoadFolders
 {
 
@@ -63,11 +57,7 @@ public final class DeleteLoadFolders
     {
     	
     }
-    /**
-     * 
-     * @param path
-     * @param loadModel
-     */
+
     public static boolean deleteLoadFoldersFromFileSystem(
             MolapLoadModel loadModel, int partitionCount, String storeLocation,
             boolean isForceDelete, int currentRestructNumber,LoadMetadataDetails[] details)
@@ -146,11 +136,6 @@ public final class DeleteLoadFolders
         return isDeleted;
     }
 
-    /**
-     * 
-     * @param aggFiles
-     * @param loadName
-     */
     public static void deleteAggLoadFolders(MolapFile[] aggFiles, String loadName) 
     {
     	for(MolapFile file : aggFiles)
@@ -160,11 +145,6 @@ public final class DeleteLoadFolders
 		
 	}
 
-    /**
-     * 
-     * @param file
-     * @param loadName
-     */
 	private static void deleteLoadFolderFromEachAgg(MolapFile file,
 			final String loadName) 
     {
@@ -203,9 +183,6 @@ public final class DeleteLoadFolders
 
     }
 
-	/**
-     * @param path
-     */
     private static boolean physicalFactAndMeasureMetadataDeletion(String path)
     {
         
@@ -223,24 +200,11 @@ public final class DeleteLoadFolders
                             @Override
                             public boolean accept(MolapFile file)
                             {
-                            	
                             	return (file.getName().endsWith(
                                         MolapCommonConstants.FACT_FILE_EXT)
                                         || file.getName()
                                                 .endsWith(
                                                       MolapCommonConstants.MEASUREMETADATA_FILE_EXT));
-                          /*      if(file.getName().endsWith(
-                                        MolapCommonConstants.FACT_FILE_EXT)
-                                        || file.getName()
-                                                .endsWith(
-                                                        MolapCommonConstants.MEASUREMETADATA_FILE_EXT))
-                                {
-                                    return true;
-                                }
-                                else
-                                {
-                                    return false;
-                                }*/
                             }
                         });
                 
@@ -256,7 +220,6 @@ public final class DeleteLoadFolders
                     {
                         if(!eachFile.delete())
                         {
-
                             LOGGER.warn(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG,
                                     "Unable to delete the file as per delete command "
                                             + eachFile.getAbsolutePath());
@@ -284,10 +247,6 @@ public final class DeleteLoadFolders
 
     }
 
-    /**
-     * @param oneLoad
-     * @return
-     */
     private static boolean checkIfLoadCanBeDeleted(LoadMetadataDetails oneLoad,
             boolean isForceDelete)
     {
@@ -339,9 +298,6 @@ public final class DeleteLoadFolders
         return false;
     }
 
-    /**
-     * @param loadFolderPath
-     */
     private static void factFileRenaming(String loadFolderPath)
     {
 
@@ -382,11 +338,7 @@ public final class DeleteLoadFolders
         }
 
     }
-    
-    /**
-     * deletes the fact file which is marked as _deleted
-     * @param loadFolderPath
-     */
+
     private static void cleanDeletedFactFile(String loadFolderPath)
     {
         FileFactory.FileType fileType = FileFactory.getFileType(loadFolderPath);

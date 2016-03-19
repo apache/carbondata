@@ -42,8 +42,6 @@ import com.huawei.unibi.molap.engine.expression.Expression;
 
 /**
  * This class contains all the logical information about the query like dimensions,measures,sort order, topN etc..
- * 
- * @author R00900208
  */
 public class MolapQueryPlan implements Serializable
 {

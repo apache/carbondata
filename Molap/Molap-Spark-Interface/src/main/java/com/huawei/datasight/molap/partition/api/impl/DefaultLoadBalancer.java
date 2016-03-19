@@ -40,14 +40,9 @@ import com.huawei.unibi.molap.constants.MolapCommonConstants;
 
 /**
  * A sample load balancer to distribute the partitions to the available nodes in a round robin mode.
- * 
- * @author K00900207
- * 
  */
 public class DefaultLoadBalancer
 {
-//    private List<String> nodeNames;
-    
     private Map<String, List<Partition>> nodeToPartitonMap = new HashMap<String, List<Partition>>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
     
     private Map<Partition, String> partitonToNodeMap = new HashMap<Partition, String>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);

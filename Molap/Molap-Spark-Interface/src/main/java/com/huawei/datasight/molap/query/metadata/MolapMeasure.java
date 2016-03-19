@@ -24,15 +24,9 @@ package com.huawei.datasight.molap.query.metadata;
 
 import java.io.Serializable;
 
-/**
- * @author R00900208
- *
- */
 public class MolapMeasure implements MolapColumn, Serializable
 {
-	/**
-	 * 
-	 */
+
 	private static final long serialVersionUID = -2944975816723740737L;
 
 	/**

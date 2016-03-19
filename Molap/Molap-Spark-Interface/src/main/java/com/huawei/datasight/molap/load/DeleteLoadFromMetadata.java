@@ -51,11 +51,6 @@ import com.huawei.unibi.molap.locks.MolapLock;
 import com.huawei.unibi.molap.util.MolapCoreLogEvent;
 import com.huawei.unibi.molap.util.MolapUtil;
 
-/**
- * Project Name : Carbon Module Name : MOLAP Data Processor Author : R00903928
- * Created Date : 21-Sep-2015 FileName : DeleteLoadFromMetadata.java Description
- * : Class Version : 1.0
- */
 public final class DeleteLoadFromMetadata
 {
 
@@ -74,10 +69,6 @@ public final class DeleteLoadFromMetadata
         List<String> invalidLoadIds = new ArrayList<String>(0);
         try
         {
-//            if(molapLock
-//                    .lock(MolapCommonConstants.NUMBER_OF_TRIES_FOR_LOAD_METADATA_LOCK,
-//                            MolapCommonConstants.MAX_TIMEOUT_FOR_LOAD_METADATA_LOCK))
-//            {
         	if (molapLock.lockWithRetries()) {
                 LOGGER.info(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG,
                         "Metadata lock has been successfully acquired");
@@ -117,19 +108,15 @@ public final class DeleteLoadFromMetadata
                     
                     try
                     {
-                    dataOutputStream = fileWrite.openForWrite(FileWriteOperation.OVERWRITE);
-                    
-                   /* dataOutputStream = FileFactory.getDataOutputStream(
-                            dataLoadLocation,
-                            FileFactory.getFileType(dataLoadLocation));*/
-                    brWriter = new BufferedWriter(
-                            new OutputStreamWriter(
-                                    dataOutputStream,
-                                    MolapCommonConstants.MOLAP_DEFAULT_STREAM_ENCODEFORMAT));
+                        dataOutputStream = fileWrite.openForWrite(FileWriteOperation.OVERWRITE);
+                        brWriter = new BufferedWriter(
+                                new OutputStreamWriter(
+                                        dataOutputStream,
+                                        MolapCommonConstants.MOLAP_DEFAULT_STREAM_ENCODEFORMAT));
 
-                    String metadataInstance = gsonObjectToWrite
-                            .toJson(listOfLoadFolderDetailsArray);
-                    brWriter.write(metadataInstance);
+                        String metadataInstance = gsonObjectToWrite
+                                .toJson(listOfLoadFolderDetailsArray);
+                        brWriter.write(metadataInstance);
                     }
                     finally
                     {
@@ -170,9 +157,6 @@ public final class DeleteLoadFromMetadata
         return invalidLoadIds;
     }
 
-    /**
-     * @param molapLock
-     */
     public static void fileUnlock(MolapLock molapLock)
     {
         if(molapLock.unlock())
@@ -187,12 +171,6 @@ public final class DeleteLoadFromMetadata
         }
     }
 
-    /**
-     * @param loadIds
-     * @param listOfLoadFolderDetailsArray
-     * @param bFound
-     * @return
-     */
     public static void updateDeletionStatusInDetails(List<String> loadIds,
             LoadMetadataDetails[] listOfLoadFolderDetailsArray,List<String> invalidLoadIds)
     {

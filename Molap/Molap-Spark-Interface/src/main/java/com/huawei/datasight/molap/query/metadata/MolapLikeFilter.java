@@ -23,10 +23,6 @@ import com.huawei.unibi.molap.engine.filters.likefilters.FilterLikeExpressionInt
 
 public class MolapLikeFilter extends MolapDimensionFilter {
 
-	
-	
-
-
 	/**
 	 * 
 	 */

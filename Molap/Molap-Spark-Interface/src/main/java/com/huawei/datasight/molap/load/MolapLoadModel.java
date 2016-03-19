@@ -30,10 +30,6 @@ import com.huawei.datasight.molap.core.load.LoadMetadataDetails;
 //import mondrian.olap.MondrianDef.Schema;
 import com.huawei.unibi.molap.olap.MolapDef.Schema;
 
-/**
- * @author R00900208
- *
- */
 public class MolapLoadModel implements Serializable
 {
 	/**
@@ -169,8 +165,6 @@ public class MolapLoadModel implements Serializable
 	public String getCubeName() {
 		return cubeName;
 	}
-
-	
 
 	/**
 	 * @return the factFilePath
