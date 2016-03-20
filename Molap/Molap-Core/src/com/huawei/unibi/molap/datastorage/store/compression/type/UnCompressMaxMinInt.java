@@ -17,20 +17,7 @@
  * under the License.
  */
 
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.datastorage.store.compression.type;
-
-import java.nio.ByteBuffer;
 
 import com.huawei.iweb.platform.logging.LogService;
 import com.huawei.iweb.platform.logging.LogServiceFactory;
@@ -42,11 +29,9 @@ import com.huawei.unibi.molap.util.MolapCoreLogEvent;
 import com.huawei.unibi.molap.util.ValueCompressionUtil;
 import com.huawei.unibi.molap.util.ValueCompressionUtil.DataType;
 
-/**
- * @author S71955
- */
-public class UnCompressMaxMinInt implements UnCompressValue<int[]>
-{
+import java.nio.ByteBuffer;
+
+public class UnCompressMaxMinInt implements UnCompressValue<int[]> {
     /**
      * Attribute for Molap LOGGER
      */
@@ -56,101 +41,69 @@ public class UnCompressMaxMinInt implements UnCompressValue<int[]>
      * intCompressor.
      */
     private static Compressor<int[]> intCompressor = SnappyCompression.SnappyIntCompression.INSTANCE;
-
-   
-
-//    @Override
-//    public double getValue(int index, int decimal, double maxValue)
-//    {
-//        if(value[index] == 0)
-//        {
-//            return maxValue;
-//        }
-//        return maxValue - value[index];
-//    }
-
-    @Override
-    public void setValue(int[] value)
-    {
-        this.value = value;
-
-    }
-
-    @Override
-    public UnCompressValue getNew()
-    {
-        try
-        {
-            return (UnCompressValue)clone();
-        }
-        catch(CloneNotSupportedException e)
-        {
-            LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, e, e.getMessage());
-        }
-        return null;
-    }
-    
-    //TODO SIMIAN
     /**
      * value.
      */
     private int[] value;
 
     @Override
-    public UnCompressValue compress()
-    {
+    public void setValue(int[] value) {
+        this.value = value;
+
+    }
+
+    @Override
+    public UnCompressValue getNew() {
+        try {
+            return (UnCompressValue) clone();
+        } catch (CloneNotSupportedException e) {
+            LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, e, e.getMessage());
+        }
+        return null;
+    }
+
+    @Override
+    public UnCompressValue compress() {
         UnCompressMaxMinByte byte1 = new UnCompressMaxMinByte();
         byte1.setValue(intCompressor.compress(value));
         return byte1;
     }
 
     @Override
-    public UnCompressValue uncompress(DataType dataTypeValue)   
-    {
+    public UnCompressValue uncompress(DataType dataTypeValue) {
         return null;
     }
 
     @Override
-    public byte[] getBackArrayData()
-    {
+    public byte[] getBackArrayData() {
         return ValueCompressionUtil.convertToBytes(value);
     }
 
     @Override
-    public void setValueInBytes(byte[] value)
-    {
+    public void setValueInBytes(byte[] value) {
         ByteBuffer buffer = ByteBuffer.wrap(value);
         this.value = ValueCompressionUtil.convertToIntArray(buffer, value.length);
     }
 
     /**
-     * 
      * @see com.huawei.unibi.molap.datastorage.store.compression.ValueCompressonHolder.UnCompressValue#getCompressorObject()
-     * 
      */
     @Override
-    public UnCompressValue getCompressorObject()
-    {
+    public UnCompressValue getCompressorObject() {
         return new UnCompressMaxMinByte();
     }
-    
-    //TODO SIMIAN
+
     @Override
-    public MolapReadDataHolder getValues(int decVal, double maxValue)
-    {
+    public MolapReadDataHolder getValues(int decVal, double maxValue) {
         double[] vals = new double[value.length];
         MolapReadDataHolder dataHolder = new MolapReadDataHolder();
-        for(int i = 0;i < vals.length;i++)
-        {
-            if(value[i] == 0)
-            {
+        for (int i = 0; i < vals.length; i++) {
+            if (value[i] == 0) {
                 vals[i] = maxValue;
+            } else {
+                vals[i] = maxValue - value[i];
             }
-            else
-            {
-                vals[i] =  maxValue - value[i]; 
-            }
-            
+
         }
         dataHolder.setReadableDoubleValues(vals);
         return dataHolder;

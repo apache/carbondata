@@ -26,42 +26,14 @@ import com.huawei.unibi.molap.datastorage.store.compression.ValueCompressonHolde
 import com.huawei.unibi.molap.datastorage.store.dataholder.MolapReadDataHolder;
 import com.huawei.unibi.molap.datastorage.store.impl.CompressedDataMeasureDataWrapper;
 
-/**
- */
 public class DoubleArrayDataFileStore extends AbstractDoubleArrayDataStore
 {
 
-    /**
-     * measuresOffsetsArray.
-     */
     private long[] measuresOffsetsArray;
 
-    /**
-     * measuresLengthArray.
-     */
     private int[] measuresLengthArray;
 
-    /**
-     * fileName.
-     */
-    private String fileName;
-
-    // public DoubleArrayDataFileStore(int size, int elementSize,
-    // ValueCompressionModel compressionModel)
-    // {
-    // super(size, elementSize, compressionModel);
-    // }
-    //
-    // public DoubleArrayDataFileStore(int size, int elementSize,
-    // ValueCompressionModel compressionModel,
-    // long[] measuresOffsetsArray, String fileName, int[] measuresLengthArray)
-    // {
-    // super(size, elementSize, compressionModel);
-    // this.fileName = fileName;
-    // this.measuresLengthArray = measuresLengthArray;
-    // this.measuresOffsetsArray = measuresOffsetsArray;
-    // datastore=null;
-    // }
+      private String fileName;
 
     public DoubleArrayDataFileStore(ValueCompressionModel compressionModel, long[] measuresOffsetsArray,
             String fileName, int[] measuresLengthArray)
@@ -108,8 +80,6 @@ public class DoubleArrayDataFileStore extends AbstractDoubleArrayDataStore
                 vals[i] = unComp[i].getValues(compressionModel.getDecimal()[i], compressionModel.getMaxValue()[i]);
             }
         }
-        // return new CompressedDataMeasureDataWrapper(unComp,
-        // compressionModel.getDecimal(), compressionModel.getMaxValue());
         return new CompressedDataMeasureDataWrapper(vals);
     }
 

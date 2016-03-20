@@ -28,12 +28,10 @@ import com.huawei.unibi.molap.datastorage.store.impl.CompressedDataMeasureDataWr
 
 /**
  * DoubleArrayDataInMemoryStore.
- * 
+ *
  * @author S71955
- * 
  */
-public class DoubleArrayDataInMemoryStore extends AbstractDoubleArrayDataStore
-{
+public class DoubleArrayDataInMemoryStore extends AbstractDoubleArrayDataStore {
 
     // /**
     // * DoubleArrayDataInMemoryStore.
@@ -89,7 +87,7 @@ public class DoubleArrayDataInMemoryStore extends AbstractDoubleArrayDataStore
 
     /**
      * DoubleArrayDataInMemoryStore.
-     * 
+     *
      * @param size
      * @param elementSize
      * @param compressionModel
@@ -99,17 +97,13 @@ public class DoubleArrayDataInMemoryStore extends AbstractDoubleArrayDataStore
      * @param fileHolder
      */
     public DoubleArrayDataInMemoryStore(ValueCompressionModel compressionModel, long[] measuresOffsetsArray,
-            int[] measuresLengthArray, String fileName, FileHolder fileHolder)
-    {
+                                        int[] measuresLengthArray, String fileName, FileHolder fileHolder) {
         super(compressionModel);
-        if(null!=compressionModel)
-        {
+        if (null != compressionModel) {
             UnCompressValue[] unCompValues = compressionModel.getUnCompressValues();
-            if(null != unCompValues)
-            {
-                for(int i = 0;i < measuresLengthArray.length;i++)
-                {
-    
+            if (null != unCompValues) {
+                for (int i = 0; i < measuresLengthArray.length; i++) {
+
                     values[i] = unCompValues[i].getNew();
                     values[i].setValueInBytes(fileHolder.readByteArray(fileName, measuresOffsetsArray[i],
                             measuresLengthArray[i]));
@@ -117,10 +111,10 @@ public class DoubleArrayDataInMemoryStore extends AbstractDoubleArrayDataStore
             }
         }
     }
-    
+
     /**
      * DoubleArrayDataInMemoryStore.
-     * 
+     *
      * @param size
      * @param elementSize
      * @param compressionModel
@@ -129,30 +123,22 @@ public class DoubleArrayDataInMemoryStore extends AbstractDoubleArrayDataStore
      * @param fileName
      * @param fileHolder
      */
-    public DoubleArrayDataInMemoryStore(ValueCompressionModel compressionModel)
-    {
+    public DoubleArrayDataInMemoryStore(ValueCompressionModel compressionModel) {
         super(compressionModel);
     }
 
     @Override
-    public MeasureDataWrapper getBackData(int[] cols, FileHolder fileHolder)
-    {
-        if(null == compressionModel)
-        {
+    public MeasureDataWrapper getBackData(int[] cols, FileHolder fileHolder) {
+        if (null == compressionModel) {
             return null;
         }
         MolapReadDataHolder[] vals = new MolapReadDataHolder[values.length];
-        if(null == cols)
-        {
-            for(int i = 0;i < vals.length;i++)
-            {
+        if (null == cols) {
+            for (int i = 0; i < vals.length; i++) {
                 vals[i] = values[i].getValues(compressionModel.getDecimal()[i], compressionModel.getMaxValue()[i]);
             }
-        }
-        else
-        {
-            for(int i = 0;i < cols.length;i++)
-            {
+        } else {
+            for (int i = 0; i < cols.length; i++) {
                 vals[cols[i]] = values[cols[i]].getValues(compressionModel.getDecimal()[cols[i]],
                         compressionModel.getMaxValue()[cols[i]]);
             }
@@ -163,14 +149,12 @@ public class DoubleArrayDataInMemoryStore extends AbstractDoubleArrayDataStore
     }
 
     @Override
-    public MeasureDataWrapper getBackData(int cols, FileHolder fileHolder)
-    {
-        if(null == compressionModel)
-        {
+    public MeasureDataWrapper getBackData(int cols, FileHolder fileHolder) {
+        if (null == compressionModel) {
             return null;
         }
         MolapReadDataHolder[] vals = new MolapReadDataHolder[values.length];
-        
+
         vals[cols] = values[cols].getValues(compressionModel.getDecimal()[cols], compressionModel.getMaxValue()[cols]);
         return new CompressedDataMeasureDataWrapper(vals);
     }

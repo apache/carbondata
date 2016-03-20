@@ -19,15 +19,14 @@
 
 package com.huawei.unibi.molap.datastorage.store.columnar;
 
+import com.huawei.unibi.molap.constants.MolapCommonConstants;
+import com.huawei.unibi.molap.util.ByteUtil.UnsafeComparer;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import com.huawei.unibi.molap.constants.MolapCommonConstants;
-import com.huawei.unibi.molap.util.ByteUtil.UnsafeComparer;
-
-public class BlockIndexerStorageForInt implements IndexStorage<int[]>
-{
+public class BlockIndexerStorageForInt implements IndexStorage<int[]> {
     private boolean alreadySorted;
 
     private int[] dataAfterComp;
@@ -37,78 +36,62 @@ public class BlockIndexerStorageForInt implements IndexStorage<int[]>
     private byte[][] keyBlock;
 
     private int[] dataIndexMap;
-    
+
     private int totalSize;
 
-    public BlockIndexerStorageForInt(byte[][] keyBlock)
-    {
+    public BlockIndexerStorageForInt(byte[][] keyBlock) {
         this(keyBlock, false, false, true);
     }
-    
-    public BlockIndexerStorageForInt(byte[][] keyBlock, boolean compressData, boolean isSortRequired)
-    {
-        ColumnWithIntIndex[] columnWithIndexs = createColumnWithIndexArray(keyBlock,false);
-        if(isSortRequired)
-        {
+
+    public BlockIndexerStorageForInt(byte[][] keyBlock, boolean compressData, boolean isSortRequired) {
+        ColumnWithIntIndex[] columnWithIndexs = createColumnWithIndexArray(keyBlock, false);
+        if (isSortRequired) {
             Arrays.sort(columnWithIndexs);
         }
         compressMyOwnWay(extractDataAndReturnIndexes(columnWithIndexs, keyBlock));
-        if(compressData)
-        {
+        if (compressData) {
             compressDataMyOwnWay(columnWithIndexs);
         }
     }
-    
-    public BlockIndexerStorageForInt(byte[][] keyBlock, boolean compressData, boolean isHighCardinality, boolean isSortRequired)
-    {
-        ColumnWithIntIndex[] columnWithIndexs = createColumnWithIndexArray(keyBlock,isHighCardinality);
-        if(isSortRequired)
-        {
+
+    public BlockIndexerStorageForInt(byte[][] keyBlock, boolean compressData, boolean isHighCardinality, boolean isSortRequired) {
+        ColumnWithIntIndex[] columnWithIndexs = createColumnWithIndexArray(keyBlock, isHighCardinality);
+        if (isSortRequired) {
             Arrays.sort(columnWithIndexs);
         }
         compressMyOwnWay(extractDataAndReturnIndexes(columnWithIndexs, keyBlock));
-        if(compressData)
-        {
+        if (compressData) {
             compressDataMyOwnWay(columnWithIndexs);
         }
     }
 
     /**
      * Create an object with each column array and respective index
-     * 
-     * @param cols
+     *
      * @return
      */
-    private ColumnWithIntIndex[] createColumnWithIndexArray(byte[][] keyBlock,boolean isHighCardinality)
-    {
-        ColumnWithIntIndex[] columnWithIndexs ;
-        if(isHighCardinality)
-        {
-             columnWithIndexs = new  ColumnWithIntIndexForHighCard[keyBlock.length];
-             for(int i = 0;i < columnWithIndexs.length;i++)
-             {
-                 columnWithIndexs[i] = new ColumnWithIntIndexForHighCard(keyBlock[i], i);
-             }
+    private ColumnWithIntIndex[] createColumnWithIndexArray(byte[][] keyBlock, boolean isHighCardinality) {
+        ColumnWithIntIndex[] columnWithIndexs;
+        if (isHighCardinality) {
+            columnWithIndexs = new ColumnWithIntIndexForHighCard[keyBlock.length];
+            for (int i = 0; i < columnWithIndexs.length; i++) {
+                columnWithIndexs[i] = new ColumnWithIntIndexForHighCard(keyBlock[i], i);
+            }
 
+        } else {
+            columnWithIndexs = new ColumnWithIntIndex[keyBlock.length];
+            for (int i = 0; i < columnWithIndexs.length; i++) {
+                columnWithIndexs[i] = new ColumnWithIntIndex(keyBlock[i], i);
+            }
         }
-        else
-        {
-         columnWithIndexs = new ColumnWithIntIndex[keyBlock.length];
-         for(int i = 0;i < columnWithIndexs.length;i++)
-         {
-             columnWithIndexs[i] = new ColumnWithIntIndex(keyBlock[i], i);
-         }
-        }
-        
+
         return columnWithIndexs;
     }
 
     private int[] extractDataAndReturnIndexes(
-            ColumnWithIntIndex[] columnWithIndexs, byte[][] keyBlock)
-    {
+            ColumnWithIntIndex[] columnWithIndexs, byte[][] keyBlock) {
         int[] indexes = new int[columnWithIndexs.length];
-        for(int i = 0;i < indexes.length;i++)
-        {
+        for (int i = 0; i < indexes.length; i++) {
             indexes[i] = columnWithIndexs[i].getIndex();
             keyBlock[i] = columnWithIndexs[i].getColumn();
         }
@@ -123,66 +106,49 @@ public class BlockIndexerStorageForInt implements IndexStorage<int[]>
      * keeps the indexes of where sequential numbers starts. If there is no
      * sequential numbers then the same array it returns with empty second
      * array.
-     * 
+     *
      * @param indexes
      */
-    public void compressMyOwnWay(int[] indexes)
-    {
+    public void compressMyOwnWay(int[] indexes) {
         List<Integer> list = new ArrayList<Integer>(MolapCommonConstants.CONSTANT_SIZE_TEN);
         List<Integer> map = new ArrayList<Integer>(MolapCommonConstants.CONSTANT_SIZE_TEN);
         int k = 0;
         int i = 1;
-        for(;i < indexes.length;i++)
-        {
-            if(indexes[i] - indexes[i - 1] == 1)
-            {
+        for (; i < indexes.length; i++) {
+            if (indexes[i] - indexes[i - 1] == 1) {
                 k++;
-            }
-            else
-            {
-                if(k > 0)
-                {
+            } else {
+                if (k > 0) {
                     map.add((list.size()));
                     list.add(indexes[i - k - 1]);
                     list.add(indexes[i - 1]);
-                }
-                else
-                {
+                } else {
                     list.add(indexes[i - 1]);
                 }
                 k = 0;
             }
         }
-        if(k > 0)
-        {
+        if (k > 0) {
             map.add((list.size()));
             list.add(indexes[i - k - 1]);
             list.add(indexes[i - 1]);
-        }
-        else
-        {
+        } else {
             list.add(indexes[i - 1]);
         }
         dataAfterComp = convertToArray(list);
-        if(indexes.length == dataAfterComp.length)
-        {
+        if (indexes.length == dataAfterComp.length) {
             indexMap = new int[0];
-        }
-        else
-        {
+        } else {
             indexMap = convertToArray(map);
         }
-        if(dataAfterComp.length == 2 && indexMap.length == 1)
-        {
+        if (dataAfterComp.length == 2 && indexMap.length == 1) {
             alreadySorted = true;
         }
     }
 
-    private int[] convertToArray(List<Integer> list)
-    {
+    private int[] convertToArray(List<Integer> list) {
         int[] shortArray = new int[list.size()];
-        for(int i = 0;i < shortArray.length;i++)
-        {
+        for (int i = 0; i < shortArray.length; i++) {
             shortArray[i] = list.get(i);
         }
         return shortArray;
@@ -191,101 +157,46 @@ public class BlockIndexerStorageForInt implements IndexStorage<int[]>
     /**
      * @return the alreadySorted
      */
-    public boolean isAlreadySorted()
-    {
+    public boolean isAlreadySorted() {
         return alreadySorted;
     }
 
     /**
      * @return the dataAfterComp
      */
-    public int[] getDataAfterComp()
-    {
+    public int[] getDataAfterComp() {
         return dataAfterComp;
     }
 
     /**
      * @return the indexMap
      */
-    public int[] getIndexMap()
-    {
+    public int[] getIndexMap() {
         return indexMap;
     }
 
     /**
      * @return the keyBlock
      */
-    public byte[][] getKeyBlock()
-    {
+    public byte[][] getKeyBlock() {
         return keyBlock;
     }
 
-//    private void compressDataMyOwnWay1(ColumnWithIntIndex[] indexes)
-//    {
-//        List<ColumnWithIntIndex> list = new ArrayList<ColumnWithIntIndex>();
-//        List<Integer> map = new ArrayList<Integer>();
-//        int k = 0;
-//        int i = 1;
-//        for(;i < indexes.length;i++)
-//        {
-//            if(indexes[i].compareTo(indexes[i - 1]) == 0)
-//            {
-//                k++;
-//            }
-//            else
-//            {
-//                if(k > 0)
-//                {
-//                    map.add((list.size()));
-//                    map.add((k + 1));
-//                    list.add(indexes[i - 1]);
-//                }
-//                else
-//                {
-//                    list.add(indexes[i - 1]);
-//                }
-//                k = 0;
-//            }
-//        }
-//        if(k > 0)
-//        {
-//            map.add((list.size()));
-//            map.add((k + 1));
-//            list.add(indexes[i - 1]);
-//        }
-//        else
-//        {
-//            list.add(indexes[i - 1]);
-//        }
-//        this.keyBlock = convertToKeyArray(list);
-//        if(indexes.length == keyBlock.length)
-//        {
-//            dataIndexMap = new int[0];
-//        }
-//        else
-//        {
-//            dataIndexMap = convertToArray(map);
-//        }
-//    }
-    
-    private void compressDataMyOwnWay(ColumnWithIntIndex[] indexes)
-    {
+    private void compressDataMyOwnWay(ColumnWithIntIndex[] indexes) {
         byte[] prvKey = indexes[0].getColumn();
         List<ColumnWithIntIndex> list = new ArrayList<ColumnWithIntIndex>(MolapCommonConstants.CONSTANT_SIZE_TEN);
         list.add(indexes[0]);
-        int counter=1;
-        int start=0;
+        int counter = 1;
+        int start = 0;
         List<Integer> map = new ArrayList<Integer>(MolapCommonConstants.CONSTANT_SIZE_TEN);
-        for(int i = 1;i < indexes.length;i++)
-        {
-            if(UnsafeComparer.INSTANCE.compareTo(prvKey, indexes[i].getColumn())!=0)
-            {
-                prvKey=indexes[i].getColumn();
+        for (int i = 1; i < indexes.length; i++) {
+            if (UnsafeComparer.INSTANCE.compareTo(prvKey, indexes[i].getColumn()) != 0) {
+                prvKey = indexes[i].getColumn();
                 list.add(indexes[i]);
                 map.add(start);
                 map.add(counter);
-                start+=counter;
-                counter=1;
+                start += counter;
+                counter = 1;
                 continue;
             }
             counter++;
@@ -293,37 +204,29 @@ public class BlockIndexerStorageForInt implements IndexStorage<int[]>
         map.add(start);
         map.add(counter);
         this.keyBlock = convertToKeyArray(list);
-        if(indexes.length == keyBlock.length)
-        {
+        if (indexes.length == keyBlock.length) {
             dataIndexMap = new int[0];
-        }
-        else
-        {
+        } else {
             dataIndexMap = convertToArray(map);
         }
     }
 
-    private byte[][] convertToKeyArray(List<ColumnWithIntIndex> list)
-    {
+    private byte[][] convertToKeyArray(List<ColumnWithIntIndex> list) {
         byte[][] shortArray = new byte[list.size()][];
-        for(int i = 0;i < shortArray.length;i++)
-        {
+        for (int i = 0; i < shortArray.length; i++) {
             shortArray[i] = list.get(i).getColumn();
-            totalSize+=shortArray[i].length;
+            totalSize += shortArray[i].length;
         }
         return shortArray;
     }
 
     @Override
-    public int[] getDataIndexMap()
-    {
+    public int[] getDataIndexMap() {
         return dataIndexMap;
     }
 
     @Override
-    public int getTotalSize()
-    {
-        // TODO Auto-generated method stub
+    public int getTotalSize() {
         return totalSize;
     }
 }

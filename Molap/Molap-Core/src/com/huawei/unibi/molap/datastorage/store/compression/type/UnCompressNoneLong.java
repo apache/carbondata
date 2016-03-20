@@ -17,17 +17,6 @@
  * under the License.
  */
 
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.datastorage.store.compression.type;
 
 import java.nio.ByteBuffer;
@@ -42,9 +31,6 @@ import com.huawei.unibi.molap.util.MolapCoreLogEvent;
 import com.huawei.unibi.molap.util.ValueCompressionUtil;
 import com.huawei.unibi.molap.util.ValueCompressionUtil.DataType;
 
-/**
- * @author S71955
- */
 public class UnCompressNoneLong implements UnCompressValue<long[]>
 {
     /**
@@ -68,14 +54,7 @@ public class UnCompressNoneLong implements UnCompressValue<long[]>
         this.value = value;
 
     }
-//
-//    @Override
-//    public double getValue(int index, int decimal, double maxValue)
-//    {
-//        return value[index];
-//    }
 
-    //TODO SIMIAN
     @Override
     public UnCompressValue getNew()
     {
@@ -134,7 +113,6 @@ public class UnCompressNoneLong implements UnCompressValue<long[]>
     {
         MolapReadDataHolder dataHolder = new MolapReadDataHolder();
         double[] vals = new double[value.length];
-//        System.arraycopy(value, 0, vals, 0, value.length);
         for(int i = 0;i < vals.length;i++)
         {
             vals[i] = value[i];

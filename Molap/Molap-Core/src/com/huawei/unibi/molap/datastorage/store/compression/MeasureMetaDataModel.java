@@ -17,31 +17,10 @@
  * under the License.
  */
 
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2014
- * =====================================
- *
- */
 
 package com.huawei.unibi.molap.datastorage.store.compression;
 
-/**
- * Project Name NSE V3R8C10 
- * Module Name : MOLAP Data Processor
- * Author :k00900841 
- * Created Date:10-Aug-2014
- * FileName : FactReaderIterator.java
- * Class Description : Iterator class to iterate over leaf node and return the tuple
- * Class Version 1.0
- */
-public class MeasureMetaDataModel
-{
+public class MeasureMetaDataModel {
     /**
      * maxValue
      */
@@ -76,15 +55,16 @@ public class MeasureMetaDataModel
      * dataTypeSelected
      */
     private byte[] dataTypeSelected;
-    
+
     private double[] minValueFactForAgg;
-    
-    public MeasureMetaDataModel()
-    {
-        
+
+    public MeasureMetaDataModel() {
+
     }
+
     /**
      * MeasureMetaDataModel Constructor
+     *
      * @param minValue
      * @param maxValue
      * @param decimal
@@ -93,161 +73,145 @@ public class MeasureMetaDataModel
      * @param type
      */
     public MeasureMetaDataModel(double[] minValue, double[] maxValue, int[] decimal, int measureCount,
-            double[] uniqueValue, char[] type,byte[] dataTypeSelected)
-    {
+                                double[] uniqueValue, char[] type, byte[] dataTypeSelected) {
         this.minValue = minValue;
         this.maxValue = maxValue;
         this.decimal = decimal;
         this.measureCount = measureCount;
         this.uniqueValue = uniqueValue;
-        this.type=type;
-        this.dataTypeSelected=dataTypeSelected;
+        this.type = type;
+        this.dataTypeSelected = dataTypeSelected;
     }
 
     /**
      * get Max value
-     * 
+     *
      * @return
      */
-    public double[] getMaxValue()
-    {
+    public double[] getMaxValue() {
         return maxValue;
     }
 
     /**
      * set max value
-     * 
+     *
      * @param maxValue
      */
-    public void setMaxValue(double[] maxValue)
-    {
+    public void setMaxValue(double[] maxValue) {
         this.maxValue = maxValue;
     }
 
     /**
-     * 
      * getMinValue
-     * 
+     *
      * @return
      */
-    public double[] getMinValue()
-    {
+    public double[] getMinValue() {
         return minValue;
     }
 
     /**
      * setMinValue
-     * 
+     *
      * @param minValue
      */
-    public void setMinValue(double[] minValue)
-    {
+    public void setMinValue(double[] minValue) {
         this.minValue = minValue;
     }
 
     /**
      * getDecimal
-     * 
+     *
      * @return
      */
-    public int[] getDecimal()
-    {
+    public int[] getDecimal() {
         return decimal;
     }
 
     /**
      * setDecimal
-     * 
+     *
      * @param decimal
      */
-    public void setDecimal(int[] decimal)
-    {
+    public void setDecimal(int[] decimal) {
         this.decimal = decimal;
     }
 
     /**
      * getMeasureCount
-     * 
+     *
      * @return
      */
-    public int getMeasureCount()
-    {
+    public int getMeasureCount() {
         return measureCount;
     }
 
     /**
      * setMeasureCount
-     * 
+     *
      * @param measureCount
      */
-    public void setMeasureCount(int measureCount)
-    {
+    public void setMeasureCount(int measureCount) {
         this.measureCount = measureCount;
     }
 
     /**
      * getUniqueValue
-     * 
+     *
      * @return
      */
-    public double[] getUniqueValue()
-    {
+    public double[] getUniqueValue() {
         return uniqueValue;
     }
 
     /**
      * setUniqueValue
-     * 
+     *
      * @param uniqueValue
      */
-    public void setUniqueValue(double[] uniqueValue)
-    {
+    public void setUniqueValue(double[] uniqueValue) {
         this.uniqueValue = uniqueValue;
     }
 
     /**
      * @return the type
      */
-    public char[] getType()
-    {
+    public char[] getType() {
         return type;
     }
 
     /**
      * @param type the type to set
      */
-    public void setType(char[] type)
-    {
+    public void setType(char[] type) {
         this.type = type;
     }
 
     /**
      * @return the dataTypeSelected
      */
-    public byte[] getDataTypeSelected()
-    {
+    public byte[] getDataTypeSelected() {
         return dataTypeSelected;
     }
 
     /**
      * @param dataTypeSelected the dataTypeSelected to set
      */
-    public void setDataTypeSelected(byte[] dataTypeSelected)
-    {
+    public void setDataTypeSelected(byte[] dataTypeSelected) {
         this.dataTypeSelected = dataTypeSelected;
     }
+
     /**
      * @return the minValueFactForAgg
      */
-    public double[] getMinValueFactForAgg()
-    {
+    public double[] getMinValueFactForAgg() {
         return minValueFactForAgg;
     }
+
     /**
      * @param minValueFactForAgg the minValueFactForAgg to set
      */
-    public void setMinValueFactForAgg(double[] minValueFactForAgg)
-    {
+    public void setMinValueFactForAgg(double[] minValueFactForAgg) {
         this.minValueFactForAgg = minValueFactForAgg;
     }
 

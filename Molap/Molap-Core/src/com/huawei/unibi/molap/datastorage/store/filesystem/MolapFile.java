@@ -17,17 +17,10 @@
  * under the License.
  */
 
-/**
- * 
- */
 package com.huawei.unibi.molap.datastorage.store.filesystem;
 
-/**
- * @author R00900208
- *
- */
-public interface MolapFile
-{
+public interface MolapFile {
+
     String getAbsolutePath();
 
     MolapFile[] listFiles(MolapFileFilter fileFilter);
@@ -49,7 +42,7 @@ public interface MolapFile
     long getSize();
 
     boolean renameTo(String changetoName);
-    
+
     boolean renameForce(String changetoName);
 
     boolean delete();
@@ -57,8 +50,8 @@ public interface MolapFile
     boolean createNewFile();
 
     boolean mkdirs();
-    
+
     long getLastModifiedTime();
-    
+
     boolean setLastModifiedTime(long timestamp);
 }

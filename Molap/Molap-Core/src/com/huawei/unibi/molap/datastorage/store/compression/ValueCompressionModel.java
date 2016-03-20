@@ -17,28 +17,21 @@
  * under the License.
  */
 
-/**
- *
- */
 package com.huawei.unibi.molap.datastorage.store.compression;
 
 import com.huawei.unibi.molap.datastorage.store.compression.ValueCompressonHolder.UnCompressValue;
 import com.huawei.unibi.molap.util.ValueCompressionUtil.COMPRESSION_TYPE;
 import com.huawei.unibi.molap.util.ValueCompressionUtil.DataType;
 
-/**
- * @author x00228947
- * 
- */
-public class ValueCompressionModel
-{
+
+public class ValueCompressionModel {
     /**
      * COMPRESSION_TYPE[] variable.
      */
     private COMPRESSION_TYPE[] compType;
-    
+
     /**
-     *  DataType[]  variable.
+     * DataType[]  variable.
      */
     private DataType[] changedDataType;
     /**
@@ -46,12 +39,12 @@ public class ValueCompressionModel
      */
     private double[] maxValue;
     /**
-     *minValue.
+     * minValue.
      */
     private double[] minValue;
-    
+
     private double[] minValueFactForAgg;
-    
+
     /**
      * uniqueValue
      */
@@ -60,12 +53,12 @@ public class ValueCompressionModel
      * decimal.
      */
     private int[] decimal;
-    
+
     /**
      * aggType
      */
     private char[] type;
-    
+
     /**
      * dataTypeSelected
      */
@@ -78,172 +71,151 @@ public class ValueCompressionModel
     /**
      * @return the compType
      */
-    public COMPRESSION_TYPE[] getCompType()
-    {
+    public COMPRESSION_TYPE[] getCompType() {
         return compType;
     }
 
     /**
-     * @param compType
-     *            the compType to set
+     * @param compType the compType to set
      */
-    public void setCompType(COMPRESSION_TYPE[] compType)
-    {
+    public void setCompType(COMPRESSION_TYPE[] compType) {
         this.compType = compType;
     }
 
     /**
      * @return the changedDataType
      */
-    public DataType[] getChangedDataType()
-    {
+    public DataType[] getChangedDataType() {
         return changedDataType;
     }
 
     /**
-     * @param changedDataType
-     *            the changedDataType to set
+     * @param changedDataType the changedDataType to set
      */
-    public void setChangedDataType(DataType[] changedDataType)
-    {
+    public void setChangedDataType(DataType[] changedDataType) {
         this.changedDataType = changedDataType;
     }
 
     /**
      * @return the maxValue
      */
-    public double[] getMaxValue()
-    {
+    public double[] getMaxValue() {
         return maxValue;
     }
 
     /**
-     * @param maxValue
-     *            the maxValue to set
+     * @param maxValue the maxValue to set
      */
-    public void setMaxValue(double[] maxValue)
-    {
+    public void setMaxValue(double[] maxValue) {
         this.maxValue = maxValue;
     }
 
     /**
      * @return the decimal
      */
-    public int[] getDecimal()
-    {
+    public int[] getDecimal() {
         return decimal;
     }
 
     /**
-     * @param decimal
-     *            the decimal to set
+     * @param decimal the decimal to set
      */
-    public void setDecimal(int[] decimal)
-    {
+    public void setDecimal(int[] decimal) {
         this.decimal = decimal;
     }
 
     /**
      * getUnCompressValues().
+     *
      * @return the unCompressValues
      */
-    public UnCompressValue[] getUnCompressValues()
-    {
+    public UnCompressValue[] getUnCompressValues() {
         return unCompressValues;
     }
 
     /**
-     * @param unCompressValues
-     *            the unCompressValues to set
+     * @param unCompressValues the unCompressValues to set
      */
-    public void setUnCompressValues(UnCompressValue[] unCompressValues)
-    {
+    public void setUnCompressValues(UnCompressValue[] unCompressValues) {
         this.unCompressValues = unCompressValues;
     }
 
     /**
      * getMinValue
+     *
      * @return
      */
-    public double[] getMinValue()
-    {
+    public double[] getMinValue() {
         return minValue;
     }
 
     /**
      * setMinValue.
+     *
      * @param minValue
      */
-    public void setMinValue(double[] minValue)
-    {
+    public void setMinValue(double[] minValue) {
         this.minValue = minValue;
     }
 
-    
+
     /**
      * @return the aggType
      */
-    public char[] getType()
-    {
+    public char[] getType() {
         return type;
     }
 
     /**
-     * @param aggType the aggType to set
+     * @param type the type to set
      */
-    public void setType(char[] type)
-    {
+    public void setType(char[] type) {
         this.type = type;
     }
 
     /**
      * @return the dataTypeSelected
      */
-    public byte[] getDataTypeSelected()
-    {
+    public byte[] getDataTypeSelected() {
         return dataTypeSelected;
     }
-    
+
+    /**
+     * @param dataTypeSelected the dataTypeSelected to set
+     */
+    public void setDataTypeSelected(byte[] dataTypeSelected) {
+        this.dataTypeSelected = dataTypeSelected;
+    }
+
     /**
      * getUniqueValue
+     *
      * @return
      */
-    public double[] getUniqueValue()
-    {
+    public double[] getUniqueValue() {
         return uniqueValue;
     }
 
     /**
      * setUniqueValue
+     *
      * @param uniqueValue
      */
-    public void setUniqueValue(double[] uniqueValue)
-    {
+    public void setUniqueValue(double[] uniqueValue) {
         this.uniqueValue = uniqueValue;
-    }
-
-
-    /**
-     * @param dataTypeSelected the dataTypeSelected to set
-     */
-    public void setDataTypeSelected(byte[] dataTypeSelected)
-    {
-        this.dataTypeSelected = dataTypeSelected;
     }
 
     /**
      * @return the minValueFactForAgg
      */
-    public double[] getMinValueFactForAgg()
-    {
+    public double[] getMinValueFactForAgg() {
         return minValueFactForAgg;
     }
 
     /**
      * @param minValueFactForAgg the minValueFactForAgg to set
      */
-    public void setMinValueFactForAgg(double[] minValueFactForAgg)
-    {
+    public void setMinValueFactForAgg(double[] minValueFactForAgg) {
         this.minValueFactForAgg = minValueFactForAgg;
     }
 }

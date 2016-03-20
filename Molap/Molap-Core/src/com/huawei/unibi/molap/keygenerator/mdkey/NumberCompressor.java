@@ -17,20 +17,12 @@
  * under the License.
  */
 
-/**
- * 
- */
 package com.huawei.unibi.molap.keygenerator.mdkey;
-
-//import java.util.Arrays;
 
 /**
  * It compresses the data as per max cardinality. It takes only the required bits for each key.
- * @author K00900841
- * 
  */
-public class NumberCompressor
-{
+public class NumberCompressor {
 
     /**
      * Bits MAX_LENGTH
@@ -47,76 +39,60 @@ public class NumberCompressor
     private static final long LONG_MAX = 0x7fffffffffffffffL;
 
     private byte bitsLength;
-    
+
     private byte oldBitsLength;
-    
+
     private int roundedBytesLength;
 
-    public NumberCompressor(int cardinaity)
-    {
-        bitsLength = (byte)Long.toBinaryString(cardinaity).length();
+    public NumberCompressor(int cardinaity) {
+        bitsLength = (byte) Long.toBinaryString(cardinaity).length();
     }
-    
-    public NumberCompressor(int newBitsLenth,int oldBitsLength)
-    {
-        bitsLength = (byte)newBitsLenth;
-        this.oldBitsLength = (byte)oldBitsLength;
+
+    public NumberCompressor(int newBitsLenth, int oldBitsLength) {
+        bitsLength = (byte) newBitsLenth;
+        this.oldBitsLength = (byte) oldBitsLength;
         roundedBytesLength = getRoundedBytesSize(oldBitsLength);
     }
 
-    public byte[] compress(int[] keys)
-    {
+    public byte[] compress(int[] keys) {
         int[] sizes = getWordsAndByteSize(keys.length);
         long[] words = get(keys, sizes[0]);
 
         return getByteValues(sizes, words);
     }
-    
-    //TODO SIMIAN
-    /**
-     * @param sizes
-     * @param words
-     * @return
-     */
-    private byte[] getByteValues(int[] sizes, long[] words)
-    {
+
+    private byte[] getByteValues(int[] sizes, long[] words) {
         byte[] bytes = new byte[sizes[1]];
 
         int l = sizes[1] - 1;
-        for(int i = 0;i < words.length;i++)
-        {
+        for (int i = 0; i < words.length; i++) {
             long val = words[i];
 
-            for(int j = BYTE_LENGTH - 1;j > 0 && l > 0;j--)
-            {
-                bytes[l] = (byte)val;
+            for (int j = BYTE_LENGTH - 1; j > 0 && l > 0; j--) {
+                bytes[l] = (byte) val;
                 val >>>= 8;
                 l--;
             }
-            bytes[l] = (byte)val;
+            bytes[l] = (byte) val;
             l--;
         }
         return bytes;
     }
-    
-    public byte[] compressBytes(byte[] keys)
-    {
+
+    public byte[] compressBytes(byte[] keys) {
         int[] sizes = getWordsAndByteSizeForByteArray(oldBitsLength, bitsLength, keys.length);
         long[] words = get(keys, sizes[0]);
 
         return getByteValues(sizes, words);
-    }    
+    }
 
-    protected long[] get(int[] keys, int wsize)
-    {
+    protected long[] get(int[] keys, int wsize) {
         long[] words = new long[wsize];
         int ll = 0;
         int index = 0;
         int pos = 0;
         int nextIndex = 0;
-//        long controlBits = LONG_MAX >> (MAX_LENGTH - bitsLength);
-        for(int i = keys.length - 1;i >= 0;i--)
-        {
+        for (int i = keys.length - 1; i >= 0; i--) {
 
             long val = keys[i];
 
@@ -130,12 +106,11 @@ public class NumberCompressor
 
             nextIndex = ll >> 6;// This is divide by 64
 
-            if(nextIndex != index)
-            {
+            if (nextIndex != index) {
                 int consideredBits = bitsLength - ll & 0x3f;
-                if(consideredBits < bitsLength) // Check for spill over only if
-                                                // all the bits are not
-                                                // considered
+                if (consideredBits < bitsLength) // Check for spill over only if
+                // all the bits are not
+                // considered
                 {
                     // Check for spill over
                     mask = (val >> (bitsLength - ll & 0x3f));
@@ -146,38 +121,31 @@ public class NumberCompressor
         }
         return words;
     }
-    
-    protected long[] get(byte[] keys, int wsize)
-    {
+
+    protected long[] get(byte[] keys, int wsize) {
         long[] words = new long[wsize];
         int ll = 0;
         long val = 0L;
-//        long controlMask = LONG_MAX >> (MAX_LENGTH - bitsLength);
-        for(int i = keys.length - 1;i >= 0;)
-        {
+        for (int i = keys.length - 1; i >= 0; ) {
 
             int size = i;
             val = 0L;
-            for(int j = i-roundedBytesLength+1;j <= size;)
-            {
+            for (int j = i - roundedBytesLength + 1; j <= size; ) {
                 val <<= BYTE_LENGTH;
                 val ^= keys[j++] & 0xFF;
                 i--;
             }
             int index = ll >> 6;// divide by 64 to get the new word index
-//            int pos = ll & 0x3f;
-//            val = val & controlMask;
             words[index] |= (val << (ll & 0x3f));
             ll += bitsLength;
 
             int nextIndex = ll >> 6;// This is divide by 64
 
-            if(nextIndex != index)
-            {
+            if (nextIndex != index) {
                 int consideredBits = bitsLength - ll & 0x3f;
-                if(consideredBits < bitsLength) // Check for spill over only if
-                                                // all the bits are not
-                                                // considered
+                if (consideredBits < bitsLength) // Check for spill over only if
+                // all the bits are not
+                // considered
                 {
                     // Check for spill over
                     words[nextIndex] |= (val >> (bitsLength - ll & 0x3f));
@@ -188,64 +156,47 @@ public class NumberCompressor
         return words;
     }
 
-    public int[] unCompress(byte[] key)
-    {
+    public int[] unCompress(byte[] key) {
         int ls = key.length;
-        int arrayLength = (ls*BYTE_LENGTH)/bitsLength;
+        int arrayLength = (ls * BYTE_LENGTH) / bitsLength;
         long[] words = new long[getWordsSizeFromBytesSize(ls)];
         unCompressVal(key, ls, words);
         return getArray(words, arrayLength);
     }
-    
-    //TODO SIMIAN
-    /**
-     * @param key
-     * @param ls
-     * @param words
-     *
-     */
-    private void unCompressVal(byte[] key, int ls, long[] words)
-    {
-        for(int i = 0;i < words.length;i++)
-        {
+
+    private void unCompressVal(byte[] key, int ls, long[] words) {
+        for (int i = 0; i < words.length; i++) {
             long l = 0;
             ls -= BYTE_LENGTH;
             int m = 0;
-            if(ls < 0)
-            {
+            if (ls < 0) {
                 m = ls + BYTE_LENGTH;
                 ls = 0;
-            }
-            else
-            {
+            } else {
                 m = ls + BYTE_LENGTH;
             }
-            for(int j = ls;j < m;j++)
-            {
+            for (int j = ls; j < m; j++) {
                 l <<= BYTE_LENGTH;
                 l ^= key[j] & 0xFF;
             }
             words[i] = l;
         }
     }
-    
-    public byte[] unCompressBytes(byte[] key)
-    {
+
+    public byte[] unCompressBytes(byte[] key) {
         int ls = key.length;
-        int actualLength = (ls*BYTE_LENGTH)/bitsLength;
-        int arrayLength = (actualLength*oldBitsLength)/BYTE_LENGTH;
+        int actualLength = (ls * BYTE_LENGTH) / bitsLength;
+        int arrayLength = (actualLength * oldBitsLength) / BYTE_LENGTH;
         long[] words = new long[getWordsSizeFromBytesSize(ls)];
         unCompressVal(key, ls, words);
-        return getArrayBytes(words, arrayLength,roundedBytesLength);
-    }    
-    
-    private int[] getArray(long[] words, int arrayLength)
-    {
+        return getArrayBytes(words, arrayLength, roundedBytesLength);
+    }
+
+    private int[] getArray(long[] words, int arrayLength) {
         int[] vals = new int[arrayLength];
         int ll = 0;
         long globalMask = LONG_MAX >>> (MAX_LENGTH - bitsLength);
-        for(int i = arrayLength - 1;i >= 0;i--)
-        {
+        for (int i = arrayLength - 1; i >= 0; i--) {
 
             int index = ll >> 6;
             int pos = ll & 0x3f;
@@ -255,28 +206,25 @@ public class NumberCompressor
             ll += bitsLength;
 
             int nextIndex = ll >> 6;
-            if(nextIndex != index)
-            {
-                pos =  ll & 0x3f;
-                if(pos != 0) // Number of bits pending for current key is zero, no spill over 
+            if (nextIndex != index) {
+                pos = ll & 0x3f;
+                if (pos != 0) // Number of bits pending for current key is zero, no spill over
                 {
-                    mask = (LONG_MAX >>> (MAX_LENGTH-pos));
+                    mask = (LONG_MAX >>> (MAX_LENGTH - pos));
                     val = words[nextIndex];
-                    value = value|((val & mask)<<(bitsLength-pos));
-                }            
+                    value = value | ((val & mask) << (bitsLength - pos));
+                }
             }
-            vals[i] = (int)value;
+            vals[i] = (int) value;
         }
         return vals;
     }
-    
-    private byte[] getArrayBytes(long[] words, int arrayLength,int eachColLen)
-    {
+
+    private byte[] getArrayBytes(long[] words, int arrayLength, int eachColLen) {
         byte[] vals = new byte[arrayLength];
         int ll = 0;
         long globalMask = LONG_MAX >>> (MAX_LENGTH - bitsLength);
-        for(int i = arrayLength - 1;i >= 0;)
-        {
+        for (int i = arrayLength - 1; i >= 0; ) {
             int index = ll >> 6;
             int pos = ll & 0x3f;
             long val = words[index];
@@ -287,103 +235,70 @@ public class NumberCompressor
             ll += bitsLength;
 
             int nextIndex = ll >> 6;
-            if(nextIndex != index)
-            {
-                pos =  ll & 0x3f;
-                if(pos != 0) // Number of bits pending for current key is zero, no spill over 
+            if (nextIndex != index) {
+                pos = ll & 0x3f;
+                if (pos != 0) // Number of bits pending for current key is zero, no spill over
                 {
-                    mask = (LONG_MAX >>> (MAX_LENGTH-pos));
+                    mask = (LONG_MAX >>> (MAX_LENGTH - pos));
                     val = words[nextIndex];
-                    value = value|((val & mask)<<(bitsLength-pos));
-                }            
+                    value = value | ((val & mask) << (bitsLength - pos));
+                }
             }
-            for(int j = 0;j < eachColLen-1;j++)
-            {
-                vals[i--] = (byte)value;
+            for (int j = 0; j < eachColLen - 1; j++) {
+                vals[i--] = (byte) value;
                 value >>>= 8;
             }
-            vals[i--] = (byte)value;          
+            vals[i--] = (byte) value;
         }
         return vals;
-    }    
-    
-    private int[] getWordsAndByteSize(int arrayLength)
-    {
+    }
+
+    private int[] getWordsAndByteSize(int arrayLength) {
         int length = arrayLength * bitsLength;
         int wsize = length / LONG_LENGTH;
         int byteSize = length / BYTE_LENGTH;
 
-        if(length % LONG_LENGTH != 0)
-        {
+        if (length % LONG_LENGTH != 0) {
             wsize++;
         }
 
-        if(length % BYTE_LENGTH != 0)
-        {
+        if (length % BYTE_LENGTH != 0) {
             byteSize++;
         }
         return new int[]{wsize, byteSize};
     }
-    
-    private int[] getWordsAndByteSizeForByteArray(int oldCardinality, int newCardinality, int arrayLength)
-    {
-        int oldLen = (arrayLength * BYTE_LENGTH)/oldCardinality;
-        
+
+    private int[] getWordsAndByteSizeForByteArray(int oldCardinality, int newCardinality, int arrayLength) {
+        int oldLen = (arrayLength * BYTE_LENGTH) / oldCardinality;
+
         int length = oldLen * newCardinality;
         int wsize = length / LONG_LENGTH;
         int byteSize = length / BYTE_LENGTH;
 
-        if(length % LONG_LENGTH != 0)
-        {
+        if (length % LONG_LENGTH != 0) {
             wsize++;
         }
 
-        if(length % BYTE_LENGTH != 0)
-        {
+        if (length % BYTE_LENGTH != 0) {
             byteSize++;
         }
         return new int[]{wsize, byteSize};
-    }    
-    
-    private int getRoundedBytesSize(int oldBitsLength)
-    {
-        int length = oldBitsLength/BYTE_LENGTH;
-        if(oldBitsLength % BYTE_LENGTH != 0)
-        {
+    }
+
+    private int getRoundedBytesSize(int oldBitsLength) {
+        int length = oldBitsLength / BYTE_LENGTH;
+        if (oldBitsLength % BYTE_LENGTH != 0) {
             length++;
         }
         return length;
     }
-    
-    private int getWordsSizeFromBytesSize(int byteSize)
-    {
+
+    private int getWordsSizeFromBytesSize(int byteSize) {
         int wsize = byteSize / BYTE_LENGTH;
-        if(byteSize % BYTE_LENGTH != 0)
-        {
+        if (byteSize % BYTE_LENGTH != 0) {
             wsize++;
         }
         return wsize;
     }
-    
-   /* public static void main(String[] args)
-    {
-        try
-        {
-        	NumberCompressor keyGen = new NumberCompressor(24,17);
-            int keyLong[] = new int[]{30000, 240000, 42899, 887, 11123, 2212, 13232, 43232, 22323, 32323, 73232, 13232,76,455,1212,4546};
-            byte[] key = keyGen.compress(keyLong);
-            System.out.println(key.length);
-            NumberCompressor keyGen1 = new NumberCompressor(18,24);
-            long s = System.nanoTime();
-            byte[] key2 = keyGen1.compressBytes(key);
-            System.out.println(System.nanoTime()-s);
-            System.out.println(key2.length);
-            System.out.println(Arrays.toString(key));
-            System.out.println(Arrays.toString(keyGen.unCompress(keyGen1.unCompressBytes(key2))));
-        }
-        catch(Exception e)
-        {
-            e.printStackTrace();
-        }
-    }*/
+
 }

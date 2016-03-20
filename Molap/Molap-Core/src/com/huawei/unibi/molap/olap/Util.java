@@ -19,9 +19,6 @@
 
 package com.huawei.unibi.molap.olap;
 
-
-
-
 public final class Util
 {
     public static final String NL = System.getProperty("line.separator");
@@ -84,9 +81,6 @@ public final class Util
     /**
      * Returns true if two strings are equal, or are both null.
      *
-     * <p>The result is not affected by
-     * {@link MondrianProperties#CaseSensitive the case sensitive option}; if
-     * you wish to compare names, use {@link #equalName(String, String)}.
      */
     public static boolean equals(String s, String t) {
         return equals((Object) s, (Object) t);
@@ -102,140 +96,7 @@ public final class Util
         }
     }
     
-//    /**
-//     * Gets content via Apache VFS and decrypt the content.
-//     *  File must exist and have content.
-//     *
-//     * @param url String
-//     * @return Apache VFS FileContent for further processing
-//     * @throws FileSystemException
-//     * @throws org.apache.commons.vfs.FileSystemException 
-//     */
-//    public static InputStream readEncryptedVirtualFile(String url)
-//            throws FileSystemException, org.apache.commons.vfs.FileSystemException
-//    {
-//
-//
-//        InputStream inputStream = readVirtualFile(url);
-//        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-//        ByteArrayInputStream bais = null;
-//        ByteArrayInputStream decryptedStream = null;
-//        byte[] buffer = new byte[1024];
-//        int read = 0;
-//        try
-//        {
-//            while((read = inputStream.read(buffer, 0, buffer.length)) != -1)
-//            {
-//                baos.write(buffer, 0, read);
-//            }
-//            baos.flush();
-//            bais = new ByteArrayInputStream(baos.toByteArray()) ;
-//            decryptedStream = SimpleFileEncryptor.decryptContent(bais);
-//            return decryptedStream;
-//        }
-//        catch(IOException ex)
-//        {
-//            throw newError("File read  is failed: " + url);
-//        }
-//        catch(Exception ex)
-//        {
-//            throw newError("File decryption is failed: " + url);
-//        }
-//        finally
-//        {
-//            MolapUtil.closeStreams(inputStream,baos,bais);
-//        }
-//    }
-//    
-//    /**
-//     * Gets content via Apache VFS. File must exist and have content
-//     *
-//     * @param url String
-//     * @return Apache VFS FileContent for further processing
-//     * @throws FileSystemException
-//     * @throws org.apache.commons.vfs.FileSystemException 
-//     */
-//    public static InputStream readVirtualFile(String url)
-//        throws FileSystemException, org.apache.commons.vfs.FileSystemException
-//    {
-//        // Treat catalogUrl as an Apache VFS (Virtual File System) URL.
-//        // VFS handles all of the usual protocols (http:, file:)
-//        // and then some.
-//        FileSystemManager fsManager = VFS.getManager();
-//        if (fsManager == null) {
-//            throw newError("Cannot get virtual file system manager");
-//        }
-//
-//        // Workaround VFS bug.
-//        if (url.startsWith("file://localhost")) {
-//            url = url.substring("file://localhost".length());
-//        }
-//        if (url.startsWith("file:")) {
-//            url = url.substring("file:".length());
-//        }
-//
-//        //work around for VFS bug not closing http sockets
-//        // (Mondrian-585)
-//        if (url.startsWith("http")) {
-//            try {
-//                return new URL(url).openStream();
-//            } catch (IOException e) {
-//                throw newError(
-//                    "Could not read URL: " + url);
-//            }
-//        }
-//
-//        File userDir = new File("").getAbsoluteFile();
-//        FileObject file = fsManager.resolveFile(userDir, url);
-//        FileContent fileContent = null;
-//        try {
-//            // Because of VFS caching, make sure we refresh to get the latest
-//            // file content. This refresh may possibly solve the following
-//            // workaround for defect MONDRIAN-508, but cannot be tested, so we
-//            // will leave the work around for now.
-//            file.refresh();
-//
-//            // Workaround to defect MONDRIAN-508. For HttpFileObjects, verifies
-//            // the URL of the file retrieved matches the URL passed in.  A VFS
-//            // cache bug can cause it to treat URLs with different parameters
-//            // as the same file (e.g. http://blah.com?param=A,
-//            // http://blah.com?param=B)
-//            if (file instanceof HttpFileObject
-//                && !file.getName().getURI().equals(url))
-//            {
-//                fsManager.getFilesCache().removeFile(
-//                    file.getFileSystem(),  file.getName());
-//
-//                file = fsManager.resolveFile(userDir, url);
-//            }
-//
-//            if (!file.isReadable()) {
-//                throw newError(
-//                    "Virtual file is not readable: " + url);
-//            }
-//
-//            fileContent = file.getContent();
-//        } 
-//        finally
-//        {
-//            try 
-//            {
-//                file.close();
-//            }
-//            catch (IOException e)
-//            {
-//                e= null;
-//            }
-//        }
-//
-//        if (fileContent == null) {
-//            throw newError(
-//                "Cannot get virtual file content: " + url);
-//        }
-//        
-//        return fileContent.getInputStream();
-//    }
-    
+
     
     /**
      * Creates a non-internal error. Currently implemented in terms of
