@@ -30,9 +30,6 @@ import com.huawei.unibi.molap.engine.aggregator.MeasureAggregator;
 
 /**
  * To hold the reference to Molap column (measure or dimension in the given expression)
- * 
- * @author K00900207
- * 
  */
 public class MolapQueryExpression implements Serializable
 {

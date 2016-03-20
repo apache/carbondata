@@ -46,11 +46,7 @@ import com.huawei.unibi.molap.constants.MolapCommonConstants;
 import com.huawei.unibi.molap.query.metadata.MolapDimensionLevelFilter;
 
 /**
- * 
  * Single partition creator for non partitioned data testing.
- * 
- * @author K00900207
- * 
  */
 public class SingleDummyDataPartitionerImpl implements DataPartitioner
 {
@@ -63,13 +59,10 @@ public class SingleDummyDataPartitionerImpl implements DataPartitioner
     private List<Partition> allPartitions;
 
     private Partitioner partitioner;
-    /**
-     * 
-     */
+
     public void initialize(String basePath, String[] columns, Partitioner partitioner)
     {
     	this.partitioner = partitioner;
-//        System.out.println("SingleDummyDataPartitionerImpl initialized");
         LOGGER.info(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, "SingleDummyDataPartitionerImpl initialized");
 
         allPartitions = new ArrayList<Partition>(MolapCommonConstants.CONSTANT_SIZE_TEN);
@@ -85,9 +78,6 @@ public class SingleDummyDataPartitionerImpl implements DataPartitioner
         return allPartitions.get(0);
     }
 
-    /**
-     * 
-     */
     public List<Partition> getAllPartitions()
     {
         return allPartitions;

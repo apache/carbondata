@@ -58,5 +58,4 @@ public interface Partition extends Serializable
      * Column name and constraints used to distribute the data
      */
     Map<String, MolapDimensionLevelFilter> getPartitionDetails();
-
 }

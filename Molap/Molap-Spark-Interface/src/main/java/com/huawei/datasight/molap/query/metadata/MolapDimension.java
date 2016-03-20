@@ -26,7 +26,6 @@ import java.io.Serializable;
 
 /**
  * Dimension class
- * @author R00900208
  *
  */
 public class MolapDimension implements MolapColumn, Serializable

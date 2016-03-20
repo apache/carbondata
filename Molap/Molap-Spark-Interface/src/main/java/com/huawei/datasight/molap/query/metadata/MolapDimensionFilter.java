@@ -30,7 +30,6 @@ import com.huawei.unibi.molap.constants.MolapCommonConstants;
 
 /**
  * It is filter class for Molap dimension.
- * @author R00900208
  *
  */
 public class MolapDimensionFilter implements Serializable
