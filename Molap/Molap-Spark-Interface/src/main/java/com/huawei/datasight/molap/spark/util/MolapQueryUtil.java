@@ -105,44 +105,13 @@ import com.huawei.unibi.molap.util.MolapUtil;
 
 /**
  * This utilty parses the Molap query plan to actual query model object.
- * @author R00900208
- *
  */
 public final class MolapQueryUtil 
 {
 	
 	private static final LogService LOGGER = LogServiceFactory
             .getLogService(MolapQueryUtil.class.getName());
-	
-//	/**
-//	 * It parses the Molap query plan to executor model. The executor model is the class which have actual information
-//	 * of query.
-//	 * @param logicalPlan
-//	 * @param schemaPath
-//	 * @return
-//	 * @throws IOException 
-//	 */
-//	public static MolapQueryExecutorModel parseQuery(MolapQueryPlan logicalPlan,String schemaPath) throws IOException
-//	{
-//		
-//		Cube cube = loadSchema(schemaPath,logicalPlan.getSchemaName(),logicalPlan.getCubeName());
-//		 MolapQueryExecutorModel executorModel = createModel(logicalPlan, cube);
-//        executorModel.setMsrConstraints(measureFilterArray);
-//        executorModel.setSortOrder(model.getDimSortTypes());
-//        executorModel.setTopNModel(model.getTopNModel());
-//        executorModel.setSortModel(model.getSortModel());
-//        executorModel.setFilterInHierGroups(model.isExactLevelsMatch());
-//        executorModel.setAggTable(!(model.getFactTableName().equals(factTableName)));
-//        executorModel.setQueryID(model.getQueryID());
-//        executorModel.setRowLimit(rowLimit);
-//		
-//		
-//		
-//		
-//		
-//		return executorModel;
-//	}
-	
+
 	private MolapQueryUtil()
 	{
 		
@@ -173,6 +142,7 @@ public final class MolapQueryUtil
 		return listOfLoadPaths;
 		
 	}
+
 	/**
 	 * This API will update the query executer model with valid sclice folder numbers based on its
 	 * load status present in the load metadata.
@@ -206,50 +176,48 @@ public final class MolapQueryUtil
 				//just directly iterate Array
 				List<LoadMetadataDetails> loadFolderDetails=Arrays.asList(loadFolderDetailsArray);
 				
-					for (LoadMetadataDetails loadMetadataDetails : loadFolderDetails) {
-						if (MolapCommonConstants.STORE_LOADSTATUS_SUCCESS
-								.equalsIgnoreCase(loadMetadataDetails
-										.getLoadStatus()) || MolapCommonConstants.MARKED_FOR_UPDATE
-										.equalsIgnoreCase(loadMetadataDetails
-												.getLoadStatus()) || MolapCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS
-												.equalsIgnoreCase(loadMetadataDetails
-														.getLoadStatus())) {
-						    // check for merged loads.
-						    if(null != loadMetadataDetails.getMergedLoadName()){
-	                            
-	                            if(!listOfValidSlices.contains(loadMetadataDetails.getMergedLoadName() ))
-	                            {
-	                                listOfValidSlices.add(loadMetadataDetails
-	                                    .getMergedLoadName());
-	                            }
-	                            // if merged load is updated then put it in updated list
-	                            if(MolapCommonConstants.MARKED_FOR_UPDATE
-                                        .equalsIgnoreCase(loadMetadataDetails
-                                                .getLoadStatus()))
-	                            {
-	                                listOfValidUpdatedSlices.add(loadMetadataDetails
-	                                        .getMergedLoadName());
-	                            }
-	                            continue;
-	                        }
-						    
-							if(MolapCommonConstants.MARKED_FOR_UPDATE
-										.equalsIgnoreCase(loadMetadataDetails
-												.getLoadStatus())){
-								
-								listOfValidUpdatedSlices.add(loadMetadataDetails
-										.getLoadName());
-							}
-							listOfValidSlices.add(loadMetadataDetails
-									.getLoadName());
+                for (LoadMetadataDetails loadMetadataDetails : loadFolderDetails) {
+                    if (MolapCommonConstants.STORE_LOADSTATUS_SUCCESS
+                            .equalsIgnoreCase(loadMetadataDetails
+                                    .getLoadStatus()) || MolapCommonConstants.MARKED_FOR_UPDATE
+                                    .equalsIgnoreCase(loadMetadataDetails
+                                            .getLoadStatus()) || MolapCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS
+                                            .equalsIgnoreCase(loadMetadataDetails
+                                                    .getLoadStatus())) {
+                        // check for merged loads.
+                        if(null != loadMetadataDetails.getMergedLoadName()){
 
-						}
-					}
-					executerModel.setListValidSliceNumbers(listOfValidSlices);
-					executerModel.setListValidUpdatedSlice(listOfValidUpdatedSlices);
-					executerModel.setLoadMetadataDetails(loadFolderDetailsArray);
-//				}
+                            if(!listOfValidSlices.contains(loadMetadataDetails.getMergedLoadName() ))
+                            {
+                                listOfValidSlices.add(loadMetadataDetails
+                                    .getMergedLoadName());
+                            }
+                            // if merged load is updated then put it in updated list
+                            if(MolapCommonConstants.MARKED_FOR_UPDATE
+                                    .equalsIgnoreCase(loadMetadataDetails
+                                            .getLoadStatus()))
+                            {
+                                listOfValidUpdatedSlices.add(loadMetadataDetails
+                                        .getMergedLoadName());
+                            }
+                            continue;
+                        }
 
+                        if(MolapCommonConstants.MARKED_FOR_UPDATE
+                                    .equalsIgnoreCase(loadMetadataDetails
+                                            .getLoadStatus())){
+
+                            listOfValidUpdatedSlices.add(loadMetadataDetails
+                                    .getLoadName());
+                        }
+                        listOfValidSlices.add(loadMetadataDetails
+                                .getLoadName());
+
+                    }
+                }
+                executerModel.setListValidSliceNumbers(listOfValidSlices);
+                executerModel.setListValidUpdatedSlice(listOfValidUpdatedSlices);
+                executerModel.setLoadMetadataDetails(loadFolderDetailsArray);
 			} 
 
 		} catch (IOException e)
@@ -289,10 +257,7 @@ public final class MolapQueryUtil
         //high cardinality property.
         
         dims.addAll(Arrays.asList(executorModel.getDims()));
-//        fillDimensionAggregator(logicalPlan, executorModel, cube.getDimensions(factTableName));
-//        dims.addAll(executorModel.getConstraints().keySet());
-        //TODO : Make this property configurable
-//        MondrianProperties.instance().setProperty("mondrian.rolap.aggregates.Use", "true");
+
         String suitableTableName = factTableName;
         if(!logicalPlan.isDetailQuery()
                 && logicalPlan.getExpressions().isEmpty()
@@ -310,9 +275,6 @@ public final class MolapQueryUtil
                         dims, executorModel, storeLocation, partitionCount);
         	}
         }
-//        if(!suitableTableName.equals(factTableName)
-//                && isDimAggInfoValidForAggTable(logicalPlan, schema, cube,
-//                        suitableTableName, cube.getDimensions(factTableName)))
         if(!suitableTableName.equals(factTableName))
         {
             fillExecutorModel(logicalPlan, cube,schema, executorModel,
@@ -325,8 +287,6 @@ public final class MolapQueryUtil
             fillDimensionAggregator(logicalPlan, schema, cube, executorModel,
                     cube.getDimensions(factTableName));
         }
-//        fillDimensionAggregator(logicalPlan, schema, cube, executorModel,
-//                cube.getDimensions(suitableTableName));
         executorModel.setActualDimsRows(executorModel.getDims());
         executorModel.setActualDimsCols(new Dimension[0]);
         executorModel.setCalcMeasures(new ArrayList<Measure>(MolapCommonConstants.CONSTANT_SIZE_TEN));
@@ -384,13 +344,7 @@ public final class MolapQueryUtil
 		}
 		executorModel.setCountStarQuery(logicalPlan.isCountStartQuery());
 	}
-	
-    /**
-     * 
-     * @param executorModel
-     * @param partitionColumns
-     * 
-     */
+
     public static void setPartitionColumn(
             MolapQueryExecutorModel executorModel, String[] partitionColumns)
     {
@@ -408,7 +362,6 @@ public final class MolapQueryUtil
 	    	for(MolapDimension mdim:sortedDims)
 	    	{
 	    		sortOrderByteArray[i++]=(byte) mdim.getSortOrderType().ordinal();
-	    		//sortOrderByteArray[i++]=(byte) 1;
 	    	}
 	    	executorModel.setSortOrder(sortOrderByteArray);
 	    	executorModel.setSortedDimensions(getDimensions(sortedDims, dimensions));
@@ -421,13 +374,6 @@ public final class MolapQueryUtil
     	
 	}
 
-    /**
-     * 
-     * @param logicalPlan
-     * @param executorModel
-     * @param dimensions
-     * 
-     */
     private static void fillDimensionAggregator(MolapQueryPlan logicalPlan,
             Schema schema, Cube cube, MolapQueryExecutorModel executorModel)
     {
@@ -464,15 +410,7 @@ public final class MolapQueryUtil
         }
         executorModel.setDimensionAggInfo(dimensionAggregatorInfos);
     }
-    
-    /**
-     * 
-     * @param measures
-     * @param msrName
-     * @param aggName
-     * @return
-     * 
-     */
+
     private static Measure getMeasure(List<Measure> measures, String msrName,
             String aggName)
     {
@@ -486,14 +424,7 @@ public final class MolapQueryUtil
         }
         return null;
     }
-    
-    /**
-     * 
-     * @param logicalPlan
-     * @param executorModel
-     * @param dimensions
-     * 
-     */
+
     private static void fillDimensionAggregator(MolapQueryPlan logicalPlan,
             Schema schema, Cube cube, MolapQueryExecutorModel executorModel,
             List<Dimension> dimensions)
@@ -516,35 +447,7 @@ public final class MolapQueryUtil
         }
         executorModel.setDimensionAggInfo(dimensionAggregatorInfos);
     }
-    
-//    private static boolean isDimAggInfoValidForAggTable(
-//            MolapQueryPlan logicalPlan, Schema schema, Cube cube,
-//            String tableName, List<Dimension> dimensions)
-//    {
-//        Map<String, DimensionAggregatorInfo> dimAggregatorInfos = logicalPlan
-//                .getDimAggregatorInfos();
-//        String dimColumnName = null;
-//        DimensionAggregatorInfo value = null;
-//        Dimension dimension = null;
-//        for(Entry<String, DimensionAggregatorInfo> entry : dimAggregatorInfos
-//                .entrySet())
-//        {
-//            dimColumnName = entry.getKey();
-//            value = entry.getValue();
-//            dimension = findDimension(dimensions, dimColumnName);
-//            List<String> aggList = value.getAggList();
-//            for(int i = 0;i < aggList.size();i++)
-//            {
-//                if(!MolapQueryParseUtil.isDimensionMeasureInAggTable(schema,
-//                        cube, dimension, aggList.get(i), tableName))
-//                {
-//                    return false;
-//                }
-//            }
-//        }
-//        return true;
-//    }
-    
+
 	private static void traverseAndSetDimensionOrMsrTypeForColumnExpressions(
 			Expression filterExpression, List<Dimension> dimensions,
 			List<Measure> measures) {
@@ -582,6 +485,7 @@ public final class MolapQueryUtil
 		}
 
 	}
+
 	private static void setDimAndMsrColumnNode(List<Dimension> dimensions,
 			List<Measure> measures, ColumnExpression col) {
 		Dimension dim;
@@ -597,6 +501,7 @@ public final class MolapQueryUtil
 			col.setDimension(false);
         }
 	}
+
 	private static Map<Dimension, MolapFilterInfo> getLikeConstaints(
 			Map<MolapDimension, List<MolapLikeFilter>> dimensionLikeFilters,
 			List<Dimension> dimensions) {
@@ -652,9 +557,6 @@ public final class MolapQueryUtil
 	
 	/**
 	 * Get the best suited dimensions from metadata.
-	 * @param molapDims
-	 * @param dimensions
-	 * @return
 	 */
 	private static Dimension[] getDimensions(List<MolapDimension> molapDims,List<Dimension> dimensions)
 	{
@@ -675,37 +577,9 @@ public final class MolapQueryUtil
 		
 	}
 
-//	/**
-//	 * Find the dimension from metadata by using unique name. As of now we are taking level name as unique name.
-//	 * But user needs to give one unique name for each level,that level he needs to mention in query.
-//	 * @param dimensions
-//	 * @param molapDim
-//	 * @return
-//	 */
-//	private static Dimension findDimension(List<Dimension> dimensions,String molapDim) 
-//	{
-//		Dimension findDim = null;
-//		for(Dimension dimension : dimensions)
-//		{
-//			//Its just a temp work around to use level name as unique name. we need to provide a way to configure unique name 
-//			//to user in schema.
-//			if(dimension.getName().equalsIgnoreCase(molapDim))
-//			{
-//				findDim = dimension.getDimCopy();
-//				findDim.setActualCol(true);
-//				break;
-//			}
-//		}
-//		return findDim;
-//	}
-	
 	/**
 	 * Find the dimension from metadata by using unique name. As of now we are taking level name as unique name.
 	 * But user needs to give one unique name for each level,that level he needs to mention in query.
-	 * @param dimensions
-	 * @param molapDim
-	 * @return
-	 * @throws Exception 
 	 */
 	public static MolapDimension getMolapDimension(List<Dimension> dimensions,String molapDim)
 	{
@@ -746,10 +620,6 @@ public final class MolapQueryUtil
 	
 	/**
 	 * Create the molap measures from the requested query model.
-	 * @param molapMsrs
-	 * @param measures
-	 * @param isDetailQuery
-	 * @return
 	 */
 	private static List<Measure> getMeasures(List<MolapMeasure> molapMsrs,List<Measure> measures,boolean isDetailQuery,MolapQueryExecutorModel executorModel)
 	{
@@ -847,93 +717,14 @@ public final class MolapQueryUtil
 			}
 		return null;
 	}
-	/**
-	 * whether it is a detail query or agg query. If any measures has agg present like sum(col1) then it becomes agg query.
-	 * @param molapMsrs
-	 * @return
-	 */
-	/*private static boolean isDetailQuery(List<MolapMeasure> molapMsrs)
-	{
-		for(MolapMeasure molapMsr : molapMsrs)
-		{
-			String name = molapMsr.getMeasure();
-			//we are just checking for ( present or not but needs to handle properly.
-			int indexOf = name.indexOf("(");
-			if(indexOf < 0)
-			{
-				return true;
-			}
-		}
-		return false;
-	}*/
-	
-	/**
-	 * Get the constraints from query model
-	 * @param queryCons
-	 * @param dimensions
-	 * @return
-	 */
-	/*private static Map<Dimension, MolapFilterInfo> getConstaints(Map<MolapDimension, MolapDimensionFilter> queryCons,List<Dimension> dimensions, Map<Dimension, MolapFilterInfo> constraints)
-	{
-		if(null==constraints)
-		{
-			constraints = new HashMap<MolapMetadata.Dimension, MolapFilterInfo>();
-		}
-		
-		for(Entry<MolapDimension, MolapDimensionFilter> entry : queryCons.entrySet())
-		{
-			Dimension findDim = findDimension(dimensions, entry.getKey().getDimensionUniqueName());
-			MolapFilterInfo createFilterInfo = createFilterInfo(entry.getValue());
-			constraints.put(findDim, createFilterInfo);
-		}
-		
-		return constraints;
-	}*/
-	
-	/**
-	 * Create the filter model from the molap query
-	 * @param dimensionFilter
-	 * @return
-	 */
-//	private static MolapFilterInfo createFilterInfo(MolapDimensionFilter dimensionFilter)
-//	{
-//		MolapFilterInfo filterInfo = null;
-//		
-//		filterInfo = getMolapFilterInfoBasedOnLikeExpressionType(dimensionFilter);
-//		if (null != filterInfo) {
-//			return filterInfo;
-//		}
-//		filterInfo = new MolapFilterInfo();
-//		filterInfo.addAllIncludedMembers(addBrackets(dimensionFilter
-//				.getIncludeFilters()));
-//		filterInfo.addAllExcludedMembers(addBrackets(dimensionFilter
-//				.getExcludeFilters()));
-//		return filterInfo;
-//		}
-	
+
 	private static MolapFilterInfo createLikeFilterInfo(List<MolapLikeFilter> listOfFilter)
-		{
+    {
 		MolapFilterInfo filterInfo = null;
 		filterInfo=getMolapFilterInfoBasedOnLikeExpressionTypeList(listOfFilter);
-//		if(null!=filterInfo)
-//		{
-//			return filterInfo;
-//		}
 		return filterInfo;
 	}
-//	private static MolapFilterInfo getMolapFilterInfoBasedOnLikeExpressionType(
-//			MolapDimensionFilter dimensionFilter) {
-////		filterInfo.getIncludedMembersRanges().addAll(dimensionFilter.getIncludeRangeFilters());
-////		filterInfo.getExcludedMembersRanges().addAll(dimensionFilter.getExcludeRangeFilters());
-//		if (dimensionFilter instanceof MolapLikeFilter
-//				&& null != ((MolapLikeFilter) dimensionFilter)
-//						.getLikeFilterExpression())
-//		{
-//			ContentMatchFilterInfo filterInfo = new ContentMatchFilterInfo();
-//			return filterInfo;
-//		}
-//		return null;
-//	}
+
 	private static MolapFilterInfo getMolapFilterInfoBasedOnLikeExpressionTypeList(
 			List<MolapLikeFilter> listOfFilter) {
 		List<FilterLikeExpressionIntf> listOfFilterLikeExpressionIntf = new ArrayList<FilterLikeExpressionIntf>(MolapCommonConstants.CONSTANT_SIZE_TEN);
@@ -945,135 +736,9 @@ public final class MolapQueryUtil
 		filterInfo.setLikeFilterExpression(listOfFilterLikeExpressionIntf);
 		return filterInfo;
 	}
-	
-	/*private static List<String> addBrackets(List<String> filters)
-	{
-		List<String> updated = new ArrayList<String>();
-		for(String filter : filters)
-		{
-			updated.add('['+filter+']');
-		}
-		return updated;
-	}*/
-	
-	
-	
-	/*private static Map<Measure, MeasureFilterModel[]> convertMsrFilters(Map<MolapMeasure, List<MolapMeasureFilter>> measureFilters,List<Measure> msrs,boolean isDetailQuery,MolapQueryExecutorModel executorModel,List<Dimension> dimensions)
-	{
-		Map<Measure, MeasureFilterModel[]> converted = new HashMap<MolapMetadata.Measure, MeasureFilterModel[]>();
-		for(Entry<MolapMeasure, List<MolapMeasureFilter>> entry : measureFilters.entrySet())
-		{
-			Measure findMeasure = findMeasure(msrs, isDetailQuery, entry.getKey());
-			List<MeasureFilterModel> filterModels = new ArrayList<MeasureFilterModel>();
-			
-			for (int i = 0; i < entry.getValue().size(); i++) 
-			{
-				MolapMeasureFilter molapMeasureFilter = entry.getValue().get(i);
-				MolapDimension dimension = molapMeasureFilter.getDimension();
-				if(dimension != null)
-				{
-					Dimension findDimension = findDimension(dimensions, dimension.getDimensionUniqueName());
-					executorModel.setMsrFilterDimension(findDimension);
-				}
-				if(molapMeasureFilter.getFilterType().equals(MolapMeasureFilterType.BETWEEN))
-				{
-					filterModels.add(new MeasureFilterModel(molapMeasureFilter.getOperandOne(), MeasureFilterType.GREATER_THAN));
-					filterModels.add(new MeasureFilterModel(molapMeasureFilter.getOperandTwo(), MeasureFilterType.LESS_THAN));
-				}
-				else
-				{
-					filterModels.add(new MeasureFilterModel(molapMeasureFilter.getOperandOne(), MeasureFilterType.valueOf(molapMeasureFilter.getFilterType().name())));
-				}
-				
-			}
-			converted.put(findMeasure, filterModels.toArray(new MeasureFilterModel[filterModels.size()]));
-		}
-		
-		if(executorModel.getMsrFilterDimension() == null && executorModel.getDims().length > 0)
-		{
-			executorModel.setMsrFilterDimension(executorModel.getDims()[executorModel.getDims().length-1]);
-		}
-		
-		return converted;
-	}*/
-	
+
 	/**
-     * Get the measure filter array for each measure asked.
-     * @param msrFilterMap
-     * @param msrs
-     * @return
-     */
-    /*private static MeasureFilterModel[][] getMeasureFilterArray(Map<Measure, MeasureFilterModel[]> msrFilterMap, List<Measure> msrs)
-    {
-        for(Entry<Measure, MeasureFilterModel[]> entry : msrFilterMap.entrySet())
-        {
-        	Measure key = entry.getKey();
-        	
-            boolean found = false;
-            for(Measure measure : msrs)
-            {
-                if(measure.getName().equals(key.getName()))
-                {
-                    found = true;
-                    break;
-                }
-            }
-            //If measure is existed only on slice then add it to the columns at the end.We can eliminate the measure while returning the result.
-            if(!found)
-            {
-                msrs.add(key);
-            }
-            
-        }
-        
-        //Get the measure filters for eaxh measure requested.
-        MeasureFilterModel[][] filterModels = new MeasureFilterModel[msrs.size()][];
-        boolean msrFilterExist = false;
-        int i=0;
-        for(Measure measure : msrs)
-        {
-            for(Entry<Measure,MeasureFilterModel[]> entry : msrFilterMap.entrySet())
-            {
-                
-                Measure key = entry.getKey();
-                if(measure.getName().equals(key.getName()))
-                {
-                    filterModels[i] = entry.getValue();
-                    msrFilterExist = true;
-                    break;
-                }
-            }
-            
-            i++;
-        }
-        if(!msrFilterExist)
-        {
-        	return null;
-        }
-        return filterModels;
-        
-    }*/
-    
-//    /**
-//     * Its just a temp method.
-//     * @return
-//     */
-//	private static HbaseDataSourceImpl getDataSource()
-//	{
-//        //TODO change the hard coded values for hbase configuration for demo .
-//        Util.PropertyList connectInfo = new Util.PropertyList();
-//        connectInfo.put(RolapConnectionProperties.Jdbc.name(), "jdbc:hbase://master:2181");
-//        connectInfo.put(RolapConnectionProperties.JdbcDrivers.name(), "com.huawei.unibi.molap.engine.datasource.HbaseDataSourceImpl");
-//        HbaseDataSourceImpl hbaseDataSourceImpl = new HbaseDataSourceImpl(connectInfo);
-//		return hbaseDataSourceImpl;
-//	}
-//	
-	/**
-	 * It creates the one split for each region server. 
-	 * @param factTable
-	 * @param aggModel
-	 * @return
-	 * @throws IOException
+	 * It creates the one split for each region server.
 	 */
 	public static synchronized TableSplit[] getTableSplits(String schemaName, String cubeName,MolapQueryPlan queryPlan, Partitioner partitioner) throws IOException
     {
@@ -1104,11 +769,7 @@ public final class MolapQueryUtil
     }
 	
 	/**
-	 * It creates the one split for each region server. 
-	 * @param factTable
-	 * @param aggModel
-	 * @return
-	 * @throws Exception 
+	 * It creates the one split for each region server.
 	 */
 	public static TableSplit[] getTableSplitsForDirectLoad(String sourcePath,  String [] nodeList, int partitionCount) throws Exception
     {
@@ -1133,11 +794,7 @@ public final class MolapQueryUtil
     }
 	
 	/**
-	 * It creates the one split for each region server. 
-	 * @param factTable
-	 * @param aggModel
-	 * @return
-	 * @throws Exception 
+	 * It creates the one split for each region server.
 	 */
 	public static TableSplit[] getPartitionSplits(String sourcePath,  String [] nodeList, int partitionCount) throws Exception
     {
@@ -1233,95 +890,30 @@ public final class MolapQueryUtil
 	    return partitionList;
 	}
 	
-	   private static int[] getNumberOfFilesPerPartition(int numberOfFiles, int partitionCount)
-	    {
-	       int div = numberOfFiles / partitionCount;
-	       int mod = numberOfFiles % partitionCount;
-	       int[] numberOfNodeToScan = null;
-	        if(div > 0)
-	        {
-	            numberOfNodeToScan = new int[partitionCount];
-	            Arrays.fill(numberOfNodeToScan, div);
-	        }
-	        else if(mod > 0)
-	        {
-	            numberOfNodeToScan = new int[mod];
-	        }
-	        for(int i = 0;i < mod;i++)
-	        {
-	            numberOfNodeToScan[i] = numberOfNodeToScan[i] + 1;
-	        }
-	        return numberOfNodeToScan;
-	    }
-    
-//    public static void createDataSource(String path, String partitionID)
-//    {
-//        PropertyList makeConnectString = makeConnectString(path);
-//        if(partitionID!=null)
-//        {
-//            Schema schema = updateSchemaWithPartition(path, partitionID);
-//            
-//            String partitioBasedSchema = schema.toXML();
-//            
-//            makeConnectString.put(RolapConnectionProperties.CatalogContent.name(), partitioBasedSchema);
-//        }
-//        
-//        DataSource molapDataSource = new MolapDataSourceFactory().getMolapDataSource(makeConnectString);
-//		Connection connection = DriverManager.getConnection(makeConnectString, null,molapDataSource);
-//    }
-    
-//    public static void createDataSource(String path, String partitionID,List<String> listOfLoadFolders)
-//    {
-//        PropertyList makeConnectString = makeConnectString(path);
-//        if(partitionID!=null)
-//        {
-//            Schema schema = updateSchemaWithPartition(path, partitionID);
-//            
-//            String partitioBasedSchema = schema.toXML();
-//            
-//            makeConnectString.put(RolapConnectionProperties.CatalogContent.name(), partitioBasedSchema);
-//        }
-//        
-//        DataSource molapDataSource = new MolapDataSourceFactory().getMolapDataSource(makeConnectString);
-//		Connection connection = DriverManager.getConnection(makeConnectString, null,molapDataSource);
-		
-//		 Schema schema = MolapSchemaParser.loadXML(path);
-//		 
-//		 createDataSource(schema, partitionID,listOfLoadFolders,null,null);
-//    }
-    
-//    public static void createDataSource(Schema schema, String partitionID)
-//    {
-//        PropertyList makeConnectString = makeConnectString(null);
-//        if(partitionID!=null)
-//        {
-//            schema = updateSchemaWithPartition(schema, partitionID);
-//            
-//            String partitioBasedSchema = schema.toXML();
-//            
-//            makeConnectString.put(RolapConnectionProperties.CatalogContent.name(), partitioBasedSchema);
-//        }
-//        
-//        DataSource molapDataSource = new MolapDataSourceFactory().getMolapDataSource(makeConnectString);
-//        Connection connection = DriverManager.getConnection(makeConnectString, null,molapDataSource);
-//    }
-    
+   private static int[] getNumberOfFilesPerPartition(int numberOfFiles, int partitionCount)
+    {
+       int div = numberOfFiles / partitionCount;
+       int mod = numberOfFiles % partitionCount;
+       int[] numberOfNodeToScan = null;
+        if(div > 0)
+        {
+            numberOfNodeToScan = new int[partitionCount];
+            Arrays.fill(numberOfNodeToScan, div);
+        }
+        else if(mod > 0)
+        {
+            numberOfNodeToScan = new int[mod];
+        }
+        for(int i = 0;i < mod;i++)
+        {
+            numberOfNodeToScan[i] = numberOfNodeToScan[i] + 1;
+        }
+        return numberOfNodeToScan;
+    }
+
     public static void createDataSource(int currentRestructNumber, Schema schema, Cube cube, String partitionID,List<String> sliceLoadPaths,List<String> sliceUpdatedLoadPaths,String factTableName, long cubeCreationTime)
     {
-//        PropertyList makeConnectString = makeConnectString(null);
-//        if(partitionID!=null)
-//        {
-//            schema = updateSchemaWithPartition(schema, partitionID);
-//            
-//            String partitioBasedSchema = schema.toXML();
-//            
-//            makeConnectString.put(RolapConnectionProperties.CatalogContent.name(), partitioBasedSchema);
-//        }
-//        
-//        DataSource molapDataSource = new MolapDataSourceFactory().getMolapDataSource(makeConnectString);
-//        Connection connection = DriverManager.getConnection(makeConnectString, null,molapDataSource);
-        String basePath = MolapUtil.getCarbonStorePath(schema.name, schema.cubes[0].name)/*MolapProperties.getInstance().getProperty(MolapCommonConstants.STORE_LOCATION,
-                MolapCommonConstants.STORE_LOCATION_DEFAULT_VAL)*/;
+        String basePath = MolapUtil.getCarbonStorePath(schema.name, schema.cubes[0].name);
     	InMemoryCubeStore.getInstance().loadCube(schema, cube, partitionID,sliceLoadPaths,sliceUpdatedLoadPaths,factTableName,basePath, currentRestructNumber, cubeCreationTime);
     }   
     
@@ -1333,10 +925,6 @@ public final class MolapQueryUtil
                 partitionID, sliceLoadPaths, sliceUpdatedLoadPaths,
                 factTableName, basePath, currentRestructNumber, cubeCreationTime);
     }
-    
-    
-    
-    
 
 	public static Schema updateSchemaWithPartition(Schema schema,
 			String partitionID) {
@@ -1380,30 +968,13 @@ public final class MolapQueryUtil
 		Set<String> metaTableColumns = cube.getMetaTableColumns(((Table)schema.cubes[0].fact).name);
 		return metaTableColumns.toArray(new String[metaTableColumns.size()]);
 	}
-    
-//    public static MolapExecutor getMolapExecutor(Cube cube)
-//    {
-//    	 InMemoryQueryExecutor executor = new InMemoryQueryExecutor(cube.getDimensions(cube.getFactTableName()),cube.getSchemaName(), cube.getOnlyCubeName());
-//    	 return executor;
-//    }
 
-//    public static MolapExecutor getMolapExecutor(Cube cube, String factTable)
-//    {
-//    	 InMemoryQueryExecutor executor = new InMemoryQueryExecutor(cube.getDimensions(factTable),cube.getSchemaName(), cube.getOnlyCubeName());
-//    	 return executor;
-//    }
-    
     public static QueryExecutor getQueryExecuter(Cube cube, String factTable)
     {
     	QueryExecutor executer = new QueryExecutorImpl(cube.getDimensions(factTable),cube.getSchemaName(), cube.getOnlyCubeName());
     	return executer;
     }
-    
-    /**
-     * 
-     * @param schema
-     * @param queryModel
-     */
+
 	public  static void updateDimensionWithHighCardinalityVal(
 			MolapDef.Schema schema, MolapQueryExecutorModel queryModel) {
 
@@ -1423,16 +994,7 @@ public final class MolapQueryUtil
 		}
 
 	}
-    
-    /**
-     * 
-     * @param queryModel
-     * @param listLoadFolders
-     * @param cubeUniqueName
-     * @return
-     * @throws Exception
-     * 
-     */
+
     public static List<String> validateAndLoadRequiredSlicesInMemory(
             MolapQueryExecutorModel queryModel, List<String> listLoadFolders,
             String cubeUniqueName) throws RuntimeException
@@ -1441,15 +1003,6 @@ public final class MolapQueryUtil
         return loadRequiredLevels(listLoadFolders, cubeUniqueName, columns);
     }
 
-    /**
-     * 
-     * @param listLoadFolders
-     * @param cubeUniqueName
-     * @param columns
-     * @return
-     * @throws Exception
-     * 
-     */
     public static List<String> loadRequiredLevels(List<String> listLoadFolders,
             String cubeUniqueName, Set<String> columns) throws RuntimeException
     {
@@ -1461,10 +1014,6 @@ public final class MolapQueryUtil
     /**
      * This method will return the name of the all the columns reference in the
      * query
-     * 
-     * @param queryModel
-     * @return
-     * 
      */
     public static Set<String> getColumnList(MolapQueryExecutorModel queryModel, String cubeUniqueName)
     {
@@ -1510,13 +1059,6 @@ public final class MolapQueryUtil
         return queryColumns;
     }
 
-    /**
-     * 
-     * @param expressions
-     * @param queryColumns
-     * @param dimensions
-     * 
-     */
     private static void addCustomExpressionColumnsToColumnList(
             List<CustomMolapAggregateExpression> expressions,
             Set<String> queryColumns, List<Dimension> dimensions)
@@ -1538,12 +1080,6 @@ public final class MolapQueryUtil
 
     /**
      * This method will traverse and populate the column list
-     * 
-     * @param filterExpression
-     * @param dimensions
-     * @param measures
-     * @param columns
-     * 
      */
     private static void traverseAndPopulateColumnList(
             Expression filterExpression, List<Dimension> dimensions,
@@ -1588,13 +1124,7 @@ public final class MolapQueryUtil
             }
         }
     }
-    
-    /**
-     * 
-     * @param details
-     * @return
-     * 
-     */
+
     public static List<String> getListOfSlices(LoadMetadataDetails[] details)
     {
         List<String> slices = new ArrayList<>(
@@ -1614,154 +1144,13 @@ public final class MolapQueryUtil
         }
         return slices;
     }
-    
-    /**
-     * 
-     * @param listOfLoadFolders
-     * @param columns
-     * @param schemaName
-     * @param cubeName
-     * @param partitionCount
-     * 
-     */
+
     public static void clearLevelLRUCacheForDroppedColumns(
-            List<String> listOfLoadFolders, List<String> columns,
-            String schemaName, String cubeName, int partitionCount)
+        List<String> listOfLoadFolders, List<String> columns,
+        String schemaName, String cubeName, int partitionCount)
     {
         MolapQueryParseUtil.removeDroppedColumnsFromLevelLRUCache(
                 listOfLoadFolders, columns, schemaName, cubeName,
                 partitionCount);
     }
-	
-	/**
-	 * whether the start key is present in the list of keys.
-	 * @param startKeys
-	 * @param key
-	 * @return
-	 */
-//	private static boolean isPresent(List<byte[]> startKeys,byte[] key)
-//	{
-//		boolean present = false;
-//		for(byte[] stKey : startKeys)
-//		{
-//			if(Arrays.equals(stKey, key))
-//			{
-//				present = true;
-//				break;
-//			}
-//		}
-//		
-//		return present;
-//	}
-	
-//    public static Util.PropertyList makeConnectString(String path) 
-//    {
-//        String connectString = null;
-//
-//        Util.PropertyList connectProperties;
-//        if (connectString == null || connectString.equals("")) 
-//        {
-//            // create new and add provider
-//            connectProperties = new Util.PropertyList();
-//            connectProperties.put(
-//                RolapConnectionProperties.Provider.name(),
-//                "mondrian");
-//        } else {
-//            // load with existing connect string
-//            connectProperties = Util.parseConnectString(connectString);
-//        }
-//
-//        // override jdbc urlmondrian.jdbcURL
-//        String jdbcURL = MolapProperties.getInstance().getProperty("mondrian.jdbcURL","molap://sourceDB=rdbmscon;mode=file");//"jdbc:hsqldb:hsql://localhost:9001/sampledata";
-//
-//
-//        if (jdbcURL != null) {
-//            // add jdbc url to connect string
-//            connectProperties.put(
-//                RolapConnectionProperties.Jdbc.name(),
-//                jdbcURL);
-//        }
-//
-//        // override jdbc drivers
-//        String jdbcDrivers = MolapProperties.getInstance().getProperty("mondrian.jdbcDrivers","com.huawei.unibi.molap.engine.datasource.MolapDataSourceImpl");//"org.hsqldb.jdbcDriver";
-//
-//        if (jdbcDrivers != null) {
-//            // add jdbc drivers to connect string
-//            connectProperties.put(
-//                RolapConnectionProperties.JdbcDrivers.name(),
-//                jdbcDrivers);
-//        }
-//
-//        // override catalog url
-//        String catalogURL = MolapProperties.getInstance().getProperty("mondrian.catalogURL",path);//"D:/Cloud/Pentaho/biserver-ce-3.9.0-stable/biserver-ce/pentaho-solutions/steel-wheels/analysis/steelwheels.mondrian.xml";
-//
-//        if (catalogURL != null) {
-//            // add catalog url to connect string
-//            connectProperties.put(
-//                RolapConnectionProperties.Catalog.name(),
-//                catalogURL);
-//        }
-//
-//        // override JDBC user
-//        String jdbcUser = "pentaho_user";
-//
-//
-//        if (jdbcUser != null) {
-//            // add user to connect string
-//            connectProperties.put(
-//                RolapConnectionProperties.JdbcUser.name(),
-//                jdbcUser);
-//        }
-//
-//        // override JDBC password
-//        String jdbcPassword = "password";
-//
-//        if (jdbcPassword != null) {
-//            // add password to connect string
-//            connectProperties.put(
-//                RolapConnectionProperties.JdbcPassword.name(),
-//                jdbcPassword);
-//        }
-//		return connectProperties;
-//
-//    }
-	
-
-
-//    /**
-//     * Sample query plan for testing
-//     * @return
-//     */
-//    public static MolapQueryPlan getSampleMolapQueryPlan()
-//    {
-//    	MolapQueryPlan plan = new MolapQueryPlan("DETAIL_UFDR_Streaming", "DETAIL_UFDR_Streaming");
-//    	String[] dims = new String[]{"msisdn","begin_time","prot_category","prot_type","get_streaming_flag","disconnection_flag","intbuffer_full_flag","failure_code","rat","mcc","mnc","lac","ci","sac","eci","rac"};
-//    	for (int i = 0; i < dims.length; i++) 
-//    	{
-//    		plan.addDimension(new MolapDimension(dims[i]));
-//		}
-//    	String[] measures = new String[]{"network_ul_traffic", "network_dl_traffic","l4_dw_throughput", "l4_dw_throughput", "l4_ul_packets"};
-////    	String[] measures = new String[]{"sum(network_ul_traffic)", "sum(network_dl_traffic)","sum(l4_dw_throughput)", "sum(l4_dw_throughput)", "sum(l4_ul_packets)",};
-//    	for (int i = 0; i < measures.length; i++) 
-//    	{
-//    		plan.addMeasure(new MolapMeasure(measures[i]));
-//		}
-//    	
-//    	MolapDimensionFilter time_filter = new MolapDimensionFilter();
-//    	time_filter.addIncludeRangeFilter(new long[]{1370028539,1370528739});
-//    	plan.setDimensionFilter(new MolapDimension("begin_time"), time_filter);
-//    	
-//       	return plan;
-//    }
-
-    
-   /* public static void main(String[] args)
-    {
-//		SparkQueryExecutor exec = new SparkQueryExecutor("local","G:/spark-1.0.0-rc3","D:/f/SVN/TRP/2014/SparkOLAPRavi/steelwheels.molap.xml","hdfs://master:54310/opt/ravi/store");
-//		exec.init();
-//		System.out.println( exec.execute("SELECT Territory, Quantity FROM  SteelWheelsSales ORDER BY Territory ASC", null, null));
-		
-//		System.out.println(exec.execute("select City,Quantity from SteelWheelsSales"));
-	}*/
-
 }

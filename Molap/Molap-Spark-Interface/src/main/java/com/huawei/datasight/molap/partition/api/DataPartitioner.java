@@ -36,20 +36,10 @@ import org.apache.spark.sql.cubemodel.Partitioner;
 
 import com.huawei.datasight.molap.query.MolapQueryPlan;
 
-/**
- * 
- * @author K00900207
- *
- */
 public interface DataPartitioner
 {
     /**
      * Initialise the partitioner based on the given columns
-     * 
-     * @param basePath
-     * @param columns
-     * @param properties
-     * 
      */
     void initialize(String basePath, String[] columns, Partitioner partitioner);
     
@@ -67,15 +57,10 @@ public interface DataPartitioner
      * Identifies the partitions applicable for the given filter (API used for For query) 
      */
     List<Partition> getPartitions(MolapQueryPlan queryPlan);
-    
-    /**
-     * 
-     * @return partitioned columns
-     */
+
     String[] getPartitionedColumns();
     
     Partitioner getPartitioner();
-    
-    
+
 }
 

@@ -31,10 +31,6 @@ import com.huawei.datasight.molap.spark.util.MolapSparkInterFaceLogEvent;
 import com.huawei.iweb.platform.logging.LogService;
 import com.huawei.iweb.platform.logging.LogServiceFactory;
 
-/**
- * @author R00900208
- *
- */
 public final class DataPartitionerProperties {
 	 private static final LogService LOGGER = LogServiceFactory
 	            .getLogService(DataPartitionerProperties.class.getName());
@@ -68,7 +64,6 @@ public final class DataPartitionerProperties {
 	}
 
     /**
-     * 
      * Read the properties from CSVFilePartitioner.properties
      */
     private Properties loadProperties()
@@ -88,9 +83,7 @@ public final class DataPartitionerProperties {
         }
         catch(Exception e)
         {
-//            e.printStackTrace();
            	LOGGER.error(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, e, e.getMessage());
-          
         } 
         finally
         {
@@ -102,14 +95,11 @@ public final class DataPartitionerProperties {
                 }
                 catch(IOException e)
                 {
-//                    e.printStackTrace();
                    	LOGGER.error(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, e, e.getMessage());
-                    
                 }
             }
         }
         
         return props;
-
     }
 }

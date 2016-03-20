@@ -27,11 +27,6 @@ import com.huawei.unibi.molap.query.metadata.MolapDimensionLevelFilter;
 
 public class PartitionMultiFileImpl implements Partition
 {
-
-    
-    /**
-     * serialVersionUID
-     */
     private static final long serialVersionUID = -4363447826181193976L;
     private String uniqueID;
     private List<String> folderPath;

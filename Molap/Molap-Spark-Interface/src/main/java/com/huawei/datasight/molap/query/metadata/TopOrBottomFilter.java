@@ -24,11 +24,6 @@ package com.huawei.datasight.molap.query.metadata;
 
 import java.io.Serializable;
 
-/**
- * TopOrBottomFilter
- * @author R00900208
- *
- */
 public class TopOrBottomFilter implements Serializable
 {
 	/**

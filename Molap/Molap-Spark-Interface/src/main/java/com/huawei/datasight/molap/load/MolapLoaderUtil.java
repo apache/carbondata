@@ -95,10 +95,6 @@ import com.huawei.unibi.molap.util.MolapSchemaParser;
 import com.huawei.unibi.molap.util.MolapUtil;
 import com.huawei.unibi.molap.util.MolapUtilException;
 
-/**
- * @author R00900208
- *
- */
 public final class MolapLoaderUtil 
 {
 	
@@ -123,26 +119,9 @@ public final class MolapLoaderUtil
         GraphGenerator generator = new GraphGenerator(model, hdfsReadMode, partitionID, schema, factStoreLocation, currentRestructNumber,allocate);
         generator.generateGraph();
     }
-    
-//    public static void main(String[] args) throws GraphGeneratorException, DataLoadingException 
-//    {
-//    	System.setProperty("KETTLE_HOME", "G:/mavenlib/molapplugins");
-////    	createGraph();
-//		DataProcessTaskStatus schmaModel = new DataProcessTaskStatus("MOLAPSteelWheels", "SteelWheelsSales", "ORDERFACT");
-//    	schmaModel.setCsvFilePath("H:/ReceiveFile/ORDERFACT.csv");
-//    	SchemaInfo info = new SchemaInfo("MOLAPSteelWheels", "com.mysql.jdbc.Driver", "jdbc:mysql://10.18.51.240:3999/sampledata", "sampledata", "sampledata");
-//    	info.setCubeName("SteelWheelsSales");
-//    	info.setSchemaPath("G:\\bibin issues\\SmokeData\\schema\\steelwheels.molap.xml");
-//
-//    	DataGraphExecuter graphExecuter = new DataGraphExecuter(schmaModel);
-//    	graphExecuter.executeGraph("F:/TRPSVN/SparkOlap/unibi-solutions/system/molap/etl/MOLAPSteelWheels/SteelWheelsSales/ORDERFACT.ktr",new ArrayList<String>(),info);
-//	}
-    
+
     public static void executeGraph(MolapLoadModel loadModel, String storeLocation, String hdfsStoreLocation, String kettleHomePath, int currentRestructNumber) throws Exception
     {
-//    	System.setProperty("KETTLE_HOME", "G:/mavenlib/molapplugins");
-//    	 MolapProperties.getInstance().addProperty("store_output_location", "/opt/ravi/storera");
-//		String output_loc = MolapProperties.getInstance().getProperty("store_output_location", "/opt/ravi/storera/etl");
         System.setProperty("KETTLE_HOME", kettleHomePath);
         if(!new File(storeLocation).mkdirs())
         {
@@ -201,16 +180,7 @@ public final class MolapLoaderUtil
        	DataGraphExecuter graphExecuter = new DataGraphExecuter(schmaModel);
     	graphExecuter.executeGraph(graphPath,new ArrayList<String>(MolapCommonConstants.CONSTANT_SIZE_TEN),info,loadModel.getPartitionId(),loadModel.getSchema());
     }
-    
-    /**
-     * 
-     * @param schemaName
-     * @param cubeName
-     * @param factTableName
-     * @param hdfsStoreLocation
-     * @return
-     * 
-     */
+
     public static String[] getStorelocs(String schemaName, String cubeName,
             String factTableName, String hdfsStoreLocation, int currentRestructNumber)
     {
@@ -218,9 +188,6 @@ public final class MolapLoaderUtil
 
         String baseStorelocation = hdfsStoreLocation + File.separator
                 + schemaName + File.separator + cubeName;
-//        int restructFolderNumber = MolapUtil
-//                .checkAndReturnNextRestructFolderNumber(baseStorelocation,
-//                        "RS_");
 
         String factStorepath = baseStorelocation + File.separator
                 + MolapCommonConstants.RESTRUCTRE_FOLDER + currentRestructNumber
@@ -256,31 +223,14 @@ public final class MolapLoaderUtil
 
         return loadFolders;
     }
-    
-    /**
-     * 
-     * @param newSlice
-     * @param activeSlices
-     * @return
-     * 
-     */
+
     public static List<String> addNewSliceNameToList(String newSlice,
             List<String> activeSlices)
     {
         activeSlices.add(newSlice);
         return activeSlices;
     }
-    
-    /**
-     * 
-     * @param loc
-     * @param schemaName
-     * @param cubeName
-     * @param aggTableName
-     * @param hdfsStoreLocation
-     * @return
-     * 
-     */
+
     public static String getAggLoadFolderLocation(String loadFolderName,
             String schemaName, String cubeName, String aggTableName,
             String hdfsStoreLocation, int currentRestructNumber)
@@ -309,16 +259,6 @@ public final class MolapLoaderUtil
         return null;
     }
 
-    /**
-     * 
-     * @param schemaName
-     * @param cubeName
-     * @param aggTableName
-     * @param hdfsStoreLocation
-     * @param currentRestructNumber
-     * @return
-     * 
-     */
     public static String getTableLocation(String schemaName,
             String cubeName, String aggTableName, String hdfsStoreLocation,
             int currentRestructNumber)
@@ -334,17 +274,7 @@ public final class MolapLoaderUtil
                         + File.separator + aggTableName;
         return aggTableLocation;
     }
-    
-    /**
-     * 
-     * @param partitionCount
-     * @param schemaName
-     * @param cubeName
-     * @param aggTableName
-     * @param hdfsStoreLocation
-     * @param currentRestructNumber
-     * 
-     */
+
     public static void deleteTable(int partitionCount,
             String schemaName, String cubeName, String aggTableName,
             String hdfsStoreLocation, int currentRestructNumber)
@@ -364,17 +294,7 @@ public final class MolapLoaderUtil
             }
         }
     }
-    
-    /**
-     * 
-     * @param partitionCount
-     * @param schemaName
-     * @param cubeName
-     * @param aggTableName
-     * @param hdfsStoreLocation
-     * @param currentRestructNumber
-     * 
-     */
+
     public static void deleteSlice(int partitionCount,
             String schemaName, String cubeName, String tableName,
             String hdfsStoreLocation, int currentRestructNumber, String loadFolder)
@@ -393,18 +313,7 @@ public final class MolapLoaderUtil
             deleteStorePath(tableLoc);
         }
     }
-    
-    /**
-     * 
-     * @param partitionCount
-     * @param schemaName
-     * @param cubeName
-     * @param aggTableName
-     * @param hdfsStoreLocation
-     * @param currentRestructNumber
-     * @throws IOException 
-     * 
-     */
+
     public static void deletePartialLoadDataIfExist(int partitionCount,
             String schemaName, String cubeName, String tableName,
             String hdfsStoreLocation, int currentRestructNumber, int loadFolder) throws IOException
@@ -450,13 +359,7 @@ public final class MolapLoaderUtil
             
         }
     }
-    
-    
-    /**
-     * 
-     * @param path
-     * 
-     */
+
     public static void deleteStorePath(String path)
     {
         try
@@ -481,15 +384,7 @@ public final class MolapLoaderUtil
                     "Unable to delete the given path :: " + e.getMessage());
         }
     }
-    
-    /**
-     * 
-     * @param loc
-     * @param activeSlices
-     * @param updatedSlices
-     * @return
-     * 
-     */
+
     public static boolean isSliceValid(String loc, List<String> activeSlices,
             List<String> updatedSlices, String factTableName)
     {
@@ -519,13 +414,7 @@ public final class MolapLoaderUtil
         }
         return false;
     }
-    
-    /**
-     * 
-     * @param details
-     * @return
-     * 
-     */
+
     public static List<String> getListOfValidSlices(
             LoadMetadataDetails[] details)
     {
@@ -556,13 +445,7 @@ public final class MolapLoaderUtil
         }
         return activeSlices;
     }
-    
-    /**
-     * 
-     * @param details
-     * @return
-     * 
-     */
+
     public static List<String> getListOfUpdatedSlices(
             LoadMetadataDetails[] details)
     {
@@ -585,14 +468,7 @@ public final class MolapLoaderUtil
         }
         return updatedSlices;
     }
-    
-    /**
-     * 
-     * @param schemaName
-     * @param cubeName
-     * @return
-     * 
-     */
+
     public static String getMetaDataFilePath(String schemaName,
             String cubeName, String hdfsStoreLocation)
     {
@@ -602,14 +478,7 @@ public final class MolapLoaderUtil
                 + cubeName;
         return metadataFilePath;
     }
-    
-    /**
-     * 
-     * @param schemaName
-     * @param cubeName
-     * @param loadName
-     * 
-     */
+
     public static void removeSliceFromMemory(String schemaName,
             String cubeName, String loadName)
     {
@@ -626,14 +495,7 @@ public final class MolapLoaderUtil
             }
         }
     }
-    
-    /**
-     * 
-     * @param aggName
-     * @param aggTables
-     * @return
-     * 
-     */
+
     public static boolean aggTableAlreadyExistWithSameMeasuresndLevels(
             AggName aggName, AggTable[] aggTables)
     {
@@ -701,26 +563,12 @@ public final class MolapLoaderUtil
         }
         return false;
     }
-    
-    
-    /**
-     * 
-     * @param table
-     * @return
-     * 
-     */
+
     public static String getAggregateTableName(AggTable table)
     {
         return ((MolapDef.AggName)table).getNameAttribute();
     }
-    
-    /**
-     * 
-     * @param model
-     * @param factLoadFolderLocation
-     * @param hdfsStoreLocation
-     * 
-     */
+
     public static void createEmptyLoadFolder(MolapLoadModel model,
             String factLoadFolderLocation, String hdfsStoreLocation, int currentRestructNumber)
     {
@@ -782,17 +630,8 @@ public final class MolapLoaderUtil
                 copyToHDFS(loadName, schemaName, cubeName, aggTableName, hdfsLocation,
                         localStore, currentRestructNumber, isUpdate, sliceRestructNumber);
             }
-//            try
-//            {
-            	 MolapUtil.deleteFoldersAndFiles(new File[] { 
+                MolapUtil.deleteFoldersAndFiles(new File[] {
             	          new File(localStore + File.separator + schemaName + File.separator + cubeName) });
-            	// MolapUtil.getSlices(localStore + File.separator + schemaName + File.separator + cubeName, factTable, loadModel.)
-//			} 
-//            catch (MolapUtilException e) 
-//            {
-////				e.printStackTrace();
-//            	LOGGER.error(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, "Error while MolapUtil.deleteFoldersAndFiles ", e, e.getMessage());
-//			}
         }
     }
     public static void generateGlobalSurrogates(MolapLoadModel loadModel, String storeLocation, int numberOfPartiiton, String[] partitionColumn, CubeDimension[] dims, int currentRestructNumber)
@@ -810,150 +649,123 @@ public final class MolapLoaderUtil
     }
 
 	public static void copyToHDFS(String loadName, String schemaName, String cubeName,
-			String factTable, String hdfsLocation, String localStore, int currentRestructNumber, boolean isUpdate, int sliceRestructNumber) throws IOException {
-//		try
-//		{
-		    //If the hdfs store and the local store configured differently, then copy
-		    if(hdfsLocation!=null && !hdfsLocation.equals(localStore))
-		    {
-		        /**
-		         * Identify the Load_X folder from thhe local store folder
-		         */
-		        String currentloadedStore = localStore;
-		        currentloadedStore = currentloadedStore + File.separator + schemaName + File.separator
-		                + cubeName;
+        String factTable, String hdfsLocation, String localStore, int currentRestructNumber, boolean isUpdate, int sliceRestructNumber) throws IOException {
+        //If the hdfs store and the local store configured differently, then copy
+        if(hdfsLocation!=null && !hdfsLocation.equals(localStore))
+        {
+            /**
+             * Identify the Load_X folder from thhe local store folder
+             */
+            String currentloadedStore = localStore;
+            currentloadedStore = currentloadedStore + File.separator + schemaName + File.separator
+                    + cubeName;
 
-		        int rsCounter = currentRestructNumber/*MolapUtil.checkAndReturnNextRestructFolderNumber(currentloadedStore,"RS_")*/;
+            int rsCounter = currentRestructNumber/*MolapUtil.checkAndReturnNextRestructFolderNumber(currentloadedStore,"RS_")*/;
 
-		   
 
-		        if(rsCounter == -1)
-		        {
-//		            System.out.println("Unable to find the local store details (RS_-1) " + currentloadedStore);
-		        	LOGGER.info(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,"Unable to find the local store details (RS_-1) " + currentloadedStore);
-		            return;
-		        }
-		        String localLoadedTable = currentloadedStore + File.separator
-		                + MolapCommonConstants.RESTRUCTRE_FOLDER + rsCounter + File.separator + factTable;
 
-		        localLoadedTable = localLoadedTable.replace("\\", "/");
-		        
-		        int loadCounter = MolapUtil.checkAndReturnCurrentLoadFolderNumber(localLoadedTable);
+            if(rsCounter == -1)
+            {
+                LOGGER.info(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,"Unable to find the local store details (RS_-1) " + currentloadedStore);
+                return;
+            }
+            String localLoadedTable = currentloadedStore + File.separator
+                    + MolapCommonConstants.RESTRUCTRE_FOLDER + rsCounter + File.separator + factTable;
 
-		        if(loadCounter == -1)
-		        {
-//		            System.out.println("Unable to find the local store details (Load_-1) " + currentloadedStore);
-		        	LOGGER.info(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,"Unable to find the local store details (Load_-1) " + currentloadedStore);
-			           
-		            return;
-		        }
+            localLoadedTable = localLoadedTable.replace("\\", "/");
 
-		        String localLoadFolder = localLoadedTable + File.separator + MolapCommonConstants.LOAD_FOLDER
-		                + loadCounter;
-		        
-		        LOGGER.info(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,"Local data loaded folder ... = " + localLoadFolder);			       
-//		        System.out.println("Local data loaded folder ... = " + localLoadFolder);
-		       
-		        /**
-		         * Identify the Load_X folder in the HDFS store 
-		         */
-		        
-		        if(isUpdate)
-		        {
-		            renameFactFile(localLoadFolder, factTable);
-		        }
-		        
-		        String hdfsStoreLocation= hdfsLocation;
-		        hdfsStoreLocation = hdfsStoreLocation + File.separator + schemaName + File.separator
-		                + cubeName;
+            int loadCounter = MolapUtil.checkAndReturnCurrentLoadFolderNumber(localLoadedTable);
 
-		        rsCounter = currentRestructNumber/*MolapUtil.checkAndReturnNextRestructFolderNumber(hdfsStoreLocation,"RS_")*/;
-		        if(rsCounter == -1)
-		        {
-		            rsCounter = 0;
-		        }
+            if(loadCounter == -1)
+            {
+                LOGGER.info(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,"Unable to find the local store details (Load_-1) " + currentloadedStore);
 
-		        String hdfsLoadedTable = hdfsStoreLocation + File.separator
-		                + MolapCommonConstants.RESTRUCTRE_FOLDER + rsCounter + File.separator + factTable;
-		        
-		        hdfsLoadedTable = hdfsLoadedTable.replace("\\", "/");
+                return;
+            }
 
-//		        loadCounter = MolapUtil.checkAndReturnCurrentLoadFolderNumber(hdfsLoadedTable);
-//
-//		        loadCounter++;
+            String localLoadFolder = localLoadedTable + File.separator + MolapCommonConstants.LOAD_FOLDER
+                    + loadCounter;
 
-		        String hdfsStoreLoadFolder = hdfsLoadedTable + File.separator + loadName;
+            LOGGER.info(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,"Local data loaded folder ... = " + localLoadFolder);
 
-//		        System.out.println("HDFS data load folder ... = " + hdfsStoreLoadFolder);
-		        LOGGER.info(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,"HDFS data load folder ... = " + hdfsStoreLoadFolder);
-		        
-		        /**
-		         * Copy the data created through latest ETL run, to the HDFS store 
-		         */
-		        
-//		        System.out.println("Copying " + localLoadFolder + " --> " + hdfsStoreLoadFolder);
-		        LOGGER.info(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,"Copying " + localLoadFolder + " --> " + hdfsStoreLoadFolder);
-		        
-		        long time1 = System.currentTimeMillis();
-		        
-		        hdfsStoreLoadFolder = hdfsStoreLoadFolder.replace("\\", "/");
-		        Path path = new Path(hdfsStoreLocation);
-		        
-		       
-		        FileSystem fs = path.getFileSystem(FileFactory.getConfiguration());
-                FileType fileType = FileFactory
-                        .getFileType(hdfsStoreLoadFolder);
-                if(FileFactory.isFileExist(hdfsStoreLoadFolder, fileType))
+            /**
+             * Identify the Load_X folder in the HDFS store
+             */
+
+            if(isUpdate)
+            {
+                renameFactFile(localLoadFolder, factTable);
+            }
+
+            String hdfsStoreLocation= hdfsLocation;
+            hdfsStoreLocation = hdfsStoreLocation + File.separator + schemaName + File.separator
+                    + cubeName;
+
+            rsCounter = currentRestructNumber;
+            if(rsCounter == -1)
+            {
+                rsCounter = 0;
+            }
+
+            String hdfsLoadedTable = hdfsStoreLocation + File.separator
+                    + MolapCommonConstants.RESTRUCTRE_FOLDER + rsCounter + File.separator + factTable;
+
+            hdfsLoadedTable = hdfsLoadedTable.replace("\\", "/");
+
+            String hdfsStoreLoadFolder = hdfsLoadedTable + File.separator + loadName;
+
+            LOGGER.info(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,"HDFS data load folder ... = " + hdfsStoreLoadFolder);
+
+            /**
+             * Copy the data created through latest ETL run, to the HDFS store
+             */
+
+            LOGGER.info(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,"Copying " + localLoadFolder + " --> " + hdfsStoreLoadFolder);
+
+            long time1 = System.currentTimeMillis();
+
+            hdfsStoreLoadFolder = hdfsStoreLoadFolder.replace("\\", "/");
+            Path path = new Path(hdfsStoreLocation);
+
+
+            FileSystem fs = path.getFileSystem(FileFactory.getConfiguration());
+            FileType fileType = FileFactory
+                    .getFileType(hdfsStoreLoadFolder);
+            if(FileFactory.isFileExist(hdfsStoreLoadFolder, fileType))
+            {
+                MolapFile molapFile = FileFactory.getMolapFile(
+                        localLoadFolder,
+                        FileFactory.getFileType(localLoadFolder));
+                MolapFile[] listFiles = molapFile.listFiles();
+                for(int i = 0;i < listFiles.length;i++)
                 {
-                    MolapFile molapFile = FileFactory.getMolapFile(
-                            localLoadFolder,
-                            FileFactory.getFileType(localLoadFolder));
-                    MolapFile[] listFiles = molapFile.listFiles();
-                    for(int i = 0;i < listFiles.length;i++)
-                    {
-                        fs.copyFromLocalFile(true, true,
-                                new Path(listFiles[i].getCanonicalPath()),
-                                new Path(hdfsStoreLoadFolder));
-                    }
-                }
-                else
-                {
-                    fs.copyFromLocalFile(true, true, new Path(localLoadFolder),
+                    fs.copyFromLocalFile(true, true,
+                            new Path(listFiles[i].getCanonicalPath()),
                             new Path(hdfsStoreLoadFolder));
                 }
-		        
-//		        System.out.println("Copying sliceMetaData from " + localLoadedTable + " --> " + hdfsLoadedTable);
-		        LOGGER.info(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,"Copying sliceMetaData from " + localLoadedTable + " --> " + hdfsLoadedTable);
-		        
-		        
-		        /**
-		         *Handler:  Delete the Load_X folder from local path also can be done through the boolean parameter in  fs.copyFromLocalFile(...) call.
-		         */
-		        fs.copyFromLocalFile(true, true, new Path(localLoadedTable + ("/sliceMetaData" + "." + currentRestructNumber)), new Path(hdfsLoadedTable+ ("/sliceMetaData" + "." + sliceRestructNumber)));
-		        //recordLoadInfoInMetadata(hdfsLoadedTable,hdfsStoreLoadFolder);
-		        
-//		        System.out.println("Total HDFS copy time (ms):  " + (System.currentTimeMillis()-time1));
-		        LOGGER.info(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,"Total HDFS copy time (ms):  " + (System.currentTimeMillis()-time1));
-		  
-		    }
-		    else
-		    {
-//		        System.out.println("Separate molap.storelocation.h444444444444444444444444444444444444dfs is not configured for hdfs store path");
-		    	LOGGER.info(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, "Separate molap.storelocation.hdfs is not configured for hdfs store path");
-		    }
-//		}
-//		catch(Exception e)
-//		{
-//			LOGGER.info(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG,e.getMessage());
-//		}
+            }
+            else
+            {
+                fs.copyFromLocalFile(true, true, new Path(localLoadFolder),
+                        new Path(hdfsStoreLoadFolder));
+            }
+
+            LOGGER.info(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,"Copying sliceMetaData from " + localLoadedTable + " --> " + hdfsLoadedTable);
+
+
+            /**
+             *Handler:  Delete the Load_X folder from local path also can be done through the boolean parameter in  fs.copyFromLocalFile(...) call.
+             */
+            fs.copyFromLocalFile(true, true, new Path(localLoadedTable + ("/sliceMetaData" + "." + currentRestructNumber)), new Path(hdfsLoadedTable+ ("/sliceMetaData" + "." + sliceRestructNumber)));
+            LOGGER.info(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,"Total HDFS copy time (ms):  " + (System.currentTimeMillis()-time1));
+
+        }
+        else
+        {
+            LOGGER.info(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, "Separate molap.storelocation.hdfs is not configured for hdfs store path");
+        }
 	}
-	
-    /**
-     * 
-     * @param location
-     * @param tableName
-     * 
-     */
+
     private static void renameFactFile(String location, String tableName)
     {
         FileType fileType = FileFactory.getFileType(location);
@@ -978,7 +790,7 @@ public final class MolapLoaderUtil
                                                         MolapCommonConstants.FILE_INPROGRESS_STATUS);
                             }
                         });
-                for(int i = 0;i < listFiles.length;i++)
+                for (int i = 0;i < listFiles.length;i++)
                 {
                     molapFile = listFiles[i];
                     String factFilePath = molapFile.getCanonicalPath();
@@ -1000,45 +812,32 @@ public final class MolapLoaderUtil
 	
 	/**
 	 * API will provide the load number inorder to record the same in metadata file.
-	 * @param loadModel
-	 * @return
-	 * @throws IOException
 	 */
 	public static int getLoadCount(MolapLoadModel loadModel, int currentRestructNumber)
-			throws IOException {
+        throws IOException {
 
-				String hdfsLoadedTable=getLoadFolderPath(loadModel,null,null, currentRestructNumber);
-				int loadCounter = MolapUtil
-						.checkAndReturnCurrentLoadFolderNumber(hdfsLoadedTable);
+            String hdfsLoadedTable=getLoadFolderPath(loadModel,null,null, currentRestructNumber);
+            int loadCounter = MolapUtil
+                    .checkAndReturnCurrentLoadFolderNumber(hdfsLoadedTable);
 
-				//loadCounter++;
+            String hdfsStoreLoadFolder = hdfsLoadedTable + File.separator
+                    + MolapCommonConstants.LOAD_FOLDER + loadCounter;
+            hdfsStoreLoadFolder = hdfsStoreLoadFolder.replace("\\", "/");
 
-				String hdfsStoreLoadFolder = hdfsLoadedTable + File.separator
-						+ MolapCommonConstants.LOAD_FOLDER + loadCounter;
-				hdfsStoreLoadFolder = hdfsStoreLoadFolder.replace("\\", "/");
-				
-				String loadFolerCount = hdfsStoreLoadFolder.substring(
-						hdfsStoreLoadFolder.lastIndexOf('_')+1,
-						hdfsStoreLoadFolder.length());
-				   return Integer.parseInt(loadFolerCount)+1;
-				
-			
-		//}
-	
-
+            String loadFolerCount = hdfsStoreLoadFolder.substring(
+                    hdfsStoreLoadFolder.lastIndexOf('_')+1,
+                    hdfsStoreLoadFolder.length());
+               return Integer.parseInt(loadFolerCount)+1;
 	}
+
 	/**
 	 * API will provide the load folder path for the store inorder to store the same
 	 * in the metadata.
-	 * @param loadModel
-	 * @param cubeName
-	 * @param schemaName
-	 * @return
 	 */
 	public static String getLoadFolderPath(MolapLoadModel loadModel,String cubeName,String schemaName, int currentRestructNumber)
 	{
 		
-	      //CHECKSTYLE:OFF    Approval No:Approval-V1R2C10_005
+        //CHECKSTYLE:OFF    Approval No:Approval-V1R2C10_005
 		
 		boolean copyStore = Boolean.valueOf(MolapProperties.getInstance()
 				.getProperty("dataload.hdfs.copy", "true"));
@@ -1065,8 +864,7 @@ public final class MolapLoaderUtil
 				hdfsStoreLocation = hdfsStoreLocation + File.separator
 						+ schemaName + File.separator + cubeName;
 
-				int rsCounter = currentRestructNumber/*MolapUtil
-						.checkAndReturnNextRestructFolderNumber(hdfsStoreLocation,"RS_")*/;
+				int rsCounter = currentRestructNumber;
 				if (rsCounter == -1) {
 					rsCounter = 0;
 				}
@@ -1083,90 +881,9 @@ public final class MolapLoaderUtil
 		
 	}
 	
-	
-/*	private static void recordLoadInfoInMetadata(String hdfsLoadedTable,
-			String hdfsStoreLoadFolder,boolean isfailure) throws IOException {
-
-		MolapLock molapLock = new LoadFileBasedLock(hdfsLoadedTable);
-		hdfsLoadedTable = hdfsLoadedTable + File.separator + "loadmetadata"
-				+ ".metadata";
-
-		// DataOutputStream ds = fs.create(path, false);
-		DataOutputStream dataOutputStream = null;
-		Gson gsonObjectToWrite = new Gson();
-		Gson gsonObjectToRead = new Gson();
-		Map<String, LoadMetadataDetails> mapOfLoadFolderDetails = null;
-		BufferedWriter brWriter = null;
-		try {
-			DataInputStream dataInputStream = FileFactory.getDataInputStream(
-					hdfsLoadedTable, FileFactory.getFileType(hdfsLoadedTable));
-
-			BufferedReader buffReader = new BufferedReader(
-					new InputStreamReader(dataInputStream, "UTF-8"));
-			mapOfLoadFolderDetails = gsonObjectToRead.fromJson(buffReader,
-					Map.class);
-
-			mapOfLoadFolderDetails=updateMapWithLoadMetadata(hdfsStoreLoadFolder,
-					mapOfLoadFolderDetails,isfailure);
-
-			while (!molapLock.isLock()) {
-				if (molapLock.lock()) {
-					dataOutputStream = FileFactory.getDataOutputStream(
-							hdfsLoadedTable,
-							FileFactory.getFileType(hdfsLoadedTable));
-
-					brWriter = new BufferedWriter(new OutputStreamWriter(
-							dataOutputStream, "UTF-8"));
-
-					String metadataInstance = gsonObjectToWrite
-							.toJson(mapOfLoadFolderDetails);
-					brWriter.write(metadataInstance);
-
-				}
-			}
-
-		} catch (IOException ex) {
-
-			mapOfLoadFolderDetails=updateMapWithLoadMetadata(hdfsStoreLoadFolder,
-					mapOfLoadFolderDetails,isfailure);
-
-			while (!molapLock.isLock()) {
-				if (molapLock.lock()) {
-					dataOutputStream = FileFactory.getDataOutputStream(
-							hdfsLoadedTable,
-							FileFactory.getFileType(hdfsLoadedTable));
-
-					brWriter = new BufferedWriter(new OutputStreamWriter(
-							dataOutputStream, "UTF-8"));
-
-					String metadataInstance = gsonObjectToWrite
-							.toJson(mapOfLoadFolderDetails);
-					brWriter.write(metadataInstance);
-				}
-			}
-
-		} finally {
-			if (null != brWriter) {
-				brWriter.flush();
-			}
-
-			if (null != dataOutputStream) {
-				dataOutputStream.close();
-			}
-			molapLock.unlock();
-		}
-
-	}*/
-	
 	/**
-	 * @Author s71955
 	 * This API will write the load level metadata for the loadmanagement module inorder to
 	 * manage the load and query execution management smoothly.
-	 * @param loadCount
-	 * @param loadMetadataDetails
-	 * @param loadModel
-	 * @param loadStatus
-	 * @throws IOException
 	 */
 	public static void recordLoadMetadata(
 			int loadCount, 
@@ -1201,11 +918,8 @@ public final class MolapLoaderUtil
 						new InputStreamReader(dataInputStream, MolapCommonConstants.MOLAP_DEFAULT_STREAM_ENCODEFORMAT));
 				listOfLoadFolderDetailsArray = gsonObjectToRead.fromJson(buffReader,
 						LoadMetadataDetails[].class);
-//				listOfLoadFolderDetails=Arrays.asList(listOfLoadFolderDetailsArray);
-//				List listOfLoadFolderDetailsRead=new ArrayList<LoadMetadataDetails>();
-//				listOfLoadFolderDetailsRead.addAll(listOfLoadFolderDetailsArray.);
-			}
-             listOfLoadFolderDetails=new ArrayList<LoadMetadataDetails>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+            }
+            listOfLoadFolderDetails=new ArrayList<LoadMetadataDetails>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
 			
 			if(null!=listOfLoadFolderDetailsArray)
 			{
@@ -1251,10 +965,6 @@ public final class MolapLoaderUtil
 		try {
 		    
 		    dataOutputStream = writeOperation.openForWrite(FileWriteOperation.OVERWRITE);
-		    
-			/*dataOutputStream = FileFactory
-					.getDataOutputStream(dataLoadLocation,
-							FileFactory.getFileType(dataLoadLocation));*/
 			brWriter = new BufferedWriter(new OutputStreamWriter(
 					dataOutputStream,
 					MolapCommonConstants.MOLAP_DEFAULT_STREAM_ENCODEFORMAT));
@@ -1278,10 +988,6 @@ public final class MolapLoaderUtil
 
 	}
 
-    /**
-     * @param loadModel
-     * @return
-     */
     public static String extractLoadMetadataFileLocation(
     		Schema schema, 
     		String schemaName , 
@@ -1300,59 +1006,6 @@ public final class MolapLoaderUtil
 		
         return cube.getMetaDataFilepath();
     }
-
-	/*private static Map<String, LoadMetadataDetails> updateMapWithLoadMetadata(String hdfsStoreLoadFolder,
-			Map<String, LoadMetadataDetails> mapOfLoadFolderDetails,
-			boolean isfailure) {
-		LoadMetadataDetails loadMetadataDetails = null;
-		String date = null;
-		final String failure = "Failure";
-		final String success = "Success";
-		final String partialFailure = "Partial Failure";
-		String loadFolerName = hdfsStoreLoadFolder.substring(
-				hdfsStoreLoadFolder.lastIndexOf('/') + 1,
-				hdfsStoreLoadFolder.length());
-		if (null == mapOfLoadFolderDetails) {
-			mapOfLoadFolderDetails = new HashMap<String, LoadMetadataDetails>(
-					15);
-		}
-		if (null == mapOfLoadFolderDetails.get(loadFolerName)) {
-			date = readCurrentTime();
-			loadMetadataDetails = new LoadMetadataDetails();
-			loadMetadataDetails.setLoadName(loadFolerName);
-			loadMetadataDetails.setTimestamp(date);
-
-			if (String.valueOf(isfailure).equals("true")) {
-				loadMetadataDetails.setLoadStatus(failure);
-			} else if (String.valueOf(isfailure).equals("false")) {
-				loadMetadataDetails.setLoadStatus(success);
-			}
-
-			mapOfLoadFolderDetails.put(loadFolerName, loadMetadataDetails);
-
-		}
-
-		else {
-
-			loadMetadataDetails = mapOfLoadFolderDetails.get(loadFolerName);
-			date = readCurrentTime();
-			loadMetadataDetails.setTimestamp(date);
-			if (loadMetadataDetails.getLoadStatus().equals(failure)
-					&& isfailure) {
-				loadMetadataDetails.setLoadStatus(failure);
-			} else if (loadMetadataDetails.getLoadStatus().equals(success)
-					&& isfailure) {
-				loadMetadataDetails.setLoadStatus(failure);
-			} else if (loadMetadataDetails.getLoadStatus().equals(success)
-					&& !isfailure) {
-				loadMetadataDetails.setLoadStatus(success);
-			}
-
-		}
-
-		return mapOfLoadFolderDetails;
-
-	}*/
 
 	public static String readCurrentTime() {
 		SimpleDateFormat sdf = new SimpleDateFormat(MolapCommonConstants.MOLAP_TIMESTAMP);
@@ -1399,6 +1052,7 @@ public final class MolapLoaderUtil
 		
 		return out;
 	}
+
 	private static int[] getNumberOfNodeToScanForEachThread(int numberOfNodes, int numberOfCores)
     {
 		int div = numberOfNodes / numberOfCores;
@@ -1420,31 +1074,6 @@ public final class MolapLoaderUtil
         return numberOfNodeToScan;
     }
 
-//	private static void createGraph(MolapLoadModel loadModel) throws GraphGeneratorException {
-//		
-//		String output_loc = MolapProperties.getInstance().getProperty("store_output_location", "../unibi-solutions/system/molap/etl");
-//		String graphPath = output_loc + "/" + loadModel.getSchemaName()
-//        + "/" + loadModel.getCubeName() + "/"+loadModel.getTableName()+".ktr";
-//		File path = new File(graphPath);
-//		if(path.exists())
-//		{
-//			path.delete();
-//		}
-//		
-//		DataProcessTaskStatus schmaModel = new DataProcessTaskStatus(loadModel.getSchemaName(), loadModel.getCubeName(), loadModel.getTableName());
-//    	schmaModel.setCsvFilePath(loadModel.getFactFilePath());
-//    	schmaModel.setDimCSVDirLoc(loadModel.getDimFolderPath());
-////    	SchemaInfo info = new SchemaInfo("MOLAPSteelWheels", "com.mysql.jdbc.Driver", "jdbc:mysql://10.18.51.240:3999/sampledata", "sampledata", "sampledata");
-//    	SchemaInfo info = new SchemaInfo(loadModel.getSchemaName(), loadModel.getDriverClass(), loadModel.getJdbcUrl(), loadModel.getDbUserName(), loadModel.getDbPwd());
-//    	info.setCubeName(loadModel.getCubeName());
-//    	info.setSchemaPath(loadModel.getSchemaPath());
-//    	generateGraph(schmaModel, info, loadModel.getTableName());
-//	}
-	
-	/**
-	* @param loadModel
-	* @return
-	*/
     public static String extractLoadMetadataFileLocation(
             MolapLoadModel loadModel)
     {
@@ -1491,10 +1120,6 @@ public final class MolapLoaderUtil
     /**
      * This method will provide the dimension column list for a given aggregate
      * table
-     * 
-     * @param model
-     * @return
-     * 
      */
     public static Set<String> getColumnListFromAggTable(MolapLoadModel model)
     {
@@ -1541,7 +1166,7 @@ public final class MolapLoaderUtil
     }
 	 public static void copyMergedLoadToHDFS(MolapLoadModel loadModel, int currentRestructNumber, String mergedLoadName)
     {
-      //Copy the current load folder to HDFS
+        //Copy the current load folder to HDFS
         boolean copyStore = Boolean.valueOf(MolapProperties.getInstance().getProperty("dataload.hdfs.copy", "true"));
         
         String schemaName =  loadModel.getSchemaName();
@@ -1560,19 +1185,15 @@ public final class MolapLoaderUtil
             copyMergeToHDFS(schemaName, cubeName, factTable, hdfsLocation,localStore, currentRestructNumber, mergedLoadName);
             }
             if(null != aggTableName) {
-//              for (int i = 0; i < aggTables.length; i++) {
                 copyMergeToHDFS(schemaName, cubeName, aggTableName, hdfsLocation, localStore, currentRestructNumber,mergedLoadName);
-//              }
             }
             try
             {
                  MolapUtil.deleteFoldersAndFiles(new File[] { 
                           new File(localStore + File.separator + schemaName + File.separator + cubeName) });
-                // MolapUtil.getSlices(localStore + File.separator + schemaName + File.separator + cubeName, factTable, loadModel.)
             } 
             catch (MolapUtilException e) 
             {
-//              e.printStackTrace();
                 LOGGER.error(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, "Error while MolapUtil.deleteFoldersAndFiles ", e, e.getMessage());
             }
         }
@@ -1593,13 +1214,12 @@ public final class MolapLoaderUtil
                         + cubeName;
 
 
-                int rsCounter = currentRestructNumber/*MolapUtil.checkAndReturnNextRestructFolderNumber(currentloadedStore,"RS_")*/;
+                int rsCounter = currentRestructNumber;
 
            
 
                 if(rsCounter == -1)
                 {
-//                  System.out.println("Unable to find the local store details (RS_-1) " + currentloadedStore);
                     LOGGER.info(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,"Unable to find the local store details (RS_-1) " + currentloadedStore);
                     return;
                 }
@@ -1612,7 +1232,6 @@ public final class MolapLoaderUtil
 
                 if(loadCounter == -1)
                 {
-//                  System.out.println("Unable to find the local store details (Load_-1) " + currentloadedStore);
                     LOGGER.info(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,"Unable to find the local store details (Load_-1) " + currentloadedStore);
                        
                     return;
@@ -1623,8 +1242,7 @@ public final class MolapLoaderUtil
                 String localLoadFolder = localLoadedTable + File.separator + MolapCommonConstants.LOAD_FOLDER
                         + mergedLoadName;
                 
-                LOGGER.info(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,"Local data loaded folder ... = " + localLoadFolder);                  
-//              System.out.println("Local data loaded folder ... = " + localLoadFolder);
+                LOGGER.info(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,"Local data loaded folder ... = " + localLoadFolder);
                
                 /**
                  * Identify the Load_X folder in the HDFS store 
@@ -1634,7 +1252,7 @@ public final class MolapLoaderUtil
                 hdfsStoreLocation = hdfsStoreLocation + File.separator + schemaName + File.separator
                         + cubeName;
 
-                rsCounter = currentRestructNumber/*MolapUtil.checkAndReturnNextRestructFolderNumber(hdfsStoreLocation,"RS_")*/;
+                rsCounter = currentRestructNumber;
                 if(rsCounter == -1)
                 {
                     rsCounter = 0;

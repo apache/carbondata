@@ -45,8 +45,6 @@ import com.huawei.unibi.molap.util.MolapUtil;
 
 /**
  * utility class for load merging.
- * @author R00903928
- *
  */
 public final class MolapDataMergerUtil 
 {
@@ -57,18 +55,7 @@ public final class MolapDataMergerUtil
 	{
 		
 	}
-	/**
-	 * 
-	 * @param molapLoadModel
-	 * @param storeLocation
-	 * @param hdfsStoreLocation
-	 * @param currentRestructNumber
-	 * @param metadataFilePath
-	 * @param loadsToMerge
-	 * @param mergedLoadName
-	 * @return
-	 * @throws Exception
-	 */
+
 	public static boolean executeMerging(MolapLoadModel molapLoadModel,String storeLocation, String hdfsStoreLocation, int currentRestructNumber , String metadataFilePath, List<String> loadsToMerge, String mergedLoadName) throws Exception
 	{
 		MolapProperties.getInstance().addProperty(
@@ -92,18 +79,8 @@ public final class MolapDataMergerUtil
 		return merger.fullMerge(currentRestructNumber);
 		
 	}
-	
-	/**
-	 * 
-	 * @param storeLocation
-	 * @param fileType
-	 * @param metadataPath
-	 * @param molapLoadModel
-	 * @param currentRestructNumber
-	 * @param partitionCount
-	 * @return
-	 */
-	 public static List<String> getLoadsToMergeFromHDFS(String storeLocation, FileType fileType, String metadataPath, MolapLoadModel molapLoadModel,int currentRestructNumber,int partitionCount)
+
+    public static List<String> getLoadsToMergeFromHDFS(String storeLocation, FileType fileType, String metadataPath, MolapLoadModel molapLoadModel,int currentRestructNumber,int partitionCount)
     {
         List<String> loadNames = new ArrayList<String>(
                 MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -185,22 +162,12 @@ public final class MolapDataMergerUtil
         return loadNames;
 
     }
-	 
-	/**
-	 * 
-	 * @param loadDetail
-	 * @param toLoadMergeMaxSize
-	 * @param molapLoadModel
-	 * @param partitionCount
-	 * @param storeLocation 
-	 * @param currentRestructNumber 
-	 * @return
-	 */
-	 private static boolean checkSizeOfloadToMerge(
-            final LoadMetadataDetails loadDetail, int toLoadMergeMaxSize,MolapLoadModel molapLoadModel, int partitionCount, String storeLocation, int currentRestructNumber, final String loadNameToMatch)
+
+    private static boolean checkSizeOfloadToMerge(
+        final LoadMetadataDetails loadDetail, int toLoadMergeMaxSize,MolapLoadModel molapLoadModel, int partitionCount, String storeLocation, int currentRestructNumber, final String loadNameToMatch)
     {
 
-	     long factSizeAcrossPartition = 0;
+        long factSizeAcrossPartition = 0;
 	     
         for(int partition = 0;partition < partitionCount;partition++)
         {
@@ -238,28 +205,16 @@ public final class MolapDataMergerUtil
             {
                 return false;
             }
-            
-            
-             factSizeAcrossPartition += getSizeOfFactFileInLoad(loadFiles[0]);
-            
-            // MolapFile loadFolder = new MolapFile()
+            factSizeAcrossPartition += getSizeOfFactFileInLoad(loadFiles[0]);
         }
         // check avg fact size if less than configured max size of to load.
         if(factSizeAcrossPartition < toLoadMergeMaxSize*1024*1024*1024)
         {
             return true;
         }
-
-        // LoadMetadataUtil.createLoadFolderPath(model, hdfsStoreLocation,
-        // partitionId, currentRestructNumber);
         return false;
     }
-	 
-    /**
-	  * 
-	  * @param molapFile
-	  * @return
-	  */
+
     private static long getSizeOfFactFileInLoad(MolapFile molapFile)
     {
         long factSize = 0;
@@ -296,11 +251,11 @@ public final class MolapDataMergerUtil
             @Override
             public boolean accept(MolapFile file)
             {
-                if(file.getName().endsWith(MolapCommonConstants.FACT_FILE_EXT))
-                {
-                    return true;
-                }
-                return false;
+            if(file.getName().endsWith(MolapCommonConstants.FACT_FILE_EXT))
+            {
+                return true;
+            }
+            return false;
             }
         });
         
@@ -311,11 +266,7 @@ public final class MolapDataMergerUtil
         
         return factSize;
     }
-    /**
-	  * 
-	  * @param loadDetail
-	  * @return
-	  */
+
 	private static boolean checkIfLoadIsMergedAlready(
             LoadMetadataDetails loadDetail)
     {
@@ -325,10 +276,7 @@ public final class MolapDataMergerUtil
 	    }
         return false;
     }
-    /**
-	 *  
-	 * @param loadDetail
-	 */
+
     private static boolean checkIfLoadIsNotDeleted(LoadMetadataDetails loadDetail)
     {
         if(!loadDetail.getLoadStatus().equalsIgnoreCase(MolapCommonConstants.MARKED_FOR_DELETE))
@@ -340,16 +288,7 @@ public final class MolapDataMergerUtil
             return false;
         }
     }
-    
-    /**
-     * 
-     * @param metadataFilePath
-     * @param molapLoadModel 
-     * @param storeLocation 
-     * @param partition 
-     * @param currentRestructNumber 
-     * @return
-     */
+
     public static boolean checkIfLoadMergingRequired(String metadataFilePath, MolapLoadModel molapLoadModel, String storeLocation, int partition, int currentRestructNumber)
     {
         
@@ -363,24 +302,24 @@ public final class MolapDataMergerUtil
         
         // get all the load files in the current RS 
         MolapFile[] loadFiles = parentLoadFolder
-                .listFiles(new MolapFileFilter()
+            .listFiles(new MolapFileFilter()
+            {
+                @Override
+                public boolean accept(MolapFile file)
                 {
-                    @Override
-                    public boolean accept(MolapFile file)
-                    {
-                        if(file.getName()
-                                .startsWith(MolapCommonConstants.LOAD_FOLDER ))
-                        {
-                            return true;
-                        }
-                        return false;
-                    }
-                });
+                if(file.getName()
+                        .startsWith(MolapCommonConstants.LOAD_FOLDER ))
+                {
+                    return true;
+                }
+                return false;
+                }
+            });
         
         
         String isLoadMergeEnabled = MolapProperties.getInstance().getProperty(
-                MolapCommonConstants.ENABLE_LOAD_MERGE,
-                MolapCommonConstants.DEFAULT_ENABLE_LOAD_MERGE);
+            MolapCommonConstants.ENABLE_LOAD_MERGE,
+            MolapCommonConstants.DEFAULT_ENABLE_LOAD_MERGE);
         
         if(isLoadMergeEnabled.equalsIgnoreCase("false"))
         {
@@ -412,13 +351,7 @@ public final class MolapDataMergerUtil
             return false;
         }
     }
-    
-    /**
-     * 
-     * @param details
-     * @param loadFiles 
-     * @return
-     */
+
     private static int getNumberOfValidLoads(LoadMetadataDetails[] details, MolapFile[] loadFiles)
     {
         int validLoads = 0;
@@ -440,13 +373,7 @@ public final class MolapDataMergerUtil
         return validLoads;
     
     }
-    
-    /**
-     * 
-     * @param loadFiles
-     * @param loadName
-     * @return
-     */
+
     private static boolean isLoadMetadataPresentInRsFolders(
             MolapFile[] loadFiles, String loadName)
     {
@@ -482,11 +409,7 @@ public final class MolapDataMergerUtil
         }
         return false;
     }
-    /**
-     * 
-     * @param loadName
-     * @return
-     */
+
     public static String getMergedLoadName(List<String> loadName)
     {
          String mergeLoadName = loadName.get(0); 
@@ -503,13 +426,7 @@ public final class MolapDataMergerUtil
         }
         
     }
-    
-    /**
-     * 
-     * @param loadsToMerge
-     * @param metaDataFilepath
-     * @param MergedLoadName
-     */
+
     public static void updateLoadMetadataWithMergeStatus(List<String> loadsToMerge, String metaDataFilepath, String MergedLoadName,MolapLoadModel molapLoadModel)
     {
         LoadMetadataDetails[] loadDetails =  MolapUtil.readLoadMetadata(metaDataFilepath);
@@ -527,11 +444,7 @@ public final class MolapDataMergerUtil
                     first = false;
                 }
                 else
-                {/*
-                    loadDetail.setLoadStatus(MolapCommonConstants.MARKED_FOR_DELETE);
-                    loadDetail.setDeletionTimestamp(MolapLoaderUtil
-                            .readCurrentTime());
-                */
+                {
                     continue;
                 }
             }
@@ -564,12 +477,7 @@ public final class MolapDataMergerUtil
         }
         
     }
-    
-    /**
-     * 
-     * @param path
-     * @param loadModel
-     */
+
     public static void cleanUnwantedMergeLoadFolder(
             MolapLoadModel loadModel, int partitionCount, String storeLocation,
             boolean isForceDelete, int currentRestructNumber)
@@ -601,17 +509,17 @@ public final class MolapDataMergerUtil
                 @Override
                 public boolean accept(MolapFile file)
                 {
-                    if(file.getName().startsWith(
-                            MolapCommonConstants.LOAD_FOLDER)
-                            && file.getName().contains(
-                                    MolapCommonConstants.MERGER_FOLDER_EXT))
-                    {
-                        return true;
-                    }
-                    else
-                    {
-                        return false;
-                    }
+                if(file.getName().startsWith(
+                    MolapCommonConstants.LOAD_FOLDER)
+                    && file.getName().contains(
+                            MolapCommonConstants.MERGER_FOLDER_EXT))
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
                 }
             });
 
@@ -648,13 +556,7 @@ public final class MolapDataMergerUtil
             }
         }
     }
-    
-    /**
-     * 
-     * @param eachMergeLoadFolder
-     * @param details
-     * @return
-     */
+
     private static boolean checkIfOldMergeLoadCanBeDeleted(
             MolapFile eachMergeLoadFolder, LoadMetadataDetails[] details)
     {
@@ -687,10 +589,7 @@ public final class MolapDataMergerUtil
         
         return false;
     }
-    /**
-     * 
-     * @return
-     */
+
     private static long getMaxQueryTimeOut()
     {
         int maxTime; 
@@ -707,14 +606,8 @@ public final class MolapDataMergerUtil
         return maxTime*60000;
       
     }
-    
-    /**
-     * 
-     * @param molapFile
-     * @return
-     */
     private static boolean isFactFilePresent(MolapFile molapFile)
-   {
+    {
         
         MolapFile [] factFileUpdated = molapFile.listFiles(new MolapFileFilter()
         {

@@ -30,9 +30,6 @@ import com.huawei.unibi.molap.constants.MolapCommonConstants;
 public class DeletedLoadMetadata implements Serializable {
 
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 7083059404172117208L;
 	private Map<String,String> deletedLoadMetadataMap = new HashMap<String,String>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
 
