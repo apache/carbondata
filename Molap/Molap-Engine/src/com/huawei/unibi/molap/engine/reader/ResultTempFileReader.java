@@ -17,24 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwedLwWEET5JCCp2J65j3EiB2PJ4ohyqaGEDuXyJ
-TTt3d0DebYPOTY5EEEbPew1WgO40egWK6f0mL8apDujTbAdIJaFxmwMbIXXKWkCJl61wFgMl
-xUphcjumnqiX4p6rdg4Jh6sECPH//yeB0vWgW+2VHgTwIhKwbO44RUeCnJrG0g==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.engine.reader;
 
 import java.io.DataInputStream;
@@ -49,15 +31,6 @@ import com.huawei.unibi.molap.engine.reader.exception.ResultReaderException;
 import com.huawei.unibi.molap.engine.wrappers.ByteArrayWrapper;
 import com.huawei.unibi.molap.util.MolapUtil;
 
-/**
- * Project Name NSE V3R7C00 
- * Module Name : Molap Engine
- * Author K00900841
- * Created Date :21-May-2013 6:42:29 PM 
- * FileName :DataFileChunkHolder.java
- * Class Description : DataFileChunkHolder  class  
- * Version 1.0
- */
 public class ResultTempFileReader
 {
     

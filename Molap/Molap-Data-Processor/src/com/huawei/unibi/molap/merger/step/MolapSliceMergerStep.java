@@ -17,22 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwe/owl+XpObKvwejIomJrN10iZBX17jBC5vj/zP
-61+Xad33kDWkcpR/rPVQVDuxeTMqs84sYRZlmITJgUrz6uVvbL7MaGGPuKhQvFy0e7f4PeM1
-jDSLUOWKduO2/4TS1cdPw067LnVgvCnmrdIuNeYhOSCQaDT4jMSnMNdvW6+/2g==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
-*/
 package com.huawei.unibi.molap.merger.step;
 
 //import org.apache.log4j.Logger;
@@ -67,16 +51,6 @@ import com.huawei.unibi.molap.util.MolapProperties;
 import com.huawei.unibi.molap.util.MolapUtil;
 import com.huawei.unibi.molap.util.MolapUtilException;
 
-/**
- * 
- * Project Name NSE V3R7C00 
- * Module Name : Molap Data Processor
- * Author K00900841
- * Created Date :21-May-2013 6:42:29 PM
- * FileName : MolapDataWriterStep.java
- * Class Description : ETL Step class for merging the slice 
- * Version 1.0
- */
 public class MolapSliceMergerStep extends BaseStep
 {
 

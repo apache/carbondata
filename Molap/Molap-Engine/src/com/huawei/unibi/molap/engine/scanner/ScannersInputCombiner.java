@@ -17,24 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwdh/HjOjN0Brs7b7TRorj6S6iAIeaqK90lj7BAM
-GSGxBtL5v/KKPfzM1vK43QeoKvH3oClqIe1OF+gF+9OUYOQq6IwFCEBySYALwsQ0+pjNOo9/
-fRhqZMis03k9I+G96xYfafd9yJgKdVZlsUcsX+hMmJ/m4Z46jdHQSwwlFA2uvA==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 1997
- * =====================================
- *
- */
 package com.huawei.unibi.molap.engine.scanner;
 
 import java.util.ArrayList;
@@ -59,7 +41,6 @@ import com.huawei.unibi.molap.util.ByteUtil;
  * Merges the data from given list of scanners to combine to a single input
  * stream.
  * 
- * @author K00900207
  */
 public class ScannersInputCombiner implements DataInputStream
 {

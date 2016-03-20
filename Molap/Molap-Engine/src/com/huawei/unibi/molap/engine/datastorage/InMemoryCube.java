@@ -17,16 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
- 2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwdh/HjOjN0Brs7b7TRorj6S6iAIeaqK90lj7BAM
- GSGxBndt6RtULR7hkF+fPK6x5fFEJkeyNx5W6B/vpCrk6Rrg2MNwKojA4BByFEx+4CUf1z0J
- mXpESfXKJH4MdJrYDXAf9TusCiUm4CpwKlUfU+zjxmaLXH2fYT1BB7hd4ichhQ==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.datastorage;
 
 import java.io.File;
@@ -57,10 +47,6 @@ import com.huawei.unibi.molap.olap.MolapDef;
 import com.huawei.unibi.molap.util.MolapUtil;
 import com.huawei.unibi.molap.util.MolapUtilException;
 
-/**
- * @author K00900207
- * 
- */
 public class InMemoryCube implements Comparable<InMemoryCube>
 {
     /**

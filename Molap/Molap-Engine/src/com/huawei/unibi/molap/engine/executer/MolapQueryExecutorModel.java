@@ -17,16 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwcAIRTtLWBkMMN+iqJ62JNQb/MYFaBoemC1VlrU
-n+vkORmli/7QlH86UVzQoJ/gth/w2dr6fIKiupHmxSez6ZSA4xy8eOofv4FF1uzEWmcOlNrl
-Hd1nDVh+hhw9gzpB3hu95Tw0JGda7cXmn3YwV/tF7ehP0J8otU0zfhZgFIdYkw==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.executer;
 
 import java.io.Serializable;
@@ -52,7 +42,6 @@ import com.huawei.unibi.molap.metadata.MolapMetadata.Measure;
 
 /**
  * Its a model object for MolapExecutor interface
- * @author R00900208
  *
  */
 public class MolapQueryExecutorModel implements Serializable

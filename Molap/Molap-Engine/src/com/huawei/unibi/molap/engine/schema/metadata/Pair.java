@@ -17,23 +17,8 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwdh/HjOjN0Brs7b7TRorj6S6iAIeaqK90lj7BAM
-GSGxBuAVYc3AOgydTJcaqGxA+5qF6dHkXSeqBAEjPcb4cNsJPvhZwswlvZ834tPoSHlBlHSu
-nwu46IaXwYLJ6QVj7l02WWOEkTkqM5IYyEhZckvf6hqrcSmyR/GYmvtjf6kzdA==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.schema.metadata;
 
-/**
- * @author R00900208
- * @param <K>
- * @param <V>
- */
 public class Pair<K, V>
 {
     /**

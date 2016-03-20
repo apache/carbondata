@@ -17,13 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwcfJtSMNYgnOYiEQwbS13nxM8hk/dmbY4B4u+tG
-aRAl/lo0gdOd2bV4b00rp5Iuy83AirE1udZDUYxMDaGBnRcoMalbXD092+0Q+HA4SHxR1WQO
-RWpVi4a3Y2huSidO3/1Y3D4TxmyAltGmv1gHDDmsiz6cRZoe261ELL4B9XLwvg==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
 package com.huawei.unibi.molap.surrogatekeysgenerator.lru;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;

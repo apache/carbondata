@@ -17,16 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwdh/HjOjN0Brs7b7TRorj6S6iAIeaqK90lj7BAM
-GSGxBupomOuNElgymnqacAyMNCiZeoi66z+b6rYL/ftaGmoRvtaKRyHprDQlnMiZ5TdSclRK
-smvKApxHYu9GBhbq542HkABJn9UXwKLpvkbAg0lWKGCIFSqHAdGVNRLciV4FxQ==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- *
- */
 package com.huawei.unibi.molap.engine.datastorage;
 
 import java.util.ArrayList;
@@ -64,10 +54,6 @@ import com.huawei.unibi.molap.metadata.SliceMetaData;
 import com.huawei.unibi.molap.util.MolapProperties;
 import com.huawei.unibi.molap.util.MolapUtil;
 
-/**
- * @author K00900207
- * 
- */
 public class CubeDataStore
 {
 

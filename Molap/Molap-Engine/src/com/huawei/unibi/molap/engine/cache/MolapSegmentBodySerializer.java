@@ -17,13 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwdh/HjOjN0Brs7b7TRorj6S6iAIeaqK90lj7BAM
-GSGxBvcB+GsV6Te0Jm+oRSjSZg4OvnfAILXqQ0ELLwySF/V6gEo0NijYaqXEAt6lsgxtUQwG
-iBgakp8N0kpdYGjcYvht2WU5po548Zk1V+78e4kEl8MFeEPjBbc85urjj2Msag==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
 package com.huawei.unibi.molap.engine.cache;
 
 import java.io.ByteArrayInputStream;
@@ -37,7 +30,6 @@ import java.io.Serializable;
 
 /**
  * Class responsible to serialize and deserialize from and to JDBM DB
- * @author A00902732
  *
  */
 public class MolapSegmentBodySerializer implements  Serializable

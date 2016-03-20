@@ -17,16 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwcAIRTtLWBkMMN+iqJ62JNQb/MYFaBoemC1VlrU
-n+vkOWwJdPbFpF99SHDgcrZhtFb9kqvPCoXnarju4+PDIo47TqwibDvKFzMA2rs9Qu/szbXr
-zrhuP7RwRyFHUNLYs//y0K3UDdXWBlrSAgK+TplEI38FlsSm4x3wqSxrL7MlgQ==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.executer.calcexp;
 
 import java.io.Serializable;
@@ -42,7 +32,6 @@ import com.huawei.unibi.molap.engine.executer.calcexp.impl.CalcExpressionModel;
 /**
  * This calculates the calculated measures.
  * 
- * @author R00900208
  *
  */
 public interface MolapCalcFunction extends Serializable

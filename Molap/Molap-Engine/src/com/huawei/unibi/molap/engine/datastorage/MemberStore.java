@@ -17,16 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwdh/HjOjN0Brs7b7TRorj6S6iAIeaqK90lj7BAM
-GSGxBsCXPNNfUL/G0OeRsSZ61fzy17VncZ+10us8wFRfhDfSvoZtMZheaD1dPIAxKpdNNcDE
-mh1mDmYGD5ZmH8236VjiKhBA1fqzeoKK4ZANLo8qi1A3NrAbXZlb0JBKXd3hYg==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.datastorage;
 
 import java.util.ArrayList;
@@ -37,10 +27,7 @@ import com.huawei.unibi.molap.constants.MolapCommonConstants;
 import com.huawei.unibi.molap.engine.util.MemberSortModel;
 import com.huawei.unibi.molap.olap.MolapDef;
 import com.huawei.unibi.molap.util.ByteUtil;
-/**
- * @author K00900207
- * 
- */
+
 public class MemberStore
 {
 

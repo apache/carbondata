@@ -17,21 +17,10 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwcz8AOhvEHjQfa55oxvUSJWRQCwLl+VwWEHaV7n
-0eFj3VSaYQFeEAVxDLHuw9Os9rXpS/bw+bkBeUnzGVJ/CUnxgjWnZRbULjDtDJNF+bqhv0Am
-jQeqccwr1Lz7zzdkx3PoKPPQB+ERDD6aA9R+qkUo8BMtfv2OZgWcUqGCfmYstg==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.filters.measurefilter;
 
 /**
  * It is group filter models used to evaluate the filters in group conditions like AND, OR
- * @author R00900208
  *
  */
 public class GroupMeasureFilterModel extends MeasureFilterModel

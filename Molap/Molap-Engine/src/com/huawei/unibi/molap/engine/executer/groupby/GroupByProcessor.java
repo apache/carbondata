@@ -17,16 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbweRARwUrjYxPx0CUk3mVB7mxOcZSaagKrMQNlhB
-QO/t7NSaFATtI3oOCDLYP03gd9USss+tJkPW5O/XmT2Vmp8hYVxwQTEm9XyU/U/I/IfTVv6X
-h6quSwsmNICgh6jKknYb3yiHtEfvGFHqgS1at5UnD2iwtHSDkzWPlSP0ONEh6Q==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.executer.groupby;
 
 import java.util.Arrays;
@@ -45,7 +35,6 @@ import com.huawei.unibi.molap.metadata.MolapMetadata.Measure;
 
 /**
  * It will group by and aggregate measures by the dimension
- * @author R00900208
  *
  */
 public class GroupByProcessor implements DataProcessor

@@ -17,22 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwcfJtSMNYgnOYiEQwbS13nxM8hk/dmbY4B4u+tG
-aRAl/qrm6HwB5CTSUMgUgskCbWJF5lu4hZv4IgatUS39YMdtn+k12imBvaO0qIkq+DzH5Kh0
-OfnhzA9l6KqoHaKRgJkIIAiKVTtE3sf4wC29+J0AwAPpIjbUk6U9ttH4lpEwXw==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
-*/
 
 package com.huawei.unibi.molap.surrogatekeysgenerator.dbbased;
 
@@ -69,15 +53,6 @@ import com.huawei.unibi.molap.util.MolapProperties;
 import com.huawei.unibi.molap.util.MolapUtil;
 import com.huawei.unibi.molap.writer.LevelValueWriter;
 
-/**
- * Project Name NSE V3R7C00 
- * Module Name : 
- * Author V00900840
- * Created Date :24-May-2013 12:10:15 PM
- * FileName : FileStoreSurrogateKeyGen.java
- * Class Description :
- * Version 1.0
- */
 public class FileStoreSurrogateKeyGen extends MolapDimSurrogateKeyGen
 {
 	private static final LogService LOGGER = LogServiceFactory.getLogService(FileStoreSurrogateKeyGen.class.getName());

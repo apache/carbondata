@@ -17,22 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwcfJtSMNYgnOYiEQwbS13nxM8hk/dmbY4B4u+tG
-aRAl/uyw4g3oOJExnIih+scXjVBXXWxOJooJLiCQ2G9sO7HYCzcqzOeer8GZVZ/AhSy70OxO
-EcQuiTHPrefC8/ba3um1fpUYZ2R3cDBRjrwOzo6mlirLR+bv+aWnjsF5qgyVrg==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- */
 
 package com.huawei.unibi.molap.sortandgroupby.sortDataStep;
 
@@ -55,15 +39,6 @@ import com.huawei.unibi.molap.sortandgroupby.sortData.SortDataRows;
 import com.huawei.unibi.molap.util.MolapDataProcessorLogEvent;
 import com.huawei.unibi.molap.util.RemoveDictionaryUtil;
 
-/**
- * Project Name 	: Carbon 
- * Module Name 		: MOLAP Data Processor
- * Author 			: Suprith T 72079 
- * Created Date 	: 25-Aug-2015
- * FileName 		: SortKeyStep.java
- * Description 		: Kettle step to sort data
- * Class Version 	: 1.0
- */
 public class SortKeyStep extends BaseStep
 {
     

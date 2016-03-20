@@ -17,24 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwcAIRTtLWBkMMN+iqJ62JNQb/MYFaBoemC1VlrU
-n+vkOevqT/yal6n9zNIf+Q+UOaLoHMwZSqjY1XxcGzdv1VSk8fMQM/ZqewefSFPVW7eQdYzr
-vNNRjXYexb6RvjGZ/9zGdXKV1h0lbBzl1sVleTdz7TDChm/mjqRVYwH/pwLWWg==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.engine.directinterface.impl;
 
 import java.io.File;
@@ -101,7 +83,6 @@ import com.huawei.unibi.molap.util.ValueCompressionUtil;
 
 /**
  * It is util class to parse the molap query object
- * @author R00900208
  *
  */
 public final class MolapQueryParseUtil

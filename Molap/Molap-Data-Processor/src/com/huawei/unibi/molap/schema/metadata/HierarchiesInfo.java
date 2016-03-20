@@ -17,23 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwcfJtSMNYgnOYiEQwbS13nxM8hk/dmbY4B4u+tG
-aRAl/vD3/dAALRhKgPGKyo/lto/vgv/KJrZ1cWb3Oe3AtLDG5XZga/GJp6kfIpM6pP5+2VDS
-izmfslOEK3GPV64ApHhLCeitojCK1ZIp2qgA4KROZZSWSByvjARDjt4sl8Qtww==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
-*/
-
 package com.huawei.unibi.molap.schema.metadata;
 
 import java.util.Map;

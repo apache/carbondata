@@ -17,38 +17,11 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwdh/HjOjN0Brs7b7TRorj6S6iAIeaqK90lj7BAM
-GSGxBuk42g3qBAwJIYgX2mn9EiJrZH7Wt15VDORFSUmmQT4BOSlCb+xQGOD4Np9Or1c2TO0i
-VhlWONwaGZdqWsPhBvXn7DJQ+7ArVW3kd8fAjCSg9gJ3fDcWB4dYzFM7d0pncg==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.engine.datasource;
 
 
 /**
- * Project Name NSE V3R7C00
- * 
- * Module Name : Molap Engine
- * 
- * Author K00900841
- * 
- * Created Date :13-May-2013 3:35:33 PM
- * 
- * FileName : AbstractMolapDataSource.java
- * 
+ *
  * Class Description : The data source process related to molap engine will be handled in this class
  * 
  * Version 1.0

@@ -17,16 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwedLwWEET5JCCp2J65j3EiB2PJ4ohyqaGEDuXyJ
-TTt3d3fu0BD55uxd8Gn+v9J/FaFhUsZdWgsI3NLe/ZR9UAMAjFuKqotIm+MGzlDomnkCe77G
-/L2SRch9AObtOhM3BjAitrcipNZZMukWjaMdrL4zGAjHVbrak2bFG8WQ3ZYcLA==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.executer.pagination.impl;
 
 import com.huawei.iweb.platform.logging.LogService;
@@ -40,10 +30,6 @@ import com.huawei.unibi.molap.engine.schema.metadata.SliceExecutionInfo;
 import com.huawei.unibi.molap.engine.util.MolapEngineLogEvent;
 import com.huawei.unibi.molap.engine.wrappers.ByteArrayWrapper;
 
-/**
- * @author R00900208
- *
- */
 public class LocalDataAggregatorRSImpl extends LocalDataAggregatorImpl
 {
     

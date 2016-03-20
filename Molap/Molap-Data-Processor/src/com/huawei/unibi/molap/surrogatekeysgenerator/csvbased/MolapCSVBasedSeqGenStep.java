@@ -17,22 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwcfJtSMNYgnOYiEQwbS13nxM8hk/dmbY4B4u+tG
-aRAl/gTWpYPJKojRDyF5Dx2KjijHceCCqZfXjzAqGckXfFWH508ESBiKfS6VsfVeyHlaEwwv
-tdZraOAWQPwAv+W43l/Oe0AVmvPll1xMfbCgBXrKs0udekaD4BNt4Ae/pFQ2pg==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
-*/
 
 package com.huawei.unibi.molap.surrogatekeysgenerator.csvbased;
 
@@ -116,15 +100,6 @@ import com.huawei.unibi.molap.util.RemoveDictionaryUtil;
 import com.huawei.unibi.molap.writer.ByteArrayHolder;
 import com.huawei.unibi.molap.writer.HierarchyValueWriterForCSV;
 
-/**
- * Project Name NSE V3R7C00 
- * Module Name : 
- * Author V00900840
- * Created Date :11-Jul-2013 4:22:49 PM
- * FileName : MolapCSVBasedSeqGenStep.java
- * Class Description :
- * Version 1.0
- */
 public class MolapCSVBasedSeqGenStep extends BaseStep
 {
 	

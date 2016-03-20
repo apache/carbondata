@@ -17,16 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwfQVwqh74rUY6n+OZ2pUrkn1TkkvO60rFu08DZa
-JnQq9GjHw1JHL8HRPq8ZgoUh/4n13d2Q4g/VTa53EI9pjxN48UFXYm726GO//kLf5/3vNNW3
-l1Jrt6XPgVywOm6Dl9p2gEmKGHgwkat6K76P8eN4GIthTQXpzx24paUWoNIs3Q==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.wrappers;
 
 import java.io.Serializable;
@@ -40,16 +30,7 @@ import com.huawei.unibi.molap.util.ByteUtil.UnsafeComparer;
 
 
 /**
- * Project Name NSE V3R7C00
- * 
- * Module Name : Molap
- * 
- * Author K00900841
- * 
- * Created Date :13-May-2013 3:35:33 PM
- * 
- * FileName : ByteArrayWrapper.java
- * 
+ *
  * Class Description :This class will be used as a key in the result map, it
  * will contain maksed key and actual data
  * 

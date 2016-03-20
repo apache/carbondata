@@ -17,13 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwdEVzw1icjfRowqz2DW4XzUpEhhSzBOwVynEHjc
-u0090UJHa7e02Wm6ckFmyt2l30cmd8ICvH9ddJ6R/m4KwZ51eWGldPy6YqvbZ6oNrtr37m75
-k1Pi0UWT0KKIOTBn3oMB1+yD/4QA/uhGfRIML6CoQz/RHUqt640EwIN/Z+sOyQ==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
 package com.huawei.unibi.molap.engine.aggregator.impl;
 
 import java.io.DataInput;
@@ -39,8 +32,7 @@ import com.huawei.unibi.molap.constants.MolapCommonConstants;
 import com.huawei.unibi.molap.engine.aggregator.MeasureAggregator;
 
 /**
- * @author A00902732
- * 
+ *
  *         <p>
  *         The distinct count aggregator
  *         <p>

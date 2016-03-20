@@ -17,23 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwcfJtSMNYgnOYiEQwbS13nxM8hk/dmbY4B4u+tG
-aRAl/qLNKDULt2sB3SXVNTsPbKtMpLQqaqQ/eiviun073JGKnVhVgCVUZ0njBHSeFH16Z6yu
-e5NWiJgHlmiidMOc0ZgxHuXkzgKYxiA47msfIEHz2/h61MaFgSZ1NKMSib8EXg==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
-*/
-
 package com.huawei.unibi.molap.surrogatekeysgenerator.csvbased;
 
 import java.io.BufferedReader;
@@ -58,16 +41,6 @@ import com.huawei.unibi.molap.constants.MolapCommonConstants;
 import com.huawei.unibi.molap.util.MolapDataProcessorLogEvent;
 import com.huawei.unibi.molap.util.MolapUtil;
 
-/**
- * Project Name NSE V3R7C00 
- * Module Name : Molap
- * Author V00900840
- * Created Date :26-Sep-2013 1:40:46 PM
- * FileName : RealTimeDataPropertyReader.java
- * Class Description : Reads the realtimedata property file and populate the year, month
- * and day map.
- * Version 1.0
- */
 public class RealTimeDataPropertyReader
 {
     /**

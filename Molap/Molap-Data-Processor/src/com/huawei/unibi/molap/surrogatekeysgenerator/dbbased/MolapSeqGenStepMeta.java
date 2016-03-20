@@ -17,24 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwcfJtSMNYgnOYiEQwbS13nxM8hk/dmbY4B4u+tG
-aRAl/qpoEdLqOwfgIb3OlbgYbMnZs2XEsp0MAIUCzKO8pc/5O6uuCJwdFMxIL+5q1joDFLtQ
-MeXHRdNHAAPoNjxO9CrrNVeFeiFNvpyz/moIZGbTA8jzWOyLYUKZGUY1zKroTg==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
-*/
-
-
 package com.huawei.unibi.molap.surrogatekeysgenerator.dbbased;
 
 import java.io.File;
@@ -79,17 +61,6 @@ import com.huawei.unibi.molap.util.MolapDataProcessorUtil;
 import com.huawei.unibi.molap.util.MolapUtil;
 
 
-
-/**
- * 
- * @author R00900208
- *
- */
-/**
- * Project Name NSE V3R7C00 Module Name : MOLAP Author :C00900810 Created Date
- * :24-Jun-2013 FileName : MolapSeqGenStepMeta.java Class Description : Version
- * 1.0
- */
 public class MolapSeqGenStepMeta extends BaseStepMeta implements StepMetaInterface,Cloneable
 {
 

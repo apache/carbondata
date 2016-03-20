@@ -17,13 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwcAIRTtLWBkMMN+iqJ62JNQb/MYFaBoemC1VlrU
-n+vkOQN2UvMawGp2Qw1J6bfQufGHx1lBrCsveljSt4nz2Rsz2vWnjsmjSYCKpnKJn9plQoQu
-HpdLKmE657q5mpCCOdJdS0X6yXXs1HAN2D9ho+8yUfLmwXzb4pC/Pa8Sksm/6Q==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
 package com.huawei.unibi.molap.engine.datastorage.tree;
 
 import com.huawei.unibi.molap.datastorage.store.FileHolder;
@@ -37,11 +30,7 @@ import com.huawei.unibi.molap.engine.datastorage.storeInterfaces.KeyValue;
 import com.huawei.unibi.molap.engine.schema.metadata.Pair;
 import com.huawei.unibi.molap.metadata.LeafNodeInfo;
 
-/**
- * Project Name NSE V3R7C00 Module Name : MOLAP Author :C00900810 Created Date
- * :25-Jun-2013 FileName : CSBTreeLeafNode.java Class Description : Version 1.0
- */
-public class CSBTreeLeafNode extends CSBNode 
+public class CSBTreeLeafNode extends CSBNode
 {
     /**
      * Number of keys in the node

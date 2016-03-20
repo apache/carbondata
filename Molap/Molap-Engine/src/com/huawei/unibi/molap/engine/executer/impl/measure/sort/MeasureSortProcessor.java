@@ -17,24 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbweRARwUrjYxPx0CUk3mVB7mxOcZSaagKrMQNlhB
-QO/t7OcIaYg265R56kYWVXPJrEsTVdhxHhXCZ2W1G14UYLmBIhNTKLoTrfmwjw/1s2Ew3hYD
-MbX+EnAJXL1TSlMcG7SoZ1z36248sdJifaD1rZhP0zCwZhV+GNpjMl9kL+LrFw==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.engine.executer.impl.measure.sort;
 
 import java.io.File;
@@ -63,12 +45,7 @@ import com.huawei.unibi.molap.engine.executer.pagination.impl.DataFileMerger;
 import com.huawei.unibi.molap.engine.executer.pagination.impl.DataFileWriter;
 
 /**
- * Project Name NSE V3R7C00 
- * Module Name : Molap Engine
- * Author K00900841
- * Created Date :21-May-2013 6:42:29 PM 
- * FileName :DataFileWriter.java
- * Class Description : Processor class to sort the data based on measures 
+ * Class Description : Processor class to sort the data based on measures
  * Version 1.0
  */
 public class MeasureSortProcessor implements DataProcessor

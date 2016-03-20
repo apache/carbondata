@@ -17,16 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbweRARwUrjYxPx0CUk3mVB7mxOcZSaagKrMQNlhB
-QO/t7G8sJvs0DEOxya/OlPGazf0uhOxVhOPgCM97GtKsBzIAzhyT9OivrTvmZ2zXfzqaRgNO
-Z4JA2lzDOWRNUHF2158nZVHaJvGqvV1iquyuXu2xCIsn6eAlPmn4+hiGmq2dTQ==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.filters.measurefilter;
 
 import java.util.ArrayList;
@@ -36,12 +26,6 @@ import com.huawei.unibi.molap.constants.MolapCommonConstants;
 import com.huawei.unibi.molap.engine.filters.measurefilter.util.MeasureFilterFactory;
 import com.huawei.unibi.molap.metadata.MolapMetadata.Measure;
 
-/**
- * MeasureFilterUtil class
- * 
- * @author R00900208
- *
- */
 public final class MeasureFilterUtil
 {
     private MeasureFilterUtil()

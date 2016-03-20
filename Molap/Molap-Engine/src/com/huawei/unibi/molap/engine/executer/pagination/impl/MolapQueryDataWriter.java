@@ -17,16 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwedLwWEET5JCCp2J65j3EiB2PJ4ohyqaGEDuXyJ
-TTt3d2fR1mKJrpuJi4zf6Ohi1r1Vw8Ab5QUfWPWH3PrRT+pNSl3okA1beKcE3rRUCneBekqd
-9bs2/YCl8QGx15rzrJTFIsTTAwxvMxbZNVMSTynBlcoQ/2FfIGus8nPbsKuQ6A==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.executer.pagination.impl;
 
 import java.io.ByteArrayOutputStream;
@@ -49,7 +39,6 @@ import com.huawei.unibi.molap.writer.exception.MolapDataWriterException;
 
 /**
  * It writes the data to file in blocks manner
- * @author R00900208
  *
  */
 public class MolapQueryDataWriter implements DataProcessor

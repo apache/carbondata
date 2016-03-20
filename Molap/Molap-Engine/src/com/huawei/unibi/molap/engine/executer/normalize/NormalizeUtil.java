@@ -17,16 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwedLwWEET5JCCp2J65j3EiB2PJ4ohyqaGEDuXyJ
-TTt3d91OJqQaDBuZsED96eGDOjw17zuZ2gytkj/o5bR1ilMYD5a/4hHLdwr36Ut3axF29uRZ
-VJXBlwhI0rDGeu2GVGn9Jt2WvEOq+PC+HbwZCfFfcf8v91nNnN4hPeOAGE4aoA==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.executer.normalize;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -47,10 +37,6 @@ import com.huawei.unibi.molap.keygenerator.KeyGenException;
 import com.huawei.unibi.molap.keygenerator.KeyGenerator;
 import com.huawei.unibi.molap.metadata.MolapMetadata.Dimension;
 
-/**
- * @author R00900208
- *
- */
 public final class NormalizeUtil
 {
  private NormalizeUtil()

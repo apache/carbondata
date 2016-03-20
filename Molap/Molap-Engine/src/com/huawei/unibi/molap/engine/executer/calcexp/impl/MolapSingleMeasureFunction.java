@@ -17,16 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbweRARwUrjYxPx0CUk3mVB7mxOcZSaagKrMQNlhB
-QO/t7BcAJpLIKe6S5BNCsI2XXRyMrW3ijjKxOtUGUzFsjySSXKmKxOsMZ1Bq+2ofjXvvKUdR
-Uemn3MOaDIOB3LU/KMSrmay7H7pKAhBi/fWXLrRlL4WGUNumjg5iks5crQOmiw==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.executer.calcexp.impl;
 
 import com.huawei.unibi.molap.engine.aggregator.MeasureAggregator;
@@ -35,10 +25,6 @@ import com.huawei.unibi.molap.engine.aggregator.MeasureAggregator;
 //import mondrian.rolap.RolapBaseCubeMeasure;
 import com.huawei.unibi.molap.olap.Exp;
 
-/**
- * @author R00900208
- *
- */
 public class MolapSingleMeasureFunction extends AbstractMolapCalcFunction
 {
     

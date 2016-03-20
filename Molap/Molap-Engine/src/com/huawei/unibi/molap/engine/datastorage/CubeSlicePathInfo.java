@@ -17,23 +17,13 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwdh/HjOjN0Brs7b7TRorj6S6iAIeaqK90lj7BAM
-GSGxBq2hMTucSe7sQ7rSzULDCcMF1v7AI8V7NuXeXLQDwoz5b9Uj0YBeldALRDASSBYK/+cs
-jNKGwEaCfQ02mK1zeWLp3t02xaJWoO7dszs6wptS3HsjlwXQZM6J+6LComC0fA==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
 package com.huawei.unibi.molap.engine.datastorage;
 
-//import com.huawei.iweb.platform.logging.LogService;
-//import com.huawei.iweb.platform.logging.LogServiceFactory;
 import com.huawei.unibi.molap.datastorage.store.filesystem.MolapFile;
 import com.huawei.unibi.molap.datastorage.store.impl.FileFactory;
 
 /**
- * @author A00902732
- * 
+ *
  * Class that deduces the info from Load path supplied
  *
  */

@@ -17,24 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwfQVwqh74rUY6n+OZ2pUrkn1TkkvO60rFu08DZa
-JnQq9DX/uXEFMlXnYpH7jRZCAXRwVTQ6gUb4acnhTfC24QNjVC5P58u91gLUkkGOWuTsrIZV
-ZLXsqhLqJq7Zvsags/CrCsVVsA/JpsWN592mKXbJxi1lQIUiyZy2jhj+soXVbw==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.engine.scanner.optimizer.impl;
 
 //import org.apache.log4j.Logger;
@@ -48,49 +30,12 @@ import com.huawei.unibi.molap.keygenerator.KeyGenerator;
  * This class provides the concrete implementation for ScanOptimizer and mainly used to get the 
  * Next key to start scan while scanning the tree with some filter is applied.
  *  
- * @author R00900208
- * 
+ *
  */
 public class ScanOptimizerImpl implements ScanOptimizer
 {
-
-//    /**
-//     * 
-//     */
-//    protected long[][] filters;
-//
-//    /**
-//     * 
-//     */
-//    protected long[] maxKey;
-//
-//    /**
-//     * 
-//     */
-//    protected byte[] endKey ;
-//
-//    /**
-//     * 
-//     */
-//    protected long[] nextEndKey;
-//
-//    /**
-//     * 
-//     */
-//    protected KeyGenerator generator;
-//
-//    /**
-//     * 
-//     */
-//    protected boolean isDone;
-//    
-    /**
-     * 
-     */
     private static final LogService LOGGER = LogServiceFactory.getLogService(ScanOptimizerImpl.class.getName());
 
-//    // public static int i;
-//
     public ScanOptimizerImpl(final long[] maxKey, final long[][] filters, final KeyGenerator keyGenerator)
     {
         LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "UNSUPPORT Operation");

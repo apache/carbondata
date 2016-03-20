@@ -17,24 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwcAIRTtLWBkMMN+iqJ62JNQb/MYFaBoemC1VlrU
-n+vkOVMc9CMCKDLKxuyZpL3JTwirW4zLhA+EDfYjPl68dd0XmITp3rUgMKRxOBkQ6tMAXLLl
-lvADaY3Hpxy78eGT/JtOMVb2ThYBiksM/otbo4Pwdl9z/SSqHDWpk6vuYtBpLA==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.engine.directinterface.impl;
 
 import java.util.List;
@@ -52,7 +34,6 @@ import com.huawei.unibi.molap.filter.MolapFilterInfo;
 
 /**
  * It is model object for molap query
- * @author R00900208
  *
  */
 public class MolapQueryModel

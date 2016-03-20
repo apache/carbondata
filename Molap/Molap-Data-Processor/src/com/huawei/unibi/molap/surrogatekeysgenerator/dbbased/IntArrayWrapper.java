@@ -17,38 +17,11 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwcfJtSMNYgnOYiEQwbS13nxM8hk/dmbY4B4u+tG
-aRAl/nNACT22lIE6Mq/L7ZxlAU/wZ1/5hyWH4XalR77cp0hMjSDj39xVVqDDMbZ2UG7zv3bK
-btBXhGSxVC9CTze2vHZk+m4mqXAc4m6GLAXKc52mnlkYVf4ho7XiAwxSTJyt8w==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.surrogatekeysgenerator.dbbased;
 
 import java.io.Serializable;
 import java.util.Arrays;
 
-/**
-* Project Name NSE V3R7C00 
-* Module Name : Molap
-* Author K00900841
-* Created Date :13-May-2013 3:35:33 PM
-* FileName : ArrayWrapper.java
-* Class Description :This class will be used as a key fi
-* Version 1.0
-*/
 public class IntArrayWrapper implements Serializable, Comparable<IntArrayWrapper>
 {
 

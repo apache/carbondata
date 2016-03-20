@@ -17,24 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwcAIRTtLWBkMMN+iqJ62JNQb/MYFaBoemC1VlrU
-n+vkOX+8zzREW/hur6AGop0oWEXEaAweTASD221EaWd234fEqE7+RM7tv2BTXQcVSiEVHRuc
-htlO458zi4EiPbUBoZ+CaGfnIoREaAZBLn78gNdoauNt7VnPykQK4Gkj4hyUZA==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.engine.executer;
 
 import java.io.IOException;
@@ -48,8 +30,6 @@ import com.huawei.unibi.molap.filter.MolapFilterInfo;
 
 /**
  * Interface to get the data out of any persistence medium.
- * 
- * @author R00900208
  * 
  */
 public interface MolapExecutor

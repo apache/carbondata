@@ -17,16 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwcAIRTtLWBkMMN+iqJ62JNQb/MYFaBoemC1VlrU
-n+vkOe0V+pgue2I4WJAlBSdZBMTEfTLKbNzCv4p4j5LMrsZ365+CdEn5l9Rk6w5MSOemIdWL
-MRh1s8DbzBHqKfzpG1SQs54H8Wz91g69qswUWOnBu/rp2Sz0s48t3ORAJn7Xlw==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.datastorage;
 
 import java.util.ArrayList;
@@ -49,10 +39,6 @@ import com.huawei.unibi.molap.keygenerator.KeyGenerator;
 import com.huawei.unibi.molap.metadata.MolapMetadata.Cube;
 import com.huawei.unibi.molap.util.MolapProperties;
 
-/**
- * @author r00900208
- * 
- */
 public class HierarchyBtreeStore implements DataStore
 {
 

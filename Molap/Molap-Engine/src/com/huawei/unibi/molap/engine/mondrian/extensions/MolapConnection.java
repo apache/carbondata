@@ -17,13 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwcz8AOhvEHjQfa55oxvUSJWRQCwLl+VwWEHaV7n
-0eFj3TV7UToc/BJqubR/Qw7tZ2ZbZI/MbDwOAInbq9GhHqKzdrozUiQNCQ6v9e2y2yQj7WKW
-7Y9wEI217hiJXzZrakz/oKBmCwXkJvZMRR2SiiJ+eQL+svcC6lTFUBpRRQMSeg==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
 package com.huawei.unibi.molap.engine.mondrian.extensions;
 
 
@@ -32,8 +25,6 @@ package com.huawei.unibi.molap.engine.mondrian.extensions;
 /**
  * This is a generic Molap connection which is equivalent to RolapConnection but
  * is responsible for handling Molap datasource instead of ROLAP
- * 
- * @author N71324
  * 
  */
 public class MolapConnection //extends RolapConnection

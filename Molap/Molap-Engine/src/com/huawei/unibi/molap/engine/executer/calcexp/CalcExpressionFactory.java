@@ -17,16 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwcAIRTtLWBkMMN+iqJ62JNQb/MYFaBoemC1VlrU
-n+vkOQ17WnuynG1SWGdkqVhUij9YVsw9qXmbfF7IFe6Cl0B17o3hX+vUJUUqZRRTE595Z7ip
-IyeyQrC3vEJqGSk9VUZ/Wnxku2asACtJtO+yKXB8DQDCK/8Jp0Jv2dJZ56OEDQ==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.executer.calcexp;
 
 import com.huawei.unibi.molap.engine.executer.calcexp.impl.MolapAddFunction;
@@ -39,7 +29,6 @@ import com.huawei.unibi.molap.engine.executer.calcexp.impl.MolapSingleMeasureFun
 import com.huawei.unibi.molap.engine.executer.calcexp.impl.MolapSubtractionFunction;
 
 /**
- * @author R00900208
  * Factory class for calc expressions
  */
 public final class CalcExpressionFactory

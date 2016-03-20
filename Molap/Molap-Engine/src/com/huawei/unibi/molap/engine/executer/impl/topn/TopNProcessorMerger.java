@@ -17,16 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwedLwWEET5JCCp2J65j3EiB2PJ4ohyqaGEDuXyJ
-TTt3d1L7W42ZUyEL2HruC0JIv4bUd47w/FjvyhcuisEK8hD7X+v2Hfm3EevSLol9ZS6lqSX9
-HlHDBsjbfO3Xru/uKgyXijwamUk1pDcwznB46Jh8sCYaMJUEOsVI01LVtivrNg==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.executer.impl.topn;
 
 import java.util.ArrayList;
@@ -50,10 +40,6 @@ import com.huawei.unibi.molap.engine.executer.pagination.exception.MolapPaginati
 import com.huawei.unibi.molap.engine.wrappers.ByteArrayWrapper;
 
 
-/**
- * @author R00900208
- *
- */
 public class TopNProcessorMerger implements DataProcessor
 {
     

@@ -17,24 +17,10 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwcz8AOhvEHjQfa55oxvUSJWRQCwLl+VwWEHaV7n
-0eFj3QHR18ARx5f7xx6i1V9MPaumc+E/ZlW+EfpELyn+ucfJOJTyZaNYg3WylMro7oqdxtLX
-fSCF4AMl+gDWUJ2AwxqfCDXw8wfuR+U1GaHmBYTDz1wwxP0pyzA7sEGOD/f9tw==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.filters.measurefilter;
 
 import com.huawei.unibi.molap.engine.aggregator.MeasureAggregator;
 
-/**
- * @author R00900208
- *
- */
 public class AndMeasureGroupFilterImpl implements MeasureFilter,MeasureGroupFilter
 {
     

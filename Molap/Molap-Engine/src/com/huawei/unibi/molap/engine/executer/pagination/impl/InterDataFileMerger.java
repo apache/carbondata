@@ -17,16 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwedLwWEET5JCCp2J65j3EiB2PJ4ohyqaGEDuXyJ
-TTt3d+TvdUZDWkFBhJjwxxd/PcckxJK8clsPGnqBlqDUhqeXNdntAkzxrjhzZqpWjrkcX+kr
-wWD5YquvY7DiXmOrBubMVy6GD4al1DEJOo670clBeHTgPNz1fEYIF6GWjLaJzg==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.executer.pagination.impl;
 
 import java.io.BufferedOutputStream;
@@ -57,7 +47,6 @@ import com.huawei.unibi.molap.util.MolapUtilException;
 
 /**
  * Intermediate file merging based on file sizes
- * @author R00900208
  *
  */
 public class InterDataFileMerger implements Callable<Void>

@@ -17,16 +17,8 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwcAIRTtLWBkMMN+iqJ62JNQb/MYFaBoemC1VlrU
-n+vkOW42r4HE7quEiJ6EZn0W60fwRM7LFBXYMqtXYLUNx6QE9LwSZ++Y2VCiXq7XZAjIN4sZ
-PskUqwmx3vSBjJpRiZxYReDjSQcDOrV6EtRrMLYX/qrBcLmwRv9X9kCEdNrgZw==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
 package com.huawei.unibi.molap.engine.datastorage.tree;
 
-//import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -53,8 +45,6 @@ import com.huawei.unibi.molap.util.MolapProperties;
  * Cache Sensitive B+-Tree to implement a search structure that is stored
  * entirely in-memory and is efficient in terms CPU cache misses entailed in
  * search operation
- * 
- * @author R00904487
  * 
  */
 public class CSBTree implements DataStore

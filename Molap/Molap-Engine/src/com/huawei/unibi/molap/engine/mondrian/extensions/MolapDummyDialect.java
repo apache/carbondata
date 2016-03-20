@@ -17,22 +17,9 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwcz8AOhvEHjQfa55oxvUSJWRQCwLl+VwWEHaV7n
-0eFj3YZiPv+yK6LdHV93ydjUid6iBnCrP54IXq7gNUF3ezKX2Rw+Uo5Ii/bWPTRTrpWeDkz9
-t+vjX+63ndw8Hy6qHYJEyvt57MHQXD2xN4jVHfsyZFr0XK8LCrclAOzMX7l0qA==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.mondrian.extensions;
 
 
-/**
- * @author K00900207
- */
 public class MolapDummyDialect //implements Dialect
 {
 

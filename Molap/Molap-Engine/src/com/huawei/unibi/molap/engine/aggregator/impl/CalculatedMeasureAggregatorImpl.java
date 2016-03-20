@@ -17,16 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwdEVzw1icjfRowqz2DW4XzUpEhhSzBOwVynEHjc
-u0090SAxaBfu5338CZx3NnXgZfCyfj67RoM21jVbgRNovmeqDC9v/EnMthFBa+NbKAwS2iTl
-xMacyzL7sMGoQCSKOXBVNo7M0aHU73oI7jTmjdSavXVomLVPeWXvBEFOXGZdQA==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.aggregator.impl;
 
 import java.io.DataInput;
@@ -37,10 +27,6 @@ import com.huawei.unibi.molap.engine.aggregator.CalculatedMeasureAggregator;
 import com.huawei.unibi.molap.engine.aggregator.MeasureAggregator;
 import com.huawei.unibi.molap.engine.executer.calcexp.MolapCalcFunction;
 
-/**
- * @author R00900208
- *
- */
 public class CalculatedMeasureAggregatorImpl implements CalculatedMeasureAggregator
 {
 

@@ -17,24 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbweRARwUrjYxPx0CUk3mVB7mxOcZSaagKrMQNlhB
-QO/t7NBKcegJHAHGhceH3nEMbmYdaw5kH+JU9pX+CBC40BzEPlY63PpFMSUQlec9FUlmo1Va
-JM/pdMq3Tf3D1088NpLL6ABYUWNEoKs1lu7HxNVTDOmMvorcEBJF7e3P46rlPQ==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.engine.schema.metadata;
 
 import java.util.List;
@@ -56,16 +38,6 @@ import com.huawei.unibi.molap.engine.filters.measurefilter.GroupMeasureFilterMod
 import com.huawei.unibi.molap.keygenerator.KeyGenerator;
 import com.huawei.unibi.molap.keygenerator.columnar.ColumnarSplitter;
 import com.huawei.unibi.molap.metadata.MolapMetadata.Dimension;
-
-/**
- * 
- * Project Name NSE V3R7C00 
- * Module Name : MOLAP
- * Created Date :13-May-2013 7:45:25 PM
- * FileName : SliceExecutionInfo.java
- * Class Description :  This class holds the information required for Execution of slice. 
- * Version 1.0
- */
 
 public class SliceExecutionInfo
 {

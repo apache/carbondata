@@ -17,13 +17,7 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwddts1/q4bCGDA4M3dH8C2PEEMnfDqqdF4ZhcSc
-1BeEnElYTj28oj1SbubylISpmjDIU8J3SoEzaxxBwHcKUI/LgRpyc9O35pSLk7yZQzvS8RFg
-jcQJXhDij4pcwSPbH65reZYoRurra+6wx5PTIXHvOcxG5Uj6h9fBK2CguqBjjw==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
+
 package com.huawei.unibi.molap.etl;
 
 import org.pentaho.di.core.KettleEnvironment;

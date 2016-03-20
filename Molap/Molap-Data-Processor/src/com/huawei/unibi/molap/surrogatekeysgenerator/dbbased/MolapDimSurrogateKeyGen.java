@@ -17,22 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwcfJtSMNYgnOYiEQwbS13nxM8hk/dmbY4B4u+tG
-aRAl/kQOnlCFbPMVsXqYvumWOMhp7a1ByVg5UozBJJlo8Dl52tYAmD2s/VsbMqKG/duopPNM
-VNj9v0uL6s/x4dscXRzXdzy1PU1CTONIXv2YNx2do/JsRhEIz5MzrBMjJUEcsQ==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
-*/
 
 package com.huawei.unibi.molap.surrogatekeysgenerator.dbbased;
 
@@ -54,11 +38,6 @@ import com.huawei.unibi.molap.schema.metadata.MolapInfo;
 import com.huawei.unibi.molap.util.MolapDataProcessorLogEvent;
 
 
-
-/**
- * @author R00900208
- * 
- */
 public abstract class MolapDimSurrogateKeyGen
 {
     /**

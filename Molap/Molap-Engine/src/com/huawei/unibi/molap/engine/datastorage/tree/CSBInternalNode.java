@@ -17,13 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwdh/HjOjN0Brs7b7TRorj6S6iAIeaqK90lj7BAM
-GSGxBpz/elmRQGqbxO8KHRE4L50zFHn8f0JbFuMFnZHxFddLA9H5gtBszK4dGjnzJH09wlPr
-L/bRPufBK9pA0WPiJBVUTdZzhd/lKL1D4SixYgAVZ+AdEaew3nqyecw/l2L0bQ==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
 package com.huawei.unibi.molap.engine.datastorage.tree;
 
 import com.huawei.unibi.molap.datastorage.store.FileHolder;
@@ -35,8 +28,6 @@ import com.huawei.unibi.molap.engine.datastorage.storeInterfaces.KeyValue;
 import com.huawei.unibi.molap.engine.schema.metadata.Pair;
 /**
  * Internal node of a cache sensitive B+Tree
- * 
- * @author R00904487
  * 
  */
 public class CSBInternalNode extends CSBNode

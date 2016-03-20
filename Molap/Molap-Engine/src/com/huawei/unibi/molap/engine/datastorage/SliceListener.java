@@ -17,16 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwdh/HjOjN0Brs7b7TRorj6S6iAIeaqK90lj7BAM
-GSGxBkxA9lJLJrfYxl51J4L2LTfZUXhtjP5zb/nAIHJGsIfWp+6AUFfjVBEM/5UfABx2C6nI
-RjDMnp23psFgTiNcXfWNAYb0unfXrC9krL3zweVC7MpN1gPXHpOSWwMkAljKOA==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.datastorage;
 
 import java.util.HashSet;
@@ -41,8 +31,6 @@ import com.huawei.unibi.molap.engine.util.MolapEngineLogEvent;
  * Maintains a list of queries on which are working on the given slice. Once all
  * the queries execution finished, informs the cube store to clear the cache for
  * the slice.
- * 
- * @author K00900207
  * 
  */
 public class SliceListener 

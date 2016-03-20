@@ -17,24 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwcAIRTtLWBkMMN+iqJ62JNQb/MYFaBoemC1VlrU
-n+vkOeA5ROghF1/gy6wbsnZqE4wizvZ+v+NvTApuZen9e4+tpvEEIeCUOFwwlccJZf3rCS5f
-o3ZbSY5FAA4CMOTJtsvBuZkdAEjpEVqVrYW9NHLISpTmZ39QiVafvzLl51iE9A==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 
 package com.huawei.unibi.molap.engine.executer;
 
@@ -51,8 +33,6 @@ import com.huawei.unibi.molap.metadata.MolapMetadata.Dimension;
 
 /**
  * This class provides the common implementation required for Query Execution.
- * 
- * @author K00900207
  * 
  */
 public abstract class AbstractMolapExecutor implements MolapExecutor

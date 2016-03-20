@@ -17,24 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwfQVwqh74rUY6n+OZ2pUrkn1TkkvO60rFu08DZa
-JnQq9Ad8w54SlcHM15fM6xhXlv5mo86YdvvrE5IxxzP2QUV1Clbdn/eb4jmsgI6l0se1ToQX
-dBtl1zLLe5CL6XbOumVrjWL2Ag4utTMyUiL/LxRu69KBa/f6aPEwRVZ8qfP0bA==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.engine.scanner.impl;
 
 import com.huawei.unibi.molap.datastorage.store.FileHolder;
@@ -46,8 +28,6 @@ import com.huawei.unibi.molap.keygenerator.KeyGenerator;
  * This scanner is used when there is no query in the filter but is executed in
  * parallel. So this class does comparison for finite number of rows which is
  * configured.
- * 
- * @author N71324
  * 
  */
 public class ParallelNonFilterTreeScanner extends BTreeScanner

@@ -17,16 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbweRARwUrjYxPx0CUk3mVB7mxOcZSaagKrMQNlhB
-QO/t7DdiJbBTq8EhkB53TfdcDK50O3qlO5u854V6/HKb13m05YsaRHsc/nthRMbx8Ii1nyuh
-EypS8h+bwtoINUUGEglUtLfxNJpOeAJMaPNusmJj8XBfZW6Bqsxpo8UEx1QuZQ==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.wrappers;
 
 import java.util.Arrays;
@@ -36,8 +26,6 @@ import java.util.Arrays;
 /**
  * It aggregates the data from the already existed data.
  * 
- * @author R00900208
- *
  */
 public class PostQueryAggregatorUtil
 {

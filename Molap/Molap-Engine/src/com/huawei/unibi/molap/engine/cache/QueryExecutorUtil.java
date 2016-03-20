@@ -17,16 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbweRARwUrjYxPx0CUk3mVB7mxOcZSaagKrMQNlhB
-QO/t7Em6PvhgfXGTCUAM83ptjOdUDmDXHJJE/b8MIXQv6yFSciPEhLCQt5dl7C9X5qMnPvr9
-TN4Y6xuoSDX/pFonIwAg8hQO0fRnuz/9X5u4nCXSrQA0VQ1m49OKWrkCdrLNmA==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.cache;
 
 import java.io.IOException;

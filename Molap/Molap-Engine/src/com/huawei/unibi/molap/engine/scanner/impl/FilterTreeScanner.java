@@ -17,27 +17,8 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwfQVwqh74rUY6n+OZ2pUrkn1TkkvO60rFu08DZa
-JnQq9PBPR+wIF7NCuys82h/tYziiwf6tBl4oi36wl19BAoBdf0dsBJSWsEO3Sd62JCJ3c3pU
-hf71GI5yjjxX3/fQgeFZL0tAGq5pvkb3oBoFrDRdvjIbSYrgpZf6+hFgqE1/DQ==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.engine.scanner.impl;
 
-//import org.apache.log4j.Logger;
 import com.huawei.iweb.platform.logging.LogService;
 import com.huawei.iweb.platform.logging.LogServiceFactory;
 import com.huawei.unibi.molap.engine.util.MolapEngineLogEvent;
@@ -50,11 +31,6 @@ import com.huawei.unibi.molap.keygenerator.KeyGenerator;
 
 /**
  * 
- * Project Name NSE V3R7C00 
- * Module Name : 
- * Author V00900840
- * Created Date :16-May-2013 10:43:09 PM
- * FileName : FilterTreeScanner.java
  * This class will be used to scan data store based on filter present in the query
  * Class Description :
  * Version 1.0

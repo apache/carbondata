@@ -17,13 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbweRARwUrjYxPx0CUk3mVB7mxOcZSaagKrMQNlhB
-QO/t7JinIZ0bTRaefaxFZwx0MX2f4iQdTj4U0wVK7BFgIZjmFhFjze2bvfS12wF/d9KGr0UC
-Jurlz4VtUD7sWctPbFkwnsbzswGZmN/xcLJSb3oUb2HiuiCUJvrzaAzAD8LuEg==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
 package com.huawei.unibi.molap.engine.executer.impl.comparator;
 
 import java.util.Comparator;

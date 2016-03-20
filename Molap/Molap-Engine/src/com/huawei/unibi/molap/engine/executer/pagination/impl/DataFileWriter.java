@@ -17,24 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwedLwWEET5JCCp2J65j3EiB2PJ4ohyqaGEDuXyJ
-TTt3d/+OaeO30CuXiPeMQ1b+bGpDqN2k91rrrg5Qo616Byv5rBJNqzufTz7T840oTWQTl92w
-xjhM1Q5+9Rooj6mjTLDiC3s4yPFyntfnBfxf9EnzO/onXMlrcTl4kfUVlrYzeg==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.engine.executer.pagination.impl;
 
 import java.io.BufferedOutputStream;
@@ -71,12 +53,7 @@ import com.huawei.unibi.molap.metadata.MolapMetadata.Dimension;
 import com.huawei.unibi.molap.util.MolapUtil;
 
 /**
- * Project Name NSE V3R7C00 
- * Module Name : Molap Engine
- * Author K00900841
- * Created Date :21-May-2013 6:42:29 PM 
- * FileName :DataFileWriter.java
- * Class Description : This class is responsible for writing query output to file 
+ * Class Description : This class is responsible for writing query output to file
  * Version 1.0
  */
 public class DataFileWriter implements Callable<Void>

@@ -17,22 +17,10 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwdEVzw1icjfRowqz2DW4XzUpEhhSzBOwVynEHjc
-u0090de9HZneVFk07Oy/tlPbQ0jOpWcoaU70iUTfuduOF+rad/y5bGkf23MeI56hvXnJX09j
-hVUSVjjDH6OXtOl9gar9bW+QofiXudfJO6rfcEcDQXhaRGF7cIrVgMgb7s21Ew==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
 package com.huawei.unibi.molap.engine.cache;
 
 
-/**
- * FileBasedSegmentCache
- * @author R00900208
- *
- */
-public class FileBasedSegmentCache 
+public class FileBasedSegmentCache
 {
 //
 //    private final static ExecutorService executor = Executors.newSingleThreadExecutor(new ThreadFactory()

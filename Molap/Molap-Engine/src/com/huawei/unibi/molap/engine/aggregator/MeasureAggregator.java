@@ -17,24 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwdEVzw1icjfRowqz2DW4XzUpEhhSzBOwVynEHjc
-u0090fUfdjWEkccKe4Y/GlbooVMj1KehmvZGK5hDgAnVApUjAvQtlp8Lu0WseUP5anZyDBDh
-6kvDDAW/B/sKJeVCKc4vFsWCQAeKJIt78i2Q9FVTaS9c1SNsIZAmKxLVnR7+OQ==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.engine.aggregator;
 
 import java.io.DataInput;
@@ -43,16 +25,7 @@ import java.io.IOException;
 import java.io.Serializable;
 
 /**
- * Project Name NSE V3R7C00
- * 
- * Module Name : Molap Engine
- * 
- * Author K00900841
- * 
- * Created Date :13-May-2013 3:35:33 PM
- * 
- * FileName : MeasureAggregator.java
- * 
+ *
  * Class Description : MeasureAggregator interface. It will be implemented by
  * all the aggregator functions eg: sum, avg, max, min, etc, will be used for
  * aggregate the measure value based on kind of aggregator
