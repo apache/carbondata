@@ -17,17 +17,6 @@
  * under the License.
  */
 
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.query.result.impl;
 
 import java.util.ArrayList;
@@ -37,38 +26,16 @@ import com.huawei.unibi.molap.query.metadata.MolapTuple;
 import com.huawei.unibi.molap.query.result.MolapResultChunk;
 import com.huawei.unibi.molap.query.result.MolapResultStream;
 
-/**
- * Implementation class for MolapResultStream
- * 
- * @author R00900208
- *
- */
 public class MolapResultStreamImpl implements MolapResultStream 
 {
-
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 908119139427979333L;
-	
-	/**
-	 * molapTuples
-	 */
+
 	private List<MolapTuple> molapTuples = new ArrayList<MolapTuple>(10);
-	
-	/**
-	 * Chunk
-	 */
+
 	private MolapResultChunk chunk;
-	
-	/**
-	 * data exists
-	 */
+
 	private boolean[] next = new boolean[]{true,false};
-	
-	/**
-	 * iterator
-	 */
+
 	private int i;
 
 	/**
@@ -126,5 +93,4 @@ public class MolapResultStreamImpl implements MolapResultStream
 	{
 		next[1] = dataLeft;
 	}
-	
 }

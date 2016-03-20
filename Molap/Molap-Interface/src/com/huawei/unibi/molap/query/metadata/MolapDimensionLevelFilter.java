@@ -17,17 +17,6 @@
  * under the License.
  */
 
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.query.metadata;
 
 import java.io.Serializable;
@@ -36,15 +25,9 @@ import java.util.List;
 
 /**
  * Level filter
- * @author R00900208
- *
  */
 public class MolapDimensionLevelFilter implements Serializable
 {
-
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 5028332445998450964L;
 
 	/**
@@ -253,12 +236,10 @@ public class MolapDimensionLevelFilter implements Serializable
                 buffer.append(levelName);
                 buffer.append(" NOT LIKE ");
                 buffer.append("'" + containsString + "'");
-                
                 appendAndRequired = true;
             }
 
         }
-
         return buffer.toString();
     }
 }

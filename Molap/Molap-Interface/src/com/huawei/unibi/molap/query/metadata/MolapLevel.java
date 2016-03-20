@@ -17,26 +17,12 @@
  * under the License.
  */
 
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.query.metadata;
 
 import java.io.Serializable;
 
 /**
  * It is level interface for MOLAP dimension level and measure.
- * 
- * @author R00900208
- *
  */
 public interface MolapLevel extends Serializable 
 {
@@ -53,13 +39,11 @@ public interface MolapLevel extends Serializable
 	 */
 	String getDimensionName(); 
 
-
 	/**
 	 * Hierarchy name of the level it belonged to.
 	 * @return the hierarchyName
 	 */
 	String getHierarchyName();
-
 
 	/**
 	 * Name of dimension level or measure

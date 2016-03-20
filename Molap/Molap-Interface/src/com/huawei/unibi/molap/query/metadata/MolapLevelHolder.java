@@ -17,17 +17,6 @@
  * under the License.
  */
 
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.query.metadata;
 
 import java.io.Serializable;
@@ -37,15 +26,9 @@ import com.huawei.unibi.molap.query.MolapQuery.SortType;
 
 /**
  * It is holder class for a level
- * @author R00900208
- *
  */
 public class MolapLevelHolder implements Serializable
 {
-
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = -6328136034161360231L;
 	
 	/**
@@ -136,6 +119,4 @@ public class MolapLevelHolder implements Serializable
 	{
 		this.dimLevelFilter = dimLevelFilter;
 	}
-
-	
 }

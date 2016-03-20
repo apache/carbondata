@@ -17,32 +17,13 @@
  * under the License.
  */
 
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.query.metadata;
-
-
 
 /**
  * Molap dimension level;
- * @author R00900208
- *
  */
 public class MolapDimensionLevel extends AbstractMolapLevel
 {
-
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 4012085091766940643L;	
 
 	/**
@@ -106,6 +87,4 @@ public class MolapDimensionLevel extends AbstractMolapLevel
 		
 		return MolapLevelType.DIMENSION;
 	}
-
-
 }

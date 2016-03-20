@@ -17,34 +17,15 @@
  * under the License.
  */
 
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.query.metadata;
 
 import java.io.Serializable;
 
-
 /**
  * Measure filter
- * 
- * @author R00900208
- *
  */
 public class MolapMeasureFilter implements Serializable
 {
-		
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = -4253090536204072658L;
 
 	/**
@@ -84,8 +65,6 @@ public class MolapMeasureFilter implements Serializable
 	
 	/**'
 	 * Enum for measure filter types.
-	 * @author R00900208
-	 *
 	 */
 	public enum FilterType
 	{
@@ -137,7 +116,6 @@ public class MolapMeasureFilter implements Serializable
 		return filterValue;
 	}
 
-
 	/**
 	 * FilterType
 	 * @return the filterType
@@ -165,5 +143,4 @@ public class MolapMeasureFilter implements Serializable
 	{
 	    return levelName + filterType.symbol + filterValue;
 	}
-
 }

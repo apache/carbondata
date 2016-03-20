@@ -17,23 +17,13 @@
  * under the License.
  */
 
-/**
- * 
- */
 package com.huawei.unibi.molap.query.metadata;
-
 
 /**
  * Calculated measures can be created by using this class
- * @author R00900208
- *
  */
 public class MolapCalculatedMeasure extends MolapMeasure
 {
-
-	/**
-	 * expression
-	 */
 	private String expression;
 	
     private boolean groupCount;
@@ -41,12 +31,8 @@ public class MolapCalculatedMeasure extends MolapMeasure
 	private String groupDimensionFormula;
 	
 	private MolapDimensionLevel groupDimensionLevel;
-	
-    /**
-	 * 
-	 */
+
 	private static final long serialVersionUID = 4176313704077360543L;
-	
 
 	public MolapCalculatedMeasure(String measureName,String expr) 
 	{

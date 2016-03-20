@@ -17,17 +17,6 @@
  * under the License.
  */
 
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.query;
 
 import java.io.Serializable;
@@ -39,12 +28,6 @@ import com.huawei.unibi.molap.query.metadata.MolapDimensionLevel;
 import com.huawei.unibi.molap.query.metadata.MolapDimensionLevelFilter;
 import com.huawei.unibi.molap.query.metadata.MolapMeasure;
 
-
-/**
- * Molap query
- * @author R00900208
- *
- */
 public interface MolapQuery extends Serializable
 {
 	/**
@@ -75,8 +58,7 @@ public interface MolapQuery extends Serializable
 	 *  Property can be set to configure the transformations in the query
 	 */
 	String TRANSFORMATIONS = "TRANSFORMATIONS";
-	
-	
+
 	/**
 	 * Add dimension levels to the query
 	 * @param dimensionLevel
@@ -134,16 +116,14 @@ public interface MolapQuery extends Serializable
 	 * @param exactLevelsMatch. By default it is false.
 	 */
 	void setExactHirarchyLevelsMatch(boolean exactLevelsMatch);
-	
-	
+
 	/**
 	 * This is properties will available to the execution. This is only used from Analyzer client purpose.
 	 * 
 	 * @param extraProperties
 	 */
 	void setExtraProperties(Map<String, Object> extraProperties);
-	
-	
+
 	/**
 	 * When this property sets, it converts the data to the target time zone. By default there is no time zone set.
 	 * When this property sets, even the time filters passed through this interface will be converted from this timezone. 
@@ -155,8 +135,6 @@ public interface MolapQuery extends Serializable
 	
 	/**
 	 * Axis
-	 * @author R00900208
-	 *
 	 */
 	public enum AxisType
 	{
@@ -200,8 +178,6 @@ public interface MolapQuery extends Serializable
 	
 	/**
 	 * Sort type
-	 * @author R00900208
-	 *
 	 */
 	public enum SortType
 	{
@@ -241,5 +217,4 @@ public interface MolapQuery extends Serializable
 			return sortVal;
 		}
 	}
-	
 }

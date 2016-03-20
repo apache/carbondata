@@ -17,37 +17,16 @@
  * under the License.
  */
 
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.query.metadata;
 
 /**
  * It is abstract class for MolapLevel interface.
- * @author R00900208
- *
  */
 public abstract class AbstractMolapLevel implements MolapLevel
 {
-
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = -1487270452433379657L;
-	
-	/**
-	 * visibility
-	 */
+
 	private boolean visible = true;
-	
 
 	/**
 	 * See interface comments

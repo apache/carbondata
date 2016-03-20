@@ -17,29 +17,12 @@
  * under the License.
  */
 
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.query.metadata;
 
 import java.io.Serializable;
 
 /**
- * @author R00900208
- *
- */
-/**
  * It is top count meta class
- * @author R00900208
- *
  */
 public class TopCount implements Serializable
 {
@@ -79,11 +62,8 @@ public class TopCount implements Serializable
 		this.type = type;
 	}
 
-
 	/**
 	 * Enum for TopN types
-	 * @author R00900208
-	 *
 	 */
 	public enum TopNType
 	{
@@ -97,8 +77,6 @@ public class TopCount implements Serializable
 		BOTTOM;
 	}
 
-
-
 	/**
 	 * Get level
 	 * @return the level
@@ -107,8 +85,6 @@ public class TopCount implements Serializable
 	{
 		return level;
 	}
-
-
 
 	/**
 	 * get measure
@@ -119,8 +95,6 @@ public class TopCount implements Serializable
 		return msr;
 	}
 
-
-
 	/**
 	 * Get top count
 	 * @return the count
@@ -129,8 +103,6 @@ public class TopCount implements Serializable
 	{
 		return count;
 	}
-
-
 
 	/**
 	 * Get the topn type

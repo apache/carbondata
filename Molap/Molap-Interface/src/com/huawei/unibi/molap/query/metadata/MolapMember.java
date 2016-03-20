@@ -17,44 +17,19 @@
  * under the License.
  */
 
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.query.metadata;
 
 import java.io.Serializable;
 
 /**
- * It is the Member object which holds information of each member which contained in query result.  
- * @author R00900208
- *
+ * It is the Member object which holds information of each member which contained in query result.
  */
 public class MolapMember implements Serializable
 {
-	
-
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 2149598237303284053L;
-	
 
-	/**
-	 * name
-	 */
 	private Object name;
-	
-	/**
-	 * properties
-	 */
+
 	private Object[] properties;
 	
 	/**
@@ -97,10 +72,7 @@ public class MolapMember implements Serializable
 	{
 		return name != null ?name.toString():"";
 	}
-	
-	/* (non-Javadoc)
-	 * @see java.lang.Object#hashCode()
-	 */
+
 	@Override
 	public int hashCode() 
 	{
@@ -110,9 +82,6 @@ public class MolapMember implements Serializable
 		return result;
 	}
 
-	/* (non-Javadoc)
-	 * @see java.lang.Object#equals(java.lang.Object)
-	 */
 	@Override
 	public boolean equals(Object obj) 
     {
