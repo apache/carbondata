@@ -17,8 +17,6 @@
  * under the License.
  */
 
-package com.huawei.unibi.molap.util;
-
 public abstract class DataProcessTask //extends AbstractUniBIInterruptableTask{
 {
 
