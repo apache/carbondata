@@ -340,23 +340,53 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
     	this.dimensionCount = dimensionCount;
     	this.complexIndexMap = complexIndexMap;
     	this.primitiveDimLens = primitiveDimLens;
-    	this.aggKeyBlock = new boolean[dimLens.length];
-        this.isAggKeyBlock = Boolean
+    	this.isAggKeyBlock = Boolean
         		.parseBoolean(MolapProperties.getInstance().getProperty(
                 MolapCommonConstants.AGGREAGATE_COLUMNAR_KEY_BLOCK,
                 MolapCommonConstants.AGGREAGATE_COLUMNAR_KEY_BLOCK_DEFAULTVALUE));
+        
+        //row store dimensions will be stored first and than other columnar store dimension will be stored in fact file
+        int aggIndex=0;
+        int noDictStartIndex=0;
+        if(this.hybridStoreModel.isHybridStore())
+        {
+        	this.aggKeyBlock=new boolean[this.hybridStoreModel.getColumnStoreOrdinals().length+highCardCount+1];
+           //hybrid store related changes, row store dimension will not get sorted and hence run length encoding alls will not be applied
+            //thus setting aggKeyBlock for row store index as false
+        	this.aggKeyBlock[aggIndex++]=false;
+        	this.isNoDictionary=new boolean[this.hybridStoreModel.getColumnStoreOrdinals().length+highCardCount+1];
+        	noDictStartIndex=this.hybridStoreModel.getColumnStoreOrdinals().length+1;
+        }
+        else
+        {
+        	//if not hybrid store than as usual
+        	this.aggKeyBlock=new boolean[this.hybridStoreModel.getColumnStoreOrdinals().length+highCardCount];	
+        	this.isNoDictionary=new boolean[this.hybridStoreModel.getColumnStoreOrdinals().length+highCardCount+1];
+        	noDictStartIndex=this.hybridStoreModel.getColumnStoreOrdinals().length;
+        }
+       // setting true value for dims of high card
+      
+        for(int i = noDictStartIndex;i < isNoDictionary.length ; i++)
+        {
+        	this.isNoDictionary[i] = true;
+        }
+        
         if(isAggKeyBlock)
         {
             int highCardinalityValue = Integer.parseInt(MolapProperties.getInstance().getProperty(
-                MolapCommonConstants.HIGH_CARDINALITY_VALUE,
-                MolapCommonConstants.HIGH_CARDINALITY_VALUE_DEFAULTVALUE));
-            for(int i = 0;i < dimLens.length;i++)
-            {
-                if(dimLens[i]<highCardinalityValue)
+                    MolapCommonConstants.HIGH_CARDINALITY_VALUE,
+                    MolapCommonConstants.HIGH_CARDINALITY_VALUE_DEFAULTVALUE));
+                //since row store index is already set to false, below aggKeyBlock is initialised for remanining dimension
+                for(int i=this.hybridStoreModel.getRowStoreOrdinals().length;i<dimLens.length;i++)
                 {
-                    this.aggKeyBlock[i]=true;
+                    if(dimLens[i]<highCardinalityValue)
+                    {
+                        this.aggKeyBlock[aggIndex++]=true;
+                        continue;
+                    }
+                	aggIndex++;
                 }
-            }
+    
             if(dimensionCount < dimLens.length)
             {
             	int allColsCount = getColsCount();
@@ -415,54 +445,9 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
 //        this.isUpdateMemberRequest=isUpdateMemberRequest;
         this.dimLens=hybridStoreModel.getHybridCardinality();
         
-        //row store dimensions will be stored first and than other columnar store dimension will be stored in fact file
-        int aggIndex=0;
-        int noDictStartIndex=0;
-        if(this.hybridStoreModel.isHybridStore())
-        {
-        	this.aggKeyBlock=new boolean[this.hybridStoreModel.getColumnStoreOrdinals().length+highCardCount+1];
-           //hybrid store related changes, row store dimension will not get sorted and hence run length encoding alls will not be applied
-            //thus setting aggKeyBlock for row store index as false
-        	this.aggKeyBlock[aggIndex++]=false;
-        	this.isNoDictionary=new boolean[this.hybridStoreModel.getColumnStoreOrdinals().length+highCardCount+1];
-        	noDictStartIndex=this.hybridStoreModel.getColumnStoreOrdinals().length+1;
-        }
-        else
-        {
-        	//if not hybrid store than as usual
-        	this.aggKeyBlock=new boolean[this.hybridStoreModel.getColumnStoreOrdinals().length+highCardCount];	
-        	this.isNoDictionary=new boolean[this.hybridStoreModel.getColumnStoreOrdinals().length+highCardCount+1];
-        	noDictStartIndex=this.hybridStoreModel.getColumnStoreOrdinals().length;
-        }
-       // setting true value for dims of high card
-      
-        for(int i = noDictStartIndex;i < isNoDictionary.length ; i++)
-        {
-        	this.isNoDictionary[i] = true;
-        }
-        
         this.currentRestructNumber = currentRestructNum;
         isIntBasedIndexer = Boolean
                 .parseBoolean(MolapCommonConstants.IS_INT_BASED_INDEXER_DEFAULTVALUE);
-        
-        this.isAggKeyBlock = Boolean
-        .parseBoolean(MolapCommonConstants.AGGREAGATE_COLUMNAR_KEY_BLOCK_DEFAULTVALUE);
-        if(isAggKeyBlock)
-        {
-            int highCardinalityValue = Integer.parseInt(MolapProperties.getInstance().getProperty(
-                MolapCommonConstants.HIGH_CARDINALITY_VALUE,
-                MolapCommonConstants.HIGH_CARDINALITY_VALUE_DEFAULTVALUE));
-            //since row store index is already set to false, below aggKeyBlock is initialised for remanining dimension
-            for(int i=this.hybridStoreModel.getRowStoreOrdinals().length;i<dimLens.length;i++)
-            {
-                if(dimLens[i]<highCardinalityValue)
-                {
-                    this.aggKeyBlock[aggIndex++]=true;
-                    continue;
-                }
-            	aggIndex++;
-            }
-        }
         
         isCompressedKeyBlock = Boolean
                 .parseBoolean(MolapCommonConstants.IS_COMPRESSED_KEYBLOCK_DEFAULTVALUE);

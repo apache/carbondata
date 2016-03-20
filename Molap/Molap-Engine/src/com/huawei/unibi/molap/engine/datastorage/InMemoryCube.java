@@ -275,12 +275,11 @@ public class InMemoryCube implements Comparable<InMemoryCube>
                     dimensionStoreType[dimension.getOrdinal()]=dimension.isColumnar();    
                 }
             }
-            hybridStoreModel= MolapUtil.getHybridStoreMeta(dimensionCardinality, dimensionStoreType,highCardDimOrdinals);
-            //TO -DO  : need finalise on keygenerator
+            hybridStoreModel= MolapUtil.getHybridStoreMeta(findRequiredDimensionForStartAndEndKey(), dimensionStoreType,highCardDimOrdinals);
             keyGenerator = KeyGeneratorFactory.getKeyGenerator(hybridStoreModel.getHybridCardinality(),hybridStoreModel.getDimensionPartitioner());
 //            keyGenerator = KeyGeneratorFactory.getKeyGenerator(dimensionCardinality);
-            keyGenerator = KeyGeneratorFactory.getKeyGenerator(findRequiredDimensionForStartAndEndKey());
-            int startAndEndKeySizeWithPrimitives = KeyGeneratorFactory.getKeyGenerator(findRequiredDimensionForStartAndEndKey()).getKeySizeInBytes();
+            //keyGenerator = KeyGeneratorFactory.getKeyGenerator(findRequiredDimensionForStartAndEndKey());
+            int startAndEndKeySizeWithPrimitives =keyGenerator.getKeySizeInBytes();// KeyGeneratorFactory.getKeyGenerator(findRequiredDimensionForStartAndEndKey()).getKeySizeInBytes();
             keyGenerator.setStartAndEndKeySizeWithOnlyPrimitives(startAndEndKeySizeWithPrimitives);
         }
         // Process fact and aggregate data cache

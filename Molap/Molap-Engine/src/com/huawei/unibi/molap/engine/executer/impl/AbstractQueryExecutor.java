@@ -223,16 +223,9 @@ public abstract class AbstractQueryExecutor implements QueryExecutor
             }
         }
         // get the mask byte range based on dimension present in the query
-        if(executerProperties.hybridStoreModel.isHybridStore())
-        {
-            executerProperties.maskByteRanges = QueryExecutorUtil.getMaskedByte(queryModel.getDims(),
+        executerProperties.maskByteRanges = QueryExecutorUtil.getMaskedByte(queryModel.getDims(),
                     executerProperties.globalKeyGenerator,executerProperties.hybridStoreModel);    
-        }
-        else
-        {
-            executerProperties.maskByteRanges = QueryExecutorUtil.getMaskedByte(queryModel.getDims(),
-                    executerProperties.globalKeyGenerator);
-        }
+       
         
 
         // creating a masked key

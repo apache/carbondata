@@ -2516,11 +2516,12 @@ public final class QueryExecutorUtil
      * @param generator
      * @return
      */
-    public static int[] getMaskedByte(Dimension[] queryDimensions, KeyGenerator generator)
+    public static int[] getMaskedByte(Dimension[] queryDimensions, KeyGenerator generator,HybridStoreModel hm)
     {
 
         Set<Integer> integers = new TreeSet<Integer>();
-        //
+        boolean isRowAdded=false;
+        
         for(int i = 0;i < queryDimensions.length;i++)
         {
 
@@ -2537,9 +2538,35 @@ public final class QueryExecutorUtil
                 continue;
             else if(queryDimensions[i].getParentName() != null)
                 continue;
+			 //if querydimension is row store based, than add all row store ordinal in mask, because row store ordinal rangesare overalapped
+            //for e.g its possible
+            //dimension1 range: 0-1
+            //dimension2 range: 1-2
+            //hence to read only dimension2, you have to mask dimension1 also
+            else if(!queryDimensions[i].isColumnar())
+            {
+                //if all row store ordinal is already added in range than no need to consider it again
+                if(!isRowAdded)
+                {
+                    isRowAdded=true;
+                    int[] rowOrdinals=hm.getRowStoreOrdinals();
+                    for(int r=0;r<rowOrdinals.length;r++)
+                    {
+                        int[] range = generator
+                                .getKeyByteOffsets(hm.getMdKeyOrdinal(rowOrdinals[r]));
+                        for(int j = range[0];j <= range[1];j++)
+                        {
+                            integers.add(j);
+                        }
+                        
+                    }
+                }
+                continue;
+                
+            }
             else
             {
-                int[] range = generator.getKeyByteOffsets(queryDimensions[i].getOrdinal());
+                int[] range = generator.getKeyByteOffsets(hm.getMdKeyOrdinal(queryDimensions[i].getOrdinal()));
                 for(int j = range[0];j <= range[1];j++)
                 {
                     integers.add(j);
@@ -2559,7 +2586,7 @@ public final class QueryExecutorUtil
         return byteIndexs;
     }
     
-    public static int[] getMaskedByte(Dimension[] queryDimensions, KeyGenerator generator,HybridStoreModel hybridStoreModel)
+   /* public static int[] getMaskedByte(Dimension[] queryDimensions, KeyGenerator generator,HybridStoreModel hybridStoreModel)
     {
 
         Set<Integer> integers = new TreeSet<Integer>();
@@ -2617,7 +2644,7 @@ public final class QueryExecutorUtil
         //
         int[] byteIndexs = convertIntegerListToIntArray(integers);
         return byteIndexs;
-    }
+    }*/
     
     
     

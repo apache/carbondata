@@ -471,9 +471,9 @@ class MolapSqlDDLParser()
   protected lazy val nestedType: Parser[Field]  =  structFieldType | arrayFieldType | primitiveFieldType
 
   protected lazy val anyFieldDef: Parser[Field]  = 
-    (ident | stringLit) ~ ((":").? ~> nestedType) ^^ {
-     case e1 ~ e2 => {
-    	 Field(e1, e2.dataType, Some(e1), e2.children)
+    (ident | stringLit) ~ ((":").? ~> nestedType) ~ (IN ~>(ident|stringLit)).? ^^ {
+     case e1 ~ e2 ~e3 => {
+    	 Field(e1, e2.dataType, Some(e1), e2.children,null,e3)
      }
   }
   
