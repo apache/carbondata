@@ -17,16 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwdEVzw1icjfRowqz2DW4XzUpEhhSzBOwVynEHjc
-u0090Yk4s7KSKIUvZ2lgA/xp4ghb3aurzQANDt/emqkEblEQAOjeMe559FD3SF5oC/1/UgVk
-e/uIo4p0QwQECisBIIwb092Y0KGWLGhqeMYznisGeN+b36Lz9EW6cIC2XtwC5w==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.aggregator.util;
 
 import java.lang.reflect.Constructor;
@@ -59,16 +49,7 @@ import com.huawei.unibi.molap.metadata.CalculatedMeasure;
 import com.huawei.unibi.molap.metadata.MolapMetadata.Measure;
 
 /**
- * Project Name NSE V3R7C00
- * 
- * Module Name : Molap Engine
- * 
- * Author K00900841
- * 
- * Created Date :13-May-2013 3:35:33 PM
- * 
- * FileName : AggUtil.java
- * 
+ *
  * Class Description : AggUtil class for aggregate classes It will return
  * aggregator instance for measures
  * 

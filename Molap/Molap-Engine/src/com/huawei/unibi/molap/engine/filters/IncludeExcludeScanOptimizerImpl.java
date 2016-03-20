@@ -17,37 +17,12 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwedLwWEET5JCCp2J65j3EiB2PJ4ohyqaGEDuXyJ
-TTt3d8+lGTsx7HIrwJOuYVsmOjf/zaw7LqoTlaRQ9Wdy5R9ayC5sJX/fXl0ISZJdzri01hl6
-PhVa1AFi75q5FRKBPUlIq2fQVWsxfR3U6oBQlPtsWDHiTrFwoa7A6cq4JpJ5yQ==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
-*/
 
 package com.huawei.unibi.molap.engine.filters;
 
 import com.huawei.unibi.molap.engine.scanner.optimizer.impl.ScanOptimizerImpl;
 import com.huawei.unibi.molap.keygenerator.KeyGenerator;
 
-/**
- * Project Name NSE V3R7C00 
- * Module Name : MOLAP
- * Author :C00900810
- * Created Date :25-Jun-2013
- * FileName : IncludeExcludeScanOptimizerImpl.java
- * Class Description : 
- * Version 1.0
- */
 public class IncludeExcludeScanOptimizerImpl extends ScanOptimizerImpl
 {
 

@@ -17,22 +17,10 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwdEVzw1icjfRowqz2DW4XzUpEhhSzBOwVynEHjc
-u0090VgvPJ+TQv5e+5CAQuFICXzTuYnvtcQbaeIVMqIjbzqj0e9rFcKXvOjoAmc+hWoguTAA
-mMepOne7qwogFjA/0SXiOLsOm/o3CIZhKFL6UD1QU41vrfiaNW291AB2HE5dMA==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
 package com.huawei.unibi.molap.engine.cache;
 
 import java.io.Serializable;
 
-/**
- * 
- * @author R00900208
- *
- */
 public class FileBasedSegmentCacheWorker implements Serializable {
 
 //    private static final long serialVersionUID  = -5744665059683205118L;

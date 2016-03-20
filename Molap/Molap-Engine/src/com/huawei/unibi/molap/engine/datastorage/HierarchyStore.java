@@ -17,26 +17,12 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwdh/HjOjN0Brs7b7TRorj6S6iAIeaqK90lj7BAM
-GSGxBvh9FWsGxOHNHCEQyqkc7YeyXIkbKZnpAHZugsIQxokJ0PI4LLWXHZyAU8SBlErtcTkj
-BK8kMos8tyf4EdPzmxWuvKc1kQXr9frNZsPnCixhdHhaIDn32vnhmRw0m1N0NA==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.datastorage;
 
 
 import com.huawei.unibi.molap.engine.datastorage.streams.DataInputStream;
 import com.huawei.unibi.molap.keygenerator.KeyGenerator;
 
-/**
- * @author R00900208
- * 
- */
 public class HierarchyStore
 {
     /**

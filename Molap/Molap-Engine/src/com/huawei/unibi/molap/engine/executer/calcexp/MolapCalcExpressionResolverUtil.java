@@ -17,16 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwcAIRTtLWBkMMN+iqJ62JNQb/MYFaBoemC1VlrU
-n+vkOQ8CipVZItgvA6SoPZ1T24XARi4nhKHIUHDdOEMQHzSrSCpXt1HWS/C5DlTRQyPqyhw4
-rd0tnpAxPfLJ3BRN4IxsActCQecz2U8I9Zh/q4Ixkxz7nlI0D8tfFzr5TqilWQ==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.executer.calcexp;
 
 import java.util.List;
@@ -40,7 +30,6 @@ import com.huawei.unibi.molap.olap.Exp;
 
 /**
  * Utility to resolve expressions to Molap understanble functions.
- * @author R00900208
  *
  */
 public final class MolapCalcExpressionResolverUtil

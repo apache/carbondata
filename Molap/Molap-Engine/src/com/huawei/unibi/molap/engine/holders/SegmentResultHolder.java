@@ -17,35 +17,11 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwfQVwqh74rUY6n+OZ2pUrkn1TkkvO60rFu08DZa
-JnQq9AHq8/lq8pVcHIKN+Su9bC5TDK2gaqPHxaZ8asciCbltvUHdYlGX38Dq7vt75kaf7rSc
-ZQrdtFfUauMF6QzTN7i4XqIQvAlIFVA2Uo/yO2h60rOAhlEuKD0HRoAv6JpBfA==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.engine.holders;
 
 import java.util.List;
 
 /**
- * Project Name NSE V3R7C00 
- * Module Name : Molap
- * Author K00900841
- * Created Date :13-May-2013 3:35:33 PM
- * FileName : SegmentDataIterator.java
- * Class Description :
  * This class can be used to re index the existing data array to read in
  * different column order. Ex:- For tuple query, data order is
  * dimensions order in query. For Segment query the order as per

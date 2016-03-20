@@ -17,24 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbweRARwUrjYxPx0CUk3mVB7mxOcZSaagKrMQNlhB
-QO/t7AnD+Ek58PMyDfIUEYWyjmq+XzwfHLkM2xg8BBubh4J0qMajjRPKR+Nt8x9XkCw1Vsgr
-g0FJodzJOM5I8vLtd0hQBvmcHr78Jbm5XlUaulc4thHHuyeeSvj+8+/55nojSg==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.engine.executer.impl;
 
 import java.util.Map;
@@ -46,11 +28,6 @@ import com.huawei.unibi.molap.engine.wrappers.ByteArrayWrapper;
 
 /**
  * 
- * Project Name NSE V3R7C00 
- * Module Name : MOLAP
- * Author V00900840
- * Created Date :13-May-2013 8:26:11 PM
- * FileName : ParallelSliceExecutorImpl.java
  * Class Description : This class executes the query for slice and return the
  * result map.
  * Version 1.0

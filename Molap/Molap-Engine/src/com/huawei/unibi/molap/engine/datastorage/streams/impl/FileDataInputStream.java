@@ -17,13 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwdh/HjOjN0Brs7b7TRorj6S6iAIeaqK90lj7BAM
-GSGxBiyhU2KLF5qT8Zm0J2uxHyqN7Dth59W7EALpjYASFK0DyYAlMbB8k93vZ47u4MQfCiyr
-oOlYCUvzhgWlNdF+wokMt0hH16DEemj0UIKIOcGCMYl4Z/GFwxaV9hrCTvT7IA==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
 package com.huawei.unibi.molap.engine.datastorage.streams.impl;
 
 import java.io.BufferedInputStream;
@@ -45,11 +38,6 @@ import com.huawei.unibi.molap.engine.util.MolapEngineLogEvent;
 import com.huawei.unibi.molap.metadata.LeafNodeInfoColumnar;
 import com.huawei.unibi.molap.util.ValueCompressionUtil;
 
-/**
- * incremental load from files
- * 
- * @author z00202354
- */
 public class FileDataInputStream extends AbstractFileDataInputStream
 {
     

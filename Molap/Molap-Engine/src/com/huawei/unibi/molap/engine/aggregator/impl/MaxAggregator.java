@@ -17,24 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwdEVzw1icjfRowqz2DW4XzUpEhhSzBOwVynEHjc
-u0090RHlGxCT+1p8z4Gk/PhPLTpbv01ABUOToFxKvvSdOeT9RvGF3fvUgSu1ZrA5a/KI2SrV
-Co3iitm+TZLyzKWgxmbGqk76EL/M0V/WiPL4QJSgl6vZ1YEI06RObKlXTjDI1g==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.engine.aggregator.impl;
 
 import java.io.ByteArrayInputStream;
@@ -55,16 +37,7 @@ import com.huawei.unibi.molap.util.MolapUtil;
 
 
 /**
- * Project Name NSE V3R7C00 
- * 
- * Module Name : Molap Engine
- * 
- * Author K00900841
- * 
- * Created Date :13-May-2013 3:35:33 PM
- * 
- * FileName : MaxAggregator.java
- * 
+ *
  * Class Description :
  * It will return max of values
  * 

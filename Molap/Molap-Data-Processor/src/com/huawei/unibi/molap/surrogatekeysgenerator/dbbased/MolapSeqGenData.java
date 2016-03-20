@@ -17,22 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwcfJtSMNYgnOYiEQwbS13nxM8hk/dmbY4B4u+tG
-aRAl/lZMDp7a3Bsd3FJXKEDlgCvnpQ22rQvEIxkRrYtuo+e+jaSX1eaRdQsLZcP3bVLYHj8h
-rui1IdJyHFAS22rz0QBNDZt1TXIERQ+FG9/UuG+FxWOu5o7qIA9jyioc0NllMQ==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
-*/
 
 package com.huawei.unibi.molap.surrogatekeysgenerator.dbbased;
 
@@ -48,10 +32,6 @@ import com.huawei.unibi.molap.constants.MolapCommonConstants;
 import com.huawei.unibi.molap.keygenerator.KeyGenerator;
 
 
-/**
- * Project Name NSE V3R7C00 Module Name : MOLAP Author :C00900810 Created Date
- * :24-Jun-2013 FileName : MolapSeqGenData.java Class Description : Version 1.0
- */
 public class MolapSeqGenData extends BaseStepData implements StepDataInterface {
 
     /**

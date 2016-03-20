@@ -17,49 +17,10 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwcz8AOhvEHjQfa55oxvUSJWRQCwLl+VwWEHaV7n
-0eFj3YT5i5Qb5zi7l2Le7WMDZun/u10Sn+D7fwIsVWOQQU3ePl7Yu889z2vrbd6HPQmRwmpr
-9VLaXCVUpQM3ZBtU12XCmZJE/ZWKvjZxq78KrIdiTRcWXbQwlclAaFLgOvMQ+Q==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.engine.mondrian.extensions.rolap.concurrent;
 
-//import java.util.ArrayList;
 import java.util.LinkedList;
-//import java.util.concurrent.ExecutionException;
-//import java.util.concurrent.ExecutorService;
-//import java.util.concurrent.Executors;
-//import java.util.concurrent.Future;
 
-//import com.huawei.iweb.platform.logging.LogService;
-//import com.huawei.iweb.platform.logging.LogServiceFactory;
-//import com.huawei.unibi.molap.engine.util.MolapEngineLogEvent;
-//import com.huawei.unibi.molap.util.MolapProperties;
-
-
-
-/**
- * Project Name NSE V3R7C00 
- * Module Name : MOLAP
- * Author :C00900810
- * Created Date :29-Jul-2013
- * FileName : CuncurrentCubeLoder.java
- * Class Description : 
- * Version 1.0
- */
 public class ConcurrentCubeLoder implements ICubeLoader
 {
 

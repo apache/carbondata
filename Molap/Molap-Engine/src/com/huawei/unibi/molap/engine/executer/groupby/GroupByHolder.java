@@ -17,13 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbweRARwUrjYxPx0CUk3mVB7mxOcZSaagKrMQNlhB
-QO/t7N/eqFlMzXYmusttKjtTK8HVzUf/Ez3GLOxdBaC/zFpeYdA/iCel2Vq5AtyzYvG8JwUU
-Qh23lMYHzmX0OEEvJL9Zh8v7onMLDG7/ULt+8bMg8GgeRvyQTKLt1UI83gWqXQ==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
 package com.huawei.unibi.molap.engine.executer.groupby;
 
 import java.util.ArrayList;
@@ -40,8 +33,6 @@ import com.huawei.unibi.molap.metadata.MolapMetadata.Measure;
 /**
  * This class aggregates and holds the rows as per the topN applied on dimension
  * and measure.
- * 
- * @author R00900208
  * 
  */
 public class GroupByHolder

@@ -17,13 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbweRARwUrjYxPx0CUk3mVB7mxOcZSaagKrMQNlhB
-QO/t7BJleLkXT6mCmwTAtcxBOQbcdID7UB1yFZBB1TBeyMgpeXFQKs3gVa+k5A/z0cIFfRlD
-VYY/Tz1c7XpAw7G1p6Q7iMD5Jc3irTHaBKp4IRDV599J61h9DzrLiROD8FI5Ww==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
 package com.huawei.unibi.molap.engine.executer.impl.dimension;
 
 import com.huawei.iweb.platform.logging.LogService;
@@ -37,7 +30,6 @@ import com.huawei.unibi.molap.engine.util.MolapEngineLogEvent;
 
 /**
  * It filters the data as per the post topN filters
- * @author R00900208
  *
  */
 public class DimensionFilterProcessor implements DataProcessor

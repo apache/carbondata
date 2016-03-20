@@ -17,16 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwfQVwqh74rUY6n+OZ2pUrkn1TkkvO60rFu08DZa
-JnQq9Hh7uFZ0IV5xxhRtZnNKgL+pPixUbMI/8IgMLMmwKOtRs4dKLIFshyODfaTXxtMq8irX
-UVbuJ6bTwuEQnJlXsWRY/qkZLx3MDNbEI5HeCcbH8eu6FoTuFFTXO/p2Wqo7Qw==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.holders;
 
 import java.io.Serializable;
@@ -39,11 +29,6 @@ import com.huawei.unibi.molap.engine.scanner.impl.MolapValue;
 import com.huawei.unibi.molap.olap.SqlStatement.Type;
 
 /**
-* Project Name NSE V3R7C00 
-* Module Name : Molap
-* Author K00900841
-* Created Date :13-May-2013 3:35:33 PM
-* FileName : MolapResultHolder.java
 * Class Description :This class will be used for holding the result after query execution.
 * Version 1.0
 */

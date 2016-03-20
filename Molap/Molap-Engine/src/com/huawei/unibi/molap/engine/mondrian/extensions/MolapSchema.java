@@ -17,20 +17,8 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwcz8AOhvEHjQfa55oxvUSJWRQCwLl+VwWEHaV7n
-0eFj3a/5SYBIRdclByCeKxf0WUvzJ4HaCUiwxjRlcqBZBBSIFzxuLTEqjl4u4bNODR1wOiU6
-PC8KfB1hyZjKBcugr2spruaNJMgx8d2rtdGyM0oqPeoq19L0v+umzBTOn54gaA==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
 package com.huawei.unibi.molap.engine.mondrian.extensions;
 
-
-/**
- * Project Name NSE V3R7C00 Module Name : MOLAP Author :C00900810 Created Date
- * :25-Jun-2013 FileName : MolapSchema.java Class Description : Version 1.0
- */
 public class MolapSchema //extends RolapSchema
 {
     

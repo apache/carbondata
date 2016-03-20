@@ -17,24 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwedLwWEET5JCCp2J65j3EiB2PJ4ohyqaGEDuXyJ
-TTt3d7yxJkAJaVAaWanwUW3mAwOEc1w9y5obEVY/f2RyG/DFd2egjHLZf4kuRGz4xWkjK0fs
-8c0uHjfQPbLsz2LFzDn/3FKLqFqDyHRmWlS1R7XWesTwLpf/UwXkAr+L5dMqXw==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.engine.executer.pagination.impl;
 
 import java.io.File;
@@ -64,15 +46,6 @@ import com.huawei.unibi.molap.util.MolapUtil;
 import com.huawei.unibi.molap.util.MolapUtilException;
 
 
-/**
- * Project Name NSE V3R7C00 
- * Module Name : Molap Engine
- * Author K00900841
- * Created Date :21-May-2013 6:42:29 PM 
- * FileName :DataFileMerger.java
- * Class Description : This class is responsible for merging the query file
- * Version 1.0
- */
 public class DataFileMerger implements Callable<Void>
 {
     /**

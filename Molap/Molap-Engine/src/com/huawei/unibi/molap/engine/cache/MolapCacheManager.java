@@ -17,20 +17,9 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwdh/HjOjN0Brs7b7TRorj6S6iAIeaqK90lj7BAM
-GSGxBnLAgIPvXIY0b2yWiu8f8JPgEAXQm2P19li3452YPtAs5XASXQXeTTt1h0A/Qo0YXphi
-3DbJY2uW0VM2ee+W3GBJ0oS7Zh+0TWgdZXf0vnh3ZOiq6C3aBndeb8Gc9vwVSQ==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
 package com.huawei.unibi.molap.engine.cache;
 
 
-/**
- * @author R00900208
- * 
- */
 public final class MolapCacheManager
 {
 //

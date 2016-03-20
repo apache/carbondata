@@ -17,24 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwdXNiZ+oxCgSX2SR8ePIzMmJfU7u5wJZ2zRTi4X
-XHfqbTx7nQdiHv7zUYcWRiQwkVLlNRAgpjeDdBPErFvTkGc2xW+k+0bImXcWenKQW1AbhfmF
-+hICym5gYcUaNWYTH7NAhdt44aIOMByLn2LjBUuGWIZisd5pnOmU3ThQx5buwg==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.util;
 
 import java.io.BufferedReader;
@@ -100,13 +82,6 @@ import com.huawei.unibi.molap.olap.MolapDef;
 //import mondrian.rolap.RolapUtil;
 import com.huawei.unibi.molap.sortandgroupby.exception.MolapSortKeyAndGroupByException;
 
-/**
- * 
- * Project Name NSE V3R7C00 Module Name : Molap Data Processor Author K00900841
- * Created Date :21-May-2013 6:42:29 PM FileName : MolapDataProcessorUtil.java
- * Class Description : All the utility methods are present in this class Version
- * 1.0
- */
 public final class MolapDataProcessorUtil
 {
     private static final LogService LOGGER = LogServiceFactory.getLogService(MolapDataProcessorUtil.class.getName());

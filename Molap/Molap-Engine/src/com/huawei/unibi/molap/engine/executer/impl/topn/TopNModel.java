@@ -17,24 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbweRARwUrjYxPx0CUk3mVB7mxOcZSaagKrMQNlhB
-QO/t7E6DVIlgmdNVJ9x1GjBp+gp3syE6S84goT1oKN/8lDzrnsIzP0lLe1wTg1RCJGirVTVq
-WHENQ4lAQNcCouavqvPbPIMyAZq1vDUibMyYrUX4Fs/oI+9sZfmBSmcK9sqCJA==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.engine.executer.impl.topn;
 
 import com.huawei.unibi.molap.metadata.MolapMetadata.Dimension;
@@ -44,7 +26,6 @@ import com.huawei.unibi.molap.query.MolapQuery.AxisType;
 
 /**
  * It is the model class for topN in MOLAP
- * @author R00900208
  *
  */
 public class TopNModel

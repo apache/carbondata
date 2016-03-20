@@ -17,24 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbweRARwUrjYxPx0CUk3mVB7mxOcZSaagKrMQNlhB
-QO/t7FYXLw/3NqLDADsGNvnR4EzZ/iWb7uS7BqWSa2shF/RD/2sgXi3E76ir5Qg+xwHBTrC2
-8fibq6kDA38jemOzPUHGTfzxRJdziLeOpGuya+RWnYeYkScZZDXnm3N2sgloVQ==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.engine.executer.impl.topn;
 
 import java.util.AbstractQueue;
@@ -55,8 +37,6 @@ import com.huawei.unibi.molap.engine.executer.pagination.exception.MolapPaginati
 /**
  * This class calculates the topN rows as per the defined parameters.
  * 
- * @author R00900208
- *
  */
 public class TopNProcessorBytes implements DataProcessor//,Callable< Map<ByteArrayWrapper, MeasureAggregator[]>>
 {

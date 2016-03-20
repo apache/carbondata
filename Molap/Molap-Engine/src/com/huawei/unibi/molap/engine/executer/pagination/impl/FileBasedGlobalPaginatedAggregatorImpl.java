@@ -17,16 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwedLwWEET5JCCp2J65j3EiB2PJ4ohyqaGEDuXyJ
-TTt3d5z66zk+gF8JDcCY2Eq95yhP7BMntGwVmedaCwGxR+26NV1z8OMxFmAR4Z5yi48U19rL
-dudRRuR88YwxNM7+hU9B3Pj0AHehwGsD8ZzKYo77OO7+Yzv4sUVycfHSZdi+PA==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.executer.pagination.impl;
 
 import java.io.IOException;
@@ -41,8 +31,7 @@ import com.huawei.unibi.molap.engine.wrappers.ByteArrayWrapper;
 /**
  * This class will do global merging of all intermediate files in case of pagination.
  * And process the rows like sort,measure filter,and topn etc.
- * @author R00900208
- * 
+ *
  */
 public class FileBasedGlobalPaginatedAggregatorImpl implements GlobalPaginatedAggregator
 {

@@ -17,24 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwdEVzw1icjfRowqz2DW4XzUpEhhSzBOwVynEHjc
-u0090X053sNIn6xK06q3gCqt2vQZyHdjWh4EgyEk3/NENKwBZ1UhJrk+bQFxX+d8etuJdplF
-NCPDfMiTrvF0I3f4ENm4EsZqBL1hakCwUGR384EWcdhbBo/fYpQ5wfMeFuWJ5w==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.engine.aggregator.impl;
 
 import java.io.ByteArrayInputStream;
@@ -54,16 +36,7 @@ import com.huawei.unibi.molap.engine.util.MolapEngineLogEvent;
 import com.huawei.unibi.molap.util.MolapUtil;
 
 /**
- * Project Name NSE V3R7C00
- * 
- * Module Name : Molap Engine
- * 
- * Author K00900841
- * 
- * Created Date :13-May-2013 3:35:33 PM
- * 
- * FileName : MinAggregator.java
- * 
+ *
  * Class Description : It will return min of values
  * 
  * Version 1.0

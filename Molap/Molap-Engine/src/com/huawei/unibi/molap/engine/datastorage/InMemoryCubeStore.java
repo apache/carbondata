@@ -17,16 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwdh/HjOjN0Brs7b7TRorj6S6iAIeaqK90lj7BAM
-GSGxBvQ+nH6KDW9rKk8VMGGhEP4VVbZTHy2TcNLB0ErjDZcMLSsskr8VUmlc6HM+z9SeYg9o
-6DN1utx92ZWHDUIfOEaiSmetXdaHyAlv7wIrawv6BSipTmcwS5k8yJaBZLPFEQ==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.datastorage;
 
 import java.io.File;
@@ -66,10 +56,6 @@ import com.huawei.unibi.molap.metadata.SliceMetaData;
 import com.huawei.unibi.molap.olap.MolapDef;
 import com.huawei.unibi.molap.util.MolapUtil;
 
-/**
- * @author K00900207
- * 
- */
 public final class InMemoryCubeStore
 {
 

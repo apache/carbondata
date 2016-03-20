@@ -17,24 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwfQVwqh74rUY6n+OZ2pUrkn1TkkvO60rFu08DZa
-JnQq9H0/UpUF011Lz7EleO9x2HtB/GgzkSrjCUgB4tgkekvhGoEm35SEnOvqq8sCd3NpgFTy
-TEVaGYhNqtgolvvip9Sak42Mmi8nDnFWK38ofbAvDg0RG2jhBIHVOzQk+B6A3g==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.engine.datastorage.storeInterfaces;
 
 import java.util.Arrays;
@@ -47,8 +29,6 @@ import com.huawei.unibi.molap.keygenerator.KeyGenerator;
 /**
  * This Class will hold key and value where key will be mdkey and value will be
  * measure value
- * 
- * @author R00900208
  * 
  */
 public class KeyValue

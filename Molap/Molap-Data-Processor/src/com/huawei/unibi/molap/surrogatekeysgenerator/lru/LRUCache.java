@@ -17,22 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwcfJtSMNYgnOYiEQwbS13nxM8hk/dmbY4B4u+tG
-aRAl/os2n9LNxuZM6tzag+BWpBdu58tb1PsVZksul+7lRoAOx7yjGWjVD99JaDdgYB8XwjwV
-zqPnZQ0RqybzNo9822++nvqthwX4BYC0jUtzzXSImO8rEqEXyvz119M8g8MGEg==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2014
- * =====================================
- */
 package com.huawei.unibi.molap.surrogatekeysgenerator.lru;
 
 import java.util.Collections;
@@ -42,15 +26,6 @@ import java.util.Map;
 import com.huawei.unibi.molap.constants.MolapCommonConstants;
 import com.huawei.unibi.molap.util.MolapProperties;
 
-/**
- * Project Name NSE V3R7C00 
- * Module Name : Molap Data Processor 
- * Author K00900841
- * Created Date :21-May-2013 6:42:29 PM 
- * FileName :LRUCache.java 
- * Class Description : LRUCache class 
- * Version 1.0
- */
 public final class LRUCache
 {
     /**

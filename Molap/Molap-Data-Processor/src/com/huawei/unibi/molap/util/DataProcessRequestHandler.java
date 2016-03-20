@@ -17,27 +17,9 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwdXNiZ+oxCgSX2SR8ePIzMmJfU7u5wJZ2zRTi4X
-XHfqbbIz5SuiZ8edolM+jg9rPCmuC+wUQbmLljTfAFiqvOMDhQQsSs1rJ/uzlTr3NncbV3Ot
-n4FXswPXmZJWPJJ/DDECNmLiPknCTm6hmd/5/zgpYBYAuOBmurGkb5U+sd6Vgg==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
 package com.huawei.unibi.molap.util;
 
-//import org.apache.commons.logging.Log;
-//import org.apache.commons.logging.LogFactory;
 
-/**
- * Project Name NSE V3R7C00 
- * Module Name : MOLAP
- * Author :r70299
- * Created Date :Sep 13, 2013
- * FileName : DataProcessRequestHandler.java
- * Class Description : 
- * Version 1.0
- */
 public final class DataProcessRequestHandler {
 
 //    private static ArrayBlockingQueue<DataProcessTask> dataProcessTaskQ = new ArrayBlockingQueue<DataProcessTask>(

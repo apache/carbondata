@@ -17,16 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwfQVwqh74rUY6n+OZ2pUrkn1TkkvO60rFu08DZa
-JnQq9FmZGF2UNElIzQn9/pmOFjaInlKV3PckfPFF3G8fde4tEYIxLGfkGcUt6rWTHOiLMg5h
-fDvGtn/q4QQhbv/+HCse9KVktnjT3kqDnha84VZ8p2pjr4OW6+irZGc7qAXxRA==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.query;
 
 import java.util.ArrayList;
@@ -41,8 +31,6 @@ import com.huawei.unibi.molap.constants.MolapCommonConstants;
 /**
  * It is used to create and parse the MOLAP query. It is just like a SQL query.
  * 
- * @author R00900208
- *
  */
 public class MolapSQLQuery
 {

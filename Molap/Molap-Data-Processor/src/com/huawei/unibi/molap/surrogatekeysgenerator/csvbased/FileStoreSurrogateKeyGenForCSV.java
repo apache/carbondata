@@ -17,22 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwcfJtSMNYgnOYiEQwbS13nxM8hk/dmbY4B4u+tG
-aRAl/l5AutcYw9HOYIzADneoyfcXf8wdDkn/FjhveV1R0L2WvhVkOWTZdMFsOdXfZS5PGNFA
-SFQ/EXJ6M0PniJluK/AHbrFOSntdsaP6lbbLtTEaECSLXnn0tfI5GdACZzIv1Q==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
-*/
 
 package com.huawei.unibi.molap.surrogatekeysgenerator.csvbased;
 
@@ -80,15 +64,6 @@ import com.huawei.unibi.molap.writer.ByteArrayHolder;
 import com.huawei.unibi.molap.writer.HierarchyValueWriterForCSV;
 import com.huawei.unibi.molap.writer.LevelValueWriter;
 
-/**
- * Project Name NSE V3R7C00 
- * Module Name : 
- * Author V00900840
- * Created Date :24-May-2013 12:10:15 PM
- * FileName : FileStoreSurrogateKeyGen.java
- * Class Description :
- * Version 1.0
- */
 public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKeyGen
 {
     

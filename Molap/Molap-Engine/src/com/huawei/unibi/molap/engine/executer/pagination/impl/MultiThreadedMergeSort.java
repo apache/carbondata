@@ -17,16 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbweRARwUrjYxPx0CUk3mVB7mxOcZSaagKrMQNlhB
-QO/t7NV2sDRPkALSVE7U+ee1PyAIuQLv1wNgHsFKctX1/SIH254LCTVDSY+Ss+nyeZC+2IEK
-4upauOylAHTOPzEB454pQcSpSEKyA20vE9yzPnS+rSdBYKNcX9wrBSvvXzlznA==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.executer.pagination.impl;
 
 import java.util.ArrayList;
@@ -41,10 +31,6 @@ import java.util.concurrent.Future;
 import com.huawei.unibi.molap.constants.MolapCommonConstants;
 import com.huawei.unibi.molap.engine.executer.pagination.impl.DataFileWriter.KeyValueHolder;
 
-/**
- * @author R00900208
- * 
- */
 public final class MultiThreadedMergeSort
 {
     private static ExecutorService executorService = Executors.newCachedThreadPool();

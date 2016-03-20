@@ -17,22 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwddts1/q4bCGDA4M3dH8C2PEEMnfDqqdF4ZhcSc
-1BeEnNEVfXe+Z0M4mfgOMv8Ry7Cu9+zaPS63Ev2Jrb0wuZucic3k8opjnZBFZBo309Zbj5/c
-wcFcE9sOJA21XxKLHhsfpiNjOXWVDTusYXFm8W8GB9h6a5aIG6Laf6S5m92gQg==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
-*/
 package com.huawei.unibi.molap.mdkeygen;
 
 import java.io.ByteArrayOutputStream;

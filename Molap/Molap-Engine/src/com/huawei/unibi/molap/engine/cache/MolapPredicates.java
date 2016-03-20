@@ -17,27 +17,11 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwdh/HjOjN0Brs7b7TRorj6S6iAIeaqK90lj7BAM
-GSGxBkpRu/I+Kqq0aCZT9IDingO22b9N0O38fzcpKjJnBkyyyAzA6qRF17FW7bqvI9m/1cRP
-lfEa0O9COE67xsL7XDlw5e7K38sQTQ2cyyN/vO/f10AP1k5z4ireXBeleqk+Kg==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.cache;
 
 import java.io.Serializable;
 import java.util.Arrays;
 
-/**
- * MolapPredicates
- * 
- * @author R00900208
- *
- */
 public class MolapPredicates implements Serializable
 {
 

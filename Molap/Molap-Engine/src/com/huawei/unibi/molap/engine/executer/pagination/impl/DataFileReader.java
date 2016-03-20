@@ -17,16 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwedLwWEET5JCCp2J65j3EiB2PJ4ohyqaGEDuXyJ
-TTt3d9wockzP4rgzWmofXL54NCnCG8JSS384/1gauvBLFQ31dHdsNWiFtWZOUAEX/PTZDUgO
-trTDOfJM5lbyrWx4umuvUitXrZuulbUf+fTqt+g5GkfG7UJba1ERerY659Wytw==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.executer.pagination.impl;
 
 import java.io.ByteArrayInputStream;
@@ -64,7 +54,6 @@ import com.huawei.unibi.molap.util.MolapUtil;
 
 /**
  * It reads the data from file which already created during pagination scanner.
- * @author R00900208
  *
  */
 public class DataFileReader

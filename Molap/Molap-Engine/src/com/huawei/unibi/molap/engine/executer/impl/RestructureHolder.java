@@ -17,26 +17,11 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbweRARwUrjYxPx0CUk3mVB7mxOcZSaagKrMQNlhB
-QO/t7OOC2Jd5kZgCxR3cwtx0D02ZUANnCG/XV4ab8+C46asBNVuLDhmzzyzecARTAFGu9jkE
-46bl6/VrInsxELP5onehfh2AxluAFaSNq5snyVYm5Eqk9l1tRmHDRO79ln+fCw==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.executer.impl;
 
 import com.huawei.unibi.molap.keygenerator.KeyGenerator;
 import com.huawei.unibi.molap.metadata.SliceMetaData;
 
-/**
- * Restructure Holder
- * @author R00900208
- *
- */
 public class RestructureHolder
 {
     /**

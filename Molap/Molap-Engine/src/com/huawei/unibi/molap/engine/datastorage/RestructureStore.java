@@ -17,16 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwdh/HjOjN0Brs7b7TRorj6S6iAIeaqK90lj7BAM
-GSGxBrMLCAysd+kVyNuvISnDIkyh4ZVHy7oAAYzCvirpcirTb0WhEvt++pStSLNZCFZz8rgw
-Fjqi/Y9Re/1LKToCCGDvzwXCHoH4nFEdsxK3HCql3d++oH4mYvudRd8tpDl4kg==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.datastorage;
 
 import java.util.ArrayList;
@@ -39,10 +29,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.huawei.unibi.molap.constants.MolapCommonConstants;
 import com.huawei.unibi.molap.metadata.SliceMetaData;
 
-/**
- * @author R00900208
- *
- */
 public class RestructureStore implements Comparable<RestructureStore>
 {
     /**

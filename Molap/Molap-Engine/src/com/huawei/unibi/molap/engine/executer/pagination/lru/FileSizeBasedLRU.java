@@ -17,16 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwedLwWEET5JCCp2J65j3EiB2PJ4ohyqaGEDuXyJ
-TTt3d+zY+KaJOUkmRwyN5EBs5k6IPHrenG1x45oBznM3IvBQLOj2BTRSZeMbEil59X7czsfq
-Mf1mIIoBdJeorwFOTo/e/dsGJIefC/g73baP4B3AyTuEV0htR2+1hSE3VDtXlg==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.executer.pagination.lru;
 
 import java.io.File;
@@ -42,10 +32,6 @@ import com.huawei.unibi.molap.constants.MolapCommonConstants;
 import com.huawei.unibi.molap.engine.util.MolapEngineLogEvent;
 import com.huawei.unibi.molap.util.MolapProperties;
 
-/**
- * FileSizeBasedLRU
- * @author R00900208
- *
  */
 public class FileSizeBasedLRU
 {

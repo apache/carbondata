@@ -17,16 +17,8 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwedLwWEET5JCCp2J65j3EiB2PJ4ohyqaGEDuXyJ
-TTt3d5go7FWu/Hd0PSxg27v6gJX/1bi8cAbUv5ATZXq6bLRFNVkvfo8D0Jn8A9UoU1mHb/HE
-XWWAQycYb8FBINgcJe3jMugMFW5H4NZe1lHdd65d3DQR8LLGbDOGLkjPeeXXvw==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
 package com.huawei.unibi.molap.engine.extras;
 
-//import org.apache.log4j.Logger;
 
 /**
  * A <code>MolapInMemoryStoreHandler</code> is a handler to InMemory store.

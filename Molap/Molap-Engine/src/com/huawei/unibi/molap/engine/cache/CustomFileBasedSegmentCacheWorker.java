@@ -17,23 +17,9 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwdEVzw1icjfRowqz2DW4XzUpEhhSzBOwVynEHjc
-u0090XF3IsG6wwheovqlq6ZgI9KUkA5nHMVBTd3b+r2VKz/tUI7C5U4YGIEbyxGxoaQv1Xzm
-Ms4audO0xEYJm0KAeIirAe58CeEY5drk0NSa+jSzkM3WHaUw3MUyEepgf8Vaeg==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.cache;
 
 
-/**
- * @author R00900208
- *
- */
 public class CustomFileBasedSegmentCacheWorker
 {
 //    private String path = MolapCommonConstants.MOLAP_CACHE_LOCATION+File.separator+"custom";

@@ -17,16 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwdh/HjOjN0Brs7b7TRorj6S6iAIeaqK90lj7BAM
-GSGxBmp06KryXpQHqSFui2gCm5Pfla1wTGsYpR0B+DkWYBRCOhwjuGPrW9Y4jRsasbkP85uk
-Pa6ACSnr7XtTKCkOtfyMRePRWYopF9B4Ve9HIbfV6MsTKhQjI4vKPJbFZ1ZDBQ==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.datastorage;
 
 import java.io.IOException;
@@ -44,9 +34,6 @@ import com.huawei.unibi.molap.engine.util.MolapEngineLogEvent;
 import com.huawei.unibi.molap.metadata.MolapSchemaReader;
 import com.huawei.unibi.molap.olap.MolapDef;
 
-/**
- * @author R00900208
- */
 public class DimensionHierarichyStore
 {
     /**

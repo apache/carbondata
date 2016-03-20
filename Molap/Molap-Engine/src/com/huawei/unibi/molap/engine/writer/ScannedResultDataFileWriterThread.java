@@ -17,24 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
- 2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwedLwWEET5JCCp2J65j3EiB2PJ4ohyqaGEDuXyJ
- TTt3d/+OaeO30CuXiPeMQ1b+bGpDqN2k91rrrg5Qo616Byv5rBJNqzufTz7T840oTWQTl92w
- xjhM1Q5+9Rooj6mjTLDiC3s4yPFyntfnBfxf9EnzO/onXMlrcTl4kfUVlrYzeg==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.engine.writer;
 
 import java.io.DataOutputStream;
@@ -57,11 +39,6 @@ import com.huawei.unibi.molap.util.MolapUtil;
 
 /**
  * 
- * Project Name  : Carbon 
- * Module Name   : MOLAP Data Processor
- * Author    : R00903928,k00900841
- * Created Date  : 27-Aug-2015
- * FileName   : ScannedResultDataFileWriterThread.java
  * Description   : This class is responsible for writing query output to file.
  * Class Version  : 1.0
  */

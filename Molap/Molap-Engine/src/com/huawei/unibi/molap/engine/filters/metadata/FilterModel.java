@@ -17,31 +17,11 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwedLwWEET5JCCp2J65j3EiB2PJ4ohyqaGEDuXyJ
-TTt3d7RXgq62sVvnXIp1Blu2u/F8oTodIH8N2LUdbYT5c3O9BmTczv85MGnRCcX/cbITigJh
-hpTSyRd2fJHgX5scVoHgpzwKTSU0cybKgR+GdEGZ+DxJt6TLb97dqlhIYvlrHA==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
-*/
 
 package com.huawei.unibi.molap.engine.filters.metadata;
 
 import java.io.Serializable;
 
-/**
- * @author R00900208
- * 
- */
 public class FilterModel implements Serializable
 {
 

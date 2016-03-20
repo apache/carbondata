@@ -17,13 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwcAIRTtLWBkMMN+iqJ62JNQb/MYFaBoemC1VlrU
-n+vkOY8zfCVMc9NqGMLeBHYzsW3EBmbF3Av+bOEWadTzwySqy/IuZrc3isKR5pqUHufcyjRv
-nmpISKQQUYBlN3vCv1cvg1XUnTWxeOovw08umbvWhS7UHe7ly/xSHMRupAG4Ew==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
 package com.huawei.unibi.molap.engine.executer.calcexp.impl;
 
 import com.huawei.unibi.molap.engine.aggregator.MeasureAggregator;
@@ -31,8 +24,6 @@ import com.huawei.unibi.molap.engine.aggregator.MeasureAggregator;
 /**
  * This class is for calculating the equal functionality.
  * 
- * @author V00900840
- *
  */
 public class MolapEqualFunction extends AbstractMolapCalcFunction
 {

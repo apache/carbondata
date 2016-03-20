@@ -17,13 +17,7 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwfnVI3c/udSMK6An9Lipq6FjccIMKj41/T4EBXl
-K2tBNxzuvXU/ULQ6C0/KH54Z7Dk92lUqmYBDRvyjyQapMz5kepuoYiZTRsWTiXNkckd362Qs
-6KwQTFGpXBo70L680CbXOqrGJmPIZgqeIN2Lzn+2Dq0PgBq/wXc89owXetXmGQ==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
+
 package com.huawei.unibi.molap.dataprocessor.queue.impl;
 
 import java.util.concurrent.PriorityBlockingQueue;

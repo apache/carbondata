@@ -17,38 +17,11 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwdh/HjOjN0Brs7b7TRorj6S6iAIeaqK90lj7BAM
-GSGxBmyLV0O/ANGbITXbOAqcEJrzjjP3pXfiDc5+P7uaNgW1D3cQOTq3Vi8/3pqOEI5QwW08
-AqJM5rsdaBH8FHUfyU5gXtGApA3my1Kwn7ix0DmzPOzgOgCGwUBXFO5mhF1Xog==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 1997
- * =====================================
- *
- */
 package com.huawei.unibi.molap.engine.datasource;
 
 
 /**
- * Project Name NSE V3R7C00
- * 
- * Module Name : Molap Engine
- * 
- * Author K00900841
- * 
- * Created Date :13-May-2013 3:35:33 PM
- * 
- * FileName : MolapExtnPooledOrJndiDataSourceService.java
- * 
+ *
  * Class Description : MolapExtnPooledOrJndiDataSourceService class will be used
  * for getting the molap data source
  * 

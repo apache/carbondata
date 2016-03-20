@@ -17,27 +17,8 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwcz8AOhvEHjQfa55oxvUSJWRQCwLl+VwWEHaV7n
-0eFj3Q8d7m0cWhPqJpWXCXqFhQo4IRr9ZbIZHyWGqm0IAd8WGUWZrZwl2FirE9IvwhWSGY4F
-FMNPWkL884Pq7vluWzB7TMULRUwIiTdETt2ErnK7Es6i/nZg/tlRWz6ZpBmrCg==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.engine.filters;
 
-//import org.apache.log4j.Logger;
 import com.huawei.iweb.platform.logging.LogService;
 import com.huawei.iweb.platform.logging.LogServiceFactory;
 import com.huawei.unibi.molap.engine.datastorage.storeInterfaces.KeyValue;
@@ -48,8 +29,6 @@ import com.huawei.unibi.molap.util.ByteUtil.UnsafeComparer;
 
 /**
  * Filter implementation to scan the data store based on include filter applied in the dimensions.
- * 
- * @author R00900208
  * 
  */
 public class KeyFilterImpl implements InMemoryFilter

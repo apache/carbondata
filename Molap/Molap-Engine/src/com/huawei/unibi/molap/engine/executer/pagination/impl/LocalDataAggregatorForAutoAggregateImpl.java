@@ -17,16 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwedLwWEET5JCCp2J65j3EiB2PJ4ohyqaGEDuXyJ
-TTt3d0EsxvHoMkGWmRRmyEz+U3jFefbodoqI8Ek8SEFXdMjJ1wKoRMPneP4jQWJGIdJ6Kwd4
-HdTwkaWbZA0QdSLZNpjr74Dk+jSBjEpkxFlhdx2cB5bf5TIifIHq4HxeI85ajQ==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.executer.pagination.impl;
 
 import java.util.ArrayList;
@@ -41,12 +31,7 @@ import com.huawei.unibi.molap.engine.executer.pagination.GlobalPaginatedAggregat
 import com.huawei.unibi.molap.engine.schema.metadata.SliceExecutionInfo;
 
 /**
- * Project Name NSE V3R8C10 
- * Module Name : MOLAP Data Processor
- * Author :k00900841 
- * Created Date:10-Aug-2014
- * FileName : LocalDataAggregatorForAutoAggregateImpl.java
- * Class Description : scan the data from store and aggregate 
+ * Class Description : scan the data from store and aggregate
  * Class Version 1.0
  */
 public class LocalDataAggregatorForAutoAggregateImpl extends LocalDataAggregatorImpl

@@ -17,24 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwcAIRTtLWBkMMN+iqJ62JNQb/MYFaBoemC1VlrU
-n+vkOfKZqZspKynm9RSRPgEXh4h+BWgR7cLBIQGCznqByh8754IDB8xbxylNC/tDOQ1WGaSl
-vFV6zcSU14ZgQCdCHxOE4uEgXqMcdL90TIyfJ3OecTCunKBxg1RjeEYHtEK5kw==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.engine.directinterface.impl;
 
 import java.util.ArrayList;
@@ -70,7 +52,6 @@ import com.huawei.unibi.molap.queryexecutor.MolapQueryInternalExecutor;
 
 /**
  * It is the executor service implementation class in server
- * @author R00900208
  *
  */
 public class MolapQueryInternalExecutorImpl implements MolapQueryInternalExecutor

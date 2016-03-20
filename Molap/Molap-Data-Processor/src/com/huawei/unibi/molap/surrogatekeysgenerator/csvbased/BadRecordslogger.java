@@ -17,22 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwcfJtSMNYgnOYiEQwbS13nxM8hk/dmbY4B4u+tG
-aRAl/h/0feSK+gQDnLiG/Rxa+KkYw1QAh29K3UhDSqor5ZTvSvr6uw8bzVv0TPChMi5H+8lU
-YAABPFf8bcJGeefBLsVbOA3FfWqCLulpUNsCHQ1DsQ1OXX5mt4ulc8VxcamD2w==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
-*/
 
 package com.huawei.unibi.molap.surrogatekeysgenerator.csvbased;
 
@@ -54,15 +38,6 @@ import com.huawei.unibi.molap.datastorage.store.impl.FileFactory.FileType;
 import com.huawei.unibi.molap.util.MolapDataProcessorLogEvent;
 import com.huawei.unibi.molap.util.MolapUtil;
 
-/**
- * Project Name NSE V3R7C00 
- * Module Name : Molap
- * Author V00900840
- * Created Date :06-Aug-2013 1:45:51 AM
- * FileName : BadRecordslogger.java
- * Class Description : This class will log the bad logs into files
- * Version 1.0
- */
 public class BadRecordslogger
 {
 

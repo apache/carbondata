@@ -17,16 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwedLwWEET5JCCp2J65j3EiB2PJ4ohyqaGEDuXyJ
-TTt3d/QcyJrVzuX9j0ejnAqxCuiGxDS9cRmFja/Lr432Jx96MGu7GPRWrcFhCYyBc8YWtJZl
-qmza/9W80UufcWjDRsS9xCTJJuRUtVSrabHxdlb9GjS+fiXXqmOTkHIhcDrDcA==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.executer.pagination.impl;
 
 import java.util.Arrays;
@@ -52,10 +42,6 @@ import com.huawei.unibi.molap.keygenerator.KeyGenerator;
 import com.huawei.unibi.molap.metadata.MolapMetadata.Measure;
 import com.huawei.unibi.molap.util.MolapProperties;
 
-/**
- * @author R00900208
- *
- */
 public class LocalDataAggregatorWithCalcMsrImpl implements DataAggregator
 {
 

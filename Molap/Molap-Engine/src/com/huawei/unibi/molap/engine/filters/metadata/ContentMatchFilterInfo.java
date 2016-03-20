@@ -17,16 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwedLwWEET5JCCp2J65j3EiB2PJ4ohyqaGEDuXyJ
-TTt3dwU41DMy77+Sd+rIg6o2YLGqoNe5Uyu94p9q/uWqSb1bSf65TOwu9s4lmXsg/Bil6S48
-DKWbmyRO60FPLVXxxh+LEPCLbNDWv+suDrEbpNg3guvkNsfJoeOItctfCWKRlw==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.filters.metadata;
 
 import java.util.HashMap;
@@ -39,8 +29,6 @@ import com.huawei.unibi.molap.filter.MolapFilterInfo;
 /**
  * This class is used for content match of level string.
  * 
- * @author R00900208
- *
  */
 public class ContentMatchFilterInfo extends MolapFilterInfo
 {

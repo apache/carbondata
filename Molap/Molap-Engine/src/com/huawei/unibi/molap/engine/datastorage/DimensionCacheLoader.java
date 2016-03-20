@@ -17,16 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwdh/HjOjN0Brs7b7TRorj6S6iAIeaqK90lj7BAM
-GSGxBngRbz/XGYymwzmyXy0KWkvivNKdHwo/qSoHqlJQpYIhlQ1Oqghe3jOLOJrNij3LjWE0
-ZBhhJhq3kdXETkghBqALRIsarMQJz17aMhkMULoGWUn6YDhQHbU9VRbBHHnwXw==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.datastorage;
 
 import java.io.File;
@@ -49,10 +39,6 @@ import com.huawei.unibi.molap.keygenerator.KeyGenerator;
 import com.huawei.unibi.molap.keygenerator.factory.KeyGeneratorFactory;
 import com.huawei.unibi.molap.olap.MolapDef;
 
-/**
- * @author R00900208
- * 
- */
 public final class DimensionCacheLoader
 {
     /**

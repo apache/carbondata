@@ -17,27 +17,12 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwedLwWEET5JCCp2J65j3EiB2PJ4ohyqaGEDuXyJ
-TTt3d0nsrTx7ES8AQGey2f3lzw4JiAMhPCO9Elgg64zoxrOmDrr8C9/Gc9hMkEyK0j2syUWK
-gb12a/Kw/S3768wv/RT/uVWNuI2M1jjF2ifp567TAgunJCMdI3rmSuoaPI7oeQ==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.executer.pagination.lru;
 
 import com.huawei.unibi.molap.engine.cache.MolapSegmentHeader;
 import com.huawei.unibi.molap.keygenerator.KeyGenerator;
 import com.huawei.unibi.molap.metadata.MolapMetadata.Measure;
 
-/**
- * It is the key for LRU cache
- * @author R00900208
- *
- */
 public class LRUCacheKey
 {
 

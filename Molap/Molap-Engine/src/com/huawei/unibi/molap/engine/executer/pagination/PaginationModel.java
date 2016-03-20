@@ -17,24 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwedLwWEET5JCCp2J65j3EiB2PJ4ohyqaGEDuXyJ
-TTt3d2t/qYElqRMUl23tjFy8c9uoUqxZ+HuzSbcpDEeNrMsFv3Fi/N+a60pslR/0SxKt51ow
-iKtAxQIiVZvoTNzTvgLLxOpiCQP26udd2/4eg1uW/T1Dw/Z+dQgbNwETGJ90XA==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.engine.executer.pagination;
 
 import java.util.List;
@@ -53,15 +35,6 @@ import com.huawei.unibi.molap.metadata.MolapMetadata.Dimension;
 import com.huawei.unibi.molap.metadata.MolapMetadata.Measure;
 import com.huawei.unibi.molap.filter.MolapFilterInfo;
 
-/**
- * Project Name NSE V3R7C00 
- * Module Name : Molap Engine
- * Author R00900208
- * Created Date :21-May-2013 6:42:29 PM 
- * FileName :PaginationModel.java
- * Class Description : This class is responsible for holding pagination info
- * Version 1.0
- */
 public class PaginationModel
 {
 

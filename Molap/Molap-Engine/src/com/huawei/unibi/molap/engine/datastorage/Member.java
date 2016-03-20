@@ -17,26 +17,12 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwdh/HjOjN0Brs7b7TRorj6S6iAIeaqK90lj7BAM
-GSGxBp3CptKgZR+CmDnfprc4NURttlQ44HomkiyKqCdSMjxhU96vLVMyEzQcCXz887HhlNDU
-r00eVy5GA8x+1loakpV4F2PotEmTHLPSFjxD70Zf7F3O3tfI7wClnqx88RrFpw==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.datastorage;
 
 import java.util.Arrays;
 
 import com.huawei.unibi.molap.util.ByteUtil;
 
-/**
- * @author R00900208
- * 
- */
 public class Member
 {
 

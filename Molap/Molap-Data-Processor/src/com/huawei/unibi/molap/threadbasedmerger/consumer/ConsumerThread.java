@@ -17,22 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwcfJtSMNYgnOYiEQwbS13nxM8hk/dmbY4B4u+tG
-aRAl/uuyIii2kxoHP4E3CI7RCeEqpOT/7rfB3ypLUrTx51VVplzlYT50hS2m5gA90bn4f/rh
-NlWN5qRhkM2cn0nfDrb1hdMkhOwGoBeDYv/2aoPzeTQdPw5UkR1UGMLggPtEtg==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2014
- * =====================================
-*/
 
 package com.huawei.unibi.molap.threadbasedmerger.consumer;
 
@@ -50,15 +34,6 @@ import com.huawei.unibi.molap.threadbasedmerger.container.Container;
 import com.huawei.unibi.molap.threadbasedmerger.iterator.RecordIterator;
 import com.huawei.unibi.molap.util.MolapDataProcessorLogEvent;
 
-/**
- * Project Name NSE V3R7C00 
- * Module Name : Molap Data Processor
- * Author K00900841
- * Created Date :10-June-2014 6:42:29 PM
- * FileName : ConsumerThread.java
- * Class Description : Consumer Thread class 
- * Version 1.0
- */
 public class ConsumerThread implements Callable<Void>
 {
     /**

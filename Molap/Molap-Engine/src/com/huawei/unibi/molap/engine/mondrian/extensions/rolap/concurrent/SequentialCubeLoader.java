@@ -17,35 +17,10 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwfQVwqh74rUY6n+OZ2pUrkn1TkkvO60rFu08DZa
-JnQq9LjRGTxZ4y8Wv3AC4kEbx7TN9PW5eYW/mevY229AXvGNzya25Yz6N9tMq25NedwkyZf2
-sgGKThgCN6WfO5vG+MEO0XePZCJXv214VG7rkTZs3lsJD9afnVb36PnWY4+huA==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
 package com.huawei.unibi.molap.engine.mondrian.extensions.rolap.concurrent;
 
-//import java.util.ArrayList;
 import java.util.LinkedList;
-//import java.util.concurrent.ExecutorService;
-//import java.util.concurrent.Executors;
-//import java.util.concurrent.Future;
 
-//import com.huawei.iweb.platform.logging.LogService;
-//import com.huawei.iweb.platform.logging.LogServiceFactory;
-//import com.huawei.unibi.molap.engine.util.MolapEngineLogEvent;
-
-
-/**
- * Project Name NSE V3R7C00 
- * Module Name : MOLAP
- * Author :C00900810
- * Created Date :02-Aug-2013
- * FileName : SequentialCubeLoader.java
- * Class Description : 
- * Version 1.0
- */
 public class SequentialCubeLoader implements ICubeLoader
 {
 

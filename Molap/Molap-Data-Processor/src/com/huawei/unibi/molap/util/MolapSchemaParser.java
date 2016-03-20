@@ -17,27 +17,8 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwddts1/q4bCGDA4M3dH8C2PEEMnfDqqdF4ZhcSc
-1BeEnDWeOoYTjBMN/90ATcty+MYmNerGxMV571rJzRW6iPaB7l7Yrn39gNdXs3yrKk4YARzK
-PV4BD10UZ0b9nnLeXk9+ccxPFyU1cVkldnnnwfz3qe2AsYjGn6YG1wPcqmyw3w==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2011
- * =====================================
- *
- */
 package com.huawei.unibi.molap.util;
 
-//import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -87,16 +68,6 @@ import com.huawei.unibi.molap.olap.MolapDef.Table;
 import com.huawei.unibi.molap.olap.Util;
 import com.huawei.unibi.molap.schema.metadata.AggregateTable;
 
-
-/**
- * Project Name NSE V3R7C00 
- * Module Name : MOLAP
- * Author :C00900810
- * Created Date :24-Jun-2013
- * FileName : MolapSchemaParser.java
- * Class Description : 
- * Version 1.0
- */
 public final class MolapSchemaParser
 {
     /**
@@ -112,21 +83,7 @@ public final class MolapSchemaParser
     private static final LogService LOGGER = LogServiceFactory
             .getLogService(GraphGenerator.class.getName());
 
-//    public static void main(String[] args)
-//    {
-//        Schema loadXML = loadXML("C:\\P1.xml");
-//        Cube mondrianCube = MolapSchemaParser.getMondrianCube(loadXML, "SINGLE_CUBE");
-//        
-//        AggregateTable[] aggregateTable = getAggregateTable(mondrianCube, loadXML);
-//        
-//        for(int i = 0;i < aggregateTable.length;i++)
-//        {
-//            System.out.println(Arrays.toString(aggregateTable[i].getAggLevels()));
-//            System.out.println(Arrays.toString(aggregateTable[i].getActualAggLevels()));
-//        }
-//        System.out.println();
-//    }
-    
+
     private MolapSchemaParser()
     {
     	

@@ -17,31 +17,12 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwdh/HjOjN0Brs7b7TRorj6S6iAIeaqK90lj7BAM
-GSGxBukTIqRm1sozxUScw8EZSSNPEGSqLD0QoN3tlautCbcuZfTm5sduVfjiRzbe1bSK1Tp7
-2LaEaIRsXVDsa6xTbGSK6k3Oz1kLUUV0cmM521HlMRfIGZHmtmXt6+ySXkLTBg==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.datasource;
 
 //import org.apache.log4j.Logger;
 
 /**
- * Project Name NSE V3R7C00
- * 
- * Module Name : Molap Engine
- * 
- * Author K00900841
- * 
- * Created Date :13-May-2013 3:35:33 PM
- * 
- * FileName : MolapDataSource.java
- * 
+ *
  * Class Description : This class will be used for getting the molap data source
  * 
  * Version 1.0

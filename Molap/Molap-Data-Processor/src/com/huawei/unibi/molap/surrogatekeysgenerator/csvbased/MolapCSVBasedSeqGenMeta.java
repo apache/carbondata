@@ -17,22 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwcfJtSMNYgnOYiEQwbS13nxM8hk/dmbY4B4u+tG
-aRAl/g0Ye9xqmTJk/cYaqtL2LaYz8T8UXb6O/7qVJZ5/8R64H9a+l43HxSY5vkobopPvlBqZ
-pV+sWATiYYreipZE6LcCYErfAEBTS79ZPtCWwREOQWTC/X1CY4ZAPqdbZAFXlQ==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
-*/
 
 package com.huawei.unibi.molap.surrogatekeysgenerator.csvbased;
 
@@ -75,15 +59,6 @@ import com.huawei.unibi.molap.constants.MolapCommonConstants;
 import com.huawei.unibi.molap.schema.metadata.HierarchiesInfo;
 import com.huawei.unibi.molap.util.MolapDataProcessorUtil;
 
-/**
- * Project Name NSE V3R7C00 
- * Module Name : 
- * Author V00900840
- * Created Date :11-Jul-2013 5:17:46 PM
- * FileName : MolapCSVBasedSeqGenMeta.java
- * Class Description :
- * Version 1.0
- */
 public class MolapCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaInterface
 {
 

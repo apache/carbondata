@@ -17,24 +17,9 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwcz8AOhvEHjQfa55oxvUSJWRQCwLl+VwWEHaV7n
-0eFj3Ww4idzTXx0aANa2BReClGe5e8qNxoNThLqnI9OmxTbDp08cbYBnPMHiSnS1yMFFnZFB
-XAAeBRp2QHWtYAyB5auGVhhds1xwaCsRS/tXaD8nLSu4SPgPoajf1EovBuKQ9A==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.mondrian.extensions;
 
-//import org.apache.log4j.Logger;
 
-/**
- * @author R00900208
- * 
- */
 public class MolapDataSourceFactory
 {
 //    /**

@@ -17,24 +17,11 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwedLwWEET5JCCp2J65j3EiB2PJ4ohyqaGEDuXyJ
-TTt3d8oJymTCbXM1fNGwIDCA7Qn3tZayJ9EvwXp5999kSnJLK8nD85uErOWaRbKpS4K9y+3u
-0irUamZCkpRcYrYnddJsrL7JEvlUWG1ZsmTrRoDbcNbqy2J9VsnMavB/zbr1VA==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.executer.overload;
 
-//import com.huawei.unibi.molap.engine.executer.MolapExecutor;
-//import com.huawei.unibi.molap.engine.executer.MolapQueryExecutorModel;
 
 /**
  * This is overload control thread task
- * @author R00900208
  *
  */
 public class MolapQueryExecutorTask //extends AbstractUniBIInterruptableTask

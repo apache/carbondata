@@ -17,35 +17,12 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwcAIRTtLWBkMMN+iqJ62JNQb/MYFaBoemC1VlrU
-n+vkOWKIF8yylyDUXjxfZcD3aabUxswGzGGVG5joPLk1NNERZeX3wEZOJ/T9qIE2JJar75I3
-FgJgasOUPeXz9vgELP/hKQu7VZVZ44fUuIfMSAne+Chu8gAn690wNtCHvOKcQA==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.executer.calcexp.impl;
 
-//import mondrian.mdx.MemberExpr;
-//import mondrian.mdx.ResolvedFunCall;
-//import mondrian.olap.Exp;
-//import mondrian.olap.Literal;
-//import mondrian.rolap.RolapHierarchy.RolapCalculatedMeasure;
-
-//import com.huawei.unibi.molap.engine.executer.calcexp.CalCExpressionName;
-//import com.huawei.unibi.molap.engine.executer.calcexp.CalcExpressionFactory;
-//import com.huawei.unibi.molap.engine.executer.calcexp.MolapCalcExpressionResolverUtil;
 import com.huawei.unibi.molap.engine.executer.calcexp.MolapCalcFunction;
 import com.huawei.unibi.molap.engine.schema.metadata.Pair;
 import com.huawei.unibi.molap.olap.Exp;
 
-/**
- * @author R00900208
- *
- */
 public abstract class AbstractMolapCalcFunction implements MolapCalcFunction
 {
 

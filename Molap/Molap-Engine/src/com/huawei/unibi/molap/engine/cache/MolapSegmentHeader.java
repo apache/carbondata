@@ -17,26 +17,12 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwdh/HjOjN0Brs7b7TRorj6S6iAIeaqK90lj7BAM
-GSGxBhD+xZAwJhttXwF7/kP1XshrM2dEfvn4L1hnki8I8pg5mgCqvyCgc3LoqhvjFI7EockQ
-mPFgx95NoPYzdZ2ttTauvYgbYxeh1oJJVbN7QIugxVW5WdJLO6wbVv8XYOpyXg==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * 
- */
 package com.huawei.unibi.molap.engine.cache;
 
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * @author R00900208
- *
- */
 public class MolapSegmentHeader implements Serializable
 {
     

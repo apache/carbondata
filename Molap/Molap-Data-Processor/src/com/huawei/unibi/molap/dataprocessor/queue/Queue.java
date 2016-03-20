@@ -17,13 +17,7 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwfnVI3c/udSMK6An9Lipq6FjccIMKj41/T4EBXl
-K2tBN7ovKNbAOcEDl1zA9SLse1Va7O8cElyNt5pz0KRMcHUQwk1ygbuGdJnsD7xh6cRXtgCB
-y04Ngl/4JKPiXGzkdFGwQy8WnRZF5P/mhod9uc+dZnLqSMsFm1vfY+9SPtYH7A==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
+
 package com.huawei.unibi.molap.dataprocessor.queue;
 
 /**

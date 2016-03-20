@@ -17,24 +17,6 @@
  * under the License.
  */
 
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwfQVwqh74rUY6n+OZ2pUrkn1TkkvO60rFu08DZa
-JnQq9KP8fVkM5irumFiBgixQEsTPNpasPy6v6tObxBT+/1oL0R8JGigu21ByAO5BOzrGUrYX
-Mo3M1Fie29uc8GlvOsJ+w/SLeBp9APu+pFjZVgyjYIbtvxmcKZMR0xr0FhE/Dw==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.engine.util;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -71,16 +53,7 @@ import com.huawei.unibi.molap.util.MolapProperties;
 import com.huawei.unibi.molap.util.MolapUtil;
 
 /**
- * Project Name NSE V3R7C00
- * 
- * Module Name : Molap
- * 
- * Author K00900841
- * 
- * Created Date :13-May-2013 3:35:33 PM
- * 
- * FileName : CacheUtil.java
- * 
+ *
  * Class Description : This class will be used for prepare member and
  * hierarchies cache , it will read member and hierarchies files to prepare
  * cache Dimension: Filename = DimensionName Columns = 2 Rows =
