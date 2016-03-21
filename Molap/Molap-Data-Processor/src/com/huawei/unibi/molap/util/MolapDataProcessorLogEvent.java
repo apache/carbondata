@@ -21,8 +21,7 @@ package com.huawei.unibi.molap.util;
 
 import com.huawei.iweb.platform.logging.LogEvent;
 
-public enum MolapDataProcessorLogEvent implements LogEvent
-{
+public enum MolapDataProcessorLogEvent implements LogEvent {
     /**
      * MOLAPENGINE_MSG
      */
@@ -30,32 +29,23 @@ public enum MolapDataProcessorLogEvent implements LogEvent
 
     private String eventCode;
 
-    private MolapDataProcessorLogEvent(final String eventCode)
-    {
+    private MolapDataProcessorLogEvent(final String eventCode) {
         this.eventCode = eventCode;
     }
 
     /**
-     * 
-     * 
      * @see com.huawei.iweb.platform.logging.LogEvent#getEventCode()
-     * 
      */
 
-    public String getEventCode()
-    {
+    public String getEventCode() {
         return eventCode;
     }
 
     /**
-     * 
-     * 
      * @see com.huawei.iweb.platform.logging.LogEvent#getModuleName()
-     * 
      */
 
-    public String getModuleName()
-    {
+    public String getModuleName() {
         return "MOLAP_DATAPROCESSOR";
     }
 

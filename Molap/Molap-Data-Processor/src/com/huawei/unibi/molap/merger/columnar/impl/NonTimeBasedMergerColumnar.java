@@ -31,50 +31,41 @@ import com.huawei.unibi.molap.schema.metadata.MolapColumnarFactMergerInfo;
 import com.huawei.unibi.molap.store.writer.exception.MolapDataWriterException;
 import com.huawei.unibi.molap.util.ByteUtil;
 
-public class NonTimeBasedMergerColumnar extends ColumnarFactFileMerger
-{
+public class NonTimeBasedMergerColumnar extends ColumnarFactFileMerger {
 
     /**
      * record holder heap
      */
     private AbstractQueue<MolapDataIterator<MolapSurrogateTupleHolder>> recordHolderHeap;
 
-    public NonTimeBasedMergerColumnar(
-            MolapColumnarFactMergerInfo molapColumnarFactMergerInfo, int currentRestructNumber)
-    {
+    public NonTimeBasedMergerColumnar(MolapColumnarFactMergerInfo molapColumnarFactMergerInfo,
+            int currentRestructNumber) {
         super(molapColumnarFactMergerInfo, currentRestructNumber);
-        if(leafTupleIteratorList.size() > 0)
-        {
+        if (leafTupleIteratorList.size() > 0) {
             recordHolderHeap = new PriorityQueue<MolapDataIterator<MolapSurrogateTupleHolder>>(
                     leafTupleIteratorList.size(), new MolapMdkeyComparator());
         }
     }
 
-    @Override
-    public void mergerSlice() throws SliceMergerException
-    {
+    @Override public void mergerSlice() throws SliceMergerException {
         // index
         int index = 0;
-        try
-        {
+        try {
             dataHandler.initialise();
             // add first record from each file
-            for(MolapDataIterator<MolapSurrogateTupleHolder> leaftTupleIterator : this.leafTupleIteratorList)
-            {
+            for (MolapDataIterator<MolapSurrogateTupleHolder> leaftTupleIterator : this.leafTupleIteratorList) {
                 this.recordHolderHeap.add(leaftTupleIterator);
                 index++;
             }
             MolapDataIterator<MolapSurrogateTupleHolder> poll = null;
-            while(index > 1)
-            {
+            while (index > 1) {
                 // poll the top record
-                 poll = this.recordHolderHeap.poll();
+                poll = this.recordHolderHeap.poll();
                 // get the mdkey
                 addRow(poll.getNextData());
                 // if there is no record in the leaf and all then decrement the
                 // index
-                if(!poll.hasNext())
-                {
+                if (!poll.hasNext()) {
                     index--;
                     continue;
                 }
@@ -85,40 +76,32 @@ public class NonTimeBasedMergerColumnar extends ColumnarFactFileMerger
             // if record holder is not empty then poll the slice holder from
             // heap
             poll = this.recordHolderHeap.poll();
-            while(true)
-            {
+            while (true) {
                 addRow(poll.getNextData());
                 // check if leaf contains no record
-                if(!poll.hasNext())
-                {
+                if (!poll.hasNext()) {
                     break;
                 }
                 poll.fetchNextData();
             }
             this.dataHandler.finish();
 
-        }
-        catch(MolapDataWriterException e)
-        {
+        } catch (MolapDataWriterException e) {
             throw new SliceMergerException(
-                    "Problem while getting the file channel for Destination file: ",
-                    e);
-        }
-        finally
-        {
+                    "Problem while getting the file channel for Destination file: ", e);
+        } finally {
             this.dataHandler.closeHandler();
         }
     }
-    
-    private class MolapMdkeyComparator implements Comparator<MolapDataIterator<MolapSurrogateTupleHolder>>
-    {
 
-        @Override
-        public int compare(MolapDataIterator<MolapSurrogateTupleHolder> o1,
-                MolapDataIterator<MolapSurrogateTupleHolder> o2)
-        {
-            return ByteUtil.UnsafeComparer.INSTANCE.compareTo(o1.getNextData().getMdKey(), o2.getNextData().getMdKey());
+    private class MolapMdkeyComparator
+            implements Comparator<MolapDataIterator<MolapSurrogateTupleHolder>> {
+
+        @Override public int compare(MolapDataIterator<MolapSurrogateTupleHolder> o1,
+                MolapDataIterator<MolapSurrogateTupleHolder> o2) {
+            return ByteUtil.UnsafeComparer.INSTANCE
+                    .compareTo(o1.getNextData().getMdKey(), o2.getNextData().getMdKey());
         }
-        
+
     }
 }

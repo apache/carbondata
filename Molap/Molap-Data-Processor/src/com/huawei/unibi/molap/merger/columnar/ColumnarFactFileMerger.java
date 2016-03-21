@@ -36,25 +36,20 @@ import com.huawei.unibi.molap.store.MolapFactHandler;
 import com.huawei.unibi.molap.store.writer.exception.MolapDataWriterException;
 import com.huawei.unibi.molap.util.MolapSliceAndFiles;
 
-
-public abstract class ColumnarFactFileMerger
-{
-
-    /**
-     * otherMeasureIndex
-     */
-    protected int[] otherMeasureIndex;
-
-    /**
-     * customMeasureIndex
-     */
-    protected int[] customMeasureIndex;
+public abstract class ColumnarFactFileMerger {
 
     /**
      * dataHandler
      */
     public MolapFactHandler dataHandler;
-
+    /**
+     * otherMeasureIndex
+     */
+    protected int[] otherMeasureIndex;
+    /**
+     * customMeasureIndex
+     */
+    protected int[] customMeasureIndex;
     /**
      * mdkeyLength
      */
@@ -62,93 +57,74 @@ public abstract class ColumnarFactFileMerger
 
     protected List<MolapDataIterator<MolapSurrogateTupleHolder>> leafTupleIteratorList;
 
-    public ColumnarFactFileMerger(
-            MolapColumnarFactMergerInfo molapColumnarFactMergerInfo, int currentRestructNumber)
-    {
+    public ColumnarFactFileMerger(MolapColumnarFactMergerInfo molapColumnarFactMergerInfo,
+            int currentRestructNumber) {
         this.mdkeyLength = molapColumnarFactMergerInfo.getMdkeyLength();
-        List<Integer> otherMeasureIndexList = new ArrayList<Integer>(
-                MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
-        List<Integer> customMeasureIndexList = new ArrayList<Integer>(
-                MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
-        for(int i = 0;i < molapColumnarFactMergerInfo.getType().length;i++)
-        {
-            if(molapColumnarFactMergerInfo.getType()[i] != 'c')
-            {
+        List<Integer> otherMeasureIndexList =
+                new ArrayList<Integer>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+        List<Integer> customMeasureIndexList =
+                new ArrayList<Integer>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+        for (int i = 0; i < molapColumnarFactMergerInfo.getType().length; i++) {
+            if (molapColumnarFactMergerInfo.getType()[i] != 'c') {
                 otherMeasureIndexList.add(i);
-            }
-            else
-            {
+            } else {
                 customMeasureIndexList.add(i);
             }
         }
         otherMeasureIndex = new int[otherMeasureIndexList.size()];
         customMeasureIndex = new int[customMeasureIndexList.size()];
-        for(int i = 0;i < otherMeasureIndex.length;i++)
-        {
+        for (int i = 0; i < otherMeasureIndex.length; i++) {
             otherMeasureIndex[i] = otherMeasureIndexList.get(i);
         }
-        for(int i = 0;i < customMeasureIndex.length;i++)
-        {
+        for (int i = 0; i < customMeasureIndex.length; i++) {
             customMeasureIndex[i] = customMeasureIndexList.get(i);
         }
 
         this.leafTupleIteratorList = new ArrayList<MolapDataIterator<MolapSurrogateTupleHolder>>(
                 molapColumnarFactMergerInfo.getSlicesFromHDFS().size());
         MolapDataIterator<MolapSurrogateTupleHolder> leaftTupleIterator = null;
-        for(MolapSliceAndFiles sliceInfo : molapColumnarFactMergerInfo
-                .getSlicesFromHDFS())
-        {
+        for (MolapSliceAndFiles sliceInfo : molapColumnarFactMergerInfo.getSlicesFromHDFS()) {
 
-            leaftTupleIterator = new MolapLeafTupleWrapperIterator(sliceInfo.getKeyGen(), molapColumnarFactMergerInfo.getGlobalKeyGen(), new MolapColumnarLeafTupleDataIterator(
-                    sliceInfo.getPath(), sliceInfo.getSliceFactFilesList(),
-                    getFactReaderInfo(molapColumnarFactMergerInfo), mdkeyLength));
-            if(leaftTupleIterator.hasNext())
-            {
+            leaftTupleIterator = new MolapLeafTupleWrapperIterator(sliceInfo.getKeyGen(),
+                    molapColumnarFactMergerInfo.getGlobalKeyGen(),
+                    new MolapColumnarLeafTupleDataIterator(sliceInfo.getPath(),
+                            sliceInfo.getSliceFactFilesList(),
+                            getFactReaderInfo(molapColumnarFactMergerInfo), mdkeyLength));
+            if (leaftTupleIterator.hasNext()) {
                 leaftTupleIterator.fetchNextData();
                 leafTupleIteratorList.add(leaftTupleIterator);
             }
         }
-        dataHandler = new MolapFactDataHandlerColumnarMerger(
-                molapColumnarFactMergerInfo, currentRestructNumber);
+        dataHandler = new MolapFactDataHandlerColumnarMerger(molapColumnarFactMergerInfo,
+                currentRestructNumber);
     }
 
     public abstract void mergerSlice() throws SliceMergerException;
 
     private FactReaderInfo getFactReaderInfo(
-            MolapColumnarFactMergerInfo molapColumnarFactMergerInfo)
-    {
+            MolapColumnarFactMergerInfo molapColumnarFactMergerInfo) {
         FactReaderInfo factReaderInfo = new FactReaderInfo();
-        String[] aggType = new String[molapColumnarFactMergerInfo
-                .getMeasureCount()];
-        
+        String[] aggType = new String[molapColumnarFactMergerInfo.getMeasureCount()];
+
         Arrays.fill(aggType, "n");
-        if(null!=molapColumnarFactMergerInfo.getAggregators())
-        {
-            for(int i = 0;i < aggType.length;i++)
-            {
-                if(molapColumnarFactMergerInfo.getAggregators()[i]
-                        .equals(MolapCommonConstants.CUSTOM)
-                        || molapColumnarFactMergerInfo.getAggregators()[i]
-                                .equals(MolapCommonConstants.DISTINCT_COUNT))
-                {
+        if (null != molapColumnarFactMergerInfo.getAggregators()) {
+            for (int i = 0; i < aggType.length; i++) {
+                if (molapColumnarFactMergerInfo.getAggregators()[i]
+                        .equals(MolapCommonConstants.CUSTOM) || molapColumnarFactMergerInfo
+                        .getAggregators()[i].equals(MolapCommonConstants.DISTINCT_COUNT)) {
                     aggType[i] = "c";
-                }
-                else
-                {
+                } else {
                     aggType[i] = "n";
                 }
             }
         }
         factReaderInfo.setCubeName(molapColumnarFactMergerInfo.getCubeName());
-        factReaderInfo.setSchemaName(molapColumnarFactMergerInfo
-                .getSchemaName());
-        factReaderInfo.setMeasureCount(molapColumnarFactMergerInfo
-                .getMeasureCount());
+        factReaderInfo.setSchemaName(molapColumnarFactMergerInfo.getSchemaName());
+        factReaderInfo.setMeasureCount(molapColumnarFactMergerInfo.getMeasureCount());
         factReaderInfo.setTableName(molapColumnarFactMergerInfo.getTableName());
         factReaderInfo.setDimLens(molapColumnarFactMergerInfo.getDimLens());
         int[] blockIndex = new int[molapColumnarFactMergerInfo.getDimLens().length];
-        for(int i = 0;i < blockIndex.length;i++)
-        {
+        for (int i = 0; i < blockIndex.length; i++) {
             blockIndex[i] = i;
         }
         factReaderInfo.setBlockIndex(blockIndex);
@@ -159,22 +135,16 @@ public abstract class ColumnarFactFileMerger
 
     /**
      * Below method will be used to add sorted row
-     * 
+     *
      * @throws SliceMergerException
      */
-    protected void addRow(MolapSurrogateTupleHolder molapTuple)
-            throws SliceMergerException
-    {
+    protected void addRow(MolapSurrogateTupleHolder molapTuple) throws SliceMergerException {
         Object[] row = new Object[molapTuple.getMeasures().length + 1];
-        System.arraycopy(molapTuple.getMeasures(), 0, row, 0,
-                molapTuple.getMeasures().length);
+        System.arraycopy(molapTuple.getMeasures(), 0, row, 0, molapTuple.getMeasures().length);
         row[row.length - 1] = molapTuple.getMdKey();
-        try
-        {
+        try {
             this.dataHandler.addDataToStore(row);
-        }
-        catch(MolapDataWriterException e)
-        {
+        } catch (MolapDataWriterException e) {
             throw new SliceMergerException("Problem in merging the slice", e);
         }
     }

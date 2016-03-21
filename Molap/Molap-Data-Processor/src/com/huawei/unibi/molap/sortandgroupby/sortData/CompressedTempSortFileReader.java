@@ -23,33 +23,30 @@ import java.io.File;
 
 import com.huawei.unibi.molap.datastorage.store.compression.SnappyCompression.SnappyByteCompression;
 
-public class CompressedTempSortFileReader extends AbstractTempSortFileReader
-{
+public class CompressedTempSortFileReader extends AbstractTempSortFileReader {
 
     /**
      * CompressedTempSortFileReader
-     * 
+     *
      * @param measureCount
      * @param dimensionCount
      * @param tempFile
      */
-    public CompressedTempSortFileReader(int dimensionCount, int complexDimensionCount, int measureCount,
-    		File tempFile,int highCardinalityCount)
-    {
+    public CompressedTempSortFileReader(int dimensionCount, int complexDimensionCount,
+            int measureCount, File tempFile, int highCardinalityCount) {
         super(dimensionCount, complexDimensionCount, measureCount, tempFile, highCardinalityCount);
     }
 
     /**
      * below method will be used to get chunk of rows
-     * 
+     *
      * @return row
      */
-    @Override
-    public Object[][] getRow()
-    {
+    @Override public Object[][] getRow() {
         int recordLength = fileHolder.readInt(filePath);
         int byteArrayLength = fileHolder.readInt(filePath);
-        byte[] byteArrayFromFile = SnappyByteCompression.INSTANCE.unCompress(fileHolder.readByteArray(filePath, byteArrayLength));
+        byte[] byteArrayFromFile = SnappyByteCompression.INSTANCE
+                .unCompress(fileHolder.readByteArray(filePath, byteArrayLength));
         return prepareRecordFromByteBuffer(recordLength, byteArrayFromFile);
     }
 }

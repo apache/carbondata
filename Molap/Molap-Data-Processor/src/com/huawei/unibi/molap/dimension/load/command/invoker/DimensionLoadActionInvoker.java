@@ -17,34 +17,30 @@
  * under the License.
  */
 
-
 package com.huawei.unibi.molap.dimension.load.command.invoker;
 
 import com.huawei.unibi.molap.dimension.load.command.DimensionLoadCommand;
 
-public class DimensionLoadActionInvoker
-{
+public class DimensionLoadActionInvoker {
     /**
      * Dimension Load
      */
     private DimensionLoadCommand dimensionLoadCommand;
+
     /**
-     * 
-     * 
-     */
-    public DimensionLoadActionInvoker(DimensionLoadCommand loadCommand)
-    {
-        this.dimensionLoadCommand = loadCommand;
-    }
-    
-    /**
-     * Executes the command
-     * @throws Exception 
-     * 
+     *
      *
      */
-    public void execute() throws Exception
-    {
+    public DimensionLoadActionInvoker(DimensionLoadCommand loadCommand) {
+        this.dimensionLoadCommand = loadCommand;
+    }
+
+    /**
+     * Executes the command
+     *
+     * @throws Exception
+     */
+    public void execute() throws Exception {
         dimensionLoadCommand.execute();
     }
 

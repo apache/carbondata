@@ -23,67 +23,56 @@ import java.io.File;
 
 import com.huawei.unibi.molap.sortandgroupby.exception.MolapSortKeyAndGroupByException;
 
-public class MolapSortTempFileChunkWriter implements MolapSortTempFileWriter
-{
+public class MolapSortTempFileChunkWriter implements MolapSortTempFileWriter {
     /**
      * writer
      */
     private MolapSortTempFileWriter writer;
-    
+
     /**
      * recordPerLeaf
      */
     private int recordPerLeaf;
-    
+
     /**
      * MolapCompressedSortTempFileChunkWriter
-     * 
+     *
      * @param writer
      */
-    public MolapSortTempFileChunkWriter(
-            MolapSortTempFileWriter writer, int recordPerLeaf)
-    {
+    public MolapSortTempFileChunkWriter(MolapSortTempFileWriter writer, int recordPerLeaf) {
         this.writer = writer;
-        this.recordPerLeaf=recordPerLeaf;
+        this.recordPerLeaf = recordPerLeaf;
     }
 
-   
     /**
      * finish
      */
-    public void finish()
-    {
+    public void finish() {
         this.writer.finish();
     }
-   
+
     /**
-     * initialise 
+     * initialise
      */
-    public void initiaize(File file,int entryCount)
-            throws MolapSortKeyAndGroupByException
-    {
-        this.writer.initiaize(file,entryCount);
+    public void initiaize(File file, int entryCount) throws MolapSortKeyAndGroupByException {
+        this.writer.initiaize(file, entryCount);
     }
-    
+
     /**
      * Below method will be used to write the sort temp file chunk by chunk
      */
-    public void writeSortTempFile(Object[][] records)
-            throws MolapSortKeyAndGroupByException
-    {
+    public void writeSortTempFile(Object[][] records) throws MolapSortKeyAndGroupByException {
         int recordCount = 0;
         Object[][] tempRecords = null;
-        while(recordCount<records.length)
-        {
-            if(records.length-recordCount<recordPerLeaf)
-            {
-                recordPerLeaf=records.length-recordCount;
+        while (recordCount < records.length) {
+            if (records.length - recordCount < recordPerLeaf) {
+                recordPerLeaf = records.length - recordCount;
             }
             tempRecords = new Object[recordPerLeaf][];
             System.arraycopy(records, recordCount, tempRecords, 0, recordPerLeaf);
-            recordCount+=recordPerLeaf;
+            recordCount += recordPerLeaf;
             this.writer.writeSortTempFile(tempRecords);
         }
-        
+
     }
 }

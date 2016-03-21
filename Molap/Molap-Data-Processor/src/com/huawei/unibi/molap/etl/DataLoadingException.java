@@ -17,43 +17,35 @@
  * under the License.
  */
 
-
 package com.huawei.unibi.molap.etl;
 
-public class DataLoadingException extends Exception
-{
+public class DataLoadingException extends Exception {
     private static final long serialVersionUID = 1L;
 
     private long errorCode = -1;
 
-    public DataLoadingException()
-    {
+    public DataLoadingException() {
         super();
     }
 
-    public DataLoadingException(long errorCode,String message)
-    {
+    public DataLoadingException(long errorCode, String message) {
         super(message);
         this.errorCode = errorCode;
     }
 
-    public DataLoadingException(String message)
-    {
+    public DataLoadingException(String message) {
         super(message);
     }
 
-    public DataLoadingException(Throwable cause)
-    {
+    public DataLoadingException(Throwable cause) {
         super(cause);
     }
 
-    public DataLoadingException(String message, Throwable cause)
-    {
+    public DataLoadingException(String message, Throwable cause) {
         super(message, cause);
     }
 
-    public long getErrorCode()
-    {
+    public long getErrorCode() {
         return errorCode;
     }
 

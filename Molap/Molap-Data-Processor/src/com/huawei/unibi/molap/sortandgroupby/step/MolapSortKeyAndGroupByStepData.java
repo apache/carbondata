@@ -23,40 +23,32 @@ import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.step.BaseStepData;
 import org.pentaho.di.trans.step.StepDataInterface;
 
-public class MolapSortKeyAndGroupByStepData extends BaseStepData implements StepDataInterface
-{
-    
+public class MolapSortKeyAndGroupByStepData extends BaseStepData implements StepDataInterface {
+
     /**
      * outputRowMeta
      */
     private RowMetaInterface outputRowMeta;
-    
+
     /**
      * rowMeta
      */
     private RowMetaInterface rowMeta;
 
-    
-    public void setOutputRowMeta(RowMetaInterface outputRowMeta)
-    {
-        this.outputRowMeta = outputRowMeta;
-    }
-
-    public RowMetaInterface getOutputRowMeta()
-    {
+    public RowMetaInterface getOutputRowMeta() {
         return outputRowMeta;
     }
 
-    
-    public void setRowMeta(RowMetaInterface rowMeta)
-    {
-        this.rowMeta = rowMeta;
+    public void setOutputRowMeta(RowMetaInterface outputRowMeta) {
+        this.outputRowMeta = outputRowMeta;
     }
-    
-    public RowMetaInterface getRowMeta()
-    {
+
+    public RowMetaInterface getRowMeta() {
         return rowMeta;
     }
 
-   
+    public void setRowMeta(RowMetaInterface rowMeta) {
+        this.rowMeta = rowMeta;
+    }
+
 }

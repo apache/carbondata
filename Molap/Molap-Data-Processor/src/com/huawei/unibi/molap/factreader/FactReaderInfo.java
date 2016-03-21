@@ -19,9 +19,7 @@
 
 package com.huawei.unibi.molap.factreader;
 
-
-public class FactReaderInfo
-{
+public class FactReaderInfo {
     private int measureCount;
 
     private int[] dimLens;
@@ -33,74 +31,62 @@ public class FactReaderInfo
     private String tableName;
 
     private int[] blockIndex;
-    
+
     private boolean isUpdateMeasureRequired;
-    
-    public int getMeasureCount()
-    {
+
+    public int getMeasureCount() {
         return measureCount;
     }
 
-    public void setMeasureCount(int measureCount)
-    {
+    public void setMeasureCount(int measureCount) {
         this.measureCount = measureCount;
     }
 
-    public int[] getDimLens()
-    {
+    public int[] getDimLens() {
         return dimLens;
     }
 
-    public void setSchemaName(String schemaName)
-    {
-        this.schemaName = schemaName;
-    }
-    
-    public void setDimLens(int[] dimLens)
-    {
+    public void setDimLens(int[] dimLens) {
         this.dimLens = dimLens;
     }
 
-    public String getSchemaName()
-    {
+    public String getSchemaName() {
         return schemaName;
     }
-    
-    public void setCubeName(String cubeName)
-    {
-        this.cubeName = cubeName;
-    } 
 
-    public String getCubeName()
-    {
+    public void setSchemaName(String schemaName) {
+        this.schemaName = schemaName;
+    }
+
+    public String getCubeName() {
         return cubeName;
     }
 
-    public String getTableName()
-    {
+    public void setCubeName(String cubeName) {
+        this.cubeName = cubeName;
+    }
+
+    public String getTableName() {
         return tableName;
     }
 
-    public void setTableName(String tableName)
-    {
+    public void setTableName(String tableName) {
         this.tableName = tableName;
     }
 
-    public int[] getBlockIndex()
-    {
+    public int[] getBlockIndex() {
         return blockIndex;
     }
 
-    public void setBlockIndex(int[] blockIndex)
-    {
+    public void setBlockIndex(int[] blockIndex) {
         this.blockIndex = blockIndex;
     }
 
-	public boolean isUpdateMeasureRequired() {
-		return isUpdateMeasureRequired;
-	}
+    public boolean isUpdateMeasureRequired() {
+        return isUpdateMeasureRequired;
+    }
 
-	public void setUpdateMeasureRequired(boolean isUpdateMeasureRequired) {
-		this.isUpdateMeasureRequired = isUpdateMeasureRequired;
-	}
+    public void setUpdateMeasureRequired(boolean isUpdateMeasureRequired) {
+        this.isUpdateMeasureRequired = isUpdateMeasureRequired;
+    }
 }

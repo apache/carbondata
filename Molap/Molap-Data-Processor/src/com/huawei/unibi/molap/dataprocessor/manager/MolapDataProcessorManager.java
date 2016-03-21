@@ -24,47 +24,44 @@ import java.util.Map;
 
 import com.huawei.unibi.molap.constants.MolapCommonConstants;
 
-public final class MolapDataProcessorManager
-{
+public final class MolapDataProcessorManager {
     /**
      * instance
      */
     private static final MolapDataProcessorManager INSTANCE = new MolapDataProcessorManager();
-    
+
     /**
      * managerHandlerMap
      */
-    private Map<String,Object> managerHandlerMap;
-    
+    private Map<String, Object> managerHandlerMap;
+
     /**
      * private constructor
      */
-    private MolapDataProcessorManager()
-    {
-        managerHandlerMap= new HashMap<String, Object>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+    private MolapDataProcessorManager() {
+        managerHandlerMap =
+                new HashMap<String, Object>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
     }
-    
+
     /**
-     * Get instance method will be used to get the class instance 
+     * Get instance method will be used to get the class instance
+     *
      * @return
      */
-    public static MolapDataProcessorManager getInstance()
-    {
+    public static MolapDataProcessorManager getInstance() {
         return INSTANCE;
     }
-    
 
     /**
      * Below method will be used to get the lock object for all the data processing request.
      * form the local map, if empty than it will update the map and return the lock object
+     *
      * @param key
      * @return
      */
-    public synchronized Object getDataProcessingLockObject(String key)
-    {
+    public synchronized Object getDataProcessingLockObject(String key) {
         Object object = managerHandlerMap.get(key);
-        if(null==object)
-        {
+        if (null == object) {
             object = new Object();
             managerHandlerMap.put(key, object);
         }

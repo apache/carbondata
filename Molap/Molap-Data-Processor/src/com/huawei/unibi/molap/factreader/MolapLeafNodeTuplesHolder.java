@@ -21,68 +21,61 @@ package com.huawei.unibi.molap.factreader;
 
 import com.huawei.unibi.molap.datastorage.store.MeasureDataWrapper;
 
-public class MolapLeafNodeTuplesHolder
-{
+public class MolapLeafNodeTuplesHolder {
     /**
      * mdkey
      */
     private byte[] mdkey;
-    
+
     /**
      * measureDataWrapper
      */
     private MeasureDataWrapper measureDataWrapper;
-    
+
     /**
      * entryCount
      */
     private int entryCount;
-    
+
     /**
      * @return the mdkey
      */
-    public byte[] getMdKey()
-    {
+    public byte[] getMdKey() {
         return mdkey;
     }
 
     /**
      * @param mdkey the mdkey to set
      */
-    public void setMdKey(byte[] mdkey)
-    {
+    public void setMdKey(byte[] mdkey) {
         this.mdkey = mdkey;
     }
 
     /**
      * @return the measureDataWrapper
      */
-    public MeasureDataWrapper getMeasureDataWrapper()
-    {
+    public MeasureDataWrapper getMeasureDataWrapper() {
         return measureDataWrapper;
     }
 
     /**
      * @param measureDataWrapper the measureDataWrapper to set
      */
-    public void setMeasureDataWrapper(MeasureDataWrapper measureDataWrapper)
-    {
+    public void setMeasureDataWrapper(MeasureDataWrapper measureDataWrapper) {
         this.measureDataWrapper = measureDataWrapper;
     }
 
     /**
      * @return the entryCount
      */
-    public int getEntryCount()
-    {
+    public int getEntryCount() {
         return entryCount;
     }
 
     /**
      * @param entryCount the entryCount to set
      */
-    public void setEntryCount(int entryCount)
-    {
+    public void setEntryCount(int entryCount) {
         this.entryCount = entryCount;
     }
 }

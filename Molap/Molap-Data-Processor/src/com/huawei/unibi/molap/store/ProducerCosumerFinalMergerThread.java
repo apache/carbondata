@@ -34,29 +34,28 @@ import com.huawei.unibi.molap.threadbasedmerger.iterator.RecordIterator;
 import com.huawei.unibi.molap.util.ByteUtil;
 import com.huawei.unibi.molap.util.MolapDataProcessorLogEvent;
 
-public class ProducerCosumerFinalMergerThread implements Callable<Void>
-{
+public class ProducerCosumerFinalMergerThread implements Callable<Void> {
     /**
      * LOGGER
      */
-    private static final LogService LOGGER = LogServiceFactory
-            .getLogService(ProducerCosumerFinalMergerThread.class.getName());
-    
+    private static final LogService LOGGER =
+            LogServiceFactory.getLogService(ProducerCosumerFinalMergerThread.class.getName());
+
     /**
      * dataHandler
      */
     private MolapFactHandler dataHandler;
-    
+
     /**
      * measureCount
      */
     private int measureCount;
-    
+
     /**
      * mdKeyIndex
      */
     private int mdKeyIndex;
-    
+
     /**
      * container
      */
@@ -71,136 +70,108 @@ public class ProducerCosumerFinalMergerThread implements Callable<Void>
      * recordHolderHeap
      */
     private AbstractQueue<RecordIterator> recordHolderHeap;
-    
+
     /**
      * ProducerCosumerFinalMergerThread
-     * 
+     *
      * @param dataHanlder
      * @param measureCount
      * @param mdKeyIndex
      */
-    public ProducerCosumerFinalMergerThread(MolapFactHandler dataHanlder,
-            int measureCount, int mdKeyIndex, List<Container> producerContainer)
-    {
+    public ProducerCosumerFinalMergerThread(MolapFactHandler dataHanlder, int measureCount,
+            int mdKeyIndex, List<Container> producerContainer) {
         this.dataHandler = dataHanlder;
         this.measureCount = measureCount;
         this.mdKeyIndex = mdKeyIndex;
         this.producerContainer = producerContainer;
     }
 
-    @Override
-    public Void call() throws Exception
-    {
-        RecordIterator[] iterators = new RecordIterator[this.producerContainer
-                .size()];
-        RecordIterator iterator= null;
-      //CHECKSTYLE:OFF    Approval No:Approval-V3R8C00_015
-        for(Container container : producerContainer)
-        {
+    @Override public Void call() throws Exception {
+        RecordIterator[] iterators = new RecordIterator[this.producerContainer.size()];
+        RecordIterator iterator = null;
+        //CHECKSTYLE:OFF    Approval No:Approval-V3R8C00_015
+        for (Container container : producerContainer) {
             iterator = new RecordIterator(container);
             iterators[producerCounter] = iterator;
             producerCounter++;
         }
         int counter = 0;
-        try
-        {
-            if(producerCounter == 2)
-            {
-                Object[] row1= null;
+        try {
+            if (producerCounter == 2) {
+                Object[] row1 = null;
                 Object[] row2 = null;
-                while(iterators[0].hasNext() && iterators[1].hasNext())
-                {
+                while (iterators[0].hasNext() && iterators[1].hasNext()) {
                     row1 = iterators[0].getRow();
                     row2 = iterators[1].getRow();
-                    if(ByteUtil.compare((byte[])row1[measureCount],
-                            (byte[])row2[measureCount]) > 0)
-                    {
+                    if (ByteUtil.compare((byte[]) row1[measureCount], (byte[]) row2[measureCount])
+                            > 0) {
                         dataHandler.addDataToStore(row2);
                         iterators[1].next();
                         counter++;
-                    }
-                    else
-                    {
+                    } else {
                         dataHandler.addDataToStore(row1);
                         iterators[0].next();
                         counter++;
                     }
                 }
-                while(iterators[0].hasNext())
-                {
+                while (iterators[0].hasNext()) {
                     dataHandler.addDataToStore(iterators[0].getRow());
                     iterators[0].next();
                     counter++;
                 }
-                while(iterators[1].hasNext())
-                {
+                while (iterators[1].hasNext()) {
                     dataHandler.addDataToStore(iterators[1].getRow());
                     iterators[1].next();
                     counter++;
                 }
-                LOGGER.info(
-                        MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                         "************************************************ Total number of records processed"
                                 + counter);
-            }
-
-            else if(producerCounter == 1)
-            {
-                while(iterators[0].hasNext())
-                {
+            } else if (producerCounter == 1) {
+                while (iterators[0].hasNext()) {
                     dataHandler.addDataToStore(iterators[0].getRow());
                     iterators[0].next();
                     counter++;
                 }
-                LOGGER.info(
-                        MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                         "************************************************ Total number of records processed"
                                 + counter);
-            }
-            else
-            {
+            } else {
                 createRecordHolderQueue(iterators);
                 initialiseHeap(iterators);
                 fillBuffer();
             }
-        }
-        catch(Exception e)
-        {
+        } catch (Exception e) {
             LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
-            throw new MolapDataWriterException(e.getMessage(),e);
+            throw new MolapDataWriterException(e.getMessage(), e);
         }
-        
+
         return null;
     }
 
     /**
      * below method will be used to initialise the heap
+     *
      * @param iterators
      * @throws MolapSortKeyException
      */
-    private void initialiseHeap(RecordIterator[] iterators)
-            throws MolapSortKeyException
-    {
-        for(RecordIterator iterator : iterators)
-        {
-            if(iterator.hasNext())
-            {
+    private void initialiseHeap(RecordIterator[] iterators) throws MolapSortKeyException {
+        for (RecordIterator iterator : iterators) {
+            if (iterator.hasNext()) {
                 this.recordHolderHeap.add(iterator);
             }
         }
     }
+
     /**
      * This method will be used to get the sorted record from file
-     * 
+     *
      * @return sorted record sorted record
      * @throws MolapDataWriterException
-     * 
      */
-    private void fillBuffer() throws MolapDataWriterException
-    {
-        int counter=0;
-        while(producerCounter > 0)
-        {
+    private void fillBuffer() throws MolapDataWriterException {
+        int counter = 0;
+        while (producerCounter > 0) {
             Object[] row = null;
             // poll the top object from heap
             // heap maintains binary tree which is based on heap condition
@@ -216,8 +187,7 @@ public class ProducerCosumerFinalMergerThread implements Callable<Void>
             poll.next();
             // get the row from chunk
             // check if there no entry present
-            if(!poll.hasNext())
-            {
+            if (!poll.hasNext()) {
                 dataHandler.addDataToStore(row);
                 counter++;
                 producerCounter--;
@@ -227,9 +197,8 @@ public class ProducerCosumerFinalMergerThread implements Callable<Void>
             counter++;
             this.recordHolderHeap.add(poll);
         }
-      
-        LOGGER.info(
-                MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+
+        LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                 "************************************************ Total number of records processed"
                         + counter);
     }
@@ -237,29 +206,22 @@ public class ProducerCosumerFinalMergerThread implements Callable<Void>
     /**
      * This method will be used to create the heap which will be used to
      * hold the chunk of data
-     * 
      */
-    private void createRecordHolderQueue(RecordIterator[] iteratorsLocal)
-    {
+    private void createRecordHolderQueue(RecordIterator[] iteratorsLocal) {
         // creating record holder heap
-        this.recordHolderHeap = new PriorityQueue<RecordIterator>(
-                iteratorsLocal.length, new Comparator<RecordIterator>()
-                {
-                    public int compare(RecordIterator recordItr1, 
-                            RecordIterator recordItr2) 
-                    {
-                        byte[] b1 = (byte[])recordItr1.getRow()[mdKeyIndex];
-                        byte[] b2 = (byte[])recordItr2.getRow()[mdKeyIndex];
+        this.recordHolderHeap = new PriorityQueue<RecordIterator>(iteratorsLocal.length,
+                new Comparator<RecordIterator>() {
+                    public int compare(RecordIterator recordItr1, RecordIterator recordItr2) {
+                        byte[] b1 = (byte[]) recordItr1.getRow()[mdKeyIndex];
+                        byte[] b2 = (byte[]) recordItr2.getRow()[mdKeyIndex];
                         int cmpVal = 0;
                         int a = 0;
                         int b = 0;
-                        for(int i = 0;i < b2.length;i++)
-                        {
+                        for (int i = 0; i < b2.length; i++) {
                             a = b1[i] & 0xFF;
                             b = b2[i] & 0xFF;
-                            cmpVal = a - b; 
-                            if(cmpVal != 0)
-                            {
+                            cmpVal = a - b;
+                            if (cmpVal != 0) {
                                 return cmpVal;
                             }
                         }

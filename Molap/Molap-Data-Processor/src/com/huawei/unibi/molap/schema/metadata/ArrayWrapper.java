@@ -22,57 +22,43 @@ package com.huawei.unibi.molap.schema.metadata;
 import java.io.Serializable;
 import java.util.Arrays;
 
-public class ArrayWrapper implements Serializable
-{
-	
+public class ArrayWrapper implements Serializable {
+
     /**
-     * 
      * Comment for <code>serialVersionUID</code>
-     * 
      */
     private static final long serialVersionUID = -2016551342632572869L;
-    
+
     /**
      * data
      */
     private int[] data;
 
-    public ArrayWrapper(int[] data)
-    {
-        if (data == null)
-        {
+    public ArrayWrapper(int[] data) {
+        if (data == null) {
             throw new IllegalArgumentException();
         }
         this.data = data;
     }
-    
-    public void setData(int[] data)
-    {
-    	this.data = data;
-    }
 
-    @Override
-    public boolean equals(Object other)
-    {
-        if(other instanceof ArrayWrapper)
-        {
-            return Arrays.equals(data, ((ArrayWrapper)other).data);
-        }
-        else
-        {
+    @Override public boolean equals(Object other) {
+        if (other instanceof ArrayWrapper) {
+            return Arrays.equals(data, ((ArrayWrapper) other).data);
+        } else {
             return false;
         }
 
     }
 
-    @Override
-    public int hashCode()
-    {
-    	return Arrays.hashCode(data);
+    @Override public int hashCode() {
+        return Arrays.hashCode(data);
     }
-    
-    public int[] getData()
-    {
-    	return data;
+
+    public int[] getData() {
+        return data;
+    }
+
+    public void setData(int[] data) {
+        this.data = data;
     }
 }

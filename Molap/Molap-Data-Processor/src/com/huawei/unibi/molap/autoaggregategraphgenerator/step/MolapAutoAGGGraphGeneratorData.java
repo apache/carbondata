@@ -23,18 +23,17 @@ import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.step.BaseStepData;
 import org.pentaho.di.trans.step.StepDataInterface;
 
-public class MolapAutoAGGGraphGeneratorData extends BaseStepData implements StepDataInterface
-{
-    /**
-     * constructor
-     */
-    public MolapAutoAGGGraphGeneratorData()
-    {
-        super();
-    }
+public class MolapAutoAGGGraphGeneratorData extends BaseStepData implements StepDataInterface {
     /**
      * outputRowMeta
      */
     protected RowMetaInterface outputRowMeta;
-    
+
+    /**
+     * constructor
+     */
+    public MolapAutoAGGGraphGeneratorData() {
+        super();
+    }
+
 }

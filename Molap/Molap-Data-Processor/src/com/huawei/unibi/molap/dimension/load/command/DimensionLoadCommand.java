@@ -17,17 +17,14 @@
  * under the License.
  */
 
-
 package com.huawei.unibi.molap.dimension.load.command;
 
-
-public interface DimensionLoadCommand
-{
+public interface DimensionLoadCommand {
     /**
-     * This method will call the execute method based on the 
-     * Run-time object reference. 
-     * @throws Exception 
-     * 
+     * This method will call the execute method based on the
+     * Run-time object reference.
+     *
+     * @throws Exception
      */
     void execute() throws Exception;
 

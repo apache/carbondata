@@ -19,21 +19,10 @@
 
 package com.huawei.unibi.molap.surrogatekeysgenerator.csvbased;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Properties;
-import java.util.Set;
-import java.util.TreeMap;
 
 import com.huawei.iweb.platform.logging.LogService;
 import com.huawei.iweb.platform.logging.LogServiceFactory;
@@ -41,202 +30,149 @@ import com.huawei.unibi.molap.constants.MolapCommonConstants;
 import com.huawei.unibi.molap.util.MolapDataProcessorLogEvent;
 import com.huawei.unibi.molap.util.MolapUtil;
 
-public class RealTimeDataPropertyReader
-{
+public class RealTimeDataPropertyReader {
     /**
-     * 
      * Comment for <code>LOGGER</code>
-     * 
      */
-    private static final LogService LOGGER = LogServiceFactory
-            .getLogService(RealTimeDataPropertyReader.class.getName());
-    
-    /**
-     * Months
-     */
-    public enum Months {
-    //CHECKSTYLE:OFF
-        JAN(1), FEB(2), MAR(3), APR(4), MAY(5), JUN(6), JUL(7), AUG(8), SEP(9), OCT(10), NOV(11), DEC(12);
-        
-        private int value;
-
-        private Months(int value)
-        {
-            this.value = value;
-        }
-
-        public int getValue()
-        {
-            return value;
-        }
-    }//CHECKSTYLE:ON
-    
-    /**
-     * Days
-     */
-    public enum Days {
-    //CHECKSTYLE:OFF
-        ONE(1), TWO(2), THREE(3), FOUR(4), FIVE(5), SIX(6), SEVEN(7), EIGHT(8), NINE(
-                9), TEN(10), ELEVEN(11), TWELVE(12), THIRTEEN(13), FOURTEEN(14), FIFTEEN(
-                15), SIXTEEN(16), SEVENTEEN(17), EIGHTEEN(18), NINTEEN(19), TWENTY(
-                20), TEWENTYONE(21), TWENTYTWO(22), TWENTYTHREE(23), TWENTYFOUR(
-                24), TWENTYFIVE(25), TWENTYSIX(26), TWENTYSEVEN(27), TWENTYEIGHT(
-                28), TWENTYNINE(29), THIRTY(30), THIRTYONE(31);
-    //CHECKSTYLE:ON
-        /**
-         * 
-         */
-        private int value;
-
-        private Days(int value)
-        {
-            this.value = value;
-        }
-
-        public int getValue()
-        {
-            return value;
-        }
-    }
-    
+    private static final LogService LOGGER =
+            LogServiceFactory.getLogService(RealTimeDataPropertyReader.class.getName());
     /**
      * Year Surrogate key Map
      */
     private Map<String, Integer> yearMap;
-    
     /**
      * Month Surrogate key Map
      */
     private Map<String, Integer> monthMap;
-    
     /**
      * Day Surrogate key Map
      */
     private Map<String, Integer> dayMap;
-    
+
     /**
      * Constructor
+     *
      * @param schemandCubeName
      * @param columnAndMemberListaMap
      * @param levelTypeColumnMap
      */
     public RealTimeDataPropertyReader(String schemandCubeName,
             Map<String, Set<String>> columnAndMemberListaMap,
-            Map<String, String> levelTypeColumnMap,
-            Map<String, Integer> levelAndCardinalityMap)
-    {
+            Map<String, String> levelTypeColumnMap, Map<String, Integer> levelAndCardinalityMap) {
         monthMap = new HashMap<String, Integer>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
         dayMap = new HashMap<String, Integer>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
         yearMap = new HashMap<String, Integer>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-        updateMap(schemandCubeName,columnAndMemberListaMap,levelTypeColumnMap,levelAndCardinalityMap);
+        updateMap(schemandCubeName, columnAndMemberListaMap, levelTypeColumnMap,
+                levelAndCardinalityMap);
     }
 
-    private void updateMap(String schemandCubeName,Map<String, Set<String>> columnAndMemberListaMap,Map<String, String> levelTypeColumnMap, Map<String, Integer> levelAndCardinalityMap)
-    {
-        File realTimeDataFile = new File(MolapCommonConstants.MOLAP_REALTIMEDATA_FILE);
-        
-        FileInputStream fileInputStream = null;
-        
-        Properties propFile = new Properties();
-        
-        try
-        {
-            fileInputStream = new FileInputStream(realTimeDataFile);
-            
-            propFile.load(fileInputStream);
+    public static String getMappedDayMemberVal(Integer memberVal) {
+        Days[] values = Days.values();
+        for (int i = 0; i < values.length; i++) {
+            if (memberVal == values[i].getValue()) {
+                return values[i].toString();
+            }
         }
-        catch(FileNotFoundException e)
-        {
-            if(LOGGER.isDebugEnabled())
-            {
-                LOGGER.error(
-                        MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        return null;
+    }
+
+    public static String getMappedMonthMemberVal(Integer memberVal) {
+        Months[] values = Months.values();
+        for (int i = 0; i < values.length; i++) {
+            if (memberVal == values[i].getValue()) {
+                return values[i].toString();
+            }
+        }
+        return null;
+    }
+
+    private void updateMap(String schemandCubeName,
+            Map<String, Set<String>> columnAndMemberListaMap,
+            Map<String, String> levelTypeColumnMap, Map<String, Integer> levelAndCardinalityMap) {
+        File realTimeDataFile = new File(MolapCommonConstants.MOLAP_REALTIMEDATA_FILE);
+
+        FileInputStream fileInputStream = null;
+
+        Properties propFile = new Properties();
+
+        try {
+            fileInputStream = new FileInputStream(realTimeDataFile);
+
+            propFile.load(fileInputStream);
+        } catch (FileNotFoundException e) {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                         "RealtimeData file not found.");
             }
-        }
-        catch(IOException e)
-        {
-            if(LOGGER.isDebugEnabled())
-            {
-                LOGGER.error(
-                        MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        } catch (IOException e) {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                         "Unable to read RealtimeData file.");
             }
-        }
-        finally
-        {
+        } finally {
             MolapUtil.closeStreams(fileInputStream);
         }
-        
+
         String[] splittedName = schemandCubeName.split("/");
-        
+
         String preKey = splittedName[0] + '.' + splittedName[1] + '.';
         // Update the month Map
         Set<String> monthLevelData = columnAndMemberListaMap.get(levelTypeColumnMap.get("MONTHS"));
         Integer monthCardinality = levelAndCardinalityMap.get(levelTypeColumnMap.get("MONTHS"));
-        if(null!=monthLevelData && null!=monthCardinality)
-        {
-            updateMonthMap(propFile,preKey,monthLevelData,monthCardinality);
+        if (null != monthLevelData && null != monthCardinality) {
+            updateMonthMap(propFile, preKey, monthLevelData, monthCardinality);
         }
         // Update the day Map
         Set<String> daysLevelData = columnAndMemberListaMap.get(levelTypeColumnMap.get("DAYS"));
         Integer daysCardinality = levelAndCardinalityMap.get(levelTypeColumnMap.get("DAYS"));
-        if(null!=daysLevelData && null!=daysCardinality)
-        {
-            updateDayMap(propFile,preKey,daysLevelData,daysCardinality);
+        if (null != daysLevelData && null != daysCardinality) {
+            updateDayMap(propFile, preKey, daysLevelData, daysCardinality);
         }
-        
+
         // Updatethe Year Map
         Set<String> yearLevelData = columnAndMemberListaMap.get(levelTypeColumnMap.get("YEAR"));
         Integer yearCardinality = levelAndCardinalityMap.get(levelTypeColumnMap.get("YEAR"));
-        if(null!=yearLevelData && null!=yearCardinality)
-        {
-            updateYearMap(realTimeDataFile, preKey,yearLevelData,yearCardinality);
+        if (null != yearLevelData && null != yearCardinality) {
+            updateYearMap(realTimeDataFile, preKey, yearLevelData, yearCardinality);
         }
-        
-        
+
     }
 
-    private void updateYearMap(File realTimeDataFile, String preKey, Set<String> set, int cardinality)
-    {
-       preKey = preKey + "YEAR";
-       
-       List<String> yearData = readPropertiesFileAndRrtursYearsList(realTimeDataFile , preKey);
-       
-       sortAndUpdateYearMap(yearData , preKey,set,cardinality);
-       
+    private void updateYearMap(File realTimeDataFile, String preKey, Set<String> set,
+            int cardinality) {
+        preKey = preKey + "YEAR";
+
+        List<String> yearData = readPropertiesFileAndRrtursYearsList(realTimeDataFile, preKey);
+
+        sortAndUpdateYearMap(yearData, preKey, set, cardinality);
+
     }
 
-    private void sortAndUpdateYearMap(List<String> yearData, String preKey, Set<String> set, int cardinality)
-    {
+    private void sortAndUpdateYearMap(List<String> yearData, String preKey, Set<String> set,
+            int cardinality) {
         Map<Integer, String> localYearMap = new TreeMap<Integer, String>();
-        
-        for(String line : yearData)
-        {
+
+        for (String line : yearData) {
             String[] split = line.split("=");
             String keyPart = split[0].trim();
             String valuePart = split[1].trim();
-            
+
             keyPart = keyPart.substring(keyPart.lastIndexOf('.') + 1, keyPart.length());
-            
-            if(localYearMap.get(Integer.parseInt(keyPart)) == null)
-            {
+
+            if (localYearMap.get(Integer.parseInt(keyPart)) == null) {
                 localYearMap.put(Integer.parseInt(keyPart), valuePart);
             }
         }
         int count = 1;
-        String value=null;
-        int numberOfValues=0;
-        for(Entry<Integer, String> entry: localYearMap.entrySet())
-        {
-            if(numberOfValues>cardinality)
-            {
+        String value = null;
+        int numberOfValues = 0;
+        for (Entry<Integer, String> entry : localYearMap.entrySet()) {
+            if (numberOfValues > cardinality) {
                 break;
             }
-            value=entry.getValue();
-            if(set.contains(value))
-            {
+            value = entry.getValue();
+            if (set.contains(value)) {
                 yearMap.put(value, count++);
                 numberOfValues++;
             }
@@ -244,84 +180,64 @@ public class RealTimeDataPropertyReader
     }
 
     private List<String> readPropertiesFileAndRrtursYearsList(File realTimeDataFile,
-            String preKey)
-    {
-        String line=null;
+            String preKey) {
+        String line = null;
         BufferedReader bufferedReader = null;
-        InputStreamReader inputStreamReader=null;
+        InputStreamReader inputStreamReader = null;
         List<String> yearsData = new ArrayList<String>(MolapCommonConstants.CONSTANT_SIZE_TEN);
-        
-        try
-        {
-        	
-        	inputStreamReader=new InputStreamReader(new FileInputStream(realTimeDataFile),Charset.defaultCharset());
-        	bufferedReader = new BufferedReader(inputStreamReader);
-            while((line = bufferedReader.readLine()) != null)
-            {
-                if(line.indexOf(preKey) > -1)
-                {
+
+        try {
+
+            inputStreamReader = new InputStreamReader(new FileInputStream(realTimeDataFile),
+                    Charset.defaultCharset());
+            bufferedReader = new BufferedReader(inputStreamReader);
+            while ((line = bufferedReader.readLine()) != null) {
+                if (line.indexOf(preKey) > -1) {
                     yearsData.add(line);
                 }
-                
+
             }
-    
-        }
-        catch(FileNotFoundException e)
-        {
-            if(LOGGER.isDebugEnabled())
-            {
-                LOGGER.error(
-                        MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+
+        } catch (FileNotFoundException e) {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                         "RealtimeData file not found.");
             }
-        }
-        catch(IOException e)
-        {
-            if(LOGGER.isDebugEnabled())
-            {
-                LOGGER.error(
-                        MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        } catch (IOException e) {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                         "Unable to read  RealtimeData file.");
             }
+        } finally {
+            MolapUtil.closeStreams(bufferedReader, inputStreamReader);
+
         }
-        finally
-        {
-            MolapUtil.closeStreams(bufferedReader,inputStreamReader);
-            
-            
-        }
-        
-      return yearsData;
+
+        return yearsData;
     }
 
-    private void updateMonthMap(Properties propFile, String preKey, Set<String> set, int cardinality)
-    {
+    private void updateMonthMap(Properties propFile, String preKey, Set<String> set,
+            int cardinality) {
         Months[] monthValues = Months.values();
-        int numberOfValues=0;
-        for(int i=0; i < monthValues.length;i++)
-        {
-            if(numberOfValues>cardinality)
-            {
+        int numberOfValues = 0;
+        for (int i = 0; i < monthValues.length; i++) {
+            if (numberOfValues > cardinality) {
                 break;
             }
             String value = propFile.getProperty(preKey + monthValues[i]);
-            if(set.contains(value))
-            {
-                updateMonthMap(monthValues[i] , value);
+            if (set.contains(value)) {
+                updateMonthMap(monthValues[i], value);
                 numberOfValues++;
             }
         }
     }
 
-    private void updateMonthMap(Months months, String value)
-    {
-        if(null == value)
-        {
+    private void updateMonthMap(Months months, String value) {
+        if (null == value) {
             return;
         }
 
-        switch(months)
-        {
+        switch (months) {
         case JAN:
             monthMap.put(value, 1);
             break;
@@ -375,43 +291,36 @@ public class RealTimeDataPropertyReader
 
     }
 
-    private void updateDayMap(Properties propFile, String preKey, Set<String> set, int cardinality)
-    {
+    private void updateDayMap(Properties propFile, String preKey, Set<String> set,
+            int cardinality) {
         Days[] dayValues = Days.values();
-        int numberOfValues=0;
-        for(int i=0; i < dayValues.length;i++)
-        {
-            if(numberOfValues>cardinality)
-            {
+        int numberOfValues = 0;
+        for (int i = 0; i < dayValues.length; i++) {
+            if (numberOfValues > cardinality) {
                 break;
             }
             String value = propFile.getProperty(preKey + dayValues[i]);
-            if(set.contains(value))
-            {
-                updateDayMap(dayValues[i] , value);
+            if (set.contains(value)) {
+                updateDayMap(dayValues[i], value);
                 numberOfValues++;
             }
         }
-        
+
     }
 
     /**
      * Update the Day Map
-     * 
+     *
      * @param days
      * @param value
-     * 
      */
-    private void updateDayMap(Days days, String value)
-    {
-        
-        if(null == value)
-        {
+    private void updateDayMap(Days days, String value) {
+
+        if (null == value) {
             return;
         }
 
-        switch(days)
-        {
+        switch (days) {
         case ONE:
             dayMap.put(value, 1);
             break;
@@ -538,66 +447,73 @@ public class RealTimeDataPropertyReader
         default:
             break;
         }
-        
+
     }
 
     /**
-     * 
      * @return Returns the yearMap.
-     * 
      */
-    public Map<String, Integer> getYearMap()
-    {
+    public Map<String, Integer> getYearMap() {
         return yearMap;
     }
 
-
     /**
-     * 
      * @return Returns the monthMap.
-     * 
      */
-    public Map<String, Integer> getMonthMap()
-    {
+    public Map<String, Integer> getMonthMap() {
         return monthMap;
     }
 
-
     /**
-     * 
      * @return Returns the dayMap.
-     * 
      */
-    public Map<String, Integer> getDayMap()
-    {
+    public Map<String, Integer> getDayMap() {
         return dayMap;
     }
 
-public static String getMappedDayMemberVal(Integer memberVal)
-  {
-      Days[] values = Days.values();
-      for(int i=0; i< values.length; i++)
-      {
-          if(memberVal == values[i].getValue())
-          {
-              return values[i].toString();
-          }
-      }
-      return null;
-  }
-  
-public static String getMappedMonthMemberVal(Integer memberVal)
-  {
-      Months[] values = Months.values();
-      for(int i=0; i< values.length; i++)
-      {
-          if(memberVal == values[i].getValue())
-          {
-              return values[i].toString();
-          }
-      }
-      return null;
-  }
-    
+    /**
+     * Months
+     */
+    public enum Months {
+        //CHECKSTYLE:OFF
+        JAN(1), FEB(2), MAR(3), APR(4), MAY(5), JUN(6), JUL(7), AUG(8), SEP(9), OCT(10), NOV(
+                11), DEC(12);
+
+        private int value;
+
+        private Months(int value) {
+            this.value = value;
+        }
+
+        public int getValue() {
+            return value;
+        }
+    }//CHECKSTYLE:ON
+
+    /**
+     * Days
+     */
+    public enum Days {
+        //CHECKSTYLE:OFF
+        ONE(1), TWO(2), THREE(3), FOUR(4), FIVE(5), SIX(6), SEVEN(7), EIGHT(8), NINE(9), TEN(
+                10), ELEVEN(11), TWELVE(12), THIRTEEN(13), FOURTEEN(14), FIFTEEN(15), SIXTEEN(
+                16), SEVENTEEN(17), EIGHTEEN(18), NINTEEN(19), TWENTY(20), TEWENTYONE(
+                21), TWENTYTWO(22), TWENTYTHREE(23), TWENTYFOUR(24), TWENTYFIVE(25), TWENTYSIX(
+                26), TWENTYSEVEN(27), TWENTYEIGHT(28), TWENTYNINE(29), THIRTY(30), THIRTYONE(31);
+        //CHECKSTYLE:ON
+        /**
+         *
+         */
+        private int value;
+
+        private Days(int value) {
+            this.value = value;
+        }
+
+        public int getValue() {
+            return value;
+        }
+    }
+
 }
 

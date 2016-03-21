@@ -22,28 +22,29 @@ package com.huawei.unibi.molap.graphgenerator;
 import java.util.ArrayList;
 import java.util.List;
 
-//import mondrian.olap.MondrianDef.Cube;
 import com.huawei.unibi.molap.olap.MolapDef.Cube;
 import com.huawei.unibi.molap.schema.metadata.AggregateTable;
 
+//import mondrian.olap.MondrianDef.Cube;
+
 public abstract class AggregateTableSelecter {
 
-	protected List<AggregateTable> aggregateTables;
-	protected List<AggregateTable> processedAggTables = new ArrayList<AggregateTable>(15);
-	protected String factName;
-	AggregateTableDerivativeComposite root;
+    protected List<AggregateTable> aggregateTables;
+    protected List<AggregateTable> processedAggTables = new ArrayList<AggregateTable>(15);
+    protected String factName;
+    AggregateTableDerivativeComposite root;
 
-	AggregateTableSelecter(List<AggregateTable> aggregateTables) {
-		this.aggregateTables = aggregateTables;
+    AggregateTableSelecter(List<AggregateTable> aggregateTables) {
+        this.aggregateTables = aggregateTables;
 
-	}
+    }
 
-	public abstract void selectTableForAggTableAggregationProcess(AggregateTable[] aggregateTable, Cube cube);
-	
-	public AggregateTableDerivative getAggregateTableDerivativeInstanceForAggEval() {
+    public abstract void selectTableForAggTableAggregationProcess(AggregateTable[] aggregateTable,
+            Cube cube);
 
-		return root;
-	}
-	
+    public AggregateTableDerivative getAggregateTableDerivativeInstanceForAggEval() {
+
+        return root;
+    }
 
 }

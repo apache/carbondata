@@ -23,10 +23,7 @@ import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.List;
 
-
-
-public class DataProcessTaskStatus implements IDataProcessStatus, Serializable
-{
+public class DataProcessTaskStatus implements IDataProcessStatus, Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -36,7 +33,7 @@ public class DataProcessTaskStatus implements IDataProcessStatus, Serializable
     private int dataloadstatusid;
 
     /**
-     * 
+     *
      */
     private Timestamp createdTime;
 
@@ -71,59 +68,24 @@ public class DataProcessTaskStatus implements IDataProcessStatus, Serializable
     private String oldSchemaFilePath;
 
     private String csvFilePath;
-    
+
     /**
-     *dimCSVDirLoc 
+     * dimCSVDirLoc
      */
     private String dimCSVDirLoc;
 
     private String dimTables;
-    
+
     private boolean isDirectLoad;
     private List<String> filesToProcess;
     private String csvHeader;
     private String csvDelimiter;
-
-    public boolean isDirectLoad() {
-		return isDirectLoad;
-	}
-
-	public void setDirectLoad(boolean isDirectLoad) {
-		this.isDirectLoad = isDirectLoad;
-	}
-
-	public List<String> getFilesToProcess() {
-		return filesToProcess;
-	}
-
-	public void setFilesToProcess(List<String> filesToProcess) {
-		this.filesToProcess = filesToProcess;
-	}
-
-	public String getCsvHeader() {
-		return csvHeader;
-	}
-
-	public void setCsvHeader(String csvHeader) {
-		this.csvHeader = csvHeader;
-	}
-
-	public String getCsvDelimiter() {
-		return csvDelimiter;
-	}
-
-	public void setCsvDelimiter(String csvDelimiter) {
-		this.csvDelimiter = csvDelimiter;
-	}
-
-
     /**
      * Set if the call to restructre from path or by upload
      */
     private boolean isFromPathApi;
 
-    public DataProcessTaskStatus(String schemaName, String cubeName, String tableName)
-    {
+    public DataProcessTaskStatus(String schemaName, String cubeName, String tableName) {
         this.schemaName = schemaName;
         this.cubeName = cubeName;
         this.tableName = tableName;
@@ -132,178 +94,175 @@ public class DataProcessTaskStatus implements IDataProcessStatus, Serializable
         this.setOldSchemaFilePath("");
     }
 
-    public DataProcessTaskStatus()
-    {
+    public DataProcessTaskStatus() {
+    }
+
+    public boolean isDirectLoad() {
+        return isDirectLoad;
+    }
+
+    public void setDirectLoad(boolean isDirectLoad) {
+        this.isDirectLoad = isDirectLoad;
+    }
+
+    public List<String> getFilesToProcess() {
+        return filesToProcess;
+    }
+
+    public void setFilesToProcess(List<String> filesToProcess) {
+        this.filesToProcess = filesToProcess;
+    }
+
+    public String getCsvHeader() {
+        return csvHeader;
+    }
+
+    public void setCsvHeader(String csvHeader) {
+        this.csvHeader = csvHeader;
+    }
+
+    public String getCsvDelimiter() {
+        return csvDelimiter;
+    }
+
+    public void setCsvDelimiter(String csvDelimiter) {
+        this.csvDelimiter = csvDelimiter;
     }
 
     /**
      * @return the schemaName
      */
-    public String getSchemaName()
-    {
+    public String getSchemaName() {
         return schemaName;
     }
 
     /**
-     * @param cubeName
-     *            the cubeName to set
+     * @param schemaName the schemaName to set
      */
-    public void setCubeName(String cubeName)
-    {
-        this.cubeName = cubeName;
+    public void setSchemaName(String schemaName) {
+        this.schemaName = schemaName;
     }
 
     /**
      * @return the tableName
      */
-    public String getTableName()
-    {
+    public String getTableName() {
         return tableName;
     }
-    
+
     /**
-     * @param schemaName
-     *            the schemaName to set
+     * @param tableName the tableName to set
      */
-    public void setSchemaName(String schemaName)
-    {
-        this.schemaName = schemaName;
+    public void setTableName(String tableName) {
+        this.tableName = tableName;
     }
 
     /**
      * @return the cubeName
      */
-    public String getCubeName()
-    {
+    public String getCubeName() {
         return cubeName;
     }
+
     /**
-     * @param tableName
-     *            the tableName to set
+     * @param cubeName the cubeName to set
      */
-    public void setTableName(String tableName)
-    {
-        this.tableName = tableName;
+    public void setCubeName(String cubeName) {
+        this.cubeName = cubeName;
     }
 
-    public String getDesc()
-    {
+    public String getDesc() {
         return desc;
     }
 
-    public void setDesc(String desc)
-    {
+    public void setDesc(String desc) {
         this.desc = desc;
     }
 
-    @Override
-    public String getKey()
-    {
+    @Override public String getKey() {
         return key;
     }
 
-    @Override
-    public String getStatus()
-    {
-        return status;
-    }
-
-    public void setKey(String key)
-    {
+    public void setKey(String key) {
         this.key = key;
     }
 
-    public void setStatus(String status)
-    {
+    @Override public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
         this.status = status;
     }
 
-    public int getDataloadstatusid()
-    {
+    public int getDataloadstatusid() {
         return dataloadstatusid;
     }
 
-    public void setDataloadstatusid(int dataloadstatusid)
-    {
+    public void setDataloadstatusid(int dataloadstatusid) {
         this.dataloadstatusid = dataloadstatusid;
     }
 
-
-    public Timestamp getCreatedTime()
-    {
+    public Timestamp getCreatedTime() {
         return createdTime;
     }
 
-    public void setCreatedTime(Timestamp createdTime)
-    {
+    public void setCreatedTime(Timestamp createdTime) {
         this.createdTime = createdTime;
     }
 
-    public int getTaskType()
-    {
+    public int getTaskType() {
         return taskType;
     }
 
-    public void setTaskType(int taskType)
-    {
+    public void setTaskType(int taskType) {
         this.taskType = taskType;
     }
 
-    public String getOldSchemaFilePath()
-    {
+    public String getOldSchemaFilePath() {
         return oldSchemaFilePath;
     }
 
-    public void setOldSchemaFilePath(String oldSchemaFilePath)
-    {
+    public void setOldSchemaFilePath(String oldSchemaFilePath) {
         this.oldSchemaFilePath = oldSchemaFilePath;
     }
 
-    public String getNewSchemaFilePath()
-    {
+    public String getNewSchemaFilePath() {
         return newSchemaFilePath;
     }
 
-    public void setNewSchemaFilePath(String newSchemaFilePath)
-    {
+    public void setNewSchemaFilePath(String newSchemaFilePath) {
         this.newSchemaFilePath = newSchemaFilePath;
     }
 
-    public String getCsvFilePath()
-    {
+    public String getCsvFilePath() {
         return csvFilePath;
     }
 
-    public void setCsvFilePath(String csvFilePath)
-    {
+    public void setCsvFilePath(String csvFilePath) {
         this.csvFilePath = csvFilePath;
     }
 
-    public String getDimTables()
-    {
+    public String getDimTables() {
         return dimTables;
     }
 
-    public void setDimTables(String dimTables)
-    {
+    public void setDimTables(String dimTables) {
         this.dimTables = dimTables;
     }
 
-    public boolean isFromPathApi()
-    {
+    public boolean isFromPathApi() {
         return isFromPathApi;
     }
 
-    public void setFromPathApi(boolean isFromPathApi)
-    {
+    public void setFromPathApi(boolean isFromPathApi) {
         this.isFromPathApi = isFromPathApi;
     }
-    
+
     /**
      * to make a copy
      */
-    public IDataProcessStatus makeCopy()
-    {
+    public IDataProcessStatus makeCopy() {
         IDataProcessStatus copy = new DataProcessTaskStatus();
         copy.setCubeName(this.cubeName);
         copy.setDataloadstatusid(this.dataloadstatusid);
@@ -321,5 +280,5 @@ public class DataProcessTaskStatus implements IDataProcessStatus, Serializable
     public void setDimCSVDirLoc(String dimCSVDirLoc) {
         this.dimCSVDirLoc = dimCSVDirLoc;
     }
-    
+
 }

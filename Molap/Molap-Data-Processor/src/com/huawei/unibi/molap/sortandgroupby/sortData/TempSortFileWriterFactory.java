@@ -19,33 +19,26 @@
 
 package com.huawei.unibi.molap.sortandgroupby.sortData;
 
+public final class TempSortFileWriterFactory {
+    private static final TempSortFileWriterFactory WRITERFACTORY = new TempSortFileWriterFactory();
 
-public final class TempSortFileWriterFactory
-{
-	private static final TempSortFileWriterFactory WRITERFACTORY = new TempSortFileWriterFactory();
-	
-	private TempSortFileWriterFactory()
-	{
-		
-	}
-	
-	public static TempSortFileWriterFactory getInstance()
-	{
-		return WRITERFACTORY;
-	}
-	
-	public TempSortFileWriter getTempSortFileWriter(boolean isCompressionEnabled, int dimensionCount, 
-    		int complexDimensionCount, int measureCount,int highCardinalityCount, int writeBufferSize)
-	{
-		if(isCompressionEnabled)
-		{
-			return new CompressedTempSortFileWriter(dimensionCount, complexDimensionCount,
-					measureCount,highCardinalityCount, writeBufferSize);
-		}
-		else
-		{
-			return new UnCompressedTempSortFileWriter(dimensionCount, complexDimensionCount,
-					measureCount,highCardinalityCount, writeBufferSize);
-		}
-	}
+    private TempSortFileWriterFactory() {
+
+    }
+
+    public static TempSortFileWriterFactory getInstance() {
+        return WRITERFACTORY;
+    }
+
+    public TempSortFileWriter getTempSortFileWriter(boolean isCompressionEnabled,
+            int dimensionCount, int complexDimensionCount, int measureCount,
+            int highCardinalityCount, int writeBufferSize) {
+        if (isCompressionEnabled) {
+            return new CompressedTempSortFileWriter(dimensionCount, complexDimensionCount,
+                    measureCount, highCardinalityCount, writeBufferSize);
+        } else {
+            return new UnCompressedTempSortFileWriter(dimensionCount, complexDimensionCount,
+                    measureCount, highCardinalityCount, writeBufferSize);
+        }
+    }
 }

@@ -19,106 +19,80 @@
 
 package com.huawei.unibi.molap.api.dataloader;
 
-public class DataLoadModel
-{
+public class DataLoadModel {
     /**
      * Schema Info
      */
     private SchemaInfo schemaInfo;
-    
+
     /**
      * table table
      */
     private String tableName;
-    
+
     /**
      * is CSV load
      */
     private boolean isCsvLoad;
-    
-    
+
     /**
      * Modified Dimension
      */
     private String[] modifiedDimesion;
 
     /**
-     * 
      * @return Returns the schemaInfo.
-     * 
      */
-    public SchemaInfo getSchemaInfo()
-    {
+    public SchemaInfo getSchemaInfo() {
         return schemaInfo;
     }
 
     /**
-     * 
      * @param schemaInfo The schemaInfo to set.
-     * 
      */
-    public void setSchemaInfo(SchemaInfo schemaInfo)
-    {
+    public void setSchemaInfo(SchemaInfo schemaInfo) {
         this.schemaInfo = schemaInfo;
     }
 
     /**
-     * 
      * @return Returns the tableName.
-     * 
      */
-    public String getTableName()
-    {
+    public String getTableName() {
         return tableName;
     }
 
     /**
-     * 
      * @param tableName The tableName to set.
-     * 
      */
-    public void setTableName(String tableName)
-    {
+    public void setTableName(String tableName) {
         this.tableName = tableName;
     }
 
     /**
-     * 
      * @return Returns the isCsvLoad.
-     * 
      */
-    public boolean isCsvLoad()
-    {
+    public boolean isCsvLoad() {
         return isCsvLoad;
     }
 
     /**
-     * 
      * @param isCsvLoad The isCsvLoad to set.
-     * 
      */
-    public void setCsvLoad(boolean isCsvLoad)
-    {
+    public void setCsvLoad(boolean isCsvLoad) {
         this.isCsvLoad = isCsvLoad;
     }
 
     /**
-     * 
      * @return Returns the modifiedDimesion.
-     * 
      */
-    public String[] getModifiedDimesion()
-    {
+    public String[] getModifiedDimesion() {
         return modifiedDimesion;
     }
 
     /**
-     * 
      * @param modifiedDimesion The modifiedDimesion to set.
-     * 
      */
-    public void setModifiedDimesion(String[] modifiedDimesion)
-    {
+    public void setModifiedDimesion(String[] modifiedDimesion) {
         this.modifiedDimesion = modifiedDimesion;
     }
 }

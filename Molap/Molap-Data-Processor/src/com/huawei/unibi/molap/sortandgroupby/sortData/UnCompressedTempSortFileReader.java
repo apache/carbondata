@@ -21,31 +21,26 @@ package com.huawei.unibi.molap.sortandgroupby.sortData;
 
 import java.io.File;
 
-
-public class UnCompressedTempSortFileReader extends AbstractTempSortFileReader
-{
+public class UnCompressedTempSortFileReader extends AbstractTempSortFileReader {
 
     /**
      * UnCompressedTempSortFileReader
-     * 
+     *
      * @param measureCount
      * @param dimensionCount
      * @param tempFile
      */
-    public UnCompressedTempSortFileReader(int dimensionCount, int complexDimensionCount, int measureCount,
-    		File tempFile, int highCardinalityCount)
-    {
-        super(dimensionCount, complexDimensionCount, measureCount, tempFile,highCardinalityCount);
+    public UnCompressedTempSortFileReader(int dimensionCount, int complexDimensionCount,
+            int measureCount, File tempFile, int highCardinalityCount) {
+        super(dimensionCount, complexDimensionCount, measureCount, tempFile, highCardinalityCount);
     }
 
     /**
      * below method will be used to get chunk of rows
-     * 
+     *
      * @return row
      */
-    @Override
-    public Object[][] getRow()
-    {
+    @Override public Object[][] getRow() {
         int recordLength = fileHolder.readInt(filePath);
         int byteArrayLength = fileHolder.readInt(filePath);
         byte[] byteArrayFromFile = fileHolder.readByteArray(filePath, byteArrayLength);

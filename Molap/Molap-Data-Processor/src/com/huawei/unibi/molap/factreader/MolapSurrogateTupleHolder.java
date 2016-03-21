@@ -19,35 +19,30 @@
 
 package com.huawei.unibi.molap.factreader;
 
-public class MolapSurrogateTupleHolder
-{
+public class MolapSurrogateTupleHolder {
     /**
      * surrogateKey
      */
     private byte[] mdKey;
-    
+
     /**
      * measures
      */
     private Object[] measures;
 
-    public byte[] getMdKey()
-    {
+    public byte[] getMdKey() {
         return mdKey;
     }
 
-    public void setSurrogateKey(byte[] mdKey)
-    {
+    public void setSurrogateKey(byte[] mdKey) {
         this.mdKey = mdKey;
     }
 
-    public Object[] getMeasures()
-    {
+    public Object[] getMeasures() {
         return measures;
     }
 
-    public void setMeasures(Object[] measures)
-    {
+    public void setMeasures(Object[] measures) {
         this.measures = measures;
     }
 

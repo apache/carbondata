@@ -21,1075 +21,913 @@ package com.huawei.unibi.molap.graphgenerator.configuration;
 
 import java.util.Map;
 
-public class GraphConfigurationInfo
-{
+public class GraphConfigurationInfo {
     private String connectionName;
-    
+
     private String dbType;
-    
+
     private String numberOfCores;
-    
+
     private String storeLocation;
-    
+
     private String tableName;
-    
+
     private String leafNodeSize;
-    
+
     private String maxLeafInFile;
-    
+
     private String batchSize;
-    
-    private  Map<String, String> dimCardinalities;
-    
-    private String [] dimensions;
-    
-     private String  highCardinalityDims;
 
+    private Map<String, String> dimCardinalities;
 
-    private String [] measures;
-    
+    private String[] dimensions;
+
+    private String highCardinalityDims;
+
+    private String[] measures;
+
     private String dimensionString;
-    
+
     private String hiersString;
-    
+
     private String measuresString;
-    
+
     private String propertiesString;
-    
+
     private String timeHeirString;
-    
+
     private String metaHeirString;
-    
+
     private String metaHeirQueryString;
 
     private String jndiName;
-    
-    private  Map<String, String> cubeMeasuresAndDataTypeMap;
-    
+
+    private Map<String, String> cubeMeasuresAndDataTypeMap;
+
     private String tableInputSqlQuery;
-    
+
     private String dimensionSqlQuery;
 
     private String sortSize;
-    
+
     private boolean isAGG;
-    
+
     private String driverclass;
-    
+
     private String username;
-    
+
     private String password;
-    
+
     private String connectionUrl;
-    
-    private String [] actualDims;
+
+    private String[] actualDims;
 
     /**
-     * Sets the dimension:hirearchy#levelnames1,levelName2 
+     * Sets the dimension:hirearchy#levelnames1,levelName2
      */
     private String dimensionTableNames;
-    
+
     /**
      * Agg type
      */
     private String[] aggType;
-    
+
     /**
      * mdkeySize
      */
     private String mdkeySize;
-    
-	/**
-	 * complexTypeString
-	 */
-	private String complexTypeString;
 
-	/**
+    /**
+     * complexTypeString
+     */
+    private String complexTypeString;
+
+    /**
      * measureCount
      */
-    
+
     private String measureCount;
-    
+
     /**
      * heirAndKeySizeString
      */
     private String heirAndKeySizeString;
-	
-	/**
+
+    /**
      * hier and containing columns string
      */
     private String hierColumnString;
 
     /**
-     * forignKey 
+     * forignKey
      */
-    private String [] forignKey;
-    
+    private String[] forignKey;
+
     /**
-     * Foreign Key and respective hierarchy 
+     * Foreign Key and respective hierarchy
      */
     private String foreignKeyHierarchyString;
-    
+
     /**
      * Primary key String
      */
     private String primaryKeyString;
-    
+
     /**
      * Measure Names
      */
     private String measureNamesString;
-    
+
     /**
      * Measure Names
      */
     private String measureUniqueColumnNamesString;
 
-
     /**
      * actualDimensionColumns
      */
     private String actualDimensionColumns;
-    
+
     /**
      * normHiers
      */
     private String normHiers;
-    
-    private String forgienKeyAndPrimaryKeyMapString; 
-    
+
+    private String forgienKeyAndPrimaryKeyMapString;
+
     /**
      * heirAndDimLens
      */
     private String heirAndDimLens;
-    
+
     /**
      * measureTypeInfo
      */
-     private String measureDataTypeInfo;
-     
-     /**
-      * columnAndTableName_ColumnMapForAgg
-      */
-     private String columnAndTableNameColumnMapForAgg;
-     
-    	/**
-      * denormColumns
-      */
-     private String denormColumns;
-     
-     private String[] aggClass;
-     
-     /**
-      * type
-      */
-     private char[] type;
-     
-     private int currentRestructNumber;
-     
-     private String levelAnddataType;
-     
+    private String measureDataTypeInfo;
+
+    /**
+     * columnAndTableName_ColumnMapForAgg
+     */
+    private String columnAndTableNameColumnMapForAgg;
+
+    /**
+     * denormColumns
+     */
+    private String denormColumns;
+
+    private String[] aggClass;
+
+    /**
+     * type
+     */
+    private char[] type;
+
+    private int currentRestructNumber;
+
+    private String levelAnddataType;
+
     /**
      * @return the connectionName
      */
-    public String getConnectionName()
-    {
+    public String getConnectionName() {
         return connectionName;
     }
 
     /**
-     * @param connectionName
-     *            the connectionName to set
+     * @param connectionName the connectionName to set
      */
-    public void setConnectionName(String connectionName)
-    {
+    public void setConnectionName(String connectionName) {
         this.connectionName = connectionName;
     }
 
     /**
      * @return the dbType
      */
-    public String getDbType()
-    {
+    public String getDbType() {
         return dbType;
     }
 
     /**
-     * @param dbType
-     *            the dbType to set
+     * @param dbType the dbType to set
      */
-    public void setDbType(String dbType)
-    {
+    public void setDbType(String dbType) {
         this.dbType = dbType;
     }
 
     /**
      * @return the numberOfCores
      */
-    public String getNumberOfCores()
-    {
+    public String getNumberOfCores() {
         return numberOfCores;
     }
 
     /**
-     * @param numberOfCores
-     *            the numberOfCores to set
+     * @param numberOfCores the numberOfCores to set
      */
-    public void setNumberOfCores(String numberOfCores)
-    {
+    public void setNumberOfCores(String numberOfCores) {
         this.numberOfCores = numberOfCores;
     }
 
     /**
      * @return the storeLocation
      */
-    public String getStoreLocation()
-    {
+    public String getStoreLocation() {
         return storeLocation;
     }
 
     /**
-     * @param storeLocation
-     *            the storeLocation to set
+     * @param storeLocation the storeLocation to set
      */
-    public void setStoreLocation(String storeLocation)
-    {
+    public void setStoreLocation(String storeLocation) {
         this.storeLocation = storeLocation;
     }
 
     /**
      * @return the tableName
      */
-    public String getTableName()
-    {
+    public String getTableName() {
         return tableName;
     }
 
     /**
-     * @param tableName
-     *            the tableName to set
+     * @param tableName the tableName to set
      */
-    public void setTableName(String tableName)
-    {
+    public void setTableName(String tableName) {
         this.tableName = tableName;
     }
 
     public String getComplexTypeString() {
-		return complexTypeString;
-	}
+        return complexTypeString;
+    }
 
-	public void setComplexTypeString(String complexTypeString) {
-		this.complexTypeString = complexTypeString;
-	}
-	
+    public void setComplexTypeString(String complexTypeString) {
+        this.complexTypeString = complexTypeString;
+    }
+
     /**
      * @return the leafNodeSize
      */
-    public String getLeafNodeSize()
-    {
+    public String getLeafNodeSize() {
         return leafNodeSize;
     }
 
     /**
-     * @param leafNodeSize
-     *            the leafNodeSize to set
+     * @param leafNodeSize the leafNodeSize to set
      */
-    public void setLeafNodeSize(String leafNodeSize)
-    {
+    public void setLeafNodeSize(String leafNodeSize) {
         this.leafNodeSize = leafNodeSize;
     }
 
     /**
      * @return the maxLeafInFile
      */
-    public String getMaxLeafInFile()
-    {
+    public String getMaxLeafInFile() {
         return maxLeafInFile;
     }
 
     /**
-     * @param maxLeafInFile
-     *            the maxLeafInFile to set
+     * @param maxLeafInFile the maxLeafInFile to set
      */
-    public void setMaxLeafInFile(String maxLeafInFile)
-    {
+    public void setMaxLeafInFile(String maxLeafInFile) {
         this.maxLeafInFile = maxLeafInFile;
     }
 
     /**
      * @return the batchSize
      */
-    public String getBatchSize()
-    {
+    public String getBatchSize() {
         return batchSize;
     }
 
     /**
-     * @param batchSize
-     *            the batchSize to set
+     * @param batchSize the batchSize to set
      */
-    public void setBatchSize(String batchSize)
-    {
+    public void setBatchSize(String batchSize) {
         this.batchSize = batchSize;
     }
 
     /**
      * @return the dimCardinalities
      */
-    public Map<String, String> getDimCardinalities()
-    {
+    public Map<String, String> getDimCardinalities() {
         return dimCardinalities;
     }
 
     /**
-     * @param dimCardinalities
-     *            the dimCardinalities to set
+     * @param dimCardinalities the dimCardinalities to set
      */
-    public void setDimCardinalities(Map<String, String> dimCardinalities)
-    {
+    public void setDimCardinalities(Map<String, String> dimCardinalities) {
         this.dimCardinalities = dimCardinalities;
     }
 
     /**
      * @return the dimensions
      */
-    public String[] getDimensions()
-    {
+    public String[] getDimensions() {
         return dimensions;
     }
 
     /**
-     * @param dimensions
-     *            the dimensions to set
+     * @param dimensions the dimensions to set
      */
-    public void setDimensions(String[] dimensions)
-    {
+    public void setDimensions(String[] dimensions) {
         this.dimensions = dimensions;
     }
 
     /**
      * @return the measures
      */
-    public String[] getMeasures()
-    {
+    public String[] getMeasures() {
         return measures;
     }
 
     /**
-     * @param measures
-     *            the measures to set
+     * @param measures the measures to set
      */
-    public void setMeasures(String[] measures)
-    {
+    public void setMeasures(String[] measures) {
         this.measures = measures;
     }
 
     /**
      * @return the dimensionString
      */
-    public String getDimensionString()
-    {
+    public String getDimensionString() {
         return dimensionString;
     }
 
     /**
-     * @param dimensionString
-     *            the dimensionString to set
+     * @param dimensionString the dimensionString to set
      */
-    public void setDimensionString(String dimensionString)
-    {
+    public void setDimensionString(String dimensionString) {
         this.dimensionString = dimensionString;
     }
 
     /**
      * getNormHiers
+     *
      * @return String
      */
-    public String getNormHiers()
-    {
+    public String getNormHiers() {
         return normHiers;
     }
 
     /**
      * setNormHiers
+     *
      * @param normHiers void
      */
-    public void setNormHiers(String normHiers)
-    {
+    public void setNormHiers(String normHiers) {
         this.normHiers = normHiers;
     }
 
     /**
      * @return the hiersString
      */
-    public String getHiersString()
-    {
+    public String getHiersString() {
         return hiersString;
     }
 
     /**
-     * @param hiersString
-     *            the hiersString to set
+     * @param hiersString the hiersString to set
      */
-    public void setHiersString(String hiersString)
-    {
+    public void setHiersString(String hiersString) {
         this.hiersString = hiersString;
     }
 
     /**
      * @return the measuresString
      */
-    public String getMeasuresString()
-    {
+    public String getMeasuresString() {
         return measuresString;
     }
 
     /**
-     * @param measuresString
-     *            the measuresString to set
+     * @param measuresString the measuresString to set
      */
-    public void setMeasuresString(String measuresString)
-    {
+    public void setMeasuresString(String measuresString) {
         this.measuresString = measuresString;
     }
 
     /**
      * @return the propertiesString
      */
-    public String getPropertiesString()
-    {
+    public String getPropertiesString() {
         return propertiesString;
     }
 
     /**
-     * @param propertiesString
-     *            the propertiesString to set
+     * @param propertiesString the propertiesString to set
      */
-    public void setPropertiesString(String propertiesString)
-    {
+    public void setPropertiesString(String propertiesString) {
         this.propertiesString = propertiesString;
     }
 
     /**
      * @return the timeHeirString
      */
-    public String getTimeHeirString()
-    {
+    public String getTimeHeirString() {
         return timeHeirString;
     }
 
     /**
-     * @param timeHeirString
-     *            the timeHeirString to set
+     * @param timeHeirString the timeHeirString to set
      */
-    public void setTimeHeirString(String timeHeirString)
-    {
+    public void setTimeHeirString(String timeHeirString) {
         this.timeHeirString = timeHeirString;
     }
 
     /**
      * @return the metaHeirString
      */
-    public String getMetaHeirString()
-    {
+    public String getMetaHeirString() {
         return metaHeirString;
     }
 
     /**
-     * @param metaHeirString
-     *            the metaHeirString to set
+     * @param metaHeirString the metaHeirString to set
      */
-    public void setMetaHeirString(String metaHeirString)
-    {
+    public void setMetaHeirString(String metaHeirString) {
         this.metaHeirString = metaHeirString;
     }
 
     /**
      * @return the metaHeirQueryString
      */
-    public String getMetaHeirQueryString()
-    {
+    public String getMetaHeirQueryString() {
         return metaHeirQueryString;
     }
 
     /**
-     * @param metaHeirQueryString
-     *            the metaHeirQueryString to set
+     * @param metaHeirQueryString the metaHeirQueryString to set
      */
-    public void setMetaHeirQueryString(String metaHeirQueryString)
-    {
+    public void setMetaHeirQueryString(String metaHeirQueryString) {
         this.metaHeirQueryString = metaHeirQueryString;
     }
 
     /**
      * @return the jndiName
      */
-    public String getJndiName()
-    {
+    public String getJndiName() {
         return jndiName;
     }
 
     /**
-     * @param jndiName
-     *            the jndiName to set
+     * @param jndiName the jndiName to set
      */
-    public void setJndiName(String jndiName)
-    {
+    public void setJndiName(String jndiName) {
         this.jndiName = jndiName;
     }
 
     /**
      * @return the cubeMeasuresAndDataTypeMap
      */
-    public Map<String, String> getCubeMeasuresAndDataTypeMap()
-    {
+    public Map<String, String> getCubeMeasuresAndDataTypeMap() {
         return cubeMeasuresAndDataTypeMap;
     }
 
     /**
-     * @param cubeMeasuresAndDataTypeMap
-     *            the cubeMeasuresAndDataTypeMap to set
+     * @param cubeMeasuresAndDataTypeMap the cubeMeasuresAndDataTypeMap to set
      */
-    public void setCubeMeasuresAndDataTypeMap(
-            Map<String, String> cubeMeasuresAndDataTypeMap)
-    {
+    public void setCubeMeasuresAndDataTypeMap(Map<String, String> cubeMeasuresAndDataTypeMap) {
         this.cubeMeasuresAndDataTypeMap = cubeMeasuresAndDataTypeMap;
     }
 
     /**
      * @return the tableInputSqlQuery
      */
-    public String getTableInputSqlQuery()
-    {
+    public String getTableInputSqlQuery() {
         return tableInputSqlQuery;
     }
 
     /**
-     * @param tableInputSqlQuery
-     *            the tableInputSqlQuery to set
+     * @param tableInputSqlQuery the tableInputSqlQuery to set
      */
-    public void setTableInputSqlQuery(String tableInputSqlQuery)
-    {
+    public void setTableInputSqlQuery(String tableInputSqlQuery) {
         this.tableInputSqlQuery = tableInputSqlQuery;
     }
 
     /**
      * @return the dimensionSqlQuery
      */
-    public String getDimensionSqlQuery()
-    {
+    public String getDimensionSqlQuery() {
         return dimensionSqlQuery;
     }
 
     /**
-     * @param dimensionSqlQuery
-     *            the dimensionSqlQuery to set
+     * @param dimensionSqlQuery the dimensionSqlQuery to set
      */
-    public void setDimensionSqlQuery(String dimensionSqlQuery)
-    {
+    public void setDimensionSqlQuery(String dimensionSqlQuery) {
         this.dimensionSqlQuery = dimensionSqlQuery;
     }
-    
+
     /**
      * @return the sortSize
      */
-    public String getSortSize()
-    {
+    public String getSortSize() {
         return sortSize;
     }
 
     /**
-     * @param sortSize
-     *            the sortSize to set
+     * @param sortSize the sortSize to set
      */
-    public void setSortSize(String sortSize)
-    {
+    public void setSortSize(String sortSize) {
         this.sortSize = sortSize;
     }
 
     /**
      * @return the isAGG
      */
-    public boolean isAGG()
-    {
+    public boolean isAGG() {
         return isAGG;
     }
-    
+
     /**
-     * @param isAGG
-     *            the isAGG to set
+     * @param isAGG the isAGG to set
      */
-    public void setAGG(boolean isAGG)
-    {
+    public void setAGG(boolean isAGG) {
         this.isAGG = isAGG;
     }
-    
+
     /**
      * @return the driverclass
      */
-    public String getDriverclass()
-    {
+    public String getDriverclass() {
         return driverclass;
     }
 
     /**
-     * @param driverclass
-     *            the driverclass to set
+     * @param driverclass the driverclass to set
      */
-    public void setDriverclass(String driverclass)
-    {
+    public void setDriverclass(String driverclass) {
         this.driverclass = driverclass;
     }
 
     /**
      * @return the username
      */
-    public String getUsername()
-    {
+    public String getUsername() {
         return username;
     }
 
     /**
-     * @param username
-     *            the username to set
+     * @param username the username to set
      */
-    public void setUsername(String username)
-    {
+    public void setUsername(String username) {
         this.username = username;
     }
 
     /**
      * @return the password
      */
-    public String getPassword()
-    {
+    public String getPassword() {
         return password;
     }
 
     /**
-     * @param password
-     *            the password to set
+     * @param password the password to set
      */
-    public void setPassword(String password)
-    {
+    public void setPassword(String password) {
         this.password = password;
     }
 
     /**
      * @return the connectionUrl
      */
-    public String getConnectionUrl()
-    {
+    public String getConnectionUrl() {
         return connectionUrl;
     }
 
     /**
-     * @param connectionUrl
-     *            the connectionUrl to set
+     * @param connectionUrl the connectionUrl to set
      */
-    public void setConnectionUrl(String connectionUrl)
-    {
+    public void setConnectionUrl(String connectionUrl) {
         this.connectionUrl = connectionUrl;
     }
 
     /**
      * @return the actualDims
      */
-    public String[] getActualDims()
-    {
+    public String[] getActualDims() {
         return actualDims;
     }
 
     /**
-     * @param actualDims
-     *            the actualDims to set
+     * @param actualDims the actualDims to set
      */
-    public void setActualDims(String[] actualDims)
-    {
+    public void setActualDims(String[] actualDims) {
         this.actualDims = actualDims;
     }
 
     /**
      * @return the dimensionTableNames
      */
-    public String getDimensionTableNames()
-    {
+    public String getDimensionTableNames() {
         return dimensionTableNames;
     }
-    
+
     /**
-     * @param dimensionTableNames
-     *            the dimensionTableNames to set
+     * @param dimensionTableNames the dimensionTableNames to set
      */
-    public void setDimensionTableNames(String dimensionTableNames)
-    {
+    public void setDimensionTableNames(String dimensionTableNames) {
         this.dimensionTableNames = dimensionTableNames;
     }
 
     /**
      * getMdkeySize
+     *
      * @return String
      */
-    public String getMdkeySize()
-    {
+    public String getMdkeySize() {
         return mdkeySize;
     }
 
     /**
      * setMdkeySize
+     *
      * @param mdkeySize void
      */
-    public void setMdkeySize(String mdkeySize)
-    {
+    public void setMdkeySize(String mdkeySize) {
         this.mdkeySize = mdkeySize;
     }
 
     /**
      * getMeasureCount
+     *
      * @return String
      */
-    public String getMeasureCount()
-    {
+    public String getMeasureCount() {
         return measureCount;
     }
 
     /**
      * setMeasureCount
+     *
      * @param measureCount void
      */
-    public void setMeasureCount(String measureCount)
-    {
+    public void setMeasureCount(String measureCount) {
         this.measureCount = measureCount;
     }
 
     /**
      * getHeirAndKeySizeString
+     *
      * @return String
      */
-    public String getHeirAndKeySizeString()
-    {
+    public String getHeirAndKeySizeString() {
         return heirAndKeySizeString;
     }
 
     /**
      * setHeirAndKeySizeString
+     *
      * @param heirAndKeySizeString void
      */
-    public void setHeirAndKeySizeString(String heirAndKeySizeString)
-    {
+    public void setHeirAndKeySizeString(String heirAndKeySizeString) {
         this.heirAndKeySizeString = heirAndKeySizeString;
     }
-	    /**
-     * 
+
+    /**
      * @return Returns the hierColumnString.
-     * 
      */
-    public String getHierColumnString()
-    {
+    public String getHierColumnString() {
         return hierColumnString;
     }
 
     /**
-     * 
      * @param hierColumnString The hierColumnString to set.
-     * 
      */
-    public void setHierColumnString(String hierColumnString)
-    {
+    public void setHierColumnString(String hierColumnString) {
         this.hierColumnString = hierColumnString;
     }
 
     /**
-     * 
      * @return Returns the forignKey.
-     * 
      */
-    public String[] getForignKey()
-    {
+    public String[] getForignKey() {
         return forignKey;
     }
 
     /**
-     * 
      * @param forignKey The forignKey to set.
-     * 
      */
-    public void setForignKey(String[] forignKey)
-    {
+    public void setForignKey(String[] forignKey) {
         this.forignKey = forignKey;
     }
 
     /**
-     * 
      * @return Returns the foreignKeyHierarchyString.
-     * 
      */
-    public String getForeignKeyHierarchyString()
-    {
+    public String getForeignKeyHierarchyString() {
         return foreignKeyHierarchyString;
     }
 
     /**
-     * 
      * @param foreignKeyHierarchyString The foreignKeyHierarchyString to set.
-     * 
      */
-    public void setForeignKeyHierarchyString(String foreignKeyHierarchyString)
-    {
+    public void setForeignKeyHierarchyString(String foreignKeyHierarchyString) {
         this.foreignKeyHierarchyString = foreignKeyHierarchyString;
     }
 
     /**
-     * 
      * @return Returns the primaryKeyString.
-     * 
      */
-    public String getPrimaryKeyString()
-    {
+    public String getPrimaryKeyString() {
         return primaryKeyString;
     }
 
     /**
-     * 
      * @param primaryKeyString The primaryKeyString to set.
-     * 
      */
-    public void setPrimaryKeyString(String primaryKeyString)
-    {
+    public void setPrimaryKeyString(String primaryKeyString) {
         this.primaryKeyString = primaryKeyString;
     }
-
 
     /**
      * @return the measureNamesString
      */
-    public String getMeasureNamesString()
-    {
+    public String getMeasureNamesString() {
         return measureNamesString;
     }
 
     /**
-     * @param measureNamesString
-     *            the measureNamesString to set
+     * @param measureNamesString the measureNamesString to set
      */
-    public void setMeasureNamesString(String measureNamesString)
-    {
+    public void setMeasureNamesString(String measureNamesString) {
         this.measureNamesString = measureNamesString;
     }
-	
-/**
-     * 
+
+    /**
      * @return Returns the aggType.
-     * 
      */
-    public String[] getAggType()
-    {
+    public String[] getAggType() {
         return aggType;
     }
 
     /**
-     * 
      * @param aggType The aggType to set.
-     * 
      */
-    public void setAggType(String[] aggType)
-    {
+    public void setAggType(String[] aggType) {
         this.aggType = aggType;
     }
 
     /**
-     * 
      * @return Returns the actualDimensionColumns.
-     * 
      */
-    public String getActualDimensionColumns()
-    {
+    public String getActualDimensionColumns() {
         return actualDimensionColumns;
     }
 
     /**
-     * 
      * @param actualDimensionColumns The actualDimensionColumns to set.
-     * 
      */
-    public void setActualDimensionColumns(String actualDimensionColumns)
-    {
+    public void setActualDimensionColumns(String actualDimensionColumns) {
         this.actualDimensionColumns = actualDimensionColumns;
     }
 
     /**
      * getForgienKeyAndPrimaryKeyMapString
+     *
      * @return String
      */
-    public String getForgienKeyAndPrimaryKeyMapString()
-    {
+    public String getForgienKeyAndPrimaryKeyMapString() {
         return forgienKeyAndPrimaryKeyMapString;
     }
 
     /**
      * setForgienKeyAndPrimaryKeyMapString
+     *
      * @param forgienKeyAndPrimaryKeyMapString void
      */
-    public void setForgienKeyAndPrimaryKeyMapString(String forgienKeyAndPrimaryKeyMapString)
-    {
+    public void setForgienKeyAndPrimaryKeyMapString(String forgienKeyAndPrimaryKeyMapString) {
         this.forgienKeyAndPrimaryKeyMapString = forgienKeyAndPrimaryKeyMapString;
     }
 
     /**
-     * 
      * @return Returns the heirAndDimLens.
-     * 
      */
-    public String getHeirAndDimLens()
-    {
+    public String getHeirAndDimLens() {
         return heirAndDimLens;
     }
 
     /**
-     * 
      * @param heirAndDimLens The heirAndDimLens to set.
-     * 
      */
-    public void setHeirAndDimLens(String heirAndDimLens)
-    {
+    public void setHeirAndDimLens(String heirAndDimLens) {
         this.heirAndDimLens = heirAndDimLens;
     }
 
     /**
-     * 
      * @return Returns the measureDataTypeInfo.
-     * 
      */
-    public String getMeasureDataTypeInfo()
-    {
+    public String getMeasureDataTypeInfo() {
         return measureDataTypeInfo;
     }
 
     /**
-     * 
      * @param measureDataTypeInfo The measureDataTypeInfo to set.
-     * 
      */
-    public void setMeasureDataTypeInfo(String measureDataTypeInfo)
-    {
+    public void setMeasureDataTypeInfo(String measureDataTypeInfo) {
         this.measureDataTypeInfo = measureDataTypeInfo;
     }
 
     public String getColumnAndTableNameColumnMapForAgg() {
-		return columnAndTableNameColumnMapForAgg;
-	}
+        return columnAndTableNameColumnMapForAgg;
+    }
 
-    public void setColumnAndTableNameColumnMapForAgg(
-			String columnAndTableNameColumnMapForAgg) {
-		this.columnAndTableNameColumnMapForAgg = columnAndTableNameColumnMapForAgg;
-	}
-	
+    public void setColumnAndTableNameColumnMapForAgg(String columnAndTableNameColumnMapForAgg) {
+        this.columnAndTableNameColumnMapForAgg = columnAndTableNameColumnMapForAgg;
+    }
+
     /**
-     * 
      * @return Returns the denormColumns.
-     * 
      */
-    public String getDenormColumns()
-    {
+    public String getDenormColumns() {
         return denormColumns;
     }
 
     /**
-     * 
      * @param denormColumns The denormColumns to set.
-     * 
      */
-    public void setDenormColumns(String denormColumns)
-    {
+    public void setDenormColumns(String denormColumns) {
         this.denormColumns = denormColumns;
     }
 
     /**
      * @return the aggClass
      */
-    public String[] getAggClass()
-    {
+    public String[] getAggClass() {
         return aggClass;
     }
 
     /**
      * @param aggClass the aggClass to set
      */
-    public void setAggClass(String[] aggClass)
-    {
+    public void setAggClass(String[] aggClass) {
         this.aggClass = aggClass;
     }
 
-	/**
-	 * @return the measureUniqueColumnNamesString
-	 */
-	public String getMeasureUniqueColumnNamesString() 
-	{
-		return measureUniqueColumnNamesString;
-	}
+    /**
+     * @return the measureUniqueColumnNamesString
+     */
+    public String getMeasureUniqueColumnNamesString() {
+        return measureUniqueColumnNamesString;
+    }
 
-	/**
-	 * @param measureUniqueColumnNamesString the measureUniqueColumnNamesString to set
-	 */
-	public void setMeasureUniqueColumnNamesString(
-			String measureUniqueColumnNamesString)
-	{
-		this.measureUniqueColumnNamesString = measureUniqueColumnNamesString;
-	}
+    /**
+     * @param measureUniqueColumnNamesString the measureUniqueColumnNamesString to set
+     */
+    public void setMeasureUniqueColumnNamesString(String measureUniqueColumnNamesString) {
+        this.measureUniqueColumnNamesString = measureUniqueColumnNamesString;
+    }
 
     /**
      * @return the type
      */
-    public char[] getType()
-    {
+    public char[] getType() {
         return type;
     }
 
     /**
      * @param type the type to set
      */
-    public void setType(char[] type)
-    {
+    public void setType(char[] type) {
         this.type = type;
     }
 
     /**
-     * 
      * @return currentRestructNumber the current Restruct Number
      */
-    public int getCurrentRestructNumber()
-    {
+    public int getCurrentRestructNumber() {
         return currentRestructNumber;
     }
 
-    public void setCurrentRestructNumber(int currentRestructNum)
-    {
+    public void setCurrentRestructNumber(int currentRestructNum) {
         this.currentRestructNumber = currentRestructNum;
     }
 
-    public String getLevelAnddataType()
-    {
+    public String getLevelAnddataType() {
         return levelAnddataType;
     }
 
-    public void setLevelAnddataType(String levelAnddataType)
-    {
+    public void setLevelAnddataType(String levelAnddataType) {
         this.levelAnddataType = levelAnddataType;
     }
 
     /**
      * getHighCardinalityDims.
+     *
      * @return
      */
     public String getHighCardinalityDims() {
-		return highCardinalityDims;
-	}
+        return highCardinalityDims;
+    }
 
     /**
      * setHighCardinalityDims.
+     *
      * @param highCardinalityDims
      */
-	public void setHighCardinalityDims(String highCardinalityDims) {
-		this.highCardinalityDims = highCardinalityDims;
-	}
+    public void setHighCardinalityDims(String highCardinalityDims) {
+        this.highCardinalityDims = highCardinalityDims;
+    }
 }

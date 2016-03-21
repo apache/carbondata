@@ -17,26 +17,22 @@
  * under the License.
  */
 
-
 package com.huawei.unibi.molap.csvreader;
 
 import org.pentaho.di.trans.steps.csvinput.CsvInputData;
 
-public class CsvReaderData extends CsvInputData
-{
+public class CsvReaderData extends CsvInputData {
 
     /**
      * totalBytesFilesFinished
      */
     public long totalBytesFilesFinished;
-    
+
     /**
      * method to resize byte buffer array
      */
-    @Override
-    public void resizeByteBufferArray()
-    {
-        totalBytesFilesFinished=totalBytesFilesFinished+startBuffer;
+    @Override public void resizeByteBufferArray() {
+        totalBytesFilesFinished = totalBytesFilesFinished + startBuffer;
         super.resizeByteBufferArray();
     }
 }

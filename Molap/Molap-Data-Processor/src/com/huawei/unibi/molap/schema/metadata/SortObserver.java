@@ -19,8 +19,7 @@
 
 package com.huawei.unibi.molap.schema.metadata;
 
-public class SortObserver
-{
+public class SortObserver {
     /**
      * is failed
      */
@@ -29,18 +28,15 @@ public class SortObserver
     /**
      * @return the isFailed
      */
-    public boolean isFailed()
-    {
+    public boolean isFailed() {
         return isFailed;
     }
 
     /**
      * @param isFailed the isFailed to set
      */
-    public void setFailed(boolean isFailed)
-    {
+    public void setFailed(boolean isFailed) {
         this.isFailed = isFailed;
     }
-    
-    
+
 }

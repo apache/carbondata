@@ -17,7 +17,6 @@
  * under the License.
  */
 
-
 package com.huawei.unibi.molap.csvreader;
 
 import java.io.File;
@@ -25,6 +24,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Map;
 
+import com.huawei.iweb.platform.logging.LogService;
+import com.huawei.iweb.platform.logging.LogServiceFactory;
+import com.huawei.unibi.molap.util.MolapDataProcessorLogEvent;
 import org.apache.commons.vfs.FileObject;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.vfs.KettleVFS;
@@ -35,151 +37,121 @@ import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
 import org.pentaho.di.trans.steps.csvinput.CsvInput;
 
-import com.huawei.iweb.platform.logging.LogService;
-import com.huawei.iweb.platform.logging.LogServiceFactory;
-import com.huawei.unibi.molap.util.MolapDataProcessorLogEvent;
-
-public class CsvReader extends CsvInput
-{
+public class CsvReader extends CsvInput {
 
     /**
      * LOGGER
      */
-    private static final LogService LOGGER = LogServiceFactory
-            .getLogService(CsvReader.class.getName());
-    
+    private static final LogService LOGGER =
+            LogServiceFactory.getLogService(CsvReader.class.getName());
+
     /**
      * CsvReaderMeta
      */
     private CsvReaderMeta meta;
-    
+
     /**
      * CsvReaderData
      */
     private CsvReaderData data;
-    
+
     /**
      * bytesAlreadyRead
      */
     private long bytesAlreadyRead;
-    
+
     /**
      * CsvReader Constructor
+     *
      * @param stepMeta
      * @param stepDataInterface
      * @param copyNr
      * @param transMeta
      * @param trans
      */
-    public CsvReader(StepMeta stepMeta, StepDataInterface stepDataInterface,
-            int copyNr, TransMeta transMeta, Trans trans)
-    {
+    public CsvReader(StepMeta stepMeta, StepDataInterface stepDataInterface, int copyNr,
+            TransMeta transMeta, Trans trans) {
         super(stepMeta, stepDataInterface, copyNr, transMeta, trans);
     }
-    
+
     /**
      * below method will be used to initialise file reader
      */
-    @Override
-    protected void initializeFileReader(FileObject fileObject)
-            throws FileNotFoundException
-    {
+    @Override protected void initializeFileReader(FileObject fileObject)
+            throws FileNotFoundException {
         super.initializeFileReader(fileObject);
         Map<String, Long> fileNameOffSetCache = meta.getFileNameOffSetCache();
         Long offset = fileNameOffSetCache.get(KettleVFS.getFilename(fileObject));
-        if(null!=offset)
-        {
-            bytesAlreadyRead=offset;
-        }
-        else
-        {
+        if (null != offset) {
+            bytesAlreadyRead = offset;
+        } else {
             bytesAlreadyRead = 0;
         }
     }
-    
+
     /**
      * Below method will be used to initialize the step
      */
-    @Override
-    public boolean init(StepMetaInterface smi, StepDataInterface sdi)
-    {
-        meta=(CsvReaderMeta)smi;
-        data=(CsvReaderData)sdi;
-        if(super.init(smi, sdi))
-        {
-            if(0 == getCopy())
-            {
+    @Override public boolean init(StepMetaInterface smi, StepDataInterface sdi) {
+        meta = (CsvReaderMeta) smi;
+        data = (CsvReaderData) sdi;
+        if (super.init(smi, sdi)) {
+            if (0 == getCopy()) {
                 meta.initializeCheckPoint(new File(getTrans().getFilename()).getName());
-                
+
             }
             return true;
         }
         return false;
     }
-    
+
     /**
-     * Below method will be used to add the check point details to row 
+     * Below method will be used to add the check point details to row
      */
-    @Override
-    protected void addRowDetails(Object[] outputRowData)
-    {
-        if (data.isAddingRowNumber)
-        {
-            outputRowData[data.rownumFieldIndex] =  data.totalBytesFilesFinished+data.startBuffer;
+    @Override protected void addRowDetails(Object[] outputRowData) {
+        if (data.isAddingRowNumber) {
+            outputRowData[data.rownumFieldIndex] = data.totalBytesFilesFinished + data.startBuffer;
         }
-        if(LOGGER.isDebugEnabled())
-        {
-            LOGGER.debug(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,"### " + data.totalBytesRead);
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                    "### " + data.totalBytesRead);
         }
     }
-    
+
     /**
      * Below method will be used to open next file
      */
-    @Override
-    protected boolean openNextFile() throws KettleException
-    {
+    @Override protected boolean openNextFile() throws KettleException {
         data.totalBytesFilesFinished = 0;
         return super.openNextFile();
     }
-    
+
     /**
      * Below method will be used to read the header
      */
-    public void readHeader() throws KettleException
-    {
-        if(0 == bytesAlreadyRead)
-        {
+    public void readHeader() throws KettleException {
+        if (0 == bytesAlreadyRead) {
             super.readHeader();
             return;
         }
-        try
-        {
+        try {
             long skip = data.bufferedInputStream.skip(bytesAlreadyRead);
-            if(skip > 0)
-            {
-                LOGGER.info(
-                        MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            if (skip > 0) {
+                LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                         "Skipped bytes :" + skip);
             }
-            data.totalBytesFilesFinished=bytesAlreadyRead;
-        }
-        catch(IOException e)
-        {
-            LOGGER.error(
-                    MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
+            data.totalBytesFilesFinished = bytesAlreadyRead;
+        } catch (IOException e) {
+            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
         }
     }
-    
-    @Override
-    public void dispose(StepMetaInterface smi, StepDataInterface sdi)
-    {
-       
-        if (null == smi && null == sdi)
-        {
+
+    @Override public void dispose(StepMetaInterface smi, StepDataInterface sdi) {
+
+        if (null == smi && null == sdi) {
             return;
         }
-            
+
         meta = null;
         super.dispose(smi, sdi);
     }

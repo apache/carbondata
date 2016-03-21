@@ -23,25 +23,26 @@ import java.io.File;
 
 import com.huawei.unibi.molap.sortandgroupby.exception.MolapSortKeyAndGroupByException;
 
-public interface TempSortFileWriter
-{
+public interface TempSortFileWriter {
     /**
      * Method will be used to initialize
+     *
      * @param file
      * @param entryCount
      * @throws MolapSortKeyAndGroupByException
      */
-    void initiaize(File file,int entryCount) throws MolapSortKeyAndGroupByException;
+    void initiaize(File file, int entryCount) throws MolapSortKeyAndGroupByException;
 
     /**
-     * Method will be used to finish 
+     * Method will be used to finish
      */
     void finish();
-    
+
     /**
      * Below method will be used to write the sort temp file
+     *
      * @param records
      * @throws MolapSortKeyAndGroupByException
      */
-    void writeSortTempFile(Object[][] records)throws MolapSortKeyAndGroupByException;
+    void writeSortTempFile(Object[][] records) throws MolapSortKeyAndGroupByException;
 }

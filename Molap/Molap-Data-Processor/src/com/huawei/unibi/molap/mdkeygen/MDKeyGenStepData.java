@@ -19,23 +19,20 @@
 
 package com.huawei.unibi.molap.mdkeygen;
 
+import com.huawei.unibi.molap.keygenerator.KeyGenerator;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.step.BaseStepData;
 import org.pentaho.di.trans.step.StepDataInterface;
 
-import com.huawei.unibi.molap.keygenerator.KeyGenerator;
-
-public class MDKeyGenStepData extends BaseStepData implements
-        StepDataInterface
-{
+public class MDKeyGenStepData extends BaseStepData implements StepDataInterface {
     /**
      * outputRowMeta
      */
     protected RowMetaInterface outputRowMeta;
-    
+
     /**
      * generator for each column independently
      */
     protected KeyGenerator[] generator;
-    
+
 }

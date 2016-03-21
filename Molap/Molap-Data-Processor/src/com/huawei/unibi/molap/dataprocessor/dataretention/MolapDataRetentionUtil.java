@@ -24,13 +24,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.commons.codec.binary.Base64;
+import java.util.*;
 
 import com.huawei.datasight.molap.core.load.LoadMetadataDetails;
 import com.huawei.iweb.platform.logging.LogService;
@@ -44,172 +38,137 @@ import com.huawei.unibi.molap.util.MolapDataProcessorLogEvent;
 import com.huawei.unibi.molap.util.MolapFileFolderComparator;
 import com.huawei.unibi.molap.util.MolapProperties;
 import com.huawei.unibi.molap.util.MolapUtil;
+import org.apache.commons.codec.binary.Base64;
 
-public final class MolapDataRetentionUtil
-{
+public final class MolapDataRetentionUtil {
 
-    private static final LogService LOGGER = LogServiceFactory
-            .getLogService(MolapDataRetentionUtil.class.getName());
+    private static final LogService LOGGER =
+            LogServiceFactory.getLogService(MolapDataRetentionUtil.class.getName());
 
-    private MolapDataRetentionUtil()
-    {
+    private MolapDataRetentionUtil() {
 
     }
 
     /**
      * This API will scan the level file and return the surrogate key for the
      * valid member
-     * 
+     *
      * @param levelName
      * @throws ParseException
      */
-    public static Map<Integer, Integer> getSurrogateKeyForRetentionMember(
-            MolapFile memberFile, String levelName, String columnValue,
-            String format, Map<Integer, Integer> mapOfSurrKeyAndAvailStatus)
-    {
+    public static Map<Integer, Integer> getSurrogateKeyForRetentionMember(MolapFile memberFile,
+            String levelName, String columnValue, String format,
+            Map<Integer, Integer> mapOfSurrKeyAndAvailStatus) {
         DataInputStream inputStream = null;
         Date storeDateMember = null;
-        Date columnValDateMember=null;
-        DataInputStream inputStreamForMaxVal  = null;
-        try
-        {
-            columnValDateMember = convertToDateObjectFromStringVal(
-                    columnValue, format, true);
-        }
-        catch(ParseException e)
-        {
-            LOGGER.error(
-                    MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-                    e, "Not able to get surrogate key for value : "
-                            + columnValue);
+        Date columnValDateMember = null;
+        DataInputStream inputStreamForMaxVal = null;
+        try {
+            columnValDateMember = convertToDateObjectFromStringVal(columnValue, format, true);
+        } catch (ParseException e) {
+            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+                    "Not able to get surrogate key for value : " + columnValue);
             return mapOfSurrKeyAndAvailStatus;
         }
-        try
-        {
+        try {
             inputStream = FileFactory.getDataInputStream(memberFile.getPath(),
                     FileFactory.getFileType(memberFile.getPath()));
 
             long currPosIndex = 0;
             long size = memberFile.getSize() - 4;
-            int minVal=inputStream.readInt();
+            int minVal = inputStream.readInt();
             int surrogateKeyIndex = minVal;
             currPosIndex += 4;
             //
-            int current=0;
-            boolean enableEncoding = Boolean.valueOf(MolapProperties.getInstance().getProperty(
-                        MolapCommonConstants.ENABLE_BASE64_ENCODING, MolapCommonConstants.ENABLE_BASE64_ENCODING_DEFAULT));
-			String memberName = null;
-            while(currPosIndex < size)
-            {
-            	int len = inputStream.readInt();
+            int current = 0;
+            boolean enableEncoding = Boolean.valueOf(MolapProperties.getInstance()
+                    .getProperty(MolapCommonConstants.ENABLE_BASE64_ENCODING,
+                            MolapCommonConstants.ENABLE_BASE64_ENCODING_DEFAULT));
+            String memberName = null;
+            while (currPosIndex < size) {
+                int len = inputStream.readInt();
                 currPosIndex += 4;
                 byte[] rowBytes = new byte[len];
                 inputStream.readFully(rowBytes);
                 currPosIndex += len;
-                if(enableEncoding)
-                {
-                    memberName = new String(Base64.decodeBase64(rowBytes), Charset.defaultCharset());
-                }
-                else
-                {
+                if (enableEncoding) {
+                    memberName =
+                            new String(Base64.decodeBase64(rowBytes), Charset.defaultCharset());
+                } else {
                     memberName = new String(rowBytes, Charset.defaultCharset());
                 }
-                int surrogateVal = surrogateKeyIndex+current;
+                int surrogateVal = surrogateKeyIndex + current;
                 current++;
-                try
-                {
-                    storeDateMember = convertToDateObjectFromStringVal(memberName,
-                            format, false);
+                try {
+                    storeDateMember = convertToDateObjectFromStringVal(memberName, format, false);
 
-                }
-                catch(Exception e)
-                {
-                    LOGGER.error(
-                            MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-                            e, "Not able to get surrogate key for value : "
-                                    + memberName);
+                } catch (Exception e) {
+                    LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+                            "Not able to get surrogate key for value : " + memberName);
                     continue;
                 }
                 // means date1 is before date2
-				if (null != columnValDateMember && null != storeDateMember) {
-					if (storeDateMember.compareTo(columnValDateMember) < 0) {
-						mapOfSurrKeyAndAvailStatus.put(surrogateVal,
-								surrogateVal);
-					}
-				}
+                if (null != columnValDateMember && null != storeDateMember) {
+                    if (storeDateMember.compareTo(columnValDateMember) < 0) {
+                        mapOfSurrKeyAndAvailStatus.put(surrogateVal, surrogateVal);
+                    }
+                }
 
             }
 
-        }
-        catch(IOException e)
-        {
-            LOGGER.error(
-                    MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
-                    "Not able to read level file for Populating Cache : "
-                            + memberFile.getName());
+        } catch (IOException e) {
+            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+                    "Not able to read level file for Populating Cache : " + memberFile.getName());
 
-        }
-        finally
-        {
+        } finally {
             MolapUtil.closeStreams(inputStream);
             MolapUtil.closeStreams(inputStreamForMaxVal);
-            
+
         }
 
         return mapOfSurrKeyAndAvailStatus;
     }
 
     @SuppressWarnings("deprecation")
-    private static Date convertToDateObjectFromStringVal(String value,
-            String dateFormatVal, boolean isUserInPut) throws ParseException
-    {
+    private static Date convertToDateObjectFromStringVal(String value, String dateFormatVal,
+            boolean isUserInPut) throws ParseException {
 
-        if(!value.equals(MolapCommonConstants.MEMBER_DEFAULT_VAL)){
+        if (!value.equals(MolapCommonConstants.MEMBER_DEFAULT_VAL)) {
 
-    	Date dateToConvert = null;
-        String dateFormat = MolapProperties.getInstance().getProperty(
-                MolapCommonConstants.MOLAP_TIMESTAMP_FORMAT,
-                MolapCommonConstants.MOLAP_TIMESTAMP_DEFAULT_FORMAT);
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(dateFormat);
-        // Format the date to Strings
+            Date dateToConvert = null;
+            String dateFormat = MolapProperties.getInstance()
+                    .getProperty(MolapCommonConstants.MOLAP_TIMESTAMP_FORMAT,
+                            MolapCommonConstants.MOLAP_TIMESTAMP_DEFAULT_FORMAT);
+            SimpleDateFormat simpleDateFormat = new SimpleDateFormat(dateFormat);
+            // Format the date to Strings
 
-        if(isUserInPut && (null != dateFormatVal || !"".equals(dateFormatVal)))
-        {
-            SimpleDateFormat defaultDateFormat = new SimpleDateFormat(
-                    dateFormatVal);
-            dateToConvert = defaultDateFormat.parse(value);
-            String dmy = simpleDateFormat.format(dateToConvert);
-            return simpleDateFormat.parse(dmy);
-        }
+            if (isUserInPut && (null != dateFormatVal || !"".equals(dateFormatVal))) {
+                SimpleDateFormat defaultDateFormat = new SimpleDateFormat(dateFormatVal);
+                dateToConvert = defaultDateFormat.parse(value);
+                String dmy = simpleDateFormat.format(dateToConvert);
+                return simpleDateFormat.parse(dmy);
+            }
 
-        return simpleDateFormat.parse(value);
+            return simpleDateFormat.parse(value);
         }
         return null;
     }
 
     /**
-     * 
      * @param baseStorePath
      * @param fileNameSearchPattern
      * @return
      */
     public static MolapFile[] getFilesArray(String baseStorePath,
-            final String fileNameSearchPattern)
-    {
+            final String fileNameSearchPattern) {
         FileType fileType = FileFactory.getFileType(baseStorePath);
-        MolapFile storeFolder = FileFactory.getMolapFile(baseStorePath,
-                fileType);
+        MolapFile storeFolder = FileFactory.getMolapFile(baseStorePath, fileType);
 
-        MolapFile[] listFiles = storeFolder.listFiles(new MolapFileFilter()
-        {
+        MolapFile[] listFiles = storeFolder.listFiles(new MolapFileFilter() {
 
-            @Override
-            public boolean accept(MolapFile pathname)
-            {
-                if(pathname.getName().indexOf(fileNameSearchPattern) > -1
-                        && !pathname.getName().endsWith(
-                                MolapCommonConstants.FILE_INPROGRESS_STATUS))
-                {
+            @Override public boolean accept(MolapFile pathname) {
+                if (pathname.getName().indexOf(fileNameSearchPattern) > -1 && !pathname.getName()
+                        .endsWith(MolapCommonConstants.FILE_INPROGRESS_STATUS)) {
                     return true;
                 }
                 return false;
@@ -219,19 +178,17 @@ public final class MolapDataRetentionUtil
         return listFiles;
     }
 
-    public static MolapFile[] getAllLoadFolderSlices(String schemaName,
-            String cubeName, String tableName, String hdsfStoreLocation,
-            int currentRestructNumber)
-    {
-        String hdfsLevelRSPath = MolapUtil.getRSPath(schemaName, cubeName,
-                tableName, hdsfStoreLocation, currentRestructNumber);
+    public static MolapFile[] getAllLoadFolderSlices(String schemaName, String cubeName,
+            String tableName, String hdsfStoreLocation, int currentRestructNumber) {
+        String hdfsLevelRSPath = MolapUtil
+                .getRSPath(schemaName, cubeName, tableName, hdsfStoreLocation,
+                        currentRestructNumber);
 
-        MolapFile file = FileFactory.getMolapFile(hdfsLevelRSPath + '/',
-                FileFactory.getFileType(hdfsLevelRSPath));
+        MolapFile file = FileFactory
+                .getMolapFile(hdfsLevelRSPath + '/', FileFactory.getFileType(hdfsLevelRSPath));
 
         MolapFile[] listFiles = listFiles(file);
-        if(null != listFiles)
-        {
+        if (null != listFiles) {
             Arrays.sort(listFiles, new MolapFileFolderComparator());
         }
         return listFiles;
@@ -241,79 +198,64 @@ public final class MolapDataRetentionUtil
      * @param file
      * @return
      */
-    private static MolapFile[] listFiles(MolapFile file)
-    {
-        MolapFile[] listFiles = file.listFiles(new MolapFileFilter()
-        {
-            @Override
-            public boolean accept(MolapFile pathname)
-            {
-                return pathname.getName().startsWith(
-                        MolapCommonConstants.LOAD_FOLDER)
-                        && !pathname.getName().endsWith(
-                                MolapCommonConstants.FILE_INPROGRESS_STATUS);
+    private static MolapFile[] listFiles(MolapFile file) {
+        MolapFile[] listFiles = file.listFiles(new MolapFileFilter() {
+            @Override public boolean accept(MolapFile pathname) {
+                return pathname.getName().startsWith(MolapCommonConstants.LOAD_FOLDER) && !pathname
+                        .getName().endsWith(MolapCommonConstants.FILE_INPROGRESS_STATUS);
             }
         });
         return listFiles;
     }
 
     /**
-     * 
      * @param loadFiles
      * @param loadMetadataDetails
      * @return
      */
     public static MolapFile[] excludeUnwantedLoads(MolapFile[] loadFiles,
-            List<LoadMetadataDetails> loadMetadataDetails)
-    {
+            List<LoadMetadataDetails> loadMetadataDetails) {
         List<MolapFile> validLoads = new ArrayList<MolapFile>();
-        
-        List<String> validLoadsForRetention =  getValidLoadsForRetention(loadMetadataDetails);
-        
-        for(MolapFile loadFolder : loadFiles)
-        {
-            String loadName = loadFolder.getName().substring(loadFolder.getName().indexOf(MolapCommonConstants.LOAD_FOLDER)+MolapCommonConstants.LOAD_FOLDER.length(),loadFolder.getName().length() );
-            
-            if(validLoadsForRetention.contains(loadName))
-            {
+
+        List<String> validLoadsForRetention = getValidLoadsForRetention(loadMetadataDetails);
+
+        for (MolapFile loadFolder : loadFiles) {
+            String loadName = loadFolder.getName().substring(
+                    loadFolder.getName().indexOf(MolapCommonConstants.LOAD_FOLDER)
+                            + MolapCommonConstants.LOAD_FOLDER.length(),
+                    loadFolder.getName().length());
+
+            if (validLoadsForRetention.contains(loadName)) {
                 validLoads.add(loadFolder);
             }
-            
+
         }
-        
-        
-        
-        
+
         return validLoads.toArray(new MolapFile[validLoads.size()]);
     }
 
     /**
-     * 
      * @param loadMetadataDetails
      * @return
      */
     private static List<String> getValidLoadsForRetention(
-            List<LoadMetadataDetails> loadMetadataDetails)
-    {
-        List<String> validLoadNameForRetention = new ArrayList<String>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
-        
-        for(LoadMetadataDetails loadDetail : loadMetadataDetails )
-        {
+            List<LoadMetadataDetails> loadMetadataDetails) {
+        List<String> validLoadNameForRetention =
+                new ArrayList<String>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+
+        for (LoadMetadataDetails loadDetail : loadMetadataDetails) {
             //load should not be deleted and load should not be merged.
-            if(!loadDetail.getLoadStatus().equalsIgnoreCase(MolapCommonConstants.MARKED_FOR_DELETE))
-            {
-                if(null == loadDetail.getMergedLoadName())
-                {
+            if (!loadDetail.getLoadStatus()
+                    .equalsIgnoreCase(MolapCommonConstants.MARKED_FOR_DELETE)) {
+                if (null == loadDetail.getMergedLoadName()) {
                     validLoadNameForRetention.add(loadDetail.getLoadName());
-                }
-                else
-                {
+                } else {
                     validLoadNameForRetention.add(loadDetail.getMergedLoadName());
                 }
-                   
+
             }
         }
-        
+
         return validLoadNameForRetention;
     }
 }

@@ -23,19 +23,18 @@ import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.step.BaseStepData;
 import org.pentaho.di.trans.step.StepDataInterface;
 
-public class MolapAggregateSurrogateGeneratorData extends BaseStepData implements
-        StepDataInterface
-{
-    /**
-     * constructor
-     */
-    public MolapAggregateSurrogateGeneratorData()
-    {
-        super();
-    }
+public class MolapAggregateSurrogateGeneratorData extends BaseStepData
+        implements StepDataInterface {
     /**
      * outputRowMeta
      */
     protected RowMetaInterface outputRowMeta;
-    
+
+    /**
+     * constructor
+     */
+    public MolapAggregateSurrogateGeneratorData() {
+        super();
+    }
+
 }

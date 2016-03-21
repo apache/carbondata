@@ -21,33 +21,26 @@ package com.huawei.unibi.molap.aggregatesurrogategenerator.step;
 
 import java.util.Arrays;
 
+import com.huawei.iweb.platform.logging.LogService;
+import com.huawei.iweb.platform.logging.LogServiceFactory;
+import com.huawei.unibi.molap.aggregatesurrogategenerator.AggregateSurrogateGenerator;
+import com.huawei.unibi.molap.constants.MolapCommonConstants;
+import com.huawei.unibi.molap.util.MolapDataProcessorLogEvent;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMeta;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
-import org.pentaho.di.trans.step.BaseStep;
-import org.pentaho.di.trans.step.StepDataInterface;
-import org.pentaho.di.trans.step.StepInterface;
-import org.pentaho.di.trans.step.StepMeta;
-import org.pentaho.di.trans.step.StepMetaInterface;
+import org.pentaho.di.trans.step.*;
 
-import com.huawei.iweb.platform.logging.LogService;
-import com.huawei.iweb.platform.logging.LogServiceFactory;
-import com.huawei.unibi.molap.aggregatesurrogategenerator.AggregateSurrogateGenerator;
-import com.huawei.unibi.molap.constants.MolapCommonConstants;
-import com.huawei.unibi.molap.util.MolapDataProcessorLogEvent;
-
-public class MolapAggregateSurrogateGeneratorStep extends BaseStep implements
-        StepInterface
-{
+public class MolapAggregateSurrogateGeneratorStep extends BaseStep implements StepInterface {
 
     /**
      * LOGGER
      */
-    private static final LogService LOGGER = LogServiceFactory
-            .getLogService(MolapAggregateSurrogateGeneratorStep.class.getName());
+    private static final LogService LOGGER =
+            LogServiceFactory.getLogService(MolapAggregateSurrogateGeneratorStep.class.getName());
 
     /**
      * BYTE ENCODING
@@ -85,20 +78,16 @@ public class MolapAggregateSurrogateGeneratorStep extends BaseStep implements
     private AggregateSurrogateGenerator aggregateRecordIterator;
 
     /**
-     * 
      * MolapAggregateSurrogateGeneratorStep Constructor to initialize the step
-     * 
+     *
      * @param stepMeta
      * @param stepDataInterface
      * @param copyNr
      * @param transMeta
      * @param trans
-     * 
      */
     public MolapAggregateSurrogateGeneratorStep(StepMeta stepMeta,
-            StepDataInterface stepDataInterface, int copyNr,
-            TransMeta transMeta, Trans trans)
-    {
+            StepDataInterface stepDataInterface, int copyNr, TransMeta transMeta, Trans trans) {
         super(stepMeta, stepDataInterface, copyNr, transMeta, trans);
     }
 
@@ -106,153 +95,120 @@ public class MolapAggregateSurrogateGeneratorStep extends BaseStep implements
      * Perform the equivalent of processing one row. Typically this means
      * reading a row from input (getRow()) and passing a row to output
      * (putRow)).
-     * 
-     * @param smi
-     *            The steps metadata to work with
-     * @param sdi
-     *            The steps temporary working data to work with (database
+     *
+     * @param smi The steps metadata to work with
+     * @param sdi The steps temporary working data to work with (database
      *            connections, result sets, caches, temporary variables, etc.)
      * @return false if no more rows can be processed or an error occurred.
      * @throws KettleException
      */
-    public boolean processRow(StepMetaInterface smi, StepDataInterface sdi)
-            throws KettleException
-    {
-        try
-        {
+    public boolean processRow(StepMetaInterface smi, StepDataInterface sdi) throws KettleException {
+        try {
             Object[] factTuple = getRow();
-            if(first)
-            {
-                meta = (MolapAggregateSurrogateGeneratorMeta)smi;
-                data = (MolapAggregateSurrogateGeneratorData)sdi;
+            if (first) {
+                meta = (MolapAggregateSurrogateGeneratorMeta) smi;
+                data = (MolapAggregateSurrogateGeneratorData) sdi;
                 meta.initialize();
                 first = false;
-                if(null != getInputRowMeta())
-                {
-                    this.data.outputRowMeta = (RowMetaInterface)getInputRowMeta()
-                            .clone();
-                    this.meta.getFields(data.outputRowMeta, getStepname(),
-                            null, null, this);
+                if (null != getInputRowMeta()) {
+                    this.data.outputRowMeta = (RowMetaInterface) getInputRowMeta().clone();
+                    this.meta.getFields(data.outputRowMeta, getStepname(), null, null, this);
                     setStepOutputInterface(meta.isMdkeyInOutRowRequired());
                 }
-                
-                String[] aggLevels = meta.getAggregateLevels(); 
+
+                String[] aggLevels = meta.getAggregateLevels();
                 String[] factLevels = meta.getFactLevels();
                 int[] cardinality = meta.getFactDimLens();
-                
+
                 int[] aggCardinality = new int[aggLevels.length];
                 Arrays.fill(aggCardinality, -1);
-                
-                for(int i = 0; i < aggLevels.length; i++)
-                {
-                    for(int j = 0; j < factLevels.length; j++)
-                    {
-                        if(aggLevels[i].equals(factLevels[j]))
-                        {      //CHECKSTYLE:OFF    Approval No:Approval-V1R2C10_001
-                        	aggCardinality[i] = cardinality[j];
+
+                for (int i = 0; i < aggLevels.length; i++) {
+                    for (int j = 0; j < factLevels.length; j++) {
+                        if (aggLevels[i]
+                                .equals(factLevels[j])) {      //CHECKSTYLE:OFF    Approval No:Approval-V1R2C10_001
+                            aggCardinality[i] = cardinality[j];
                             break;
                         }// CHECKSTYLE:ON
                     }
                 }
-                this.aggregateRecordIterator = new AggregateSurrogateGenerator(
-                		factLevels, aggLevels,
-                        meta.getFactMeasure(), meta.getAggregateMeasures(),
-                        meta.isMdkeyInOutRowRequired(), aggCardinality);
-                
-                this.logCounter = Integer
-                        .parseInt(MolapCommonConstants.DATA_LOAD_LOG_COUNTER_DEFAULT_COUNTER);
+                this.aggregateRecordIterator =
+                        new AggregateSurrogateGenerator(factLevels, aggLevels,
+                                meta.getFactMeasure(), meta.getAggregateMeasures(),
+                                meta.isMdkeyInOutRowRequired(), aggCardinality);
+
+                this.logCounter = Integer.parseInt(
+                        MolapCommonConstants.DATA_LOAD_LOG_COUNTER_DEFAULT_COUNTER);
             }
-            if(null == factTuple)
-            {
-                LOGGER.info(
-                        MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            if (null == factTuple) {
+                LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                         "Record Procerssed For table: " + meta.getTableName());
-                String logMessage = "Summary: Molap Auto Aggregate Generator Step: Read: "
-                        + readCounter + ": Write: " + writeCounter;
-                LOGGER.info(
-                        MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-                        logMessage);
+                String logMessage =
+                        "Summary: Molap Auto Aggregate Generator Step: Read: " + readCounter
+                                + ": Write: " + writeCounter;
+                LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, logMessage);
                 setOutputDone();
                 return false;
             }
             readCounter++;
-            putRow(data.outputRowMeta,
-                    this.aggregateRecordIterator.generateSurrogate(factTuple));
+            putRow(data.outputRowMeta, this.aggregateRecordIterator.generateSurrogate(factTuple));
             writeCounter++;
-            if(readCounter % logCounter == 0)
-            {
-                LOGGER.info(
-                        MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            if (readCounter % logCounter == 0) {
+                LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                         "Record Procerssed For table: " + meta.getTableName());
-                String logMessage = "Molap Auto Aggregate Generator Step: Read: "
-                        + readCounter + ": Write: " + writeCounter;
-                LOGGER.info(
-                        MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-                        logMessage);
+                String logMessage =
+                        "Molap Auto Aggregate Generator Step: Read: " + readCounter + ": Write: "
+                                + writeCounter;
+                LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, logMessage);
             }
-        }
-        catch(Exception ex)
-        {
-            LOGGER.error(
-                    MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, ex);
+        } catch (Exception ex) {
+            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, ex);
             throw new RuntimeException(ex);
         }
         return true;
     }
-    
+
     /**
      * This method will be used for setting the output interface. Output
      * interface is how this step will process the row to next step
-     * 
      */
-    private void setStepOutputInterface(boolean isMdkeyRequiredInOutRow)
-    {
+    private void setStepOutputInterface(boolean isMdkeyRequiredInOutRow) {
         String[] aggregateMeasures = meta.getAggregateMeasures();
-        int size=aggregateMeasures.length
-                + 1;
-        
-        if(isMdkeyRequiredInOutRow)
-        {
-            size+=1;
+        int size = aggregateMeasures.length + 1;
+
+        if (isMdkeyRequiredInOutRow) {
+            size += 1;
         }
         ValueMetaInterface[] out = new ValueMetaInterface[size];
         int l = 0;
         ValueMetaInterface valueMetaInterface = null;
         ValueMetaInterface storageMetaInterface = null;
-        for(int i = 0;i < aggregateMeasures.length;i++)
-        {
-            valueMetaInterface = new ValueMeta(aggregateMeasures[i],
-                    ValueMetaInterface.TYPE_NUMBER,
+        for (int i = 0; i < aggregateMeasures.length; i++) {
+            valueMetaInterface = new ValueMeta(aggregateMeasures[i], ValueMetaInterface.TYPE_NUMBER,
                     ValueMetaInterface.STORAGE_TYPE_NORMAL);
-            storageMetaInterface = new ValueMeta(aggregateMeasures[i],
-                    ValueMetaInterface.TYPE_NUMBER,
-                    ValueMetaInterface.STORAGE_TYPE_NORMAL);
+            storageMetaInterface =
+                    new ValueMeta(aggregateMeasures[i], ValueMetaInterface.TYPE_NUMBER,
+                            ValueMetaInterface.STORAGE_TYPE_NORMAL);
             valueMetaInterface.setStorageMetadata(storageMetaInterface);
             out[l++] = valueMetaInterface;
 
         }
-        valueMetaInterface = new ValueMeta("id",
-                ValueMetaInterface.TYPE_BINARY,
+        valueMetaInterface = new ValueMeta("id", ValueMetaInterface.TYPE_BINARY,
                 ValueMetaInterface.STORAGE_TYPE_BINARY_STRING);
-        valueMetaInterface.setStorageMetadata((new ValueMeta("id",
-                ValueMetaInterface.TYPE_STRING,
+        valueMetaInterface.setStorageMetadata((new ValueMeta("id", ValueMetaInterface.TYPE_STRING,
                 ValueMetaInterface.STORAGE_TYPE_NORMAL)));
-        valueMetaInterface.getStorageMetadata().setStringEncoding(
-                BYTE_ENCODING);
+        valueMetaInterface.getStorageMetadata().setStringEncoding(BYTE_ENCODING);
         valueMetaInterface.setStringEncoding(BYTE_ENCODING);
         out[l++] = valueMetaInterface;
-        if(isMdkeyRequiredInOutRow)
-        {
-            valueMetaInterface = new ValueMeta("factMdkey",
-                    ValueMetaInterface.TYPE_BINARY,
+        if (isMdkeyRequiredInOutRow) {
+            valueMetaInterface = new ValueMeta("factMdkey", ValueMetaInterface.TYPE_BINARY,
                     ValueMetaInterface.STORAGE_TYPE_BINARY_STRING);
-            valueMetaInterface.setStorageMetadata((new ValueMeta("factMdkey",
-                    ValueMetaInterface.TYPE_STRING,
-                    ValueMetaInterface.STORAGE_TYPE_NORMAL)));
+            valueMetaInterface.setStorageMetadata(
+                    (new ValueMeta("factMdkey", ValueMetaInterface.TYPE_STRING,
+                            ValueMetaInterface.STORAGE_TYPE_NORMAL)));
             valueMetaInterface.setStringEncoding(BYTE_ENCODING);
             valueMetaInterface.setStringEncoding(BYTE_ENCODING);
-            valueMetaInterface.getStorageMetadata()
-                    .setStringEncoding(BYTE_ENCODING);
+            valueMetaInterface.getStorageMetadata().setStringEncoding(BYTE_ENCODING);
             out[l] = valueMetaInterface;
         }
 
@@ -261,32 +217,26 @@ public class MolapAggregateSurrogateGeneratorStep extends BaseStep implements
 
     /**
      * Initialize and do work where other steps need to wait for...
-     * 
-     * @param smi
-     *            The metadata to work with
-     * @param sdi
-     *            The data to initialize
+     *
+     * @param smi The metadata to work with
+     * @param sdi The data to initialize
      * @return step initialize or not
      */
-    public boolean init(StepMetaInterface smi, StepDataInterface sdi)
-    {
-        meta = (MolapAggregateSurrogateGeneratorMeta)smi;
-        data = (MolapAggregateSurrogateGeneratorData)sdi;
+    public boolean init(StepMetaInterface smi, StepDataInterface sdi) {
+        meta = (MolapAggregateSurrogateGeneratorMeta) smi;
+        data = (MolapAggregateSurrogateGeneratorData) sdi;
         return super.init(smi, sdi);
     }
 
     /**
      * Dispose of this step: close files, empty logs, etc.
-     * 
-     * @param smi
-     *            The metadata to work with
-     * @param sdi
-     *            The data to dispose of
+     *
+     * @param smi The metadata to work with
+     * @param sdi The data to dispose of
      */
-    public void dispose(StepMetaInterface smi, StepDataInterface sdi)
-    {
-        meta = (MolapAggregateSurrogateGeneratorMeta)smi;
-        data = (MolapAggregateSurrogateGeneratorData)sdi;
+    public void dispose(StepMetaInterface smi, StepDataInterface sdi) {
+        meta = (MolapAggregateSurrogateGeneratorMeta) smi;
+        data = (MolapAggregateSurrogateGeneratorData) sdi;
         super.dispose(smi, sdi);
     }
 }

@@ -28,55 +28,52 @@ import com.huawei.unibi.molap.datastorage.store.compression.SnappyCompression.Sn
 import com.huawei.unibi.molap.sortandgroupby.exception.MolapSortKeyAndGroupByException;
 import com.huawei.unibi.molap.util.MolapUtil;
 
-public class CompressedTempSortFileWriter extends AbstractTempSortFileWriter
-{
+public class CompressedTempSortFileWriter extends AbstractTempSortFileWriter {
 
     /**
      * CompressedTempSortFileWriter
+     *
      * @param writeBufferSize
      * @param dimensionCount
      * @param measureCount
      */
     public CompressedTempSortFileWriter(int dimensionCount, int complexDimensionCount,
-    		int measureCount,int highCardinalityCount, int writeBufferSize)
-    {
-        super(dimensionCount, complexDimensionCount, measureCount,highCardinalityCount, writeBufferSize);
+            int measureCount, int highCardinalityCount, int writeBufferSize) {
+        super(dimensionCount, complexDimensionCount, measureCount, highCardinalityCount,
+                writeBufferSize);
     }
 
     /**
      * Below method will be used to write the sort temp file
+     *
      * @param records
      */
-    public void writeSortTempFile(Object[][] records)
-            throws MolapSortKeyAndGroupByException
-    {
-    	DataOutputStream dataOutputStream = null;
+    public void writeSortTempFile(Object[][] records) throws MolapSortKeyAndGroupByException {
+        DataOutputStream dataOutputStream = null;
         ByteArrayOutputStream blockDataArray = null;
         int totalSize = 0;
         int recordSize = 0;
-        try
-        {
-        	recordSize = (measureCount * MolapCommonConstants.DOUBLE_SIZE_IN_BYTE) + (dimensionCount * MolapCommonConstants.INT_SIZE_IN_BYTE);
+        try {
+            recordSize = (measureCount * MolapCommonConstants.DOUBLE_SIZE_IN_BYTE) + (dimensionCount
+                    * MolapCommonConstants.INT_SIZE_IN_BYTE);
             totalSize = records.length * recordSize;
-            
+
             blockDataArray = new ByteArrayOutputStream(totalSize);
             dataOutputStream = new DataOutputStream(blockDataArray);
-            
-            UnCompressedTempSortFileWriter.writeDataOutputStream(records, dataOutputStream, measureCount, dimensionCount, highCardinalityCount, complexDimensionCount);
-            
+
+            UnCompressedTempSortFileWriter
+                    .writeDataOutputStream(records, dataOutputStream, measureCount, dimensionCount,
+                            highCardinalityCount, complexDimensionCount);
+
             stream.writeInt(records.length);
-            byte[] byteArray = SnappyByteCompression.INSTANCE
-                    .compress(blockDataArray.toByteArray());
+            byte[] byteArray =
+                    SnappyByteCompression.INSTANCE.compress(blockDataArray.toByteArray());
             stream.writeInt(byteArray.length);
             stream.write(byteArray);
 
-        }
-        catch(IOException e)
-        {
+        } catch (IOException e) {
             throw new MolapSortKeyAndGroupByException(e);
-        }
-        finally
-        {
+        } finally {
             MolapUtil.closeStreams(blockDataArray);
             MolapUtil.closeStreams(dataOutputStream);
         }

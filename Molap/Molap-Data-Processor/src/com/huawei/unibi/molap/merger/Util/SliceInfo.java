@@ -25,125 +25,104 @@ import java.util.List;
 import com.huawei.unibi.molap.datastorage.store.compression.ValueCompressionModel;
 import com.huawei.unibi.molap.metadata.LeafNodeInfo;
 
-public class SliceInfo
-{
-	private File tableFolder;
-	
+public class SliceInfo {
+    private File tableFolder;
     /**
-     * getTableFolder
-     * @return File
-     */
-    public File getTableFolder() {
-		return tableFolder;
-	}
-
-	/**
-	 * setTableFolder
-	 * @param tableFolder void
-	 */
-	public void setTableFolder(File tableFolder) {
-		this.tableFolder = tableFolder;
-	}
-
-	/**
      * leafNodeInfoList
      */
     private List<LeafNodeInfo> leafNodeInfoList;
-    
     /**
      * compressionModel
-     *  
      */
     private ValueCompressionModel compressionModel;
-    
     /**
      * sliceLocation
      */
     private String sliceLocation;
-    
     /**
      * measureCount
      */
     private int measureCount;
-    
+
     /**
-     * Will return list of leaf meta data 
-     * 
-     * @return leafNodeInfoList
-     *          leafNodeInfoList
+     * getTableFolder
      *
+     * @return File
      */
-    public List<LeafNodeInfo> getLeafNodeInfoList()
-    {
+    public File getTableFolder() {
+        return tableFolder;
+    }
+
+    /**
+     * setTableFolder
+     *
+     * @param tableFolder void
+     */
+    public void setTableFolder(File tableFolder) {
+        this.tableFolder = tableFolder;
+    }
+
+    /**
+     * Will return list of leaf meta data
+     *
+     * @return leafNodeInfoList
+     * leafNodeInfoList
+     */
+    public List<LeafNodeInfo> getLeafNodeInfoList() {
         return leafNodeInfoList;
     }
 
     /**
      * This method will set the leafNodeinfo list
-     * 
-     * @param leafNodeInfoList
-     *          leafNodeInfoList
      *
+     * @param leafNodeInfoList leafNodeInfoList
      */
-    public void setLeafNodeInfoList(List<LeafNodeInfo> leafNodeInfoList)
-    {
+    public void setLeafNodeInfoList(List<LeafNodeInfo> leafNodeInfoList) {
         this.leafNodeInfoList = leafNodeInfoList;
     }
 
     /**
-     * This method will be used to get the compression model 
-     * 
-     * @return compressionModel
-     *             compressionModel
+     * This method will be used to get the compression model
      *
+     * @return compressionModel
+     * compressionModel
      */
-    public ValueCompressionModel getCompressionModel()
-    {
+    public ValueCompressionModel getCompressionModel() {
         return compressionModel;
     }
 
     /**
-     * This method will be used to set the compression model 
-     * 
-     * @param compressionModel
-     *          compressionModel
+     * This method will be used to set the compression model
      *
+     * @param compressionModel compressionModel
      */
-    public void setCompressionModel(ValueCompressionModel compressionModel)
-    {
+    public void setCompressionModel(ValueCompressionModel compressionModel) {
         this.compressionModel = compressionModel;
     }
 
     /**
      * This method will be used to get the slice location
-     * 
-     * @return slice location
      *
+     * @return slice location
      */
-    public String getSliceLocation()
-    {
+    public String getSliceLocation() {
         return sliceLocation;
     }
 
     /**
-     * This method will be used to set the slice location 
-     * 
-     * @param sliceLocation
-     *          sliceLocation
+     * This method will be used to set the slice location
      *
+     * @param sliceLocation sliceLocation
      */
-    public void setSliceLocation(String sliceLocation)
-    {
+    public void setSliceLocation(String sliceLocation) {
         this.sliceLocation = sliceLocation;
     }
 
-    public int getMeasureCount()
-    {
+    public int getMeasureCount() {
         return measureCount;
     }
 
-    public void setMeasureCount(int measureCount)
-    {
+    public void setMeasureCount(int measureCount) {
         this.measureCount = measureCount;
     }
 }

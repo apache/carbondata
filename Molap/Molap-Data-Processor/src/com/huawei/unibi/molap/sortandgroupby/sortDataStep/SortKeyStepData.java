@@ -23,36 +23,31 @@ import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.step.BaseStepData;
 import org.pentaho.di.trans.step.StepDataInterface;
 
-public class SortKeyStepData extends BaseStepData implements StepDataInterface
-{
-    
+public class SortKeyStepData extends BaseStepData implements StepDataInterface {
+
     /**
      * outputRowMeta
      */
     private RowMetaInterface outputRowMeta;
-    
+
     /**
      * rowMeta
      */
     private RowMetaInterface rowMeta;
 
-    public RowMetaInterface getOutputRowMeta()
-    {
+    public RowMetaInterface getOutputRowMeta() {
         return outputRowMeta;
     }
 
-    public void setOutputRowMeta(RowMetaInterface outputRowMeta)
-    {
+    public void setOutputRowMeta(RowMetaInterface outputRowMeta) {
         this.outputRowMeta = outputRowMeta;
     }
 
-    public RowMetaInterface getRowMeta()
-    {
+    public RowMetaInterface getRowMeta() {
         return rowMeta;
     }
 
-    public void setRowMeta(RowMetaInterface rowMeta)
-    {
+    public void setRowMeta(RowMetaInterface rowMeta) {
         this.rowMeta = rowMeta;
     }
 }

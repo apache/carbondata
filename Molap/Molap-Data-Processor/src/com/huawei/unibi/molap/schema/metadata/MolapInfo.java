@@ -26,9 +26,7 @@ import java.util.Set;
 import com.huawei.datasight.molap.datatypes.GenericDataType;
 import com.huawei.unibi.molap.keygenerator.KeyGenerator;
 
-
-public class MolapInfo
-{
+public class MolapInfo {
 
     /**
      * Indices for dimensions in the record. Doesn't include any properties.
@@ -70,12 +68,12 @@ public class MolapInfo
      * column Names for dimensions. Which will be used as table name for store
      */
     private String[] dimColNames;
-    
+
     /**
      * baseStoreLocation
      */
     private String baseStoreLocation;
-    
+
     /**
      * Maximum possible surrogate key for dimension possible based on
      * cardinality value in schema definition
@@ -84,18 +82,14 @@ public class MolapInfo
 
     /**
      * Dimension Index, Properties indices in the tuple.
-     * 
      * [0] - [2,3] - 2 Props at indices 2 & 3 [1] - [4,7,8] - 3 props at indices
      * 4,7, & 8 [2] - [] - No props
-     * 
      */
     private int[][] propIndx;
 
     /**
      * Dimension Index, Property column names from cube.
-     * 
      * [0] - [col2,col3] [1] - [col4,col7,col8] [2] - []
-     * 
      */
     private List<String>[] propColumns;
 
@@ -127,477 +121,351 @@ public class MolapInfo
     /**
      * dimHierRel
      */
-    private String [] dimHierRel;
-    
+    private String[] dimHierRel;
+
     /**
      * tableName
      */
     private String tableName;
-    
+
     /**
      * Primary key Map
      */
     private Map<String, Boolean> primaryKeyMap;
-    
+
     /**
      * measureColumns
      */
     private String[] measureColumns;
-    
+
     private boolean[] dimsPresent;
-    
+
     private String schemaName;
-    
-    private Map<String,GenericDataType> complexTypesMap;
-    
-	public Map<String, GenericDataType> getComplexTypesMap() {
-		return complexTypesMap;
-	}
 
-	public void setComplexTypesMap(Map<String, GenericDataType> complexTypesMap) {
-		this.complexTypesMap = complexTypesMap;
-	}
+    private Map<String, GenericDataType> complexTypesMap;
 
-	/**
-     * 
+    public Map<String, GenericDataType> getComplexTypesMap() {
+        return complexTypesMap;
+    }
+
+    public void setComplexTypesMap(Map<String, GenericDataType> complexTypesMap) {
+        this.complexTypesMap = complexTypesMap;
+    }
+
+    /**
      * @return Returns the dims.
-     * 
      */
-    public int[] getDims()
-    {
+    public int[] getDims() {
         return dims;
     }
 
     /**
-     * 
      * @param dims The dims to set.
-     * 
      */
-    public void setDims(int[] dims)
-    {
+    public void setDims(int[] dims) {
         this.dims = dims;
     }
 
     /**
-     * 
      * @return Returns the keyGenerators.
-     * 
      */
-    public Map<String, KeyGenerator> getKeyGenerators()
-    {
+    public Map<String, KeyGenerator> getKeyGenerators() {
         return keyGenerators;
     }
 
     /**
-     * 
      * @param keyGenerators The keyGenerators to set.
-     * 
      */
-    public void setKeyGenerators(Map<String, KeyGenerator> keyGenerators)
-    {
+    public void setKeyGenerators(Map<String, KeyGenerator> keyGenerators) {
         this.keyGenerators = keyGenerators;
     }
 
     /**
-     * 
      * @return Returns the cubeName.
-     * 
      */
-    public String getCubeName()
-    {
+    public String getCubeName() {
         return cubeName;
     }
 
     /**
-     * 
      * @param cubeName The cubeName to set.
-     * 
      */
-    public void setCubeName(String cubeName)
-    {
+    public void setCubeName(String cubeName) {
         this.cubeName = cubeName;
     }
 
     /**
-     * 
      * @return Returns the hierTables.
-     * 
      */
-    public Set<String> getHierTables()
-    {
+    public Set<String> getHierTables() {
         return hierTables;
     }
 
     /**
-     * 
      * @param hierTables The hierTables to set.
-     * 
      */
-    public void setHierTables(Set<String> hierTables)
-    {
+    public void setHierTables(Set<String> hierTables) {
         this.hierTables = hierTables;
     }
 
     /**
-     * 
      * @return Returns the batchSize.
-     * 
      */
-    public int getBatchSize()
-    {
+    public int getBatchSize() {
         return batchSize;
     }
 
     /**
-     * 
      * @param batchSize The batchSize to set.
-     * 
      */
-    public void setBatchSize(int batchSize)
-    {
+    public void setBatchSize(int batchSize) {
         this.batchSize = batchSize;
     }
 
     /**
-     * 
      * @return Returns the isInitialLoad.
-     * 
      */
-    public boolean isAggregateLoad()
-    {
+    public boolean isAggregateLoad() {
         return isAggregateLoad;
     }
 
-    public void setAggregateLoad(boolean isAggregateLoad)
-    {
+    public void setAggregateLoad(boolean isAggregateLoad) {
         this.isAggregateLoad = isAggregateLoad;
     }
 
     /**
-     * 
      * @return Returns the storeType.
-     * 
      */
-    public String getStoreType()
-    {
+    public String getStoreType() {
         return storeType;
     }
 
     /**
-     * 
      * @param storeType The storeType to set.
-     * 
      */
-    public void setStoreType(String storeType)
-    {
+    public void setStoreType(String storeType) {
         this.storeType = storeType;
     }
 
     /**
-     * 
      * @return Returns the dimColNames.
-     * 
      */
-    public String[] getDimColNames()
-    {
+    public String[] getDimColNames() {
         return dimColNames;
     }
 
     /**
-     * 
      * @param dimColNames The dimColNames to set.
-     * 
      */
-    public void setDimColNames(String[] dimColNames)
-    {
+    public void setDimColNames(String[] dimColNames) {
         this.dimColNames = dimColNames;
     }
 
     /**
-     * 
      * @return Returns the maxKeys.
-     * 
      */
-    public int[] getMaxKeys()
-    {
+    public int[] getMaxKeys() {
         return maxKeys;
     }
 
     /**
-     * 
      * @param maxKeys The maxKeys to set.
-     * 
      */
-    public void setMaxKeys(int[] maxKeys)
-    {
+    public void setMaxKeys(int[] maxKeys) {
         this.maxKeys = maxKeys;
     }
 
     /**
-     * 
      * @return Returns the propIndx.
-     * 
      */
-    public int[][] getPropIndx()
-    {
+    public int[][] getPropIndx() {
         return propIndx;
     }
 
     /**
-     * 
      * @param propIndx The propIndx to set.
-     * 
      */
-    public void setPropIndx(int[][] propIndx)
-    {
+    public void setPropIndx(int[][] propIndx) {
         this.propIndx = propIndx;
     }
 
     /**
-     * 
      * @return Returns the propColumns.
-     * 
      */
-    public List<String>[] getPropColumns()
-    {
+    public List<String>[] getPropColumns() {
         return propColumns;
     }
 
     /**
-     * 
      * @param propColumns The propColumns to set.
-     * 
      */
-    public void setPropColumns(List<String>[] propColumns)
-    {
+    public void setPropColumns(List<String>[] propColumns) {
         this.propColumns = propColumns;
     }
 
     /**
-     * 
      * @return Returns the timDimIndex.
-     * 
      */
-    public int getTimDimIndex()
-    {
+    public int getTimDimIndex() {
         return timDimIndex;
     }
 
     /**
-     * 
      * @param timDimIndex The timDimIndex to set.
-     * 
      */
-    public void setTimDimIndex(int timDimIndex)
-    {
+    public void setTimDimIndex(int timDimIndex) {
         this.timDimIndex = timDimIndex;
     }
 
     /**
-     * 
      * @return Returns the timDimIndexEnd.
-     * 
      */
-    public int getTimDimIndexEnd()
-    {
+    public int getTimDimIndexEnd() {
         return timDimIndexEnd;
     }
 
     /**
-     * 
      * @param timDimIndexEnd The timDimIndexEnd to set.
-     * 
      */
-    public void setTimDimIndexEnd(int timDimIndexEnd)
-    {
+    public void setTimDimIndexEnd(int timDimIndexEnd) {
         this.timDimIndexEnd = timDimIndexEnd;
     }
 
     /**
-     * 
      * @return Returns the timeOrdinalIndices.
-     * 
      */
-    public int[] getTimeOrdinalIndices()
-    {
+    public int[] getTimeOrdinalIndices() {
         return timeOrdinalIndices;
     }
 
     /**
-     * 
      * @param timeOrdinalIndices The timeOrdinalIndices to set.
-     * 
      */
-    public void setTimeOrdinalIndices(int[] timeOrdinalIndices)
-    {
+    public void setTimeOrdinalIndices(int[] timeOrdinalIndices) {
         this.timeOrdinalIndices = timeOrdinalIndices;
     }
 
     /**
-     * 
      * @return Returns the timeOrdinalCols.
-     * 
      */
-    public String[] getTimeOrdinalCols()
-    {
+    public String[] getTimeOrdinalCols() {
         return timeOrdinalCols;
     }
 
     /**
-     * 
      * @param timeOrdinalCols The timeOrdinalCols to set.
-     * 
      */
-    public void setTimeOrdinalCols(String[] timeOrdinalCols)
-    {
+    public void setTimeOrdinalCols(String[] timeOrdinalCols) {
         this.timeOrdinalCols = timeOrdinalCols;
     }
 
     /**
-     * 
      * @return Returns the propTypes.
-     * 
      */
-    public List<String>[] getPropTypes()
-    {
+    public List<String>[] getPropTypes() {
         return propTypes;
     }
 
     /**
-     * 
      * @param propTypes The propTypes to set.
-     * 
      */
-    public void setPropTypes(List<String>[] propTypes)
-    {
+    public void setPropTypes(List<String>[] propTypes) {
         this.propTypes = propTypes;
     }
 
     /**
-     * 
      * @return Returns the baseStoreLocation.
-     * 
      */
-    public String getBaseStoreLocation()
-    {
+    public String getBaseStoreLocation() {
         return baseStoreLocation;
     }
 
     /**
-     * 
      * @param baseStoreLocation The baseStoreLocation to set.
-     * 
      */
-    public void setBaseStoreLocation(String baseStoreLocation)
-    {
+    public void setBaseStoreLocation(String baseStoreLocation) {
         this.baseStoreLocation = baseStoreLocation;
     }
 
     /**
-     * 
      * @return Returns the dimHierRel.
-     * 
      */
-    public String[] getDimHierRel()
-    {
+    public String[] getDimHierRel() {
         return dimHierRel;
     }
 
     /**
-     * 
      * @param dimHierRel The dimHierRel to set.
-     * 
      */
-    public void setDimHierRel(String []dimHierRel)
-    {
+    public void setDimHierRel(String[] dimHierRel) {
         this.dimHierRel = dimHierRel;
     }
 
     /**
-     * 
      * @return Returns the tableName.
-     * 
      */
-    public String getTableName()
-    {
+    public String getTableName() {
         return tableName;
     }
 
     /**
-     * 
      * @param tableName The tableName to set.
-     * 
      */
-    public void setTableName(String tableName)
-    {
+    public void setTableName(String tableName) {
         this.tableName = tableName;
     }
 
     /**
-     * 
      * @return Returns the primaryKeyMap.
-     * 
      */
-    public Map<String, Boolean> getPrimaryKeyMap()
-    {
+    public Map<String, Boolean> getPrimaryKeyMap() {
         return primaryKeyMap;
     }
 
     /**
-     * 
      * @param primaryKeyMap The primaryKeyMap to set.
-     * 
      */
-    public void setPrimaryKeyMap(Map<String, Boolean> primaryKeyMap)
-    {
+    public void setPrimaryKeyMap(Map<String, Boolean> primaryKeyMap) {
         this.primaryKeyMap = primaryKeyMap;
     }
 
     /**
      * getDimsPresent
+     *
      * @return boolean[]
      */
-    public boolean[] getDimsPresent()
-    {
+    public boolean[] getDimsPresent() {
         return dimsPresent;
     }
 
     /**
      * setDimsPresent
-     * @param dimsPresent 
+     *
+     * @param dimsPresent
      */
-    public void setDimsPresent(boolean[] dimsPresent)
-    {
+    public void setDimsPresent(boolean[] dimsPresent) {
         this.dimsPresent = dimsPresent;
     }
 
     /**
-     * 
      * @return Returns the measureColumns.
-     * 
      */
-    public String[] getMeasureColumns()
-    {
+    public String[] getMeasureColumns() {
         return measureColumns;
     }
 
     /**
-     * 
      * @param measureColumns The measureColumns to set.
-     * 
      */
-    public void setMeasureColumns(String[] measureColumns)
-    {
+    public void setMeasureColumns(String[] measureColumns) {
         this.measureColumns = measureColumns;
     }
 
-    public String getSchemaName()
-    {
+    public String getSchemaName() {
         return schemaName;
     }
 
-    public void setSchemaName(String schemaName)
-    {
+    public void setSchemaName(String schemaName) {
         this.schemaName = schemaName;
     }
 

@@ -19,20 +19,14 @@
 
 package com.huawei.unibi.molap.sortandgroupby.sortKey;
 
-import java.io.BufferedOutputStream;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 
 import com.huawei.unibi.molap.sortandgroupby.exception.MolapSortKeyAndGroupByException;
 import com.huawei.unibi.molap.util.MolapUtil;
 
-public abstract class AbstractMolapSortTempFileWriter implements MolapSortTempFileWriter
-{
+public abstract class AbstractMolapSortTempFileWriter implements MolapSortTempFileWriter {
     /**
-     * Measure count 
+     * Measure count
      */
     protected int measureCount;
 
@@ -65,14 +59,15 @@ public abstract class AbstractMolapSortTempFileWriter implements MolapSortTempFi
      * mdKeyLength
      */
     protected int mdKeyLength;
-    
+
     /**
      * type
      */
     protected char[] type;
-    
+
     /**
-     * AbstractMolapSortTempFileWriter 
+     * AbstractMolapSortTempFileWriter
+     *
      * @param measureCount
      * @param mdkeyIndex
      * @param mdKeyLength
@@ -80,11 +75,8 @@ public abstract class AbstractMolapSortTempFileWriter implements MolapSortTempFi
      * @param factMdkeyLength
      * @param writeFileBufferSize
      */
-    public AbstractMolapSortTempFileWriter(
-            int measureCount, int mdkeyIndex, int mdKeyLength,
-            boolean isFactMdkeyInSort, int factMdkeyLength,
-            int writeFileBufferSize, char [] type)
-    {
+    public AbstractMolapSortTempFileWriter(int measureCount, int mdkeyIndex, int mdKeyLength,
+            boolean isFactMdkeyInSort, int factMdkeyLength, int writeFileBufferSize, char[] type) {
         this.measureCount = measureCount;
         this.mdkeyIndex = mdkeyIndex;
         this.isFactMdkeyInSort = isFactMdkeyInSort;
@@ -93,26 +85,19 @@ public abstract class AbstractMolapSortTempFileWriter implements MolapSortTempFi
         this.mdKeyLength = mdKeyLength;
         this.type = type;
     }
-    
+
     /**
-     * Below method will be used to initialise the stream and write the entry count 
+     * Below method will be used to initialise the stream and write the entry count
      */
-    @Override
-    public void initiaize(File file, int entryCount)
-            throws MolapSortKeyAndGroupByException
-    {
-        try
-        {
-            stream = new DataOutputStream(new BufferedOutputStream(
-                    new FileOutputStream(file), writeFileBufferSize));
+    @Override public void initiaize(File file, int entryCount)
+            throws MolapSortKeyAndGroupByException {
+        try {
+            stream = new DataOutputStream(
+                    new BufferedOutputStream(new FileOutputStream(file), writeFileBufferSize));
             stream.writeInt(entryCount);
-        }
-        catch(FileNotFoundException e1)
-        {
+        } catch (FileNotFoundException e1) {
             throw new MolapSortKeyAndGroupByException(e1);
-        }
-        catch(IOException e)
-        {
+        } catch (IOException e) {
             throw new MolapSortKeyAndGroupByException(e);
         }
     }
@@ -120,8 +105,7 @@ public abstract class AbstractMolapSortTempFileWriter implements MolapSortTempFi
     /**
      * Below method will be used to close the stream
      */
-	@Override
-	public void finish() {
-		MolapUtil.closeStreams(stream);
-	}
+    @Override public void finish() {
+        MolapUtil.closeStreams(stream);
+    }
 }

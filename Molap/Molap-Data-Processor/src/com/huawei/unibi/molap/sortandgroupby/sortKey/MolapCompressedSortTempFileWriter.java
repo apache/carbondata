@@ -29,11 +29,11 @@ import com.huawei.unibi.molap.engine.aggregator.MeasureAggregator;
 import com.huawei.unibi.molap.sortandgroupby.exception.MolapSortKeyAndGroupByException;
 import com.huawei.unibi.molap.util.MolapUtil;
 
-public class MolapCompressedSortTempFileWriter extends AbstractMolapSortTempFileWriter
-{
+public class MolapCompressedSortTempFileWriter extends AbstractMolapSortTempFileWriter {
 
     /**
      * MolapCompressedSortTempFileWriter
+     *
      * @param measureCount
      * @param mdkeyIndex
      * @param mdKeyLength
@@ -42,68 +42,56 @@ public class MolapCompressedSortTempFileWriter extends AbstractMolapSortTempFile
      * @param writeFileBufferSize
      */
     public MolapCompressedSortTempFileWriter(int measureCount, int mdkeyIndex, int mdKeyLength,
-            boolean isFactMdkeyInSort, int factMdkeyLength,
-            int writeFileBufferSize, char[] type)
-    {
-        super(measureCount, mdkeyIndex, mdKeyLength, isFactMdkeyInSort, factMdkeyLength, writeFileBufferSize,type);
+            boolean isFactMdkeyInSort, int factMdkeyLength, int writeFileBufferSize, char[] type) {
+        super(measureCount, mdkeyIndex, mdKeyLength, isFactMdkeyInSort, factMdkeyLength,
+                writeFileBufferSize, type);
     }
 
     /**
      * Below method will be used to write the sort temp file
+     *
      * @param records
      */
-    public void writeSortTempFile(Object[][] records)
-            throws MolapSortKeyAndGroupByException
-    {
+    public void writeSortTempFile(Object[][] records) throws MolapSortKeyAndGroupByException {
         ByteArrayOutputStream[] blockDataArray = null;
         DataOutputStream[] dataOutputStream = null;
         byte[] completeMdkey = null;
         byte[] completeFactMdkey = null;
-        Object[] row= null;
-        try
-        {
+        Object[] row = null;
+        try {
             blockDataArray = new ByteArrayOutputStream[measureCount];
             dataOutputStream = new DataOutputStream[measureCount];
-            initializeMeasureBuffers(blockDataArray,dataOutputStream, records.length);
+            initializeMeasureBuffers(blockDataArray, dataOutputStream, records.length);
             completeMdkey = new byte[mdKeyLength * records.length];
-            if(isFactMdkeyInSort)
-            {
+            if (isFactMdkeyInSort) {
                 completeFactMdkey = new byte[factMdkeyLength * records.length];
             }
-            for(int i = 0;i < records.length;i++)
-            {
+            for (int i = 0; i < records.length; i++) {
                 row = records[i];
                 int aggregatorIndexInRowObject = 0;
                 // get row from record holder list
-                MeasureAggregator[] aggregator = (MeasureAggregator[])row[aggregatorIndexInRowObject];
-                for(int j = 0;j < aggregator.length;j++)
-                {
+                MeasureAggregator[] aggregator =
+                        (MeasureAggregator[]) row[aggregatorIndexInRowObject];
+                for (int j = 0; j < aggregator.length; j++) {
                     byte[] byteArray = aggregator[j].getByteArray();
                     stream.writeInt(byteArray.length);
                     stream.write(byteArray);
                 }
-                stream.writeDouble((Double)row[mdkeyIndex - 1]);
-                System.arraycopy((byte[])row[mdkeyIndex], 0, completeMdkey, i
-                        * mdKeyLength, mdKeyLength);
-                if(isFactMdkeyInSort)
-                {
-                    System.arraycopy((byte[])row[row.length - 1], 0,
-                            completeFactMdkey, i * factMdkeyLength,
-                            factMdkeyLength);
+                stream.writeDouble((Double) row[mdkeyIndex - 1]);
+                System.arraycopy((byte[]) row[mdkeyIndex], 0, completeMdkey, i * mdKeyLength,
+                        mdKeyLength);
+                if (isFactMdkeyInSort) {
+                    System.arraycopy((byte[]) row[row.length - 1], 0, completeFactMdkey,
+                            i * factMdkeyLength, factMdkeyLength);
                 }
             }
 
-            writeCompressData(records.length, completeMdkey,
-                    completeFactMdkey,blockDataArray, isFactMdkeyInSort,
-                    writeFileBufferSize);
+            writeCompressData(records.length, completeMdkey, completeFactMdkey, blockDataArray,
+                    isFactMdkeyInSort, writeFileBufferSize);
 
-        }
-        catch(IOException e)
-        {
+        } catch (IOException e) {
             throw new MolapSortKeyAndGroupByException(e);
-        }
-        finally
-        {
+        } finally {
             MolapUtil.closeStreams(blockDataArray);
             MolapUtil.closeStreams(dataOutputStream);
         }
@@ -111,6 +99,7 @@ public class MolapCompressedSortTempFileWriter extends AbstractMolapSortTempFile
 
     /**
      * Below method will be used to write the compress data to temp file
+     *
      * @param recordSize
      * @param mdkey
      * @param factMdkey
@@ -118,39 +107,31 @@ public class MolapCompressedSortTempFileWriter extends AbstractMolapSortTempFile
      * @param writeFileBufferSize
      * @throws IOException
      */
-    private void writeCompressData(int recordSize, byte[] mdkey,
-            byte[] factMdkey,  ByteArrayOutputStream[] blockDataArray,
-            boolean isFactMdkeyInSort,
-            int writeFileBufferSize) throws IOException
-    {
+    private void writeCompressData(int recordSize, byte[] mdkey, byte[] factMdkey,
+            ByteArrayOutputStream[] blockDataArray, boolean isFactMdkeyInSort,
+            int writeFileBufferSize) throws IOException {
         stream.writeInt(recordSize);
-        byte[] byteArray=null;
-        for(int i = 0;i < blockDataArray.length;i++)
-        {
-            byteArray = SnappyByteCompression.INSTANCE
-                    .compress(blockDataArray[i].toByteArray());
+        byte[] byteArray = null;
+        for (int i = 0; i < blockDataArray.length; i++) {
+            byteArray = SnappyByteCompression.INSTANCE.compress(blockDataArray[i].toByteArray());
             stream.writeInt(byteArray.length);
             stream.write(byteArray);
         }
         byteArray = SnappyByteCompression.INSTANCE.compress(mdkey);
         stream.writeInt(byteArray.length);
         stream.write(byteArray);
-        if(isFactMdkeyInSort)
-        {
+        if (isFactMdkeyInSort) {
             byteArray = SnappyByteCompression.INSTANCE.compress(factMdkey);
             stream.writeInt(byteArray.length);
             stream.write(byteArray);
         }
     }
 
-    private void initializeMeasureBuffers(
-            ByteArrayOutputStream[] blockDataArray,
-            DataOutputStream[] dataOutputStream, int recordSizePerLeaf)
-    {
-        for(int i = 0;i < blockDataArray.length;i++)
-        {
-            blockDataArray[i] = new ByteArrayOutputStream(recordSizePerLeaf
-                    * MolapCommonConstants.DOUBLE_SIZE_IN_BYTE);
+    private void initializeMeasureBuffers(ByteArrayOutputStream[] blockDataArray,
+            DataOutputStream[] dataOutputStream, int recordSizePerLeaf) {
+        for (int i = 0; i < blockDataArray.length; i++) {
+            blockDataArray[i] = new ByteArrayOutputStream(
+                    recordSizePerLeaf * MolapCommonConstants.DOUBLE_SIZE_IN_BYTE);
             dataOutputStream[i] = new DataOutputStream(blockDataArray[i]);
         }
     }

@@ -24,8 +24,7 @@ import java.io.File;
 import com.huawei.unibi.molap.datastorage.store.FileHolder;
 import com.huawei.unibi.molap.datastorage.store.impl.FileHolderImpl;
 
-public abstract class AbstractSortTempFileReader
-{
+public abstract class AbstractSortTempFileReader {
     /**
      * measure count
      */
@@ -70,10 +69,10 @@ public abstract class AbstractSortTempFileReader
      * type
      */
     protected char[] type;
-    
+
     /**
      * MolapCompressedSortTempFileReader
-     * 
+     *
      * @param measureCount
      * @param mdKeyLenght
      * @param isFactMdkeyInSort
@@ -81,10 +80,8 @@ public abstract class AbstractSortTempFileReader
      * @param tempFile
      * @param type
      */
-    public AbstractSortTempFileReader(int measureCount, int mdKeyLenght,
-            boolean isFactMdkeyInSort, int factMdkeyLength, File tempFile,
-            char[] type)
-    {
+    public AbstractSortTempFileReader(int measureCount, int mdKeyLenght, boolean isFactMdkeyInSort,
+            int factMdkeyLength, File tempFile, char[] type) {
         this.measureCount = measureCount;
         this.mdKeyLenght = mdKeyLenght;
         this.factMdkeyLength = factMdkeyLength;
@@ -94,30 +91,27 @@ public abstract class AbstractSortTempFileReader
         entryCount = fileHolder.readInt(filePath);
         eachRecordSize = measureCount + 1;
         this.type = type;
-        if(isFactMdkeyInSort)
-        {
+        if (isFactMdkeyInSort) {
             eachRecordSize += 1;
         }
     }
-    
+
     /**
      * below method will be used to close the file holder
      */
-    public void finish()
-    {
+    public void finish() {
         this.fileHolder.finish();
     }
-    
+
     /**
      * Below method will be used to get the total row count in temp file
-     * 
+     *
      * @return
      */
-    public int getEntryCount()
-    {
+    public int getEntryCount() {
         return entryCount;
     }
-    
+
     /**
      * Below method will be used to get the row
      */

@@ -30,56 +30,41 @@ import com.huawei.unibi.molap.util.MolapCoreLogEvent;
 /**
  * This class is a wrapper class over MolapColumnarLeafTupleDataIterator.
  * This uses the global key gen for generating key.
- *
  */
-public class MolapLeafTupleWrapperIterator implements MolapDataIterator<MolapSurrogateTupleHolder>
-{
-    MolapDataIterator<MolapSurrogateTupleHolder> iterator;
-    
-    private KeyGenerator localKeyGen; 
-    
-    private KeyGenerator globalKeyGen;
-    
+public class MolapLeafTupleWrapperIterator implements MolapDataIterator<MolapSurrogateTupleHolder> {
     /**
      * logger
      */
-    private static final LogService LOGGER = LogServiceFactory
-            .getLogService(MolapLeafTupleWrapperIterator.class.getName());
-    
-    public MolapLeafTupleWrapperIterator(KeyGenerator localKeyGen, KeyGenerator globalKeyGen, MolapDataIterator<MolapSurrogateTupleHolder> iterator)
-    {
+    private static final LogService LOGGER =
+            LogServiceFactory.getLogService(MolapLeafTupleWrapperIterator.class.getName());
+    MolapDataIterator<MolapSurrogateTupleHolder> iterator;
+    private KeyGenerator localKeyGen;
+    private KeyGenerator globalKeyGen;
+
+    public MolapLeafTupleWrapperIterator(KeyGenerator localKeyGen, KeyGenerator globalKeyGen,
+            MolapDataIterator<MolapSurrogateTupleHolder> iterator) {
         this.iterator = iterator;
         this.localKeyGen = localKeyGen;
         this.globalKeyGen = globalKeyGen;
     }
 
-    @Override
-    public boolean hasNext()
-    {
+    @Override public boolean hasNext() {
         return iterator.hasNext();
     }
 
-    @Override
-    public void fetchNextData()
-    {
+    @Override public void fetchNextData() {
         iterator.fetchNextData();
     }
 
-    @Override
-    public MolapSurrogateTupleHolder getNextData()
-    {
+    @Override public MolapSurrogateTupleHolder getNextData() {
         MolapSurrogateTupleHolder nextData = iterator.getNextData();
         byte[] mdKey = nextData.getMdKey();
         long[] keyArray = localKeyGen.getKeyArray(mdKey);
         byte[] generateKey = null;
-        try
-        {
+        try {
             generateKey = globalKeyGen.generateKey(keyArray);
-        }
-        catch(KeyGenException e)
-        {
-            LOGGER.error(
-                    MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG ,
+        } catch (KeyGenException e) {
+            LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG,
                     "Error occurred :: " + e.getMessage());
         }
         nextData.setSurrogateKey(generateKey);

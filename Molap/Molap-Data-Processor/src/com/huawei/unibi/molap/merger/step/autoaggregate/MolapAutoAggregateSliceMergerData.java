@@ -23,30 +23,24 @@ import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.step.BaseStepData;
 import org.pentaho.di.trans.step.StepDataInterface;
 
-public class MolapAutoAggregateSliceMergerData extends BaseStepData implements
-        StepDataInterface
-{
+public class MolapAutoAggregateSliceMergerData extends BaseStepData implements StepDataInterface {
     /**
      * outputRowMeta
      */
     private RowMetaInterface outputRowMeta;
 
-    public RowMetaInterface getOutputRowMeta()
-    {
+    /**
+     * MolapSliceMergerStepData
+     */
+    public MolapAutoAggregateSliceMergerData() {
+        super();
+    }
+
+    public RowMetaInterface getOutputRowMeta() {
         return outputRowMeta;
     }
 
-    public void setOutputRowMeta(RowMetaInterface outputRowMeta)
-    {
+    public void setOutputRowMeta(RowMetaInterface outputRowMeta) {
         this.outputRowMeta = outputRowMeta;
-    }
-
-    /**
-     * MolapSliceMergerStepData
-     * 
-     */
-    public MolapAutoAggregateSliceMergerData()
-    {
-        super();
     }
 }

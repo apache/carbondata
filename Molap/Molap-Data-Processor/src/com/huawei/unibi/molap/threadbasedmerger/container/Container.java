@@ -17,118 +17,107 @@
  * under the License.
  */
 
-
 package com.huawei.unibi.molap.threadbasedmerger.container;
 
 import com.huawei.iweb.platform.logging.LogService;
 import com.huawei.iweb.platform.logging.LogServiceFactory;
 import com.huawei.unibi.molap.util.MolapDataProcessorLogEvent;
 
-public class Container
-{
+public class Container {
     /**
      * LOGGER
      */
-    private static final LogService LOGGER = LogServiceFactory.getLogService(Container.class.getName());
+    private static final LogService LOGGER =
+            LogServiceFactory.getLogService(Container.class.getName());
     /**
      * record array
      */
     private Object[][] sortHolderArray;
 
     /**
-     * is array filled 
+     * is array filled
      */
     private boolean isFilled;
 
     /**
-     * is done 
+     * is done
      */
     private boolean isDone;
-    
+
     /**
      * container counter
      */
     private int containerCounter;
 
     /**
-     * Below method will be used to fill the container 
+     * Below method will be used to fill the container
+     *
      * @param sortHolder
      */
-    public void fillContainer(Object[][] sortHolder)
-    {
+    public void fillContainer(Object[][] sortHolder) {
         sortHolderArray = sortHolder;
     }
 
     /**
-     * below method will be used to get the container data 
+     * below method will be used to get the container data
+     *
      * @return
      */
-    public Object[][] getContainerData()
-    {
-    	//CHECKSTYLE:OFF
-        while(!isFilled && !isDone)
-        {
+    public Object[][] getContainerData() {
+        //CHECKSTYLE:OFF
+        while (!isFilled && !isDone) {
             try//CHECKSTYLE:ON
             {
                 Thread.sleep(10);
-            }
-            catch(InterruptedException e)
-            {
+            } catch (InterruptedException e) {
                 LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
             }
         }
-      
-        Object[][] temp=sortHolderArray;
-        sortHolderArray=null;
+
+        Object[][] temp = sortHolderArray;
+        sortHolderArray = null;
         return temp;
     }
 
     /**
      * @return the isFilled
      */
-    public boolean isFilled()
-    {
+    public boolean isFilled() {
         return isFilled;
     }
 
     /**
-     * @param isFilled
-     *            the isFilled to set
+     * @param isFilled the isFilled to set
      */
-    public void setFilled(boolean isFilled)
-    {
+    public void setFilled(boolean isFilled) {
         this.isFilled = isFilled;
     }
 
     /**
      * @return the isDone
      */
-    public boolean isDone()
-    {
+    public boolean isDone() {
         return isDone;
     }
 
     /**
      * @param isDone the isDone to set
      */
-    public void setDone(boolean isDone)
-    {
+    public void setDone(boolean isDone) {
         this.isDone = isDone;
     }
 
     /**
      * @return the containerCounter
      */
-    public int getContainerCounter()
-    {
+    public int getContainerCounter() {
         return containerCounter;
     }
 
     /**
      * @param containerCounter the containerCounter to set
      */
-    public void setContainerCounter(int containerCounter)
-    {
+    public void setContainerCounter(int containerCounter) {
         this.containerCounter = containerCounter;
     }
 }
