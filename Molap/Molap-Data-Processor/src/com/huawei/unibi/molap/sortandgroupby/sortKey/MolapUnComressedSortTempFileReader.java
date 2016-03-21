@@ -22,12 +22,6 @@ package com.huawei.unibi.molap.sortandgroupby.sortKey;
 import java.io.File;
 import java.nio.ByteBuffer;
 
-/**
- * Project Name NSE V3R8C10 Module Name : MOLAP Data Processor Author :k00900841
- * Created Date:10-Aug-2014 FileName : MolapUnComressedSortTempFileReader.java
- * Class Description : below method will be used to read uncompressed sort temp
- * file Class Version 1.0
- */
 public class MolapUnComressedSortTempFileReader extends
         AbstractSortTempFileReader
 {

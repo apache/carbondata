@@ -25,15 +25,6 @@ import org.pentaho.di.trans.step.StepDataInterface;
 
 import com.huawei.unibi.molap.keygenerator.KeyGenerator;
 
-/**
- * Project Name NSE V3R7C00 
- * Module Name : MOLAP 
- * Author :C00900810 
- * Created Date:24-Jun-2013 
- * FileName : MolapMDKeyGenStepData.java 
- * Class Description :
- * Version 1.0
- */
 public class MolapMDKeyGenStepData extends BaseStepData implements
         StepDataInterface
 {
@@ -43,34 +34,9 @@ public class MolapMDKeyGenStepData extends BaseStepData implements
     protected RowMetaInterface outputRowMeta;
     
     /**
-     * rowMeta
-     */
-   // protected RowMetaInterface rowMeta;
-    
-    /**
      * generator
      */
     protected KeyGenerator generator;
-    
-    /**
-     * precomputed default objects
-     */
-    // public Object[] defaultObjects;
-
-    /**
-     * the size of the input rows
-     */
-    // public int inputSize;
-
-    /**
-     * where the key field indexes are
-     */
-    // public int[] keyFieldIndex;
-
-    /**
-     * meta info for a string conversion
-     */
-    // public ValueMetaInterface[] conversionMeta;
     
     /**
      * CONSTRUCTOR

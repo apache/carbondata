@@ -72,13 +72,6 @@ import org.pentaho.di.trans.steps.textfileinput.TextFileInputField;
 import org.pentaho.di.trans.steps.textfileinput.TextFileInputMeta;
 import org.w3c.dom.Node;
 
-
-/**
- * @since 2007-07-05
- * @author matt
- * @version 3.0
- */
-
 public class CsvInputMeta extends BaseStepMeta implements StepMetaInterface, InputFileMetaInterface, StepMetaInjectionInterface
 {
 	private static final Class<?> PKG = CsvInput.class; // for i18n purposes, needed by Translator2!!   $NON-NLS-1$
@@ -124,12 +117,6 @@ public class CsvInputMeta extends BaseStepMeta implements StepMetaInterface, Inp
 	{
 		readData(stepnode);
 	}
-
-/*	public Object clone()
-	{
-		Object retval = super.clone();
-		return retval;
-	}*/
 
 	public void setDefault() {
 		delimiter = ",";

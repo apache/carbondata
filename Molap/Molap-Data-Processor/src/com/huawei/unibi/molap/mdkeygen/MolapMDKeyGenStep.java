@@ -65,16 +65,6 @@ import com.huawei.unibi.molap.util.MolapProperties;
 import com.huawei.unibi.molap.util.MolapUtil;
 import com.huawei.unibi.molap.util.ValueCompressionUtil;
 
-/**
- * 
- * Project Name NSE V3R7C00 
- * Module Name : Molap Data Processor
- * Author K00900841
- * Created Date :21-May-2013 6:42:29 PM
- * FileName : MolapMDKeyGenStep.java
- * Class Description : This class is responsible for creating the mdkey for dimensions levels from surrogate keys
- * Version 1.0
- */
 public class MolapMDKeyGenStep extends BaseStep implements StepInterface
 {
     private static final LogService LOGGER = LogServiceFactory
@@ -114,11 +104,6 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface
      * dimension length
      */
     private int dimensionLength;
-    
-    /**
-     * input row size
-     */
-//    private int inputRowMetaSize;
     
     /**
      * number of cores
@@ -248,16 +233,7 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface
      */
     private ExecutorService putRowExecutorService;
     
-    /**
-     * rowQueue
-     */
-//    private DataProcessorQueue rowQueue = new DataProcessorQueue(5000);
-    
     private DataProcessorQueue localDataProcessorQueue;
-    
-//    private Object[][] rowQueue = new Object[getTransMeta().getSizeRowset()][];
-//    
-//    private Object[][] localQueue ;
     
     private int counterToFlush;
     
@@ -268,8 +244,6 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface
     private ExecutorService exec;
     
     private int measureCount;
-    
-//    private boolean startLoad = true; 
     
     /**
      * MolapMDKeyGenStep
@@ -342,8 +316,6 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface
                 
                 dataQueue = new PriorityBlockingQueue<DataProcessorRecordHolder>(initialCapacity, new RecordComparator());
                 
-//                localQueue = new Object[getTransMeta().getSizeRowset()][];
-//                meta.initialize();
                 if(CheckPointHanlder.IS_CHECK_POINT_NEEDED && !meta.isAutoAggRequest())
                 {
                     updateCounter();
@@ -375,11 +347,6 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface
                                             MolapCommonConstants.MOLAP_CHECKPOINT_TOCOPY_FROM_QUEUE,
                                             MolapCommonConstants.MOLAP_CHECKPOINT_TOCOPY_FROM_QUEUE_DEFAULT_VAL));
                 }
-//                data.rowMeta = getInputRowMeta();
-
-                // create the measure column mapping
-                // meta.msrMapping =
-                // getMeasureOriginalIndexes(meta.measureColumns);
 
                 data.outputRowMeta = (RowMetaInterface)getInputRowMeta()
                         .clone();
@@ -407,9 +374,7 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface
             Object[] outputRow = new Object[data.outputRowMeta.size()];
             double[] msrs = new double[this.measureCount];
             process(r, outputRow, msrs);
-//            updateMeasureMetadata(msrs);
             calculateMaxMinUnique(msrs);
-//            setDecimals(msrs);	
             // add model in model list
             // send the transformed row to next step for processing
             writeCounter++;
@@ -420,8 +385,6 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface
             //Start the reading records process.
             startReadingProcess();
 
-        //    System.out.println("Number of times came.");
-//            startProcesses();
             // writre data to measure meta file
             try
             {
@@ -498,10 +461,7 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface
                 {
                     dataQueue.offer(localDataProcessorQueue.poll());
                 }
-//                if(putRowFuture.isDone())
-//                {
                     putRowInSeqence();
-//                }
             }
             
             while(true)
@@ -558,14 +518,10 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface
 
         resultArray = results.toArray(new Future[results.size()]);
         boolean completed = false;
-//        if(!CheckPointHanlder.IS_CHECK_POINT_NEEDED)
-//        {
-//            complete = false;
-//        }
         try
-        {// CHECKSTYLE:OFF Approval No:Approval-262
+        {
             while(!completed) 
-            {// CHECKSTYLE:ON
+            {
                 completed = true;
                 for(int i = 0;i < resultArray.length;i++)
                 {
@@ -593,14 +549,6 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface
         exec.shutdown();
     }
     
-    
-//    public void putRow(RowMetaInterface rowMeta, Object[] outputRow, Object[] inputRow)
-//            throws KettleStepException
-//    {
-////        checkPoint.updateInfoFields(inputRow, outputRow);
-//        super.putRow(rowMeta, outputRow);
-//    }
-
     /**
      * 
      * @param r
@@ -619,16 +567,6 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface
         return true;
     }
 
-    /**
-     * 
-     * Project Name NSE V3R7C00 
-     * Module Name : Molap Data Processor
-     * Author K00900841
-     * Created Date :21-May-2013 6:42:29 PM
-     * FileName : DoProcess.java
-     * Class Description : Thread class to convert surrogate keys to mdkey 
-     * Version 1.0
-     */
     private class DoProcess implements Callable<Void>
     {
         @Override
@@ -663,9 +601,7 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface
     private void setStepConfiguration(int[] dimLens)
     {
         data.generator= KeyGeneratorFactory.getKeyGenerator(dimLens);
-//        data.generator=getKeyGenerator(dimLens);
         this.dimensionLength = dimLens.length;
-//        this.inputRowMetaSize=getInputRowMeta().size();
         this.measureCount=meta.getMeasureCount();
         
         try
@@ -724,7 +660,6 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface
         FileData fileData = new FileData(metaDataFileName, storeLocation);
         fileManager.add(fileData);
         
-//        int length= this.inputRowMetaSize- this.dimensionLength - checkPoint.getCheckPointInfoFieldCount();
         maxValue = new double[measureCount];
         minValue = new double[measureCount];
         decimalLength = new int[measureCount];
@@ -860,11 +795,6 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface
                     String logMessage= "Molap Mdkey Generation Step: Record Read for table : "+this.tableName+" is : "+ readCounter;
                     LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, logMessage);
                 }
-//                r = rowQueue.poll();
-                
-//                r = rowQueue[rowProcessedCounter];
-//                rowQueue[rowProcessedCounter++] = null;
-                
                 r = getRow();
             }
             // no more input to be expected...
@@ -874,83 +804,16 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface
                 break;
             }
             Object[] outputRow = new Object[data.outputRowMeta.size()];
-//            Arrays.fill(msrs, 0);
             process(r,outputRow,msrs);
             synchronized(putRowLock)
             {
             	writeCounter++;
-//              modelList.add(model);
                 putRow(data.outputRowMeta, outputRow);
             }
-//            updateMeasureMetadata(msrs);
             calculateMaxMinUnique(msrs);
-//            setDecimals(msrs);
-            // Some basic logging
-//            if(checkFeedback(getLinesRead()))
-//            {
-//                if(log.isBasic())
-//                {
-//                    logBasic("Linenr " + getLinesRead());
-//                }
-//            }
-            
+
         }
     }
-    
-    /**
-     * 
-     * This method will be used to get the row from previous step and then it
-     * will generate the mdkey and then send the mdkey to next step
-     * 
-     * @throws KettleException
-     * 
-     */
-//    private void doProcessWithoutCheckPoint() throws KettleException
-//    {
-//        double[] msrs = new double[this.inputRowMetaSize-this.dimensionLength];
-//        while(true)
-//        {
-//            Object[] r = null;
-//            synchronized(getRowLock)
-//            {
-//                readCounter++;
-//                if(readCounter%logCounter==0)
-//                {
-//                    String logMessage= "Molap Mdkey Generation Step: Record Read for table : "+this.tableName+" is : "+ readCounter;
-//                    LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, logMessage);
-//                }
-//                
-//                r = getRow();
-//            }
-//            // no more input to be expected...
-//            if(r == null)
-//            {
-//                readCounter--;
-//                break;
-//            }
-//            Object[] outputRow = new Object[data.outputRowMeta.size()];
-////            Arrays.fill(msrs, 0);
-//            process(r,outputRow,msrs);
-//            synchronized(putRowLock)
-//            {
-//                writeCounter++;
-////              modelList.add(model);
-//                putRow(data.outputRowMeta, outputRow,r);
-//            }
-////            updateMeasureMetadata(msrs);
-//            calculateMaxMinUnique(msrs);
-////            setDecimals(msrs);
-//            // Some basic logging
-////            if(checkFeedback(getLinesRead()))
-////            {
-////                if(log.isBasic())
-////                {
-////                    logBasic("Linenr " + getLinesRead());
-////                }
-////            }
-//            
-//        }
-//    }
     
     private void doProcessWithCheckPoint() throws KettleException
     {
@@ -1000,63 +863,12 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface
                                 dataQueue.offer(localDataProcessorQueue.poll());
                             }
                             
-                            // dataQueue.offer(localQueue);
                             putRowInSeqence();
                         }
 
                     }
                 }
 
-                // Object[] outputRow = new Object[data.outputRowMeta.size()];
-                // process(r, outputRow, msrs);
-                //
-                // // synchronized(putRowLock)
-                // // {
-                // DataProcessorRecordHolder obj = new
-                // DataProcessorRecordHolder(r, outputRow);
-                // synchronized(putRowExecutorService)
-                // {
-                // while(!localQueue.offer(obj))
-                // {
-                // // Thread.sleep(100);
-                // // System.out.println("Entered");
-                // // System.out.println(localQueue.offer(new
-                // // DataProcessorRecordHolder(r, outputRow)));
-                // }
-                // }
-                // // }
-
-                // if(localQueue.isFull())
-                // {
-                // synchronized(putRowLock)
-                // {
-                // dataQueue.offer(localQueue);
-                //
-                // localQueue = new DataProcessorQueue(5000, r.length-1);
-                //
-                // putRowInSeqence();
-                // }
-                // }
-
-                // if(!dataQueue.isEmpty())
-                // {
-                // }
-                //
-                // calculateMaxMinUnique(msrs);
-                //
-                // if(processed++ % counterToFlush == 0)
-                // {
-                // // Write the measureMetadata details into the File, as it
-                // will
-                // // be required if the
-                // // data loading is failed as we will not start reading fact
-                // csv
-                // // from beginning.
-                // synchronized(writeMsrMetaDataFileLock)
-                // {
-                // writeMeasureMetadataFileToTempLocation();
-                // }
-                // }
             }
 
         }
@@ -1106,19 +918,6 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface
             oriRecords.addProcessedRows(outputRow);
         }
         
-//        synchronized(putRowLock)
-//        {
-//            if(localQueue.isFull())
-//            {
-//                dataQueue.offer(localQueue);
-//                
-//                localQueue = new DataProcessorQueue(10);
-//                
-//                putRowInSeqence();
-//                
-//            }
-//        }
-        
         synchronized(putRowLock)
         {
             while(!localDataProcessorQueue.offer(oriRecords))
@@ -1129,22 +928,8 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface
     }
 
 
-    /**
-     * 
-     * @throws KettleStepException
-     * 
-     */
     private void putRowInSeqence() throws KettleStepException
     {
-//        if(dataQueue.isEmpty())
-//        {
-//            return;
-//        }
-//        
-//        while(putRowFuture != null && !putRowFuture.isDone())
-//        {
-////            System.out.println("Entered MDkey Gen");
-//        }
         putRowFuture = putRowExecutorService.submit(new Callable<Void>()
         {
 
@@ -1154,14 +939,7 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface
                 try
                 {
                    
-//                DataProcessorQueue localQueue1 = dataQueue.poll();
-//                if(localQueue1 == null)
-//                {
-//                    return null;
-//                }
                 while(!dataQueue.isEmpty())
-//                {
-//                   for(int k = 0; k < 5; k++)
                     {
 
                         DataProcessorRecordHolder records = dataQueue.poll();
@@ -1171,29 +949,19 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface
                             return null;
                         }
                         
-//                        System.out.println("MDKey : " + records.getSeqNumber());
                         Object[][] processedRow = records.getProcessedRow();
-                        // while(!processedRecords.isEmpty())
                         for(int i = 0;i < checkPointSize;i++)
                         {
                             if(processedRow[i] == null)
                             {
                                 break;
                             }
-                            // if(checkAllRowValuesAreNull(processedRow[i]))
-                            // {
-                            // continue;
-                            // }
-                            // System.out.println("MDkey gen step : "+recordsHolder.getOriginalRow()[recordsHolder.getOriginalRow().length-1]);
                             writeCounter++;
                             putRow(data.outputRowMeta, processedRow[i]);
                             processedRow[i] = null;
-                            // processed++;
                         }
 
                     }
-//                }
-//                }
             }
              catch(Throwable t)
             {
@@ -1205,22 +973,6 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface
         });
     }
    
-    /**
-     * This method will be used to update the max min and decimal length for
-     * each measures
-     * 
-     * @param msrs
-     *      measures
-     * 
-     */
-//    private void updateMeasureMetadata(double[] msrs)
-//    {
-//        calculateMaxMinUnique(msrs);
-////        calculateMin(msrs);
-//        setDecimals(msrs);
-////        calculateUnique();
-//    }
-   //TODO SIMIAN
     private void writeMeasureMetadataFileToTempLocation()
     {
         MolapProperties molapPropInstance = MolapProperties.getInstance();
@@ -1314,9 +1066,7 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface
      * 
      * @param row
      *          input row
-     * @param outputrow
-     *          output row
-     *      
+     *
      * @throws KettleException
      * 
      */
@@ -1339,20 +1089,12 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface
             }
             l++;
         }
-//        System.arraycopy(row, this.dimensionLength, outputRow, 0, (this.inputRowMetaSize - this.dimensionLength));
         // copy all the dimension to keys Array. This key array will be used to
         // generate id
         for(int i = 0;i < this.dimensionLength;i++)
         {
             Object key = row[i];
             keys[i] = (Integer)key;
-//            if(key instanceof Integer)
-//            {
-//            }
-//            else
-//            {
-//                keys[i] = Integer.parseInt((String)key);
-//            }
         }
         try
         {
@@ -1407,26 +1149,6 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface
         super.dispose(smi, sdi);
     }
 
-//    /**
-//     * 
-//     * Utility method to get the level cardinality  
-//     * @param dimensions
-//     *          dimension string with its cardianlity
-//     * @return cardinality array
-//     *
-//     */
-//    private int[] getDimLens(String dimensions)
-//    {
-//        String[] dims = dimensions.split(MolapCommonConstants.COMA_SPC_CHARACTER);
-//        int[] dimLens = new int[dims.length];
-//        for(int i = 0;i < dims.length;i++)
-//        {
-//            dimLens[i] = Integer.parseInt(dims[i]);
-//        }
-//
-//        return dimLens;
-//    }
-
 
     /**
      * This method will be used to update the max value for each measure 
@@ -1450,159 +1172,11 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface
 				: num);
 		   }
 	   }
-//       if(meta.isCountMeasureNotPresent)
-//       {
-//           maxValue[arrayIndex] = measureCount;
-//           measureCount++;
-//       }
-//       else
-//       {
-//           maxValue[meta.msrCountOrdinal] = measureCount;
-//           measureCount++;
-//       }
    }
-   
-//   /**
-//    * This method will be used to update the max value for each measure 
-//    * 
-//    * @param currentMeasures
-//    *
-//    */
-//  private void calculateUnique()
-//  {
-//      for(int i = 0;i < this.minValue.length;i++)
-//      {
-//    	  uniqueValue[i]=minValue[i]-1;
-////        if("max".equalsIgnoreCase(measureAgg[i]))
-////        {
-////            uniqueValue[i]=minValue[i]-1;
-////        }
-////        else if("min".equalsIgnoreCase(measureAgg[i]))
-////        {
-////            uniqueValue[i]=maxValue[i]+1;
-////        }
-//      }
-//  }
-//   
-//   /**
-//    * This method will be used to update the min value for each measure 
-//    * 
-//    * @param currentMeasures
-//    *
-//    */
-//   private void calculateMin(double[] currentMeasures)
-//   {
-//    
-//       for (int i = 0; i < currentMeasures.length; i++) 
-//       {
-//           double value = currentMeasures[i];
-//           minValue[i] = (minValue[i]<value?minValue[i]:value);
-//       }
-////       if(meta.isCountMeasureNotPresent)
-////       {
-////           minValue[arrayIndex] = 0;
-////       }
-////       else
-////       {
-////           minValue[meta.msrCountOrdinal] = 0;
-////       }
-//   }
-    
-    /**
-     * This method will be used to update the measures decimal length If current
-     * measure length is more then decimalLength then it will update the decimal
-     * length for that measure
-     * @param currentMeasure
-     *          measures array
-     * 
-     */
-//    private void setDecimals(double[] currentMeasure) 
-//    {
-//       
-////    	synchronized (decimalLock) 
-////    	{
-//    		for (int i = 0; i < currentMeasure.length; i++) 
-//    		{
-//    			double value = currentMeasure[i];
-//    			String measureString =null;
-//    			try
-//    			{
-//    				measureString = format.valueToString(value);
-//    			}
-//    			catch(ParseException e)
-//    			{
-//    				
-//    				measureString = "0";
-//    			}
-//    			int index = measureString.indexOf(".");
-//    			int num = 0;
-//    			if(index != -1)
-//    			{
-//    				num = measureString.length() - index - 1;
-//    			}
-//    			decimalLength[i] = (decimalLength[i] > num ? decimalLength[i]
-//    					: num);
-////    		}
-//			
-//		}
-        
-//        if(meta.isCountMeasureNotPresent)
-//        {
-//            decimalLength[arrayIndex] = 0;
-//        }
-//        else
-//        {
-//            decimalLength[meta.msrCountOrdinal] = 0;
-//        }
-//    }
-    
-    /**-
-     * 
-     * @param measureColumn
-     * @param measureColumn2
-     * @return
-     * 
-     */
-//    private int[] getMeasureOriginalIndexes(String[] originalMsrCols)
-//    {
-//
-//        List<String> currMsrCol = new ArrayList<String>();
-//        for(int i = 0;i < getInputRowMeta().size();i++)
-//        {
-//            String columnName = getInputRowMeta().getValueMeta(i).getName(); 
-//            for(String measureCol : originalMsrCols)
-//            {
-//                if(measureCol.equalsIgnoreCase(columnName))
-//                {
-//                    currMsrCol.add(columnName);
-//                    break;
-//                }
-//            }
-//        }
-//        
-//        String[] currentMsrCols = currMsrCol.toArray(new String[currMsrCol.size()]);
-//
-//        int[] indexs = new int[originalMsrCols.length];
-//
-//        for(int i = 0;i < originalMsrCols.length;i++)
-//        {
-//            for(int j = 0;j < currentMsrCols.length;j++)
-//            {
-//                if(originalMsrCols[i].equalsIgnoreCase(currentMsrCols[j]))
-//                {
-//                    indexs[i] = j;
-//                    break;
-//                }
-//            }
-//        }
-//
-//        return indexs;
-//    }
    
    /**
     * Observer class for thread execution 
     * In case of any failure we need stop all the running thread 
-    * @author k00900841
     *
     */
    private class ThreadStatusObserver
@@ -1610,7 +1184,6 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface
        /**
         * Below method will be called if any thread fails during execution
         * @param exception
-        * @throws MolapSortKeyAndGroupByException
         */
        public void notifyFailed(Throwable exception) throws RuntimeException
        {

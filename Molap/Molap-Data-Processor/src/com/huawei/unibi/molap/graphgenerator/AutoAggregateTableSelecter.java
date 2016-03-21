@@ -35,9 +35,6 @@ public class AutoAggregateTableSelecter extends AggregateTableSelecter {
 
 	}
 
-	/**
-	 * 
-	 */
 	public void selectTableForAggTableAggregationProcess(
 			AggregateTable[] aggregateTablesArray, Cube cube) {
 
@@ -46,17 +43,11 @@ public class AutoAggregateTableSelecter extends AggregateTableSelecter {
 
 			if (i == 0) {
 				factName = cube.fact.getAlias();
-				// aggregateTableDerivative = new
-				// AggregateTableDerivativeComposite();
 				root = new AggregateTableDerivativeComposite();
 				aggregateTableDerivative = new AggregateTableDerivativeComposite(
 						factName, aggregateTables.get(i));
 				root.add(aggregateTableDerivative);
-				// aggregateTableDerivative.add(aggregateTableDerivativeLocal);
-
 			} else {
-
-				//AggregateTableDerivative aggregateTableDerivativeLocal = aggregateTableDerivative;
 
 				if (aggregateTableDerivative!=null) {
 
@@ -85,14 +76,12 @@ public class AutoAggregateTableSelecter extends AggregateTableSelecter {
 		AggregateTable aggregateTableOfDerivativecomp = null;
 
 		if (listOfAggregateTableDerivativeChildren.isEmpty()) {
-//			if (aggregateTableDerivative instanceof AggregateTableDerivativeComposite) {
 				aggregateTableOfDerivativecomp = ((AggregateTableDerivativeComposite) aggregateTableDerivative)
 						.getAggregateTable();
 //			}
 			isMatching = isMatchingTable(aggregateTable,
 					aggregateTableOfDerivativecomp, isMatching);
 			if (isMatching) {
-				// addLeafNode(aggregateTable,aggregateTableOfDerivativecomp,aggregateTableDerivative);
 				AggregateTableDerivative derivedTable = new AggregateTableDerivativeComposite(
 						aggregateTableOfDerivativecomp.getAggregateTableName(),
 						aggregateTable);
@@ -123,10 +112,8 @@ public class AutoAggregateTableSelecter extends AggregateTableSelecter {
 			AggregateTable aggregateTable) {
 		AggregateTable aggregateTableOfDerivativecomp = null;
 
-//		if (aggTableDerivativeChild instanceof AggregateTableDerivativeComposite) {
 			aggregateTableOfDerivativecomp = ((AggregateTableDerivativeComposite) aggTableDerivativeChild)
 					.getAggregateTable();
-//		}
 		isMatching = isMatchingTable(aggregateTable,
 				aggregateTableOfDerivativecomp, isMatching);
 		if (isMatching) {
@@ -140,15 +127,6 @@ public class AutoAggregateTableSelecter extends AggregateTableSelecter {
 		}
 
 	}
-
-	/*
-	 * private void addCompositeNode(AggregateTable aggregateTable,
-	 * AggregateTable aggregateTableOfDerivativecomp, AggregateTableDerivative
-	 * aggTableDerivativeChild) { AggregateTableDerivative derivedTable = new
-	 * AggregateTableDerivativeComposite( aggregateTableOfDerivativecomp
-	 * .getAggregateTableName(), aggregateTable);
-	 * aggTableDerivativeChild.add(derivedTable); }
-	 */
 
 	private boolean isMatchingTable(AggregateTable aggregateTable,
 			AggregateTable aggregateTableOfDerivativecomp, boolean isMatching) {

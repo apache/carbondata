@@ -177,7 +177,6 @@ public abstract class AbstractFactDataWriter<T> implements MolapFactDataWriter<T
                 * MolapCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
                 * MolapCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
                 *1L;
-      //CHECKSTYLE:OFF    Approval No:Approval-323
         this.isNodeHolderRequired = Boolean
                 .valueOf(MolapCommonConstants.WRITE_ALL_NODE_IN_SINGLE_TIME_DEFAULT_VALUE);
         this.fileManager=fileManager;	
@@ -190,8 +189,7 @@ public abstract class AbstractFactDataWriter<T> implements MolapFactDataWriter<T
          * 
          */
         this.mdkeySize=mdKeyLength;
-      //CHECKSTYLE:ON
-        
+
         this.isNodeHolderRequired = this.isNodeHolderRequired && isNodeHolder;
         if(this.isNodeHolderRequired)
         {
@@ -302,10 +300,8 @@ public abstract class AbstractFactDataWriter<T> implements MolapFactDataWriter<T
         return fileInitialCount;
     }
     
-    //TODO SIMIAN
     /**
      * Thread class for writing data to file 
-     * @author k00900841
      *
      */
     private final class WriterThread implements Callable<Void>
@@ -328,7 +324,6 @@ public abstract class AbstractFactDataWriter<T> implements MolapFactDataWriter<T
             return null;
         }
     }
-  //CHECKSTYLE:ON
     /**
      * Below method will be used to write data and its meta data to file 
      * @param channel
@@ -491,18 +486,6 @@ public abstract class AbstractFactDataWriter<T> implements MolapFactDataWriter<T
     /**
      * This method will be used to get the leaf node metadata 
      * 
-     * @param keySize
-     *          key size
-     * @param msrLength
-     *          measure length array
-     * @param offset
-     *          current offset
-     * @param entryCount
-     *          total number of rows in leaf 
-     * @param startKey
-     *          start key of leaf 
-     * @param endKey
-     *          end key of leaf
      * @return LeafNodeInfo - leaf metadata
      *
      */
@@ -525,11 +508,6 @@ public abstract class AbstractFactDataWriter<T> implements MolapFactDataWriter<T
         	keyOffSets[i]=offset;
         	offset+=nodeHolder.getKeyLengths()[i];
 		}
-        // key offset will be 8 bytes from current offset because first 4 bytes
-        // will be for number of entry in leaf, then next 4 bytes will be for
-        // key lenght;
-//        offset += MolapCommonConstants.INT_SIZE_IN_BYTE * 2;
-
         // add key offset
         infoObj.setKeyOffSets(keyOffSets);
 
@@ -540,9 +518,6 @@ public abstract class AbstractFactDataWriter<T> implements MolapFactDataWriter<T
 
         for(int i = 0;i < this.measureCount;i++)
         {
-            // increment the current offset by 4 bytes because 4 bytes will be
-            // used for measure byte length
-//            offset += MolapCommonConstants.INT_SIZE_IN_BYTE;
             msrOffset[i] = offset;
             // now increment the offset by adding measure length to get the next
             // measure offset;
@@ -641,17 +616,7 @@ public abstract class AbstractFactDataWriter<T> implements MolapFactDataWriter<T
      * 
      * file format
      * <key><measure1><measure2>....
-     * @param keyArray
-     *          key array
-     * @param dataArray
-     *          measure array
-     * @param entryCount
-     *          number of entries
-     * @param startKey
-     *          start key of leaf
-     * @param endKey
-     *          end key of leaf
-     * @throws MolapDataWriterException 
+     * @throws MolapDataWriterException
      * @throws MolapDataWriterException
      *          throws new MolapDataWriterException if any problem
      *

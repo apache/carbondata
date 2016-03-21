@@ -23,15 +23,6 @@ import java.io.File;
 
 import com.huawei.unibi.molap.datastorage.store.compression.SnappyCompression.SnappyByteCompression;
 
-/**
- * Project Name 	: Carbon 
- * Module Name 		: MOLAP Data Processor
- * Author 			: Suprith T 72079 
- * Created Date 	: 18-Aug-2015
- * FileName 		: CompressedTempSortFileReader.java
- * Description 		: Class for reading the compressed sort temp file
- * Class Version 	: 1.0
- */
 public class CompressedTempSortFileReader extends AbstractTempSortFileReader
 {
 
@@ -41,7 +32,6 @@ public class CompressedTempSortFileReader extends AbstractTempSortFileReader
      * @param measureCount
      * @param dimensionCount
      * @param tempFile
-     * @param type
      */
     public CompressedTempSortFileReader(int dimensionCount, int complexDimensionCount, int measureCount,
     		File tempFile,int highCardinalityCount)

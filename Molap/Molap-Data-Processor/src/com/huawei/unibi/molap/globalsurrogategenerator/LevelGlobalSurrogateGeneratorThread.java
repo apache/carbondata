@@ -175,17 +175,6 @@ public class LevelGlobalSurrogateGeneratorThread implements Callable<Void>
         return null;
     }
 
-    //TODO SIMIAN
-	/**
-	 * @param currentTimeMillis
-	 * @param currentTimeMillis1
-	 * @param isPartitionColumn
-	 * @param levelFileName
-	 * @param partitionMemberVoList
-	 * @param ex
-	 * @param maxSeqenceKey
-	 * @throws InterruptedException
-	 */
 	private void createGlobalSurrogateKey(long currentTimeMillis,
 			long currentTimeMillis1, boolean isPartitionColumn,
 			String levelFileName,
@@ -277,13 +266,6 @@ public class LevelGlobalSurrogateGeneratorThread implements Callable<Void>
         ex.awaitTermination(1, TimeUnit.DAYS);
 	}
 
-	/**
-	 * @param currentTimeMillis
-	 * @param levelFileName
-	 * @param partitionMemberVoList
-	 * @param ex
-	 * @param maxSeqenceKey
-	 */
 	private void processNonPartitionedColumn(long currentTimeMillis,
 			String levelFileName,
 			List<PartitionMemberVo> partitionMemberVoList, ExecutorService ex,
@@ -400,12 +382,10 @@ public class LevelGlobalSurrogateGeneratorThread implements Callable<Void>
         }
         catch(FileNotFoundException e)
         {
-//            e.printStackTrace();
         	 LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,e,e.getMessage());
         }
         catch(IOException e)
         {
-//            e.printStackTrace();
         	 LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,e,e.getMessage());
         }
         finally
@@ -446,7 +426,6 @@ public class LevelGlobalSurrogateGeneratorThread implements Callable<Void>
         {
             writeGlobalSurrogateKeyFile(path, key, value, fileName,
                     currentMaxKey,minValue);
-            // + ".globallevel");
             return null;
         }
 
@@ -472,12 +451,10 @@ public class LevelGlobalSurrogateGeneratorThread implements Callable<Void>
         }
         catch(FileNotFoundException e)
         {
-//            e.printStackTrace();
         	 LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,e,e.getMessage());
         }
         catch(IOException e)
         {
-//            e.printStackTrace();
         	 LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,e,e.getMessage());
          }
         finally
@@ -486,37 +463,6 @@ public class LevelGlobalSurrogateGeneratorThread implements Callable<Void>
         }
     }
 
-  /*  private class ReaderThread implements Callable<Map<String, Integer>>
-    {
-        MolapFile file;
-
-        public ReaderThread(MolapFile file)
-        {
-            this.file = file;
-        }
-
-        @Override
-        public Map<String, Integer> call() throws Exception
-        {
-            // TODO Auto-generated method stub
-            return readLevelFileAndUpdateCache(file);
-        }
-
-    }*/
-
-    
-  /*  public static void main(String[] args) throws IOException
-    {
-        MolapFile molapFile = FileFactory.getMolapFile("D:\\Vmall_FACT_FirstName.level", FileType.LOCAL);
-        Map<String, Integer> readLevelFileAndUpdateCache = readLevelFileAndUpdateCache(molapFile);
-    }*/
-    /**
-     * 
-     * @param memberFile
-     * @param fileName
-     * @throws IOException
-     * 
-     */
     public static Map<String, Integer> readLevelFileAndUpdateCache(
             MolapFile memberFile) throws IOException
     {
@@ -529,15 +475,12 @@ public class LevelGlobalSurrogateGeneratorThread implements Callable<Void>
                     FileFactory.getFileType(memberFile.getPath()));
 
             long currentPosition = 4;
-            // ByteBuffer toltalLength, memberLength, surrogateKey, bf3;
             long size = memberFile.getSize()-4;
             
-            //CHECKSTYLE:OFF Approval No:Approval-V1R2C10_005
             boolean enableEncoding = Boolean.valueOf(MolapProperties.getInstance().getProperty(
                     MolapCommonConstants.ENABLE_BASE64_ENCODING,
                     MolapCommonConstants.ENABLE_BASE64_ENCODING_DEFAULT));
             int surrogateValue=inputStream.readInt();
-            //CHECKSTYLE:ON
             while(currentPosition < size)
             {
                 int len = inputStream.readInt();

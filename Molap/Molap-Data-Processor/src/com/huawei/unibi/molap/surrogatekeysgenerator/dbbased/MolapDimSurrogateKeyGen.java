@@ -124,19 +124,10 @@ public abstract class MolapDimSurrogateKeyGen
     {
         this.molapInfo = molapInfo;
 
-        //setConnection(molapInfo.getConnectionString());
         setDimensionTables(molapInfo.getDimColNames());
         setHierFileNames(molapInfo.getHierTables());
     }
 
-    /**
-     * @param timeTuples
-     * @param out
-     * @param columnIndex
-     * @param timeOrdinalColValues
-     * @return
-     * @throws KettleException
-     */
     public int[] generateSurrogateKeys(String[] timeTuples, int [] out, int []columnIndex,
             List<Integer> timeOrdinalColValues) throws KettleException
     {
@@ -166,14 +157,6 @@ public abstract class MolapDimSurrogateKeyGen
         return out;
     }
     
-    /**
-     * @param tuples
-     * @param columnNames
-     * @param index
-     * @param props
-     * @return
-     * @throws KettleException
-     */
     public Integer generateSurrogateKeys(String tuples, String columnNames,
             int index, Object[] props) throws KettleException
     {
@@ -187,9 +170,6 @@ public abstract class MolapDimSurrogateKeyGen
             {
                 LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, "Invalid cardinality. Key size exceeded cardinality for: "
                         + molapInfo.getDimColNames()[index]);
-               /* throw new KettleException(new KeyGenException(
-                        "Invalid cardinality. Key size exceeded cardinality for: "
-                                + molapInfo.getDimColNames()[index]));*/
                 return -1;
             }
             // Extract properties from tuple
@@ -200,12 +180,6 @@ public abstract class MolapDimSurrogateKeyGen
         return key;
     }
 
-    /**
-     * @param tuple
-     * @param out
-     * @param timeOrdinalColValues
-     * @throws KettleException
-     */
     public Object[] generateSurrogateKeys(Object[] tuple,Object[] out,List<Integer> timeOrdinalColValues) throws KettleException
     {
 	//Modified for Normalized hierarchy AR-UniBI-OLAP-003
@@ -214,8 +188,6 @@ public abstract class MolapDimSurrogateKeyGen
         
         String[] dimColNames = molapInfo.getDimColNames();
         int k=0;
-//        try
-//        {
             for (int i = 0; i < dims.length; i++)
             {
                 Integer key = null;
@@ -280,24 +252,9 @@ public abstract class MolapDimSurrogateKeyGen
                 out[k] = key;
                 k++;
             }
-//        }
-//        finally
-//        {
-//            if (locked)
-//            {
-//                wLock.unlock();
-//            }
-//        }
         return out;
     }
 
-    /**
-     * @param tuple
-     * @param timeOrdinalColValues
-     * @param i
-     * @return
-     * 
-     */
     private Object[] getProperties(Object[] tuple, List<Integer> timeOrdinalColValues, int i)
     {
         Object[] props = new Object[0];
@@ -326,18 +283,11 @@ public abstract class MolapDimSurrogateKeyGen
         return props;
     }
 
-    /**
-     * @param val
-     * @param hier
-     * @throws KeyGenException
-     * @throws KettleException
-     */
     public void checkHierExists(int[] val, String hier)
             throws KettleException
     {
         IntArrayWrapper wrapper = new IntArrayWrapper(val,0);
         Map<IntArrayWrapper, Boolean> hCache = hierCache.get(hier);
-//        Map<ArrayWrapper<Long>, Boolean> hCache = getHCache(hier);
         Boolean b = hCache.get(wrapper);
         if(b != null)
         {
@@ -358,9 +308,6 @@ public abstract class MolapDimSurrogateKeyGen
         }
     }
 
-    /**
-     * @throws Exception
-     */
     public void close() throws Exception
     {
         if(null != connection)
@@ -370,9 +317,6 @@ public abstract class MolapDimSurrogateKeyGen
         hierCache.clear();
     }
     
-    /**
-     * @throws KettleException
-     */
     public abstract void writeHeirDataToFileAndCloseStreams() throws KettleException;
 
     /**
@@ -448,7 +392,6 @@ public abstract class MolapDimSurrogateKeyGen
             memberCache.put(dimeFileNames[i], new HashMap<String, Integer>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE));
         }
 
-       // checkDimTableCreated();
         createRespectiveDimFilesForDimTables();
     }
 
@@ -457,19 +400,8 @@ public abstract class MolapDimSurrogateKeyGen
         int dimCount = this.dimsFiles.length;
         dimInsertFileNames = new String[dimCount];
         System.arraycopy(dimsFiles, 0, dimInsertFileNames, 0, dimCount);
-        // Checkstyle fix
-        /*
-         * for(int i=0 ; i < dimCount ; i++) { dimInsertFileNames[i] =
-         * dimsFiles[i]; }
-         */
     }
     
-    /**
-     * @param val
-     * @param hier
-     * @throws KeyGenException
-     * @throws KettleException
-     */
     public void checkNormalizedHierExists(int[] val, String hier, HierarchyValueWriter hierWriter)
             throws KettleException
     {

@@ -21,162 +21,67 @@ package com.huawei.unibi.molap.graphgenerator.configuration;
 
 import java.util.Map;
 
-/**
- * 
- * @author K00900841
- *
- */
 public class GraphConfigurationInfo
 {
-    /**
-     * 
-     */
     private String connectionName;
     
-    /**
-     * 
-     */
     private String dbType;
     
-    /**
-     * 
-     */
     private String numberOfCores;
     
-    /**
-     * 
-     */
     private String storeLocation;
     
-    /**
-     * 
-     */
     private String tableName;
     
-    /**
-     * 
-     */
     private String leafNodeSize;
     
-    /**
-     * 
-     */
     private String maxLeafInFile;
     
-    /**
-     * 
-     */
     private String batchSize;
     
-    /**
-     * 
-     */
     private  Map<String, String> dimCardinalities;
     
-    /**
-     * 
-     */
     private String [] dimensions;
     
-    /**
-     * 
-     */
      private String  highCardinalityDims;
 
 
-	/**
-     * 
-     */
     private String [] measures;
     
-    /**
-     * 
-     */
     private String dimensionString;
     
-    /**
-     * 
-     */
     private String hiersString;
     
-    /**
-     * 
-     */
     private String measuresString;
     
-    /**
-     * 
-     */
     private String propertiesString;
     
-    /**
-     * 
-     */
     private String timeHeirString;
     
-    /**
-     * 
-     */
     private String metaHeirString;
     
-    /**
-     * 
-     */
     private String metaHeirQueryString;
 
-    /**
-     * 
-     */
     private String jndiName;
     
-    /**
-     * 
-     */
     private  Map<String, String> cubeMeasuresAndDataTypeMap;
     
-    /**
-     * 
-     */
     private String tableInputSqlQuery;
     
-    /**
-     * 
-     */
     private String dimensionSqlQuery;
 
-    /**
-     * 
-     */
     private String sortSize;
     
-    /**
-     * 
-     */
     private boolean isAGG;
     
-    /**
-     * 
-     */
     private String driverclass;
     
-    /**
-     * 
-     */
     private String username;
     
-    /**
-     * 
-     */
     private String password;
     
-    /**
-     * 
-     */
     private String connectionUrl;
     
-    /**
-     * 
-     */
     private String [] actualDims;
 
     /**
@@ -216,11 +121,6 @@ public class GraphConfigurationInfo
     private String hierColumnString;
 
     /**
-     * primary key and containing columns;
-     */
-//    private String primaryKeyColumnNamesString;
-    
-    /**
      * forignKey 
      */
     private String [] forignKey;
@@ -246,12 +146,6 @@ public class GraphConfigurationInfo
     private String measureUniqueColumnNamesString;
 
 
-    /**
-     * Forign key Coluumn name String
-     */
-    
-//    private String foreignKeyColumnNameString;
-    
     /**
      * actualDimensionColumns
      */
@@ -907,26 +801,6 @@ public class GraphConfigurationInfo
 
     /**
      * 
-     * @return Returns the primaryKeyColumnNamesString.
-     * 
-     */
-   /* public String getPrimaryKeyColumnNamesString()
-    {
-        return primaryKeyColumnNamesString;
-    }
-
-    *//**
-     * 
-     * @param primaryKeyColumnNamesString The primaryKeyColumnNamesString to set.
-     * 
-     *//*
-    public void setPrimaryKeyColumnNamesString(String primaryKeyColumnNamesString)
-    {
-        this.primaryKeyColumnNamesString = primaryKeyColumnNamesString;
-    }
-*/
-    /**
-     * 
      * @return Returns the forignKey.
      * 
      */
@@ -985,25 +859,6 @@ public class GraphConfigurationInfo
         this.primaryKeyString = primaryKeyString;
     }
 
-    /**
-     * 
-     * @return Returns the foreignKeyColumnNameString.
-     * 
-     */
-//    public String getForeignKeyColumnNameString()
-//    {
-//        return foreignKeyColumnNameString;
-//    }
-
-    /**
-     * 
-     * @param foreignKeyColumnNameString The foreignKeyColumnNameString to set.
-     * 
-     */
-//    public void setForeignKeyColumnNameString(String foreignKeyColumnNameString)
-//    {
-//        this.foreignKeyColumnNameString = foreignKeyColumnNameString;
-//    }
 
     /**
      * @return the measureNamesString
@@ -1120,32 +975,10 @@ public class GraphConfigurationInfo
         this.measureDataTypeInfo = measureDataTypeInfo;
     }
 
-   /* *//**
-     * @return the columnAndTableName_ColumnMapForAgg
-     *//*
-    public String getColumnAndTableName_ColumnMapForAgg()
-    {
-        return columnAndTableName_ColumnMapForAgg;
-    }
-
-    *//**
-     * @param columnAndTableName_ColumnMapForAgg the columnAndTableName_ColumnMapForAgg to set
-     *//*
-    public void setColumnAndTableName_ColumnMapForAgg(
-            String columnAndTableName_ColumnMapForAgg)
-    {
-        this.columnAndTableName_ColumnMapForAgg = columnAndTableName_ColumnMapForAgg;
-    }
-*/
-    
     public String getColumnAndTableNameColumnMapForAgg() {
 		return columnAndTableNameColumnMapForAgg;
 	}
 
-    /**
-     * @param columnAndTableName_ColumnMapForAgg the columnAndTableName_ColumnMapForAgg to set
-     */
-    
     public void setColumnAndTableNameColumnMapForAgg(
 			String columnAndTableNameColumnMapForAgg) {
 		this.columnAndTableNameColumnMapForAgg = columnAndTableNameColumnMapForAgg;
@@ -1229,9 +1062,6 @@ public class GraphConfigurationInfo
         return currentRestructNumber;
     }
 
-    /**
-     * @param currentRestructNumber the currentRestructNumber to set
-     */
     public void setCurrentRestructNumber(int currentRestructNum)
     {
         this.currentRestructNumber = currentRestructNum;

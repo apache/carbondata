@@ -66,7 +66,6 @@ public abstract class ColumnarFactFileMerger
             MolapColumnarFactMergerInfo molapColumnarFactMergerInfo, int currentRestructNumber)
     {
         this.mdkeyLength = molapColumnarFactMergerInfo.getMdkeyLength();
-        // CHECKSTYLE:OFF Approval No:Approval-367
         List<Integer> otherMeasureIndexList = new ArrayList<Integer>(
                 MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
         List<Integer> customMeasureIndexList = new ArrayList<Integer>(
@@ -99,17 +98,14 @@ public abstract class ColumnarFactFileMerger
         for(MolapSliceAndFiles sliceInfo : molapColumnarFactMergerInfo
                 .getSlicesFromHDFS())
         {
-            /*leaftTupleIterator = new MolapColumnarLeafTupleDataIterator(
-                    sliceInfo.getPath(), sliceInfo.getSliceFactFilesList(),
-                    getFactReaderInfo(molapColumnarFactMergerInfo), mdkeyLength);*/
-            
+
             leaftTupleIterator = new MolapLeafTupleWrapperIterator(sliceInfo.getKeyGen(), molapColumnarFactMergerInfo.getGlobalKeyGen(), new MolapColumnarLeafTupleDataIterator(
                     sliceInfo.getPath(), sliceInfo.getSliceFactFilesList(),
                     getFactReaderInfo(molapColumnarFactMergerInfo), mdkeyLength));
             if(leaftTupleIterator.hasNext())
             {
                 leaftTupleIterator.fetchNextData();
-                leafTupleIteratorList.add(leaftTupleIterator); // CHECKSTYLE:ON
+                leafTupleIteratorList.add(leaftTupleIterator);
             }
         }
         dataHandler = new MolapFactDataHandlerColumnarMerger(
@@ -143,7 +139,6 @@ public abstract class ColumnarFactFileMerger
                 }
             }
         }
-        //factReaderInfo.setAggType(aggType);
         factReaderInfo.setCubeName(molapColumnarFactMergerInfo.getCubeName());
         factReaderInfo.setSchemaName(molapColumnarFactMergerInfo
                 .getSchemaName());
@@ -165,10 +160,6 @@ public abstract class ColumnarFactFileMerger
     /**
      * Below method will be used to add sorted row
      * 
-     * @param rowKey
-     * @param measure
-     * @param measureIndexToRead
-     * @param sliceUniqueValue
      * @throws SliceMergerException
      */
     protected void addRow(MolapSurrogateTupleHolder molapTuple)

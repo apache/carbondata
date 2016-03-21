@@ -19,7 +19,6 @@
 
 package com.huawei.unibi.molap.groupby.step;
 
-//import org.apache.log4j.Logger;
 import java.util.Arrays;
 
 import org.pentaho.di.core.exception.KettleException;
@@ -40,16 +39,6 @@ import com.huawei.unibi.molap.constants.MolapCommonConstants;
 import com.huawei.unibi.molap.groupby.MolapGroupBy;
 import com.huawei.unibi.molap.util.MolapDataProcessorLogEvent;
 
-/**
- * 
- * Project Name NSE V3R7C00 
- * Module Name : Molap Data Processor
- * Author K00900841
- * Created Date :21-May-2013 6:42:29 PM
- * FileName : MolapGroupByStep.java
- * Class Description : MolapGroupByStep
- * Version 1.0
- */
 public class MolapGroupByStep extends BaseStep implements StepInterface
 {
 
@@ -180,9 +169,6 @@ public class MolapGroupByStep extends BaseStep implements StepInterface
      * This method will be used for setting the output interface.
      * Output interface is how this step will process the row to next step  
      * 
-     * @param dimLens
-     *      number of dimensions
-     *
      */
     private void setStepOutputInterface(int outRowSize)
     {

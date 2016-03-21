@@ -57,16 +57,6 @@ import com.huawei.unibi.molap.util.MolapDataProcessorUtil;
 import com.huawei.unibi.molap.util.MolapProperties;
 import com.huawei.unibi.molap.util.MolapUtil;
 
-/**
- * 
- * Project Name NSE V3R7C00 
- * Module Name : Molap Data Processor 
- * Author K00900841
- * Created Date :21-May-2013 6:42:29 PM 
- * FileName :MolapSortKeyAndGroupByStep.java 
- * Class Description :MolapSortKeyAndGroupByStep 
- * Version 1.0
- */
 public class MolapSortKeyAndGroupByStep extends BaseStep
 {
     
@@ -150,16 +140,6 @@ public class MolapSortKeyAndGroupByStep extends BaseStep
      * minValue
      */
     private char[] aggType;
-    
-//    /**
-//     * indexes for aggregation applied on dimensions
-//     */
-//    private int[] unmatchedMeasureIndexes;
-//    
-//    /**
-//     * minimum values for aggregation applied on dimesnions
-//     */
-//    private double[] minValuesForUnmatchedMeasureIndexes;
     
     private String[] aggregators;
     
@@ -262,17 +242,14 @@ public class MolapSortKeyAndGroupByStep extends BaseStep
         if(first)
         {
             first = false;
-//            sizeRowset =  getTransMeta().getSizeRowset();
-            // clone out row meta 
+            // clone out row meta
             this.data.setOutputRowMeta((RowMetaInterface)getInputRowMeta().clone());
             // get all fields 
             this.meta.getFields(data.getOutputRowMeta(), getStepname(), null, null, this);
             this.meta.initialize();
             // get mdkey index
-//            this.mdkeyIndex = meta.getMeasureCount();
-            
-//            this.mdkeylength = ((byte[])row[mdkeyIndex]).length;
-            // create sort key 
+
+            // create sort key
             int factMDkeySize=0;
             
             if(meta.isFactMdKeyInInputRow() && meta.isAutoAggRequest())
@@ -280,19 +257,10 @@ public class MolapSortKeyAndGroupByStep extends BaseStep
                 factMDkeySize=((byte[])row[row.length-1]).length;
             }
 
-//            msrModel = MolapDataProcessorUtil.getMeasureModelForManual(meta.getFactStorePath(),
-//                    meta.getFactTableName(), meta.getFactMeasure().length, FileFactory.getFileType(meta.getFactStorePath()));
             initializeMeasureIndex(row);
             initialize();
             this.mdkeyIndex = row.length - 1;
             this.mdkeylength = meta.getMdkeyLength();
-//          this.molapSortKeys = new MolapSortKeys(meta.getTabelName(),
-//                  meta.getMeasureCount(), mdkeyIndex, mdkeylength,
-//                  this.checkpoint, this.observer, meta.isAutoAggRequest(),
-//                  meta.isFactMdKeyInInputRow(), factMDkeySize,
-//                  meta.getAggregators(), meta.getAggregatorClass(),
-//                  MolapDataProcessorUtil.getDimLens(meta
-//                          .getFactDimLensString()),meta.getSchemaName(),meta.getCubeName(), meta.isUpdateMemberRequest());
             this.molapSortKeys = new MolapSortKeys(meta.getTabelName(),
                     aggregators.length, mdkeyIndex, mdkeylength,
                     this.checkpoint, this.observer, meta.isAutoAggRequest(),
@@ -338,7 +306,6 @@ public class MolapSortKeyAndGroupByStep extends BaseStep
     /**
      * Below method will be used to process data to next step 
      * @return false is finished 
-     * @throws KettleStepException
      * @throws KettleException
      */
     private boolean processRowToNextStep() throws KettleException 
@@ -408,7 +375,6 @@ public class MolapSortKeyAndGroupByStep extends BaseStep
      */
     private void initializeMeasureIndex(Object[] row)
     {
-//      measureIndex = new int[meta.getAggregateMeasures().length];
         MeasureAggregator[] aggregator = (MeasureAggregator[])row[0];
         minValue = new double[aggregator.length + 1];
         maxValue = new double[aggregator.length + 1];
@@ -435,8 +401,6 @@ public class MolapSortKeyAndGroupByStep extends BaseStep
     
     /**
      * This method will be used to update the max value for each measure
-     * 
-     * @param currentMeasures
      * 
      */
     protected void calculateMaxMinUnique(Object[] row)
@@ -483,14 +447,13 @@ public class MolapSortKeyAndGroupByStep extends BaseStep
             for(int j = 0;j < factLevels.length;j++)
             {
                 if(aggreateLevels[k].equals(factLevels[j]))
-                { // CHECKSTYLE:OFF Approval No:Approval-V1R2C10_001
+                {
                     aggCardinality[k] = cardinality[j];
                     break;
-                }// CHECKSTYLE:ON
+                }
             }
         }
         meta.setAggDimeLens(aggCardinality);
-//        meta.setAggregateLevels(reorderedAggregateLevels);
         createStoreAndWriteSliceMetadata(meta.isManualAutoAggRequest(),
                 aggCardinality);
     }
@@ -519,7 +482,6 @@ public class MolapSortKeyAndGroupByStep extends BaseStep
      * @param storeLocation
      * @throws KettleException
      * 
-     * @author Suprith T 72079
      */
     private void writeAggLevelCardinalityFile(int[] dimCardinality,
             String storeLocation) throws KettleException
@@ -583,34 +545,15 @@ public class MolapSortKeyAndGroupByStep extends BaseStep
         sliceMetaData.setMeasures(meta.getAggregateMeasuresColumnName());
         sliceMetaData.setActualDimLens(meta.getAggDimeLens());
         sliceMetaData.setDimLens(meta.getAggDimeLens());
-//        String[] aggregators = meta.getAggregators();
-//        sliceMetaData.setMeasuresAggregator(aggregators);
         sliceMetaData.setMeasuresAggregator(this.aggregators);
         sliceMetaData.setHeirAnKeySize(meta.getHeirAndKeySize());
         sliceMetaData.setTableNamesToLoadMandatory(null);
-        int measureOrdinal = 0;
-        // CHECKSTYLE:OFF Approval No:Approval-367
-        for(String agg : aggregators)
-        { // CHECKSTYLE:ON
-            if("count".equals(agg))
-            {
-                break;
-            }
-            measureOrdinal++;
-        }
-//        sliceMetaData.setCountMsrOrdinal(measureOrdinal);
-//        sliceMetaData.setHeirAndDimLens(meta.getHeirAndDimLens());
         sliceMetaData.setKeyGenerator(KeyGeneratorFactory.getKeyGenerator(meta
                 .getAggDimeLens()));
         MolapDataProcessorUtil.writeFileAsObjectStream(sliceMetaDataFilePath,
                 sliceMetaData);
     }
     
-    /**
-     * 
-     * @throws KettleException
-     * 
-     */
     private void writeMeasureMetadataFile() throws KettleException
     {
         String metaDataFileName = MolapCommonConstants.MEASURE_METADATA_FILE_NAME
@@ -618,25 +561,6 @@ public class MolapSortKeyAndGroupByStep extends BaseStep
                 + MolapCommonConstants.MEASUREMETADATA_FILE_EXT;
         String measureMetaDataFileLocation = createStoreLocaion
                 + metaDataFileName;
-
-//        double[] minValue = new double[this.minValue.length + 1];
-//
-//        for(int i = 0;i < minValue.length;i++)
-//        {
-//            if(measureIndex[i] == -1)
-//            {
-//                continue;
-//            }
-//            minValue[i] = msrModel.getMinValue()[measureIndex[i]];
-//            minValue[i] = minValue[i];
-//        }
-        
-//        for(int i = 0;i < unmatchedMeasureIndexes.length;i++)
-//        {
-//            minValue[unmatchedMeasureIndexes[i]] = minValuesForUnmatchedMeasureIndexes[i];
-//        }
-
-//        minValue[minValue.length - 1] = 1;
 
         try
         {
@@ -646,12 +570,6 @@ public class MolapSortKeyAndGroupByStep extends BaseStep
                     uniqueValue,
                     aggType,
                     new byte[minValue.length], measureMetaDataFileLocation);
-//            MolapDataProcessorUtil.writeMeasureMetaDataToFile(
-//                    new double[measureIndex.length], minValue,
-//                    new int[measureIndex.length],
-//                    new double[measureIndex.length],
-//                    new char[measureIndex.length],
-//                    new byte[measureIndex.length], measureMetaDataFileLocation);
         }
         catch(MolapDataProcessorException e)
         {
@@ -660,24 +578,6 @@ public class MolapSortKeyAndGroupByStep extends BaseStep
         }
     }
 
-//    /**
-//     * Below method will be used to check whether row is empty or not 
-//     * 
-//     * @param row
-//     * @return row empty 
-//     *
-//     */
-//    private boolean checkAllValuesAreNull(Object[] row)
-//    {
-//        for(int i = 0;i < row.length;i++)
-//        {
-//            if(null != row[i])
-//            {
-//                return false;
-//            }
-//        }
-//        return true;
-//    }
 
     /**
      * Initialize and do work where other steps need to wait for...
@@ -705,7 +605,6 @@ public class MolapSortKeyAndGroupByStep extends BaseStep
      */
     public void dispose(StepMetaInterface smi, StepDataInterface sdi)
     {
-//        checkpoint.clear();
         this.meta = ((MolapSortKeyAndGroupByStepMeta)smi);
         this.data = ((MolapSortKeyAndGroupByStepData)sdi);
         this.molapSortKeys= null;

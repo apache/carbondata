@@ -30,15 +30,6 @@ import com.huawei.unibi.molap.schema.metadata.HierarchiesInfo;
 import com.huawei.unibi.molap.surrogatekeysgenerator.csvbased.MolapCSVBasedDimSurrogateKeyGen;
 import com.huawei.unibi.molap.surrogatekeysgenerator.csvbased.MolapCSVBasedSeqGenMeta;
 
-/**
- * Project Name NSE V3R7C00 
- * Module Name : 
- * Author V00900840
- * Created Date :14-Nov-2013 6:57:43 PM
- * FileName : DimensionLoadInfo.java
- * Class Description :
- * Version 1.0
- */
 public class DimensionLoadInfo
 {
     /**
@@ -288,8 +279,6 @@ public class DimensionLoadInfo
     {
         this.keyGeneratorMap = keyGenMap;
     }
-    
-    
-    
+
 }
 

@@ -44,15 +44,6 @@ import org.w3c.dom.Node;
 
 import com.huawei.unibi.molap.constants.MolapCommonConstants;
 
-/**
- * Project Name NSE V3R8C10 
- * Module Name : MOLAP Data Processor
- * Author :k00900841 
- * Created Date:10-Aug-2014
- * FileName : MolapFactReaderMeta.java
- * Class Description : meta class to hold the meta information for the step 
- * Class Version 1.0
- */
 public class MolapFactReaderMeta extends BaseStepMeta implements StepMetaInterface
 {
     /**
@@ -443,7 +434,6 @@ public class MolapFactReaderMeta extends BaseStepMeta implements StepMetaInterfa
         return cubeName;
     }
 
-    //TODO SIMIAN
     /**
      * @param tableName the tableName to set
      */

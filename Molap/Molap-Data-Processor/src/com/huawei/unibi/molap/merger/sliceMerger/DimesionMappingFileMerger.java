@@ -43,26 +43,8 @@ import com.huawei.unibi.molap.merger.exeception.SliceMergerException;
 import com.huawei.unibi.molap.util.MolapDataProcessorLogEvent;
 import com.huawei.unibi.molap.util.MolapUtil;
 
-/**
- * 
- * Project Name NSE V3R7C00 
- * Module Name : Molap Data Processor
- * Author K00900841
- * Created Date :21-May-2013 6:42:29 PM
- * FileName : DimesionMappingFileMerger.java
- * Class Description : This class is responsible for merging the dimension files 
- * Version 1.0
- */
-public class DimesionMappingFileMerger 
+public class DimesionMappingFileMerger
 {
-    
-    /**
-     * 
-     * Comment for <code>LOGGER</code>
-     * 
-     */
-//    private static final LogService LOGGER = LogServiceFactory
-//            .getLogService(DimesionMappingFileMerger.class.getName()); 
     
     /**
      * LOGGER
@@ -98,8 +80,6 @@ public class DimesionMappingFileMerger
      * location if unique file is present in any folder then it will be copied
      * to destination 
      * 
-     * @param slice location
-     *          slice location
      * @throws SliceMergerException
      *          problem while merging     
      *          

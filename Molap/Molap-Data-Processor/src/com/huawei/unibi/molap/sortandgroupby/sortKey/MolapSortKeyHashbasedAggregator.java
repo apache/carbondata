@@ -134,77 +134,7 @@ public class MolapSortKeyHashbasedAggregator
     	 aggergatorMap = new HashMap<ByteArrayWrapper, MeasureAggregator[]>(numberOfRows+1,1.0f);
     	 counter++;
     }
-//    /**
-//     * getAggregatedData.
-//     * @Author s71955
-//     * @Description : getAggregatedData
-//     * @param rows
-//     * @return
-//     * @throws MolapGroupByException
-//     */
-//    public int getAggregatedData(Object[][] rows, int numberofEntry)
-//    {
-//    	XXHash32 xxHash32 = null;
-//        boolean useXXHASH = Boolean.valueOf(MolapProperties.getInstance().getProperty("molap.enableXXHash", "false"));
-//        if(useXXHASH)
-//        {
-//            xxHash32 = XXHashFactory.fastestInstance().hash32();
-//        }
-//    	Map<ByteArrayWrapper, MeasureAggregator[]> aggergatorMap = new HashMap<ByteArrayWrapper, MeasureAggregator[]>(numberofEntry+1,1.0f);
-//    	ByteArrayWrapper wrapper = new ByteArrayWrapper();
-//    	MeasureAggregator[] data=null;
-//        for(int i = 0;i < rows.length;i++)
-//        {
-//        	wrapper.setMaskedKey((byte[])rows[i][this.keyIndex]);
-//        	data=aggergatorMap.get(wrapper);
-//        	if(null==data)
-//        	{
-//        		data = getAggregators();
-//        		updateMeasureValue(rows[i],data);
-//        		aggergatorMap.put(wrapper, data);
-//        		wrapper = new ByteArrayWrapper(xxHash32);
-//        	}
-//        	else
-//        	{
-//        		updateMeasureValue(rows[i],data);
-//        	}
-//        }
-//        return prepareResult(aggergatorMap,rows);
-//    }
-//
-//    private int prepareResult(Map<ByteArrayWrapper, MeasureAggregator[]> aggergatorMap,Object[][] rows)
-//    {
-//        Object[] row = null;
-//        int index=0;
-//        for (Entry<ByteArrayWrapper, MeasureAggregator[]> entry:aggergatorMap.entrySet()) 
-//        {
-//			row = new Object[resultSize];
-//			row[this.keyIndex]=entry.getKey().getMaskedKey();
-//			MeasureAggregator[] value = entry.getValue();
-//			for(int i = 0;i < value.length;i++)
-//	        {
-//	            if(type[i] != 'c')
-//	            {
-//	                if(!value[i].isFirstTime())
-//	                {
-//	                	row[i] = value[i].getValue();
-//
-//	                }
-//	                else
-//	                {
-//	                	row[i] = null;
-//	                }
-//	            }
-//	            else
-//	            {
-//	            	row[i] = value[i].getByteArray();
-//	            }
-//	        }
-//			rows[index++]=row;
-//		}
-//        return aggergatorMap.size();
-//    }
-    
+
     public Object[][] getResult()
     {
     	Object[][]rows = new Object[aggergatorMap.size()][];

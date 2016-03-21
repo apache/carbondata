@@ -19,15 +19,6 @@
 
 package com.huawei.unibi.molap.graphgenerator;
 
-/**
- * Project Name NSE V3R7C00 
- * Module Name : MOLAP Data Processor
- * Author :k00900841
- * Created Date:24-Jun-2013 
- * FileName : GraphGeneratorConstants.java 
- * Class Description :Graph Generator Constants
- * Version 1.0
- */
 public final class GraphGeneratorConstants
 {
 	private GraphGeneratorConstants()
@@ -211,7 +202,5 @@ public final class GraphGeneratorConstants
      * Group by
      */
     public static final String GROUP_BY = "Group by Step";
-    
-    
-    
+
 }

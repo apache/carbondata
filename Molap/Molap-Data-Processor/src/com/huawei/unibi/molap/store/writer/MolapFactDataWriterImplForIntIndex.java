@@ -183,12 +183,6 @@ public class MolapFactDataWriterImplForIntIndex extends AbstractFactDataWriter<i
 	/**
      * This method is responsible for writing leaf node to the leaf node file
      * 
-     * @param keyArray
-     *            mdkey array
-     * @param measureArray
-     *            measure array
-     * @param fileName
-     *            leaf node file
      * @return file offset offset is the current position of the file
      * @throws MolapDataWriterException 
      *          if will throw MolapDataWriterException when any thing goes wrong

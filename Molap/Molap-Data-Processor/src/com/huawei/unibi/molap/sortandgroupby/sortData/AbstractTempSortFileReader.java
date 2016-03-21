@@ -25,15 +25,6 @@ import java.nio.ByteBuffer;
 import com.huawei.unibi.molap.datastorage.store.FileHolder;
 import com.huawei.unibi.molap.datastorage.store.impl.FileHolderImpl;
 
-/**
- * Project Name 	: Carbon 
- * Module Name 		: MOLAP Data Processor
- * Author 			: Suprith T 72079 
- * Created Date 	: 18-Aug-2015
- * FileName 		: AbstractTempSortFileReader.java
- * Description 		: Abstract class for reading the sort temp file
- * Class Version 	: 1.0
- */
 public abstract class AbstractTempSortFileReader implements TempSortFileReader
 {
     /**
@@ -112,7 +103,6 @@ public abstract class AbstractTempSortFileReader implements TempSortFileReader
     
     /**
      * Below method will be used to get the row
-     * @see com.huawei.unibi.molap.sortandgroupby.sortKey.MolapSortTempFileReader#getRow()
      */
     public abstract Object[][] getRow();
 

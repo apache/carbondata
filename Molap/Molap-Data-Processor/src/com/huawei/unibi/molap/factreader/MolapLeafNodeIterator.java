@@ -17,18 +17,6 @@
  * under the License.
  */
 
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2014
- * =====================================
- *
- */
-
 package com.huawei.unibi.molap.factreader;
 
 import java.util.ArrayList;
@@ -46,15 +34,6 @@ import com.huawei.unibi.molap.metadata.LeafNodeInfo;
 import com.huawei.unibi.molap.util.MolapProperties;
 import com.huawei.unibi.molap.util.MolapUtil;
 
-/**
- * Project Name NSE V3R8C10 
- * Module Name : MOLAP Data Processor
- * Author :k00900841 
- * Created Date:10-Aug-2014
- * FileName : MolapLeafNodeIterator.java
- * Class Description : Iterator class to iterate over list of leaf present the the b tree and return the one leaf
- * Class Version 1.0
- */
 public class MolapLeafNodeIterator implements
         MolapIterator<MolapLeafNodeTuplesHolder>
 {
@@ -117,8 +96,6 @@ public class MolapLeafNodeIterator implements
      * MolapLeafNodeIterator constructor to initialise iterator
      * @param factFiles
      *          fact files 
-     * @param tableName
-     *          
      * @param measureCount
      * @param mdkeyLength
      * @param compressionModel
@@ -137,12 +114,6 @@ public class MolapLeafNodeIterator implements
      * below method will be used to initialise the iterator
      * @param factFiles
      *          fact files
-     * @param measureCount
-     *          measure count
-     * @param mdkeyLength
-     *          mdkey length
-     * @param compressionModel
-     *          value comepression model
      */
     private void initialise(MolapFile[] factFiles)
     {

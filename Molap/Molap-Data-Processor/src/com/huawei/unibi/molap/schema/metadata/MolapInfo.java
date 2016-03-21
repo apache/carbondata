@@ -27,11 +27,6 @@ import com.huawei.datasight.molap.datatypes.GenericDataType;
 import com.huawei.unibi.molap.keygenerator.KeyGenerator;
 
 
-/**
- * 
- * @author K00900207
- * 
- */
 public class MolapInfo
 {
 
@@ -55,11 +50,6 @@ public class MolapInfo
      * incremental load)
      */
     private Set<String> hierTables;
-
-    /**
-     * Connection for DB based persistent store
-     */
-//    private String connectionString;
 
     /**
      * Batch size configured in transformation
@@ -247,26 +237,6 @@ public class MolapInfo
     {
         this.hierTables = hierTables;
     }
-//
-//    /**
-//     * 
-//     * @return Returns the connectionString.
-//     * 
-//     */
-//    public String getConnectionString()
-//    {
-//        return connectionString;
-//    }
-//
-//    /**
-//     * 
-//     * @param connectionString The connectionString to set.
-//     * 
-//     */
-//    public void setConnectionString(String connectionString)
-//    {
-//        this.connectionString = connectionString;
-//    }
 
     /**
      * 
@@ -298,11 +268,6 @@ public class MolapInfo
         return isAggregateLoad;
     }
 
-    /**
-     * 
-     * @param isInitialLoad The isInitialLoad to set.
-     * 
-     */
     public void setAggregateLoad(boolean isAggregateLoad)
     {
         this.isAggregateLoad = isAggregateLoad;

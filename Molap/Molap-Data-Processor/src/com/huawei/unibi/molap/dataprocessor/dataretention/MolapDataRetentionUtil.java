@@ -60,11 +60,7 @@ public final class MolapDataRetentionUtil
      * This API will scan the level file and return the surrogate key for the
      * valid member
      * 
-     * @param folderList
-     * @param surrogateKeys
      * @param levelName
-     * @param dataPeriod
-     *            int
      * @throws ParseException
      */
     public static Map<Integer, Integer> getSurrogateKeyForRetentionMember(
@@ -100,22 +96,16 @@ public final class MolapDataRetentionUtil
             currPosIndex += 4;
             //
             int current=0;
-            // CHECKSTYLE:OFF Approval No:Approval-V1R2C10_005
             boolean enableEncoding = Boolean.valueOf(MolapProperties.getInstance().getProperty(
                         MolapCommonConstants.ENABLE_BASE64_ENCODING, MolapCommonConstants.ENABLE_BASE64_ENCODING_DEFAULT));
-            // CHECKSTYLE:ON
 			String memberName = null;
             while(currPosIndex < size)
             {
             	int len = inputStream.readInt();
-                // CHECKSTYLE:OFF Approval No:Approval-V1R2C10_005
-                // CHECKSTYLE:ON
                 currPosIndex += 4;
                 byte[] rowBytes = new byte[len];
                 inputStream.readFully(rowBytes);
                 currPosIndex += len;
-               // CHECKSTYLE:OFF Approval
-                                         // No:Approval-361
                 if(enableEncoding)
                 {
                     memberName = new String(Base64.decodeBase64(rowBytes), Charset.defaultCharset());
@@ -131,10 +121,6 @@ public final class MolapDataRetentionUtil
                     storeDateMember = convertToDateObjectFromStringVal(memberName,
                             format, false);
 
-                    /*
-                     * if(storeDateMember.compareTo(columnValDateMember)==0){
-                     * surrogateValue=surrogateVal; isPresent=true; break; }
-                     */
                 }
                 catch(Exception e)
                 {
@@ -161,7 +147,6 @@ public final class MolapDataRetentionUtil
                     MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
                     "Not able to read level file for Populating Cache : "
                             + memberFile.getName());
-            // MolapUtil.closeStreams(inputStream);
 
         }
         finally
@@ -171,7 +156,6 @@ public final class MolapDataRetentionUtil
             
         }
 
-        // mapOfSurrKeyAndAvailStatus.put(surrogateValue, isPresent);
         return mapOfSurrKeyAndAvailStatus;
     }
 
@@ -328,7 +312,6 @@ public final class MolapDataRetentionUtil
                 }
                    
             }
-            
         }
         
         return validLoadNameForRetention;

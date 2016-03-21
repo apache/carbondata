@@ -54,15 +54,7 @@ import com.huawei.unibi.molap.util.MolapUtil;
 import com.huawei.unibi.molap.util.MolapUtilException;
 import com.huawei.unibi.molap.util.RemoveDictionaryUtil;
 
-/**
- * Project Name NSE V3R7C00 
- * Module Name : Molap Data Processor 
- * Author K00900841
- * Created Date :21-May-2013 6:42:29 PM 
- * FileName :MolapSortKeys.java 
- * Class Description : MolapSortKeys class 
- * Version 1.0
- */
+
 public class MolapSortKeys
 {
 
@@ -294,8 +286,6 @@ public class MolapSortKeys
 	/**
      * This method will be used to initialize
      * 
-     * @param storeLocation
-     *            storeLocation
      */
     public void initialize(String schemaName, String cubeName, int currentRestructNumber)
             throws MolapSortKeyAndGroupByException
@@ -375,18 +365,11 @@ public class MolapSortKeys
         
         prefetch = MolapCommonConstants.MOLAP_PREFETCH_IN_MERGE_VALUE;
         bufferSize=MolapCommonConstants.MOLAP_PREFETCH_BUFFERSIZE;
-//        isGroupByInSort = Boolean.parseBoolean(molapProperties.getProperty(
-//                MolapCommonConstants.MOLAP_IS_GROUPBY_IN_SORT,
-//                MolapCommonConstants.MOLAP_IS_GROUPBY_IN_SORT_DEFAULTVALUE));
         isGroupByInSort = false;
         
         boolean useHashBasedAggWhileSorting=Boolean.parseBoolean(molapProperties.getProperty(
                 MolapCommonConstants.MOLAP_USE_HASHBASED_AGG_INSORT,
                 MolapCommonConstants.MOLAP_USE_HASHBASED_AGG_INSORT_DEFAULTVALUE));
-        /*if(useHashBasedAggWhileSorting)
-        {
-        	isGroupByInSort=false;
-        }*/
         checkGroupByInSortIfValid();
         updateAggTypeForDistinctCount(isGroupByInSort);
         updateAggTypeForDistinctCount(useHashBasedAggWhileSorting);
@@ -404,13 +387,7 @@ public class MolapSortKeys
 			hashedBasedAgg = new MolapSortKeyHashbasedAggregator(aggregators,
 					aggregatorClass, factKetGenerator, type, this.sortBufferSize,mergedMinValue);
         }
-        /*else if (isAutoAggRequest && isGroupByInSort && !isUpdateMemberRequest)
-        {
-        	SORTKEYLOGGER.info(
-                    MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-                    "************************ After sort based aggaregator is being used");
-        }*/
-        
+
         boolean useXXHASH = Boolean.valueOf(MolapProperties.getInstance().getProperty("molap.enableXXHash", "false"));
         if(useXXHASH)
         {
@@ -508,7 +485,6 @@ public class MolapSortKeys
     
     /**
      * This method will check of sort resume is required or not in case of check point 
-     * @param schemaCubeName
      * @param tableName
      * @return SortingResumeRequired
      */
@@ -542,15 +518,8 @@ public class MolapSortKeys
     	//Delete the fact files created before server was killed/stopped 
     	return deleteFactFiles(schemaName, cubeName, tableName, currentRestructNumber);
     	
-//    	return true;
     }
     
-    /**
-     * 
-     * @param schemaCubeName
-     * @param tableName2
-     * 
-     */
     private static boolean deleteFactFiles(String schemaName, String cubeName, final String tableName, int currentRestructNumber)
     {
      // get the base location
@@ -685,7 +654,6 @@ public class MolapSortKeys
 
     /**
      * This will be used to get the sort temo location
-     * @param storeLocation
      * @param instance
      */
     private void updateSortTempFileLocation(String schemaName,String cubeName,
@@ -711,22 +679,6 @@ public class MolapSortKeys
             throws MolapSortKeyAndGroupByException
     {
     	MolapDataProcessorUtil.deleteSortLocationIfExists(this.tempFileLocation);
-        // create new tem file location where this class 
-        //will write all the temp files
-//        File file = new File(this.tempFileLocation);
-//        if(file.exists())
-//        {
-//            try
-//            {
-//                MolapUtil.deleteFoldersAndFiles(file);
-//            }
-//            catch(MolapUtilException e)
-//            {
-//                SORTKEYLOGGER.error(
-//                        MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-//                        e);
-//            }
-//        }
     }
     
     /**
@@ -871,7 +823,6 @@ public class MolapSortKeys
             if(CheckPointHanlder.IS_CHECK_POINT_NEEDED && !(isAutoAggRequest || isUpdateMemberRequest))
             {
                 localCheckPointMap= new HashMap<String, Long>(checkPointMap);
-//                checkPointMap=new HashMap<String, Long>();
             }
             sortAndWriteToFile(destFile, recordHolderListLocal, sortBufferSize, mdKeyIndex,localCheckPointMap);
             this.entryCount = 0;
@@ -896,10 +847,6 @@ public class MolapSortKeys
         }
 	}
     
-//    private void aggData()
-//    {
-//    	entryCount=hashedBasedAgg.getAggregatedData(recordHolderList,entryCount);
-//    }
     /**
      * Below method will be used to save the checkpoint details to check point map 
      * @param row
@@ -971,7 +918,6 @@ public class MolapSortKeys
                 synchronized(lockObject)
                 {
                     procFiles.add(finalFile);
-//                    checkpoint.saveCheckPointCache(checkPointMapLocal);
                 }
                 return null;
             }
@@ -1210,7 +1156,6 @@ public class MolapSortKeys
     /**
      * Observer class for thread execution 
      * In case of any failure we need stop all the running thread 
-     * @author k00900841
      *
      */
     private class ThreadStatusObserver

@@ -53,18 +53,6 @@ import com.huawei.unibi.molap.util.MolapProperties;
 import com.huawei.unibi.molap.util.MolapUtil;
 import com.huawei.unibi.molap.util.MolapUtilException;
 
-
-
-/**
- * Project Name NSE V3R7C00 
- * Module Name : Molap Data Processor 
- * Author K00900841
- * Created Date :21-May-2013 6:42:29 PM 
- * FileName : MolapDataWriterStep.java
- * Class Description : This class is responsible for writing the incoming data
- * to molap structure 
- * Version 1.0
- */
 public class MolapDataWriterStep extends BaseStep implements StepInterface
 {
 
@@ -271,10 +259,6 @@ public class MolapDataWriterStep extends BaseStep implements StepInterface
      * This method will be used to get and update the step properties which will
      * required to run this step
      * 
-     * @param totalRowLength
-     *            total number of records in reacords
-     * @param mdkeyLength
-     *            lenght of mdkey
      * @throws KettleException
      * @throws MolapUtilException 
      * 
@@ -292,8 +276,7 @@ public class MolapDataWriterStep extends BaseStep implements StepInterface
                 tempLocationKey,
                 MolapCommonConstants.STORE_LOCATION_DEFAULT_VAL)
                 + File.separator + inputStoreLocation;
-        int restructFolderNumber = meta.getCurrentRestructNumber()/*MolapUtil
-                .checkAndReturnNextRestructFolderNumber(baseStorelocation,"RS_")*/;
+        int restructFolderNumber = meta.getCurrentRestructNumber();
         if(restructFolderNumber<0)
         {
             isEmptyLoad=true;
@@ -368,35 +351,9 @@ public class MolapDataWriterStep extends BaseStep implements StepInterface
         type = new char[measureCount];
         Arrays.fill(type, 'c'); 
         type[measureCount - 1] = 'n';
-//        boolean isGroupByInSort = Boolean
-//                .parseBoolean(MolapProperties
-//                        .getInstance()
-//                        .getProperty(
-//                                MolapCommonConstants.MOLAP_IS_GROUPBY_IN_SORT,
-//                                MolapCommonConstants.MOLAP_IS_GROUPBY_IN_SORT_DEFAULTVALUE));
-//        
-////        isGroupByInSort = updateStepConfForGroupByInSort(aggType, isGroupByInSort);
         boolean isByteArrayInMeasure=true;
         
-//        if(meta.isGroupByEnabled()
-//                && (isGroupByInSort || meta.isUpdateMemberRequest()))
-//        {
-//            aggType = MolapDataProcessorUtil.getUpdatedAggregator(meta
-//                    .getAggregators());
-//            for(int i = 0;i < aggType.length;i++)
-//            {
-//                if(aggType[i].equals(MolapCommonConstants.DISTINCT_COUNT)
-//                        || aggType[i].equals(MolapCommonConstants.AVERAGE))
-//                {
-//                    type[i] = 'c';
-//                    isByteArrayInMeasure = true;
-//                }
-//            }
-//        }
-//        
-//        isByteArrayInMeasure = updateStepConfForByteArrInMeasure(aggType, isByteArrayInMeasure);
-        
-        String levelCardinalityFilePath = storeLocation + File.separator + 
+        String levelCardinalityFilePath = storeLocation + File.separator +
 				MolapCommonConstants.LEVEL_METADATA_FILE + meta.getTabelName() + ".metadata";
         int[] dimLens;
         try
@@ -420,39 +377,7 @@ public class MolapDataWriterStep extends BaseStep implements StepInterface
         }
     }
 
-   /* private boolean updateStepConfForByteArrInMeasure(String[] aggType, boolean isByteArrayInMeasure)
-    {
-        if(meta.isGroupByEnabled() && meta.isUpdateMemberRequest())
-        {
-            for(int i = 0;i < aggType.length;i++)
-            {
-                if(aggType[i].equals(MolapCommonConstants.CUSTOM))
-                {
-                    type[i] = 'c';
-                    isByteArrayInMeasure = true;
-                }
-            }
-        }
-        return isByteArrayInMeasure;
-    }*/
 
-   /* private boolean updateStepConfForGroupByInSort(String[] aggType, boolean isGroupByInSort)
-    {
-        if(meta.isGroupByEnabled()
-                && (isGroupByInSort || meta.isUpdateMemberRequest()))
-        {
-            for(int i = 0;i < aggType.length;i++)
-            {
-                if(aggType[i].equals(MolapCommonConstants.CUSTOM))
-                {
-                    isGroupByInSort = false;
-                    break;
-                }
-            }
-        }
-        return isGroupByInSort;
-    }*/
-    
     /**
      * Initialize and do work where other steps need to wait for...
      * 
@@ -504,8 +429,6 @@ public class MolapDataWriterStep extends BaseStep implements StepInterface
     /**
      * This will be used to get the sort temo location
      * 
-     * @param storeLocation
-     * @param instance
      */
     private void updateSortTempFileLocation(MolapProperties molapProperties,
             String schemaName, String cubeName)
@@ -536,7 +459,6 @@ public class MolapDataWriterStep extends BaseStep implements StepInterface
                 meta.getFactMdkeyLength(), type, this.aggregators,this.meta.gethighCardCount());
         finalMergerThread.startFinalMerge();
         int recordCounter=0;
-      //CHECKSTYLE:OFF    Approval No:Approval-V3R8C00_018
         while(finalMergerThread.hasNext())
         {
             dataHandler.addDataToStore(finalMergerThread.next());
@@ -547,7 +469,6 @@ public class MolapDataWriterStep extends BaseStep implements StepInterface
                 "************************************************ Total number of records processed"
                         + recordCounter);
         finalMergerThread.clear();
-      //CHECKSTYLE:ON
     }
     
     /**
@@ -613,7 +534,6 @@ public class MolapDataWriterStep extends BaseStep implements StepInterface
             int i = 0;
             while(true)
             {
-               //CHECKSTYLE:OFF    Approval No:Approval-019
                 File[] temp = new File[filesPerEachThread[i].length + 1];
                 System.arraycopy(filesPerEachThread[i], 0, temp, 0,
                         filesPerEachThread[i].length);
@@ -629,7 +549,6 @@ public class MolapDataWriterStep extends BaseStep implements StepInterface
                     i = 0;
                 }
                 i++;
-              //CHECKSTYLE:ON
             }
         }
         if(leftOver > 0 && numberOfFilesPerThreads <= 0)

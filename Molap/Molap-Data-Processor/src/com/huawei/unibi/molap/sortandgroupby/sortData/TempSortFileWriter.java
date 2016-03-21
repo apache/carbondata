@@ -23,15 +23,6 @@ import java.io.File;
 
 import com.huawei.unibi.molap.sortandgroupby.exception.MolapSortKeyAndGroupByException;
 
-/**
- * Project Name 	: Carbon 
- * Module Name 		: MOLAP Data Processor
- * Author 			: Suprith T 72079 
- * Created Date 	: 24-Aug-2015
- * FileName 		: TempSortFileWriter.java
- * Description 		: Interface for writing the sort temp file
- * Class Version 	: 1.0
- */
 public interface TempSortFileWriter
 {
     /**

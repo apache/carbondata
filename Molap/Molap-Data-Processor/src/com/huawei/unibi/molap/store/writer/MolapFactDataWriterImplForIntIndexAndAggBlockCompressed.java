@@ -49,13 +49,11 @@ public class MolapFactDataWriterImplForIntIndexAndAggBlockCompressed extends Mol
         }
     }
     
-    //TODO SIMIAN
-    protected byte[][] fillAndCompressedKeyBlockData(IndexStorage<int[]>[] keyStorageArray,int entryCount) 
+    protected byte[][] fillAndCompressedKeyBlockData(IndexStorage<int[]>[] keyStorageArray,int entryCount)
     {
         byte[][] keyBlockData = new byte[keyStorageArray.length][];
         int destPos=0;
-//        int normal=0;
-        
+
         for(int i =0;i<keyStorageArray.length;i++)
         {
             destPos=0;
@@ -67,9 +65,7 @@ public class MolapFactDataWriterImplForIntIndexAndAggBlockCompressed extends Mol
                     System.arraycopy(keyStorageArray[i].getKeyBlock()[m], 0, keyBlockData[i], destPos, keyStorageArray[i].getKeyBlock()[m].length);
                     destPos+=keyStorageArray[i].getKeyBlock()[m].length;
                 }
-//                normal=keyBlockData[i].length;
                 keyBlockData[i]= this.keyBlockCompressor[i].compressBytes(keyBlockData[i]);
-//                System.out.println("Block Number: "+i + "Compressed Number Compressor: "+ (normal-keyBlockData[i].length));
             }
             else
             {
@@ -79,12 +75,8 @@ public class MolapFactDataWriterImplForIntIndexAndAggBlockCompressed extends Mol
                     System.arraycopy(keyStorageArray[i].getKeyBlock()[j], 0, keyBlockData[i], destPos, keyBlockSize[i]);
                     destPos+=keyBlockSize[i];
                 }
-//                normal=keyBlockData[i].length;
                 keyBlockData[i]= this.keyBlockCompressor[i].compressBytes(keyBlockData[i]);
-//                System.out.println("Block Number: "+i + "Compressed Number Compressor: "+ (normal-keyBlockData[i].length));
-//                normal=keyBlockData[i].length;
                 keyBlockData[i]=SnappyByteCompression.INSTANCE.compress(keyBlockData[i]);
-//                System.out.println("Block Number: "+i + "Compressed Snappy Compressor: "+ (normal-keyBlockData[i].length));
             }
            
         }

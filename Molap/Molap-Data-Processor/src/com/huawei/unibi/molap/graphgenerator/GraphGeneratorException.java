@@ -21,11 +21,6 @@ package com.huawei.unibi.molap.graphgenerator;
 
 import java.util.Locale;
 
-/**
- * 
- * @author K00900841
- *
- */
 public class GraphGeneratorException extends Exception
 {
 
@@ -43,8 +38,6 @@ public class GraphGeneratorException extends Exception
     /**
      * Constructor
      * 
-     * @param errorCode
-     *            The error code for this exception.
      * @param msg
      *            The error message for this exception.
      * 
@@ -58,8 +51,6 @@ public class GraphGeneratorException extends Exception
     /**
      * Constructor
      * 
-     * @param errorCode
-     *            The error code for this exception.
      * @param msg
      *            The error message for this exception.
      * 

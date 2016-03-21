@@ -38,8 +38,6 @@ public class MolapDataWriterException extends Exception
     /**
      * Constructor
      * 
-     * @param errorCode
-     *            The error code for this exception.
      * @param msg
      *            The error message for this exception.
      * 
@@ -53,8 +51,6 @@ public class MolapDataWriterException extends Exception
     /**
      * Constructor
      * 
-     * @param errorCode
-     *            The error code for this exception.
      * @param msg
      *            The error message for this exception.
      * 

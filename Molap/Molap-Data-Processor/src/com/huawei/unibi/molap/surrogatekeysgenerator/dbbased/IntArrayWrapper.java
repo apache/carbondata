@@ -32,9 +32,6 @@ public class IntArrayWrapper implements Serializable, Comparable<IntArrayWrapper
      */
     private static final long serialVersionUID = 1L;
 
-    /**
-     * 
-     */
     private int[] data;
     
     private int primaryKey;
@@ -63,9 +60,7 @@ public class IntArrayWrapper implements Serializable, Comparable<IntArrayWrapper
     /**
      * This method will be used check to ArrayWrapper object is equal or not 
      * 
-     * @param object
-     *          ArrayWrapper object 
-     * @return boolean 
+     * @return boolean
      *          equal or not
      *
      */
@@ -109,8 +104,7 @@ public class IntArrayWrapper implements Serializable, Comparable<IntArrayWrapper
      * ArrayWrapper data object, basically it will compare two surrogate keys
      * array to check which one is greater
      * 
-     * @param other
-     *            ArrayWrapper Object
+     * @param other ArrayWrapper Object
      * 
      */
     @Override

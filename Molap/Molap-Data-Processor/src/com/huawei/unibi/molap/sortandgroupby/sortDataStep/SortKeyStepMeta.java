@@ -43,15 +43,6 @@ import org.w3c.dom.Node;
 
 import com.huawei.unibi.molap.util.MolapDataProcessorUtil;
 
-/**
- * Project Name 	: Carbon 
- * Module Name 		: MOLAP Data Processor
- * Author 			: Suprith T 72079 
- * Created Date 	: 25-Aug-2015
- * FileName 		: SortKeyStepData.java
- * Description 		: Kettle step meta to sort data
- * Class Version 	: 1.0
- */
 public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface
 {
     /**
@@ -284,16 +275,6 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface
     public void check(List<CheckResultInterface> remarks, TransMeta transMeta, StepMeta stepMeta,
             RowMetaInterface prev, String[] input, String[] output, RowMetaInterface info)
     {
-//        if(input.length > 0)
-//        {
-//            CheckResult cr = new CheckResult(1, "Step is receiving info from other steps.", stepMeta);
-//            remarks.add(cr);
-//        }
-//        else
-//        {
-//            CheckResult cr = new CheckResult(4, "No input received from other steps!", stepMeta);
-//            remarks.add(cr);
-//        }
         MolapDataProcessorUtil.checkResult(remarks, stepMeta, input);
     }
 

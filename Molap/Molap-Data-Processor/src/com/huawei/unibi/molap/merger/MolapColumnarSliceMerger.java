@@ -89,48 +89,6 @@ public class MolapColumnarSliceMerger implements MolapSliceMerger
     private static final LogService LOGGER = LogServiceFactory
             .getLogService(MolapColumnarSliceMerger.class.getName());
 
-//    public static void main(String[] args) throws SliceMergerException
-//    {
-//        String schemaPath = "D:/Network_Audit_Gn.xml";
-//        String storeLocation = "D:/molap";
-//        Schema loadXML = MolapSchemaParser.loadXML(schemaPath);
-//        Cube localCube = MolapSchemaParser.getMondrianCubes(loadXML)[0];
-//
-//        MolapSliceMergerInfo molapSliceMergerInfo = new MolapSliceMergerInfo();
-//        molapSliceMergerInfo.setCubeName(localCube.name);
-//        molapSliceMergerInfo.setSchemaName(loadXML.name);
-////        molapSliceMergerInfo.setTableName(MolapSchemaParser
-////                .getFactTableName(localCube));
-//        molapSliceMergerInfo.setTableName("agg_1_FACT_IU_DATA_INFO");
-//        molapSliceMergerInfo.setSchemaPath(schemaPath);
-//        MolapProperties.getInstance().addProperty("store_output_location",
-//                storeLocation);
-//        MolapProperties.getInstance().addProperty(
-//                MolapCommonConstants.STORE_LOCATION, storeLocation);
-//        MolapProperties.getInstance().addProperty(
-//                MolapCommonConstants.STORE_LOCATION_HDFS, storeLocation);
-//        MolapProperties.getInstance().addProperty("send.signal.load", "false");
-//        MolapProperties.getInstance().addProperty(
-//                "molap.dimension.split.value.in.columnar", "1");
-//        MolapProperties.getInstance().addProperty("molap.is.fullyfilled.bits",
-//                "true");
-//        MolapProperties.getInstance().addProperty("is.int.based.indexer",
-//                "true");
-//        MolapProperties.getInstance().addProperty(
-//                "aggregate.columnar.keyblock", "true");
-//        MolapProperties.getInstance().addProperty("high.cardinality.value",
-//                "100000");
-//        MolapProperties.getInstance().addProperty("molap.is.columnar.storage",
-//                "true");
-//        MolapProperties.getInstance()
-//                .addProperty("molap.leaf.node.size", "299");
-//
-//        MolapColumnarSliceMerger columnarSliceMerger = new MolapColumnarSliceMerger(
-//                molapSliceMergerInfo);
-//
-//        columnarSliceMerger.fullMerge();
-//
-//    }
 
     public MolapColumnarSliceMerger(MolapSliceMergerInfo molapSliceMergerInfo)
     {
@@ -170,14 +128,12 @@ public class MolapColumnarSliceMerger implements MolapSliceMerger
                 + '/' + schema.name + '/' + cube.name;
 
         LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,"HDFS Location: "+ hdfsLocation);
-//        String tempLocationKey = schema.name + '/' + cube.name;
         String localStore = MolapProperties.getInstance().getProperty(
                 MolapCommonConstants.STORE_LOCATION,
                 MolapCommonConstants.STORE_LOCATION_DEFAULT_VAL)
                 + '/' + schema.name + '/' + cube.name;
 
-        int restrctFolderCount = currentRestructNumber/*MolapUtil
-                .checkAndReturnNextRestructFolderNumber(hdfsLocation,"RS_")*/;
+        int restrctFolderCount = currentRestructNumber;
         if(restrctFolderCount == -1)
         {
             restrctFolderCount = 0;
@@ -538,11 +494,6 @@ public class MolapColumnarSliceMerger implements MolapSliceMerger
         return decimalLength;
     }
 
-    /**
-     * 
-     * @param uniqueValue2
-     * 
-     */
     private double[] updateUniqueValue(double[] currentUniqueValue,
             double[] uniqueValue)
     {
@@ -550,9 +501,7 @@ public class MolapColumnarSliceMerger implements MolapSliceMerger
         {
             if(uniqueValue[i] > currentUniqueValue[i])
             {
-                // CHECKSTYLE:OFF Approval No:Approval-352
                 uniqueValue[i] = currentUniqueValue[i];
-                // CHECKSTYLE:ON Approval No:Approval-352
             }
         }
         return uniqueValue;

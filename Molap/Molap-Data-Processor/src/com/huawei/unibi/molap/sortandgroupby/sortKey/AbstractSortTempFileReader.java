@@ -120,8 +120,6 @@ public abstract class AbstractSortTempFileReader
     
     /**
      * Below method will be used to get the row
-     * @ Author s71955
-     * @see com.huawei.unibi.molap.sortandgroupby.sortKey.MolapSortTempFileReader#getRow()
      */
     public abstract Object[][] getRow();
 }

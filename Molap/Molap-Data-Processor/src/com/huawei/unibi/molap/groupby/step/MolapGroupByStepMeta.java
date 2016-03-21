@@ -42,15 +42,6 @@ import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
 import org.w3c.dom.Node;
 
-/**
- * Project Name NSE V3R7C00 
- * Module Name : MOLAP
- * Author :C00900810
- * Created Date :24-Jun-2013
- * FileName : MolapSliceMergerStepMeta.java
- * Class Description : This class is the entry point for MolapDataWriterStepMeta plug-in
- * Version 1.0
- */
 public class MolapGroupByStepMeta extends BaseStepMeta implements
         StepMetaInterface, Cloneable
 {
@@ -154,7 +145,6 @@ public class MolapGroupByStepMeta extends BaseStepMeta implements
         }
         catch(Exception e)
         {
-            // TODO Auto-generated catch block
             throw new KettleXMLException(
                     "Unable to read step info from XML node", e);
         }
@@ -262,9 +252,7 @@ public class MolapGroupByStepMeta extends BaseStepMeta implements
             StepMeta stepMeta, RowMetaInterface prev, String[] input,
             String[] output, RowMetaInterface info)
     {
-        // TODO Auto-generated method stub 
-
-        CheckResult checkResultInfo; 
+        CheckResult checkResultInfo;
 
         // See if we have input streams leading to this step!
         if(input.length > 0)
@@ -302,7 +290,6 @@ public class MolapGroupByStepMeta extends BaseStepMeta implements
             StepDataInterface stepDataInterface, int copyNr,
             TransMeta transMeta, Trans trans)
     {
-        // TODO Auto-generated method stub
         return new MolapGroupByStep(stepMeta, stepDataInterface, copyNr,
                 transMeta, trans);
     }
@@ -317,7 +304,6 @@ public class MolapGroupByStepMeta extends BaseStepMeta implements
     @Override
     public StepDataInterface getStepData()
     {
-        // TODO Auto-generated method stub
         return new MolapGroupByStepData();
     }
 

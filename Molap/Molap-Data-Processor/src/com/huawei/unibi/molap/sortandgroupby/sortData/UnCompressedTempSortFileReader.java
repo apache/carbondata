@@ -22,15 +22,6 @@ package com.huawei.unibi.molap.sortandgroupby.sortData;
 import java.io.File;
 
 
-/**
- * Project Name 	: Carbon 
- * Module Name 		: MOLAP Data Processor
- * Author 			: Suprith T 72079 
- * Created Date 	: 18-Aug-2015
- * FileName 		: UnCompressedTempSortFileReader.java
- * Description 		: Class for reading the uncompressed sort temp file
- * Class Version 	: 1.0
- */
 public class UnCompressedTempSortFileReader extends AbstractTempSortFileReader
 {
 
@@ -40,7 +31,6 @@ public class UnCompressedTempSortFileReader extends AbstractTempSortFileReader
      * @param measureCount
      * @param dimensionCount
      * @param tempFile
-     * @param type
      */
     public UnCompressedTempSortFileReader(int dimensionCount, int complexDimensionCount, int measureCount,
     		File tempFile, int highCardinalityCount)
@@ -60,7 +50,6 @@ public class UnCompressedTempSortFileReader extends AbstractTempSortFileReader
         int byteArrayLength = fileHolder.readInt(filePath);
         byte[] byteArrayFromFile = fileHolder.readByteArray(filePath, byteArrayLength);
         return prepareRecordFromByteBuffer(recordLength, byteArrayFromFile);
-
     }
 
 }

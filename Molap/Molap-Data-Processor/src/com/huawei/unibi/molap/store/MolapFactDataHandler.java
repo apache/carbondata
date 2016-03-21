@@ -17,17 +17,6 @@
  * under the License.
  */
 
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2014
- * =====================================
- *
- */
 package com.huawei.unibi.molap.store;
 
 import java.io.File;
@@ -61,15 +50,6 @@ import com.huawei.unibi.molap.util.MolapDataProcessorUtil;
 import com.huawei.unibi.molap.util.MolapProperties;
 import com.huawei.unibi.molap.util.ValueCompressionUtil;
 
-/**
- * Project Name NSE V3R8C10 
- * Module Name : MOLAP Data Processor
- * Author :k00900841 
- * Created Date:10-Aug-2014
- * FileName : MolapFactDataHandler.java
- * Class Description : Fact data handler class to handle the fact data .  
- * Class Version 1.0
- */
 public class MolapFactDataHandler implements MolapFactHandler
 {
 
@@ -252,7 +232,6 @@ public class MolapFactDataHandler implements MolapFactHandler
      * @param mdKeyIndex
      * @param aggregators
      * @param aggregatorClass
-     * @param extension
      */
     public MolapFactDataHandler(String schemaName, String cubeName,
             String tableName, boolean isGroupByEnabled, int measureCount,
@@ -304,11 +283,7 @@ public class MolapFactDataHandler implements MolapFactHandler
      * This method will be used to get and update the step properties which will
      * required to run this step
      * 
-     * @param totalRowLength
-     *            total number of records in reacords
-     * @param mdkeyLength
-     *            lenght of mdkey
-     * @throws MolapDataWriterException 
+     * @throws MolapDataWriterException
      * 
      */
     public void initialise() throws MolapDataWriterException
@@ -368,52 +343,6 @@ public class MolapFactDataHandler implements MolapFactHandler
         }
     }
     
-//    /**
-//     * below method will be used to add row to store
-//     * @param row
-//     * @throws MolapDataWriterException
-//     */
-//    private void addToStore(Object[] row) throws MolapDataWriterException
-//    {
-//        byte[] mdkey = (byte[])row[this.mdKeyIndex];
-//        if(this.entryCount == 0)
-//        {
-//            this.startKey = mdkey;
-//        }
-//        this.endKey = mdkey;
-//        // add to key store
-//        this.keyStore.put(entryCount, mdkey);
-//
-//        double[] measureData = new double[measureCount];
-//        for(int i = 0;i < this.measureCount;i++)
-//        {
-//            if(null == row[i])
-//            {// CHECKSTYLE:OFF Approval No:Approval-351
-//                measureData[i] = uniqueValue[i];
-//            }// CHECKSTYLE:ON
-//            else
-//            {// CHECKSTYLE:OFF Approval No:Approval-351
-//                measureData[i] = (Double)row[i];
-//            }// CHECKSTYLE:ON
-//        }
-//        this.dataStore.put(entryCount, measureData);
-//        this.entryCount++;
-//        // if entry count reaches to leaf node size then we are ready to
-//        // write
-//        // this to leaf node file and update the intermediate files
-//        if(this.entryCount == this.leafNodeSize)
-//        {
-//                // write data to file
-//                this.dataWriter.writeDataToFile(
-//                        this.keyStore.getWritableKeyArray(),
-//                        this.dataStore.getWritableMeasureDataArray(dataHolder),
-//                        this.entryCount, this.startKey, this.endKey);
-//            // set the entry count to zero
-//            this.entryCount = 0;
-//            this.keyStore.clear();
-//        }
-//    }
-    
     /**
      * below method will be used to add row to store
      * @param row
@@ -431,7 +360,6 @@ public class MolapFactDataHandler implements MolapFactHandler
         this.endKey = mdkey;
         // add to key store
         this.keyStore.put(entryCount, mdkey);
-     // CHECKSTYLE:OFF Approval No:Approval-351
         for(int i = 0;i < otherMeasureIndex.length;i++)
         {
             if(null == row[otherMeasureIndex[i]])
@@ -459,7 +387,6 @@ public class MolapFactDataHandler implements MolapFactHandler
             dataHolder[customMeasureIndex[i]].setWritableByteArrayValueByIndex(
                     entryCount,b);
         }
-        // CHECKSTYLE:ON
         this.entryCount++;
         // if entry count reaches to leaf node size then we are ready to
         // write
@@ -612,10 +539,8 @@ public class MolapFactDataHandler implements MolapFactHandler
         this.groupBy=null;
     }
     
-    //TODO SIMIAN
     /**
      * Below method will be to configure fact file writing configuration
-     * @param instance
      * @throws MolapDataWriterException
      */
     private void setWritingConfiguration(int mdkeySize)

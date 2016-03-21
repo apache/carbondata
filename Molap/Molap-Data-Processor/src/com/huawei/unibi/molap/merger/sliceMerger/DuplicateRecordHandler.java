@@ -22,16 +22,6 @@ package com.huawei.unibi.molap.merger.sliceMerger;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * 
- * Project Name NSE V3R7C00 
- * Module Name : Molap Data Processor
- * Author K00900841
- * Created Date :21-May-2013 6:42:29 PM
- * FileName : DuplicateRecordHandler.java
- * Class Description :
- * Version 1.0
- */
 public class DuplicateRecordHandler
 {
     /**

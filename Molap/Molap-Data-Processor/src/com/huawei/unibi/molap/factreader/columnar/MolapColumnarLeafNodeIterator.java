@@ -124,9 +124,6 @@ public class MolapColumnarLeafNodeIterator implements
      * MolapLeafNodeIterator constructor to initialise iterator
      * @param factFiles
      *          fact files 
-     * @param tableName
-     *          
-     * @param measureCount
      * @param mdkeyLength
      * @param compressionModel
      */
@@ -137,13 +134,6 @@ public class MolapColumnarLeafNodeIterator implements
         initialise(factFiles,null);
         this.needCompressedData= new boolean[blockIndexes.length];
         Arrays.fill(needCompressedData, true);
-//        for(int i = 0;i < needCompressedData.length;i++)
-//        {
-//            if(this.isUniqueBlock[blockIndexes[i]])
-//            {
-//                needCompressedData[i]=false;
-//            }
-//        }
     }
     
     public MolapColumnarLeafNodeIterator(MolapFile[] factFiles, int mdKeySize,
@@ -203,12 +193,6 @@ public class MolapColumnarLeafNodeIterator implements
      * @param factFiles
      *          fact files
 	 * @param leafNodeInfoColumnar 
-     * @param measureCount
-     *          measure count
-     * @param mdkeyLength
-     *          mdkey length
-     * @param compressionModel
-     *          value comepression model
      */
 	private void initialise(MolapFile[] factFiles,
 			LeafNodeInfoColumnar leafNodeInfoColumnar) {

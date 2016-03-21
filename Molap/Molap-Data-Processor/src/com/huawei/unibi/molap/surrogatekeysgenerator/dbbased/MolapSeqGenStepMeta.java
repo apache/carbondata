@@ -351,9 +351,6 @@ public class MolapSeqGenStepMeta extends BaseStepMeta implements StepMetaInterfa
 		return molapJNDI;
 	}
 
-	/**
-	 * @param molapCon the molapCon to set
-	 */
 	public void setMolapJNDIName(String jndiName) {
 		this.molapJNDI = jndiName;
 	}
@@ -377,9 +374,6 @@ public class MolapSeqGenStepMeta extends BaseStepMeta implements StepMetaInterfa
 		return storeLocation;
 	}
 
-	/**
-	 * @param molapLocation the molapLocation to set
-	 */
     public void setStoreLocation(String molapLocation)
     {
         this.storeLocation = molapLocation;
@@ -415,11 +409,6 @@ public class MolapSeqGenStepMeta extends BaseStepMeta implements StepMetaInterfa
         return isAggregate;
     }
 
-    /**
-     * 
-     * @param isInitialLoad The isInitialLoad to set.
-     * 
-     */
     public void setAggregate(boolean isAggregate)
     {
         this.isAggregate = isAggregate;
@@ -436,16 +425,10 @@ public class MolapSeqGenStepMeta extends BaseStepMeta implements StepMetaInterfa
         this.batchSize = batchSize;
     }
     
-	/**
-	 * @return the molapTime
-	 */
 	public String getMolapTime() {
 		return molapTime;
 	}
 
-	/**
-	 * @param molapTime the molapTime to set
-	 */
 	public void setMolapTime(String molapTime) {
 		this.molapTime = molapTime;
 	}
@@ -498,7 +481,6 @@ public class MolapSeqGenStepMeta extends BaseStepMeta implements StepMetaInterfa
 		this.molaphier = molaphier;
 	}
 	
-	//TODO SIMIAN
 	 /**
      * 
      * @param generateDimFiles The generateDimFiles to set.
@@ -524,7 +506,6 @@ public class MolapSeqGenStepMeta extends BaseStepMeta implements StepMetaInterfa
     /**
      * set sensible defaults for a new step
      * 
-     * @see org.pentaho.di.trans.step.StepMetaInterface#setDefault()
      */
 	public void setDefault() {
 	    molapProps="";
@@ -562,10 +543,6 @@ public class MolapSeqGenStepMeta extends BaseStepMeta implements StepMetaInterfa
 		// field by field copy is default
 		MolapSeqGenStepMeta retval = (MolapSeqGenStepMeta) super.clone();
 		
-		// add proper deep copy for the collections
-//		int nrKeys   = keyField.length;
-
-	
 		return retval;
 	}	
 	
@@ -602,8 +579,7 @@ public class MolapSeqGenStepMeta extends BaseStepMeta implements StepMetaInterfa
 		return retval.toString();
 	}
 	
-	//TODO SIMIAN
-	public void loadXML(Node stepnode, List<DatabaseMeta> databases, Map<String, Counter> counters) throws KettleXMLException 
+	public void loadXML(Node stepnode, List<DatabaseMeta> databases, Map<String, Counter> counters) throws KettleXMLException
     {
 
         try {
@@ -616,7 +592,7 @@ public class MolapSeqGenStepMeta extends BaseStepMeta implements StepMetaInterfa
             storeLocation = XMLHandler.getTagValue(stepnode, "loc");
             molapJNDI = XMLHandler.getTagValue(stepnode, "con");
             molapMetaHier = XMLHandler.getTagValue(stepnode, "molapMetaHier");
-			molapMeasureNames = XMLHandler.getTagValue(stepnode, "molapMeasureNames");
+			      molapMeasureNames = XMLHandler.getTagValue(stepnode, "molapMeasureNames");
             dimesionTableNames = XMLHandler.getTagValue(stepnode, "dimHierReleation");
             tableName = XMLHandler.getTagValue(stepnode, "factOrAggTable");
             msrAggregatorString = XMLHandler.getTagValue(stepnode, "msrAggregatorString");
@@ -646,8 +622,7 @@ public class MolapSeqGenStepMeta extends BaseStepMeta implements StepMetaInterfa
             
             int nrKeys = XMLHandler.countNodes(stepnode, "lookup"); 
             allocate(nrKeys);
-//          intialize();
-            
+
         } catch (Exception e) {
             throw new KettleXMLException("Template Plugin Unable to read step info from XML node", e);
         }
@@ -709,12 +684,6 @@ public class MolapSeqGenStepMeta extends BaseStepMeta implements StepMetaInterfa
         
 	}
 	
-    /**
-     * 
-     * @param foreignKeyHierarchyString2
-     * @return
-     * 
-     */
     private Map<String, String> getForeignKeyHierMap(
             String foreignKeyHierarchyString)
     {
@@ -735,12 +704,7 @@ public class MolapSeqGenStepMeta extends BaseStepMeta implements StepMetaInterfa
         }
         return map;
     }
-	/**
-     * 
-     * @param primaryKeyColumnNamesString2
-     * @return
-     * 
-     */
+
     private Map<String, String[]> getPrimaryKeyColumnMap(
             String primaryKeyColumnNamesString)
     {
@@ -769,10 +733,6 @@ public class MolapSeqGenStepMeta extends BaseStepMeta implements StepMetaInterfa
         String [] splitedColumnNames = columnNames.split(",");
         String[] columns = new String[splitedColumnNames.length];
         
-//        for (int i = 0; i < columns.length; i++) 
-//        {
-//            columns[i] = splitedColumnNames[i];
-//        }
         System.arraycopy(splitedColumnNames, 0, columns, 0, columns.length);
         return columns;
     }
@@ -794,11 +754,6 @@ public class MolapSeqGenStepMeta extends BaseStepMeta implements StepMetaInterfa
 	        }
 	    }
 	
-	 /**
-     * 
-     * @param msrAggregatorString2
-     * 
-     */
     private void updateMeasureAggregator(String msrAggregatorString)
     {
         String[] split = msrAggregatorString.split(";");
@@ -818,42 +773,27 @@ public class MolapSeqGenStepMeta extends BaseStepMeta implements StepMetaInterfa
         
         String [] measureName = new String[foreignKeys.length];
 
-//        for(int i = 0;i < foreignKeys.length;i++)
-//        {
-//            measureName[i] = foreignKeys[i];
-//        }
         System.arraycopy(foreignKeys, 0, measureName, 0, foreignKeys.length);
         return measureName;
     }
 
-    /**
-     * 
-     * @param metaHeirSQLQuery2
-     * @throws KettleException 
-     * @throws IOException 
-     * 
-     */
     private void updateRowCountMap() throws KettleException
     {
         // check first the rowCounter file Exists
-        String storeLocation = MolapUtil.getCarbonStorePath(null, null)/*MolapProperties.getInstance().getProperty(
-                MolapCommonConstants.STORE_LOCATION,
-                MolapCommonConstants.STORE_LOCATION_DEFAULT_VAL)*/;
+        String storeLocation = MolapUtil.getCarbonStorePath(null, null);
         storeLocation = storeLocation + File.separator + getStoreLocation();
 
-        int restructFolderNumber = currentRestructNumber/*MolapUtil.checkAndReturnNextRestructFolderNumber(storeLocation,"RS_")*/;
+        int restructFolderNumber = currentRestructNumber;
         
         storeLocation = storeLocation + File.separator
                 + MolapCommonConstants.RESTRUCTRE_FOLDER + restructFolderNumber
                 + File.separator + ROW_COUNT_INFO;
-        //
         File rowCountFile = new File(storeLocation);
 
         if(!rowCountFile.exists())
         {
             return;
         }
-        //
         FileInputStream fileInputStream = null;
         FileChannel fileChannel = null;
 
@@ -883,7 +823,6 @@ public class MolapSeqGenStepMeta extends BaseStepMeta implements StepMetaInterfa
                 tableInfo.get(bb);
                 tableName = new String(bb,Charset.defaultCharset());
                 int rowCoutValue = tableInfo.getInt();
-                //
                 rowCountMap.put(tableName, rowCoutValue);
             }
         }
@@ -928,13 +867,6 @@ public class MolapSeqGenStepMeta extends BaseStepMeta implements StepMetaInterfa
                 columnNames[index] = columnAndPropertyNames[0];
                 columnIndex[index] = getColumnIndex(columnNames[index]);
                 String[] properties = new String[columnAndPropertyNames.length - 1];
-//                int propertyIndex = 0;
-//                for(int k = 1;k < columnAndPropertyNames.length;k++)
-//                {
-//                    //
-//                    properties[propertyIndex] = columnAndPropertyNames[k];
-//                    propertyIndex++;
-//                }
                 System.arraycopy(columnAndPropertyNames, 1, properties, 0, columnAndPropertyNames.length - 1);
                 columnPropsMap.put(columnNames[index], properties);
                 index++;
@@ -948,7 +880,6 @@ public class MolapSeqGenStepMeta extends BaseStepMeta implements StepMetaInterfa
 	
 	private void updateMetaHierarichiesWithQueries(String molapLocation)
 	{
-        //
 	    if(null==molapLocation)
 	    {
 	        return;
@@ -1135,15 +1066,6 @@ public class MolapSeqGenStepMeta extends BaseStepMeta implements StepMetaInterfa
 		int[] uDimLens = new int[dims.length+timeLevels.length-1];
 		String[] cols = new String[dims.length+timeLevels.length-1];
 		
-        // Here to copy, time dimension index in the dimensions list to be used.
-        // Not the actual index in CSV file.
-//		for (int i = 0; i < timeDimeIndex; i++) 
-//		{
-//			uDims[i] = dims[i];
-//			cols[i] = dimColNames[i];
-//			uDimLens[i] = dimLens[i];
-//		}
-		
 		System.arraycopy(dims, 0, uDims, 0, timeDimeIndex);
 		System.arraycopy(dimColNames, 0, cols, 0, timeDimeIndex);
 		System.arraycopy(dimLens, 0, uDimLens, 0, timeDimeIndex);
@@ -1154,9 +1076,6 @@ public class MolapSeqGenStepMeta extends BaseStepMeta implements StepMetaInterfa
 		{
 			uDims[i] = timeIndex+j;
 			tim[j] = i;
-			//cols[i] = colNames[j];
-			//uDimLens[i] = timeCardinalities[j]; 
-			
 			j++;
 		}
 		
@@ -1166,8 +1085,6 @@ public class MolapSeqGenStepMeta extends BaseStepMeta implements StepMetaInterfa
 		for (int i = timeDimeIndex+1; i < dims.length; i++) 
 		{
 			uDims[i+timeLevels.length-1] = dims[i]+timeLevels.length-1;
-			//cols[i+timeLevels.length-1] = dimColNames[i];
-			//uDimLens[i+timeLevels.length-1] = dimLens[i];
 		}
 		
 		System.arraycopy(dimColNames, timeDimeIndex + 1, cols, timeDimeIndex+timeLevels.length, dims.length - (timeDimeIndex + 1));
@@ -1254,7 +1171,6 @@ public class MolapSeqGenStepMeta extends BaseStepMeta implements StepMetaInterfa
 		}
 		msrs = m;
 		measureColumn = mlist.toArray(new String[mlist.size()]);
-//		columns.put(MEASURES, mlist);
 	}
 
 
@@ -1303,7 +1219,6 @@ public class MolapSeqGenStepMeta extends BaseStepMeta implements StepMetaInterfa
 			rep.saveStepAttribute(idTransformation, idStep, "dim", molapdim); 
 			rep.saveStepAttribute(idTransformation, idStep, "msr", molapmsr); 
 			rep.saveStepAttribute(idTransformation, idStep, "hier", molaphier);
-//			rep.saveStepAttribute(id_transformation, id_step, "molaphierColumn", molaphierColumn);
 			rep.saveStepAttribute(idTransformation, idStep, "time", molapTime);
             //
 			rep.saveStepAttribute(idTransformation, idStep, "loc", storeLocation);
@@ -1343,51 +1258,6 @@ public class MolapSeqGenStepMeta extends BaseStepMeta implements StepMetaInterfa
             StepMeta stepMeta, RowMetaInterface prev, String[] input,
             String[] output, RowMetaInterface info)
     {
-//		CheckResult cr;
-//
-//		// See if we have input streams leading to this step!
-//		if (input.length > 0) {
-//            cr = new CheckResult(
-//                    CheckResult.TYPE_RESULT_OK,
-//                    BaseMessages
-//                            .getString(pkg,
-//                                    "MolapStep.Check.StepIsReceivingInfoFromOtherSteps"),
-//                    stepMeta);
-//			remarks.add(cr);
-//		} else {
-//            cr = new CheckResult(CheckResult.TYPE_RESULT_ERROR,
-//                    BaseMessages.getString(pkg,
-//                            "MolapStep.Check.NoInputReceivedFromOtherSteps"),
-//                    stepMeta);
-//			remarks.add(cr);
-//		}	
-//		
-//		// also check that each expected key fields are acually coming
-//		if (prev!=null && prev.size()>0)
-//		{
-//			String error_message = ""; 
-//			boolean error_found = false;
-//			
-//			if (error_found)
-//			{
-//				cr = new CheckResult(CheckResultInterface.TYPE_RESULT_ERROR, error_message, stepMeta);
-//			}
-//			else
-//			{
-//                cr = new CheckResult(CheckResultInterface.TYPE_RESULT_OK,
-//                        BaseMessages.getString(pkg,
-//                                "MolapStep.Check.AllFieldsFoundInInput"),
-//                        stepMeta);
-//			}
-//			remarks.add(cr);
-//		}
-//		else
-//		{
-//            String error_message = BaseMessages.getString(pkg,
-//                    "MolapStep.Check.CouldNotReadFromPreviousSteps") + Const.CR;
-//			cr = new CheckResult(CheckResultInterface.TYPE_RESULT_ERROR, error_message, stepMeta);
-//			remarks.add(cr);
-//		}
     	MolapDataProcessorUtil.check(PKG, remarks, stepMeta, prev, input);
     	
 	}
@@ -1508,7 +1378,6 @@ public class MolapSeqGenStepMeta extends BaseStepMeta implements StepMetaInterfa
         this.msrAggregatorString = msrAggregatorString;
     }
     
-    //TODO SIMIAN    
     /**
      * 
      * @param dimHierReleation The dimHierReleation to set.

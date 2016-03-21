@@ -65,7 +65,7 @@ public class Container
      */
     public Object[][] getContainerData()
     {
-    	//CHECKSTYLE:OFF    Approval No:Approval-252
+    	//CHECKSTYLE:OFF
         while(!isFilled && !isDone)
         {
             try//CHECKSTYLE:ON

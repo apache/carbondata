@@ -49,15 +49,6 @@ import com.huawei.datasight.molap.datatypes.StructDataType;
 import com.huawei.unibi.molap.constants.MolapCommonConstants;
 import com.huawei.unibi.molap.util.MolapDataProcessorUtil;
 
-/**
- * Project Name 	: Carbon 
- * Module Name 		: MOLAP Data Processor
- * Author 			: Suprith T 72079 
- * Created Date 	: 25-Aug-2015
- * FileName 		: MDKeyGenStep.java
- * Description 		: Kettle step meta to generate MD Key
- * Class Version 	: 1.0
- */
 public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface
 {
 	/**
@@ -140,9 +131,6 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface
         currentRestructNumber = -1;
     }
 
-    /**
-     * 
-     */
     public String getXML()
     {
         StringBuffer retval = new StringBuffer(150);
@@ -187,11 +175,6 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface
         }
     }
 
-   /* public Object clone()
-    {
-        Object retval = super.clone();
-        return retval;
-    }*/
 
     @Override
     public void saveRep(Repository rep, ObjectId idTransformation, ObjectId idStep) throws KettleException 

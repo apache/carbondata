@@ -29,15 +29,6 @@ import com.huawei.unibi.molap.engine.aggregator.MeasureAggregator;
 import com.huawei.unibi.molap.sortandgroupby.exception.MolapSortKeyAndGroupByException;
 import com.huawei.unibi.molap.util.MolapUtil;
 
-/**
- * Project Name NSE V3R8C10 
- * Module Name : MOLAP Data Processor
- * Author :k00900841 
- * Created Date:10-Aug-2014
- * FileName : MolapCompressedSortTempFileReader.java
- * Class Description : Below class will be used to write the compressed sort temp file 
- * Class Version 1.0
- */
 public class MolapCompressedSortTempFileWriter extends AbstractMolapSortTempFileWriter
 {
 
@@ -123,7 +114,6 @@ public class MolapCompressedSortTempFileWriter extends AbstractMolapSortTempFile
      * @param recordSize
      * @param mdkey
      * @param factMdkey
-     * @param measureData
      * @param isFactMdkeyInSort
      * @param writeFileBufferSize
      * @throws IOException

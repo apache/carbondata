@@ -17,17 +17,6 @@
  * under the License.
  */
 
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2014
- * =====================================
- *
- */
 package com.huawei.unibi.molap.autoaggregategraphgenerator.step;
 
 import java.util.List;
@@ -53,15 +42,6 @@ import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
 import org.w3c.dom.Node;
 
-/**
- * Project Name NSE V3R8C10 
- * Module Name : MOLAP Data Processor
- * Author :k00900841 
- * Created Date:10-Aug-2014
- * FileName : MolapAutoAGGGraphGeneratorMeta.java 
- * Class Description : Below class is responsible for holding step meta information
- * Version 1.0
- */
 public class MolapAutoAGGGraphGeneratorMeta extends BaseStepMeta implements StepMetaInterface
 {
     /**
@@ -134,8 +114,6 @@ public class MolapAutoAGGGraphGeneratorMeta extends BaseStepMeta implements Step
         factStoreLocation = "";
         currentRestructNumber = -1;
     }
-    
-    //TODO SIMIAN
     
     /**
      * Checks the settings of this step and puts the findings in a remarks List.

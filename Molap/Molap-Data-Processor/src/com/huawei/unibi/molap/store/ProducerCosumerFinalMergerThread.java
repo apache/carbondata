@@ -17,17 +17,6 @@
  * under the License.
  */
 
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2014
- * =====================================
- *
- */
 package com.huawei.unibi.molap.store;
 
 import java.util.AbstractQueue;
@@ -45,16 +34,6 @@ import com.huawei.unibi.molap.threadbasedmerger.iterator.RecordIterator;
 import com.huawei.unibi.molap.util.ByteUtil;
 import com.huawei.unibi.molap.util.MolapDataProcessorLogEvent;
 
-/**
- * Project Name NSE V3R7C00 
- * Module Name : Molap Data Processor 
- * Author K00900841
- * Created Date :21-May-2013 6:42:29 PM 
- * FileName : MolapDataWriterStep.java
- * Class Description : below class is responsible for sorting the data, this class uses producer consumer based algorithm to sort the data  
- * 
- * Version 1.0
- */
 public class ProducerCosumerFinalMergerThread implements Callable<Void>
 {
     /**
@@ -122,9 +101,7 @@ public class ProducerCosumerFinalMergerThread implements Callable<Void>
             iterators[producerCounter] = iterator;
             producerCounter++;
         }
-      //CHECKSTYLE:ON
         int counter = 0;
-      //CHECKSTYLE:OFF    Approval No:Approval-V3R8C00_020
         try
         {
             if(producerCounter == 2)
@@ -186,7 +163,6 @@ public class ProducerCosumerFinalMergerThread implements Callable<Void>
                 initialiseHeap(iterators);
                 fillBuffer();
             }
-            //CHECKSTYLE:ON
         }
         catch(Exception e)
         {
@@ -205,7 +181,6 @@ public class ProducerCosumerFinalMergerThread implements Callable<Void>
     private void initialiseHeap(RecordIterator[] iterators)
             throws MolapSortKeyException
     {
-      //CHECKSTYLE:OFF    Approval No:Approval-V3R8C00_015
         for(RecordIterator iterator : iterators)
         {
             if(iterator.hasNext())
@@ -213,9 +188,7 @@ public class ProducerCosumerFinalMergerThread implements Callable<Void>
                 this.recordHolderHeap.add(iterator);
             }
         }
-      //CHECKSTYLE:ON
     }
-  //CHECKSTYLE:OFF    Approval No:Approval-V3R8C00_021
     /**
      * This method will be used to get the sorted record from file
      * 
@@ -245,14 +218,11 @@ public class ProducerCosumerFinalMergerThread implements Callable<Void>
             // check if there no entry present
             if(!poll.hasNext())
             {
-                // this.dataWriterStep.processRow(row);
-                // putRow(data.getOutputRowMeta(), row);
                 dataHandler.addDataToStore(row);
                 counter++;
                 producerCounter--;
                 continue;
             }
-            // putRow(data.getOutputRowMeta(), row);
             dataHandler.addDataToStore(row);
             counter++;
             this.recordHolderHeap.add(poll);
@@ -262,16 +232,11 @@ public class ProducerCosumerFinalMergerThread implements Callable<Void>
                 MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                 "************************************************ Total number of records processed"
                         + counter);
-        // return row
     }
 
-    //TODO SIMIAN
     /**
      * This method will be used to create the heap which will be used to
      * hold the chunk of data
-     * 
-     * @param listFiles
-     *            list of temp files
      * 
      */
     private void createRecordHolderQueue(RecordIterator[] iteratorsLocal)

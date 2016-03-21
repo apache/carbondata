@@ -44,15 +44,6 @@ import org.w3c.dom.Node;
 
 import com.huawei.unibi.molap.constants.MolapCommonConstants;
 
-/**
- * Project Name NSE V3R7C00 
- * Module Name : MOLAP
- * Author :C00900810
- * Created Date :24-Jun-2013
- * FileName : MolapSliceMergerStepMeta.java
- * Class Description : This class is the entry point for MolapDataWriterStepMeta plug-in
- * Version 1.0
- */
 public class MolapSliceMergerStepMeta extends BaseStepMeta implements
         StepMetaInterface, Cloneable
 {
@@ -218,7 +209,6 @@ public class MolapSliceMergerStepMeta extends BaseStepMeta implements
         }
         catch(Exception e)
         {
-            // TODO Auto-generated catch block
             throw new KettleXMLException(
                     "Unable to read step info from XML node", e);
         }
@@ -278,7 +268,6 @@ public class MolapSliceMergerStepMeta extends BaseStepMeta implements
         }
     }
     
-    //TODO SIMIAN
     /**
      * Make an exact copy of this step, make sure to explicitly copy Collections
      * etc.
@@ -327,7 +316,6 @@ public class MolapSliceMergerStepMeta extends BaseStepMeta implements
         }
         catch(Exception exception)
         {
-            // TODO Auto-generated catch block
             throw new KettleException(
                     BaseMessages
                             .getString(PKG,
@@ -357,7 +345,6 @@ public class MolapSliceMergerStepMeta extends BaseStepMeta implements
             StepDataInterface stepDataInterface, int copyNr,
             TransMeta transMeta, Trans trans)
     {
-        // TODO Auto-generated method stub
         return new MolapSliceMergerStep(stepMeta, stepDataInterface, copyNr,
                 transMeta, trans);
     }
@@ -384,7 +371,6 @@ public class MolapSliceMergerStepMeta extends BaseStepMeta implements
             StepMeta stepMeta, RowMetaInterface prev, String[] input,
             String[] output, RowMetaInterface info)
     {
-        // TODO Auto-generated method stub
 
         CheckResult checkResVal;
 
@@ -414,7 +400,6 @@ public class MolapSliceMergerStepMeta extends BaseStepMeta implements
     @Override
     public StepDataInterface getStepData()
     {
-        // TODO Auto-generated method stub
         return new MolapSliceMergerStepData();
     }
 

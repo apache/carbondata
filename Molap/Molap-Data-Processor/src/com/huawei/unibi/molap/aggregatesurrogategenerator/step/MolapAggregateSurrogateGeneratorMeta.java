@@ -17,17 +17,6 @@
  * under the License.
  */
 
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2014
- * =====================================
- *
- */
 package com.huawei.unibi.molap.aggregatesurrogategenerator.step;
 
 import java.util.List;
@@ -55,15 +44,6 @@ import org.w3c.dom.Node;
 
 import com.huawei.unibi.molap.constants.MolapCommonConstants;
 
-/**
- * Project Name NSE V3R8C10 
- * Module Name : MOLAP Data Processor
- * Author :k00900841 
- * Created Date:10-Aug-2014
- * FileName : MolapAggregateSurrogateGeneratorMeta.java 
- * Class Description : Below class is responsible for holding step meta information
- * Version 1.0
- */
 public class MolapAggregateSurrogateGeneratorMeta extends BaseStepMeta
         implements StepMetaInterface
 {
@@ -610,15 +590,6 @@ public class MolapAggregateSurrogateGeneratorMeta extends BaseStepMeta
     }
 
     /**
-     * @param aggregateMeasures
-     *            the aggregateMeasures to set
-     */
-    public void setAggregateMeasures(String[] aggregateMeasures)
-    {
-        this.aggregateMeasures = aggregateMeasures;
-    }
-
-    /**
      * @return the aggregateLevels
      */
     public String[] getAggregateLevels()
@@ -626,14 +597,6 @@ public class MolapAggregateSurrogateGeneratorMeta extends BaseStepMeta
         return aggregateLevels;
     }
 
-    /**
-     * @param aggregateLevels
-     *            the aggregateLevels to set
-     */
-    public void setAggregateLevels(String[] aggregateLevels)
-    {
-        this.aggregateLevels = aggregateLevels;
-    }
 
     /**
      * @return the factMeasure
@@ -644,29 +607,11 @@ public class MolapAggregateSurrogateGeneratorMeta extends BaseStepMeta
     }
 
     /**
-     * @param factMeasure
-     *            the factMeasure to set
-     */
-    public void setFactMeasure(String[] factMeasure)
-    {
-        this.factMeasure = factMeasure;
-    }
-
-    /**
      * @return the factLevels
      */
     public String[] getFactLevels()
     {
         return factLevels;
-    }
-
-    /**
-     * @param factLevels
-     *            the factLevels to set
-     */
-    public void setFactLevels(String[] factLevels)
-    {
-        this.factLevels = factLevels;
     }
 
     /**
@@ -738,28 +683,12 @@ public class MolapAggregateSurrogateGeneratorMeta extends BaseStepMeta
     }
 
     /**
-     * @return the measureCountString
-     */
-    public String getMeasureCountString()
-    {
-        return measureCountString;
-    }
-
-    /**
      * @param measureCountString
      *            the measureCountString to set
      */
     public void setMeasureCountString(String measureCountString)
     {
         this.measureCountString = measureCountString;
-    }
-
-    /**
-     * @return the aggregateMeasuresString
-     */
-    public String getAggregateMeasuresString()
-    {
-        return aggregateMeasuresString;
     }
 
     /**
@@ -772,28 +701,12 @@ public class MolapAggregateSurrogateGeneratorMeta extends BaseStepMeta
     }
 
     /**
-     * @return the aggregateLevelsString
-     */
-    public String getAggregateLevelsString()
-    {
-        return aggregateLevelsString;
-    }
-
-    /**
      * @param aggregateLevelsString
      *            the aggregateLevelsString to set
      */
     public void setAggregateLevelsString(String aggregateLevelsString)
     {
         this.aggregateLevelsString = aggregateLevelsString;
-    }
-
-    /**
-     * @return the factMeasureString
-     */
-    public String getFactMeasureString()
-    {
-        return factMeasureString;
     }
 
     /**
@@ -806,28 +719,12 @@ public class MolapAggregateSurrogateGeneratorMeta extends BaseStepMeta
     }
 
     /**
-     * @return the factLevelsString
-     */
-    public String getFactLevelsString()
-    {
-        return factLevelsString;
-    }
-
-    /**
      * @param factLevelsString
      *            the factLevelsString to set
      */
     public void setFactLevelsString(String factLevelsString)
     {
         this.factLevelsString = factLevelsString;
-    }
-
-    /**
-     * @return the heirAndKeySize
-     */
-    public String getHeirAndKeySize()
-    {
-        return heirAndKeySize;
     }
 
     /**
@@ -840,37 +737,12 @@ public class MolapAggregateSurrogateGeneratorMeta extends BaseStepMeta
     }
 
     /**
-     * @return the heirAndDimLens
-     */
-    public String getHeirAndDimLens()
-    {
-        return heirAndDimLens;
-    }
-
-    /**
      * @param heirAndDimLens
      *            the heirAndDimLens to set
      */
     public void setHeirAndDimLens(String heirAndDimLens)
     {
         this.heirAndDimLens = heirAndDimLens;
-    }
-
-    /**
-     * @return the aggDimeLens
-     */
-    public int[] getAggDimeLens()
-    {
-        return aggDimeLens;
-    }
-
-    /**
-     * @param aggDimeLens
-     *            the aggDimeLens to set
-     */
-    public void setAggDimeLens(int[] aggDimeLens)
-    {
-        this.aggDimeLens = aggDimeLens;
     }
 
     /**
@@ -891,28 +763,12 @@ public class MolapAggregateSurrogateGeneratorMeta extends BaseStepMeta
     }
 
     /**
-     * @return the aggDimeLensString
-     */
-    public String getAggDimeLensString()
-    {
-        return aggDimeLensString;
-    }
-
-    /**
      * @param aggDimeLensString
      *            the aggDimeLensString to set
      */
     public void setAggDimeLensString(String aggDimeLensString)
     {
         this.aggDimeLensString = aggDimeLensString;
-    }
-
-    /**
-     * @return the aggregatorString
-     */
-    public String getAggregatorString()
-    {
-        return aggregatorString;
     }
 
     /**
@@ -925,14 +781,6 @@ public class MolapAggregateSurrogateGeneratorMeta extends BaseStepMeta
     }
 
     /**
-     * @return the aggregateMeasuresColumnNameString
-     */
-    public String getAggregateMeasuresColumnNameString()
-    {
-        return aggregateMeasuresColumnNameString;
-    }
-
-    /**
      * @param aggregateMeasuresColumnNameString
      *            the aggregateMeasuresColumnNameString to set
      */
@@ -940,24 +788,6 @@ public class MolapAggregateSurrogateGeneratorMeta extends BaseStepMeta
             String aggregateMeasuresColumnNameString)
     {
         this.aggregateMeasuresColumnNameString = aggregateMeasuresColumnNameString;
-    }
-
-    /**
-     * @return the aggregateMeasuresColumnName
-     */
-    public String[] getAggregateMeasuresColumnName()
-    {
-        return aggregateMeasuresColumnName;
-    }
-
-    /**
-     * @param aggregateMeasuresColumnName
-     *            the aggregateMeasuresColumnName to set
-     */
-    public void setAggregateMeasuresColumnName(
-            String[] aggregateMeasuresColumnName)
-    {
-        this.aggregateMeasuresColumnName = aggregateMeasuresColumnName;
     }
 
     /**
@@ -974,14 +804,6 @@ public class MolapAggregateSurrogateGeneratorMeta extends BaseStepMeta
     public void setMdkeyInOutRowRequired(String isMdkeyInOutRowRequired)
     {
         this.mdkeyInOutRowRequired = isMdkeyInOutRowRequired;
-    }
-
-    /**
-     * @return the isManualAutoAggRequest
-     */
-    public boolean isManualAutoAggRequest()
-    {
-        return Boolean.parseBoolean(manualAutoAggRequest);
     }
 
     /**
@@ -1006,11 +828,6 @@ public class MolapAggregateSurrogateGeneratorMeta extends BaseStepMeta
 	public void setFactDimLensString(String factDimLensString) 
 	{
 		this.factDimLensString = factDimLensString;
-	}
-
-	public String getFactStorePath()
-	{
-		return factStorePath;
 	}
 
 	public void setFactStorePath(String factStorePath)

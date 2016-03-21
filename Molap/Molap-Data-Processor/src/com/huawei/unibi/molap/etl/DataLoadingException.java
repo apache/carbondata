@@ -20,26 +20,10 @@
 
 package com.huawei.unibi.molap.etl;
 
-/**
- * 
- * Project Name NSE V3R7C00 
- * Module Name : MOLAP
- * Author :C00900810
- * Created Date :24-Jun-2013
- * FileName : DataLoadingException.java
- * Class Description : 
- * Version 1.0
- */
 public class DataLoadingException extends Exception
 {
-    /**
-   * 
-   */
     private static final long serialVersionUID = 1L;
 
-    /**
-     * 
-     */
     private long errorCode = -1;
 
     public DataLoadingException()
@@ -68,9 +52,6 @@ public class DataLoadingException extends Exception
         super(message, cause);
     }
 
-    /**
-     * @return
-     */
     public long getErrorCode()
     {
         return errorCode;

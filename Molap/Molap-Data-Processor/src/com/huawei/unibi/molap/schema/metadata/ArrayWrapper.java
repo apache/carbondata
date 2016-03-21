@@ -22,10 +22,6 @@ package com.huawei.unibi.molap.schema.metadata;
 import java.io.Serializable;
 import java.util.Arrays;
 
-/**
- * @author R00900208
- */
-
 public class ArrayWrapper implements Serializable
 {
 	
@@ -41,9 +37,6 @@ public class ArrayWrapper implements Serializable
      */
     private int[] data;
 
-    /**
-     * @param data
-     */
     public ArrayWrapper(int[] data)
     {
         if (data == null)
@@ -53,19 +46,11 @@ public class ArrayWrapper implements Serializable
         this.data = data;
     }
     
-    /**
-     * 
-     * @param data
-     */
     public void setData(int[] data)
     {
     	this.data = data;
     }
 
-    /**
-     * 
-     * @see java.lang.Object#equals(java.lang.Object)
-     */
     @Override
     public boolean equals(Object other)
     {
@@ -80,20 +65,12 @@ public class ArrayWrapper implements Serializable
 
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see java.lang.Object#hashCode()
-     */
     @Override
     public int hashCode()
     {
     	return Arrays.hashCode(data);
     }
     
-    /**
-     * @return
-     */
     public int[] getData()
     {
     	return data;

@@ -26,8 +26,6 @@ package com.huawei.unibi.molap.dataprocessor.record.holder;
 public class DataProcessorRecordHolder
 {
     
-//    private Object[] originalRecords;
-    
     private Object[][] processedRecords;
     
     private Object[][] originalRecords;
@@ -38,9 +36,6 @@ public class DataProcessorRecordHolder
     
     private int processCounter; 
 
-	/**
-	*
-	*/
     public DataProcessorRecordHolder(int size, int seqNumber)
     {
         this.originalRecords = new Object[size][];
@@ -48,25 +43,16 @@ public class DataProcessorRecordHolder
         this.seqNumber = seqNumber;
     }
     
-    /**
-	*
-	*/
     public Object[][] getOriginalRow()
     {
         return originalRecords;
     }
 
-	/**
-	*
-	*/
     public void addRow(Object[] oriRow)
     {
         originalRecords[counter++] = oriRow;
     }
 
-    /**
-	*
-	*/
     public void addProcessedRows(Object[] processedRows)
     {
         processedRecords[processCounter++] = processedRows;
@@ -81,9 +67,6 @@ public class DataProcessorRecordHolder
     }
 
 
-	/**
-	*
-	*/
     public Object[][] getProcessedRow()
     {
         return processedRecords;

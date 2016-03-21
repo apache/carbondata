@@ -36,16 +36,6 @@ import com.huawei.unibi.molap.csvreader.checkpoint.CheckPointInterface;
 import com.huawei.unibi.molap.csvreader.checkpoint.exception.CheckPointException;
 import com.huawei.unibi.molap.util.MolapDataProcessorLogEvent;
 
-/**
- * 
- * Project Name NSE V3R7C00 
- * Module Name : Molap Data Processor 
- * Author K00900841
- * Created Date :21-May-2013 6:42:29 PM 
- * FileName :CsvReaderMeta.java 
- * Class Description :CsvReaderMeta 
- * Version 1.0
- */
 public class CsvReaderMeta extends CsvInputMeta
 {
     
@@ -91,10 +81,6 @@ public class CsvReaderMeta extends CsvInputMeta
      * @param stepDataInterface
      *            the step data interface linked to this step. Here the step can
      *            store temporary data, database connections, etc.
-     * @param copyNr
-     *            The copy nr to get
-     * @param transMeta
-     *            The transformation info
      * @param trans
      *            The launching transformation
      */
@@ -137,17 +123,11 @@ public class CsvReaderMeta extends CsvInputMeta
         }
     }
 
-    /**
-     * @return the fileNameOffSetCache
-     */
     public Map<String, Long> getFileNameOffSetCache()
     {
         return fileNameOffSetCache;
     }
 
-    /**
-     * @param fileNameOffSetCache the fileNameOffSetCache to set
-     */
     public void setFileNameOffSetCache(Map<String, Long> fileNameOffSetCache)
     {
         this.fileNameOffSetCache = fileNameOffSetCache;

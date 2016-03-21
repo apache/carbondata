@@ -17,27 +17,8 @@
  * under the License.
  */
 
-/**
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- */
-
 package com.huawei.unibi.molap.api.dataloader;
 
-/**
- * Project Name NSE V3R7C00 
- * Module Name : Molap 
- * Author V00900840 
- * Created Date:29-May-2013 4:31:02 AM 
- * FileName : SchemaInfo.java 
- * Class Description : schema info
- * class Version 1.0
- */
 public class SchemaInfo
 {
 
@@ -236,16 +217,6 @@ public class SchemaInfo
     }
 
     /**
-     * @param isAggregateTableCSVLoadRequest
-     *            the isAggregateTableCSVLoadRequest to set
-     */
-    public void setAggregateTableCSVLoadRequest(
-            boolean isAggregateTableCSVLoadRequest)
-    {
-        this.isAggregateTableCSVLoadRequest = isAggregateTableCSVLoadRequest;
-    }
-
-    /**
      * @return the schemaName
      */
     public String getSchemaName()
@@ -278,38 +249,5 @@ public class SchemaInfo
     {
         this.schemaPath = schemaPath;
     }
-
-    /**
-     * @return the schemaConnName
-     */
-    public String getSchemaConnName()
-    {
-        return schemaConnName;
-    }
-
-    /**
-     * @param schemaConnName
-     *            the schemaConnName to set
-     */
-    public void setSchemaConnName(String schemaConnName)
-    {
-        this.schemaConnName = schemaConnName;
-    }
-
-	/**
-	 * @return the isBackgroundMergingRequest
-	 */
-	public boolean isBackgroundMergingRequest()
-	{
-		return isBackgroundMergingRequest;
-	}
-
-	/**
-	 * @param isBackgroundMergingRequest the isBackgroundMergingRequest to set
-	 */
-	public void setBackgroundMergingRequest(boolean isBackgroundMergingRequest) 
-	{
-		this.isBackgroundMergingRequest = isBackgroundMergingRequest;
-	}
 
 }

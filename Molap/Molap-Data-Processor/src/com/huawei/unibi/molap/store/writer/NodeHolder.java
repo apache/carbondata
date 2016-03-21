@@ -205,10 +205,6 @@ public class NodeHolder
         return keyLengths;
     }
 
-    /**
-     * @param keyLenghts
-     *            the keyLenghts to set
-     */
     public void setKeyLengths(int[] keyLengths)
     {
         this.keyLengths = keyLengths;
@@ -298,9 +294,6 @@ public class NodeHolder
         return compressedIndexMap;
     }
 
-    /**
-     * @param compressedIndexex the compressedIndexex to set
-     */
     public void setCompressedIndex(byte[][] compressedIndex)
     {
         this.compressedIndex = compressedIndex;
@@ -371,7 +364,5 @@ public class NodeHolder
 	{
 		return this.columnMinMaxData;
 	}
-	
-	
 
 }

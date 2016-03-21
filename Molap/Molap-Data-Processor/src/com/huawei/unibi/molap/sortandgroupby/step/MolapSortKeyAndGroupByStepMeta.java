@@ -44,17 +44,6 @@ import org.w3c.dom.Node;
 
 import com.huawei.unibi.molap.constants.MolapCommonConstants;
 
-/**
- * 
- * Project Name NSE V3R7C00 
- * Module Name : Molap Data Processor
- * Author K00900841
- * Created Date :21-May-2013 6:42:29 PM
- * FileName : MolapSortKeyAndGroupByStepMeta.java
- * Class Description : This class is the entry point for MolapSortKeyAndGroupByStepMeta plug.
- *
- * Version 1.0
- */
 public class MolapSortKeyAndGroupByStepMeta extends BaseStepMeta implements StepMetaInterface
 {
     /**
@@ -257,13 +246,6 @@ public class MolapSortKeyAndGroupByStepMeta extends BaseStepMeta implements Step
         aggregateMeasures = aggregateMeasuresString
                 .split(MolapCommonConstants.HASH_SPC_CHARACTER);
       
-//        String[] aggDimeLensStringArray = aggDimeLensString
-//                .split(MolapCommonConstants.COMA_SPC_CHARACTER);
-//        aggDimeLens = new int[aggDimeLensStringArray.length];
-//        for(int i = 0;i < aggDimeLens.length;i++)
-//        {
-//            aggDimeLens[i] = Integer.parseInt(aggDimeLensStringArray[i]);
-//        }
         String[] dimLensStringArray = factDimLensString.split(MolapCommonConstants.COMA_SPC_CHARACTER);
         factDimLens= new int[dimLensStringArray.length];
         for(int i = 0;i < dimLensStringArray.length;i++)

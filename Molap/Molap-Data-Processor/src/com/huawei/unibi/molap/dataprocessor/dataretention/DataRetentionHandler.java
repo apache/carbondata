@@ -83,7 +83,6 @@ public class DataRetentionHandler
 
     private int[] compareIndex;
 
-    // private boolean isSurrogateKeyPresent;
     private int retentionSurrogateKey = -1;
 
     private int[] dimensionCardinality;
@@ -152,12 +151,8 @@ public class DataRetentionHandler
 
             if(null == loadFiles)
             {
-               /* loadDetails = new HashMap<String, String>(20);
-                loadDetails.put("", "");
-                return loadDetails;*/
                 continue;
             }
-//            loadDetails = new HashMap<String, String>(loadFiles.length);
             LOGGER.info(
                     MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "System is going Data retention policy based on member"
@@ -166,11 +161,6 @@ public class DataRetentionHandler
             String sliceMetadataLocation = MolapUtil.getRSPath(schemaName,
                     cubeName, tableName, hdsfStoreLocation,
                     restrucureNum);
-            // int rsCounter = MolapUtil.checkAndReturnNextRestructFolderNumber(
-            // hdsfStoreLocation, "RS_");
-            // if (rsCounter == -1) {
-            // rsCounter = 0;
-            // }
             sliceMetadata = MolapUtil.readSliceMetaDataFile(
                     sliceMetadataLocation, restrucureNum);
 
@@ -213,10 +203,6 @@ public class DataRetentionHandler
             {
                 continue;
             }
-                /*
-                 * if(retentionSurrogateKey==-1) { throw new
-                 * MolapDataProcessorException("Invalid Date Member..."); }
-                 */
                 factFiles = MolapUtil.getSortedFileList(factFiles);
                 loadSliceLocation = molapFile.getAbsolutePath();
                 try
@@ -306,7 +292,6 @@ public class DataRetentionHandler
 
         // Forming the member name for reading the same inorder to get the
         // surrogate
-        // key.tableName.append(table).append('_').append(levelColName).append(MolapCommonConstants.LEVEL_FILE_EXTENSION);
         if(!columnActualName.equals(columnName))
         {
         	if(null==dimensionTableName|| "".equals(dimensionTableName))
@@ -355,17 +340,6 @@ public class DataRetentionHandler
                     MolapDataRetentionUtil.getSurrogateKeyForRetentionMember(
                             molapLevelFile[0], columnName, columnValue, dateFormat,
                             retentionSurrogateKeyMap);
-                    /*
-                     * Iterator itr=retentionSurrogateKeyMap.entrySet().iterator();
-                     * while(itr.hasNext()) { Map.Entry<Integer,Integer>
-                     * entry=(Map.Entry<Integer,Boolean>) itr.next();
-                     * retentionSurrogateKey= entry.getKey();
-                     * if(retentionSurrogateKey==-1) { continue; } else
-                     * if(retentionSurrogateKey>-1 && !entry.getValue()) {
-                     * isSurrogateKeyPresent=false; } else
-                     * if(retentionSurrogateKey>-1) { isSurrogateKeyPresent=true; }
-                     * } if(isSurrogateKeyPresent) { break; }
-                     */
                 }
             }
         	
@@ -411,31 +385,7 @@ public class DataRetentionHandler
             leafNodeInfoList = MolapUtil.getLeafNodeInfoColumnar(factFiles[i],
                     measureLength, mdKeySize);
 
-            /*
-             * if (compare(keyGenerator.getKeyArray(leafNodeInfoList.get(0)
-             * .getStartKey()), surrogateKeyArray) < 0 && compare(
-             * keyGenerator.getKeyArray(leafNodeInfoList.get(
-             * leafNodeInfoList.size() - 1).getEndKey()), surrogateKeyArray) <=
-             * 0) { // The files can be successfully deleted
-             * fileToBeDeleted.add(factFiles[i]); } else if
-             * (compare(keyGenerator.getKeyArray(leafNodeInfoList.get(0)
-             * .getStartKey()), surrogateKeyArray) < 0 && compare(
-             * keyGenerator.getKeyArray(leafNodeInfoList.get(
-             * leafNodeInfoList.size() - 1).getEndKey()), surrogateKeyArray) >=
-             * 0) {
-             */
             fileToBeUpdated = factFiles[i].getAbsolutePath();
-            // break;
-            // }
-
-            /*
-             * if (factFiles.length == fileToBeDeleted.size()) {
-             * LOGGER.info(MolapDataProcessorLogEvent
-             * .UNIBI_MOLAPDATAPROCESSOR_MSG,
-             * "Following load file will be marked for deletion: " +loadName);
-             * loadDetails.put(loadName,
-             * MolapCommonConstants.MARKED_FOR_DELETE); }
-             */
             if(null != fileToBeUpdated)
             {
                 try
@@ -449,12 +399,9 @@ public class DataRetentionHandler
                     processFactFileAsPerFileToBeUpdatedDetails(
                             leafNodeInfoList, fileToBeUpdated, loadPath,
                             loadDetails, loadName, restrucureNum);
-                    // loadDetails.put(loadName,
-                    // MolapCommonConstants.MARKED_FOR_UPDATE);
                 }
                 catch(MolapDataProcessorException e)
                 {
-                    // TODO Auto-generated catch block
                     throw new MolapDataProcessorException(e.getMessage());
                 }
             }
@@ -467,12 +414,6 @@ public class DataRetentionHandler
             Map<String, String> loadDetails, String loadName, int restructureNumber)
             throws MolapDataProcessorException
     {
-        // FileHolder fileHolder = new FileHolderImpl();
-        // int leafNodeInfoIndex =
-        // getLeafNodeInfoIndexForFactFileUpdation(leafNodeInfoList);
-        // LeafNodeInfoColumnar leafNodeInfoColumnar =
-        // leafNodeInfoList.get(leafNodeInfoIndex);
-        // int numberOfKeys = leafNodeInfoColumnar.getNumberOfKeys();
 
         ValueCompressionModel valueCompressionModel = ValueCompressionUtil
                 .getValueCompressionModel(loadSliceLocation
@@ -580,12 +521,10 @@ public class DataRetentionHandler
         }
         catch(MolapUtilException e)
         {
-            // TODO Auto-generated catch block
             throw new MolapDataProcessorException(e.getMessage());
         }
         catch(MolapDataWriterException e)
         {
-            // TODO Auto-generated catch block
             throw new MolapDataProcessorException(e.getMessage());
         }
     }
@@ -607,27 +546,5 @@ public class DataRetentionHandler
         factReaderInfo.setUpdateMeasureRequired(true);
         return factReaderInfo;
     }
-
-    /*
-     * private int getLeafNodeInfoIndexForFactFileUpdation(
-     * List<LeafNodeInfoColumnar> leafNodeInfoList) { LeafNodeInfoColumnar
-     * leafNodeInfoColumnar; int leafNodeInfoIndex = -1; for (int i = 0; i <
-     * leafNodeInfoList.size(); i++) { leafNodeInfoColumnar =
-     * leafNodeInfoList.get(i);
-     * 
-     * if (compare(keyGenerator.getKeyArray(leafNodeInfoColumnar
-     * .getStartKey()), surrogateKeyArray) < 0 &&
-     * compare(keyGenerator.getKeyArray(leafNodeInfoColumnar .getEndKey()),
-     * surrogateKeyArray) >= 0) { leafNodeInfoIndex = i; break; }
-     * 
-     * } return leafNodeInfoIndex; }
-     */
-
-    /*
-     * private int compare(long[] first, long[] second) { for (int i = 0; i <
-     * compareIndex.length; i++) { if (first[compareIndex[i]] >
-     * second[compareIndex[i]]) { return 1; } else if (first[compareIndex[i]] <
-     * second[compareIndex[i]]) { return -1; } } return 0; }
-     */
 
 }

@@ -17,29 +17,8 @@
  * under the License.
  */
 
-/**
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
-*/
-
 package com.huawei.unibi.molap.api.dataloader;
 
-
-/**
- * Project Name NSE V3R7C00 
- * Module Name : Molap
- * Author V00900840
- * Created Date :10-Jul-2013 7:00:03 PM
- * FileName : DataLoadModel.java
- * Class Description : This is model class to hold the information about the parameters required for 
- * creating graph file.
- * Version 1.0
- */
 public class DataLoadModel
 {
     /**
@@ -142,7 +121,5 @@ public class DataLoadModel
     {
         this.modifiedDimesion = modifiedDimesion;
     }
-    
-
 }
 

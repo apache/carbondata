@@ -38,16 +38,6 @@ import com.huawei.unibi.molap.util.MolapUtil;
 import com.huawei.unibi.molap.util.MolapUtilException;
 import com.huawei.unibi.molap.util.RemoveDictionaryUtil;
 
-/**
- * Project Name 	: Carbon 
- * Module Name 		: MOLAP Data Processor
- * Author 			: Suprith T 72079 
- * Created Date 	: 19-Aug-2015
- * FileName 		: IntermediateFileMerger.java
- * Description 		: Class to merge sorted intermediate files
- * Class Version 	: 1.0
- */
-
 public class IntermediateFileMerger implements Callable<Void>
 {
     /**
@@ -102,16 +92,6 @@ public class IntermediateFileMerger implements Callable<Void>
     /**
      * IntermediateFileMerger Constructor
      * 
-     * @param intermediateFiles
-     *            intermediateFiles
-     * @param fileBufferSize
-     *            fileBufferSize
-     * @param measureCount
-     *            measureCount
-     * @param mdKeyLength
-     *            mdKeyLength
-     * @param outFile
-     *            outFile
      */
     public IntermediateFileMerger(FileMergerParameters mergerParameters)
     {

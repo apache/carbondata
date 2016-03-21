@@ -114,7 +114,7 @@ public class ConsumerThread implements Callable<Void>
         RecordIterator[] iterators = new RecordIterator[producerContainer
                 .size()];
         int i = 0;
-      //CHECKSTYLE:OFF    Approval No:Approval-V3R8C00_015
+      //CHECKSTYLE:OFF
         for(Container container : producerContainer)
         {
             iterators[i++] = new RecordIterator(container);
@@ -184,7 +184,7 @@ public class ConsumerThread implements Callable<Void>
     private void initialiseHeap(RecordIterator[] iterators)
             throws MolapSortKeyException
     {
-      //CHECKSTYLE:OFF    Approval No:Approval-V3R8C00_016
+      //CHECKSTYLE:OFF
         for(RecordIterator iterator : iterators)
         {
             if(iterator.hasNext())
@@ -250,10 +250,6 @@ public class ConsumerThread implements Callable<Void>
         {
             Object[][] temp = new Object[counter][];
             System.arraycopy(sortRecordHolders, 0, temp, 0, temp.length);
-//            for(int i = 0;i < temp.length;i++)
-//            {
-//                temp[i]=sortRecordHolders[i];
-//            }
             sortRecordHolders = temp;
         }
         if(isBackupFilling)
@@ -269,9 +265,6 @@ public class ConsumerThread implements Callable<Void>
     /**
      * This method will be used to create the heap which will be used to hold
      * the chunk of data
-     * 
-     * @param listFiles
-     *            list of temp files
      * 
      */
     private void createRecordHolderQueue(RecordIterator[] iterators)

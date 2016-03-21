@@ -167,8 +167,6 @@ public class SortKeyStep extends BaseStep
             // get all fields 
             this.meta.getFields(data.getOutputRowMeta(), getStepname(), null, null, this);
 
-			/*this.sortDataRows = new SortDataRows(meta.getTabelName(),
-					meta.getDimensionCount(), meta.getMeasureCount(), this.observer, meta.getCurrentRestructNumber(), meta.getHighCardinalityCount()); */
             // TODO : send high cardinality count.
             
             this.meta.setHighCardinalityCount(RemoveDictionaryUtil.extractHighCardCount(meta.getHighCardinalityDims()));
@@ -264,25 +262,6 @@ public class SortKeyStep extends BaseStep
         }
         
     }
-
-//    /**
-//     * Below method will be used to check whether row is empty or not 
-//     * 
-//     * @param row
-//     * @return row empty 
-//     *
-//     */
-//    private boolean checkAllValuesAreNull(Object[] row)
-//    {
-//        for(int i = 0;i < row.length;i++)
-//        {
-//            if(null != row[i])
-//            {
-//                return false;
-//            }
-//        }
-//        return true;
-//    }
 
     /**
      * Initialize and do work where other steps need to wait for...

@@ -21,15 +21,6 @@ package com.huawei.unibi.molap.sortandgroupby.exception;
 
 import java.util.Locale;
 
-/**
- * Project Name NSE V3R7C00 
- * Module Name : MOLAP
- * Author :C00900810
- * Created Date :24-Jun-2013
- * FileName : MolapSortKeyAndGroupByException.java
- * Class Description : MolapSortKeyAndGroupByException
- * Version 1.0
- */
 public class MolapSortKeyAndGroupByException extends Exception
 {
 
@@ -47,8 +38,6 @@ public class MolapSortKeyAndGroupByException extends Exception
     /**
      * Constructor
      * 
-     * @param errorCode
-     *            The error code for this exception.
      * @param msg
      *            The error message for this exception.
      * 
@@ -62,8 +51,6 @@ public class MolapSortKeyAndGroupByException extends Exception
     /**
      * Constructor
      * 
-     * @param errorCode
-     *            The error code for this exception.
      * @param msg
      *            The error message for this exception.
      * 

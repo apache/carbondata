@@ -55,15 +55,6 @@ import com.huawei.unibi.molap.util.MolapProperties;
 import com.huawei.unibi.molap.util.MolapUtil;
 import com.huawei.unibi.molap.util.MolapUtilException;
 
-/**
- * Project Name NSE V3R7C00 
- * Module Name : 
- * Author V00900840
- * Created Date :15-Nov-2013 12:12:25 PM
- * FileName : DimenionLoadCommandHelper.java
- * Class Description :
- * Version 1.0
- */
 public final class DimenionLoadCommandHelper
 {
     /**
@@ -99,7 +90,6 @@ public final class DimenionLoadCommandHelper
     
     /**
      * Check the cache exist , if exists return true , false otherwise.
-     * @param actualColumnsIncludingPrimaryKey
      * @param tableName
      * @param columnPropMap 
      * @param dimensionLoadInfo
@@ -193,8 +183,7 @@ public final class DimenionLoadCommandHelper
                 .getMeta().getCubeName());
         //
 
-        int restructFolderNumber = currentRestructNumber/*MolapUtil
-                .checkAndReturnNextRestructFolderNumber(storeLocation,"RS_")*/;
+        int restructFolderNumber = currentRestructNumber;
 
         String sliceMetaDataFilePath = storeLocation + File.separator
                 + MolapCommonConstants.RESTRUCTRE_FOLDER + restructFolderNumber
@@ -254,7 +243,6 @@ public final class DimenionLoadCommandHelper
         return true;
     }
     
-    //TODO SIMIAN
     private String updateStoreLocationAndPopulateMolapInfo(String schemaName, String cubeName)
     {
         String tempLocationKey = schemaName+'_'+cubeName;
@@ -288,8 +276,6 @@ public final class DimenionLoadCommandHelper
      */
     public String[] getDimensionTableNameArray(String []dimTableNames)
     {
-//        String[] tableNames = dimTableNames.split("&");
-
         for(int i = 0;i < dimTableNames.length;i++)
         {
             if(dimTableNames[i].indexOf("\"") > -1)
@@ -303,7 +289,6 @@ public final class DimenionLoadCommandHelper
     
     /**
      * Below method will be used to member cache
-     * @param surrogateKeyGen
      * @param levelTypeColumnMap
      * @param tableName
      * @param columnIndex 
@@ -343,12 +328,6 @@ public final class DimenionLoadCommandHelper
             Map<String, Integer> yearMap = memberCache.get(tableName + '_'
                     + yearColumn);
 
-            // int yearIndex = getColumnIndex(columnNames,columnIndex,tableName
-            // + '_' + yearColumn);
-
-            // surrogateKeyGen.max[yearIndex] =
-            // dataPropertyReader.getYearMap().size();
-
             surrogateKeyGen.getTimeDimCache().put(tableName + '_' + yearColumn,
                     new HashMap<String, Integer>(yearMap));
 
@@ -360,12 +339,6 @@ public final class DimenionLoadCommandHelper
         {
             Map<String, Integer> monthsMap = memberCache.get(tableName + '_'
                     + monthColumn);
-
-            // int monthIndex = getColumnIndex(columnNames,columnIndex,tableName
-            // + '_' + monthColumn);
-
-            // surrogateKeyGen.max[monthIndex] =
-            // dataPropertyReader.getMonthMap().size();
 
             surrogateKeyGen.getTimeDimCache().put(
                     tableName + '_' + monthColumn,
@@ -380,12 +353,6 @@ public final class DimenionLoadCommandHelper
         {
             Map<String, Integer> dayMap = memberCache.get(tableName + '_'
                     + dayColumn);
-
-            // int dayIndex = getColumnIndex(columnNames,columnIndex,tableName +
-            // '_' + dayColumn);
-
-            // surrogateKeyGen.max[dayIndex] =
-            // dataPropertyReader.getDayMap().size();
 
             surrogateKeyGen.getTimeDimCache().put(tableName + '_' + dayColumn,
                     new HashMap<String, Integer>(dayMap));
@@ -471,35 +438,6 @@ public final class DimenionLoadCommandHelper
     
     
 
-    /**
-     * 
-     * @param primaryKeyColumnName
-     * @param originalColumnNames
-     * 
-     */
-//    public int getRepeatedPrimaryFromLevels(String[] originalColumnNames,String tableName, String [] columnNames)
-//    {
-//        if(isPriamryKeyIsOnlyColumnName(originalColumnNames[0], tableName,
-//                columnNames))
-//        {
-//            String primaryKey = originalColumnNames[0];
-//            for(int j = 1;j < originalColumnNames.length;j++)
-//            {
-//                if(primaryKey.equals(originalColumnNames[j]))
-//                {
-//                    return j;
-//                }
-//            }
-//        }
-//        return -1;
-//    }
-        
-    
-    /**
-     * 
-     * @param primaryKeyColumnName
-     * 
-     */
     public int getRepeatedPrimaryFromLevels(String tableName, String [] columnNames,String primaryKey)
     {
         primaryKey = tableName + '_' + primaryKey.trim();
@@ -513,32 +451,6 @@ public final class DimenionLoadCommandHelper
         return -1;
     }
 
-    
-
-    /**
-     * 
-     * @param primaryKey
-     * @param columnNames
-     * @param tableName
-     * @param columnNames2 
-     * @return
-     * 
-     */
-//    private boolean isPriamryKeyIsOnlyColumnName(String primaryKey, String tableName,
-//            String[] columnNames)
-//    {
-//        String primaryKeyName = tableName + '_' + primaryKey;
-//
-//        for(String columnName : columnNames)
-//        {
-//            if(columnName.equalsIgnoreCase(primaryKeyName))
-//            {
-//                return true;
-//            }
-//        }
-//        return false;
-//    }
-    
     /**
      * Return the data row
      * 
@@ -568,12 +480,6 @@ public final class DimenionLoadCommandHelper
         return records.toArray(new String[records.size()]);
     }
     
-    /**
-     * 
-     * @param data
-     * @return
-     * 
-     */
     private String[] getData(String data)
     {
         List<String> records = new ArrayList<String>(MolapCommonConstants.CONSTANT_SIZE_TEN);
@@ -930,7 +836,6 @@ public final class DimenionLoadCommandHelper
         
         return hierKeyMap;
     }
-
 
 }
 

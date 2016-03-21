@@ -203,64 +203,6 @@ public final class MolapDataProcessorUtil
     }
     
     /**
-     * This method will be used to get the cube info list
-     * 
-     * @return all cube info
-     * 
-     * @throws MolapDataProcessorException
-     *             problem while getting the schema path
-     * 
-     */
-  /*  public static List<MolapCubeInfo> getAllMolapCubeInfo() throws MolapDataProcessorException
-    {
-        Set<String> allSchemaPath = null;
-        List<String> tableName = null;
-        Schema schema = null;
-        Cube[] cubes = null;
-        Cube cube = null;
-        List<MolapCubeInfo> molapCubeInfoList = null;
-        MolapCubeInfo cubeInfo = null;
-        try
-        {
-            allSchemaPath = getAllSchemaPath();
-            molapCubeInfoList = new ArrayList<MolapCubeInfo>(MolapCommonConstants.CONSTANT_SIZE_TEN);
-            for(String schemaPath : allSchemaPath)
-            {
-                schema = MolapSchemaParser.loadXML(schemaPath);
-                cubes = MolapSchemaParser.getMondrianCubes(schema);
-                for(int i = 0;i < cubes.length;i++)
-                {
-                    cube = cubes[i];
-                    if(!MolapSchemaParser.validateCube(cube, schema,false))
-                    {
-                        continue;
-                    }
-                    tableName = new ArrayList<String>(MolapCommonConstants.CONSTANT_SIZE_TEN);
-                    String factTableName = MolapSchemaParser.getFactTableName(cube);
-                    tableName.add(factTableName);
-                    AggregateTable[] aggregateTable = MolapSchemaParser.getAggregateTable(cube, schema);
-                    for(int j = 0;j < aggregateTable.length;j++)
-                    {
-                        tableName.add(aggregateTable[j].getAggregateTableName());
-                    }
-                    cubeInfo = new MolapCubeInfo();
-                    cubeInfo.setCubeName(cube.name);
-                    cubeInfo.setCube(cube);
-                    cubeInfo.setSchemaName(schema.name);
-                    cubeInfo.setTableNames(tableName);
-                    cubeInfo.setSchemaPath(schemaPath);
-                    molapCubeInfoList.add(cubeInfo);
-                }
-            }
-        }
-        catch(MolapDataProcessorException e)
-        {
-            throw new MolapDataProcessorException("Problem while getting the schema path", e);
-        }
-        return molapCubeInfoList;
-    }
-*/
-    /**
      * This method will be used to read all the RS folders
      * 
      * @param schemaName
@@ -269,8 +211,6 @@ public final class MolapDataProcessorUtil
      */
     public static File[] getAllRSFiles(String schemaName, String cubeName, String baseLocation)
     {
-        /*String baseLocation = MolapProperties.getInstance().getProperty(MolapCommonConstants.STORE_LOCATION,
-                MolapCommonConstants.STORE_LOCATION_DEFAULT_VAL);*/
         baseLocation = baseLocation + File.separator + schemaName + File.separator + cubeName;
         File file = new File(baseLocation);
         File[] rsFile = file.listFiles(new FileFilter()
@@ -284,6 +224,7 @@ public final class MolapDataProcessorUtil
         });
         return rsFile;
     }
+
     public static File[] getAllRSFiles(String schemaName, String cubeName)
     {
         String tempLocationKey = schemaName+'_'+cubeName;
@@ -302,6 +243,7 @@ public final class MolapDataProcessorUtil
         });
         return rsFile;
     }
+
     /**
      * This method will be used to read all the load folders
      * 
@@ -355,15 +297,11 @@ public final class MolapDataProcessorUtil
     /**
      * This method will be used to read all the load folders
      * 
-     * @param rsFiles
-     * @param tableName
      * @return
      * 
      */
     public static File[] getAllLoadFolders(File tableFolder)
     {
-        //File file = new File(rsFiles + File.separator + tableName);
-
         File[] listFiles = tableFolder.listFiles(new FileFilter()
         {
             @Override
@@ -379,15 +317,9 @@ public final class MolapDataProcessorUtil
     /**
      * This method will be used to read all the load folders
      * 
-     * @param rsFiles
-     * @param tableName
-     * @return
-     * 
      */
     public static File[] getChildrenFolders(File parentFolder)
     {
-        //File file = new File(rsFiles + File.separator + tableName);
-
         File[] listFiles = parentFolder.listFiles(new FileFilter()
         {
             @Override
@@ -521,10 +453,6 @@ public final class MolapDataProcessorUtil
         }
     }
 
-    /**
-     * @param storeLocation
-     * @throws MolapDataProcessorException
-     */
     public static void sendUpdateSignaltoEngine(String storeLocation) throws MolapDataProcessorException
     {
     	if(!Boolean.parseBoolean(MolapProperties.getInstance().getProperty("send.signal.load", "true")))
@@ -614,7 +542,6 @@ public final class MolapDataProcessorUtil
     
     /**
      * 
-     * @Author M00903915
      * @Description : clearCubeCache
      * @param schemaName
      * @param cubeName
@@ -662,26 +589,6 @@ public final class MolapDataProcessorUtil
         return false;
     }
     
-//    /**
-//     * 
-//     * @Author M00903915
-//     * @Description : clearCubeCache
-//     * @param schemaName
-//     * @param cubeName
-//     */
-//    public static void flushSchemaCache() 
-//    {
-//        try
-//        {
-//            CacheControlImpl impl = new CacheControlImpl();
-//            impl.flushSchemaCache();
-//        }
-//        catch(Exception e)
-//        {
-//            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, "Problem while flushing the cache");
-//        }
-//    }
-    
     /**
      * This method will be used to for sending the new slice signal to engine
      * 
@@ -727,142 +634,6 @@ public final class MolapDataProcessorUtil
             throw new MolapDataProcessorException("Problem While informing BI Server", invocationTargetException);
         }
     }
-
-    /**
-     * This method will be used to get the all schema path present in unibi
-     * server
-     * 
-     * @return schema path list
-     * 
-     */
-  /*  private static Set<String> getAllSchemaPath() throws MolapDataProcessorException
-    {
-
-//        IPentahoSession pSession = PentahoSystem.get(IPentahoSession.class, "systemStartupSession", null);
-//        MondrianCatalogHelper helper = (MondrianCatalogHelper)PentahoSystem.get(IMondrianCatalogService.class,
-//                "IMondrianCatalogService", null);
-//        final int MOLAP_URL_START_LENGNTH = "molap://".length();
-//        List<MondrianCatalog> list = helper.getCatalogList(pSession);
-//        ListIterator<MondrianCatalog> itr = list.listIterator();
-//        MondrianCatalog catalog = null;
-//        String schemaFilePath = "";
-//        String url = "";
-//        Set<String> schemaFilePathList = new HashSet<String>();
-//        while(itr.hasNext())
-//        {
-//            catalog = itr.next();
-//
-//            List<MondrianCube> cubes = catalog.getSchema().getCubes();
-//            for(int i = 0;i < cubes.size();i++)
-//            {
-//                String datasourceName = getDataSourceName(catalog);
-//                IDatasource datasource = getDataSource(datasourceName);
-//                if(null == datasource)
-//                {
-//                    //throw new MolapDataProcessorException("Problem while getting the data source, datasource is null");
-//                    continue;
-//                }
-//                url = datasource.getUrl();
-//                if(url.startsWith("molap://"))
-//                {
-//                    url = url.substring(MOLAP_URL_START_LENGNTH);
-//
-//                    String[] dsStrParams = url.split(";");
-//                    for(String dsStrParam : dsStrParams)
-//                    {
-//                        if(dsStrParam.startsWith("sourceDB"))
-//                        {
-//                            url = dsStrParam.split("=")[1];
-//                        }
-//                    }
-//                    schemaFilePath = catalog.getDefinition().replace("solution:/", "");
-//                    
-//                    IDatasource iDatasource = getDataSource(url);
-//                    if(null == iDatasource)
-//                    {
-//                        LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-//                                "Not Able to get datasource: "+datasource);
-//                    }
-//                    schemaFilePathList.add(PentahoSystem.getApplicationContext().getSolutionPath("") + schemaFilePath);
-//                }
-//            }
-//        }
-        return null;
-    }*/
-    
-//    public static void loadAllSchema()
-//    {
-//        IPentahoSession pSession = PentahoSystem.get(IPentahoSession.class,
-//                "systemStartupSession", null);
-//        MondrianCatalogHelper helper = (MondrianCatalogHelper)PentahoSystem
-//                .get(IMondrianCatalogService.class, "IMondrianCatalogService",
-//                        null);
-//        List<MondrianCatalog> list = helper.getCatalogList(pSession);
-//        ListIterator<MondrianCatalog> itr = list.listIterator();
-//        try
-//        {
-//            while(itr.hasNext())
-//            {
-//                RolapUtil.loadSchemaToCache(itr.next().getName());
-//            }
-//        }
-//        catch(ClassNotFoundException e)
-//        {
-//           LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e, "Problem while loading the schema");
-//        }
-//        catch(NoSuchMethodException e)
-//        {
-//            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e, "Problem while loading the schema");
-//        }
-//        catch(IllegalAccessException e)
-//        {
-//             LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e, "Problem while loading the schema");
-//        }
-//        catch(InvocationTargetException e)
-//        {
-//            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e, "Problem while loading the schema");
-//        }
-//
-//    }
-
-//    /**
-//     * 
-//     * @param catalog
-//     * @return
-//     * 
-//     */
-//    private static String getDataSourceName(MondrianCatalog catalog)
-//    {
-//        String[] ds = catalog.getDataSourceInfo().split(";");
-//        String datasource = null;
-//        for(int i = 0;i < ds.length;i++)
-//        {
-//            String[] con = ds[i].split("=");
-//            if("DataSource".equals(con[0]))
-//            {
-//                datasource = con[1];
-//                break;
-//            }
-//        }
-//        return datasource;
-//    }
-//
-//    private static IDatasource getDataSource(String datasource) throws MolapDataProcessorException
-//    {
-//        IDatasourceMgmtService datasourceMgmtSvc;
-//        IDatasource iDataSource = null;
-//        try
-//        {
-//            datasourceMgmtSvc = (IDatasourceMgmtService)PentahoSystem.getObjectFactory().get(
-//                    IDatasourceMgmtService.class, null);
-//            iDataSource = datasourceMgmtSvc.getDatasource(datasource);
-//        }
-//        catch(Exception e)
-//        {
-//            throw new MolapDataProcessorException("Problem while getting Data source", e);
-//        }
-//        return iDataSource;
-//    }
 
     /**
      * 
@@ -916,114 +687,6 @@ public final class MolapDataProcessorUtil
         return filenames;
     }
 
-//    /**
-//     * getAllAggTables
-//     * @param rolapCube
-//     * @return AggTable[]
-//     */
-//    //public static AggTable[] getAllAggTables(RolapCube rolapCube)
-//    public static AggTable[] getAllAggTables(RolapCube rolapCube) throws MolapDataProcessorException
-//    {
-//
-//        MondrianDef.AggTable[] aggtables = null;
-//        try
-//        {
-//
-//            List<MolapCubeInfo> listMolapCubeInfo = getAllMolapCubeInfo();
-//            Cube cube;
-//            Iterator<MolapCubeInfo> itr = listMolapCubeInfo.iterator();
-//            while(itr.hasNext())
-//            {
-//                MolapCubeInfo molapCubeInfo = itr.next();
-//                if(rolapCube.getName().equals(molapCubeInfo.getCubeName()))
-//                {
-//
-//                    cube = molapCubeInfo.getCube();
-//                    aggtables = ((MondrianDef.Table)cube.fact).aggTables;
-//                    return aggtables;
-//
-//                }
-//            }
-//
-//        }
-//        catch(MolapDataProcessorException e)
-//        {
-//
-//                throw new MolapDataProcessorException("Problem while getting aggregate table metadata for data retention", e);
-//            
-//        }
-//        return aggtables;
-//    }
-
-//    /**
-//     * readMemberFileAndPopulateSurrogateKey
-//     * @param folderList
-//     * @param surrogateKeys
-//     * @param levelName
-//     * @param dataPeriod void
-//     */
-//    public static void readMemberFileAndPopulateSurrogateKey(
-//            List<File> folderList, Map<String, Integer> surrogateKeys,
-//            String levelName, DataRetentionPeriodMemberIntf dataPeriod)
-//    {
-//        FileInputStream fos = null;
-//        FileChannel fileChannel= null;
-//        try
-//        {
-//            for(File file : folderList)
-//            {
-//                fos = new FileInputStream(file);
-//                fileChannel = fos.getChannel();
-//                long size = fileChannel.size();
-//                while(fileChannel.position() < size)
-//                {
-//                    ByteBuffer rowlengthToRead = ByteBuffer.allocate(4);
-//                    fileChannel.read(rowlengthToRead);
-//                    rowlengthToRead.rewind();
-//                    int len = rowlengthToRead.getInt();
-//                    ByteBuffer row = ByteBuffer.allocate(len);
-//                    fileChannel.read(row);
-//                    row.rewind();
-//                    int toread = row.getInt();
-//                    byte[] bb = new byte[toread];
-//                    row.get(bb);
-//                    String value=null;//CHECKSTYLE:OFF    Approval No:Approval-245
-//                    try
-//                    {//CHECKSTYLE:ON
-//                        value = new String(Base64.decodeBase64(bb),"UTF-8");
-//                    }
-//                    catch(Exception e)
-//                    {
-//                        LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
-//                                "Unable to decrypt value for file " + file.getName());
-//                        value = new String(Base64.decodeBase64(bb));
-//                    }
-//                    int surrogateValue = row.getInt();
-//                    if(dataPeriod instanceof DataRetentionPeriodMember
-//                            && value.equals(((DataRetentionPeriodMember)dataPeriod).getMemberNames()))
-//                    {
-//                        surrogateKeys.put(levelName, surrogateValue);
-//                    }
-//                    else if(dataPeriod instanceof DataRetentionDayMember
-//                            && value.equals(((DataRetentionDayMember)dataPeriod).getMemberNames()))
-//                    {
-//                    	
-//                        surrogateKeys.put(levelName, surrogateValue);
-//                    }
-//                }
-//            }
-//        }
-//        catch (IOException e) 
-//        {
-//            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
-//                    "Unable to read file " + levelName);
-//        }
-//        finally
-//        {
-//            MolapUtil.closeStreams(fileChannel, fos);
-//        }
-//    }
-    
     /**
      * Pass the folder name, The API will tell you whether the
      * retention processing is in progress or not. Restructure and
@@ -1046,12 +709,7 @@ public final class MolapDataProcessorUtil
 
     }
     
-    /**
-     * 
-     * @param folderName
-     * @throws MolapDataProcessorException
-     */
-    public static void deleteFileAsPerRetentionFileRecord(String folderName) throws MolapDataProcessorException 
+    public static void deleteFileAsPerRetentionFileRecord(String folderName) throws MolapDataProcessorException
     {
         String deletionRecordFilePath = folderName + File.separator
                 + MolapCommonConstants.RETENTION_RECORD;
@@ -1084,13 +742,11 @@ public final class MolapDataProcessorUtil
         catch(FileNotFoundException e)
         {
             
-                // TODO Auto-generated catch block
                 throw new MolapDataProcessorException(
                         "Data Deletion is Failed...");
         }
         catch(IOException e)
         {
-            // TODO Auto-generated catch block
             throw new MolapDataProcessorException(
                     "Data Deletion is Failed...");
         }
@@ -1100,130 +756,6 @@ public final class MolapDataProcessorUtil
         }
 
     }
-    
-//    /**
-//     * This Method will process the Load folder by copying all the files
-//     * 
-//     * @param folderName
-//     * @param listOfAllMetadataFiles
-//     * @param fileToBeUpdated 
-//     * @throws MolapDataProcessorException  
-//     * @throws DataRetentionException 
-//     *///CHECKSTYLE:OFF    Approval No:Approval-279
-//    public static void processLoadFolderWithModifiedData(String folderName,
-//            File[] listOfAllMetadataFiles, String fileToBeUpdated) throws MolapDataProcessorException, DataRetentionException 
-//    {//CHECKSTYLE:ON
-//        File inProgressFile = new File(folderName
-//                + MolapCommonConstants.FILE_INPROGRESS_STATUS);
-//        boolean isDirCreated;
-//        if(!inProgressFile.exists())
-//        {
-//             isDirCreated = new File(folderName
-//                    + MolapCommonConstants.FILE_INPROGRESS_STATUS).mkdirs();
-//        }
-//        else
-//        {
-//            isDirCreated=true;
-//        }
-//
-//        if(isDirCreated)
-//        {
-////            for(int i = 0;i < listOfAllMetadataFiles.length;i++)
-////            {
-////                File file = listOfAllMetadataFiles[i];
-////
-////                String destFileName = inProgressFile.getAbsolutePath()
-////                        + File.separator + file.getName();
-//                try
-//                {
-//                    for(int i = 0;i < listOfAllMetadataFiles.length;i++)
-//                    {
-//                        File file = listOfAllMetadataFiles[i];
-//
-//                        String destFileName = inProgressFile.getAbsolutePath()
-//                                + File.separator + file.getName();
-//                            MolapUtil.copySchemaFile(file.getAbsolutePath(),
-//                                    destFileName);
-//                    }
-//                }
-//                catch(MolapUtilException e)
-//                {
-//                    // TODO Auto-generated catch block
-//                    throw new MolapDataProcessorException(
-//                            "Data Deletion is Failed...");
-//                }
-////            }
-//            File originalFileName = new File(folderName);
-//            try
-//            {
-//                MolapUtil.deleteFoldersAndFiles(folderName);
-//            }
-//            catch(MolapUtilException e)
-//            {
-//                throw new DataRetentionException(
-//                        "Data Retention operation has been failed", e);
-//            }
-//            boolean status = inProgressFile.renameTo(originalFileName);
-//            if(status)
-//            {
-//                String deletionRecordFilePath = folderName + File.separator
-//                        + MolapCommonConstants.RETENTION_RECORD;
-//                File deletionRecordFileName = new File(deletionRecordFilePath);
-//                if(deletionRecordFileName.exists())
-//                {
-//                    if(!deletionRecordFileName.delete())
-//                    {
-//						LOGGER.debug(
-//								MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-//								"Could not delete the file : "
-//										+ deletionRecordFileName
-//												.getAbsolutePath());
-//                    }
-//                }
-//            }
-//
-//        }
-//        else
-//        {
-//            throw new DataRetentionException(
-//                    "Data Retention operation has been failed");
-//        }
-//    }
-   
-    /**
-     * Below method will be used to write slice metadata
-     * 
-     * @param sliceMetaData
-     *          slice meta data
-     * @param sliceMetadatFilePath
-     *          sliceMetadatFilePath
-     * @throws MolapDataProcessorException 
-     *
-     */
-//    public static void writeSliceMetaDataFile(SliceMetaData sliceMetaData, String sliceMetadatFilePath) throws MolapDataProcessorException
-//    {
-//        FileOutputStream fileOutputStream = null;
-//        ObjectOutputStream objectOutputStream = null;
-//        try
-//        {
-//            fileOutputStream = new FileOutputStream(sliceMetadatFilePath + File.separator
-//                    + MolapCommonConstants.SLICE_METADATA_FILENAME);
-//            objectOutputStream = new ObjectOutputStream(fileOutputStream);
-//            objectOutputStream.writeObject(sliceMetaData);
-//        }
-//        catch(FileNotFoundException e)
-//        {
-//            throw new MolapDataProcessorException("Problem while writing the slice metadata file", e);
-//        }
-//        catch(IOException e)
-//        {
-//            throw new MolapDataProcessorException("Problem while writing the slice metadata file", e);
-//        }
-//        finally
-//        {
-//            MolapUtil.closeStreams(objectOutputStream, fileOutputStream);
-//        }
-//    }
     
     /**
      * This mehtod will be used to copmare to byte array
@@ -1283,8 +815,6 @@ public final class MolapDataProcessorUtil
     /**
      * 
      * Utility method to get the level cardinality  
-     * @param dimensions
-     *          dimension string with its cardianlity
      * @return cardinality array
      *
      */
@@ -1332,8 +862,6 @@ public final class MolapDataProcessorUtil
     
     /**
      * Utility method to get level cardinality string 
-     * @param dimCardinalities
-     * @param aggDims
      * @return level cardinality string
      */
     public static String getLevelCardinalitiesString(int[] dimlens)
@@ -1377,7 +905,6 @@ public final class MolapDataProcessorUtil
      * 
      * @param cubeUniqueName
      * @param tableName
-     * @param schemaPath
      * @return List<InMemoryCube>
      */
     public static List<InMemoryCube> getAllLoadedSlices(String cubeUniqueName, String tableName)
@@ -1398,7 +925,6 @@ public final class MolapDataProcessorUtil
     
     /**
      * getMaskedByte
-     * @param queryDimensions
      * @param generator
      * @return
      */
@@ -1453,35 +979,6 @@ public final class MolapDataProcessorUtil
 	}
     
     
-//    /**
-//     * Below method will be used to get the fact file present in slice 
-//     * 
-//     * @param sliceLocation
-//     *          slice location
-//     * @return fact files array
-//     *
-//     */
-//    private static MolapFile[] getAllFactFiles(String sliceLocation, final String tableName, FileType fileType)
-//    {
-//        MolapFile file = FileFactory.getMolapFile(sliceLocation, fileType);
-//        MolapFile[] files = null;
-//        if(file.isDirectory())
-//        {
-//            files = file.listFiles(new MolapFileFilter()
-//            {
-//                public boolean accept(MolapFile pathname)
-//                {
-//                    return ((!pathname.isDirectory())
-//                            && (pathname.getName().startsWith(tableName)) && pathname
-//                            .getName().endsWith(
-//                                    MolapCommonConstants.FACT_FILE_EXT));
-//
-//                }
-//            });
-//        }
-//        return files;
-//    }
-    
     public static double[] updateMergedMinValue(String schemaName, String cubeName, String tableName, int measureCount, String extension, int currentRestructNumber)
     {
         // get the table name
@@ -1493,8 +990,7 @@ public final class MolapDataProcessorUtil
                 tempLocationKey,
                 MolapCommonConstants.STORE_LOCATION_DEFAULT_VAL)
                 + File.separator + inputStoreLocation;
-        int restructFolderNumber = currentRestructNumber/*MolapUtil
-                .checkAndReturnNextRestructFolderNumber(baseStorelocation,"RS_")*/;
+        int restructFolderNumber = currentRestructNumber;
         if(restructFolderNumber<0)
         {
             return null;
@@ -1535,12 +1031,6 @@ public final class MolapDataProcessorUtil
 		badLogStoreLocation = badLogStoreLocation + File.separator
 				+ storeLocation;
 
-		// File badRecordFolder = new File(badLogStoreLocation);
-
-		// if(!badRecordFolder.exists())
-		// {
-		// return;
-		// }
 		FileType fileType = FileFactory.getFileType(badLogStoreLocation);
 		try {
 			if (!FileFactory.isFileExist(badLogStoreLocation, fileType)) {
@@ -1569,24 +1059,9 @@ public final class MolapDataProcessorUtil
 			}
 		});
 
-		// File[] listFiles = badRecordFolder.listFiles(new FileFilter()
-		// {
-		//
-		// @Override
-		// public boolean accept(File pathname)
-		// {
-		// if(pathname.getName().indexOf(MolapCommonConstants.FILE_INPROGRESS_STATUS)
-		// > -1)
-		// {
-		// return true;
-		// }
-		// return false;
-		// }
-		// });
 		String badRecordsInProgressFileName = null;
 		String changedFileName = null;
-//		String badRecordEncryption = MolapProperties.getInstance().getProperty(MolapCommonConstants.MOLAP_BADRECORDS_ENCRYPTION);
-		// CHECKSTYLE:OFF Approval No:Approval-367
+		// CHECKSTYLE:OFF
 		for (MolapFile badFiles : listFiles) {
 			// CHECKSTYLE:ON
 			badRecordsInProgressFileName = badFiles.getName();
@@ -1606,11 +1081,6 @@ public final class MolapDataProcessorUtil
 		}// CHECKSTYLE:ON
 	}
 	
-	/**
-	 * @param sliceMetaDataFilePath
-	 * @param sliceMetaData
-	 * @throws KettleException
-	 */
 	public static void writeFileAsObjectStream(String sliceMetaDataFilePath,
 			SliceMetaData sliceMetaData) throws KettleException {
 		FileOutputStream fileOutputStream = null;
@@ -1636,11 +1106,6 @@ public final class MolapDataProcessorUtil
         }
 	}
     
-	/**
-	 * @param remarks
-	 * @param stepMeta
-	 * @param input
-	 */
 	public static void checkResult(List<CheckResultInterface> remarks,
 			StepMeta stepMeta, String[] input) {
 		CheckResult cr;
@@ -1658,12 +1123,6 @@ public final class MolapDataProcessorUtil
         }
 	}
 	
-	/**
-	 * @param remarks
-	 * @param stepMeta
-	 * @param prev
-	 * @param input
-	 */
 	public static void check(Class<?> pkg,List<CheckResultInterface> remarks,
 			StepMeta stepMeta, RowMetaInterface prev, String[] input) {
 		CheckResult cr;
@@ -1688,20 +1147,10 @@ public final class MolapDataProcessorUtil
 		// also check that each expected key fields are acually coming
 		if (prev!=null && prev.size()>0)
 		{
-//			String errorMessage = ""; 
-			/*boolean errorFound = false; 
-			
-			if (errorFound)
-			{
-				cr = new CheckResult(CheckResultInterface.TYPE_RESULT_ERROR, errorMessage, stepMeta);
-			}
-			else
-			{*/
                 cr = new CheckResult(CheckResultInterface.TYPE_RESULT_OK,
                         BaseMessages.getString(pkg,
                                 "MolapStep.Check.AllFieldsFoundInInput"),
                         stepMeta);
-//			}
 			remarks.add(cr);
 		}	
 		else
@@ -1775,8 +1224,7 @@ public final class MolapDataProcessorUtil
                 MolapCommonConstants.STORE_LOCATION_DEFAULT_VAL);
         baseStorePath = baseStorePath + File.separator + schemaName
                 + File.separator + cubeName;
-        int restrctFolderCount = currentRestructFolder/*MolapUtil
-                .checkAndReturnNextRestructFolderNumber(baseStorePath, "RS_")*/;
+        int restrctFolderCount = currentRestructFolder;
         if(restrctFolderCount == -1)
         {
             restrctFolderCount = 0;
@@ -1859,66 +1307,6 @@ public final class MolapDataProcessorUtil
         return null;
     }
     
-//    /**
-//     * 
-//     * @param aggregator
-//     * @return
-//     * 
-//     */
-//    public static MeasureAggregator getAggregatorObject(String aggregator)
-//    {
-//        if(aggregator.equals(MolapCommonConstants.SUM))
-//        {
-//            return new SumAggregator();
-//        }
-//        else if(aggregator.equals(MolapCommonConstants.MAX))
-//        {
-//            return new MaxAggregator();
-//        }
-//        else if(aggregator.equals(MolapCommonConstants.MIN))
-//        {
-//            return new MinAggregator();
-//        }
-//        else if(aggregator.equals(MolapCommonConstants.AVERAGE))
-//        {
-//            return new AvgAggregator();
-//        }
-//        else if(aggregator.equals(MolapCommonConstants.COUNT))
-//        {
-//            return new CountAggregator();
-//        }
-//        else if(aggregator.equals(MolapCommonConstants.DISTINCT_COUNT))
-//        {
-//            return new DistinctCountAggregator();
-//        }
-//        return null;
-//    }
-//    
-//    /**
-//     * 
-//     * @param agg
-//     * @return
-//     * 
-//     */
-//    public static boolean isCustomMeasure(String agg)
-//    {
-//        if(MolapCommonConstants.AVERAGE.equals(agg)
-//                || MolapCommonConstants.DISTINCT_COUNT.equals(agg)
-//                || MolapCommonConstants.CUSTOM.equals(agg))
-//        {
-//            return true;
-//        }
-//        return false;
-//    }
-    
-    /**
-     * 
-     * @param schema
-     * @param cube
-     * @param aggreateLevels
-     * @return
-     * 
-     */
     public static String[] getReorderedLevels(MolapDef.Schema schema,
             MolapDef.Cube cube, String[] aggreateLevels, String factTableName)
     {
@@ -1986,13 +1374,6 @@ public final class MolapDataProcessorUtil
         return factTableDimensioncardinality;
     }
     
-    /**
-     * 
-     * @param factStoreLocation
-     * @param currentRestructNumber
-     * @return
-     * 
-     */
     public static SliceMetaData readSliceMetadata(String factStoreLocation,
             int currentRestructNumber)
     {

@@ -32,8 +32,6 @@ import com.huawei.unibi.molap.constants.MolapCommonConstants;
 /**
  * This is the utility class for No Dictionary changes.
  * 
- * @author R00903928
- * 
  */
 public class RemoveDictionaryUtil
 {
@@ -42,9 +40,7 @@ public class RemoveDictionaryUtil
      * dimensions , one for high card, one for measures.
      * 
      * @param out
-     * @param dimArray
      * @param byteBufferArr
-     * @param measureArray
      */
     public static void prepareOut(Object[] newOutArr,
             ByteBuffer[] byteBufferArr, Object[] out, int dimCount)
@@ -101,7 +97,6 @@ public class RemoveDictionaryUtil
         for(int index = 0;index < byteBufferArr.length - 1;index++)
         {
             ByteBuffer individualCol = byteBufferArr[index];
-            // short lengthOfbytes = individualCol.getShort();
             int noOfBytes = individualCol.capacity();
 
             buffer.putShort((short)(offsetLen + noOfBytes));
@@ -220,24 +215,12 @@ public class RemoveDictionaryUtil
         return measures[index];
     }
 
-    /**
-     * 
-     * @param row
-     * @return
-     */
     public static byte[] getByteArrayForNoDictionaryCols(Object[] row)
     {
 
         return (byte[])row[IgnoreDictionary.BYTE_ARRAY_INDEX_IN_ROW.getIndex()];
     }
 
-    /**
-     * 
-     * @param out
-     * @param dimArray
-     * @param byteBufferArr
-     * @param measureArray
-     */
     public static void prepareOutObj(Object[] out, Integer[] dimArray,
             byte[] byteBufferArr, Double[] measureArray)
     {
@@ -248,21 +231,10 @@ public class RemoveDictionaryUtil
 
     }
 
-    /**
-     * 
-     * @param row
-     * @return
-     */
-    public static Integer[] getCompleteDimensions(Object[] row)
-    {
-
-        return (Integer[])row[0];
-    }
 
     /**
      * This will extract the high cardinality count from the string.
      * 
-     * @param highCardinalityDims2
      */
     public static int extractHighCardCount(String highCardinalityDim)
     {
@@ -368,7 +340,6 @@ public class RemoveDictionaryUtil
     /**
      * This will extract the high cardinality count from the string.
      * 
-     * @param highCardinalityDims2
      */
     public static String[] extractHighCardDimsArr(String highCardinalityDim)
     {
@@ -383,7 +354,6 @@ public class RemoveDictionaryUtil
         int[] highCardDimsLocal = new int[highCard.length];
         List<String> list1 = new ArrayList<String>(
                 MolapCommonConstants.CONSTANT_SIZE_TEN);
-        // int[] lenshighCard = new int[highCard.length];
 
         for(int i = 0;i < highCardDimsLocal.length;i++)
         {
@@ -397,11 +367,7 @@ public class RemoveDictionaryUtil
 
         return list1.toArray(new String[list1.size()]);
     }
-    /**
-     * 
-     * @param directSurrogateKeyList
-     * @return
-     */
+
     public static byte[] convertListByteArrToSingleArr(
             List<byte[]> directSurrogateKeyList)
     {

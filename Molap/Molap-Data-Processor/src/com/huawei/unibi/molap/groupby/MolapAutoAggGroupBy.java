@@ -17,17 +17,6 @@
  * under the License.
  */
 
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2014
- * =====================================
- *
- */
 package com.huawei.unibi.molap.groupby;
 
 import java.io.BufferedInputStream;
@@ -61,15 +50,6 @@ import com.huawei.unibi.molap.util.MolapUtil;
 import com.huawei.unibi.molap.util.MolapUtilException;
 
 
-/**
- * Project Name NSE V3R8C10 
- * Module Name : MOLAP Data Processor
- * Author :k00900841 
- * Created Date:10-Aug-2014
- * FileName : MolapAutoAggGroupBy.java
- * Class Description : Group by class to aggregate the measure value based on mdkey 
- * Class Version 1.0
- */
 public class MolapAutoAggGroupBy
 {
     /**
@@ -224,19 +204,6 @@ public class MolapAutoAggGroupBy
     protected double[] mergedMinValue;
     
     
-    /**
-     * 
-     * 
-     * @param aggType
-     *            agg type
-     * @param rowMeasures
-     *            row Measures name
-     * @param actual
-     *            Measures actual Measures
-     * @param row
-     *            row
-     * 
-     */
     public MolapAutoAggGroupBy(String[] aggType, String[] aggClassName,
             String schemaName, String cubeName, String tableName, int []factDims, String extension, int currentRestructNum)
     {
@@ -288,10 +255,6 @@ public class MolapAutoAggGroupBy
     /**
      * Below method will be used to initialize
      * 
-     * @param storeLocation
-     *            store location
-     * @param tableName
-     *            table name
      * @throws MolapGroupByException
      *             any problem while initializing
      * @throws MolapGroupByException
@@ -324,8 +287,6 @@ public class MolapAutoAggGroupBy
     /**
      * This will be used to get the sort temo location
      * 
-     * @param storeLocation
-     * @param instance
      * @throws MolapGroupByException
      */
     private void updateSortTempFileLocation(String schemaName, String cubeName)
@@ -684,8 +645,6 @@ public class MolapAutoAggGroupBy
 
     /**
      * This method will be used to update the max value for each measure
-     * 
-     * @param currentMeasures
      * 
      */
     protected void calculateMaxMinUnique()

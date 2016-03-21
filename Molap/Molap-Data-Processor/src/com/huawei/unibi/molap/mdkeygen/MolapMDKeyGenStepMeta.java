@@ -43,11 +43,6 @@ import org.w3c.dom.Node;
 
 import com.huawei.unibi.molap.util.MolapDataProcessorUtil;
 
-/**
- * Project Name NSE V3R7C00 Module Name : MOLAP Author :C00900810 Created Date
- * :24-Jun-2013 FileName : MolapMDKeyGenStepMeta.java Class Description :
- * Version 1.0
- */
 public class MolapMDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface,Cloneable
 {
     /**
@@ -168,7 +163,6 @@ public class MolapMDKeyGenStepMeta extends BaseStepMeta implements StepMetaInter
     public void loadXML(Node stepnode, List<DatabaseMeta> databases, Map<String, Counter> counters)
             throws KettleXMLException
     {
-        // TODO Auto-generated method stub
         try
         {
             tableName = XMLHandler.getTagValue(stepnode, "TableName");
@@ -183,7 +177,6 @@ public class MolapMDKeyGenStepMeta extends BaseStepMeta implements StepMetaInter
         }
         catch(Exception ex)
         {
-            // TODO Auto-generated catch block
             throw new KettleXMLException("Unable to read step info from XML node", ex);
         }
     }
@@ -213,7 +206,6 @@ public class MolapMDKeyGenStepMeta extends BaseStepMeta implements StepMetaInter
         }
         catch(Exception e)
         {
-            // TODO Auto-generated catch block
             throw new KettleException(BaseMessages.getString(pkg,
                     "MolapMDKeyStepMeta.Exception.UnexpectedErrorInReadingStepInfo"), e);
         }
@@ -231,14 +223,12 @@ public class MolapMDKeyGenStepMeta extends BaseStepMeta implements StepMetaInter
     public StepInterface getStep(StepMeta stepMeta, StepDataInterface stepDataInterface, int copyNr,
             TransMeta transMeta, Trans trans)
     {
-        // TODO Auto-generated method stub
         return new MolapMDKeyGenStep(stepMeta, stepDataInterface, copyNr, transMeta, trans);
     }
 
     @Override
     public StepDataInterface getStepData()
     {
-        // TODO Auto-generated method stub
         return new MolapMDKeyGenStepData();
     }
 

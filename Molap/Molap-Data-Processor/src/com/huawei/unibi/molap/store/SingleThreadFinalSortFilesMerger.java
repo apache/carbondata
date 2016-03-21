@@ -17,17 +17,6 @@
  * under the License.
  */
 
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2014
- * =====================================
- *
- */
 package com.huawei.unibi.molap.store;
 
 import java.io.File;
@@ -51,15 +40,6 @@ import com.huawei.unibi.molap.util.MolapDataProcessorUtil;
 import com.huawei.unibi.molap.util.MolapProperties;
 import com.huawei.unibi.molap.util.RemoveDictionaryUtil;
 
-/**
- * Project Name 	: Carbon 
- * Module Name 		: MOLAP Data Processor
- * Author 			: Suprith T 72079 
- * Created Date 	: 25-Aug-2015
- * FileName 		: SingleThreadFinalSortFilesMerger.java
- * Description 		: Class to merge data files files
- * Class Version 	: 1.0
- */
 public class SingleThreadFinalSortFilesMerger
 {
     /**
@@ -132,7 +112,6 @@ public class SingleThreadFinalSortFilesMerger
     
     /**
      * This method will be used to merger the merged files 
-     * @param file
      * @throws MolapSortKeyAndGroupByException
      */
     public void startFinalMerge()

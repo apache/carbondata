@@ -37,8 +37,6 @@ public interface GenericDataType {
 	
 	String getName();
 
-	void setParentname(String parentname);
-	
 	String getParentname();
 	
 	void addChildren(GenericDataType children);

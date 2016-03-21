@@ -42,16 +42,6 @@ import com.huawei.unibi.molap.merger.Util.RowTempFile;
 import com.huawei.unibi.molap.merger.exeception.SliceMergerException;
 import com.huawei.unibi.molap.util.MolapUtil;
 
-/**
- * 
- * Project Name NSE V3R7C00 
- * Module Name : Molap Data Processor
- * Author K00900841
- * Created Date :21-May-2013 6:42:29 PM
- * FileName : HierarchyMergerExecuter.java
- * Class Description : This class is responsible for merging the Hierarchy files 
- * Version 1.0
- */
 public class HierarchyMergerExecuter
 {
     /**
@@ -88,8 +78,6 @@ public class HierarchyMergerExecuter
      *          hierarchy AndKey Size Map
      * @param desitinationLocation
      *          destination location
-     * @param numberOfCores
-     *          number of cores
      *
      */
     public HierarchyMergerExecuter(Map<String, List<MolapFile>> filesMap, Map<String, Integer> hierarchyAndKeySizeMap,
@@ -251,8 +239,6 @@ public class HierarchyMergerExecuter
     
     /**
      * This method will be used to create the record holder heap 
-     * 
-     *
      */
     private void createRecordHolderQueue(int size, int compareSize)
     {

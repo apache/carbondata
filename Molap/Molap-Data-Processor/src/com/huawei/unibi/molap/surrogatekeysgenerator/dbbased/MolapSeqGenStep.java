@@ -140,11 +140,6 @@ public class MolapSeqGenStep extends BaseStep implements StepInterface
 
     /**
      * 
-     */
-    
-    
-    /**
-     * 
      * Comment for <code>LOGGER</code>
      * 
      */
@@ -209,20 +204,8 @@ public class MolapSeqGenStep extends BaseStep implements StepInterface
         if(first)
         {
             first = false;
-            /*try
-            {
-                database = getDataBase();
-            }
-            catch(Exception e)
-            {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-            database.connect();*/
             meta.initialize();
-            // the size of the incoming rows
-            //data.inputSize = getInputRowMeta().size();
-            
+
             meta.updateHierMappings(getInputRowMeta());
             
             data.setInputSize(getInputRowMeta().size());
@@ -234,12 +217,8 @@ public class MolapSeqGenStep extends BaseStep implements StepInterface
                         meta.hirches, meta.dimLens, meta.dimColNames);
             }
 
-            //data.setGenerator(new MultiDimKeyVarLengthGenerator(meta.dimLens));
             data.setGenerator(KeyGeneratorFactory.getKeyGenerator(getUpdatedLens(meta.dimLens, meta.dimPresent)));
            
-            // determine output field structure
-//            data.outputRowMeta = (RowMetaInterface)getInputRowMeta().clone();
-            
             data.setOutputRowMeta((RowMetaInterface)getInputRowMeta().clone());
             
             
@@ -247,58 +226,32 @@ public class MolapSeqGenStep extends BaseStep implements StepInterface
             // Make info object with all the data required for surrogate key
             // generator
             MolapInfo molapInfo = new MolapInfo();
-            //molapInfo.dims = meta.dims;
             molapInfo.setDims(meta.dims);
-           // molapInfo.dimColNames = meta.dimColNames;
             molapInfo.setDimColNames(meta.dimColNames);
-            //molapInfo.keyGenerators = data.keyGenerators;
             molapInfo.setKeyGenerators(data.getKeyGenerators());
-            //molapInfo.connectionString = meta.getMolapCon();
-//            molapInfo.setConnectionString(meta.getMolapJNDIName());
-            //molapInfo.hierTables = meta.hirches.keySet();
             molapInfo.setHierTables(meta.hirches.keySet());
-            //molapInf.batchSize = meta.getBatchSize();
             molapInfo.setBatchSize(meta.getBatchSize());
-            //molapInfo.isInitialLoad = meta.isInitialLoad();
             molapInfo.setAggregateLoad(meta.isAggregate());
-            //molapInfo.storeType = meta.getStoreType();
             molapInfo.setStoreType(meta.getStoreType());
-            //molapInfo.maxKeys = generateMaxKey(data.generator);
             molapInfo.setMaxKeys(meta.dimLens);
-            //molapInfo.propColumns = meta.getPropertiesColumns();
             molapInfo.setPropColumns(meta.getPropertiesColumns());
-            //molapInfo.propIndx = meta.getPropertiesIndices();
             molapInfo.setPropIndx(meta.getPropertiesIndices());
-            //molapInfo.timDimIndex = meta.timeDimeIndex;
             molapInfo.setTimDimIndex(meta.timeDimeIndex);
-            //molapInfo.timeOrdinalCols = meta.timeOrdinalCols;
             molapInfo.setTimeOrdinalCols(meta.timeOrdinalCols);
-            //molapInfo.propTypes = meta.getPropTypes();
             molapInfo.setPropTypes(meta.getPropTypes());
-            
-//            molapInfo.setDimHierRel(meta.getTableNames());
-            
             molapInfo.setBaseStoreLocation(updateStoreLocationAndPopulateMolapInfo(meta.getStoreLocation()));
-            
             molapInfo.setTableName(meta.getTableName());
-            
             molapInfo.setDimsPresent(meta.dimPresent);
-            
             
             if(meta.timeIndex != -1)
             {
-                // molapInfo.timDimIndexEnd = molapInfo.timDimIndex
-                // + meta.timeLevels.length;
                 molapInfo.setTimDimIndexEnd(molapInfo.getTimDimIndex()
                         + meta.timeLevels.length);
             }
 
-            //molapInfo.timeOrdinalIndices = meta.timeOrdinalIndices;
             molapInfo.setTimeOrdinalIndices(meta.timeOrdinalIndices);
                 
            data.setSurrogateKeyGen(new FileStoreSurrogateKeyGen(molapInfo, meta.getCurrentRestructNumber()));
-                
-//           updateStoreLocation();
                 
             if(meta.timeIndex >= 0)
             {
@@ -308,11 +261,9 @@ public class MolapSeqGenStep extends BaseStep implements StepInterface
             else
             {
                 // We consider that there is no time dimension,in these case the
-                // timeIndex = -1
                 handleDimWithoutTime();
                 
             }
-            //String metaDataFilesLocation = meta.getMetaHeirSQLQueries();
             List<HierarchiesInfo> metahierVoList = meta.getMetahierVoList();
             if(null != metahierVoList && !meta.isAggregate())
             {
@@ -367,29 +318,6 @@ public class MolapSeqGenStep extends BaseStep implements StepInterface
         return false; 
     }
     
-    /**
-     * Load Store location
-     * 
-     */
-   /* private void updateStoreLocation()
-    {
-        String store = MolapProperties.getInstance().getProperty(
-                MolapCommonConstants.STORE_LOCATION,
-                MolapCommonConstants.STORE_LOCATION_DEFAULT_VAL);
-        store = store + File.separator + meta.getStoreLocation();
-
-        int rsCounter = MolapUtil.checkAndReturnNextRestructFolderNumber(store,"RS_");
-
-        store = store + File.separator + MolapCommonConstants.RESTRUCTRE_FOLDER
-                + rsCounter + File.separator + meta.getTableName();
-
-//        int loadCounter = MolapUtil.checkAndReturnNextFolderNumber(store);
-
-//        loadFolderLoc = store + File.separator
-//                + MolapCommonConstants.LOAD_FOLDER + loadCounter + MolapCommonConstants.FILE_INPROGRESS_STATUS;
-
-    }*/
-
 
 	/**
 	 * Handle when time dimension is present
@@ -425,13 +353,13 @@ public class MolapSeqGenStep extends BaseStep implements StepInterface
 		ValueMetaInterface[] out = new ValueMetaInterface[dimSize
 		        + meta.msrs.length];
 		for(int i = 0;i < dimSize;i++)
-		{//CHECKSTYLE:OFF    Approval No:Approval-313
+		{//CHECKSTYLE:OFF
 		    out[i] = metaInterface[meta.dims[i]];
 		}//CHECKSTYLE:ON
 		int l = 0;
 		int len = dimSize + meta.msrs.length;
 		for(int i = dimSize;i < len;i++)
-		{//CHECKSTYLE:OFF    Approval No:Approval-314
+		{//CHECKSTYLE:OFF
 		    out[i] = metaInterface[meta.msrs[l]];
 		    l++;
 		}//CHECKSTYLE:ON
@@ -459,7 +387,6 @@ public class MolapSeqGenStep extends BaseStep implements StepInterface
         outSize= out.length;
         for(int i = 0;i < dimSize;i++)
         {
-            // out[i] = data.outputRowMeta.getValueMeta(meta.dims[i]);
             String name = data.getOutputRowMeta().getValueMeta(i).getName();
             ValueMetaInterface x = new ValueMeta(name,
                     ValueMetaInterface.TYPE_STRING,
@@ -487,9 +414,6 @@ public class MolapSeqGenStep extends BaseStep implements StepInterface
 	private void startProcess(int numberOfNodes) throws KettleException {
 		ExecutorService exec = Executors.newFixedThreadPool(numberOfNodes);
         
-//        CompletionService<Void> completionService = new ExecutorCompletionService<Void>(
-//                exec);
- 
         Callable<Void> callable = new Callable<Void>()
         {
             @Override
@@ -516,7 +440,7 @@ public class MolapSeqGenStep extends BaseStep implements StepInterface
         Future[] resultArray = results.toArray(new Future[results.size()]);
         boolean complete = false;
         try
-        {//CHECKSTYLE:OFF    Approval No:Approval-247
+        {//CHECKSTYLE:OFF
             while (!complete)
             {//CHECKSTYLE:ON
                 complete = true;
@@ -557,7 +481,7 @@ public class MolapSeqGenStep extends BaseStep implements StepInterface
                 .getStoreLocation());
         //
         
-        int restructFolderNumber = meta.getCurrentRestructNumber()/*MolapUtil.checkAndReturnNextRestructFolderNumber(storeLocation,"RS_")*/;
+        int restructFolderNumber = meta.getCurrentRestructNumber();
         
         String sliceMetaDataFilePath = storeLocation + File.separator
                 + MolapCommonConstants.RESTRUCTRE_FOLDER + restructFolderNumber
@@ -585,55 +509,21 @@ public class MolapSeqGenStep extends BaseStep implements StepInterface
             }
             measureOrdinal++;
         }
-//        sliceMetaData.setCountMsrOrdinal(measureOrdinal);
-        //sliceMetaData.setKeyGenerator(new MultiDimKeyVarLengthGenerator(meta.dimLens));
         sliceMetaData.setKeyGenerator(KeyGeneratorFactory.getKeyGenerator(getUpdatedLens(meta.dimLens, meta.dimPresent)));
-//        FileOutputStream fileOutputStream = null;
-//        ObjectOutputStream objectOutputStream = null;
-//        //
-//        try
-//        {
-//            fileOutputStream = new FileOutputStream(sliceMetaDataFilePath);
-//            objectOutputStream = new ObjectOutputStream(fileOutputStream);
-//            objectOutputStream.writeObject(sliceMetaData);
-//            //
-//        }
-//        catch(FileNotFoundException e)
-//        {
-//            throw new KettleException("slice metadata file not found", e);
-//        }
-//        catch(IOException e)
-//        {
-//            throw new KettleException("Not able to write slice metadata File",
-//                    e);
-//        }
-//        finally
-//        {
-//            MolapUtil.closeStreams(objectOutputStream, fileOutputStream);
-//        }
         MolapDataProcessorUtil.writeFileAsObjectStream(sliceMetaDataFilePath, sliceMetaData);
     }
 
-    /**
-     * 
-     * @param rowCountMap
-     * @throws KettleException 
-     * 
-     */
     private void writeRowCountFile(Map<String, Integer> rowCountMap) throws KettleException
     {
         FileOutputStream fileOutputStream = null;
         FileChannel fileChannel = null;
         //
-        String storeLocation = MolapUtil.getCarbonStorePath(null, null)/*MolapProperties.getInstance().getProperty(
-                MolapCommonConstants.STORE_LOCATION,
-                MolapCommonConstants.STORE_LOCATION_DEFAULT_VAL)*/;
+        String storeLocation = MolapUtil.getCarbonStorePath(null, null);
 
         storeLocation = storeLocation + File.separator
                 + meta.getStoreLocation();
 
-        int restructFolderNumber = meta.getCurrentRestructNumber()/*MolapUtil
-                .checkAndReturnNextRestructFolderNumber(storeLocation,"RS_")*/;
+        int restructFolderNumber = meta.getCurrentRestructNumber();
 
         storeLocation = storeLocation + File.separator
                 + MolapCommonConstants.RESTRUCTRE_FOLDER + restructFolderNumber
@@ -728,8 +618,6 @@ public class MolapSeqGenStep extends BaseStep implements StepInterface
             // no more input to be expected...
             if(r == null)
             {
-               //
-//                closeFileWriterStreams();
                 readCounter--;
                 break;
             }
@@ -758,9 +646,7 @@ public class MolapSeqGenStep extends BaseStep implements StepInterface
     private String updateStoreLocationAndPopulateMolapInfo(String schemaCubeName)
     {
         //
-        String storeLocation = MolapUtil.getCarbonStorePath(null,  null)/*MolapProperties.getInstance().getProperty(
-                MolapCommonConstants.STORE_LOCATION,
-                MolapCommonConstants.STORE_LOCATION_DEFAULT_VAL)*/;
+        String storeLocation = MolapUtil.getCarbonStorePath(null,  null);
         File f = new File(storeLocation);
         String absoluteStorePath = f.getAbsolutePath();
         //
@@ -786,7 +672,7 @@ public class MolapSeqGenStep extends BaseStep implements StepInterface
             Object[] outputRow = new Object[r.length + meta.timeLevels.length
                     - 1];
             for(int i = 0;i < meta.timeIndex;i++)
-            {//CHECKSTYLE:OFF    Approval No:Approval-315
+            {//CHECKSTYLE:OFF
                 outputRow[i] = r[i];
             }//CHECKSTYLE:ON
 
@@ -803,7 +689,7 @@ public class MolapSeqGenStep extends BaseStep implements StepInterface
             }
 
             for(int i = meta.timeIndex + 1;i < r.length;i++)
-            {//CHECKSTYLE:OFF    Approval No:Approval-316
+            {//CHECKSTYLE:OFF
                 outputRow[i + meta.timeLevels.length - 1] = r[i];
             }//CHECKSTYLE:ON
             r = outputRow;
@@ -862,7 +748,7 @@ public class MolapSeqGenStep extends BaseStep implements StepInterface
         int l = 0;
         int len = dimensionLength + meta.msrs.length;
         for(int i = dimensionLength;i < len;i++)
-        {//CHECKSTYLE:OFF    Approval No:Approval-317
+        {//CHECKSTYLE:OFF
             out[i] = r[l+ dimensionLength];
             l++;
         }//CHECKSTYLE:ON
@@ -871,89 +757,11 @@ public class MolapSeqGenStep extends BaseStep implements StepInterface
         Object[] generateSurrogateKeys = data.getSurrogateKeyGen()
                 .generateSurrogateKeys(r, out, timeOrdinalColValues);
 
-//            if(!meta.isAggregate())
-//            {
-//                insertHierarichies(out);
-//            }
-
-        
-        /*for(int i = 0;i < meta.dims.length;i++)
-        {
-            out[i] = out[i].toString().getBytes();
-        }*/
         // copy row to possible alternate rowset(s)
         return generateSurrogateKeys;
     }
     
     
-    /*private void insertHierarichies(Object[] rowWithKeys)
-            throws KettleException
-    {
-        try
-        {
-            for(Iterator<Map.Entry<String, int[]>> iterator = meta.hirches
-                    .entrySet().iterator();iterator.hasNext();)
-            {
-                Map.Entry<String, int[]> entry = iterator.next();
-                String name = entry.getKey();
-                
-                List<String> hierList = Arrays.asList(meta.hierNames);
-                if(hierList.contains(name))
-                {
-                    continue;
-                }
-                
-               /* String[] hierNames = meta.hierNames;
-                * 
-                
-                for(String hierName : hierNames)
-                {
-                    if(name.equals(hierName))
-                    {
-                        return;
-                    }
-                }* /
-                
-                
-                String storeLocation = "";
-                String hierInprogName = name + MolapCommonConstants.HIERARCHY_FILE_EXTENSION + MolapCommonConstants.FILE_INPROGRESS_STATUS;
-                HierarchyValueWriter hierWriter = nrmlizedHierWriterMap.get(hierInprogName);
-                storeLocation = loadFolderLoc;// + File.separator + hierInprogName;
-                if(null == filemanager)
-                {
-                    filemanager = new LoadFolderData();
-                    filemanager.setName(storeLocation);
-                }
-                if(null == hierWriter)
-                {
-                    FileData fileData = new FileData(hierInprogName, storeLocation);
-                    hierWriter = new HierarchyValueWriter(hierInprogName, storeLocation);
-                    filemanager.add(fileData);
-                    nrmlizedHierWriterMap.put(hierInprogName, hierWriter);
-                }
-
-                int[] levelsIndxs = entry.getValue();
-                int[] levelSKeys = new int[levelsIndxs.length];
-                
-                for(int i = 0;i < levelSKeys.length;i++)
-                  {
-                      levelSKeys[i] = (Integer)rowWithKeys[levelsIndxs[i]];
-                  }
-
-                data.getSurrogateKeyGen().checkNormalizedHierExists(levelSKeys, name, hierWriter);
-            }
-        }
-        catch(Exception e)
-        {
-            throw new KettleException(e.getMessage(), e);
-        }
-    }*/
-    
-    /**
-     * @throws KettleException 
-     * 
-     * 
-     */
     private void closeNormalizedHierFiles() throws KettleException
     {
         if(null == filemanager)
@@ -998,9 +806,6 @@ public class MolapSeqGenStep extends BaseStep implements StepInterface
             MolapUtil.closeStreams(bufferedOutStream);
 
             hierInProgressFileName = hierFileData.getFileName();
-//            String storePath = hierFileData.getStorePath();
-//            String changedFileName = hierInProgressFileName.substring(0,
-//                    hierInProgressFileName.lastIndexOf('.'));
             File currentFile = new File(storePath + File.separator
                     + hierInProgressFileName);
             File destFile = new File(storePath + File.separator
@@ -1021,7 +826,7 @@ public class MolapSeqGenStep extends BaseStep implements StepInterface
         for(int i = 0;i < lens.length;i++)
         {
             if(presentDims[i])
-            {//CHECKSTYLE:OFF    Approval No:Approval-318
+            {//CHECKSTYLE:OFF
                 integers[k] = lens[i];
                 k++;
             }//CHECKSTYLE:ON
@@ -1037,38 +842,11 @@ public class MolapSeqGenStep extends BaseStep implements StepInterface
             for(int i = 0;i < metahierVoList.size();i++)
             {
                 HierarchiesInfo hierarichiesVO = metahierVoList.get(i);
-//                String hierarichiesName = hierarichiesVO.getHierarichieName();
                 String query = hierarichiesVO.getQuery();
                 if(null == query) // table will be denormalized so no foreign key , primary key for this hierarchy 
                 {                  // Direct column names will be present in the csv file. in that case continue.  
                     continue;
                 }
-//                boolean loadToHierarichiTable = hierarichiesVO
-//                        .isLoadToHierarichiTable();
-//                Map<String, String[]> columnPropMap = hierarichiesVO
-//                        .getColumnPropMap();
-
-//                if(meta.timeIndex >= 0
-//                        && hierarichiesName.equalsIgnoreCase(meta.timehierName))
-//                {
-////                    updateHierarichiesFromSourceDB(columnNames, columnPropMap,
-////                            columnIndex, hierarichiesName, true,
-////                            loadToHierarichiTable, query);
-//                }
-//                else
-//                {
-//                    /*
-//                     * updateHierarichiesFromMetaDataFile(metadataFilePath + "/"
-//                     * + hierarichiesName, columnNames, columnPropMap,
-//                     * columnIndex, hierarichiesName, false,
-//                     * loadToHierarichiTable);
-//                     */
-//
-////                    updateHierarichiesFromSourceDB(columnNames, columnPropMap,
-////                            columnIndex, hierarichiesName, false,
-////                            loadToHierarichiTable, query);
-//                }
-
             }
         }
         catch(Exception e)
@@ -1088,374 +866,6 @@ public class MolapSeqGenStep extends BaseStep implements StepInterface
         }
     }
 
-//    private void updateHierarichiesFromSourceDB(String[] columnNames, Map<String, String[]> columnPropMap,
-//            int[] columnIndex, String hierarichiesName, boolean isTimeHier,
-//            boolean loadToHier, String query) throws Exception
-//    {
-//
-//        String tableName = query.substring(query.indexOf("FROM") + 4).trim();
-//        
-//        int differnce = 0;
-//
-//        // Check if the cache contains the row count info
-//
-//        Map<String, Integer> rowCountMap = meta.getRowCountMap();
-//
-//        Integer maxCount = rowCountMap.get(tableName);
-//        
-//        String countQuery = "SELECT COUNT(*) FROM "+tableName;
-//        
-//        ResultSet countRS = createConnectionAndExecuteQuery(countQuery);
-//        
-//        int count = 0;
-//        if(countRS.next())
-//        {
-//        	count = countRS.getInt(1);
-//        }
-//        countRS.getStatement().close();
-//        countRS.close();
-//        if(null != maxCount)
-//        {
-//            differnce = count - rowCountMap.get(tableName);
-//        }
-//        else
-//        {
-//            
-//            differnce = count;
-//        }
-//        // update row count cache
-//          updateRowCountCache(count, tableName);
-//
-//        if(differnce > 0)
-//        {
-//        	 ResultSet resultSet = createConnectionAndExecuteQuery(query);
-//            try
-//            {
-//                int[] columnNameFileIndex = new int[columnNames.length];
-//
-//                String substring = query.substring(query.indexOf("SELECT") + 6,
-//                        query.indexOf("FROM"));
-//                String[] split = substring.split(",");
-//                // check if the name contains quotes remove and return athe
-//                // array
-//                // checkQuotesAndRemoveIfExist(split);
-//                String []origunalColumnName = new String[split.length];
-//                String[] columnNameArray = checkQuotesAndAddTableName(split, tableName , origunalColumnName);
-//                columnNameFileIndex = getIndex(columnNameArray, columnNames);
-//                int[] output = new int[columnNames.length];
-//                int [][]propertyIndex = null;
-//                String[] timeTuple = null;
-//
-//                if(!isTimeHier)
-//                {
-//                    propertyIndex = new int[columnNames.length][];
-//                    for(int i = 0;i < columnNames.length;i++)
-//                    {
-//                        String[] property = columnPropMap.get(columnNames[i]);
-//                        propertyIndex[i] = getIndex(columnNameArray, property);
-//                    }
-//                    output = new int[columnNames.length];
-//                }
-//                else
-//                {
-//                    int timeDimStartIndex = meta.timeDimeIndex;
-//                    timeTuple = new String[meta.timeLevels.length];
-//                    columnIndex = new int[meta.timeLevels.length];
-//                    for(int i = 0;i < columnIndex.length;i++)
-//                    {
-//                        columnIndex[i] = timeDimStartIndex;
-//                        timeDimStartIndex++;
-//                    }
-//                    output = new int[columnIndex.length];
-//                }
-//                boolean isCardinalityExcceded = false;
-//                while(resultSet.next())
-//                {
-//                    int length = split.length;
-//                    String[] columnNameArrayNew = new String[length];
-//                    for(int i = 0;i < length;i++)
-//                    {
-//                        columnNameArrayNew[i] = resultSet
-//                                .getString(origunalColumnName[i]);
-//                    }
-//                    // columnNameArray = readLine.split(",");
-//                    for(int j = 0;j < columnNames.length;j++)
-//                    {
-//                        if(isTimeHier)
-//                        {
-//                            List<Integer> timeOrdinalColValues = new ArrayList<Integer>();
-//                            getTimeValue(timeTuple, columnNameArrayNew[0],
-//                                    timeOrdinalColValues, 0);
-//                            output = data.getSurrogateKeyGen()
-//                                    .generateSurrogateKeys(timeTuple, output,
-//                                            columnIndex, timeOrdinalColValues);
-//                        }
-//                        else
-//                        {
-//                            String columnName = columnNames[j];
-//                            String tuple = columnNameArrayNew[columnNameFileIndex[j]];
-//                            if(propertyIndex[j]!=null)
-//                            {
-//                            Object []propertyvalue = new Object[propertyIndex[j].length];
-//
-//                            for(int k = 0;k < propertyIndex[j].length;k++)
-//                            {
-//                                String value =columnNameArrayNew[propertyIndex[j][k]];
-//                                if(null==value)
-//                                {
-//                                    value=MolapCommonConstants.MEMBER_DEFAULT_VAL;
-//                                }
-//                                propertyvalue[k] = value.trim();
-//                            }
-//                            if(null==tuple)
-//                            {
-//                                tuple=MolapCommonConstants.MEMBER_DEFAULT_VAL;
-//                            }
-//                            output[j] = data.getSurrogateKeyGen()
-//                                    .generateSurrogateKeys(tuple.trim(),
-//                                            columnName.trim(), columnIndex[j],
-//                                            propertyvalue);
-//                            if(output[j]==-1)
-//                            {
-//                                isCardinalityExcceded=true;
-//                            }
-//                        }
-//                        }
-//                    }
-//
-//                    if(loadToHier && ! isCardinalityExcceded)
-//                    {
-//                        data.getSurrogateKeyGen().checkHierExists(output,
-//                                hierarichiesName);
-//                    }
-//                    isCardinalityExcceded= false;
-//
-//                }
-//                
-//                
-//                
-//
-//                // Close the streamso that data should be written to file
-//               // closeFileWriterStreams();
-//
-//            }
-//            catch(KeyGenException e)
-//            {
-//                throw new KettleException(
-//                        "Not able to Surrogate generate key ", e);
-//            }
-//            catch(KettleException e)
-//            {
-//                throw new KettleException(e.getMessage(), e);
-//            }
-//            finally
-//            {
-//                try
-//                {
-//                    if (null != resultSet && null != resultSet.getStatement())
-//                    {
-//                        resultSet.getStatement().close();
-//                    }
-//                }
-//                catch (SQLException e)
-//                {
-//                    LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e, "Not able to close statement");
-//                }
-//
-//                try
-//                {
-//                    if (null != resultSet)
-//                    {
-//                        resultSet.close();
-//                    }
-//                }
-//                catch (SQLException e)
-//                {
-//                    LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e, "Not able to close result set");
-//                }
-//               // closeFileWriterStreams();
-//            }
-//        }
-//    }
-
-//    /**
-//     * 
-//     * @param fetchSize
-//     * @param tableName
-//     * 
-//     */
-//    private void updateRowCountCache(int fetchSize, String tableName)
-//    {
-//        Map<String, Integer> rowCountMap = meta.getRowCountMap();
-//        if(null == rowCountMap)
-//        {
-//            rowCountMap = new HashMap<String, Integer>();
-//        }
-//        
-//        rowCountMap.put(tableName, fetchSize);
-//        
-//        meta.setRowCountMap(rowCountMap);
-//    }
-//
-//    /**
-//     * 
-//     * @param split
-//     * 
-//     */
-//    private String[] checkQuotesAndAddTableName(String[] split, String tableName, String[] originalColumnName)
-//    {
-//        //
-//    	if(tableName.contains("."))
-//    	{
-//    		tableName = tableName.split("\\.")[1];
-//    	}
-//		if(tableName.contains("\""))
-//        {
-//            tableName = tableName.replaceAll("\"", "");
-//        }
-//        String []result = new String[split.length];
-//        int i =0;
-//        //
-//        for(int j = 0;j < split.length;j++)
-//        {
-//            String str = split[j];
-//            if(str.contains("\""))
-//            {
-//                str = str.replaceAll("\"", "");
-//            }
-//            result[i] = tableName + '_' + str.trim();
-//            originalColumnName[i] = str.trim();
-//            i++;
-//        }
-//        //
-//        return result;
-//        
-//    }
-
-//    /**
-//     * 
-//     * @param query
-//     * @throws ClassNotFoundException 
-//     * @throws IllegalAccessException 
-//     * @throws InstantiationException 
-//     * @throws SQLException 
-//     * @throws CipherException 
-//     * 
-//     */
-//    private ResultSet createConnectionAndExecuteQuery(String query) throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException, CipherException
-//    {
-//        String molapJNDIName = meta.getMolapJNDIName();
-//        
-//        Statement statement = null;
-//        Connection connection = cons.get(molapJNDIName);
-//        if(connection == null)
-//        {
-//        	connection = parseStringAndCreateConnection(molapJNDIName);
-//        	cons.put(molapJNDIName, connection);
-//        }
-//        
-//    /*    String connectionURL = 
-//                "jdbc:oracle:thin:@10.18.51.145:1521:orcl";
-////      // declare a connection by using Connection interface 
-//      Connection connection = null;
-////            // declare object of Statement interface that
-////            //    uses for executing sql statements.
-//      Statement statement = null;
-//                // declare a resultset that uses as a table for 
-//              //  output data from the table.
-//      ResultSet rs = null;
-// //     int updateQuery = 0;
-//      // Load JBBC driver "com.mysql.jdbc.Driver".
-//      Class.forName("oracle.jdbc.OracleDriver");
-//       Create a connection by using getConnection()
-//                method that takes parameters of string type 
-//                connection url, user name and password to 
-//                connect to database. 
-//      connection = DriverManager.getConnection
-//                (connectionURL, "vishal", "password");*/
-//      
-//      //connection = database.getConnection();
-//            /* createStatement() is used for create 
-//                statement object that is used for sending sql 
-//                statements to the specified database. */
-//      statement = connection.createStatement();
-//      
-//      ResultSet executeQuery = statement.executeQuery(query);
-//      return executeQuery;
-//    }
-    
-//    /**
-//     * 
-//     * @param molapJNDIName
-//     * @throws ClassNotFoundException 
-//     * @throws SQLException 
-//     * @throws CipherException 
-//     * 
-//     */
-//    private Connection parseStringAndCreateConnection(String molapJNDIName) throws ClassNotFoundException, SQLException, CipherException
-//    {
-//        
-//        String[] connectionDetails = molapJNDIName.split("&");
-//        
-//        String connectionURL = connectionDetails[1];
-//        String driverClass = connectionDetails[0];
-//        String userName = connectionDetails[2];
-//        String pwd = connectionDetails[3];
-//        
-////      // declare a connection by using Connection interface 
-//      Connection connection = null;
-////            // declare object of Statement interface that
-////            //    uses for executing sql statements.
-//     
-//                // declare a resultset that uses as a table for 
-//              //  output data from the table.
-//      
-// //     int updateQuery = 0;
-//      // Load JBBC driver "com.mysql.jdbc.Driver".
-//      Class.forName(driverClass);
-//      /* Create a connection by using getConnection()
-//                method that takes parameters of string type 
-//                connection url, user name and password to 
-//                connect to database. */
-//      connection = DriverManager.getConnection
-//                (connectionURL, userName,  pwd);
-//
-//        return connection;
-//        
-//    }
-
-   /* *//**
-     * 
-     * @param pwd
-     * 
-     *//*
-    private String decryptPassword(String pwd) throws CipherException
-    {
-        return EncryptionUtil.decrypt(pwd);
-        
-    }
-*/
-   /* private DatabaseMeta getDataBaseMeta()
-    {
-        DatabaseMeta dbMeta = new DatabaseMeta();
-        dbMeta.setName("target");
-        dbMeta.setDatabaseType("ORACLE");
-        dbMeta.setShared(true);
-        dbMeta.setDBName("orcl");
-        dbMeta.setAccessType(DatabaseMeta.getAccessType("Native"));
-        return dbMeta;
-    }
-    
-    private Database getDataBase() throws Exception
-    {
-        TransMeta meta = new TransMeta();
-        meta.setName("transMeta");
-        DatabaseMeta findDatabase = meta.findDatabase("target");
-        Database database = new Database(meta,findDatabase);
-        connect(null, null, database);
-        return database;
-    }*/
-    
     public synchronized void connect(String group , String partitionId,Database database)
             throws Exception
     {
@@ -1503,111 +913,12 @@ public class MolapSeqGenStep extends BaseStep implements StepInterface
         database.setConnection(connection);
     }
 
-//    private int[] getIndex(String[] columnNamesFromFile, String[] names)
-//    {
-//        int[] columnIndex = new int[names.length];
-//        for(int i = 0;i < names.length;i++)
-//        {
-//            for(int j = 0;j < columnNamesFromFile.length;j++)
-//            {
-//                if(names[i].equalsIgnoreCase(columnNamesFromFile[j].trim()))
-//                {
-//                    columnIndex[i] = j;
-//                    break;
-//                }
-//            }
-//        }
-//        return columnIndex;
-//    }
-
-    // /**
-    // * transfer the cardinalities to binary string and count the length
-    // *
-    // * @param cards
-    // * @return
-    // *
-    // */
-    // private int[] getBinaryStringLength(int[] cards)
-    // {
-    // int[] lens = new int[cards.length];
-    //
-    // for(int i = 0;i < lens.length;i++)
-    // {
-    // lens[i] = Long.toBinaryString(cards[i]).length();
-    // }
-    //
-    // return lens;
-    // }
-
-//    private void insertHierarichies(Object[] rowWithKeys)
-//            throws KettleException
-//    {
-//        String timehierName = "";
-//        if(meta.getMolapTime() == null || "".equals(meta.getMolapTime()))
-//        {
-//            timehierName = "";
-//        }
-//        else
-//        {
-//            String[] hies = meta.getMolapTime().split(":");
-//            timehierName = hies[1];
-//        }
-//        try
-//        {
-//            for(Iterator<Map.Entry<String, int[]>> iterator = meta.hirches
-//                    .entrySet().iterator();iterator.hasNext();)
-//            {
-//                Map.Entry<String, int[]> entry = iterator.next();
-//                String name = entry.getKey();
-//
-//                int[] levelsIndxs = entry.getValue();
-//                int[] levelSKeys = new int[levelsIndxs.length];
-//                if(name.equalsIgnoreCase(timehierName))
-//                {
-//                    for(int i = 0;i < levelSKeys.length;i++)
-//                    {
-//                        levelSKeys[i] = (Integer)rowWithKeys[levelsIndxs[i]];
-//                    }
-//                }
-//                else
-//                {
-//
-//                    for(int i = 0;i < levelSKeys.length;i++)
-//                    {
-//                        // fix the bug : order of hierarchy has changed,but the
-//                        // order not represent
-//                        // in the key.
-//                        RowMetaInterface inputRowMeta = this.getInputRowMeta();
-//                        String columnName = inputRowMeta.getValueMeta(
-//                                levelsIndxs[i]).getName();
-//
-//                        int newIndex = data.getOutputRowMeta().indexOfValue(
-//                                columnName);
-//
-//                        levelSKeys[i] = (Integer)rowWithKeys[newIndex];
-//
-//                        // b[i] = (Long)key[a[i]];
-//                    }
-//
-//                }
-//
-//                data.getSurrogateKeyGen().checkHierExists(levelSKeys, name);
-//            }
-//        }
-//        catch(Exception e)
-//        {
-//            throw new KettleException(e.getMessage(), e);
-//        }
-//    }
-
-
     /**
      * Read all the data values in String format. Identify any Ordinal column is
      * defined and fill the ordinal integer value in the given list
      * 
      * @param t
      * @param val
-     * @param metaInterface
      * @param timOrdinalColValues
      * @throws Exception
      * 
@@ -1738,7 +1049,6 @@ public class MolapSeqGenStep extends BaseStep implements StepInterface
             timeHierName = hies[1];
         }
         
-        // Set<Entry<String,int[]>> hierSet = hirches.entrySet();
         Iterator<Entry<String,int[]>> itr = hirches.entrySet().iterator();
         
         while(itr.hasNext())
@@ -1751,35 +1061,18 @@ public class MolapSeqGenStep extends BaseStep implements StepInterface
             if(name.equalsIgnoreCase(timeHierName))
             {
                 for(int i = 0;i < a.length;i++)
-                {//CHECKSTYLE:OFF    Approval No:Approval-319
+                {//CHECKSTYLE:OFF
                     lens[i] = dimLens[a[i]];
                 }//CHECKSTYLE:ON
             }
             else
             {
-                //
                 for(int i = 0;i < a.length;i++)
                 {
-//                    RowMetaInterface inputRowMeta = this.getInputRowMeta();
-//                    String hierName = inputRowMeta.getValueMeta(a[i]).getName();
-					//Modified as it is not being used
-//                    int newIndex = -1;
-//                    for(int j = 0;j < dimCols.length;j++)
-//                    {
-//                        //
-//                        if(checkDimensionColName(dimCols[j],hierName))
-//                        {
-//                            newIndex = j;
-//                            break;
-//                        }
-//                    }//CHECKSTYLE:OFF    Approval No:Approval-320
                     lens[i] = dimLens[a[i]];
-                }//CHECKSTYLE:ON
+                }
             }
-            //
-            //int[] binaryLens = getBinaryStringLength(lens);
             KeyGenerator generator = KeyGeneratorFactory.getKeyGenerator(lens);
-//            KeyGenerator generator = getKeyGenerator(lens);
             keyGenerators.put(name, generator);
         
         }
@@ -1787,24 +1080,6 @@ public class MolapSeqGenStep extends BaseStep implements StepInterface
     }
 
     
-    /*private boolean checkDimensionColName(String dimColName, String hierName)
-    {
-        String tableNames = meta.getTableNames();
-        String[] tables = tableNames.split("&");
-
-        for(String table : tables)
-        {
-            String hierWithTableName = table + '_' +hierName;
-            if(hierWithTableName.equalsIgnoreCase(dimColName))
-            {
-                return true;
-            }
-        }
-        
-        
-        return false;
-    }*/
-
     public boolean init(StepMetaInterface smi, StepDataInterface sdi)
     {
         meta = (MolapSeqGenStepMeta)smi;
@@ -1831,15 +1106,6 @@ public class MolapSeqGenStep extends BaseStep implements StepInterface
         }
         surrogateKeyGen.hierCache = null;
         surrogateKeyGen.memberCache = null;
-//        try
-//        {
-//            data.getSurrogateKeyGen().writeHeirDataToFileAndCloseStreams();
-//        }
-//        catch(KettleException e)
-//        {
-//            // TODO Auto-generated catch block
-//            e.printStackTrace();
-//        }
         super.dispose(smi, sdi);
     }
 }

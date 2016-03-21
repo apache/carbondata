@@ -25,16 +25,6 @@ import java.util.List;
 import com.huawei.unibi.molap.datastorage.store.compression.ValueCompressionModel;
 import com.huawei.unibi.molap.metadata.LeafNodeInfo;
 
-/**
- * 
- * Project Name NSE V3R7C00 
- * Module Name : Molap Data Processor
- * Author K00900841
- * Created Date :21-May-2013 6:42:29 PM
- * FileName : SliceInfo.java
- * Class Description : This class is responsible for holding the slice information 
- * Version 1.0
- */
 public class SliceInfo
 {
 	private File tableFolder;

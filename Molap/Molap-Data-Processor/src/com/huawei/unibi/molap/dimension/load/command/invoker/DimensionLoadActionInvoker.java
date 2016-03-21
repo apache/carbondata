@@ -22,15 +22,6 @@ package com.huawei.unibi.molap.dimension.load.command.invoker;
 
 import com.huawei.unibi.molap.dimension.load.command.DimensionLoadCommand;
 
-/**
- * Project Name NSE V3R7C00 
- * Module Name : 
- * Author V00900840
- * Created Date :14-Nov-2013 6:13:57 PM
- * FileName : DimensionLoadActionInvoker.java
- * Class Description :
- * Version 1.0
- */
 public class DimensionLoadActionInvoker
 {
     /**

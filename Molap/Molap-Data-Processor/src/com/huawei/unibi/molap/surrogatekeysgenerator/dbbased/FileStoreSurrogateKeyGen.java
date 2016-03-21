@@ -57,14 +57,7 @@ public class FileStoreSurrogateKeyGen extends MolapDimSurrogateKeyGen
 {
 	private static final LogService LOGGER = LogServiceFactory.getLogService(FileStoreSurrogateKeyGen.class.getName());
     
-    /**
-     * 
-     * Comment for <code>LOGGER</code>
-     * 
-     */
-    /*private static final LogService LOGGER = LogServiceFactory
-            .getLogService(FileStoreSurrogateKeyGen.class.getName());*/
-    
+
     /**
      * dimensionWriter
      */
@@ -156,15 +149,9 @@ public class FileStoreSurrogateKeyGen extends MolapDimSurrogateKeyGen
         this.currentRestructNumber = currentRestructNum;
     }
     
-    /**
-     * 
-     * @param baseStorePath
-     * @param tableName 
-     * 
-     */
     private String checkAndCreateLoadFolderNumber(String baseStorePath, String tableName) throws KettleException
     {
-        int restrctFolderCount = currentRestructNumber/*MolapUtil.checkAndReturnNextRestructFolderNumber(baseStorePath,"RS_")*/;
+        int restrctFolderCount = currentRestructNumber;
         //
         if(restrctFolderCount == -1)
         {
@@ -190,11 +177,6 @@ public class FileStoreSurrogateKeyGen extends MolapDimSurrogateKeyGen
         return basePath;
     }
     
-    /**
-     * @throws KettleException 
-     * 
-     * 
-     */
     private void populateCache() throws KettleException
     {
         //
@@ -290,25 +272,14 @@ public class FileStoreSurrogateKeyGen extends MolapDimSurrogateKeyGen
         return rsFolders;
     }
     
-    /**
-     * 
-     * @throws KettleException 
-     * @throws KeyGenException 
-     * 
-     */
     @Override
     protected byte[] getHierFromStore(int[] val, String hier)
             throws KettleException
 
     {
 
-        // readHierarchyMappingFiles("");
         long[] value = new long[val.length];
 
-        /*for(int i = 0;i < val.length;i++)
-        {
-            value[i] = val[i];
-        }*/
         System.arraycopy(val, 0, value, 0, val.length);
 
         byte[] bytes;
@@ -321,17 +292,10 @@ public class FileStoreSurrogateKeyGen extends MolapDimSurrogateKeyGen
         {
             throw new KettleException(ex);
         }
-        // hierValueWriter.get(hier).writeIntoHierarchyFile(bytes);
         return bytes;
 
     }
 
-    /**
-     * 
-     * @throws KettleException 
-     * @see com.huawei.unibi.surrogatekeygen.MolapDimSurrogateKeyGen#getSurrogateFromStore(java.lang.Object, int, java.lang.Object[])
-     * 
-     */
     @Override
     protected int getSurrogateFromStore(String value, int index,
             Object[] properties) throws KettleException
@@ -345,11 +309,6 @@ public class FileStoreSurrogateKeyGen extends MolapDimSurrogateKeyGen
     }
     
     
-    /**
-     * 
-     * @see com.huawei.unibi.molap.surrogatekeysgenerator.MolapDimSurrogateKeyGen
-     *      #writeHeirDataToFileAndCloseStreams()
-     */
     public void writeHeirDataToFileAndCloseStreams() throws KettleException
     {
         // For closing Level value writer bufferred streams
@@ -383,29 +342,6 @@ public class FileStoreSurrogateKeyGen extends MolapDimSurrogateKeyGen
                      LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, "Not Able to rename " + currentFile.getName() + " to " + destFile.getName());
                  }
                     
-//                    try
-//                    {
-//                        SimpleFileEncryptor.encryptFile(storePath
-//                                + File.separator + inProgFileName, storePath
-//                                + File.separator + changedFileName);
-//                        //Delete the inprogress File
-//                        new File(storePath + File.separator + inProgFileName).delete();
-//                        fileData.setName(changedFileName);
-//                    }
-//                    catch(CipherException e)
-//                    {
-//                        LOGGER.error(
-//                                MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-//                                e, "Not able to encrypt File");
-//                       throw new KettleException();
-//                    }
-//                    catch(IOException e)
-//                    {
-//                        LOGGER.error(
-//                                MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-//                                e, "IO exception");
-//                       throw new KettleException();
-//                    }
                   break;
                 }
                 
@@ -466,15 +402,7 @@ public class FileStoreSurrogateKeyGen extends MolapDimSurrogateKeyGen
             }
         }
     }
-    /**
-     * @throws FileNotFoundException,IOException 
-     * @throws FileNotFoundException 
-     * 
-     * @param hierarchyFile
-     * @param hierarchy 
-     * @throws  
-     * 
-     */
+
     private void readHierarchyAndUpdateCache(File hierarchyFile, String hierarchy) throws IOException
     {
         KeyGenerator generator = keyGeneratorMap.get(hierarchy);
@@ -498,9 +426,9 @@ public class FileStoreSurrogateKeyGen extends MolapDimSurrogateKeyGen
             // Change long to int
             for(int i = 0;i < keyArray.length;i++)
             {
-              //CHECKSTYLE:OFF    Approval No:Approval-349
+              //CHECKSTYLE:OFF
                 hirerarchyValues[i] = (int)keyArray[i];
-              //CHECKSTYLE:ON    Approval No:Approval-349
+              //CHECKSTYLE:ON
 
             }
             // update the cache
@@ -516,12 +444,6 @@ public class FileStoreSurrogateKeyGen extends MolapDimSurrogateKeyGen
 
     }
 
-    /**
-     * 
-     * @param hirerarchyValues
-     * @param hierarchy
-     * 
-     */
     private void updateHierCache(int[] hirerarchyValues, String hierarchy)
     {
         //
@@ -544,18 +466,8 @@ public class FileStoreSurrogateKeyGen extends MolapDimSurrogateKeyGen
         
     }
 
-    /**
-     * 
-     * @param memberFile
-     * @param dimInsertFileNames 
-     * @throws IOException 
-     * @throws KettleException 
-     * 
-     */
     private void readLevelFileAndUpdateCache(File memberFile, String dimInsertFileNames) throws IOException, KettleException
     {
-//        File decryptedFile = decryptEncyptedFile(memberFile);
-        
         // create an object of FileOutputStream
         FileInputStream fos = new FileInputStream(memberFile);
         
@@ -582,7 +494,7 @@ public class FileStoreSurrogateKeyGen extends MolapDimSurrogateKeyGen
             int toread = row.getInt();
             byte[] bytes = new byte[toread];
             row.get(bytes);
-            String value = null;//CHECKSTYLE:OFF    Approval No:Approval-350
+            String value = null;//CHECKSTYLE:OFF
             
             if(enableEncoding)
             {
@@ -608,53 +520,8 @@ public class FileStoreSurrogateKeyGen extends MolapDimSurrogateKeyGen
             MolapUtil.closeStreams(fileChannel,fos);
         }
         
-      /*  // Delete the temp File
-        if(decryptedFile.exists())
-        {
-            decryptedFile.delete();
-        }*/
     }
 
-    /**
-     * 
-     * @param memberFile
-     * @param inProgressLoadFolder 
-     * @return
-     * @throws KettleException 
-     * 
-     */
-//    private File decryptEncyptedFile(File memberFile) throws KettleException
-//    {
-//        String decryptedFilePath = memberFile.getAbsolutePath() + MolapCommonConstants.FILE_INPROGRESS_STATUS;
-//        
-//        try
-//        {
-//            SimpleFileEncryptor.decryptFile(memberFile.getAbsolutePath(), decryptedFilePath);
-//        }
-//        catch(CipherException e)
-//        {
-//            LOGGER.error(
-//                    MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-//                    e, "Not able to encrypt File");
-//           throw new KettleException();
-//        }
-//        catch(IOException e)
-//        {
-//            LOGGER.error(
-//                    MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-//                    e, "Not able to encrypt File");
-//           throw new KettleException();
-//        }
-//
-//        return new File(decryptedFilePath);
-//    }
-
-    /**
-     * 
-     * @param maxKey
-     * @param dimInsertFileNames
-     * 
-     */
     private void checkAndUpdateMap(int maxKey,
             String dimInsertFileNames)
     {
@@ -669,11 +536,6 @@ public class FileStoreSurrogateKeyGen extends MolapDimSurrogateKeyGen
         
     }
 
-    /**
-     * 
-     * @see com.huawei.unibi.molap.surrogatekeysgenerator.dbbased.MolapDimSurrogateKeyGen#getNormalizedHierFromStore(int[], java.lang.String, com.huawei.unibi.molap.surrogatekeysgenerator.dbbased.HierarchyValueWriter)
-     * 
-     */
     @Override
     protected byte[] getNormalizedHierFromStore(int[] val, String hier,
             HierarchyValueWriter hierWriter) throws KettleException

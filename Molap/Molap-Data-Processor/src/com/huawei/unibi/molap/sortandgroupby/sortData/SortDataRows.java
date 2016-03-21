@@ -45,16 +45,7 @@ import com.huawei.unibi.molap.util.MolapProperties;
 import com.huawei.unibi.molap.util.MolapUtil;
 import com.huawei.unibi.molap.util.RemoveDictionaryUtil;
 
-/**
- * Project Name 	: Carbon 
- * Module Name 		: MOLAP Data Processor
- * Author 			: Suprith T 72079 
- * Created Date 	: 20-Aug-2015
- * FileName 		: SortDataRows.java
- * Description 		: This class is responsible for data sorting
- * Class Version 	: 1.0
- */
-public class SortDataRows 
+public class SortDataRows
 {
 	/**
      * LOGGER
@@ -240,8 +231,6 @@ public class SortDataRows
 	/**
      * This method will be used to initialize
      * 
-     * @param storeLocation
-     *            storeLocation
      */
     public void initialize(String schemaName, String cubeName)
             throws MolapSortKeyAndGroupByException
@@ -580,17 +569,6 @@ public class SortDataRows
                     stream.write(RemoveDictionaryUtil.getByteArrayForNoDictionaryCols(row));
                 }
                 
-                /*for(int highCardinality = 0; highCardinality < this.highCardinalityCount; highCardinality++)
-                {
-                	 ByteBuffer buffer = (ByteBuffer) row[fieldIndex++];
-                	 int length = (int)buffer.getShort();
-                	stream.writeShort(length);
-                	byte[] arr = new byte[length];
-                	buffer.get(arr);
-                	stream.write(arr);
-                	buffer.rewind();
-                }*/
-                
                 // as measures are stored in separate array.
                 fieldIndex = 0;
                 for(int mesCount = 0; mesCount < this.measureColCount; mesCount++)
@@ -719,7 +697,6 @@ public class SortDataRows
     
     /**
      * This will be used to get the sort temo location
-     * @param storeLocation
      * @param instance
      */
     private void updateSortTempFileLocation(MolapProperties instance)
@@ -746,23 +723,6 @@ public class SortDataRows
             throws MolapSortKeyAndGroupByException
     {
     	MolapDataProcessorUtil.deleteSortLocationIfExists(this.tempFileLocation);
-        // create new temp file location where this class 
-        //will write all the temp files
-//        File file = new File(this.tempFileLocation);
-//        
-//        if(file.exists())
-//        {
-//            try
-//            {
-//                MolapUtil.deleteFoldersAndFiles(file);
-//            }
-//            catch(MolapUtilException e)
-//            {
-//                LOGGER.error(
-//                        MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-//                        e);
-//            }
-//        }
     }
     
     /**
@@ -789,8 +749,6 @@ public class SortDataRows
     /**
      * This method will be used to update the max value for each measure 
      * 
-     * @param currentMeasures
-     *
      */
    private void calculateMaxMinUnique(double[] max, double[] min, int[] decimal, int length)
    {
@@ -821,8 +779,7 @@ public class SortDataRows
                + File.separator + schemaName
                + File.separator + cubeName;
                
-       int restructFolderNumber = currentRestructNumber/*MolapUtil
-               .checkAndReturnNextRestructFolderNumber(baseStorelocation,"RS_")*/;
+       int restructFolderNumber = currentRestructNumber;
        
        baseStorelocation = baseStorelocation + File.separator
                + MolapCommonConstants.RESTRUCTRE_FOLDER + restructFolderNumber

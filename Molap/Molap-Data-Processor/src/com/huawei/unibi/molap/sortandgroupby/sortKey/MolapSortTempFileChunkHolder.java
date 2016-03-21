@@ -39,12 +39,6 @@ import com.huawei.unibi.molap.util.MolapDataProcessorLogEvent;
 import com.huawei.unibi.molap.util.MolapProperties;
 import com.huawei.unibi.molap.util.MolapUtil;
 
-/**
- * Project Name NSE V3R7C00 Module Name : Molap Data Processor Author K00900841
- * Created Date :21-May-2013 6:42:29 PM FileName
- * :MolapSortTempFileChunkHolder.java Class Description :
- * MolapSortTempFileChunkHolder class Version 1.0
- */
 public class MolapSortTempFileChunkHolder
 {
 
@@ -224,11 +218,6 @@ public class MolapSortTempFileChunkHolder
      */
     public void initialize() throws MolapSortKeyAndGroupByException
     {
-        // create reader stream
-        // stream = new DataInputStream( new BufferedInputStream(
-        // new FileInputStream(tempFile),this.fileBufferSize));
-        // read enrty count;
-
         prefetch = MolapCommonConstants.MOLAP_PREFETCH_IN_MERGE_VALUE;
         this.isSortTempFileCompressionEnabled = Boolean
                 .parseBoolean(MolapProperties
@@ -458,9 +447,6 @@ public class MolapSortTempFileChunkHolder
             
             
         byte[] byteArray = null;
-//        int readInt=0;
-//        MeasureAggregator aggregator = null;
-//        MeasureAggregator[] aggs = new MeasureAggregator[this.aggregator.length -1];
         try
         {
             for(int i=0; i<this.aggregator.length-1; i++)
@@ -570,7 +556,6 @@ public class MolapSortTempFileChunkHolder
             }
             catch (Exception e)
             {
-//                e.printStackTrace();
                 MOLAPCHUNKHOLDERLOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
             }
             return null;

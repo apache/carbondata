@@ -55,7 +55,7 @@ public class RealTimeDataPropertyReader
      * Months
      */
     public enum Months {
-//CHECKSTYLE:OFF    Approval No:Approval-
+    //CHECKSTYLE:OFF
         JAN(1), FEB(2), MAR(3), APR(4), MAY(5), JUN(6), JUL(7), AUG(8), SEP(9), OCT(10), NOV(11), DEC(12);
         
         private int value;
@@ -75,14 +75,14 @@ public class RealTimeDataPropertyReader
      * Days
      */
     public enum Days {
-//CHECKSTYLE:OFF    Approval No:Approval-
+    //CHECKSTYLE:OFF
         ONE(1), TWO(2), THREE(3), FOUR(4), FIVE(5), SIX(6), SEVEN(7), EIGHT(8), NINE(
                 9), TEN(10), ELEVEN(11), TWELVE(12), THIRTEEN(13), FOURTEEN(14), FIFTEEN(
                 15), SIXTEEN(16), SEVENTEEN(17), EIGHTEEN(18), NINTEEN(19), TWENTY(
                 20), TEWENTYONE(21), TWENTYTWO(22), TWENTYTHREE(23), TWENTYFOUR(
                 24), TWENTYFIVE(25), TWENTYSIX(26), TWENTYSEVEN(27), TWENTYEIGHT(
                 28), TWENTYNINE(29), THIRTY(30), THIRTYONE(31);
-//CHECKSTYLE:ON
+    //CHECKSTYLE:ON
         /**
          * 
          */
@@ -132,11 +132,6 @@ public class RealTimeDataPropertyReader
         updateMap(schemandCubeName,columnAndMemberListaMap,levelTypeColumnMap,levelAndCardinalityMap);
     }
 
-    /**
-     * @throws IOException 
-     * 
-     * 
-     */
     private void updateMap(String schemandCubeName,Map<String, Set<String>> columnAndMemberListaMap,Map<String, String> levelTypeColumnMap, Map<String, Integer> levelAndCardinalityMap)
     {
         File realTimeDataFile = new File(MolapCommonConstants.MOLAP_REALTIMEDATA_FILE);
@@ -203,12 +198,6 @@ public class RealTimeDataPropertyReader
         
     }
 
-    /**
-     * 
-     * @param realTimeDataFile
-     * @param set 
-     * 
-     */
     private void updateYearMap(File realTimeDataFile, String preKey, Set<String> set, int cardinality)
     {
        preKey = preKey + "YEAR";
@@ -219,13 +208,6 @@ public class RealTimeDataPropertyReader
        
     }
 
-    /**
-     * 
-     * @param yearData
-     * @param preKey
-     * @param set 
-     * 
-     */
     private void sortAndUpdateYearMap(List<String> yearData, String preKey, Set<String> set, int cardinality)
     {
         Map<Integer, String> localYearMap = new TreeMap<Integer, String>();
@@ -261,13 +243,6 @@ public class RealTimeDataPropertyReader
         }
     }
 
-    /**
-     * 
-     * @param realTimeDataFile
-     * @param preKey
-     * @param set 
-     * 
-     */
     private List<String> readPropertiesFileAndRrtursYearsList(File realTimeDataFile,
             String preKey)
     {
@@ -319,14 +294,6 @@ public class RealTimeDataPropertyReader
       return yearsData;
     }
 
-    /**
-     * 
-     * @param propFile
-     * @param set 
-     * @param cubeName 
-     * @param schemaName 
-     * 
-     */
     private void updateMonthMap(Properties propFile, String preKey, Set<String> set, int cardinality)
     {
         Months[] monthValues = Months.values();
@@ -346,12 +313,6 @@ public class RealTimeDataPropertyReader
         }
     }
 
-    /**
-     * 
-     * @param months
-     * @param value
-     * 
-     */
     private void updateMonthMap(Months months, String value)
     {
         if(null == value)
@@ -414,12 +375,6 @@ public class RealTimeDataPropertyReader
 
     }
 
-    /**
-     * 
-     * @param propFile
-     * @param set 
-     * 
-     */
     private void updateDayMap(Properties propFile, String preKey, Set<String> set, int cardinality)
     {
         Days[] dayValues = Days.values();
@@ -618,10 +573,6 @@ public class RealTimeDataPropertyReader
         return dayMap;
     }
 
-  /**
- * @param memberVal
- * @return
- */
 public static String getMappedDayMemberVal(Integer memberVal)
   {
       Days[] values = Days.values();
@@ -635,10 +586,6 @@ public static String getMappedDayMemberVal(Integer memberVal)
       return null;
   }
   
-  /**
- * @param memberVal
- * @return
- */
 public static String getMappedMonthMemberVal(Integer memberVal)
   {
       Months[] values = Months.values();

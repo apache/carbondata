@@ -36,9 +36,6 @@ public class GlobalSurrogateGeneratorInfo {
 
 	private CubeDimension[] cubeDimensions;
 
-	/**
-	 * 
-	 */
 	private String partiontionColumnName;
 
 	public String getCubeName() {

@@ -28,9 +28,6 @@ import java.util.List;
 public class DataProcessTaskStatus implements IDataProcessStatus, Serializable
 {
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = 1L;
 
     /**
@@ -63,34 +60,16 @@ public class DataProcessTaskStatus implements IDataProcessStatus, Serializable
      */
     private int taskType;
 
-    /**
-     * 
-     */
     private String schemaName;
 
-    /**
-     * 
-     */
     private String cubeName;
 
-    /**
-     * 
-     */
     private String tableName;
 
-    /**
-     * 
-     */
     private String newSchemaFilePath;
 
-    /**
-     * 
-     */
     private String oldSchemaFilePath;
 
-    /**
-     * 
-     */
     private String csvFilePath;
     
     /**
@@ -98,9 +77,6 @@ public class DataProcessTaskStatus implements IDataProcessStatus, Serializable
      */
     private String dimCSVDirLoc;
 
-    /**
-     * 
-     */
     private String dimTables;
     
     private boolean isDirectLoad;
@@ -220,45 +196,23 @@ public class DataProcessTaskStatus implements IDataProcessStatus, Serializable
         this.desc = desc;
     }
 
-    /**
-     * 
-     * @see com.huawei.unibi.platform.api.dataloader.IDataLoaderStatus#getId()
-     * 
-     */
     @Override
     public String getKey()
     {
         return key;
     }
 
-    /**
-     * 
-     * @see com.huawei.unibi.platform.api.dataloader.IDataLoaderStatus#getStatus()
-     * 
-     */
     @Override
     public String getStatus()
     {
         return status;
     }
 
-    /**
-     * 
-     * @param key
-     *            The key to set.
-     * 
-     */
     public void setKey(String key)
     {
         this.key = key;
     }
 
-    /**
-     * 
-     * @param status
-     *            The status to set.
-     * 
-     */
     public void setStatus(String status)
     {
         this.status = status;
@@ -275,28 +229,16 @@ public class DataProcessTaskStatus implements IDataProcessStatus, Serializable
     }
 
 
-    /**
-     * @return the createdTime
-     */
     public Timestamp getCreatedTime()
     {
         return createdTime;
     }
 
-    /**
-     * @param createdTime
-     *            the createdTime to set
-     */
     public void setCreatedTime(Timestamp createdTime)
     {
         this.createdTime = createdTime;
     }
 
-    /**
-     * 
-     * @return Returns the taskType.
-     * 
-     */
     public int getTaskType()
     {
         return taskType;
@@ -307,85 +249,51 @@ public class DataProcessTaskStatus implements IDataProcessStatus, Serializable
         this.taskType = taskType;
     }
 
-    /**
-     * @return the oldSchemaFilePath
-     */
     public String getOldSchemaFilePath()
     {
         return oldSchemaFilePath;
     }
 
-    /**
-     * @param oldSchemaFilePath
-     *            the oldSchemaFilePath to set
-     */
     public void setOldSchemaFilePath(String oldSchemaFilePath)
     {
         this.oldSchemaFilePath = oldSchemaFilePath;
     }
 
-    /**
-     * @return the newSchemaFilePath
-     */
     public String getNewSchemaFilePath()
     {
         return newSchemaFilePath;
     }
 
-    /**
-     * @param newSchemaFilePath
-     *            the newSchemaFilePath to set
-     */
     public void setNewSchemaFilePath(String newSchemaFilePath)
     {
         this.newSchemaFilePath = newSchemaFilePath;
     }
 
-    /**
-     * @return the csvFilePath
-     */
     public String getCsvFilePath()
     {
         return csvFilePath;
     }
 
-    /**
-     * @param csvFilePath
-     *            the csvFilePath to set
-     */
     public void setCsvFilePath(String csvFilePath)
     {
         this.csvFilePath = csvFilePath;
     }
 
-    /**
-     * @return the dimTables
-     */
     public String getDimTables()
     {
         return dimTables;
     }
 
-    /**
-     * @param dimTables
-     *            the dimTables to set
-     */
     public void setDimTables(String dimTables)
     {
         this.dimTables = dimTables;
     }
 
-    /**
-     * @return the isFromPathApi
-     */
     public boolean isFromPathApi()
     {
         return isFromPathApi;
     }
 
-    /**
-     * @param isFromPathApi the isFromPathApi to set
-     */
     public void setFromPathApi(boolean isFromPathApi)
     {
         this.isFromPathApi = isFromPathApi;
@@ -393,7 +301,6 @@ public class DataProcessTaskStatus implements IDataProcessStatus, Serializable
     
     /**
      * to make a copy
-     * @return
      */
     public IDataProcessStatus makeCopy()
     {

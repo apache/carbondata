@@ -23,15 +23,6 @@ import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.step.BaseStepData;
 import org.pentaho.di.trans.step.StepDataInterface;
 
-/**
- * Project Name NSE V3R7C00 
- * Module Name : MOLAP
- * Author :C00900810
- * Created Date :24-Jun-2013
- * FileName : MolapSliceMergerStepData.java
- * Class Description : 
- * Version 1.0
- */
 public class MolapSliceMergerStepData extends BaseStepData implements
         StepDataInterface
 {
@@ -50,10 +41,6 @@ public class MolapSliceMergerStepData extends BaseStepData implements
         this.outputRowMeta = outputRowMeta;
     }
 
-    /**
-     * MolapSliceMergerStepData
-     * 
-     */
     public MolapSliceMergerStepData()
     {
         super();

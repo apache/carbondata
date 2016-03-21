@@ -17,18 +17,8 @@
  * under the License.
  */
 
-/**
-f * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2014
- * =====================================
-*/
 package com.huawei.unibi.molap.merger.step.autoaggregate;
 
-//import org.apache.log4j.Logger;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
@@ -56,16 +46,6 @@ import com.huawei.unibi.molap.util.MolapProperties;
 import com.huawei.unibi.molap.util.MolapUtil;
 import com.huawei.unibi.molap.util.MolapUtilException;
 
-/**
- * 
- * Project Name NSE V3R7C00 
- * Module Name : Molap Data Processor
- * Author K00900841
- * Created Date :21-May-2013 6:42:29 PM
- * FileName : MolapDataWriterStep.java
- * Class Description : ETL Step class for merging the slice 
- * Version 1.0
- */
 public class MolapAutoAggregateSliceMergerStep extends BaseStep
 {
 
@@ -228,15 +208,8 @@ public class MolapAutoAggregateSliceMergerStep extends BaseStep
                 renameLoadFolderFromInProgressToNormal(meta.getSchemaName()
                         + File.separator + meta.getCubeName(), tableNames[i],
                         isDimFileRenameRequired);
-//                {
-//                	MolapDataProcessorUtil.renameBadRecordsFromInProgressToNormal(meta.getSchemaName()
-//                            + File.separator + meta.getCubeName());
-//                }
-//                else
-//                {
                 	MolapDataProcessorUtil.renameBadRecordsFromInProgressToNormal(meta.getSchemaName()
                             + File.separator + meta.getCubeName());
-//                }
             }
 
         }
@@ -245,62 +218,6 @@ public class MolapAutoAggregateSliceMergerStep extends BaseStep
             throw new KettleException(e);
         }
     }
-
-//    /**
-//     * This method will be used to get the base store location 
-//     * 
-//     * @return base store location
-//     * @throws SliceMergerException 
-//     *
-//     */
-//    private void sendLoadSignal(String tableName) throws SliceMergerException
-//    {
-////        boolean sendLoad = Boolean
-////                .parseBoolean(System
-////                        .getProperty(
-////                                MolapCommonConstants.MOLAP_SEND_LOAD_SIGNAL_TO_ENGINE,
-////                                MolapCommonConstants.MOLAP_SEND_LOAD_SIGNAL_TO_ENGINE_DEFAULTVALUE));
-////        
-////        if(!sendLoad)
-////        {
-////            return;
-////        }
-//        String inputStoreLocation = meta.getSchemaName()+File.separator+meta.getCubeName();
-//        // get the base store location
-//        String baseStorelocation = MolapProperties.getInstance().getProperty(MolapCommonConstants.STORE_LOCATION,
-//                MolapCommonConstants.STORE_LOCATION_DEFAULT_VAL)
-//                + File.separator + inputStoreLocation;
-//        int restructFolderNumber = MolapUtil.checkAndReturnNextRestructFolderNumber(baseStorelocation);
-//        if(restructFolderNumber < 0)
-//        {
-//            return;
-//        }
-//        baseStorelocation = baseStorelocation + File.separator + MolapCommonConstants.RESTRUCTRE_FOLDER
-//                + restructFolderNumber + File.separator + tableName;
-//        int counter = MolapUtil.checkAndReturnNextFolderNumber(baseStorelocation);
-//        if(counter < 0 )
-//        {
-//            return;
-//        }
-//        File file = new File(baseStorelocation);
-//        try
-//        {
-//            LOGGER.info(
-//                    MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-//                    "Sending load signal for Slice: " + file.getAbsolutePath()
-//                            + File.separator + MolapCommonConstants.LOAD_FOLDER
-//                            + (counter));
-//            MolapDataProcessorUtil.sendLoadSignalToEngine(file
-//                    .getAbsolutePath()
-//                    + File.separator
-//                    + MolapCommonConstants.LOAD_FOLDER + (counter));
-//        }
-//        catch(MolapDataProcessorException e)
-//        {
-//            throw new SliceMergerException(
-//                    "Problem while seding signal to engine", e);
-//        }
-//    }
 
     private void deleteCheckPointFiles(final String tableName)
     {
@@ -359,115 +276,6 @@ public class MolapAutoAggregateSliceMergerStep extends BaseStep
     /**
      * 
      * @param storeLocation
-     * 
-     */
-//    private void renameBadRecordsFromInProgressToNormal(String storeLocation)
-//    {
-//        // get the base store location
-//        String badLogStoreLocation = MolapProperties.getInstance().getProperty(
-//                MolapCommonConstants.MOLAP_BADRECORDS_LOC);
-//        badLogStoreLocation = badLogStoreLocation + File.separator
-//                + storeLocation;
-//        
-////        File badRecordFolder = new File(badLogStoreLocation);
-//        
-////        if(!badRecordFolder.exists())
-////        {
-////            return;
-////        }
-//        FileType fileType = FileFactory.getFileType(badLogStoreLocation);
-//		try {
-//			if (!FileFactory.isFileExist(badLogStoreLocation,
-//					fileType)) {
-//				return;
-//			}
-//		} catch (IOException e1) {
-//			LOGGER.info(
-//					MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-//					"bad record folder does not exist");
-//		}
-//		MolapFile molapFile = null;
-//      if(fileType == FileFactory.FileType.HDFS)
-//      {
-//             molapFile = new HDFSMolapFile(badLogStoreLocation) ;
-//             molapFile.mkdirs();
-//      }
-//      else
-//      {
-//          molapFile = new LocalMolapFile(badLogStoreLocation) ;
-//          molapFile.mkdirs();
-//      }
-//      
-//      MolapFile[] listFiles = molapFile.listFiles(new MolapFileFilter()
-//      {
-//          @Override
-//          public boolean accept(MolapFile pathname)
-//          {
-//        	  if(pathname.getName().indexOf(MolapCommonConstants.FILE_INPROGRESS_STATUS) > -1)
-//                {
-//                    return true;
-//                }
-//                return false;
-//          }
-//      });
-//      
-////        File[] listFiles = badRecordFolder.listFiles(new FileFilter()
-////        {
-////            
-////            @Override
-////            public boolean accept(File pathname)
-////            {
-////                if(pathname.getName().indexOf(MolapCommonConstants.FILE_INPROGRESS_STATUS) > -1)
-////                {
-////                    return true;
-////                }
-////                return false;
-////            }
-////        });
-//        String badRecordsInProgressFileName= null;
-//        String changedFileName= null;
-//      //CHECKSTYLE:OFF    Approval No:Approval-367
-//        for(MolapFile badFiles : listFiles)
-//        {
-//          //CHECKSTYLE:ON
-//            badRecordsInProgressFileName = badFiles.getName();
-//            
-//            changedFileName = badRecordsInProgressFileName.substring(0,
-//                    badRecordsInProgressFileName.lastIndexOf('.'));
-////CHECKSTYLE:OFF    Approval No:Approval-396            
-//            try
-//            {//CHECKSTYLE:ON
-//                SimpleFileEncryptor.encryptFile(badLogStoreLocation  + File.separator + badRecordsInProgressFileName, badLogStoreLocation + File.separator + changedFileName);
-//            }
-//            catch(CipherException e)
-//            {
-//                LOGGER.error(
-//                        MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-//                        "Unable to decrypt File : " + badFiles.getName());
-//            }
-//            catch(IOException e)
-//            {
-//                LOGGER.error(
-//                        MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-//                        "Unable to Read File : " + badFiles.getName());
-//            }
-//            
-//          
-//            if(badFiles.exists())
-//            {
-//                if(!badFiles.delete())
-//                {
-//                    LOGGER.error(
-//                            MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-//                            "Unable to delete File : " + badFiles.getName());
-//                }
-//            }
-//        }
-//    }
-
-    /**
-     * 
-     * @param storeLocation
      * @throws SliceMergerException 
      * 
      */
@@ -479,8 +287,7 @@ public class MolapAutoAggregateSliceMergerStep extends BaseStep
                 MolapCommonConstants.STORE_LOCATION_DEFAULT_VAL)
                 + File.separator + storeLocation;
         
-        int rsCount = meta.getCurrentRestructNumber()/*MolapUtil
-                .checkAndReturnNextRestructFolderNumber(baseStorelocation,"RS_")*/;
+        int rsCount = meta.getCurrentRestructNumber();
         if(rsCount<0) 
         {
         	return false;

@@ -39,16 +39,6 @@ import com.huawei.iweb.platform.logging.LogService;
 import com.huawei.iweb.platform.logging.LogServiceFactory;
 import com.huawei.unibi.molap.util.MolapDataProcessorLogEvent;
 
-/**
- * 
- * Project Name NSE V3R7C00 
- * Module Name : Molap Data Processor 
- * Author K00900841
- * Created Date :21-May-2013 6:42:29 PM 
- * FileName :CsvReader.java 
- * Class Description :CsvReader 
- * Version 1.0
- */
 public class CsvReader extends CsvInput
 {
 
@@ -149,71 +139,6 @@ public class CsvReader extends CsvInput
     @Override
     protected boolean openNextFile() throws KettleException
     {
-//        if(CheckPointHanlder.IS_CHECK_POINT_NEEDED)
-//        {
-//            try
-//            {
-//                if (data.fc!=null) {
-//                    data.fc.close();
-//                }
-//                
-//                if (data.fis!=null) {
-//                    data.fis.close();
-//                }
-//                
-//                if(data.bufferedInputStream != null)
-//                {
-//                    data.bufferedInputStream.close();
-//                }
-//                
-//            }
-//            catch(IOException e)
-//            {
-//                LOGGER.error(
-//                        MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-//                        "Not able to close the output stream");
-//                throw new KettleException();
-//            }
-//            
-//            if(data.filenr > 0)
-//            {
-//                File inprogressFile = new File(data.filenames[data.filenr-1]);
-//                
-//                String inprogressFileName = inprogressFile.getName();
-//                String normalFileName = inprogressFileName.substring(0, inprogressFileName.lastIndexOf('.'));
-//                normalFileName = normalFileName + MolapCommonConstants.DONE_EXT;
-//                File doneFile = new File(inprogressFile.getParent() + File.separator + normalFileName);
-//                if(!inprogressFile.renameTo(doneFile))
-//                {
-//                    LOGGER.error(
-//                            MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-//                            "Not ale to rename the source csv files");
-//                }
-//            }
-//            if(data.filenr < data.filenames.length)
-//            {
-//                String csvFileName = data.filenames[data.filenr];
-//                String inProgresscsvFileName = null;
-//                if(!csvFileName.endsWith(MolapCommonConstants.FILE_INPROGRESS_STATUS))
-//                {
-//                    inProgresscsvFileName = csvFileName + MolapCommonConstants.FILE_INPROGRESS_STATUS;
-//                    File csvFile = new File(csvFileName);
-//                    File inProgressFile = new File(inProgresscsvFileName);
-//                    if(!csvFile.renameTo(inProgressFile))
-//                    {
-//                        LOGGER.error(
-//                                MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-//                                "Unable to rename source csv files from .csv to inprogress extension.");
-//                    }
-//                    
-//                }
-//                else
-//                {
-//                    inProgresscsvFileName = csvFileName;
-//                }
-//                data.filenames[data.filenr] = inProgresscsvFileName;
-//            }
-//        }
         data.totalBytesFilesFinished = 0;
         return super.openNextFile();
     }
@@ -246,11 +171,6 @@ public class CsvReader extends CsvInput
         }
     }
     
-    /**
-     * 
-     * @see org.pentaho.di.trans.steps.csvinput.CsvInput#dispose(org.pentaho.di.trans.step.StepMetaInterface, org.pentaho.di.trans.step.StepDataInterface)
-     * 
-     */
     @Override
     public void dispose(StepMetaInterface smi, StepDataInterface sdi)
     {
@@ -260,7 +180,6 @@ public class CsvReader extends CsvInput
             return;
         }
             
-//        meta = (CsvReaderMeta)smi;
         meta = null;
         super.dispose(smi, sdi);
     }

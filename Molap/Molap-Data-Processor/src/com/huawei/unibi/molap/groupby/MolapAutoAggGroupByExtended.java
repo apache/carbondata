@@ -17,26 +17,8 @@
  * under the License.
  */
 
-/**
- * Project Name NSE V3R8C10 
- * Module Name : MOLAP Data Processor
- * Author :k00900841 
- * Created Date:10-Aug-2014
- * FileName : MolapAutoAggGroupBy.java
- * Class Description : Group by class to aggregate the measure value based on mdkey 
- * Class Version 1.0
- */
 package com.huawei.unibi.molap.groupby;
 
-/**
- * Project Name NSE V3R8C10 
- * Module Name : MOLAP Data Processor
- * Author :k00900841 
- * Created Date:10-Aug-2014
- * FileName : MolapAutoAggGroupByExtended.java
- * Class Description : Group by class to aggregate the measure value based on mdkey 
- * Class Version 1.0
- */
 public class MolapAutoAggGroupByExtended extends MolapAutoAggGroupBy
 {
     
@@ -79,8 +61,7 @@ public class MolapAutoAggGroupByExtended extends MolapAutoAggGroupBy
      * This method will be used to update the measure value based on aggregator
      * type
      * 
-     * @param row
-     *            row
+     * @param row row
      * 
      */
     protected void updateMeasureValue(Object[] row)

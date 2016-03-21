@@ -28,15 +28,6 @@ import com.huawei.unibi.molap.sortandgroupby.exception.MolapSortKeyAndGroupByExc
 import com.huawei.unibi.molap.util.MolapUtil;
 import com.huawei.unibi.molap.util.RemoveDictionaryUtil;
 
-/**
- * Project Name 	: Carbon 
- * Module Name 		: MOLAP Data Processor
- * Author 			: Suprith T 72079 
- * Created Date 	: 18-Aug-2015
- * FileName 		: UnCompressedTempSortFileWriter.java
- * Description 		: Class for writing the uncompressed sort temp file
- * Class Version 	: 1.0
- */
 public class UnCompressedTempSortFileWriter extends AbstractTempSortFileWriter
 {
 
@@ -61,7 +52,6 @@ public class UnCompressedTempSortFileWriter extends AbstractTempSortFileWriter
     {
         ByteArrayOutputStream blockDataArray = null;
         DataOutputStream dataOutputStream = null;
-//        Object[] row = null;
         int totalSize = 0;
         int recordSize = 0;
         try
@@ -90,13 +80,6 @@ public class UnCompressedTempSortFileWriter extends AbstractTempSortFileWriter
         }
     }
 
-	/**
-	 * @param records
-	 * @param dataOutputStream
-	 * @param dimensionCount 
-	 * @param measureCount 
-	 * @throws IOException
-	 */
 	public static void writeDataOutputStream(Object[][] records,
 			DataOutputStream dataOutputStream, int measureCount, int dimensionCount,int highCardinalityCount, int complexDimensionCount) throws IOException
 	{

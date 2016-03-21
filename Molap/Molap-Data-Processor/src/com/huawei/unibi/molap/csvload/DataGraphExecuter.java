@@ -69,15 +69,6 @@ import com.huawei.unibi.molap.util.MolapDataProcessorLogEvent;
 import com.huawei.unibi.molap.util.MolapProperties;
 import com.huawei.unibi.molap.util.MolapSchemaParser;
 
-/**
- * Project Name NSE V3R7C00 
- * Module Name : MOLAP
- * Author :C00900810
- * Created Date :11-Jul-2013
- * FileName : DataGraphExecuter.java
- * Class Description : 
- * Version 1.0
- */
 public class DataGraphExecuter
 {
     /**
@@ -159,11 +150,9 @@ public class DataGraphExecuter
     /**
      * 
      * This method returns the Columns names for the dimension only from the schema.
-     * @param cube 
-     * @param schema 
+     * @param schema
      * 
      * @param schemaInfo
-     * @param tableName
      * @return column names array.
      * 
      */
@@ -232,9 +221,6 @@ public class DataGraphExecuter
     public void executeGraph(String graphFilePath, List<String> measureColumns,SchemaInfo schemaInfo,String partitionId, Schema schema) throws DataLoadingException
     {
         
-        //Change the .progress Files present to the notmal csv File.
-//        changeFileExtension();
-		//Sourcemonitor Fix
         //This Method will validate the both fact and dimension csv files.
     	if(!schemaInfo.isAutoAggregateRequest())
     	{
@@ -242,37 +228,16 @@ public class DataGraphExecuter
     	}
         execute(graphFilePath, measureColumns, schemaInfo);
     }
-    /**
-     * executeGraph which generate the kettle graph
-     * 
-     * @param graphFile
-     * @throws DataLoadingException
-     */
-
-    public void executeGraph(String graphFilePath, List<String> measureColumns,SchemaInfo schemaInfo) throws DataLoadingException
-    {
-        
-        //Change the .progress Files present to the notmal csv File.
-//        changeFileExtension();
-		//Sourcemonitor Fix
-        //This Method will validate the both fact and dimension csv files.
-        validateCSVFiles(schemaInfo,null, null);
-        execute(graphFilePath, measureColumns, schemaInfo);
-    }
 
     /**
      * executeGraph which generate the kettle graph
      * 
-     * @param graphFile
      * @throws DataLoadingException
      */
 
     private void execute(String graphFilePath, List<String> measureColumns,SchemaInfo schemaInfo) throws DataLoadingException
     {
         
-        //Change the .progress Files present to the notmal csv File.
-//        changeFileExtension();
-        //Sourcemonitor Fix
         //This Method will validate the both fact and dimension csv files.
     	
     	isCheckPointNeeded(graphFilePath, schemaInfo);
@@ -358,15 +323,7 @@ public class DataGraphExecuter
             throw new DataLoadingException(
                     "Unable to start execution of graph ", e);
         }
-//        finally
-//        {
-//            if(schemaInfo.isAutoAggregateRequest())
-//            {
-//                InMemoryCubeStore.getInstance().removeFromDataLoaderMap(schemaInfo.getSchemaName()+'_'+schemaInfo.getCubeName());
-//            }
-//        }
 
-        
         //Don't change the logic of creating key
         String key = model.getSchemaName()+'/'+model.getCubeName()+'_'+model.getTableName();
                 
@@ -551,8 +508,6 @@ public class DataGraphExecuter
 						files[i++] = file;
 					}
 		        	stepMetaInterface.setFileName(files);
-//		        	stepMetaInterface.setIncludeSubFolders(new String[files.length]);
-//		            stepMetaInterface.setExcludeFileMask(new String[files.length]);
 		        }
 		        break;
 		    }
@@ -654,26 +609,10 @@ public class DataGraphExecuter
     private void setGraphLogLevel()
     {
         trans.setLogLevel(LogLevel.NOTHING);
-        // boolean isLogEnabled = Boolean
-        // .valueOf(MolapProperties
-        // .getInstance()
-        // .getProperty(
-        // MolapCommonConstants.IS_DATA_LOAD_LOG_ENABLED,
-        // MolapCommonConstants.IS_DATA_LOAD_LOG_ENABLED_DEFAULT_VALUE));
-        // if(isLogEnabled)
-        // {
-        // trans.setLogLevel(LogLevel.BASIC);
-        // }
-        // else
-        // {
-        // trans.setLogLevel(LogLevel.NOTHING);
-        // }
     }
     
     /**
      * This will be used to get the sort temp location
-     * @param storeLocation
-     * @param instance
      */
     private String getCheckPointFileLocation(String schemaName, String cubeName)
     {
@@ -843,7 +782,6 @@ public class DataGraphExecuter
 	                                partitionId, schema, model.getCsvDelimiter());
 						}
 					} catch (IOException e) {
-						// TODO Auto-generated catch block
 						LOGGER.error(
 		                        MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
 		                        e, "Error while checking file exists" + file);
@@ -930,10 +868,8 @@ public class DataGraphExecuter
     /**
      * 
      * Validate the dimension csv files.
-     * @param cube 
-     * @param schema 
+     * @param schema
      * @param schemaInfo
-     * @param tableName
      * @param dimFile
      * @throws DataLoadingException 
      * 
@@ -978,8 +914,6 @@ public class DataGraphExecuter
     /**
      * Check All the columns are present in the CSV File
      * 
-     * @param schemaInfo
-     * @param tableName
      * @param dimFilePath
      * @return
      * 
@@ -991,11 +925,6 @@ public class DataGraphExecuter
 
     /**
      * Check the dimension csv file is having all the dimension.
-     * 
-     * @param schemaInfo
-     * @param tableName
-     * @param absolutePath
-     * @return
      * 
      */
     private boolean checkDimHeaderExist(String []columnNames, String dimFilePath, String delimiter)

@@ -102,13 +102,6 @@ public class HierarchyValueWriter
         return bufferedOutStream;
     }
 
-    /**
-     * 
-     * @param storeFolderLocation 
-     * @param list 
-     * @param trim
-     * 
-     */
     public HierarchyValueWriter(String hierarchy, String storeFolderLocation)
     {
         this.hierarchyName = hierarchy;
@@ -116,18 +109,12 @@ public class HierarchyValueWriter
     }
     
     
-    /**
-     * @param bytes
-     * @throws KettleException
-     */
     public void writeIntoHierarchyFile(byte[] bytes) throws KettleException
     {
             File f = new File(storeFolderLocation + File.separator + hierarchyName);
 
             FileOutputStream fos = null;
 
-            // ByteBuffer buffer = ByteBuffer.allocate(bytes.length);
-            // buffer.put(bytes);
             boolean isFileCreated = false;
             if(!f.exists())
             {
@@ -138,10 +125,6 @@ public class HierarchyValueWriter
                 }
                 catch(IOException e)
                 {
-                    // TODO : logging 
-                    //closeStreamAndDeleteFile(f, bufferedOutStream,fos);
-                	// delete the file
-                                        
                     throw new KettleException("unable to create file", e);
                 }
                 if(!isFileCreated)
@@ -162,13 +145,11 @@ public class HierarchyValueWriter
             }
             catch(FileNotFoundException e)
             {
-                // TODO : logging 
                 closeStreamAndDeleteFile(f, bufferedOutStream,fos);
                 throw new KettleException("hierarchy mapping file not found", e);
             }
             catch(IOException e)
             {
-                // TODO : logging 
                 closeStreamAndDeleteFile(f, bufferedOutStream,fos);
                 throw new KettleException("Error while writting in the hierarchy mapping file", e);
             }
@@ -187,8 +168,6 @@ public class HierarchyValueWriter
                 }
                 catch(IOException e)
                 {
-                    // throw new KettleException("unable to close the stream",
-                    // e);
                     LOGGER.error(
                             MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                             e, "unable to close the stream ");

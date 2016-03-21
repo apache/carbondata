@@ -51,7 +51,6 @@ public class AggregateTableDerivativeComposite implements
 
 	@Override
 	public AggregateTableDerivative get(int i) {
-		// TODO Auto-generated method stub
 		return childrens.get(i);
 	}
 	public List<AggregateTableDerivative> getChildrens() {
@@ -59,7 +58,6 @@ public class AggregateTableDerivativeComposite implements
 	}
 	
 	public int length() {
-		// TODO Auto-generated method stub
 		return childrens.size();
 	}
 

@@ -22,15 +22,6 @@ package com.huawei.unibi.molap.schema.metadata;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Project Name NSE V3R7C00 
- * Module Name : MOLAP
- * Author :C00900810
- * Created Date :24-Jun-2013
- * FileName : AggregateTable.java
- * Class Description : 
- * Version 1.0
- */
 public class AggregateTable
 {
     
@@ -79,8 +70,6 @@ public class AggregateTable
      */
     private String[] aggregateClass;
 
-	//private String tableNameForAggr;
-	
 	private List<AggregateTable> dependentAggTables=new ArrayList<AggregateTable>(10);
     
 
@@ -224,9 +213,5 @@ public class AggregateTable
 	public void setAggColuName(String[] aggColuName) {
 		this.aggColuName = aggColuName;
 	}
-	/*public void setTableNameForAggregate(String tableNameForAggr) {
-		this.tableNameForAggr=tableNameForAggr;
-		
-	}*/
 
 }

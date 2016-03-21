@@ -39,16 +39,6 @@ import com.huawei.unibi.molap.util.MolapDataProcessorLogEvent;
 import com.huawei.unibi.molap.util.MolapUtil;
 import com.huawei.unibi.molap.util.MolapUtilException;
 
-/**
- * Project Name NSE V3R7C00 
- * Module Name : Molap Data Processor 
- * Author K00900841
- * Created Date :21-May-2013 6:42:29 PM 
- * FileName :IntermediateFileMerger.java
- * Class Description : Thread class to merge sorted intermediate files  
- * Version 1.0
- */
-
 public class IntermediateFileMerger implements Callable<Void>
 {
 
@@ -180,8 +170,6 @@ public class IntermediateFileMerger implements Callable<Void>
      * 
      * @param intermediateFiles
      *            intermediateFiles
-     * @param fileBufferSize
-     *            fileBufferSize
      * @param measureCount
      *            measureCount
      * @param mdKeyLength
@@ -224,10 +212,8 @@ public class IntermediateFileMerger implements Callable<Void>
         {
             startSorting();
             initialize();
-            //CHECKSTYLE:OFF    Approval No:Approval-367
             while(hasNext())
             {
-              //CHECKSTYLE:ON
                 writeDataTofile(next());
             }
             if(isSortTempFileCompressionEnabled || prefetch)
@@ -397,10 +383,8 @@ public class IntermediateFileMerger implements Callable<Void>
         FILEMERGERLOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                 "Started adding first record from each file");
         MolapSortTempFileChunkHolder molapSortTempFileChunkHolder = null;
-      //CHECKSTYLE:OFF    Approval No:Approval-367
         for(File tempFile : this.intermediateFiles)
         {
-          //CHECKSTYLE:ON
             // create chunk holder
             molapSortTempFileChunkHolder = new MolapSortTempFileChunkHolder(
                     tempFile, this.measureCount, this.mdKeyLength,
@@ -438,15 +422,11 @@ public class IntermediateFileMerger implements Callable<Void>
                         byte[] b1 = (byte[])r1.getRow()[mdKeyIndex];
                         byte[] b2 = (byte[])r2.getRow()[mdKeyIndex];
                         int cmp = 0;
-//                        int length = b1.length < b2.length ? b1.length
-//                                : b2.length;
 
                         for(int i = 0;i < mdKeyLength;i++)
                         {
-                          //CHECKSTYLE:OFF    Approval No:Approval-367
                             int a = b1[i] & 0xFF;
                             int b = b2[i] & 0xFF;
-                          //CHECKSTYLE:ON
                             cmp = a - b;
                             if(cmp != 0)
                             {
@@ -482,7 +462,6 @@ public class IntermediateFileMerger implements Callable<Void>
         return this.fileCounter > 0;
     }
     
-    //TODO SIMIAN
     /**
      * Below method will be used to write data to file
      * 
@@ -528,40 +507,6 @@ public class IntermediateFileMerger implements Callable<Void>
             {
                 stream.write((byte[])row[row.length - 1]);
             }
-            // write measure value first
-//            for(int m = 0;m < measureCount;m++)	
-//            {
-//                if(type[m]!='c')
-//                {
-//                    // check if row is null or not
-//                    if(null != row[m])
-//                    {
-//                        // if not null than write 1 byte with value 1 to
-//                        // check
-//                        // whether that measure value is null or not
-//                        stream.write(1);
-//                        // than write measure value
-//                        stream.writeDouble((Double)row[m]);
-//                    }
-//                    else
-//                    {
-//                        // other wise write 0 for null check
-//                        stream.write(0);
-//                        stream.writeDouble(0.0);
-//                    }
-//                }
-//                else
-//                {
-//                    stream.writeInt(((byte[])row[m]).length);
-//                    stream.write((byte[])row[m]);
-//                }
-//                // write mdkye
-//            }
-//            stream.write((byte[])row[this.mdKeyIndex]);
-//            if(this.isFactMdkeyInInputRow)
-//            {
-//                stream.write((byte[])row[row.length-1]);
-//            }
         }
         catch(IOException e)
         {

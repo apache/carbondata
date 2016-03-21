@@ -28,15 +28,6 @@ import com.huawei.unibi.molap.datastorage.store.compression.SnappyCompression.Sn
 import com.huawei.unibi.molap.sortandgroupby.exception.MolapSortKeyAndGroupByException;
 import com.huawei.unibi.molap.util.MolapUtil;
 
-/**
- * Project Name 	: Carbon 
- * Module Name 		: MOLAP Data Processor
- * Author 			: Suprith T 72079 
- * Created Date 	: 18-Aug-2015
- * FileName 		: CompressedTempSortFileWriter.java
- * Description 		: Class for writing the compressed sort temp file
- * Class Version 	: 1.0
- */
 public class CompressedTempSortFileWriter extends AbstractTempSortFileWriter
 {
 
@@ -61,7 +52,6 @@ public class CompressedTempSortFileWriter extends AbstractTempSortFileWriter
     {
     	DataOutputStream dataOutputStream = null;
         ByteArrayOutputStream blockDataArray = null;
-//        Object[] row = null;
         int totalSize = 0;
         int recordSize = 0;
         try
@@ -74,32 +64,6 @@ public class CompressedTempSortFileWriter extends AbstractTempSortFileWriter
             
             UnCompressedTempSortFileWriter.writeDataOutputStream(records, dataOutputStream, measureCount, dimensionCount, highCardinalityCount, complexDimensionCount);
             
-            /*for(int recordIndex = 0; recordIndex < records.length; recordIndex++)
-            {
-                row = records[recordIndex];
-                int fieldIndex = 0;
-                
-                for(int counter = 0; counter < dimensionCount; counter++)
-                {
-                	dataOutputStream.writeInt((Integer)row[fieldIndex++]);
-                }
-                
-                for(int counter = 0; counter < measureCount; counter++)
-                {
-                	if(null != row[fieldIndex])
-                    {
-                        dataOutputStream.write((byte)1);
-                        dataOutputStream.writeDouble((Double)row[fieldIndex]);
-                    }
-                    else
-                    {
-                        dataOutputStream.write((byte)0);
-                    }
-                	
-                	fieldIndex++;
-                }
-                
-            }*/
             stream.writeInt(records.length);
             byte[] byteArray = SnappyByteCompression.INSTANCE
                     .compress(blockDataArray.toByteArray());

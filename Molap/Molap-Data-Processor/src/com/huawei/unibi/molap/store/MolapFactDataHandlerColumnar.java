@@ -17,17 +17,6 @@
  * under the License.
  */
 
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2014
- * =====================================
- *
- */
 package com.huawei.unibi.molap.store;
 
 import java.io.File;
@@ -78,15 +67,6 @@ import com.huawei.unibi.molap.util.RemoveDictionaryUtil;
 import com.huawei.unibi.molap.util.ValueCompressionUtil;
 
 
-/**
- * Project Name NSE V3R8C10 
- * Module Name : MOLAP Data Processor
- * Author :k00900841 
- * Created Date:10-Aug-2014
- * FileName : MolapFactDataHandler.java
- * Class Description : Fact data handler class to handle the fact data .  
- * Class Version 1.0
- */
 public class MolapFactDataHandlerColumnar implements MolapFactHandler
 {
 
@@ -280,11 +260,6 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
      */
     private int[] maskedByte;
     
-    /**
-     * isDataWritingRequest
-     */
-//    private boolean isDataWritingRequest;
-    
     private  ExecutorService writerExecutorService;
     
     private int numberOfColumns;
@@ -299,9 +274,6 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
 
     private int highCardCount;
     
-//    private String[] aggregator;
- 
-    //TODO SIMIAN
     /**
      * MolapFactDataHandler cosntructor
      * @param schemaName
@@ -314,7 +286,6 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
      * @param aggregators
      * @param aggregatorClass
      * @param highCardCount 
-     * @param extension
      */
     public MolapFactDataHandlerColumnar(String schemaName, String cubeName,
             String tableName, boolean isGroupByEnabled, int measureCount,
@@ -392,7 +363,6 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
         this.factDimLens=factDimLens;
         this.highCardCount = highCardCount;
         this.isMergingRequestForCustomAgg=isMergingRequestForCustomAgg;
-//        this.isUpdateMemberRequest=isUpdateMemberRequest;
         this.dimLens=dimLens;
         
         boolean [] noDict = new boolean[dimLens.length+this.highCardCount];
@@ -428,8 +398,7 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
         isCompressedKeyBlock = Boolean
                 .parseBoolean(MolapCommonConstants.IS_COMPRESSED_KEYBLOCK_DEFAULTVALUE);
         
-//        this.isDataWritingRequest=isDataWritingRequest;
-       
+
         if(this.isGroupByEnabled && isDataWritingRequest && !isUpdateMemberRequest)
         {
             surrogateIndex = new int[aggLevels.length-highCardCount];
@@ -459,11 +428,7 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
      * This method will be used to get and update the step properties which will
      * required to run this step
      * 
-     * @param totalRowLength
-     *            total number of records in reacords
-     * @param mdkeyLength
-     *            lenght of mdkey
-     * @throws MolapDataWriterException 
+     * @throws MolapDataWriterException
      * 
      */
     public void initialise() throws MolapDataWriterException
@@ -572,29 +537,20 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
         for(int i = 0;i < customMeasureIndex.length;i++) 
         {
             b= (byte[])row[customMeasureIndex[i]];
-//            if(isUpdateMemberRequest)
-//            {
                 byteBuffer=ByteBuffer.allocate(b.length+MolapCommonConstants.INT_SIZE_IN_BYTE);
                 byteBuffer.putInt(b.length);
                 byteBuffer.put(b);
                 byteBuffer.flip();
                 b=byteBuffer.array();
-//            }
             dataHolder[customMeasureIndex[i]].setWritableByteArrayValueByIndex(
                     entryCount,b);
         }
-        // CHECKSTYLE:ON
         this.entryCount++;
         // if entry count reaches to leaf node size then we are ready to
         // write
         // this to leaf node file and update the intermediate files
         if(this.entryCount == this.leafNodeSize)
         {
-//            byte[][][] data = new byte[numberOfColumns][][];
-//            for(int i = 0;i < keyBlockHolder.length;i++)
-//            {
-//                data[i]=keyBlockHolder[i].getKeyBlock().clone();
-//            }
             byte[][] byteArrayValues = keyDataHolder.getByteArrayValues().clone();
             byte[][][] columnByteArrayValues = keyDataHolder.getColumnByteArrayValues().clone();
             //TODO need to handle high card also here
@@ -605,9 +561,7 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
             byte[] endKeyLocal=endKey;
             startKey= new byte[mdkeyLength];
             endKey= new byte[mdkeyLength];
-//            writerExecutorService.submit(new DataWriterThread(byteArrayValues,writableMeasureDataArray,entryCountLocal,startKeyLocal,endKeyLocal));
             writerExecutorService.submit(new DataWriterThread(byteArrayValues,writableMeasureDataArray,columnByteArrayValues,entryCountLocal,startKeyLocal,endKeyLocal));
-//            writeDataToFile(data,writableMeasureDataArray,entryCount,startKey,endKey);
             // set the entry count to zero
             processedDataCount+=entryCount;
             LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, "*******************************************Number Of records processed: "+processedDataCount);
@@ -618,73 +572,11 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
         }
     }
 
-//    private void writeDataToFile(byte[][] data,
-//            byte[][] dataHolderLocal, int entryCountLocal,
-//            byte[] startkeyLocal, byte[] endKeyLocal)
-//            throws MolapDataWriterException
-//    {
-//        ExecutorService executorService= Executors.newFixedThreadPool(5);
-//        List<Future<IndexStorage>> submit = new ArrayList<Future<IndexStorage>>(numberOfColumns);
-//        byte[][][] columnsData = new byte[numberOfColumns][data.length][];
-//        for(int i = 0;i < data.length;i++)
-//        {
-//            byte[][] splitKey = columnarSplitter.splitKey(data[i]);
-//            for(int j = 0;j < splitKey.length;j++)
-//            {
-//                columnsData[j][i]=splitKey[j];
-//            }
-//        }
-//        for(int i = 0;i < numberOfColumns;i++)
-//        {
-//            submit.add(executorService.submit(new BlockSortThread(i,columnsData[i])));
-//        }
-//        executorService.shutdown();
-//        try
-//        {
-//            executorService.awaitTermination(1, TimeUnit.DAYS);
-//        }
-//        catch(InterruptedException ex) 
-//        { 
-//            // TODO Auto-generated catch block
-//         //   e.printStackTrace();
-//            LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, ex, ex.getMessage());
-//        }
-//        IndexStorage[] blockStorage = new IndexStorage[numberOfColumns];
-//        try
-//        {
-//            for(int i = 0;i < blockStorage.length;i++)
-//            {
-//                blockStorage[i]=submit.get(i).get();
-//            }
-//        }
-//        catch(Exception exception) 
-//        {
-//            // TODO Auto-generated catch block
-////            e.printStackTrace();
-//        	 LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, exception, exception.getMessage());
-//        }
-//        synchronized(lock)
-//        {
-//            this.dataWriter.writeDataToFile(
-//                    blockStorage,
-//                    dataHolderLocal,
-//                    entryCountLocal, startkeyLocal, endKeyLocal);
-//        }
-//    }
-    
     private void writeDataToFile(byte[][] data,
     		byte[][] dataHolderLocal, byte[][][] columnData, int entryCountLocal,
     		byte[] startkeyLocal, byte[] endKeyLocal)
     				throws MolapDataWriterException
     				{
-//    	for(int i = 0;i < data.length;i++)
-//    	{
-//    		byte[][] splitKey = columnarSplitter.splitKey(data[i]);
-//    		for(int j = 0;j < splitKey.length;j++)
-//    		{
-//    			columnsData[j][i]=splitKey[j];
-//    		}
-//    	}
     	int allColsCount = getColsCount();
     	List<ArrayList<byte[]>> colsAndValues = new ArrayList<ArrayList<byte[]>>();
         for(int i=0;i<allColsCount;i++)
@@ -718,11 +610,7 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
         	}
         }
         
-//    	for(int i = 0;i < numberOfColumns;i++)
-//    	{
-//    		submit.add(executorService.submit(new BlockSortThread(i,columnsData[i])));
-//    	}
-        
+
         ExecutorService executorService= Executors.newFixedThreadPool(5);
         List<Future<IndexStorage>> submit = new ArrayList<Future<IndexStorage>>(allColsCount);
         int l=0;
@@ -810,7 +698,6 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
         @Override
         public IndexStorage call() throws Exception
         {
-//            writeDataToFile(this.data,dataHolderLocal, entryCountLocal,startkeyLocal,endKeyLocal);
             writeDataToFile(this.data,dataHolderLocal,columnData, entryCountLocal,startkeyLocal,endKeyLocal);
             return null;
         }
@@ -858,52 +745,11 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
      */
     public void finish() throws MolapDataWriterException
     {
-//        if(isGroupByEnabled && !this.isUpdateMemberRequest)
-//        {
-//            try
-//            {
-//                this.groupBy
-//                        .initiateReading(this.storeLocation, this.tableName);
-//                setWritingConfiguration(this.keyGenerator.getKeySizeInBytes());
-//                //CHECKSTYLE:OFF    Approval No:Approval-V3R8C00_018
-//                Object[] rowObj= null;
-//                while(this.groupBy.hasNext())
-//                { //CHECKSTYLE:ON
-//                    rowObj = this.groupBy.next(); 
-//                    if(isDataWritingRequest)
-//                    {
-//                        rowObj[mdKeyIndex]=getAggregateTableMdkey((byte[])rowObj[mdKeyIndex]);
-//                    }
-//                    addToStore(rowObj);
-//                }
-//            }
-//            catch(MolapGroupByException e)
-//            {
-//                throw new MolapDataWriterException(
-//                        "Problem while doing the groupby", e);
-//            }
-//            finally
-//            {
-//                try
-//                {
-//                    this.groupBy.finish();
-//                }
-//                catch(MolapGroupByException e)
-//                {
-//                    LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, "Problem in group by finish");
-//                }
-//            }
-//        }
         // / still some data is present in stores if entryCount is more
         // than 0
         if(this.entryCount > 0)
         {
-            // write data to file
-//            for(int i = 0;i < columnarCompressedData.length;i++)
-//            {
-//                columnarCompressedData[i].compress(keyBlockHolder[i].getKeyBlock());
-//            }
-            
+
             byte[][] data = keyDataHolder.getByteArrayValues();
             
             
@@ -998,8 +844,6 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
             }
             catch(InterruptedException e)
             {
-                // TODO Auto-generated catch block
-//                e.printStackTrace();
                 LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e, e.getMessage());
             }
             IndexStorage[] blockStorage = new IndexStorage[numberOfColumns+highCardCount+complexColCount];
@@ -1012,8 +856,6 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
             }
             catch(Exception e)
             {
-                // TODO Auto-generated catch block
-//                e.printStackTrace();
                  LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e, e.getMessage());
             }
             
@@ -1024,8 +866,6 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
             }
             catch(InterruptedException e)
             {
-                // TODO Auto-generated catch block
-//                e.printStackTrace();
                  LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e, e.getMessage());
             }
             this.dataWriter.writeDataToFile(
@@ -1045,7 +885,6 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
         }
     }
     
-    //TODO SIMIAN
     private byte[] getAggregateTableMdkey(byte[] maksedKey) throws MolapDataWriterException
     {
         long[] keyArray = this.factKeyGenerator.getKeyArray(maksedKey, maskedByte);
@@ -1139,7 +978,6 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
     }
     /**
      * Below method will be to configure fact file writing configuration
-     * @param instance
      * @throws MolapDataWriterException
      */
     private void setWritingConfiguration(int mdkeySize)
@@ -1162,16 +1000,7 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
         
         LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, "************* Leaf Node Size: "+ leafNodeSize);
 
-//        boolean isColumnar=Boolean.parseBoolean(MolapProperties.getInstance().getProperty(
-//                MolapCommonConstants.IS_COLUMNAR_STORAGE,
-//                MolapCommonConstants.IS_COLUMNAR_STORAGE_DEFAULTVALUE));
-//        
         int dimSet=Integer.parseInt(MolapCommonConstants.DIMENSION_SPLIT_VALUE_IN_COLUMNAR_DEFAULTVALUE);
-//        
-//        if(!isColumnar)
-//        {
-//        	dimSet=dimLens.length;
-//        }
         // if atleast one dimension is present then initialize column splitter otherwise null
         
         int[] keyBlockSize = null;
@@ -1243,10 +1072,7 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
           highCardkeyDataHolder.initialiseByteArrayValues(leafNodeSize);
           
         initialisedataHolder();
-        // create data writer instance
-//        this.dataWriter = new MolapFactDataWriterImpl(this.storeLocation,
-//                this.measureCount, this.mdkeyLength, this.tableName,true,fileManager, this.columnarSplitter.getBlockKeySize());
-        
+
         this.dataWriter=getFactDataWriter(this.storeLocation,
                 this.measureCount, this.mdkeyLength, this.tableName,true,fileManager, keyBlockSize);
         this.dataWriter.setIsNoDictionary(isNoDictionary);
@@ -1264,23 +1090,11 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
     }
     private void initialisedataHolder()
     {
-//        this.dataHolder= new MolapWriteDataHolder[this.measureCount];
-        
         for(int i = 0;i < this.dataHolder.length;i++)
         {
             this.dataHolder[i].reset();
         }
         
-//        for(int i = 0;i < otherMeasureIndex.length;i++)
-//        {
-//            this.dataHolder[otherMeasureIndex[i]]=new MolapWriteDataHolder();
-//            this.dataHolder[otherMeasureIndex[i]].initialiseDoubleValues(this.leafNodeSize);
-//        }
-//        for(int i = 0;i < customMeasureIndex.length;i++)
-//        {
-//            this.dataHolder[customMeasureIndex[i]]=new MolapWriteDataHolder();
-//            this.dataHolder[customMeasureIndex[i]].initialiseByteArrayValues(leafNodeSize);
-//        }
     }
     
     private MolapFactDataWriter<?> getFactDataWriter(String storeLocation, int measureCount,

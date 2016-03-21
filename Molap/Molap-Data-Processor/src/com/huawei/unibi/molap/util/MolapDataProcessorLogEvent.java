@@ -28,9 +28,6 @@ public enum MolapDataProcessorLogEvent implements LogEvent
      */
     UNIBI_MOLAPDATAPROCESSOR_MSG("molap.dataprocessor");
 
-    /**
-     * 
-     */
     private String eventCode;
 
     private MolapDataProcessorLogEvent(final String eventCode)

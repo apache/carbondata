@@ -133,7 +133,6 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
         
         baseStorePath = molapInfo.getBaseStoreLocation();
         setStoreFolderWithLoadNumber(checkAndCreateLoadFolderNumber(baseStorePath,molapInfo.getTableName()));
-//        storeFolderWithLoadNumber = checkAndCreateLoadFolderNumber(baseStorePath,molapInfo.getTableName());
         fileManager = new LoadFolderData();
         fileManager.setName(loadFolderName
                 + MolapCommonConstants.FILE_INPROGRESS_STATUS);
@@ -205,12 +204,6 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
         
     }
     
-    /**
-     * 
-     * @param dimInsertFileNames
-     * @param map 
-     * 
-     */
     private void populatePrimaryKeyarray(String[] dimInsertFileNames, Map<String, Boolean> map)
     {
         List<String> primaryKeyList = new ArrayList<String>(MolapCommonConstants.CONSTANT_SIZE_TEN);
@@ -263,12 +256,6 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
        
     }
     
-    /**
-     * 
-     * @param primaryKeyColumnName
-     * @param columnNames
-     * 
-     */
     private int getRepeatedPrimaryFromLevels(String[] columnNames,String primaryKey)
     {
        for(int j = 0;j < columnNames.length;j++)
@@ -281,15 +268,9 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
     return -1;
     }
 
-    /**
-     * 
-     * @param baseStorePath
-     * @param tableName 
-     * 
-     */
     private String checkAndCreateLoadFolderNumber(String baseStorePath, String tableName) throws KettleException
     {
-        int restrctFolderCount = currentRestructNumber/*MolapUtil.checkAndReturnNextRestructFolderNumber(baseStorePath,"RS_")*/;
+        int restrctFolderCount = currentRestructNumber;
         //
         if(restrctFolderCount == -1)
         {
@@ -359,11 +340,6 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
     }
     
     
-    /**
-     * @throws KettleException 
-     * 
-     * 
-     */
     private void populateCache() throws KettleException
     {
         //TODO temporary changes to load cache from HDFS store. If base store path itself changed to HDFS this path is not required 
@@ -380,8 +356,6 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
         catch(Exception e)
         {
         	LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e, e.getMessage());
-//            e.printStackTrace();
-            //Nothing to do
         }
         
         baselocation=baselocation+'/'+molapInfo.getSchemaName()+'/'+molapInfo.getCubeName();
@@ -424,11 +398,6 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
 
                     for(MolapFile hierarchyFile : hierarchyFilesArray)
                     {
-                        // File hierarchyFile = new
-                        // File(folder.getAbsolutePath()
-                        // + File.separator + entry.getKey()
-                        // + MolapCommonConstants.HIERARCHY_FILE_EXTENSION);
-                        //
                         if(hierarchyFile.exists())
                         {
 
@@ -450,10 +419,6 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
 
                     for(MolapFile primaryKey : primaryKeyFilesArray)
                     {
-
-                        // File file = new File(folder.getAbsolutePath()
-                        // + File.separator + primaryKeyStringArray[i] +
-                        // MolapCommonConstants.LEVEL_FILE_EXTENSION);
 
                         if(primaryKey.exists())
                         {
@@ -486,10 +451,6 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
         {
             throw new KettleException(exceptionMsg, e);
         }
-//        catch(Throwable t)
-//        {
-//            System.out.println(t.getMessage());
-//        }
         folderList.clear();
 
     }
@@ -515,11 +476,8 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
         catch (IOException e) 
         {
         	LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e, e.getMessage());
-//			e.printStackTrace();
 		}
         MolapFile folders = FileFactory.getMolapFile(baseStorePath, fileType);
-//        File folders = new File(baseStorePath);
-        //
         MolapFile[] rsFolders = folders.listFiles(new MolapFileFilter()
         {
             @Override
@@ -565,12 +523,6 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
         
     }
     
-    /**
-     * 
-     * @throws KettleException 
-     * @throws KeyGenException 
-     * 
-     */
     @Override
     protected byte[] getHierFromStore(int[] val, String hier,int primaryKey)
             throws KettleException
@@ -591,12 +543,6 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
 
     }
 
-    /**
-     * 
-     * @throws KettleException 
-     * @see com.huawei.unibi.molap.surrogatekeysgenerator.csvbased.metadata.MolapCSVBasedDimSurrogateKeyGen.MolapDimSurrogateKeyGen#getSurrogateFromStore(java.lang.Object, int, java.lang.Object[])
-     * 
-     */
     @Override
     protected int getSurrogateFromStore(String value, int index,
             Object[] properties) throws KettleException
@@ -604,20 +550,11 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
         max[index]++;
         int key = max[index];
 
-//        synchronized(syncObject)
-//        {
             dimensionWriter[index].writeIntoLevelFile(value, key, properties);
-//        }
 
         return key;
     }
     
-    /**
-     * 
-     * @throws KettleException 
-     * @see com.huawei.unibi.molap.surrogatekeysgenerator.csvbased.metadata.MolapCSVBasedDimSurrogateKeyGen.MolapDimSurrogateKeyGen#getSurrogateFromStore(java.lang.Object, int, java.lang.Object[])
-     * 
-     */
     @Override
     protected int updateSurrogateToStore(String tuple, String columnName, int index,int key,
             Object[] properties) throws KettleException
@@ -657,12 +594,6 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
     }
     
     
-    /**
-     * 
-     * @throws  KettleException
-     * @see com.huawei.unibi.molap.surrogatekeysgenerator.MolapDimSurrogateKeyGen
-     *      #writeHeirDataToFileAndCloseStreams()
-     */
     public void writeHeirDataToFileAndCloseStreams() throws KettleException
     {
         // For closing Level value writer bufferred streams
@@ -736,83 +667,8 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
             
         }
         
-        // For closing stream inside hierarchy writer 
-        
-//        for(Entry<String, String> entry : hierInsertFileNames.entrySet())
-//        {
-//            // First we need to sort the byte array
-//            
-//            List<ByteArrayHolder> holders = hierValueWriter.get(entry.getKey()).getByteArrayList();
-//            String hierFileName = hierValueWriter.get(entry.getKey()).getHierarchyName();
-//            Collections.sort(holders);
-//            HierarchyValueWriterForCSV hierarchyValueWriterForCSV = hierValueWriter.get(entry.getKey());
-//            for(ByteArrayHolder holder : holders)
-//            {
-//                hierarchyValueWriterForCSV.writeIntoHierarchyFile(holder.getMdKey(),holder.getPrimaryKey());
-//            }
-//
-//            holders.clear();
-//            
-//            // now write the byte array in the file.
-//            FileChannel bufferedOutStream = hierarchyValueWriterForCSV.getBufferedOutStream();
-//            if(null == bufferedOutStream)
-//            {
-//                continue;
-//            }
-//            MolapUtil.closeStreams(bufferedOutStream);
-//            int size = fileManager.size();
-//            
-//            for(int j = 0; j < size; j++)
-//            {
-//                FileData fileData = (FileData)fileManager.get(j);
-//                String fileName = fileData.getFileName();
-//                if(hierFileName.equals(fileName))
-//                {
-//                    String storePath = fileData.getStorePath();
-//                    HierarchyValueWriterForCSV hierarchyValueWriter = fileData.getHierarchyValueWriter();
-//                    int counter = hierarchyValueWriter.getCounter();
-//                    String hierName = hierarchyValueWriter.getHierarchyName();
-//                    String changedFileName = hierName + (counter-1);
-//                    
-//                    String inProgFileName = changedFileName + MolapCommonConstants.FILE_INPROGRESS_STATUS;
-//                    File currentFile = new File(storePath + File.separator
-//                            + inProgFileName);
-//                    File destFile = new File(storePath + File.separator
-//                            + changedFileName);
-//                    if(!currentFile.exists())
-//                    {
-//                        continue;
-//                    }
-//
-//                    if(currentFile.length() == 0)
-//                    {
-//                        currentFile.delete();
-//                    }
-//                    else
-//                    {
-//                        if(!currentFile.renameTo(destFile))
-//                        {
-//                            LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, "Not Able to rename " + currentFile.getName() + " to " + destFile.getName());
-//                        }
-//                    }
-//                    
-//                    fileData.setName(changedFileName);
-//
-//                    break;
-//                }
-//                
-//            }
-//        }
     }
-    /**
-     * @throws FileNotFoundException,IOException 
-     * @throws FileNotFoundException 
-     * 
-     * @param hierarchyFile
-     * @param hierarchy 
-     * @throws  
-     * 
-     */
+
     private void readHierarchyAndUpdateCache(MolapFile hierarchyFile, String hierarchy) throws IOException
     {
         KeyGenerator generator = keyGenerator.get(hierarchy);
@@ -856,14 +712,6 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
     }
 
 
-    /**
-     * 
-     * @param memberFile
-     * @param fileName 
-     * @throws IOException 
-     * @throws KettleException 
-     * 
-     */
     private void readLevelFileAndUpdateCache(MolapFile memberFile, String fileName,boolean isPrimary,boolean isMeasure) throws IOException, KettleException
     {
     	DataInputStream inputStream = null;
@@ -894,22 +742,19 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
              // subtracted 4 as last 4 bytes will have the max value for no of records
              long size = memberFile.getSize() - 4;
              
-             //CHECKSTYLE:OFF    Approval No:Approval-V1R2C10_005
              boolean enableEncoding = Boolean.valueOf(MolapProperties.getInstance().getProperty(
                      MolapCommonConstants.ENABLE_BASE64_ENCODING,
                      MolapCommonConstants.ENABLE_BASE64_ENCODING_DEFAULT));
-          // CHECKSTYLE:ON
-            // incremented by 4 as integer value as read for minimum no of surrogates 
+            // incremented by 4 as integer value as read for minimum no of surrogates
             currPositionIndx += 4;
             while (currPositionIndx < size)
             {
                 int len = inputStream.readInt();
                 currPositionIndx+=4; 
                 byte[] rowBytes = new byte[len];
-//                ByteBuffer row = ByteBuffer.allocate(len);
                 inputStream.readFully(rowBytes);
                 currPositionIndx+=len;
-                String decodedValue = null;// CHECKSTYLE:OFF Approval No:Approval-361
+                String decodedValue = null;
                 
                 if(enableEncoding)
                 {
@@ -965,12 +810,6 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
         
     }
 
-    /**
-     * 
-     * @param maxKey
-     * @param dimInsertFileNames
-     * 
-     */
     private void checkAndUpdateMap(int maxKey,
             String dimInsertFileNames)
     {
@@ -989,11 +828,6 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
         
     }
 
-    /**
-     * 
-     * @see com.huawei.unibi.molap.surrogatekeysgenerator.MolapDimSurrogateKeyGen#isCacheFilled()
-     * 
-     */
     @Override
     public boolean isCacheFilled(String []columns)
     {
@@ -1012,11 +846,6 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
         return false;
     }
 
-    /**
-     * 
-     * @see com.huawei.unibi.molap.surrogatekeysgenerator.csvbased.MolapCSVBasedDimSurrogateKeyGen#getSurrogateKeyForPrimaryKey(java.lang.String, java.lang.String)
-     * 
-     */
     @Override
     public int getSurrogateKeyForPrimaryKey(String tuples, String columnName, LevelValueWriter levelValueWriter)
             throws KettleException
@@ -1057,55 +886,11 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
     
     }
     
-    /*  *//**
-     * 
-     * @param memberFile
-     * @param inProgressLoadFolder 
-     * @return
-     * @throws KettleException 
-     * 
-     *//*
-    private File decryptEncyptedFile(File memberFile) throws KettleException
-    {
-        String decryptedFilePath = memberFile.getAbsolutePath() + MolapCommonConstants.FILE_INPROGRESS_STATUS;
-        
-        try
-        {
-            SimpleFileEncryptor.decryptFile(memberFile.getAbsolutePath(), decryptedFilePath);
-        }
-        catch(CipherException e)
-        {
-            LOGGER.error(
-                    MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-                    e, "Not able to encrypt File");
-           throw new KettleException();
-        }
-        catch(IOException e)
-        {
-            LOGGER.error(
-                    MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-                    e, "Not able to encrypt File");
-           throw new KettleException();
-        }
-
-        return new File(decryptedFilePath);
-    }*/
-
-    /**
-     * 
-     * @return Returns the fileManager.
-     * 
-     */
     public IFileManagerComposite getFileManager()
     {
         return fileManager;
     }
 
-    /**
-     * 
-     * @see com.huawei.unibi.molap.surrogatekeysgenerator.csvbased.MolapCSVBasedDimSurrogateKeyGen#getNormalizedHierFromStore(int[], java.lang.String, int, com.huawei.unibi.molap.writer.HierarchyValueWriterForCSV)
-     * 
-     */
     @Override
     protected byte[] getNormalizedHierFromStore(int[] val, String hier,
             int primaryKey, HierarchyValueWriterForCSV hierWriter)
@@ -1124,11 +909,6 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
         return bytes;
     }
 
-    /**
-     * 
-     * @see com.huawei.unibi.molap.surrogatekeysgenerator.csvbased.MolapCSVBasedDimSurrogateKeyGen#getSurrogateForMeasure(java.lang.String, java.lang.String, com.huawei.unibi.molap.writer.LevelValueWriter)
-     * 
-     */
     @Override
     public int getSurrogateForMeasure(String tuple, String columnName,int index) throws KettleException
     {
@@ -1163,7 +943,6 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
             {
                 String dimFileName = columnName
                         + MolapCommonConstants.LEVEL_FILE_EXTENSION;
-//                      + MolapCommonConstants.FILE_INPROGRESS_STATUS;
                 LevelValueWriter levelValueWriter = measureValWriterMap.get(dimFileName);
                 if(null == levelValueWriter)
                 {
@@ -1226,11 +1005,6 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
         return measureSurrogate;
     }
 
-    /**
-     * 
-     * @see com.huawei.unibi.molap.surrogatekeysgenerator.csvbased.MolapCSVBasedDimSurrogateKeyGen#writeDataToFileAndCloseStreams()
-     * 
-     */
     @Override
     public void writeDataToFileAndCloseStreams() throws KettleException,
             KeyGenException
@@ -1282,8 +1056,7 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
                 
             }
         }
-    
-        
+
     }
 
 }

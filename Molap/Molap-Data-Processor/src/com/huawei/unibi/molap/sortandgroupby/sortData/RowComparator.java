@@ -23,15 +23,7 @@ import java.util.Comparator;
 
 import com.huawei.unibi.molap.util.RemoveDictionaryUtil;
 
-/**
- * Project Name 	: Carbon 
- * Module Name 		: MOLAP Data Processor
- * Author 			: Suprith T 72079 
- * Created Date 	: 19-Aug-2015
- * FileName 		: RowComparator.java
- * Description 		: This class is responsible for comparing two rows
- * Class Version 	: 1.0
- */
+
 public class RowComparator implements Comparator<Object[]>
 {
     /**
@@ -53,8 +45,6 @@ public class RowComparator implements Comparator<Object[]>
     /**
      * Below method will be used to compare two mdkey 
      * 
-     * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object)
-     *
      */
     public int compare(Object[] rowA, Object[] rowB)
     {

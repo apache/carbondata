@@ -64,16 +64,7 @@ import com.huawei.unibi.molap.util.MolapUtil;
 import com.huawei.unibi.molap.util.MolapUtilException;
 import com.huawei.unibi.molap.util.RemoveDictionaryUtil;
 
-/**
- * Project Name 	: Carbon 
- * Module Name 		: MOLAP Data Processor
- * Author 			: Suprith T 72079 
- * Created Date 	: 25-Aug-2015
- * FileName 		: MDKeyGenStep.java
- * Description 		: Kettle step to generate MD Key
- * Class Version 	: 1.0
- */
-public class MDKeyGenStep extends BaseStep 
+public class MDKeyGenStep extends BaseStep
 {
     private static final LogService LOGGER = LogServiceFactory
           .getLogService(MDKeyGenStep.class.getName());
@@ -164,8 +155,6 @@ public class MDKeyGenStep extends BaseStep
     public boolean processRow(StepMetaInterface smi, StepDataInterface sdi)
             throws KettleException
     {
-//        try
-//        {
             meta = (MDKeyGenStepMeta)smi;
             StandardLogService.setThreadName(StandardLogService.getPartitionID(meta.getCubeName()), null);
             data = (MDKeyGenStepData)sdi;
@@ -176,8 +165,6 @@ public class MDKeyGenStep extends BaseStep
             {
                 first = false;
                 
-              //  data.rowMeta = getInputRowMeta();
-
                 data.outputRowMeta = new RowMeta();
                 boolean isExecutionRequired = setStepConfiguration();
                 
@@ -233,12 +220,6 @@ public class MDKeyGenStep extends BaseStep
             String logMessage= "Finished Molap Mdkey Generation Step: Read: " + readCounter + ": Write: "+ writeCounter;
             LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, logMessage);
             processingComplete();
-//        }
-//        catch(Exception ex)
-//        {
-//            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, ex);
-//            throw new RuntimeException(ex);
-//        }
         return false;
     }
     
@@ -337,7 +318,6 @@ public class MDKeyGenStep extends BaseStep
 			data.generator[i] = KeyGeneratorFactory.getKeyGenerator(new int[]{dimLens[i]});
 		}
         
-//      this.dimensionCount = dimLens.length;
       this.dimensionCount = meta.getDimensionCount();
       this.dimsLenIncludingComplexPrimitives = dimLens.length;
       
@@ -382,8 +362,6 @@ public class MDKeyGenStep extends BaseStep
         this.dataFolderLocation = baseStorelocation + File.separator +
         		MolapCommonConstants.SORT_TEMP_FILE_LOCATION + File.separator + this.tableName;
         
-        /*finalMerger = new SingleThreadFinalSortFilesMerger(dataFolderLocation,
-    			tableName, dimensionCount, measureCount,meta.getHighCardinalityDims().length);*/
         finalMerger = new SingleThreadFinalSortFilesMerger(dataFolderLocation,
                 tableName, dimensionCount - meta.getComplexDimsCount(), meta.getComplexDimsCount(), measureCount,meta.getHighCardinalityCount());
         if(meta.getHighCardinalityCount() > 0)
@@ -443,9 +421,6 @@ public class MDKeyGenStep extends BaseStep
      * 
      * @param row
      *          input row
-     * @param outputrow
-     *          output row
-     *      
      * @throws KettleException
      * 
      */
@@ -467,11 +442,7 @@ public class MDKeyGenStep extends BaseStep
         int index = 0;
         for(int i = 0; i < measureCount; i++)
         {
-//            if(null != row[i])
-//            {
-            
             	outputRow[l++] = (Double)RemoveDictionaryUtil.getMeasure(index++, row);
-//            }
         }
         outputRow[l] =  RemoveDictionaryUtil.getByteArrayForNoDictionaryCols(row);
         

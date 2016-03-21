@@ -165,7 +165,6 @@ public class ProducerThread implements Callable<Void>
     }
     
     
-    //TODO SIMIAN
     /**
      * Run method
      */
@@ -244,7 +243,6 @@ public class ProducerThread implements Callable<Void>
      * This method will be used to get the sorted record from file
      * 
      * @return sorted record sorted record
-     * @throws MolapSortKeyException
      * @throws MolapSortKeyAndGroupByException
      * 
      */
@@ -286,13 +284,6 @@ public class ProducerThread implements Callable<Void>
             sortRecordHolders[counter++] = row;
             // read new row
             poll.readRow();
-            // add to heap
-            // while(ByteUtil.compare(poll.getRow().getMdkey(),
-            // this.recordHolderHeap.peek().getRow().getMdkey()) > 0)
-            // {
-            // sortRecordHolders[counter++] = poll.getRow();
-            // poll.readRow();
-            // }
             this.recordHolderHeap.add(poll);
         }
         // return row
@@ -300,10 +291,6 @@ public class ProducerThread implements Callable<Void>
         {
             Object[][] temp = new Object[counter][];
             System.arraycopy(sortRecordHolders, 0, temp, 0, temp.length);
-            // for(int i = 0;i < temp.length;i++)
-            // {
-            // temp[i]=sortRecordHolders[i];
-            // }
             sortRecordHolders = temp;
         }
         return sortRecordHolders;
@@ -318,7 +305,7 @@ public class ProducerThread implements Callable<Void>
     {
         this.fileCounter = this.sortTempFiles.length;
         MolapSortTempFileChunkHolder molapSortTempFileChunkHolder = null;
-      //CHECKSTYLE:OFF    Approval No:Approval-V3R8C00_016
+      //CHECKSTYLE:OFF
         for(File tempFile : this.sortTempFiles)
         {
             // create chunk holder

@@ -30,16 +30,6 @@ import com.huawei.unibi.molap.datastorage.store.compression.SnappyCompression.Sn
 import com.huawei.unibi.molap.util.MolapDataProcessorLogEvent;
 import com.huawei.unibi.molap.util.MolapUtil;
 
-/**
- * Project Name NSE V3R8C10 
- * Module Name : MOLAP Data Processor 
- * Author :k00900841
- * Created Date:10-Aug-2014 
- * FileName : MolapUnComressedSortTempFileReader.java
- * Class Description : below method will be used to read compressed sort temp
- * file 
- * Class Version 1.0
- */
 public class MolapCompressedSortTempFileReader extends AbstractSortTempFileReader
 {
     /**

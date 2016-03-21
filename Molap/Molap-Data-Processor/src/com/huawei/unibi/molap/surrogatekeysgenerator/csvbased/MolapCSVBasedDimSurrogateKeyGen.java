@@ -123,26 +123,6 @@ public abstract class MolapCSVBasedDimSurrogateKeyGen
     protected IFileManagerComposite measureFilemanager;
 
     /**
-     * rwLock
-     */
-//    private ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
-//    
-//    /**
-//     * wLock
-//     */
-//    private Lock wLock = rwLock.writeLock();
-//    
-//    private Lock readLock = rwLock.readLock();
-    
-    
-//    private ReentrantReadWriteLock rwLockForMember = new ReentrantReadWriteLock();
-    
-//    private Lock wLockForMember = rwLockForMember.writeLock();
-//    
-//    private Lock rLockForMember = rwLockForMember.readLock();
-    
-
-    /**
      * rwLock2
      */
     private ReentrantReadWriteLock rwLock2 = new ReentrantReadWriteLock();
@@ -187,66 +167,14 @@ public abstract class MolapCSVBasedDimSurrogateKeyGen
     {
         this.molapInfo = molapInfo;
 
-        //setConnection(molapInfo.getConnectionString());
         setDimensionTables(molapInfo.getDimColNames());
         setHierFileNames(molapInfo.getHierTables());
     }
 
-    /**
-     * @param timeTuples
-     * @param out
-     * @param columnIndex
-     * @param timeOrdinalColValues
-     * @return
-     * @throws KettleException
-     */
-//    public int[] generateSurrogateKeys(String[] timeTuples, int [] out, int []columnIndex,
-//            List<Integer> timeOrdinalColValues) throws KettleException
-//    {
-//        Integer key = null;
-//        for(int i =0;i<columnIndex.length;i++)
-//        {
-//            Map<String, Integer> cache = memberCache.get(molapInfo.getDimColNames()[columnIndex[i]]);
-//
-//            key = cache.get(timeTuples[i]);
-//            if(key == null)
-//            {
-//                // Validate the key against cardinality bits
-//                if(max[i] >= molapInfo.getMaxKeys()[i])
-//                {
-//                    throw new KettleException(new KeyGenException(
-//                            "Invalid cardinality. Key size exceeded cardinality for: " + molapInfo.getDimColNames()[i]));
-//                }
-//                // Extract properties from tuple
-//                Object[] props = getProperties(new Object[0], timeOrdinalColValues, columnIndex[i]);
-//                
-//                // Need to create a new surrogate key.
-//                key = getSurrogateFromStore(timeTuples[i], columnIndex[i], props);
-//                cache.put(timeTuples[i], key);
-//            }
-//            out[i] = key;
-//        }
-//        return out;
-//    }
-    
-    /**
-     * @param tuples
-     * @param columnNames
-     * @param index
-     * @param props
-     * @return
-     * @throws KettleException
-     */
+
     public Integer generateSurrogateKeys(String tuples, String columnNames,
             int index, Object[] props) throws KettleException
     {
-//      boolean locked = false;
-//      if(tuples== null || tuples.length() == 0)
-//      {
-//          tuples = MolapCommonConstants.MEMBER_DEFAULT_VAL;
-//      }
-            
-        
         Integer key = null;
         Map<String, Integer> cache = memberCache.get(columnNames);
 
@@ -258,17 +186,6 @@ public abstract class MolapCSVBasedDimSurrogateKeyGen
                  key = cache.get(tuples);
                  if(null == key)
                  {
-                	 // Commented for Dynamic Cardinality requirement - Suprith
-//                     if(max[index] >= molapInfo.getMaxKeys()[index])
-//                     {
-//                         if(MolapCommonConstants.MEMBER_DEFAULT_VAL.equals(tuples))
-//                         {
-//                             tuples = null;
-//                         }
-//                         LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, "Invalid cardinality. Key size exceeded cardinality for: "
-//                                         + molapInfo.getDimColNames()[index]+ ": MemberValue: "+tuples) ;
-//                         return -1;
-//                     }
                      key = getSurrogateFromStore(tuples, index, props);
                      cache.put(tuples, key);
                  }
@@ -278,10 +195,6 @@ public abstract class MolapCSVBasedDimSurrogateKeyGen
         return key;
     }
     
-    /**
-     * 
-     * 
-     */
     public void closeMeasureLevelValWriter()
     {
 
@@ -346,14 +259,6 @@ public abstract class MolapCSVBasedDimSurrogateKeyGen
     }
     
     
-    /**
-     * @param tuples
-     * @param columnName
-     * @param index
-     * @param props
-     * @return
-     * @throws KettleException
-     */
     public Integer generateSurrogateKeysForTimeDims(String tuples, String columnName,
             int index, Object[] props) throws KettleException
     {
@@ -393,115 +298,6 @@ public abstract class MolapCSVBasedDimSurrogateKeyGen
     }
     
 
-    /**
-     * @param tuple
-     * @param out
-     * @param timeOrdinalColValues
-     * @throws KettleException
-     */
-//    public void generateSurrogateKeys(Object[] tuple, Object[] out, List<Integer> timeOrdinalColValues) throws KettleException
-//    {
-//      boolean locked = false;
-//        try
-//        {
-//            for (int i = 0; i < molapInfo.getDims().length; i++)
-//            {
-//                Integer key = null;
-//                Object value = tuple[molapInfo.getDims()[i]];
-//                if (value == null)
-//                {
-//                    value = "null";
-//                }
-//                String dimS = value.toString();
-//                // getting values from local cache
-//                Map<String, Integer> cache = memberCache.get(molapInfo
-//                        .getDimColNames()[i]);
-//
-//                key = cache.get(dimS);
-//                // here we added this null check
-//                if (key == null)
-//                {
-//                    // Validate the key against cardinality bits
-//                    // Commenting for testing if this required will be enabled
-//                    /*
-//                     * if(max[i] >= molapInfo.getMaxKeys()[i]) { throw new
-//                     * KettleException(new KeyGenException(
-//                     * "Invalid cardinality. Key size exceeded cardinality for: "
-//                     * + molapInfo.getDimColNames()[i])); }
-//                     */
-//                    // Extract properties from tuple
-//                  
-//                  readLock.lock();
-//                    wLock.lock();
-//                  locked = true;
-//                    // try{
-//                    key = cache.get(dimS);
-//                    if (null == key)
-//                    {
-//                        Object[] props = getProperties(tuple,
-//                                timeOrdinalColValues, i);
-//                        key = getSurrogateFromStore(dimS, i, props);
-//                        cache.put(dimS, key);
-//                    }
-//                    // }finally{
-//                    // wLock.unlock();
-//                    // }
-//                }
-//                // Update the generated key in output.
-//                out[i] = key;
-//            }
-//        }
-//        finally
-//        {
-//          if (locked)
-//          {
-//              wLock.unlock();
-//              readLock.unlock();
-//          }
-//        }
-//    }
-
-    /**
-     * @param tuple
-     * @param timeOrdinalColValues
-     * @param i
-     * @return
-     * 
-     */
-    /*private Object[] getProperties(Object[] tuple, List<Integer> timeOrdinalColValues, int i)
-    {
-        Object[] props = new Object[0];
-        if(molapInfo.getTimDimIndex() != -1 && i >= molapInfo.getTimDimIndex() && i < molapInfo.getTimDimIndexEnd())
-        {
-            //For time dimensions only ordinal columns is considered.
-            int ordinalIndx = molapInfo.getTimeOrdinalIndices()[i-molapInfo.getTimDimIndexEnd()];
-            if(ordinalIndx != -1)
-            {
-                props =  new Object[1];
-                props[0] = timeOrdinalColValues.get(ordinalIndx);
-            }
-        }
-        else
-        {
-            if(molapInfo.getPropIndx() != null)
-            {
-                int[] pIndices = molapInfo.getPropIndx()[i];
-                props= new Object[pIndices.length];
-                for(int j = 0;j < props.length;j++)
-                {//CHECKSTYLE:OFF    Approval No:Approval-310
-                    props[j] = tuple[pIndices[j]];
-                }//CHECKSTYLE:ON
-            }
-        }
-        return props;
-    }*/
-
-    /**
-     * @param val
-     * @param hier
-     * @throws KeyGenException
-     * @throws KettleException
-     */
     public void checkHierExists(int[] val, String hier, int primaryKey)
             throws KettleException
     {
@@ -517,7 +313,6 @@ public abstract class MolapCSVBasedDimSurrogateKeyGen
             wLock2.lock();
             try
             {
-//                 getHierFromStore(val, hier,primaryKey);
                 // Store in cache
                 cache.put(primaryKey, val);
             }
@@ -528,12 +323,6 @@ public abstract class MolapCSVBasedDimSurrogateKeyGen
         }
     }
 
-    /**
-     * @param val
-     * @param hier
-     * @throws KeyGenException
-     * @throws KettleException
-     */
     public void checkNormalizedHierExists(int[] val, String hier,HierarchyValueWriterForCSV hierWriter)
             throws KettleException
     {
@@ -562,9 +351,6 @@ public abstract class MolapCSVBasedDimSurrogateKeyGen
     }
 
     
-    /**
-     * @throws Exception
-     */
     public void close() throws Exception
     {
         if(null != connection)
@@ -573,19 +359,9 @@ public abstract class MolapCSVBasedDimSurrogateKeyGen
         }
     }
     
-    /**
-     * @throws KettleException
-     * @throws KeyGenException 
-     *///CHECKSTYLE:OFF    Approval No:Approval-311
     public abstract void writeHeirDataToFileAndCloseStreams() throws KettleException, KeyGenException;
-//CHECKSTYLE:ON
-    
-    /**
-     * @throws KettleException
-     * @throws KeyGenException 
-     *///CHECKSTYLE:OFF    Approval No:Approval-311
+
         public abstract void writeDataToFileAndCloseStreams() throws KettleException, KeyGenException;
-    //CHECKSTYLE:ON
     /**
      * Search entry and insert if not found in store.
      *  
@@ -697,8 +473,6 @@ public abstract class MolapCSVBasedDimSurrogateKeyGen
     
     private void setDimensionTables(String[] dimeFileNames)
     {
-//        this.dimsFiles = dimeFileNames;
-//        max = new int[dimeFileNames.length];
         int noOfPrimitiveDims = 0;
         List<String> dimFilesForPrimitives = new ArrayList<String>();
         memberCache = new ConcurrentHashMap<String, Map<String, Integer>>();
@@ -727,7 +501,6 @@ public abstract class MolapCSVBasedDimSurrogateKeyGen
         max = new int[noOfPrimitiveDims];
         this.dimsFiles = dimFilesForPrimitives.toArray(new String[dimFilesForPrimitives.size()]);
 
-       // checkDimTableCreated();
         createRespectiveDimFilesForDimTables();
     }
 
@@ -736,11 +509,6 @@ public abstract class MolapCSVBasedDimSurrogateKeyGen
         int dimCount = this.dimsFiles.length;
         dimInsertFileNames = new String[dimCount];
         System.arraycopy(dimsFiles, 0, dimInsertFileNames, 0, dimCount);
-        // Checkstyle fix
-        /*
-         * for(int i=0 ; i < dimCount ; i++) { dimInsertFileNames[i] =
-         * dimsFiles[i]; }
-         */
     }
     
     /**

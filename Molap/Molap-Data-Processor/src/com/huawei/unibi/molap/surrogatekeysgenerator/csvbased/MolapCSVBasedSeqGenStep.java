@@ -247,19 +247,7 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
     private int toCopy = 10;
     
     
-//    private int[] aggMsrMappings;
-
-    /**
-     * 
-     */
     private int outSize;
-    
-//    private int outcount;
-    
-    /**
-     * isDBFactLoad
-     */
-//    private boolean isDBFactLoad;
     
     /**
      * denormHierarchies
@@ -335,23 +323,15 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
     private MolapCSVBasedDimSurrogateKeyGen surrogateKeyGen;
    
     
-//    private DataProcessorQueue rowQueue = new DataProcessorQueue(5000);
-
     private DataProcessorQueue localQueue;
     
-//    private BlockingQueue<DataProcessorQueue<Object[]>> dataQueue;
-    
     private BlockingQueue<DataProcessorRecordHolder> dataQueue;
-    
-//    private boolean startLoad = true; 
     
     private int buffer;
     
     private int processed;
     
-//    private static boolean isDone = false;
-    
-    static 
+    static
     {
         
         DRIVERS = new HashMap<String, String>(16);
@@ -433,22 +413,10 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
                         .getProperty(MolapCommonConstants.NUM_CORES_LOADING,
                                 MolapCommonConstants.NUM_CORES_DEFAULT_VAL));
                 
-    //            int graphRowSet = Integer.parseInt(MolapProperties.getInstance().getProperty(
-    //                    MolapCommonConstants.GRAPH_ROWSET_SIZE,
-    //                    MolapCommonConstants.GRAPH_ROWSET_SIZE_DEFAULT));
-                
-    //            if(graphRowSet < buffer)
-    //            {
-    //                buffer = graphRowSet;
-    //            }
-                
-                
-                
+
                 // Update the Null value comparer and update the String against which we need 
                 // to check the values coming from the previous step.
-//                updateNullValueComparer();
-                
-                
+
                 logCounter = Integer.parseInt(MolapCommonConstants.DATA_LOAD_LOG_COUNTER_DEFAULT_COUNTER);
                 if(null != getInputRowMeta())
                     {
@@ -457,8 +425,7 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
                         meta.msrMapping = getMeasureOriginalIndexes(meta.measureColumn);
     
                         meta.memberMapping = getMemberMappingOriginalIndexes();
-                        // }
-    
+
                         data.setInputSize(getInputRowMeta().size());
                         
                         updatePropMap(meta.actualDimArray);
@@ -498,7 +465,6 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
                 molapInfo.setKeyGenerators(data.getKeyGenerators());
                 molapInfo.setSchemaName(meta.getSchemaName());
                 molapInfo.setCubeName(meta.getCubeName());
-    //            molapInfo.setConnectionString(meta.getMolapJNDIName());
                 molapInfo.setHierTables(meta.hirches.keySet());
                 molapInfo.setBatchSize(meta.getBatchSize());
                 molapInfo.setStoreType(meta.getStoreType());
@@ -541,8 +507,6 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
                         // timeIndex = -1
     
                         ValueMetaInterface[] out = null;
-                        // if(!meta.isAggregate())
-                        // {
                         out = new ValueMetaInterface[meta.normLength
                             + meta.msrMapping.length+checkPoint.getCheckPointInfoFieldCount()];
                         this.outSize=out.length;
@@ -577,8 +541,6 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
                                         .getOutputRowMeta().getValueMeta(k)
                                         .getName()))
                                 {
-    //                                out[outCounter++] = data.getOutputRowMeta()
-    //                                        .getValueMeta(k);
                                     out[outCounter] = new ValueMeta(meta.measureColumn[j], ValueMetaInterface.TYPE_NUMBER,
                                             ValueMetaInterface.STORAGE_TYPE_NORMAL);
                                     out[outCounter].setStorageMetadata(new ValueMeta(meta.measureColumn[j],
@@ -630,7 +592,6 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
                	}
                }
                
-                //String metaDataFilesLocation = meta.getMetaHeirSQLQueries();
                 List<HierarchiesInfo> metahierVoList = meta.getMetahierVoList();
                 if(null != metahierVoList && !meta.isAggregate())
                 {
@@ -649,7 +610,6 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
         readCounter++;
         if(null != out)
         {
-//            outcount++;
             writeCounter++;
             putRow(data.getOutputRowMeta(), out);
         }
@@ -670,20 +630,8 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
         
         startReadingProcess(numberOfNodes);
         
-//        if(!CheckPointHanlder.IS_CHECK_POINT_NEEDED)
-//        {
-//            try
-//            {
                 data.getSurrogateKeyGen().writeHeirDataToFileAndCloseStreams();
-//            }
-//            catch(KeyGenException e)
-//            {
-//                LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e, "not able to get Key genrator");
-//                throw new KettleException();
-//            }
-//        }
         updateAndWriteSliceMetadataFile();
-//        MolapUtil.writeLevelCardinalityFile(loadFolderLoc, meta.getTableName(), data.getSurrogateKeyGen().max);
         MolapUtil.writeLevelCardinalityFile(loadFolderLoc, meta.getTableName(), getUpdatedCardinality(data.getSurrogateKeyGen().max));
         writeDataFileVersion();
         badRecordslogger.closeStreams();
@@ -712,13 +660,6 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
         return false; 
     }
 
-    /**
-     * 
-     * @param numberOfNodes
-     * @throws KettleException
-     * @throws InterruptedException
-     * 
-     */
     private void startReadingProcess(int numberOfNodes) throws KettleException,
             InterruptedException
     {
@@ -754,10 +695,7 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
                 {
                     dataQueue.offer(localQueue.poll());
                 }
-//                if(putRowFuture.isDone())
-//                {
                     putRowInSeqence();
-//                }
             }
             
             while(true)
@@ -778,10 +716,6 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
         }
     }
 
-    /**
-     * @return
-     * @throws KettleException
-     */
     private boolean processWhenRowIsNull() throws KettleException
     {
         // If first request itself is null then It will not enter the first block and 
@@ -812,18 +746,6 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
         return false;
     }
     
-//  public void putRow(RowMetaInterface rowMeta, Object[] outputRow, Object[] inputRow)
-//            throws KettleStepException
-//    {
-//        checkPoint.updateInfoFields(inputRow, outputRow);
-//        super.putRow(rowMeta, outputRow);
-//    }
-
-
-    /**
-     * 
-     * 
-     */
     private List<String> getDenormalizedHierarchies()
     {
         List<String> hierList = Arrays.asList(meta.hierNames);
@@ -847,11 +769,6 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
          return denormHiers;   
     }
 
-    /**
-     * 
-     * @param name
-     * 
-     */
     private void updatePropMap(String[] actualDimArray)
     {
         if(null == propMap)
@@ -862,17 +779,11 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
         for(int i = 0;i < getInputRowMeta().size();i++)
         {
             currentColNames.add(getInputRowMeta().getValueMeta(i).getName());
-            // currentMsrCols[k++] =
-            // getInputRowMeta().getValueMeta(i).getName();
         }
-        // int inputSize = getInputRowMeta().size();
 
-        // String []currentColumnNames = new String[orgDimColNames.length];
         List<String> currentColName = new ArrayList<String>(
                 actualDimArray.length);
 
-        // int k=0;
-        // int len = getInputRowMeta().size() - meta.msrMapping.length;
         for(int i = 0;i < getInputRowMeta().size();i++)
         {
             String columnName = getInputRowMeta().getValueMeta(i).getName();
@@ -905,7 +816,6 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
                     {
                         for(String column : columns)
                         {
-                            // currentColumnNames[k++] = column;
                             currentColName.add(tableName + '_' + column);
                         }
                     }
@@ -914,7 +824,6 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
             else
             // then it can be direct column name if not foreign key.
             {
-                // currentColumnNames[k++] = columnName;
                 currentColName.add(meta.getTableName() + '_' + columnName);
             }
         }
@@ -945,16 +854,8 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
 
     }
 
-    /**
-     * 
-     * @param currentColNamesArray
-     * @param propColmns
-     * @return
-     * 
-     */
     private int[] getIndex(String[] currentColNamesArray, String[] propColmns)
     {
-//       String factTableName = meta.getTableName();
        int [] resultIndex = new int[propColmns.length];
        
        for(int i=0; i < propColmns.length; i++)
@@ -972,53 +873,6 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
         return resultIndex;
     }
 
-//    /**
-//     * update the null value comparer
-//     * 
-//     */
-//    private void updateNullValueComparer()
-//    {
-//        MolapProperties molapProperties = MolapProperties.getInstance();
-//
-//        String driverClass = meta.getDriverClass();
-//
-//        String dbType = drivers.get(driverClass);
-//        
-//        if(null == dbType)
-//        {
-//            return;
-//        }
-//
-//        if(dbType.equals(MolapCommonConstants.TYPE_MSSQL))
-//        {
-//            ValueToCheckAgainst = molapProperties.getProperty(
-//                    MolapCommonConstants.MSSQL_NULL_VALUE, "");
-//        }
-//        else if(dbType.equals(MolapCommonConstants.TYPE_MYSQL))
-//        {
-//            ValueToCheckAgainst = molapProperties.getProperty(
-//                    MolapCommonConstants.MYSQL_NULL_VALUE, "\\N");
-//        }
-//        else if(dbType.equals(MolapCommonConstants.TYPE_ORACLE))
-//        {
-//            ValueToCheckAgainst = molapProperties.getProperty(
-//                    MolapCommonConstants.ORACLE_NULL_VALUE, "NULL");
-//        }
-//        else if(dbType.equals(MolapCommonConstants.TYPE_SYBASE))
-//        {
-//            // Todo : Need to check what will be the value of null if they are
-//            // exporting the csv file.
-//            ValueToCheckAgainst = molapProperties.getProperty(
-//                    MolapCommonConstants.MSSQL_NULL_VALUE, "");
-//        }
-//
-//    }
-
-    /**
-     * @throws KettleException 
-     * 
-     * 
-     */
     private void closeNormalizedHierFiles() throws KettleException
     {
         if(null == filemanager)
@@ -1108,12 +962,6 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
 
     }
 
-    /**
-     * 
-     * @param storeLocation
-     * @return
-     * 
-     */
     private String getBadLogStoreLocation(String storeLocation)
     {
 		String badLogStoreLocation = MolapProperties.getInstance().getProperty(
@@ -1123,10 +971,6 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
         return badLogStoreLocation;
     }
 
-    /**
-     * 
-     * 
-     */
     private void updateBagLogFileName()
     {
         csvFilepath = new File(csvFilepath).getName();
@@ -1140,13 +984,10 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
         
     }
 
-    //TODO SIMIAN
     private void startProcess(final int numberOfNodes) throws RuntimeException {
         exec = Executors.newFixedThreadPool(numberOfNodes);
         
-//        CompletionService<Void> completionService = new ExecutorCompletionService<Void>(
-//                exec);
- 
+
         Callable<Void> callable = new Callable<Void>()
         {
             @Override
@@ -1157,9 +998,7 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
                 {
                     if(CheckPointHanlder.IS_CHECK_POINT_NEEDED)
                     {
-//                        DataProcessorQueue<DataProcessorRecordHolder> dataQueue = new DataProcessorQueue<DataProcessorRecordHolder>(numberOfNodes);
                         doProcessWithCheckPoint();
-//                        System.out.println("Time taken to complete the thread pool : --" + (System.currentTimeMillis() -startTime));
                     }
                     else
                     {
@@ -1182,14 +1021,10 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
 
         resultArray = results.toArray(new Future[results.size()]);
         boolean completed = false;
-//        if(!CheckPointHanlder.IS_CHECK_POINT_NEEDED)
-//        {
-//            completed = false;
-//        }
         try
-        {//CHECKSTYLE:OFF    Approval No:Approval-252
+        {
             while (!completed)
-            {//CHECKSTYLE:ON
+            {
                 completed = true;
                 for (int j = 0; j < resultArray.length; j++)
                 {
@@ -1224,10 +1059,10 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
         for(int i = 0;i < lens.length;i++)
         {
             if(presentDims[i])
-            {//CHECKSTYLE:OFF    Approval No:Approval-364
+            {
                 integers[k] = lens[i];
                 k++;
-            }//CHECKSTYLE:ON
+            }
         }
         return integers;
     }
@@ -1247,10 +1082,10 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
         for(int i = 0;i < dims.length;i++)
         {
             if(presentDims[i])
-            {//CHECKSTYLE:OFF    Approval No:Approval-364
+            {
                 normDims[k] = dims[i];
                 k++;
-            }//CHECKSTYLE:ON
+            }
         }
         if( null != highCardCols)
         {
@@ -1290,42 +1125,7 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
         sliceMetaData.setHeirAnKeySize(meta.getHeirKeySize());
         sliceMetaData.setTableNamesToLoadMandatory(null);
         sliceMetaData.setComplexTypeString(meta.getComplexTypeString());
-//        int measureOrdinal =0;
-//        for(String agg : meta.msrAggregators)
-//        {
-//            if("count".equals(agg))
-//            {
-//                break;
-//            }
-//            measureOrdinal++;
-//        }
-//        sliceMetaData.setCountMsrOrdinal(measureOrdinal);
-//        sliceMetaData.setHeirAndDimLens(meta.getHeirNadDimsLensString());
-        //sliceMetaData.setKeyGenerator(new MultiDimKeyVarLengthGenerator(meta.dimLens));
         sliceMetaData.setKeyGenerator(KeyGeneratorFactory.getKeyGenerator(getUpdatedLens(meta.dimLens, meta.dimPresent)));
-//        FileOutputStream fileOutputStream = null;
-//        ObjectOutputStream objectOutputStream = null;
-//        //
-//        try
-//        {
-//            fileOutputStream = new FileOutputStream(sliceMetaDataFilePath);
-//            objectOutputStream = new ObjectOutputStream(fileOutputStream);
-//            objectOutputStream.writeObject(sliceMetaData);
-//            //
-//        }
-//        catch(FileNotFoundException e)
-//        {
-//            throw new KettleException("slice metadata file not found", e);
-//        }
-//        catch(IOException e)
-//        {
-//            throw new KettleException("Not able to write slice metadata File",
-//                    e);
-//        }
-//        finally
-//        {
-//            MolapUtil.closeStreams(objectOutputStream, fileOutputStream);
-//        }
         MolapDataProcessorUtil.writeFileAsObjectStream(sliceMetaDataFilePath, sliceMetaData);
     }
     
@@ -1334,7 +1134,6 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
      * @param dimCardinality
      * @return
      * 
-     * @author Suprith T 72079
      */
     private int[] getUpdatedCardinality(int[] dimCardinality)
     {
@@ -1355,74 +1154,13 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
     		}
     	}
     	
-//    	int length = dimCardinality.length;
-//    	System.arraycopy(maxSurrogateKeyArray, 0, dimCardinality, 0, length);
-//    	
-//    	return dimCardinality;
-    	int[] complexDimCardinality = new int[dimCardWithComplex.size()]; 
+    	int[] complexDimCardinality = new int[dimCardWithComplex.size()];
     	for(int i=0;i<dimCardWithComplex.size();i++)
     	{
     		complexDimCardinality[i] = dimCardWithComplex.get(i);
     	}
     	return complexDimCardinality;
     }
-    
-	/**
-	 * This method writes cardinality of each level to a file that will be used
-	 * for calculating mdKey
-	 * 
-	 * @param dimCardinality
-	 * @param levelCardinalityFilePath
-	 * @throws KettleException
-	 * 
-	 * @author Suprith T 72079
-	 */
-//    private void writeLevelCardinalityFile(String loadFolderLoc, int[] dimCardinality) throws KettleException
-//    {
-//		String levelCardinalityFilePath = loadFolderLoc + File.separator + 
-//				MolapCommonConstants.LEVEL_METADATA_FILE + meta.getTableName() + ".metadata";
-//		
-//    	FileOutputStream fileOutputStream = null;
-//    	FileChannel channel = null;
-//    	try
-//        {
-//			int dimCardinalityArrLength = dimCardinality.length;
-//			
-//			// first four bytes for writing the length of array, remaining for array data
-//			ByteBuffer buffer = ByteBuffer
-//					.allocate(MolapCommonConstants.INT_SIZE_IN_BYTE
-//							+ dimCardinalityArrLength * MolapCommonConstants.INT_SIZE_IN_BYTE);
-//			
-//			fileOutputStream = new FileOutputStream(levelCardinalityFilePath);
-//			channel = fileOutputStream.getChannel();
-//			buffer.putInt(dimCardinalityArrLength);
-//			
-//			for (int i = 0; i < dimCardinalityArrLength; i++)
-//			{
-//				buffer.putInt(dimCardinality[i]);
-//			}
-//			
-//			buffer.flip();
-//			channel.write(buffer);
-//			buffer.clear();
-//			
-//			LOGGER.info(
-//                    MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-//                    "Level cardinality file written to : " + levelCardinalityFilePath);
-//        }
-//        catch(IOException e)
-//        {
-//        	LOGGER.error(
-//                    MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-//                    "Error while writing level cardinality file : " + levelCardinalityFilePath 
-//                            + e.getMessage());
-//            throw new KettleException("Not able to write level cardinality file", e);
-//        }
-//        finally
-//        {
-//            MolapUtil.closeStreams(channel, fileOutputStream);
-//        }
-//    }
     
     private void doProcess() throws RuntimeException
     {
@@ -1434,7 +1172,6 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
                 synchronized(getRowLock)
                 {
                    
-//                    r = rowQueue.poll();
                     r = getRow();
                     readCounter++;
                 }
@@ -1453,19 +1190,10 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
                
                 synchronized(putRowLock)
                 {
-//                  outcount++;
                     putRow(data.getOutputRowMeta(), out);
                     processRecord();
                     writeCounter++;
                 }
-//              // Some basic logging
-//              if(checkFeedback(getLinesRead()))
-//              {
-//                  if(log.isBasic())
-//                  {
-//                      logBasic("Linenr " + getLinesRead());
-//                  }
-//              }
             }
         }
         catch (RuntimeException e) 
@@ -1527,13 +1255,6 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
                         break;
                 }
                 
-//                Object[] out = process(r);
-//                if(null == out)
-//                {
-//                    continue;
-//                }
-//                
-                
                 if(localQueue.size() > threshold)
                 {
                     synchronized(putRowLock)
@@ -1544,37 +1265,12 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
                             {
                                 dataQueue.offer(localQueue.poll());
                             }
-//                            dataQueue.offer(localQueue);
                             putRowInSeqence();
                         }
                         
                     }
                 }
-//                
-//                    DataProcessorRecordHolder obj = new DataProcessorRecordHolder(r, out);
-//                    synchronized(putRowExecutorService)
-//                    {
-//                        while(!localQueue.offer(obj))
-//                        {
-//                            
-//                        }
-//                    }
-//                }
 
-//                    if(localQueue.isFull())
-//                    {
-//                        synchronized(putRowLock)
-//                        {
-//                            if(localQueue.isFull())
-//                            {
-//                                dataQueue.offer(localQueue);
-//                                
-//                                localQueue = new DataProcessorQueue(CHECKPOINT_SIZE, r.length-1);
-//                                
-//                                putRowInSeqence();
-//                            }
-//                        }
-//                    }
             }
         }
         catch(RuntimeException e)
@@ -1593,15 +1289,8 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
             throw new RuntimeException(t);
         }
 
-        // isDone = true;
     }
 
-    /**
-     * 
-     * @param oriRecordHolders
-     * @throws KettleStepException 
-     * 
-     */
     private void processRows(DataProcessorRecordHolder oriRecordHolders) throws KettleStepException
     {
         Object[][] originalRow = oriRecordHolders.getOriginalRow();
@@ -1621,19 +1310,7 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
             oriRecordHolders.addProcessedRows(process);
         }
         
-//        synchronized(putRowLock)
-//        {
-//            if(localQueue.isFull())
-//            {
-//                dataQueue.offer(localQueue);
-//                
-//                localQueue = new DataProcessorQueue(10);
-//                
-//                putRowInSeqence();
-//                
-//            }
-//        }
-        
+
         synchronized(putRowLock)
         {
             while(!localQueue.offer(oriRecordHolders))
@@ -1643,23 +1320,9 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
         }
     }
 
-    /**
-     * 
-     * @throws KettleStepException
-     * 
-     */
     private void putRowInSeqence() throws KettleStepException
     {
         
-//        if(dataQueue.isEmpty())
-//        {
-//            return;
-//        }
-        
-//        while(putRowFuture != null && !putRowFuture.isDone())
-//        {
-////            System.out.println("Entered Seq Gen");
-//        }
         putRowFuture = putRowExecutorService.submit(new Callable<Void>()
         {
 
@@ -1668,22 +1331,14 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
             {
                 try
                 {
-//                    DataProcessorQueue localQueue1 = dataQueue.poll();
-//                    if(localQueue1 == null)
-//                    {
-//                        return null;
-//                    }
                     while(!dataQueue.isEmpty())
-//                    {
-//                    for(int k=0; k < 5 ; k++)
                     {
                         DataProcessorRecordHolder recordHolders = dataQueue.poll();
                         if(null == recordHolders)
                         {
                             return null;
                         }
-//                        System.out.println("SeqGen : " + records.getSeqNumber());
-                        
+
                         Object[][] processedRow = recordHolders.getProcessedRow();
                         // while(!processedRecords.isEmpty())
                         for(int i = 0;i < checkPointSize;i++)
@@ -1692,25 +1347,15 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
                             {
                                 break;
                             }
-//                            if(checkAllRowValuesAreNull(processedRow[i]))
-//                            {
-//                                continue;
-//                            }
-                            // outcount++;
-                            
+
                             putRow(data.getOutputRowMeta(), processedRow[i]);
                             processedRow[i] = null;
-                         // System.out.println("Surrogate Key step : "+
-                            // recordsHolder.getOriginalRow()[recordsHolder.getOriginalRow().length-2]
-                            // +
-                            // recordsHolder.getOriginalRow()[recordsHolder.getOrigina
                             processRecord();
                             writeCounter++;
                         }
                     }
 
                     }
-//                }
                 catch(Throwable t)
                 {
                     LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, "Not able to process rows to next step");
@@ -1720,159 +1365,7 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
             }
         });
     }
-    
-    
-//    private void putRowInSeqence() throws KettleStepException
-//    {
-//        if(!putRowFuture.isDone())
-//        {
-//            return;
-//        }
-//        
-//        putRowFuture = putRowExecutorService.submit(new Callable<Void>()
-//        {
-//
-//            @Override
-//            public Void call() throws Exception
-//            {
-//                synchronized(putRowLock)
-//                {
-//                    while(!localQueue.isEmpty())
-//                    {
-//                        DataProcessorRecordHolder recordsHolder = localQueue
-//                                .poll();
-//                        if(recordsHolder == null)
-//                        {
-//                            break;
-//                        }
-//                        putRow(data.getOutputRowMeta(),
-//                                recordsHolder.getProcessedRow(),
-//                                recordsHolder.getOriginalRow());
-//                        if(readCounter % logCounter == 0)
-//                        {
-//                            LOGGER.info(
-//                                    MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-//                                    "Record Procerssed For table: "
-//                                            + meta.getTableName());
-//                            String logMessage = "Molap Csv Based Seq Gen Step: Record Read : "
-//                                    + readCounter;
-//                            LOGGER.info(
-//                                    MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-//                                    logMessage);
-//                        }
-//                        writeCounter++;
-//                    }
-//                }
-//                return null;
-//            }
-//        });
-//    }
-    
-//    private void doProcessWithCheckPoint(DataProcessorQueue<DataProcessorRecordHolder> dataQueue) throws RuntimeException
-//    {
-//        try
-//        {
-//            
-//            List<String> hierColumnCache = new ArrayList<String>();
-//            DataProcessorRecordHolder recordsChunk = null;
-//            while(true)
-//            {
-//                Object[] r = null;
-//                synchronized(getRowLock)
-//                {
-//                    while(dataQueue.isFull())
-//                    {
-//
-//                    }
-//
-//                    recordsChunk = new DataProcessorRecordHolder(
-//                            seqNumber++, buffer);
-//                    for(int i = 0;i < buffer;i++)
-//                    {
-//                        r = getRow();
-//                        if(r == null)
-//                        {
-//                            break;
-//                        }
-//                        recordsChunk.addRow(r);
-//                    }
-//                    dataQueue.offer(recordsChunk);
-//                    readCounter++;
-//                }
-//                
-//                
-//
-//                while(true)
-//                {
-//                    r = recordsChunk.getRow();
-//                    // no more input to be expected...
-//                    if(r == null)
-//                    {
-//                        readCounter--;
-//                        break;
-//                    }
-//                    Object[] out = process(r, hierColumnCache);
-//                    recordsChunk.updateRow(out);
-//                    hierColumnCache.clear();
-//                    if(null == out)
-//                    {
-//                        continue;
-//                    }
-//
-//                    
-//                    if(dataQueue.peek().isProcessed())
-//                    {
-//                        while(dataQueue.peek().getSeqNumber() != expectedSeqence)
-//                        {
-//                            dataQueue.offer(dataQueue.poll());
-//                        }
-//                        synchronized(putRowLock)
-//                        {
-//                            expectedSeqence++;
-//                            DataProcessorRecordHolder poll = dataQueue.poll();
-//                            poll.setGetOriginalCounter(0);
-//                            for(int i = 0;i < poll.getsize();i++)
-//                            {
-//                                // outcount++;
-//                                putRow(data.getOutputRowMeta(),
-//                                        poll.getProcessedRow(), poll.getRow());
-//                                if(readCounter % logCounter == 0)
-//                                {
-//                                    LOGGER.info(
-//                                            MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-//                                            "Record Procerssed For table: "
-//                                                    + meta.getTableName());
-//                                    String logMessage = "Molap Csv Based Seq Gen Step: Record Read : "
-//                                            + readCounter;
-//                                    LOGGER.info(
-//                                            MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-//                                            logMessage);
-//                                }
-//                                writeCounter++;
-//                            }
-//                            
-//                        }
-//                    }
-//
-//                }
-//                
-//                if(r == null)
-//                {
-//                    break;
-//                }
-//            }
-//        }
-//        catch (RuntimeException e) 
-//        {
-//            throw e;
-//        }
-//        catch (Exception e) 
-//        {
-//            throw new RuntimeException(e);
-//        }
-//    }
 
-    //TODO SIMIAN
     private String updateStoreLocationAndPopulateMolapInfo(String schemaCubeName)
     { 
         //
@@ -1926,9 +1419,6 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
             }
             return out;
             
-            
-            
-            // }
         }
         catch(Exception e)
         {
@@ -1936,14 +1426,6 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
         }
     }
 
-
-
-    /**
-     * 
-     * @param rowValue
-     * @return
-     * 
-     */
     private Object[] changeNullValueToNullString(Object[] rowValue)
     {
         int i=0;
@@ -1972,27 +1454,15 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
         return rowValue;
     }
 
-    /**
-     * 
-     * @param r
-     * @param measureCol
-     * @return
-     * @throws KettleException
-     * 
-     */
     private Object[] populateOutputRow(Object[] r)
             throws KettleException
     {
             
-//        int[] dimMapping = meta.dimMapping;
         // Copy the dimension String values to output
         int [] memberMapping = meta.memberMapping;
         int inputColumnsSize = metaColumnNames.length;
         boolean isGenerated=false;
         int generatedSurrogate=-1;
-        
-//        Map<String, List<String>> hierColumnCache = new HashMap<String, List<String>>();
-//        boolean needToUpdateHierCache = false;
         
         //If CSV Exported from DB and we enter one row down then that row become empty.
         // In that case it will have first value empty and other values will be null
@@ -2007,7 +1477,7 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
         
        
         Map<String, Map<String, Integer>> allMemberCache = surrogateKeyGen.getMemberCache();
-		Object[] out = new Object[meta.normLength + meta.msrs.length + checkPoint.getCheckPointInfoFieldCount()];
+		    Object[] out = new Object[meta.normLength + meta.msrs.length + checkPoint.getCheckPointInfoFieldCount()];
         int dimLen = meta.dims.length;        
 
         Object[] newArray = new Object[MolapCommonConstants.ARRAYSIZE];
@@ -2022,7 +1492,6 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
         int index = 0;
         int l = 0;
         boolean isNull=false;
-      //CHECKSTYLE:OFF    Approval No:Approval-367
         int complexIndex = meta.highCardCols.length;
         for(int j = 0;j < inputColumnsSize;j++)
         {
@@ -2032,7 +1501,6 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
             
             // TODO check if it is ignore dictionary dimension or not . if yes directly write byte buffer
             
-          //  if(isDimentionHighCardinality)
             if(null != meta.highCardCols && isDimensionHighCardinality(meta.highCardCols,columnName) && !measurePresentMapping[j])
             {
             	processhighCardinalityDim(getIndexOfHighCardDims(meta.highCardCols,columnName),(String)r[j],byteBufferArr);
@@ -2048,10 +1516,9 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
             //3) This column can be measure column
           
             if(measurePresentMapping[j])
-            {//CHECKSTYLE:OFF    Approval No:Approval-367
+            {
                 String msr = r[j]==null?null:r[j].toString();
                 isNull = MolapCommonConstants.MEMBER_DEFAULT_VAL.equals(msr);
-//                  Boolean isPresent = meta.getMeasureSurrogateRequired().get(columnName);
                 if(measureSurrogateReqMapping[j] && !isNull)
                 {
                     Integer surrogate=0;
@@ -2115,7 +1582,6 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
                 //1) this is not foreign key it can be direct columns
                 //2) This column present in the csv file but in the schema it is not present.
                 //3) This column can be measure column
-                //CHECKSTYLE:ON
                 int m = presentColumnMapIndex[j];
                 if(m >= 0)
                 {
@@ -2134,7 +1600,6 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
             }
             
 
-            //CHECKSTYLE:ON
             //If it refers to multiple hierarchy by same foreign key
             if(foreignKeyMappingColumnsForMultiple[j] != null)
             {
@@ -2230,11 +1695,9 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
             		try {
             			ByteArrayOutputStream byteArray = new ByteArrayOutputStream();
             			DataOutputStream dataOutputStream = new DataOutputStream(byteArray);
-//						complexType.parseStringAndWriteByteArray(meta.getTableName(), (String)r[j], new String[]{"\\$","\\:"}, 0, dataOutputStream, surrogateKeyGen);
-						complexType.parseStringAndWriteByteArray(meta.getTableName(), (String)r[j], 
+						complexType.parseStringAndWriteByteArray(meta.getTableName(), (String)r[j],
 								new String[]{meta.getComplexDelimiterLevel1(),meta.getComplexDelimiterLevel2()}, 
 								0, dataOutputStream, surrogateKeyGen);
-//						out[memberMapping[i]] = byteArray.toByteArray();
 						byteBufferArr[complexIndex++] = ByteBuffer.wrap(byteArray.toByteArray());
 						if(null != byteArray)
 						{
@@ -2347,7 +1810,6 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
             }
         }
         
-        //CHECKSTYLE:ON
         insertHierIfRequired(out);
         
         RemoveDictionaryUtil.prepareOut(newArray, byteBufferArr, out, dimLen);
@@ -2356,12 +1818,6 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
         return newArray;
     }
 
-    /**
-	 * @param r
-	 * @param inputRowSize
-	 * @param j
-	 * @param columnName
-	 */
 	private void addCardinalityExcededEntry(Object[] r, int inputRowSize,
 			int j, String columnName) {
 		badRecordslogger
@@ -2377,12 +1833,6 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
 		                        + "cardinality exceeded while loading dimension table.",valueToCheckAgainst);
 	}
 
-	/**
-	 * @param r
-	 * @param inputRowSize
-	 * @param j
-	 * @param columnName
-	 */
 	private void addMemberNotExistEntry(Object[] r, int inputRowSize, int j,
 			String columnName) {
 		badRecordslogger
@@ -2397,11 +1847,6 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
 		                        + " member not exist in the dimension table ",valueToCheckAgainst);
 	}
 
-    /**
-     * 
-     * @param out
-     * @throws KettleException
-     */
     private void insertHierIfRequired(Object[] out) throws KettleException {
         if(denormHierarchies.size() > 0)
         {
@@ -2448,28 +1893,16 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
             }
             else
             {
-//              List<Integer> repeats = new ArrayList<Integer>();
-//              m=0;
                 for(String col : meta.actualDimArray)
                 {
                     if(col.equalsIgnoreCase(columnName))
                     {
                         presentColumnMapIndex[j] = m;
                         break;
-//                      repeats.add(m);
                     }
                     m++;
                 }
                 
-//              if(repeats.size() > 1)
-//              {
-//                  int[] dims = new int[repeats.size()];
-//                  for (int i = 0; i < dims.length; i++) 
-//                  {
-//                      dims[i] = repeats.get(i);
-//                  }
-//                  duplicateColMapping[j] = dims;
-//              }
             }
         }
         return presentColumnMapIndex;
@@ -2576,13 +2009,6 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
         }
     }
     
-    /**
-     * 
-     * @param string
-     * @param columnName
-     * @throws KettleException 
-     * 
-     */
     private int createSurrogateForMeasure(String member, String columnName,int index) throws KettleException
     {
         String colName = meta.getTableName()+ '_' + columnName;
@@ -2603,11 +2029,9 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
                 String storeLocation = "";
                 String hierInprogName = hierName
                         + MolapCommonConstants.HIERARCHY_FILE_EXTENSION;
-//                        + MolapCommonConstants.FILE_INPROGRESS_STATUS;
                 HierarchyValueWriterForCSV hierWriter = nrmlizedHierWriterMap
                         .get(hierInprogName);
-                storeLocation = loadFolderLoc;// + File.separator +
-                                              // hierInprogName;
+                storeLocation = loadFolderLoc;
                 if(null == filemanager)
                 {
                     filemanager = new LoadFolderData();
@@ -2667,19 +2091,8 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
         return false;
     }
 
-    /**
-     * 
-     * @param measureColumn
-     * @param measureColumn2
-     * @return
-     * 
-     */
     private int[] getMeasureOriginalIndexes(String[] originalMsrCols)
     {
-
-        
-        //String[] currentMsrCols = new String[originalMsrCols.length];
-      //  int k=0;
         List<String> currMsrCol = new ArrayList<String>(10);
         for(int i = 0;i < getInputRowMeta().size();i++)
         {
@@ -2693,11 +2106,8 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
                 }
             }
         }
-      //  int inputSize = getInputRowMeta().size();
-        
         String[] currentMsrCols = currMsrCol.toArray(new String[currMsrCol.size()]);
 
-       // int diff = inputSize - currentMsrCols.length;
         int[] indexs = new int[currentMsrCols.length];
 
         for(int i = 0;i < currentMsrCols.length;i++)
@@ -2706,7 +2116,6 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
             {
                 if(currentMsrCols[i].equalsIgnoreCase(originalMsrCols[j]))
                 {
-//                    indexs[i] = j-diff;
                     indexs[i] = j;
                     break;
                 }
@@ -2715,11 +2124,7 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
 
         return indexs;
     }
-    /**
-     * 
-     * @return
-     * 
-     */
+
     private int[] getMemberMappingOriginalIndexes()
     {
         int []memIndexes = new int[meta.dimLens.length + meta.msrs.length];
@@ -2767,7 +2172,6 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
                     currentColName.add(uniqueName);
                 }
             
-//                currentColName.add(columnName);
             }
             else // then it can be direct column name if not foreign key.
             {
@@ -2822,7 +2226,7 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
 
                     String mapKey = currentColNamesArray[i] + "__" + j;
                     if (null == counterMap.get(mapKey)) 
-                    {//CHECKSTYLE:OFF    Approval No:Approval-368
+                    {
                         dimPresentCsvOrder[tmpIndex] = meta.dimPresent[j];//CHECKSTYLE:ON
                         tmpIndex++;
                         counterMap.put(mapKey, true);
@@ -2875,18 +2279,6 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
         // Or Measure can be in any ordinal in the csv 
         
         int k = 0;
-//        for(int j = 0;j < meta.measureColumn.length;j++)
-//        {
-//            for(int i = 0;i < currentColNamesArray.length;i++)
-//            {
-//                if(currentColNamesArray[i].equalsIgnoreCase(meta.measureColumn[j]))
-//                {
-//                    memIndexes[k + dimIndex] = toAddInIndex + j;
-//                    k++;
-//                    break;
-//                }
-//            }
-//        }
         Map<String, Boolean> existsMap = new HashMap<String, Boolean>(16);
          
         for(int i = 0;i < currentColNamesArray.length;i++)
@@ -2898,10 +2290,6 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
         return memIndexes;
     }
 
-    /**
-     * @param currentColName
-     * @param hier
-     */
     private void getCurrenColForMultiHier(List<String> currentColName,
             String hier) 
     {
@@ -2970,12 +2358,6 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
     }
     
 
-    /**
-     * 
-     * @param columnName
-     * @return
-     * 
-     */
     private boolean isNotInDims(String columnName)
     {
         for(String dimName :  meta.dimColNames)
@@ -3025,11 +2407,6 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
        
     }
 
-    /**
-     * 
-     * @throws KettleException
-     * 
-     */
     private void closeConnections() throws KettleException
     {
         try
@@ -3135,7 +2512,7 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
             if(name.equalsIgnoreCase(timeHierNameVal))
             {
                 for(int i = 0;i < a.length;i++)
-                {//CHECKSTYLE:OFF    Approval No:Approval-369
+                {//CHECKSTYLE:OFF
                     lens[i] = dimLens[a[i]];
                 }//CHECKSTYLE:ON
             }
@@ -3150,8 +2527,6 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
                 //
                 for(int i = 0;i < a.length;i++)
                 {
-                    /*RowMetaInterface inputRowMeta = this.getInputRowMeta();
-                    String hierName = inputRowMeta.getValueMeta(a[i]).getName();*/
                     int newIndex = -1;
                     for(int j = 0;j < dimCols.length;j++)
                     {
@@ -3161,14 +2536,12 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
                             newIndex = j;
                             break;
                         }
-                    }//CHECKSTYLE:OFF    Approval No:Approval-370
+                    }//CHECKSTYLE:OFF
                     lens[i] = dimLens[newIndex];
                 }//CHECKSTYLE:ON
             }
             //
-            //int[] binaryLens = getBinaryStringLength(lens);
             KeyGenerator generator = KeyGeneratorFactory.getKeyGenerator(lens);
-//            KeyGenerator generator = getKeyGenerator(lens);
             keyGenerators.put(name, generator);
         
         }
@@ -3187,20 +2560,10 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
         }
     }
 
-    /**
-     * 
-     * @param string
-     * @param hierName 
-     * @return
-     * 
-     */
     private boolean checkDimensionColName(String dimColName, String hierName)
     {
-//        String tableNames = meta.getTableNames();
         String[] tables = meta.getDimTableArray();
         
-//       String[] tables = tableNames.split("&");
-
         for(String table : tables)
         {
             String hierWithTableName = table + '_' +hierName;
@@ -3283,15 +2646,6 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
         {
             LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
         }
-//        try
-//        {
-//            data.getSurrogateKeyGen().writeHeirDataToFileAndCloseStreams();
-//        }
-//        catch(KettleException e)
-//        {
-//            // TODO Auto-generated catch block
-//            e.printStackTrace();
-//        }
         nrmlizedHierWriterMap = null;
         data.clean();
         super.dispose(smi, sdi);
@@ -3302,7 +2656,6 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
     /**
      * Observer class for thread execution 
      * In case of any failure we need stop all the running thread 
-     * @author k00900841
      *
      */
     private class ThreadStatusObserver
@@ -3329,7 +2682,6 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
 					+ MolapVersion.getDataVersion());
 			versionWriter.flush();
 		} catch (IOException e) {
-			//e.printStackTrace();
 			throw new KettleException("Not able to write version File", e);
 		} finally {
 			try 
@@ -3339,7 +2691,6 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
 			    versionWriter.close();
 			    }
 			} catch (IOException e) {
-				//e.printStackTrace();
 				LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
 			}
 		}
@@ -3351,7 +2702,6 @@ public class MolapCSVBasedSeqGenStep extends BaseStep
 		 
          	String dimensionValue = dimension;
          	ByteBuffer buffer = ByteBuffer.allocate(dimensionValue.length());
-//         	buffer.putShort((short)dimensionValue.length());
          	buffer.put(dimensionValue.getBytes(Charset.forName("UTF-8")));
          	buffer.rewind();
          	out[index] = buffer;

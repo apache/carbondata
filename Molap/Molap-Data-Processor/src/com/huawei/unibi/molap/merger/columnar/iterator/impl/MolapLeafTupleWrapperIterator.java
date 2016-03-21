@@ -30,7 +30,6 @@ import com.huawei.unibi.molap.util.MolapCoreLogEvent;
 /**
  * This class is a wrapper class over MolapColumnarLeafTupleDataIterator.
  * This uses the global key gen for generating key.
- * @author R00903928
  *
  */
 public class MolapLeafTupleWrapperIterator implements MolapDataIterator<MolapSurrogateTupleHolder>

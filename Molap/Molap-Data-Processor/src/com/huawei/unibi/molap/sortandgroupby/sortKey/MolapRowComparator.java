@@ -21,15 +21,6 @@ package com.huawei.unibi.molap.sortandgroupby.sortKey;
 
 import java.util.Comparator;
 
-/**
- * Project Name NSE V3R7C00 
- * Module Name : Molap Data Processor 
- * Author K00900841
- * Created Date :21-May-2013 6:42:29 PM 
- * FileName :HierarchyBTreeWriter.java
- * Class Description : This class is responsible for comparing two mdkey 
- * Version 1.0
- */
 public class MolapRowComparator implements Comparator<Object[]>
 {
     /**

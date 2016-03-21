@@ -171,11 +171,6 @@ public class MolapFactDataHandlerColumnarMerger implements MolapFactHandler
     private int currentRestructNumber;
     
     
-    //TODO SIMIAN
-    /**
-     * 
-     * @param molapFactDataMergerInfo
-     */
     public MolapFactDataHandlerColumnarMerger(
             MolapColumnarFactMergerInfo molapFactDataMergerInfo, int currentRestructNum)
     {
@@ -217,10 +212,6 @@ public class MolapFactDataHandlerColumnarMerger implements MolapFactHandler
      * This method will be used to get and update the step properties which will
      * required to run this step
      * 
-     * @param totalRowLength
-     *            total number of records in reacords
-     * @param mdkeyLength
-     *            lenght of mdkey
      * @throws MolapDataWriterException
      * 
      */
@@ -317,7 +308,6 @@ public class MolapFactDataHandlerColumnarMerger implements MolapFactHandler
         // add to key store
         keyDataHolder.setWritableByteArrayValueByIndex(entryCount, mdkey);
 
-        // CHECKSTYLE:OFF Approval No:Approval-351
         for(int i = 0;i < otherMeasureIndex.length;i++)
         {
             if(null == row[otherMeasureIndex[i]])
@@ -337,18 +327,12 @@ public class MolapFactDataHandlerColumnarMerger implements MolapFactHandler
             dataHolder[customMeasureIndex[i]].setWritableByteArrayValueByIndex(
                     entryCount, b);
         }
-        // CHECKSTYLE:ON
         this.entryCount++;
         // if entry count reaches to leaf node size then we are ready to
         // write
         // this to leaf node file and update the intermediate files
         if(this.entryCount == this.leafNodeSize)
         {
-            // byte[][][] data = new byte[numberOfColumns][][];
-            // for(int i = 0;i < keyBlockHolder.length;i++)
-            // {
-            // data[i]=keyBlockHolder[i].getKeyBlock().clone();
-            // }
             byte[][] byteArrayValues = keyDataHolder.getByteArrayValues()
                     .clone();
             byte[][] writableMeasureDataArray = this.dataStore
@@ -361,7 +345,6 @@ public class MolapFactDataHandlerColumnarMerger implements MolapFactHandler
             writerExecutorService.submit(new DataWriterThread(byteArrayValues,
                     writableMeasureDataArray, entryCountLocal, startKeyLocal,
                     endKeyLocal));
-            // writeDataToFile(data,writableMeasureDataArray,entryCount,startKey,endKey);
             // set the entry count to zero
             processedDataCount += entryCount;
             LOGGER.info(
@@ -403,8 +386,6 @@ public class MolapFactDataHandlerColumnarMerger implements MolapFactHandler
         }
         catch(InterruptedException e)
         {
-            // TODO Auto-generated catch block
-//            e.printStackTrace();
             LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,"error in executorService/awaitTermination ", e, e.getMessage());
             
         }
@@ -418,8 +399,6 @@ public class MolapFactDataHandlerColumnarMerger implements MolapFactHandler
         }
         catch(Exception e)
         {
-            // TODO Auto-generated catch block
-//            e.printStackTrace();
             LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,"error in  populating  blockstorage array ", e, e.getMessage());
             
         }
@@ -500,10 +479,9 @@ public class MolapFactDataHandlerColumnarMerger implements MolapFactHandler
                         molapFactDataMergerInfo.getTableName());
                 setWritingConfiguration(molapFactDataMergerInfo
                         .getMdkeyLength());
-                // CHECKSTYLE:OFF Approval No:Approval-V3R8C00_018
                 Object[] row = null;
                 while(this.groupBy.hasNext())
-                { // CHECKSTYLE:ON
+                {
                     row = this.groupBy.next();
                     addToStore(row);
                 }
@@ -556,8 +534,6 @@ public class MolapFactDataHandlerColumnarMerger implements MolapFactHandler
             }
             catch(InterruptedException e)
             {
-                // TODO Auto-generated catch block
-//                e.printStackTrace();
                 LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,"error in  executorService.awaitTermination ", e, e.getMessage());
                 
             }
@@ -571,8 +547,6 @@ public class MolapFactDataHandlerColumnarMerger implements MolapFactHandler
             }
             catch(Exception e)
             {
-                // TODO Auto-generated catch block
-//                e.printStackTrace();
                 LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,"error while populating blockStorage array ", e, e.getMessage());
                 
             }
@@ -584,8 +558,6 @@ public class MolapFactDataHandlerColumnarMerger implements MolapFactHandler
             }
             catch(InterruptedException e)
             {
-                // TODO Auto-generated catch block
-//                e.printStackTrace();
                 LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,"error in  writerexecutorService/awaitTermination ", e, e.getMessage());
             }
             this.dataWriter.writeDataToFile(blockStorage,
@@ -678,7 +650,6 @@ public class MolapFactDataHandlerColumnarMerger implements MolapFactHandler
     /**
      * Below method will be to configure fact file writing configuration
      * 
-     * @param instance
      * @throws MolapDataWriterException
      */
     private void setWritingConfiguration(int mdkeySize)
@@ -769,10 +740,6 @@ public class MolapFactDataHandlerColumnarMerger implements MolapFactHandler
         keyDataHolder = new MolapWriteDataHolder();
         keyDataHolder.initialiseByteArrayValues(leafNodeSize);
         initialisedataHolder();
-        // create data writer instance
-        // this.dataWriter = new MolapFactDataWriterImpl(this.storeLocation,
-        // this.measureCount, this.mdkeyLength, this.tableName,true,fileManager,
-        // this.columnarSplitter.getBlockKeySize());
 
         this.dataWriter = getFactDataWriter(
                 molapFactDataMergerInfo.getDestinationLocation(),
@@ -854,7 +821,6 @@ public class MolapFactDataHandlerColumnarMerger implements MolapFactHandler
 			fs = path.getFileSystem(FileFactory.getConfiguration());
 			 fs.copyFromLocalFile(true, true, new Path(destLocation), new Path(loadPath));
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			throw new MolapDataWriterException(e.getLocalizedMessage());
 		}
 	      

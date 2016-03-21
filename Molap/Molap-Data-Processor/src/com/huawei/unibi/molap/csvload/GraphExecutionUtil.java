@@ -54,15 +54,6 @@ import com.huawei.unibi.molap.util.MolapDataProcessorLogEvent;
 import com.huawei.unibi.molap.util.MolapSchemaParser;
 import com.huawei.unibi.molap.util.MolapUtil;
 
-/**
- * Project Name NSE V3R7C00 
- * Module Name : 
- * Author V00900840
- * Created Date :18-Jul-2013 1:08:01 PM
- * FileName : GraphExecutionUtil.java
- * Class Description :
- * Version 1.0
- */
 public final class GraphExecutionUtil
 {
     private GraphExecutionUtil()
@@ -123,9 +114,7 @@ public final class GraphExecutionUtil
     /**
      * 
      * @param measuresInCSVFile 
-     * @param csvFilePath
-     * @return
-     * @throws DataLoadingException 
+     * @throws DataLoadingException
      * 
      */
     public static TextFileInputField[] getTextInputFiles(MolapFile csvFile,List<String> measureColumns, StringBuilder builder, 
@@ -181,17 +170,9 @@ public final class GraphExecutionUtil
                 builder.append(";");
                 textFileInputFields[i]= new TextFileInputField();
                 textFileInputFields[i].setName(tmpCol.trim());
-//                if(contains(measureColumns,tmpCol.trim()))
-//                {
-//                    textFileInputFields[i].setType(1);
                     textFileInputFields[i].setType(2);
                     measuresInCSVFile.append(tmpCol);
                     measuresInCSVFile.append(";");
-//                }
-//                else
-//                {
-//                    textFileInputFields[i].setType(2);
-//                }
                 i++;
             }
             
@@ -205,9 +186,7 @@ public final class GraphExecutionUtil
     /**
      * 
      * @param measuresInCSVFile 
-     * @param csvFilePath
-     * @return
-     * @throws DataLoadingException 
+     * @throws DataLoadingException
      * 
      */
     public static TextFileInputField[] getTextInputFiles(String header, StringBuilder builder, 
@@ -236,25 +215,6 @@ public final class GraphExecutionUtil
     
     }
     
-//    private static boolean contains(List<String> coList, String cols)
-//    {
-//        for(String col : coList)
-//        {
-//            if(col.equalsIgnoreCase(cols))
-//            {
-//                return true;
-//            }
-//        }
-//        return false;
-//    }
-    
-    /**
-     * 
-     * 
-     * @param csvFilePath
-     * @return
-     *
-     */
     public static boolean checkIsFolder(String csvFilePath)
     {
         try
@@ -275,192 +235,7 @@ public final class GraphExecutionUtil
     }
     
     /**
-     * This method reads the csv file and checks the header count length and 
-     * data length is same or not, may be the data is corrupted.
-     * 
-     * @param csvFile
-     * @return
-     * @throws DataLoadingException 
-     *
-     */
-//    public static boolean checkDataColumnCountMatch(File csvFile) throws DataLoadingException
-//    {
-//
-//        FileReader fileReader = null;
-//        BufferedReader bufferedReader = null;
-//        String headerLine = null;
-//        List<String> data = new ArrayList<String>(2);
-//        boolean isHeader = true;
-//        int count = 0;
-//
-//        try
-//        {
-//            fileReader = new FileReader(csvFile);
-//            bufferedReader = new BufferedReader(fileReader);
-//            String line = bufferedReader.readLine();
-//            while(null != line && (count < 2))
-//            {
-//                if(isHeader)
-//                {
-//                    headerLine = line;
-//                    isHeader = false;
-//                }
-//                else
-//                {
-//                    if(!line.isEmpty())
-//                    {
-//                        data.add(line);
-//                        count++;
-//                    }
-//                }
-//
-//                line = bufferedReader.readLine();
-//
-//            }
-//        }
-//        catch(FileNotFoundException e)
-//        {
-//            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, 
-//                    e, "CSV Input File not found  " + e.getMessage());
-//            throw new DataLoadingException(
-//                    "CSV Input File not found ", e);
-//        }
-//        catch(IOException e)
-//        {
-//            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, 
-//                    e, "Not able to read CSV input File  " + e.getMessage());
-//            throw new DataLoadingException(
-//                    "Not able to read CSV input File ", e);
-//        }
-//        finally
-//        {
-//            MolapUtil.closeStreams(fileReader, bufferedReader);
-//        }
-//
-//        String[] headerColumns = null;
-//        
-//        if (null != headerLine)
-//        {
-//            headerColumns = getRowData(headerLine);
-//        }
-//        else
-//        {
-//            headerColumns = new String[0];
-//        }
-//        
-//        int size = data.size();
-//        switch(size)
-//        {
-//        case 1 : 
-//            String rowData = data.get(0);
-//            
-//            String[] splittedData = getRowData(rowData);
-//            
-//            if(splittedData.length == headerColumns.length)
-//            {
-//                return true;
-//            }
-//            else
-//            {
-//                int length = splittedData.length;
-//                if(length == 1)
-//                {
-//                    if(splittedData[0].isEmpty())
-//                    {
-//                        return true;
-//                    }
-//                }
-//                else
-//                {
-//                    return false;
-//                }
-//                    
-//            }
-//                
-//            break;
-//        case 2: 
-//            String rowData1 = data.get(1);
-//            
-//            String[] splittedData1 = getRowData(rowData1);
-//            
-//            if(splittedData1.length == headerColumns.length)
-//            {
-//                return true;
-//            }
-//            break;
-//            
-//         default :
-//             
-//             return true;
-//            
-//        }
-//        
-//        return false;
-//    }
-    
-    /**
-     * Return the data row
-     * 
-     * @param data
-     * @return
-     *
-     */
-//    private static String[] getRowData(String data)
-//    {
-//        if(data.indexOf("\"") != 0 && data.lastIndexOf("\"") != data.length())
-//        {
-//            return data.split(",");
-//        }
-//        
-//        List<String> records = new ArrayList<String>();
-//        
-//        addRecordsRecursively(data, records);
-//        
-//        return records.toArray(new String[records.size()]);
-//    }
-    
-    /**
-     * Recursively split the records and return the data as comes 
-     * under quotes.
-     * 
-     * @param data
-     * @param records
-     * 
-     * For Example : 
-     * If data comes like:
-     * String s = ""13569,69600000","SN=66167523766568","NE=66167522854161""
-     * then it will return {"13569,69600000","SN=66167523766568","NE=66167522854161"}
-     * 
-     * and If String is without quotes:
-     * String s = "13569,69600000,SN=66167523766568,NE=66167522854161"
-     * then it will return {"13569","69600000","SN=66167523766568","NE=66167522854161"}
-     */
-//    private static void addRecordsRecursively(String data, List<String> records)
-//    {
-//       if(data.length() == 0)
-//       {
-//           return;
-//       }
-//       
-//       int secondIndexOfQuotes = data.indexOf("\"" , 1);
-//       records.add(data.substring(1, secondIndexOfQuotes));
-//
-//       if(data.length()-1 != secondIndexOfQuotes)
-//       {
-//           data = data.substring(secondIndexOfQuotes + 2);
-//       }
-//       else
-//       {
-//           data = data.substring(secondIndexOfQuotes + 1);
-//       }
-//       
-//       //call recursively
-//       addRecordsRecursively(data, records);
-//    }
-    
-    /**
      * This method update the column Name 
-     * @param columnNames
      * @param cube
      * @param tableName 
      * @param schema 
@@ -617,6 +392,7 @@ public final class GraphExecutionUtil
         }
 		return readLine;
 	}
+
     /**
      * 
      * @param csvFilePath
@@ -652,14 +428,6 @@ public final class GraphExecutionUtil
             }
 
             return (count == columnNames.length);
-          /*  if(count == columnNames.length)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }*/
         }
 
         return false;
@@ -696,81 +464,7 @@ public final class GraphExecutionUtil
 
         return true;
     }
-    /**
-     * 
-     * @param schemaInfo
-     * @param cubeName
-     * @param tableName
-     * 
-     */
-//    public static boolean checkKeyOrdinalDefined(SchemaInfo schemaInfo,
-//            String cubeName, String tableName)
-//    {
-//        
-//        Schema schema = MolapSchemaParser.loadXML(schemaInfo.getSchemaPath());
-//        Cube cube = MolapSchemaParser.getMondrianCube(schema,
-//                schemaInfo.getCubeName());
-//        Map<Integer, Boolean> levelsKeyOrdinal = new HashMap<Integer, Boolean>();
-//        
-//        String factTableName = MolapSchemaParser.getFactTableName(cube);
-//        int keyOrdinalNOtDefined = 0;
-//        
-//        if(!tableName.equals(factTableName))
-//        {
-//            return true;
-//        }
-//        
-//        CubeDimension[] dimensions = cube.dimensions;
-//        
-//        int counter = 0;
-//        for(CubeDimension cDimension : dimensions)
-//        {
-//            Hierarchy[] hierarchies =  null;
-//            hierarchies = MolapSchemaParser.extractHierarchies(schema, cDimension);
-//            for(Hierarchy hierarchy : hierarchies)
-//            {
-//                for(Level level : hierarchy.levels)
-//                {
-//                    counter++;
-//
-//                    Integer keyOrdinal = level.keyOrdinal;
-//
-//                    if(-1 == keyOrdinal)
-//                    {
-//                        keyOrdinalNOtDefined++;
-//                        break;
-//                    }
-//
-//                    if(null == levelsKeyOrdinal.get(keyOrdinal))
-//                    {
-//                        levelsKeyOrdinal.put(keyOrdinal, true);
-//                    }
-//                }
-//
-//            }
-//        }
-//        
-//        if(counter == keyOrdinalNOtDefined)
-//        {
-//            return true;
-//        }
-//        if(levelsKeyOrdinal.size() < counter)
-//        {
-//            return false;
-//        }
-//
-//        return true;
-//        
-//    }
-    /**
-     * 
-     * @param cube
-     * @param factTableName
-     * @param dimTableName
-     * @param schema
-     * @return
-     * 
-     */
+
     public static Set<String> getDimensionColumnNames(Cube cube,
             String factTableName, String dimTableName, Schema schema)
     {

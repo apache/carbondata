@@ -17,17 +17,6 @@
  * under the License.
  */
 
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2014
- * =====================================
- *
- */
 package com.huawei.unibi.molap.autoaggregategraphgenerator.step;
 
 import java.io.ByteArrayInputStream;
@@ -70,16 +59,6 @@ import com.huawei.unibi.molap.schema.metadata.AggregateTable;
 import com.huawei.unibi.molap.util.MolapDataProcessorLogEvent;
 import com.huawei.unibi.molap.util.MolapSchemaParser;
 
-
-/**
- * Project Name NSE V3R8C10 
- * Module Name : MOLAP Data Processor
- * Author :k00900841 
- * Created Date:10-Aug-2014
- * FileName : MolapAutoAGGGraphGeneratorStep.java
- * Class Description : Step responsible for generating and running the aggregate table graph
- * Class Version 1.0
- */
 public class MolapAutoAGGGraphGeneratorStep extends BaseStep implements
         StepInterface
 {
@@ -105,31 +84,11 @@ public class MolapAutoAGGGraphGeneratorStep extends BaseStep implements
      */
     private long writeCounter;
 
-//    /**
-//     * aggCounter
-//     */
-//    private int aggCounter;
-//
-//    /**
-//     * numberOfParallelGeneration
-//     */
-//    private int numberOfParallelGeneration;
-//
-//    /**
-//     * aggregateTable
-//     */
-//    private String[] aggregateTable;
-
     /**
      * generator
      */
     private GraphGenerator generator;
 
-//    /**
-//     * loadedTableList
-//     */
-//    private List<String> loadedTableList;
-    
     /**
      * aggTableQueue
      */
@@ -190,54 +149,7 @@ public class MolapAutoAGGGraphGeneratorStep extends BaseStep implements
             if(null == row)
             {
                 String generateGraph = null;
-//                List<String> list = null;
-//                while(aggCounter < aggregateTable.length)
-//                {
-//                    list = new ArrayList<String>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
-//                    if(aggregateTable.length - aggCounter >= numberOfParallelGeneration)
-//                    {
-//                        for(int i = 0;i < numberOfParallelGeneration;i++)
-//                        {
-//                            list.add(aggregateTable[aggCounter++]);
-//                            writeCounter++;
-//                        }
-//                    }
-//                    else
-//                    {
-//                        int leftOver = aggregateTable.length - aggCounter;
-//                        for(int i = 0;i < leftOver;i++)
-//                        {
-//                            list.add(aggregateTable[aggCounter++]);
-//                            writeCounter++;
-//                        }
-//                    }
-//                  //CHECKSTYLE:OFF    Approval No:V3R8C00_002
-//                    try
-//                    {
-//                        generateGraph = generator.generateGraph(list,
-//                                meta.getFactTableName());
-//                        loadedTableList.addAll(list);
-//                    }
-//                    catch(GraphGeneratorException e)
-//                    {
-//                        throw new KettleException(
-//                                "Problem while generating the auto aggregate graph",
-//                                e);
-//                    }
-//                    //CHECKSTYLE:ON
-//                    executeAggregateGeneration(generateGraph);
-//                }
-                
-//                int size = aggTableQueue.size();
-//                String[] storeLocs = getStorelocs();
                 AggTableInfo poll = aggTableQueue.poll();
-//                for (String loc : storeLocs)
-//				{
-//                    String aggTableLoc = loc.replace(meta.getFactTableName(), meta.getAggTables());
-//                    if(new File(aggTableLoc).exists())
-//                    {
-//                        continue;
-//                    }
                     generateGraph = generator.generateGraph(
                             meta.getFactTableName(), meta.getFactStoreLocation(), generator.getAllAggTables(),true, meta.getAggTables());
                     
@@ -268,132 +180,18 @@ public class MolapAutoAGGGraphGeneratorStep extends BaseStep implements
         return true;
     }
     
-//    private String[] getStorelocs()
-//    {
-//    	String[] loadFolders;
-//    	
-//    	if(!Boolean.parseBoolean(meta.isAutoMode()))
-//    	{
-//    		FileType fType = FileType.LOCAL;
-//    		
-//    		String factStorepath = getFactStoreFilePath(fType);
-//    		MolapFile file = FileFactory.getMolapFile(factStorepath, fType);
-//            
-//    		if(!file.exists())
-//            {
-//                return new String[0];
-//            }
-//    		
-//            MolapFile[] listFiles = file.listFiles(new MolapFileFilter()
-//            {
-//                @Override
-//                public boolean accept(MolapFile pathname)
-//                {
-//                    return pathname.getName().startsWith(
-//                            MolapCommonConstants.LOAD_FOLDER)&& pathname.getName().endsWith(MolapCommonConstants.FILE_INPROGRESS_STATUS);
-//                }
-//            });
-//            
-//            loadFolders = new String[listFiles.length];
-//            int count = 0;
-//            
-//            for(MolapFile loadFile : listFiles)
-//            {
-//            	loadFolders[count++] = loadFile.getAbsolutePath();
-//            }
-//    		
-//    	}
-//    	else
-//    	{
-//    		String factStorepath = getFactStoreFilePath(FileType.HDFS);
-//    		
-//    		// Chnage to LOCAL for testing in local
-//            MolapFile file = FileFactory.getMolapFile(factStorepath, FileFactory.getFileType(factStorepath));
-//            
-//            if(!file.exists())
-//            {
-//            	return new String[0];
-//            }
-//            MolapFile[] listFiles = file.listFiles( new MolapFileFilter()
-//            {
-//                @Override
-//                public boolean accept(MolapFile path)
-//                {
-//                    return path.getName().startsWith(
-//                            MolapCommonConstants.LOAD_FOLDER)
-//                            && !path
-//                                    .getName()
-//                                    .endsWith(
-//                                            MolapCommonConstants.FILE_INPROGRESS_STATUS);
-//                }
-//            });
-//            
-//            loadFolders = new String[listFiles.length];
-//            int count = 0;
-//            
-//            for(MolapFile loadFile : listFiles)
-//            {
-//            	loadFolders[count++] = loadFile.getAbsolutePath();
-//            }
-//    	}
-//    	
-//    	return loadFolders;
-//    }
-//    
-//    private String getFactStoreFilePath(FileType fType)
-//    {
-//    	String localtion;
-//    	
-//    	if(fType.equals(FileType.HDFS))
-//    	{
-//    		localtion = MolapCommonConstants.STORE_LOCATION_HDFS;
-//    	}
-//    	else
-//    	{
-//    		localtion = MolapCommonConstants.STORE_LOCATION;
-//    	}
-//    	
-//    	MolapProperties instance = MolapProperties.getInstance();
-//        
-//        String baseStorelocation = instance.getProperty(localtion,
-//                MolapCommonConstants.STORE_LOCATION_DEFAULT_VAL)
-//                + File.separator + meta.getSchemaName() + File.separator + meta.getCubeName();
-//    	int restructFolderNumber = MolapUtil.checkAndReturnNextRestructFolderNumber(baseStorelocation,"RS_");
-//
-//        String restructFolderlocation = baseStorelocation + File.separator
-//                + MolapCommonConstants.RESTRUCTRE_FOLDER + restructFolderNumber
-//                + File.separator + meta.getFactTableName();
-//
-//    	return restructFolderlocation;
-//    }
-    
     private  class AggTableInfo
     { 
-//        private String[] aggTablesName;
-        
         private String factTableName;
-        
-//        private AggregateTable[] aggTables;
     }
     
-//    public static void main(String[] args)
-//    {
-//        Schema loadXML = MolapSchemaParser.loadXML("D:\\SmartCare_ec.xml");
-//        Cube cube = MolapSchemaParser.getMondrianCubes(loadXML)[0];
-//        AggregateTable[] aggregateTable = MolapSchemaParser.getAggregateTable(cube, loadXML);
-//        getAllAggregateTableDetails(aggregateTable,cube);
-//        
-//    }
     private void getAllAggregateTableDetails(AggregateTable[] aggTables, Cube cube)
     {
         List<AggregateTable> copyOfaggregateTable = new ArrayList<AggregateTable>(Arrays.asList(aggTables));
-//        AggregateTable[] aggTable= copyOfaggregateTable.toArray(new AggregateTable[copyOfaggregateTable.size()]);
-//        copyOfaggregateTable.addAll(Arrays.asList(aggregateTable));
         Collections.sort(copyOfaggregateTable,
                 new AggregateTableComparator());
         AggregateTableSelecter tableSelecter = new AutoAggregateTableSelecter(
                 copyOfaggregateTable);
-        // tableSelecter.selectAggTableNeedsToGenFromFact(cube);
         tableSelecter.selectTableForAggTableAggregationProcess(
                 aggTables, cube);
 
@@ -456,12 +254,9 @@ public class MolapAutoAGGGraphGeneratorStep extends BaseStep implements
                     {
 
                         AggTableInfo aggTableInfo= new AggTableInfo();
-//                        aggTableInfo.aggTables= tableInstancesForEvaluation
-//                                .toArray(new AggregateTable[tableInstancesForEvaluation.size()]);
                         aggTableInfo.factTableName= aggregateTableDerivativeMetadata
                                 .getAggregateTable()
                                 .getAggregateTableName();
-//                        aggTableInfo.aggTablesName=tableNamesForEvaluation.toArray(new String[tableNamesForEvaluation.size()]);
                         aggInfoQueue.offer(aggTableInfo);
                         
                     }
@@ -469,10 +264,7 @@ public class MolapAutoAGGGraphGeneratorStep extends BaseStep implements
                     {
 
                         AggTableInfo aggTableInfo= new AggTableInfo();
-//                        aggTableInfo.aggTables= tableInstancesForEvaluation
-//                                .toArray(new AggregateTable[tableInstancesForEvaluation.size()]);
                         aggTableInfo.factTableName= factTableName;
-//                        aggTableInfo.aggTablesName=tableNamesForEvaluation.toArray(new String[tableNamesForEvaluation.size()]);
                         aggInfoQueue.offer(aggTableInfo);
                     }
                     if(!listOfChildAggregateTableDerivativeMetadata.isEmpty())
@@ -493,21 +285,6 @@ public class MolapAutoAGGGraphGeneratorStep extends BaseStep implements
      */
     private void setStepConfiguration() throws Exception
     {
-//        numberOfParallelGeneration = 0;
-//        try
-//        {
-//            numberOfParallelGeneration = Integer
-//                    .parseInt(MolapProperties
-//                            .getInstance()
-//                            .getProperty(
-//                                    MolapCommonConstants.MOLAP_AUTOAGGREGATION_NO_OF_PARALLEL_AGGREGATETABLE_GENERATION,
-//                                    MolapCommonConstants.MOLAP_AUTOAGGREGATION_NO_OF_PARALLEL_AGGREGATETABLE_GENERATION_DEFAULT));
-//        }
-//        catch(NumberFormatException e)
-//        {
-//            numberOfParallelGeneration = 1;
-//        }
-//        aggregateTable = meta.getAggTables();
         DataLoadModel model = new DataLoadModel();
         SchemaInfo info = new SchemaInfo();
         info.setSchemaName(meta.getSchemaName());
@@ -517,7 +294,6 @@ public class MolapAutoAGGGraphGeneratorStep extends BaseStep implements
         model.setSchemaInfo(info);
         model.setTableName(meta.getAggTables());
         generator = new GraphGenerator(model,meta.isHDFSMode(), meta.getPartitionId(), parseStringToSchema(meta.getSchema()), meta.getFactStoreLocation(), meta.getCurrentRestructNumber(), 1);
-//        loadedTableList = new ArrayList<String>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
         getAllAggregateTableDetails(generator.getAllAggTables(), generator.getCube());
     }
     

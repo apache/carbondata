@@ -67,8 +67,7 @@ public class MolapCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaInt
     /**
      * pkg
      */
-    private static Class<?> pkg = MolapCSVBasedSeqGenMeta.class; // for i18n
-                                                             // purposes
+    private static Class<?> pkg = MolapCSVBasedSeqGenMeta.class;
     
     /**
      * molapdim
@@ -105,16 +104,6 @@ public class MolapCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaInt
      */
     private String molapTime;
     private String  highCardinalityDims;
-
-//    /**
-//     * storeLocation
-//     */
-//    private String storeLocation;
-
-    /**
-     * molapJNDI
-     */
-//    private String molapJNDI;
 
     /**
      * molapSchema
@@ -285,11 +274,6 @@ public class MolapCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaInt
      * 
      */
     private Map<String, String> hierDimTableMap;
-
-    /**
-     * timeIndex
-     */
-//    protected int timeIndex = -1;
 
     /**
      * timeDimeIndex
@@ -473,21 +457,11 @@ public class MolapCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaInt
         this.metaHeirSQLQuery = metaHeirSQLQuery;
     }
    
-    /**
-     * 
-     * @param isInitialLoad The isInitialLoad to set.
-     * 
-     */
     public void setAggregate(boolean isAggregate)
     {
         this.isAggregate = isAggregate;
     }
     
-    /**
-     * 
-     * @return Returns the isInitialLoad.
-     * 
-     */
     public boolean isAggregate()
     {
         return isAggregate;
@@ -505,56 +479,24 @@ public class MolapCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaInt
     }
 
     
-    /**
-     * 
-     * @return Returns the storeType.
-     * 
-     */
     public String getStoreType()
     {
         return storeType;
     }
 
-    /**
-     * 
-     * @param storeType The storeType to set.
-     * 
-     */
     public void setStoreType(String storeType)
     {
         this.storeType = storeType;
     }
 
-    /**
-     * @return the molapSchema
-     */
     public String getMolapSchema() {
         return molapSchema;
     }
 
-    /**
-     * @param molapSchema the molapSchema to set
-     */
     public void setMolapSchema(String molapSchema) {
         this.molapSchema = molapSchema;
     }
 
-//    /**
-//     * @return the molapCon
-//     */
-//    public String getMolapJNDIName() {
-//        return molapJNDI;
-//    }
-//
-//    /**
-//     * @param molapCon the molapCon to set
-//     */
-//    public void setMolapJNDIName(String jndiName) {
-//        this.molapJNDI = jndiName;
-//    }
-
-
-    
     public List<HierarchiesInfo> getMetahierVoList()
     {
         return metahierVoList;
@@ -565,16 +507,10 @@ public class MolapCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaInt
         this.metahierVoList = metahierVoList;
     }
 
-    /**
-     * @return the molapTime
-     */
     public String getMolapTime() {
         return molapTime;
     }
 
-    /**
-     * @param molapTime the molapTime to set
-     */
     public void setMolapTime(String molapTime) {
         this.molapTime = molapTime;
     }
@@ -715,8 +651,6 @@ public class MolapCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaInt
         molapmsr = "";
         molaphier = "";
         molapTime="";
-        //
-//        molapJNDI = "";
         driverClass = "";
         connectionURL = "";
         userName = "";
@@ -755,36 +689,17 @@ public class MolapCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaInt
         
     }
 
-   /* public Object clone() {
-        
-        // field by field copy is default
-        MolapCSVBasedSeqGenMeta retval = (MolapCSVBasedSeqGenMeta) super.clone();
-        
-        // add proper deep copy for the collections
-//      int nrKeys   = keyField.length;
-
-    
-        return retval;
-    }   */
-    
-    /**
-     * @see org.pentaho.di.trans.step.BaseStepMeta#getXML()
-     */
     public String getXML() throws KettleValueException {
-        //
         StringBuffer retval = new StringBuffer(150);
-        //
         retval.append("    ").append(XMLHandler.addTagValue("molapProps", molapProps));
         retval.append("    ").append(XMLHandler.addTagValue("dim", molapdim));
         retval.append("    ").append(XMLHandler.addTagValue("msr", molapmsr));
         retval.append("    ").append(XMLHandler.addTagValue("hier", molaphier));
         retval.append("    ").append(XMLHandler.addTagValue("time", molapTime));
-//        retval.append("    ").append(XMLHandler.addTagValue("con", molapJNDI));
         retval.append("    ").append(XMLHandler.addTagValue("driverClass", driverClass));
         retval.append("    ").append(XMLHandler.addTagValue("connectionURL", connectionURL));
         retval.append("    ").append(XMLHandler.addTagValue("userName", userName));
         retval.append("    ").append(XMLHandler.addTagValue("password", password));
-        //
         retval.append("    ").append(XMLHandler.addTagValue("batchSize", batchSize));
         retval.append("    ").append(XMLHandler.addTagValue("genDimFiles", generateDimFiles));
         retval.append("    ").append(XMLHandler.addTagValue("isAggregate", isAggregate));
@@ -812,15 +727,12 @@ public class MolapCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaInt
         retval.append("    ").append(XMLHandler.addTagValue("heirNadDimsLensString", heirNadDimsLensString));
         retval.append("    ").append(XMLHandler.addTagValue("measureDataType", measureDataType));
         retval.append("    ").append(XMLHandler.addTagValue("columnAndTableName_ColumnMapForAggString", columnAndTableNameColumnMapForAggString));
-		retval.append("    ").append(XMLHandler.addTagValue("schemaName", schemaName));
+		    retval.append("    ").append(XMLHandler.addTagValue("schemaName", schemaName));
         retval.append("    ").append(XMLHandler.addTagValue("cubeName", cubeName));
         retval.append("    ").append(XMLHandler.addTagValue("checkPointFileExits", checkPointFileExits));
         retval.append("    ").append(XMLHandler.addTagValue("denormColumNames", denormColumNames));
         retval.append("    ").append(XMLHandler.addTagValue("currentRestructNumber", currentRestructNumber));
         
-        
-        
-        //
         return retval.toString();
     }
     
@@ -834,7 +746,6 @@ public class MolapCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaInt
             molapmsr = XMLHandler.getTagValue(stepnode, "msr");
             molaphier = XMLHandler.getTagValue(stepnode, "hier");
             molapTime = XMLHandler.getTagValue(stepnode, "time");
-//            molapJNDI = XMLHandler.getTagValue(stepnode, "con");
             driverClass = XMLHandler.getTagValue(stepnode, "driverClass");
             connectionURL = XMLHandler.getTagValue(stepnode, "connectionURL");
             userName = XMLHandler.getTagValue(stepnode, "userName");
@@ -858,7 +769,7 @@ public class MolapCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaInt
             dimesionTableNames = XMLHandler.getTagValue(stepnode, "dimHierReleation");
             highCardinalityDims=XMLHandler.getTagValue(stepnode, "dimHighCardinality");
             tableName = XMLHandler.getTagValue(stepnode, "factOrAggTable");
-			cubeName = XMLHandler.getTagValue(stepnode, "cubeName");
+			      cubeName = XMLHandler.getTagValue(stepnode, "cubeName");
             schemaName = XMLHandler.getTagValue(stepnode, "schemaName");
             checkPointFileExits = XMLHandler.getTagValue(stepnode, "checkPointFileExits");
             denormColumNames = XMLHandler.getTagValue(stepnode, "denormColumNames");
@@ -885,8 +796,7 @@ public class MolapCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaInt
             
             int nrKeys = XMLHandler.countNodes(stepnode, "lookup"); 
             allocate(nrKeys);
-//          intialize();
-            
+
         } catch (Exception e) {
             throw new KettleXMLException("Template Plugin Unable to read step info from XML node", e);
         }
@@ -946,11 +856,6 @@ public class MolapCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaInt
         
     }
     
-    /**
-     * 
-     * @param denormColumNames2
-     * 
-     */
     private void updateDenormColunList(String denormColumNames)
     {
         //
@@ -973,14 +878,8 @@ public class MolapCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaInt
         }
     }
 
-    /**
-     * 
-     * @param dimesionTableNames2
-     * 
-     */
     private void updateHierDimTableMap(String dimesionTableNames)
     {
-        //
         if(null==dimesionTableNames || "".equals(dimesionTableNames))
         {
             return;
@@ -1005,12 +904,6 @@ public class MolapCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaInt
         }
     }
 
-    /**
-     * 
-     * @param measureDataType2
-     * @return
-     * 
-     */
     private Map<String, Boolean> getMeasureDatatypeMap(String measureDataType)
     {
         if(measureDataType == null
@@ -1030,11 +923,6 @@ public class MolapCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaInt
         return resultMap;
     }
 
-    /**
-     * 
-     * @param msrAggregatorString2
-     * 
-     */
     private void updateMeasureAggregator(String msrAggregatorString)
     {
         String[] split = msrAggregatorString.split(MolapCommonConstants.SEMICOLON_SPC_CHARACTER);
@@ -1042,12 +930,6 @@ public class MolapCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaInt
         System.arraycopy(split, 0, msrAggregators, 0, split.length);
     }
 
-    /**
-     * 
-     * @param actualDimNames2
-     * @return
-     * 
-     */
     private String[] getActualDimensionArray(String actualDimNames)
     {
         if(actualDimNames == null
@@ -1076,12 +958,6 @@ public class MolapCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaInt
         return hierList;
     }
     
-    /**
-     * 
-     * @param foreignKeyColumnNameString2
-     * @return
-     * 
-     */
     private Map<String, String> getForeignKeyColumnNameMap(
             String foreignKeyColumnNameString)
     {
@@ -1111,12 +987,6 @@ public class MolapCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaInt
         return map;
     }
 
-    /**
-     * 
-     * @param primaryKeysString2
-     * @return
-     * 
-     */
     private Map<String, Boolean> updatePrimaryKeyMap(String primaryKeysString)
     {
         if(primaryKeysString == null
@@ -1137,7 +1007,6 @@ public class MolapCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaInt
 
     public void updateHierMappings(RowMetaInterface metaInterface)
     {
-//        hierNames = new String[primaryKeyColumnMap.size()];
         List<String> actualHierList = new ArrayList<String>(MolapCommonConstants.CONSTANT_SIZE_TEN);
         for(int j=0;j<metaInterface.size();j++)
         {
@@ -1157,7 +1026,6 @@ public class MolapCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaInt
                 {
                     actualHierList.add(actualHier);
                 }
-//                hierNames[k++] = actualHier;
             }
         }
         
@@ -1195,12 +1063,7 @@ public class MolapCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaInt
         }
         return complexTypesMap;
     }
-    /**
-     * 
-     * @param foreignKeyHierarchyString2
-     * @return
-     * 
-     */
+
     private Map<String, String> getForeignKeyHierMap(
             String foreignKeyHierarchyString)
     {
@@ -1231,12 +1094,6 @@ public class MolapCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaInt
         return map;
     }
 
-    /**
-     * 
-     * @param molaphierColumn
-     * @return
-     * 
-     */
     private Map<String, String[]> getHierarchiesColumnMap(
             String molaphierColumn)
     {
@@ -1265,17 +1122,12 @@ public class MolapCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaInt
         String [] splitedColumnNames = columnNames.split(MolapCommonConstants.COMA_SPC_CHARACTER);
         String[] columns = new String[splitedColumnNames.length];
         
-//        for (int i = 0; i < columns.length; i++) 
-//        {
-//            columns[i] = splitedColumnNames[i];
-//        }
         System.arraycopy(splitedColumnNames, 0, columns, 0, columns.length);
         return columns;
     }
 
     private void getMetaHierarichies(String molapMetaHier)
     {
-        //
         if(null==molapMetaHier || "".equals(molapMetaHier))
         {
             return;
@@ -1327,13 +1179,6 @@ public class MolapCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaInt
                 columnNames[index] = columnAndPropertyNames[0];//CHECKSTYLE:ON
                 columnIndex[index] = getColumnIndex(columnNames[index]);
                 String[] properties = new String[columnAndPropertyNames.length - 1];
-//                int propertyIndex = 0;
-//                for(int k = 1;k < columnAndPropertyNames.length;k++)
-//                {
-//                    //
-//                    properties[propertyIndex] = columnAndPropertyNames[k];
-//                    propertyIndex++;
-//                }
                 System.arraycopy(columnAndPropertyNames, 1, properties, 0, columnAndPropertyNames.length - 1);
                 if(null == columnPropsMap.get(columnNames[index]))
                 {
@@ -1420,10 +1265,9 @@ public class MolapCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaInt
                     String[] propEntry = levelEntry[j].split(MolapCommonConstants.COMA_SPC_CHARACTER);
                     pIndices[j-1] = Integer.parseInt(propEntry[1]);
                     
-                    //CHECKSTYLE:OFF    Approval No:Approval-324,325
                     cols[j-1]  =  propEntry[0];
                     dbType[j-1]  =  propEntry[2];
-                }//CHECKSTYLE:ON
+                }
                 
                 indices.put(dimColumnName, pIndices);
                 columns.put(dimColumnName, cols);
@@ -1528,7 +1372,6 @@ public class MolapCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaInt
         }
         dims = dimsLocal;
         dimLens = lens;
-//      columns.put(DIMENSIONS, list);
         dimColNames = list.toArray(new String[list.size()]);
         highCardCols= new String[0];
         //for high card dims
@@ -1562,7 +1405,6 @@ public class MolapCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaInt
         }
         msrs = m;
         measureColumn = mlist.toArray(new String[mlist.size()]);
-//      columns.put(MEASURES, mlist);
     }
 
 
@@ -1576,7 +1418,6 @@ public class MolapCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaInt
             molaphier = rep.getStepAttributeString(idStep, "hier");
             molapTime = rep.getStepAttributeString(idStep, "time"); 
             //
-//            molapJNDI = rep.getStepAttributeString(id_step, "con");
             driverClass = rep.getStepAttributeString(idStep, "driverClass");
             connectionURL =rep.getStepAttributeString(idStep, "connectionURL");
             userName = rep.getStepAttributeString(idStep, "userName");
@@ -1585,10 +1426,8 @@ public class MolapCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaInt
             metaHeirSQLQuery =  rep.getStepAttributeString(idStep, "metadataFilePath");
             molapMetaHier =  rep.getStepAttributeString(idStep, "molapMetaHier");
             molaphierColumn =  rep.getStepAttributeString(idStep, "molaphierColumn");
-//            primaryKeyColumnNamesString =  rep.getStepAttributeString(id_step, "primaryKeyColumnNamesString");
             foreignKeyHierarchyString =  rep.getStepAttributeString(idStep, "foreignKeyHierarchyString");
             primaryKeysString =  rep.getStepAttributeString(idStep, "primaryKeysString");
-//            foreignKeyColumnNameString =  rep.getStepAttributeString(id_step, "foreignKeyColumnNameString");
             molapMeasureNames =  rep.getStepAttributeString(idStep, "molapMeasureNames");
             actualDimNames =  rep.getStepAttributeString(idStep, "actualDimNames");
             msrAggregatorString =  rep.getStepAttributeString(idStep, "msrAggregatorString");
@@ -1604,16 +1443,14 @@ public class MolapCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaInt
             heirNadDimsLensString = rep.getStepAttributeString(idStep, "heirNadDimsLensString");
             measureDataType = rep.getStepAttributeString(idStep, "measureDataType");
             columnAndTableNameColumnMapForAggString=rep.getStepAttributeString(idStep, "columnAndTableName_ColumnMapForAggString");
-			schemaName=rep.getStepAttributeString(idStep, "schemaName");
+			      schemaName=rep.getStepAttributeString(idStep, "schemaName");
             
             cubeName=rep.getStepAttributeString(idStep, "cubeName");
             checkPointFileExits = rep.getStepAttributeString(idStep, "checkPointFileExits");
             denormColumNames = rep.getStepAttributeString(idStep, "denormColumNames");
             currentRestructNumber = (int)rep.getStepAttributeInteger(idStep, "currentRestructNumber");
-            //
             int nrKeys   = rep.countNrStepAttributes(idStep, "lookup_keyfield");
             allocate(nrKeys);
-            //
         }
         catch(Exception e)
         {
@@ -1624,7 +1461,6 @@ public class MolapCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaInt
 
     public void saveRep(Repository rep, ObjectId idTransformation, ObjectId idStep) throws KettleException
     {
-        //
         try
         {
             rep.saveStepAttribute(idTransformation, idStep, "dim", molapdim); 
@@ -1634,8 +1470,6 @@ public class MolapCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaInt
             rep.saveStepAttribute(idTransformation, idStep, "molaphierColumn", molaphierColumn);
             rep.saveStepAttribute(idTransformation, idStep, "columnAndTableName_ColumnMapForAggString", columnAndTableNameColumnMapForAggString);
             rep.saveStepAttribute(idTransformation, idStep, "time", molapTime);
-            //
-//            rep.saveStepAttribute(id_transformation, id_step, "con", molapJNDI);
             rep.saveStepAttribute(idTransformation, idStep, "driverClass", driverClass);
             rep.saveStepAttribute(idTransformation, idStep, "connectionURL", connectionURL);
             rep.saveStepAttribute(idTransformation, idStep, "userName", userName);
@@ -1646,21 +1480,18 @@ public class MolapCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaInt
             rep.saveStepAttribute(idTransformation, idStep, "batchSize", batchSize);
             rep.saveStepAttribute(idTransformation, idStep, "dimHierReleation", dimesionTableNames);
             rep.saveStepAttribute(idTransformation, idStep, "dimHighCardinality", highCardinalityDims);
-//            rep.saveStepAttribute(id_transformation, id_step, "primaryKeyColumnNamesString", primaryKeyColumnNamesString);
             rep.saveStepAttribute(idTransformation, idStep, "foreignKeyHierarchyString", foreignKeyHierarchyString);
             rep.saveStepAttribute(idTransformation, idStep, "primaryKeysString", primaryKeysString);
-//            rep.saveStepAttribute(id_transformation, id_step, "foreignKeyColumnNameString", foreignKeyColumnNameString);
             rep.saveStepAttribute(idTransformation, idStep, "molapMeasureNames", molapMeasureNames);
             rep.saveStepAttribute(idTransformation, idStep, "actualDimNames", actualDimNames);
             rep.saveStepAttribute(idTransformation, idStep, "normHiers", normHiers);
             rep.saveStepAttribute(idTransformation, idStep, "msrAggregatorString", msrAggregatorString);
             rep.saveStepAttribute(idTransformation, idStep, "heirKeySize", heirKeySize);
             rep.saveStepAttribute(idTransformation, idStep, "forgienKeyPrimayKeyString", forgienKeyPrimayKeyString);
-            //
             rep.saveStepAttribute(idTransformation, idStep, "factOrAggTable", tableName);
             rep.saveStepAttribute(idTransformation, idStep, "heirNadDimsLensString", heirNadDimsLensString);
             rep.saveStepAttribute(idTransformation, idStep, "measureDataType", measureDataType);
-			rep.saveStepAttribute(idTransformation, idStep, "schemaName", schemaName);
+			      rep.saveStepAttribute(idTransformation, idStep, "schemaName", schemaName);
             rep.saveStepAttribute(idTransformation, idStep, "cubeName", cubeName);
             rep.saveStepAttribute(idTransformation, idStep, "checkPointFileExits", checkPointFileExits);
             rep.saveStepAttribute(idTransformation, idStep, "denormColumNames", denormColumNames);
@@ -1680,51 +1511,6 @@ public class MolapCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaInt
             StepMeta stepMeta, RowMetaInterface prev, String[] input,
             String[] output, RowMetaInterface info)
     {
-//        CheckResult cr;
-//
-//        // See if we have input streams leading to this step!
-//        if (input.length > 0) {
-//            cr = new CheckResult(
-//                    CheckResult.TYPE_RESULT_OK,
-//                    BaseMessages
-//                            .getString(pkg,
-//                                    "MolapStep.Check.StepIsReceivingInfoFromOtherSteps"),
-//                    stepMeta);
-//            remarks.add(cr);
-//        } else {
-//            cr = new CheckResult(CheckResult.TYPE_RESULT_ERROR,
-//                    BaseMessages.getString(pkg,
-//                            "MolapStep.Check.NoInputReceivedFromOtherSteps"),
-//                    stepMeta);
-//            remarks.add(cr);
-//        }   
-//        
-//        // also check that each expected key fields are acually coming
-//        if (prev!=null && prev.size()>0)
-//        {
-//            String error_message = ""; 
-//            boolean error_found = false;
-//            
-//            if (error_found)
-//            {
-//                cr = new CheckResult(CheckResultInterface.TYPE_RESULT_ERROR, error_message, stepMeta);
-//            }
-//            else
-//            {
-//                cr = new CheckResult(CheckResultInterface.TYPE_RESULT_OK,
-//                        BaseMessages.getString(pkg,
-//                                "MolapStep.Check.AllFieldsFoundInInput"),
-//                        stepMeta);
-//            }
-//            remarks.add(cr);
-//        }
-//        else
-//        {
-//            String error_message = BaseMessages.getString(pkg,
-//                    "MolapStep.Check.CouldNotReadFromPreviousSteps") + Const.CR;
-//            cr = new CheckResult(CheckResultInterface.TYPE_RESULT_ERROR, error_message, stepMeta);
-//            remarks.add(cr);
-//        }       
     	MolapDataProcessorUtil.check(pkg, remarks, stepMeta, prev, input);
     }
 
@@ -1746,168 +1532,76 @@ public class MolapCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaInt
         return propIndxs;
     }
 
-    /**
-     * 
-     * @return Returns the propTypes.
-     * 
-     */
     public List<String>[] getPropTypes()
     {
         return propTypes;
     }
 
-    /**
-     * 
-     * @return Returns the dimHierReleation.
-     * 
-     */
     public String getTableNames()
     {
         return dimesionTableNames;
     }
 
-    /**
-     * 
-     * @param dimHierReleation The dimHierReleation to set.
-     * 
-     */
     public void setTableNames(String dimHierReleation)
     {
         this.dimesionTableNames = dimHierReleation;
     }
 
-    /**
-     * 
-     * @return Returns the tableName.
-     * 
-     */
     public String getTableName()
     {
         return tableName;
     }
 
-    /**
-     * 
-     * @param tableName The tableName to set.
-     * 
-     */
     public void setTableName(String tableName)
     {
         this.tableName = tableName;
     }
 
-    /**
-     * 
-     * @return Returns the modifiedDimension.
-     * 
-     */
     public String[] getModifiedDimension()
     {
         return modifiedDimension;
     }
 
-    /**
-     * 
-     * @param modifiedDimension The modifiedDimension to set.
-     * 
-     */
     public void setModifiedDimension(String[] modifiedDimension)
     {
         this.modifiedDimension = modifiedDimension;
     }
 
-    /**
-     * 
-     * @param molaphierColumn The molaphierColumn to set.
-     * 
-     */
     public void setMolaphierColumn(String molaphierColumn)
     {
         this.molaphierColumn = molaphierColumn;
     }
 
-    /**
-     * 
-     * @param primaryKeyColumnNamesString The primaryKeyColumnNamesString to set.
-     * 
-     */
-//    public void setPrimaryKeyColumnNamesString(String primaryKeyColumnNamesString)
-//    {
-//        this.primaryKeyColumnNamesString = primaryKeyColumnNamesString;
-//    }
-
-    /**
-     * 
-     * @param foreignKeyHierarchyString The foreignKeyHierarchyString to set.
-     * 
-     */
     public void setForeignKeyHierarchyString(String foreignKeyHierarchyString)
     {
         this.foreignKeyHierarchyString = foreignKeyHierarchyString;
     }
 
-    /**
-     * 
-     * @param primaryKeysString The primaryKeysString to set.
-     * 
-     */
     public void setPrimaryKeysString(String primaryKeysString)
     {
         this.primaryKeysString = primaryKeysString;
     }
 
-    /**
-     * 
-     * @return Returns the primaryKeyMap.
-     * 
-     */
     public Map<String, Boolean> getPrimaryKeyMap()
     {
         return primaryKeyMap;
     }
 
-    /**
-     * 
-     * @param foreignKeyColumnNameString The foreignKeyColumnNameString to set.
-     * 
-     */
-//    public void setForeignKeyColumnNameString(String foreignKeyColumnNameString)
-//    {
-//        this.foreignKeyColumnNameString = foreignKeyColumnNameString;
-//    }
-
-    /**
-     * @return the molapMeasureNames
-     */
     public String getMolapMeasureNames()
     {
         return molapMeasureNames;
     }
 
-    /**
-     * @param molapMeasureNames
-     *            the molapMeasureNames to set
-     */
     public void setMolapMeasureNames(String molapMeasureNames)
     {
         this.molapMeasureNames = molapMeasureNames;
     }
 
-    /**
-     * 
-     * @return Returns the actualDimNames.
-     * 
-     */
     public String getActualDimNames()
     {
         return actualDimNames;
     }
 
-    /**
-     * 
-     * @param actualDimNames The actualDimNames to set.
-     * 
-     */
     public void setActualDimNames(String actualDimNames)
     {
         this.actualDimNames = actualDimNames;
@@ -1923,21 +1617,11 @@ public class MolapCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaInt
         this.normHiers = normHiers;
     }
 	
-	/**
-     * 
-     * @return Returns the msrAggregatorString.
-     * 
-     */
     public String getMsrAggregatorString()
     {
         return msrAggregatorString;
     }
 
-    /**
-     * 
-     * @param msrAggregatorString The msrAggregatorString to set.
-     * 
-     */
     public void setMsrAggregatorString(String msrAggregatorString)
     {
         this.msrAggregatorString = msrAggregatorString;
@@ -1963,82 +1647,42 @@ public class MolapCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaInt
         this.forgienKeyPrimayKeyString = forgienKeyPrimayKeyString;
     }
 
-    /**
-     * 
-     * @return Returns the heirNadDimsLensString.
-     * 
-     */
     public String getHeirNadDimsLensString()
     {
         return heirNadDimsLensString;
     }
 
-    /**
-     * 
-     * @param heirNadDimsLensString The heirNadDimsLensString to set.
-     * 
-     */
     public void setHeirNadDimsLensString(String heirNadDimsLensString)
     {
         this.heirNadDimsLensString = heirNadDimsLensString;
     }
 
-    /**
-     * 
-     * @return Returns the measureDataType.
-     * 
-     */
     public String getMeasureDataType()
     {
         return measureDataType;
     }
 
-    /**
-     * 
-     * @param measureDataType The measureDataType to set.
-     * 
-     */
     public void setMeasureDataType(String measureDataType)
     {
         this.measureDataType = measureDataType;
     }
 
-    /**
-     * 
-     * @return Returns the measureSurrogateRequired.
-     * 
-     */
     public Map<String, Boolean> getMeasureSurrogateRequired()
     {
         return measureSurrogateRequired;
     }
 
-    /**
-     * 
-     * @param measureSurrogateRequired The measureSurrogateRequired to set.
-     * 
-     */
     public void setMeasureSurrogateRequired(
             Map<String, Boolean> measureSurrogateRequired)
     {
         this.measureSurrogateRequired = measureSurrogateRequired;
     }
 
-    /**
-     * 
-     * @return Returns the hierDimTableMap.
-     * 
-     */
     public Map<String, String> getHierDimTableMap()
     {
         return hierDimTableMap;
     }
 
-    /**
-     * 
-     * @return Returns the dimTableArray.
-     * 
-     */
     public String[] getDimTableArray()
     {
         return dimTableArray;
@@ -2053,22 +1697,6 @@ public class MolapCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaInt
 		this.columnAndTableNameColumnMapForAggString = columnAndTableNameColumnMapForAggString;
 	}
 
-	/**
-     * @return the columnAndTableName_ColumnMapForAggString
-     *//*
-    public String getColumnAndTableName_ColumnMapForAggString()
-    {
-        return columnAndTableName_ColumnMapForAggString;
-    }
-
-    *//**
-     * @param columnAndTableName_ColumnMapForAggString the columnAndTableName_ColumnMapForAggString to set
-     *//*
-    public void setColumnAndTableName_ColumnMapForAggString(
-            String columnAndTableName_ColumnMapForAggString)
-    {
-        this.columnAndTableName_ColumnMapForAggString = columnAndTableName_ColumnMapForAggString;
-    }*/
 
     public String getCheckPointFileExits()
     {
@@ -2080,85 +1708,49 @@ public class MolapCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaInt
         this.checkPointFileExits = checkPointFileExits;
     }
 	
-	 /**
-     * @return the cubeName
-     */
     public String getCubeName()
     {
         return cubeName;
     }
 
-    /**
-     * @return the schemaName
-     */
     public String getSchemaName()
     {
         return schemaName;
     }
 
-    /**
-     * @param cubeName the cubeName to set
-     */
     public void setCubeName(String cubeName)
     {
         this.cubeName = cubeName;
     }
 
-    /**
-     * @param schemaName the schemaName to set
-     */
     public void setSchemaName(String schemaName)
     {
         this.schemaName = schemaName;
     }
 
-    /**
-     * 
-     * @return Returns the denormColumNames.
-     * 
-     */
     public String getDenormColumNames()
     {
         return denormColumNames;
     }
 
-    /**
-     * 
-     * @param denormColumNames The denormColumNames to set.
-     * 
-     */
     public void setDenormColumNames(String denormColumNames)
     {
         this.denormColumNames = denormColumNames;
     }
 
-    /**
-     * @return the currentRestructNumber
-     */
     public int getCurrentRestructNumber()
     {
         return currentRestructNumber;
     }
 
-    /**
-     * @param currentRestructNum the currentRestructNumber to set
-     */
     public void setCurrentRestructNumber(int currentRestructNum)
     {
         this.currentRestructNumber = currentRestructNum;
     }
-    /**
-     * 
-     * @return
-     */
     public String  getHighCardinalityDims() {
 		return highCardinalityDims;
 	}
 
-    /**
-     * 
-     * @param highCardinalityDims
-     */
 	public void setHighCardinalityDims(String highCardinalityDims) {
 		this.highCardinalityDims = highCardinalityDims;
 	}

@@ -17,17 +17,17 @@
  * under the License.
  */
 
- /* Copyright (c) 2007 Pentaho Corporation.  All rights reserved. 
- * This software was developed by Pentaho Corporation and is provided under the terms 
- * of the GNU Lesser General Public License, Version 2.1. You may not use 
- * this file except in compliance with the license. If you need a copy of the license, 
- * please go to http://www.gnu.org/licenses/lgpl-2.1.txt. The Original Code is Pentaho 
+ /* Copyright (c) 2007 Pentaho Corporation.  All rights reserved.
+ * This software was developed by Pentaho Corporation and is provided under the terms
+ * of the GNU Lesser General Public License, Version 2.1. You may not use
+ * this file except in compliance with the license. If you need a copy of the license,
+ * please go to http://www.gnu.org/licenses/lgpl-2.1.txt. The Original Code is Pentaho
  * Data Integration.  The Initial Developer is Pentaho Corporation.
  *
- * Software distributed under the GNU Lesser Public License is distributed on an "AS IS" 
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or  implied. Please refer to 
+ * Software distributed under the GNU Lesser Public License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or  implied. Please refer to
  * the license for the specific language governing your rights and limitations.*/
- 
+
 package com.huawei.unibi.molap.csvreaderstep;
 
 import java.io.IOException;
@@ -69,8 +69,6 @@ import com.huawei.unibi.molap.util.MolapDataProcessorLogEvent;
  * Read a simple CSV file
  * Just output Strings found in the file...
  * 
- * @author Matt
- * @since 2007-07-05
  */
 public class CsvInput extends BaseStep implements StepInterface
 {
@@ -148,15 +146,6 @@ public class CsvInput extends BaseStep implements StepInterface
 			}	
 		}
 		
-		// If we are running in parallel, make sure we don't read too much in this step copy...
-		//
-//		if (data.parallel) {
-//			if (data.totalBytesRead>data.blockToRead) {
-//				setOutputDone(); // stop reading
-//				return false;
-//			}
-//		}
-		
 		try {
 			Object[] outputRowData=readOneRow(true);    // get row, set busy!
 			if (outputRowData==null)  // no more input to be expected...
@@ -209,70 +198,6 @@ public class CsvInput extends BaseStep implements StepInterface
 
 	
 	private void prepareToRunInParallel() throws KettleException {
-//		try {
-//			// At this point it doesn't matter if we have 1 or more files.
-//			// We'll use the same algorithm...
-//			//
-//	        for (String filename : data.filenames) { 
-//	        	long size = KettleVFS.getFileObject(filename, getTransMeta()).getContent().getSize();
-//	        	data.fileSizes.add(size);
-//	        	data.totalFileSize+=size;
-//	        }
-//	        
-//	        // Now we can determine the range to read.
-//	        //
-//	        // For example, the total file size is 50000, spread over 5 files of 10000
-//	        // Suppose we have 2 step copies running (clustered or not)
-//	        // That means step 0 has to read 0-24999 and step 1 has to read 25000-49999
-//	        //
-//	        // The size of the block to read (25000 in the example) :
-//	        //
-//	        data.blockToRead = Math.round( (double)data.totalFileSize / (double)data.totalNumberOfSteps ); 
-//	        
-//	        // Now we calculate the position to read (0 and 25000 in our sample) :
-//	        //
-//	        data.startPosition = data.blockToRead * data.stepNumber;
-//	        data.endPosition = data.startPosition + data.blockToRead;
-//	        
-//	        // Determine the start file number (0 or 2 in our sample) :
-//	        // >0<,1000,>2000<,3000,4000
-//	        //
-//	        long totalFileSize=0L;
-//	        for (int i=0;i<data.fileSizes.size();i++) {
-//	        	long size = data.fileSizes.get(i);
-//
-//	        	// Start of file range: totalFileSize
-//	        	// End of file range: totalFileSize+size
-//	        	
-//	        	if (data.startPosition>=totalFileSize && data.startPosition<totalFileSize+size) {
-//	        		// This is the file number to start reading from...
-//	        		//
-//	        		data.filenr = i;
-//	        		
-//	        		// remember where we started to read to allow us to know that we have to skip the header row in the next files (if any)
-//	        		//
-//	        		data.startFilenr = i; 
-//	        		
-//	        		
-//	        		// How many bytes do we skip in that first file?
-//	        		//
-//	        		if (data.startPosition==0) {
-//	        			data.bytesToSkipInFirstFile=0L;
-//	        		} else {
-//	        			data.bytesToSkipInFirstFile = data.startPosition - totalFileSize;
-//	        		}
-//	        		
-//	        		break;
-//	        	}
-//	        	totalFileSize+=size;
-//	        }
-//	        
-//	        if (data.filenames.length > 0)
-//	        	logBasic(BaseMessages.getString(PKG, "CsvInput.Log.ParallelFileNrAndPositionFeedback", data.filenames[data.filenr], Long.toString(data.fileSizes.get(data.filenr)), Long.toString(data.bytesToSkipInFirstFile), Long.toString(data.blockToRead))); //$NON-NLS-1$
-//		}
-//		catch(Exception e) {
-//			throw new KettleException(BaseMessages.getString(PKG, "CsvInput.Exception.ErrorPreparingParallelRun"), e); //$NON-NLS-1$
-//		}
 	}
 
 	private void getFilenamesFromPreviousSteps() throws KettleException {
@@ -316,14 +241,6 @@ public class CsvInput extends BaseStep implements StepInterface
 	    logError("Error closing file channel", e);
 	  }
 
-//	  try {
-//      if (data.fis!=null) {
-//        data.fis.close();
-//      }
-//	  } catch(Exception e) {
-//	    logError("Error closing file input stream", e);
-//	  }
-
     super.dispose(smi, sdi);
 	}
 
@@ -336,10 +253,6 @@ public class CsvInput extends BaseStep implements StepInterface
 				data.bufferedInputStream.close();
 			}
 			
-//			if (data.fis!=null) {
-//				data.fis.close();
-//			}
-			
 			if (data.filenr>=data.filenames.length) {
 				return false;
 			}
@@ -347,28 +260,12 @@ public class CsvInput extends BaseStep implements StepInterface
 			// Open the next one...
 			//
 			FileObject fileObject = KettleVFS.getFileObject(data.filenames[data.filenr], getTransMeta());
-//			if (!(fileObject instanceof LocalFile)) {
-//				// We can only use NIO on local files at the moment, so that's what we limit ourselves to.
-//				//
-//				throw new KettleException(BaseMessages.getString(PKG, "CsvInput.Log.OnlyLocalFilesAreSupported")); //$NON-NLS-1$
-//			}
-			
+
 			if (meta.isLazyConversionActive()) {
 				data.binaryFilename=data.filenames[data.filenr].getBytes(Charset.defaultCharset());
 			}
 			
 			initializeFileReader(fileObject);
-			// If we are running in parallel and we need to skip bytes in the first file, let's do so here.
-			//
-//			if (data.parallel) {
-//				if (data.bytesToSkipInFirstFile>0) {
-//					data.fc.position(data.bytesToSkipInFirstFile);
-//	
-//					// Now, we need to skip the first row, until the first CR that is.
-//					//
-//					readOneRow(false);
-//				}
-//			}
 
 			// Add filename to result filenames ?
 			if(meta.isAddResultFile())
@@ -422,14 +319,10 @@ public class CsvInput extends BaseStep implements StepInterface
     protected void initializeFileReader(FileObject fileObject)
             throws IOException
     {
-//        data.fis = new FileInputStream(KettleVFS.getFilename(fileObject));
-//        data.fc = data.fis.getChannel();
-//        data.bb = ByteBuffer.allocateDirect( data.preferredBufferSize );
         String filePath=KettleVFS.getFilename(fileObject);
         data.bufferedInputStream = FileFactory.getDataInputStream(
                 KettleVFS.getFilename(fileObject),
                 FileFactory.getFileType(filePath), data.preferredBufferSize);
-//        data.bufferedInputStream=new BufferedInputStream(data.fis, data.preferredBufferSize);
     }
 
 
@@ -458,56 +351,7 @@ public class CsvInput extends BaseStep implements StepInterface
 		return false;
 	}
 	
-	/*
-    private boolean isReturn(byte[] source, int location) {
-      switch (data.encodingType) {
-      case SINGLE:
-        return source[location] == '\n';
-  
-      case DOUBLE_BIG_ENDIAN:
-        if (location >= 1) {
-          return source[location - 1] == 0 && source[location] == 0x0d;
-        } else {
-          return false;
-        }
-  
-      case DOUBLE_LITTLE_ENDIAN:
-        if (location >= 1) {
-          return source[location - 1] == 0x0d && source[location] == 0x00;
-        } else {
-          return false;
-        }
-  
-      default:
-        return source[location] == '\n';
-      }
-    }
 
-    private boolean isLineFeed(byte[] source, int location) {
-      switch (data.encodingType) {
-      case SINGLE:
-        return source[location] == '\r';
-  
-      case DOUBLE_BIG_ENDIAN:
-        if (location >= 1) {
-          return source[location - 1] == 0 && source[location] == 0x0a;
-        } else {
-          return false;
-        }
-  
-      case DOUBLE_LITTLE_ENDIAN:
-        if (location >= 1) {
-          return source[location - 1] == 0x0a && source[location] == 0x00;
-        } else {
-          return false;
-        }
-  
-      default:
-        return source[location] == '\r';
-      }
-    }
-	*/
-	
 	/** Read a single row of data from the file... 
 	 * 
 	 * @param doConversions if you want to do conversions, set to false for the header row.
@@ -538,12 +382,7 @@ public class CsvInput extends BaseStep implements StepInterface
 			//
 			while (!newLineFound && outputIndex<meta.getInputFields().length) {
 				
-			  /*
-			  if (getLinesInput()==5445) {
-			    System.out.println("Break!");
-			  }
-			  */
-			  
+
 				if (checkBufferSize()&&outputRowData != null) {
 					// Last row was being discarded if the last item is null and
 					// there is no end of line delimiter
@@ -666,7 +505,6 @@ public class CsvInput extends BaseStep implements StepInterface
 								{
 								    /**
 								     * <pre>
-								     * @author m72626
 								     * fix for customer issue.
 								     * after last enclosure there must be either field end or row end otherwise enclosure is field content.
 								     * Example:
@@ -840,7 +678,7 @@ public class CsvInput extends BaseStep implements StepInterface
     protected void addRowDetails(Object[] outputRowData)
     {
         if (data.isAddingRowNumber) {
-        	outputRowData[data.rownumFieldIndex] =Long.valueOf(data.rowNumber++); //new Long(data.rowNumber++);
+        	outputRowData[data.rownumFieldIndex] =Long.valueOf(data.rowNumber++);
         }
     }
 
@@ -926,10 +764,8 @@ public class CsvInput extends BaseStep implements StepInterface
 			
 			// Handle parallel reading capabilities...
 			//
-//			data.stopReading = false;
-			
+
 			if (meta.isRunningInParallel()) {
-//				data.stepNumber = getUniqueStepNrAcrossSlaves();
 				data.totalNumberOfSteps = getUniqueStepCountAcrossSlaves();
 				
 				// We are not handling a single file, but possibly a list of files...
@@ -937,8 +773,6 @@ public class CsvInput extends BaseStep implements StepInterface
 				// Then read the required block.
 				//
 				
-//	            data.fileSizes = new ArrayList<Long>(MolapCommonConstants.CONSTANT_SIZE_TEN);
-//	            data.totalFileSize = 0L;
 			}
 			
 			// Set the most efficient pattern matcher to match the delimiter.
@@ -985,9 +819,6 @@ public class CsvInput extends BaseStep implements StepInterface
 			if (data.bufferedInputStream!=null) {
 				data.bufferedInputStream.close();
 			}
-//			if (data.fis!=null) {
-//				data.fis.close();
-//			}
 		} catch (IOException e) {
 			throw new KettleException("Unable to close file channel for file '"+data.filenames[data.filenr-1],e);
 		}

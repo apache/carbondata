@@ -43,16 +43,6 @@ import com.huawei.unibi.molap.merger.exeception.SliceMergerException;
 import com.huawei.unibi.molap.util.MolapDataProcessorLogEvent;
 import com.huawei.unibi.molap.util.MolapUtil;
 
-/**
- * 
- * Project Name NSE V3R7C00 
- * Module Name : Molap Data Processor
- * Author K00900841
- * Created Date :21-May-2013 6:42:29 PM
- * FileName : HierarchyFileMerger.java
- * Class Description : This class is responsible for merging the Hierarchy files 
- * Version 1.0
- */
 public class HierarchyFileMerger
 {
     /**
@@ -90,19 +80,15 @@ public class HierarchyFileMerger
         this.hierarchyAndKeySizeMap = hierarchyAndKeySizeMap;
     }
     
-    //TODO SIMIAN
     /**
      * This method is responsible for merging the Hierarchy files from multiple
      * location if unique file is present in any folder then it will be copied
      * to destination else file will be merged and merged file will be in sorted
      * order
      * 
-     * @param slice location
-     *          slice location
      * @throws SliceMergerException
      *          problem while merging     
-     *          
-     * 
+     *
      */ 
     
     public void mergerData(String[] sliceLocation) throws SliceMergerException
@@ -176,8 +162,6 @@ public class HierarchyFileMerger
                             "Problem while renaming the file");
                 }
 
-
-                // fileManager.remove(fileData);
             }
         }
 
@@ -186,37 +170,6 @@ public class HierarchyFileMerger
         mergeHierarchyFiles.mergeExecuter();
     }
 
-//    /**
-//     * below method will be used to get the files 
-//     * 
-//     * @param sliceLocation
-//     *          slocation locations
-//     * @return sorted files
-//     *
-//     */
-//    private MolapFile[] getSortedPathForFiles(String sliceLocation)
-//    {
-//        File file = new File(sliceLocation);
-//        File[] files = null;
-//        if(file.isDirectory())
-//        {
-//            files = file.listFiles(new FileFilter()
-//            {
-//                public boolean accept(File pathname)
-//                {
-//                    return (!pathname.isDirectory()) && pathname.getName().endsWith(".hierarchy");
-//                }
-//            });
-//        }
-//        /**
-//         * Fortify Fix: FORWARD_NULL
-//         */
-//        if(null == files)
-//        {
-//            throw new IllegalArgumentException("Inavalid hierarchy file location");
-//        }
-//        return MolapUtil.getSortedFileList(files);
-//    }
     /**
      * below method will be used to get the files 
      * 

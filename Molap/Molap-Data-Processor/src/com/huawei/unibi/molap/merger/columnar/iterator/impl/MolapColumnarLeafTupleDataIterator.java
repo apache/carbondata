@@ -35,10 +35,6 @@ public class MolapColumnarLeafTupleDataIterator implements MolapDataIterator<Mol
 {
     
     /**
-     * number of keys in one leaf node
-     */
-
-    /**
      * unique value if slice
      */
     private double[] uniqueValue;
@@ -69,10 +65,6 @@ public class MolapColumnarLeafTupleDataIterator implements MolapDataIterator<Mol
     private AbstractColumnarScanResult keyValue;
     
     /**
-     * rowCounter
-     */
-    
-    /**
      * tuple
      */
     private MolapSurrogateTupleHolder currentTuple;
@@ -85,12 +77,8 @@ public class MolapColumnarLeafTupleDataIterator implements MolapDataIterator<Mol
     /**
      * MolapSliceTupleIterator constructor to initialise
      * 
-     * @param sliceModel
-     *            slice model which will hold the slice information
      * @param mdkeyLength
      *            mdkey length
-     * @param measureCount
-     *            measure count
      */
     public MolapColumnarLeafTupleDataIterator(String sliceLocation, MolapFile[] factFiles,FactReaderInfo factItreatorInfo, int mdkeyLength)
     {
@@ -119,8 +107,6 @@ public class MolapColumnarLeafTupleDataIterator implements MolapDataIterator<Mol
     /**
      * This method will be used to get the compression model for slice
      * 
-     * @param path
-     *          slice path
      * @param measureCount
      *          measure count
      * @return compression model

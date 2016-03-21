@@ -48,16 +48,6 @@ import com.huawei.unibi.molap.util.MolapDataProcessorLogEvent;
 import com.huawei.unibi.molap.util.MolapUtil;
 import com.huawei.unibi.molap.writer.ByteArrayHolder;
 
-/**
- * 
- * Project Name NSE V3R7C00 
- * Module Name : Molap Data Processor
- * Author K00900841
- * Created Date :21-May-2013 6:42:29 PM
- * FileName : MolapSliceMergerUtil.java
- * Class Description : Class having all the utility method used for Slice merging 
- * Version 1.0
- */
 public final class MolapSliceMergerUtil
 {
 	private MolapSliceMergerUtil()
@@ -201,7 +191,6 @@ public final class MolapSliceMergerUtil
             fos = new FileOutputStream(destFile);
 
             outPutFileChannel = fos.getChannel();
-          //CHECKSTYLE:OFF    Approval No:Approval-367
             for(ByteArrayHolder arrayHolder : holder)
             {
                 try
@@ -218,8 +207,7 @@ public final class MolapSliceMergerUtil
                 }
 
             }
-          //CHECKSTYLE:ON
-        
+
         }
         finally
         {
@@ -247,14 +235,6 @@ public final class MolapSliceMergerUtil
         }
     }
     
-    /**
-     * 
-     * @param value
-     * @param key
-     * @param properties
-     * @return
-     * 
-     */
     private static ByteBuffer storeValueInCache(byte[] bytes, int primaryKey)
     {
         
@@ -318,7 +298,6 @@ public final class MolapSliceMergerUtil
 
     }
     
-    //TODO SIMIAN
     /**
      * This method will copy input stream to output stream it will copy file to
      * destination
@@ -396,8 +375,7 @@ public final class MolapSliceMergerUtil
         }
     }
     
-    //TODO SIMIAN
-    
+
     /**
      * compare
      * @param byte1
@@ -423,20 +401,12 @@ public final class MolapSliceMergerUtil
     }
     
 
-    /**
-     * 
-     * @param memberFile
-     * @param inProgressLoadFolder 
-     * @return
-     * 
-     */
     public static File decryptEncyptedFile(File memberFile) throws SliceMergerException
     {
         String filePath = memberFile.getAbsolutePath() + MolapCommonConstants.FILE_INPROGRESS_STATUS;
         return new File(filePath);
     }
     
-    //TODO SIMIAN
     /**
      * below method will be used to get the files 
      * 

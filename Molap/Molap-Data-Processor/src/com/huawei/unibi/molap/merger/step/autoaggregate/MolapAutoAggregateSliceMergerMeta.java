@@ -56,15 +56,6 @@ import org.w3c.dom.Node;
 
 import com.huawei.unibi.molap.constants.MolapCommonConstants;
 
-/**
- * Project Name NSE V3R8C10 
- * Module Name : MOLAP Data Processor
- * Author :k00900841 
- * Created Date:10-Aug-2014
- * FileName : MolapAutoAggregateSliceMergerMeta.java 
- * Class Description : Below class is responsible for holding step meta information
- * Version 1.0
- */
 public class MolapAutoAggregateSliceMergerMeta extends BaseStepMeta implements
         StepMetaInterface
 {
@@ -221,7 +212,6 @@ public class MolapAutoAggregateSliceMergerMeta extends BaseStepMeta implements
 
     }
     
-    //TODO SIMIAN
     /**
      * Get the XML that represents the values in this step
      * 
@@ -292,23 +282,10 @@ public class MolapAutoAggregateSliceMergerMeta extends BaseStepMeta implements
         }
         catch(Exception ex)
         {
-            // TODO Auto-generated catch block
             throw new KettleXMLException(
                     "Unable to read step info from XML node", ex);
         }
     }
-
-    /**
-     * Make an exact copy of this step, make sure to explicitly copy Collections
-     * etc.
-     * 
-     * @return an exact copy of this step
-     */
-   /* public Object clone()
-    {
-        Object obj = super.clone();
-        return obj;
-    }*/
 
     /**
      * Save the steps data into a Kettle repository
@@ -397,7 +374,6 @@ public class MolapAutoAggregateSliceMergerMeta extends BaseStepMeta implements
         }
         catch(Exception e)
         {
-            // TODO Auto-generated catch block
             throw new KettleException(
                     BaseMessages
                             .getString(PKG,
@@ -429,7 +405,6 @@ public class MolapAutoAggregateSliceMergerMeta extends BaseStepMeta implements
             StepMeta stepMeta, RowMetaInterface prev, String[] input,
             String[] output, RowMetaInterface info)
     {
-        // TODO Auto-generated method stub
 
         CheckResult chkRes = null;
  
@@ -469,7 +444,6 @@ public class MolapAutoAggregateSliceMergerMeta extends BaseStepMeta implements
             StepDataInterface stepDataInterface, int copyNr,
             TransMeta transMeta, Trans trans)
     {
-        // TODO Auto-generated method stub
         return new MolapAutoAggregateSliceMergerStep(stepMeta,
                 stepDataInterface, copyNr, transMeta, trans);
     }
@@ -484,7 +458,6 @@ public class MolapAutoAggregateSliceMergerMeta extends BaseStepMeta implements
     @Override
     public StepDataInterface getStepData()
     {
-        // TODO Auto-generated method stub
         return new MolapAutoAggregateSliceMergerData();
     }
 
@@ -549,7 +522,6 @@ public class MolapAutoAggregateSliceMergerMeta extends BaseStepMeta implements
     {
         return mapOfTableAndMdkeySize;
     }
-    //TODO SIMIAN
 
     /**
      * This method will be used to set the heir and key size string

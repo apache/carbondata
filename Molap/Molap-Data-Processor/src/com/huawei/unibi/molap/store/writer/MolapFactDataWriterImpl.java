@@ -142,8 +142,6 @@ public class MolapFactDataWriterImpl extends AbstractFactDataWriter<short[]>
 	private byte[][] fillAndCompressedKeyBlockData(IndexStorage<short[]>[] keyStorageArray,int entryCount) 
 	{
 		byte[][] keyBlockData = new byte[keyStorageArray.length][];
-//		try
-//		{
 		int destPos=0;
 		for(int i =0;i<keyStorageArray.length;i++)
 		{
@@ -156,23 +154,12 @@ public class MolapFactDataWriterImpl extends AbstractFactDataWriter<short[]>
 			}
 			keyBlockData[i]=SnappyByteCompression.INSTANCE.compress(keyBlockData[i]);
 		}
-//		}
-//		catch(Exception e)
-//		{
-//			System.out.println();
-//		}
 		return keyBlockData;
 	}
 	
 	/**
      * This method is responsible for writing leaf node to the leaf node file
      * 
-     * @param keyArray
-     *            mdkey array
-     * @param measureArray
-     *            measure array
-     * @param fileName
-     *            leaf node file
      * @return file offset offset is the current position of the file
      * @throws MolapDataWriterException 
      *          if will throw MolapDataWriterException when any thing goes wrong

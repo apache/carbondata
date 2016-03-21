@@ -20,16 +20,6 @@
 
 package com.huawei.unibi.molap.dataprocessor.queue;
 
-/**
- * Project Name NSE V3R7C30 
- * Module Name : Molap
- * Author V00900840
- * Created Date :24-May-2013 12:15:55 PM
- * FileName : Queue.java
- * Class Description : This is queue interface for 
- * handling the dataload checkpoint request in queue.
- * Version 1.0
- */
 public interface Queue<E>
 {
     /**

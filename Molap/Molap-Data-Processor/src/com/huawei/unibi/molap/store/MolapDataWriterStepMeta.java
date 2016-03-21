@@ -47,8 +47,6 @@ import com.huawei.unibi.molap.constants.MolapCommonConstants;
 /**
  * This class is the entry point for MolapDataWriterStepMeta plug-in
  * 
- * @author K00900841
- * 
  */
 public class MolapDataWriterStepMeta extends BaseStepMeta implements
         StepMetaInterface,Cloneable
@@ -364,7 +362,6 @@ public class MolapDataWriterStepMeta extends BaseStepMeta implements
         }
     }
     
-    //TODO SIMIAN
     /**
      * Read the steps information from a Kettle repository
      * 
@@ -484,7 +481,6 @@ public class MolapDataWriterStepMeta extends BaseStepMeta implements
             StepDataInterface stepDataInterface, int copyNr,
             TransMeta transMeta, Trans trans)
     {
-        // TODO Auto-generated method stub
         return new MolapDataWriterStep(stepMeta, stepDataInterface, copyNr,
                 transMeta, trans);
     }

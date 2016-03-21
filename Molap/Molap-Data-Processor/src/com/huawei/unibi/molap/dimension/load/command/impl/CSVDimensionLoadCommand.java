@@ -47,19 +47,7 @@ import com.huawei.unibi.molap.surrogatekeysgenerator.csvbased.MolapCSVBasedDimSu
 import com.huawei.unibi.molap.util.MolapDataProcessorLogEvent;
 import com.huawei.unibi.molap.util.MolapUtil;
 import com.huawei.unibi.molap.writer.LevelValueWriter;
-//import java.util.HashSet;
-//import java.util.Iterator;
-//import java.util.Set;
 
-/**
- * Project Name NSE V3R7C00 
- * Module Name : 
- * Author V00900840
- * Created Date :14-Nov-2013 6:07:43 PM
- * FileName : CSVDimensionLoadCommand.java
- * Class Description :
- * Version 1.0
- */
 public class CSVDimensionLoadCommand implements DimensionLoadCommand
 {
     /**
@@ -165,14 +153,6 @@ public class CSVDimensionLoadCommand implements DimensionLoadCommand
             {
                 dimensionLoadInfo.getSurrogateKeyGen().writeHeirDataToFileAndCloseStreams();
 
-                // Merge the dimension and hierarchy files
-//                MolapCSVBasedDimSurrogateKeyGen surrogateKeyGen = dimensionLoadInfo.getSurrogateKeyGen();
-//                String baseStoreFolder = surrogateKeyGen.getStoreFolderWithLoadNumber();
-//                Map<String, KeyGenerator> keyGenerator = dimensionLoadInfo.getKeyGenerator();
-                
-//                Map<String, Integer> hierKeyMap = DimenionLoadCommandHelper.getHierKeyMap(keyGenerator);
-                
-//                DimenionLoadCommandHelper.mergeFiles(baseStoreFolder, hierKeyMap);
             }
             catch(KeyGenException e)
             {
@@ -180,13 +160,6 @@ public class CSVDimensionLoadCommand implements DimensionLoadCommand
                         MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                         "Not able to close the stream for level value and hierarchy files.");
             }
-//         catch(IOException e)
-//         {
-//             LOGGER.error(
-//                     MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-//                     "Not able to merge the level and hierarchy files.");
-//         }
-            
         }
     }
     
@@ -284,17 +257,7 @@ public class CSVDimensionLoadCommand implements DimensionLoadCommand
 
         primaryKeyColumnName = tblName + '_' + primaryKeyColumnName.replace("\"", "").trim();
         isTimeDim=false;
-       /* if(isTimeDim)
-        {
-            if(!loadTimeDimensionFromRealTimeDataMappingFile(columnNames,
-                    columnIndex, levelTypeColumnMap, dimFileLocDir,
-                    dimenionLoadCommandHelper, tblName, primaryKeyColumnName))
-            {
-                return;
-            }
-        
-        }*/
-        
+
         LevelValueWriter primaryKeyValueWriter = null;
         boolean fileAlreadyCreated = false;
         DataInputStream fileReader = null;
@@ -344,7 +307,6 @@ public class CSVDimensionLoadCommand implements DimensionLoadCommand
                 return;
             }
 
-//            String[] origunalColumnName = new String[actualColumnsIncludingPrimaryKey.length];
             String[] columnNameArray = dimenionLoadCommandHelper.checkQuotesAndAddTableNameForCSV(
                     dimenionLoadCommandHelper.getRowData(header), tblName);
             int primaryIndexInLevel = dimenionLoadCommandHelper.getRepeatedPrimaryFromLevels(tblName, columnNames,actualColumnsIncludingPrimaryKey[0]);
@@ -356,7 +318,6 @@ public class CSVDimensionLoadCommand implements DimensionLoadCommand
                 }
                 String dimFileName = primaryKeyColumnName
                         + MolapCommonConstants.LEVEL_FILE_EXTENSION;
-//                        + MolapCommonConstants.FILE_INPROGRESS_STATUS;
                 for(int i = 0;i < dimensionWriter.length;i++)
                 {
                     if(dimFileName.equals(dimensionWriter[i]
@@ -374,12 +335,9 @@ public class CSVDimensionLoadCommand implements DimensionLoadCommand
                 }
             }
             
-//            columnNameFileIndex = getIndex(columnNameArray, columnNames);
             int[] outputVal = new int[columnNames.length];
             int[][] propertyIndex = null;
             int primaryKeySurrogate = -1;
-//            String []columnNameWithoutPrimaryKey = new String[columnNameArray.length -1];
-//            System.arraycopy(columnNameArray, 1, columnNameWithoutPrimaryKey, 0, columnNameArray.length-1);
             propertyIndex = new int[columnNames.length][];
             for(int i = 0;i < columnNames.length;i++)
             {
@@ -407,7 +365,6 @@ public class CSVDimensionLoadCommand implements DimensionLoadCommand
                     continue;
                 }
 
-                // String[] columnNameArrayNew = new String[length-1];
                 isKeyExceeded = processCSVRows(columnNames, columnIndex,
                         isTimeDim, surrogateKeyGen, dimColmapping, outputVal,
                         propertyIndex,data);
@@ -429,7 +386,6 @@ public class CSVDimensionLoadCommand implements DimensionLoadCommand
                         surrogateKeyGen.checkHierExists(outputVal, hierarichiesName, primaryKeySurrogate);
                     }
                 }
-//                isKeyExceeded= false;// Not required to assign, as it is not used further.in the loop again it is initialized.
             }
 
             if(0==recordCnt)
@@ -442,12 +398,6 @@ public class CSVDimensionLoadCommand implements DimensionLoadCommand
                 }
             }
             
-         /*   if(isTimeDim)
-            {
-                surrogateKeyGen.setTimeDimCache(null);
-                dimenionLoadCommandHelper.dataPropertyReader = null;
-            }
-            */
         }
         catch(KettleException e)
         {
@@ -475,8 +425,6 @@ public class CSVDimensionLoadCommand implements DimensionLoadCommand
                 int counter = primaryKeyValueWriter.getCounter();
 
                 String changedFileName = levelFileName + (counter - 1);
-                // String changedFileName = inProgFileName.substring(0,
-                // inProgFileName.lastIndexOf('.'));
                 String inProgFileName = changedFileName
                         + MolapCommonConstants.FILE_INPROGRESS_STATUS;
                 File inProgress = new File(storePath + File.separator
@@ -500,140 +448,6 @@ public class CSVDimensionLoadCommand implements DimensionLoadCommand
     }
 
     /**
-     * Below method will be used to load the the time dimension data which is present in real time data mapping file and dimension table 
-     * @param columnNames
-     * @param columnIndex
-     * @param levelTypeColumnMap
-     * @param dimFileLocDir
-     * @param dimenionLoadCommandHelper
-     * @param tableName
-     * @param primaryKeyColumnName
-     */
-    /*private boolean loadTimeDimensionFromRealTimeDataMappingFile(
-            String[] columnNames, int[] columnIndex,
-            Map<String, String> levelTypeColumnMap, String dimFileLocDir,
-            DimenionLoadCommandHelper dimenionLoadCommandHelper,
-            String tableName, String primaryKeyColumnName) throws Exception
-    {
-        DataInputStream fileReader = null;
-        BufferedReader bufferedReader = null;
-        try
-        {
-            int[] dimCardinality = dimensionLoadInfo.getDimCardinality();
-            // get the column name only year, month and day is supported in real time mapping file  
-            Iterator<String> iterator = levelTypeColumnMap.values()
-                    .iterator();
-            // create map for each level and it data present in dimension table in csv files
-            Map<String, Set<String>> columnAndMemberListaMap = new HashMap<String, Set<String>>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
-            String[] columnNameInDBTable = new String[levelTypeColumnMap.size()];
-            int counter = 0;
-            while(iterator.hasNext())
-            {
-                // create map with column and its data 
-                Set<String> list = new HashSet<String>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
-                columnNameInDBTable[counter] = iterator.next();
-                columnAndMemberListaMap.put(columnNameInDBTable[counter], list);
-                counter++;
-            }
-
-            // create dimension table file 
-            FileType fileType = FileFactory.getFileType(dimFileLocDir);
-            
-            String dimCsvFile = dimFileLocDir + '/'
-                    + tableName + ".csv";
-            if(!FileFactory.isFileExist(dimCsvFile, fileType))
-            {
-                LOGGER.error(
-                        MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-                        "For Dimension table : \"" + dimCsvFile
-                                + " \" CSV file not presnt.");
-                throw new RuntimeException("For Dimension table : \""
-                        + dimCsvFile + " \" ,CSV file not presnt.");
-            }
-            
-            
-            fileReader = FileFactory.getDataInputStream(dimCsvFile, fileType);
-            // create reader 
-            bufferedReader = new BufferedReader(new InputStreamReader(fileReader,Charset.defaultCharset()));
-
-            // if header is not present in csv then return 
-            String header = bufferedReader.readLine();
-            if(null == header)
-            {
-                return false;
-            }
-            String[] headerValues = dimenionLoadCommandHelper
-                    .getRowData(header);
-            int[] dimColmapping = new int[columnNameInDBTable.length];
-            int index = 0;
-            // map the header 
-            for(int i = 0;i < columnNameInDBTable.length;i++)
-            {
-                for(int j = 0;j < headerValues.length;j++)
-                {
-                    if(columnNameInDBTable[i].equals(headerValues[j]))
-                    {
-                        dimColmapping[index++] = j;
-                    }
-                }
-            }
-            // get the primary key column if its index is -1 then return 
-            int primaryColumnIndex = getPrimaryColumnMap(tableName,
-                    primaryKeyColumnName, header, dimenionLoadCommandHelper);
-            if(primaryColumnIndex == -1)
-            {
-                return false;
-            }
-            counter=0;
-            int []cardinalityIndex = new int[columnNameInDBTable.length];
-            StringBuilder builder= null;
-            for(int i = 0;i < columnNameInDBTable.length;i++)
-            {
-                builder= new StringBuilder();
-                builder.append(tableName);
-                builder.append('_');
-                builder.append(columnNameInDBTable[i]);
-                for(int j = 0;j < columnNames.length;j++)
-                {
-                    if(builder.toString().equals(columnNames[j]))
-                    {
-                        cardinalityIndex[counter++]=j;
-                    }
-                }
-            }
-            Map<String,Integer> levelAndCardinalityMap = new HashMap<String, Integer>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
-            for(int i = 0;i < columnNameInDBTable.length;i++)
-            {
-                levelAndCardinalityMap.put(columnNameInDBTable[i],dimCardinality[cardinalityIndex[i]]);
-            }
-            String dimRow = "";
-            // read row for year month and day and fill the map 
-            while(null != (dimRow = bufferedReader.readLine()))
-            {
-                String[] columnValues = dimenionLoadCommandHelper
-                        .getRowData(dimRow);
-                for(int i = 0;i < dimColmapping.length;i++)
-                {
-                    if(columnValues[dimColmapping[i]]!=null)
-                    {
-                        columnAndMemberListaMap.get(columnNameInDBTable[i]).add(
-                                columnValues[dimColmapping[i]]);
-                    }
-                }
-            }
-            // load the data and create the catch 
-            dimenionLoadCommandHelper.updateMemberCache(dimensionLoadInfo,
-                    levelTypeColumnMap, tableName, columnNames,
-                    columnIndex, columnAndMemberListaMap, levelAndCardinalityMap);
-        }
-        finally
-        {
-            MolapUtil.closeStreams(bufferedReader);
-        }
-        return true;
-    }*/
-
-    /**
      * processCSVRows
      * @param columnNames
      * @param columnIndex
@@ -642,7 +456,6 @@ public class CSVDimensionLoadCommand implements DimensionLoadCommand
      * @param dimColmapping
      * @param output
      * @param propertyIndex
-     * @param isKeyExceeded
      * @param data
      * @return
      * @throws KettleException
@@ -664,8 +477,6 @@ public class CSVDimensionLoadCommand implements DimensionLoadCommand
                 {
                     String value = data[propertyIndex[i][k]];
                     
-//                            Object value = resultSet
-//                                    .getObject(origunalColumnName[propertyIndex[dimColmapping[i]][k]]);
                     if(null == value)
                     {
                         value = MolapCommonConstants.MEMBER_DEFAULT_VAL;
@@ -699,15 +510,6 @@ public class CSVDimensionLoadCommand implements DimensionLoadCommand
         return isKeyExceeded;
     }
 
-    /**
-     * 
-     * @param tableName
-     * @param primaryKeyColumnName
-     * @param header
-     * @param dimenionLoadCommandHelper
-     * @return
-     * 
-     */
     private int getPrimaryColumnMap(String tableName,
             String primaryKeyColumnName, String header,
             DimenionLoadCommandHelper dimenionLoadCommandHelper)

@@ -17,17 +17,6 @@
  * under the License.
  */
 
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2014
- * =====================================
- *
- */
 package com.huawei.unibi.molap.store;
 
 import java.io.File;
@@ -50,17 +39,6 @@ import com.huawei.unibi.molap.util.MolapDataProcessorLogEvent;
 import com.huawei.unibi.molap.util.MolapDataProcessorUtil;
 import com.huawei.unibi.molap.util.MolapProperties;
 
-/**
- * Project Name NSE V3R7C00 
- * Module Name : Molap Data Processor 
- * Author K00900841
- * Created Date :21-May-2013 6:42:29 PM 
- * FileName : MolapDataWriterStep.java
- * Class Description : below class is responsible for sorting the data, its a 
- * single thread based sorting, it is using traditional merge sort algorithm
- * 
- * Version 1.0
- */
 public class SingleThreadFinalMerger
 {
     
@@ -156,7 +134,6 @@ public class SingleThreadFinalMerger
     
     /**
      * This method will be used to merger the merged files 
-     * @param file
      * @throws MolapSortKeyAndGroupByException
      */
     public void startFinalMerge()
@@ -219,7 +196,6 @@ public class SingleThreadFinalMerger
                     .parseInt(MolapCommonConstants.MOLAP_MAX_THREAD_FOR_SORTING_DEFAULTVALUE);
         }
         ExecutorService service = Executors.newFixedThreadPool(maxThreadForSorting);
-      //CHECKSTYLE:OFF    Approval No:Approval-367
         for(final File tmpFile : files)
         {
           
@@ -232,7 +208,6 @@ public class SingleThreadFinalMerger
                     MolapSortTempFileChunkHolder molapSortTempFileChunkHolder = new MolapSortTempFileChunkHolder(
                             tmpFile, measureCount, mdkeyLength,
                             fileBufferSize,isFactMdkeyInInputRow,factMdkeyLength, aggregators,highCardCount);
-                  //CHECKSTYLE:ON
                     // initialize
                     molapSortTempFileChunkHolder.initialize();
                     molapSortTempFileChunkHolder.readRow();

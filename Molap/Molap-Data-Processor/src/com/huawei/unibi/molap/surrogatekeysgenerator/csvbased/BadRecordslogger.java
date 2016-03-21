@@ -60,11 +60,6 @@ public class BadRecordslogger
     private String storePath;
 
     /**
-     * Log Strings
-     */
-    // private StringBuilder logStrings;
-
-    /**
      * FileChannel
      */
     private BufferedWriter bufferedWriter;
@@ -98,11 +93,6 @@ public class BadRecordslogger
         this.storePath = storePath;
     }
 
-    /**
-     * @param row
-     * @param size
-     * @param string
-     */
     public void addBadRecordsToBilder(Object[] row, int size, String reason,
             String valueComparer)
     {
@@ -154,8 +144,6 @@ public class BadRecordslogger
      */
     private synchronized void writeBadRecordsToFile(StringBuilder logStrings)
     {
-        // synchronized (syncObject)
-        // {
         String filePath = this.storePath + File.separator + this.fileName
                 + MolapCommonConstants.FILE_INPROGRESS_STATUS;
         if(null == logFile)
@@ -163,7 +151,6 @@ public class BadRecordslogger
             logFile = FileFactory.getMolapFile(filePath,
                     FileFactory.getFileType(filePath));
         }
-        // }
 
         try
         {
@@ -173,11 +160,9 @@ public class BadRecordslogger
                 if(!FileFactory.isFileExist(this.storePath, fileType))
                 {
                     // create the folders if not exist
-                    // new File(this.storePath).mkdirs();
                     FileFactory.mkdirs(this.storePath, fileType);
 
                     // create the files
-                    // logFile.createNewFile();
                     FileFactory.createNewFile(filePath, fileType);
                 }
 

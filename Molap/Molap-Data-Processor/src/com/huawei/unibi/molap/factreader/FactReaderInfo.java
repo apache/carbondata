@@ -86,16 +86,6 @@ public class FactReaderInfo
         this.tableName = tableName;
     }
 
-//    public String[] getAggType()
-//    {
-//        return aggType;
-//    }
-
-//    public void setAggType(String[] aggType)
-//    {
-//        this.aggType = aggType;
-//    }
-
     public int[] getBlockIndex()
     {
         return blockIndex;

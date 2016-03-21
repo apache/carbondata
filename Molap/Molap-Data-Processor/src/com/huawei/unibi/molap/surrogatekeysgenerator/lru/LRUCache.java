@@ -80,16 +80,12 @@ public final class LRUCache
                 new LinkedHashMap<String, MolapSeqGenCacheHolder>(lruCacheSize+1,
                         1.0f, true)
                 {
-                    //CHECKSTYLE:OFF    Approval No:Approval-398
+                    //CHECKSTYLE:OFF
                     /**
                      * serialVersionUID
                      */
                     private static final long serialVersionUID = 1L;
                     //CHECKSTYLE:ON
-                    /**
-                     * size
-                     */
-//                    private int size;
 
                     @Override
                     public boolean removeEldestEntry(

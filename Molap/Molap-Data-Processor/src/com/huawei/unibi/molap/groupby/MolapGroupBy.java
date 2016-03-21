@@ -22,13 +22,6 @@ package com.huawei.unibi.molap.groupby;
 import com.huawei.unibi.molap.constants.MolapCommonConstants;
 import com.huawei.unibi.molap.util.MolapDataProcessorUtil;
 
-/**
- * 
- * Project Name NSE V3R7C00 Module Name : Molap Data Processor Author K00900841
- * Created Date :21-May-2013 6:42:29 PM FileName : MolapGroupBy.java Class
- * Description : This class will be used for merging the same key (Group By)
- * Version 1.0
- */
 public class MolapGroupBy
 {
     /**
@@ -56,19 +49,6 @@ public class MolapGroupBy
      */
     private byte[] prvKey;
 
-    /**
-     * 
-     * 
-     * @param aggType
-     *            agg type
-     * @param rowMeasures
-     *            row Measures name
-     * @param actual
-     *            Measures actual Measures
-     * @param row
-     *            row
-     * 
-     */
     public MolapGroupBy(String aggType, String rowMeasures, String actualMeasures, Object[] row)
     {
         this.aggType = aggType.split(";");
@@ -99,18 +79,16 @@ public class MolapGroupBy
                     && !this.aggType[i].equals(MolapCommonConstants.MIN))
             {
                 if(null != row[columnIndexMapping[i]])
-                {//CHECKSTYLE:OFF    Approval No:Approval-344
                     newRow[index++] = row[columnIndexMapping[i]];
-                }//CHECKSTYLE:ON
                 else
                 {
                     newRow[index++] = 0D;
                 }
             }
             else
-            {//CHECKSTYLE:OFF    Approval No:Approval-345
+            {
                 newRow[index++] = row[columnIndexMapping[i]];
-            }//CHECKSTYLE:ON
+            }
         }
         prvKey = (byte[])row[this.keyIndex];
         newRow[index] = prvKey;

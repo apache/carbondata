@@ -41,14 +41,6 @@ import com.huawei.unibi.molap.util.MolapProperties;
 import com.huawei.unibi.molap.util.MolapUtil;
 import com.huawei.unibi.molap.util.RemoveDictionaryUtil;
 
-/**
- * Project Name 	: Carbon 
- * Module Name 		: MOLAP Data Processor
- * Author 			: Suprith T 72079 
- * Created Date 	: 20-Aug-2015
- * FileName 		: SortTempFileChunkHolder.java
- * Class Version 	: 1.0
- */
 public class SortTempFileChunkHolder
 {
 
@@ -155,9 +147,7 @@ public class SortTempFileChunkHolder
      *            temp file
      * @param measureCount
      *            measure count
-     * @param mdKeyLength
-     *            mdkey length
-     * 
+     *
      */
     public SortTempFileChunkHolder(File tempFile, int dimensionCount, int complexDimensionCount,  int measureCount, 
             int fileBufferSize, int highCardinalityCount)
@@ -417,17 +407,6 @@ public class SortTempFileChunkHolder
         	    
         	}
         	
-        	/*for(int i = 0; i < this.highCardinalityCount; i++)
-            {
-        		short length = stream.readShort();
-        		byte[] arr = new byte[length];
-        		stream.read(arr);
-        		ByteBuffer buffer = ByteBuffer.allocate(MolapCommonConstants.BYTESREQTOSTORELENGTH+length);
-             	buffer.putShort(length);
-             	buffer.put(arr);
-             	buffer.rewind();
-        		holder[index++] = buffer;
-            }*/
         	 index = 0;
             // read measure values
             for(int i = 0; i < this.measureCount; i++)

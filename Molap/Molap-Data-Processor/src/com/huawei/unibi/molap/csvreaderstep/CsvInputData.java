@@ -41,14 +41,8 @@ import org.pentaho.di.trans.steps.textfileinput.EncodingType;
 
 
 
-/**
- * @author Matt
- * @since 24-jan-2005
- */
 public class CsvInputData extends BaseStepData implements StepDataInterface
 {
-//	public FileChannel fc;
-//	public ByteBuffer bb;
 	public RowMetaInterface convertRowMeta;
 	public RowMetaInterface outputRowMeta;
 	
@@ -63,22 +57,12 @@ public class CsvInputData extends BaseStepData implements StepDataInterface
 	public int preferredBufferSize;
 	public String[] filenames;
 	public int      filenr;
-//	public int      startFilenr;
 	public byte[]   binaryFilename;
-//	public long fileSize;
-//	public FileInputStream fis;
 	protected InputStream bufferedInputStream;
 	
 	public boolean  isAddingRowNumber;
 	public long     rowNumber;
-	//public boolean stopReading;
-	//public int stepNumber;
 	public int totalNumberOfSteps;
-	//public List<Long> fileSizes;
-	//public long totalFileSize;
-//	public long blockToRead;
-//	public long startPosition;
-//	public long endPosition;
 	public long bytesToSkipInFirstFile;
 			
 	public long totalBytesRead;
@@ -92,7 +76,6 @@ public class CsvInputData extends BaseStepData implements StepDataInterface
 	 * Ecample: 'abc''xyz' would be processed as abc'xyz
 	 * </pre>
 	 */
-//	public boolean escapeEnclosure;
         public EncodingType encodingType;
         public PatternMatcherInterface delimiterMatcher;
         public PatternMatcherInterface enclosureMatcher;
@@ -105,9 +88,6 @@ public class CsvInputData extends BaseStepData implements StepDataInterface
 	{
 		super();
 		byteBuffer = new byte[] {};
-//		startBuffer = 0;
-//		endBuffer = 0;
-//		totalBytesRead = 0;
 	}
 
 	// Resize
@@ -137,10 +117,7 @@ public class CsvInputData extends BaseStepData implements StepDataInterface
 		// In that case we need to increase the size of the byte buffer.
 		// Since this method doesn't get called every other character, I'm sure we can spend a bit of time here without major performance loss.
 		//
-		/*if (endBuffer>=bb.capacity()) {
-			resizeByteBuffer((int)(Math.round(bb.capacity()*1.5)));
-		}*/
-		
+
 		int read = bufferedInputStream.read(byteBuffer,endBuffer, (byteBuffer.length-endBuffer));
 		if(read>=0) {
 		 // adjust the highest used position...
@@ -148,29 +125,6 @@ public class CsvInputData extends BaseStepData implements StepDataInterface
                     bufferSize = endBuffer+read; 
 		}
 		return read;
-		/*bb.position(endBuffer);
-		int n = fc.read( bb );
-		if( n>=0) {
-
-			// adjust the highest used position...
-			//
-			bufferSize = endBuffer+n; 
-			
-			// Make sure we have room in the target byte buffer array
-			//
-			if (byteBuffer.length < bufferSize) {
-				byte[] newByteBuffer = new byte[bufferSize];
-				System.arraycopy(byteBuffer, 0, newByteBuffer, 0, byteBuffer.length);
-				byteBuffer=newByteBuffer;
-			}
-			
-			// Store the data in our byte array
-			//
-			bb.position(endBuffer);
-			bb.get( byteBuffer, endBuffer, n);
-		}
-		
-		return n;*/
 	}
 
 	/**
@@ -222,18 +176,6 @@ public class CsvInputData extends BaseStepData implements StepDataInterface
 					// Not an escaped enclosure...
 					result[resultIndex++] = field[i];
 				}
-				
-			/*	if (i+1<field.length && field[i+1]==enclosure[0])
-				{
-					// field[i]+field[i+1] is an escaped enclosure...
-					// so we ignore this one
-					// field[i+1] will be picked up on the next iteration.
-				}
-				else
-				{
-					// Not an escaped enclosure...
-					result[resultIndex++] = field[i];
-				}*/
 			}
 			else
 			{

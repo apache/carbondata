@@ -29,15 +29,6 @@ import java.io.IOException;
 import com.huawei.unibi.molap.sortandgroupby.exception.MolapSortKeyAndGroupByException;
 import com.huawei.unibi.molap.util.MolapUtil;
 
-/**
- * Project Name NSE V3R8C10 
- * Module Name : MOLAP Data Processor
- * Author :k00900841 
- * Created Date:10-Aug-2014
- * FileName : AbstractMolapSortTempFileWriter.java
- * Class Description : abstract class for writing the sort temp file
- * Class Version 1.0
- */
 public abstract class AbstractMolapSortTempFileWriter implements MolapSortTempFileWriter
 {
     /**

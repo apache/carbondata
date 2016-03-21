@@ -20,15 +20,6 @@
 
 package com.huawei.unibi.molap.constants;
 
-/**
- * Project Name NSE V3R7C00 
- * Module Name : MOLAP
- * Author :C00900810
- * Created Date :09-Jul-2013
- * FileName : DataProcessorConstants.java
- * Class Description : 
- * Version 1.0
- */
 public final class DataProcessorConstants
 {
 	private DataProcessorConstants()

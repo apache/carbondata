@@ -31,8 +31,6 @@ public interface MolapFactDataWriter<T>
      * 
      * file format
      * <key><measure1><measure2>....
-	 * @param keyArray
-     *          key array
      * @param dataArray
      *          measure array
      * @param entryCount

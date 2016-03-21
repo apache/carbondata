@@ -32,9 +32,6 @@ import com.huawei.unibi.molap.util.ValueCompressionUtil;
 public class MolapColumnarLeafTupleIterator  implements
                     MolapIterator<MolapSurrogateTupleHolder>
 {
-    /**
-     * number of keys in one leaf node
-     */
 
     /**
      * unique value if slice
@@ -75,12 +72,8 @@ public class MolapColumnarLeafTupleIterator  implements
     /**
      * MolapSliceTupleIterator constructor to initialise
      * 
-     * @param sliceModel
-     *            slice model which will hold the slice information
      * @param mdkeyLength
      *            mdkey length
-     * @param measureCount
-     *            measure count
      */
     public MolapColumnarLeafTupleIterator(String sliceLocation, MolapFile[] factFiles,FactReaderInfo factItreatorInfo, int mdkeyLength)
     {
@@ -123,8 +116,6 @@ public class MolapColumnarLeafTupleIterator  implements
     /**
      * This method will be used to get the compression model for slice
      * 
-     * @param path
-     *          slice path
      * @param measureCount
      *          measure count
      * @return compression model

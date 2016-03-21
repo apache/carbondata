@@ -49,7 +49,6 @@ public class MolapKeyBlockHolder
 	
 	public void resetCounter()
 	{
-//	    keyBlock= new byte[keyBlock.length][];
 		counter=0;
 	}
 }

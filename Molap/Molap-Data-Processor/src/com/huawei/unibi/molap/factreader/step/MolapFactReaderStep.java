@@ -17,17 +17,6 @@
  * under the License.
  */
 
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2014
- * =====================================
- *
- */
 package com.huawei.unibi.molap.factreader.step;
 
 import java.io.ByteArrayInputStream;
@@ -99,15 +88,6 @@ import com.huawei.unibi.molap.util.RemoveDictionaryUtil;
 //import com.huawei.unibi.molap.util.MolapSliceAndFiles;
 import com.huawei.unibi.molap.util.MolapUtil;
 
-/**
- * Project Name NSE V3R8C10 
- * Module Name : MOLAP Data Processor
- * Author :k00900841 
- * Created Date:10-Aug-2014
- * FileName : MolapFactReaderStep.java
- * Class Description : Step class to read the fact table data
- * Class Version 1.0
- */
 public class MolapFactReaderStep extends BaseStep implements StepInterface
 {
 
@@ -306,7 +286,6 @@ public class MolapFactReaderStep extends BaseStep implements StepInterface
     
     /**
      * Thread class to which will be used to read the fact data 
-     * @author K00900841
      *
      */
     private final class DataProcessor implements Callable<Void>
@@ -602,10 +581,6 @@ public class MolapFactReaderStep extends BaseStep implements StepInterface
         return info;
     }
     
-    /**
-     * @param cube
-     * @return
-     */
     private void initQueryDims(Cube cube)
     {
         currentQueryDims = new Dimension[aggLevels.length];
@@ -616,9 +591,6 @@ public class MolapFactReaderStep extends BaseStep implements StepInterface
         }
     }
 
-    /**
-     * @return
-     */
     private String[] getAggTypes()
     {
         String[] aggTypes = new String[aggMeasures.length];
@@ -686,8 +658,6 @@ public class MolapFactReaderStep extends BaseStep implements StepInterface
     /**
      * Observer class for thread execution 
      * In case of any failure we need stop all the running thread 
-     * @author k00900841
-     *
      */
     private class ThreadStatusObserver
     {
@@ -708,9 +678,6 @@ public class MolapFactReaderStep extends BaseStep implements StepInterface
     /**
      * This method will be used for setting the output interface. Output
      * interface is how this step will process the row to next step
-     * 
-     * @param dimLens
-     *            number of dimensions
      * 
      */
     private void setStepOutputInterface(String[] aggType)

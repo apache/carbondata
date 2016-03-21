@@ -60,9 +60,6 @@ public class NodeHolderColumnar
         return keyStorageArray;
     }
 
-    /**
-     * @param keyArray the keyArray to set
-     */
     public void setKeyArray(BlockIndexerStorage[] keyStorageArray)
     {
         this.keyStorageArray = keyStorageArray;

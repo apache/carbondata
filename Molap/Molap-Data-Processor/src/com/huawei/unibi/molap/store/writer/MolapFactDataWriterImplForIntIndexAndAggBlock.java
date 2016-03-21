@@ -297,12 +297,6 @@ public class MolapFactDataWriterImplForIntIndexAndAggBlock extends AbstractFactD
     /**
      * This method is responsible for writing leaf node to the leaf node file
      * 
-     * @param keyArray
-     *            mdkey array
-     * @param measureArray
-     *            measure array
-     * @param fileName
-     *            leaf node file
      * @return file offset offset is the current position of the file
      * @throws MolapDataWriterException 
      *          if will throw MolapDataWriterException when any thing goes wrong
@@ -371,18 +365,6 @@ public class MolapFactDataWriterImplForIntIndexAndAggBlock extends AbstractFactD
     /**
      * This method will be used to get the leaf node metadata 
      * 
-     * @param keySize
-     *          key size
-     * @param msrLength
-     *          measure length array
-     * @param offset
-     *          current offset
-     * @param entryCount
-     *          total number of rows in leaf 
-     * @param startKey
-     *          start key of leaf 
-     * @param endKey
-     *          end key of leaf
      * @return LeafNodeInfo - leaf metadata
      *
      */
@@ -406,10 +388,6 @@ public class MolapFactDataWriterImplForIntIndexAndAggBlock extends AbstractFactD
             keyOffSets[i]=offset;
             offset+=nodeHolder.getKeyLengths()[i];
         }
-        // key offset will be 8 bytes from current offset because first 4 bytes
-        // will be for number of entry in leaf, then next 4 bytes will be for
-        // key lenght;
-//        offset += MolapCommonConstants.INT_SIZE_IN_BYTE * 2;
 
         // add key offset
         info.setKeyOffSets(keyOffSets);
@@ -421,9 +399,6 @@ public class MolapFactDataWriterImplForIntIndexAndAggBlock extends AbstractFactD
 
         for(int i = 0;i < this.measureCount;i++)
         {
-            // increment the current offset by 4 bytes because 4 bytes will be
-            // used for measure byte length
-//            offset += MolapCommonConstants.INT_SIZE_IN_BYTE;
             msrOffset[i] = offset;
             // now increment the offset by adding measure length to get the next
             // measure offset;
@@ -495,7 +470,6 @@ public class MolapFactDataWriterImplForIntIndexAndAggBlock extends AbstractFactD
         return metaSize;
     }
     
-    //TODO SIMIAN
     /**
      * This method will write metadata at the end of file file format
      * <KeyArray><measure1><measure2> <KeyArray><measure1><measure2>

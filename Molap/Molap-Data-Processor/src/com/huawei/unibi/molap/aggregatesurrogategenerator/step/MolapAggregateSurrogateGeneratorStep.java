@@ -17,17 +17,6 @@
  * under the License.
  */
 
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2014
- * =====================================
- *
- */
 package com.huawei.unibi.molap.aggregatesurrogategenerator.step;
 
 import java.util.Arrays;
@@ -50,15 +39,6 @@ import com.huawei.unibi.molap.aggregatesurrogategenerator.AggregateSurrogateGene
 import com.huawei.unibi.molap.constants.MolapCommonConstants;
 import com.huawei.unibi.molap.util.MolapDataProcessorLogEvent;
 
-/**
- * Project Name NSE V3R8C10 
- * Module Name : MOLAP Data Processor
- * Author :k00900841 
- * Created Date:10-Aug-2014
- * FileName : MolapAggregateSurrogateGeneratorStep.java
- * Class Description : Step class is generating surrogate keys for aggregate tables
- * Class Version 1.0
- */
 public class MolapAggregateSurrogateGeneratorStep extends BaseStep implements
         StepInterface
 {
@@ -174,7 +154,6 @@ public class MolapAggregateSurrogateGeneratorStep extends BaseStep implements
                         }// CHECKSTYLE:ON
                     }
                 }
-//                meta.setAggDimeLens(aggCardinality);
                 this.aggregateRecordIterator = new AggregateSurrogateGenerator(
                 		factLevels, aggLevels,
                         meta.getFactMeasure(), meta.getAggregateMeasures(),
@@ -182,7 +161,6 @@ public class MolapAggregateSurrogateGeneratorStep extends BaseStep implements
                 
                 this.logCounter = Integer
                         .parseInt(MolapCommonConstants.DATA_LOAD_LOG_COUNTER_DEFAULT_COUNTER);
-//                createStoreAndWriteSliceMetadata(meta.isManualAutoAggRequest(), factTuple, aggCardinality);
             }
             if(null == factTuple)
             {
@@ -222,230 +200,9 @@ public class MolapAggregateSurrogateGeneratorStep extends BaseStep implements
         return true;
     }
     
-//    /**
-//     * Below method will be used to create the load folder and write the slice meta data for aggregate table
-//     * @throws KettleException
-//     */
-//    private void createStoreAndWriteSliceMetadata(boolean deleteExistingStore, Object[] isFirstIsNull, int[] aggCardinality) throws KettleException
-//    {
-//        String createStoreLocaion = MolapDataProcessorUtil.createStoreLocaion(
-//                meta.getSchemaName(), meta.getCubeName(),
-//                meta.getTableName(),deleteExistingStore);
-//        
-//        updateAndWriteSliceMetadataFile(createStoreLocaion);
-//        writeAggLevelCardinalityFile(aggCardinality, createStoreLocaion);
-        
-//        if(null==isFirstIsNull)
-//        {
-//        	return;
-//        }
-//        
-//        MeasureMetaDataModel msrModel = null;
-//        msrModel = MolapDataProcessorUtil.getMeasureModelForManual(meta.getFactStorePath(),
-//					meta.getFactTableName(), meta.getFactMeasure().length, FileFactory.getFileType(meta.getFactStorePath()));
-//
-//		String metaDataFileName = MolapCommonConstants.MEASURE_METADATA_FILE_NAME
-//				+ meta.getTableName()
-//				+ MolapCommonConstants.MEASUREMETADATA_FILE_EXT;
-//		String measureMetaDataFileLocation = createStoreLocaion
-//				+ metaDataFileName;
-//		
-//		
-//		int[] measureIndex = new int[meta.getAggregateMeasures().length];
-//		Arrays.fill(measureIndex, -1);
-//		
-//		for (int i = 0; i < meta.getAggregateMeasures().length - 1; i++) 
-//		{
-//			for (int j = 0; j < meta.getFactMeasure().length; j++) 
-//			{
-//				if (meta.getAggregateMeasures()[i]
-//						.equals(meta.getFactMeasure()[j])) 
-//				{
-//					measureIndex[i] = j;
-//					break;
-//				}
-//			}
-//		}
-//		measureIndex[measureIndex.length - 1] = measureIndex[0];
-//		
-//		double[] minValue = new double[measureIndex.length];
-//		
-//		for (int i = 0; i < measureIndex.length-1; i++)
-//		{
-//			minValue[i]=msrModel.getMinValue()[measureIndex[i]];
-//		}
-//		
-//		minValue[minValue.length-1]=1;
-//		
-//		try 
-//		{
-//			MolapDataProcessorUtil.writeMeasureMetaDataToFile(
-//					new double[measureIndex.length], minValue,
-//					new int[measureIndex.length], new double[measureIndex.length],
-//					new char[measureIndex.length], new byte[measureIndex.length],
-//					measureMetaDataFileLocation);
-//		} 
-//		catch (MolapDataProcessorException e) 
-//		{
-//			LOGGER.error(
-//					MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
-//		}
-//    }
-    
-//    /**
-//	 * This method writes aggregate level cardinality of each agg level to a file
-//	 * 
-//	 * @param dimCardinality
-//	 * @param storeLocation
-//	 * @throws KettleException
-//	 * 
-//	 * @author Suprith T 72079
-//	 */
-//    private void writeAggLevelCardinalityFile(int[] dimCardinality, String storeLocation) throws KettleException
-//    {
-//		String aggLevelCardinalityFilePath = storeLocation + File.separator + 
-//				MolapCommonConstants.LEVEL_METADATA_FILE + meta.getTableName() + ".metadata";
-//		
-//    	FileOutputStream fileOutputStream = null;
-//    	FileChannel channel = null;
-//    	try
-//        {
-//			int dimCardinalityArrLength = dimCardinality.length;
-//			
-//			// first four bytes for writing the length of array, remaining for array data
-//			ByteBuffer buffer = ByteBuffer
-//					.allocate(MolapCommonConstants.INT_SIZE_IN_BYTE
-//							+ dimCardinalityArrLength * MolapCommonConstants.INT_SIZE_IN_BYTE);
-//			
-//			fileOutputStream = new FileOutputStream(aggLevelCardinalityFilePath);
-//			channel = fileOutputStream.getChannel();
-//			buffer.putInt(dimCardinalityArrLength);
-//			
-//			for (int i = 0; i < dimCardinalityArrLength; i++)
-//			{
-//				buffer.putInt(dimCardinality[i]);
-//			}
-//			
-//			buffer.flip();
-//			channel.write(buffer);
-//			buffer.clear();
-//        }
-//        catch(IOException e)
-//        {
-//            throw new KettleException("Not able to write level cardinality file", e);
-//        }
-//        finally
-//        {
-//            MolapUtil.closeStreams(channel, fileOutputStream);
-//        }
-//    }
-
-//    /**
-//     * Below method will be used to update and write the slice meta data
-//     * 
-//     * @throws KettleException
-//     */
-//    private void updateAndWriteSliceMetadataFile(String path)
-//            throws KettleException
-//    {
-//        File file = new File(path);
-//        String sliceMetaDataFilePath = file.getParentFile().getAbsolutePath()
-//                + File.separator + MolapCommonConstants.SLICE_METADATA_FILENAME;
-//
-//        SliceMetaData sliceMetaData = new SliceMetaData();
-//        sliceMetaData.setDimensions(meta.getAggregateLevels());
-//        sliceMetaData.setActualDimensions(meta.getAggregateLevels());
-//        sliceMetaData.setMeasures(meta.getAggregateMeasuresColumnName());
-//        sliceMetaData.setActualDimLens(meta.getAggDimeLens());
-//        sliceMetaData.setDimLens(meta.getAggDimeLens());
-//        String[] aggregators = meta.getAggregators();
-//        sliceMetaData.setMeasuresAggregator(aggregators);
-//        sliceMetaData.setHeirAnKeySize(meta.getHeirAndKeySize());
-//        sliceMetaData.setTableNamesToLoadMandatory(null);
-//        int measureOrdinal = 0;
-//        //CHECKSTYLE:OFF    Approval No:Approval-367
-//        for(String agg : aggregators)
-//        {     //CHECKSTYLE:ON
-//            if("count".equals(agg))
-//            {
-//                break;
-//            }
-//            measureOrdinal++;
-//        }
-//        sliceMetaData.setCountMsrOrdinal(measureOrdinal);
-//        sliceMetaData.setHeirAndDimLens(meta.getHeirAndDimLens());
-//        sliceMetaData.setKeyGenerator(KeyGeneratorFactory.getKeyGenerator(meta
-//                .getAggDimeLens()));
-//        MolapDataProcessorUtil.writeFileAsObjectStream(sliceMetaDataFilePath, sliceMetaData);
-//    }
-
-//    /**
-//     * Below method will be used to create the store
-//     * @param schemaName
-//     * @param cubeName
-//     * @param tableName
-//     * @return store location
-//     * @throws KettleException
-//     */
-//    private String createStoreLocaion(String schemaName, String cubeName,
-//            String tableName,boolean deleteExistingStore) throws KettleException
-//    {
-//        String baseStorePath = MolapProperties.getInstance().getProperty(
-//                MolapCommonConstants.STORE_LOCATION,
-//                MolapCommonConstants.STORE_LOCATION_DEFAULT_VAL);
-//        baseStorePath = baseStorePath + File.separator + schemaName
-//                + File.separator + cubeName;
-//        int restrctFolderCount = MolapUtil
-//                .checkAndReturnNextRestructFolderNumber(baseStorePath, "RS_");
-//        if(restrctFolderCount == -1)
-//        {
-//            restrctFolderCount = 0;
-//        }
-//        String baseStorePathWithTableName = baseStorePath + File.separator
-//                + MolapCommonConstants.RESTRUCTRE_FOLDER + restrctFolderCount
-//                + File.separator + tableName;
-//        if(deleteExistingStore)
-//        {
-//            File file = new File(baseStorePathWithTableName);
-//            if(file.exists())
-//            {
-//                try
-//                {
-//                    MolapUtil.deleteFoldersAndFiles(file);
-//                }
-//                catch(MolapUtilException e)
-//                {
-//                   throw new KettleException("Problem while deleting the existing aggregate table data in case of Manual Aggregation");
-//                }
-//            }
-//        }
-//        int counter = MolapUtil
-//                .checkAndReturnNextRestructFolderNumber(baseStorePathWithTableName,"Load_");
-//        counter++;
-//        String basePath = baseStorePathWithTableName + File.separator
-//                + MolapCommonConstants.LOAD_FOLDER + counter;
-//        if(new File(basePath).exists())
-//        {
-//            counter++;
-//        }
-//        basePath = baseStorePathWithTableName + File.separator
-//                + MolapCommonConstants.LOAD_FOLDER + counter
-//                + MolapCommonConstants.FILE_INPROGRESS_STATUS;
-//        boolean isDirCreated = new File(basePath).mkdirs();
-//        if(!isDirCreated)
-//        {
-//            throw new KettleException("Unable to create dataload directory"
-//                    + basePath);
-//        }
-//        return basePath;
-//    }
-
     /**
      * This method will be used for setting the output interface. Output
      * interface is how this step will process the row to next step
-     * 
-     * @param dimLens
-     *            number of dimensions
      * 
      */
     private void setStepOutputInterface(boolean isMdkeyRequiredInOutRow)

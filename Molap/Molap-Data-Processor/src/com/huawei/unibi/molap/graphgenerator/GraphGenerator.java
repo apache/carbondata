@@ -83,15 +83,6 @@ import com.huawei.unibi.molap.util.MolapUtil;
 import com.huawei.unibi.molap.util.MolapUtilException;
 import com.huawei.unibi.molap.util.RemoveDictionaryUtil;
 
-/**
- * Project Name 	: Carbon 
- * Module Name 		: MOLAP Data Processor
- * Author 			: Kumar Vishal 00900841, Suprith T 72079 
- * Created Date 	: 25-Aug-2015
- * FileName 		: GraphGenerator.java
- * Description 		: Graph generator
- * Class Version 	: 1.0
- */
 public class GraphGenerator
 {
 
@@ -200,11 +191,6 @@ public class GraphGenerator
     private AggregateTable[] aggregateTable;
 
     /**
-     * isFactTable
-     */
-//    private boolean isFactTable;
-
-    /**
      * isUpdateMemberRequest
      */
     private boolean isUpdateMemberRequest;
@@ -257,9 +243,6 @@ public class GraphGenerator
                 MolapCommonConstants.TYPE_SYBASE);
     }
 
-    /**
-     * @param schemaInfo
-     */
     public GraphGenerator(DataLoadModel dataLoadModel, boolean isHDFSReadMode,
             String partitionID, Schema schema, String factStoreLocation, int currentRestructNum, int allocate)
     {
@@ -268,8 +251,6 @@ public class GraphGenerator
         this.isCSVLoad = dataLoadModel.isCsvLoad();
         this.modifiedDimension = dataLoadModel.getModifiedDimesion();
         this.isAutoAggRequest = schemaInfo.isAutoAggregateRequest();
-//        this.isHDFSReadMode = isHDFSReadMode;
-//        this.isHDFSReadMode = false;
         this.schema = schema;
         this.schemaName = schema.name;
         this.partitionID = partitionID;
@@ -304,9 +285,6 @@ public class GraphGenerator
         this.factTableName=MolapSchemaParser.getFactTableName(cube);
     }
 
-    /**
-     * @throws GraphGeneratorException
-     */
     public void generateGraph() throws GraphGeneratorException
     {
         validateAndInitialiseKettelEngine();
@@ -314,14 +292,11 @@ public class GraphGenerator
         GraphConfigurationInfo graphConfigInfoForFact = getGraphConfigInfoForFact(schema);
         if(factTableName.equals(tableName))
         {
-//            isFactTable = true;
             generateGraph(graphConfigInfoForFact,
                     graphConfigInfoForFact.getTableName() + ": Graph",
                     isCSVLoad, graphConfigInfoForFact);
             return;
         }
-        //
-        // check if the agg table not in schema
         if(null != aggregateTable)
         {
             if(schemaInfo.isAggregateTableCSVLoadRequest())
@@ -387,18 +362,10 @@ public class GraphGenerator
             }
         }
 
-//        if(!MolapSchemaParser.validateCube(cube, schema,
-//                schemaInfo.isAutoAggregateRequest()))
-//        {
-//            throw new GraphGeneratorException("INTERNAL_SYSTEM_ERROR");
-//        }
-
         if(!kettleIntialized)
         {
             synchronized(DRIVERS)
             {
-//                if(!kettleIntialized)
-//                {
                     try
                     {
                         EnvUtil.environmentInit();
@@ -417,145 +384,9 @@ public class GraphGenerator
                                 "Error While Initializing the Kettel Engine ",
                                 kettlExp);
                     }
-//               }
             }
         }
     }
-
-   /* private void fillAggTypeAndAggClass(StringBuilder aggTypeBuilder,
-            StringBuilder aggClassBuilder)
-    {
-        StringBuilder aggString = null;
-        String[] aggregator = null;
-        StringBuilder aggClassString = null;
-        String[] aggClassNames = null;
-        for(int i = 0;i < aggregateTable.length;i++)
-        {
-            aggregator = aggregateTable[i].getAggregator();
-            aggString = new StringBuilder();
-            for(int j = 0;j < aggregator.length - 1;j++)
-            {
-                if(aggregator[j].equals(MolapCommonConstants.COUNT))
-                {
-                    aggregator[j] = MolapCommonConstants.SUM;
-                }
-                aggString.append(aggregator[j]);
-
-                aggString.append(MolapCommonConstants.HASH_SPC_CHARACTER);
-            }
-            aggString.append(aggregator[aggregator.length - 1]);
-
-            aggClassNames = aggregateTable[i].getAggregateClass();
-            aggClassString = new StringBuilder();
-            for(int j = 0;j < aggClassNames.length - 1;j++)
-            {
-                aggClassString.append(aggClassNames[j]);
-                aggClassString.append(MolapCommonConstants.HASH_SPC_CHARACTER);
-            }
-            aggClassString.append(aggClassNames[aggClassNames.length - 1]);
-
-            aggTypeBuilder.append(aggregateTable[i].getAggregateTableName());
-            aggTypeBuilder.append(MolapCommonConstants.COMA_SPC_CHARACTER);
-            aggTypeBuilder.append(aggString.toString());
-            aggClassBuilder.append(aggregateTable[i].getAggregateTableName());
-            aggClassBuilder.append(MolapCommonConstants.COMA_SPC_CHARACTER);
-            aggClassBuilder.append(aggClassString.toString());
-            if(i < aggregateTable.length - 1)
-            {
-                aggTypeBuilder.append(MolapCommonConstants.COLON_SPC_CHARACTER);
-                aggClassBuilder
-                        .append(MolapCommonConstants.COLON_SPC_CHARACTER);
-            }
-        }
-    }
-*/
-/*    private StepMeta getMolapAutoAggregateSliceMergerStep()
-            throws GraphGeneratorException
-    {
-
-        List<GraphConfigurationInfo> graphConfigInfoList = new ArrayList<GraphConfigurationInfo>(
-                1);
-        graphConfigInfoList.add(getGraphConfigInfoForFact(schema));
-        for(int i = 0;i < aggregateTable.length;i++)
-        {
-            graphConfigInfoList.add(getGraphConfigInfoForCSVBasedAGG(
-                    aggregateTable[i], schema));
-        }
-        StringBuilder mdkeyBuilder = new StringBuilder();
-        StringBuilder measureCountBuilder = new StringBuilder();
-        StringBuilder tableNameBuilder = new StringBuilder();
-        int size = graphConfigInfoList.size();
-        GraphConfigurationInfo graphConfigurationInfo = null;
-        for(int i = 0;i < size - 1;i++)
-        {
-            graphConfigurationInfo = graphConfigInfoList.get(i);
-            mdkeyBuilder.append(graphConfigurationInfo.getTableName());
-            mdkeyBuilder.append(MolapCommonConstants.COMA_SPC_CHARACTER);
-            mdkeyBuilder.append(graphConfigurationInfo.getMdkeySize());
-            mdkeyBuilder.append(MolapCommonConstants.HASH_SPC_CHARACTER);
-
-            measureCountBuilder.append(graphConfigurationInfo.getTableName());
-            measureCountBuilder.append(MolapCommonConstants.COMA_SPC_CHARACTER);
-            measureCountBuilder
-                    .append(graphConfigurationInfo.getMeasureCount());
-            measureCountBuilder.append(MolapCommonConstants.HASH_SPC_CHARACTER);
-
-            tableNameBuilder.append(graphConfigurationInfo.getTableName());
-            tableNameBuilder.append(MolapCommonConstants.HASH_SPC_CHARACTER);
-        }
-
-        graphConfigurationInfo = graphConfigInfoList.get(graphConfigInfoList
-                .size() - 1);
-        mdkeyBuilder.append(graphConfigurationInfo.getTableName());
-        mdkeyBuilder.append(MolapCommonConstants.COMA_SPC_CHARACTER);
-        mdkeyBuilder.append(graphConfigurationInfo.getMdkeySize());
-
-        measureCountBuilder.append(graphConfigurationInfo.getTableName());
-        measureCountBuilder.append(MolapCommonConstants.COMA_SPC_CHARACTER);
-        measureCountBuilder.append(graphConfigurationInfo.getMeasureCount());
-
-        tableNameBuilder.append(graphConfigurationInfo.getTableName());
-        tableNameBuilder.append(MolapCommonConstants.HASH_SPC_CHARACTER);
-
-        StringBuilder aggTypeBuilder = new StringBuilder();
-        StringBuilder aggClassBuilder = new StringBuilder();
-        fillAggTypeAndAggClass(aggTypeBuilder, aggClassBuilder);
-
-        MolapAutoAggregateSliceMergerMeta sliceMeta = new MolapAutoAggregateSliceMergerMeta();
-
-        if(aggregateTable.length > 0)
-        {
-            sliceMeta.setAggregatorClassString(aggClassBuilder.toString());
-            sliceMeta.setAggregatorString(aggTypeBuilder.toString());
-        }
-        else
-        {
-            sliceMeta.setAggregatorClassString("");
-            sliceMeta.setAggregatorString("");
-        }
-
-        sliceMeta.setCubeName(cubeName);
-        sliceMeta.setSchemaName(schemaName);
-        sliceMeta.setHeirAndKeySize(graphConfigInfoList.get(0)
-                .getHeirAndKeySizeString());
-        sliceMeta.setTabelName(tableNameBuilder.toString());
-        sliceMeta.setMeasureCount(measureCountBuilder.toString());
-        sliceMeta.setMdkeySize(mdkeyBuilder.toString());
-        sliceMeta.setFactDimLensString("");
-        StepMeta sliceMeregrMeta = new StepMeta(
-                GraphGeneratorConstants.MOLAP_AUTOAGG_SLICE_MERGER,
-                (StepMetaInterface)sliceMeta);
-        sliceMeregrMeta
-                .setStepID(GraphGeneratorConstants.MOLAP_AUTO_AGGREGATE_SLICE_MERGER_ID);
-        xAxixLocation += 120;
-        //
-        sliceMeregrMeta.setLocation(xAxixLocation, yAxixLocation);
-        sliceMeregrMeta.setDraw(true);
-        sliceMeregrMeta.setDescription("Slice Merger For Auto AGG: "
-                + GraphGeneratorConstants.MOLAP_AUTOAGG_SLICE_MERGER);
-        return sliceMeregrMeta;
-
-    }*/
 
     /**
      * Below method will be used to generate the graph
@@ -777,8 +608,6 @@ public class GraphGenerator
                 configurationInfoFact, configurationInfoAgg, aggregateTable,
                 false, aggregateTableArray, factCardinality, factStorePath);
         stepMetaList.add(molapAggregateGeneratorStep);
-        // StepMeta molapMDKeyStep = getMolapMDKeyStep(configurationInfoAgg);
-        // stepMetaList.add(molapMDKeyStep);
         StepMeta molapSortRowAndGroupByStep = getMolapSortRowAndGroupByStep(
                 configurationInfoAgg, aggregateTable, factStorePath,
                 configurationInfoFact, aggregateTableArray, factCardinality, false);
@@ -788,30 +617,6 @@ public class GraphGenerator
         stepMetaList.add(molapDataWriter);
         return stepMetaList;
     }
-
-//    private List<StepMeta> generateParallelStepMetaForAutoAgg(
-//            GraphConfigurationInfo configurationInfoFact,
-//            GraphConfigurationInfo configurationInfoAgg,
-//            AggregateTable aggregateTable, AggregateTable[] aggregateTableArray)
-//            throws GraphGeneratorException
-//    {
-//        List<StepMeta> stepMetaList = new ArrayList<StepMeta>();
-//        StepMeta molapAggregateGeneratorStep = getMolapAutoAggregateSurrogateKeyGeneratorStep(
-//                configurationInfoFact, configurationInfoAgg, aggregateTable,
-//                true, aggregateTableArray);
-//        stepMetaList.add(molapAggregateGeneratorStep);
-//        // StepMeta molapMDKeyStep = getMolapMDKeyStep(configurationInfoAgg);
-//        // stepMetaList.add(molapMDKeyStep);
-//        StepMeta molapSortRowAndGroupByStep = getMolapSortRowAndGroupByStep(configurationInfoAgg);
-//        stepMetaList.add(molapSortRowAndGroupByStep);
-//        StepMeta molapDataWriter = getMolapDataWriter(configurationInfoAgg,
-//                configurationInfoFact, aggregateTableArray);
-//        stepMetaList.add(molapDataWriter);
-//        StepMeta molapSliceMergerStep = getSliceMeregerStep(
-//                configurationInfoAgg, configurationInfoFact);
-//        stepMetaList.add(molapSliceMergerStep);
-//        return stepMetaList;
-//    }
 
     private void generateGraph(GraphConfigurationInfo configurationInfo,
             String transName, boolean isCSV, 
@@ -866,25 +671,7 @@ public class GraphGenerator
         molapSurrogateKeyStep = getMolapCSVBasedSurrogateKeyStep(configurationInfo);
         StepMeta sortStep = getSortStep(configurationInfo);
         StepMeta molapMDKeyStep = getMDKeyStep(configurationInfo);
-//        StepMeta molapDataWriter = getMolapDataWriter(configurationInfo,
-//                configurationInfoForFact, null);
         StepMeta molapSliceMergerStep = null;
-//        StepMeta molapAutoAggGraphGeneratorStep = null;
-//        String property = cube.autoAggregationType;
-
-//        if(isFactTable
-//                && MolapCommonConstants.MOLAP_AUTO_TYPE_VALUE
-//                        .equalsIgnoreCase(property)
-//                && aggregateTable.length > 0)
-//        {
-//            molapAutoAggGraphGeneratorStep = getAutoAggGraphGeneratorStep(factTableName, aggregateTable);
-//            molapSliceMergerStep = getMolapAutoAggregateSliceMergerStep();
-//        }
-//        else
-//        {
-//            molapSliceMergerStep = getSliceMeregerStep(configurationInfo,
-//                    configurationInfoForFact);
-//        }
         molapSliceMergerStep = getSliceMeregerStep(configurationInfo,
                 configurationInfoForFact);
 
@@ -903,16 +690,7 @@ public class GraphGenerator
         trans.addStep(molapSurrogateKeyStep);
         trans.addStep(sortStep);
         trans.addStep(molapMDKeyStep);
-//        trans.addStep(molapDataWriter);
-        
-//        if(isFactTable
-//                && MolapCommonConstants.MOLAP_AUTO_TYPE_VALUE
-//                        .equalsIgnoreCase(property)
-//                && aggregateTable.length > 0)
-//        {
-//            trans.addStep(molapAutoAggGraphGeneratorStep);
-//        }
-        
+
         trans.addStep(molapSliceMergerStep);
         TransHopMeta getFilesInputTocsvFileInput = null;
         TransHopMeta inputStepToSelectValueHop = null;
@@ -937,25 +715,7 @@ public class GraphGenerator
         TransHopMeta surrogateKeyToSortHop = new TransHopMeta(
                 molapSurrogateKeyStep, sortStep);
         TransHopMeta sortToMDKeyHop = new TransHopMeta(sortStep, molapMDKeyStep);
-//        TransHopMeta mdkeyToDataWriterHop = new TransHopMeta(molapMDKeyStep, molapDataWriter);
         TransHopMeta mdkeyToSliceMerger = null;
-//        TransHopMeta autoAggGraphGeneratorToSliceMerger = null;
-        
-//        if(isFactTable
-//                && MolapCommonConstants.MOLAP_AUTO_TYPE_VALUE
-//                        .equalsIgnoreCase(property)
-//                && aggregateTable.length > 0)
-//        {
-//        	mdkeyToSliceMerger = new TransHopMeta(molapMDKeyStep,
-//                    molapAutoAggGraphGeneratorStep);
-//            autoAggGraphGeneratorToSliceMerger = new TransHopMeta(
-//                    molapAutoAggGraphGeneratorStep, molapSliceMergerStep);
-//        }
-//        else
-//        {
-//        	mdkeyToSliceMerger = new TransHopMeta(molapMDKeyStep,
-//                    molapSliceMergerStep);
-//        }
         mdkeyToSliceMerger = new TransHopMeta(molapMDKeyStep,
                 molapSliceMergerStep);
         
@@ -972,16 +732,8 @@ public class GraphGenerator
         
         trans.addTransHop(surrogateKeyToSortHop);
         trans.addTransHop(sortToMDKeyHop);
-//        trans.addTransHop(mdkeyToDataWriterHop);
         trans.addTransHop(mdkeyToSliceMerger);
         
-//        if(isFactTable
-//                && MolapCommonConstants.MOLAP_AUTO_TYPE_VALUE
-//                        .equalsIgnoreCase(property)
-//                && aggregateTable.length > 0)
-//        {
-//            trans.addTransHop(autoAggGraphGeneratorToSliceMerger);
-//        }
         String graphFilePath = outputLocation + File.separator + schemaName
                 + File.separator + cubeName + File.separator
                 + configurationInfo.getTableName() + ".ktr";
@@ -1055,7 +807,6 @@ public class GraphGenerator
         {
             csvDataStep.setCopies(copies);
         }
-        // csvDataStep.setStepID("MolapCSVBasedSurrogateGen");
         csvDataStep.setDraw(true);
         csvDataStep.setDescription("Read raw data from "
                 + GraphGeneratorConstants.CSV_INPUT);
@@ -1094,7 +845,6 @@ public class GraphGenerator
             csvReaderMeta.setIncludingFilename(true);
             csvReaderMeta.setRowNumField("rownum");
         }
-        // csvDataStep.setStepID("MolapCSVBasedSurrogateGen");
         csvDataStep.setStepID("MolapCSVReaderStep");
         csvDataStep.setDraw(true);
         csvDataStep.setDescription("Read raw data from "
@@ -1109,25 +859,14 @@ public class GraphGenerator
         GetFileNamesMeta inputFileNamesMeta = new GetFileNamesMeta();
         // Init the Filename...
        	inputFileNamesMeta.allocate(allocate);
-        // inputFileNamesMeta.setDefault();
-        // inputFileNamesMeta.setFileName(new String[]{"C:\\GraphCheck\\csvs"});
-        // inputFileNamesMeta.setFileMask(new String[]{".*\\.csv$"});
         inputFileNamesMeta.setFilterFileType(0);
-        // inputFileNamesMeta.setExcludeFileMask(new String[]{});
         inputFileNamesMeta.setFileRequired(new String[]{"N"});
 
-        /*
-         * csvInputMeta.setFilename("${csvInputFilePath}");
-         * csvInputMeta.setDefault(); csvInputMeta.setEncoding("UTF-8");
-         * csvInputMeta.setEnclosure("\""); csvInputMeta.setHeaderPresent(true);
-         */
         StepMeta inputFileNames = new StepMeta("Get File Names",
                 (StepMetaInterface)inputFileNamesMeta);
-        // inputFileNames.setStepID("FileInput");
         inputFileNames.setName("getFileNames");
 
         inputFileNames.setLocation(100, 100);
-        // csvDataStep.setStepID("MolapCSVBasedSurrogateGen");
         inputFileNames.setDraw(true);
         inputFileNames.setDescription("Read raw data from "
                 + GraphGeneratorConstants.CSV_INPUT);
@@ -1222,16 +961,6 @@ public class GraphGenerator
         meta.setFactStoreLocation(factStoreLocation);
         meta.setCurrentRestructNumber(currentRestructNumber);
         meta.setPartitionId(null == partitionID ? "" : partitionID);
-//        StringBuilder aggTableBuilder = new StringBuilder();
-//        
-//        for(int i = 0;i < aggregateTable.length - 1;i++)
-//        {
-//            aggTableBuilder.append(aggregateTable[i].getAggregateTableName());
-//            aggTableBuilder.append(MolapCommonConstants.HASH_SPC_CHARACTER);
-//        }
-//        aggTableBuilder.append(aggregateTable[aggregateTable.length - 1]
-//                .getAggregateTableName());
-//        meta.setAggTables(aggTableBuilder.toString());
         meta.setAggTables(this.tableName);
         meta.setFactTableName(tableName);
         meta.setAutoMode(Boolean.toString(schemaInfo.isAutoAggregateRequest()));
@@ -1458,11 +1187,6 @@ public class GraphGenerator
         return mdkeyStepMeta;
     }
 
-	/**
-	 * @param aggTableArray
-	 * @param factDimensions
-	 * @return
-	 */
 	private String[] getFactDim(AggregateTable[] aggTableArray,
 			String[] factDimensions) {
 		Set<String> aggLevels = new LinkedHashSet<String>();
@@ -1525,7 +1249,6 @@ public class GraphGenerator
         seqMeta.setComplexTypeString(graphConfiguration.getComplexTypeString());
         seqMeta.setBatchSize(Integer.parseInt(graphConfiguration.getBatchSize()));
         seqMeta.setHighCardinalityDims(graphConfiguration.getHighCardinalityDims());
-        // seqMeta.setStoreLocation(graphConfiguration.getStoreLocation());
         seqMeta.setCubeName(cubeName);
         seqMeta.setSchemaName(schemaName);
         seqMeta.setComplexDelimiterLevel1(schemaInfo.getComplexDelimiterLevel1());
@@ -1544,13 +1267,9 @@ public class GraphGenerator
                 .getForgienKeyAndPrimaryKeyMapString());
         seqMeta.setTableName(graphConfiguration.getTableName());
         seqMeta.setModifiedDimension(modifiedDimension);
-        // seqMeta.setPrimaryKeyColumnNamesString(graphConfiguration
-        // .getPrimaryKeyColumnNamesString());
         seqMeta.setForeignKeyHierarchyString(graphConfiguration
                 .getForeignKeyHierarchyString());
         seqMeta.setPrimaryKeysString(graphConfiguration.getPrimaryKeyString());
-        // seqMeta.setForeignKeyColumnNameString(graphConfiguration
-        // .getForeignKeyColumnNameString());
         seqMeta.setMolapMeasureNames(graphConfiguration.getMeasureNamesString());
         seqMeta.setHeirNadDimsLensString(graphConfiguration.getHeirAndDimLens());
         seqMeta.setActualDimNames(graphConfiguration
@@ -1572,8 +1291,6 @@ public class GraphGenerator
         seqMeta.setPassword(graphConfiguration.getPassword());
         seqMeta.setMeasureDataType(graphConfiguration.getMeasureDataTypeInfo());
         seqMeta.setDenormColumNames(graphConfiguration.getDenormColumns());
-        // seqMeta.setMolapTime(graphConfiguration.getHiersString());
-        // seqMeta.setStoreType("A");
         seqMeta.setAggregate(graphConfiguration.isAGG());
         seqMeta.setTableNames(graphConfiguration.getDimensionTableNames());
         seqMeta.setCheckPointFileExits("false");
@@ -1589,7 +1306,6 @@ public class GraphGenerator
                 seqMeta.setCheckPointFileExits("true");
             }
         }
-        // seqMeta.setMolapSchema(schemaFilePath);
         StepMeta mdkeyStepMeta = new StepMeta(
                 GraphGeneratorConstants.MOLAP_SURROGATE_KEY_GENERATOR,
                 (StepMetaInterface)seqMeta);
@@ -1650,7 +1366,6 @@ public class GraphGenerator
         //
         MolapDataWriterStepMeta molapDataWriter = getMolapDataWriter(graphConfiguration);
         String[] factDimensions = graphjConfigurationForFact.getDimensions();
-//        factDimensions = getFactDimensions(aggTableArray, factDimensions);
         molapDataWriter.setCurrentRestructNumber(MolapUtil
                 .getRestructureNumber(this.factStoreLocation,
                         this.factTableName));
@@ -1722,12 +1437,6 @@ public class GraphGenerator
         return molapDataWriterStep;
     }
 
-    /**
-	 * @param graphConfiguration
-	 * @param graphjConfigurationForFact
-	 * @param molapDataWriter
-	 * @param isFactMdkeyInInputRow
-	 */
 	private void processAutoAggRequest(
 			GraphConfigurationInfo graphConfiguration,
 			GraphConfigurationInfo graphjConfigurationForFact,
@@ -1791,10 +1500,6 @@ public class GraphGenerator
         }
 	}
 
-	/**
-	 * @param graphConfiguration
-	 * @return
-	 */
 	private MolapDataWriterStepMeta getMolapDataWriter(
 			GraphConfigurationInfo graphConfiguration) {
 		MolapDataWriterStepMeta molapDataWriter = new MolapDataWriterStepMeta();
@@ -1913,12 +1618,6 @@ public class GraphGenerator
         return true;
     }
 
-    /**
-     * 
-     * @param measureDataType2
-     * @return
-     * 
-     */
     private Map<String, Boolean> getMeasureDatatypeMap(String measureDataType)
     {
         if(measureDataType == null || "".equals(measureDataType))
@@ -1934,9 +1633,7 @@ public class GraphGenerator
         {
             measureValue = measures[i]
                     .split(MolapCommonConstants.COLON_SPC_CHARACTER);
-            // CHECKSTYLE:OFF Approval No:Approval-252
             resultMap.put(measureValue[0], Boolean.valueOf(measureValue[1]));
-            // CHECKSTYLE:ON
         }
         return resultMap;
     }
@@ -1960,9 +1657,7 @@ public class GraphGenerator
                 columns[i] = columns[i].replace("\"", "");
                 if(columns[i].contains("."))
                 {
-                    // CHECKSTYLE:OFF Approval No:Approval-367
                     columns[i] = columns[i].split("\\.")[1];
-                    // CHECKSTYLE:ON
                 }
             }
 
@@ -2046,7 +1741,6 @@ public class GraphGenerator
     {
         MolapSortKeyAndGroupByStepMeta sortRowsMeta = new MolapSortKeyAndGroupByStepMeta();
         sortRowsMeta.setTabelName(graphConfiguration.getTableName());
-        // sortRowsMeta.setStoreLocation(graphConfiguration.getStoreLocation());
         sortRowsMeta.setCubeName(cubeName);
         sortRowsMeta.setSchemaName(schemaName);
         sortRowsMeta.setCurrentRestructNumber(MolapUtil.getRestructureNumber(
@@ -2054,7 +1748,6 @@ public class GraphGenerator
         
         String[] highCardDims = RemoveDictionaryUtil.extractHighCardDimsArr(configurationInfoFact.getHighCardinalityDims());
         sortRowsMeta.setHighCardinalityCount(getHighCardDimsCountInAggQuery(highCardDims,graphConfiguration.getDimensions()));
-//        sortRowsMeta.setOutputRowSize(actualMeasures.length + 1 + "");
         sortRowsMeta.setIsAutoAggRequest(isAutoAggRequest + "");
         boolean isFactMdKeyInInputRow = false;
         StringBuilder builder = null;
@@ -2087,10 +1780,6 @@ public class GraphGenerator
             }
             builder.append(aggClass[aggClass.length - 1]);
             sortRowsMeta.setAggregatorClassString(builder.toString());
-//            sortRowsMeta.setFactDimLensString(MolapDataProcessorUtil
-//                    .getLevelCardinalitiesString(
-//                            graphConfiguration.getDimCardinalities(),
-//                            graphConfiguration.getDimensions()));
         }
         else
         {
@@ -2115,16 +1804,6 @@ public class GraphGenerator
                     aggLevels.add(aggLevelsActualName[j]);
                 }
             }
-//            String[] selectedFactDims = new String[aggLevels.size()];
-//            int index = 0;
-//            for(int j = 0;j < factDimensions.length;j++)
-//            {
-//                if(aggLevels.contains(factDimensions[j]))
-//                {
-//                    selectedFactDims[index++] = factDimensions[j];
-//                }
-//            }
-//            factDimensions = selectedFactDims;
         }
         String mdkeySize = getMdkeySizeInCaseOfAutoAggregate(
                 graphConfiguration.getDimensions(), factDimensions, factCardinality );
@@ -2264,7 +1943,6 @@ public class GraphGenerator
         CubeDimension[] dimensions = cube.dimensions;
         graphConfiguration.setDimensions(MolapSchemaParser.getCubeDimensions(
                 cube, schema));
-       // graphConfiguration.setHighCardinalityDims(MolapSchemaParser.getHighCardinalityDimensions(cube, schema));
         graphConfiguration.setActualDims(MolapSchemaParser.getDimensions(cube,
                 schema));
         graphConfiguration.setComplexTypeString(MolapSchemaParser.getLevelDataTypeAndParentMapString(cube,
@@ -2300,8 +1978,6 @@ public class GraphGenerator
                 .getHierarchyStringWithColumnNames(dimensions, schema));
         graphConfiguration.setMeasureUniqueColumnNamesString(MolapSchemaParser
                 .getMeasuresUniqueColumnNamesString(cube));
-        // graphConfiguration.setPrimaryKeyColumnNamesString(MolapSchemaParser
-        // .getForeignKeyColumnsNamesString(dimensions,schema));
         graphConfiguration
                 .setForeignKeyHierarchyString(MolapSchemaParser
                         .getForeignKeyHierarchyString(dimensions, schema,
@@ -2315,11 +1991,6 @@ public class GraphGenerator
                 .getDenormColNames(dimensions, schema));
         
         graphConfiguration.setLevelAnddataType(MolapSchemaParser.getLevelAndDataTypeMapString(dimensions, schema, cube));
-
-        /*
-         * graphConfiguration.setForeignKeyColumnNameString(MolapSchemaParser
-         * .getForeignKeyColumnNameString(dimensions, schema));
-         */
 
         graphConfiguration
                 .setForgienKeyAndPrimaryKeyMapString(MolapSchemaParser
@@ -2340,23 +2011,17 @@ public class GraphGenerator
         graphConfiguration.setMeasureCount(measureColumn.size() + "");
         graphConfiguration.setHeirAndKeySizeString(MolapSchemaParser
                 .getHeirAndKeySizeMapForFact(dimensions, schema));
-        // graphConfiguration.setJndiName(jndiName);
         graphConfiguration.setAggType(MolapSchemaParser
                 .getMeasuresAggragatorArray(cube));
         graphConfiguration.setMeasureNamesString(MolapSchemaParser
                 .getMeasuresNamesString(cube));
         graphConfiguration.setActualDimensionColumns(MolapSchemaParser
                 .getActualDimensions(schemaInfo, cube, schema));
-        /*
-         * graphConfiguration.setDenormalizedHierarchyString(MolapSchemaParser
-         * .getDenormalizedHierarchyString(dimensions, schema));
-         */
         graphConfiguration.setNormHiers(MolapSchemaParser.getNormHiers(cube,
                 schema));
         graphConfiguration.setMeasureDataTypeInfo(MolapSchemaParser
                 .getMeasuresDataType(cube));
 
-        //
         graphConfiguration.setStoreLocation(this.schemaName + '/' + cube.name);
         graphConfiguration.setLeafNodeSize((instance
                 .getProperty("com.huawei.unibi.molap.leaf.node.size",
@@ -2371,10 +2036,8 @@ public class GraphGenerator
         String quote = MolapSchemaParser.QUOTES;
         if(null != schemaInfo.getSrcDriverName())
         {
-            // isQuotesRequired = isQuotesRequired(schemaInfo);
             quote = getQuoteType(schemaInfo);
         }
-        //
         graphConfiguration.setTableInputSqlQuery(MolapSchemaParser
                 .getTableInputSQLQuery(dimensions, cube.measures,
                         MolapSchemaParser.getFactTableName(cube),
@@ -2388,14 +2051,12 @@ public class GraphGenerator
                         isQuotesRequired, quote));
         graphConfiguration.setMetaHeirString(MolapSchemaParser
                 .getMetaHeirString(dimensions, schema, factTableName));
-        //
         graphConfiguration.setDimCardinalities(MolapSchemaParser
                 .getCardinalities(factTableName, dimensions, schema));
         
         graphConfiguration.setMeasures(MolapSchemaParser
                 .getMeasures(cube.measures));
         graphConfiguration.setAGG(false);
-        //
         graphConfiguration.setUsername(schemaInfo.getSrcUserName());
         graphConfiguration.setPassword(schemaInfo.getSrcPwd());
         graphConfiguration.setDriverclass(schemaInfo.getSrcDriverName());
@@ -2407,7 +2068,6 @@ public class GraphGenerator
             AggregateTable aggtable, Schema schema)
             throws GraphGeneratorException
     {
-        //
         GraphConfigurationInfo graphConfiguration = new GraphConfigurationInfo();
         graphConfiguration.setCurrentRestructNumber(currentRestructNumber);
         CubeDimension[] dimensions = cube.dimensions;
@@ -2418,7 +2078,6 @@ public class GraphGenerator
         String factTableName = MolapSchemaParser.getFactTableName(cube);
         Map<String, String> cardinalities = MolapSchemaParser.getCardinalities(
                 factTableName, dimensions, schema);
-        //
         graphConfiguration.setDimCardinalities(cardinalities);
         graphConfiguration.setDimensionTableNames(MolapSchemaParser
                 .getTableNameString(factTableName, dimensions, schema));
@@ -2442,10 +2101,6 @@ public class GraphGenerator
         builder.append(levelWithTableName[actualLevalName.length - 1]);
         graphConfiguration.setColumnAndTableNameColumnMapForAgg(builder
                 .toString());
-        //
-        // int currentCount = MolapSchemaParser.getDimensionStringForAgg(
-        // aggtable.getAggLevels(), dimString, 0,
-        // cardinalities,aggtable.getActualAggLevels());
 
         int currentCount = MolapSchemaParser.getDimensionStringForAgg(
                 aggtable.getActualAggLevels(), dimString, 0, cardinalities,
@@ -2489,7 +2144,6 @@ public class GraphGenerator
         }
         graphConfiguration.setType(type);
         graphConfiguration.setAggType(aggtable.getAggregator());
-        // graphConfiguration.setJndiName(jndiName);
         graphConfiguration.setStoreLocation(this.schemaName + '/' + cube.name);
         graphConfiguration.setLeafNodeSize((instance
                 .getProperty("com.huawei.unibi.molap.leaf.node.size",
@@ -2524,12 +2178,6 @@ public class GraphGenerator
         return graphConfiguration;
     }
 
-    /**
-     * 
-     * @param schemaInfo2
-     * @return
-     * 
-     */
     private boolean isQuotesRequired(SchemaInfo schemaInfo)
             throws GraphGeneratorException
     {
@@ -2558,12 +2206,6 @@ public class GraphGenerator
         return true;
     }
 
-    /**
-     * 
-     * @param schemaInfo2
-     * @return
-     * 
-     */
     private String getQuoteType(SchemaInfo schemaInfo)
             throws GraphGeneratorException
     {
@@ -2602,12 +2244,6 @@ public class GraphGenerator
         return cube;
     }
     
-    /**
-     * 
-     * @param highCardDims
-     * @param actualDims
-     * @return
-     */
     private int getHighCardDimsCountInAggQuery(String[] highCardDims,
             String[] actualDims)
     {

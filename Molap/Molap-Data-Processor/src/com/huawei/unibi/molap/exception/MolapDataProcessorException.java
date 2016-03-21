@@ -22,16 +22,6 @@ package com.huawei.unibi.molap.exception;
 
 import java.util.Locale;
 
-/**
- * 
- * Project Name NSE V3R7C00 
- * Module Name : Molap Data Processor
- * Author K00900841
- * Created Date :21-May-2013 6:42:29 PM
- * FileName : SliceMergerException.java
- * Class Description :  MolapDataProcessorException class 
- * Version 1.0
- */
 public class MolapDataProcessorException extends Exception
 {
 
@@ -49,8 +39,6 @@ public class MolapDataProcessorException extends Exception
     /**
      * Constructor
      * 
-     * @param errorCode
-     *            The error code for this exception.
      * @param msg
      *            The error message for this exception.
      * 
@@ -64,8 +52,6 @@ public class MolapDataProcessorException extends Exception
     /**
      * Constructor
      * 
-     * @param errorCode
-     *            The error code for this exception.
      * @param msg
      *            The error message for this exception.
      * 

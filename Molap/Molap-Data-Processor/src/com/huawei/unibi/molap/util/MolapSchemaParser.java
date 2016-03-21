@@ -108,9 +108,7 @@ public final class MolapSchemaParser
             InputStream in = null;
             try
             {
-//                in = Util.readEncryptedVirtualFile(catalogUrl);
                 in=FileFactory.getDataInputStream(catalogUrl, FileFactory.getFileType(catalogUrl));
-//                in = new FileInputStream(catalogUrl);
                 def = xmlParser.parse(in);
             }
             finally
@@ -130,27 +128,12 @@ public final class MolapSchemaParser
         //
         catch(IOException e)
         {
-//            e.printStackTrace();
             throw Util.newError(e, "while parsing catalog " + catalogUrl);
         }
 
         return xmlSchema;
     }
-    /**
-     * 
-     * @param schema
-     * @return
-     */
-    public static Cube[] getMondrianCubes(Schema schema)
-    {
-        return schema.cubes;
-    }
-    
-    /**
-     * @param schema
-     * @param cubeName
-     * @return
-     */
+
     public static Cube getMondrianCube(Schema schema,String cubeName)
     {
         Cube[] cubes = schema.cubes;
@@ -183,145 +166,6 @@ public final class MolapSchemaParser
         {
             return getDimensionSQLQueries(cube,dimensions, schema);
         }
-    }
-    
-    /**
-     * Validate the cube.
-     * @param cube
-     * @param schema
-     * @return
-     */
-    public static boolean validateCube(Cube cube, Schema schema, boolean isNormalizedCheck)
-    {
-        if(validateHierarchyTables(cube, schema,isNormalizedCheck))
-        {
-            AggregateTable[] aggregateTable = getAggregateTable(cube, schema);
-            Set<String> tableNames = new HashSet<String>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
-            if(aggregateTable.length > 0)
-            {
-                for(int i = 0;i < aggregateTable.length;i++)
-                {
-                    if(tableNames.contains(aggregateTable[i].getAggregateTableName()))
-                    {
-                        LOGGER.error(
-                                MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-                                "Invalid Schema: Two aggregate table having same name");
-                        return false;
-                    }
-                }
-                String[] aggregator = null;
-                for(int i = 0;i < aggregateTable.length;i++)
-                {
-                    aggregator = aggregateTable[i].getAggregator();
-                    for(int j = 0;j < aggregator.length;j++)
-                    {
-                        if(null==aggregator[j])
-                        {
-                            LOGGER.error(
-                                    MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-                                    "Invalid Schema: Invalid measure name in aggreagte table ");
-                            return false;
-                        }
-                    }
-                }
-                for(int i = 0;i < aggregateTable.length;i++)
-                {
-                    if(null==aggregateTable[i].getAggLevels()||aggregateTable[i].getAggLevels().length<1)
-                    {
-                        LOGGER.error(
-                                MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-                                "Invalid Schema: Invalid aggreagte table as levels are not present in aggregate table: "
-                                        + aggregateTable[i]
-                                                .getAggregateTableName());
-                        return false;
-                    }
-                    if(null==aggregateTable[i].getAggMeasure()||aggregateTable[i].getAggMeasure().length<1)
-                    {
-                        LOGGER.error(
-                                MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-                                "Invalid Schema: Invalid aggreagte table as measure are present in aggregate table: "
-                                        + aggregateTable[i]
-                                                .getAggregateTableName());
-                        return false;
-                    }
-                }
-                
-                return true;
-            }
-            else
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-    
-    /**
-     * Validate the hierarchies 
-     * @param cube
-     * @param schema
-     * @return
-     */
-    private static boolean validateHierarchyTables(Cube cube, Schema schema, boolean isNormalizedCheck)
-    {
-    	CubeDimension[] dimensions = cube.dimensions;
-        for(CubeDimension dim : dimensions)
-        {
-        	
-            Hierarchy[] hierarchies = extractHierarchies(schema, dim);
-            boolean foreignKeyPresent = dim.foreignKey != null && dim.foreignKey.length() > 0;
-            for(Hierarchy hierarchy : hierarchies)
-            {
-                if(isNormalizedCheck)
-                {
-                    if(hierarchy.normalized)
-                    {
-                        LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-                                "Nomalized Hierarchy is No Supported in Case of Auto Aggrgetaion : "
-                                        + hierarchy.name);
-                        return false;
-                    }
-                }
-                RelationOrJoin relation = hierarchy.relation;
-                boolean tablePresent = relation != null && ((Table)hierarchy.relation).name.length() > 0;
-                boolean primaryKeyPresent = hierarchy.primaryKey != null && hierarchy.primaryKey.length() > 0;
-                if(!tablePresent && primaryKeyPresent)
-                {
-					LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-							"Table is not present for the hierarchy : "
-									+ hierarchy.name
-									+ " but primary key is present");
-            		return false;
-                }
-                else if (tablePresent && !primaryKeyPresent) 
-                {
-					LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-							"Table is present for the hierarchy : "
-									+ hierarchy.name
-									+ " but primary key is not present");
-					return false;
-				} 
-                else if(!foreignKeyPresent && tablePresent && primaryKeyPresent)
-				{
-					LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-							"Table and primary key are present for the hierarchy : "
-									+ hierarchy.name
-									+ " but foreign key is missing for dimension");
-					return false;
-				}
-                else if(foreignKeyPresent && !tablePresent)
-                {
-					LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-							"Table is not present for the hierarchy : "
-									+ hierarchy.name
-									+ " but foreign key is present");
-					return false;
-                }
-
-            }
-            
-        }
-		return true;
     }
     
     public static String getDenormColNames(CubeDimension[] dimensions, Schema schema)
@@ -387,12 +231,6 @@ public final class MolapSchemaParser
         return columnstr;
     }
 
-    /**
-     * @param cube 
-     * @param dimensions
-     * @param isQuotesRequired
-     * @return
-     */
     private static String getDimensionSQLQueries(Cube cube,
             CubeDimension[] dimensions, Schema schema)
     {
@@ -411,7 +249,6 @@ public final class MolapSchemaParser
             StringBuilder query;
             for(Hierarchy hierarchy : hierarchies)
             {
-               // String tableName = hierarchy.relation.toString();
                 RelationOrJoin relation = hierarchy.relation;
                 if(relation == null)
                 {
@@ -452,20 +289,6 @@ public final class MolapSchemaParser
                 
                 addNameColumnAndPropertyInQuery(tableName, hierarchy.levels[0].column, dimensions, schema, query);
                 
-//                if(null!=hierarchy.levels[0].nameColumn)
-//                {
-//                    query.append(',' + hierarchy.levels[0].nameColumn);
-//                }
-//                //
-//                properties = hierarchy.levels[0].properties;
-//                if(properties.length > 0)
-//                {
-//                    for(int j = 0;j < properties.length;j++)
-//                    {
-//                        query.append(',' + properties[j].column);
-//                    }
-//                }
-                //
                 for(int i = 1;i < hierarchy.levels.length;i++)
                 {
                     query.append(',' + hierarchy.levels[i].column);
@@ -477,20 +300,7 @@ public final class MolapSchemaParser
                 
                     addNameColumnAndPropertyInQuery(tableName, hierarchy.levels[0].column, dimensions, schema, query);
                     
-//                    if(null!=hierarchy.levels[i].nameColumn)
-//                    {
-//                        query.append(',' + hierarchy.levels[i].nameColumn);
-//                    }
-//                    properties = hierarchy.levels[i].properties;
-//                    if(properties.length > 0)
-//                    {
-//                        for(int j = 0;j < properties.length;j++)
-//                        {
-//                            query.append(',' + properties[j].column);
-//                        }
-//                    }
                 }
-                //
                 query.append(" FROM " + tableName);
                 queryList.add(query.toString());
             }
@@ -510,16 +320,9 @@ public final class MolapSchemaParser
     }
 
     
-    /**
-     * @param cube 
-     * @param dimensions
-     * @return
-     */
     private static String getDimensionSQLQueriesWithQuotes(Cube cube, CubeDimension[]dimensions,Schema schema,String quotes)
     {
-        //
         List<String> queryList = new ArrayList<String>(MolapCommonConstants.CONSTANT_SIZE_TEN);
-//        Property[] properties = null;
         for(CubeDimension dim : dimensions)
         {
         	if(!dim.visible)
@@ -527,13 +330,11 @@ public final class MolapSchemaParser
         		continue;
         	}
         	
-            //
             Hierarchy[] hierarchies = null;
             hierarchies = extractHierarchies(schema, dim);
             for(Hierarchy hrrchy : hierarchies)
             { 
                 StringBuilder query;
-               // String tableName = hierarchy.relation.toString();
                 RelationOrJoin relation = hrrchy.relation;
                 if(relation == null)
                 {
@@ -573,22 +374,6 @@ public final class MolapSchemaParser
                 
                 addNameColumnAndPropertyInQueryWithQuotes(tableName, hrrchy.levels[0].column, dimensions, schema, query, quotes);
                 
-//                if(null!=hierarchy.levels[0].nameColumn)
-//                {
-//                    query.append(',' + quotes + hierarchy.levels[0].nameColumn
-//                            + quotes);
-//                }
-//                //
-//                properties = hierarchy.levels[0].properties;
-//                if(properties.length > 0)
-//                {
-//                    for(int j = 0;j < properties.length;j++)
-//                    {
-//                        query.append(',' + quotes + properties[j].column
-//                                + quotes);
-//                    }
-//                }
-                //
                 for(int i = 1;i < hrrchy.levels.length;i++)
                 {
                     query.append(',' + quotes + hrrchy.levels[i].column
@@ -603,22 +388,7 @@ public final class MolapSchemaParser
                             hrrchy.levels[i].column, dimensions, schema,
                             query, quotes);
 
-//                    if(null != hierarchy.levels[i].nameColumn)
-//                    {
-//                        query.append(',' + quotes
-//                                + hierarchy.levels[i].nameColumn + quotes);
-//                    }
-//                    properties = hierarchy.levels[i].properties;
-//                    if(properties.length > 0)
-//                    {
-//                        for(int j = 0;j < properties.length;j++)
-//                        {
-//                            query.append(',' + quotes + properties[j].column
-//                                    + quotes);
-//                        }
-//                    }
                 }
-                //
                 query.append(" FROM " + quotes + tableName + quotes);
                 queryList.add(query.toString());
             }
@@ -737,14 +507,6 @@ public final class MolapSchemaParser
     }
     
     
-    /**
-     * @param dimensions
-     * @param measures
-     * @param factTableName
-     * @param isQuotesRequired 
-     * @param schemaInfo 
-     * @return
-     */
     public static String getTableInputSQLQuery(CubeDimension[] dimensions,
             Measure[] measures, String factTableName, boolean isQuotesRequired,
             Schema schema)
@@ -827,20 +589,12 @@ public final class MolapSchemaParser
        } 
        return true;
     }
-    /**
-     * @param aggDim
-     * @param measures
-     * @param factTableName
-     * @param isQuotesRequired 
-     * @param schemaInfo 
-     * @return
-     */
+
     public static String getTableInputSQLQueryForAGG(String[] aggDim,
             String[] measures, String factTableName, boolean isQuotesRequired)
     {
         StringBuilder queryBuilder = new StringBuilder("SELECT ");
         queryBuilder.append(System.getProperty("line.separator"));
-        //query.append("\n");
         for(int i = 0;i < aggDim.length;i++)
         {
             if(isQuotesRequired)
@@ -853,7 +607,6 @@ public final class MolapSchemaParser
             }
             queryBuilder.append(",");
             queryBuilder.append(System.getProperty("line.separator"));
-            //query.append("\n");
         }
         
         for(int i = 0;i < measures.length-1;i++)
@@ -868,7 +621,6 @@ public final class MolapSchemaParser
             }
             queryBuilder.append(",");
             queryBuilder.append(System.getProperty("line.separator"));
-            //query.append("\n");
         }
         if(isQuotesRequired)
         {
@@ -899,7 +651,6 @@ public final class MolapSchemaParser
                 {
                     continue;
                 }
-                // String tableName = hierarchy.relation.toString();
                 RelationOrJoin relation = hierarchy.relation;
                 String dimName = cDim.name;
                 dimName = dimName.replaceAll(" ", "_");
@@ -909,14 +660,12 @@ public final class MolapSchemaParser
                 if(hasOrdinalColumn(hierarchy.levels[0]))
                 {
                     query.append(System.getProperty("line.separator"));
-                    // query.append("\n"); 
                     query.append(',' + hierarchyTbl + '.'
                             + hierarchy.levels[0].ordinalColumn);
                 }
                 if(null != hierarchy.levels[0].nameColumn)
                 {
                     query.append(System.getProperty("line.separator"));
-                    // query.append("\n");
                     query.append(',' + hierarchyTbl + '.'
                             + hierarchy.levels[0].nameColumn);
                 }
@@ -926,7 +675,6 @@ public final class MolapSchemaParser
                     for(int j = 0;j < properties.length;j++)
                     {
                         query.append(System.getProperty("line.separator"));
-                        // query.append("\n");
                         query.append(',' + hierarchyTbl + '.'
                                 + properties[j].column);
                     }
@@ -936,14 +684,12 @@ public final class MolapSchemaParser
                     if(hasOrdinalColumn(hierarchy.levels[i]))
                     {
                         query.append(System.getProperty("line.separator"));
-                        // query.append("\n");
                         query.append(',' + hierarchyTbl + '.'
                                 + hierarchy.levels[i].ordinalColumn);
                     }
                     if(null != hierarchy.levels[i].nameColumn)
                     {
                         query.append(System.getProperty("line.separator"));
-                        // query.append("\n");
                         query.append(',' + hierarchyTbl + '.'
                                 + hierarchy.levels[i].nameColumn);
                     }
@@ -953,7 +699,6 @@ public final class MolapSchemaParser
                         for(int j = 0;j < properties.length;j++)
                         {
                             query.append(System.getProperty("line.separator"));
-                            // query.append("\n");
                             query.append(',' + hierarchyTbl + '.'
                                     + properties[j].column);
                         }
@@ -974,7 +719,6 @@ public final class MolapSchemaParser
             hierarchies = extractHierarchies(schema, cDim);
             for(Hierarchy hierarchy : hierarchies)
             {
-                //String tableName = hierarchy.relation.toString();
                 if(hierarchy.normalized)
                 {
                     continue;
@@ -986,7 +730,6 @@ public final class MolapSchemaParser
                 if(hasOrdinalColumn(hierarchy.levels[0]))
                 {
                     query.append(System.getProperty("line.separator"));
-                    // query.append("\n");
                     query.append(',' + QUOTES + hierarchyTable + QUOTES + '.'
                             + QUOTES + hierarchy.levels[0].ordinalColumn
                             + QUOTES);
@@ -994,7 +737,6 @@ public final class MolapSchemaParser
                 if(null!=hierarchy.levels[0].nameColumn)
                 {
                     query.append(System.getProperty("line.separator"));
-                    //query.append("\n");
                         query.append(',' + QUOTES + hierarchyTable + QUOTES + '.'
                                 + QUOTES + hierarchy.levels[0].nameColumn + QUOTES);
                 }
@@ -1004,7 +746,6 @@ public final class MolapSchemaParser
                     for(int j = 0;j < properties.length;j++)
                     {
                         query.append(System.getProperty("line.separator"));
-                        // query.append("\n");
                         query.append(',' + QUOTES + hierarchyTable + QUOTES
                                 + '.' + QUOTES + properties[j].column + QUOTES);
                     }
@@ -1014,7 +755,6 @@ public final class MolapSchemaParser
                     if(hasOrdinalColumn(hierarchy.levels[i]))
                     {
                         query.append(System.getProperty("line.separator"));
-                        // query.append("\n");
                         query.append(',' + QUOTES + hierarchyTable + QUOTES
                                 + '.' + QUOTES
                                 + hierarchy.levels[i].ordinalColumn + QUOTES);
@@ -1022,7 +762,6 @@ public final class MolapSchemaParser
                     if(null!=hierarchy.levels[i].nameColumn)
                     {
                         query.append(System.getProperty("line.separator"));
-                        // query.append("\n");
                         query.append(',' + QUOTES + hierarchyTable + QUOTES
                                 + '.' + QUOTES + hierarchy.levels[i].nameColumn
                                 + QUOTES);
@@ -1033,7 +772,6 @@ public final class MolapSchemaParser
                         for(int j = 0;j < properties.length;j++)
                         {
                             query.append(System.getProperty("line.separator"));
-                            // query.append("\n");
                             query.append(',' + QUOTES + hierarchyTable + QUOTES
                                     + '.' + QUOTES + properties[j].column
                                     + QUOTES);
@@ -1049,7 +787,6 @@ public final class MolapSchemaParser
             StringBuilder query, String factTableName,
             boolean isQuotesRequired, Schema schema)
     {
-        //
         int counter=0;
         for(CubeDimension cDim:dimensions)
         {
@@ -1152,12 +889,9 @@ public final class MolapSchemaParser
             for(Hierarchy hierarchy : hierarchies)
             {
                 RelationOrJoin relation = hierarchy.relation;
-                // String dimName = cDimension.name;
-                // dimName = dimName.replaceAll(" ", "_");
 
                 String tableName = relation == null ? getFactTableName(cube)
                         : ((Table)hierarchy.relation).name;
-                // String tableName = hierarchy.relation.toString();
                 int i = hierarchy.levels.length;
                 boolean appendComma = true;
                 for(Level level : hierarchy.levels)
@@ -1211,29 +945,13 @@ public final class MolapSchemaParser
                 	dimString.append(MolapCommonConstants.COMA_SPC_CHARACTER);
             }
         }
-/*
-        String dimstr = dimString.toString();
-        if(dimstr.length() > 0 && dimstr.endsWith(MolapCommonConstants.COMA_SPC_CHARACTER))
-        {
-            dimstr = dimstr.substring(0, dimstr.length()
-                    - MolapCommonConstants.COMA_SPC_CHARACTER.length());
-        }*/
-
         return counter;
     }
     
-   /**
- * @param dimensions
- * @param dimString
- * @param counter
- * @param dimCardinalities
- * @return
- */
     public static int getDimensionStringForAgg(String[] dimensions,
             StringBuilder dimString, int counter,
             Map<String, String> dimCardinalities, String[] acutalDimension)
     {
-        //
        int len=dimensions.length;
         for(int i = 0;i < len-1;i++)
         {
@@ -1272,11 +990,8 @@ public final class MolapSchemaParser
             //
             for(Hierarchy hierarchy : hierarchies)
             {
-                //String tableName = hierarchy.relation.toString();
                 RelationOrJoin relation = hierarchy.relation;
-//                String dimName = cDimension.name;
-//                dimName = dimName.replaceAll(" ", "_");
-                
+
                 String tableName = relation == null ? factTableName
                         : ((Table)hierarchy.relation).name;
                 int counter=0;
@@ -1306,49 +1021,6 @@ public final class MolapSchemaParser
     }
     
 
-    /**
-     * Return mapping of Column name to cardinality 
-     */
-    public static Map<String, String> getActualCardinalities(
-            String factTableName, CubeDimension[] dimensions, Schema schema)
-    {
-        Map<String, String>  cardinalities = new LinkedHashMap<String, String>();
-        //
-        for(CubeDimension cDimension : dimensions)
-        {
-            Hierarchy[] hierarchies = null;
-            hierarchies = extractHierarchies(schema, cDimension);
-            //
-            for(Hierarchy hierarchy : hierarchies)
-            {
-                addLevelCardinality(factTableName, cardinalities, cDimension,
-                        hierarchy);
-            }
-        }
-        return cardinalities;
-    }
-
-    private static void addLevelCardinality(String factTableName,
-            Map<String, String> cardinalities, CubeDimension cDimension,
-            Hierarchy hierarchy)
-    {
-        //String tableName = hierarchy.relation.toString();
-        RelationOrJoin relation = hierarchy.relation;
-//        String dimName = cDimension.name;
-//        dimName = dimName.replaceAll(" ", "_");
-        
-        String tableName = relation == null ? factTableName
-                : ((Table)hierarchy.relation).name;
-        for(Level level : hierarchy.levels)
-        {
-        	if(level.parentname != null)
-        		continue;
-            cardinalities.put(tableName + '_' + level.column,
-                    level.levelCardinality + "");
-        }
-    }
-    
-    
     /**
      * Get measure string from a array of Measure
      * 
@@ -1408,32 +1080,6 @@ public final class MolapSchemaParser
      * @return
      * 
      */
-    public static String getStringWithSeperator(String[] measures,
-            String seperator)
-    {
-        StringBuilder measureString = new StringBuilder();
-        int i = measures.length;
-        for(String measure : measures)
-        {
-            
-            measureString.append(measure);
-            if(i > 1)
-            {
-                measureString.append(seperator);
-            }
-            i--;
-
-        }
-        return measureString.toString();
-    }
-    
-    /**
-     * Get measure string from a array of Measure
-     * 
-     * @param measures
-     * @return
-     * 
-     */
     public static String[] getMeasures(Measure[] measures)
     {
         String [] measuresStringArray= new String[measures.length];
@@ -1446,7 +1092,6 @@ public final class MolapSchemaParser
     }
     
     
-    //TODO SIMIAN
     /**
      * Get hierarchy string from dimensions
      * 
@@ -1483,10 +1128,7 @@ public final class MolapSchemaParser
                 }
                     // Replace the hierarchy name space with "_" 
                     hName = hName.replaceAll(" ", "_");
-//                RelationOrJoin relation = hierarchy.relation;
                 cDimName = cDimName.replaceAll(" ", "_");
-                
-//                String tableName = relation == null ? dimName : ((Table)hierarchy.relation).name;
                 
                     lengthOfLevels = hierarchy.levels.length;
                     int hierlength = hierarchy.levels.length;
@@ -1525,7 +1167,6 @@ public final class MolapSchemaParser
             }
         }
 
-     //   }
 
         hierStr = hierString.toString();
         if(hierStr.length() > 0 && hierStr.endsWith(MolapCommonConstants.AMPERSAND_SPC_CHARACTER))
@@ -1535,43 +1176,6 @@ public final class MolapSchemaParser
         return hierStr;
     }
 
-    
-    /**
-     * Get all aggregate tables in a cube
-     * 
-     * @param cube
-     * @return
-     *
-     */
-    public static List<Map<String,String>> getAggTable(Cube cube)
-    {
-        List<Map<String,String>> aggTableLst = new ArrayList<Map<String,String>>(MolapCommonConstants.CONSTANT_SIZE_TEN);
-        
-        MolapDef.Table factTable = (MolapDef.Table)cube.fact;
-        MolapDef.AggTable[] aggTables = factTable.getAggTables();
-        
-        for(int i = 0;i < aggTables.length;i++)
-        {
-            Map<String,String> aggTblMap = new HashMap<String,String>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
-            String aggTableName = "Agg";//aggTables[0].name; 
-            String dimensionString = "";
-            String timeString = "";
-            String measureString = "";
-            
-            // MolapDef.AggMeasure[] measures = aggTable.measures;
-            // MolapDef.AggLevel[] dimensions = aggTable.levels;
-            
-            aggTblMap.put("AggTableName", aggTableName);
-            aggTblMap.put("AggTableDim", dimensionString);
-            aggTblMap.put("AggTableTime", timeString);
-            aggTblMap.put("AggTableMsr", measureString);
-            
-            aggTableLst.add(aggTblMap);
-            
-        }
-        
-        return aggTableLst;
-    }
     
     /**
      * Get the name of a fact table in a cube
@@ -1586,84 +1190,6 @@ public final class MolapSchemaParser
         return factTable.name;
     }
     
-    /**
-     * @param measures
-     * @return
-     */
-    public static String getAggTableMeasureString(MolapDef.AggMeasure[] measures)
-    {
-        StringBuilder measureStr = new StringBuilder();
-
-        int i = measures.length;
-        for(int j = 0;j < measures.length;j++)
-        {
-            measureStr.append(measures[j].column + ':' + measures[j].name);
-            if(i > 1)
-            {
-                measureStr.append(",");
-            }
-            i--;
-
-        }
-        return measureStr.toString();
-    }
-
-
-
-    /**
-     * @param cube
-     * @return
-     */
-    public static Map<String,String> getCubeMeasuresAndDataType(Cube cube)
-    {
-        MolapDef.Measure[] measures = cube.measures;
-        int numOfaggr = measures.length;
-        Map<String, String> measureNameAndDataTypeMap = new LinkedHashMap<String, String>(
-                numOfaggr);
-        for(int i = 0;i < numOfaggr;i++)
-        {
-            measureNameAndDataTypeMap.put(measures[i].column,
-                    measures[i].datatype);
-        }
-        return measureNameAndDataTypeMap;
-    }
-    
-    /**
-     * @param cube
-     * @return
-     */
-    public static List<String[]> getCubeMeasures(Cube cube)
-    {
-        
-        List<String[]> cubeMsrs = new ArrayList<String[]>(3);
-        MolapDef.Measure[] measures = cube.measures;
-        int numOfagg = measures.length;
-        String[] aggregators = new String[numOfagg];
-        String[] measureNames = new String[numOfagg]; 
-        String[] measureColumns = new String[numOfagg];
-       // String[] measureColumnIndex = new String[numOfagg];
-        
-        for(int i = 0;i< numOfagg;i++)
-        {
-            aggregators[i] = measures[i].aggregator;
-            measureColumns[i] = measures[i].column;
-            measureNames[i] = measures[i].name;
-            //measureColumnIndex[i] = measures[i].columnIndex+"";
-        }
-        
-        cubeMsrs.add(measureColumns);
-        cubeMsrs.add(measureNames);
-        cubeMsrs.add(aggregators);
-      //  cubeMeasures.add(measureColumnIndex);
-        
-        return cubeMsrs;
-        
-    }
-    
-    /**
-     * @param cube
-     * @return
-     */
     public static String[] getCubeDimensions(Cube cube,Schema schema)
     {
         List<String> list = new ArrayList<String>(MolapCommonConstants.CONSTANT_SIZE_TEN);
@@ -1679,8 +1205,6 @@ public final class MolapSchemaParser
             hierarchies = extractHierarchies(schema, cDimension);
             for(Hierarchy hierarchy : hierarchies)
             {
-//                String dimName = cDimension.name;
-//                dimName = dimName.replaceAll(" ", "_");
                 String factTableName = getFactTableName(cube);
                 list.addAll(getTableNames(factTableName, hierarchy));
             }
@@ -1689,70 +1213,11 @@ public final class MolapSchemaParser
         fields= list.toArray(fields);
         return fields;
     }
-    /**
-     * Get the high cardinality dimensions from the cube metadata, for these dims
-     * no metadata will be generated.
-     * @param cube
-     * @param schema
-     * @return String[].
-     */
-    public static String[] getHighCardinalityDimensions(Cube cube,Schema schema)
-    {
-    	 List<String> list = new ArrayList<String>(MolapCommonConstants.CONSTANT_SIZE_TEN);
-    	  MolapDef.CubeDimension[] dimensions = cube.dimensions;
-         for(CubeDimension cDimension : dimensions)
-         {
-         	//Ignoring the dimensions which are high cardinality dimension
-         	if(!cDimension.highCardinality)
-         	{
-         		continue;
-         	}
-             Hierarchy[] hierarchies = null;
-             hierarchies = extractHierarchies(schema, cDimension);
-             for(Hierarchy hierarchy : hierarchies)
-             {
-//                 String dimName = cDimension.name;
-//                 dimName = dimName.replaceAll(" ", "_");
-                 String factTableName = getFactTableName(cube);
-                 list.addAll(getTableNames(factTableName, hierarchy));
-             }
-         }
-         String[] fields = new String[list.size()];
-         fields= list.toArray(fields);
-         return fields;
-       
-    }
-    
-    /**
-     * @param cube
-     * @return
-     */
-    public static String[] getUpdatedCubeDimensions(Cube cube,Schema schema)
-    {
-        List<String> list = new ArrayList<String>(MolapCommonConstants.CONSTANT_SIZE_TEN);
-        MolapDef.CubeDimension[] dimensions = cube.dimensions;
-        for(CubeDimension cDimension : dimensions)
-        {
-            Hierarchy[] hierarchies = null;
-            hierarchies = extractHierarchies(schema, cDimension);
-            for(Hierarchy hierarchy : hierarchies)
-            {
-                String dimName = cDimension.name;
-                dimName = dimName.replaceAll(" ", "_");
-                
-                list.addAll(getUpdatedTableNames(dimName, hierarchy));
-            }
-        }
-        String[] fields = new String[list.size()];
-        fields= list.toArray(fields);
-        return fields;
-    }
-    
+
     /**
      * Extracts the hierarchy from Dimension or Dimension usage(basedon multiple cubes)
      * @param schema
      * @param cDimension
-     * @param hierarchies
      * @return
      */
     public static Hierarchy[] extractHierarchies(Schema schema,
@@ -1779,48 +1244,10 @@ public final class MolapSchemaParser
         return hierarchies;
     }
     
-    /**
-     * 
-     * Returns Dimension or Extract Dimension from DimensionUsage
-     * @param schema
-     * @param cubeDimension
-     * @return
-     */
-//    private static Dimension extractDimension(Schema schema,
-//            CubeDimension cubeDimension) {
-//        Dimension dim = null;
-//        if(cubeDimension instanceof Dimension)
-//        {
-//            dim = (Dimension) cubeDimension;
-//        }
-//        else
-//        if(cubeDimension instanceof DimensionUsage)
-//        {
-//            String sourceDimensionName = ((DimensionUsage)cubeDimension).source;
-//            Dimension[] schemaGlobalDimensions = schema.dimensions;
-//            for(Dimension dimension : schemaGlobalDimensions)
-//            {
-//                if(sourceDimensionName.equals(dimension.name))
-//                {
-//                    dim = dimension;
-//                }
-//            }
-//        }
-//        
-//        return dim;
-//    }
-    
-    
-    /**
-     * @param factTable
-     * @param list
-     * @param hierarchy
-     */
     private static List<String> getTableNames(String factTableName,
             Hierarchy hierarchy)
     {
         List<String> list = new ArrayList<String>(MolapCommonConstants.CONSTANT_SIZE_TEN);
-        // String tableName = hierarchy.relation.toString();
         RelationOrJoin relation = hierarchy.relation;
         String tableName = relation == null ? factTableName
                 : ((Table)hierarchy.relation).name;
@@ -1830,61 +1257,10 @@ public final class MolapSchemaParser
         		continue;
             list.add(tableName + '_' + level.column);
 
-//            if(hasOrdinalColumn(level))
-//            {
-//                list.add(tableName + '_' + level.ordinalColumn);
-//            }
-//            if(level.nameColumn != null)
-//            {
-//                list.add(tableName + '_' + level.nameColumn);
-//            }
-//            Property[] properties = level.properties;
-//            for(int i = 0;i < properties.length;i++)
-//            {
-//                list.add(properties[i].name);
-//            }
         }
         return list;
     }
     
-    /**
-     * @param factTable
-     * @param list
-     * @param hierarchy
-     */
-    private static List<String> getUpdatedTableNames(String dimName,
-            Hierarchy hierarchy)
-    {
-        List<String> list = new ArrayList<String>(MolapCommonConstants.CONSTANT_SIZE_TEN);
-        // String tableName = hierarchy.relation.toString();
-        RelationOrJoin relation = hierarchy.relation;
-        String tableName = relation == null ? dimName
-                : ((Table)hierarchy.relation).name;
-        int counter = 0;
-        for(Level level : hierarchy.levels)
-        {
-        	if(level.parentname != null)
-        		continue;
-        	if(hierarchy.normalized)
-        	{
-        		if(counter == hierarchy.levels.length-1)
-        		{
-        			list.add(tableName + '_' + level.column);        			
-        		}
-        		counter++;
-        	}
-        	else
-        	{
-        		list.add(tableName + '_' + level.column);        		
-        	}
-        }
-        return list;
-    }
-    
-    /**
-     * @param cube
-     * @return
-     */
     public static String[] getDimensions(Cube cube,Schema schema)
     {  //
         List<String> list = new ArrayList<String>(MolapCommonConstants.CONSTANT_SIZE_TEN);
@@ -1896,11 +1272,8 @@ public final class MolapSchemaParser
             hierarchies = extractHierarchies(schema, cDimension);
             for(Hierarchy hierarchy : hierarchies)
             {
-               // String tableName = hierarchy.relation.toString();
                 RelationOrJoin relation = hierarchy.relation;
-//                String dimName = cDimension.name;
-//                dimName = dimName.replaceAll(" ", "_");
-                
+
                 String tableName = relation == null ? getFactTableName(cube)
                         : ((Table)hierarchy.relation).name;
                 for(Level level : hierarchy.levels)
@@ -1908,7 +1281,6 @@ public final class MolapSchemaParser
                 	if(level.parentname != null)
                 		continue;
                     list.add(tableName + '_' + level.column);
-                    //
                 }
             }
         }
@@ -1917,139 +1289,20 @@ public final class MolapSchemaParser
         return fields;
     }
     
-    
-    /**
-     * @param cube
-     * @return
-     */
-    public static Map<String,GenericDataType> getComplexDimensions(Cube cube,Schema schema)
-    {  
-    	MolapDef.CubeDimension[] dimensions = cube.dimensions;
-    	Map<String,GenericDataType> complexTypeMap = new HashMap<String,GenericDataType>();
-    	for(CubeDimension cDimension : dimensions)
-    	{
-    		//
-    		Hierarchy[] hierarchies = null;
-    		hierarchies = extractHierarchies(schema, cDimension);
-    		for(Hierarchy hierarchy : hierarchies)
-    		{
-    			if(hierarchy.levels.length > 1 && (hierarchy.levels[0].type.equals("Array") 
-    					|| hierarchy.levels[0].type.equals("Struct")))
-    			{
-    				Level levelZero = hierarchy.levels[0];
-    				GenericDataType g = levelZero.type.equals("Array")?
-    						new ArrayDataType(levelZero.name, ""):new StructDataType(levelZero.name, "");
-    				complexTypeMap.put(levelZero.name, g);
-    				boolean isFirst = true;
-	    			for(Level level : hierarchy.levels)
-	    			{
-	    				if(isFirst)
-	    				{
-	    					isFirst = false;
-	    					continue;
-	    				}
-	    				else
-	    				{
-		    				switch(level.type)
-		    				{
-		    					case "Array" : 
-		    						g.addChildren(new ArrayDataType(level.name, level.parentname));
-		    						break;
-		    					case "Struct" : 
-		    						g.addChildren(new StructDataType(level.name, level.parentname));
-		    						break;
-		    					default :
-		    						g.addChildren(new PrimitiveDataType(level.name, level.parentname));
-		    				}
-	    				}
-	    			}
-    			}
-    		}
-    	}
-    	return complexTypeMap;
-    }
-    
-    
-    /**
-     * @param cube
-     * @return
-     */
-    public static String[] getDimensionTables(Cube cube,Schema schema)
-    {  //
-        List<String> list = new ArrayList<String>(MolapCommonConstants.CONSTANT_SIZE_TEN);
-        MolapDef.CubeDimension[] dimensions = cube.dimensions;
-        for(CubeDimension cDimension : dimensions)
-        {
-            //
-            Hierarchy[] hierarchies = null;
-            hierarchies = extractHierarchies(schema, cDimension);
-            for(Hierarchy hierarchy : hierarchies)
-            {
-               // String tableName = hierarchy.relation.toString();
-                RelationOrJoin relation = hierarchy.relation;
-                String dimName = cDimension.name;
-                dimName = dimName.replaceAll(" ", "_");
-                
-                String tableName = relation == null ? getFactTableName(cube)
-                        : ((Table)hierarchy.relation).name;
-                list.add(tableName);
-            }
-        }
-        String[] fields = new String[list.size()];
-        fields= list.toArray(fields);
-        return fields;
-    }
-    
-    public static String getDimensionTable(Cube cube, Schema schema,
-            CubeDimension cDimension, String hierarchyName)
-    {
-        String tableName = null;
-
-        Hierarchy[] hierarchies = null;
-        RelationOrJoin relation = null;
-//        String dimName = null;
-
-        hierarchies = extractHierarchies(schema, cDimension);
-        for(Hierarchy hierarchy : hierarchies)
-        {
-            if(hierarchyName.equals(hierarchy.name))
-            {
-                relation = hierarchy.relation;
-//                dimName = cDimension.name;
-//                dimName = dimName.replaceAll(" ", "_");
-
-                tableName = relation == null ? getFactTableName(cube)
-                        : ((Table)hierarchy.relation).name;
-                break;
-            }
-        }
-
-        return tableName;
-    }
-    /**
-     * @param cube
-     * @return
-     */
     public static AggregateTable[] getAggregateTable(Cube cube,Schema schema)
     {
         MolapDef.Table table = (MolapDef.Table)cube.fact;
         MolapDef.AggTable[] aggTables = table.aggTables;
         int numberOfAggregates = aggTables.length;
         AggregateTable[] aggregates = new AggregateTable[numberOfAggregates];
-       // MolapDef.AggMeasure[] aggMeasures = new AggMeasure[numberOfAggregates];
-        List<List<String[]>> aggregatorList = new ArrayList<List<String[]>>(numberOfAggregates); 
+        List<List<String[]>> aggregatorList = new ArrayList<List<String[]>>(numberOfAggregates);
         
         for(int i = 0;i < aggregates.length;i++)
         {
             aggregates[i] = new AggregateTable();
-         //   aggMeasures = aggTables[i].measures;
             String name = ((MolapDef.AggName)aggTables[i]).getNameAttribute();
             aggregatorList.add(getCubeMeasureAggregatorDetails(name , cube));
         }
-        
-       //List<String[]> aggregators = getCubeMeasures(cube);
-       //String[] aggs = aggregators.get(2);
-       //String[] measureColumns = aggregators.get(0);
         
         for(int i = 0;i < numberOfAggregates;i++)
         {
@@ -2076,7 +1329,6 @@ public final class MolapSchemaParser
                 
                 String[] newCols = new String[aggs.length+1];
                 System.arraycopy(measureColumns, 0, newCols, 0, measureColumns.length);
-                //newCols[aggs.length] = "fact_count";
                 newCols[aggs.length] = factCountName;
                 
                 String[] newNames = new String[aggs.length + 1];
@@ -2121,13 +1373,6 @@ public final class MolapSchemaParser
         return aggregates;
     }
     
-   /**
- * 
- * @param cube 
- * @param measureName 
- * @return
- * 
- */
 private static List<String[]> getCubeMeasureAggregatorDetails(String aggTableName, Cube cube)
 {
     MolapDef.Table table = (MolapDef.Table)cube.fact;
@@ -2143,9 +1388,7 @@ private static List<String[]> getCubeMeasureAggregatorDetails(String aggTableNam
         {
             MolapDef.AggMeasure[] aggMeasures = aggTables[i].measures;
             int numOfAgg = aggMeasures.length;
-//            MolapDef.Measure[] measures = cube.measures;
-//            int numOfMsr = measures.length;
-            
+
             String[] aggregators = new String[numOfAgg];
             String[] measureColumns = new String[numOfAgg];
             String[] measureNames = new String[numOfAgg];
@@ -2154,29 +1397,6 @@ private static List<String[]> getCubeMeasureAggregatorDetails(String aggTableNam
             
             for(int k=0; k < numOfAgg; k++)
             {
-//                String name = aggMeasures[k].name;
-//                String[] split = name.split("\\.");
-//                
-//                if(null != split && split.length > 1)
-//                    {
-//                        String measureName = split[1];
-//                        measureName = measureName.substring(
-//                                measureName.indexOf("[") + 1,
-//                                measureName.indexOf("]")).trim();
-//
-//                        for(int l = 0;l < numOfMsr;l++)
-//                        {
-//                            if(measureName.equalsIgnoreCase(measures[l].name))
-//                            {
-//                                measureColumns[k] = aggMeasures[k].column;
-//                                aggregators[k] = measures[l].aggregator;
-//                                measureNames[k] = measureName;
-//                                aggregatorClass[k]=measures[l].aggClass;
-//                                measureActualColumnName[k]=measures[l].column;
-//                                break;
-//                            }
-//                        }
-//                    }
             	measureColumns[k] = aggMeasures[k].column;
                 aggregators[k] = aggMeasures[k].aggregator;
                 measureNames[k] = aggMeasures[k].name;
@@ -2194,18 +1414,11 @@ private static List<String[]> getCubeMeasureAggregatorDetails(String aggTableNam
     return cubeMeasures;
     
 }
-/**
- * 
- * @param levels
- * @param cube 
- * @return
- * 
- */
+
 private static String[] getLevelsWithTableName(AggLevel[] levels, Cube cube,Schema schema, boolean appendFactTableNameIfRequired)
 {
     int size = levels.length;
     String []resultLevels = new String[size];
-    //String dimensionTable = "";
     for(int i=0; i< size; i++)
     {
         String name = levels[i].name;
@@ -2225,27 +1438,15 @@ private static String[] getLevelsWithTableName(AggLevel[] levels, Cube cube,Sche
             resultLevels[i]=  getDimensionTable(split[0],split[1],split[2],cube,schema,appendFactTableNameIfRequired);
         }
         
-       // resultLevels[i] = dimensionTable + '_' + levels[i].column;       
     }
     
     return resultLevels;
 }
 
-/**
- * 
- * @param levelName 
- * @param string
- * @param string2
- * @param cube
- * 
- */
 private static String getDimensionTable(String dimName, String hierName, String levelName, Cube cube,Schema schema, boolean appendFactTableNameIfRequired)
 {
     CubeDimension[] dimensions = cube.dimensions;
-//    dimName = dimName.substring(dimName.indexOf("[")+1,dimName.indexOf("]")).trim();
-//    hierName = hierName.substring(hierName.indexOf("[")+1,hierName.indexOf("]")).trim();
-//    levelName = levelName.substring(levelName.indexOf("[")+1,levelName.indexOf("]")).trim();
-    
+
     for(CubeDimension dim : dimensions)
     {
         
@@ -2279,19 +1480,10 @@ private static String getDimensionTable(String dimName, String hierName, String 
     return "";
 }
 
-/**
- * 
- * @param levelName 
- * @param string
- * @param cube 
- * 
- */
 private static String getDimensionTable(String dimName, String levelName, Cube cube,Schema schema, boolean appendFactTableNameIfRequired)
 {
     CubeDimension[] dimensions = cube.dimensions;
-//    dimName = dimName.substring(dimName.indexOf("[")+1,dimName.indexOf("]")).trim();
-//    levelName = levelName.substring(levelName.indexOf("[")+1,levelName.indexOf("]")).trim();
-    
+
     for(CubeDimension dim : dimensions)
     {
        
@@ -2344,21 +1536,9 @@ private static String getDimensionTable(String dimName, String levelName, Cube c
             }
         }
         
-        //Delete the last & character
-      /*  String prop = propString.toString();
-        if(prop.length() > 0 && prop.endsWith(MolapCommonConstants.AMPERSAND_SPC_CHARACTER))
-        {
-            prop = prop.substring(0, prop.length()-MolapCommonConstants.AMPERSAND_SPC_CHARACTER.length());
-        }*/
         return counter;
     }
 
-    /**
-     * @param propString
-     * @param counter
-     * @param hierarchy
-     * @return
-     */
     private static int generatePropertyString(StringBuilder propString,
             int counter, Hierarchy hierarchy)
     {
@@ -2469,53 +1649,6 @@ private static String getDimensionTable(String dimName, String levelName, Cube c
         return builder.toString();
     }
     
-    //TODO SIMIAN
-    /**
-     * getHeirAndCardinalityString
-     * @param dimensions
-     * @param schema
-     * @return String
-     */
-    public static int[] getHierarchyCardinalityArray(CubeDimension[] dimensions,Schema schema, String dimensionName, String hierarchyName)
-    {
-        String heirName=null;
-        List<Integer> cardinalityList = new ArrayList<Integer>(MolapCommonConstants.CONSTANT_SIZE_TEN);
-        for(CubeDimension cDimension : dimensions)
-        {
-            Hierarchy[] hierarchies = null;
-            hierarchies = extractHierarchies(schema, cDimension);
-            String cDimensionName=cDimension.name;
-            for(Hierarchy hierarchy : hierarchies) 
-            {
-                cDimensionName = cDimensionName.replaceAll(" ", "_");
-                heirName = hierarchy.name;
-                if(heirName == null || "".equals(heirName.trim()))
-                {
-                    heirName = cDimension.name;
-                }
-                heirName = heirName.replaceAll(" ", "_");
-                if(dimensionName.equals(cDimensionName) && hierarchyName.equals(cDimensionName))
-                {
-                    for(Level level : hierarchy.levels)
-                    {
-                    	if(level.parentname != null)
-                    		continue;
-                        cardinalityList.add(level.levelCardinality);
-                    }
-                }
-            }
-        }
-        int [] hierarchyCardinalityArray = new int[cardinalityList.size()];
-        for(int i = 0;i < hierarchyCardinalityArray.length;i++)
-        {
-            hierarchyCardinalityArray[i]=cardinalityList.get(i);
-        }
-        return hierarchyCardinalityArray;
-    }
-    /**
-     * @param dimensions
-     * @return
-     */
     public static String getMetaHeirString(CubeDimension[] dimensions,Schema schema,String factTableName)
     {
         StringBuilder propString = new StringBuilder();
@@ -2566,10 +1699,6 @@ private static String getDimensionTable(String dimName, String levelName, Cube c
 
                 propString.append(MolapCommonConstants.AMPERSAND_SPC_CHARACTER);
             }
-            // }
-//            int lastIndexOf = propString.lastIndexOf(":");
-//            propString.deleteCharAt(lastIndexOf);
-//            propString.append("&");
         }
 
         // Delete the last & character
@@ -2578,16 +1707,9 @@ private static String getDimensionTable(String dimName, String levelName, Cube c
         {
         	prop = prop.substring(0, prop.length()-MolapCommonConstants.AMPERSAND_SPC_CHARACTER.length());
         }
-//        propString.deleteCharAt(lastIndexOf);
         return prop;
     }
 
-    /**
-     * 
-     * @param hierarchy
-     * @return
-     * 
-     */
     private static String levelTypeColumnString(Hierarchy hierarchy)
     {
         StringBuilder propString = new StringBuilder();
@@ -2625,18 +1747,10 @@ private static String getDimensionTable(String dimName, String levelName, Cube c
         return propString.toString();
     }
     
-    /**
-     * @param propString
-     * @param dimension
-     * @param hierarchy
-     * @param schema 
-     * @param dimensions 
-     */
     private static String perpareMetaHeirString(CubeDimension dimension,
             Hierarchy hierarchy,String factTableName, CubeDimension[] dimensions, Schema schema)
     {
         StringBuilder propString = new StringBuilder();
-        // String tableName = hierarchy.relation.toString();
         RelationOrJoin relation = hierarchy.relation;
         String dimName = dimension.name;
         dimName = dimName.replaceAll(" ", "_");
@@ -2670,28 +1784,10 @@ private static String getDimensionTable(String dimName, String levelName, Cube c
             
             // Add the Name column if present.
             addNameColumnsAndProperty(tableName, level.column, dimensions, schema, propString,factTableName);
-            // Second is name column
-//            if(level.nameColumn != null
-//                    && !"".equals(tableName + '_' + level.nameColumn))
-//            {
-//                propString.append(MolapCommonConstants.COMA_SPC_CHARACTER);
-//                propString.append(tableName + '_' + level.nameColumn);
-//            }
-//
-//            // Next all properties
-//            for(Property property : level.properties)
-//            {
-//                propString.append(MolapCommonConstants.COMA_SPC_CHARACTER);
-//                propString.append(tableName + '_' + property.column);
-//            }
             propString.append(MolapCommonConstants.COLON_SPC_CHARACTER);
 
         }
         String prop=propString.toString();
-//        if(prop.length()>0 && prop.endsWith(MolapCommonConstants.COLON_SPC_CHARACTER))
-//        {
-//            prop=prop.substring(0, prop.length()-MolapCommonConstants.COLON_SPC_CHARACTER.length());
-//        }
         return prop;
     }
     
@@ -2716,11 +1812,6 @@ private static String getDimensionTable(String dimName, String levelName, Cube c
                 RelationOrJoin relation = hierarchy.relation;
                 String dimTableName = relation == null ? factTableName
                         : ((Table)hierarchy.relation).name;
-//                if(relation == null)
-//                {
-//                    continue;
-//                }
-//                String dimTableName = ((Table)hierarchy.relation).name;
                 if(tableName.equals(dimTableName))
                 {
                     for(Level level : hierarchy.levels)
@@ -2762,12 +1853,6 @@ private static String getDimensionTable(String dimName, String levelName, Cube c
                 .equals(level.ordinalColumn));
     }
     
-    /**
-     * 
-     * @param dimensions
-     * @return
-     * 
-     */
     public static String getTableNameString(String factTableName,CubeDimension[] dimensions,Schema schema)
     {
         StringBuffer stringBuffer = new StringBuffer();
@@ -2785,9 +1870,7 @@ private static String getDimensionTable(String dimName, String levelName, Cube c
                 {
                     hierName = dimName;
                 }
-                //String tableName = hierarchy.relation.toString();
                 RelationOrJoin relation = hierarchy.relation;
-//                String dimName = cDimension.name;
                  hierName = hierName.replaceAll(" ", "_");
                 
                 String tableName = relation == null ? factTableName
@@ -2807,11 +1890,6 @@ private static String getDimensionTable(String dimName, String levelName, Cube c
         return string;
     }
     
-    /**
-     * @param dimensions
-     * @param schema
-     * @return
-     */
     public static String getMdkeySizeForFact(CubeDimension[] dimensions,Schema schema)
     {
         int[] dims = getDimsArray(dimensions, schema);
@@ -2849,22 +1927,6 @@ private static String getDimensionTable(String dimName, String levelName, Cube c
 		return dims;
 	}
     
-    /**
-     * @param dimensions
-     * @param schema
-     * @return
-     */
-    public static KeyGenerator getKeyGeneratorForFact(CubeDimension[] dimensions,Schema schema)
-    {
-        int[] dims = getDimsArray(dimensions, schema);
-        return KeyGeneratorFactory.getKeyGenerator(dims);
-    }
-    
-    /**
-     * @param dimensions
-     * @param dimCardinalities
-     * @return
-     */
     public static String getMdkeySizeForAgg(String[] dimensions,Map<String, String> dimCardinalities)
     {
         int[] dims = new int[dimensions.length];
@@ -2876,26 +1938,6 @@ private static String getDimensionTable(String dimName, String levelName, Cube c
                 
     }
     
-    /**
-     * @param dimensions
-     * @param dimCardinalities
-     * @return
-     */
-    public static KeyGenerator getKeyGeneratorForAGG(String[] dimensions,Map<String, String> dimCardinalities)
-    {
-        int[] dims = new int[dimensions.length];
-        for(int i = 0;i < dimensions.length;i++)
-        {
-            dims[i] = Integer.parseInt(dimCardinalities.get(dimensions[i]));
-        }
-        return  KeyGeneratorFactory.getKeyGenerator(dims);
-                
-    }
-    /**
-     * @param dimensions
-     * @param schema
-     * @return
-     */
     public static String getHeirAndKeySizeMapForFact(CubeDimension[] dimensions,Schema schema)
     {
         StringBuffer stringBuffer = new StringBuffer();
@@ -2939,12 +1981,6 @@ private static String getDimensionTable(String dimName, String levelName, Cube c
         return stringBuffer.toString();
     }
     
-    /**
-     * 
-     * @param dimensions
-     * @return
-     * 
-     */
     public static String getHierarchyStringWithColumnNames(
             CubeDimension[] dimensions,Schema schema)
     {
@@ -2970,21 +2006,14 @@ private static String getDimensionTable(String dimName, String levelName, Cube c
                 // Replace the hierarchy name space with "_"
                 hName = hName.replaceAll(" ", "_");
 
-                // String tableName = hierarchy.relation.toString();
-//                RelationOrJoin relation = hierarchy.relation;
                 dimName = dimName.replaceAll(" ", "_");
                 
-//                String tableName = relation == null ? dimName
-//                        : ((Table)hierarchy.relation).name;
-
                 lengthOfLevels = hierarchy.levels.length;
                 int hierlength = hierarchy.levels.length;
                 if(hierlength > 0)
                 {
                     StringBuilder localString = new StringBuilder();
 
-                    // for(int i = 0;i < hierlength;i++)
-                    // {
                     for(Level level : hierarchy.levels)
                     {
                     	if(level.parentname != null)
@@ -2999,7 +2028,6 @@ private static String getDimensionTable(String dimName, String levelName, Cube c
                         }
                         lengthOfLevels--;
                     }
-                    // }
                     localString.append(MolapCommonConstants.AMPERSAND_SPC_CHARACTER);
                     hierStr = localString.toString();
                     hierStr = dimName + '_' + hName + MolapCommonConstants.COLON_SPC_CHARACTER + hierStr;
@@ -3007,8 +2035,6 @@ private static String getDimensionTable(String dimName, String levelName, Cube c
                 }
             }
         }
-
-        // }
 
         hierStr = hierString.toString();
         if(hierStr.length() > 0 && hierStr.endsWith(MolapCommonConstants.AMPERSAND_SPC_CHARACTER))
@@ -3019,70 +2045,6 @@ private static String getDimensionTable(String dimName, String levelName, Cube c
     
     }
     
-    /**
-     * Return the foreign key and respective column Name String
-     * 
-     * @param dimensions
-     * @return
-     *
-     */
-  /*  public static String getForeignKeyColumnsNamesString(CubeDimension[] dimensions,Schema schema)
-    {
-        StringBuilder primaryKeyColumnsNamesString = new StringBuilder();
-        int lengthOfLevels = 0;
-        String columns = "";
-
-        for(CubeDimension cDimension : dimensions)
-        {
-            Hierarchy[] hierarchies = null;
-            hierarchies = extractHierarchies(schema, cDimension);
-
-            for(Hierarchy hierarchy : hierarchies)
-            {
-                String dimName = cDimension.name;
-                dimName = dimName.replaceAll(" ", "_");
-                
-                String primaryKey = cDimension.foreignKey==null?dimName:cDimension.foreignKey;
-
-                lengthOfLevels = hierarchy.levels.length;
-                int hierlength = hierarchy.levels.length;
-                if(hierlength > 0)
-                {
-                    StringBuilder localString = new StringBuilder();
-
-                    for(Level level : hierarchy.levels)
-                    {
-
-                        localString.append(level.column);
-
-                        if(lengthOfLevels > 1)
-                        {
-                            localString.append(",");
-
-                        }
-                        lengthOfLevels--;
-                    }
-                    // }
-                    localString.append("&");
-                    columns = localString.toString();
-                    columns = primaryKey + ':' + columns;
-                    primaryKeyColumnsNamesString.append(columns);
-                }
-
-            }
-        }
-
-        // }
-
-        columns = primaryKeyColumnsNamesString.toString();
-        if(columns.length() > 0 && columns.charAt(columns.length() - 1) == '&')
-        {
-            columns = columns.substring(0, columns.length() - 1);
-        }
-        return columns;
-
-    }*/
- 
     /**
      * Return foreign key array
      * 
@@ -3150,11 +2112,7 @@ private static String getDimensionTable(String dimName, String levelName, Cube c
                 }
                 hierName = hierName.replaceAll(" ", "_");
 
-//                RelationOrJoin relation = hierarchy.relation;
                 dimName = dimName.replaceAll(" ", "_");
-                
-//                String tableName = relation == null ? dimName
-//                        : ((Table)hierarchy.relation).name;
                 
                 RelationOrJoin relation = hierarchy.relation;
                 
@@ -3293,50 +2251,6 @@ private static String getDimensionTable(String dimName, String levelName, Cube c
     }
     
     /**
-     * Return foreign key array
-     * 
-     * @param dimensions
-     * @return
-     *
-     */
- /*   public static String getForeignKeyColumnNameString(CubeDimension[] dimensions,Schema schema)
-    {
-        StringBuffer foreignKeyColumnNameStringbuffer = new StringBuffer();
-        for(CubeDimension cDimension : dimensions)
-        {
-            Hierarchy[] hierarchies = null;
-            hierarchies = extractHierarchies(schema, cDimension);
-            
-            for(Hierarchy hierarchy : hierarchies)
-            {
-                String foreignKey = cDimension.foreignKey;
-
-                RelationOrJoin relation = hierarchy.relation;
-                String dimName = cDimension.name;
-                dimName = dimName.replaceAll(" ", "_");
-                
-                String tableName = relation == null ? dimName
-                        : ((Table)hierarchy.relation).name;
-                
-                foreignKeyColumnNameStringbuffer.append(foreignKey);
-                foreignKeyColumnNameStringbuffer.append(':');
-                foreignKeyColumnNameStringbuffer.append(tableName + '_' + foreignKey);
-                foreignKeyColumnNameStringbuffer.append('&');
-            }
-
-        }
-        
-        String primaryKeyString = foreignKeyColumnNameStringbuffer.toString();
-        
-        if(primaryKeyString.length() > 0 && primaryKeyString.charAt(primaryKeyString.length() - 1) == '&')
-        {
-            primaryKeyString = primaryKeyString.substring(0, primaryKeyString.length() - 1);
-        }
-        
-        return primaryKeyString;
-    }*/
-
-    /**
      * Get Measure Name String
      * 
      * @param cube
@@ -3373,33 +2287,6 @@ private static String getDimensionTable(String dimName, String levelName, Cube c
      * @return
      *
      */
-    public static String getMeasuresColumnNamesString(Cube cube)
-    {
-        Measure[] measures = cube.measures;
-        StringBuilder measureNames = new StringBuilder();
-
-        for(int i = 0;i < measures.length;i++)
-        {
-            measureNames.append(measures[i].column);
-            measureNames.append(MolapCommonConstants.AMPERSAND_SPC_CHARACTER);
-        }
-        String measureNameString = measureNames.toString();
-        if(measureNameString.length() > 0
-                && measureNameString.endsWith(MolapCommonConstants.AMPERSAND_SPC_CHARACTER))
-        {
-            measureNameString = measureNameString.substring(0,
-                    measureNameString.length() - MolapCommonConstants.AMPERSAND_SPC_CHARACTER.length());
-        }
-        return measureNameString;
-    }
-    
-    /**
-     * Get Measure Name String
-     * 
-     * @param cube
-     * @return
-     *
-     */
     public static String getMeasuresUniqueColumnNamesString(Cube cube)
     {
         Measure[] measures = cube.measures;
@@ -3425,28 +2312,8 @@ private static String getDimensionTable(String dimName, String levelName, Cube c
     }
     
     /**
-     * getUniqueMeasureColumns
-     * @param cube
-     * @return String[]
-     */
-    public static String[] getUniqueMeasureColumns(Cube cube)
-    {
-    	Set<String> uniqueMsrsSet = new LinkedHashSet<String>();
-    	Measure[] measures = cube.measures;
-    	for(int i = 0;i < measures.length;i++)
-        {
-    		uniqueMsrsSet.add(measures[i].column);
-        }
-    	return uniqueMsrsSet.toArray(new String[uniqueMsrsSet.size()]);
-    	
-    }
-    
-    /**
      * Get Measure Name String
      * 
-     * @param cube
-     * @return
-     *
      */
     public static String getMeasuresNamesStringForAgg(String [] measures)
     {
@@ -3489,65 +2356,10 @@ private static String getDimensionTable(String dimName, String levelName, Cube c
         return msrAggregators;
     }
     
-    /**
-     * @param schemaInfo 
-     * @param cube
-     * @return
-     */
     public static String getActualDimensions(SchemaInfo schemaInfo, Cube cube,Schema schema)
     {
-        //
         StringBuilder actualDim = new StringBuilder();
         MolapDef.CubeDimension[] dimensions = cube.dimensions;
-//        if(!(GraphExecutionUtil.checkKeyOrdinalDefined(schemaInfo, cube.getName(), getFactTableName(cube))))
-//        {
-//            int levelCounter=0;
-//            int count =0;
-//            for(CubeDimension cDimension : dimensions)
-//            {
-//                //
-//                Hierarchy[] hierarchies = null;
-//                hierarchies = extractHierarchies(schema, cDimension);
-//                
-//                for(Hierarchy hierarchy : hierarchies)
-//                {
-//                    for(int i=0; i<hierarchy.levels.length ;i++)
-//                    {
-//                        levelCounter++;
-//                    }
-//                }
-//            }
-//            
-//            for(int j = 0;j < levelCounter;j++)
-//            {
-//                
-//                loops: 
-//                    for(CubeDimension cDimension : dimensions)
-//                    {
-//                        //
-//                        Hierarchy[] hierarchies = null;
-//                        hierarchies = extractHierarchies(schema, cDimension);
-//                        
-//                        for(Hierarchy hierarchy : hierarchies)
-//                        {
-//                            for(Level level : hierarchy.levels)
-//                            {
-//                                Integer keyOrdinal = level.keyOrdinal;
-//                                if(count == keyOrdinal)
-//                                {
-//                                    count++;
-//                                    actualDim.append(level.column);
-//                                    actualDim.append('&');
-//                                    break loops;
-//                                }
-//                                
-//                            }
-//                        }
-//                    }
-//            }
-//        }
-//        else
-//        {
             for(CubeDimension cDimension : dimensions)
             {
                 
@@ -3573,9 +2385,6 @@ private static String getDimensionTable(String dimName, String levelName, Cube c
                 }
             }
 
-//        }
-               
-        
         String actualDimString = actualDim.toString();
 
         if(actualDimString.length() > 0
@@ -3588,13 +2397,8 @@ private static String getDimensionTable(String dimName, String levelName, Cube c
         return actualDimString;
     }
     
-    /**
-     * @param cube
-     * @return
-     */
     public static String getActualDimensionsForAggregate(String []columns)
     {
-        //
         StringBuilder actualDim = new StringBuilder();
         for(String column: columns)
         {
@@ -3614,15 +2418,8 @@ private static String getDimensionTable(String dimName, String levelName, Cube c
     }
     
     
-    /**
-     * @param cube
-     * @param schema
-     * @return
-     */
     public static String getNormHiers(Cube cube, Schema schema)
     {
-
-        //
         StringBuilder normHier = new StringBuilder();
         MolapDef.CubeDimension[] dimensions = cube.dimensions;
         for(CubeDimension cDimension : dimensions)
@@ -3654,10 +2451,6 @@ private static String getDimensionTable(String dimName, String levelName, Cube c
     
     }
     
-    /**
-     * @param cube
-     * @return
-     */
     public static String getMeasuresDataType(Cube cube)
     {
         StringBuilder measureDataTypeString = new StringBuilder();
@@ -3709,12 +2502,7 @@ private static String getDimensionTable(String dimName, String levelName, Cube c
         return measureTypeString;
     
     }
-    /**
-     * 
-     * @param column
-     * @param cube
-     * 
-     */
+
     private static boolean isMeasureColumnAsSomeOtherAggregator(String msrColumnName,
             Cube cube)
     {
@@ -3763,38 +2551,7 @@ private static String getDimensionTable(String dimName, String levelName, Cube c
         return ordinalMap;
     }
     
-    /**
-     * returns a array of level cardinalities of all levels in given hier
-     * 
-     * @param hier
-     * @return
-     *
-     */
-    public static int[] getHierarchyCardinalities(Hierarchy hier)
-    {
-        int[] cardinalities=new int[hier.levels.length];
-        int index=0;        
-        // CHECKSTYLE:OFF Approval No:V3R8C00_002
-        for(Level level:hier.levels)
-        {// CHECKSTYLE:ON
-        	if(level.parentname != null)
-        		continue;
-            cardinalities[index++]=level.levelCardinality;
-        }
-        return cardinalities;
-    }
-    
-    public static int getMeasureCountForFact(Cube cube)
-    {
-        Set<String> measureColumn = new HashSet<String>(cube.measures.length);
-        Measure[] m = cube.measures;
-        for(int i = 0;i < m.length;i++)
-        {
-            measureColumn.add(m[i].column);
-        }
-        return measureColumn.size();
-    }
-    
+
     /**
      * Below method will be used to get the level and its data type string
      * @param dimensions
@@ -3812,12 +2569,9 @@ private static String getDimensionTable(String dimName, String levelName, Cube c
             for(Hierarchy hierarchy : hierarchies)
             {
                 RelationOrJoin relation = hierarchy.relation;
-                // String dimName = cDimension.name;
-                // dimName = dimName.replaceAll(" ", "_");
 
                 String tableName = relation == null ? getFactTableName(cube)
                         : ((Table)hierarchy.relation).name;
-                // String tableName = hierarchy.relation.toString();
 
                 for(Level level : hierarchy.levels)
                 { // Added for Normalized hierarchy AR-UniBI-OLAP-003
@@ -3834,7 +2588,6 @@ private static String getDimensionTable(String dimName, String levelName, Cube c
     
     /**
      * Below method will be used to get the level and its data type string
-     * @param dimensions
      * @param schema
      * @param cube
      * @return String
@@ -3923,13 +2676,8 @@ private static String getDimensionTable(String dimName, String levelName, Cube c
             for(Hierarchy hierarchy : hierarchies)
             {
                 RelationOrJoin relation = hierarchy.relation;
-                // String dimName = cDimension.name;
-                // dimName = dimName.replaceAll(" ", "_");
-        
-
                 String tableName = relation == null ? getFactTableName(cube)
                         : ((Table)hierarchy.relation).name;
-                // String tableName = hierarchy.relation.toString();
                 int i = hierarchy.levels.length;
 
                 for(Level level : hierarchy.levels)
@@ -3978,13 +2726,6 @@ private static String getDimensionTable(String dimName, String levelName, Cube c
                 dimString.append(MolapCommonConstants.COMA_SPC_CHARACTER);
             }
         }
-/*
-        String dimstr = dimString.toString();
-        if(dimstr.length() > 0 && dimstr.endsWith(MolapCommonConstants.COMA_SPC_CHARACTER))
-        {
-            dimstr = dimstr.substring(0, dimstr.length()
-                    - MolapCommonConstants.COMA_SPC_CHARACTER.length());
-        }*/
 
         return counter;
     }
@@ -4004,8 +2745,6 @@ private static String getDimensionTable(String dimName, String levelName, Cube c
             hierarchies = extractHierarchies(schema, cDimension);
             for(Hierarchy hierarchy : hierarchies)
             {
-//                String dimName = cDimension.name;
-//                dimName = dimName.replaceAll(" ", "_");
                 String factTableName = getFactTableName(cube);
                 list.addAll(getTableNames(factTableName, hierarchy));
             }

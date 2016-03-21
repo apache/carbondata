@@ -40,8 +40,6 @@ import com.huawei.unibi.molap.engine.util.MemberSortModel;
 /**
  * Below class is responsible for creating the level sort index data file
  * 
- * @author K00900841
- *
  */
 public class LevelSortIndexWriterThread implements Callable<Void>
 {
@@ -132,7 +130,7 @@ public class LevelSortIndexWriterThread implements Callable<Void>
         long size = 0;
         ByteBuffer buffer = null;
         
-     // CHECKSTYLE:OFF Approval No:Approval-V1R2C10_005
+     // CHECKSTYLE:OFF
         boolean enableEncoding = Boolean.valueOf(MolapProperties.getInstance()
                 .getProperty(MolapCommonConstants.ENABLE_BASE64_ENCODING,
                         MolapCommonConstants.ENABLE_BASE64_ENCODING_DEFAULT));
@@ -156,7 +154,6 @@ public class LevelSortIndexWriterThread implements Callable<Void>
         catch(IOException e)
         {
             LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,"problem while reading the level file");
-            /*return null;*/
             throw e;
         }
         finally
@@ -168,7 +165,7 @@ public class LevelSortIndexWriterThread implements Callable<Void>
         {
             fileChannel = FileFactory.getDataInputStream(levelFilePath,
                     FileFactory.getFileType(levelFilePath));
-         // CHECKSTYLE:OFF Approval No:Approval-V1R2C10_005
+         // CHECKSTYLE:OFF
             buffer = ByteBuffer.allocate((int)size);
          // CHECKSTYLE:ON
             fileChannel.readFully(buffer.array());
@@ -177,7 +174,6 @@ public class LevelSortIndexWriterThread implements Callable<Void>
         catch(IOException e)
         {
             LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,"problem while reading the level file");
-            /*return null;*/
             throw e;
         }
         finally
@@ -193,14 +189,13 @@ public class LevelSortIndexWriterThread implements Callable<Void>
         while(currPositionIndex < size)
         {
             int len = buffer.getInt();
-            // CHECKSTYLE:OFF Approval No:Approval-V1R2C10_005
+            // CHECKSTYLE:OFF
             // CHECKSTYLE:ON
             currPositionIndex += 4;
             byte[] rowBytes = new byte[len];
             buffer.get(rowBytes);
             currPositionIndex += len;
-            String memberName = null;// CHECKSTYLE:OFF Approval
-                                     // No:Approval-361
+            String memberName = null;// CHECKSTYLE:OFF
             if(!memberDataType.equals(DataType.STRING))
             {
                 if(enableEncoding)

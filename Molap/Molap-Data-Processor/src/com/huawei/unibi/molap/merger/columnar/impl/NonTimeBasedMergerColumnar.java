@@ -59,10 +59,9 @@ public class NonTimeBasedMergerColumnar extends ColumnarFactFileMerger
         {
             dataHandler.initialise();
             // add first record from each file
-            // CHECKSTYLE:OFF Approval No:Approval-367
             for(MolapDataIterator<MolapSurrogateTupleHolder> leaftTupleIterator : this.leafTupleIteratorList)
             {
-                this.recordHolderHeap.add(leaftTupleIterator); // CHECKSTYLE:ON
+                this.recordHolderHeap.add(leaftTupleIterator);
                 index++;
             }
             MolapDataIterator<MolapSurrogateTupleHolder> poll = null;

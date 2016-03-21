@@ -99,8 +99,6 @@ public class SchemaRestructurer
         newSliceMetaDataPath = pathTillRSFolderParent + File.separator
                 + newRSFolderName + File.separator + factTableName;
         
-//        levelFilePrefix = factTableName + "_";
-        
         this.factTableName = factTableName;
         this.cubeName = cubeName.substring(0, cubeName.lastIndexOf('_'));
         this.curTimeToAppendToDroppedDims = curTimeToAppendToDroppedDims;
@@ -111,7 +109,6 @@ public class SchemaRestructurer
         String prevRSFolderPathPrefix = pathTillRSFolderParent + File.separator + MolapCommonConstants.RESTRUCTRE_FOLDER;
         String sliceMetaDatapath = prevRSFolderPathPrefix  + currentRestructFolderNumber + File.separator + factTableName;
         
-//        SliceMetaData currentSliceMetaData = readCurrentSliceMetaData(sliceMetaDatapath, "." + currentRestructFolderNumber);
         SliceMetaData currentSliceMetaData = MolapUtil.readSliceMetaDataFile(sliceMetaDatapath, currentRestructFolderNumber);
         if (null == currentSliceMetaData)
         {
@@ -141,13 +138,6 @@ public class SchemaRestructurer
         Map<String, String> defValuesWithFactTableNames = new HashMap<String, String>();
     	
         
-//    	for (CubeDimension aDimension : newDimensions)
-//    	{
-//    	    levelColName = ((MolapDef.Dimension)aDimension).hierarchies[0].levels[0].column;
-//    		dimensions.add(factTableName + '_' + levelColName);
-//    		dimsToAddToOldSliceMetaData.add(factTableName + '_' + levelColName);
-//    	}
-    	
     	for (Measure aMeasure : newMeasures)
     	{
     		measures.add(aMeasure.column);
@@ -197,8 +187,7 @@ public class SchemaRestructurer
         }
         
         List<Integer> dimLens = (null != currDimCardinality) ? new ArrayList<Integer>(Arrays.asList(ArrayUtils.toObject(currDimCardinality))) : new ArrayList<Integer>();
-//        List<Integer> dimLens = new ArrayList<Integer>(Arrays.asList(ArrayUtils.toObject(currDimCardinality)));
-    	
+
     	String defaultVal = null;
     	String levelColName;
         for(CubeDimension aDimension : newDimensions)
@@ -208,8 +197,6 @@ public class SchemaRestructurer
                 levelColName = ((MolapDef.Dimension)aDimension).hierarchies[0].levels[0].column;
                 
                 RelationOrJoin relation = ((MolapDef.Dimension)aDimension).hierarchies[0].relation;
-                // String dimName = cDimension.name;
-                // dimName = dimName.replaceAll(" ", "_");
 
                 String tableName = relation == null ? factTableName
                         : ((Table)((MolapDef.Dimension)aDimension).hierarchies[0].relation).name;
@@ -254,11 +241,7 @@ public class SchemaRestructurer
         
         newSliceMetaData.setHeirAnKeySize(MolapSchemaParser.getHeirAndKeySizeMapForFact(cube.dimensions, schema));
         
-//    	for (int i = 0;i < newDimensions.size();i++)
-//        {
-//            dimLens.add(1);
-//        }
-    	
+
     	int[] updatedCardinality = ArrayUtils.toPrimitive(dimLens.toArray(new Integer[dimLens.size()]));
     	try
         {
@@ -370,8 +353,6 @@ public class SchemaRestructurer
                 		 continue;
                 	 }
                      RelationOrJoin relation = ((MolapDef.Dimension)schemaDim).hierarchies[0].relation;
-                     // String dimName = cDimension.name;
-                     // dimName = dimName.replaceAll(" ", "_");
 
                      String tableName = relation == null ? factTableName
                              : ((Table)((MolapDef.Dimension)schemaDim).hierarchies[0].relation).name;
@@ -582,12 +563,6 @@ public class SchemaRestructurer
         
     }
 
-//    private SliceMetaData readCurrentSliceMetaData(String sliceMetaDatapath,
-//            String string)
-//    {
-//        return MolapUtil.readSliceMetaDataFile(sliceMetaDatapath, currentRestructFolderNumber);
-//    }
-
     private void updateSliceMetadata(List<String> newDimensions,
             List<Measure> newMeasures, Map<String, String> dimDefaultValues, Map<String, String> defaultValues,
             SliceMetaData oldSliceMetaData, String oldSliceMetaDatapath, String newSliceMetaDataFileExtn)
@@ -615,11 +590,6 @@ public class SchemaRestructurer
 
         existingNewDimensions.addAll(newDimensions);
 
-        // List<String> msrsToaddToSliceMetaData = new ArrayList<String>();
-        // List<String> newDimsDefVals = new ArrayList<String>();
-        // List<Integer> newDimsSurrogateKeys = new ArrayList<Integer>();
-
-        // List<Integer> dimLens = new ArrayList<Integer>();
         String dimDefVal;
         for(int i = 0;i < newDimensions.size();i++)
         {
@@ -638,8 +608,6 @@ public class SchemaRestructurer
             }
         }
 
-        // List<String> measureAggregators = new ArrayList<String>();
-
         oldSliceMetaData.setNewDimLens(ArrayUtils.toPrimitive(existingNewDimLens.toArray(new Integer[existingNewDimLens
                 .size()])));
         oldSliceMetaData.setNewActualDimLens(ArrayUtils.toPrimitive(existingNewDimLens
@@ -651,7 +619,6 @@ public class SchemaRestructurer
         oldSliceMetaData.setNewDimsSurrogateKeys(ArrayUtils.toPrimitive(existingNewDimsSurrogateKeys
                 .toArray(new Integer[existingNewDimsSurrogateKeys.size()])));
 
-        // List<Double> newMeasureDftVals = new ArrayList<Double>();
         String doubleVal;
         Double val;
 
@@ -695,19 +662,7 @@ public class SchemaRestructurer
     {
         FileType fileType = FileFactory.getFileType(levelFilePath);
         
-//        MolapFile newLevelFile = FileFactory.getMolapFile(levelFilePath + levelFileName, fileType);
-        
         OutputStream stream = null;
-//        ByteBuffer buffer = getByteBufferToStore(MolapCommonConstants.MEMBER_DEFAULT_VAL, defaultValue, DEF_SURROGATE_KEY, (DEF_SURROGATE_KEY + 1), new Object[0]);
-//        ByteBuffer buffer = getByteBufferToStore(MolapCommonConstants.MEMBER_DEFAULT_VAL, DEF_SURROGATE_KEY, new Object[0]);
-//        ByteBuffer buffer1 = null;
-//        if (null != defaultValue)
-//        {
-//            buffer1 = getByteBufferToStore(defaultValue, (DEF_SURROGATE_KEY + 1), new Object[0]);
-//            buffer1.flip();
-//        }
-//
-//        buffer.flip();
         ByteBuffer buffer=getMemberByteBufferWithoutDefaultValue(defaultValue);
         try
         {
@@ -806,69 +761,7 @@ public class SchemaRestructurer
         buffer.flip();
         return buffer;
     }
-//    private static ByteBuffer getByteBufferToStore(String value,
-//            int surrogateKey, Object[] properties)
-//    {
-//
-//        // holds the total length of the row. initializing with 4 since it takes 4 bytes to store the length of the row.
-//        int rowLength = 0;
-//        
-//        //Add member value length. as for storing member length we take 4 bytes.
-//        rowLength = rowLength + 4;
-//        
-//        // to store surrogate key it requires 4 bytes.
-//        rowLength = rowLength + 4;
-//        
-//        // Holds the size of the properties 
-//        int propertySize = properties.length;
-//        
-//        // Holds 4 bytes for each of the property name length.
-//        rowLength = rowLength + propertySize * 4;
-//        
-//        // Holds the length of the individual properties name length 
-//        int []propertyLength = new int[propertySize];
-//        
-//        // holds the byte array of of the Properties.
-//        byte[][] propertiesByte = new byte[propertySize][];
-//        
-//        int i = 0;
-//        for(Object obj: properties)
-//        {
-//            String prop = obj.toString();
-//            byte[] propBytes = prop.getBytes();
-//            propertyLength[i] = propBytes.length;
-//            propertiesByte[i] = propBytes;
-//            rowLength = rowLength + propBytes.length;
-//            i++;
-//        }
-//        
-//        byte[] memberBytes;
-//        try 
-//        {
-//            memberBytes = Base64.encodeBase64(value.getBytes("UTF-8"));
-//        } 
-//        catch (UnsupportedEncodingException e) 
-//        {
-//            memberBytes =  Base64.encodeBase64(value.getBytes());
-//        }
-//        
-//        rowLength = rowLength + memberBytes.length;
-//        
-//        ByteBuffer buffer = ByteBuffer.allocate(rowLength+4);
-//       // buffer.clear();
-//        // put total length in the buffer to get the row end
-//        buffer.putInt(rowLength);
-//        buffer.putInt(memberBytes.length);
-//        buffer.put(memberBytes);
-//        buffer.putInt(surrogateKey);
-//        for(int j=0; j < propertySize; j++)
-//        {
-//           buffer.putInt(propertyLength[j]);
-//           buffer.put(propertiesByte[j]);
-//        }
-//        return buffer;
-//    }
-    
+
     private void writeLevelCardinalityFile(String loadFolderLoc,
             String tableName, int[] dimCardinality) throws KettleException
     {
@@ -920,7 +813,6 @@ public class SchemaRestructurer
     {
         //file name to write the slicemetadata before moving
         String tmpSliceMetaDataFileName = path + File.separator + MolapUtil.getSliceMetaDataFileName(restructFolder) + ".tmp";
-        //actual slicemetadata name
         String presentSliceMetaDataFileName = path + File.separator + MolapUtil.getSliceMetaDataFileName(restructFolder);
 
         FileType fileType = FileFactory.getFileType(tmpSliceMetaDataFileName);

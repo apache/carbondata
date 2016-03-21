@@ -17,13 +17,6 @@
  * under the License.
  */
 
-/**
- * ====================Copyright Notice =======================
- *  This file contains proprietary information of Huawei Technologies Co. Ltd. Copying or
- * reproduction without prior written approval is prohibited. Copyright (c) 2013
- * =========================================================
- * 
- */
 package com.huawei.unibi.molap.sortandgroupby.sortKey;
 
 import java.util.ArrayList;
@@ -37,20 +30,6 @@ import com.huawei.unibi.molap.groupby.exception.MolapGroupByException;
 import com.huawei.unibi.molap.keygenerator.KeyGenerator;
 import com.huawei.unibi.molap.util.MolapDataProcessorUtil;
 
-/**
- * 
- * Project Name V3R008
- * Module Name : 
- * Author s71955
- * Created Date :14-Oct-2014 10:32:00 AM
- * FileName : MolapSortKeyAggregator.java
- * Class Description :
- * Version 1.0
- * ====================Copyright Notice =======================
- *  This file contains proprietary information of Huawei Technologies Co. Ltd. Copying or
- * reproduction without prior written approval is prohibited. Copyright (c) 2010
- * =========================================================
- */
 public class MolapSortKeyAggregator
 {
 
@@ -110,7 +89,6 @@ public class MolapSortKeyAggregator
 
     /**
      * getAggregatedData.
-     * @Author s71955
      * @Description : getAggregatedData
      * @param rows
      * @return

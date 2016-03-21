@@ -66,12 +66,6 @@ public class PrimitiveDataType implements GenericDataType {
 	}
 
 	@Override
-	public void setParentname(String parentname) {
-		this.parentname = parentname;
-		
-	}
-
-	@Override
 	public String getParentname() {
 		return parentname;
 	}

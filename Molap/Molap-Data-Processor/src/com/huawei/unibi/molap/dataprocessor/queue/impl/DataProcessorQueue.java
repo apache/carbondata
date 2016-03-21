@@ -26,16 +26,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import com.huawei.unibi.molap.dataprocessor.queue.Queue;
 import com.huawei.unibi.molap.dataprocessor.record.holder.DataProcessorRecordHolder;
 
-
-/**
- * Project Name NSE V3R7C30 
- * Module Name : Molap
- * Author V00900840
- * Created Date :26-Feb-2014 12:12:25 PM
- * FileName : DataProcessorQueue.java
- * Class Description :
- * Version 1.0
- */
 public class DataProcessorQueue implements Queue<DataProcessorRecordHolder>
 {
     /**

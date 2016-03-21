@@ -140,9 +140,7 @@ public class MolapDataWriter
      *          mdkey length
      * @param tableName
      *          table name
-     * @param fileSizeInBytes
-     *          file size in bytes
-     * 
+     *
      */
     public MolapDataWriter(String storeLocation, int measureCount, int mdKeyLength, String tableName, boolean isNodeHolder)
     {
@@ -171,11 +169,9 @@ public class MolapDataWriter
                 * MolapCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
                 * MolapCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
                 *1L;
-      //CHECKSTYLE:OFF    Approval No:Approval-323
         this.isNodeHolderRequired = Boolean
                 .valueOf(MolapCommonConstants.WRITE_ALL_NODE_IN_SINGLE_TIME_DEFAULT_VALUE);
-      //CHECKSTYLE:ON
-        
+
         this.isNodeHolderRequired = this.isNodeHolderRequired && isNodeHolder;
         if(this.isNodeHolderRequired)
         {
@@ -260,7 +256,6 @@ public class MolapDataWriter
         }
     }
     
-    //TODO SIMIAN
     private int initFileCount()
     {
         int filesCnt = 0;
@@ -491,10 +486,6 @@ public class MolapDataWriter
         // add the key array length
         nodeInfo.setKeyLength(keySize);
 
-        // key offset will be 8 bytes from current offset because first 4 bytes
-        // will be for number of entry in leaf, then next 4 bytes will be for
-        // key lenght;
-//        offset += MolapCommonConstants.INT_SIZE_IN_BYTE * 2;
 
         // add key offset
         nodeInfo.setKeyOffset(offset);
@@ -512,9 +503,6 @@ public class MolapDataWriter
 
         for(int i = 0;i < this.measureCount;i++)
         {
-            // increment the current offset by 4 bytes because 4 bytes will be
-            // used for measure byte length
-//            offset += MolapCommonConstants.INT_SIZE_IN_BYTE;
             msrOffset[i] = offset;
             // now increment the offset by adding measure length to get the next
             // measure offset;
@@ -537,8 +525,6 @@ public class MolapDataWriter
      *            mdkey array
      * @param measureArray
      *            measure array
-     * @param fileName
-     *            leaf node file
      * @return file offset offset is the current position of the file
      * @throws MolapDataWriterException 
      *          if will throw MolapDataWriterException when any thing goes wrong
@@ -649,9 +635,6 @@ public class MolapDataWriter
         return leafNodeInfoList.size();
     }
 
-	/**
-     * @param fileManager2
-     */
     public void setFileManager(IFileManagerComposite fileManager)
     {
         this.fileManager = fileManager;
@@ -698,7 +681,6 @@ public class MolapDataWriter
             return null;
         }
     }
-  //CHECKSTYLE:ON
     /**
      * Below method will be used to write data and its meta data to file 
      * @param channel
