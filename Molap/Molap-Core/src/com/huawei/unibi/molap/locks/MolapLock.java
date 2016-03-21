@@ -35,88 +35,67 @@ import com.huawei.unibi.molap.util.MolapProperties;
 
 /**
  * Class Provides generic implementation of the lock in Molap.
- * @author S71955
- *
  */
-public abstract class MolapLock
-{
-    private static final LogService LOGGER = LogServiceFactory.getLogService(MolapLock.class.getName());
-    
-    private boolean isLocked;
-
+public abstract class MolapLock {
+    private static final LogService LOGGER =
+            LogServiceFactory.getLogService(MolapLock.class.getName());
     protected String location;
-    
+    private boolean isLocked;
     private DataOutputStream dataOutputStream;
-    
+
     private boolean isLocal;
-    
+
     private FileChannel channel;
-    
+
     private FileOutputStream fileOutputStream;
-    
+
     private FileLock fileLock;
 
     private int retryCount;
-    
+
     private int retryTimeout;
-    
-    protected void initRetry()
-    {
-        String retries = MolapProperties.getInstance().getProperty(
-                MolapCommonConstants.NUMBER_OF_TRIES_FOR_LOAD_METADATA_LOCK);
-        try
-        {
-             retryCount = Integer.parseInt(retries);
-        }
-        catch(NumberFormatException e)
-        {
+
+    protected void initRetry() {
+        String retries = MolapProperties.getInstance()
+                .getProperty(MolapCommonConstants.NUMBER_OF_TRIES_FOR_LOAD_METADATA_LOCK);
+        try {
+            retryCount = Integer.parseInt(retries);
+        } catch (NumberFormatException e) {
             retryCount = MolapCommonConstants.NUMBER_OF_TRIES_FOR_LOAD_METADATA_LOCK_DEFAULT;
         }
-        
-        String maxTimeout = MolapProperties.getInstance().getProperty(
-                MolapCommonConstants.MAX_TIMEOUT_FOR_LOAD_METADATA_LOCK);
-        try
-        {
+
+        String maxTimeout = MolapProperties.getInstance()
+                .getProperty(MolapCommonConstants.MAX_TIMEOUT_FOR_LOAD_METADATA_LOCK);
+        try {
             retryTimeout = Integer.parseInt(maxTimeout);
-        }
-        catch(NumberFormatException e)
-        {
+        } catch (NumberFormatException e) {
             retryTimeout = MolapCommonConstants.MAX_TIMEOUT_FOR_LOAD_METADATA_LOCK_DEFAULT;
         }
-        
+
     }
-    
+
     /**
      * This API will provide file based locking mechanism
      * In HDFS locking is handled using the hdfs append API which provide only one stream at a time.
      * In local file system locking is handled using the file channel.
      */
-    private boolean lock()
-    {
+    private boolean lock() {
 
-        if(FileFactory.getFileType(location) == FileType.LOCAL)
-        {
+        if (FileFactory.getFileType(location) == FileType.LOCAL) {
             isLocal = true;
         }
-        try
-        {
-            if(!FileFactory.isFileExist(location, FileFactory.getFileType(location)))
-            {
+        try {
+            if (!FileFactory.isFileExist(location, FileFactory.getFileType(location))) {
                 FileFactory.createNewLockFile(location, FileFactory.getFileType(location));
             }
-        }
-        catch(IOException e)
-        {
+        } catch (IOException e) {
             isLocked = false;
             return isLocked;
         }
-        
-        if(isLocal)
-        {
+
+        if (isLocal) {
             localFileLocking();
-        }
-        else
-        {
+        } else {
             hdfsFileLocking();
         }
         return isLocked;
@@ -125,19 +104,15 @@ public abstract class MolapLock
     /**
      * Handling of the locking in HDFS file system.
      */
-    private void hdfsFileLocking()
-    {
-        try
-        {
+    private void hdfsFileLocking() {
+        try {
 
-            dataOutputStream = FileFactory.getDataOutputStreamUsingAppend(location,
-                    FileFactory.getFileType(location));
+            dataOutputStream = FileFactory
+                    .getDataOutputStreamUsingAppend(location, FileFactory.getFileType(location));
 
             isLocked = true;
 
-        }
-        catch(IOException e)
-        {
+        } catch (IOException e) {
             isLocked = false;
         }
     }
@@ -145,51 +120,39 @@ public abstract class MolapLock
     /**
      * Handling of the locking in local file system using file channel.
      */
-    private void localFileLocking()
-    {
-        try
-        {
+    private void localFileLocking() {
+        try {
 
             fileOutputStream = new FileOutputStream(location);
             channel = fileOutputStream.getChannel();
 
             fileLock = channel.tryLock();
-            if(null != fileLock)
-            {
+            if (null != fileLock) {
                 isLocked = true;
-            }
-            else
-            {
+            } else {
                 isLocked = false;
             }
 
-        }
-        catch(IOException e)
-        {
+        } catch (IOException e) {
             isLocked = false;
         }
     }
 
-   /**
-    * This API will release the stream of locked file, Once operation in the metadata has been done
-    * @return
-    */
-    public boolean unlock()
-    {
+    /**
+     * This API will release the stream of locked file, Once operation in the metadata has been done
+     *
+     * @return
+     */
+    public boolean unlock() {
         boolean status = false;
-        
-        if(isLock())
-        {
-            
-            if(isLocal)
-            {
+
+        if (isLock()) {
+
+            if (isLocal) {
                 status = localLockFileUnlock();
-            }
-            
-            else
-            {
+            } else {
                 status = hdfslockFileUnlock(status);
-                
+
             }
         }
         return status;
@@ -197,20 +160,16 @@ public abstract class MolapLock
 
     /**
      * handling of the hdfs file unlocking.
+     *
      * @param status
      * @return
      */
-    private boolean hdfslockFileUnlock(boolean status)
-    {
-        if(null != dataOutputStream)
-        {
-            try
-            {
+    private boolean hdfslockFileUnlock(boolean status) {
+        if (null != dataOutputStream) {
+            try {
                 dataOutputStream.close();
                 status = true;
-            }
-            catch(IOException e)
-            {
+            } catch (IOException e) {
                 status = false;
             }
         }
@@ -219,32 +178,23 @@ public abstract class MolapLock
 
     /**
      * handling of the local file unlocking.
+     *
      * @return
      */
-    private boolean localLockFileUnlock()
-    {
+    private boolean localLockFileUnlock() {
         boolean status;
-        try
-        {
+        try {
             fileLock.release();
             status = true;
-        }
-        catch(IOException e)
-        {
+        } catch (IOException e) {
             status = false;
-        }
-        finally
-        {
-            if(null != fileOutputStream)
-            {
-                try
-                {
+        } finally {
+            if (null != fileOutputStream) {
+                try {
                     fileOutputStream.close();
-                }
-                catch(IOException e)
-                {
+                } catch (IOException e) {
                     LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, e.getMessage());
-                } 
+                }
             }
         }
         return status;
@@ -253,36 +203,23 @@ public abstract class MolapLock
     /**
      * To check whether the file is locked or not.
      */
-    public boolean isLock()
-    {
+    public boolean isLock() {
         return isLocked;
     }
 
     /**
-     * API for enabling the locking of file. 
-     * 
-     * @param tries
-     * @param waitTimeInSec
-     * @return
+     * API for enabling the locking of file.
      */
-    public boolean lockWithRetries()
-    {
-        try
-        {
-            for(int i = 0;i < retryCount;i++)
-            {
-                if(lock())
-                {
+    public boolean lockWithRetries() {
+        try {
+            for (int i = 0; i < retryCount; i++) {
+                if (lock()) {
                     return true;
-                }
-                else
-                {
+                } else {
                     Thread.sleep(retryTimeout * 1000L);
                 }
             }
-        }
-        catch(InterruptedException e)
-        {
+        } catch (InterruptedException e) {
             return false;
         }
         return false;

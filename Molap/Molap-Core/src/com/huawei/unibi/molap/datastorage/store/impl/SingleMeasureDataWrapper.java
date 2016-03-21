@@ -24,12 +24,9 @@ import com.huawei.unibi.molap.datastorage.store.dataholder.MolapReadDataHolder;
 
 /**
  */
-public class SingleMeasureDataWrapper implements MeasureDataWrapper
-{
+public class SingleMeasureDataWrapper implements MeasureDataWrapper {
 
-    @Override
-    public MolapReadDataHolder[] getValues()
-    {
+    @Override public MolapReadDataHolder[] getValues() {
         // TODO Auto-generated method stub
         return null;
     }

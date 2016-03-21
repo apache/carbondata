@@ -19,21 +19,14 @@
 
 package com.huawei.unibi.molap.olap;
 
-
-
 /**
  * Enumerates the types of levels.
- *
- * @deprecated Will be replaced with {@link org.olap4j.metadata.Level.Type}
- * before mondrian-4.0.
- *
- * @author jhyde
- * @since 5 April, 2004
- * @version $Id: //open/mondrian/src/main/mondrian/olap/LevelType.java#15 $
  */
 public enum LevelType {
 
-    /** Indicates that the level is not related to time. */
+    /**
+     * Indicates that the level is not related to time.
+     */
     Regular,
 
     /**
@@ -117,9 +110,6 @@ public enum LevelType {
      * @return Whether this is a time level.
      */
     public boolean isTime() {
-        return ordinal() >= TimeYears.ordinal()
-           && ordinal() <= TimeUndefined.ordinal();
+        return ordinal() >= TimeYears.ordinal() && ordinal() <= TimeUndefined.ordinal();
     }
 }
-
-// End LevelType.java

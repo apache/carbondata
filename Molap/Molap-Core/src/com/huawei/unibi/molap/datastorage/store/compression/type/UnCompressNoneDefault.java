@@ -17,17 +17,6 @@
  * under the License.
  */
 
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- *
- */
 package com.huawei.unibi.molap.datastorage.store.compression.type;
 
 import java.nio.ByteBuffer;
@@ -42,98 +31,65 @@ import com.huawei.unibi.molap.util.MolapCoreLogEvent;
 import com.huawei.unibi.molap.util.ValueCompressionUtil;
 import com.huawei.unibi.molap.util.ValueCompressionUtil.DataType;
 
-/**
- * @author S71955
- */
-public class UnCompressNoneDefault implements UnCompressValue<double[]>
-{
-    /**
-     * doubleCompressor.
-     */
-    private static Compressor<double[]> doubleCompressor = SnappyCompression.SnappyDoubleCompression.INSTANCE;
-
+public class UnCompressNoneDefault implements UnCompressValue<double[]> {
     /**
      * Attribute for Molap LOGGER
      */
-    private static final LogService LOGGER = LogServiceFactory.getLogService(UnCompressNoneDefault.class.getName());
-
+    private static final LogService LOGGER =
+            LogServiceFactory.getLogService(UnCompressNoneDefault.class.getName());
+    /**
+     * doubleCompressor.
+     */
+    private static Compressor<double[]> doubleCompressor =
+            SnappyCompression.SnappyDoubleCompression.INSTANCE;
     /**
      * value.
      */
     private double[] value;
 
-    @Override
-    public void setValue(double[] value)
-    {
+    @Override public void setValue(double[] value) {
         this.value = value;
 
     }
 
-//    @Override
-//    public double getValue(int index, int decimal, double maxValue)
-//    {
-//        return value[index];
-//    }
-
-    @Override
-    public UnCompressValue getNew()
-    {
-        try
-        {
-            return (UnCompressValue)clone();
-        }
-        catch(CloneNotSupportedException exception1) 
-        {
-            LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, exception1, exception1.getMessage());
+    @Override public UnCompressValue getNew() {
+        try {
+            return (UnCompressValue) clone();
+        } catch (CloneNotSupportedException exception1) {
+            LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, exception1,
+                    exception1.getMessage());
         }
         return null;
     }
 
-    @Override
-    public UnCompressValue compress()
-    {
+    @Override public UnCompressValue compress() {
         UnCompressNoneByte byte1 = new UnCompressNoneByte();
         byte1.setValue(doubleCompressor.compress(value));
 
         return byte1;
     }
 
-    @Override
-    public UnCompressValue uncompress(DataType dataType)
-    {
+    @Override public UnCompressValue uncompress(DataType dataType) {
         return null;
     }
 
-   
-
     /**
-     * 
      * @see com.huawei.unibi.molap.datastorage.store.compression.ValueCompressonHolder.UnCompressValue#getCompressorObject()
-     * 
      */
-    @Override
-    public UnCompressValue getCompressorObject()
-    {
+    @Override public UnCompressValue getCompressorObject() {
         return new UnCompressNoneByte();
     }
-    
-    //TODO SIMIAN    
-    @Override
-    public byte[] getBackArrayData()
-    {
+
+    @Override public byte[] getBackArrayData() {
         return ValueCompressionUtil.convertToBytes(value);
     }
 
-    @Override
-    public void setValueInBytes(byte[] value)
-    {
+    @Override public void setValueInBytes(byte[] value) {
         ByteBuffer buffer = ByteBuffer.wrap(value);
         this.value = ValueCompressionUtil.convertToDoubleArray(buffer, value.length);
     }
-    
-    @Override
-    public MolapReadDataHolder getValues(int decimal, double maxValue)
-    {
+
+    @Override public MolapReadDataHolder getValues(int decimal, double maxValue) {
         MolapReadDataHolder dataHolder = new MolapReadDataHolder();
         dataHolder.setReadableDoubleValues(value);
         return dataHolder;
