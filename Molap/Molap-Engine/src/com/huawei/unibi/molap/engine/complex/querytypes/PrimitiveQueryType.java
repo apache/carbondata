@@ -21,7 +21,6 @@ package com.huawei.unibi.molap.engine.complex.querytypes;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.List;
@@ -156,17 +155,28 @@ public class PrimitiveQueryType implements GenericQueryType {
     {
 	    byte[] data = new byte[keySize];
         surrogateData.get(data);
-        String memberData = QueryExecutorUtility.getMemberBySurrogateKey(dimensions[blockIndex], new BigInteger(data).intValue(), slices).toString();
+        String memberData = QueryExecutorUtility.getMemberBySurrogateKey(dimensions[blockIndex], unsignedIntFromByteArray(data), slices).toString();
         Object actualData = DataTypeConverter.getDataBasedOnDataType(
                 memberData.equals(MolapCommonConstants.MEMBER_DEFAULT_VAL) ? null : memberData,
                         dimensions[blockIndex].getDataType());
-        if(dimensions[blockIndex].getDataType() == SqlStatement.Type.STRING)
+        if(null != actualData && dimensions[blockIndex].getDataType() == SqlStatement.Type.STRING)
         {
             byte[] dataBytes = ((String)actualData).getBytes(Charset.defaultCharset());
             return UTF8String.fromBytes(dataBytes);
         }
         return actualData;
     }
+	
+	private int unsignedIntFromByteArray(byte[] bytes) {
+	    int res = 0;
+	    if (bytes == null)
+	        return res;
+
+	    for (int i = 0; i < bytes.length; i++) {
+	        res = (res *10) + ((bytes[i] & 0xff));
+	    }
+	    return res;
+	}
 	
 	@Override
     public void parseAndGetResultBytes(ByteBuffer complexData, DataOutputStream dataOutput) throws IOException

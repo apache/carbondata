@@ -246,6 +246,27 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>,Serializab
             }
 
         }
+        
+        List<byte[]> otherComplexTypesData = ((ByteArrayWrapper)other).getCompleteComplexTypeData();
+        if(null != complexTypesData)
+        {
+            if(complexTypesData.size() != otherComplexTypesData.size())
+            {
+                return false;
+            }
+            else
+            {
+                for(int i = 0;i < complexTypesData.size();i++)
+                {
+                    result = UnsafeComparer.INSTANCE.equals(complexTypesData.get(i), otherComplexTypesData.get(i));
+                    if(!result)
+                    {
+                        return false;
+                    }
+                }
+            }
+
+        }
         return UnsafeComparer.INSTANCE.equals(maskedKey, ((ByteArrayWrapper)other).maskedKey);
     }
 

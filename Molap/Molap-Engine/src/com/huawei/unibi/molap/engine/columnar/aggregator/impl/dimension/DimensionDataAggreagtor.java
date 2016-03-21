@@ -145,122 +145,119 @@ public class DimensionDataAggreagtor
             }
             else if(!dimensionAggregatorInfo.getDim().isHighCardinalityDim())
             {
-             dimSurrogate = keyValue.getDimDataForAgg(dimensionAggregatorInfo.getDim().getOrdinal());
-            Object dataBasedOnDataType = null;
-            byte[] complexSurrogates = null;
-            GenericQueryType complexType = null;
-            if(dimensionAggregatorInfo.getDim().getDataType() != Type.ARRAY &&  dimensionAggregatorInfo.getDim().getDataType() != Type.STRUCT)
-            {
-                dimSurrogate = keyValue.getDimDataForAgg(dimensionAggregatorInfo.getDim().getOrdinal());
-                if(dimSurrogate==1)
-                {
-                    break;
-                }
-            }
-            else
-            {
-                try
-                {
-                    complexType = this.columnaraggreagtorInfo.getComplexQueryDims().get(dimensionAggregatorInfo.getDim().getOrdinal());
-                    ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-                    DataOutputStream dataOutputStream = new DataOutputStream(byteStream);
-                    keyValue.getComplexDimDataForAgg(complexType, dataOutputStream);
-                    complexSurrogates = byteStream.toByteArray();
-                    byteStream.close();
-                }
-                catch(IOException e)
-                {
-                    LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
-                }
-            }
-            for(int j = 0;j < dimCountAndDistinctCountAGGIndex[i].length;j++)
-            {
+                Object dataBasedOnDataType = null;
+                byte[] complexSurrogates = null;
+                GenericQueryType complexType = null;
                 if(dimensionAggregatorInfo.getDim().getDataType() != Type.ARRAY &&  dimensionAggregatorInfo.getDim().getDataType() != Type.STRUCT)
                 {
-                    if(dimensionAggregatorInfo.getDim().getDataType()!=SqlStatement.Type.STRING)
+                    dimSurrogate = keyValue.getDimDataForAgg(dimensionAggregatorInfo.getDim().getOrdinal());
+                    if(dimSurrogate==1)
                     {
-                        if(null==dataBasedOnDataType)
+                        break;
+                    }
+                }
+                else
+                {
+                    try
+                    {
+                        complexType = this.columnaraggreagtorInfo.getComplexQueryDims().get(dimensionAggregatorInfo.getDim().getOrdinal());
+                        ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+                        DataOutputStream dataOutputStream = new DataOutputStream(byteStream);
+                        keyValue.getComplexDimDataForAgg(complexType, dataOutputStream);
+                        complexSurrogates = byteStream.toByteArray();
+                        byteStream.close();
+                    }
+                    catch(IOException e)
+                    {
+                        LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
+                    }
+                }
+                for(int j = 0;j < dimCountAndDistinctCountAGGIndex[i].length;j++)
+                {
+                    if(dimensionAggregatorInfo.getDim().getDataType() != Type.ARRAY &&  dimensionAggregatorInfo.getDim().getDataType() != Type.STRUCT)
+                    {
+                        if(dimensionAggregatorInfo.getDim().getDataType()!=SqlStatement.Type.STRING)
                         {
-                            dataBasedOnDataType = QueryExecutorUtility
-                                    .getMemberBySurrogateKey(dimensionAggregatorInfo.getDim(), dimSurrogate,
-                                            columnaraggreagtorInfo.getSlices(), columnaraggreagtorInfo.getCurrentSliceIndex()).toString();
-                            dataBasedOnDataType = DataTypeConverter.getDataBasedOnDataType((String)dataBasedOnDataType,
-                                    dimensionAggregatorInfo.getDim().getDataType());
+                            if(null==dataBasedOnDataType)
+                            {
+                                dataBasedOnDataType = QueryExecutorUtility
+                                        .getMemberBySurrogateKey(dimensionAggregatorInfo.getDim(), dimSurrogate,
+                                                columnaraggreagtorInfo.getSlices(), columnaraggreagtorInfo.getCurrentSliceIndex()).toString();
+                                dataBasedOnDataType = DataTypeConverter.getDataBasedOnDataType((String)dataBasedOnDataType,
+                                        dimensionAggregatorInfo.getDim().getDataType());
+                            }
+                            if(null!=dataBasedOnDataType)
+                            {
+                                currentMsrRowData[dimCountAndDistinctCountAGGIndex[i][j]].agg(dimSurrogate, null, 0, 0);
+                            }
                         }
-                        if(null!=dataBasedOnDataType)
+                        else
                         {
                             currentMsrRowData[dimCountAndDistinctCountAGGIndex[i][j]].agg(dimSurrogate, null, 0, 0);
                         }
                     }
                     else
                     {
-                        currentMsrRowData[dimCountAndDistinctCountAGGIndex[i][j]].agg(dimSurrogate, null, 0, 0);
+                        currentMsrRowData[dimCountAndDistinctCountAGGIndex[i][j]].agg(complexSurrogates, null, 0, 0);
+                        dataBasedOnDataType = complexType.getDataBasedOnDataTypeFromSurrogates(this.columnaraggreagtorInfo.getSlices(), ByteBuffer.wrap(complexSurrogates), this.columnaraggreagtorInfo.getDimensions());
                     }
                 }
-                else
+                
+                for(int j = 0;j < dimAggNormalIndex[i].length;j++)
                 {
-                    currentMsrRowData[dimCountAndDistinctCountAGGIndex[i][j]].agg(complexSurrogates, null, 0, 0);
-                    dataBasedOnDataType = complexType.getDataBasedOnDataTypeFromSurrogates(this.columnaraggreagtorInfo.getSlices(), ByteBuffer.wrap(complexSurrogates), this.columnaraggreagtorInfo.getDimensions());
-                }
-            }
-            
-            for(int j = 0;j < dimAggNormalIndex[i].length;j++)
-            {
-                if(dataBasedOnDataType== null)
-                {
-                    dataBasedOnDataType = QueryExecutorUtility
-                            .getMemberBySurrogateKey(dimensionAggregatorInfo.getDim(), dimSurrogate,
-                                    columnaraggreagtorInfo.getSlices(), columnaraggreagtorInfo.getCurrentSliceIndex()).toString();
-                }
-                // Do not convert to double as the aggregator may work on
-                // different data types. Min & Max can work for String,
-                // TimeStamp,etc
-
-                if(dataBasedOnDataType instanceof Double)
-                {
-                    currentMsrRowData[dimAggNormalIndex[i][j]].agg(dataBasedOnDataType, null, 0, 0);
-                }
-                else if(!((String)dataBasedOnDataType).equals(MolapCommonConstants.MEMBER_DEFAULT_VAL))
-                {
-                    dataBasedOnDataType = DataTypeConverter.getDataBasedOnDataType((String)dataBasedOnDataType,
-                            SqlStatement.Type.DOUBLE);
-                    if(null != dataBasedOnDataType)
+                    if(dataBasedOnDataType== null)
+                    {
+                        dataBasedOnDataType = QueryExecutorUtility
+                                .getMemberBySurrogateKey(dimensionAggregatorInfo.getDim(), dimSurrogate,
+                                        columnaraggreagtorInfo.getSlices(), columnaraggreagtorInfo.getCurrentSliceIndex()).toString();
+                    }
+                    // Do not convert to double as the aggregator may work on
+                    // different data types. Min & Max can work for String,
+                    // TimeStamp,etc
+    
+                    if(dataBasedOnDataType instanceof Double)
                     {
                         currentMsrRowData[dimAggNormalIndex[i][j]].agg(dataBasedOnDataType, null, 0, 0);
                     }
+                    else if(!((String)dataBasedOnDataType).equals(MolapCommonConstants.MEMBER_DEFAULT_VAL))
+                    {
+                        dataBasedOnDataType = DataTypeConverter.getDataBasedOnDataType((String)dataBasedOnDataType,
+                                SqlStatement.Type.DOUBLE);
+                        if(null != dataBasedOnDataType)
+                        {
+                            currentMsrRowData[dimAggNormalIndex[i][j]].agg(dataBasedOnDataType, null, 0, 0);
+                        }
+                    }
                 }
-            }
-            
-            for(int j = 0;j < dimAggMaxMinIndex[i].length;j++)
-            {
-                if(dataBasedOnDataType== null)
+                
+                for(int j = 0;j < dimAggMaxMinIndex[i].length;j++)
                 {
-                    dataBasedOnDataType = QueryExecutorUtility
-                            .getMemberBySurrogateKey(dimensionAggregatorInfo.getDim(), dimSurrogate,
-                                    columnaraggreagtorInfo.getSlices(), columnaraggreagtorInfo.getCurrentSliceIndex()).toString();
-                }
-                if(dataBasedOnDataType instanceof Double)
-                {
-                    currentMsrRowData[dimAggMaxMinIndex[i][j]].agg(dataBasedOnDataType, null, 0, 0);
-                }
-                else if(!((String)dataBasedOnDataType).equals(MolapCommonConstants.MEMBER_DEFAULT_VAL))
-                {
-                    dataBasedOnDataType = DataTypeConverter.getDataBasedOnDataType((String)dataBasedOnDataType,
-                            dimensionAggregatorInfo.getDim().getDataType());
-                    if(null != dataBasedOnDataType)
+                    if(dataBasedOnDataType== null)
+                    {
+                        dataBasedOnDataType = QueryExecutorUtility
+                                .getMemberBySurrogateKey(dimensionAggregatorInfo.getDim(), dimSurrogate,
+                                        columnaraggreagtorInfo.getSlices(), columnaraggreagtorInfo.getCurrentSliceIndex()).toString();
+                    }
+                    if(dataBasedOnDataType instanceof Double)
                     {
                         currentMsrRowData[dimAggMaxMinIndex[i][j]].agg(dataBasedOnDataType, null, 0, 0);
                     }
+                    else if(!((String)dataBasedOnDataType).equals(MolapCommonConstants.MEMBER_DEFAULT_VAL))
+                    {
+                        dataBasedOnDataType = DataTypeConverter.getDataBasedOnDataType((String)dataBasedOnDataType,
+                                dimensionAggregatorInfo.getDim().getDataType());
+                        if(null != dataBasedOnDataType)
+                        {
+                            currentMsrRowData[dimAggMaxMinIndex[i][j]].agg(dataBasedOnDataType, null, 0, 0);
+                        }
+                    }
                 }
             }
-        
-        }
-        else
-        {
-            aggregateDirectDurrogateDims(keyValue,currentMsrRowData,dimensionAggregatorInfo.getDim(),i,dimensionsRowWrapper);
-            
-        }
-        
+            else
+            {
+                aggregateDirectDurrogateDims(keyValue,currentMsrRowData,dimensionAggregatorInfo.getDim(),i,dimensionsRowWrapper);
+                
+            }
         }
         
     }
