@@ -25,26 +25,26 @@ import com.huawei.iweb.platform.logging.LogEvent;
  * MolapLogEvent
  */
 public enum MolapCoreLogEvent implements LogEvent {
-  /**
-   * MOLAPCORE_MSG
-   */
-  UNIBI_MOLAPCORE_MSG("molap.core");
+    /**
+     * MOLAPCORE_MSG
+     */
+    UNIBI_MOLAPCORE_MSG("molap.core");
 
-  /**
-   * eventCode.
-   */
-  private String eventCode;
+    /**
+     * eventCode.
+     */
+    private String eventCode;
 
-  private MolapCoreLogEvent(final String eventCode) {
-    this.eventCode = eventCode;
-  }
+    MolapCoreLogEvent(final String eventCode) {
+        this.eventCode = eventCode;
+    }
 
-  public String getEventCode() {
-    return eventCode;
-  }
+    public String getEventCode() {
+        return eventCode;
+    }
 
-  public String getModuleName() {
-    return "MOLAP_CORE";
-  }
+    public String getModuleName() {
+        return "MOLAP_CORE";
+    }
 
 }

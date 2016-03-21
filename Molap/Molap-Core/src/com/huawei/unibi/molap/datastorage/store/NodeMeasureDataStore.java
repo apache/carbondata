@@ -22,20 +22,20 @@ package com.huawei.unibi.molap.datastorage.store;
 import com.huawei.unibi.molap.datastorage.store.dataholder.MolapWriteDataHolder;
 
 public interface NodeMeasureDataStore {
-  /**
-   * This method will be used to get the writable key array.
-   * writable measure data array will hold below information:
-   * <size of measure data array><measure data array>
-   * total length will be 4 bytes for size + measure data array length
-   *
-   * @return writable array (compressed or normal)
-   */
-  byte[][] getWritableMeasureDataArray(MolapWriteDataHolder[] dataHolderArray);
+    /**
+     * This method will be used to get the writable key array.
+     * writable measure data array will hold below information:
+     * <size of measure data array><measure data array>
+     * total length will be 4 bytes for size + measure data array length
+     *
+     * @return writable array (compressed or normal)
+     */
+    byte[][] getWritableMeasureDataArray(MolapWriteDataHolder[] dataHolderArray);
 
-  MeasureDataWrapper getBackData(int[] cols, FileHolder fileHolder);
+    MeasureDataWrapper getBackData(int[] cols, FileHolder fileHolder);
 
-  MeasureDataWrapper getBackData(int cols, FileHolder fileHolder);
+    MeasureDataWrapper getBackData(int cols, FileHolder fileHolder);
 
-  short getLength();
+    short getLength();
 
 }

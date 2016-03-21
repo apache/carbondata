@@ -22,25 +22,25 @@ package com.huawei.unibi.molap.datastorage.store.impl.key.compressed;
 import com.huawei.unibi.molap.datastorage.store.FileHolder;
 
 public class CompressedSingleArrayKeyInMemoryStore extends AbstractCompressedSingleArrayStore {
-  /**
-   * @param size
-   * @param elementSize
-   */
-  public CompressedSingleArrayKeyInMemoryStore(int size, int elementSize) {
-    super(size, elementSize);
-  }
+    /**
+     * @param size
+     * @param elementSize
+     */
+    public CompressedSingleArrayKeyInMemoryStore(int size, int elementSize) {
+        super(size, elementSize);
+    }
 
-  /**
-   * @param size
-   * @param elementSize
-   * @param offset
-   * @param filePath
-   * @param fileHolder
-   * @param length
-   */
-  public CompressedSingleArrayKeyInMemoryStore(int size, int elementSize, long offset,
-      String filePath, FileHolder fileHolder, int length) {
-    this(size, elementSize);
-    datastore = fileHolder.readByteArray(filePath, offset, length);
-  }
+    /**
+     * @param size
+     * @param elementSize
+     * @param offset
+     * @param filePath
+     * @param fileHolder
+     * @param length
+     */
+    public CompressedSingleArrayKeyInMemoryStore(int size, int elementSize, long offset,
+            String filePath, FileHolder fileHolder, int length) {
+        this(size, elementSize);
+        datastore = fileHolder.readByteArray(filePath, offset, length);
+    }
 }

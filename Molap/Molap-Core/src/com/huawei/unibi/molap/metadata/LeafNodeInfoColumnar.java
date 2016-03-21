@@ -22,327 +22,327 @@ package com.huawei.unibi.molap.metadata;
 import com.huawei.unibi.molap.keygenerator.mdkey.NumberCompressor;
 
 public class LeafNodeInfoColumnar {
-  /**
-   * fileName.
-   */
-  private String fileName;
+    /**
+     * fileName.
+     */
+    private String fileName;
 
-  /**
-   * measureOffset.
-   */
-  private long[] measureOffset;
+    /**
+     * measureOffset.
+     */
+    private long[] measureOffset;
 
-  /**
-   * measureLength.
-   */
-  private int[] measureLength;
+    /**
+     * measureLength.
+     */
+    private int[] measureLength;
 
-  /**
-   * numberOfKeys.
-   */
-  private int numberOfKeys;
+    /**
+     * numberOfKeys.
+     */
+    private int numberOfKeys;
 
-  /**
-   * startKey.
-   */
-  private byte[] startKey;
+    /**
+     * startKey.
+     */
+    private byte[] startKey;
 
-  /**
-   * endKey.
-   */
-  private byte[] endKey;
+    /**
+     * endKey.
+     */
+    private byte[] endKey;
 
-  /**
-   * keyOffSets
-   */
-  private long[] keyOffSets;
+    /**
+     * keyOffSets
+     */
+    private long[] keyOffSets;
 
-  /**
-   * keyLengths
-   */
-  private int[] keyLengths;
+    /**
+     * keyLengths
+     */
+    private int[] keyLengths;
 
-  /**
-   * isSortedKeyColumn
-   */
-  private boolean[] isSortedKeyColumn;
+    /**
+     * isSortedKeyColumn
+     */
+    private boolean[] isSortedKeyColumn;
 
-  /**
-   * keyBlockIndexOffSets
-   */
-  private long[] keyBlockIndexOffSets;
+    /**
+     * keyBlockIndexOffSets
+     */
+    private long[] keyBlockIndexOffSets;
 
-  /**
-   * keyBlockIndexLength
-   */
-  private int[] keyBlockIndexLength;
+    /**
+     * keyBlockIndexLength
+     */
+    private int[] keyBlockIndexLength;
 
-  /**
-   * dataIndexMap
-   */
-  private int[] dataIndexMapLength;
+    /**
+     * dataIndexMap
+     */
+    private int[] dataIndexMapLength;
 
-  /**
-   * dataIndexMap
-   */
-  private long[] dataIndexMapOffsets;
+    /**
+     * dataIndexMap
+     */
+    private long[] dataIndexMapOffsets;
 
-  private boolean[] aggKeyBlock;
-  /**
-   * leafNodeMetaSize
-   */
-  private int leafNodeMetaSize;
+    private boolean[] aggKeyBlock;
+    /**
+     * leafNodeMetaSize
+     */
+    private int leafNodeMetaSize;
 
-  private NumberCompressor[] keyBlockUnCompressor;
+    private NumberCompressor[] keyBlockUnCompressor;
 
-  /**
-   * column min max array
-   */
-  private byte[][] columnMinMaxData;
+    /**
+     * column min max array
+     */
+    private byte[][] columnMinMaxData;
 
-  /**
-   * getFileName().
-   *
-   * @return String.
-   */
-  public String getFileName() {
-    return fileName;
-  }
+    /**
+     * getFileName().
+     *
+     * @return String.
+     */
+    public String getFileName() {
+        return fileName;
+    }
 
-  /**
-   * setFileName.
-   */
-  public void setFileName(String fileName) {
-    this.fileName = fileName;
-  }
+    /**
+     * setFileName.
+     */
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+    }
 
-  /**
-   * getMeasureLength
-   *
-   * @return int[].
-   */
-  public int[] getMeasureLength() {
-    return measureLength;
-  }
+    /**
+     * getMeasureLength
+     *
+     * @return int[].
+     */
+    public int[] getMeasureLength() {
+        return measureLength;
+    }
 
-  /**
-   * setMeasureLength.
-   *
-   * @param measureLength
-   */
-  public void setMeasureLength(int[] measureLength) {
-    this.measureLength = measureLength;
-  }
+    /**
+     * setMeasureLength.
+     *
+     * @param measureLength
+     */
+    public void setMeasureLength(int[] measureLength) {
+        this.measureLength = measureLength;
+    }
 
-  /**
-   * getMeasureOffset.
-   *
-   * @return long[].
-   */
-  public long[] getMeasureOffset() {
-    return measureOffset;
-  }
+    /**
+     * getMeasureOffset.
+     *
+     * @return long[].
+     */
+    public long[] getMeasureOffset() {
+        return measureOffset;
+    }
 
-  /**
-   * setMeasureOffset.
-   *
-   * @param measureOffset
-   */
-  public void setMeasureOffset(long[] measureOffset) {
-    this.measureOffset = measureOffset;
-  }
+    /**
+     * setMeasureOffset.
+     *
+     * @param measureOffset
+     */
+    public void setMeasureOffset(long[] measureOffset) {
+        this.measureOffset = measureOffset;
+    }
 
-  /**
-   * getStartKey().
-   *
-   * @return byte[].
-   */
-  public byte[] getStartKey() {
-    return startKey;
-  }
+    /**
+     * getStartKey().
+     *
+     * @return byte[].
+     */
+    public byte[] getStartKey() {
+        return startKey;
+    }
 
-  /**
-   * setStartKey.
-   *
-   * @param startKey
-   */
-  public void setStartKey(byte[] startKey) {
-    this.startKey = startKey;
-  }
+    /**
+     * setStartKey.
+     *
+     * @param startKey
+     */
+    public void setStartKey(byte[] startKey) {
+        this.startKey = startKey;
+    }
 
-  /**
-   * getEndKey().
-   *
-   * @return byte[].
-   */
-  public byte[] getEndKey() {
-    return endKey;
-  }
+    /**
+     * getEndKey().
+     *
+     * @return byte[].
+     */
+    public byte[] getEndKey() {
+        return endKey;
+    }
 
-  /**
-   * setEndKey.
-   *
-   * @param endKey
-   */
-  public void setEndKey(byte[] endKey) {
-    this.endKey = endKey;
-  }
+    /**
+     * setEndKey.
+     *
+     * @param endKey
+     */
+    public void setEndKey(byte[] endKey) {
+        this.endKey = endKey;
+    }
 
-  /**
-   * @return the keyOffSets
-   */
-  public long[] getKeyOffSets() {
-    return keyOffSets;
-  }
+    /**
+     * @return the keyOffSets
+     */
+    public long[] getKeyOffSets() {
+        return keyOffSets;
+    }
 
-  /**
-   * @param keyOffSets the keyOffSets to set
-   */
-  public void setKeyOffSets(long[] keyOffSets) {
-    this.keyOffSets = keyOffSets;
-  }
+    /**
+     * @param keyOffSets the keyOffSets to set
+     */
+    public void setKeyOffSets(long[] keyOffSets) {
+        this.keyOffSets = keyOffSets;
+    }
 
-  /**
-   * @return the keyLengths
-   */
-  public int[] getKeyLengths() {
-    return keyLengths;
-  }
+    /**
+     * @return the keyLengths
+     */
+    public int[] getKeyLengths() {
+        return keyLengths;
+    }
 
-  //TODO SIMIAN
+    //TODO SIMIAN
 
-  /**
-   * @param keyLengths the keyLengths to set
-   */
-  public void setKeyLengths(int[] keyLengths) {
-    this.keyLengths = keyLengths;
-  }
+    /**
+     * @param keyLengths the keyLengths to set
+     */
+    public void setKeyLengths(int[] keyLengths) {
+        this.keyLengths = keyLengths;
+    }
 
-  /**
-   * getNumberOfKeys()
-   *
-   * @return int.
-   */
-  public int getNumberOfKeys() {
-    return numberOfKeys;
-  }
+    /**
+     * getNumberOfKeys()
+     *
+     * @return int.
+     */
+    public int getNumberOfKeys() {
+        return numberOfKeys;
+    }
 
-  /**
-   * setNumberOfKeys.
-   *
-   * @param numberOfKeys
-   */
-  public void setNumberOfKeys(int numberOfKeys) {
-    this.numberOfKeys = numberOfKeys;
-  }
+    /**
+     * setNumberOfKeys.
+     *
+     * @param numberOfKeys
+     */
+    public void setNumberOfKeys(int numberOfKeys) {
+        this.numberOfKeys = numberOfKeys;
+    }
 
-  /**
-   * @return the isSortedKeyColumn
-   */
-  public boolean[] getIsSortedKeyColumn() {
-    return isSortedKeyColumn;
-  }
+    /**
+     * @return the isSortedKeyColumn
+     */
+    public boolean[] getIsSortedKeyColumn() {
+        return isSortedKeyColumn;
+    }
 
-  /**
-   * @param isSortedKeyColumn the isSortedKeyColumn to set
-   */
-  public void setIsSortedKeyColumn(boolean[] isSortedKeyColumn) {
-    this.isSortedKeyColumn = isSortedKeyColumn;
-  }
+    /**
+     * @param isSortedKeyColumn the isSortedKeyColumn to set
+     */
+    public void setIsSortedKeyColumn(boolean[] isSortedKeyColumn) {
+        this.isSortedKeyColumn = isSortedKeyColumn;
+    }
 
-  /**
-   * @return the keyBlockIndexOffSets
-   */
-  public long[] getKeyBlockIndexOffSets() {
-    return keyBlockIndexOffSets;
-  }
+    /**
+     * @return the keyBlockIndexOffSets
+     */
+    public long[] getKeyBlockIndexOffSets() {
+        return keyBlockIndexOffSets;
+    }
 
-  /**
-   * @param keyBlockIndexOffSets the keyBlockIndexOffSets to set
-   */
-  public void setKeyBlockIndexOffSets(long[] keyBlockIndexOffSets) {
-    this.keyBlockIndexOffSets = keyBlockIndexOffSets;
-  }
+    /**
+     * @param keyBlockIndexOffSets the keyBlockIndexOffSets to set
+     */
+    public void setKeyBlockIndexOffSets(long[] keyBlockIndexOffSets) {
+        this.keyBlockIndexOffSets = keyBlockIndexOffSets;
+    }
 
-  /**
-   * @return the keyBlockIndexLength
-   */
-  public int[] getKeyBlockIndexLength() {
-    return keyBlockIndexLength;
-  }
+    /**
+     * @return the keyBlockIndexLength
+     */
+    public int[] getKeyBlockIndexLength() {
+        return keyBlockIndexLength;
+    }
 
-  /**
-   * @param keyBlockIndexLength the keyBlockIndexLength to set
-   */
-  public void setKeyBlockIndexLength(int[] keyBlockIndexLength) {
-    this.keyBlockIndexLength = keyBlockIndexLength;
-  }
+    /**
+     * @param keyBlockIndexLength the keyBlockIndexLength to set
+     */
+    public void setKeyBlockIndexLength(int[] keyBlockIndexLength) {
+        this.keyBlockIndexLength = keyBlockIndexLength;
+    }
 
-  /**
-   * @return the leafNodeMetaSize
-   */
-  public int getLeafNodeMetaSize() {
-    return leafNodeMetaSize;
-  }
+    /**
+     * @return the leafNodeMetaSize
+     */
+    public int getLeafNodeMetaSize() {
+        return leafNodeMetaSize;
+    }
 
-  /**
-   * @param leafNodeMetaSize the leafNodeMetaSize to set
-   */
-  public void setLeafNodeMetaSize(int leafNodeMetaSize) {
-    this.leafNodeMetaSize = leafNodeMetaSize;
-  }
+    /**
+     * @param leafNodeMetaSize the leafNodeMetaSize to set
+     */
+    public void setLeafNodeMetaSize(int leafNodeMetaSize) {
+        this.leafNodeMetaSize = leafNodeMetaSize;
+    }
 
-  /**
-   * @return the dataIndexMapLenght
-   */
-  public int[] getDataIndexMapLength() {
-    return dataIndexMapLength;
-  }
+    /**
+     * @return the dataIndexMapLenght
+     */
+    public int[] getDataIndexMapLength() {
+        return dataIndexMapLength;
+    }
 
-  public void setDataIndexMapLength(int[] dataIndexMapLength) {
-    this.dataIndexMapLength = dataIndexMapLength;
-  }
+    public void setDataIndexMapLength(int[] dataIndexMapLength) {
+        this.dataIndexMapLength = dataIndexMapLength;
+    }
 
-  /**
-   * @return the dataIndexMapOffsets
-   */
-  public long[] getDataIndexMapOffsets() {
-    return dataIndexMapOffsets;
-  }
+    /**
+     * @return the dataIndexMapOffsets
+     */
+    public long[] getDataIndexMapOffsets() {
+        return dataIndexMapOffsets;
+    }
 
-  public void setDataIndexMapOffsets(long[] dataIndexMapOffsets) {
-    this.dataIndexMapOffsets = dataIndexMapOffsets;
-  }
+    public void setDataIndexMapOffsets(long[] dataIndexMapOffsets) {
+        this.dataIndexMapOffsets = dataIndexMapOffsets;
+    }
 
-  public boolean[] getAggKeyBlock() {
-    return aggKeyBlock;
-  }
+    public boolean[] getAggKeyBlock() {
+        return aggKeyBlock;
+    }
 
-  public void setAggKeyBlock(boolean[] aggKeyBlock) {
-    this.aggKeyBlock = aggKeyBlock;
-  }
+    public void setAggKeyBlock(boolean[] aggKeyBlock) {
+        this.aggKeyBlock = aggKeyBlock;
+    }
 
-  public NumberCompressor[] getKeyBlockUnCompressor() {
-    return keyBlockUnCompressor;
-  }
+    public NumberCompressor[] getKeyBlockUnCompressor() {
+        return keyBlockUnCompressor;
+    }
 
-  public void setKeyBlockUnCompressor(NumberCompressor[] keyBlockUnCompressor) {
-    this.keyBlockUnCompressor = keyBlockUnCompressor;
-  }
+    public void setKeyBlockUnCompressor(NumberCompressor[] keyBlockUnCompressor) {
+        this.keyBlockUnCompressor = keyBlockUnCompressor;
+    }
 
-  /**
-   * for each column min max data
-   */
-  public byte[][] getColumnMinMaxData() {
-    return this.columnMinMaxData;
-  }
+    /**
+     * for each column min max data
+     */
+    public byte[][] getColumnMinMaxData() {
+        return this.columnMinMaxData;
+    }
 
-  /**
-   * for each column min max data
-   */
-  public void setColumnMinMaxData(byte[][] columnMinMaxData) {
-    this.columnMinMaxData = columnMinMaxData;
+    /**
+     * for each column min max data
+     */
+    public void setColumnMinMaxData(byte[][] columnMinMaxData) {
+        this.columnMinMaxData = columnMinMaxData;
 
-  }
+    }
 
 }

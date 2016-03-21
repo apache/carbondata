@@ -30,72 +30,72 @@ import com.huawei.unibi.molap.olap.SqlStatement.Type;
  */
 public class CalculatedMeasure extends Measure {
 
-  private static final long serialVersionUID = 7678164364921738949L;
+    private static final long serialVersionUID = 7678164364921738949L;
 
-  private transient Exp exp;
+    private transient Exp exp;
 
-  private Dimension distCountDim;
+    private Dimension distCountDim;
 
-  public CalculatedMeasure(String colName, int ordinal, String aggName, String aggClassName,
-      String name, Type dataType, Cube cube) {
-  }
-
-  public CalculatedMeasure(Exp exp, String name) {
-    super(null, -1, null, null, name, null, null, false);
-    this.exp = exp;
-  }
-
-  public CalculatedMeasure(String name) {
-    super(null, -1, null, null, name, null, null, false);
-  }
-
-  /**
-   * @return the exp
-   */
-  public Exp getExp() {
-    return exp;
-  }
-
-  /**
-   * @param exp the exp to set
-   */
-  public void setExp(Exp exp) {
-    this.exp = exp;
-  }
-
-  /**
-   * @return the distCountDim
-   */
-  public Dimension getDistCountDim() {
-    return distCountDim;
-  }
-
-  /**
-   * @return the distCountDim
-   */
-  public void setDistCountDim(Dimension distCountDim) {
-    this.distCountDim = distCountDim;
-  }
-
-  @Override public boolean equals(Object obj) {
-    Measure that = null;
-
-    if (obj instanceof Measure) {
-
-      that = (Measure) obj;
-      return that.getName().equals(getName());
+    public CalculatedMeasure(String colName, int ordinal, String aggName, String aggClassName,
+            String name, Type dataType, Cube cube) {
     }
-    // Added this to fix Find bug
-    // Symmetric issue
-    if (obj instanceof Dimension) {
-      return super.equals(obj);
+
+    public CalculatedMeasure(Exp exp, String name) {
+        super(null, -1, null, null, name, null, null, false);
+        this.exp = exp;
     }
-    return false;
 
-  }
+    public CalculatedMeasure(String name) {
+        super(null, -1, null, null, name, null, null, false);
+    }
 
-  @Override public int hashCode() {
-    return getName().hashCode();
-  }
+    /**
+     * @return the exp
+     */
+    public Exp getExp() {
+        return exp;
+    }
+
+    /**
+     * @param exp the exp to set
+     */
+    public void setExp(Exp exp) {
+        this.exp = exp;
+    }
+
+    /**
+     * @return the distCountDim
+     */
+    public Dimension getDistCountDim() {
+        return distCountDim;
+    }
+
+    /**
+     * @return the distCountDim
+     */
+    public void setDistCountDim(Dimension distCountDim) {
+        this.distCountDim = distCountDim;
+    }
+
+    @Override public boolean equals(Object obj) {
+        Measure that = null;
+
+        if (obj instanceof Measure) {
+
+            that = (Measure) obj;
+            return that.getName().equals(getName());
+        }
+        // Added this to fix Find bug
+        // Symmetric issue
+        if (obj instanceof Dimension) {
+            return super.equals(obj);
+        }
+        return false;
+
+    }
+
+    @Override public int hashCode() {
+        return getName().hashCode();
+    }
 
 }

@@ -21,17 +21,17 @@ package com.huawei.unibi.molap.keygenerator.util;
 
 public final class KeyGenUtil {
 
-  private KeyGenUtil() {
+    private KeyGenUtil() {
 
-  }
-
-  public static long toLong(byte[] bytes, int offset, final int length) {
-    long l = 0;
-    for (int i = offset; i < offset + length; i++) {
-      l <<= 8;
-      l ^= bytes[i] & 0xFF;
     }
-    return l;
-  }
+
+    public static long toLong(byte[] bytes, int offset, final int length) {
+        long l = 0;
+        for (int i = offset; i < offset + length; i++) {
+            l <<= 8;
+            l ^= bytes[i] & 0xFF;
+        }
+        return l;
+    }
 
 }

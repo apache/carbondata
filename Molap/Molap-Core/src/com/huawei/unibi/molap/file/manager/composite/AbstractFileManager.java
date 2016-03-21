@@ -23,35 +23,35 @@ import java.util.ArrayList;
 import java.util.List;
 
 public abstract class AbstractFileManager implements IFileManagerComposite {
-  /**
-   * listOfFileData, composite parent which holds the different objects
-   */
-  protected List<IFileManagerComposite> listOfFileData = new ArrayList<IFileManagerComposite>(10);
+    /**
+     * listOfFileData, composite parent which holds the different objects
+     */
+    protected List<IFileManagerComposite> listOfFileData = new ArrayList<IFileManagerComposite>(10);
 
-  @Override public void add(IFileManagerComposite customData) {
-    listOfFileData.add(customData);
-  }
+    @Override public void add(IFileManagerComposite customData) {
+        listOfFileData.add(customData);
+    }
 
-  @Override public void remove(IFileManagerComposite customData) {
-    listOfFileData.remove(customData);
+    @Override public void remove(IFileManagerComposite customData) {
+        listOfFileData.remove(customData);
 
-  }
+    }
 
-  @Override public IFileManagerComposite get(int i) {
-    return listOfFileData.get(i);
-  }
+    @Override public IFileManagerComposite get(int i) {
+        return listOfFileData.get(i);
+    }
 
-  /**
-   * Renames the File/Folders
-   */
-  public abstract boolean rename(IFileManagerComposite composite);
+    /**
+     * Renames the File/Folders
+     */
+    public abstract boolean rename(IFileManagerComposite composite);
 
-  /**
-   * Return the size
-   */
-  public int size() {
-    return listOfFileData.size();
-  }
+    /**
+     * Return the size
+     */
+    public int size() {
+        return listOfFileData.size();
+    }
 
 }
 

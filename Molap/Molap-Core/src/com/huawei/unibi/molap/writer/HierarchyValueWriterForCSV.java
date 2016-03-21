@@ -19,6 +19,13 @@
 
 package com.huawei.unibi.molap.writer;
 
+import java.io.*;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import com.huawei.iweb.platform.logging.LogService;
 import com.huawei.iweb.platform.logging.LogServiceFactory;
 import com.huawei.unibi.molap.constants.MolapCommonConstants;
@@ -27,295 +34,294 @@ import com.huawei.unibi.molap.util.MolapProperties;
 import com.huawei.unibi.molap.util.MolapUtil;
 import org.pentaho.di.core.exception.KettleException;
 
-import java.io.*;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 public class HierarchyValueWriterForCSV {
 
-  /**
-   * Comment for <code>LOGGER</code>
-   */
-  private static final LogService LOGGER =
-      LogServiceFactory.getLogService(HierarchyValueWriterForCSV.class.getName());
-  /**
-   * hierarchyName
-   */
-  private String hierarchyName;
+    /**
+     * Comment for <code>LOGGER</code>
+     */
+    private static final LogService LOGGER =
+            LogServiceFactory.getLogService(HierarchyValueWriterForCSV.class.getName());
+    /**
+     * hierarchyName
+     */
+    private String hierarchyName;
 
-  /**
-   * bufferedOutStream
-   */
-  private FileChannel outPutFileChannel;
+    /**
+     * bufferedOutStream
+     */
+    private FileChannel outPutFileChannel;
 
-  /**
-   * storeFolderLocation
-   */
-  private String storeFolderLocation;
+    /**
+     * storeFolderLocation
+     */
+    private String storeFolderLocation;
 
-  /**
-   * intialized
-   */
-  private boolean intialized;
+    /**
+     * intialized
+     */
+    private boolean intialized;
 
-  /**
-   * counter the number of files.
-   */
-  private int counter;
+    /**
+     * counter the number of files.
+     */
+    private int counter;
 
-  /**
-   * byteArrayList
-   */
-  private List<ByteArrayHolder> byteArrayholder =
-      new ArrayList<ByteArrayHolder>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+    /**
+     * byteArrayList
+     */
+    private List<ByteArrayHolder> byteArrayholder =
+            new ArrayList<ByteArrayHolder>(MolapCommonConstants.CONSTANT_SIZE_TEN);
 
-  /**
-   * toflush
-   */
-  private int toflush;
+    /**
+     * toflush
+     */
+    private int toflush;
 
-  public HierarchyValueWriterForCSV(String hierarchy, String storeFolderLocation) {
-    this.hierarchyName = hierarchy;
-    this.storeFolderLocation = storeFolderLocation;
+    public HierarchyValueWriterForCSV(String hierarchy, String storeFolderLocation) {
+        this.hierarchyName = hierarchy;
+        this.storeFolderLocation = storeFolderLocation;
 
-    MolapProperties instance = MolapProperties.getInstance();
+        MolapProperties instance = MolapProperties.getInstance();
 
-    this.toflush = Integer.parseInt(instance
-        .getProperty(MolapCommonConstants.SORT_SIZE, MolapCommonConstants.SORT_SIZE_DEFAULT_VAL));
+        this.toflush = Integer.parseInt(instance.getProperty(MolapCommonConstants.SORT_SIZE,
+                MolapCommonConstants.SORT_SIZE_DEFAULT_VAL));
 
-    int rowSetSize = Integer.parseInt(instance.getProperty(MolapCommonConstants.GRAPH_ROWSET_SIZE,
-        MolapCommonConstants.GRAPH_ROWSET_SIZE_DEFAULT));
+        int rowSetSize = Integer.parseInt(
+                instance.getProperty(MolapCommonConstants.GRAPH_ROWSET_SIZE,
+                        MolapCommonConstants.GRAPH_ROWSET_SIZE_DEFAULT));
 
-    if (this.toflush > rowSetSize) {
-      this.toflush = rowSetSize;
-    }
-
-    updateCounter(hierarchy, storeFolderLocation);
-  }
-
-  /**
-   * @return Returns the byteArrayList.
-   */
-  public List<ByteArrayHolder> getByteArrayList() throws KettleException {
-    return byteArrayholder;
-  }
-
-  public FileChannel getBufferedOutStream() {
-    return outPutFileChannel;
-  }
-
-  private void updateCounter(final String meString, String storeFolderLocation) {
-    File storeFolder = new File(storeFolderLocation);
-
-    File[] listFiles = storeFolder.listFiles(new FileFilter() {
-
-      @Override public boolean accept(File file) {
-        if (file.getName().indexOf(meString) > -1)
-
-        {
-          return true;
+        if (this.toflush > rowSetSize) {
+            this.toflush = rowSetSize;
         }
-        return false;
-      }
-    });
 
-    if (listFiles.length == 0) {
-      counter = 0;
-      return;
+        updateCounter(hierarchy, storeFolderLocation);
     }
 
-    for (File hierFile : listFiles) {
-      String hierFileName = hierFile.getName();
+    /**
+     * @return Returns the byteArrayList.
+     */
+    public List<ByteArrayHolder> getByteArrayList() throws KettleException {
+        return byteArrayholder;
+    }
 
-      if (hierFileName.endsWith(MolapCommonConstants.FILE_INPROGRESS_STATUS)) {
-        hierFileName = hierFileName.substring(0, hierFileName.lastIndexOf('.'));
+    public FileChannel getBufferedOutStream() {
+        return outPutFileChannel;
+    }
+
+    private void updateCounter(final String meString, String storeFolderLocation) {
+        File storeFolder = new File(storeFolderLocation);
+
+        File[] listFiles = storeFolder.listFiles(new FileFilter() {
+
+            @Override public boolean accept(File file) {
+                if (file.getName().indexOf(meString) > -1)
+
+                {
+                    return true;
+                }
+                return false;
+            }
+        });
+
+        if (listFiles.length == 0) {
+            counter = 0;
+            return;
+        }
+
+        for (File hierFile : listFiles) {
+            String hierFileName = hierFile.getName();
+
+            if (hierFileName.endsWith(MolapCommonConstants.FILE_INPROGRESS_STATUS)) {
+                hierFileName = hierFileName.substring(0, hierFileName.lastIndexOf('.'));
+                try {
+                    counter = Integer.parseInt(hierFileName.substring(hierFileName.length() - 1));
+                } catch (NumberFormatException nfe) {
+
+                    if (new File(hierFileName + '0' + MolapCommonConstants.LEVEL_FILE_EXTENSION)
+                            .exists()) {
+                        // Need to skip because the case can come in which server went down while files were merging and the other hieracrhy
+                        // files were not deleted, and the current file status is inrogress. so again we will merge the files and
+                        // rename to normal file
+                        LOGGER.info(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                                "Need to skip as this can be case in which hierarchy file already renamed.");
+                        if (hierFile.delete()) {
+                            LOGGER.info(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                                    "Deleted the Inprogress hierarchy Files.");
+                        }
+                    } else {
+                        // levelfileName0.level file not exist that means files is merged and other files got deleted.
+                        // while renaming this file from inprogress to normal file, server got restarted/killed.
+                        // so we need to rename the file to normal.
+
+                        File inprogressFile =
+                                new File(storeFolder + File.separator + hierFile.getName());
+                        File changetoName = new File(storeFolder + File.separator + hierFileName);
+
+                        if (inprogressFile.renameTo(changetoName)) {
+                            LOGGER.info(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                                    "Renaming the level Files while creating the new instance on server startup.");
+                        }
+
+                    }
+
+                }
+            }
+
+            String val = hierFileName.substring(hierFileName.length() - 1);
+
+            int parsedVal = getIntValue(val);
+
+            if (counter < parsedVal) {
+                counter = parsedVal;
+            }
+        }
+        counter++;
+    }
+
+    private int getIntValue(String val) {
+        int parsedVal = 0;
         try {
-          counter = Integer.parseInt(hierFileName.substring(hierFileName.length() - 1));
+            parsedVal = Integer.parseInt(val);
         } catch (NumberFormatException nfe) {
-
-          if (new File(hierFileName + '0' + MolapCommonConstants.LEVEL_FILE_EXTENSION).exists()) {
-            // Need to skip because the case can come in which server went down while files were merging and the other hieracrhy
-            // files were not deleted, and the current file status is inrogress. so again we will merge the files and
-            // rename to normal file
             LOGGER.info(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG,
-                "Need to skip as this can be case in which hierarchy file already renamed.");
-            if (hierFile.delete()) {
-              LOGGER.info(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG,
-                  "Deleted the Inprogress hierarchy Files.");
-            }
-          } else {
-            // levelfileName0.level file not exist that means files is merged and other files got deleted.
-            // while renaming this file from inprogress to normal file, server got restarted/killed.
-            // so we need to rename the file to normal.
-
-            File inprogressFile = new File(storeFolder + File.separator + hierFile.getName());
-            File changetoName = new File(storeFolder + File.separator + hierFileName);
-
-            if (inprogressFile.renameTo(changetoName)) {
-              LOGGER.info(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG,
-                  "Renaming the level Files while creating the new instance on server startup.");
-            }
-
-          }
-
+                    "Hierarchy File is already renamed so there will not be"
+                            + "any need to keep the counter");
         }
-      }
-
-      String val = hierFileName.substring(hierFileName.length() - 1);
-
-      int parsedVal = getIntValue(val);
-
-      if (counter < parsedVal) {
-        counter = parsedVal;
-      }
-    }
-    counter++;
-  }
-
-  private int getIntValue(String val) {
-    int parsedVal = 0;
-    try {
-      parsedVal = Integer.parseInt(val);
-    } catch (NumberFormatException nfe) {
-      LOGGER.info(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG,
-          "Hierarchy File is already renamed so there will not be"
-              + "any need to keep the counter");
-    }
-    return parsedVal;
-  }
-
-  private void intialize() throws KettleException {
-    intialized = true;
-
-    File f = new File(storeFolderLocation + File.separator + hierarchyName + counter
-        + MolapCommonConstants.FILE_INPROGRESS_STATUS);
-
-    counter++;
-
-    FileOutputStream fos = null;
-
-    boolean isFileCreated = false;
-    if (!f.exists()) {
-      try {
-        isFileCreated = f.createNewFile();
-
-      } catch (IOException e) {
-        //not required: findbugs fix
-        throw new KettleException("unable to create member mapping file", e);
-      }
-      if (!isFileCreated) {
-        throw new KettleException("unable to create file" + f.getAbsolutePath());
-      }
+        return parsedVal;
     }
 
-    try {
-      fos = new FileOutputStream(f);
+    private void intialize() throws KettleException {
+        intialized = true;
 
-      outPutFileChannel = fos.getChannel();
-    } catch (FileNotFoundException e) {
-      closeStreamAndDeleteFile(f, outPutFileChannel, fos);
-      throw new KettleException("member Mapping File not found to write mapping info", e);
-    }
-  }
+        File f = new File(storeFolderLocation + File.separator + hierarchyName + counter
+                + MolapCommonConstants.FILE_INPROGRESS_STATUS);
 
-  public void writeIntoHierarchyFile(byte[] bytes, int primaryKey) throws KettleException {
-    if (!intialized) {
-      intialize();
-    }
+        counter++;
 
-    ByteBuffer byteBuffer = storeValueInCache(bytes, primaryKey);
+        FileOutputStream fos = null;
 
-    try {
-      byteBuffer.flip();
-      outPutFileChannel.write(byteBuffer);
-    } catch (IOException e) {
-      throw new KettleException("Error while writting in the hierarchy mapping file", e);
-    }
-  }
+        boolean isFileCreated = false;
+        if (!f.exists()) {
+            try {
+                isFileCreated = f.createNewFile();
 
-  private ByteBuffer storeValueInCache(byte[] bytes, int primaryKey) {
+            } catch (IOException e) {
+                //not required: findbugs fix
+                throw new KettleException("unable to create member mapping file", e);
+            }
+            if (!isFileCreated) {
+                throw new KettleException("unable to create file" + f.getAbsolutePath());
+            }
+        }
 
-    // adding 4 to store the total length of the row at the beginning
-    ByteBuffer buffer = ByteBuffer.allocate(bytes.length + 4);
-
-    buffer.put(bytes);
-    buffer.putInt(primaryKey);
-
-    return buffer;
-  }
-
-  public void performRequiredOperation() throws KettleException {
-    if (byteArrayholder.size() == 0) {
-      return;
-    }
-    //write to the file and close the stream.
-    Collections.sort(byteArrayholder);
-
-    for (ByteArrayHolder byteArray : byteArrayholder) {
-      writeIntoHierarchyFile(byteArray.getMdKey(), byteArray.getPrimaryKey());
-    }
-
-    MolapUtil.closeStreams(outPutFileChannel);
-
-    //rename the inprogress file to normal .level file
-    String filePath = this.storeFolderLocation + File.separator + hierarchyName + (counter - 1)
-        + MolapCommonConstants.FILE_INPROGRESS_STATUS;
-    File inProgressFile = new File(filePath);
-    String inprogressFileName = inProgressFile.getName();
-
-    String changedFileName = inprogressFileName.substring(0, inprogressFileName.lastIndexOf('.'));
-
-    File orgFinalName = new File(this.storeFolderLocation + File.separator + changedFileName);
-
-    if (!inProgressFile.renameTo(orgFinalName)) {
-      LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG,
-          "Not able to rename file : " + inprogressFileName);
-    }
-
-    //create the new outputStream
-    try {
-      intialize();
-    } catch (KettleException e) {
-      LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG,
-          "Not able to create the output stream for File :" + hierarchyName + (counter - 1));
-    }
-
-    //clear the byte array holder also.
-    byteArrayholder.clear();
-  }
-
-  private void closeStreamAndDeleteFile(File f, Closeable... streams) throws KettleException {
-    boolean isDeleted = false;
-    for (Closeable stream : streams) {
-      if (null != stream) {
         try {
-          stream.close();
-        } catch (IOException e) {
-          LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, e, "unable to close the stream ");
+            fos = new FileOutputStream(f);
+
+            outPutFileChannel = fos.getChannel();
+        } catch (FileNotFoundException e) {
+            closeStreamAndDeleteFile(f, outPutFileChannel, fos);
+            throw new KettleException("member Mapping File not found to write mapping info", e);
+        }
+    }
+
+    public void writeIntoHierarchyFile(byte[] bytes, int primaryKey) throws KettleException {
+        if (!intialized) {
+            intialize();
         }
 
-      }
+        ByteBuffer byteBuffer = storeValueInCache(bytes, primaryKey);
+
+        try {
+            byteBuffer.flip();
+            outPutFileChannel.write(byteBuffer);
+        } catch (IOException e) {
+            throw new KettleException("Error while writting in the hierarchy mapping file", e);
+        }
     }
 
-    // delete the file
-    isDeleted = f.delete();
-    if (!isDeleted) {
-      LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG,
-          "Unable to delete the file " + f.getAbsolutePath());
+    private ByteBuffer storeValueInCache(byte[] bytes, int primaryKey) {
+
+        // adding 4 to store the total length of the row at the beginning
+        ByteBuffer buffer = ByteBuffer.allocate(bytes.length + 4);
+
+        buffer.put(bytes);
+        buffer.putInt(primaryKey);
+
+        return buffer;
     }
 
-  }
+    public void performRequiredOperation() throws KettleException {
+        if (byteArrayholder.size() == 0) {
+            return;
+        }
+        //write to the file and close the stream.
+        Collections.sort(byteArrayholder);
 
-  public String getHierarchyName() {
-    return hierarchyName;
-  }
+        for (ByteArrayHolder byteArray : byteArrayholder) {
+            writeIntoHierarchyFile(byteArray.getMdKey(), byteArray.getPrimaryKey());
+        }
 
-  public int getCounter() {
-    return counter;
-  }
+        MolapUtil.closeStreams(outPutFileChannel);
+
+        //rename the inprogress file to normal .level file
+        String filePath = this.storeFolderLocation + File.separator + hierarchyName + (counter - 1)
+                + MolapCommonConstants.FILE_INPROGRESS_STATUS;
+        File inProgressFile = new File(filePath);
+        String inprogressFileName = inProgressFile.getName();
+
+        String changedFileName =
+                inprogressFileName.substring(0, inprogressFileName.lastIndexOf('.'));
+
+        File orgFinalName = new File(this.storeFolderLocation + File.separator + changedFileName);
+
+        if (!inProgressFile.renameTo(orgFinalName)) {
+            LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                    "Not able to rename file : " + inprogressFileName);
+        }
+
+        //create the new outputStream
+        try {
+            intialize();
+        } catch (KettleException e) {
+            LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                    "Not able to create the output stream for File :" + hierarchyName + (counter
+                            - 1));
+        }
+
+        //clear the byte array holder also.
+        byteArrayholder.clear();
+    }
+
+    private void closeStreamAndDeleteFile(File f, Closeable... streams) throws KettleException {
+        boolean isDeleted = false;
+        for (Closeable stream : streams) {
+            if (null != stream) {
+                try {
+                    stream.close();
+                } catch (IOException e) {
+                    LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, e,
+                            "unable to close the stream ");
+                }
+
+            }
+        }
+
+        // delete the file
+        isDeleted = f.delete();
+        if (!isDeleted) {
+            LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                    "Unable to delete the file " + f.getAbsolutePath());
+        }
+
+    }
+
+    public String getHierarchyName() {
+        return hierarchyName;
+    }
+
+    public int getCounter() {
+        return counter;
+    }
 
 }
 

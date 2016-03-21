@@ -23,14 +23,14 @@ import com.huawei.unibi.molap.datastorage.store.FileHolder;
 
 public class SingleArrayKeyInMemoryStore extends AbstractSingleArrayKeyStore {
 
-  public SingleArrayKeyInMemoryStore(int size, int elementSize) {
-    super(size, elementSize);
-  }
+    public SingleArrayKeyInMemoryStore(int size, int elementSize) {
+        super(size, elementSize);
+    }
 
-  public SingleArrayKeyInMemoryStore(int size, int elementSize, long offset, String filePath,
-      FileHolder fileHolder, int length) {
-    this(size, elementSize);
-    datastore = fileHolder.readByteArray(filePath, offset, length);
-  }
+    public SingleArrayKeyInMemoryStore(int size, int elementSize, long offset, String filePath,
+            FileHolder fileHolder, int length) {
+        this(size, elementSize);
+        datastore = fileHolder.readByteArray(filePath, offset, length);
+    }
 
 }

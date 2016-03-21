@@ -21,5 +21,5 @@ package com.huawei.unibi.molap.datastorage.store.fileperations;
 
 public enum FileWriteOperation {
 
-  APPEND, OVERWRITE
+    APPEND, OVERWRITE
 }
