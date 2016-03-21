@@ -17,7 +17,6 @@
  * under the License.
  */
 
-
 package com.huawei.unibi.molap.datastorage.store.compression.type;
 
 import com.huawei.iweb.platform.logging.LogService;
@@ -33,80 +32,74 @@ import com.huawei.unibi.molap.util.ValueCompressionUtil.DataType;
 import java.nio.ByteBuffer;
 
 public class UnCompressNoneShort implements UnCompressValue<short[]> {
-    /**
-     * Attribute for Molap LOGGER
-     */
-    private static final LogService LOGGER = LogServiceFactory.getLogService(UnCompressNoneShort.class.getName());
+  /**
+   * Attribute for Molap LOGGER
+   */
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(UnCompressNoneShort.class.getName());
 
-    /**
-     * shortCompressor.
-     */
-    private static Compressor<short[]> shortCompressor = SnappyCompression.SnappyShortCompression.INSTANCE;
+  /**
+   * shortCompressor.
+   */
+  private static Compressor<short[]> shortCompressor =
+      SnappyCompression.SnappyShortCompression.INSTANCE;
 
-    /**
-     * value.
-     */
-    private short[] shortValue;
+  /**
+   * value.
+   */
+  private short[] shortValue;
 
-    @Override
-    public void setValue(short[] shortValue) {
-        this.shortValue = shortValue;
+  @Override public void setValue(short[] shortValue) {
+    this.shortValue = shortValue;
 
+  }
+
+  @Override public UnCompressValue getNew() {
+    try {
+      return (UnCompressValue) clone();
+    } catch (CloneNotSupportedException cns1) {
+      LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, cns1, cns1.getMessage());
     }
+    return null;
+  }
 
-    @Override
-    public UnCompressValue getNew() {
-        try {
-            return (UnCompressValue) clone();
-        } catch (CloneNotSupportedException cns1) {
-            LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, cns1, cns1.getMessage());
-        }
-        return null;
+  @Override public UnCompressValue compress() {
+
+    UnCompressNoneByte byte1 = new UnCompressNoneByte();
+    byte1.setValue(shortCompressor.compress(shortValue));
+
+    return byte1;
+
+  }
+
+  @Override public UnCompressValue uncompress(DataType dataType) {
+    return null;
+  }
+
+  @Override public byte[] getBackArrayData() {
+    return ValueCompressionUtil.convertToBytes(shortValue);
+  }
+
+  @Override public void setValueInBytes(byte[] value) {
+    ByteBuffer buffer = ByteBuffer.wrap(value);
+    shortValue = ValueCompressionUtil.convertToShortArray(buffer, value.length);
+  }
+
+  /**
+   * @see com.huawei.unibi.molap.datastorage.store.compression.ValueCompressonHolder.UnCompressValue#getCompressorObject()
+   */
+  @Override public UnCompressValue getCompressorObject() {
+    return new UnCompressNoneByte();
+  }
+
+  @Override public MolapReadDataHolder getValues(int decimal, double maxValue) {
+    MolapReadDataHolder dataHolder = new MolapReadDataHolder();
+    double[] vals = new double[shortValue.length];
+    for (int i = 0; i < vals.length; i++) {
+      vals[i] = shortValue[i];
     }
-
-    @Override
-    public UnCompressValue compress() {
-
-        UnCompressNoneByte byte1 = new UnCompressNoneByte();
-        byte1.setValue(shortCompressor.compress(shortValue));
-
-        return byte1;
-
-    }
-
-    @Override
-    public UnCompressValue uncompress(DataType dataType) {
-        return null;
-    }
-
-    @Override
-    public byte[] getBackArrayData() {
-        return ValueCompressionUtil.convertToBytes(shortValue);
-    }
-
-    @Override
-    public void setValueInBytes(byte[] value) {
-        ByteBuffer buffer = ByteBuffer.wrap(value);
-        shortValue = ValueCompressionUtil.convertToShortArray(buffer, value.length);
-    }
-
-    /**
-     * @see com.huawei.unibi.molap.datastorage.store.compression.ValueCompressonHolder.UnCompressValue#getCompressorObject()
-     */
-    @Override
-    public UnCompressValue getCompressorObject() {
-        return new UnCompressNoneByte();
-    }
-
-    @Override
-    public MolapReadDataHolder getValues(int decimal, double maxValue) {
-        MolapReadDataHolder dataHolder = new MolapReadDataHolder();
-        double[] vals = new double[shortValue.length];
-        for (int i = 0; i < vals.length; i++) {
-            vals[i] = shortValue[i];
-        }
-        dataHolder.setReadableDoubleValues(vals);
-        return dataHolder;
-    }
+    dataHolder.setReadableDoubleValues(vals);
+    return dataHolder;
+  }
 
 }

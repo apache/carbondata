@@ -22,18 +22,17 @@ package com.huawei.unibi.molap.constants;
 import com.huawei.unibi.molap.util.MolapProperties;
 
 public final class DataSetUtil {
-    public static final String DATA_SET_LOCATION =
-            MolapProperties.getInstance().getProperty("spark.dataset.location", "../datasets/");
+  public static final String DATA_SET_LOCATION =
+      MolapProperties.getInstance().getProperty("spark.dataset.location", "../datasets/");
 
-    public static final String DP_LOCATION =
-            MolapProperties.getInstance().getProperty("spark.dp.location", "../datapipelines/");
+  public static final String DP_LOCATION =
+      MolapProperties.getInstance().getProperty("spark.dp.location", "../datapipelines/");
 
-    public static final String DATA_SOURCE_LOCATION =
-            MolapProperties.getInstance().
-                    getProperty("spark.sqlconnections.location", "../unibi-solutions/system/dbconnection/sqlconnections.xml");
+  public static final String DATA_SOURCE_LOCATION = MolapProperties.getInstance()
+      .getProperty("spark.sqlconnections.location",
+          "../unibi-solutions/system/dbconnection/sqlconnections.xml");
 
-    private DataSetUtil() {
-
-    }
+  private DataSetUtil() {
+  }
 
 }

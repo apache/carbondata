@@ -25,9 +25,9 @@ import java.io.IOException;
 
 public interface AtomicFileOperations {
 
-    DataInputStream openForRead() throws IOException;
+  DataInputStream openForRead() throws IOException;
 
-    void close() throws IOException;
+  void close() throws IOException;
 
-    DataOutputStream openForWrite(FileWriteOperation operation) throws IOException;
+  DataOutputStream openForWrite(FileWriteOperation operation) throws IOException;
 }

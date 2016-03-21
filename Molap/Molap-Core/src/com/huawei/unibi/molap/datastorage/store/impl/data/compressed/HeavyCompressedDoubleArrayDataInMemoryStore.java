@@ -25,51 +25,52 @@ import com.huawei.unibi.molap.datastorage.store.compression.ValueCompressionMode
 import com.huawei.unibi.molap.datastorage.store.dataholder.MolapReadDataHolder;
 import com.huawei.unibi.molap.datastorage.store.impl.CompressedDataMeasureDataWrapper;
 
+public class HeavyCompressedDoubleArrayDataInMemoryStore
+    extends AbstractHeavyCompressedDoubleArrayDataStore {
 
-public class HeavyCompressedDoubleArrayDataInMemoryStore extends AbstractHeavyCompressedDoubleArrayDataStore {
-
-
-    public HeavyCompressedDoubleArrayDataInMemoryStore(ValueCompressionModel compressionModel, long[] measuresOffsetsArray, int[] measuresLengthArray,
-                                                       String fileName, FileHolder fileHolder) {
-        super(compressionModel);
-        for (int i = 0; i < measuresLengthArray.length; i++) {
-            values[i] = compressionModel.getUnCompressValues()[i].getCompressorObject();
-            values[i].setValue(fileHolder.readByteArray(fileName, measuresOffsetsArray[i], measuresLengthArray[i]));
-        }
+  public HeavyCompressedDoubleArrayDataInMemoryStore(ValueCompressionModel compressionModel,
+      long[] measuresOffsetsArray, int[] measuresLengthArray, String fileName,
+      FileHolder fileHolder) {
+    super(compressionModel);
+    for (int i = 0; i < measuresLengthArray.length; i++) {
+      values[i] = compressionModel.getUnCompressValues()[i].getCompressorObject();
+      values[i].setValue(
+          fileHolder.readByteArray(fileName, measuresOffsetsArray[i], measuresLengthArray[i]));
     }
+  }
 
-    public HeavyCompressedDoubleArrayDataInMemoryStore(ValueCompressionModel compressionModel) {
-        super(compressionModel);
+  public HeavyCompressedDoubleArrayDataInMemoryStore(ValueCompressionModel compressionModel) {
+    super(compressionModel);
+  }
+
+  @Override public MeasureDataWrapper getBackData(int[] cols, FileHolder fileHolder) {
+    if (null == compressionModel) {
+      return null;
     }
+    MolapReadDataHolder[] vals = new MolapReadDataHolder[values.length];
+    if (cols != null) {
+      for (int i = 0; i < cols.length; i++) {
+        vals[cols[i]] = values[cols[i]].uncompress(compressionModel.getChangedDataType()[cols[i]])
+            .getValues(compressionModel.getDecimal()[cols[i]],
+                compressionModel.getMaxValue()[cols[i]]);
+      }
+    } else {
+      for (int i = 0; i < vals.length; i++) {
 
-
-    @Override
-    public MeasureDataWrapper getBackData(int[] cols, FileHolder fileHolder) {
-        if (null == compressionModel) {
-            return null;
-        }
-        MolapReadDataHolder[] vals = new MolapReadDataHolder[values.length];
-        if (cols != null) {
-            for (int i = 0; i < cols.length; i++) {
-                vals[cols[i]] = values[cols[i]].uncompress(compressionModel.getChangedDataType()[cols[i]]).getValues(compressionModel.getDecimal()[cols[i]], compressionModel.getMaxValue()[cols[i]]);
-            }
-        } else {
-            for (int i = 0; i < vals.length; i++) {
-
-                vals[i] = values[i].uncompress(compressionModel.getChangedDataType()[i]).getValues(compressionModel.getDecimal()[i], compressionModel.getMaxValue()[i]);
-            }
-        }
-        return new CompressedDataMeasureDataWrapper(vals);
+        vals[i] = values[i].uncompress(compressionModel.getChangedDataType()[i])
+            .getValues(compressionModel.getDecimal()[i], compressionModel.getMaxValue()[i]);
+      }
     }
+    return new CompressedDataMeasureDataWrapper(vals);
+  }
 
-    @Override
-    public MeasureDataWrapper getBackData(int cols, FileHolder fileHolder) {
-        if (null == compressionModel) {
-            return null;
-        }
-        MolapReadDataHolder[] vals = new MolapReadDataHolder[values.length];
-        vals[cols] = values[cols].uncompress(compressionModel.getChangedDataType()[cols]).getValues(
-                compressionModel.getDecimal()[cols], compressionModel.getMaxValue()[cols]);
-        return new CompressedDataMeasureDataWrapper(vals);
+  @Override public MeasureDataWrapper getBackData(int cols, FileHolder fileHolder) {
+    if (null == compressionModel) {
+      return null;
     }
+    MolapReadDataHolder[] vals = new MolapReadDataHolder[values.length];
+    vals[cols] = values[cols].uncompress(compressionModel.getChangedDataType()[cols])
+        .getValues(compressionModel.getDecimal()[cols], compressionModel.getMaxValue()[cols]);
+    return new CompressedDataMeasureDataWrapper(vals);
+  }
 }

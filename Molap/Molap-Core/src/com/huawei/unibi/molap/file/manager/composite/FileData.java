@@ -23,91 +23,88 @@ import com.huawei.unibi.molap.writer.HierarchyValueWriterForCSV;
 import com.huawei.unibi.molap.writer.LevelValueWriter;
 
 public class FileData extends AbstractFileManager {
-    /**
-     * File Name
-     */
-    private String fileName;
+  /**
+   * File Name
+   */
+  private String fileName;
 
-    /**
-     * Store Path
-     */
-    private String storePath;
+  /**
+   * Store Path
+   */
+  private String storePath;
 
-    /**
-     * levelValueWriter
-     */
-    private LevelValueWriter levelValueWriter;
+  /**
+   * levelValueWriter
+   */
+  private LevelValueWriter levelValueWriter;
 
-    /**
-     * hierarchyValueWriter
-     */
-    private HierarchyValueWriterForCSV hierarchyValueWriter;
+  /**
+   * hierarchyValueWriter
+   */
+  private HierarchyValueWriterForCSV hierarchyValueWriter;
 
-    public FileData(String fileName, String storePath) {
-        this.fileName = fileName;
-        this.storePath = storePath;
-    }
+  public FileData(String fileName, String storePath) {
+    this.fileName = fileName;
+    this.storePath = storePath;
+  }
 
-    @Override
-    public boolean rename(IFileManagerComposite composite) {
-        return false;
-    }
+  @Override public boolean rename(IFileManagerComposite composite) {
+    return false;
+  }
 
-    @Override
-    public void setName(String name) {
-        this.fileName = name;
-    }
+  @Override public void setName(String name) {
+    this.fileName = name;
+  }
 
-    /**
-     * @return Returns the fileName.
-     */
-    public String getFileName() {
-        return fileName;
-    }
+  /**
+   * @return Returns the fileName.
+   */
+  public String getFileName() {
+    return fileName;
+  }
 
-    /**
-     * @return Returns the storePath.
-     */
-    public String getStorePath() {
-        return storePath;
-    }
+  /**
+   * @return Returns the storePath.
+   */
+  public String getStorePath() {
+    return storePath;
+  }
 
-    /**
-     * get LevelValueWriter
-     *
-     * @return
-     */
-    public LevelValueWriter getLevelValueWriter() {
-        return levelValueWriter;
-    }
+  /**
+   * get LevelValueWriter
+   *
+   * @return
+   */
+  public LevelValueWriter getLevelValueWriter() {
+    return levelValueWriter;
+  }
 
-    /**
-     * set level ValueWriter
-     *
-     * @param levelValueWriter
-     */
-    public void setLevelValueWriter(LevelValueWriter levelValueWriter) {
-        this.levelValueWriter = levelValueWriter;
-    }
+  /**
+   * set level ValueWriter
+   *
+   * @param levelValueWriter
+   */
+  public void setLevelValueWriter(LevelValueWriter levelValueWriter) {
+    this.levelValueWriter = levelValueWriter;
+  }
 
-    /**
-     * get Hierarchy Value writer
-     *
-     * @return
-     */
-    public HierarchyValueWriterForCSV getHierarchyValueWriter() {
-        return hierarchyValueWriter;
-    }
+  /**
+   * get Hierarchy Value writer
+   *
+   * @return
+   */
+  public HierarchyValueWriterForCSV getHierarchyValueWriter() {
+    return hierarchyValueWriter;
+  }
 
-    /**
-     * Set Hierarchy Value Writer.
-     *
-     * @param hierarchyValueWriter
-     */
-    public void setHierarchyValueWriter(
-            HierarchyValueWriterForCSV hierarchyValueWriter) {
-        this.hierarchyValueWriter = hierarchyValueWriter;
-    }
+  /**
+   * Set Hierarchy Value Writer.
+   *
+   * @param hierarchyValueWriter
+   */
+  public void setHierarchyValueWriter(HierarchyValueWriterForCSV hierarchyValueWriter) {
+    this.hierarchyValueWriter = hierarchyValueWriter;
+  }
 
 }
 

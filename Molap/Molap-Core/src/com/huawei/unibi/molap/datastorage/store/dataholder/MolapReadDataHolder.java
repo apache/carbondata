@@ -21,61 +21,61 @@ package com.huawei.unibi.molap.datastorage.store.dataholder;
 
 public class MolapReadDataHolder {
 
-    /**
-     * doubleValues
-     */
-    private double[] doubleValues;
+  /**
+   * doubleValues
+   */
+  private double[] doubleValues;
 
-    /**
-     * byteValues
-     */
-    private byte[][] byteValues;
+  /**
+   * byteValues
+   */
+  private byte[][] byteValues;
 
-    /**
-     * @return the doubleValues
-     */
-    public double[] getReadableDoubleValues() {
-        return doubleValues;
-    }
+  /**
+   * @return the doubleValues
+   */
+  public double[] getReadableDoubleValues() {
+    return doubleValues;
+  }
 
-    /**
-     * @param doubleValues the doubleValues to set
-     */
-    public void setReadableDoubleValues(double[] doubleValues) {
-        this.doubleValues = doubleValues;
-    }
+  /**
+   * @param doubleValues the doubleValues to set
+   */
+  public void setReadableDoubleValues(double[] doubleValues) {
+    this.doubleValues = doubleValues;
+  }
 
-    /**
-     * @return the byteValues
-     */
-    public byte[][] getReadableByteArrayValues() {
-        return byteValues;
-    }
+  /**
+   * @return the byteValues
+   */
+  public byte[][] getReadableByteArrayValues() {
+    return byteValues;
+  }
 
-    /**
-     * @param byteValues the byteValues to set
-     */
-    public void setReadableByteValues(byte[][] byteValues) {
-        this.byteValues = byteValues;
-    }
+  /**
+   * @param byteValues the byteValues to set
+   */
+  public void setReadableByteValues(byte[][] byteValues) {
+    this.byteValues = byteValues;
+  }
 
-    /**
-     * below method will be used to get the double value by index
-     *
-     * @param index
-     * @return double values
-     */
-    public double getReadableDoubleValueByIndex(int index) {
-        return this.doubleValues[index];
-    }
+  /**
+   * below method will be used to get the double value by index
+   *
+   * @param index
+   * @return double values
+   */
+  public double getReadableDoubleValueByIndex(int index) {
+    return this.doubleValues[index];
+  }
 
-    /**
-     * below method will be used to get the readable byte array value by index
-     *
-     * @param index
-     * @return byte array value
-     */
-    public byte[] getReadableByteArrayValueByIndex(int index) {
-        return this.byteValues[index];
-    }
+  /**
+   * below method will be used to get the readable byte array value by index
+   *
+   * @param index
+   * @return byte array value
+   */
+  public byte[] getReadableByteArrayValueByIndex(int index) {
+    return this.byteValues[index];
+  }
 }

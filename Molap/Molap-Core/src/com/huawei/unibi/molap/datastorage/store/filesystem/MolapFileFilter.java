@@ -19,7 +19,6 @@
 
 package com.huawei.unibi.molap.datastorage.store.filesystem;
 
-
 public interface MolapFileFilter {
-    boolean accept(MolapFile file);
+  boolean accept(MolapFile file);
 }

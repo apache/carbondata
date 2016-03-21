@@ -25,6 +25,6 @@ import com.huawei.unibi.molap.datastorage.store.dataholder.MolapReadDataHolder;
  * MeasureDataWrapper, interface.
  */
 public interface MeasureDataWrapper {
-    MolapReadDataHolder[] getValues();
+  MolapReadDataHolder[] getValues();
 
 }

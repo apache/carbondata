@@ -24,29 +24,29 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class LoadRestructureLock {
 
-    private Queue<Thread> taskQueue = new LinkedBlockingQueue<Thread>();
-    private int rsLockCtr;
-    private int loadLockCtr;
+  private Queue<Thread> taskQueue = new LinkedBlockingQueue<Thread>();
+  private int rsLockCtr;
+  private int loadLockCtr;
 
-    /**
-     * restructureLock
-     *
-     * @throws Exception void
-     */
-    public void restructureLock() throws Exception {
-        if (rsLockCtr > 0) {
-            throw new Exception();
-        }
-        rsLockCtr++;
-        taskQueue.add(Thread.currentThread());
+  /**
+   * restructureLock
+   *
+   * @throws Exception void
+   */
+  public void restructureLock() throws Exception {
+    if (rsLockCtr > 0) {
+      throw new Exception();
     }
+    rsLockCtr++;
+    taskQueue.add(Thread.currentThread());
+  }
 
-    /**
-     * loadLock void
-     */
-    public void loadLock() {
-        loadLockCtr++;
-        taskQueue.add(Thread.currentThread());
-    }
+  /**
+   * loadLock void
+   */
+  public void loadLock() {
+    loadLockCtr++;
+    taskQueue.add(Thread.currentThread());
+  }
 
 }

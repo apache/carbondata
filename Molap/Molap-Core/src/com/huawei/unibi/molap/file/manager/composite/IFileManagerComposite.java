@@ -20,40 +20,40 @@
 package com.huawei.unibi.molap.file.manager.composite;
 
 public interface IFileManagerComposite {
-    /**
-     * Add the data which can be either row Folder(Composite) or File
-     *
-     * @param customData
-     */
-    void add(IFileManagerComposite customData);
+  /**
+   * Add the data which can be either row Folder(Composite) or File
+   *
+   * @param customData
+   */
+  void add(IFileManagerComposite customData);
 
-    /**
-     * Remove the CustomData type object from the IFileManagerComposite object hierarchy.
-     *
-     * @param customData
-     */
-    void remove(IFileManagerComposite customData);
+  /**
+   * Remove the CustomData type object from the IFileManagerComposite object hierarchy.
+   *
+   * @param customData
+   */
+  void remove(IFileManagerComposite customData);
 
-    /**
-     * get the CustomData type object name
-     *
-     * @return CustomDataIntf type
-     */
-    IFileManagerComposite get(int i);
+  /**
+   * get the CustomData type object name
+   *
+   * @return CustomDataIntf type
+   */
+  IFileManagerComposite get(int i);
 
-    /**
-     * set the CustomData type object name
-     *
-     * @param name
-     */
-    void setName(String name);
+  /**
+   * set the CustomData type object name
+   *
+   * @param name
+   */
+  void setName(String name);
 
-    /**
-     * Get the size
-     *
-     * @return
-     */
-    int size();
+  /**
+   * Get the size
+   *
+   * @return
+   */
+  int size();
 
 }
 

@@ -25,49 +25,47 @@ import com.huawei.unibi.molap.datastorage.store.compression.ValueCompressonHolde
 import com.huawei.unibi.molap.datastorage.store.dataholder.MolapWriteDataHolder;
 import com.huawei.unibi.molap.util.ValueCompressionUtil;
 
-
 public abstract class AbstractDoubleArrayDataStore implements NodeMeasureDataStore {
 
-    protected UnCompressValue[] values;
+  protected UnCompressValue[] values;
 
-    protected ValueCompressionModel compressionModel;
+  protected ValueCompressionModel compressionModel;
 
-    private char[] type;
+  private char[] type;
 
-    public AbstractDoubleArrayDataStore(ValueCompressionModel compressionModel) {
-        this.compressionModel = compressionModel;
-        if (null != compressionModel) {
-            values = new UnCompressValue[compressionModel.getUnCompressValues().length];
-            type = compressionModel.getType();
-        }
+  public AbstractDoubleArrayDataStore(ValueCompressionModel compressionModel) {
+    this.compressionModel = compressionModel;
+    if (null != compressionModel) {
+      values = new UnCompressValue[compressionModel.getUnCompressValues().length];
+      type = compressionModel.getType();
+    }
+  }
+
+  @Override public byte[][] getWritableMeasureDataArray(MolapWriteDataHolder[] dataHolder) {
+    values = new UnCompressValue[compressionModel.getUnCompressValues().length];
+    for (int i = 0; i < compressionModel.getUnCompressValues().length; i++) {
+      values[i] = compressionModel.getUnCompressValues()[i].getNew();
+      if (type[i] != 'c') {
+        values[i].setValue(ValueCompressionUtil
+            .getCompressedValues(compressionModel.getCompType()[i],
+                dataHolder[i].getWritableDoubleValues(), compressionModel.getChangedDataType()[i],
+                compressionModel.getMaxValue()[i], compressionModel.getDecimal()[i]));
+      } else {
+        values[i].setValue(dataHolder[i].getWritableByteArrayValues());
+      }
     }
 
-    @Override
-    public byte[][] getWritableMeasureDataArray(MolapWriteDataHolder[] dataHolder) {
-        values = new UnCompressValue[compressionModel.getUnCompressValues().length];
-        for (int i = 0; i < compressionModel.getUnCompressValues().length; i++) {
-            values[i] = compressionModel.getUnCompressValues()[i].getNew();
-            if (type[i] != 'c') {
-                values[i].setValue(ValueCompressionUtil.getCompressedValues(compressionModel.getCompType()[i],
-                        dataHolder[i].getWritableDoubleValues(), compressionModel.getChangedDataType()[i],
-                        compressionModel.getMaxValue()[i], compressionModel.getDecimal()[i]));
-            } else {
-                values[i].setValue(dataHolder[i].getWritableByteArrayValues());
-            }
-        }
+    byte[][] resturnValue = new byte[values.length][];
 
-        byte[][] resturnValue = new byte[values.length][];
-
-        for (int i = 0; i < values.length; i++) {
-            resturnValue[i] = values[i].getBackArrayData();
-        }
-        return resturnValue;
+    for (int i = 0; i < values.length; i++) {
+      resturnValue[i] = values[i].getBackArrayData();
     }
+    return resturnValue;
+  }
 
-    @Override
-    public short getLength() {
-        return values != null ? (short) values.length : 0;
-    }
+  @Override public short getLength() {
+    return values != null ? (short) values.length : 0;
+  }
 
 }
 

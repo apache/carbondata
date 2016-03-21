@@ -37,84 +37,86 @@ import java.util.List;
  */
 public class MolapMergerUtil {
 
-    /**
-     * Attribute for Molap LOGGER
-     */
-    private static final LogService LOGGER = LogServiceFactory.getLogService(MolapMergerUtil.class.getName());
+  /**
+   * Attribute for Molap LOGGER
+   */
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(MolapMergerUtil.class.getName());
 
-    public static List<MolapSliceAndFiles> getSliceAndFilesList(String storeLocation, String tableName,
-                                                                FileType fileType, List<String> loadsToBeMerged) {
-        try {
-            if (!FileFactory.isFileExist(storeLocation, fileType)) {
-                return new ArrayList<MolapSliceAndFiles>(0);
-            }
-        } catch (IOException e) {
-            LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, "Error occurred :: " + e.getMessage());
+  public static List<MolapSliceAndFiles> getSliceAndFilesList(String storeLocation,
+      String tableName, FileType fileType, List<String> loadsToBeMerged) {
+    try {
+      if (!FileFactory.isFileExist(storeLocation, fileType)) {
+        return new ArrayList<MolapSliceAndFiles>(0);
+      }
+    } catch (IOException e) {
+      LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, "Error occurred :: " + e.getMessage());
+    }
+    MolapFile file = FileFactory.getMolapFile(storeLocation, fileType);
+
+    MolapFile[] listFiles = MolapUtil.listFiles(file);
+    if (null == listFiles || listFiles.length < 0) {
+      return new ArrayList<MolapSliceAndFiles>(0);
+    }
+    Arrays.sort(listFiles, new MolapFileFolderComparator());
+    listFiles = getMergeFilesList(loadsToBeMerged, listFiles);
+
+    return MolapUtil.getSliceAndFilesList(tableName, listFiles, fileType);
+  }
+
+  private static MolapFile[] getMergeFilesList(List<String> loadsToBeMerged,
+      MolapFile[] listFiles) {
+    MolapFile[] molapFile = new MolapFile[loadsToBeMerged.size()];
+    int i = 0;
+    for (MolapFile listFile : listFiles) {
+      String loadName = listFile.getName();
+      for (String load : loadsToBeMerged) {
+        if ((MolapCommonConstants.LOAD_FOLDER + load).equalsIgnoreCase(loadName)) {
+          molapFile[i++] = listFile;
         }
-        MolapFile file = FileFactory.getMolapFile(storeLocation, fileType);
+      }
+    }
+    return molapFile;
+  }
 
-        MolapFile[] listFiles = MolapUtil.listFiles(file);
-        if (null == listFiles || listFiles.length < 0) {
-            return new ArrayList<MolapSliceAndFiles>(0);
-        }
-        Arrays.sort(listFiles, new MolapFileFolderComparator());
-        listFiles = getMergeFilesList(loadsToBeMerged, listFiles);
+  public static int[] mergeLevelMetadata(String[] sliceLocation, String tableName,
+      String destinationLocation) {
+    int[][] cardinalityOfLoads = new int[sliceLocation.length][];
+    int i = 0;
+    for (String loadFolderLoacation : sliceLocation) {
+      try {
+        cardinalityOfLoads[i++] = MolapUtil.getCardinalityFromLevelMetadataFile(
+            loadFolderLoacation + '/' + MolapCommonConstants.LEVEL_METADATA_FILE + tableName
+                + ".metadata");
+      } catch (MolapUtilException e) {
+        LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, "Error occurred :: " + e.getMessage());
+      }
+    }
+    int[] MaxCardinality = new int[cardinalityOfLoads[0].length];
 
-        return MolapUtil.getSliceAndFilesList(tableName, listFiles, fileType);
+    for (int k = 0; k < cardinalityOfLoads[0].length; k++) {
+      MaxCardinality[k] = Math.max(cardinalityOfLoads[0][k], cardinalityOfLoads[1][k]);
     }
 
-    private static MolapFile[] getMergeFilesList(List<String> loadsToBeMerged, MolapFile[] listFiles) {
-        MolapFile[] molapFile = new MolapFile[loadsToBeMerged.size()];
-        int i = 0;
-        for (MolapFile listFile : listFiles) {
-            String loadName = listFile.getName();
-            for (String load : loadsToBeMerged) {
-                if ((MolapCommonConstants.LOAD_FOLDER + load).equalsIgnoreCase(loadName)) {
-                    molapFile[i++] = listFile;
-                }
-            }
-        }
-        return molapFile;
+    try {
+      MolapUtil.writeLevelCardinalityFile(destinationLocation, tableName, MaxCardinality);
+    } catch (KettleException e) {
+      LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, "Error occurred :: " + e.getMessage());
     }
 
-    public static int[] mergeLevelMetadata(String[] sliceLocation, String tableName, String destinationLocation) {
-        int[][] cardinalityOfLoads = new int[sliceLocation.length][];
-        int i = 0;
-        for (String loadFolderLoacation : sliceLocation) {
-            try {
-                cardinalityOfLoads[i++] = MolapUtil.getCardinalityFromLevelMetadataFile(loadFolderLoacation + '/'
-                        + MolapCommonConstants.LEVEL_METADATA_FILE + tableName + ".metadata");
-            } catch (MolapUtilException e) {
-                LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, "Error occurred :: " + e.getMessage());
-            }
-        }
-        int[] MaxCardinality = new int[cardinalityOfLoads[0].length];
+    return MaxCardinality;
+  }
 
-        for (int k = 0; k < cardinalityOfLoads[0].length; k++) {
-            MaxCardinality[k] = Math.max(cardinalityOfLoads[0][k], cardinalityOfLoads[1][k]);
-        }
-
-        try {
-            MolapUtil.writeLevelCardinalityFile(destinationLocation, tableName, MaxCardinality);
-        } catch (KettleException e) {
-            LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, "Error occurred :: " + e.getMessage());
-        }
-
-        return MaxCardinality;
+  public static int[] getCardinalityFromLevelMetadata(String path, String tableName) {
+    int[] localCardinality = null;
+    try {
+      localCardinality = MolapUtil.getCardinalityFromLevelMetadataFile(
+          path + '/' + MolapCommonConstants.LEVEL_METADATA_FILE + tableName + ".metadata");
+    } catch (MolapUtilException e) {
+      LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, "Error occurred :: " + e.getMessage());
     }
 
-    public static int[] getCardinalityFromLevelMetadata(String path, String tableName) {
-        int[] localCardinality = null;
-        try {
-            localCardinality = MolapUtil.getCardinalityFromLevelMetadataFile(path + '/'
-                    + MolapCommonConstants.LEVEL_METADATA_FILE + tableName + ".metadata");
-        } catch (MolapUtilException e) {
-            LOGGER.error(
-                    MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG,
-                    "Error occurred :: " + e.getMessage());
-        }
-
-        return localCardinality;
-    }
+    return localCardinality;
+  }
 
 }

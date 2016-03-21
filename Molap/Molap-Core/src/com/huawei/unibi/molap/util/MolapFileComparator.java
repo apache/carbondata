@@ -24,30 +24,29 @@ import java.util.Comparator;
 
 public class MolapFileComparator implements Comparator<File> {
 
-    /**
-     * File extension
-     */
-    private String fileExt;
+  /**
+   * File extension
+   */
+  private String fileExt;
 
-    public MolapFileComparator(String fileExt) {
-        this.fileExt = fileExt;
+  public MolapFileComparator(String fileExt) {
+    this.fileExt = fileExt;
+  }
+
+  @Override public int compare(File file1, File file2) {
+    String firstFileName = file1.getName().split(fileExt)[0];
+    String secondFileName = file2.getName().split(fileExt)[0];
+    int lastIndexOfO1 = firstFileName.lastIndexOf('_');
+    int lastIndexOfO2 = secondFileName.lastIndexOf('_');
+    int f1 = 0;
+    int f2 = 0;
+
+    try {
+      f1 = Integer.parseInt(firstFileName.substring(lastIndexOfO1 + 1));
+      f2 = Integer.parseInt(secondFileName.substring(lastIndexOfO2 + 1));
+    } catch (NumberFormatException e) {
+      return -1;
     }
-
-    @Override
-    public int compare(File file1, File file2) {
-        String firstFileName = file1.getName().split(fileExt)[0];
-        String secondFileName = file2.getName().split(fileExt)[0];
-        int lastIndexOfO1 = firstFileName.lastIndexOf('_');
-        int lastIndexOfO2 = secondFileName.lastIndexOf('_');
-        int f1 = 0;
-        int f2 = 0;
-
-        try {
-            f1 = Integer.parseInt(firstFileName.substring(lastIndexOfO1 + 1));
-            f2 = Integer.parseInt(secondFileName.substring(lastIndexOfO2 + 1));
-        } catch (NumberFormatException e) {
-            return -1;
-        }
-        return (f1 < f2) ? -1 : (f1 == f2 ? 0 : 1);
-    }
+    return (f1 < f2) ? -1 : (f1 == f2 ? 0 : 1);
+  }
 }

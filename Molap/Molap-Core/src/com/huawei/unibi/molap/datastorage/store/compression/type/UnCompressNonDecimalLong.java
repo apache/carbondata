@@ -32,79 +32,70 @@ import com.huawei.unibi.molap.util.ValueCompressionUtil.DataType;
 import java.nio.ByteBuffer;
 
 public class UnCompressNonDecimalLong implements UnCompressValue<long[]> {
-    /**
-     * Attribute for Molap LOGGER
-     */
-    private static final LogService LOGGER = LogServiceFactory.getLogService(UnCompressNonDecimalLong.class.getName());
+  /**
+   * Attribute for Molap LOGGER
+   */
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(UnCompressNonDecimalLong.class.getName());
 
-    /**
-     * longCompressor.
-     */
-    private static Compressor<long[]> longCompressor = SnappyCompression.SnappyLongCompression.INSTANCE;
+  /**
+   * longCompressor.
+   */
+  private static Compressor<long[]> longCompressor =
+      SnappyCompression.SnappyLongCompression.INSTANCE;
 
-    /**
-     * value.
-     */
-    private long[] value;
+  /**
+   * value.
+   */
+  private long[] value;
 
+  @Override public void setValue(long[] value) {
+    this.value = value;
+  }
 
-    @Override
-    public void setValue(long[] value) {
-        this.value = value;
+  @Override public UnCompressValue compress() {
+    UnCompressNonDecimalByte byte1 = new UnCompressNonDecimalByte();
+    byte1.setValue(longCompressor.compress(value));
+    return byte1;
+  }
+
+  @Override public UnCompressValue getNew() {
+    try {
+      return (UnCompressValue) clone();
+    } catch (CloneNotSupportedException e) {
+      LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, e, e.getMessage());
     }
+    return null;
+  }
 
+  @Override public UnCompressValue uncompress(DataType dataType) {
+    return null;
+  }
 
-    @Override
-    public UnCompressValue compress() {
-        UnCompressNonDecimalByte byte1 = new UnCompressNonDecimalByte();
-        byte1.setValue(longCompressor.compress(value));
-        return byte1;
+  @Override public byte[] getBackArrayData() {
+    return ValueCompressionUtil.convertToBytes(value);
+  }
+
+  @Override public void setValueInBytes(byte[] bytes) {
+    ByteBuffer buffer = ByteBuffer.wrap(bytes);
+    this.value = ValueCompressionUtil.convertToLongArray(buffer, bytes.length);
+  }
+
+  /**
+   * @see com.huawei.unibi.molap.datastorage.store.compression.ValueCompressonHolder.UnCompressValue#getCompressorObject()
+   */
+  @Override public UnCompressValue getCompressorObject() {
+    return new UnCompressNonDecimalByte();
+  }
+
+  @Override public MolapReadDataHolder getValues(int decimal, double maxValue) {
+    double[] vals = new double[value.length];
+    for (int i = 0; i < vals.length; i++) {
+      vals[i] = value[i] / Math.pow(10, decimal);
     }
-
-    @Override
-    public UnCompressValue getNew() {
-        try {
-            return (UnCompressValue) clone();
-        } catch (CloneNotSupportedException e) {
-            LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, e, e.getMessage());
-        }
-        return null;
-    }
-
-
-    @Override
-    public UnCompressValue uncompress(DataType dataType) {
-        return null;
-    }
-
-    @Override
-    public byte[] getBackArrayData() {
-        return ValueCompressionUtil.convertToBytes(value);
-    }
-
-    @Override
-    public void setValueInBytes(byte[] bytes) {
-        ByteBuffer buffer = ByteBuffer.wrap(bytes);
-        this.value = ValueCompressionUtil.convertToLongArray(buffer, bytes.length);
-    }
-
-    /**
-     * @see com.huawei.unibi.molap.datastorage.store.compression.ValueCompressonHolder.UnCompressValue#getCompressorObject()
-     */
-    @Override
-    public UnCompressValue getCompressorObject() {
-        return new UnCompressNonDecimalByte();
-    }
-
-    @Override
-    public MolapReadDataHolder getValues(int decimal, double maxValue) {
-        double[] vals = new double[value.length];
-        for (int i = 0; i < vals.length; i++) {
-            vals[i] = value[i] / Math.pow(10, decimal);
-        }
-        MolapReadDataHolder dataHolder = new MolapReadDataHolder();
-        dataHolder.setReadableDoubleValues(vals);
-        return dataHolder;
-    }
+    MolapReadDataHolder dataHolder = new MolapReadDataHolder();
+    dataHolder.setReadableDoubleValues(vals);
+    return dataHolder;
+  }
 
 }

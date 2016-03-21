@@ -21,37 +21,37 @@ package com.huawei.unibi.molap.datastorage.store.filesystem;
 
 public interface MolapFile {
 
-    String getAbsolutePath();
+  String getAbsolutePath();
 
-    MolapFile[] listFiles(MolapFileFilter fileFilter);
+  MolapFile[] listFiles(MolapFileFilter fileFilter);
 
-    MolapFile[] listFiles();
+  MolapFile[] listFiles();
 
-    String getName();
+  String getName();
 
-    boolean isDirectory();
+  boolean isDirectory();
 
-    boolean exists();
+  boolean exists();
 
-    String getCanonicalPath();
+  String getCanonicalPath();
 
-    MolapFile getParentFile();
+  MolapFile getParentFile();
 
-    String getPath();
+  String getPath();
 
-    long getSize();
+  long getSize();
 
-    boolean renameTo(String changetoName);
+  boolean renameTo(String changetoName);
 
-    boolean renameForce(String changetoName);
+  boolean renameForce(String changetoName);
 
-    boolean delete();
+  boolean delete();
 
-    boolean createNewFile();
+  boolean createNewFile();
 
-    boolean mkdirs();
+  boolean mkdirs();
 
-    long getLastModifiedTime();
+  long getLastModifiedTime();
 
-    boolean setLastModifiedTime(long timestamp);
+  boolean setLastModifiedTime(long timestamp);
 }

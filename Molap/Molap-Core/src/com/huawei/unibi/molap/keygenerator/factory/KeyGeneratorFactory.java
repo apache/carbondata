@@ -25,22 +25,20 @@ import com.huawei.unibi.molap.keygenerator.mdkey.MultiDimKeyVarLengthGenerator;
 import com.huawei.unibi.molap.util.MolapUtil;
 
 public final class KeyGeneratorFactory {
-    private KeyGeneratorFactory() {
+  private KeyGeneratorFactory() {
 
-    }
+  }
 
-    public static KeyGenerator getKeyGenerator(int[] dimesion) {
-        int[] incrementedCardinality = null;
-        boolean isFullyFilled = Boolean
-                .parseBoolean(MolapCommonConstants.IS_FULLY_FILLED_BITS_DEFAULT_VALUE);
-        if (!isFullyFilled) {
-            incrementedCardinality = MolapUtil
-                    .getIncrementedCardinality(dimesion);
-        } else {
-            incrementedCardinality = MolapUtil
-                    .getIncrementedCardinalityFullyFilled(dimesion);
-        }
-        return new MultiDimKeyVarLengthGenerator(incrementedCardinality);
+  public static KeyGenerator getKeyGenerator(int[] dimesion) {
+    int[] incrementedCardinality = null;
+    boolean isFullyFilled =
+        Boolean.parseBoolean(MolapCommonConstants.IS_FULLY_FILLED_BITS_DEFAULT_VALUE);
+    if (!isFullyFilled) {
+      incrementedCardinality = MolapUtil.getIncrementedCardinality(dimesion);
+    } else {
+      incrementedCardinality = MolapUtil.getIncrementedCardinalityFullyFilled(dimesion);
     }
+    return new MultiDimKeyVarLengthGenerator(incrementedCardinality);
+  }
 }
 

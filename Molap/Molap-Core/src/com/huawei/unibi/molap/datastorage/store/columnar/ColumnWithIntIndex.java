@@ -22,49 +22,48 @@ package com.huawei.unibi.molap.datastorage.store.columnar;
 import com.huawei.unibi.molap.util.ByteUtil.UnsafeComparer;
 
 public class ColumnWithIntIndex implements Comparable<ColumnWithIntIndex> {
-    protected byte[] column;
+  protected byte[] column;
 
-    private int index;
+  private int index;
 
-    public ColumnWithIntIndex(byte[] column, int index) {
-        this.column = column;
-        this.index = index;
-    }
+  public ColumnWithIntIndex(byte[] column, int index) {
+    this.column = column;
+    this.index = index;
+  }
 
-    public ColumnWithIntIndex() {
-    }
+  public ColumnWithIntIndex() {
+  }
 
-    /**
-     * @return the column
-     */
-    public byte[] getColumn() {
-        return column;
-    }
+  /**
+   * @return the column
+   */
+  public byte[] getColumn() {
+    return column;
+  }
 
-    /**
-     * @param column the column to set
-     */
-    public void setColumn(byte[] column) {
-        this.column = column;
-    }
+  /**
+   * @param column the column to set
+   */
+  public void setColumn(byte[] column) {
+    this.column = column;
+  }
 
-    /**
-     * @return the index
-     */
-    public int getIndex() {
-        return index;
-    }
+  /**
+   * @return the index
+   */
+  public int getIndex() {
+    return index;
+  }
 
-    /**
-     * @param index the index to set
-     */
-    public void setIndex(int index) {
-        this.index = index;
-    }
+  /**
+   * @param index the index to set
+   */
+  public void setIndex(int index) {
+    this.index = index;
+  }
 
-    @Override
-    public int compareTo(ColumnWithIntIndex o) {
-        return UnsafeComparer.INSTANCE.compareTo(column, o.column);
-    }
+  @Override public int compareTo(ColumnWithIntIndex o) {
+    return UnsafeComparer.INSTANCE.compareTo(column, o.column);
+  }
 
 }

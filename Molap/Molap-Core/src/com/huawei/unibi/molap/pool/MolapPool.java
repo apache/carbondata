@@ -20,8 +20,8 @@
 package com.huawei.unibi.molap.pool;
 
 public interface MolapPool<E> {
-    E get();
+  E get();
 
-    void put(E e);
+  void put(E e);
 
 }

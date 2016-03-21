@@ -22,187 +22,187 @@ package com.huawei.unibi.molap.datastorage.store;
 import com.huawei.unibi.molap.datastorage.store.compression.ValueCompressionModel;
 
 public class MeasureDataStoreVO {
-    /**
-     * totalSize.
-     */
-    private int totalSize;
+  /**
+   * totalSize.
+   */
+  private int totalSize;
 
-    /**
-     * elementSize.
-     */
-    private int elementSize;
+  /**
+   * elementSize.
+   */
+  private int elementSize;
 
-    /**
-     * isFileStore.
-     */
-    private boolean isFileStore;
+  /**
+   * isFileStore.
+   */
+  private boolean isFileStore;
 
-    /**
-     * compressionModel.
-     */
-    private ValueCompressionModel compressionModel;
+  /**
+   * compressionModel.
+   */
+  private ValueCompressionModel compressionModel;
 
-    /**
-     * offset.
-     */
-    private long[] offset;
+  /**
+   * offset.
+   */
+  private long[] offset;
 
-    /**
-     * length.
-     */
-    private int[] length;
+  /**
+   * length.
+   */
+  private int[] length;
 
-    /**
-     * filePath.
-     */
-    private String filePath;
+  /**
+   * filePath.
+   */
+  private String filePath;
 
-    /**
-     * fileHolder.
-     */
-    private FileHolder fileHolder;
+  /**
+   * fileHolder.
+   */
+  private FileHolder fileHolder;
 
-    /**
-     * getTotalSize.
-     *
-     * @return int
-     */
-    public int getTotalSize() {
-        return totalSize;
-    }
+  /**
+   * getTotalSize.
+   *
+   * @return int
+   */
+  public int getTotalSize() {
+    return totalSize;
+  }
 
-    /**
-     * setTotalSize.
-     *
-     * @param totalSize
-     */
-    public void setTotalSize(int totalSize) {
-        this.totalSize = totalSize;
-    }
+  /**
+   * setTotalSize.
+   *
+   * @param totalSize
+   */
+  public void setTotalSize(int totalSize) {
+    this.totalSize = totalSize;
+  }
 
-    /**
-     * getElementSize.
-     *
-     * @return int
-     */
-    public int getElementSize() {
-        return elementSize;
-    }
+  /**
+   * getElementSize.
+   *
+   * @return int
+   */
+  public int getElementSize() {
+    return elementSize;
+  }
 
-    /**
-     * setElementSize.
-     *
-     * @param elementSize
-     */
-    public void setElementSize(int elementSize) {
-        this.elementSize = elementSize;
-    }
+  /**
+   * setElementSize.
+   *
+   * @param elementSize
+   */
+  public void setElementSize(int elementSize) {
+    this.elementSize = elementSize;
+  }
 
-    /**
-     * isFileStore.
-     *
-     * @return boolean.
-     */
-    public boolean isFileStore() {
-        return isFileStore;
-    }
+  /**
+   * isFileStore.
+   *
+   * @return boolean.
+   */
+  public boolean isFileStore() {
+    return isFileStore;
+  }
 
-    /**
-     * setFileStore.
-     *
-     * @param isFileStore
-     */
-    public void setFileStore(boolean isFileStore) {
-        this.isFileStore = isFileStore;
-    }
+  /**
+   * setFileStore.
+   *
+   * @param isFileStore
+   */
+  public void setFileStore(boolean isFileStore) {
+    this.isFileStore = isFileStore;
+  }
 
-    /**
-     * getCompressionModel.
-     *
-     * @return ValueCompressionModel.
-     */
-    public ValueCompressionModel getCompressionModel() {
-        return compressionModel;
-    }
+  /**
+   * getCompressionModel.
+   *
+   * @return ValueCompressionModel.
+   */
+  public ValueCompressionModel getCompressionModel() {
+    return compressionModel;
+  }
 
-    /**
-     * setCompressionModel.
-     *
-     * @param compressionModel
-     */
-    public void setCompressionModel(ValueCompressionModel compressionModel) {
-        this.compressionModel = compressionModel;
-    }
+  /**
+   * setCompressionModel.
+   *
+   * @param compressionModel
+   */
+  public void setCompressionModel(ValueCompressionModel compressionModel) {
+    this.compressionModel = compressionModel;
+  }
 
-    /**
-     * getOffset.
-     *
-     * @return long[].
-     */
-    public long[] getOffset() {
-        return offset;
-    }
+  /**
+   * getOffset.
+   *
+   * @return long[].
+   */
+  public long[] getOffset() {
+    return offset;
+  }
 
-    /**
-     * setOffset.
-     *
-     * @param offset
-     */
-    public void setOffset(long[] offset) {
-        this.offset = offset;
-    }
+  /**
+   * setOffset.
+   *
+   * @param offset
+   */
+  public void setOffset(long[] offset) {
+    this.offset = offset;
+  }
 
-    /**
-     * getLength().
-     *
-     * @return int[].
-     */
-    public int[] getLength() {
-        return length;
-    }
+  /**
+   * getLength().
+   *
+   * @return int[].
+   */
+  public int[] getLength() {
+    return length;
+  }
 
-    /**
-     * setLength.
-     *
-     * @param length
-     */
-    public void setLength(int[] length) {
-        this.length = length;
-    }
+  /**
+   * setLength.
+   *
+   * @param length
+   */
+  public void setLength(int[] length) {
+    this.length = length;
+  }
 
-    /**
-     * getFilePath()
-     *
-     * @return String.
-     */
-    public String getFilePath() {
-        return filePath;
-    }
+  /**
+   * getFilePath()
+   *
+   * @return String.
+   */
+  public String getFilePath() {
+    return filePath;
+  }
 
-    /**
-     * setFilePath.
-     *
-     * @param filePath
-     */
-    public void setFilePath(String filePath) {
-        this.filePath = filePath;
-    }
+  /**
+   * setFilePath.
+   *
+   * @param filePath
+   */
+  public void setFilePath(String filePath) {
+    this.filePath = filePath;
+  }
 
-    /**
-     * getFileHolder.
-     *
-     * @return FileHolder.
-     */
-    public FileHolder getFileHolder() {
-        return fileHolder;
-    }
+  /**
+   * getFileHolder.
+   *
+   * @return FileHolder.
+   */
+  public FileHolder getFileHolder() {
+    return fileHolder;
+  }
 
-    /**
-     * setFileHolder.
-     *
-     * @param fileHolder
-     */
-    public void setFileHolder(FileHolder fileHolder) {
-        this.fileHolder = fileHolder;
-    }
+  /**
+   * setFileHolder.
+   *
+   * @param fileHolder
+   */
+  public void setFileHolder(FileHolder fileHolder) {
+    this.fileHolder = fileHolder;
+  }
 }

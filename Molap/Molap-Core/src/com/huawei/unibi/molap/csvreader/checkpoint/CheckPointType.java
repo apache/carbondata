@@ -20,13 +20,13 @@
 package com.huawei.unibi.molap.csvreader.checkpoint;
 
 public enum CheckPointType {
-    /**
-     * csv
-     */
-    CSV,
+  /**
+   * csv
+   */
+  CSV,
 
-    /**
-     * db
-     */
-    DB;
+  /**
+   * db
+   */
+  DB;
 }

@@ -20,34 +20,30 @@
 package com.huawei.unibi.molap.file.manager.composite;
 
 public class LoadFolderData extends AbstractFileManager {
-    /**
-     * folder name
-     */
-    private String folderName;
+  /**
+   * folder name
+   */
+  private String folderName;
 
-    @Override
-    public void add(IFileManagerComposite customData) {
-        super.add(customData);
-    }
+  @Override public void add(IFileManagerComposite customData) {
+    super.add(customData);
+  }
 
-    @Override
-    public boolean rename(IFileManagerComposite composite) {
-        return false;
-    }
+  @Override public boolean rename(IFileManagerComposite composite) {
+    return false;
+  }
 
-    @Override
-    public void setName(String name) {
-        this.folderName = name;
+  @Override public void setName(String name) {
+    this.folderName = name;
 
+  }
 
-    }
-
-    /**
-     * @return Returns the folderName.
-     */
-    public String getFolderName() {
-        return folderName;
-    }
+  /**
+   * @return Returns the folderName.
+   */
+  public String getFolderName() {
+    return folderName;
+  }
 
 }
 

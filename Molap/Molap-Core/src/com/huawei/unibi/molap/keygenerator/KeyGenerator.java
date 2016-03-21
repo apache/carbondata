@@ -28,89 +28,88 @@ import java.util.Comparator;
  * key(dimensional key) out of combined key.
  */
 public interface KeyGenerator extends Serializable, Comparator<byte[]> {
-    /**
-     * It generates the single key aka byte array from multiple keys.
-     *
-     * @param keys
-     * @return byte array
-     * @throws KeyGenException
-     */
-    byte[] generateKey(long[] keys) throws KeyGenException;
+  /**
+   * It generates the single key aka byte array from multiple keys.
+   *
+   * @param keys
+   * @return byte array
+   * @throws KeyGenException
+   */
+  byte[] generateKey(long[] keys) throws KeyGenException;
 
-    /**
-     * It generates the single key aka byte array from multiple keys.
-     *
-     * @param keys
-     * @return
-     * @throws KeyGenException
-     */
-    byte[] generateKey(int[] keys) throws KeyGenException;
+  /**
+   * It generates the single key aka byte array from multiple keys.
+   *
+   * @param keys
+   * @return
+   * @throws KeyGenException
+   */
+  byte[] generateKey(int[] keys) throws KeyGenException;
 
-    /**
-     * It gets array of keys out of single key aka byte array
-     *
-     * @param key
-     * @return array of keys.
-     */
-    long[] getKeyArray(byte[] key);
+  /**
+   * It gets array of keys out of single key aka byte array
+   *
+   * @param key
+   * @return array of keys.
+   */
+  long[] getKeyArray(byte[] key);
 
+  /**
+   * It gets array of keys out of single key aka byte array
+   *
+   * @param key
+   * @param maskedByteRanges
+   * @return array of keys
+   */
+  long[] getKeyArray(byte[] key, int[] maskedByteRanges);
 
-    /**
-     * It gets array of keys out of single key aka byte array
-     *
-     * @param key
-     * @param maskedByteRanges
-     * @return array of keys
-     */
-    long[] getKeyArray(byte[] key, int[] maskedByteRanges);
+  /**
+   * It gets the key in the specified index from the single key aka byte array
+   *
+   * @param key
+   * @param index of key.
+   * @return key
+   */
+  long getKey(byte[] key, int index);
 
-    /**
-     * It gets the key in the specified index from the single key aka byte array
-     *
-     * @param key
-     * @param index of key.
-     * @return key
-     */
-    long getKey(byte[] key, int index);
+  /**
+   * Set any extra properties if required.
+   */
+  void setProperty(Object key, Object value);
 
-    /**
-     * Set any extra properties if required.
-     */
-    void setProperty(Object key, Object value);
+  /**
+   * Gives the key size in number of bytes.
+   */
+  int getKeySizeInBytes();
 
-    /**
-     * Gives the key size in number of bytes.
-     */
-    int getKeySizeInBytes();
+  /**
+   * It gets the specified index and size from the single key aka byte aray
+   *
+   * @param key
+   * @param index
+   * @param size
+   * @return
+   */
+  long[] getSubKeyArray(byte[] key, int index, int size);
 
-    /**
-     * It gets the specified index and size from the single key aka byte aray
-     *
-     * @param key
-     * @param index
-     * @param size
-     * @return
-     */
-    long[] getSubKeyArray(byte[] key, int index, int size);
+  /**
+   * returns key bytes offset
+   *
+   * @param index
+   * @return
+   */
+  int[] getKeyByteOffsets(int index);
 
-    /**
-     * returns key bytes offset
-     *
-     * @param index
-     * @return
-     */
-    int[] getKeyByteOffsets(int index);
+  int compare(byte[] key1, int offset1, int length1, byte[] key2, int offset2, int length2);
 
-    int compare(byte[] key1, int offset1, int length1, byte[] key2, int offset2, int length2);
+  /**
+   * returns the dimension count
+   *
+   * @return
+   */
+  int getDimCount();
 
-    /**
-     * returns the dimension count
-     *
-     * @return
-     */
-    int getDimCount();
+  int getStartAndEndKeySizeWithOnlyPrimitives();
 
-    int getStartAndEndKeySizeWithOnlyPrimitives();
-
-    void setStartAndEndKeySizeWithOnlyPrimitives(int startAndEndKeySizeWithPrimitives);
+  void setStartAndEndKeySizeWithOnlyPrimitives(int startAndEndKeySizeWithPrimitives);
 }

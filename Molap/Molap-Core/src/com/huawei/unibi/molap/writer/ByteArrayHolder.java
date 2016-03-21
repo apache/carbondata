@@ -25,58 +25,53 @@ import java.util.Arrays;
 
 public class ByteArrayHolder implements Comparable<ByteArrayHolder> {
 
-    /**
-     * mdkey
-     */
-    private byte[] mdKey;
+  /**
+   * mdkey
+   */
+  private byte[] mdKey;
 
-    /**
-     * primary key
-     */
-    private int primaryKey;
+  /**
+   * primary key
+   */
+  private int primaryKey;
 
-    /**
-     * @param mdKey
-     * @param primaryKey
-     */
-    public ByteArrayHolder(byte[] mdKey, int primaryKey) {
-        this.mdKey = mdKey;
-        this.primaryKey = primaryKey;
+  /**
+   * @param mdKey
+   * @param primaryKey
+   */
+  public ByteArrayHolder(byte[] mdKey, int primaryKey) {
+    this.mdKey = mdKey;
+    this.primaryKey = primaryKey;
+  }
+
+  @Override public int compareTo(ByteArrayHolder o) {
+    return ByteUtil.compare(mdKey, o.mdKey);
+  }
+
+  @Override public boolean equals(Object obj) {
+    // TODO Auto-generated method stub
+    if (obj instanceof ByteArrayHolder) {
+      if (0 == ByteUtil.compare(mdKey, ((ByteArrayHolder) obj).mdKey)) {
+        return true;
+      }
     }
+    return false;
+  }
 
-    @Override
-    public int compareTo(ByteArrayHolder o) {
-        return ByteUtil.compare(mdKey, o.mdKey);
-    }
+  @Override public int hashCode() {
+    int prime = 31;
+    int result = prime * Arrays.hashCode(mdKey);
+    result = result + prime * primaryKey;
+    return result;
+  }
 
+  public byte[] getMdKey() {
+    return mdKey;
+  }
 
-    @Override
-    public boolean equals(Object obj) {
-        // TODO Auto-generated method stub
-        if (obj instanceof ByteArrayHolder) {
-            if (0 == ByteUtil.compare(mdKey, ((ByteArrayHolder) obj).mdKey)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    @Override
-    public int hashCode() {
-        int prime = 31;
-        int result = prime * Arrays.hashCode(mdKey);
-        result = result + prime * primaryKey;
-        return result;
-    }
-
-    public byte[] getMdKey() {
-        return mdKey;
-    }
-
-
-    public int getPrimaryKey() {
-        return primaryKey;
-    }
+  public int getPrimaryKey() {
+    return primaryKey;
+  }
 
 }
 

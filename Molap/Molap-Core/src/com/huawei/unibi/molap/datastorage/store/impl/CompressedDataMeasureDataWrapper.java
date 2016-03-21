@@ -24,15 +24,14 @@ import com.huawei.unibi.molap.datastorage.store.dataholder.MolapReadDataHolder;
 
 public class CompressedDataMeasureDataWrapper implements MeasureDataWrapper {
 
-    private final MolapReadDataHolder[] values;
+  private final MolapReadDataHolder[] values;
 
-    public CompressedDataMeasureDataWrapper(final MolapReadDataHolder[] values) {
-        this.values = values;
-    }
+  public CompressedDataMeasureDataWrapper(final MolapReadDataHolder[] values) {
+    this.values = values;
+  }
 
-    @Override
-    public MolapReadDataHolder[] getValues() {
-        return values;
-    }
+  @Override public MolapReadDataHolder[] getValues() {
+    return values;
+  }
 
 }

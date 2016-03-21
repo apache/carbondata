@@ -26,68 +26,66 @@ import java.util.HashMap;
 import java.util.Map;
 
 public final class CheckPointHanlder {
-    /**
-     * IS_CHECK_POINT_NEEDED
-     */
-    public static final boolean IS_CHECK_POINT_NEEDED = Boolean
-            .valueOf(MolapProperties
-                    .getInstance()
-                    .getProperty(
-                            MolapCommonConstants.MOLAP_DATALOAD_CHECKPOINT,
-                            MolapCommonConstants.MOLAP_DATALOAD_CHECKPOINT_DEFAULTVALUE));
-    /**
-     * dummyCheckPoint
-     */
-    private static final CheckPointInterface DUMMYCHECKPOINT = new DummyCheckPointHandler();
-    /**
-     * check point cache
-     */
-    private static Map<String, CheckPointInterface> checkpoints = new HashMap<String, CheckPointInterface>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+  /**
+   * IS_CHECK_POINT_NEEDED
+   */
+  public static final boolean IS_CHECK_POINT_NEEDED = Boolean.valueOf(MolapProperties.getInstance()
+      .getProperty(MolapCommonConstants.MOLAP_DATALOAD_CHECKPOINT,
+          MolapCommonConstants.MOLAP_DATALOAD_CHECKPOINT_DEFAULTVALUE));
+  /**
+   * dummyCheckPoint
+   */
+  private static final CheckPointInterface DUMMYCHECKPOINT = new DummyCheckPointHandler();
+  /**
+   * check point cache
+   */
+  private static Map<String, CheckPointInterface> checkpoints =
+      new HashMap<String, CheckPointInterface>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-    private CheckPointHanlder() {
+  private CheckPointHanlder() {
 
+  }
+
+  /**
+   * Below method will be used to initialise the check point
+   *
+   * @param checkPointType
+   * @return check point
+   */
+  public static void initializeCheckpoint(String transName, CheckPointType checkPointType,
+      String checkPointFileLocation, String checkPointFileName) {
+    // if check is not true
+    if (IS_CHECK_POINT_NEEDED) {
+      // if present in case return else create and return
+      CheckPointInterface checkPoint = checkpoints.get(transName);
+      if (null == checkPoint && checkPointType.equals(CheckPointType.CSV)) {
+        checkPoint = new CSVCheckPointHandler(checkPointFileLocation, checkPointFileName);
+        checkpoints.put(transName, checkPoint);
+      }
     }
+  }
 
-    /**
-     * Below method will be used to initialise the check point
-     *
-     * @param checkPointType
-     * @return check point
-     */
-    public static void initializeCheckpoint(String transName,
-                                            CheckPointType checkPointType, String checkPointFileLocation, String checkPointFileName) {
-        // if check is not true 
-        if (IS_CHECK_POINT_NEEDED) {
-            // if present in case return else create and return
-            CheckPointInterface checkPoint = checkpoints.get(transName);
-            if (null == checkPoint && checkPointType.equals(CheckPointType.CSV)) {
-                checkPoint = new CSVCheckPointHandler(checkPointFileLocation, checkPointFileName);
-                checkpoints.put(transName, checkPoint);
-            }
-        }
+  /**
+   * Below method will be used to get the check point from cache
+   *
+   * @param transPath
+   * @return CheckPoint
+   */
+  public static CheckPointInterface getCheckpoint(String transPath) {
+    if (!IS_CHECK_POINT_NEEDED) {
+      return DUMMYCHECKPOINT;
     }
+    CheckPointInterface checkPoint = checkpoints.get(transPath);
+    return null != checkPoint ? checkPoint : DUMMYCHECKPOINT;
+  }
 
-    /**
-     * Below method will be used to get the check point from cache
-     *
-     * @param transPath
-     * @return CheckPoint
-     */
-    public static CheckPointInterface getCheckpoint(String transPath) {
-        if (!IS_CHECK_POINT_NEEDED) {
-            return DUMMYCHECKPOINT;
-        }
-        CheckPointInterface checkPoint = checkpoints.get(transPath);
-        return null != checkPoint ? checkPoint : DUMMYCHECKPOINT;
-    }
+  /**
+   * Below method will be used to get the dummy check point
+   *
+   * @return dummy check point
+   */
 
-    /**
-     * Below method will be used to get the dummy check point
-     *
-     * @return dummy check point
-     */
-
-    public static CheckPointInterface getDummyCheckPoint() {
-        return DUMMYCHECKPOINT;
-    }
+  public static CheckPointInterface getDummyCheckPoint() {
+    return DUMMYCHECKPOINT;
+  }
 }

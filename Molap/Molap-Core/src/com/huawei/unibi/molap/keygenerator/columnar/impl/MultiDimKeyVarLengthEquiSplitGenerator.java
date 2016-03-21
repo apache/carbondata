@@ -31,198 +31,195 @@ import java.util.*;
  * It splits depends on the @dimensionsToSplit parameter. This parameter decides how many dimensions should be
  * present in each column.
  */
-public class MultiDimKeyVarLengthEquiSplitGenerator extends MultiDimKeyVarLengthGenerator implements ColumnarSplitter {
+public class MultiDimKeyVarLengthEquiSplitGenerator extends MultiDimKeyVarLengthGenerator
+    implements ColumnarSplitter {
 
-    /**
-     *
-     */
-    private static final long serialVersionUID = -7767757692821917570L;
+  /**
+   *
+   */
+  private static final long serialVersionUID = -7767757692821917570L;
 
-    private byte dimensionsToSplit;
+  private byte dimensionsToSplit;
 
-    private int[][] splitDimArray;
+  private int[][] splitDimArray;
 
-    private int[][] dimBlockArray;
+  private int[][] dimBlockArray;
 
-    private int[][][] byteRangesForDims;
+  private int[][][] byteRangesForDims;
 
-    private int[] blockKeySize;
+  private int[] blockKeySize;
 
-    public MultiDimKeyVarLengthEquiSplitGenerator(int[] lens, byte dimensionsToSplit) {
-        super(lens);
-        this.dimensionsToSplit = dimensionsToSplit;
-        intialize();
-    }
+  public MultiDimKeyVarLengthEquiSplitGenerator(int[] lens, byte dimensionsToSplit) {
+    super(lens);
+    this.dimensionsToSplit = dimensionsToSplit;
+    intialize();
+  }
 
-    private void intialize() {
-        byte s = 0;
-        List<Set<Integer>> splitList = new ArrayList<Set<Integer>>(MolapCommonConstants.CONSTANT_SIZE_TEN);
-        Set<Integer> split = new TreeSet<Integer>();
+  private void intialize() {
+    byte s = 0;
+    List<Set<Integer>> splitList =
+        new ArrayList<Set<Integer>>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+    Set<Integer> split = new TreeSet<Integer>();
+    splitList.add(split);
+    for (int i = 0; i < byteRangesForKeys.length; i++) {
+      if (s == dimensionsToSplit) {
+        s = 0;
+        split = new TreeSet<Integer>();
         splitList.add(split);
-        for (int i = 0; i < byteRangesForKeys.length; i++) {
-            if (s == dimensionsToSplit) {
-                s = 0;
-                split = new TreeSet<Integer>();
-                splitList.add(split);
-            }
-            for (int j = 0; j < byteRangesForKeys[i].length; j++) {
-                for (int j2 = byteRangesForKeys[i][0]; j2 <= byteRangesForKeys[i][1]; j2++) {
-                    split.add(j2);
-                }
-            }
-            s++;
+      }
+      for (int j = 0; j < byteRangesForKeys[i].length; j++) {
+        for (int j2 = byteRangesForKeys[i][0]; j2 <= byteRangesForKeys[i][1]; j2++) {
+          split.add(j2);
         }
-        List<Integer>[] splits = new List[splitList.size()];
-        int i = 0;
-        for (Set<Integer> splitLocal : splitList) {
-            List<Integer> range = new ArrayList<Integer>(MolapCommonConstants.CONSTANT_SIZE_TEN);
-            for (Integer index : splitLocal) {
-                range.add(index);
-            }
-            splits[i++] = range;
-        }
-        for (int j = 1; j < splits.length; j++) {
-            if (splits[j - 1].get(splits[j - 1].size() - 1) == splits[j].get(0)) {
-                splits[j].remove(0);
-            }
-        }
-        splitDimArray = new int[splits.length][];
-        for (int j = 0; j < splits.length; j++) {
-            int[] a = convertToArray(splits[j]);
-            splitDimArray[j] = new int[]{a[0], a[a.length - 1]};
-        }
-
-        dimBlockArray = new int[byteRangesForKeys.length][];
-        Set<Integer>[] dimBlockSet = new Set[dimBlockArray.length];
-        for (int k = 0; k < byteRangesForKeys.length; k++) {
-            int[] dimRange = byteRangesForKeys[k];
-            Set<Integer> dimBlockPosSet = new TreeSet<Integer>();
-            dimBlockSet[k] = dimBlockPosSet;
-            for (int j = 0; j < splitDimArray.length; j++) {
-                if (dimRange[0] >= splitDimArray[j][0] && dimRange[0] <= splitDimArray[j][1]) {
-                    dimBlockPosSet.add(j);
-                }
-                if (dimRange[1] >= splitDimArray[j][0] && dimRange[1] <= splitDimArray[j][1]) {
-                    dimBlockPosSet.add(j);
-                }
-            }
-
-        }
-
-        for (int j = 0; j < dimBlockSet.length; j++) {
-            dimBlockArray[j] = convertToArray(dimBlockSet[j]);
-        }
-
-        int[][] splitDimArrayLocalIndexes = new int[splitDimArray.length][];
-        for (int j = 0; j < splitDimArrayLocalIndexes.length; j++) {
-            splitDimArrayLocalIndexes[j] = new int[]{0, splitDimArray[j][1] - splitDimArray[j][0]};
-        }
-
-        byteRangesForDims = new int[byteRangesForKeys.length][][];
-        for (int j = 0; j < byteRangesForKeys.length; j++) {
-            if (dimBlockArray[j].length > 1) {
-                int[] bArray1 = splitDimArrayLocalIndexes[dimBlockArray[j][0]];
-                byteRangesForDims[j] = new int[2][2];
-                byteRangesForDims[j][0] = new int[]{bArray1[bArray1.length - 1], bArray1[bArray1.length - 1]};
-                byteRangesForDims[j][1] = new int[]{0, (byteRangesForKeys[j][byteRangesForKeys[j].length - 1] - byteRangesForKeys[j][0]) - 1};
-            } else {
-                byteRangesForDims[j] = new int[1][1];
-                int[] bArray1 = splitDimArray[dimBlockArray[j][0]];
-                byteRangesForDims[j][0] = new int[]{byteRangesForKeys[j][0] - bArray1[0], byteRangesForKeys[j][1] - bArray1[0]};
-            }
-        }
-        blockKeySize = new int[splitDimArray.length];
-
-        for (int j = 0; j < blockKeySize.length; j++) {
-            blockKeySize[j] = splitDimArray[j][1] - splitDimArray[j][0] + 1;
-        }
+      }
+      s++;
+    }
+    List<Integer>[] splits = new List[splitList.size()];
+    int i = 0;
+    for (Set<Integer> splitLocal : splitList) {
+      List<Integer> range = new ArrayList<Integer>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+      for (Integer index : splitLocal) {
+        range.add(index);
+      }
+      splits[i++] = range;
+    }
+    for (int j = 1; j < splits.length; j++) {
+      if (splits[j - 1].get(splits[j - 1].size() - 1) == splits[j].get(0)) {
+        splits[j].remove(0);
+      }
+    }
+    splitDimArray = new int[splits.length][];
+    for (int j = 0; j < splits.length; j++) {
+      int[] a = convertToArray(splits[j]);
+      splitDimArray[j] = new int[] { a[0], a[a.length - 1] };
     }
 
-    private int[] convertToArray(List<Integer> list) {
-        int[] ints = new int[list.size()];
-        for (int i = 0; i < ints.length; i++) {
-            ints[i] = list.get(i);
+    dimBlockArray = new int[byteRangesForKeys.length][];
+    Set<Integer>[] dimBlockSet = new Set[dimBlockArray.length];
+    for (int k = 0; k < byteRangesForKeys.length; k++) {
+      int[] dimRange = byteRangesForKeys[k];
+      Set<Integer> dimBlockPosSet = new TreeSet<Integer>();
+      dimBlockSet[k] = dimBlockPosSet;
+      for (int j = 0; j < splitDimArray.length; j++) {
+        if (dimRange[0] >= splitDimArray[j][0] && dimRange[0] <= splitDimArray[j][1]) {
+          dimBlockPosSet.add(j);
         }
-        return ints;
-    }
-
-    private int[] convertToArray(Set<Integer> set) {
-        int[] ints = new int[set.size()];
-        int i = 0;
-        for (Iterator iterator = set.iterator(); iterator.hasNext(); ) {
-            ints[i++] = (Integer) iterator.next();
+        if (dimRange[1] >= splitDimArray[j][0] && dimRange[1] <= splitDimArray[j][1]) {
+          dimBlockPosSet.add(j);
         }
-        return ints;
+      }
+
     }
 
-    @Override
-    public byte[][] splitKey(byte[] key) {
-        byte[][] split = new byte[blockKeySize.length][];
-        int copyIndex = 0;
-        for (int i = 0; i < split.length; i++) {
-            split[i] = new byte[blockKeySize[i]];
-            System.arraycopy(key, copyIndex, split[i], 0, split[i].length);
-            copyIndex += blockKeySize[i];
-        }
-        return split;
+    for (int j = 0; j < dimBlockSet.length; j++) {
+      dimBlockArray[j] = convertToArray(dimBlockSet[j]);
     }
 
-    @Override
-    public byte[][] generateAndSplitKey(long[] keys) throws KeyGenException {
-        return splitKey(generateKey(keys));
+    int[][] splitDimArrayLocalIndexes = new int[splitDimArray.length][];
+    for (int j = 0; j < splitDimArrayLocalIndexes.length; j++) {
+      splitDimArrayLocalIndexes[j] = new int[] { 0, splitDimArray[j][1] - splitDimArray[j][0] };
     }
 
-    @Override
-    public byte[][] generateAndSplitKey(int[] keys) throws KeyGenException {
-        return splitKey(generateKey(keys));
+    byteRangesForDims = new int[byteRangesForKeys.length][][];
+    for (int j = 0; j < byteRangesForKeys.length; j++) {
+      if (dimBlockArray[j].length > 1) {
+        int[] bArray1 = splitDimArrayLocalIndexes[dimBlockArray[j][0]];
+        byteRangesForDims[j] = new int[2][2];
+        byteRangesForDims[j][0] =
+            new int[] { bArray1[bArray1.length - 1], bArray1[bArray1.length - 1] };
+        byteRangesForDims[j][1] = new int[] { 0,
+            (byteRangesForKeys[j][byteRangesForKeys[j].length - 1] - byteRangesForKeys[j][0]) - 1 };
+      } else {
+        byteRangesForDims[j] = new int[1][1];
+        int[] bArray1 = splitDimArray[dimBlockArray[j][0]];
+        byteRangesForDims[j][0] = new int[] { byteRangesForKeys[j][0] - bArray1[0],
+            byteRangesForKeys[j][1] - bArray1[0] };
+      }
     }
+    blockKeySize = new int[splitDimArray.length];
 
-    @Override
-    public long[] getKeyArray(byte[][] key) {
-        byte[] fullKey = new byte[getKeySizeInBytes()];
-        int copyIndex = 0;
-        for (int i = 0; i < key.length; i++) {
-            System.arraycopy(key[i], 0, fullKey, copyIndex, key[i].length);
-            copyIndex += key[i].length;
-        }
-        return getKeyArray(fullKey);
+    for (int j = 0; j < blockKeySize.length; j++) {
+      blockKeySize[j] = splitDimArray[j][1] - splitDimArray[j][0] + 1;
     }
+  }
 
-    @Override
-    public byte[] getKeyByteArray(byte[][] key) {
-        byte[] fullKey = new byte[getKeySizeInBytes()];
-        int copyIndex = 0;
-        for (int i = 0; i < key.length; i++) {
-            System.arraycopy(key[i], 0, fullKey, copyIndex, key[i].length);
-            copyIndex += key[i].length;
-        }
-        return fullKey;
+  private int[] convertToArray(List<Integer> list) {
+    int[] ints = new int[list.size()];
+    for (int i = 0; i < ints.length; i++) {
+      ints[i] = list.get(i);
     }
+    return ints;
+  }
 
-    @Override
-    public byte[] getKeyByteArray(byte[][] key, int[] columnIndexes) {
-        return null;
+  private int[] convertToArray(Set<Integer> set) {
+    int[] ints = new int[set.size()];
+    int i = 0;
+    for (Iterator iterator = set.iterator(); iterator.hasNext(); ) {
+      ints[i++] = (Integer) iterator.next();
     }
+    return ints;
+  }
 
-    @Override
-    public long[] getKeyArray(byte[][] key, int[] columnIndexes) {
-        return null;
+  @Override public byte[][] splitKey(byte[] key) {
+    byte[][] split = new byte[blockKeySize.length][];
+    int copyIndex = 0;
+    for (int i = 0; i < split.length; i++) {
+      split[i] = new byte[blockKeySize[i]];
+      System.arraycopy(key, copyIndex, split[i], 0, split[i].length);
+      copyIndex += blockKeySize[i];
     }
+    return split;
+  }
 
-    public int[] getBlockKeySize() {
-        return blockKeySize;
+  @Override public byte[][] generateAndSplitKey(long[] keys) throws KeyGenException {
+    return splitKey(generateKey(keys));
+  }
+
+  @Override public byte[][] generateAndSplitKey(int[] keys) throws KeyGenException {
+    return splitKey(generateKey(keys));
+  }
+
+  @Override public long[] getKeyArray(byte[][] key) {
+    byte[] fullKey = new byte[getKeySizeInBytes()];
+    int copyIndex = 0;
+    for (int i = 0; i < key.length; i++) {
+      System.arraycopy(key[i], 0, fullKey, copyIndex, key[i].length);
+      copyIndex += key[i].length;
     }
+    return getKeyArray(fullKey);
+  }
 
-    @Override
-    public int getKeySizeByBlock(int[] blockIndexes) {
-        int size = 0;
-
-        for (int i = 0; i < blockIndexes.length; i++) {
-            if (blockIndexes[i] < blockKeySize.length) {
-                size += blockKeySize[blockIndexes[i]];
-            }
-        }
-        return size;
+  @Override public byte[] getKeyByteArray(byte[][] key) {
+    byte[] fullKey = new byte[getKeySizeInBytes()];
+    int copyIndex = 0;
+    for (int i = 0; i < key.length; i++) {
+      System.arraycopy(key[i], 0, fullKey, copyIndex, key[i].length);
+      copyIndex += key[i].length;
     }
+    return fullKey;
+  }
+
+  @Override public byte[] getKeyByteArray(byte[][] key, int[] columnIndexes) {
+    return null;
+  }
+
+  @Override public long[] getKeyArray(byte[][] key, int[] columnIndexes) {
+    return null;
+  }
+
+  public int[] getBlockKeySize() {
+    return blockKeySize;
+  }
+
+  @Override public int getKeySizeByBlock(int[] blockIndexes) {
+    int size = 0;
+
+    for (int i = 0; i < blockIndexes.length; i++) {
+      if (blockIndexes[i] < blockKeySize.length) {
+        size += blockKeySize[blockIndexes[i]];
+      }
+    }
+    return size;
+  }
 
 }

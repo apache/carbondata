@@ -21,8 +21,8 @@ package com.huawei.unibi.molap.datastorage.store.compression;
 
 public interface Compressor<T> {
 
-    byte[] compress(T input);
+  byte[] compress(T input);
 
-    T unCompress(byte[] input);
+  T unCompress(byte[] input);
 
 }
