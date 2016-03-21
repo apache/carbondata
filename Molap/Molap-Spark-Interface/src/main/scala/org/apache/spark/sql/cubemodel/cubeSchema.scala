@@ -17,9 +17,6 @@
  * under the License.
  */
 
-/**
-  *
-  */
 package org.apache.spark.sql.cubemodel
 
 import java.text.SimpleDateFormat
@@ -49,11 +46,6 @@ import org.apache.spark.sql.types.TimestampType
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
-
-/**
-  * @author R00900208
-  *
-  */
 
 case class CubeModel(
                       ifNotExistsSet: Boolean,
