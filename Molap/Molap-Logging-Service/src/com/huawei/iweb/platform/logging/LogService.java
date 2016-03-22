@@ -17,22 +17,10 @@
  * under the License.
  */
 
-/**
- * 
- * Copyright Notice ===================================== This file contains
- * proprietary information of Huawei Technologies India Pvt Ltd. Copying or
- * reproduction without prior written approval is prohibited. Copyright (c) 2011
- * =====================================
- * 
- */
 package com.huawei.iweb.platform.logging;
 
 /**
  * for Log Services
- * 
- * @author R72411
- * @version 1.0
- * @created 08-Oct-2008 10:37:40
  */
 public interface LogService
 {
@@ -144,13 +132,5 @@ public interface LogService
      * 
      */
     void warn(LogEvent event , Object... inserts);
-
-    /**
-     * Added for alarm message
-     * 
-     * @param msg
-     * 
-     */
-    void alarm(String msg);
 
 }

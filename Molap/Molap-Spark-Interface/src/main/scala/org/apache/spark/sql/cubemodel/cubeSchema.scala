@@ -17,76 +17,35 @@
  * under the License.
  */
 
-/**
-  *
-  */
 package org.apache.spark.sql.cubemodel
 
-import org.apache.spark.sql.catalyst.expressions.Expression
-import org.apache.spark.sql.SQLContext
-import org.apache.spark.sql.execution.RunnableCommand
-import com.huawei.unibi.molap.olap._
-import org.apache.commons.io.output.FileWriterWithEncoding
-import org.eigenbase.xom.XMLOutput
-import java.io.File
-import java.util.Date
-import org.apache.spark.sql.OlapContext
-import org.apache.spark.sql.sources.RelationProvider
-import org.apache.spark.sql.sources.BaseRelation
-import java.io.StringWriter
-import java.lang.NumberFormatException
-import com.huawei.datasight.molap.load.MolapLoadModel
-import org.apache.spark.sql.OlapRelation
-import com.huawei.datasight.spark.rdd.MolapDataRDDFactory
-import scala.collection.mutable.OpenHashMap
-import scala.collection.mutable.ArrayBuffer
-import scala.collection.JavaConversions._
-import org.apache.spark.sql.CarbonEnv
-import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, GenericRow}
-import org.apache.spark.sql.Row
-import org.apache.spark.sql.types.StringType
-import com.huawei.datasight.molap.spark.util.MolapQueryUtil
-import org.apache.spark.sql.execution.LeafNode
-import org.apache.spark.sql.catalyst.plans.logical.{Command, LogicalPlan, UnaryNode}
-import com.huawei.unibi.molap.util.MolapUtil
-import com.huawei.unibi.molap.datastorage.store.filesystem._
-import com.huawei.unibi.molap.datastorage.store.impl.FileFactory
-import com.huawei.unibi.molap.util.MolapProperties
-import com.huawei.datasight.molap.spark.util.LoadMetadataUtil
-import com.huawei.unibi.molap.util.MolapSchemaParser
 import java.text.SimpleDateFormat
-import com.huawei.unibi.molap.constants.MolapCommonConstants
-import com.huawei.datasight.molap.load.DeleteLoadFromMetadata
-import org.apache.spark.sql.types.TimestampType
-import org.apache.spark.sql.DataFrame
-import com.huawei.datasight.spark.processors.MolapScalaUtil
-import com.huawei.datasight.molap.autoagg.AutoAggSuggestionService
-import com.huawei.datasight.molap.autoagg.model.Request
-import com.huawei.unibi.molap.engine.querystats.QueryStatsCollector
-import com.huawei.datasight.molap.autoagg.AutoAggSuggestionFactory
-import com.huawei.iweb.platform.logging.LogServiceFactory
-import com.huawei.datasight.molap.load.MolapLoaderUtil
-import com.huawei.datasight.molap.spark.util.MolapSparkInterFaceLogEvent
-import com.huawei.datasight.molap.datastats.model.LoadModel
-import com.huawei.datasight.molap.autoagg.util.CommonUtil
-import com.huawei.unibi.molap.olap.MolapDef._
-import com.huawei.unibi.molap.metadata.MolapMetadata
-import scala.collection.mutable.ListBuffer
-import org.apache.spark.sql.hive.{OlapMetastoreCatalog, HiveContext}
-import org.apache.spark.sql.execution.SparkPlan
-import com.huawei.unibi.molap.locks.MetadataLock
-import org.apache.spark.sql.execution.datasources.CreateTempTableUsing
-import org.apache.spark.sql.getDB
-import com.huawei.datasight.molap.spark.util
-import java.util.ArrayList
-import com.huawei.unibi.molap.datastorage.store.impl.FileFactory.FileType
-import com.huawei.datasight.molap.partition.api.impl.QueryPartitionHelper
-import com.huawei.unibi.molap.util.MolapSchemaParser
 
-/**
-  * @author R00900208
-  *
-  */
+import com.huawei.datasight.molap.autoagg.{AutoAggSuggestionFactory, AutoAggSuggestionService}
+import com.huawei.datasight.molap.autoagg.model.Request
+import com.huawei.datasight.molap.autoagg.util.CommonUtil
+import com.huawei.datasight.molap.datastats.model.LoadModel
+import com.huawei.datasight.molap.load.{DeleteLoadFromMetadata, MolapLoadModel, MolapLoaderUtil}
+import com.huawei.datasight.molap.partition.api.impl.QueryPartitionHelper
+import com.huawei.datasight.molap.spark.util.{MolapQueryUtil, MolapSparkInterFaceLogEvent}
+import com.huawei.datasight.spark.processors.MolapScalaUtil
+import com.huawei.datasight.spark.rdd.MolapDataRDDFactory
+import com.huawei.iweb.platform.logging.LogServiceFactory
+import com.huawei.unibi.molap.constants.MolapCommonConstants
+import com.huawei.unibi.molap.datastorage.store.impl.FileFactory
+import com.huawei.unibi.molap.locks.MetadataLock
+import com.huawei.unibi.molap.metadata.MolapMetadata
+import com.huawei.unibi.molap.olap.MolapDef._
+import com.huawei.unibi.molap.olap._
+import com.huawei.unibi.molap.util.{MolapProperties, MolapSchemaParser, MolapUtil}
+import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
+import org.apache.spark.sql.execution.{RunnableCommand, SparkPlan}
+import org.apache.spark.sql.{CarbonEnv, DataFrame, OlapContext, OlapRelation, Row, SQLContext, getDB}
+import org.apache.spark.sql.hive.{HiveContext, OlapMetastoreCatalog}
+import org.apache.spark.sql.types.TimestampType
+
+import scala.collection.JavaConversions._
+import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
 case class CubeModel(
                       ifNotExistsSet: Boolean,
@@ -182,16 +141,15 @@ class CubeProcessor(cm: CubeModel, sqlContext: SQLContext) {
     val LOGGER = LogServiceFactory.getLogService(CubeProcessor.getClass().getName())
 
     // Create Cube DDL with Schema defination
-//    levels = 
-      cm.dimCols.map(field =>
-      {
-    	 if(field.parent != null)
-    		 levels ++= Seq(Level(field.name.getOrElse(field.column), field.column, Int.MaxValue, field.dataType.getOrElse(MolapCommonConstants.STRING), field.parent))
-    	 else
-    		 levels ++= Seq(Level(field.name.getOrElse(field.column), field.column, Int.MaxValue, field.dataType.getOrElse(MolapCommonConstants.STRING)))
-    	 if(field.children.get != null)
-    		 levels ++= getAllChildren(field.children)
-      })
+    cm.dimCols.map(field =>
+    {
+     if(field.parent != null)
+       levels ++= Seq(Level(field.name.getOrElse(field.column), field.column, Int.MaxValue, field.dataType.getOrElse(MolapCommonConstants.STRING), field.parent))
+     else
+       levels ++= Seq(Level(field.name.getOrElse(field.column), field.column, Int.MaxValue, field.dataType.getOrElse(MolapCommonConstants.STRING)))
+     if(field.children.get != null)
+       levels ++= getAllChildren(field.children)
+    })
     measures = cm.msrCols.map(field => Measure(field.name.getOrElse(field.column), field.column, field.dataType.getOrElse(MolapCommonConstants.NUMERIC)))
 
     if (cm.withKeyword.equalsIgnoreCase(MolapCommonConstants.WITH) && cm.simpleDimRelations.size > 0) {
@@ -2380,7 +2338,6 @@ private[sql] case class DescribeCommandFormatted(
 private[sql] case class DescribeNativeCommand(sql: String,
                                               override val output: Seq[Attribute]) extends RunnableCommand {
   override def run(sqlContext: SQLContext): Seq[Row] = {
-    import sqlContext.implicits._
     val output = sqlContext.asInstanceOf[HiveContext].catalog.client.runSqlHive(sql).toSeq
     output.map(x => {
       val row = x.split("\t", -3)

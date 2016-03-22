@@ -17,18 +17,6 @@
  * under the License.
  */
 
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2011
- * =====================================
- *
- */
-
 package com.huawei.iweb.platform.logging.impl;
 
 import java.io.Closeable;
@@ -42,18 +30,12 @@ import org.apache.log4j.Logger;
 
 /**
  * Provides file Utility
- * 
- * @author S00900484
- * 
  */
 public final class FileUtil
 {
 
     private static final Logger LOG = Logger.getLogger(FileUtil.class.getName());
-    
-    /**
-     * porpeties .
-     */
+
     private static Properties molapProperties;
     
     public static final String MOLAP_PROPERTIES_FILE_PATH = "../../../conf/molap.properties";
