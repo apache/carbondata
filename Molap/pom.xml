@@ -17,102 +17,116 @@
  ~ under the License.
  -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>com.huawei.datasight</groupId>
-  <artifactId>spark-cube-parent</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
-  <packaging>pom</packaging>
-  <name>Spark-Cube</name>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.huawei.datasight</groupId>
+    <artifactId>spark-cube-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <name>Spark-Cube</name>
 
-  <properties>
-    <assembly.jar>spark-cube-assembly.jar</assembly.jar>
-	<checkstyle.config.location>../build/checkstyle.xml</checkstyle.config.location>
-	<checkstyle.excludes>**/MolapDef.java</checkstyle.excludes>
-	<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-	<spark.version>1.5.2</spark.version>
-	<scala.binary.version>2.10</scala.binary.version>
-  </properties>
+    <properties>
+        <assembly.jar>spark-cube-assembly.jar</assembly.jar>
+        <checkstyle.config.location>../build/checkstyle.xml</checkstyle.config.location>
+        <checkstyle.excludes>**/MolapDef.java</checkstyle.excludes>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <spark.version>1.5.2</spark.version>
+        <scala.binary.version>2.10</scala.binary.version>
+    </properties>
 
-  <modules>
-    <module>dummy-encryption-util</module>
-    <module>Molap-Logging-Service</module>
-    <module>Molap-Core</module>
-	<module>Molap-Interface</module>
-	<!--module>AutoAggregation</module-->
-    <module>Molap-Engine</module>
-	<module>Molap-Data-Processor</module>
-	<module>Molap-Spark-Interface </module>
-	<module>Molap-Aggregation</module>
-  </modules>
-   <dependencies>
-   <dependency>
-<groupId>org.apache.spark</groupId>
-<artifactId>spark-core_${scala.binary.version}</artifactId>
-<version>${spark.version}</version>
-</dependency>
-<dependency>
-<groupId>org.apache.spark</groupId>
-<artifactId>spark-bagel_${scala.binary.version}</artifactId>
-<version>${spark.version}</version>
-</dependency>
-<dependency>
-<groupId>org.apache.spark</groupId>
-<artifactId>spark-mllib_${scala.binary.version}</artifactId>
-<version>${spark.version}</version>
-</dependency>
-<dependency>
-<groupId>org.apache.spark</groupId>
-<artifactId>spark-streaming_${scala.binary.version}</artifactId>
-<version>${spark.version}</version>
-</dependency>
-<dependency>
-<groupId>org.apache.spark</groupId>
-<artifactId>spark-graphx_${scala.binary.version}</artifactId>
-<version>${spark.version}</version>
-</dependency>
-<dependency>
-<groupId>org.apache.spark</groupId>
-<artifactId>spark-sql_${scala.binary.version}</artifactId>
-<version>${spark.version}</version>
-</dependency>
-<dependency>
-<groupId>org.apache.spark</groupId>
-<artifactId>spark-repl_${scala.binary.version}</artifactId>
-<version>${spark.version}</version>
-</dependency>
-<!--dependency>
-<groupId>org.apache.spark</groupId>
-<artifactId>spark-om</artifactId>
-<version>${spark.version}</version>
-</dependency-->
-<dependency>
-<groupId>org.apache.spark</groupId>
-<artifactId>spark-hive-thriftserver_${scala.binary.version}</artifactId>
-<version>${spark.version}</version>
-</dependency>
-<dependency>
-<groupId>org.apache.spark</groupId>
-<artifactId>spark-hive_${scala.binary.version}</artifactId>
-<version>${spark.version}</version>
-</dependency>
-<dependency>
-<groupId>org.apache.spark</groupId>
-<artifactId>spark-yarn_${scala.binary.version}</artifactId>
-<version>${spark.version}</version>
-</dependency>
+    <modules>
+        <module>dummy-encryption-util</module>
+        <module>Molap-Logging-Service</module>
+        <module>Molap-Core</module>
+        <module>Molap-Interface</module>
+        <module>Molap-Engine</module>
+        <module>Molap-Data-Processor</module>
+        <module>Molap-Spark-Interface</module>
+        <module>Molap-Aggregation</module>
+    </modules>
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-core_${scala.binary.version}</artifactId>
+            <version>${spark.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-bagel_${scala.binary.version}</artifactId>
+            <version>${spark.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-mllib_${scala.binary.version}</artifactId>
+            <version>${spark.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-streaming_${scala.binary.version}</artifactId>
+            <version>${spark.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-graphx_${scala.binary.version}</artifactId>
+            <version>${spark.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-sql_${scala.binary.version}</artifactId>
+            <version>${spark.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-repl_${scala.binary.version}</artifactId>
+            <version>${spark.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-hive-thriftserver_${scala.binary.version}</artifactId>
+            <version>${spark.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-hive_${scala.binary.version}</artifactId>
+            <version>${spark.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-yarn_${scala.binary.version}</artifactId>
+            <version>${spark.version}</version>
+        </dependency>
     </dependencies>
-   <build>
-	<plugins>
-   <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-checkstyle-plugin</artifactId>
-        <version>2.9.1</version>
-      </plugin>
+    <build>
+        <plugins>
 
-	</plugins>
-</build>
-	
-  
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>2.17</version>
+                <configuration>
+                    <verbose>false</verbose>
+                    <failOnViolation>false</failOnViolation>
+                    <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                    <failOnWarning>false</failOnWarning>
+                    <sourceDirectory>${basedir}/src</sourceDirectory>
+                    <testSourceDirectory>${basedir}/src/test/java</testSourceDirectory>
+                    <configLocation>dev/javastyle-config.xml</configLocation>
+                    <outputFile>${basedir}/target/checkstyle-output.xml</outputFile>
+                    <inputEncoding>UTF-8</inputEncoding>
+                    <outputEncoding>UTF-8</outputEncoding>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
 
 </project>
