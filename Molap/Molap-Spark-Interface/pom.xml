@@ -17,19 +17,20 @@
  ~ under the License.
  -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.huawei.datasight</groupId>
   <artifactId>molap-spark-interface</artifactId>
   <version>0.1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>"Molap-Spark-Interface"</name>
-   <parent>
-	     <groupId>com.huawei.datasight</groupId>
-	     <version>0.1.0-SNAPSHOT</version>
-	     <artifactId>spark-cube-parent</artifactId>
+  <parent>
+    <groupId>com.huawei.datasight</groupId>
+    <version>0.1.0-SNAPSHOT</version>
+    <artifactId>spark-cube-parent</artifactId>
   </parent>
-  
+
   <repositories>
   </repositories>
 
@@ -42,7 +43,7 @@
     <tpjars.path>${basedir}/../../libraries/TPJars</tpjars.path>
     <buildjars.path>${basedir}/../../libraries/build_tools</buildjars.path>
   </properties>
-  
+
   <dependencies>
     <dependency>
       <groupId>com.huawei.datasight</groupId>
@@ -109,35 +110,35 @@
   </dependencies>
 
   <build>
-		<testSourceDirectory>test</testSourceDirectory>
-		<resources>
-			<resource>
-				<directory>.</directory>
-				<includes>
-					<include>MOLAP_SPARK_INTERFACELogResource.properties</include>
+    <testSourceDirectory>test</testSourceDirectory>
+    <resources>
+      <resource>
+        <directory>.</directory>
+        <includes>
+          <include>MOLAP_SPARK_INTERFACELogResource.properties</include>
         </includes>
       </resource>
     </resources>
-    
+
     <plugins>
       <plugin>
         <groupId>org.scala-tools</groupId>
         <artifactId>maven-scala-plugin</artifactId>
-				<version>2.15.2</version>
+        <version>2.15.2</version>
         <executions>
           <execution>
-						<id>compile</id>
+            <id>compile</id>
             <goals>
               <goal>compile</goal>
             </goals>
-						<phase>compile</phase>
+            <phase>compile</phase>
           </execution>
-					<execution>
-						<phase>process-resources</phase>
-						<goals>
-							<goal>compile</goal>
-						</goals>
-						</execution>
+          <execution>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+          </execution>
         </executions>
       </plugin>
 
@@ -147,7 +148,7 @@
           <source>1.7</source>
           <target>1.7</target>
         </configuration>
-			</plugin>
+      </plugin>
 
       <plugin>
         <groupId>org.scalastyle</groupId>
@@ -167,11 +168,11 @@
           <failOnWarning>false</failOnWarning>
           <sourceDirectory>${basedir}/src/main/scala</sourceDirectory>
           <testSourceDirectory>${basedir}/src/test/scala</testSourceDirectory>
-          <configLocation>${basedir}/../tools/maven/scalastyle-config.xml</configLocation>
+          <configLocation>${basedir}/../dev/scalastyle-config.xml</configLocation>
           <outputFile>${basedir}/target/scalastyle-output.xml</outputFile>
           <outputEncoding>UTF-8</outputEncoding>
         </configuration>
       </plugin>
-    </plugins>  
+    </plugins>
   </build>
 </project>
