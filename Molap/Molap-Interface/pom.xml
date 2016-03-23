@@ -32,15 +32,6 @@
         <artifactId>spark-cube-parent</artifactId>
     </parent>
 
-    <repositories>
-    </repositories>
-
-    <pluginRepositories>
-    </pluginRepositories>
-
-    <properties>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>com.huawei.datasight</groupId>
