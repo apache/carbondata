@@ -21,9 +21,13 @@ package com.huawei.unibi.molap.engine.util;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -49,14 +53,8 @@ import com.huawei.unibi.molap.metadata.MolapMetadata;
 import com.huawei.unibi.molap.metadata.MolapMetadata.Dimension;
 import com.huawei.unibi.molap.metadata.MolapMetadata.Measure;
 import com.huawei.unibi.molap.metadata.SliceMetaData;
-import com.huawei.unibi.molap.olap.MolapDef;
-import com.huawei.unibi.molap.olap.MolapDef.Cube;
-import com.huawei.unibi.molap.olap.MolapDef.CubeDimension;
-import com.huawei.unibi.molap.olap.MolapDef.Hierarchy;
-import com.huawei.unibi.molap.olap.MolapDef.Level;
-import com.huawei.unibi.molap.olap.MolapDef.Schema;
-import com.huawei.unibi.molap.olap.SqlStatement.Type;
 import com.huawei.unibi.molap.olap.SqlStatement;
+import com.huawei.unibi.molap.olap.SqlStatement.Type;
 import com.huawei.unibi.molap.util.MolapUtil;
 
 public final class QueryExecutorUtility
@@ -412,7 +410,14 @@ public final class QueryExecutorUtility
 //        Arrays.sort(selectedDimsIndex);
 //        return selectedDimsIndex;
         // updated for block index size with complex types
-        Set<Integer> allQueryDimension = new HashSet<Integer>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+        Set<Integer> allQueryDimension = new LinkedHashSet<Integer>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+//                new TreeSet<Integer>(new Comparator<Integer>(){
+//            public int compare(Integer a, Integer b){
+//                return a.compareTo(b);
+//            }
+//        });
+        Map<Integer, Integer> primitiveCols = new LinkedHashMap<Integer, Integer>();
+        int index = 0;
         for(int i = 0;i < queryDims.length;i++)
         {
             if(queryDims[i].getAllApplicableDataBlockIndexs().length > 1)
@@ -420,14 +425,53 @@ public final class QueryExecutorUtility
                 for(int eachBlockIndex : queryDims[i].getAllApplicableDataBlockIndexs())
                 {
                     allQueryDimension.add(eachBlockIndex);
+                    index++;
                 }
             }
             else
             {
                 allQueryDimension.add(queryDims[i].getOrdinal());
+                primitiveCols.put(index++, queryDims[i].getOrdinal());
             }
         }
-        return convertIntegerArrayToInt(allQueryDimension.toArray(new Integer[allQueryDimension.size()]));
+        int[] indexArray = convertIntegerArrayToInt(allQueryDimension.toArray(new Integer[allQueryDimension.size()]));
+        
+        //Sorting only primitives cols for MDKey Generation.
+        Map<Integer, Integer> sortedPrimitiveCols = sortByComparator(primitiveCols);
+        List<Entry<Integer, Integer>> unordered = new ArrayList<Entry<Integer, Integer>>(primitiveCols.entrySet());
+        List<Entry<Integer, Integer>> ordered = new ArrayList<Entry<Integer, Integer>>(sortedPrimitiveCols.entrySet());
+        
+        for(int i=0;i<unordered.size();i++)
+        {
+            indexArray[unordered.get(i).getKey()] = ordered.get(i).getValue();
+        }
+        
+        return indexArray;
+    }
+    
+    private static Map<Integer, Integer> sortByComparator(Map<Integer, Integer> unsortMap)
+    {
+
+        List<Entry<Integer, Integer>> list = new ArrayList<Entry<Integer, Integer>>(unsortMap.entrySet());
+
+        // Sorting the list based on values
+        Collections.sort(list, new Comparator<Entry<Integer, Integer>>()
+        {
+            @Override
+            public int compare(Entry<Integer, Integer> o1, Entry<Integer, Integer> o2)
+            {
+                return o1.getValue().compareTo(o2.getValue());
+            }
+        });
+
+        // Maintaining insertion order with the help of LinkedList
+        Map<Integer, Integer> sortedMap = new LinkedHashMap<Integer, Integer>();
+        for (Entry<Integer, Integer> entry : list)
+        {
+            sortedMap.put(entry.getKey(), entry.getValue());
+        }
+
+        return sortedMap;
     }
     
     public static Map<Integer, GenericQueryType> getQueryComplexTypes(
@@ -522,7 +566,8 @@ public final class QueryExecutorUtility
     public static Map<String, Integer> getComplexQueryIndexes(Dimension[] queryDims, Dimension[] currentDimTables)
     {
         Map<String, Integer> colToDataMap = new HashMap<String, Integer>();
-        boolean[] dimPresent = new boolean[currentDimTables.length];
+//        boolean[] dimPresent = new boolean[currentDimTables.length];
+        int index=0;
         for(Dimension queryDim : queryDims)
         {
             for(int i=0;i<currentDimTables.length;i++)
@@ -531,26 +576,26 @@ public final class QueryExecutorUtility
                         (currentDimTables[i].getDataType() == Type.ARRAY || 
                         currentDimTables[i].getDataType() == Type.STRUCT))
                 {
-                    dimPresent[i] = true;
+//                    dimPresent[i] = true;
+                    colToDataMap.put(currentDimTables[i].getColName(), index++);
                     break;
                 }
             }
         }
-        int index=0;
-        for(int i=0;i<dimPresent.length;i++)
-        {
-            if(dimPresent[i] == true)
-            {
-                colToDataMap.put(currentDimTables[i].getColName(), index++);
-            }
-        }
+//        for(int i=0;i<dimPresent.length;i++)
+//        {
+//            if(dimPresent[i] == true)
+//            {
+//                colToDataMap.put(currentDimTables[i].getColName(), index++);
+//            }
+//        }
         return colToDataMap;
     }
     
     public static int[] getAllSelectedDiemnsion(Dimension[] queryDims, List<DimensionAggregatorInfo> dimAggInfo, List<Dimension> fromCustomExps)
     {
         //Updated to get multiple column blocks for complex types
-        Set<Integer> allQueryDimension = new HashSet<Integer>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+        Set<Integer> allQueryDimension = new LinkedHashSet<Integer>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
         for(int i = 0;i < queryDims.length;i++)
         {
             if(queryDims[i].getAllApplicableDataBlockIndexs().length > 1)
@@ -585,7 +630,17 @@ public final class QueryExecutorUtility
         
         for(int i=0;i<fromCustomExps.size();i++)
         {
-            allQueryDimension.add(fromCustomExps.get(i).getOrdinal());
+            if(fromCustomExps.get(i).getAllApplicableDataBlockIndexs().length > 1)
+            {
+                for(int eachBlockIndex : fromCustomExps.get(i).getAllApplicableDataBlockIndexs())
+                {
+                    allQueryDimension.add(eachBlockIndex);
+                }
+            }
+            else
+            {
+                allQueryDimension.add(fromCustomExps.get(i).getOrdinal());
+            }
         }
         return convertIntegerArrayToInt(allQueryDimension.toArray(new Integer[allQueryDimension.size()]));
     }

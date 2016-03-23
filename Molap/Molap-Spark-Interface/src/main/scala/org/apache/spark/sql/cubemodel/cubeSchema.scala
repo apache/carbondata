@@ -255,6 +255,7 @@ class CubeProcessor(cm: CubeModel, sqlContext: SQLContext) {
     
     var newOrderedDims = scala.collection.mutable.ListBuffer[Dimension]()
     val highCardDims = scala.collection.mutable.ListBuffer[Dimension]()
+    val complexDims = scala.collection.mutable.ListBuffer[Dimension]()
      for(dimension <- dimensions)
     {
       if(highCardinalityDims.contains(dimension.name))
@@ -262,14 +263,18 @@ class CubeProcessor(cm: CubeModel, sqlContext: SQLContext) {
        // dimension.highCardinality=true
         highCardDims.add(dimension)
       }
-      else      
+      else if(dimension.hierarchies(0).levels.length > 1)
+      {
+    	  complexDims.add(dimension)
+      }
+      else
       {
        newOrderedDims.add(dimension)
       }
       
     }
     
-    newOrderedDims = newOrderedDims ++ highCardDims
+    newOrderedDims = newOrderedDims ++ highCardDims ++ complexDims
 
     dimensions = newOrderedDims
     

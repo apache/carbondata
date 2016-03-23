@@ -1464,6 +1464,7 @@ import org.eigenbase.xom.NodeDef;
             copy.schemaOrdinal = this.schemaOrdinal;
             copy.hasOrdinalCol = this.hasOrdinalCol;
             copy.highCardinalityDim = this.highCardinalityDim;
+            copy.allApplicableDataBlockIndexs = this.allApplicableDataBlockIndexs;
             copy.propertyCount = this.propertyCount;
             copy.propertyTypes = this.propertyTypes;
             copy.tableName = this.tableName;

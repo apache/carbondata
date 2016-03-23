@@ -208,26 +208,33 @@ public class RowLevelFilterEvalutor extends AbstractConditionalEvalutor
                 {
                     record[dimColumnEvaluatorInfo.getRowIndex()]=dimColumnEvaluatorInfo.getDefaultValue();
                 }
-                Member member = QueryExecutorUtility.getMemberBySurrogateKey(dimColumnEvaluatorInfo
-                        .getDims(), blockDataHolder.getColumnarKeyStore()[dimColumnEvaluatorInfo.getColumnIndex()]
-                        .getSurrogateKey(index), dimColumnEvaluatorInfo.getSlices(),dimColumnEvaluatorInfo.getCurrentSliceIndex());
-                
-                if(null != member)
+                if(dimColumnEvaluatorInfo.getDims().isHighCardinalityDim())
                 {
-                    memberString = member.toString();
-                    if(memberString.equals(MolapCommonConstants.MEMBER_DEFAULT_VAL))
+                    ColumnarKeyStoreDataHolder columnarKeyStoreDataHolder=blockDataHolder.getColumnarKeyStore()[dimColumnEvaluatorInfo.getColumnIndex()];
+                    if(null!=columnarKeyStoreDataHolder.getColumnarKeyStoreMetadata().getMapOfColumnarKeyBlockDataForDirectSurroagtes())
                     {
-                        memberString=null;
+                        Member member = readMemberBasedOnDirectSurrogate(dimColumnEvaluatorInfo, columnarKeyStoreDataHolder,index);
+                        if(null != member)
+                        {
+                            memberString = member.toString();
+                            if(memberString.equals(MolapCommonConstants.MEMBER_DEFAULT_VAL))
+                            {
+                                memberString=null;
+                            }
+                        }
+                        record[dimColumnEvaluatorInfo.getRowIndex()] = DataTypeConverter.getDataBasedOnDataType(memberString,dimColumnEvaluatorInfo.getDims().getDataType());
+                    }
+                    else
+                    {
+                        continue;
                     }
                 }
-                record[dimColumnEvaluatorInfo.getRowIndex()] = DataTypeConverter.getDataBasedOnDataType(memberString,dimColumnEvaluatorInfo.getDims().getDataType());
-            }
-            if(dimColumnEvaluatorInfo.getDims().isHighCardinalityDim())
-            {
-                ColumnarKeyStoreDataHolder columnarKeyStoreDataHolder=blockDataHolder.getColumnarKeyStore()[dimColumnEvaluatorInfo.getColumnIndex()];
-                if(null!=columnarKeyStoreDataHolder.getColumnarKeyStoreMetadata().getMapOfColumnarKeyBlockDataForDirectSurroagtes())
+                else
                 {
-                    Member member = readMemberBasedOnDirectSurrogate(dimColumnEvaluatorInfo, columnarKeyStoreDataHolder,index);
+                    Member member = QueryExecutorUtility.getMemberBySurrogateKey(dimColumnEvaluatorInfo
+                            .getDims(), blockDataHolder.getColumnarKeyStore()[dimColumnEvaluatorInfo.getColumnIndex()]
+                            .getSurrogateKey(index), dimColumnEvaluatorInfo.getSlices(),dimColumnEvaluatorInfo.getCurrentSliceIndex());
+                    
                     if(null != member)
                     {
                         memberString = member.toString();
@@ -238,18 +245,8 @@ public class RowLevelFilterEvalutor extends AbstractConditionalEvalutor
                     }
                     record[dimColumnEvaluatorInfo.getRowIndex()] = DataTypeConverter.getDataBasedOnDataType(memberString,dimColumnEvaluatorInfo.getDims().getDataType());
                 }
-                else
-                {
-                    continue;
-                }
             }
             else
-            {
-            Member member = QueryExecutorUtility.getMemberBySurrogateKey(dimColumnEvaluatorInfo
-                    .getDims(), blockDataHolder.getColumnarKeyStore()[dimColumnEvaluatorInfo.getColumnIndex()]
-                    .getSurrogateKey(index), dimColumnEvaluatorInfo.getSlices(),dimColumnEvaluatorInfo.getCurrentSliceIndex());
-            
-            if(null != member)
             {
                 try
                 {
@@ -268,7 +265,6 @@ public class RowLevelFilterEvalutor extends AbstractConditionalEvalutor
                 }
                 
             }
-        }
        }
         
         for(MsrColumnEvalutorInfo msrColumnEvalutorInfo : msrColEvalutorInfoList)

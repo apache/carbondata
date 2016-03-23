@@ -86,13 +86,17 @@ public class CSBTreeColumnarLeafNode extends CSBNode
         this.columnMaxData=new byte[columnMinMaxData.length][];
         com.huawei.unibi.molap.olap.MolapDef.Cube cubeXml=metaCube.getCube();
         CubeDimension[] cubeDimensions=cubeXml.dimensions;
+        int highCardColsCount = 0;
         for(int i = 0;i < columnMinMaxData.length;i++)
         {
 
             //For high cardinality dimension engine has to ignore the length and store the min and max value
             //of dimension members.
-            if(cubeDimensions[i].highCardinality || i >= eachBlockSize.length)
+            //Primitives types + high Card Cols + complex columns. Incrementing highcard cols & used it
+            // to identify complex columns block size.
+            if(i < cubeDimensions.length && cubeDimensions[i].highCardinality)
             {
+                highCardColsCount++;
                 ByteBuffer byteBuffer = ByteBuffer.allocate(columnMinMaxData[i].length);
                 byteBuffer.put(columnMinMaxData[i]);
                 byteBuffer.flip();
@@ -106,11 +110,11 @@ public class CSBTreeColumnarLeafNode extends CSBNode
             }
             else
             {
-            this.columnMinData[i] = new byte[eachBlockSize[i]];
-            System.arraycopy(columnMinMaxData[i], 0, this.columnMinData[i], 0, eachBlockSize[i]);
+            this.columnMinData[i] = new byte[eachBlockSize[i - highCardColsCount]];
+            System.arraycopy(columnMinMaxData[i], 0, this.columnMinData[i], 0, eachBlockSize[i - highCardColsCount]);
 
-            this.columnMaxData[i] = new byte[eachBlockSize[i]];
-            System.arraycopy(columnMinMaxData[i], eachBlockSize[i], this.columnMaxData[i], 0, eachBlockSize[i]);
+            this.columnMaxData[i] = new byte[eachBlockSize[i - highCardColsCount]];
+            System.arraycopy(columnMinMaxData[i], eachBlockSize[i - highCardColsCount], this.columnMaxData[i], 0, eachBlockSize[i - highCardColsCount]);
             }
         }
         

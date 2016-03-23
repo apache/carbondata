@@ -187,6 +187,10 @@ public class ArrayQueryType implements GenericQueryType {
     public Object getDataBasedOnDataTypeFromSurrogates(List<InMemoryCube> slices, ByteBuffer surrogateData, Dimension[] dimensions)
     {
         int dataLength = surrogateData.getInt();
+        if(dataLength == -1)
+        {
+            return null;
+        }
         Object[] data = new Object[dataLength];
         for(int i=0;i<dataLength;i++)
         {

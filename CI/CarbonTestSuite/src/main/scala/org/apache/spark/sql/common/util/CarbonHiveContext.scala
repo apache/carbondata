@@ -28,9 +28,10 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import com.huawei.unibi.molap.constants.MolapCommonConstants
 import com.huawei.datasight.molap.load.MolapLoaderUtil
+import org.apache.spark.sql.OlapContext
 	
 class LocalSQLContext(hdfsCarbonBasePath :String)
-  extends HiveContext(new SparkContext(new SparkConf()
+  extends OlapContext(new SparkContext(new SparkConf()
   	 .setAppName("CarbonSpark")
   	 .setMaster("local[2]")
      .set("carbon.storelocation", hdfsCarbonBasePath)
@@ -44,7 +45,7 @@ class LocalSQLContext(hdfsCarbonBasePath :String)
      .set("spark.sql.bigdata.register.strategy.useFunction", "true")
      .set("hive.security.authorization.enabled","false")
      .set("spark.sql.bigdata.register.analyseRule","org.apache.spark.sql.QueryStatsRule")
-     .set("spark.sql.dialect", "hiveql"))) {
+     .set("spark.sql.dialect", "hiveql")), hdfsCarbonBasePath) {
 
 }
 

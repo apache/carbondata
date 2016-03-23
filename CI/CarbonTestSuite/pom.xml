@@ -21,12 +21,16 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.huawei.datasight</groupId>
   <artifactId>CarbonTestSuite</artifactId>
-  <version>1.2.10</version>
+  <version>0.1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>CarbonTestSuite</name>
  
   <repositories>
-  </repositories>
+        <repository>
+            <id>pentaho-releases</id>
+            <url>http://repository.pentaho.org/artifactory/repo/</url>
+        </repository>
+    </repositories>
 
   <pluginRepositories>
   </pluginRepositories>
@@ -36,9 +40,9 @@
 		<checkstyle.config.location>../build/checkstyle.xml</checkstyle.config.location>
 		<checkstyle.excludes>**/MolapDef.java</checkstyle.excludes>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<spark.version>1.5.1</spark.version>
+		<spark.version>1.5.2</spark.version>
 		<scala.binary.version>2.10</scala.binary.version>
-		<prebuild.path>${basedir}/../../libraries/Unibi_Prebuild</prebuild.path>
+		<prebuild.path>${basedir}/../../Molap/lib</prebuild.path>
 		<tpjars.path>${basedir}/../../libraries/TPJars</tpjars.path>
 		<buildjars.path>${basedir}/../../libraries/build_tools</buildjars.path>
   </properties>
@@ -71,76 +75,111 @@
 		<scope>system</scope>
 		<systemPath>${prebuild.path}/kettle-db-4.2.1-GA.jar</systemPath>
 	</dependency>
+	
+	
 	<dependency>
-	  <groupId>eigenbase</groupId>
-	  <artifactId>eigenbase-xom</artifactId>
-	  <version>1.3.0.13768</version>
-	  <scope>system</scope>
-	  <systemPath>${tpjars.path}/eigenbase-xom-1.3.0.13768.jar</systemPath>
+		<groupId>eigenbase</groupId>
+		<artifactId>eigenbase-xom</artifactId>
+		<version>1.3.4</version>
+		<exclusions>
+			<exclusion>
+				<groupId>*</groupId>
+				<artifactId>*</artifactId>
+			</exclusion>
+		</exclusions>
 	</dependency>
 	<dependency>
-	  <groupId>eigenbase</groupId>
-	  <artifactId>eigenbase-resgen</artifactId>
-	  <version>1.3.0.13768</version>
-	  <scope>system</scope>
-	  <systemPath>${tpjars.path}/eigenbase-resgen-1.3.0.13768.jar</systemPath>
+		<groupId>eigenbase</groupId>
+		<artifactId>eigenbase-properties</artifactId>
+		<version>1.1.4</version>
+		<exclusions>
+			<exclusion>
+				<groupId>*</groupId>
+				<artifactId>*</artifactId>
+			</exclusion>
+		</exclusions>
 	</dependency>
 	<dependency>
-	  <groupId>eigenbase</groupId>
-	  <artifactId>eigenbase-properties</artifactId>
-	  <version>1.1.0.10924</version>
-	  <scope>system</scope>
-	  <systemPath>${tpjars.path}/eigenbase-properties-1.1.0.10924.jar</systemPath>
+		<groupId>eigenbase</groupId>
+		<artifactId>eigenbase-resgen</artifactId>
+		<version>1.3.4</version>
+		<exclusions>
+			<exclusion>
+				<groupId>*</groupId>
+				<artifactId>*</artifactId>
+			</exclusion>
+		</exclusions>
 	</dependency>
 	<dependency>
-		<groupId>fastutil</groupId>  
-		<artifactId>com.fastutil</artifactId>  
-		<version>6.5.0</version> 
-		<scope>system</scope>
-		<systemPath>${tpjars.path}/fastutil-6.5.0.jar</systemPath>
+		<groupId>commons-vfs</groupId>
+		<artifactId>commons-vfs</artifactId>
+		<version>1.0</version>
+		<exclusions>
+			<exclusion>
+				<groupId>*</groupId>
+				<artifactId>*</artifactId>
+			</exclusion>
+		</exclusions>
 	</dependency>
 	<dependency>
-		<groupId>pentahohdfsvfs</groupId>  
-		<artifactId>com.pentahohdfsvfs</artifactId>  
-		<version>1.0.0</version> 
-		<scope>system</scope>
-		<systemPath>${tpjars.path}/pentaho-hdfs-vfs-1.0.0.jar</systemPath>
+		<groupId>it.unimi.dsi</groupId>
+		<artifactId>fastutil</artifactId>
+		<version>6.5.0</version>
+		<exclusions>
+			<exclusion>
+				<groupId>*</groupId>
+				<artifactId>*</artifactId>
+			</exclusion>
+		</exclusions>
 	</dependency>
+	<dependency>
+		<groupId>pentaho</groupId>
+		<artifactId>pentaho-hdfs-vfs</artifactId>
+		<version>1.0.0</version>
+		<exclusions>
+			<exclusion>
+				<groupId>*</groupId>
+				<artifactId>*</artifactId>
+			</exclusion>
+		</exclusions>
+	</dependency>
+	
+	
 
+	<dependency>
+		<groupId>com.google.code.gson</groupId>
+		<artifactId>gson</artifactId>
+		<version>2.3.1</version>
+	</dependency>
 	<dependency>
 		<groupId>com.huawei.datasight</groupId>
 		<artifactId>molap-core</artifactId>
-		<version>1.2.10</version>
+		<version>0.1.0-SNAPSHOT</version>
 	</dependency>
 	<dependency>
 		<groupId>com.huawei.datasight</groupId>
 		<artifactId>molap-engine</artifactId>
-		<version>1.2.10</version>
+		<version>0.1.0-SNAPSHOT</version>
 	</dependency>
 	<dependency>
 		<groupId>com.huawei.datasight</groupId>
 		<artifactId>molap-data-processor</artifactId>
-		<version>1.2.10</version>
+		<version>0.1.0-SNAPSHOT</version>
 	</dependency>
 	<dependency>
 		<groupId>com.huawei.datasight</groupId>  
 		<artifactId>molap-interface</artifactId>  
-		<version>1.2.10</version> 
-	</dependency>
-	<dependency>
-		<groupId>com.huawei.datasight</groupId>  
-		<artifactId>molap-autoaggregation</artifactId>  
-		<version>1.2.10</version>
+		<version>0.1.0-SNAPSHOT</version> 
 	</dependency>
 	<dependency>
 		<groupId>com.huawei.datasight</groupId>  
 		<artifactId>molap-aggregation</artifactId>  
-		<version>1.2.10</version>
+		<version>0.1.0-SNAPSHOT</version>
 	</dependency>
 	<dependency>
 		<groupId>com.huawei.datasight</groupId>  
 		<artifactId>molap-spark-interface</artifactId>  
-		<version>1.2.10</version>
+		<version>0.1.0-SNAPSHOT</version>
 	</dependency>
 	<dependency>
 		<groupId>com.huawei.datasight</groupId>  
@@ -189,11 +228,6 @@
 	<dependency>
 		<groupId>org.apache.spark</groupId>
 		<artifactId>spark-repl_${scala.binary.version}</artifactId>
-		<version>${spark.version}</version>
-	</dependency>
-	<dependency>
-		<groupId>org.apache.spark</groupId>
-		<artifactId>spark-om</artifactId>
 		<version>${spark.version}</version>
 	</dependency>
 	<dependency>

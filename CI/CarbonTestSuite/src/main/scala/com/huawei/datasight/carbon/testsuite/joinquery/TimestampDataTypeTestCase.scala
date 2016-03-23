@@ -26,17 +26,18 @@ import org.apache.spark.sql.Row
 import com.huawei.unibi.molap.datastorage.store.impl.FileFactory
 import com.huawei.datasight.molap.load.MolapLoaderUtil
 import java.sql.Timestamp
+import org.scalatest.BeforeAndAfterAll
 
 /**
  * Test Class for join query on timestamp datatypes
  * @author N00902756
  *
  */
-class TimestampDataTypeTestCase extends QueryTest with BeforeAndAfter {
+class TimestampDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
   
   import org.apache.spark.sql.common.util.CarbonHiveContext.implicits._
   
-  before
+  override def beforeAll
   {
 	  sql("CREATE CUBE timestamptypecube DIMENSIONS (doj Timestamp, projectjoindate Timestamp, projectenddate Timestamp) OPTIONS (PARTITIONER [PARTITION_COUNT=1])");
 	  sql("LOAD DATA fact from './TestData/data.csv' INTO CUBE timestamptypecube PARTITIONDATA(DELIMITER ',', QUOTECHAR '\"')");
@@ -55,7 +56,7 @@ class TimestampDataTypeTestCase extends QueryTest with BeforeAndAfter {
           Row(Timestamp.valueOf("2015-05-12 00:00:00.0")),
           Row(Timestamp.valueOf("2015-12-01 00:00:00.0"))))
   }
-  after
+  override def afterAll
   {
 	  sql("drop cube timestamptypecube")
   }

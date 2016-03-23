@@ -19,17 +19,27 @@
 
 package com.huawei.unibi.molap.engine.columnar.aggregator.impl;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.List;
 
+import com.huawei.iweb.platform.logging.LogService;
+import com.huawei.iweb.platform.logging.LogServiceFactory;
 import com.huawei.unibi.molap.engine.aggregator.CustomMeasureAggregator;
 import com.huawei.unibi.molap.engine.aggregator.MeasureAggregator;
 import com.huawei.unibi.molap.engine.columnar.aggregator.ColumnarAggregatorInfo;
+import com.huawei.unibi.molap.engine.columnar.aggregator.impl.dimension.DimensionDataAggreagtor;
 import com.huawei.unibi.molap.engine.columnar.keyvalue.AbstractColumnarScanResult;
+import com.huawei.unibi.molap.engine.complex.querytypes.GenericQueryType;
 import com.huawei.unibi.molap.engine.molapfilterinterface.RowImpl;
 import com.huawei.unibi.molap.engine.util.DataTypeConverter;
+import com.huawei.unibi.molap.engine.util.MolapEngineLogEvent;
 import com.huawei.unibi.molap.engine.util.QueryExecutorUtility;
 import com.huawei.unibi.molap.metadata.MolapMetadata.Dimension;
 import com.huawei.unibi.molap.metadata.MolapMetadata.Measure;
+import com.huawei.unibi.molap.olap.SqlStatement.Type;
 
 /**
  * To handle aggregation for expressions in the query   
@@ -39,6 +49,8 @@ import com.huawei.unibi.molap.metadata.MolapMetadata.Measure;
  */
 public class ExpressionAggregator 
 {
+    
+    private static final LogService LOGGER = LogServiceFactory.getLogService(DimensionDataAggreagtor.class.getName());
     
     private ColumnarAggregatorInfo columnaraggreagtorInfo;
     
@@ -70,18 +82,39 @@ public class ExpressionAggregator
                 }
                 else
                 {
-                    int dimSurrogate = keyValue.getDimDataForAgg(dimension.getOrdinal());
-                    if(dimSurrogate==1)
+                    if(dimension.getDataType() != Type.ARRAY &&  dimension.getDataType() != Type.STRUCT)
                     {
-                        row[j]=null;
+                        int dimSurrogate = keyValue.getDimDataForAgg(dimension.getOrdinal());
+                        if(dimSurrogate==1)
+                        {
+                            row[j]=null;
+                        }
+                        else
+                        {
+                            String member = QueryExecutorUtility
+                                    .getMemberBySurrogateKey(dimension, dimSurrogate,
+                                            columnaraggreagtorInfo.getSlices(), columnaraggreagtorInfo.getCurrentSliceIndex()).toString();
+                            row[j]=DataTypeConverter.getDataBasedOnDataType(member,
+                                    dimension.getDataType());
+                        }
                     }
                     else
                     {
-                    String member = QueryExecutorUtility
-                    .getMemberBySurrogateKey(dimension, dimSurrogate,
-                            columnaraggreagtorInfo.getSlices(), columnaraggreagtorInfo.getCurrentSliceIndex()).toString();
-                    row[j]=DataTypeConverter.getDataBasedOnDataType(member,
-                            dimension.getDataType());
+                        try
+                        {
+                            GenericQueryType complexType = null;
+                            complexType = this.columnaraggreagtorInfo.getComplexQueryDims().get(dimension.getOrdinal());
+                            ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+                            DataOutputStream dataOutputStream = new DataOutputStream(byteStream);
+                            keyValue.getComplexDimDataForAgg(complexType, dataOutputStream);
+                            row[j]=complexType.getDataBasedOnDataTypeFromSurrogates(this.columnaraggreagtorInfo.getSlices(), 
+                                    ByteBuffer.wrap(byteStream.toByteArray()), this.columnaraggreagtorInfo.getDimensions());
+                            byteStream.close();
+                        }
+                        catch(IOException e)
+                        {
+                            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
+                        }
                     }
                 }
             }
