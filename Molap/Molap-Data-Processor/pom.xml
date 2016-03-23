@@ -43,7 +43,7 @@
     </pluginRepositories>
 
     <properties>
-        <prebuild.path>${basedir}/../../libraries/Unibi_Prebuild</prebuild.path>
+        <prebuild.path>${basedir}/../lib</prebuild.path>
     </properties>
 
     <dependencies>
