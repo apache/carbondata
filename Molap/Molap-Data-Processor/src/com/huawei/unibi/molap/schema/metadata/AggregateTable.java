@@ -22,33 +22,23 @@ package com.huawei.unibi.molap.schema.metadata;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Project Name NSE V3R7C00 
- * Module Name : MOLAP
- * Author :C00900810
- * Created Date :24-Jun-2013
- * FileName : AggregateTable.java
- * Class Description : 
- * Version 1.0
- */
-public class AggregateTable
-{
-    
+public class AggregateTable {
+
     /**
      * aggregateTableName
      */
     private String aggregateTableName;
-    
+
     /**
      * aggLevels
      */
     private String[] aggLevels;
-    
+
     /**
      * aggLevels
      */
     private String[] aggLevelsActualName;
-    
+
     /**
      * actualAggLevels
      */
@@ -58,175 +48,161 @@ public class AggregateTable
      * aggMeasure
      */
     private String[] aggMeasure;
-    
+
     /**
      * aggregator
      */
     private String[] aggregator;
-    
+
     /**
      * Agg Namesssss
      */
     private String[] aggNames;
-    
+
     /**
      * aggColuName
      */
     private String[] aggColuName;
-    
+
     /**
      * aggregateClass
      */
     private String[] aggregateClass;
 
-	//private String tableNameForAggr;
-	
-	private List<AggregateTable> dependentAggTables=new ArrayList<AggregateTable>(10);
-    
+    private List<AggregateTable> dependentAggTables = new ArrayList<AggregateTable>(10);
 
-	public List<AggregateTable> getDependentAggTables() {
-		return dependentAggTables;
-	}
-	public void setDependentAggTables(List<AggregateTable> dependentAggTables) {
-		this.dependentAggTables = dependentAggTables;
-	}
-	/**
+    public List<AggregateTable> getDependentAggTables() {
+        return dependentAggTables;
+    }
+
+    public void setDependentAggTables(List<AggregateTable> dependentAggTables) {
+        this.dependentAggTables = dependentAggTables;
+    }
+
+    /**
      * @return
      */
-    public String getAggregateTableName()
-    {
+    public String getAggregateTableName() {
         return aggregateTableName;
     }
+
     /**
      * @param aggregateTableName
      */
-    public void setAggregateTableName(String aggregateTableName)
-    {
+    public void setAggregateTableName(String aggregateTableName) {
         this.aggregateTableName = aggregateTableName;
     }
+
     /**
      * @return
      */
-    public String[] getAggLevels()
-    {
+    public String[] getAggLevels() {
         return aggLevels;
     }
+
     /**
      * @param aggLevels
      */
-    public void setAggLevels(String[] aggLevels)
-    {
+    public void setAggLevels(String[] aggLevels) {
         this.aggLevels = aggLevels;
     }
+
     /**
      * @return
      */
-    public String[] getAggMeasure()
-    {
+    public String[] getAggMeasure() {
         return aggMeasure;
     }
+
     /**
      * @param aggMeasure
      */
-    public void setAggMeasure(String[] aggMeasure)
-    {
+    public void setAggMeasure(String[] aggMeasure) {
         this.aggMeasure = aggMeasure;
     }
+
     /**
      * @return
      */
-    public String[] getAggregator()
-    {
+    public String[] getAggregator() {
         return aggregator;
     }
+
     /**
      * @param aggregator
      */
-    public void setAggregator(String[] aggregator)
-    {
+    public void setAggregator(String[] aggregator) {
         this.aggregator = aggregator;
     }
 
     /**
-     * 
      * @return Returns the actualAggLevels.
-     * 
      */
-    public String[] getActualAggLevels()
-    {
+    public String[] getActualAggLevels() {
         return actualAggLevels;
     }
 
     /**
-     * 
      * @param actualAggLevels The actualAggLevels to set.
-     * 
      */
-    public void setActualAggLevels(String[] actualAggLevels)
-    {
+    public void setActualAggLevels(String[] actualAggLevels) {
         this.actualAggLevels = actualAggLevels;
     }
+
     /**
-     * 
      * @return Returns the aggNames.
-     * 
      */
-    public String[] getAggNames()
-    {
+    public String[] getAggNames() {
         return aggNames;
     }
+
     /**
-     * 
      * @param aggNames The aggNames to set.
-     * 
      */
-    public void setAggNames(String[] aggNames)
-    {
+    public void setAggNames(String[] aggNames) {
         this.aggNames = aggNames;
     }
+
     /**
      * @return the aggregateClass
      */
-    public String[] getAggregateClass()
-    {
+    public String[] getAggregateClass() {
         return aggregateClass;
     }
+
     /**
      * @param aggregateClass the aggregateClass to set
      */
-    public void setAggregateClass(String[] aggregateClass)
-    {
+    public void setAggregateClass(String[] aggregateClass) {
         this.aggregateClass = aggregateClass;
     }
+
     /**
      * @return the aggLevelsActualName
      */
-    public String[] getAggLevelsActualName()
-    {
+    public String[] getAggLevelsActualName() {
         return aggLevelsActualName;
     }
+
     /**
      * @param aggLevelsActualName the aggLevelsActualName to set
      */
-    public void setAggLevelsActualName(String[] aggLevelsActualName)
-    {
+    public void setAggLevelsActualName(String[] aggLevelsActualName) {
         this.aggLevelsActualName = aggLevelsActualName;
     }
-	/**
-	 * @return the aggColuName
-	 */
-	public String[] getAggColuName() {
-		return aggColuName;
-	}
-	/**
-	 * @param aggColuName the aggColuName to set
-	 */
-	public void setAggColuName(String[] aggColuName) {
-		this.aggColuName = aggColuName;
-	}
-	/*public void setTableNameForAggregate(String tableNameForAggr) {
-		this.tableNameForAggr=tableNameForAggr;
-		
-	}*/
+
+    /**
+     * @return the aggColuName
+     */
+    public String[] getAggColuName() {
+        return aggColuName;
+    }
+
+    /**
+     * @param aggColuName the aggColuName to set
+     */
+    public void setAggColuName(String[] aggColuName) {
+        this.aggColuName = aggColuName;
+    }
 
 }

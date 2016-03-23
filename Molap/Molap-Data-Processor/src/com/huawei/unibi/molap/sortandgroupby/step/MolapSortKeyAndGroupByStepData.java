@@ -23,49 +23,32 @@ import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.step.BaseStepData;
 import org.pentaho.di.trans.step.StepDataInterface;
 
-/**
- * Project Name NSE V3R7C00 
- * Module Name : MOLAP
- * Author :C00900810
- * Created Date :24-Jun-2013
- * FileName : MolapSortKeyAndGroupByStepData.java
- * Class Description : MolapSortKeyAndGroupByStepData
- * Version 1.0
- */
-public class MolapSortKeyAndGroupByStepData extends BaseStepData implements StepDataInterface
-{
-    
+public class MolapSortKeyAndGroupByStepData extends BaseStepData implements StepDataInterface {
+
     /**
      * outputRowMeta
      */
     private RowMetaInterface outputRowMeta;
-    
+
     /**
      * rowMeta
      */
     private RowMetaInterface rowMeta;
 
-    
-    public void setOutputRowMeta(RowMetaInterface outputRowMeta)
-    {
-        this.outputRowMeta = outputRowMeta;
-    }
-
-    public RowMetaInterface getOutputRowMeta()
-    {
+    public RowMetaInterface getOutputRowMeta() {
         return outputRowMeta;
     }
 
-    
-    public void setRowMeta(RowMetaInterface rowMeta)
-    {
-        this.rowMeta = rowMeta;
+    public void setOutputRowMeta(RowMetaInterface outputRowMeta) {
+        this.outputRowMeta = outputRowMeta;
     }
-    
-    public RowMetaInterface getRowMeta()
-    {
+
+    public RowMetaInterface getRowMeta() {
         return rowMeta;
     }
 
-   
+    public void setRowMeta(RowMetaInterface rowMeta) {
+        this.rowMeta = rowMeta;
+    }
+
 }

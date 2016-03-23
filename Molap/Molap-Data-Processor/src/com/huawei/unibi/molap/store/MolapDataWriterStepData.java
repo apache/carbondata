@@ -23,9 +23,7 @@ import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.step.BaseStepData;
 import org.pentaho.di.trans.step.StepDataInterface;
 
-public class MolapDataWriterStepData extends BaseStepData implements
-        StepDataInterface
-{
+public class MolapDataWriterStepData extends BaseStepData implements StepDataInterface {
     /**
      * outputRowMeta
      */
@@ -33,10 +31,8 @@ public class MolapDataWriterStepData extends BaseStepData implements
 
     /**
      * MolapDataWriterStepData
-     * 
      */
-    public MolapDataWriterStepData()
-    {
+    public MolapDataWriterStepData() {
         super();
     }
 

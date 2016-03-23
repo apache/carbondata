@@ -19,8 +19,7 @@
 
 package com.huawei.unibi.molap.merger.Util;
 
-public class RowTempFile
-{
+public class RowTempFile {
     /**
      * row
      */
@@ -32,7 +31,7 @@ public class RowTempFile
     private long fileSize;
 
     /**
-     * offset 
+     * offset
      */
     private long offset;
 
@@ -42,143 +41,116 @@ public class RowTempFile
     private int fileHolderIndex;
 
     /**
-     *  file path
+     * file path
      */
     private String filePath;
 
     /**
      * RowTempFile constructor
-     * 
-     * @param row
-     *      row
-     * @param fileSize
-     *      file size
-     * @param offset
-     *          offset
-     * @param fileHolderIndex
-     *          file holder index
-     * @param filePath
-     *          file path
      *
+     * @param row             row
+     * @param fileSize        file size
+     * @param offset          offset
+     * @param fileHolderIndex file holder index
+     * @param filePath        file path
      */
-    public RowTempFile(byte[] row, long fileSize, long offset, int fileHolderIndex, String filePath)
-    {
+    public RowTempFile(byte[] row, long fileSize, long offset, int fileHolderIndex,
+            String filePath) {
         this.row = row;
         this.fileSize = fileSize;
         this.offset = offset;
         this.fileHolderIndex = fileHolderIndex;
         this.filePath = filePath;
     }
-    
+
     /**
      * get the row
-     * 
+     *
      * @return row
-     * 
      */
-    public byte[] getRow()
-    {
+    public byte[] getRow() {
         return row;
     }
 
     /**
-     * Will return file size
-     * 
-     * @return file size
-     *
-     */
-    public long getFileSize()
-    {
-        return fileSize;
-    }
-
-    /**
-     *  Will return offset
-     * 
-     * @return offset
-     *
-     */
-    public long getOffset()
-    {
-        return offset;
-    }
-
-    /**
-     * Will return file holder index
-     * 
-     * @return fileHolderIndex
-     *
-     */
-    public int getFileHolderIndex()
-    {
-        return fileHolderIndex;
-    }
-
-    /**
-     * return the file path
-     * 
-     * @return filePath
-     *
-     */
-    public String getFilePath()
-    {
-        return filePath;
-    }
-
-    /**
      * set the row
-     * 
-     * @param row
      *
+     * @param row
      */
-    public void setRow(byte[] row)
-    {
+    public void setRow(byte[] row) {
         this.row = row;
     }
 
     /**
-     * set the file size
-     * 
-     * @param fileSize
+     * Will return file size
      *
+     * @return file size
      */
-    public void setFileSize(long fileSize)
-    {
+    public long getFileSize() {
+        return fileSize;
+    }
+
+    /**
+     * set the file size
+     *
+     * @param fileSize
+     */
+    public void setFileSize(long fileSize) {
         this.fileSize = fileSize;
     }
 
     /**
-     * set the offset 
-     * 
-     * @param offset
+     * Will return offset
      *
+     * @return offset
      */
-    public void setOffset(long offset)
-    {
+    public long getOffset() {
+        return offset;
+    }
+
+    /**
+     * set the offset
+     *
+     * @param offset
+     */
+    public void setOffset(long offset) {
         this.offset = offset;
     }
 
     /**
-     * set the file holder index
-     * 
-     * @param fileHolderIndex
+     * Will return file holder index
      *
+     * @return fileHolderIndex
      */
-    public void setFileHolderIndex(int fileHolderIndex)
-    {
+    public int getFileHolderIndex() {
+        return fileHolderIndex;
+    }
+
+    /**
+     * set the file holder index
+     *
+     * @param fileHolderIndex
+     */
+    public void setFileHolderIndex(int fileHolderIndex) {
         this.fileHolderIndex = fileHolderIndex;
     }
 
     /**
-     * set the file path
-     * 
-     * @param filePath
+     * return the file path
      *
+     * @return filePath
      */
-    public void setFilePath(String filePath)
-    {
-        this.filePath = filePath;
+    public String getFilePath() {
+        return filePath;
     }
 
+    /**
+     * set the file path
+     *
+     * @param filePath
+     */
+    public void setFilePath(String filePath) {
+        this.filePath = filePath;
+    }
 
 }

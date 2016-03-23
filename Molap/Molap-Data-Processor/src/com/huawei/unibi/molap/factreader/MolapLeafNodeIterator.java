@@ -17,18 +17,6 @@
  * under the License.
  */
 
-/**
- *
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2014
- * =====================================
- *
- */
-
 package com.huawei.unibi.molap.factreader;
 
 import java.util.ArrayList;
@@ -46,23 +34,12 @@ import com.huawei.unibi.molap.metadata.LeafNodeInfo;
 import com.huawei.unibi.molap.util.MolapProperties;
 import com.huawei.unibi.molap.util.MolapUtil;
 
-/**
- * Project Name NSE V3R8C10 
- * Module Name : MOLAP Data Processor
- * Author :k00900841 
- * Created Date:10-Aug-2014
- * FileName : MolapLeafNodeIterator.java
- * Class Description : Iterator class to iterate over list of leaf present the the b tree and return the one leaf
- * Class Version 1.0
- */
-public class MolapLeafNodeIterator implements
-        MolapIterator<MolapLeafNodeTuplesHolder>
-{
+public class MolapLeafNodeIterator implements MolapIterator<MolapLeafNodeTuplesHolder> {
     /**
      * createKeyStore object which will hold the mdkey
      */
     private byte[] keyArray;
-    
+
     /**
      * entryCountList
      */
@@ -72,121 +49,108 @@ public class MolapLeafNodeIterator implements
      * data store which will hold the measure data
      */
     private MeasureDataWrapper dataStore;
-    
+
     /**
      * fileHolder
      */
     private FileHolder fileHolder;
-    
+
     /**
      * leafSize
      */
     private int leafSize;
-    
+
     /**
      * currentCount
      */
     private int currentCount;
-    
+
     /**
      * leafNodeInfo
      */
     private List<LeafNodeInfo> leafNodeInfoList;
-    
+
     /**
      * leafNodeSize
      */
     private int leafNodeSize;
-    
+
     /**
      * mdKeyLength
      */
     private int mdKeyLength;
-    
+
     /**
      * measureCount
      */
     private int measureCount;
-    
+
     /**
      * compressionModel
      */
     private ValueCompressionModel compressionModel;
-    
+
     /**
      * MolapLeafNodeIterator constructor to initialise iterator
-     * @param factFiles
-     *          fact files 
-     * @param tableName
-     *          
+     *
+     * @param factFiles        fact files
      * @param measureCount
      * @param mdkeyLength
      * @param compressionModel
      */
-    public MolapLeafNodeIterator(MolapFile[] factFiles,
-            int measureCount, int mdkeyLength,ValueCompressionModel compressionModel)
-    {
-        this.fileHolder = FileFactory.getFileHolder(FileFactory.getFileType(factFiles[0].getAbsolutePath()));
-        this.mdKeyLength=mdkeyLength;
-        this.measureCount=measureCount;
-        this.compressionModel=compressionModel;
+    public MolapLeafNodeIterator(MolapFile[] factFiles, int measureCount, int mdkeyLength,
+            ValueCompressionModel compressionModel) {
+        this.fileHolder =
+                FileFactory.getFileHolder(FileFactory.getFileType(factFiles[0].getAbsolutePath()));
+        this.mdKeyLength = mdkeyLength;
+        this.measureCount = measureCount;
+        this.compressionModel = compressionModel;
         initialise(factFiles);
     }
 
     /**
      * below method will be used to initialise the iterator
-     * @param factFiles
-     *          fact files
-     * @param measureCount
-     *          measure count
-     * @param mdkeyLength
-     *          mdkey length
-     * @param compressionModel
-     *          value comepression model
+     *
+     * @param factFiles fact files
      */
-    private void initialise(MolapFile[] factFiles)
-    {
-        this.leafNodeInfoList = new ArrayList<LeafNodeInfo>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
-            // get the count of number of tuples present in leaf node
+    private void initialise(MolapFile[] factFiles) {
+        this.leafNodeInfoList =
+                new ArrayList<LeafNodeInfo>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+        // get the count of number of tuples present in leaf node
         this.leafNodeSize = Integer.parseInt(MolapProperties.getInstance()
                 .getProperty(MolapCommonConstants.LEAFNODE_SIZE,
                         MolapCommonConstants.LEAFNODE_SIZE_DEFAULT_VAL));
         /**
          * below method 
          */
-        List<LeafNodeInfo> leafNodeInfo= null;
-        for(int i = 0;i < factFiles.length;i++)
-        {
-            leafNodeInfo = MolapUtil.getLeafNodeInfo(
-                    factFiles[i], measureCount, mdKeyLength);
+        List<LeafNodeInfo> leafNodeInfo = null;
+        for (int i = 0; i < factFiles.length; i++) {
+            leafNodeInfo = MolapUtil.getLeafNodeInfo(factFiles[i], measureCount, mdKeyLength);
             leafNodeInfoList.addAll(leafNodeInfo);
         }
-        leafSize=leafNodeInfoList.size();
+        leafSize = leafNodeInfoList.size();
     }
-    
-    private void getNewLeafData()
-    {
+
+    private void getNewLeafData() {
         LeafNodeInfo leafNodeInfo = leafNodeInfoList.get(currentCount++);
-        this.keyArray = StoreFactory.createKeyStore(leafNodeSize, mdKeyLength, true, true,
-                leafNodeInfo.getKeyOffset(), leafNodeInfo.getFileName(), leafNodeInfo.getKeyLength(),
-                fileHolder).getBackArray(fileHolder);
-        this.dataStore = StoreFactory.createDataStore(true, compressionModel, leafNodeInfo.getMeasureOffset(),
-                leafNodeInfo.getMeasureLength(), leafNodeInfo.getFileName(), fileHolder).getBackData(null, fileHolder);
-        this.entryCount=leafNodeInfo.getNumberOfKeys();
+        this.keyArray = StoreFactory
+                .createKeyStore(leafNodeSize, mdKeyLength, true, true, leafNodeInfo.getKeyOffset(),
+                        leafNodeInfo.getFileName(), leafNodeInfo.getKeyLength(), fileHolder)
+                .getBackArray(fileHolder);
+        this.dataStore = StoreFactory
+                .createDataStore(true, compressionModel, leafNodeInfo.getMeasureOffset(),
+                        leafNodeInfo.getMeasureLength(), leafNodeInfo.getFileName(), fileHolder)
+                .getBackData(null, fileHolder);
+        this.entryCount = leafNodeInfo.getNumberOfKeys();
     }
-    
+
     /**
-     * check some more leaf are present in the b tree 
+     * check some more leaf are present in the b tree
      */
-    @Override
-    public boolean hasNext()
-    {
-        if(currentCount<leafSize)
-        {
+    @Override public boolean hasNext() {
+        if (currentCount < leafSize) {
             return true;
-        }
-        else
-        {
+        } else {
             fileHolder.finish();
         }
         return false;
@@ -195,9 +159,7 @@ public class MolapLeafNodeIterator implements
     /**
      * below method will be used to get the leaf node
      */
-    @Override
-    public MolapLeafNodeTuplesHolder next()
-    {
+    @Override public MolapLeafNodeTuplesHolder next() {
         MolapLeafNodeTuplesHolder holder = new MolapLeafNodeTuplesHolder();
         getNewLeafData();
         holder.setEntryCount(this.entryCount);

@@ -36,156 +36,137 @@ import com.huawei.unibi.molap.store.writer.exception.MolapDataWriterException;
 import com.huawei.unibi.molap.util.MolapDataProcessorLogEvent;
 import com.huawei.unibi.molap.util.MolapProperties;
 
-public class MolapFactDataWriterImplForIntIndexAndAggBlock extends AbstractFactDataWriter<int[]> 
-{
-    private NumberCompressor numberCompressor;
-    
-    private boolean[] isComplexType;
-    
-    protected boolean[] aggBlocks;
-    
+public class MolapFactDataWriterImplForIntIndexAndAggBlock extends AbstractFactDataWriter<int[]> {
     private static final LogService LOGGER = LogServiceFactory
-          .getLogService(MolapFactDataWriterImplForIntIndexAndAggBlock.class.getName());
+            .getLogService(MolapFactDataWriterImplForIntIndexAndAggBlock.class.getName());
+    protected boolean[] aggBlocks;
+    private NumberCompressor numberCompressor;
+    private boolean[] isComplexType;
 
     public MolapFactDataWriterImplForIntIndexAndAggBlock(String storeLocation, int measureCount,
             int mdKeyLength, String tableName, boolean isNodeHolder,
-            IFileManagerComposite fileManager, int[] keyBlockSize, 
-            boolean[] aggBlocks, boolean isUpdateFact, boolean[] isComplexType)
-    {
-    	this(storeLocation, measureCount, mdKeyLength, tableName, 
-    			isNodeHolder,fileManager, keyBlockSize, aggBlocks, isUpdateFact);
-    	this.isComplexType = isComplexType;
-    }
-    
-    public MolapFactDataWriterImplForIntIndexAndAggBlock(String storeLocation, int measureCount,
-            int mdKeyLength, String tableName, boolean isNodeHolder,IFileManagerComposite fileManager, int[] keyBlockSize, boolean[] aggBlocks, boolean isUpdateFact)
-    {
-        super(storeLocation, measureCount, mdKeyLength, tableName, isNodeHolder,fileManager,keyBlockSize,isUpdateFact);
-        this.aggBlocks=aggBlocks;
-        this.numberCompressor=new NumberCompressor(Integer.parseInt(MolapProperties.getInstance().getProperty(
-                MolapCommonConstants.LEAFNODE_SIZE,
-                MolapCommonConstants.LEAFNODE_SIZE_DEFAULT_VAL)));
+            IFileManagerComposite fileManager, int[] keyBlockSize, boolean[] aggBlocks,
+            boolean isUpdateFact, boolean[] isComplexType) {
+        this(storeLocation, measureCount, mdKeyLength, tableName, isNodeHolder, fileManager,
+                keyBlockSize, aggBlocks, isUpdateFact);
+        this.isComplexType = isComplexType;
     }
 
-    @Override
-    public void writeDataToFile(IndexStorage<int[]>[] keyStorageArray, byte[][] dataArray,
-            int entryCount, byte[] startKey, byte[] endKey)
-            throws MolapDataWriterException
-    {
+    public MolapFactDataWriterImplForIntIndexAndAggBlock(String storeLocation, int measureCount,
+            int mdKeyLength, String tableName, boolean isNodeHolder,
+            IFileManagerComposite fileManager, int[] keyBlockSize, boolean[] aggBlocks,
+            boolean isUpdateFact) {
+        super(storeLocation, measureCount, mdKeyLength, tableName, isNodeHolder, fileManager,
+                keyBlockSize, isUpdateFact);
+        this.aggBlocks = aggBlocks;
+        this.numberCompressor = new NumberCompressor(Integer.parseInt(MolapProperties.getInstance()
+                .getProperty(MolapCommonConstants.LEAFNODE_SIZE,
+                        MolapCommonConstants.LEAFNODE_SIZE_DEFAULT_VAL)));
+    }
+
+    @Override public void writeDataToFile(IndexStorage<int[]>[] keyStorageArray, byte[][] dataArray,
+            int entryCount, byte[] startKey, byte[] endKey) throws MolapDataWriterException {
         updateLeafNodeFileChannel();
         // total measure length;
         int totalMsrArrySize = 0;
         // current measure length;
         int currentMsrLenght = 0;
-        int totalKeySize=0;
-        int keyBlockSize=0;
-        
-        boolean[] isSortedData= new boolean [keyStorageArray.length];
-        int[] keyLengths= new int[keyStorageArray.length];
+        int totalKeySize = 0;
+        int keyBlockSize = 0;
+
+        boolean[] isSortedData = new boolean[keyStorageArray.length];
+        int[] keyLengths = new int[keyStorageArray.length];
 
         //below will calculate min and max value for each column
         //for below 2d array, first index will be for column and second will be min max value for same column
-        byte[][] columnMinMaxData=new byte[keyStorageArray.length][];
-        
-        
-        byte[][] keyBlockData= fillAndCompressedKeyBlockData(keyStorageArray,entryCount);
-        
-        for (int i = 0; i < keyLengths.length; i++) 
-        {
-            keyLengths[i]=keyBlockData[i].length;
-            isSortedData[i]=keyStorageArray[i].isAlreadySorted();
-            if(!isSortedData[i])
-            {
+        byte[][] columnMinMaxData = new byte[keyStorageArray.length][];
+
+        byte[][] keyBlockData = fillAndCompressedKeyBlockData(keyStorageArray, entryCount);
+
+        for (int i = 0; i < keyLengths.length; i++) {
+            keyLengths[i] = keyBlockData[i].length;
+            isSortedData[i] = keyStorageArray[i].isAlreadySorted();
+            if (!isSortedData[i]) {
                 keyBlockSize++;
-                
+
             }
-            totalKeySize+=keyLengths[i];
-            
-            if(isNoDictionary[i])
-            {
-                columnMinMaxData[i]=new byte[keyStorageArray[i].getKeyBlock()[0].length + keyStorageArray[i].getKeyBlock()[keyStorageArray[i].getKeyBlock().length-1].length ];
-                
-                byte[] minVal=keyStorageArray[i].getKeyBlock()[0];
-                byte[] maxVal=keyStorageArray[i].getKeyBlock()[keyStorageArray[i].getKeyBlock().length-1];
+            totalKeySize += keyLengths[i];
+
+            if (isNoDictionary[i]) {
+                columnMinMaxData[i] =
+                        new byte[keyStorageArray[i].getKeyBlock()[0].length + keyStorageArray[i]
+                                .getKeyBlock()[keyStorageArray[i].getKeyBlock().length - 1].length];
+
+                byte[] minVal = keyStorageArray[i].getKeyBlock()[0];
+                byte[] maxVal =
+                        keyStorageArray[i].getKeyBlock()[keyStorageArray[i].getKeyBlock().length
+                                - 1];
                 System.arraycopy(minVal, 0, columnMinMaxData[i], 0, minVal.length);
-                System.arraycopy(maxVal, 0, columnMinMaxData[i],minVal.length, maxVal.length);
-            }
-            else
-            {
-            //for column min max value
-            columnMinMaxData[i]=new byte[this.keyBlockSize[i]*2];
-        	byte[] minVal=keyStorageArray[i].getKeyBlock()[0];
-        	byte[] maxVal=keyStorageArray[i].getKeyBlock()[keyStorageArray[i].getKeyBlock().length-1];
-        	System.arraycopy(minVal, 0, columnMinMaxData[i], 0, this.keyBlockSize[i]);
-        	System.arraycopy(maxVal, 0, columnMinMaxData[i], this.keyBlockSize[i], this.keyBlockSize[i]);
+                System.arraycopy(maxVal, 0, columnMinMaxData[i], minVal.length, maxVal.length);
+            } else {
+                //for column min max value
+                columnMinMaxData[i] = new byte[this.keyBlockSize[i] * 2];
+                byte[] minVal = keyStorageArray[i].getKeyBlock()[0];
+                byte[] maxVal =
+                        keyStorageArray[i].getKeyBlock()[keyStorageArray[i].getKeyBlock().length
+                                - 1];
+                System.arraycopy(minVal, 0, columnMinMaxData[i], 0, this.keyBlockSize[i]);
+                System.arraycopy(maxVal, 0, columnMinMaxData[i], this.keyBlockSize[i],
+                        this.keyBlockSize[i]);
             }
         }
-        int[] keyBlockIdxLengths= new int[keyBlockSize];
-        byte[][] dataAfterCompression= new byte[keyBlockSize][];
-        byte[][] indexMap= new byte[keyBlockSize][];
-        int idx=0; 
-        for (int i = 0; i < isSortedData.length; i++) 
-        {
-            if(!isSortedData[i])
-            {
-                dataAfterCompression[idx] =numberCompressor
-                        .compress(keyStorageArray[i].getDataAfterComp());
-                if(null!=keyStorageArray[i].getIndexMap() && keyStorageArray[i]
-                        .getIndexMap().length>0)
-                {
-                    indexMap[idx]=numberCompressor.compress(keyStorageArray[i].getIndexMap());
-                }
-                else
-                {
-                    indexMap[idx]= new byte[0];
+        int[] keyBlockIdxLengths = new int[keyBlockSize];
+        byte[][] dataAfterCompression = new byte[keyBlockSize][];
+        byte[][] indexMap = new byte[keyBlockSize][];
+        int idx = 0;
+        for (int i = 0; i < isSortedData.length; i++) {
+            if (!isSortedData[i]) {
+                dataAfterCompression[idx] =
+                        numberCompressor.compress(keyStorageArray[i].getDataAfterComp());
+                if (null != keyStorageArray[i].getIndexMap()
+                        && keyStorageArray[i].getIndexMap().length > 0) {
+                    indexMap[idx] = numberCompressor.compress(keyStorageArray[i].getIndexMap());
+                } else {
+                    indexMap[idx] = new byte[0];
                 }
                 keyBlockIdxLengths[idx] = (dataAfterCompression[idx].length + indexMap[idx].length)
-                         + MolapCommonConstants.INT_SIZE_IN_BYTE;
+                        + MolapCommonConstants.INT_SIZE_IN_BYTE;
                 idx++;
             }
         }
-        int compressDataBlockSize=0;
-        for(int i = 0;i < aggBlocks.length;i++)
-        {
-            if(aggBlocks[i])
-            {
+        int compressDataBlockSize = 0;
+        for (int i = 0; i < aggBlocks.length; i++) {
+            if (aggBlocks[i]) {
                 compressDataBlockSize++;
             }
         }
-        byte[][] compressedDataIndex= new byte[compressDataBlockSize][];
-        int[] dataIndexMapLength= new int[compressDataBlockSize];
-        idx=0;
-        for(int i = 0;i < aggBlocks.length;i++)
-        {
-            if(aggBlocks[i])
-            {
-                try
-                {
-                compressedDataIndex[idx]= numberCompressor.compress(keyStorageArray[i].getDataIndexMap());
-                dataIndexMapLength[idx]=compressedDataIndex[idx].length;
-                idx++;
-                }
-                catch(Exception e)
-                {
-                	   LOGGER.error(
-                             MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-                             e);
+        byte[][] compressedDataIndex = new byte[compressDataBlockSize][];
+        int[] dataIndexMapLength = new int[compressDataBlockSize];
+        idx = 0;
+        for (int i = 0; i < aggBlocks.length; i++) {
+            if (aggBlocks[i]) {
+                try {
+                    compressedDataIndex[idx] =
+                            numberCompressor.compress(keyStorageArray[i].getDataIndexMap());
+                    dataIndexMapLength[idx] = compressedDataIndex[idx].length;
+                    idx++;
+                } catch (Exception e) {
+                    LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
                 }
             }
         }
-        
-        byte[] writableKeyArray=new byte[totalKeySize];
+
+        byte[] writableKeyArray = new byte[totalKeySize];
         int startPosition = 0;
-        for(int i = 0;i < keyLengths.length;i++)
-        {
-            System.arraycopy(keyBlockData[i], 0, writableKeyArray, startPosition,keyBlockData[i].length);
+        for (int i = 0; i < keyLengths.length; i++) {
+            System.arraycopy(keyBlockData[i], 0, writableKeyArray, startPosition,
+                    keyBlockData[i].length);
             startPosition += keyLengths[i];
         }
         int[] msrLength = new int[this.measureCount];
         // calculate the total size required for all the measure and get the
         // each measure size
-        for(int i = 0;i < dataArray.length;i++)
-        {
+        for (int i = 0; i < dataArray.length; i++) {
             currentMsrLenght = dataArray[i].length;
             totalMsrArrySize += currentMsrLenght;
             msrLength[i] = currentMsrLenght;
@@ -197,14 +178,14 @@ public class MolapFactDataWriterImplForIntIndexAndAggBlock extends AbstractFactD
         // by added measure length which will be used for next measure start
         // position
         startPosition = 0;
-        for(int i = 0;i < dataArray.length;i++)
-        {
-            System.arraycopy(dataArray[i], 0, writableDataArray, startPosition, dataArray[i].length);
+        for (int i = 0; i < dataArray.length; i++) {
+            System.arraycopy(dataArray[i], 0, writableDataArray, startPosition,
+                    dataArray[i].length);
             startPosition += msrLength[i];
         }
         // current file size;
         this.currentFileSize += writableKeyArray.length + writableDataArray.length;
-        
+
         NodeHolder holder = new NodeHolder();
         holder.setDataArray(writableDataArray);
         holder.setKeyArray(writableKeyArray);
@@ -221,173 +202,129 @@ public class MolapFactDataWriterImplForIntIndexAndAggBlock extends AbstractFactD
         holder.setCompressedDataIndex(compressedDataIndex);
         //setting column min max value
         holder.setColumnMinMaxData(columnMinMaxData);
-        if(!this.isNodeHolderRequired)
-        {
+        if (!this.isNodeHolderRequired) {
             writeDataToFile(holder);
-        }
-        else
-        {
+        } else {
             nodeHolderList.add(holder);
         }
     }
 
-    protected byte[][] fillAndCompressedKeyBlockData(IndexStorage<int[]>[] keyStorageArray,int entryCount) 
-    {
+    protected byte[][] fillAndCompressedKeyBlockData(IndexStorage<int[]>[] keyStorageArray,
+            int entryCount) {
         byte[][] keyBlockData = new byte[keyStorageArray.length][];
-        int destPos=0;
-        for(int i =0;i<keyStorageArray.length;i++)
-        {
-            destPos=0;
+        int destPos = 0;
+        for (int i = 0; i < keyStorageArray.length; i++) {
+            destPos = 0;
             //handling for high card dims
-            if(i >= keyBlockSize.length && !isComplexType[i])
-            {
+            if (i >= keyBlockSize.length && !isComplexType[i]) {
                 int totalLength = 0;
                 // calc size of the total bytes in all the colmns.
-                for(int k = 0 ; k < keyStorageArray[i].getKeyBlock().length ;k++ )
-                {
-                    byte [] colValue = keyStorageArray[i].getKeyBlock()[k];
-                    totalLength+= colValue.length;
+                for (int k = 0; k < keyStorageArray[i].getKeyBlock().length; k++) {
+                    byte[] colValue = keyStorageArray[i].getKeyBlock()[k];
+                    totalLength += colValue.length;
                 }
                 keyBlockData[i] = new byte[totalLength];
-                
-                for(int j = 0;j < keyStorageArray[i].getKeyBlock().length;j++)
-                {
+
+                for (int j = 0; j < keyStorageArray[i].getKeyBlock().length; j++) {
                     int length = keyStorageArray[i].getKeyBlock()[j].length;
-                    System.arraycopy(keyStorageArray[i].getKeyBlock()[j], 0,
-                            keyBlockData[i], destPos,length);
+                    System.arraycopy(keyStorageArray[i].getKeyBlock()[j], 0, keyBlockData[i],
+                            destPos, length);
                     destPos += length;
                 }
-            }
-            else
-            {
-            	if(aggBlocks[i])
-                {
-                    keyBlockData[i] = new byte[keyStorageArray[i]
-                            .getTotalSize()];
-                    for(int j = 0;j < keyStorageArray[i].getKeyBlock().length;j++)
-                    {
-                        System.arraycopy(keyStorageArray[i].getKeyBlock()[j],
-                                0, keyBlockData[i], destPos,
-                                keyStorageArray[i].getKeyBlock()[j].length);
+            } else {
+                if (aggBlocks[i]) {
+                    keyBlockData[i] = new byte[keyStorageArray[i].getTotalSize()];
+                    for (int j = 0; j < keyStorageArray[i].getKeyBlock().length; j++) {
+                        System.arraycopy(keyStorageArray[i].getKeyBlock()[j], 0, keyBlockData[i],
+                                destPos, keyStorageArray[i].getKeyBlock()[j].length);
                         destPos += keyStorageArray[i].getKeyBlock()[j].length;
                     }
-                }
-                else
-                {
-                	if(isComplexType[i])
-	            	{
-	            		keyBlockData[i]= new byte[keyStorageArray[i].getKeyBlock().length* keyBlockSize[i]];
-	            	}
-	            	else
-	            	{
-	            		keyBlockData[i]= new byte[entryCount* keyBlockSize[i]];
-	            	}
-	                for(int j=0;j<keyStorageArray[i].getKeyBlock().length;j++)
-	                {
-	                    System.arraycopy(keyStorageArray[i].getKeyBlock()[j], 0, keyBlockData[i], destPos, keyBlockSize[i]);
-	                    destPos+=keyBlockSize[i];
-	                }
+                } else {
+                    if (isComplexType[i]) {
+                        keyBlockData[i] =
+                                new byte[keyStorageArray[i].getKeyBlock().length * keyBlockSize[i]];
+                    } else {
+                        keyBlockData[i] = new byte[entryCount * keyBlockSize[i]];
+                    }
+                    for (int j = 0; j < keyStorageArray[i].getKeyBlock().length; j++) {
+                        System.arraycopy(keyStorageArray[i].getKeyBlock()[j], 0, keyBlockData[i],
+                                destPos, keyBlockSize[i]);
+                        destPos += keyBlockSize[i];
+                    }
                 }
             }
-            keyBlockData[i]=SnappyByteCompression.INSTANCE.compress(keyBlockData[i]);
+            keyBlockData[i] = SnappyByteCompression.INSTANCE.compress(keyBlockData[i]);
         }
         return keyBlockData;
     }
-    
+
     /**
      * This method is responsible for writing leaf node to the leaf node file
-     * 
-     * @param keyArray
-     *            mdkey array
-     * @param measureArray
-     *            measure array
-     * @param fileName
-     *            leaf node file
+     *
      * @return file offset offset is the current position of the file
-     * @throws MolapDataWriterException 
-     *          if will throw MolapDataWriterException when any thing goes wrong
-     *             while while writing the leaf file
+     * @throws MolapDataWriterException if will throw MolapDataWriterException when any thing goes wrong
+     *                                  while while writing the leaf file
      */
-    protected long writeDataToFile(NodeHolder nodeHolder,FileChannel channel) throws MolapDataWriterException
-    {
+    protected long writeDataToFile(NodeHolder nodeHolder, FileChannel channel)
+            throws MolapDataWriterException {
         // create byte buffer
         byte[][] compressedIndex = nodeHolder.getCompressedIndex();
         byte[][] compressedIndexMap = nodeHolder.getCompressedIndexMap();
         byte[][] compressedDataIndex = nodeHolder.getCompressedDataIndex();
-        int indexBlockSize=0;
-        int index=0;
-        for(int i =0;i<nodeHolder.getKeyBlockIndexLength().length;i++)
-        {
+        int indexBlockSize = 0;
+        int index = 0;
+        for (int i = 0; i < nodeHolder.getKeyBlockIndexLength().length; i++) {
             indexBlockSize += nodeHolder.getKeyBlockIndexLength()[index++]
                     + MolapCommonConstants.INT_SIZE_IN_BYTE;
         }
-        
-        for(int i =0;i<nodeHolder.getDataIndexMapLength().length;i++)
-        {
+
+        for (int i = 0; i < nodeHolder.getDataIndexMapLength().length; i++) {
             indexBlockSize += nodeHolder.getDataIndexMapLength()[i];
         }
-        ByteBuffer byteBuffer = ByteBuffer.allocate(nodeHolder.getKeyArray().length + nodeHolder.getDataArray().length+indexBlockSize);
+        ByteBuffer byteBuffer = ByteBuffer.allocate(
+                nodeHolder.getKeyArray().length + nodeHolder.getDataArray().length
+                        + indexBlockSize);
         long offset = 0;
-        try
-        {
+        try {
             // get the current offset
-            offset = channel.size(); 
+            offset = channel.size();
             // add key array to byte buffer
             byteBuffer.put(nodeHolder.getKeyArray());
             // add measure data array to byte buffer
             byteBuffer.put(nodeHolder.getDataArray());
-            
+
             ByteBuffer buffer1 = null;
-            for(int i =0;i<compressedIndex.length;i++)
-            {
-                buffer1= ByteBuffer.allocate(nodeHolder.getKeyBlockIndexLength()[i]);
+            for (int i = 0; i < compressedIndex.length; i++) {
+                buffer1 = ByteBuffer.allocate(nodeHolder.getKeyBlockIndexLength()[i]);
                 buffer1.putInt(compressedIndex[i].length);
                 buffer1.put(compressedIndex[i]);
-                if(compressedIndexMap[i].length>0)
-                {
+                if (compressedIndexMap[i].length > 0) {
                     buffer1.put(compressedIndexMap[i]);
                 }
                 buffer1.rewind();
                 byteBuffer.put(buffer1.array());
-                
+
             }
-            for(int i = 0;i < compressedDataIndex.length;i++)
-            {
+            for (int i = 0; i < compressedDataIndex.length; i++) {
                 byteBuffer.put(compressedDataIndex[i]);
             }
             byteBuffer.flip();
             // write data to file
             channel.write(byteBuffer);
-        }
-        catch(IOException exception)
-        {
+        } catch (IOException exception) {
             throw new MolapDataWriterException("Problem in writing Leaf Node File: ", exception);
         }
         // return the offset, this offset will be used while reading the file in
         // engine side to get from which position to start reading the file
         return offset;
     }
-    
+
     /**
-     * This method will be used to get the leaf node metadata 
-     * 
-     * @param keySize
-     *          key size
-     * @param msrLength
-     *          measure length array
-     * @param offset
-     *          current offset
-     * @param entryCount
-     *          total number of rows in leaf 
-     * @param startKey
-     *          start key of leaf 
-     * @param endKey
-     *          end key of leaf
-     * @return LeafNodeInfo - leaf metadata
+     * This method will be used to get the leaf node metadata
      *
+     * @return LeafNodeInfo - leaf metadata
      */
-    protected LeafNodeInfoColumnar getLeafNodeInfo(NodeHolder nodeHolder, long offset)
-    {
+    protected LeafNodeInfoColumnar getLeafNodeInfo(NodeHolder nodeHolder, long offset) {
         // create the info object for leaf entry
         LeafNodeInfoColumnar info = new LeafNodeInfoColumnar();
         // add total entry count
@@ -395,21 +332,16 @@ public class MolapFactDataWriterImplForIntIndexAndAggBlock extends AbstractFactD
 
         // add the key array length
         info.setKeyLengths(nodeHolder.getKeyLengths());
-        
+
         //add column min max length
         info.setColumnMinMaxData(nodeHolder.getColumnMinMaxData());
-        
-        long[] keyOffSets= new long[nodeHolder.getKeyLengths().length];
-        
-        for (int i = 0; i < keyOffSets.length; i++) 
-        {
-            keyOffSets[i]=offset;
-            offset+=nodeHolder.getKeyLengths()[i];
+
+        long[] keyOffSets = new long[nodeHolder.getKeyLengths().length];
+
+        for (int i = 0; i < keyOffSets.length; i++) {
+            keyOffSets[i] = offset;
+            offset += nodeHolder.getKeyLengths()[i];
         }
-        // key offset will be 8 bytes from current offset because first 4 bytes
-        // will be for number of entry in leaf, then next 4 bytes will be for
-        // key lenght;
-//        offset += MolapCommonConstants.INT_SIZE_IN_BYTE * 2;
 
         // add key offset
         info.setKeyOffSets(keyOffSets);
@@ -419,11 +351,7 @@ public class MolapFactDataWriterImplForIntIndexAndAggBlock extends AbstractFactD
 
         long[] msrOffset = new long[this.measureCount];
 
-        for(int i = 0;i < this.measureCount;i++)
-        {
-            // increment the current offset by 4 bytes because 4 bytes will be
-            // used for measure byte length
-//            offset += MolapCommonConstants.INT_SIZE_IN_BYTE;
+        for (int i = 0; i < this.measureCount; i++) {
             msrOffset[i] = offset;
             // now increment the offset by adding measure length to get the next
             // measure offset;
@@ -433,18 +361,16 @@ public class MolapFactDataWriterImplForIntIndexAndAggBlock extends AbstractFactD
         info.setMeasureOffset(msrOffset);
         info.setIsSortedKeyColumn(nodeHolder.getIsSortedKeyBlock());
         info.setKeyBlockIndexLength(nodeHolder.getKeyBlockIndexLength());
-        long[] keyBlockIndexOffsets= new long[nodeHolder.getKeyBlockIndexLength().length];
-        for (int i = 0; i < keyBlockIndexOffsets.length; i++) 
-        {
-            keyBlockIndexOffsets[i]=offset;
-            offset+=nodeHolder.getKeyBlockIndexLength()[i];
+        long[] keyBlockIndexOffsets = new long[nodeHolder.getKeyBlockIndexLength().length];
+        for (int i = 0; i < keyBlockIndexOffsets.length; i++) {
+            keyBlockIndexOffsets[i] = offset;
+            offset += nodeHolder.getKeyBlockIndexLength()[i];
         }
         info.setDataIndexMapLength(nodeHolder.getDataIndexMapLength());
-        long [] dataIndexMapOffsets = new long[nodeHolder.getDataIndexMapLength().length];
-        for(int i = 0;i < dataIndexMapOffsets.length;i++)
-        {
-            dataIndexMapOffsets[i]=offset;
-            offset+=nodeHolder.getDataIndexMapLength()[i];
+        long[] dataIndexMapOffsets = new long[nodeHolder.getDataIndexMapLength().length];
+        for (int i = 0; i < dataIndexMapOffsets.length; i++) {
+            dataIndexMapOffsets[i] = offset;
+            offset += nodeHolder.getDataIndexMapLength()[i];
         }
         info.setDataIndexMapOffsets(dataIndexMapOffsets);
         info.setKeyBlockIndexOffSets(keyBlockIndexOffsets);
@@ -456,46 +382,50 @@ public class MolapFactDataWriterImplForIntIndexAndAggBlock extends AbstractFactD
         // return leaf metadata
         return info;
     }
-    
-    protected int calculateAndSetLeafNodeMetaSize(NodeHolder nodeHolderInfo)
-    {
-        int metaSize=0;
+
+    protected int calculateAndSetLeafNodeMetaSize(NodeHolder nodeHolderInfo) {
+        int metaSize = 0;
         //measure offset and measure length
-        metaSize+= (measureCount * MolapCommonConstants.INT_SIZE_IN_BYTE)
-                + (measureCount * MolapCommonConstants.LONG_SIZE_IN_BYTE); 
+        metaSize += (measureCount * MolapCommonConstants.INT_SIZE_IN_BYTE) + (measureCount
+                * MolapCommonConstants.LONG_SIZE_IN_BYTE);
         //start and end key 
-        metaSize+=mdkeySize*2;
-        
+        metaSize += mdkeySize * 2;
+
         // keyblock length + key offsets + number of tuples+ number of columnar block
-        metaSize+=(nodeHolderInfo.getKeyLengths().length * MolapCommonConstants.INT_SIZE_IN_BYTE)
-                + (nodeHolderInfo.getKeyLengths().length * MolapCommonConstants.LONG_SIZE_IN_BYTE)+MolapCommonConstants.INT_SIZE_IN_BYTE
-                + MolapCommonConstants.INT_SIZE_IN_BYTE;
+        metaSize +=
+                (nodeHolderInfo.getKeyLengths().length * MolapCommonConstants.INT_SIZE_IN_BYTE) + (
+                        nodeHolderInfo.getKeyLengths().length
+                                * MolapCommonConstants.LONG_SIZE_IN_BYTE)
+                        + MolapCommonConstants.INT_SIZE_IN_BYTE
+                        + MolapCommonConstants.INT_SIZE_IN_BYTE;
         //if sorted or not 
-        metaSize+=nodeHolderInfo.getIsSortedKeyBlock().length;
-        
+        metaSize += nodeHolderInfo.getIsSortedKeyBlock().length;
+
         //column min max size
         //for length of columnMinMax byte array
-        metaSize+=MolapCommonConstants.INT_SIZE_IN_BYTE;
-        for(int i=0;i<nodeHolderInfo.getColumnMinMaxData().length;i++)
-        {
-        	//length of sub byte array
-        	metaSize+=MolapCommonConstants.INT_SIZE_IN_BYTE;
-        	metaSize+=nodeHolderInfo.getColumnMinMaxData()[i].length;
+        metaSize += MolapCommonConstants.INT_SIZE_IN_BYTE;
+        for (int i = 0; i < nodeHolderInfo.getColumnMinMaxData().length; i++) {
+            //length of sub byte array
+            metaSize += MolapCommonConstants.INT_SIZE_IN_BYTE;
+            metaSize += nodeHolderInfo.getColumnMinMaxData()[i].length;
         }
-        
+
         // key block index length + key block index offset + number of key block
-        metaSize+= (nodeHolderInfo
-                .getKeyBlockIndexLength().length * MolapCommonConstants.INT_SIZE_IN_BYTE)
-                + (nodeHolderInfo.getKeyBlockIndexLength().length * MolapCommonConstants.LONG_SIZE_IN_BYTE)+MolapCommonConstants.INT_SIZE_IN_BYTE;
-        
+        metaSize += (nodeHolderInfo.getKeyBlockIndexLength().length
+                * MolapCommonConstants.INT_SIZE_IN_BYTE) + (
+                nodeHolderInfo.getKeyBlockIndexLength().length
+                        * MolapCommonConstants.LONG_SIZE_IN_BYTE)
+                + MolapCommonConstants.INT_SIZE_IN_BYTE;
+
         // aggregate block length + agg block offsets + number of block aggergated
-        metaSize+= (nodeHolderInfo
-                .getDataIndexMapLength().length * MolapCommonConstants.INT_SIZE_IN_BYTE)
-                + (nodeHolderInfo.getDataIndexMapLength().length * MolapCommonConstants.LONG_SIZE_IN_BYTE)+MolapCommonConstants.INT_SIZE_IN_BYTE;
+        metaSize += (nodeHolderInfo.getDataIndexMapLength().length
+                * MolapCommonConstants.INT_SIZE_IN_BYTE) + (
+                nodeHolderInfo.getDataIndexMapLength().length
+                        * MolapCommonConstants.LONG_SIZE_IN_BYTE)
+                + MolapCommonConstants.INT_SIZE_IN_BYTE;
         return metaSize;
     }
-    
-    //TODO SIMIAN
+
     /**
      * This method will write metadata at the end of file file format
      * <KeyArray><measure1><measure2> <KeyArray><measure1><measure2>
@@ -503,95 +433,86 @@ public class MolapFactDataWriterImplForIntIndexAndAggBlock extends AbstractFactD
      * <entrycount>
      * <keylength><keyoffset><measure1length><measure1offset><measure2length
      * ><measure2offset>
-     * 
-     * @throws MolapDataWriterException
-     *             throw MolapDataWriterException when problem in writing the meta data
-     *             to file
-     * 
+     *
+     * @throws MolapDataWriterException throw MolapDataWriterException when problem in writing the meta data
+     *                                  to file
      */
-    protected void writeleafMetaDataToFile(List<LeafNodeInfoColumnar> infoList, FileChannel channel) throws MolapDataWriterException 
-    {
+    protected void writeleafMetaDataToFile(List<LeafNodeInfoColumnar> infoList, FileChannel channel)
+            throws MolapDataWriterException {
         ByteBuffer buffer = null;
-        long currentPos = 0; 
+        long currentPos = 0;
         int[] msrLength = null;
         long[] msroffset = null;
         int[] keyLengths = null;
-        long[] keyOffSets= null;
+        long[] keyOffSets = null;
         //columns min max data
-        byte[][] columnMinMaxData=null;
-        
+        byte[][] columnMinMaxData = null;
+
         int[] keyBlockIndexLengths = null;
-        long[] keyBlockIndexOffSets= null;
+        long[] keyBlockIndexOffSets = null;
         boolean[] isSortedKeyColumn = null;
         int[] dataIndexBlockLength = null;
         long[] dataIndexBlockOffsets = null;
-        try
-        {
+        try {
             // get the current position of the file, this will be used for
             // reading the file meta data, meta data start position in file will
             // be this position
             currentPos = channel.size();
-            for(LeafNodeInfoColumnar info : infoList)
-            {
+            for (LeafNodeInfoColumnar info : infoList) {
                 // get the measure length array
                 msrLength = info.getMeasureLength();
                 // get the measure offset array
                 msroffset = info.getMeasureOffset();
                 //get the key length
-                keyLengths= info.getKeyLengths();
+                keyLengths = info.getKeyLengths();
                 // get the key offsets
-                keyOffSets= info.getKeyOffSets();
+                keyOffSets = info.getKeyOffSets();
                 //keyBlockIndexLengths
-                keyBlockIndexLengths= info.getKeyBlockIndexLength();
+                keyBlockIndexLengths = info.getKeyBlockIndexLength();
                 //keyOffSets
-                keyBlockIndexOffSets=info.getKeyBlockIndexOffSets();
+                keyBlockIndexOffSets = info.getKeyBlockIndexOffSets();
                 //isSortedKeyColumn
-                isSortedKeyColumn=info.getIsSortedKeyColumn();
-                dataIndexBlockLength= info.getDataIndexMapLength();
-                dataIndexBlockOffsets= info.getDataIndexMapOffsets();
+                isSortedKeyColumn = info.getIsSortedKeyColumn();
+                dataIndexBlockLength = info.getDataIndexMapLength();
+                dataIndexBlockOffsets = info.getDataIndexMapOffsets();
                 // allocate total size for buffer
                 buffer = ByteBuffer.allocate(info.getLeafNodeMetaSize());
                 // add entry count
                 buffer.putInt(info.getNumberOfKeys());
                 buffer.putInt(keyOffSets.length);
-                for (int j = 0; j < keyOffSets.length; j++)
-                {
-                     // add key length
+                for (int j = 0; j < keyOffSets.length; j++) {
+                    // add key length
                     buffer.putInt(keyLengths[j]);
                     // add key offset
                     buffer.putLong(keyOffSets[j]);
-                    buffer.put(isSortedKeyColumn[j]?(byte)0:(byte)1);
-                  
+                    buffer.put(isSortedKeyColumn[j] ? (byte) 0 : (byte) 1);
+
                 }
                 //set column min max data
-                columnMinMaxData=info.getColumnMinMaxData();
+                columnMinMaxData = info.getColumnMinMaxData();
                 buffer.putInt(columnMinMaxData.length);
-                for(int j=0;j<columnMinMaxData.length;j++)
-                {
-                	buffer.putInt(columnMinMaxData[j].length);
-                	buffer.put(columnMinMaxData[j]);
+                for (int j = 0; j < columnMinMaxData.length; j++) {
+                    buffer.putInt(columnMinMaxData[j].length);
+                    buffer.put(columnMinMaxData[j]);
                 }
-                
+
                 // set the start key
                 buffer.put(info.getStartKey());
                 // set the end key
                 buffer.put(info.getEndKey());
                 // add each measure length and its offset
-                for(int m = 0;m < msrLength.length;m++)
-                {
+                for (int m = 0; m < msrLength.length; m++) {
                     buffer.putInt(msrLength[m]);
                     buffer.putLong(msroffset[m]);
                 }
                 buffer.putInt(keyBlockIndexLengths.length);
-                for(int i = 0;i < keyBlockIndexLengths.length;i++)
-                {
+                for (int i = 0; i < keyBlockIndexLengths.length; i++) {
                     buffer.putInt(keyBlockIndexLengths[i]);
                     buffer.putLong(keyBlockIndexOffSets[i]);
                 }
-                
+
                 buffer.putInt(dataIndexBlockLength.length);
-                for(int k = 0;k < dataIndexBlockLength.length;k++) 
-                {
+                for (int k = 0; k < dataIndexBlockLength.length; k++) {
                     buffer.putInt(dataIndexBlockLength[k]);
                     buffer.putLong(dataIndexBlockOffsets[k]);
                 }
@@ -607,10 +528,9 @@ public class MolapFactDataWriterImplForIntIndexAndAggBlock extends AbstractFactD
             buffer.flip();
             // write offset to file
             channel.write(buffer);
-        }
-        catch(IOException exception)
-        {
-            throw new MolapDataWriterException("Problem while writing the Leaf Node File: ", exception);
+        } catch (IOException exception) {
+            throw new MolapDataWriterException("Problem while writing the Leaf Node File: ",
+                    exception);
         }
     }
 }

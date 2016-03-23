@@ -22,80 +22,43 @@ package com.huawei.unibi.molap.schema.metadata;
 import java.io.Serializable;
 import java.util.Arrays;
 
-/**
- * @author R00900208
- */
+public class ArrayWrapper implements Serializable {
 
-public class ArrayWrapper implements Serializable
-{
-	
     /**
-     * 
      * Comment for <code>serialVersionUID</code>
-     * 
      */
     private static final long serialVersionUID = -2016551342632572869L;
-    
+
     /**
      * data
      */
     private int[] data;
 
-    /**
-     * @param data
-     */
-    public ArrayWrapper(int[] data)
-    {
-        if (data == null)
-        {
+    public ArrayWrapper(int[] data) {
+        if (data == null) {
             throw new IllegalArgumentException();
         }
         this.data = data;
     }
-    
-    /**
-     * 
-     * @param data
-     */
-    public void setData(int[] data)
-    {
-    	this.data = data;
-    }
 
-    /**
-     * 
-     * @see java.lang.Object#equals(java.lang.Object)
-     */
-    @Override
-    public boolean equals(Object other)
-    {
-        if(other instanceof ArrayWrapper)
-        {
-            return Arrays.equals(data, ((ArrayWrapper)other).data);
-        }
-        else
-        {
+    @Override public boolean equals(Object other) {
+        if (other instanceof ArrayWrapper) {
+            return Arrays.equals(data, ((ArrayWrapper) other).data);
+        } else {
             return false;
         }
 
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see java.lang.Object#hashCode()
-     */
-    @Override
-    public int hashCode()
-    {
-    	return Arrays.hashCode(data);
+    @Override public int hashCode() {
+        return Arrays.hashCode(data);
     }
-    
-    /**
-     * @return
-     */
-    public int[] getData()
-    {
-    	return data;
+
+    public int[] getData() {
+        return data;
+    }
+
+    public void setData(int[] data) {
+        this.data = data;
     }
 }

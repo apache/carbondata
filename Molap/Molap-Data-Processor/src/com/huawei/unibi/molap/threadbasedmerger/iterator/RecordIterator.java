@@ -21,80 +21,71 @@ package com.huawei.unibi.molap.threadbasedmerger.iterator;
 
 import com.huawei.unibi.molap.threadbasedmerger.container.Container;
 
-public class RecordIterator
-{
+public class RecordIterator {
     /**
-     * producer container 
+     * producer container
      */
     private final Container producerContainer;
-    
+
     /**
-     * record holder array 
+     * record holder array
      */
     private Object[][] sortHolderArray;
-    
+
     /**
      * record counter
      */
     private int counter;
-    
+
     /**
      * holder size
      */
     private int size;
-    
+
     /**
      * ProducerIterator constructor
-     * 
+     *
      * @param producerContainer
      */
-    public RecordIterator(Container producerContainer)
-    {
+    public RecordIterator(Container producerContainer) {
         this.producerContainer = producerContainer;
     }
-    
+
     /**
      * below method will be used to increment the counter
      */
-    public void next()
-    {
+    public void next() {
         counter++;
     }
-    
+
     /**
-     * below method will be used to get the row from holder 
+     * below method will be used to get the row from holder
+     *
      * @return
      */
-    public Object[] getRow()
-    {
+    public Object[] getRow() {
         return sortHolderArray[counter];
     }
-    
+
     /**
      * has next method will be used to check any more row is present or not
-     * @return is row present 
+     *
+     * @return is row present
      */
-    public boolean hasNext()
-    {
-        if(counter >= size)
-        {
-            if(!producerContainer.isDone())
-            {
+    public boolean hasNext() {
+        if (counter >= size) {
+            if (!producerContainer.isDone()) {
                 sortHolderArray = producerContainer.getContainerData();
-                if(null==sortHolderArray)
-                {
+                if (null == sortHolderArray) {
                     return false;
                 }
                 counter = 0;
                 size = sortHolderArray.length;
-                synchronized(producerContainer)
-                {
+                synchronized (producerContainer) {
                     this.producerContainer.setFilled(false);
                     producerContainer.notifyAll();
                 }
-            }
-            else
-            {
+            } else {
                 return false;
             }
         }

@@ -17,10 +17,7 @@
  * under the License.
  */
 
-
 package com.huawei.unibi.molap.surrogatekeysgenerator.csvbased;
-
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 
 import java.io.DataInputStream;
 import java.io.File;
@@ -28,15 +25,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
-
-import org.apache.commons.codec.binary.Base64;
-import org.pentaho.di.core.exception.KettleException;
 
 import com.huawei.iweb.platform.logging.LogService;
 import com.huawei.iweb.platform.logging.LogServiceFactory;
@@ -63,121 +53,109 @@ import com.huawei.unibi.molap.util.MolapUtil;
 import com.huawei.unibi.molap.writer.ByteArrayHolder;
 import com.huawei.unibi.molap.writer.HierarchyValueWriterForCSV;
 import com.huawei.unibi.molap.writer.LevelValueWriter;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import org.apache.commons.codec.binary.Base64;
+import org.pentaho.di.core.exception.KettleException;
 
-public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKeyGen
-{
-    
+public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKeyGen {
+
     /**
-     * 
      * Comment for <code>LOGGER</code>
-     * 
      */
-    private static final LogService LOGGER = LogServiceFactory
-            .getLogService(FileStoreSurrogateKeyGen.class.getName());
-    
+    private static final LogService LOGGER =
+            LogServiceFactory.getLogService(FileStoreSurrogateKeyGen.class.getName());
+
     /**
      * syncObject
      */
-    private final Object syncObject =new Object();
+    private final Object syncObject = new Object();
 
     /**
      * hierValueWriter
      */
     private Map<String, HierarchyValueWriterForCSV> hierValueWriter;
-    
+
     /**
      * keyGenerator
      */
     private Map<String, KeyGenerator> keyGenerator;
-    
+
     /**
      * baseStorePath
      */
     private String baseStorePath;
-    
+
     /**
      * LOAD_FOLDER
      */
     private String loadFolderName;
-    
+
     /**
      * folderList
      */
     private List<MolapFile> folderList = new ArrayList<MolapFile>(5);
-    
+
     /**
      * primaryKeyStringArray
      */
     private String[] primaryKeyStringArray;
-    
+
     /**
-     * 
+     *
      */
     private Object lock = new Object();
-    
+
     private int currentRestructNumber;
-    
+
     /**
-     * 
      * @param molapInfo
-     * @throws KettleException 
-     * 
+     * @throws KettleException
      */
-    public FileStoreSurrogateKeyGenForCSV(MolapInfo molapInfo, int currentRestructNum) throws KettleException
-    {
+    public FileStoreSurrogateKeyGenForCSV(MolapInfo molapInfo, int currentRestructNum)
+            throws KettleException {
         super(molapInfo);
         currentRestructNumber = currentRestructNum;
         populatePrimaryKeyarray(dimInsertFileNames, molapInfo.getPrimaryKeyMap());
-        
-        keyGenerator = new HashMap<String, KeyGenerator>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
-        
+
+        keyGenerator =
+                new HashMap<String, KeyGenerator>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+
         baseStorePath = molapInfo.getBaseStoreLocation();
-        setStoreFolderWithLoadNumber(checkAndCreateLoadFolderNumber(baseStorePath,molapInfo.getTableName()));
-//        storeFolderWithLoadNumber = checkAndCreateLoadFolderNumber(baseStorePath,molapInfo.getTableName());
+        setStoreFolderWithLoadNumber(
+                checkAndCreateLoadFolderNumber(baseStorePath, molapInfo.getTableName()));
         fileManager = new LoadFolderData();
-        fileManager.setName(loadFolderName
-                + MolapCommonConstants.FILE_INPROGRESS_STATUS);
-        
+        fileManager.setName(loadFolderName + MolapCommonConstants.FILE_INPROGRESS_STATUS);
+
         dimensionWriter = new LevelValueWriter[dimInsertFileNames.length];
-        for(int i = 0;i < dimensionWriter.length;i++)
-        {
-            String dimFileName = dimInsertFileNames[i]
-                    + MolapCommonConstants.LEVEL_FILE_EXTENSION;
-            dimensionWriter[i] = new LevelValueWriter(dimFileName,
-                    getStoreFolderWithLoadNumber());
-            FileData fileData = new FileData(dimFileName,
-                    getStoreFolderWithLoadNumber());
+        for (int i = 0; i < dimensionWriter.length; i++) {
+            String dimFileName = dimInsertFileNames[i] + MolapCommonConstants.LEVEL_FILE_EXTENSION;
+            dimensionWriter[i] = new LevelValueWriter(dimFileName, getStoreFolderWithLoadNumber());
+            FileData fileData = new FileData(dimFileName, getStoreFolderWithLoadNumber());
             fileData.setLevelValueWriter(dimensionWriter[i]);
             fileManager.add(fileData);
         }
 
-        hierValueWriter = new HashMap<String, HierarchyValueWriterForCSV>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+        hierValueWriter = new HashMap<String, HierarchyValueWriterForCSV>(
+                MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-        for(Entry<String, String> entry : hierInsertFileNames.entrySet())
-        {
+        for (Entry<String, String> entry : hierInsertFileNames.entrySet()) {
             String hierFileName = entry.getValue().trim();
-            hierValueWriter.put(entry.getKey(), new HierarchyValueWriterForCSV(hierFileName, getStoreFolderWithLoadNumber()));
+            hierValueWriter.put(entry.getKey(),
+                    new HierarchyValueWriterForCSV(hierFileName, getStoreFolderWithLoadNumber()));
             Map<String, KeyGenerator> keyGenerators = molapInfo.getKeyGenerators();
             keyGenerator.put(entry.getKey(), keyGenerators.get(entry.getKey()));
-            FileData fileData = new FileData(hierFileName,getStoreFolderWithLoadNumber());
+            FileData fileData = new FileData(hierFileName, getStoreFolderWithLoadNumber());
             fileData.setHierarchyValueWriter(hierValueWriter.get(entry.getKey()));
             fileManager.add(fileData);
         }
-        boolean isCacheEnabled=Boolean.parseBoolean(MolapProperties
-                .getInstance()
-                .getProperty(
-                        MolapCommonConstants.MOLAP_SEQ_GEN_INMEMORY_LRU_CACHE_ENABLED,
+        boolean isCacheEnabled = Boolean.parseBoolean(MolapProperties.getInstance()
+                .getProperty(MolapCommonConstants.MOLAP_SEQ_GEN_INMEMORY_LRU_CACHE_ENABLED,
                         MolapCommonConstants.MOLAP_SEQ_GEN_INMEMORY_LRU_CACHE_ENABLED_DEFAULT_VALUE));
-        if(isCacheEnabled)
-        {
-            String cacheKey = molapInfo.getSchemaName()
-                    + '_'
-                    + molapInfo.getCubeName();
+        if (isCacheEnabled) {
+            String cacheKey = molapInfo.getSchemaName() + '_' + molapInfo.getCubeName();
             MolapSeqGenCacheHolder molapSeqGenCacheHolder = LRUCache.getIntance().get(cacheKey);
-            if(null!=molapSeqGenCacheHolder)
-            {
-                LOGGER.info(
-                        MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            if (null != molapSeqGenCacheHolder) {
+                LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                         "********************************************** Loading from LRU cache");
                 setMax(molapSeqGenCacheHolder.getMax());
                 setHierCache(molapSeqGenCacheHolder.getHierCache());
@@ -186,226 +164,164 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
                 setTimDimMax(molapSeqGenCacheHolder.getTimDimMax());
                 setTimeDimCache(molapSeqGenCacheHolder.getTimeDimCache());
                 setMeasureMaxSurroagetMap(molapSeqGenCacheHolder.getMeasureMaxSurroagetMap());
-            }
-            else 
-            {
+            } else {
                 populateCache();
             }
-        }
-        else
-        {
+        } else {
             populateCache();
         }
 
-        
         //Update the primary key surroagate key map
-        
+
         updatePrimaryKeyMaxSurrogateMap();
-        
-        
+
     }
-    
-    /**
-     * 
-     * @param dimInsertFileNames
-     * @param map 
-     * 
-     */
-    private void populatePrimaryKeyarray(String[] dimInsertFileNames, Map<String, Boolean> map)
-    {
+
+    private void populatePrimaryKeyarray(String[] dimInsertFileNames, Map<String, Boolean> map) {
         List<String> primaryKeyList = new ArrayList<String>(MolapCommonConstants.CONSTANT_SIZE_TEN);
-        
-        for(String columnName : dimInsertFileNames)
-        {
-            if(null != map.get(columnName))
-            {
+
+        for (String columnName : dimInsertFileNames) {
+            if (null != map.get(columnName)) {
                 map.put(columnName, false);
             }
         }
-        
+
         Set<Entry<String, Boolean>> entrySet = map.entrySet();
-        
-       
-        
-        for(Entry<String, Boolean> entry : entrySet)
-        {
-            if(entry.getValue())
-            {
-               primaryKeyList.add(entry.getKey().trim());
+
+        for (Entry<String, Boolean> entry : entrySet) {
+            if (entry.getValue()) {
+                primaryKeyList.add(entry.getKey().trim());
             }
         }
-        
+
         primaryKeyStringArray = primaryKeyList.toArray(new String[primaryKeyList.size()]);
     }
-    
+
     /**
-     * update the 
-     * 
-     *
+     * update the
      */
-    private void updatePrimaryKeyMaxSurrogateMap()
-    {
+    private void updatePrimaryKeyMaxSurrogateMap() {
         Map<String, Boolean> primaryKeyMap = molapInfo.getPrimaryKeyMap();
-       
-        for(Entry<String, Boolean> entry : primaryKeyMap.entrySet())
-        {
-            if(!primaryKeyMap.get(entry.getKey()))
-            {
-                int repeatedPrimaryFromLevels = getRepeatedPrimaryFromLevels(dimInsertFileNames,entry.getKey());
-                
-                if(null == primaryKeysMaxSurroagetMap)
-                {
-                    primaryKeysMaxSurroagetMap = new HashMap<String, Integer>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+
+        for (Entry<String, Boolean> entry : primaryKeyMap.entrySet()) {
+            if (!primaryKeyMap.get(entry.getKey())) {
+                int repeatedPrimaryFromLevels =
+                        getRepeatedPrimaryFromLevels(dimInsertFileNames, entry.getKey());
+
+                if (null == primaryKeysMaxSurroagetMap) {
+                    primaryKeysMaxSurroagetMap = new HashMap<String, Integer>(
+                            MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
                 }
                 primaryKeysMaxSurroagetMap.put(entry.getKey(), max[repeatedPrimaryFromLevels]);
             }
         }
-       
-    }
-    
-    /**
-     * 
-     * @param primaryKeyColumnName
-     * @param columnNames
-     * 
-     */
-    private int getRepeatedPrimaryFromLevels(String[] columnNames,String primaryKey)
-    {
-       for(int j = 0;j < columnNames.length;j++)
-       {
-         if(primaryKey.equals(columnNames[j]))
-         {
-             return j;
-         }
-       }
-    return -1;
+
     }
 
-    /**
-     * 
-     * @param baseStorePath
-     * @param tableName 
-     * 
-     */
-    private String checkAndCreateLoadFolderNumber(String baseStorePath, String tableName) throws KettleException
-    {
-        int restrctFolderCount = currentRestructNumber/*MolapUtil.checkAndReturnNextRestructFolderNumber(baseStorePath,"RS_")*/;
+    private int getRepeatedPrimaryFromLevels(String[] columnNames, String primaryKey) {
+        for (int j = 0; j < columnNames.length; j++) {
+            if (primaryKey.equals(columnNames[j])) {
+                return j;
+            }
+        }
+        return -1;
+    }
+
+    private String checkAndCreateLoadFolderNumber(String baseStorePath, String tableName)
+            throws KettleException {
+        int restrctFolderCount = currentRestructNumber;
         //
-        if(restrctFolderCount == -1)
-        {
+        if (restrctFolderCount == -1) {
             restrctFolderCount = 0;
         }
         //
-        String baseStorePathWithTableName = baseStorePath + File.separator
-                + MolapCommonConstants.RESTRUCTRE_FOLDER + restrctFolderCount + File.separator + tableName;
-        int counter = MolapUtil
-                .checkAndReturnCurrentLoadFolderNumber(baseStorePathWithTableName);
-        if(!CheckPointHanlder.IS_CHECK_POINT_NEEDED)
-        {
+        String baseStorePathWithTableName =
+                baseStorePath + File.separator + MolapCommonConstants.RESTRUCTRE_FOLDER
+                        + restrctFolderCount + File.separator + tableName;
+        int counter = MolapUtil.checkAndReturnCurrentLoadFolderNumber(baseStorePathWithTableName);
+        if (!CheckPointHanlder.IS_CHECK_POINT_NEEDED) {
+            counter++;
+        } else if (counter == -1) {
             counter++;
         }
-        else if(counter == -1)
-        {
-            counter++;
-        }
-        String basePath = baseStorePathWithTableName + File.separator
-                + MolapCommonConstants.LOAD_FOLDER + counter;
+        String basePath =
+                baseStorePathWithTableName + File.separator + MolapCommonConstants.LOAD_FOLDER
+                        + counter;
         // Incase of normalized data we will load dinemnsion data first and will rename the files, level files
         // extension from inprogress to normal , so in that case we need to start create new folder with 
         // next available folder.
-        if(new File(basePath).exists())
-        {
+        if (new File(basePath).exists()) {
             counter++;
         }
-        
-        basePath = baseStorePathWithTableName + File.separator
-                + MolapCommonConstants.LOAD_FOLDER + counter + MolapCommonConstants.FILE_INPROGRESS_STATUS;
-                
+
+        basePath = baseStorePathWithTableName + File.separator + MolapCommonConstants.LOAD_FOLDER
+                + counter + MolapCommonConstants.FILE_INPROGRESS_STATUS;
+
         loadFolderName = MolapCommonConstants.LOAD_FOLDER + counter;
-        
-        if(new File(basePath).exists())
-        {
+
+        if (new File(basePath).exists()) {
             return basePath;
         }
         //
-        boolean isDirCreated= new File(basePath).mkdirs();
-        if(!isDirCreated)
-        {
+        boolean isDirCreated = new File(basePath).mkdirs();
+        if (!isDirCreated) {
             throw new KettleException("Unable to create dataload directory" + basePath);
         }
         return basePath;
     }
-    
-    private MolapFile[] getFilesArray(String baseStorePath, final String fileNameSearchPattern)
-    {
+
+    private MolapFile[] getFilesArray(String baseStorePath, final String fileNameSearchPattern) {
         FileType fileType = FileFactory.getFileType(baseStorePath);
         MolapFile storeFolder = FileFactory.getMolapFile(baseStorePath, fileType);
-        
-        MolapFile[] listFiles = storeFolder.listFiles(new MolapFileFilter()
-        {
-            
-            @Override
-            public boolean accept(MolapFile pathname)
-            {
-                if(pathname.getName().indexOf(fileNameSearchPattern) > -1 && !pathname.getName().endsWith(MolapCommonConstants.FILE_INPROGRESS_STATUS))
-                {
+
+        MolapFile[] listFiles = storeFolder.listFiles(new MolapFileFilter() {
+
+            @Override public boolean accept(MolapFile pathname) {
+                if (pathname.getName().indexOf(fileNameSearchPattern) > -1 && !pathname.getName()
+                        .endsWith(MolapCommonConstants.FILE_INPROGRESS_STATUS)) {
                     return true;
                 }
                 return false;
             }
         });
-        
+
         return listFiles;
     }
-    
-    
-    /**
-     * @throws KettleException 
-     * 
-     * 
-     */
-    private void populateCache() throws KettleException
-    {
+
+    private void populateCache() throws KettleException {
         //TODO temporary changes to load cache from HDFS store. If base store path itself changed to HDFS this path is not required 
         boolean exists = false;
         String baselocation = null;
-        try
-        {
-            baselocation = MolapProperties.getInstance().getProperty(MolapCommonConstants.STORE_LOCATION_HDFS);
-            if(baselocation!=null)
-            {
-                exists = FileFactory.isFileExist(baselocation, FileFactory.getFileType(baselocation));
+        try {
+            baselocation = MolapProperties.getInstance()
+                    .getProperty(MolapCommonConstants.STORE_LOCATION_HDFS);
+            if (baselocation != null) {
+                exists = FileFactory
+                        .isFileExist(baselocation, FileFactory.getFileType(baselocation));
             }
+        } catch (Exception e) {
+            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+                    e.getMessage());
         }
-        catch(Exception e)
-        {
-        	LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e, e.getMessage());
-//            e.printStackTrace();
-            //Nothing to do
-        }
-        
-        baselocation=baselocation+'/'+molapInfo.getSchemaName()+'/'+molapInfo.getCubeName();
+
+        baselocation =
+                baselocation + '/' + molapInfo.getSchemaName() + '/' + molapInfo.getCubeName();
         checkAndUpdateFolderList(exists ? baselocation : baseStorePath);
-        
+
         // Fixing Check style
         String exceptionMsg = "";
-        try
-        {
-            for(MolapFile folder : folderList)
-            {
+        try {
+            for (MolapFile folder : folderList) {
                 exceptionMsg = "Not able to read level mapping File.";
                 // update the member cache
-                for(int i = 0;i < dimInsertFileNames.length;i++)
-                {
-                    MolapFile[] levelFilesArray = getFilesArray(folder.getAbsolutePath(), dimInsertFileNames[i] + MolapCommonConstants.LEVEL_FILE_EXTENSION);
-                    
-                    for(MolapFile file : levelFilesArray)
-                    {
-                        if(file.exists())
-                        {
+                for (int i = 0; i < dimInsertFileNames.length; i++) {
+                    MolapFile[] levelFilesArray = getFilesArray(folder.getAbsolutePath(),
+                            dimInsertFileNames[i] + MolapCommonConstants.LEVEL_FILE_EXTENSION);
+
+                    for (MolapFile file : levelFilesArray) {
+                        if (file.exists()) {
                             //
-                                readLevelFileAndUpdateCache(file,
-                                        dimInsertFileNames[i],false,false);
+                            readLevelFileAndUpdateCache(file, dimInsertFileNames[i], false, false);
                         }
                     }
 
@@ -413,146 +329,105 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
 
                 // Update the hierarchy cache
                 exceptionMsg = "Not able to read hierarchy mapping File.";
-                for(Entry<String, String> entry : hierInsertFileNames
-                        .entrySet())
-                {
+                for (Entry<String, String> entry : hierInsertFileNames.entrySet()) {
 
-                    MolapFile[] hierarchyFilesArray = getFilesArray(
-                            folder.getAbsolutePath(),
-                            entry.getKey()
-                                    + MolapCommonConstants.HIERARCHY_FILE_EXTENSION);
+                    MolapFile[] hierarchyFilesArray = getFilesArray(folder.getAbsolutePath(),
+                            entry.getKey() + MolapCommonConstants.HIERARCHY_FILE_EXTENSION);
 
-                    for(MolapFile hierarchyFile : hierarchyFilesArray)
-                    {
-                        // File hierarchyFile = new
-                        // File(folder.getAbsolutePath()
-                        // + File.separator + entry.getKey()
-                        // + MolapCommonConstants.HIERARCHY_FILE_EXTENSION);
-                        //
-                        if(hierarchyFile.exists())
-                        {
+                    for (MolapFile hierarchyFile : hierarchyFilesArray) {
+                        if (hierarchyFile.exists()) {
 
-                            readHierarchyAndUpdateCache(hierarchyFile,
-                                    entry.getKey());
+                            readHierarchyAndUpdateCache(hierarchyFile, entry.getKey());
 
                         }
                     }
 
                 }
-                
+
                 exceptionMsg = "Not able to read primary value mapping File.";
                 // update the member cache
-                for(int i = 0;i < primaryKeyStringArray.length;i++)
-                {
-                    MolapFile[] primaryKeyFilesArray = getFilesArray(
-                            folder.getAbsolutePath(), primaryKeyStringArray[i]
-                                    + MolapCommonConstants.LEVEL_FILE_EXTENSION);
+                for (int i = 0; i < primaryKeyStringArray.length; i++) {
+                    MolapFile[] primaryKeyFilesArray = getFilesArray(folder.getAbsolutePath(),
+                            primaryKeyStringArray[i] + MolapCommonConstants.LEVEL_FILE_EXTENSION);
 
-                    for(MolapFile primaryKey : primaryKeyFilesArray)
-                    {
+                    for (MolapFile primaryKey : primaryKeyFilesArray) {
 
-                        // File file = new File(folder.getAbsolutePath()
-                        // + File.separator + primaryKeyStringArray[i] +
-                        // MolapCommonConstants.LEVEL_FILE_EXTENSION);
-
-                        if(primaryKey.exists())
-                        {
+                        if (primaryKey.exists()) {
                             //
-                            readLevelFileAndUpdateCache(primaryKey,
-                                    primaryKeyStringArray[i], true, false);
+                            readLevelFileAndUpdateCache(primaryKey, primaryKeyStringArray[i], true,
+                                    false);
                         }
                     }
 
                 }
-                
+
                 // update the member cache for measure 
-                for(int i = 0;i < molapInfo.getMeasureColumns().length;i++)
-                {
-                    String path = folder.getAbsolutePath()+ File.separator + molapInfo.getTableName()+ '_' + molapInfo.getMeasureColumns()[i]  + MolapCommonConstants.LEVEL_FILE_EXTENSION;
+                for (int i = 0; i < molapInfo.getMeasureColumns().length; i++) {
+                    String path =
+                            folder.getAbsolutePath() + File.separator + molapInfo.getTableName()
+                                    + '_' + molapInfo.getMeasureColumns()[i]
+                                    + MolapCommonConstants.LEVEL_FILE_EXTENSION;
                     FileType fileType = FileFactory.getFileType(path);
 
-                    if(FileFactory.isFileExist(path, fileType, true))
-                    {
-                        MolapFile file = FileFactory.getMolapFile(path, FileFactory.getFileType(path));
+                    if (FileFactory.isFileExist(path, fileType, true)) {
+                        MolapFile file =
+                                FileFactory.getMolapFile(path, FileFactory.getFileType(path));
                         readLevelFileAndUpdateCache(file,
-                                molapInfo.getTableName()+ '_' + molapInfo.getMeasureColumns()[i],false,true);
+                                molapInfo.getTableName() + '_' + molapInfo.getMeasureColumns()[i],
+                                false, true);
                     }
 
                 }
 
             }
-        }
-        catch(IOException e)
-        {
+        } catch (IOException e) {
             throw new KettleException(exceptionMsg, e);
         }
-//        catch(Throwable t)
-//        {
-//            System.out.println(t.getMessage());
-//        }
         folderList.clear();
 
     }
-    
+
     /**
      * This method recursively checks the folder with Load_ inside each and every RS_x/TableName/Load_x
      * and add in the folder list the load folders.
-     * 
+     *
      * @param baseStorePath
      * @return
-     * @throws KettleException 
-     *
+     * @throws KettleException
      */
-    private MolapFile[] checkAndUpdateFolderList(String baseStorePath)
-    {
+    private MolapFile[] checkAndUpdateFolderList(String baseStorePath) {
         FileType fileType = FileFactory.getFileType(baseStorePath);
         try {
-			if(!FileFactory.isFileExist(baseStorePath, fileType))
-			{
-				return new MolapFile[0];
-			}
-		} 
-        catch (IOException e) 
-        {
-        	LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e, e.getMessage());
-//			e.printStackTrace();
-		}
+            if (!FileFactory.isFileExist(baseStorePath, fileType)) {
+                return new MolapFile[0];
+            }
+        } catch (IOException e) {
+            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+                    e.getMessage());
+        }
         MolapFile folders = FileFactory.getMolapFile(baseStorePath, fileType);
-//        File folders = new File(baseStorePath);
-        //
-        MolapFile[] rsFolders = folders.listFiles(new MolapFileFilter()
-        {
-            @Override
-            public boolean accept(MolapFile pathname)
-            {
+        MolapFile[] rsFolders = folders.listFiles(new MolapFileFilter() {
+            @Override public boolean accept(MolapFile pathname) {
                 boolean check = false;
-                if(CheckPointHanlder.IS_CHECK_POINT_NEEDED)
-                {
+                if (CheckPointHanlder.IS_CHECK_POINT_NEEDED) {
                     check = pathname.isDirectory()
-                            && pathname.getAbsolutePath().indexOf(
-                                    MolapCommonConstants.LOAD_FOLDER) > -1;
-                }
-                else
-                {
+                            && pathname.getAbsolutePath().indexOf(MolapCommonConstants.LOAD_FOLDER)
+                            > -1;
+                } else {
                     check = pathname.isDirectory()
-                            && pathname.getAbsolutePath().indexOf(
-                                    MolapCommonConstants.LOAD_FOLDER) > -1
-                            && pathname.getName().indexOf(
-                                    MolapCommonConstants.FILE_INPROGRESS_STATUS) == -1;
-                    
+                            && pathname.getAbsolutePath().indexOf(MolapCommonConstants.LOAD_FOLDER)
+                            > -1 &&
+                            pathname.getName().indexOf(MolapCommonConstants.FILE_INPROGRESS_STATUS)
+                                    == -1;
+
                 }
-                if(check)
-                {
+                if (check) {
                     return true;
-                }
-                else
-                {
+                } else {
                     //
                     MolapFile[] checkFolder = checkAndUpdateFolderList(pathname.getAbsolutePath());
-                    if(null != checkFolder)
-                    {
-                        for(MolapFile f: checkFolder)
-                        {
+                    if (null != checkFolder) {
+                        for (MolapFile f : checkFolder) {
                             folderList.add(f);
                         }
                     }
@@ -560,280 +435,151 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
                 return false;
             }
         });
-        
+
         return rsFolders;
-        
+
     }
-    
-    /**
-     * 
-     * @throws KettleException 
-     * @throws KeyGenException 
-     * 
-     */
-    @Override
-    protected byte[] getHierFromStore(int[] val, String hier,int primaryKey)
+
+    @Override protected byte[] getHierFromStore(int[] val, String hier, int primaryKey)
             throws KettleException
 
     {
 
         byte[] bytes;
-        try
-        {
+        try {
             bytes = molapInfo.getKeyGenerators().get(hier).generateKey(val);
-            hierValueWriter.get(hier).getByteArrayList().add(new ByteArrayHolder(bytes, primaryKey));
-        }
-        catch(KeyGenException e)
-        {
+            hierValueWriter.get(hier).getByteArrayList()
+                    .add(new ByteArrayHolder(bytes, primaryKey));
+        } catch (KeyGenException e) {
             throw new KettleException(e);
         }
         return bytes;
 
     }
 
-    /**
-     * 
-     * @throws KettleException 
-     * @see com.huawei.unibi.molap.surrogatekeysgenerator.csvbased.metadata.MolapCSVBasedDimSurrogateKeyGen.MolapDimSurrogateKeyGen#getSurrogateFromStore(java.lang.Object, int, java.lang.Object[])
-     * 
-     */
-    @Override
-    protected int getSurrogateFromStore(String value, int index,
-            Object[] properties) throws KettleException
-    {
+    @Override protected int getSurrogateFromStore(String value, int index, Object[] properties)
+            throws KettleException {
         max[index]++;
         int key = max[index];
 
-//        synchronized(syncObject)
-//        {
-            dimensionWriter[index].writeIntoLevelFile(value, key, properties);
-//        }
+        dimensionWriter[index].writeIntoLevelFile(value, key, properties);
 
         return key;
     }
-    
-    /**
-     * 
-     * @throws KettleException 
-     * @see com.huawei.unibi.molap.surrogatekeysgenerator.csvbased.metadata.MolapCSVBasedDimSurrogateKeyGen.MolapDimSurrogateKeyGen#getSurrogateFromStore(java.lang.Object, int, java.lang.Object[])
-     * 
-     */
+
     @Override
-    protected int updateSurrogateToStore(String tuple, String columnName, int index,int key,
-            Object[] properties) throws KettleException
-    {
+    protected int updateSurrogateToStore(String tuple, String columnName, int index, int key,
+            Object[] properties) throws KettleException {
         Integer count = null;
         Map<String, Integer> cache = getTimeDimCache().get(columnName);
-        
-        if(cache == null)
-        {
+
+        if (cache == null) {
             return key;
         }
 
         count = cache.get(tuple);
-        if(count == null)
-        {
-            if(getTimDimMax()[index] >= molapInfo.getMaxKeys()[index])
-            {
-                LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, "Invalid cardinality. Key size exceeded cardinality for: "
-                                + molapInfo.getDimColNames()[index]+ ": MemberValue: "+tuple);
+        if (count == null) {
+            if (getTimDimMax()[index] >= molapInfo.getMaxKeys()[index]) {
+                LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                        "Invalid cardinality. Key size exceeded cardinality for: " + molapInfo
+                                .getDimColNames()[index] + ": MemberValue: " + tuple);
                 return -1;
             }
             getTimDimMax()[index]++;
             max[index]++;
             cache.put(tuple, key);
-            synchronized(syncObject)
-            {
-                dimensionWriter[index].writeIntoLevelFile(tuple, key,
-                        properties);
+            synchronized (syncObject) {
+                dimensionWriter[index].writeIntoLevelFile(tuple, key, properties);
             }
-        }
-        else
-        {
+        } else {
             return count;
         }
 
         return key;
     }
-    
-    
-    /**
-     * 
-     * @throws  KettleException
-     * @see com.huawei.unibi.molap.surrogatekeysgenerator.MolapDimSurrogateKeyGen
-     *      #writeHeirDataToFileAndCloseStreams()
-     */
-    public void writeHeirDataToFileAndCloseStreams() throws KettleException
-    {
+
+    public void writeHeirDataToFileAndCloseStreams() throws KettleException {
         // For closing Level value writer bufferred streams
-        for(int i=0; i< dimensionWriter.length; i++)
-        {
+        for (int i = 0; i < dimensionWriter.length; i++) {
             String memberFileName = dimensionWriter[i].getMemberFileName();
             OutputStream bufferedOutputStream = dimensionWriter[i].getBufferedOutputStream();
-            if(null == bufferedOutputStream)
-            {
+            if (null == bufferedOutputStream) {
                 continue;
             }
-            try
-            {
+            try {
                 dimensionWriter[i].writeMaxValue();
-            }
-            catch(IOException e)
-            {
-                LOGGER.info(
-                        MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            } catch (IOException e) {
+                LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                         "********************************************** Problem writing max value :: "
                                 + e.getMessage());
-                throw new KettleException("Unable to write max value for level file :: " + memberFileName);
+                throw new KettleException(
+                        "Unable to write max value for level file :: " + memberFileName);
             }
             MolapUtil.closeStreams(bufferedOutputStream);
             dimensionWriter[i].clearOutputStream();
             int size = fileManager.size();
-            for(int j = 0; j < size; j++)
-            {
-                FileData fileData = (FileData)fileManager.get(j);
+            for (int j = 0; j < size; j++) {
+                FileData fileData = (FileData) fileManager.get(j);
                 String fileName = fileData.getFileName();
-                if(memberFileName.equals(fileName))
-                {
+                if (memberFileName.equals(fileName)) {
                     String storePath = fileData.getStorePath();
                     LevelValueWriter levelValueWriter = fileData.getLevelValueWriter();
                     String levelFileName = levelValueWriter.getMemberFileName();
                     int counter = levelValueWriter.getCounter();
-                    
-                    String changedFileName = levelFileName + (counter -1);
-                    
-                    String inProgFileName = changedFileName + MolapCommonConstants.FILE_INPROGRESS_STATUS;
-                    
-                    File currentFile = new File(storePath + File.separator
-                            + inProgFileName);
-                    File destFile = new File(storePath + File.separator
-                            + changedFileName);
 
-                    if(!currentFile.exists())
-                    {
+                    String changedFileName = levelFileName + (counter - 1);
+
+                    String inProgFileName =
+                            changedFileName + MolapCommonConstants.FILE_INPROGRESS_STATUS;
+
+                    File currentFile = new File(storePath + File.separator + inProgFileName);
+                    File destFile = new File(storePath + File.separator + changedFileName);
+
+                    if (!currentFile.exists()) {
                         continue;
                     }
-                    if(currentFile.length() == 0)
-                    {
-                       if(!currentFile.delete())
-                       {
-                           LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, "Not Able to delete current file : " + currentFile.getName()); 
-                       }
-                    }
-                    else
-                    {
-                        if(!currentFile.renameTo(destFile))
-                        {
-                            LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, "Not Able to rename " + currentFile.getName() + " to " + destFile.getName());
+                    if (currentFile.length() == 0) {
+                        if (!currentFile.delete()) {
+                            LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                                    "Not Able to delete current file : " + currentFile.getName());
+                        }
+                    } else {
+                        if (!currentFile.renameTo(destFile)) {
+                            LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                                    "Not Able to rename " + currentFile.getName() + " to "
+                                            + destFile.getName());
                         }
                     }
-                    
-                  break;
+
+                    break;
                 }
-                
+
             }
-            
-            
+
         }
-        
-        // For closing stream inside hierarchy writer 
-        
-//        for(Entry<String, String> entry : hierInsertFileNames.entrySet())
-//        {
-//            // First we need to sort the byte array
-//            
-//            List<ByteArrayHolder> holders = hierValueWriter.get(entry.getKey()).getByteArrayList();
-//            String hierFileName = hierValueWriter.get(entry.getKey()).getHierarchyName();
-//            Collections.sort(holders);
-//            HierarchyValueWriterForCSV hierarchyValueWriterForCSV = hierValueWriter.get(entry.getKey());
-//            for(ByteArrayHolder holder : holders)
-//            {
-//                hierarchyValueWriterForCSV.writeIntoHierarchyFile(holder.getMdKey(),holder.getPrimaryKey());
-//            }
-//
-//            holders.clear();
-//            
-//            // now write the byte array in the file.
-//            FileChannel bufferedOutStream = hierarchyValueWriterForCSV.getBufferedOutStream();
-//            if(null == bufferedOutStream)
-//            {
-//                continue;
-//            }
-//            MolapUtil.closeStreams(bufferedOutStream);
-//            int size = fileManager.size();
-//            
-//            for(int j = 0; j < size; j++)
-//            {
-//                FileData fileData = (FileData)fileManager.get(j);
-//                String fileName = fileData.getFileName();
-//                if(hierFileName.equals(fileName))
-//                {
-//                    String storePath = fileData.getStorePath();
-//                    HierarchyValueWriterForCSV hierarchyValueWriter = fileData.getHierarchyValueWriter();
-//                    int counter = hierarchyValueWriter.getCounter();
-//                    String hierName = hierarchyValueWriter.getHierarchyName();
-//                    String changedFileName = hierName + (counter-1);
-//                    
-//                    String inProgFileName = changedFileName + MolapCommonConstants.FILE_INPROGRESS_STATUS;
-//                    File currentFile = new File(storePath + File.separator
-//                            + inProgFileName);
-//                    File destFile = new File(storePath + File.separator
-//                            + changedFileName);
-//                    if(!currentFile.exists())
-//                    {
-//                        continue;
-//                    }
-//
-//                    if(currentFile.length() == 0)
-//                    {
-//                        currentFile.delete();
-//                    }
-//                    else
-//                    {
-//                        if(!currentFile.renameTo(destFile))
-//                        {
-//                            LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, "Not Able to rename " + currentFile.getName() + " to " + destFile.getName());
-//                        }
-//                    }
-//                    
-//                    fileData.setName(changedFileName);
-//
-//                    break;
-//                }
-//                
-//            }
-//        }
+
     }
-    /**
-     * @throws FileNotFoundException,IOException 
-     * @throws FileNotFoundException 
-     * 
-     * @param hierarchyFile
-     * @param hierarchy 
-     * @throws  
-     * 
-     */
-    private void readHierarchyAndUpdateCache(MolapFile hierarchyFile, String hierarchy) throws IOException
-    {
+
+    private void readHierarchyAndUpdateCache(MolapFile hierarchyFile, String hierarchy)
+            throws IOException {
         KeyGenerator generator = keyGenerator.get(hierarchy);
         int keySizeInBytes = generator.getKeySizeInBytes();
-        int rowLength = keySizeInBytes+4;
+        int rowLength = keySizeInBytes + 4;
         DataInputStream inputStream = null;
 
-        inputStream = FileFactory.getDataInputStream(hierarchyFile.getAbsolutePath(), FileFactory.getFileType(hierarchyFile.getAbsolutePath()));
-        
+        inputStream = FileFactory.getDataInputStream(hierarchyFile.getAbsolutePath(),
+                FileFactory.getFileType(hierarchyFile.getAbsolutePath()));
+
         long size = hierarchyFile.getSize();
-        long position =0;
+        long position = 0;
         Int2ObjectMap<int[]> hCache = getHierCache().get(hierarchy);
         Map<ArrayWrapper, Integer> hierCacheReverse = getHierCacheReverse().get(hierarchy);
         ByteBuffer rowlengthToRead = ByteBuffer.allocate(rowLength);
         byte[] rowlengthToReadBytes = new byte[rowLength];
-        try
-        {
-            while(position < size)
-            {
+        try {
+            while (position < size) {
                 inputStream.readFully(rowlengthToReadBytes);
-                position+=rowLength;
+                position += rowLength;
                 rowlengthToRead = ByteBuffer.wrap(rowlengthToReadBytes);
                 rowlengthToRead.rewind();
 
@@ -847,76 +593,60 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
                 hierCacheReverse.put(new ArrayWrapper(keyArray), primaryKey);
                 rowlengthToRead.clear();
             }
-        }
-        finally
-        {
-           MolapUtil.closeStreams(inputStream);
+        } finally {
+            MolapUtil.closeStreams(inputStream);
         }
 
     }
 
-
-    /**
-     * 
-     * @param memberFile
-     * @param fileName 
-     * @throws IOException 
-     * @throws KettleException 
-     * 
-     */
-    private void readLevelFileAndUpdateCache(MolapFile memberFile, String fileName,boolean isPrimary,boolean isMeasure) throws IOException, KettleException
-    {
-    	DataInputStream inputStream = null;
+    private void readLevelFileAndUpdateCache(MolapFile memberFile, String fileName,
+            boolean isPrimary, boolean isMeasure) throws IOException, KettleException {
+        DataInputStream inputStream = null;
         Map<String, Integer> memberMap = getMemberCache().get(fileName);
-        
-        if (null == memberMap)
-        {
+
+        if (null == memberMap) {
             memberMap = new HashMap<String, Integer>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
             getMemberCache().put(fileName, memberMap);
         }
-        
-        Integer maxValFromMap = primaryKeysMaxSurroagetMap == null ?  Integer.valueOf(0)
-                : primaryKeysMaxSurroagetMap.get(fileName);
-        
-        int maxKey = maxValFromMap == null ? 0 : maxValFromMap.intValue();
-        
-        Map<String, Integer> localMemberMap = new HashMap<String, Integer>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
-        
-        try
-        {
-        	 inputStream = FileFactory.getDataInputStream(memberFile.getPath(), FileFactory.getFileType(memberFile.getPath()));
 
-             long currPositionIndx = 0;
-       
-             int minValue = inputStream.readInt();
-             int surrogateValue = minValue;
-             // ByteBuffer toltalLength, memberLength, surrogateKey, bf3;
-             // subtracted 4 as last 4 bytes will have the max value for no of records
-             long size = memberFile.getSize() - 4;
-             
-             //CHECKSTYLE:OFF    Approval No:Approval-V1R2C10_005
-             boolean enableEncoding = Boolean.valueOf(MolapProperties.getInstance().getProperty(
-                     MolapCommonConstants.ENABLE_BASE64_ENCODING,
-                     MolapCommonConstants.ENABLE_BASE64_ENCODING_DEFAULT));
-          // CHECKSTYLE:ON
-            // incremented by 4 as integer value as read for minimum no of surrogates 
+        Integer maxValFromMap = primaryKeysMaxSurroagetMap == null ?
+                Integer.valueOf(0) :
+                primaryKeysMaxSurroagetMap.get(fileName);
+
+        int maxKey = maxValFromMap == null ? 0 : maxValFromMap.intValue();
+
+        Map<String, Integer> localMemberMap =
+                new HashMap<String, Integer>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+
+        try {
+            inputStream = FileFactory.getDataInputStream(memberFile.getPath(),
+                    FileFactory.getFileType(memberFile.getPath()));
+
+            long currPositionIndx = 0;
+
+            int minValue = inputStream.readInt();
+            int surrogateValue = minValue;
+            // ByteBuffer toltalLength, memberLength, surrogateKey, bf3;
+            // subtracted 4 as last 4 bytes will have the max value for no of records
+            long size = memberFile.getSize() - 4;
+
+            boolean enableEncoding = Boolean.valueOf(MolapProperties.getInstance()
+                    .getProperty(MolapCommonConstants.ENABLE_BASE64_ENCODING,
+                            MolapCommonConstants.ENABLE_BASE64_ENCODING_DEFAULT));
+            // incremented by 4 as integer value as read for minimum no of surrogates
             currPositionIndx += 4;
-            while (currPositionIndx < size)
-            {
+            while (currPositionIndx < size) {
                 int len = inputStream.readInt();
-                currPositionIndx+=4; 
+                currPositionIndx += 4;
                 byte[] rowBytes = new byte[len];
-//                ByteBuffer row = ByteBuffer.allocate(len);
                 inputStream.readFully(rowBytes);
-                currPositionIndx+=len;
-                String decodedValue = null;// CHECKSTYLE:OFF Approval No:Approval-361
-                
-                if(enableEncoding)
-                {
-                    decodedValue = new String(Base64.decodeBase64(rowBytes), Charset.defaultCharset());
-                }
-                else
-                {
+                currPositionIndx += len;
+                String decodedValue = null;
+
+                if (enableEncoding) {
+                    decodedValue =
+                            new String(Base64.decodeBase64(rowBytes), Charset.defaultCharset());
+                } else {
                     decodedValue = new String(rowBytes, Charset.defaultCharset());
                 }
                 memberMap.put(decodedValue, surrogateValue);
@@ -924,126 +654,83 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
                 surrogateValue++;
             }
 
-        }
-        catch(Exception e)
-        {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e, "Not able to read level file for Populating Cache : " + fileName);
+        } catch (Exception e) {
+            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+                    "Not able to read level file for Populating Cache : " + fileName);
             MolapUtil.closeStreams(inputStream);
-            if(!memberFile.delete())
-            {
-                LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, "Not able to delete level File after exception.");
+            if (!memberFile.delete()) {
+                LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                        "Not able to delete level File after exception.");
             }
             return;
-        }
-        finally
-        {
+        } finally {
             MolapUtil.closeStreams(inputStream);
         }
-        
-        if(isPrimary)
-        {
-            if(null == primaryKeysMaxSurroagetMap)
-            {
+
+        if (isPrimary) {
+            if (null == primaryKeysMaxSurroagetMap) {
                 primaryKeysMaxSurroagetMap = new HashMap<String, Integer>();
             }
 
             primaryKeysMaxSurroagetMap.put(fileName, maxKey);
-        }
-        else if(isMeasure)
-        {
-            if(null == measureMaxSurroagetMap)
-            {
+        } else if (isMeasure) {
+            if (null == measureMaxSurroagetMap) {
                 measureMaxSurroagetMap = new HashMap<String, Integer>();
             }
             measureMaxSurroagetMap.put(fileName, maxKey);
-        }
-        else
-        {
+        } else {
             checkAndUpdateMap(maxKey, fileName);
         }
         memberMap.putAll(localMemberMap);
-        
+
     }
 
-    /**
-     * 
-     * @param maxKey
-     * @param dimInsertFileNames
-     * 
-     */
-    private void checkAndUpdateMap(int maxKey,
-            String dimInsertFileNames)
-    {
+    private void checkAndUpdateMap(int maxKey, String dimInsertFileNames) {
         String[] dimsFiles2 = getDimsFiles();
-        for(int i=0; i < dimsFiles2.length; i++)
-        {
-            if(dimInsertFileNames.equalsIgnoreCase(dimsFiles2[i]))
-            {
-               if(max[i] < maxKey)
-                {
+        for (int i = 0; i < dimsFiles2.length; i++) {
+            if (dimInsertFileNames.equalsIgnoreCase(dimsFiles2[i])) {
+                if (max[i] < maxKey) {
                     max[i] = maxKey;
                     break;
                 }
             }
         }
-        
+
     }
 
-    /**
-     * 
-     * @see com.huawei.unibi.molap.surrogatekeysgenerator.MolapDimSurrogateKeyGen#isCacheFilled()
-     * 
-     */
-    @Override
-    public boolean isCacheFilled(String []columns)
-    {
-        for(String column : columns)
-        {
+    @Override public boolean isCacheFilled(String[] columns) {
+        for (String column : columns) {
             Map<String, Integer> memberMap = getMemberCache().get(column);
-            if(null != memberMap && memberMap.isEmpty())
-            {
+            if (null != memberMap && memberMap.isEmpty()) {
                 continue;
-            }
-            else
-            {
+            } else {
                 return true;
             }
         }
         return false;
     }
 
-    /**
-     * 
-     * @see com.huawei.unibi.molap.surrogatekeysgenerator.csvbased.MolapCSVBasedDimSurrogateKeyGen#getSurrogateKeyForPrimaryKey(java.lang.String, java.lang.String)
-     * 
-     */
-    @Override
-    public int getSurrogateKeyForPrimaryKey(String tuples, String columnName, LevelValueWriter levelValueWriter)
-            throws KettleException
-    {
+    @Override public int getSurrogateKeyForPrimaryKey(String tuples, String columnName,
+            LevelValueWriter levelValueWriter) throws KettleException {
 
         Integer primSurrogate = null;
         Map<String, Integer> cache = getMemberCache().get(columnName);
-        
-        if(null == primaryKeysMaxSurroagetMap)
-        {
+
+        if (null == primaryKeysMaxSurroagetMap) {
             primaryKeysMaxSurroagetMap = new HashMap<String, Integer>();
         }
-        
-        if(cache == null)
-        {
-            getMemberCache().put(columnName , new HashMap<String, Integer>());
+
+        if (cache == null) {
+            getMemberCache().put(columnName, new HashMap<String, Integer>());
         }
-        
+
         cache = getMemberCache().get(columnName);
 
         primSurrogate = cache.get(tuples);
-        if(primSurrogate == null)
-        {
+        if (primSurrogate == null) {
             // get the key from the map 
             primSurrogate = primaryKeysMaxSurroagetMap.get(columnName);
-            if(null == primSurrogate || 0 == primSurrogate)
-            {
+            if (null == primSurrogate || 0 == primSurrogate) {
                 updatePrimaryKeyMaxSurrogateMap();
                 primSurrogate = primaryKeysMaxSurroagetMap.get(columnName);
             }
@@ -1054,150 +741,79 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
             primaryKeysMaxSurroagetMap.put(columnName, primSurrogate);
         }
         return primSurrogate;
-    
+
     }
-    
-    /*  *//**
-     * 
-     * @param memberFile
-     * @param inProgressLoadFolder 
-     * @return
-     * @throws KettleException 
-     * 
-     *//*
-    private File decryptEncyptedFile(File memberFile) throws KettleException
-    {
-        String decryptedFilePath = memberFile.getAbsolutePath() + MolapCommonConstants.FILE_INPROGRESS_STATUS;
-        
-        try
-        {
-            SimpleFileEncryptor.decryptFile(memberFile.getAbsolutePath(), decryptedFilePath);
-        }
-        catch(CipherException e)
-        {
-            LOGGER.error(
-                    MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-                    e, "Not able to encrypt File");
-           throw new KettleException();
-        }
-        catch(IOException e)
-        {
-            LOGGER.error(
-                    MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-                    e, "Not able to encrypt File");
-           throw new KettleException();
-        }
 
-        return new File(decryptedFilePath);
-    }*/
-
-    /**
-     * 
-     * @return Returns the fileManager.
-     * 
-     */
-    public IFileManagerComposite getFileManager()
-    {
+    public IFileManagerComposite getFileManager() {
         return fileManager;
     }
 
-    /**
-     * 
-     * @see com.huawei.unibi.molap.surrogatekeysgenerator.csvbased.MolapCSVBasedDimSurrogateKeyGen#getNormalizedHierFromStore(int[], java.lang.String, int, com.huawei.unibi.molap.writer.HierarchyValueWriterForCSV)
-     * 
-     */
-    @Override
-    protected byte[] getNormalizedHierFromStore(int[] val, String hier,
-            int primaryKey, HierarchyValueWriterForCSV hierWriter)
-            throws KettleException
-    {
+    @Override protected byte[] getNormalizedHierFromStore(int[] val, String hier, int primaryKey,
+            HierarchyValueWriterForCSV hierWriter) throws KettleException {
         byte[] bytes;
-        try
-        {
+        try {
             bytes = molapInfo.getKeyGenerators().get(hier).generateKey(val);
             hierWriter.getByteArrayList().add(new ByteArrayHolder(bytes, primaryKey));
-        }
-        catch(KeyGenException e)
-        {
+        } catch (KeyGenException e) {
             throw new KettleException(e);
         }
         return bytes;
     }
 
-    /**
-     * 
-     * @see com.huawei.unibi.molap.surrogatekeysgenerator.csvbased.MolapCSVBasedDimSurrogateKeyGen#getSurrogateForMeasure(java.lang.String, java.lang.String, com.huawei.unibi.molap.writer.LevelValueWriter)
-     * 
-     */
-    @Override
-    public int getSurrogateForMeasure(String tuple, String columnName,int index) throws KettleException
-    {
+    @Override public int getSurrogateForMeasure(String tuple, String columnName, int index)
+            throws KettleException {
 
         Integer measureSurrogate = null;
-        
+
         Map<String, Map<String, Integer>> memberCache = getMemberCache();
-        
+
         Map<String, Integer> cache = memberCache.get(columnName);
-        
-        if(index == -1)
-        {
-            
-            if(null == measureValWriterMap)
-            {
-               measureValWriterMap = new HashMap<String, LevelValueWriter>();
+
+        if (index == -1) {
+
+            if (null == measureValWriterMap) {
+                measureValWriterMap = new HashMap<String, LevelValueWriter>();
             }
-            
-            if(null == cache)
-            {
+
+            if (null == cache) {
                 cache = new HashMap<String, Integer>();
                 memberCache.put(columnName, cache);
             }
-            
-            if(null == measureMaxSurroagetMap)
-            {
+
+            if (null == measureMaxSurroagetMap) {
                 measureMaxSurroagetMap = new HashMap<String, Integer>();
             }
-            
+
             measureSurrogate = cache.get(tuple);
-            if(null == measureSurrogate)
-            {
-                String dimFileName = columnName
-                        + MolapCommonConstants.LEVEL_FILE_EXTENSION;
-//                      + MolapCommonConstants.FILE_INPROGRESS_STATUS;
+            if (null == measureSurrogate) {
+                String dimFileName = columnName + MolapCommonConstants.LEVEL_FILE_EXTENSION;
                 LevelValueWriter levelValueWriter = measureValWriterMap.get(dimFileName);
-                if(null == levelValueWriter)
-                {
-                    synchronized(lock)
-                    {
+                if (null == levelValueWriter) {
+                    synchronized (lock) {
                         levelValueWriter = measureValWriterMap.get(dimFileName);
-                        if(null == levelValueWriter)
-                        {
-                            levelValueWriter = new LevelValueWriter(
-                                    dimFileName, getStoreFolderWithLoadNumber());
-                            if(null == measureFilemanager)
-                            {
+                        if (null == levelValueWriter) {
+                            levelValueWriter = new LevelValueWriter(dimFileName,
+                                    getStoreFolderWithLoadNumber());
+                            if (null == measureFilemanager) {
                                 measureFilemanager = new LoadFolderData();
                                 measureFilemanager.setName(getStoreFolderWithLoadNumber());
                             }
-                            FileData fileData = new FileData(dimFileName,
-                                    getStoreFolderWithLoadNumber());
+                            FileData fileData =
+                                    new FileData(dimFileName, getStoreFolderWithLoadNumber());
                             measureFilemanager.add(fileData);
                             measureValWriterMap.put(dimFileName, levelValueWriter);
                         }
-                        
+
                     }
-                    
+
                 }
-                
-                synchronized(cache)
-                {
+
+                synchronized (cache) {
                     measureSurrogate = cache.get(tuple);
-                    if(measureSurrogate == null)
-                    {
+                    if (measureSurrogate == null) {
                         // get the key from the map 
                         measureSurrogate = measureMaxSurroagetMap.get(columnName);
-                        if(null == measureSurrogate)
-                        {
+                        if (null == measureSurrogate) {
                             measureSurrogate = 0;
                         }
                         // Need to create a new surrogate key.
@@ -1206,17 +822,13 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
                         measureMaxSurroagetMap.put(columnName, measureSurrogate);
                     }
                 }
-                
+
             }
 
-        }
-        else
-        {
-            synchronized(cache)
-            {
+        } else {
+            synchronized (cache) {
                 measureSurrogate = cache.get(tuple);
-                if(measureSurrogate == null)
-                {
+                if (measureSurrogate == null) {
                     measureSurrogate = getSurrogateFromStore(tuple, index, new Object[0]);
                     cache.put(tuple, measureSurrogate);
                 }
@@ -1226,64 +838,48 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
         return measureSurrogate;
     }
 
-    /**
-     * 
-     * @see com.huawei.unibi.molap.surrogatekeysgenerator.csvbased.MolapCSVBasedDimSurrogateKeyGen#writeDataToFileAndCloseStreams()
-     * 
-     */
-    @Override
-    public void writeDataToFileAndCloseStreams() throws KettleException,
-            KeyGenException
-    {
+    @Override public void writeDataToFileAndCloseStreams() throws KettleException, KeyGenException {
 
         // For closing Level value writer bufferred streams
-        for(int i=0; i< dimensionWriter.length; i++)
-        {
+        for (int i = 0; i < dimensionWriter.length; i++) {
             String memberFileName = dimensionWriter[i].getMemberFileName();
             int size = fileManager.size();
-            for(int j = 0; j < size; j++)
-            {
-                FileData fileData = (FileData)fileManager.get(j);
+            for (int j = 0; j < size; j++) {
+                FileData fileData = (FileData) fileManager.get(j);
                 String fileName = fileData.getFileName();
-                if(memberFileName.equals(fileName))
-                {
-                    LevelValueWriter levelValueWriter = fileData
-                            .getLevelValueWriter();
+                if (memberFileName.equals(fileName)) {
+                    LevelValueWriter levelValueWriter = fileData.getLevelValueWriter();
 
                     levelValueWriter.performRequiredOperation();
 
                     break;
                 }
-                
+
             }
-            
-            
+
         }
-        
+
         // For closing stream inside hierarchy writer 
-        
-        for(Entry<String, String> entry : hierInsertFileNames.entrySet())
-        {
-            
+
+        for (Entry<String, String> entry : hierInsertFileNames.entrySet()) {
+
             String hierFileName = hierValueWriter.get(entry.getKey()).getHierarchyName();
-            
+
             int size = fileManager.size();
-            for(int j = 0; j < size; j++)
-            {
-                FileData fileData = (FileData)fileManager.get(j);
+            for (int j = 0; j < size; j++) {
+                FileData fileData = (FileData) fileManager.get(j);
                 String fileName = fileData.getFileName();
-                if(hierFileName.equals(fileName))
-                {
-                    HierarchyValueWriterForCSV hierarchyValueWriter = fileData.getHierarchyValueWriter();
+                if (hierFileName.equals(fileName)) {
+                    HierarchyValueWriterForCSV hierarchyValueWriter =
+                            fileData.getHierarchyValueWriter();
                     hierarchyValueWriter.performRequiredOperation();
 
                     break;
                 }
-                
+
             }
         }
-    
-        
+
     }
 
 }

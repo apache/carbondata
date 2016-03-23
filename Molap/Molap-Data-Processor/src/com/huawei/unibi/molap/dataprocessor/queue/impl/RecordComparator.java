@@ -17,46 +17,26 @@
  * under the License.
  */
 
-
 package com.huawei.unibi.molap.dataprocessor.queue.impl;
 
 import java.util.Comparator;
 
 import com.huawei.unibi.molap.dataprocessor.record.holder.DataProcessorRecordHolder;
 
-/**
- * 
- * @author V00900840
- *
- */
-public class RecordComparator implements Comparator<DataProcessorRecordHolder>
-{
-    
-    /**
-     * 
-     * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object)
-     * 
-     */
-    @Override
-    public int compare(DataProcessorRecordHolder o1,
-            DataProcessorRecordHolder o2)
-    {
+public class RecordComparator implements Comparator<DataProcessorRecordHolder> {
 
-        if(o1 == null)
-        {
+    @Override public int compare(DataProcessorRecordHolder o1, DataProcessorRecordHolder o2) {
+
+        if (o1 == null) {
             return -1;
         }
-        if(o2 == null)
-        {
+        if (o2 == null) {
             return 1;
         }
 
-        if(o1.getSeqNumber() < o2.getSeqNumber())
-        {
+        if (o1.getSeqNumber() < o2.getSeqNumber()) {
             return -1;
-        }
-        else if(o1.getSeqNumber() > o2.getSeqNumber())
-        {
+        } else if (o1.getSeqNumber() > o2.getSeqNumber()) {
             return 1;
         }
         return 0;

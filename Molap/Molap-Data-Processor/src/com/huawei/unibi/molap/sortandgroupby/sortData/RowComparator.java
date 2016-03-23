@@ -23,17 +23,7 @@ import java.util.Comparator;
 
 import com.huawei.unibi.molap.util.RemoveDictionaryUtil;
 
-/**
- * Project Name 	: Carbon 
- * Module Name 		: MOLAP Data Processor
- * Author 			: Suprith T 72079 
- * Created Date 	: 19-Aug-2015
- * FileName 		: RowComparator.java
- * Description 		: This class is responsible for comparing two rows
- * Class Version 	: 1.0
- */
-public class RowComparator implements Comparator<Object[]>
-{
+public class RowComparator implements Comparator<Object[]> {
     /**
      * dimension count
      */
@@ -41,34 +31,26 @@ public class RowComparator implements Comparator<Object[]>
 
     /**
      * MolapRowComparator Constructor
-     * 
-     * @param dimensionCount
      *
+     * @param dimensionCount
      */
-    public RowComparator(int dimensionCount)
-    {
+    public RowComparator(int dimensionCount) {
         this.dimensionCount = dimensionCount;
     }
 
     /**
-     * Below method will be used to compare two mdkey 
-     * 
-     * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object)
-     *
+     * Below method will be used to compare two mdkey
      */
-    public int compare(Object[] rowA, Object[] rowB)
-    {
-    	int diff = 0;
+    public int compare(Object[] rowA, Object[] rowB) {
+        int diff = 0;
 
-        for(int i = 0; i < dimensionCount; i++)
-        {
-            
+        for (int i = 0; i < dimensionCount; i++) {
+
             int dimFieldA = RemoveDictionaryUtil.getDimension(i, rowA);
             int dimFieldB = RemoveDictionaryUtil.getDimension(i, rowB);
-            
+
             diff = dimFieldA - dimFieldB;
-            if(diff != 0)
-            {
+            if (diff != 0) {
                 return diff;
             }
         }

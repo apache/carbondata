@@ -21,17 +21,7 @@ package com.huawei.unibi.molap.sortandgroupby.exception;
 
 import java.util.Locale;
 
-/**
- * Project Name NSE V3R7C00 
- * Module Name : MOLAP
- * Author :C00900810
- * Created Date :24-Jun-2013
- * FileName : MolapSortKeyAndGroupByException.java
- * Class Description : MolapSortKeyAndGroupByException
- * Version 1.0
- */
-public class MolapSortKeyAndGroupByException extends Exception
-{
+public class MolapSortKeyAndGroupByException extends Exception {
 
     /**
      * default serial version ID.
@@ -43,73 +33,57 @@ public class MolapSortKeyAndGroupByException extends Exception
      */
     private String msg = "";
 
-
     /**
      * Constructor
-     * 
-     * @param errorCode
-     *            The error code for this exception.
-     * @param msg
-     *            The error message for this exception.
-     * 
+     *
+     * @param msg The error message for this exception.
      */
-    public MolapSortKeyAndGroupByException(String msg)
-    {
+    public MolapSortKeyAndGroupByException(String msg) {
         super(msg);
         this.msg = msg;
     }
-    
+
     /**
      * Constructor
-     * 
-     * @param errorCode
-     *            The error code for this exception.
-     * @param msg
-     *            The error message for this exception.
-     * 
+     *
+     * @param msg The error message for this exception.
      */
-    public MolapSortKeyAndGroupByException(String msg, Throwable t)
-    {
-        super(msg,t);
+    public MolapSortKeyAndGroupByException(String msg, Throwable t) {
+        super(msg, t);
         this.msg = msg;
     }
-    
-   /**
-    * Constructor
-    * @param t
-    */
-    public MolapSortKeyAndGroupByException(Throwable t)
-    {
+
+    /**
+     * Constructor
+     *
+     * @param t
+     */
+    public MolapSortKeyAndGroupByException(Throwable t) {
         super(t);
     }
 
     /**
      * This method is used to get the localized message.
-     * 
-     * @param locale
-     *            - A Locale object represents a specific geographical,
-     *            political, or cultural region.
+     *
+     * @param locale - A Locale object represents a specific geographical,
+     *               political, or cultural region.
      * @return - Localized error message.
      */
-    public String getLocalizedMessage(Locale locale)
-    {
+    public String getLocalizedMessage(Locale locale) {
         return "";
     }
 
     /**
      * getLocalizedMessage
      */
-    @Override
-    public String getLocalizedMessage()
-    {
+    @Override public String getLocalizedMessage() {
         return super.getLocalizedMessage();
     }
 
     /**
      * getMessage
      */
-    public String getMessage()
-    {
+    public String getMessage() {
         return this.msg;
     }
 }

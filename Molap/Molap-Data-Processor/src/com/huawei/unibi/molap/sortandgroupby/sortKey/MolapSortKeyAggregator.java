@@ -17,13 +17,6 @@
  * under the License.
  */
 
-/**
- * ====================Copyright Notice =======================
- *  This file contains proprietary information of Huawei Technologies Co. Ltd. Copying or
- * reproduction without prior written approval is prohibited. Copyright (c) 2013
- * =========================================================
- * 
- */
 package com.huawei.unibi.molap.sortandgroupby.sortKey;
 
 import java.util.ArrayList;
@@ -37,22 +30,7 @@ import com.huawei.unibi.molap.groupby.exception.MolapGroupByException;
 import com.huawei.unibi.molap.keygenerator.KeyGenerator;
 import com.huawei.unibi.molap.util.MolapDataProcessorUtil;
 
-/**
- * 
- * Project Name V3R008
- * Module Name : 
- * Author s71955
- * Created Date :14-Oct-2014 10:32:00 AM
- * FileName : MolapSortKeyAggregator.java
- * Class Description :
- * Version 1.0
- * ====================Copyright Notice =======================
- *  This file contains proprietary information of Huawei Technologies Co. Ltd. Copying or
- * reproduction without prior written approval is prohibited. Copyright (c) 2010
- * =========================================================
- */
-public class MolapSortKeyAggregator
-{
+public class MolapSortKeyAggregator {
 
     private int keyIndex;
 
@@ -84,43 +62,38 @@ public class MolapSortKeyAggregator
     private boolean[] isNotNullValue;
 
     private int resultSize;
-    
+
     private double[] mergedMinValue;
-    
-    
 
     /**
      * constructer.
+     *
      * @param aggType
      * @param aggClassName
      * @param factKeyGenerator
      * @param type
      */
     public MolapSortKeyAggregator(String[] aggType, String[] aggClassName,
-            KeyGenerator factKeyGenerator, char[] type, double[] mergedMinValue)
-    {
+            KeyGenerator factKeyGenerator, char[] type, double[] mergedMinValue) {
         this.keyIndex = aggType.length;
         this.aggType = aggType;
         this.aggClassName = aggClassName;
         this.factKeyGenerator = factKeyGenerator;
         resultSize = aggType.length + 1;
-        this.type=type;
-        this.mergedMinValue=mergedMinValue;
+        this.type = type;
+        this.mergedMinValue = mergedMinValue;
     }
 
     /**
      * getAggregatedData.
-     * @Author s71955
-     * @Description : getAggregatedData
+     *
      * @param rows
      * @return
      * @throws MolapGroupByException
+     * @Description : getAggregatedData
      */
-    public Object[][] getAggregatedData(Object[][] rows)
-            throws MolapGroupByException
-    {
-        for(int i = 0;i < rows.length;i++)
-        {
+    public Object[][] getAggregatedData(Object[][] rows) throws MolapGroupByException {
+        for (int i = 0; i < rows.length; i++) {
             add(rows[i]);
         }
 
@@ -132,17 +105,13 @@ public class MolapSortKeyAggregator
      * This method will be used to add new row it will check if new row and
      * previous row key is same then it will merger the measure values, else it
      * return the previous row
-     * 
-     * @param row
-     *            new row
+     *
+     * @param row new row
      * @return previous row
      * @throws MolapGroupByException
-     * 
      */
-    private void add(Object[] row) throws MolapGroupByException
-    {
-        if(isFirst)
-        {
+    private void add(Object[] row) throws MolapGroupByException {
+        if (isFirst) {
 
             isFirst = false;
             initialiseAggegators();
@@ -150,37 +119,26 @@ public class MolapSortKeyAggregator
 
             return;
         }
-        if(MolapDataProcessorUtil.compare(prvKey, (byte[])row[this.keyIndex]) == 0)
-        {
+        if (MolapDataProcessorUtil.compare(prvKey, (byte[]) row[this.keyIndex]) == 0) {
             updateMeasureValue(row);
-        }
-        else
-        {
+        } else {
             result.add(prepareResult());
             initialiseAggegators();
             addNewRow(row);
         }
     }
 
-    private Object[] prepareResult()
-    {
+    private Object[] prepareResult() {
         Object[] out = new Object[resultSize];
-        for(int i = 0;i < aggregators.length;i++)
-        {
-            if(type[i] != 'c')
-            {
-                if(isNotNullValue[i])
-                {
+        for (int i = 0; i < aggregators.length; i++) {
+            if (type[i] != 'c') {
+                if (isNotNullValue[i]) {
                     out[i] = aggregators[i].getValue();
 
-                }
-                else
-                {
+                } else {
                     out[i] = null;
                 }
-            }
-            else
-            {
+            } else {
                 out[i] = aggregators[i].getByteArray();
             }
         }
@@ -189,16 +147,12 @@ public class MolapSortKeyAggregator
         return out;
     }
 
-    private void initialiseAggegators()
-    {
+    private void initialiseAggegators() {
         aggregators = AggUtil.getAggregators(Arrays.asList(this.aggType),
-                Arrays.asList(this.aggClassName), false, factKeyGenerator,
-                null,mergedMinValue);
+                Arrays.asList(this.aggClassName), false, factKeyGenerator, null, mergedMinValue);
         isNotNullValue = new boolean[this.aggType.length];
-        for(int i = 0;i < aggType.length;i++)
-        {
-            if(aggType[i].equals(MolapCommonConstants.DISTINCT_COUNT))
-            {
+        for (int i = 0; i < aggType.length; i++) {
+            if (aggType[i].equals(MolapCommonConstants.DISTINCT_COUNT)) {
                 isNotNullValue[i] = true;
             }
 
@@ -208,20 +162,15 @@ public class MolapSortKeyAggregator
     /**
      * This method will be used to update the measure value based on aggregator
      * type
-     * 
-     * @param row
-     *            row
-     * 
+     *
+     * @param row row
      */
-    private void updateMeasureValue(Object[] row)
-    {
-        for(int i = 0;i < aggregators.length;i++)
-        {
-            if(null != row[i])
-            {
-                double value = (Double)row[i];
-                aggregators[i].agg(value, (byte[])row[row.length - 1], 0,
-                        ((byte[])row[row.length - 1]).length);
+    private void updateMeasureValue(Object[] row) {
+        for (int i = 0; i < aggregators.length; i++) {
+            if (null != row[i]) {
+                double value = (Double) row[i];
+                aggregators[i].agg(value, (byte[]) row[row.length - 1], 0,
+                        ((byte[]) row[row.length - 1]).length);
             }
         }
 
@@ -229,23 +178,19 @@ public class MolapSortKeyAggregator
 
     /**
      * Below method will be used to add new row
-     * 
+     *
      * @param row
-     * 
      */
-    private void addNewRow(Object[] row)
-    {
-        for(int i = 0;i < aggregators.length;i++)
-        {
-            if(null != row[i])
-            {
+    private void addNewRow(Object[] row) {
+        for (int i = 0; i < aggregators.length; i++) {
+            if (null != row[i]) {
                 this.isNotNullValue[i] = true;
-                double value = (Double)row[i];
-                aggregators[i].agg(value, (byte[])row[row.length - 1], 0,
-                        ((byte[])row[row.length - 1]).length);
+                double value = (Double) row[i];
+                aggregators[i].agg(value, (byte[]) row[row.length - 1], 0,
+                        ((byte[]) row[row.length - 1]).length);
             }
         }
-        prvKey = (byte[])row[this.keyIndex];
+        prvKey = (byte[]) row[this.keyIndex];
 
     }
 

@@ -22,15 +22,7 @@ package com.huawei.unibi.molap.groupby;
 import com.huawei.unibi.molap.constants.MolapCommonConstants;
 import com.huawei.unibi.molap.util.MolapDataProcessorUtil;
 
-/**
- * 
- * Project Name NSE V3R7C00 Module Name : Molap Data Processor Author K00900841
- * Created Date :21-May-2013 6:42:29 PM FileName : MolapGroupBy.java Class
- * Description : This class will be used for merging the same key (Group By)
- * Version 1.0
- */
-public class MolapGroupBy
-{
+public class MolapGroupBy {
     /**
      * key array index
      */
@@ -56,21 +48,7 @@ public class MolapGroupBy
      */
     private byte[] prvKey;
 
-    /**
-     * 
-     * 
-     * @param aggType
-     *            agg type
-     * @param rowMeasures
-     *            row Measures name
-     * @param actual
-     *            Measures actual Measures
-     * @param row
-     *            row
-     * 
-     */
-    public MolapGroupBy(String aggType, String rowMeasures, String actualMeasures, Object[] row)
-    {
+    public MolapGroupBy(String aggType, String rowMeasures, String actualMeasures, Object[] row) {
         this.aggType = aggType.split(";");
         this.keyIndex = row.length - 1;
         this.columnIndexMapping = new int[this.aggType.length];
@@ -78,41 +56,28 @@ public class MolapGroupBy
         addNewRow(row);
     }
 
-    private void addNewRow(Object[] row)
-    {
+    private void addNewRow(Object[] row) {
         int index = 0;
         Object[] newRow = new Object[columnIndexMapping.length + 1];
-        for(int i = 0;i < columnIndexMapping.length;i++)
-        {
-            if(this.aggType[i].equals(MolapCommonConstants.COUNT))
-            {
-                if(row[columnIndexMapping[i]] != null)
-                {
+        for (int i = 0; i < columnIndexMapping.length; i++) {
+            if (this.aggType[i].equals(MolapCommonConstants.COUNT)) {
+                if (row[columnIndexMapping[i]] != null) {
                     newRow[index++] = 1D;
-                }
-                else
-                {
+                } else {
                     newRow[index++] = 0D;
                 }
-            }
-            else if(!this.aggType[i].equals(MolapCommonConstants.MAX)
-                    && !this.aggType[i].equals(MolapCommonConstants.MIN))
-            {
-                if(null != row[columnIndexMapping[i]])
-                {//CHECKSTYLE:OFF    Approval No:Approval-344
+            } else if (!this.aggType[i].equals(MolapCommonConstants.MAX) && !this.aggType[i]
+                    .equals(MolapCommonConstants.MIN)) {
+                if (null != row[columnIndexMapping[i]])
                     newRow[index++] = row[columnIndexMapping[i]];
-                }//CHECKSTYLE:ON
-                else
-                {
+                else {
                     newRow[index++] = 0D;
                 }
-            }
-            else
-            {//CHECKSTYLE:OFF    Approval No:Approval-345
+            } else {
                 newRow[index++] = row[columnIndexMapping[i]];
-            }//CHECKSTYLE:ON
+            }
         }
-        prvKey = (byte[])row[this.keyIndex];
+        prvKey = (byte[]) row[this.keyIndex];
         newRow[index] = prvKey;
         prvRow = newRow;
     }
@@ -120,22 +85,15 @@ public class MolapGroupBy
     /**
      * This method will be used to update the column index mapping array which
      * will be used for mapping actual column with row column
-     * 
-     * @param rowMeasureName
-     *            row Measure Name
-     * @param actualMeasures
-     *            actual Measures
-     * 
+     *
+     * @param rowMeasureName row Measure Name
+     * @param actualMeasures actual Measures
      */
-    private void updateColumnIndexMapping(String[] rowMeasureName, String[] actualMeasures)
-    {
+    private void updateColumnIndexMapping(String[] rowMeasureName, String[] actualMeasures) {
         int index = 0;
-        for(int i = 0;i < actualMeasures.length;i++)
-        {
-            for(int j = 0;j < rowMeasureName.length;j++)
-            {
-                if(actualMeasures[i].equals(rowMeasureName[j]))
-                {
+        for (int i = 0; i < actualMeasures.length; i++) {
+            for (int j = 0; j < rowMeasureName.length; j++) {
+                if (actualMeasures[i].equals(rowMeasureName[j])) {
                     this.columnIndexMapping[index++] = j;
                     break;
                 }
@@ -147,21 +105,15 @@ public class MolapGroupBy
      * This method will be used to add new row it will check if new row and
      * previous row key is same then it will merger the measure values, else it
      * return the previous row
-     * 
-     * @param row
-     *            new row
+     *
+     * @param row new row
      * @return previous row
-     * 
      */
-    public Object[] add(Object[] row)
-    {
-        if(MolapDataProcessorUtil.compare(prvKey, (byte[])row[this.keyIndex]) == 0)
-        {
+    public Object[] add(Object[] row) {
+        if (MolapDataProcessorUtil.compare(prvKey, (byte[]) row[this.keyIndex]) == 0) {
             updateMeasureValue(row);
 
-        }
-        else
-        {
+        } else {
             Object[] lastRow = prvRow;
             addNewRow(row);
             return lastRow;
@@ -172,16 +124,12 @@ public class MolapGroupBy
     /**
      * This method will be used to update the measure value based on aggregator
      * type
-     * 
-     * @param row
-     *            row
-     * 
+     *
+     * @param row row
      */
-    private void updateMeasureValue(Object[] row)
-    {
+    private void updateMeasureValue(Object[] row) {
 
-        for(int i = 0;i < columnIndexMapping.length;i++)
-        {
+        for (int i = 0; i < columnIndexMapping.length; i++) {
             aggregateValue(prvRow[i], row[columnIndexMapping[i]], aggType[i], i);
         }
     }
@@ -189,84 +137,52 @@ public class MolapGroupBy
     /**
      * This method will be used to update the measure value based on aggregator
      * type
-     * 
-     * @param object1
-     *            previous row measure value
-     * @param object2
-     *            new row measure value
-     * 
+     *
+     * @param object1 previous row measure value
+     * @param object2 new row measure value
      * @param aggType
-     * 
-     * @param idx
-     *            measure index
-     * 
+     * @param idx     measure index
      */
-    private void aggregateValue(Object object1, Object object2, String aggType, int idx)
-    {
-        if(aggType.equals(MolapCommonConstants.MAX))
-        {
-            if(null == object1 && null != object2)
-            {
+    private void aggregateValue(Object object1, Object object2, String aggType, int idx) {
+        if (aggType.equals(MolapCommonConstants.MAX)) {
+            if (null == object1 && null != object2) {
                 prvRow[idx] = object2;
-            }
-            else if(null != object1 && null == object2)
-            {
+            } else if (null != object1 && null == object2) {
                 prvRow[idx] = object1;
+            } else if (null != object1 && null != object2) {
+                prvRow[idx] = (Double) object1 > (Double) object2 ? object1 : object2;
             }
-            else if(null != object1 && null != object2)
-            {
-                prvRow[idx] = (Double)object1 > (Double)object2 ? object1 : object2;
-            }
-        }
-        else if(aggType.equals(MolapCommonConstants.MIN))
-        {
-            if(null == object1 && null != object2)
-            {
+        } else if (aggType.equals(MolapCommonConstants.MIN)) {
+            if (null == object1 && null != object2) {
                 prvRow[idx] = object2;
-            }
-            else if(null != object1 && null == object2)
-            {
+            } else if (null != object1 && null == object2) {
                 prvRow[idx] = object1;
+            } else if (null != object1 && null != object2) {
+                prvRow[idx] = (Double) object1 < (Double) object2 ? object1 : object2;
             }
-            else if(null != object1 && null != object2)
-            {
-                prvRow[idx] = (Double)object1 < (Double)object2 ? object1 : object2;
-            }
-        }
-        else if(aggType.equals(MolapCommonConstants.COUNT))
-        {
-            if(null != object2)
-            {
-                double d = (Double)prvRow[idx];
+        } else if (aggType.equals(MolapCommonConstants.COUNT)) {
+            if (null != object2) {
+                double d = (Double) prvRow[idx];
                 d++;
                 prvRow[idx] = d;
             }
-        }
-        else
-        {
-            if(null == object1 && null != object2)
-            {
+        } else {
+            if (null == object1 && null != object2) {
                 prvRow[idx] = object2;
-            }
-            else if(null != object1 && null == object2)
-            {
+            } else if (null != object1 && null == object2) {
                 prvRow[idx] = object1;
-            }
-            else if(null != object1 && null != object2)
-            {
-                prvRow[idx] = (Double)object1 + (Double)object2;
+            } else if (null != object1 && null != object2) {
+                prvRow[idx] = (Double) object1 + (Double) object2;
             }
         }
     }
 
     /**
      * This method will be used to get the last row
-     * 
+     *
      * @return last row
-     * 
      */
-    public Object[] getLastRow()
-    {
+    public Object[] getLastRow() {
         return prvRow;
     }
 }

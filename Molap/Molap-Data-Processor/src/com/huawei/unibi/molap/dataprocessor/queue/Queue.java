@@ -17,43 +17,31 @@
  * under the License.
  */
 
-
 package com.huawei.unibi.molap.dataprocessor.queue;
 
-/**
- * Project Name NSE V3R7C30 
- * Module Name : Molap
- * Author V00900840
- * Created Date :24-May-2013 12:15:55 PM
- * FileName : Queue.java
- * Class Description : This is queue interface for 
- * handling the dataload checkpoint request in queue.
- * Version 1.0
- */
-public interface Queue<E>
-{
+public interface Queue<E> {
     /**
      * This method insert the element in the queue, and return false if it fails
      * to isert in the queue.
-     * 
+     *
      * @param obj
      * @return true if insererted properly false otherwise.
      */
     boolean offer(E obj);
-    
-    
+
     /**
-     * This method get the element from the head of the queue and 
+     * This method get the element from the head of the queue and
      * remove the element from the queue.
-     * 
+     *
      * @return
      */
     E poll();
-    
+
     /**
      * This method just return the element in the head of the queue.
+     *
      * @return
      */
     E peek();
-   
+
 }

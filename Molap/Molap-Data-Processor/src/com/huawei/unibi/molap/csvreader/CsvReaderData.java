@@ -17,36 +17,22 @@
  * under the License.
  */
 
-
 package com.huawei.unibi.molap.csvreader;
 
 import org.pentaho.di.trans.steps.csvinput.CsvInputData;
 
-/**
- * 
- * Project Name NSE V3R7C00 
- * Module Name : Molap Data Processor 
- * Author K00900841
- * Created Date :21-May-2013 6:42:29 PM 
- * FileName :CsvReaderData.java 
- * Class Description :CsvReaderData 
- * Version 1.0
- */
-public class CsvReaderData extends CsvInputData
-{
+public class CsvReaderData extends CsvInputData {
 
     /**
      * totalBytesFilesFinished
      */
     public long totalBytesFilesFinished;
-    
+
     /**
      * method to resize byte buffer array
      */
-    @Override
-    public void resizeByteBufferArray()
-    {
-        totalBytesFilesFinished=totalBytesFilesFinished+startBuffer;
+    @Override public void resizeByteBufferArray() {
+        totalBytesFilesFinished = totalBytesFilesFinished + startBuffer;
         super.resizeByteBufferArray();
     }
 }

@@ -18,7 +18,6 @@
  */
 
 /**
- *
  * Copyright Notice
  * =====================================
  * This file contains proprietary information of
@@ -26,7 +25,6 @@
  * Copying or reproduction without prior written approval is prohibited.
  * Copyright (c) 2014
  * =====================================
- *
  */
 package com.huawei.unibi.molap.merger.step.autoaggregate;
 
@@ -34,6 +32,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.huawei.unibi.molap.constants.MolapCommonConstants;
 import org.pentaho.di.core.CheckResult;
 import org.pentaho.di.core.CheckResultInterface;
 import org.pentaho.di.core.Counter;
@@ -47,27 +46,10 @@ import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
-import org.pentaho.di.trans.step.BaseStepMeta;
-import org.pentaho.di.trans.step.StepDataInterface;
-import org.pentaho.di.trans.step.StepInterface;
-import org.pentaho.di.trans.step.StepMeta;
-import org.pentaho.di.trans.step.StepMetaInterface;
+import org.pentaho.di.trans.step.*;
 import org.w3c.dom.Node;
 
-import com.huawei.unibi.molap.constants.MolapCommonConstants;
-
-/**
- * Project Name NSE V3R8C10 
- * Module Name : MOLAP Data Processor
- * Author :k00900841 
- * Created Date:10-Aug-2014
- * FileName : MolapAutoAggregateSliceMergerMeta.java 
- * Class Description : Below class is responsible for holding step meta information
- * Version 1.0
- */
-public class MolapAutoAggregateSliceMergerMeta extends BaseStepMeta implements
-        StepMetaInterface
-{
+public class MolapAutoAggregateSliceMergerMeta extends BaseStepMeta implements StepMetaInterface {
 
     /**
      * for i18n purposes
@@ -138,31 +120,28 @@ public class MolapAutoAggregateSliceMergerMeta extends BaseStepMeta implements
      * mapOfAggTableAndAgg
      */
     private Map<String, String[]> mapOfAggTableAndAgg;
-    
+
     /**
      * factDimLensString
      */
     private String factDimLensString;
-    
+
     private int currentRestructNumber;
 
     /**
-     * 
+     *
      * MolapDataWriterStepMeta constructor to initialize this class
-     * 
+     *
      */
-    public MolapAutoAggregateSliceMergerMeta()
-    {
+    public MolapAutoAggregateSliceMergerMeta() {
         super();
     }
 
     /**
      * set the default value for all the properties
-     * 
+     *
      */
-    @Override
-    public void setDefault()
-    {
+    @Override public void setDefault() {
         tabelName = "";
         mdkeySize = "";
         measureCount = "";
@@ -171,94 +150,79 @@ public class MolapAutoAggregateSliceMergerMeta extends BaseStepMeta implements
         schemaName = "";
         aggregatorClassString = "";
         aggregatorString = "";
-        factDimLensString="";
+        factDimLensString = "";
         currentRestructNumber = -1;
     }
 
     /**
      * Below method will be used to initialise the meta
      */
-    public void initialise()
-    {
+    public void initialise() {
         tableNames = tabelName.split(MolapCommonConstants.HASH_SPC_CHARACTER);
-        mapOfTableAndMdkeySize = new HashMap<String, Integer>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
-        mapOfTableAndMeasureCount = new HashMap<String, Integer>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
-        mapOfAggTableAndAggClass = new HashMap<String, String[]>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
-        mapOfAggTableAndAgg = new HashMap<String, String[]>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
-        String[] split = mdkeySize
-                .split(MolapCommonConstants.HASH_SPC_CHARACTER);
+        mapOfTableAndMdkeySize =
+                new HashMap<String, Integer>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+        mapOfTableAndMeasureCount =
+                new HashMap<String, Integer>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+        mapOfAggTableAndAggClass =
+                new HashMap<String, String[]>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+        mapOfAggTableAndAgg =
+                new HashMap<String, String[]>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+        String[] split = mdkeySize.split(MolapCommonConstants.HASH_SPC_CHARACTER);
         String[] split2 = null;
-        for(int i = 0;i < split.length;i++)
-        {
+        for (int i = 0; i < split.length; i++) {
             split2 = split[i].split(MolapCommonConstants.COMA_SPC_CHARACTER);
             mapOfTableAndMdkeySize.put(split2[0], Integer.parseInt(split2[1]));
         }
 
         split = measureCount.split(MolapCommonConstants.HASH_SPC_CHARACTER);
-        for(int i = 0;i < split.length;i++)
-        {
+        for (int i = 0; i < split.length; i++) {
             split2 = split[i].split(MolapCommonConstants.COMA_SPC_CHARACTER);
-            mapOfTableAndMeasureCount.put(split2[0],
-                    Integer.parseInt(split2[1]));
+            mapOfTableAndMeasureCount.put(split2[0], Integer.parseInt(split2[1]));
         }
-        split = aggregatorString
-                .split(MolapCommonConstants.COLON_SPC_CHARACTER);
-        for(int i = 0;i < split.length;i++)
-        {
+        split = aggregatorString.split(MolapCommonConstants.COLON_SPC_CHARACTER);
+        for (int i = 0; i < split.length; i++) {
             split2 = split[i].split(MolapCommonConstants.COMA_SPC_CHARACTER);
-            mapOfAggTableAndAgg.put(split2[0],
-                    split2[1].split(MolapCommonConstants.HASH_SPC_CHARACTER));
+            mapOfAggTableAndAgg
+                    .put(split2[0], split2[1].split(MolapCommonConstants.HASH_SPC_CHARACTER));
         }
 
-        split = aggregatorClassString
-                .split(MolapCommonConstants.COLON_SPC_CHARACTER);
-        for(int i = 0;i < split.length;i++)
-        {
+        split = aggregatorClassString.split(MolapCommonConstants.COLON_SPC_CHARACTER);
+        for (int i = 0; i < split.length; i++) {
             split2 = split[i].split(MolapCommonConstants.COMA_SPC_CHARACTER);
-            mapOfAggTableAndAggClass.put(split2[0],
-                    split2[1].split(MolapCommonConstants.HASH_SPC_CHARACTER));
+            mapOfAggTableAndAggClass
+                    .put(split2[0], split2[1].split(MolapCommonConstants.HASH_SPC_CHARACTER));
         }
 
     }
-    
-    //TODO SIMIAN
+
     /**
      * Get the XML that represents the values in this step
-     * 
+     *
      * @return the XML that represents the metadata in this step
      * @throws KettleException
      *             in case there is a conversion or XML encoding error
      */
-    public String getXML()
-    {
+    public String getXML() {
         StringBuffer strBuff = new StringBuffer(150);
-        strBuff.append("    ").append(
-                XMLHandler.addTagValue("TableName", tabelName));
-        strBuff.append("    ").append(
-                XMLHandler.addTagValue("MDKeySize", mdkeySize));
-        strBuff.append("    ").append(
-                XMLHandler.addTagValue("Measurecount", measureCount));
-        strBuff.append("    ").append(
-                XMLHandler.addTagValue("HeirAndKeySize", heirAndKeySize));
-        strBuff.append("    ").append(
-                XMLHandler.addTagValue("cubeName", cubeName));
-        strBuff.append("    ").append(
-                XMLHandler.addTagValue("schemaName", schemaName));
-        strBuff.append("    ").append(
-                XMLHandler.addTagValue("aggregatorClassString",
-                        aggregatorClassString));
-        strBuff.append("    ").append(
-                XMLHandler.addTagValue("aggregatorString", aggregatorString));
-        strBuff.append("    ").append(
-                XMLHandler.addTagValue("factDimLensString", factDimLensString));
-        strBuff.append("    ").append(
-                XMLHandler.addTagValue("currentRestructNumber", currentRestructNumber));
-        return strBuff.toString(); 
+        strBuff.append("    ").append(XMLHandler.addTagValue("TableName", tabelName));
+        strBuff.append("    ").append(XMLHandler.addTagValue("MDKeySize", mdkeySize));
+        strBuff.append("    ").append(XMLHandler.addTagValue("Measurecount", measureCount));
+        strBuff.append("    ").append(XMLHandler.addTagValue("HeirAndKeySize", heirAndKeySize));
+        strBuff.append("    ").append(XMLHandler.addTagValue("cubeName", cubeName));
+        strBuff.append("    ").append(XMLHandler.addTagValue("schemaName", schemaName));
+        strBuff.append("    ")
+                .append(XMLHandler.addTagValue("aggregatorClassString", aggregatorClassString));
+        strBuff.append("    ").append(XMLHandler.addTagValue("aggregatorString", aggregatorString));
+        strBuff.append("    ")
+                .append(XMLHandler.addTagValue("factDimLensString", factDimLensString));
+        strBuff.append("    ")
+                .append(XMLHandler.addTagValue("currentRestructNumber", currentRestructNumber));
+        return strBuff.toString();
     }
 
     /**
      * Load the values for this step from an XML Node
-     * 
+     *
      * @param stepnode
      *            the Node to get the info from
      * @param databases
@@ -268,12 +232,9 @@ public class MolapAutoAggregateSliceMergerMeta extends BaseStepMeta implements
      * @throws KettleXMLException
      *             When an unexpected XML error occurred. (malformed etc.)
      */
-    @Override
-    public void loadXML(Node stepnode, List<DatabaseMeta> databases,
-            Map<String, Counter> counters) throws KettleXMLException
-    {
-        try
-        {
+    @Override public void loadXML(Node stepnode, List<DatabaseMeta> databases,
+            Map<String, Counter> counters) throws KettleXMLException {
+        try {
             tabelName = XMLHandler.getTagValue(stepnode, "TableName");
             mdkeySize = XMLHandler.getTagValue(stepnode, "MDKeySize");
             measureCount = XMLHandler.getTagValue(stepnode, "Measurecount");
@@ -281,38 +242,19 @@ public class MolapAutoAggregateSliceMergerMeta extends BaseStepMeta implements
 
             cubeName = XMLHandler.getTagValue(stepnode, "cubeName");
             schemaName = XMLHandler.getTagValue(stepnode, "schemaName");
-            aggregatorClassString = XMLHandler.getTagValue(stepnode,
-                    "aggregatorClassString");
-            aggregatorString = XMLHandler.getTagValue(stepnode,
-                    "aggregatorString");
-            factDimLensString = XMLHandler.getTagValue(stepnode,
-                    "factDimLensString");
-            currentRestructNumber = Integer.parseInt(
-                    XMLHandler.getTagValue(stepnode, "currentRestructNumber"));
-        }
-        catch(Exception ex)
-        {
-            // TODO Auto-generated catch block
-            throw new KettleXMLException(
-                    "Unable to read step info from XML node", ex);
+            aggregatorClassString = XMLHandler.getTagValue(stepnode, "aggregatorClassString");
+            aggregatorString = XMLHandler.getTagValue(stepnode, "aggregatorString");
+            factDimLensString = XMLHandler.getTagValue(stepnode, "factDimLensString");
+            currentRestructNumber =
+                    Integer.parseInt(XMLHandler.getTagValue(stepnode, "currentRestructNumber"));
+        } catch (Exception ex) {
+            throw new KettleXMLException("Unable to read step info from XML node", ex);
         }
     }
 
     /**
-     * Make an exact copy of this step, make sure to explicitly copy Collections
-     * etc.
-     * 
-     * @return an exact copy of this step
-     */
-   /* public Object clone()
-    {
-        Object obj = super.clone();
-        return obj;
-    }*/
-
-    /**
      * Save the steps data into a Kettle repository
-     * 
+     *
      * @param repository
      *            The Kettle repository to save to
      * @param idTransformation
@@ -322,45 +264,39 @@ public class MolapAutoAggregateSliceMergerMeta extends BaseStepMeta implements
      * @throws KettleException
      *             When an unexpected error occurred (database, network, etc)
      */
-    @Override
-    public void saveRep(Repository repository, ObjectId idTransformation,
-            ObjectId idStep) throws KettleException
-    { 
-        try
-        {
-            repository.saveStepAttribute(idTransformation, idStep,
-                    "TableName", tabelName); //$NON-NLS-1$
-            repository.saveStepAttribute(idTransformation, idStep,
-                    "MDKeySize", mdkeySize); //$NON-NLS-1$
-            repository.saveStepAttribute(idTransformation, idStep, "Measurecount",
-                    measureCount);
-            repository.saveStepAttribute(idTransformation, idStep,
-                    "HeirAndKeySize", heirAndKeySize); //$NON-NLS-1$
-            repository.saveStepAttribute(idTransformation, idStep,
-                    "cubeName", cubeName); //$NON-NLS-1$
-            repository.saveStepAttribute(idTransformation, idStep,
-                    "schemaName", schemaName); //$NON-NLS-1$
-            repository.saveStepAttribute(idTransformation, idStep,
-                    "aggregatorClassString", aggregatorClassString);
-            repository.saveStepAttribute(idTransformation, idStep,
-                    "aggregatorString", aggregatorString);
-            repository.saveStepAttribute(idTransformation, idStep,
-                    "factDimLensString", factDimLensString);
-            repository.saveStepAttribute(idTransformation, idStep, 
-                    "currentRestructNumber", currentRestructNumber);
+    @Override public void saveRep(Repository repository, ObjectId idTransformation, ObjectId idStep)
+            throws KettleException {
+        try {
+            repository.saveStepAttribute(idTransformation, idStep, "TableName",
+                    tabelName); //$NON-NLS-1$
+            repository.saveStepAttribute(idTransformation, idStep, "MDKeySize",
+                    mdkeySize); //$NON-NLS-1$
+            repository.saveStepAttribute(idTransformation, idStep, "Measurecount", measureCount);
+            repository.saveStepAttribute(idTransformation, idStep, "HeirAndKeySize",
+                    heirAndKeySize); //$NON-NLS-1$
+            repository.saveStepAttribute(idTransformation, idStep, "cubeName",
+                    cubeName); //$NON-NLS-1$
+            repository.saveStepAttribute(idTransformation, idStep, "schemaName",
+                    schemaName); //$NON-NLS-1$
+            repository.saveStepAttribute(idTransformation, idStep, "aggregatorClassString",
+                    aggregatorClassString);
+            repository.saveStepAttribute(idTransformation, idStep, "aggregatorString",
+                    aggregatorString);
+            repository.saveStepAttribute(idTransformation, idStep, "factDimLensString",
+                    factDimLensString);
+            repository.saveStepAttribute(idTransformation, idStep, "currentRestructNumber",
+                    currentRestructNumber);
 
-        }
-        catch(Exception e)
-        {
-            throw new KettleException(BaseMessages.getString(PKG,
-                    "TemplateStep.Exception.UnableToSaveStepInfoToRepository")
+        } catch (Exception e) {
+            throw new KettleException(BaseMessages
+                    .getString(PKG, "TemplateStep.Exception.UnableToSaveStepInfoToRepository")
                     + idStep, e);
         }
     }
 
     /**
      * Read the steps information from a Kettle repository
-     * 
+     *
      * @param rep
      *            The repository to read from
      * @param idStep
@@ -372,44 +308,30 @@ public class MolapAutoAggregateSliceMergerMeta extends BaseStepMeta implements
      * @throws KettleException
      *             When an unexpected error occurred (database, network, etc)
      */
-    @Override
-    public void readRep(Repository rep, ObjectId idStep,
-            List<DatabaseMeta> databases, Map<String, Counter> counters)
-            throws KettleException 
-    {
-        try
-        {
+    @Override public void readRep(Repository rep, ObjectId idStep, List<DatabaseMeta> databases,
+            Map<String, Counter> counters) throws KettleException {
+        try {
             tabelName = rep.getStepAttributeString(idStep, "TableName");
             mdkeySize = rep.getStepAttributeString(idStep, "MDKeySize");
             measureCount = rep.getStepAttributeString(idStep, "Measurecount");
-            heirAndKeySize = rep.getStepAttributeString(idStep,
-                    "HeirAndKeySize");
+            heirAndKeySize = rep.getStepAttributeString(idStep, "HeirAndKeySize");
             schemaName = rep.getStepAttributeString(idStep, "schemaName");
             cubeName = rep.getStepAttributeString(idStep, "cubeName");
-            aggregatorClassString = rep.getStepAttributeString(idStep,
-                    "aggregatorClassString");
-            aggregatorString = rep.getStepAttributeString(idStep,
-                    "aggregatorString");
-            factDimLensString = rep.getStepAttributeString(idStep,
-                    "factDimLensString");
-            currentRestructNumber = (int)rep.getStepAttributeInteger(idStep, 
-                    "currentRestructNumber");
-        }
-        catch(Exception e)
-        {
-            // TODO Auto-generated catch block
-            throw new KettleException(
-                    BaseMessages
-                            .getString(PKG,
-                                    "MolapDataWriterStepMeta.Exception.UnexpectedErrorInReadingStepInfo"),
-                    e);
+            aggregatorClassString = rep.getStepAttributeString(idStep, "aggregatorClassString");
+            aggregatorString = rep.getStepAttributeString(idStep, "aggregatorString");
+            factDimLensString = rep.getStepAttributeString(idStep, "factDimLensString");
+            currentRestructNumber =
+                    (int) rep.getStepAttributeInteger(idStep, "currentRestructNumber");
+        } catch (Exception e) {
+            throw new KettleException(BaseMessages.getString(PKG,
+                    "MolapDataWriterStepMeta.Exception.UnexpectedErrorInReadingStepInfo"), e);
         }
 
     }
 
     /**
      * Checks the settings of this step and puts the findings in a remarks List.
-     * 
+     *
      * @param remarks
      *            The list to put the remarks in @see
      *            org.pentaho.di.core.CheckResult
@@ -424,24 +346,18 @@ public class MolapAutoAggregateSliceMergerMeta extends BaseStepMeta implements
      * @param info
      *            The fields that are used as information by the step
      */
-    @Override
-    public void check(List<CheckResultInterface> remarks, TransMeta transMeta,
-            StepMeta stepMeta, RowMetaInterface prev, String[] input,
-            String[] output, RowMetaInterface info)
-    {
-        // TODO Auto-generated method stub
+    @Override public void check(List<CheckResultInterface> remarks, TransMeta transMeta,
+            StepMeta stepMeta, RowMetaInterface prev, String[] input, String[] output,
+            RowMetaInterface info) {
 
         CheckResult chkRes = null;
- 
+
         // See if we have input streams leading to this step!
-        if(input.length > 0)
-        {
+        if (input.length > 0) {
             chkRes = new CheckResult(CheckResult.TYPE_RESULT_OK,
                     "Step is receiving info from other steps.", stepMeta);
             remarks.add(chkRes);
-        }
-        else
-        {
+        } else {
             chkRes = new CheckResult(CheckResult.TYPE_RESULT_ERROR,
                     "No input received from other steps!", stepMeta);
             remarks.add(chkRes);
@@ -451,7 +367,7 @@ public class MolapAutoAggregateSliceMergerMeta extends BaseStepMeta implements
 
     /**
      * Get the executing step, needed by Trans to launch a step.
-     * 
+     *
      * @param stepMeta
      *            The step info
      * @param stepDataInterface
@@ -464,72 +380,62 @@ public class MolapAutoAggregateSliceMergerMeta extends BaseStepMeta implements
      * @param trans
      *            The launching transformation
      */
-    @Override
-    public StepInterface getStep(StepMeta stepMeta,
-            StepDataInterface stepDataInterface, int copyNr,
-            TransMeta transMeta, Trans trans)
-    {
-        // TODO Auto-generated method stub
-        return new MolapAutoAggregateSliceMergerStep(stepMeta,
-                stepDataInterface, copyNr, transMeta, trans);
+    @Override public StepInterface getStep(StepMeta stepMeta, StepDataInterface stepDataInterface,
+            int copyNr, TransMeta transMeta, Trans trans) {
+        return new MolapAutoAggregateSliceMergerStep(stepMeta, stepDataInterface, copyNr, transMeta,
+                trans);
     }
 
     /**
      * Get a new instance of the appropriate data class. This data class
      * implements the StepDataInterface. It basically contains the persisting
      * data that needs to live on, even if a worker thread is terminated.
-     * 
+     *
      * @return The appropriate StepDataInterface class.
      */
-    @Override
-    public StepDataInterface getStepData()
-    {
-        // TODO Auto-generated method stub
+    @Override public StepDataInterface getStepData() {
         return new MolapAutoAggregateSliceMergerData();
     }
 
     /**
      * This method will be used to get the heir and its key suze string
-     * 
+     *
      * @return heirAndKeySize
-     * 
+     *
      */
-    public String getHeirAndKeySize()
-    {
+    public String getHeirAndKeySize() {
         return heirAndKeySize;
+    }
+
+    /**
+     * This method will be used to set the heir and key size string
+     *
+     * @param heirAndKeySize
+     *
+     */
+    public void setHeirAndKeySize(String heirAndKeySize) {
+        this.heirAndKeySize = heirAndKeySize;
     }
 
     /**
      * @return the cubeName
      */
-    public String getCubeName()
-    {
+    public String getCubeName() {
         return cubeName;
-    }
-
-    /**
-     * @param schemaName
-     *            the schemaName to set
-     */
-    public void setSchemaName(String schemaName)
-    {
-        this.schemaName = schemaName;
     }
 
     /**
      * @param cubeName
      *            the cubeName to set
      */
-    public void setCubeName(String cubeName)
-    {
+    public void setCubeName(String cubeName) {
         this.cubeName = cubeName;
     }
 
     /**
      * @return the tableNames
      */
-    public String[] getTableNames()
-    {
+    public String[] getTableNames() {
         return tableNames;
     }
 
@@ -537,54 +443,44 @@ public class MolapAutoAggregateSliceMergerMeta extends BaseStepMeta implements
      * @param tableNames
      *            the tableNames to set
      */
-    public void setTableNames(String[] tableNames)
-    {
+    public void setTableNames(String[] tableNames) {
         this.tableNames = tableNames;
     }
 
     /**
      * @return the mapOfTableAndMdkeySize
      */
-    public Map<String, Integer> getMapOfTableAndMdkeySize()
-    {
+    public Map<String, Integer> getMapOfTableAndMdkeySize() {
         return mapOfTableAndMdkeySize;
     }
-    //TODO SIMIAN
 
     /**
-     * This method will be used to set the heir and key size string
-     * 
-     * @param heirAndKeySize
-     * 
+     * @param mapOfTableAndMdkeySize
+     *            the mapOfTableAndMdkeySize to set
      */
-    public void setHeirAndKeySize(String heirAndKeySize)
-    {
-        this.heirAndKeySize = heirAndKeySize;
+    public void setMapOfTableAndMdkeySize(Map<String, Integer> mapOfTableAndMdkeySize) {
+        this.mapOfTableAndMdkeySize = mapOfTableAndMdkeySize;
     }
 
     /**
      * @return the schemaName
      */
-    public String getSchemaName()
-    {
+    public String getSchemaName() {
         return schemaName;
     }
-    
+
     /**
-     * @param mapOfTableAndMdkeySize
-     *            the mapOfTableAndMdkeySize to set
+     * @param schemaName
+     *            the schemaName to set
      */
-    public void setMapOfTableAndMdkeySize(
-            Map<String, Integer> mapOfTableAndMdkeySize)
-    {
-        this.mapOfTableAndMdkeySize = mapOfTableAndMdkeySize;
+    public void setSchemaName(String schemaName) {
+        this.schemaName = schemaName;
     }
 
     /**
      * @return the mapOfTableAndMeasureCount
      */
-    public Map<String, Integer> getMapOfTableAndMeasureCount()
-    {
+    public Map<String, Integer> getMapOfTableAndMeasureCount() {
         return mapOfTableAndMeasureCount;
     }
 
@@ -592,154 +488,133 @@ public class MolapAutoAggregateSliceMergerMeta extends BaseStepMeta implements
      * @param mapOfTableAndMeasureCount
      *            the mapOfTableAndMeasureCount to set
      */
-    public void setMapOfTableAndMeasureCount(
-            Map<String, Integer> mapOfTableAndMeasureCount)
-    {
+    public void setMapOfTableAndMeasureCount(Map<String, Integer> mapOfTableAndMeasureCount) {
         this.mapOfTableAndMeasureCount = mapOfTableAndMeasureCount;
     }
-    
+
     /**
      * @return the mapOfAggTableAndAggClass
      */
-    public Map<String, String[]> getMapOfAggTableAndAggClass()
-    {
+    public Map<String, String[]> getMapOfAggTableAndAggClass() {
         return mapOfAggTableAndAggClass;
     }
 
     /**
      * @param mapOfAggTableAndAggClass the mapOfAggTableAndAggClass to set
      */
-    public void setMapOfAggTableAndAggClass(
-            Map<String, String[]> mapOfAggTableAndAggClass)
-    {
+    public void setMapOfAggTableAndAggClass(Map<String, String[]> mapOfAggTableAndAggClass) {
         this.mapOfAggTableAndAggClass = mapOfAggTableAndAggClass;
     }
 
     /**
      * @return the mapOfAggTableAndAgg
      */
-    public Map<String, String[]> getMapOfAggTableAndAgg()
-    {
+    public Map<String, String[]> getMapOfAggTableAndAgg() {
         return mapOfAggTableAndAgg;
     }
 
     /**
      * @param mapOfAggTableAndAgg the mapOfAggTableAndAgg to set
      */
-    public void setMapOfAggTableAndAgg(Map<String, String[]> mapOfAggTableAndAgg)
-    {
+    public void setMapOfAggTableAndAgg(Map<String, String[]> mapOfAggTableAndAgg) {
         this.mapOfAggTableAndAgg = mapOfAggTableAndAgg;
     }
 
     /**
      * @return the tabelName
      */
-    public String getTabelName()
-    {
+    public String getTabelName() {
         return tabelName;
-    }
-
-    /**
-     * @return the mdkeySize
-     */
-    public String getMdkeySize()
-    {
-        return mdkeySize;
-    }
-
-    /**
-     * @return the measureCount
-     */
-    public String getMeasureCount()
-    {
-        return measureCount;
-    }
-
-    /**
-     * @return the aggregatorString
-     */
-    public String getAggregatorString()
-    {
-        return aggregatorString;
-    }
-
-    /**
-     * @return the aggregatorClassString
-     */
-    public String getAggregatorClassString()
-    {
-        return aggregatorClassString;
     }
 
     /**
      * @param tabelName the tabelName to set
      */
-    public void setTabelName(String tabelName)
-    {
+    public void setTabelName(String tabelName) {
         this.tabelName = tabelName;
+    }
+
+    /**
+     * @return the mdkeySize
+     */
+    public String getMdkeySize() {
+        return mdkeySize;
     }
 
     /**
      * @param mdkeySize the mdkeySize to set
      */
-    public void setMdkeySize(String mdkeySize)
-    {
+    public void setMdkeySize(String mdkeySize) {
         this.mdkeySize = mdkeySize;
+    }
+
+    /**
+     * @return the measureCount
+     */
+    public String getMeasureCount() {
+        return measureCount;
     }
 
     /**
      * @param measureCount the measureCount to set
      */
-    public void setMeasureCount(String measureCount)
-    {
+    public void setMeasureCount(String measureCount) {
         this.measureCount = measureCount;
+    }
+
+    /**
+     * @return the aggregatorString
+     */
+    public String getAggregatorString() {
+        return aggregatorString;
     }
 
     /**
      * @param aggregatorString the aggregatorString to set
      */
-    public void setAggregatorString(String aggregatorString)
-    {
+    public void setAggregatorString(String aggregatorString) {
         this.aggregatorString = aggregatorString;
+    }
+
+    /**
+     * @return the aggregatorClassString
+     */
+    public String getAggregatorClassString() {
+        return aggregatorClassString;
     }
 
     /**
      * @param aggregatorClassString the aggregatorClassString to set
      */
-    public void setAggregatorClassString(String aggregatorClassString)
-    {
+    public void setAggregatorClassString(String aggregatorClassString) {
         this.aggregatorClassString = aggregatorClassString;
     }
 
     /**
      * @return the factDimLensString
      */
-    public String getFactDimLensString()
-    {
+    public String getFactDimLensString() {
         return factDimLensString;
     }
 
     /**
      * @param factDimLensString the factDimLensString to set
      */
-    public void setFactDimLensString(String factDimLensString)
-    {
+    public void setFactDimLensString(String factDimLensString) {
         this.factDimLensString = factDimLensString;
     }
-    
+
     /**
      * @return the currentRestructNumber
      */
-    public int getCurrentRestructNumber()
-    {
+    public int getCurrentRestructNumber() {
         return currentRestructNumber;
     }
 
     /**
      * @param currentRestructNum the currentRestructNumber to set
      */
-    public void setCurrentRestructNumber(int currentRestructNum)
-    {
+    public void setCurrentRestructNumber(int currentRestructNum) {
         this.currentRestructNumber = currentRestructNum;
     }
 }

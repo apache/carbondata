@@ -21,8 +21,7 @@ package com.huawei.unibi.molap.store.writer.exception;
 
 import java.util.Locale;
 
-public class MolapDataWriterException extends Exception
-{
+public class MolapDataWriterException extends Exception {
 
     /**
      * default serial version ID.
@@ -34,64 +33,48 @@ public class MolapDataWriterException extends Exception
      */
     private String msg = "";
 
-
     /**
      * Constructor
-     * 
-     * @param errorCode
-     *            The error code for this exception.
-     * @param msg
-     *            The error message for this exception.
-     * 
+     *
+     * @param msg The error message for this exception.
      */
-    public MolapDataWriterException(String msg)
-    {
+    public MolapDataWriterException(String msg) {
         super(msg);
         this.msg = msg;
     }
-    
+
     /**
      * Constructor
-     * 
-     * @param errorCode
-     *            The error code for this exception.
-     * @param msg
-     *            The error message for this exception.
-     * 
+     *
+     * @param msg The error message for this exception.
      */
-    public MolapDataWriterException(String msg, Throwable t)
-    {
-        super(msg,t);
+    public MolapDataWriterException(String msg, Throwable t) {
+        super(msg, t);
         this.msg = msg;
     }
 
     /**
      * This method is used to get the localized message.
-     * 
-     * @param locale
-     *            - A Locale object represents a specific geographical,
-     *            political, or cultural region.
+     *
+     * @param locale - A Locale object represents a specific geographical,
+     *               political, or cultural region.
      * @return - Localized error message.
      */
-    public String getLocalizedMessage(Locale locale)
-    {
+    public String getLocalizedMessage(Locale locale) {
         return "";
     }
 
     /**
      * getLocalizedMessage
      */
-    @Override
-    public String getLocalizedMessage()
-    {
+    @Override public String getLocalizedMessage() {
         return super.getLocalizedMessage();
     }
 
     /**
      * getMessage
      */
-    public String getMessage()
-    {
+    public String getMessage() {
         return this.msg;
     }
 
