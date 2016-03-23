@@ -19,11 +19,7 @@
 
 package com.huawei.unibi.molap.mdkeygen;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.io.File;
-import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -92,11 +88,6 @@ public class MDKeyGenStep extends BaseStep
      * dimension length
      */
     private int dimensionCount;
-    
-    /**
-     * dimsLenIncludingComplexPrimitives
-     */
-    private int dimsLenIncludingComplexPrimitives;
     
     /**
      * table name
@@ -339,7 +330,6 @@ public class MDKeyGenStep extends BaseStep
         
 //      this.dimensionCount = dimLens.length;
       this.dimensionCount = meta.getDimensionCount();
-      this.dimsLenIncludingComplexPrimitives = dimLens.length;
       
       int simpleDimsCount = this.dimensionCount - meta.getComplexDimsCount();
       int[] simpleDimsLen = new int[simpleDimsCount];
@@ -386,7 +376,7 @@ public class MDKeyGenStep extends BaseStep
     			tableName, dimensionCount, measureCount,meta.getHighCardinalityDims().length);*/
         finalMerger = new SingleThreadFinalSortFilesMerger(dataFolderLocation,
                 tableName, dimensionCount - meta.getComplexDimsCount(), meta.getComplexDimsCount(), measureCount,meta.getHighCardinalityCount());
-        if(meta.getHighCardinalityCount() > 0)
+        if(meta.getHighCardinalityCount() > 0 || meta.getComplexDimsCount() > 0)
         {
             dataHandler = new MolapFactDataHandlerColumnar(
                     meta.getSchemaName(), meta.getCubeName(), this.tableName,
@@ -401,7 +391,7 @@ public class MDKeyGenStep extends BaseStep
             dataHandler = new MolapFactDataHandlerColumnar(
                     meta.getSchemaName(), meta.getCubeName(), this.tableName,
                     false, measureCount, data.generator[dimLens.length].getKeySizeInBytes(),
-                    measureCount + 1, null, null, storeLocation, dimLens,
+                    measureCount, null, null, storeLocation, dimLens,
                     false, false, dimLens, null, null, true,
                     meta.getCurrentRestructNumber(),
                     meta.getHighCardinalityCount(), dimensionCount, complexIndexMap, simpleDimsLen);

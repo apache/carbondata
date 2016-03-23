@@ -21,7 +21,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.huawei.datasight</groupId>
   <artifactId>CarbonTestSuite</artifactId>
-  <version>1.2.10</version>
+  <version>0.1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>CarbonTestSuite</name>
  
@@ -36,7 +36,7 @@
 		<checkstyle.config.location>../build/checkstyle.xml</checkstyle.config.location>
 		<checkstyle.excludes>**/MolapDef.java</checkstyle.excludes>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<spark.version>1.5.1</spark.version>
+		<spark.version>1.5.2</spark.version>
 		<scala.binary.version>2.10</scala.binary.version>
 		<prebuild.path>${basedir}/../../libraries/Unibi_Prebuild</prebuild.path>
 		<tpjars.path>${basedir}/../../libraries/TPJars</tpjars.path>
@@ -106,41 +106,40 @@
 		<scope>system</scope>
 		<systemPath>${tpjars.path}/pentaho-hdfs-vfs-1.0.0.jar</systemPath>
 	</dependency>
-
+		<dependency>
+		<groupId>com.google.code.gson</groupId>
+		<artifactId>gson</artifactId>
+		<version>2.3.1</version>
+	</dependency>
 	<dependency>
 		<groupId>com.huawei.datasight</groupId>
 		<artifactId>molap-core</artifactId>
-		<version>1.2.10</version>
+		<version>0.1.0-SNAPSHOT</version>
 	</dependency>
 	<dependency>
 		<groupId>com.huawei.datasight</groupId>
 		<artifactId>molap-engine</artifactId>
-		<version>1.2.10</version>
+		<version>0.1.0-SNAPSHOT</version>
 	</dependency>
 	<dependency>
 		<groupId>com.huawei.datasight</groupId>
 		<artifactId>molap-data-processor</artifactId>
-		<version>1.2.10</version>
+		<version>0.1.0-SNAPSHOT</version>
 	</dependency>
 	<dependency>
 		<groupId>com.huawei.datasight</groupId>  
 		<artifactId>molap-interface</artifactId>  
-		<version>1.2.10</version> 
-	</dependency>
-	<dependency>
-		<groupId>com.huawei.datasight</groupId>  
-		<artifactId>molap-autoaggregation</artifactId>  
-		<version>1.2.10</version>
+		<version>0.1.0-SNAPSHOT</version> 
 	</dependency>
 	<dependency>
 		<groupId>com.huawei.datasight</groupId>  
 		<artifactId>molap-aggregation</artifactId>  
-		<version>1.2.10</version>
+		<version>0.1.0-SNAPSHOT</version>
 	</dependency>
 	<dependency>
 		<groupId>com.huawei.datasight</groupId>  
 		<artifactId>molap-spark-interface</artifactId>  
-		<version>1.2.10</version>
+		<version>0.1.0-SNAPSHOT</version>
 	</dependency>
 	<dependency>
 		<groupId>com.huawei.datasight</groupId>  
@@ -189,11 +188,6 @@
 	<dependency>
 		<groupId>org.apache.spark</groupId>
 		<artifactId>spark-repl_${scala.binary.version}</artifactId>
-		<version>${spark.version}</version>
-	</dependency>
-	<dependency>
-		<groupId>org.apache.spark</groupId>
-		<artifactId>spark-om</artifactId>
 		<version>${spark.version}</version>
 	</dependency>
 	<dependency>

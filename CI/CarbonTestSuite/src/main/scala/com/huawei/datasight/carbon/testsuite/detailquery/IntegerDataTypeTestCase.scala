@@ -23,17 +23,18 @@ import org.scalatest.BeforeAndAfter
 import org.apache.spark.sql.common.util.QueryTest
 import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.Row
+import org.scalatest.BeforeAndAfterAll
 
 /**
  * Test Class for detailed query on Integer datatypes
  * @author N00902756
  *
  */
-class IntegerDataTypeTestCase extends QueryTest with BeforeAndAfter {
+class IntegerDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
   
   import org.apache.spark.sql.common.util.CarbonHiveContext.implicits._
   
-  before
+  override def beforeAll
   {
 	  sql("CREATE CUBE integertypecube DIMENSIONS (empno Integer, workgroupcategory Integer, deptno Integer, projectcode Integer) MEASURES (attendance Integer) OPTIONS (PARTITIONER [PARTITION_COUNT=1])")
 	  sql("LOAD DATA fact from './TestData/data.csv' INTO CUBE integertypecube PARTITIONDATA(DELIMITER ',', QUOTECHAR '\"')")
@@ -43,7 +44,7 @@ class IntegerDataTypeTestCase extends QueryTest with BeforeAndAfter {
       sql("select empno from integertypecube"),
       Seq(Row(11),Row(12),Row(13),Row(14),Row(15),Row(16),Row(17),Row(18),Row(19),Row(20)))
   }
-  after
+  override def afterAll
   {
 	  sql("drop cube integertypecube")
   }
