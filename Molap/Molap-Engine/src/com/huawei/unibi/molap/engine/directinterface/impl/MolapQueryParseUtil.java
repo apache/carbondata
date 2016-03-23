@@ -91,10 +91,8 @@ public final class MolapQueryParseUtil
     {
         
     }
-    /**
-     * 
-     */
-    private static final LogService LOGGER = LogServiceFactory.getLogService(MolapQueryInternalExecutorImpl.class.getName());
+
+    private static final LogService LOGGER = LogServiceFactory.getLogService(MolapQueryParseUtil.class.getName());
     
     /**
      * It parses the MOLAP query object and returns model object.
