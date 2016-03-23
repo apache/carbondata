@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.StringTokenizer;
 
 import org.pentaho.di.core.exception.KettleException;
 
@@ -73,12 +72,6 @@ public class StructDataType implements GenericDataType {
 		return name;
 	}
 	
-	@Override
-	public void setParentname(String parentname) {
-		this.parentname = parentname;
-		
-	}
-
 	@Override
 	public String getParentname() {
 		return parentname;
