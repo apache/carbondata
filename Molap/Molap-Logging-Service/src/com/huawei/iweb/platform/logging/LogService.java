@@ -102,14 +102,6 @@ public interface LogService
     void info(LogEvent event , Throwable throwable , Object... inserts);
 
     /**
-     * for Secure Logs
-     * 
-     * @param event events
-     * @param inserts inserts
-     */
-    void secure(LogEvent event , Object... inserts);
-
-    /**
      * for audit
      * 
      * @param event events
