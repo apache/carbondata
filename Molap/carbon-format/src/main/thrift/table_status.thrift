@@ -18,16 +18,19 @@
  */
 
 /**
- * File format description for carbon dictionary file
+ * File format description for carbon table status file
  */
 namespace java org.carbondata.format
 
-struct ColumnDictionaryChunk {
-	1: required i32 min_surrogate_key //The least surrogate key in this dictionary, in most cases min will be 0, but after history data deletion, min can be non-zero
-	2: list<binary> values // the values in dictionary order, each value is represented by a list of bytes, The values can be of any supported data type
-	3: required i32 max_surrogate_key //The least surrogate key in this dictionary, in most cases min will be 0, but after history data deletion, min can be non-zero
+enum SegmentState {
+	LOAD_PROGRESS = 0; // Loading is in progress
+	SUCCESS = 1; //Data is in readable state (successful load/update)
+	DELETE_PROGRESS = 2;	// Data is in process of deletion
+	UPDATE_PROGRESS = 2;	// Data is in process of update
 }
 
-struct ColumnDictionary{
-	1: required list<ColumnDictionaryChunk> dictionary_chunks
+struct SegmentStatus{
+	1: SegmentState current_state // The current status of the segment
+	2: i64 creation_time // The last creation time
+	3: i64 latest_state_time // The time when last state was changed
 }
