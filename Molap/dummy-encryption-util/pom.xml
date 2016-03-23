@@ -37,8 +37,6 @@
   </pluginRepositories>
 
   <properties>
-		<prebuild.path>${basedir}/../../libraries/Unibi_Prebuild</prebuild.path>
-		<tpjars.path>${basedir}/../../libraries/TPJars</tpjars.path>
   </properties>
   
   <dependencies>

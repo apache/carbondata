@@ -29,7 +29,6 @@
 
     <properties>
         <assembly.jar>spark-cube-assembly.jar</assembly.jar>
-        <checkstyle.config.location>../build/checkstyle.xml</checkstyle.config.location>
         <checkstyle.excludes>**/MolapDef.java</checkstyle.excludes>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <spark.version>1.5.2</spark.version>
