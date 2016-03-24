@@ -42,32 +42,22 @@
     <pluginRepositories>
     </pluginRepositories>
 
-    <properties>
-        <prebuild.path>${basedir}/../lib</prebuild.path>
-    </properties>
-
     <dependencies>
 
         <dependency>
             <groupId>unibi</groupId>
             <artifactId>com.kettlecore</artifactId>
             <version>4.2.1-GA</version>
-            <scope>system</scope>
-            <systemPath>${prebuild.path}/kettle-core-4.2.1-GA.jar</systemPath>
         </dependency>
         <dependency>
             <groupId>unibi</groupId>
             <artifactId>com.kettleengine</artifactId>
             <version>4.2.1-GA</version>
-            <scope>system</scope>
-            <systemPath>${prebuild.path}/kettle-engine-4.2.1-GA.jar</systemPath>
         </dependency>
         <dependency>
             <groupId>unibi</groupId>
             <artifactId>com.kettledb</artifactId>
             <version>4.2.1-GA</version>
-            <scope>system</scope>
-            <systemPath>${prebuild.path}/kettle-db-4.2.1-GA.jar</systemPath>
         </dependency>
         <dependency>
             <groupId>com.huawei.datasight</groupId>
@@ -124,12 +114,12 @@
         <dependency>
             <groupId>com.huawei.datasight</groupId>
             <artifactId>molap-interface</artifactId>
-            <version>0.1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.huawei.datasight</groupId>
             <artifactId>molap-core</artifactId>
-            <version>0.1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -148,7 +138,12 @@
                 </exclusion>
             </exclusions>
         </dependency>
-
+		<dependency>
+			<groupId>org.apache.spark</groupId>
+			<artifactId>spark-sql_${scala.binary.version}</artifactId>
+			<version>${spark.version}</version>
+			<scope>${spark.deps.scope}</scope>
+		</dependency>
     </dependencies>
 
     <build>

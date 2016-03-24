@@ -39,13 +39,6 @@
         </repository>
     </repositories>
 
-    <pluginRepositories>
-    </pluginRepositories>
-
-    <properties>
-        <prebuild.path>${basedir}/../lib</prebuild.path>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>com.huawei.datasight</groupId>
@@ -56,8 +49,6 @@
             <groupId>unibi</groupId>
             <artifactId>com.kettlecore</artifactId>
             <version>4.2.1-GA</version>
-            <scope>system</scope>
-            <systemPath>${prebuild.path}/kettle-core-4.2.1-GA.jar</systemPath>
         </dependency>
         <dependency>
             <groupId>eigenbase</groupId>
@@ -97,7 +88,6 @@
             <artifactId>gson</artifactId>
             <version>2.3.1</version>
         </dependency>
-
         <dependency>
             <groupId>commons-vfs</groupId>
             <artifactId>commons-vfs</artifactId>
@@ -109,7 +99,23 @@
                 </exclusion>
             </exclusions>
         </dependency>
-
+        <dependency>
+			<groupId>org.apache.hadoop</groupId>
+			<artifactId>hadoop-common</artifactId>
+			<version>${hadoop.version}</version>
+			<scope>${hadoop.deps.scope}</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.hadoop</groupId>
+			<artifactId>hadoop-hdfs</artifactId>
+			<version>${hadoop.version}</version>
+			<scope>${hadoop.deps.scope}</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.xerial.snappy</groupId>
+			<artifactId>snappy-java</artifactId>
+			<version>${snappy.version}</version>
+		</dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
