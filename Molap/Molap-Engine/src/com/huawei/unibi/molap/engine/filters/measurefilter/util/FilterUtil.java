@@ -65,6 +65,7 @@ import com.huawei.unibi.molap.keygenerator.factory.KeyGeneratorFactory;
 import com.huawei.unibi.molap.metadata.MolapMetadata.Dimension;
 import com.huawei.unibi.molap.olap.SqlStatement.Type;
 import com.huawei.unibi.molap.engine.datastorage.MemberStore;
+import com.huawei.unibi.molap.vo.HybridStoreModel;
 
 
 
@@ -165,7 +166,7 @@ public final class FilterUtil
                         }
                     return new NonUniqueBlockEqualsEvalutor(expression, isExpressionResolve,true);
                 }
-                else if(dataCache.getAggKeyBlock()[currentCondExpression.getColumnList().get(0).getDim().getOrdinal()])
+                else if(dataCache.getAggKeyBlock()[getDimensionStoreOrdinal(currentCondExpression.getColumnList().get(0).getDim().getOrdinal(),info.getHybridStoreModel())])
                 {
                     return new UniqueBlockEqualsEvalutor(expression, isExpressionResolve,true);
                 }
@@ -280,6 +281,12 @@ public final class FilterUtil
         }
     }
     
+    private static int getDimensionStoreOrdinal(int ordinal, HybridStoreModel hybridStoreModel)
+    {
+        return hybridStoreModel.getStoreIndex(ordinal);
+        
+    }
+
     /**
      * This method will check if a given expression contains a column expression recursively.
      * 
@@ -367,7 +374,7 @@ public final class FilterUtil
 //        }
         int[] keys = new int[info.getKeyGenerator().getDimCount()];
         Arrays.fill(keys, 0);
-        int[] rangesForMaskedByte = getRangesForMaskedByte(columnExpression.getDim().getOrdinal(),
+        int[] rangesForMaskedByte = getRangesForMaskedByte(info.getHybridStoreModel().getMdKeyOrdinal(columnExpression.getDim().getOrdinal()),
                 info.getKeyGenerator());
         List<Integer> surrogates = new ArrayList<Integer>(20);
         for(String result : evaluateResultList)
@@ -387,7 +394,7 @@ public final class FilterUtil
         {
             try
             {
-                keys[columnExpression.getDim().getOrdinal()]=surrogate;
+                keys[info.getHybridStoreModel().getMdKeyOrdinal(columnExpression.getDim().getOrdinal())]=surrogate;
                 filterValuesList.add(getMaskedKey(rangesForMaskedByte, info.getKeyGenerator().generateKey(keys)));
             }
             catch(KeyGenException e)

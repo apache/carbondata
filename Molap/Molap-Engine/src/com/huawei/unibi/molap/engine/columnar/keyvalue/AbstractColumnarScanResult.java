@@ -126,6 +126,13 @@ public abstract class AbstractColumnarScanResult
                         columnarKeyStoreDataHolder[selectedDimensionIndex[i]].getColumnarKeyStoreMetadata()
                                 .getEachRowSize());
             }
+            else if(!columnarKeyStoreDataHolder[selectedDimensionIndex[i]].getColumnarKeyStoreMetadata().isSorted())
+            {
+                //handleRowStore(columnarKeyStoreDataHolder[selectedDimensionIndex[i]].getKeyBlockData(),columnarKeyStoreDataHolder[selectedDimensionIndex[i]].getColumnarKeyStoreMetadata().getEachRowSize(),row);
+                System.arraycopy(columnarKeyStoreDataHolder[selectedDimensionIndex[i]].getKeyBlockData(), ((columnIndex) * columnarKeyStoreDataHolder[selectedDimensionIndex[i]].getColumnarKeyStoreMetadata().getEachRowSize()), completeKeyArray, destinationPosition,
+                        columnarKeyStoreDataHolder[selectedDimensionIndex[i]].getColumnarKeyStoreMetadata().getEachRowSize());
+                
+            }
             else
             {
 
@@ -195,7 +202,7 @@ public abstract class AbstractColumnarScanResult
         return completeKeyArray;
     }
 
-    protected List<byte[]> getKeyArrayWithComplexTypes(int columnIndex, Map<Integer, GenericQueryType> complexQueryDims)
+    protected List<byte[]> getKeyArrayWithComplexTypes(int columnIndex, Map<Integer, GenericQueryType> complexQueryDims,ByteArrayWrapper keyVal)
     {
 //        byte[] completeKeyArray = new byte[keySize];
 //        int destinationPosition = 0;
@@ -209,6 +216,12 @@ public abstract class AbstractColumnarScanResult
             {
                 byte[] currentColBytes = new byte[columnarKeyStoreDataHolder[selectedDimensionIndex[i]].getColumnarKeyStoreMetadata()
                                                   .getEachRowSize()];
+                if(columnarKeyStoreDataHolder[selectedDimensionIndex[i]].getColumnarKeyStoreMetadata().isDirectSurrogateColumn())
+                {
+                    //Incase of high cardinality system has to update the byte array with high cardinality dimension values.
+                    updateByteArrayWithDirectSurrogateKeyVal(keyVal,columnIndex,columnarKeyStoreDataHolder[selectedDimensionIndex[i]]);
+                    continue;
+                }
                 if(!columnarKeyStoreDataHolder[selectedDimensionIndex[i]].getColumnarKeyStoreMetadata().isSorted())
                 {
                     System.arraycopy(columnarKeyStoreDataHolder[selectedDimensionIndex[i]].getKeyBlockData(),
@@ -301,7 +314,7 @@ public abstract class AbstractColumnarScanResult
     public abstract byte[] getKeyArray(ByteArrayWrapper key);
     public abstract byte[] getKeyArray();
 
-    public abstract List<byte[]> getKeyArrayWithComplexTypes(Map<Integer, GenericQueryType> complexQueryDims);
+    public abstract List<byte[]> getKeyArrayWithComplexTypes(Map<Integer, GenericQueryType> complexQueryDims,ByteArrayWrapper keyVal);
     
     public abstract int getDimDataForAgg(int dimOrdinal);
 

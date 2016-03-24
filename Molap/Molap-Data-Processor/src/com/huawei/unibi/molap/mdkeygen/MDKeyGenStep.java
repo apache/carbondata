@@ -59,6 +59,7 @@ import com.huawei.unibi.molap.util.MolapProperties;
 import com.huawei.unibi.molap.util.MolapUtil;
 import com.huawei.unibi.molap.util.MolapUtilException;
 import com.huawei.unibi.molap.util.RemoveDictionaryUtil;
+import com.huawei.unibi.molap.vo.HybridStoreModel;
 
 /**
  * Project Name 	: Carbon 
@@ -121,6 +122,8 @@ public class MDKeyGenStep extends BaseStep
      * dataHandler
      */
     private MolapFactHandler dataHandler;
+
+	private HybridStoreModel hybridStoreModel;
     
     /**
      * MolapMDKeyGenStep
@@ -201,7 +204,7 @@ public class MDKeyGenStep extends BaseStep
 						dataHandler.addDataToStore(outputRow);
 						writeCounter++;
 					}
-				} 
+				}
 				catch (MolapDataWriterException e)
 				{
 					 LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e, "Failed for: "+ this.tableName);
@@ -213,9 +216,12 @@ public class MDKeyGenStep extends BaseStep
 				{
 					try {
 						dataHandler.finish();
-					} catch (MolapDataWriterException e) {
+					}
+                    catch (MolapDataWriterException e) {
+						
 						LOGGER.debug(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG ,"Error in  closing data handler ");
 					}
+					
 				}
 			}
             
@@ -314,14 +320,15 @@ public class MDKeyGenStep extends BaseStep
                     "Level cardinality file :: " + e.getMessage());
 			return false;
 		}
-		if(null == dimLens)
+		String[] dimStoreType = meta.getDimensionsStoreType().split(",");
+		boolean[] dimensionStoreType = new boolean[dimLens.length];
+		for(int i=0;i<dimensionStoreType.length;i++)
 		{
-			LOGGER.info(
-                    MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-                    "Cardinality could not determined. Nothing to process further in MDKeyGenstep");
-			return false;
+				dimensionStoreType[i]=Boolean.parseBoolean(dimStoreType[i]);
 		}
-  
+		this.hybridStoreModel = MolapUtil.getHybridStoreMeta(dimLens,
+					dimensionStoreType,null);
+		dimLens=hybridStoreModel.getHybridCardinality();  
 		data.generator = new KeyGenerator[dimLens.length + 1];
 		for(int i=0;i<dimLens.length;i++)
 		{
@@ -331,15 +338,17 @@ public class MDKeyGenStep extends BaseStep
 //      this.dimensionCount = dimLens.length;
       this.dimensionCount = meta.getDimensionCount();
       
-      int simpleDimsCount = this.dimensionCount - meta.getComplexDimsCount();
+      int simpleDimsCount = this.dimensionCount - meta.getComplexDimsCount()-meta.getHighCardinalityCount();
       int[] simpleDimsLen = new int[simpleDimsCount];
       for(int i=0;i<simpleDimsCount;i++)
       {
       	simpleDimsLen[i] = dimLens[i];
       }
-      
+     	
       //Actual primitive dimension used to generate start & end key 
-      data.generator[dimLens.length] = KeyGeneratorFactory.getKeyGenerator(simpleDimsLen);
+     
+      //data.generator[dimLens.length] = KeyGeneratorFactory.getKeyGenerator(simpleDimsLen);
+      data.generator[dimLens.length] = KeyGeneratorFactory.getKeyGenerator(hybridStoreModel.getHybridCardinality(),hybridStoreModel.getDimensionPartitioner());
       
       //To Set MDKey Index of each primitive type in complex type 
       int surrIndex = simpleDimsCount;
@@ -375,7 +384,7 @@ public class MDKeyGenStep extends BaseStep
         /*finalMerger = new SingleThreadFinalSortFilesMerger(dataFolderLocation,
     			tableName, dimensionCount, measureCount,meta.getHighCardinalityDims().length);*/
         finalMerger = new SingleThreadFinalSortFilesMerger(dataFolderLocation,
-                tableName, dimensionCount - meta.getComplexDimsCount(), meta.getComplexDimsCount(), measureCount,meta.getHighCardinalityCount());
+                tableName, dimensionCount - meta.getComplexDimsCount()-meta.getHighCardinalityCount(), meta.getComplexDimsCount(), measureCount,meta.getHighCardinalityCount());
         if(meta.getHighCardinalityCount() > 0 || meta.getComplexDimsCount() > 0)
         {
             dataHandler = new MolapFactDataHandlerColumnar(
@@ -384,7 +393,7 @@ public class MDKeyGenStep extends BaseStep
                     measureCount + 1, null, null, storeLocation, dimLens,
                     false, false, dimLens, null, null, true,
                     meta.getCurrentRestructNumber(),
-                    meta.getHighCardinalityCount(), dimensionCount, complexIndexMap, simpleDimsLen);
+                    meta.getHighCardinalityCount(), dimensionCount, complexIndexMap, simpleDimsLen,this.hybridStoreModel);
         }
         else
         {
@@ -394,7 +403,7 @@ public class MDKeyGenStep extends BaseStep
                     measureCount, null, null, storeLocation, dimLens,
                     false, false, dimLens, null, null, true,
                     meta.getCurrentRestructNumber(),
-                    meta.getHighCardinalityCount(), dimensionCount, complexIndexMap, simpleDimsLen);
+                    meta.getHighCardinalityCount(), dimensionCount, complexIndexMap, simpleDimsLen,this.hybridStoreModel);
         }
         return true;
     }
@@ -465,22 +474,32 @@ public class MDKeyGenStep extends BaseStep
         }
         outputRow[l] =  RemoveDictionaryUtil.getByteArrayForNoDictionaryCols(row);
         
-        // copy all the dimension to keys Array. This key array will be used to generate id
-        for(int i = 0; i < (this.dimensionCount - meta.getComplexDimsCount()); i++)
+        //copy all columnar dimension to key array
+        int[] columnarStoreOrdinals=hybridStoreModel.getColumnStoreOrdinals();
+        int[] columnarDataKeys=new int[columnarStoreOrdinals.length];
+        for(int i=0;i<columnarStoreOrdinals.length;i++)
         {
-            Object key = RemoveDictionaryUtil.getDimension(i, row);
-            keys[i] = (Integer)key;
+        	Object key = RemoveDictionaryUtil.getDimension(columnarStoreOrdinals[i], row);
+        	columnarDataKeys[i]=(Integer)key;
         }
-        
+        //copy all row dimension in row key array
+        int[] rowStoreOrdinals=hybridStoreModel.getRowStoreOrdinals();
+        int[] rowDataKeys = new int[rowStoreOrdinals.length];
+        for(int i=0;i<rowStoreOrdinals.length;i++)
+        {
+        	Object key=RemoveDictionaryUtil.getDimension(rowStoreOrdinals[i], row);
+        	rowDataKeys[i]=(Integer)key;
+        }
         try
         {
-            // generate byte array from id.
-            byte[] k = data.generator[data.generator.length-1].generateKey(keys);
-            outputRow[outputRow.length - 1] = k;
+        	int[] completeKeys=new int[columnarDataKeys.length+rowDataKeys.length];
+        	System.arraycopy(rowDataKeys, 0, completeKeys, 0, rowDataKeys.length);
+        	System.arraycopy(columnarDataKeys, 0, completeKeys, rowDataKeys.length, columnarDataKeys.length);
+        	outputRow[outputRow.length-1]=data.generator[data.generator.length-1].generateKey(completeKeys);
         }
         catch(KeyGenException e)
         {
-            throw new KettleException("Unbale to generate the mdkey", e);
+        	throw new KettleException("Unbale to generate the mdkey", e);	
         }
         
         return outputRow;

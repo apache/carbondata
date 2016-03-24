@@ -530,17 +530,7 @@ public class MolapDataWriterStep extends BaseStep implements StepInterface {
                     this.tableName, meta.isGroupByEnabled(), measureCount, mdkeyLength, mdKeyIndex,
                     aggType, meta.getAggregatorClass(), storeLocation,
                     MolapDataProcessorUtil.getDimLens(meta.getFactDimLensString()),
-                    isByteArrayInMeasure, meta.isUpdateMemberRequest(), dimLens,
-                    meta.getFactLevels(), meta.getAggregateLevels(), true,
-                    meta.getCurrentRestructNumber(), this.meta.gethighCardCount());
-        } else {
-            dataHandler = new MolapFactDataHandler(meta.getSchemaName(), meta.getCubeName(),
-                    this.tableName, meta.isGroupByEnabled(), measureCount, mdkeyLength, mdKeyIndex,
-                    aggType, meta.getAggregatorClass(), storeLocation,
-                    MolapDataProcessorUtil.getDimLens(meta.getFactDimLensString()),
-                    isByteArrayInMeasure, meta.isUpdateMemberRequest(), dimLens,
-                    meta.getFactLevels(), meta.getAggregateLevels(), true,
-                    meta.getCurrentRestructNumber());
+                    isByteArrayInMeasure, meta.isUpdateMemberRequest(),dimLens,meta.getFactLevels(),meta.getAggregateLevels(), true, meta.getCurrentRestructNumber(),this.meta.gethighCardCount(),null);
         }
 
     }

@@ -34,6 +34,7 @@ import com.huawei.unibi.molap.metadata.LeafNodeInfoColumnar;
 import com.huawei.unibi.molap.metadata.MolapMetadata.Cube;
 import com.huawei.unibi.molap.olap.MolapDef.CubeDimension;
 import com.huawei.unibi.molap.util.MolapUtil;
+import com.huawei.unibi.molap.vo.HybridStoreModel;
 
 public class CSBTreeColumnarLeafNode extends CSBNode
 {
@@ -73,10 +74,10 @@ public class CSBTreeColumnarLeafNode extends CSBNode
     private byte[][] columnMaxData;
     
     public CSBTreeColumnarLeafNode(int maxKeys, int[] eachBlockSize, boolean isFileStore, FileHolder fileHolder,
-            LeafNodeInfoColumnar leafNodeInfo, ValueCompressionModel compressionModel, long nodeNumber,Cube metaCube)
+            LeafNodeInfoColumnar leafNodeInfo, ValueCompressionModel compressionModel, long nodeNumber,Cube metaCube,HybridStoreModel hybridStoreModel)
     {
         nKeys = leafNodeInfo.getNumberOfKeys();
-        keyStore = StoreFactory.createColumnarKeyStore(MolapUtil.getColumnarKeyStoreInfo(leafNodeInfo, eachBlockSize), fileHolder,isFileStore);
+        keyStore = StoreFactory.createColumnarKeyStore(MolapUtil.getColumnarKeyStoreInfo(leafNodeInfo, eachBlockSize,hybridStoreModel), fileHolder,isFileStore);
         dataStore = StoreFactory.createDataStore(isFileStore,
                 compressionModel, leafNodeInfo.getMeasureOffset(), leafNodeInfo.getMeasureLength(),
                 leafNodeInfo.getFileName(),fileHolder);
@@ -94,7 +95,7 @@ public class CSBTreeColumnarLeafNode extends CSBNode
             //of dimension members.
             //Primitives types + high Card Cols + complex columns. Incrementing highcard cols & used it
             // to identify complex columns block size.
-            if(i < cubeDimensions.length && cubeDimensions[i].highCardinality)
+            if(cubeDimensions[i].highCardinality || i >= eachBlockSize.length)
             {
                 highCardColsCount++;
                 ByteBuffer byteBuffer = ByteBuffer.allocate(columnMinMaxData[i].length);
@@ -110,11 +111,11 @@ public class CSBTreeColumnarLeafNode extends CSBNode
             }
             else
             {
-            this.columnMinData[i] = new byte[eachBlockSize[i - highCardColsCount]];
-            System.arraycopy(columnMinMaxData[i], 0, this.columnMinData[i], 0, eachBlockSize[i - highCardColsCount]);
+            this.columnMinData[i] = new byte[eachBlockSize[i]];
+            System.arraycopy(columnMinMaxData[i], 0, this.columnMinData[i], 0, eachBlockSize[i]);
 
-            this.columnMaxData[i] = new byte[eachBlockSize[i - highCardColsCount]];
-            System.arraycopy(columnMinMaxData[i], eachBlockSize[i - highCardColsCount], this.columnMaxData[i], 0, eachBlockSize[i - highCardColsCount]);
+            this.columnMaxData[i] = new byte[eachBlockSize[i]];
+            System.arraycopy(columnMinMaxData[i], eachBlockSize[i], this.columnMaxData[i], 0, eachBlockSize[i]);
             }
         }
         

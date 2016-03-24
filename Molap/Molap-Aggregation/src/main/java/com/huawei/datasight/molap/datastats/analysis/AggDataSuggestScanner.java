@@ -168,4 +168,12 @@ public class AggDataSuggestScanner extends AbstractColumnarScanResult
         return null;
     }
 
+	@Override
+	public List<byte[]> getKeyArrayWithComplexTypes(
+			Map<Integer, GenericQueryType> complexQueryDims,
+			ByteArrayWrapper keyVal) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

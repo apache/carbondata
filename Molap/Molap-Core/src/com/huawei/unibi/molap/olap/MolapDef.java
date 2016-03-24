@@ -269,6 +269,8 @@ public class MolapDef {
         public String description;  // optional attribute
         public String foreignKey;  // optional attribute
         public Boolean highCardinality;  // attribute default: false
+        public Boolean columnar=true;
+
         /**
          * Contains values of user-defined properties.
          */
@@ -1387,6 +1389,7 @@ public class MolapDef {
         public String type;  // attribute default: String
         public String internalType;  // optional attribute
         public Boolean uniqueMembers;  // attribute default: false
+        public Boolean columnar=true;
         public String levelType;  // attribute default: Regular
         public String hideMemberIf;  // attribute default: Never
         public String formatter;  // optional attribute
@@ -1468,6 +1471,8 @@ public class MolapDef {
                         .getAttribute("internalType", "String", null, _internalType_values, false);
                 uniqueMembers = (Boolean) _parser
                         .getAttribute("uniqueMembers", "Boolean", "false", null, false);
+                columnar = (Boolean) _parser
+                        .getAttribute("columnar", "Boolean", "false", null, true);
                 levelType = (String) _parser
                         .getAttribute("levelType", "String", "Regular", _levelType_values, false);
                 hideMemberIf = (String) _parser
@@ -1506,45 +1511,41 @@ public class MolapDef {
 
         public void display(java.io.PrintWriter _out, int _indent) {
             _out.println(getName());
-            displayAttribute(_out, "approxRowCount", approxRowCount, _indent + 1);
-            displayAttribute(_out, "name", name, _indent + 1);
-            displayAttribute(_out, "parentname", parentname, _indent + 1);
-            displayAttribute(_out, "visible", visible, _indent + 1);
-            displayAttribute(_out, "columnIndex", columnIndex, _indent + 1);
-            displayAttribute(_out, "keyOrdinal", keyOrdinal, _indent + 1);
-            displayAttribute(_out, "levelCardinality", levelCardinality, _indent + 1);
-            displayAttribute(_out, "ordinalColumnIndex", ordinalColumnIndex, _indent + 1);
-            displayAttribute(_out, "nameColumnIndex", nameColumnIndex, _indent + 1);
-            displayAttribute(_out, "table", table, _indent + 1);
-            displayAttribute(_out, "column", column, _indent + 1);
-            displayAttribute(_out, "nameColumn", nameColumn, _indent + 1);
-            displayAttribute(_out, "ordinalColumn", ordinalColumn, _indent + 1);
-            displayAttribute(_out, "parentColumn", parentColumn, _indent + 1);
-            displayAttribute(_out, "nullParentValue", nullParentValue, _indent + 1);
-            displayAttribute(_out, "type", type, _indent + 1);
-            displayAttribute(_out, "internalType", internalType, _indent + 1);
-            displayAttribute(_out, "uniqueMembers", uniqueMembers, _indent + 1);
-            displayAttribute(_out, "levelType", levelType, _indent + 1);
-            displayAttribute(_out, "hideMemberIf", hideMemberIf, _indent + 1);
-            displayAttribute(_out, "formatter", formatter, _indent + 1);
-            displayAttribute(_out, "isParent", isParent, _indent + 1);
-            displayAttribute(_out, "caption", caption, _indent + 1);
-            displayAttribute(_out, "description", description, _indent + 1);
-            displayAttribute(_out, "captionColumn", captionColumn, _indent + 1);
-            displayElement(_out, "annotations", (org.eigenbase.xom.ElementDef) annotations,
-                    _indent + 1);
-            displayElement(_out, "keyExp", (org.eigenbase.xom.ElementDef) keyExp, _indent + 1);
-            displayElement(_out, "nameExp", (org.eigenbase.xom.ElementDef) nameExp, _indent + 1);
-            displayElement(_out, "captionExp", (org.eigenbase.xom.ElementDef) captionExp,
-                    _indent + 1);
-            displayElement(_out, "ordinalExp", (org.eigenbase.xom.ElementDef) ordinalExp,
-                    _indent + 1);
-            displayElement(_out, "parentExp", (org.eigenbase.xom.ElementDef) parentExp,
-                    _indent + 1);
-            displayElement(_out, "memberFormatter", (org.eigenbase.xom.ElementDef) memberFormatter,
-                    _indent + 1);
-            displayElement(_out, "closure", (org.eigenbase.xom.ElementDef) closure, _indent + 1);
-            displayElementArray(_out, "properties", properties, _indent + 1);
+            displayAttribute(_out, "approxRowCount", approxRowCount, _indent+1);
+            displayAttribute(_out, "name", name, _indent+1);
+            displayAttribute(_out, "parentname", parentname, _indent+1);
+            displayAttribute(_out, "visible", visible, _indent+1);
+            displayAttribute(_out, "columnIndex", columnIndex, _indent+1);
+            displayAttribute(_out, "keyOrdinal", keyOrdinal, _indent+1);
+            displayAttribute(_out, "levelCardinality", levelCardinality, _indent+1);
+            displayAttribute(_out, "ordinalColumnIndex", ordinalColumnIndex, _indent+1);
+            displayAttribute(_out, "nameColumnIndex", nameColumnIndex, _indent+1);
+            displayAttribute(_out, "table", table, _indent+1);
+            displayAttribute(_out, "column", column, _indent+1);
+            displayAttribute(_out, "nameColumn", nameColumn, _indent+1);
+            displayAttribute(_out, "ordinalColumn", ordinalColumn, _indent+1);
+            displayAttribute(_out, "parentColumn", parentColumn, _indent+1);
+            displayAttribute(_out, "nullParentValue", nullParentValue, _indent+1);
+            displayAttribute(_out, "type", type, _indent+1);
+            displayAttribute(_out, "internalType", internalType, _indent+1);
+            displayAttribute(_out, "uniqueMembers", uniqueMembers, _indent+1);
+            displayAttribute(_out,"columnar",columnar,_indent+1);
+            displayAttribute(_out, "levelType", levelType, _indent+1);
+            displayAttribute(_out, "hideMemberIf", hideMemberIf, _indent+1);
+            displayAttribute(_out, "formatter", formatter, _indent+1);
+            displayAttribute(_out, "isParent", isParent, _indent+1);
+            displayAttribute(_out, "caption", caption, _indent+1);
+            displayAttribute(_out, "description", description, _indent+1);
+            displayAttribute(_out, "captionColumn", captionColumn, _indent+1);
+            displayElement(_out, "annotations", (org.eigenbase.xom.ElementDef) annotations, _indent+1);
+            displayElement(_out, "keyExp", (org.eigenbase.xom.ElementDef) keyExp, _indent+1);
+            displayElement(_out, "nameExp", (org.eigenbase.xom.ElementDef) nameExp, _indent+1);
+            displayElement(_out, "captionExp", (org.eigenbase.xom.ElementDef) captionExp, _indent+1);
+            displayElement(_out, "ordinalExp", (org.eigenbase.xom.ElementDef) ordinalExp, _indent+1);
+            displayElement(_out, "parentExp", (org.eigenbase.xom.ElementDef) parentExp, _indent+1);
+            displayElement(_out, "memberFormatter", (org.eigenbase.xom.ElementDef) memberFormatter, _indent+1);
+            displayElement(_out, "closure", (org.eigenbase.xom.ElementDef) closure, _indent+1);
+            displayElementArray(_out, "properties", properties, _indent+1);
         }
 
         public void displayXML(org.eigenbase.xom.XMLOutput _out, int _indent) {
@@ -1559,6 +1560,7 @@ public class MolapDef {
                             .add("ordinalColumn", ordinalColumn).add("parentColumn", parentColumn)
                             .add("nullParentValue", nullParentValue).add("type", type)
                             .add("internalType", internalType).add("uniqueMembers", uniqueMembers)
+                             .add("columnar",columnar)
                             .add("levelType", levelType).add("hideMemberIf", hideMemberIf)
                             .add("formatter", formatter).add("isParent", isParent)
                             .add("caption", caption).add("description", description)
@@ -1612,6 +1614,7 @@ public class MolapDef {
                     _cother.internalType, _out, _indent + 1);
             _diff = _diff && displayAttributeDiff("uniqueMembers", uniqueMembers,
                     _cother.uniqueMembers, _out, _indent + 1);
+            _diff = _diff && displayAttributeDiff("columnar", columnar, _cother.columnar, _out, _indent+1);
             _diff = _diff && displayAttributeDiff("levelType", levelType, _cother.levelType, _out,
                     _indent + 1);
             _diff = _diff && displayAttributeDiff("hideMemberIf", hideMemberIf,

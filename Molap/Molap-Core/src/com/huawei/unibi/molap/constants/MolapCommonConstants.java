@@ -1201,6 +1201,8 @@ public final class MolapCommonConstants {
     public static final String DECIMAL_TYPE = "DecimalType";
     public static final String NULL_TYPE = "NullType";
     public static final String STRING = "String";
+    public static final String COLUMNAR = "columnar";
+    
     public static final String INTEGER = "Integer";
     public static final String NUMERIC = "Numeric";
     public static final String TIMESTAMP = "Timestamp";

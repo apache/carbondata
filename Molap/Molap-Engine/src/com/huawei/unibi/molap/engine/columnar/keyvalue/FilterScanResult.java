@@ -54,10 +54,10 @@ public class FilterScanResult extends AbstractColumnarScanResult
         ++currentRow;
         return getKeyArray(rowMapping[++sourcePosition],key);
     }
-    public List<byte[]> getKeyArrayWithComplexTypes(Map<Integer, GenericQueryType> complexQueryDims)
+    public List<byte[]> getKeyArrayWithComplexTypes(Map<Integer, GenericQueryType> complexQueryDims,ByteArrayWrapper keyVal)
     {
         ++currentRow;
-        return getKeyArrayWithComplexTypes(rowMapping[++sourcePosition], complexQueryDims);
+        return getKeyArrayWithComplexTypes(rowMapping[++sourcePosition], complexQueryDims,keyVal);
     }
 
     @Override

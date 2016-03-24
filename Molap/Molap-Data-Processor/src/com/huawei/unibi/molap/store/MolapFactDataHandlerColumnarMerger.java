@@ -661,7 +661,7 @@ public class MolapFactDataHandlerColumnarMerger implements MolapFactHandler {
         }
 
         @Override public IndexStorage call() throws Exception {
-            return new BlockIndexerStorageForInt(this.data, aggKeyBlock[this.index], true);
+            return new BlockIndexerStorageForInt(this.data, aggKeyBlock[this.index], true,false);
 
         }
 

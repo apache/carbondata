@@ -40,5 +40,11 @@ public final class KeyGeneratorFactory {
         }
         return new MultiDimKeyVarLengthGenerator(incrementedCardinality);
     }
+    public static KeyGenerator getKeyGenerator(int[] dimCardinality,int[][] splits)
+    {
+        int[] dimsBitLens = MolapUtil.getDimensionBitLength(dimCardinality, splits);
+        
+        return new MultiDimKeyVarLengthGenerator(dimsBitLens);
+    }
 }
 

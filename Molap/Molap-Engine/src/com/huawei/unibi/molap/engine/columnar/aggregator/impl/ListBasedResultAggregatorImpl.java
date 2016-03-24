@@ -81,12 +81,12 @@ public class ListBasedResultAggregatorImpl implements ColumnarScannedResultAggre
             //Primitives types selected
             if(columnaraggreagtorInfo.getQueryDimensionsLength() == keyValue.getKeyBlockLength())
             {
-                key.setMaskedKey(keyValue.getKeyArray());
+                key.setMaskedKey(keyValue.getKeyArray(key));
             }
             else
             {
                 //Complex columns selected.
-                List<byte[]> complexKeyArray = keyValue.getKeyArrayWithComplexTypes(this.columnaraggreagtorInfo.getComplexQueryDims());
+                List<byte[]> complexKeyArray = keyValue.getKeyArrayWithComplexTypes(this.columnaraggreagtorInfo.getComplexQueryDims(),key);
                 key.setMaskedKey(complexKeyArray.remove(complexKeyArray.size() - 1));
                 for(byte[] complexKey : complexKeyArray)
                 {

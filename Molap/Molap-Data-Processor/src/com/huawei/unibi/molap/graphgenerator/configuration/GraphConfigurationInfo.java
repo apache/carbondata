@@ -165,7 +165,23 @@ public class GraphConfigurationInfo {
      */
     private String measureDataTypeInfo;
 
-    /**
+     /**
+      * true represent columnar store
+      * false represent row store
+      */
+     private String dimensionStoreType;
+     
+     public String getDimensionStoreTypeString()
+	 {
+		return dimensionStoreType;
+	 }
+
+	 public void setDimensionStoreTypeString(String dimensionStoreType)
+	 {
+		this.dimensionStoreType = dimensionStoreType;
+	 }
+
+	/**
      * columnAndTableName_ColumnMapForAgg
      */
     private String columnAndTableNameColumnMapForAgg;
