@@ -471,8 +471,7 @@ public class CubeDataStore
             {
                 keyBlockSize = new MultiDimKeyVarLengthVariableSplitGenerator(MolapUtil.getDimensionBitLength(this.hybridStoreModel.getHybridCardinality(),this.hybridStoreModel.getDimensionPartitioner()),this.hybridStoreModel.getColumnSplit())
                         .getBlockKeySize();
-
-           // aggKeyBlock = new boolean[dimCardinality.length];
+            
                 boolean isAggKeyBlock = Boolean
                         .parseBoolean(MolapCommonConstants.AGGREAGATE_COLUMNAR_KEY_BLOCK_DEFAULTVALUE);
                 if(isAggKeyBlock)
@@ -488,11 +487,15 @@ public class CubeDataStore
                     }
                     else
                     {
-                        this.aggKeyBlock=new boolean[this.hybridStoreModel.getColumnStoreOrdinals().length]; 
+                        this.aggKeyBlock=new boolean[this.hybridStoreModel.getColumnStoreOrdinals().length];
                     }
                     
                     for(int i=hybridStoreModel.getRowStoreOrdinals().length;i<dimCardinality.length;i++)
                     {
+                    	if(dimCardinality[i]==0)
+                    	{
+                    		continue;
+                    	}
                         if(dimCardinality[i]<highCardinalityValue)
                         {
                             this.aggKeyBlock[aggIndex++]=true;

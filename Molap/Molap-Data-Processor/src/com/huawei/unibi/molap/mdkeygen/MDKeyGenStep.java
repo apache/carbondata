@@ -204,7 +204,7 @@ public class MDKeyGenStep extends BaseStep
 						dataHandler.addDataToStore(outputRow);
 						writeCounter++;
 					}
-				} 
+				}
 				catch (MolapDataWriterException e)
 				{
 					 LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e, "Failed for: "+ this.tableName);
@@ -221,6 +221,7 @@ public class MDKeyGenStep extends BaseStep
 						
 						LOGGER.debug(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG ,"Error in  closing data handler ");
 					}
+					
 				}
 			}
             
@@ -321,13 +322,13 @@ public class MDKeyGenStep extends BaseStep
 		}
 		String[] dimStoreType = meta.getDimensionsStoreType().split(",");
 		boolean[] dimensionStoreType = new boolean[dimLens.length];
-		for(int i=0;i<dimLens.length;i++)
+		for(int i=0;i<dimensionStoreType.length;i++)
 		{
-			dimensionStoreType[i]=Boolean.parseBoolean(dimStoreType[i]);
+				dimensionStoreType[i]=Boolean.parseBoolean(dimStoreType[i]);
 		}
 		this.hybridStoreModel = MolapUtil.getHybridStoreMeta(dimLens,
-				dimensionStoreType,null);
-        dimLens=hybridStoreModel.getHybridCardinality();
+					dimensionStoreType,null);
+		dimLens=hybridStoreModel.getHybridCardinality();  
 		data.generator = new KeyGenerator[dimLens.length + 1];
 		for(int i=0;i<dimLens.length;i++)
 		{
@@ -343,9 +344,9 @@ public class MDKeyGenStep extends BaseStep
       {
       	simpleDimsLen[i] = dimLens[i];
       }
-      
+     	
       //Actual primitive dimension used to generate start & end key 
-      
+     
       //data.generator[dimLens.length] = KeyGeneratorFactory.getKeyGenerator(simpleDimsLen);
       data.generator[dimLens.length] = KeyGeneratorFactory.getKeyGenerator(hybridStoreModel.getHybridCardinality(),hybridStoreModel.getDimensionPartitioner());
       

@@ -1390,8 +1390,6 @@ public class MolapDef {
         public String internalType;  // optional attribute
         public Boolean uniqueMembers;  // attribute default: false
         public Boolean columnar=true;
-        /** Allowable values for {@link #levelType}. */
-        public static final String[] _levelType_values = {"Regular", "TimeYears", "TimeHalfYears", "TimeHalfYear", "TimeQuarters", "TimeMonths", "TimeWeeks", "TimeDays", "TimeHours", "TimeMinutes", "TimeSeconds", "TimeUndefined"};
         public String levelType;  // attribute default: Regular
         public String hideMemberIf;  // attribute default: Never
         public String formatter;  // optional attribute

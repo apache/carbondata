@@ -265,7 +265,7 @@ public class InMemoryCube implements Comparable<InMemoryCube>
             List<Integer> highCardDimOrdinals=new ArrayList<Integer>();
             for(Dimension dimension:dimensions)
             {
-                if(dimension.isHighCardinalityDim())
+            	if(dimension.isHighCardinalityDim())
                 {
                     highCardDimOrdinals.add(dimension.getOrdinal());
                     continue;

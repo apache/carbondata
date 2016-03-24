@@ -95,7 +95,7 @@ public class CSBTreeColumnarLeafNode extends CSBNode
             //of dimension members.
             //Primitives types + high Card Cols + complex columns. Incrementing highcard cols & used it
             // to identify complex columns block size.
-            if(i < cubeDimensions.length && cubeDimensions[i].highCardinality)
+            if(cubeDimensions[i].highCardinality || i >= eachBlockSize.length)
             {
                 highCardColsCount++;
                 ByteBuffer byteBuffer = ByteBuffer.allocate(columnMinMaxData[i].length);
@@ -111,11 +111,11 @@ public class CSBTreeColumnarLeafNode extends CSBNode
             }
             else
             {
-            this.columnMinData[i] = new byte[eachBlockSize[i - highCardColsCount]];
-            System.arraycopy(columnMinMaxData[i], 0, this.columnMinData[i], 0, eachBlockSize[i - highCardColsCount]);
+            this.columnMinData[i] = new byte[eachBlockSize[i]];
+            System.arraycopy(columnMinMaxData[i], 0, this.columnMinData[i], 0, eachBlockSize[i]);
 
-            this.columnMaxData[i] = new byte[eachBlockSize[i - highCardColsCount]];
-            System.arraycopy(columnMinMaxData[i], eachBlockSize[i - highCardColsCount], this.columnMaxData[i], 0, eachBlockSize[i - highCardColsCount]);
+            this.columnMaxData[i] = new byte[eachBlockSize[i]];
+            System.arraycopy(columnMinMaxData[i], eachBlockSize[i], this.columnMaxData[i], 0, eachBlockSize[i]);
             }
         }
         

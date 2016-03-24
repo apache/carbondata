@@ -307,6 +307,10 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
     private int highCardCount;
     
     private HybridStoreModel hybridStoreModel;
+
+	private int[] primitiveDimLens;
+
+	private int[] completeDimLens;
     
 //    private String[] aggregator;
  
@@ -350,26 +354,26 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
         int noDictStartIndex=0;
         if(this.hybridStoreModel.isHybridStore())
         {
-        	this.aggKeyBlock=new boolean[this.hybridStoreModel.getColumnStoreOrdinals().length+highCardCount+1];
+        	this.aggKeyBlock=new boolean[this.hybridStoreModel.getColumnStoreOrdinals().length+highCardCount+1+getComplexColsCount()];
            //hybrid store related changes, row store dimension will not get sorted and hence run length encoding alls will not be applied
             //thus setting aggKeyBlock for row store index as false
         	this.aggKeyBlock[aggIndex++]=false;
-        	this.isNoDictionary=new boolean[this.hybridStoreModel.getColumnStoreOrdinals().length+highCardCount+1];
+        	this.isNoDictionary=new boolean[this.hybridStoreModel.getColumnStoreOrdinals().length+highCardCount+1+getComplexColsCount()];
         	noDictStartIndex=this.hybridStoreModel.getColumnStoreOrdinals().length+1;
         }
         else
         {
         	//if not hybrid store than as usual
-        	this.aggKeyBlock=new boolean[this.hybridStoreModel.getColumnStoreOrdinals().length+highCardCount];	
-        	this.isNoDictionary=new boolean[this.hybridStoreModel.getColumnStoreOrdinals().length+highCardCount+1];
+        	this.aggKeyBlock=new boolean[this.hybridStoreModel.getColumnStoreOrdinals().length+highCardCount+getComplexColsCount()];	
+        	this.isNoDictionary=new boolean[this.hybridStoreModel.getColumnStoreOrdinals().length+highCardCount+getComplexColsCount()];
         	noDictStartIndex=this.hybridStoreModel.getColumnStoreOrdinals().length;
         }
        // setting true value for dims of high card
-      
         for(int i = noDictStartIndex;i < isNoDictionary.length ; i++)
         {
-        	this.isNoDictionary[i] = true;
+            this.isNoDictionary[i] = true;
         }
+               	
         
         if(isAggKeyBlock)
         {
@@ -389,7 +393,7 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
     
             if(dimensionCount < dimLens.length)
             {
-            	int allColsCount = getColsCount();
+            	int allColsCount = getColsCount(dimensionCount);
             	List<Boolean> aggKeyBlockWithComplex = new ArrayList<Boolean>(allColsCount);
                 for(int i = 0;i < dimensionCount;i++)
                 {
@@ -409,16 +413,7 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
                 	this.aggKeyBlock[i] = aggKeyBlockWithComplex.get(i);
                 }
             }
-            
-            int primitiveDims = this.dimensionCount - complexIndexMap.size();
-            boolean [] noDict = new boolean[primitiveDims + this.highCardCount + getComplexColsCount()];
-            // setting true value for dims of high card
-            for(int i = primitiveDims;i < primitiveDims + this.highCardCount; i++)
-            {
-                noDict[i] = true;
-            }
-            
-            this.isNoDictionary = noDict;
+           
         }
     }
     public MolapFactDataHandlerColumnar(String schemaName, String cubeName,
@@ -443,7 +438,9 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
         this.isMergingRequestForCustomAgg=isMergingRequestForCustomAgg;
         this.hybridStoreModel=hybridStoreModel;
 //        this.isUpdateMemberRequest=isUpdateMemberRequest;
+        this.completeDimLens=dimLens;
         this.dimLens=hybridStoreModel.getHybridCardinality();
+        
         
         this.currentRestructNumber = currentRestructNum;
         isIntBasedIndexer = Boolean
@@ -731,7 +728,7 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
 //    			columnsData[j][i]=splitKey[j];
 //    		}
 //    	}
-    	int allColsCount = getColsCount();
+    	int allColsCount = getColsCount(hybridStoreModel.getColumnSplit().length);
     	List<ArrayList<byte[]>> colsAndValues = new ArrayList<ArrayList<byte[]>>();
         for(int i=0;i<allColsCount;i++)
         {
@@ -959,10 +956,10 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
 //            {
 //                columnarCompressedData[i].compress(keyBlockHolder[i].getKeyBlock());
 //            }
-            
+            int noOfColumn=hybridStoreModel.getNoOfColumnStore();
             byte[][] data = keyDataHolder.getByteArrayValues();
             
-            byte[][][] columnsData = new byte[primitiveDimLens.length][data.length][];
+            byte[][][] columnsData = new byte[noOfColumn][data.length][];
             for(int i = 0;i < data.length;i++)
             {
                 byte[][] splitKey = columnarSplitter.splitKey(data[i]);
@@ -1053,7 +1050,7 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
             ExecutorService executorService= Executors.newFixedThreadPool(7);
             List<Future<IndexStorage>> submit = new ArrayList<Future<IndexStorage>>(primitiveDimLens.length+highCardCount + complexColCount);
             int i = 0;
-            for( i = 0;i < primitiveDimLens.length;i++)
+            for( i = 0;i < noOfColumn;i++)
             {
                 submit.add(executorService.submit(new BlockSortThread(i, columnsData[i], true)));
             }
@@ -1077,7 +1074,7 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
 //                e.printStackTrace();
                 LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e, e.getMessage());
             }
-            IndexStorage[] blockStorage = new IndexStorage[primitiveDimLens.length+highCardCount+complexColCount];
+            IndexStorage[] blockStorage = new IndexStorage[noOfColumn+highCardCount+complexColCount];
             try
             {
                 for(int k = 0;k < blockStorage.length;k++)
@@ -1142,10 +1139,10 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
         }
     }
     
-    private int getColsCount()
+    private int getColsCount(int columnSplit)
     {
     	int count=0;
-    	for(int i=0;i<dimensionCount;i++)
+    	for(int i=0;i<columnSplit;i++)
     	{
     		GenericDataType complexDataType = complexIndexMap.get(i);
     		if(complexDataType != null)
@@ -1275,10 +1272,10 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
         	this.columnarSplitter = new MultiDimKeyVarLengthVariableSplitGenerator(MolapUtil.getDimensionBitLength(hybridStoreModel.getHybridCardinality(),hybridStoreModel.getDimensionPartitioner()),hybridStoreModel.getColumnSplit());
             this.keyBlockHolder= new MolapKeyBlockHolder [this.columnarSplitter.getBlockKeySize().length];
             keyBlockSize = columnarSplitter.getBlockKeySize();
-            this.complexKeyGenerator = new KeyGenerator[dimLens.length];
-            for(int i=0;i<dimLens.length;i++)
+            this.complexKeyGenerator = new KeyGenerator[completeDimLens.length];
+            for(int i=0;i<completeDimLens.length;i++)
             {
-            	complexKeyGenerator[i] = KeyGeneratorFactory.getKeyGenerator(new int[] {dimLens[i]});
+            	complexKeyGenerator[i] = KeyGeneratorFactory.getKeyGenerator(new int[] {completeDimLens[i]});
             }
         }
         else
@@ -1346,11 +1343,13 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
         // create data writer instance
 //        this.dataWriter = new MolapFactDataWriterImpl(this.storeLocation,
 //                this.measureCount, this.mdkeyLength, this.tableName,true,fileManager, this.columnarSplitter.getBlockKeySize());
-        int[] blockKeySize = getBlockKeySizeWithComplexTypes(new MultiDimKeyVarLengthEquiSplitGenerator(
-        		MolapUtil.getIncrementedCardinalityFullyFilled(dimLens.clone()),(byte)dimSet).getBlockKeySize()); 
+        //MolapUtil.getDimensionBitLength(hybridStoreModel.getHybridCardinality(),hybridStoreModel.getDimensionPartitioner()),hybridStoreModel.getColumnSplit()
+        //complex data type
+        /*int[] blockKeySize = getBlockKeySizeWithComplexTypes(new MultiDimKeyVarLengthEquiSplitGenerator(
+        		MolapUtil.getIncrementedCardinalityFullyFilled(dimLens.clone()),(byte)dimSet).getBlockKeySize());*/  
         setComplexMapSurrogateIndex(this.dimensionCount);
         this.dataWriter=getFactDataWriter(this.storeLocation,
-                this.measureCount, this.mdkeyLength, this.tableName,true,fileManager, blockKeySize);
+                this.measureCount, this.mdkeyLength, this.tableName,true,fileManager, keyBlockSize);
         this.dataWriter.setIsNoDictionary(isNoDictionary);
         // initialize the channel;
         this.dataWriter.initializeWriter();
@@ -1412,11 +1411,11 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
     }
     private int[] getBlockKeySizeWithComplexTypes(int[] primitiveBlockKeySize)
     {
-    	int allColsCount = getColsCount();
+    	int allColsCount = getColsCount(hybridStoreModel.getColumnSplit().length+highCardCount+complexIndexMap.size());
     	int[] blockKeySizeWithComplexTypes = new int[allColsCount];
     	
     	List<Integer> blockKeySizeWithComplex = new ArrayList<Integer>(allColsCount);
-        for(int i = 0;i < dimensionCount;i++)
+        for(int i = 0;i < primitiveBlockKeySize.length;i++)
         {
         	GenericDataType complexDataType = complexIndexMap.get(i);
     		if(complexDataType != null)
@@ -1437,11 +1436,12 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
     }
     private boolean[] isComplexTypes()
     {
-    	int allColsCount = getColsCount();
+    	int noOfColumn=hybridStoreModel.getNoOfColumnStore()+highCardCount+complexIndexMap.size();
+    	int allColsCount = getColsCount(noOfColumn);
     	boolean[] isComplexType = new boolean[allColsCount];
     	
     	List<Boolean> complexTypesList = new ArrayList<Boolean>(allColsCount);
-    	for(int i = 0;i < dimensionCount;i++)
+    	for(int i = 0;i < noOfColumn;i++)
     	{
     		GenericDataType complexDataType = complexIndexMap.get(i);
     		if(complexDataType != null)

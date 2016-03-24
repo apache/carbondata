@@ -622,7 +622,7 @@ public final class QueryExecutorUtility
     {
         //it can be possible that multiple queryDim will be part of row store and hence .if row store index is already added then its not required to add again.
         Set<Integer> selectedDimensionList=new HashSet<Integer>(queryDims.length);
-        int highCardStartIndex=hybridStoreModel.getColumnStoreOrdinals().length+1;
+        int highCardStartIndex=hybridStoreModel.getColumnStoreOrdinals().length;
         for(Dimension dimension:queryDims)
         {
             if(dimension.isHighCardinalityDim())

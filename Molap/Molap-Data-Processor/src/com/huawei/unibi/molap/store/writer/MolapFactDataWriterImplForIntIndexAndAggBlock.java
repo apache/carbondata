@@ -279,16 +279,16 @@ public class MolapFactDataWriterImplForIntIndexAndAggBlock extends AbstractFactD
                 {
                 	if(isComplexType[i])
 	            	{
-	            		keyBlockData[i]= new byte[keyStorageArray[i].getKeyBlock().length* keyBlockSize[i - highCardCount]];
+	            		keyBlockData[i]= new byte[keyStorageArray[i].getKeyBlock().length* keyBlockSize[i]];
 	            	}
 	            	else
 	            	{
-	            		keyBlockData[i]= new byte[entryCount* keyBlockSize[i - highCardCount]];
+	            		keyBlockData[i]= new byte[entryCount* keyBlockSize[i]];
 	            	}
 	                for(int j=0;j<keyStorageArray[i].getKeyBlock().length;j++)
 	                {
-	                    System.arraycopy(keyStorageArray[i].getKeyBlock()[j], 0, keyBlockData[i], destPos, keyBlockSize[i - highCardCount]);
-	                    destPos+=keyBlockSize[i - highCardCount];
+	                    System.arraycopy(keyStorageArray[i].getKeyBlock()[j], 0, keyBlockData[i], destPos, keyBlockSize[i]);
+	                    destPos+=keyBlockSize[i];
 	                }
                 }
             }
