@@ -442,7 +442,10 @@ public final class MolapUtil {
             //row stores will be stored at 0th inex
             dimOrdinalStoreIndexMapping.put(rowStoreOrdinal[i], storeIndex);
         }
-        storeIndex++;
+        if(rowStoreOrdinal.length>0)
+        {
+        	storeIndex++;
+        }
         for(int i=0;i<columnarStoreOrdinal.length;i++)
         {
             //dimOrdinalMDKeymapping.put(dimCount++,columnarStoreOrdinal[i] );

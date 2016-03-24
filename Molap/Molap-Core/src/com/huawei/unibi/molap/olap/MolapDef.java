@@ -1473,6 +1473,8 @@ public class MolapDef {
                         .getAttribute("internalType", "String", null, _internalType_values, false);
                 uniqueMembers = (Boolean) _parser
                         .getAttribute("uniqueMembers", "Boolean", "false", null, false);
+                columnar = (Boolean) _parser
+                        .getAttribute("columnar", "Boolean", "false", null, true);
                 levelType = (String) _parser
                         .getAttribute("levelType", "String", "Regular", _levelType_values, false);
                 hideMemberIf = (String) _parser
@@ -1612,9 +1614,9 @@ public class MolapDef {
             _diff = _diff && displayAttributeDiff("type", type, _cother.type, _out, _indent + 1);
             _diff = _diff && displayAttributeDiff("internalType", internalType,
                     _cother.internalType, _out, _indent + 1);
-            _diff = _diff && displayAttributeDiff("columnar", columnar, _cother.columnar, _out, _indent+1);
             _diff = _diff && displayAttributeDiff("uniqueMembers", uniqueMembers,
                     _cother.uniqueMembers, _out, _indent + 1);
+            _diff = _diff && displayAttributeDiff("columnar", columnar, _cother.columnar, _out, _indent+1);
             _diff = _diff && displayAttributeDiff("levelType", levelType, _cother.levelType, _out,
                     _indent + 1);
             _diff = _diff && displayAttributeDiff("hideMemberIf", hideMemberIf,

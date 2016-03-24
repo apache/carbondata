@@ -88,12 +88,12 @@ public class MapBasedResultAggregatorImpl implements ColumnarScannedResultAggreg
             //Primitives types selected
             if(columnaraggreagtorInfo.getDimensionAggInfos().size() == keyValue.getKeyBlockLength())
             {
-                dimensionsRowWrapper.setMaskedKey(keyValue.getKeyArray());
+                dimensionsRowWrapper.setMaskedKey(keyValue.getKeyArray(dimensionsRowWrapper));
             }
             else
             {
                 //Complex columns selected.
-                List<byte[]> complexKeyArray = keyValue.getKeyArrayWithComplexTypes(this.columnaraggreagtorInfo.getComplexQueryDims());
+                List<byte[]> complexKeyArray = keyValue.getKeyArrayWithComplexTypes(this.columnaraggreagtorInfo.getComplexQueryDims(),dimensionsRowWrapper);
                 dimensionsRowWrapper.setMaskedKey(complexKeyArray.remove(complexKeyArray.size() - 1));
                 for(byte[] complexKey : complexKeyArray)
                 {

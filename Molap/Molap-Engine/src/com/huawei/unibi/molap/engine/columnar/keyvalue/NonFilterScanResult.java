@@ -52,10 +52,10 @@ public class NonFilterScanResult extends AbstractColumnarScanResult
         return getKeyArray(++sourcePosition,keyVal);
     }
 
-    public List<byte[]> getKeyArrayWithComplexTypes(Map<Integer, GenericQueryType> complexQueryDims)
+    public List<byte[]> getKeyArrayWithComplexTypes(Map<Integer, GenericQueryType> complexQueryDims,ByteArrayWrapper keyVal)
     {
         ++currentRow;
-        return getKeyArrayWithComplexTypes(++sourcePosition, complexQueryDims);
+        return getKeyArrayWithComplexTypes(++sourcePosition, complexQueryDims,keyVal);
     }
     
     
