@@ -1,0 +1,16 @@
+*~
+*.#*
+*#*#
+*.swp
+*.ipr
+*.iml
+*.iws
+*.pyc
+*.pyo
+.idea/
+.idea_modules/
+.settings
+.cache
+target/
+.project
+.classpath
