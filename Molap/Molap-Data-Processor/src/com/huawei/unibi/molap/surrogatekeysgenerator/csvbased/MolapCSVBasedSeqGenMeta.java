@@ -29,6 +29,7 @@ import com.huawei.datasight.molap.datatypes.StructDataType;
 import com.huawei.unibi.molap.constants.MolapCommonConstants;
 import com.huawei.unibi.molap.schema.metadata.HierarchiesInfo;
 import com.huawei.unibi.molap.util.MolapDataProcessorUtil;
+import com.huawei.unibi.molap.util.RemoveDictionaryUtil;
 import org.pentaho.di.core.CheckResultInterface;
 import org.pentaho.di.core.Counter;
 import org.pentaho.di.core.database.DatabaseMeta;
@@ -789,20 +790,8 @@ public class MolapCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaInt
     }
 
     private Map<String, Boolean> getMeasureDatatypeMap(String measureDataType) {
-        if (measureDataType == null || "".equals(measureDataType)) {
             return new HashMap<String, Boolean>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
         }
-        Map<String, Boolean> resultMap =
-                new HashMap<String, Boolean>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
-
-        String[] measures = measureDataType.split(MolapCommonConstants.AMPERSAND_SPC_CHARACTER);
-
-        for (int i = 0; i < measures.length; i++) {
-            String[] measureValue = measures[i].split(MolapCommonConstants.COLON_SPC_CHARACTER);
-            resultMap.put(measureValue[0], Boolean.valueOf(measureValue[1]));
-        }
-        return resultMap;
-    }
 
     private void updateMeasureAggregator(String msrAggregatorString) {
         String[] split = msrAggregatorString.split(MolapCommonConstants.SEMICOLON_SPC_CHARACTER);
@@ -1195,22 +1184,10 @@ public class MolapCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaInt
         dims = dimsLocal;
         dimLens = lens;
         dimColNames = list.toArray(new String[list.size()]);
-        highCardCols = new String[0];
-        //for high card dims
-        if (null != highCardinalityDims) {
-            String[] highCard = highCardinalityDims.split(MolapCommonConstants.COMA_SPC_CHARACTER);
-            int[] highCardDimsLocal = new int[highCard.length];
-            List<String> list1 = new ArrayList<String>(MolapCommonConstants.CONSTANT_SIZE_TEN);
 
-            for (int i = 0; i < highCardDimsLocal.length; i++) {
-                String[] dim = highCard[i].split(MolapCommonConstants.COLON_SPC_CHARACTER);
-                list1.add(dim[0]);
-                highCardDimsLocal[i] = Integer.parseInt(dim[1]);
-                Integer.parseInt(dim[2]);
+        // get high cardinality dimension Array
+        highCardCols = RemoveDictionaryUtil.extractHighCardDimsArr(highCardinalityDims);
 
-            }
-            highCardCols = list1.toArray(new String[list1.size()]);
-        }
         String[] sm = msr.split(MolapCommonConstants.COMA_SPC_CHARACTER);
         int[] m = new int[sm.length];
         Set<String> mlist = new LinkedHashSet<String>();

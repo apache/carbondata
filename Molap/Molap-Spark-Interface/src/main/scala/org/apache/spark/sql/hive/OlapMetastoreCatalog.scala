@@ -1078,10 +1078,11 @@ object OlapMetastoreTypes extends RegexParsers {
       "int" ^^^ IntegerType |
       "tinyint" ^^^ ShortType |
       "double" ^^^ DoubleType |
-      "bigint" ^^^ LongType |
+      "long" ^^^ LongType |
       "binary" ^^^ BinaryType |
       "boolean" ^^^ BooleanType |
-      "decimal" ^^^ DecimalType() |
+//      "decimal" ^^^ DecimalType() |
+      "decimal" ^^^ "decimal" ^^^ DecimalType(18, 2) |
       "varchar\\((\\d+)\\)".r ^^^ StringType |
       "timestamp" ^^^ TimestampType
 

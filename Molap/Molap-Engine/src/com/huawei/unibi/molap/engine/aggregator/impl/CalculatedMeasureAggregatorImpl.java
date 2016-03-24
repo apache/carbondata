@@ -22,7 +22,9 @@ package com.huawei.unibi.molap.engine.aggregator.impl;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.math.BigDecimal;
 
+import com.huawei.unibi.molap.datastorage.store.dataholder.MolapReadDataHolder;
 import com.huawei.unibi.molap.engine.aggregator.CalculatedMeasureAggregator;
 import com.huawei.unibi.molap.engine.aggregator.MeasureAggregator;
 import com.huawei.unibi.molap.engine.executer.calcexp.MolapCalcFunction;
@@ -53,21 +55,21 @@ public class CalculatedMeasureAggregatorImpl implements CalculatedMeasureAggrega
     }
 
     @Override
-    public void agg(double newVal, byte[] key, int offset, int length)
+    public void agg(double newVal)
     {
         
     }
 
     @Override
-    public void agg(double newVal, double factCount)
+    public void agg(MolapReadDataHolder newVal, int index)
     {
        
-        
     }
     
     @Override
-    public void agg(Object newVal, byte[] key, int offset, int length)
+    public void agg(Object newVal)
     {
+
     }
 
     @Override
@@ -77,9 +79,21 @@ public class CalculatedMeasureAggregatorImpl implements CalculatedMeasureAggrega
     }
 
     @Override
-    public double getValue()
+    public Double getDoubleValue()
     {
         return val;
+    }
+
+    @Override
+    public Long getLongValue()
+    {
+        return (long)val;
+    }
+
+    @Override
+    public BigDecimal getBigDecimalValue()
+    {
+        return new BigDecimal(val);
     }
 
     @Override
@@ -97,7 +111,7 @@ public class CalculatedMeasureAggregatorImpl implements CalculatedMeasureAggrega
     }
 
     @Override
-    public void setNewValue(double newValue)
+    public void setNewValue(Object newValue)
     {
         // TODO Auto-generated method stub
         
@@ -143,8 +157,8 @@ public class CalculatedMeasureAggregatorImpl implements CalculatedMeasureAggrega
     @Override
     public int compareTo(MeasureAggregator msrObj) 
     {
-        double msrVal1 = getValue();    
-        double otherMsrVal1 = msrObj.getValue(); 
+        double msrVal1 = getDoubleValue();
+        double otherMsrVal1 = msrObj.getDoubleValue();
         if(msrVal1 > otherMsrVal1)
         {
             return 1;

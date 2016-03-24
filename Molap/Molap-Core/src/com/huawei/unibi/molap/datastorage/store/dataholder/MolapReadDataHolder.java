@@ -19,12 +19,24 @@
 
 package com.huawei.unibi.molap.datastorage.store.dataholder;
 
+import java.math.BigDecimal;
+
 public class MolapReadDataHolder {
 
     /**
      * doubleValues
      */
     private double[] doubleValues;
+
+    /**
+     * longValues
+     */
+    private long[] longValues;
+
+    /**
+     * bigDecimalValues
+     */
+    private BigDecimal[] bigDecimalValues;
 
     /**
      * byteValues
@@ -39,6 +51,13 @@ public class MolapReadDataHolder {
     }
 
     /**
+     * @return the byteValues
+     */
+    public byte[][] getReadableByteArrayValues() {
+        return byteValues;
+    }
+
+    /**
      * @param doubleValues the doubleValues to set
      */
     public void setReadableDoubleValues(double[] doubleValues) {
@@ -46,10 +65,17 @@ public class MolapReadDataHolder {
     }
 
     /**
-     * @return the byteValues
+     * @param longValues the longValues to set
      */
-    public byte[][] getReadableByteArrayValues() {
-        return byteValues;
+    public void setReadableLongValues(long[] longValues) {
+        this.longValues = longValues;
+    }
+
+    /**
+     * @param longValues the bigDecimalValues to set
+     */
+    public void setReadableBigDecimalValues(BigDecimal[] bigDecimalValues) {
+        this.bigDecimalValues = bigDecimalValues;
     }
 
     /**
@@ -67,6 +93,14 @@ public class MolapReadDataHolder {
      */
     public double getReadableDoubleValueByIndex(int index) {
         return this.doubleValues[index];
+    }
+
+    public long getReadableLongValueByIndex(int index) {
+        return this.longValues[index];
+    }
+
+    public BigDecimal getReadableBigDecimalValueByIndex(int index) {
+        return this.bigDecimalValues[index];
     }
 
     /**

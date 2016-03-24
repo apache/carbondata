@@ -48,7 +48,21 @@ public class MolapSingleMeasureFunction extends AbstractMolapCalcFunction
     @Override
     public double calculate(MeasureAggregator[] msrAggs)
     {
-        return msrAggs[index].isFirstTime()?0:msrAggs[index].getValue();
+        double value;
+        if(msrAggs[index].toString().contains("Long"))
+        {
+            value = msrAggs[index].getLongValue();
+        }
+        else if(msrAggs[index].toString().contains("Decimal"))
+        {
+            value = msrAggs[index].getBigDecimalValue().doubleValue();
+        }
+        else
+        {
+            value = msrAggs[index].getDoubleValue();
+        }
+
+        return msrAggs[index].isFirstTime()?0:value;
     }
 
     @Override

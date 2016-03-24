@@ -73,8 +73,8 @@ public class LevelSortIndexWriterThread implements Callable<Void> {
      */
     public LevelSortIndexWriterThread(String levelFilePath, String dataType) {
         this.levelFilePath = levelFilePath;
-        if (dataType.equalsIgnoreCase("Numeric") || dataType
-                .equalsIgnoreCase("Integer")) {//CHECKSTYLE:ON
+        if (dataType.equalsIgnoreCase("Numeric") || dataType.equalsIgnoreCase("Integer") || dataType
+                .equalsIgnoreCase("BigInt")) {//CHECKSTYLE:ON
             memberDataType = DataType.NUMBER;
         } else if (dataType.equalsIgnoreCase("Timestamp")) {
             memberDataType = DataType.TIMESTAMP;

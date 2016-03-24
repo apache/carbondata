@@ -20,6 +20,7 @@
 package com.huawei.unibi.molap.sortandgroupby.sortData;
 
 import java.io.*;
+import java.math.BigDecimal;
 import java.util.AbstractQueue;
 import java.util.Comparator;
 import java.util.PriorityQueue;
@@ -27,11 +28,9 @@ import java.util.concurrent.Callable;
 
 import com.huawei.iweb.platform.logging.LogService;
 import com.huawei.iweb.platform.logging.LogServiceFactory;
+import com.huawei.unibi.molap.constants.MolapCommonConstants;
 import com.huawei.unibi.molap.sortandgroupby.exception.MolapSortKeyAndGroupByException;
-import com.huawei.unibi.molap.util.MolapDataProcessorLogEvent;
-import com.huawei.unibi.molap.util.MolapUtil;
-import com.huawei.unibi.molap.util.MolapUtilException;
-import com.huawei.unibi.molap.util.RemoveDictionaryUtil;
+import com.huawei.unibi.molap.util.*;
 
 public class IntermediateFileMerger implements Callable<Void> {
     /**
@@ -244,7 +243,8 @@ public class IntermediateFileMerger implements Callable<Void> {
                             mergerParameters.getComplexDimColCount(),
                             mergerParameters.getMeasureColCount(),
                             mergerParameters.getFileReadBufferSize(),
-                            mergerParameters.getHighCardinalityCount());
+                            mergerParameters.getHighCardinalityCount(),
+                            mergerParameters.getAggType());
 
             // initialize
             sortTempFileChunkHolder.initialize();
@@ -332,6 +332,7 @@ public class IntermediateFileMerger implements Callable<Void> {
         }
         try {
             int fieldIndex = 0;
+            char[] aggType = mergerParameters.getAggType();
 
             for (int counter = 0; counter < mergerParameters.getDimColCount(); counter++) {
                 stream.writeInt((Integer) RemoveDictionaryUtil.getDimension(fieldIndex++, row));
@@ -346,7 +347,19 @@ public class IntermediateFileMerger implements Callable<Void> {
             for (int counter = 0; counter < mergerParameters.getMeasureColCount(); counter++) {
                 if (null != RemoveDictionaryUtil.getMeasure(fieldIndex, row)) {
                     stream.write((byte) 1);
-                    stream.writeDouble(RemoveDictionaryUtil.getMeasure(fieldIndex, row));
+                    if (aggType[counter] == MolapCommonConstants.BYTE_VALUE_MEASURE) {
+                        Double val = (Double) RemoveDictionaryUtil.getMeasure(fieldIndex, row);
+                        stream.writeDouble(val);
+                    } else if (aggType[counter] == MolapCommonConstants.BIG_INT_MEASURE) {
+                        Long val = (Long) RemoveDictionaryUtil.getMeasure(fieldIndex, row);
+                        stream.writeLong(val);
+                    } else if (aggType[counter] == MolapCommonConstants.BIG_DECIMAL_MEASURE) {
+                        BigDecimal val =
+                                (BigDecimal) RemoveDictionaryUtil.getMeasure(fieldIndex, row);
+                        byte[] bigDecimalInBytes = DataTypeUtil.bigDecimalToByte(val);
+                        stream.writeInt(bigDecimalInBytes.length);
+                        stream.write(bigDecimalInBytes);
+                    }
                 } else {
                     stream.write((byte) 0);
                 }

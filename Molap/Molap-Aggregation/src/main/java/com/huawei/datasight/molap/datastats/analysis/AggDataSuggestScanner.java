@@ -21,6 +21,7 @@ package com.huawei.datasight.molap.datastats.analysis;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.List;
@@ -30,7 +31,6 @@ import com.huawei.unibi.molap.datastorage.store.columnar.ColumnarKeyStoreDataHol
 import com.huawei.unibi.molap.engine.columnar.keyvalue.AbstractColumnarScanResult;
 import com.huawei.unibi.molap.engine.complex.querytypes.GenericQueryType;
 import com.huawei.unibi.molap.engine.wrappers.ByteArrayWrapper;
-import com.huawei.unibi.molap.metadata.MolapMetadata.Dimension;
 
 /**
  * This is store scanner, it returns given no of rows of records
@@ -122,17 +122,23 @@ public class AggDataSuggestScanner extends AbstractColumnarScanResult
 	 * } return columnsData; }
 	 */
 
-	public double getNormalMeasureValue(int measureOrdinal)
+
+    public  double getDoubleValue(int measureOrdinal)
 	{
 		return 0.0;
 	}
 
-	public byte[] getCustomMeasureValue(int measureOrdinal)
+    public  BigDecimal getBigDecimalValue(int measureOrdinal)
 	{
-		return null;
+        return new BigDecimal(0);
+    }
+
+    public  long getLongValue(int measureOrdinal)
+    {
+        return (long)(0);
 	}
 
-	public byte[] getKeyArray()
+	public byte[] getByteArrayValue(int measureOrdinal)
 	{
 		return null;
 	}
@@ -162,8 +168,13 @@ public class AggDataSuggestScanner extends AbstractColumnarScanResult
 	}
 
     @Override
-    public byte[] getHighCardinalityDimDataForAgg(Dimension dimension)
-    {
+	public byte[] getKeyArray() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public byte[] getHighCardinalityDimDataForAgg(int dimOrdinal) {
         // TODO Auto-generated method stub
         return null;
     }

@@ -94,7 +94,7 @@ public class ListBasedResultAggregatorImpl implements ColumnarScannedResultAggre
                 }
             }
             value = AggUtil.getAggregators(columnaraggreagtorInfo.getAggType(), isAggTable, null,
-                        columnaraggreagtorInfo.getCubeUniqueName(),columnaraggreagtorInfo.getMsrMinValue(),columnaraggreagtorInfo.getHighCardinalityTypes());
+                        columnaraggreagtorInfo.getCubeUniqueName(),columnaraggreagtorInfo.getMsrMinValue(),columnaraggreagtorInfo.getHighCardinalityTypes(), columnaraggreagtorInfo.getDataTypes());
             dataAggregator.aggregateData(keyValue, value,key);
             keys.add(key);
             values.add(value);

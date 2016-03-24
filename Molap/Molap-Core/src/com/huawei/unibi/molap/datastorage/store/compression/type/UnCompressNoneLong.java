@@ -45,7 +45,7 @@ public class UnCompressNoneLong implements UnCompressValue<long[]> {
     /**
      * value.
      */
-    private long[] value;
+    protected long[] value;
 
     @Override public void setValue(long[] value) {
         this.value = value;
@@ -89,7 +89,7 @@ public class UnCompressNoneLong implements UnCompressValue<long[]> {
         return new UnCompressNoneByte();
     }
 
-    @Override public MolapReadDataHolder getValues(int decimal, double maxValue) {
+    @Override public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
         MolapReadDataHolder dataHolder = new MolapReadDataHolder();
         double[] vals = new double[value.length];
         for (int i = 0; i < vals.length; i++) {

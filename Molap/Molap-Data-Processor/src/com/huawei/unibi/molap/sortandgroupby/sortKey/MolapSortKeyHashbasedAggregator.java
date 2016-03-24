@@ -62,7 +62,7 @@ public class MolapSortKeyHashbasedAggregator {
     private XXHash32 xxHash32;
     private int counter;
     private int numberOfRows;
-    private double[] mergedMinValue;
+    private Object[] mergedMinValue;
 
     /**
      * constructer.
@@ -73,7 +73,7 @@ public class MolapSortKeyHashbasedAggregator {
      * @param type
      */
     public MolapSortKeyHashbasedAggregator(String[] aggType, String[] aggClassName,
-            KeyGenerator factKeyGenerator, char[] type, int numberOfRows, double[] mergedMinValue) {
+            KeyGenerator factKeyGenerator, char[] type, int numberOfRows, Object[] mergedMinValue) {
         this.keyIndex = aggType.length;
         this.aggType = aggType;
         this.aggClassName = aggClassName;
@@ -126,8 +126,16 @@ public class MolapSortKeyHashbasedAggregator {
             for (int i = 0; i < value.length; i++) {
                 if (type[i] != 'c') {
                     if (!value[i].isFirstTime()) {
-                        row[i] = value[i].getValue();
-
+                        switch (type[i]) {
+                        case 'l':
+                            row[i] = value[i].getLongValue();
+                            break;
+                        case 'b':
+                            row[i] = value[i].getBigDecimalValue();
+                            break;
+                        default:
+                            row[i] = value[i].getDoubleValue();
+                        }
                     } else {
                         row[i] = null;
                     }
@@ -142,7 +150,8 @@ public class MolapSortKeyHashbasedAggregator {
 
     private MeasureAggregator[] getAggregators() {
         MeasureAggregator[] aggregators = AggUtil.getAggregators(Arrays.asList(this.aggType),
-                Arrays.asList(this.aggClassName), false, factKeyGenerator, null, mergedMinValue);
+                Arrays.asList(this.aggClassName), false, factKeyGenerator, null, mergedMinValue,
+                this.type);
         return aggregators;
     }
 
@@ -157,16 +166,13 @@ public class MolapSortKeyHashbasedAggregator {
             if (null != row[i]) {
                 if (type[i] != 'c') {
                     double value = (Double) row[i];
-                    aggregators[i].agg(value, (byte[]) row[row.length - 1], 0,
-                            ((byte[]) row[row.length - 1]).length);
+                    aggregators[i].agg(value);
                 } else {
                     if (row[i] instanceof byte[]) {
-                        aggregators[i].agg(row[i], (byte[]) row[row.length - 1], 0,
-                                ((byte[]) row[row.length - 1]).length);
+                        aggregators[i].agg(row[i]);
                     } else {
                         double value = (Double) row[i];
-                        aggregators[i].agg(value, (byte[]) row[row.length - 1], 0,
-                                ((byte[]) row[row.length - 1]).length);
+                        aggregators[i].agg(value);
                     }
                 }
             }

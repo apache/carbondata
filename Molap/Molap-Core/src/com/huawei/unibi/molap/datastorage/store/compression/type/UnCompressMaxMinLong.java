@@ -45,7 +45,7 @@ public class UnCompressMaxMinLong implements UnCompressValue<long[]> {
     /**
      * value.
      */
-    private long[] value;
+    protected long[] value;
 
     @Override public UnCompressValue getNew() {
         try {
@@ -87,7 +87,8 @@ public class UnCompressMaxMinLong implements UnCompressValue<long[]> {
         return new UnCompressMaxMinByte();
     }
 
-    @Override public MolapReadDataHolder getValues(int decimal, double maxValue) {
+    @Override public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
+        double maxValue = (double) maxValueObject;
         double[] vals = new double[value.length];
         MolapReadDataHolder data = new MolapReadDataHolder();
         for (int i = 0; i < vals.length; i++) {

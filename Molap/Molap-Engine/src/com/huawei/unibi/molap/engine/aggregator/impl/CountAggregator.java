@@ -22,9 +22,11 @@ package com.huawei.unibi.molap.engine.aggregator.impl;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 
 import com.huawei.unibi.molap.constants.MolapCommonConstants;
+import com.huawei.unibi.molap.datastorage.store.dataholder.MolapReadDataHolder;
 import com.huawei.unibi.molap.engine.aggregator.MeasureAggregator;
 
 /**
@@ -53,16 +55,10 @@ public class CountAggregator implements MeasureAggregator
      * 
      * @param newVal
      *            new value
-     * @param key
-     *            mdkey
-     * @param offset
-     *            key offset
-     * @param length
-     *            length to be considered
      * 
      */
     @Override
-    public void agg(double newVal, byte[] key, int offset, int length)
+    public void agg(double newVal)
     {
         aggVal++;
     }
@@ -72,16 +68,17 @@ public class CountAggregator implements MeasureAggregator
      * 
      * @param newVal
      *            new value
-     * @param key
-     *            mdkey
-     * @param offset
-     *            key offset
-     * @param length
-     *            length to be considered
      * 
      */
     @Override
-    public void agg(Object newVal, byte[] key, int offset, int length)
+    public void agg(Object newVal)
+    {
+        aggVal++;
+    }
+
+
+    @Override
+    public void agg(MolapReadDataHolder newVal,int index)
     {
         aggVal++;
     }
@@ -104,15 +101,27 @@ public class CountAggregator implements MeasureAggregator
      * 
      */
     @Override
-    public double getValue()
+    public Double getDoubleValue()
     {
         return aggVal;
+    }
+
+    @Override
+    public Long getLongValue()
+    {
+        return (long)aggVal;
+    }
+
+    @Override
+    public BigDecimal getBigDecimalValue()
+    {
+        return new BigDecimal(aggVal);
     }
 
     /**
      * Merge the total count with the aggregator
      * 
-     * @param Aggregator
+     * @param aggregator
      *            count aggregator
      * 
      */
@@ -134,11 +143,11 @@ public class CountAggregator implements MeasureAggregator
      *            total fact count
      * 
      */
-    @Override
-    public void agg(double newVal, double factCount)
-    {
-        agg(newVal, null, 0, 0);
-    }
+//    @Override
+//    public void agg(double newVal, double factCount)
+//    {
+//        agg(newVal, null, 0, 0);
+//    }
 
     /**
      * This method return the count value as an object
@@ -154,13 +163,13 @@ public class CountAggregator implements MeasureAggregator
 
     /**
      * 
-     * @see com.huawei.unibi.molap.engine.aggregator.MeasureAggregator#setNewValue(double)
+     * @see com.huawei.unibi.molap.engine.aggregator.MeasureAggregator#setNewValue(Object)
      * 
      */
     @Override
-    public void setNewValue(double newValue)
+    public void setNewValue(Object newValue)
     {
-        aggVal+=newValue;
+        aggVal += Double.parseDouble(String.valueOf(newValue));
     }
 
     @Override
@@ -209,8 +218,8 @@ public class CountAggregator implements MeasureAggregator
     @Override
     public int compareTo(MeasureAggregator obj)
     {
-        double val = getValue();
-        double otherVal = obj.getValue();
+        double val = getDoubleValue();
+        double otherVal = obj.getDoubleValue();
         if(val > otherVal)
         {
             return 1;

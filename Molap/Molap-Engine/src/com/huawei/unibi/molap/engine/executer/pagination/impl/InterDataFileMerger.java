@@ -244,7 +244,7 @@ public class InterDataFileMerger implements Callable<Void>
             for(File fileInfo : dataOutFiles) 
             {
                 // create chunk holder
-                DataFileChunkHolder molapSortTempFileChunkHolder = new DataFileChunkHolder(fileInfo, this.keySize,
+                DataFileChunkHolder molapSortTempFileChunkHolder = new DataFileChunkHolder(fileInfo, this.keySize,this.measures,
                         AggUtil.getAggregators(this.measures,calculatedMeasures, false, keyGenerator, slice.getCubeUniqueName()), this.fileBufferSize);
                 // initialize
                 molapSortTempFileChunkHolder.initialize();

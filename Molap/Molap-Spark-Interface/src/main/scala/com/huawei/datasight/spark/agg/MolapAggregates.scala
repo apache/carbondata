@@ -42,7 +42,7 @@ case class CountMolap(child: Expression) extends UnaryExpression with PartialAgg
 
   override def newInstance() = new CountFunctionMolap(child, this, false)
 
-  implicit def toAggregates(aggregate: MeasureAggregator): Double = aggregate.getValue()
+  implicit def toAggregates(aggregate: MeasureAggregator): Double = aggregate.getDoubleValue()
 }
 
 case class CountMolapFinal(child: Expression, origDataType: DataType) extends AggregateExpression1 {
@@ -103,7 +103,7 @@ case class AverageMolap(child: Expression, castedDataType: DataType = null) exte
   override def asPartial: SplitEvaluation = {
     val partialSum = Alias(AverageMolap(child), "PartialAverage")()
     SplitEvaluation(
-      AverageMolapFinal(partialSum.toAttribute, DoubleType),
+      AverageMolapFinal(partialSum.toAttribute, if (child.dataType == IntegerType) DoubleType else child.dataType),
       partialSum :: Nil)
   }
 
@@ -117,7 +117,7 @@ case class AverageMolapFinal(child: Expression, origDataType: DataType) extends 
 
   override def nullable = false
 
-  override def dataType = DoubleType
+  override def dataType = origDataType
 
   override def toString = s"AVG($child)"
 
@@ -142,7 +142,7 @@ case class SumMolap(child: Expression, castedDataType: DataType = null) extends 
 
   override def newInstance() = new SumFunctionMolap(child, this, false)
 
-  implicit def toAggregates(aggregate: MeasureAggregator): Double = aggregate.getValue()
+  implicit def toAggregates(aggregate: MeasureAggregator): Double = aggregate.getDoubleValue()
 }
 
 case class SumMolapFinal(child: Expression, origDataType: DataType) extends AggregateExpression1 {
@@ -286,6 +286,7 @@ case class AverageFunctionMolap(expr: Expression, base: AggregateExpression1, fi
 
   def this() = this(null, null, false) // Required for serialization.
 
+  //  var count: Int = _
   private var avg: MeasureAggregator = null
 
   override def update(input: InternalRow): Unit = {
@@ -299,21 +300,55 @@ case class AverageFunctionMolap(expr: Expression, base: AggregateExpression1, fi
     val agg = resolution match {
       case s: MeasureAggregator => s
       case s => {
-        val dc = new AvgAggregator; if (s != null) {
-          dc.agg(s.toString.toDouble, null, 0, 0); dc.setNewValue(s.toString.toDouble)
-        }; dc
+        var dc: MeasureAggregator = null
+        if(s != null)
+        {
+          if (s.isInstanceOf[java.math.BigDecimal])
+          {
+            dc = new AvgBigDecimalAggregator
+            dc.agg(new java.math.BigDecimal(s.toString))
+            dc.setNewValue(new java.math.BigDecimal(s.toString))
+          }
+          else if (s.isInstanceOf[Long])
+          {
+            dc = new AvgLongAggregator
+            dc.agg(s.toString.toLong)
+            dc.setNewValue(s.toString.toLong)
+          }
+          else
+          {
+            dc = new AvgDoubleAggregator
+            dc.agg(s.toString.toDouble)
+            dc.setNewValue(s.toString.toDouble)
+          }
+        }
+        else
+        {
+          dc = new AvgDoubleAggregator()
+        }
+        dc
       }
     }
     if (avg == null) avg = agg else avg.merge(agg)
   }
 
   override def eval(input: InternalRow): Any =
-    if (finalAgg) {
-      if (avg.isFirstTime()) null
-      else Cast(Literal(avg.getValue), base.dataType).eval(null)
-    } else {
-      avg
+    if (finalAgg)
+      if (avg.isFirstTime())
+        null
+      else
+      {
+        if (avg.isInstanceOf[AvgBigDecimalAggregator]) {
+          Cast(Literal(avg.getBigDecimalValue), base.dataType).eval(null)
+        }
+        else if (avg.isInstanceOf[AvgLongAggregator]) {
+          Cast(Literal(avg.getLongValue), base.dataType).eval(null)
     }
+        else {
+          Cast(Literal(avg.getDoubleValue), base.dataType).eval(null)
+        }
+      }
+    else avg
 }
 
 case class CountFunctionMolap(expr: Expression, base: AggregateExpression1, finalAgg: Boolean) extends AggregateFunction1 {
@@ -334,14 +369,17 @@ case class CountFunctionMolap(expr: Expression, base: AggregateExpression1, fina
       case others =>
         val agg1: MeasureAggregator = new CountAggregator
         if (others != null) {
-          agg1.agg(0, null, 0, 0)
+          agg1.agg(0)
+          //agg1.setNewValue(others.toString.toDouble)
         }
         agg1
     }
     if (count == null) count = agg else count.merge(agg)
   }
 
-  override def eval(input: InternalRow): Any = if (finalAgg && count != null) if (count.isFirstTime()) 0L else Cast(Literal(count.getValue), base.dataType).eval(null) else count
+  override def eval(input: InternalRow): Any = if (finalAgg && count != null) if (count.isFirstTime()) 0L else Cast(Literal(count.getDoubleValue), base.dataType).eval(null) else count
+
+  //override def eval(input: Row): Any = if(finalAgg) if(count.isFirstTime()) 0 else count.getValue.toLong else count
 }
 
 
@@ -361,9 +399,33 @@ case class SumFunctionMolap(expr: Expression, base: AggregateExpression1, finalA
     val agg = resolution match {
       case s: MeasureAggregator => s
       case s => {
-        val dc = new SumAggregator; if (s != null) {
-          dc.agg(s.toString.toDouble, null, 0, 0); dc.setNewValue(s.toString.toDouble)
-        }; dc
+        var dc: MeasureAggregator = null
+        if(s != null)
+        {
+          if (s.isInstanceOf[java.math.BigDecimal])
+          {
+            dc = new SumBigDecimalAggregator
+            dc.agg(new java.math.BigDecimal(s.toString))
+            dc.setNewValue(new java.math.BigDecimal(s.toString))
+          }
+          else if (s.isInstanceOf[Long])
+          {
+            dc = new SumLongAggregator
+            dc.agg(s.toString.toLong)
+            dc.setNewValue(s.toString.toLong)
+          }
+          else
+          {
+            dc = new SumDoubleAggregator
+            dc.agg(s.toString.toDouble)
+            dc.setNewValue(s.toString.toDouble)
+          }
+        }
+        else
+        {
+          dc = new SumDoubleAggregator
+        }
+        dc
       }
     }
     if (sum == null) sum = agg else sum.merge(agg)
@@ -373,7 +435,17 @@ case class SumFunctionMolap(expr: Expression, base: AggregateExpression1, finalA
     if (finalAgg && sum != null)
       if (sum.isFirstTime())
         null
-      else Cast(Literal(sum.getValue), base.dataType).eval(input)
+      else {
+        if (sum.isInstanceOf[SumBigDecimalAggregator]) {
+          Cast(Literal(sum.getBigDecimalValue), base.dataType).eval(input)
+        }
+        else if (sum.isInstanceOf[SumLongAggregator]) {
+          Cast(Literal(sum.getLongValue), base.dataType).eval(input)
+        }
+        else {
+          Cast(Literal(sum.getDoubleValue), base.dataType).eval(input)
+        }
+      }
 
     else sum
 }
@@ -395,8 +467,8 @@ case class MaxFunctionMolap(expr: Expression, base: AggregateExpression1, finalA
       case s: MeasureAggregator => s
       case s => {
         val dc = new MaxAggregator; if (s != null) {
-          dc.agg(s.toString.toDouble, null, 0, 0); dc.setNewValue(s.toString.toDouble)
-        }; dc
+          dc.agg(s.toString.toDouble);dc.setNewValue(s.toString.toDouble)
+        };dc
       }
     }
     if (max == null) max = agg else max.merge(agg)
@@ -421,12 +493,9 @@ case class MinFunctionMolap(expr: Expression, base: AggregateExpression1, finalA
     val agg = resolution match {
       case s: MeasureAggregator => s
       case s => {
-        val dc = new MinAggregator;
-        if (s != null) {
-          dc.agg(s.toString.toDouble, null, 0, 0);
-          dc.setNewValue(s.toString.toDouble)
-        };
-        dc
+        val dc = new MinAggregator; if (s != null) {
+          dc.agg(s.toString.toDouble);dc.setNewValue(s.toString.toDouble)
+        };dc
       }
     }
     if (min == null) min = agg else min.merge(agg)
@@ -462,7 +531,23 @@ case class SumDisctinctFunctionMolap(expr: Expression, base: AggregateExpression
       case s: MeasureAggregator => s
       case null => null
       case s => {
-        val dc = new SumDistinctAggregator; dc.setNewValue(s.toString.toDouble); dc
+        var dc: MeasureAggregator = null
+        if (s.isInstanceOf[Double])
+        {
+          dc = new SumDistinctDoubleAggregator
+          dc.setNewValue(s.toString.toDouble)
+        }
+        else if (s.isInstanceOf[Int])
+        {
+          dc = new SumDistinctLongAggregator
+          dc.setNewValue(s.toString.toLong)
+        }
+        else if (s.isInstanceOf[java.math.BigDecimal])
+        {
+          dc = new SumDistinctBigDecimalAggregator
+          dc.setNewValue(new java.math.BigDecimal(s.toString))
+        }
+        dc
       }
     }
     if (agg == null) distinct
@@ -539,7 +624,7 @@ case class CountDistinctFunctionMolapFinal(expr: Expression, base: AggregateExpr
     else if (count.isFirstTime())
       Cast(Literal(0), base.dataType).eval(null)
     else
-      Cast(Literal(count.getValue), base.dataType).eval(null)
+      Cast(Literal(count.getDoubleValue), base.dataType).eval(null)
 }
 
 case class FirstFunctionMolap(expr: Expression, base: AggregateExpression1) extends AggregateFunction1 {
@@ -583,7 +668,7 @@ case class FlattenExpr(expr: Expression) extends Expression with CodegenFallback
 
   override def eval(input: InternalRow): Any = {
     expr.eval(input) match {
-      case d: MeasureAggregator => d.getValue()
+      case d: MeasureAggregator => d.getDoubleValue()
       case others => others
     }
   }
@@ -609,7 +694,7 @@ case class FlatAggregatorsExpr(expr: Expression) extends Expression with Codegen
   override def eval(input: InternalRow): Any = {
     expr.eval(input) match {
       case d: MeasureAggregator => {
-        d.setNewValue(d.getValue())
+        d.setNewValue(d.getDoubleValue())
         d
       }
       case others => others

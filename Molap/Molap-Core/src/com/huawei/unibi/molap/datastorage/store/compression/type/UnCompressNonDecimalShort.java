@@ -88,7 +88,7 @@ public class UnCompressNonDecimalShort implements UnCompressValue<short[]> {
         return new UnCompressNonDecimalByte();
     }
 
-    @Override public MolapReadDataHolder getValues(int decimal, double maxValue) {
+    @Override public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
         MolapReadDataHolder dataHolder = new MolapReadDataHolder();
         double[] vals = new double[value.length];
         for (int i = 0; i < vals.length; i++) {

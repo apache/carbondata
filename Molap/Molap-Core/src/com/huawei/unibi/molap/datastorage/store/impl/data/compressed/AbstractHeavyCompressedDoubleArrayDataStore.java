@@ -19,6 +19,7 @@
 
 package com.huawei.unibi.molap.datastorage.store.impl.data.compressed;
 
+import com.huawei.unibi.molap.constants.MolapCommonConstants;
 import com.huawei.unibi.molap.datastorage.store.NodeMeasureDataStore;
 import com.huawei.unibi.molap.datastorage.store.compression.ValueCompressionModel;
 import com.huawei.unibi.molap.datastorage.store.compression.ValueCompressonHolder.UnCompressValue;
@@ -60,13 +61,23 @@ public abstract class AbstractHeavyCompressedDoubleArrayDataStore
     @Override public byte[][] getWritableMeasureDataArray(MolapWriteDataHolder[] dataHolder) {
         for (int i = 0; i < compressionModel.getUnCompressValues().length; i++) {
             values[i] = compressionModel.getUnCompressValues()[i].getNew();
-            if (type[i] != 'c') {
+            if (type[i] != MolapCommonConstants.BYTE_VALUE_MEASURE
+                    && type[i] != MolapCommonConstants.BIG_DECIMAL_MEASURE) {
+                if (type[i] == MolapCommonConstants.BIG_INT_MEASURE) {
+                    values[i].setValue(ValueCompressionUtil
+                            .getCompressedValues(compressionModel.getCompType()[i],
+                                    dataHolder[i].getWritableLongValues(),
+                                    compressionModel.getChangedDataType()[i],
+                                    (long) compressionModel.getMaxValue()[i],
+                                    compressionModel.getDecimal()[i]));
+                } else {
                 values[i].setValue(ValueCompressionUtil
                         .getCompressedValues(compressionModel.getCompType()[i],
                                 dataHolder[i].getWritableDoubleValues(),
                                 compressionModel.getChangedDataType()[i],
-                                compressionModel.getMaxValue()[i],
+                                    (double) compressionModel.getMaxValue()[i],
                                 compressionModel.getDecimal()[i]));
+                }
             } else {
                 values[i].setValue(dataHolder[i].getWritableByteArrayValues());
             }

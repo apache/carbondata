@@ -84,7 +84,7 @@ public class UnCompressNonDecimalDefault implements UnCompressValue<double[]> {
         return new UnCompressNonDecimalByte();
     }
 
-    @Override public MolapReadDataHolder getValues(int decimal, double maxValue) {
+    @Override public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
         double[] dblVals = new double[value.length];
         for (int i = 0; i < dblVals.length; i++) {
             dblVals[i] = value[i] / Math.pow(10, decimal);

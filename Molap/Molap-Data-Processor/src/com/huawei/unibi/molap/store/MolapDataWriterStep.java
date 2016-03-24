@@ -32,6 +32,7 @@ import com.huawei.iweb.platform.logging.LogService;
 import com.huawei.iweb.platform.logging.LogServiceFactory;
 import com.huawei.unibi.molap.constants.MolapCommonConstants;
 import com.huawei.unibi.molap.csvreader.checkpoint.CheckPointHanlder;
+import com.huawei.unibi.molap.datastorage.store.compression.ValueCompressionModel;
 import com.huawei.unibi.molap.metadata.SliceMetaData;
 import com.huawei.unibi.molap.store.writer.exception.MolapDataWriterException;
 import com.huawei.unibi.molap.threadbasedmerger.consumer.ConsumerThread;
@@ -288,10 +289,10 @@ public class MolapDataWriterStep extends BaseStep implements StepInterface {
                 instance.getProperty(MolapCommonConstants.IS_PRODUCERCONSUMER_BASED_SORTING,
                         MolapCommonConstants.PRODUCERCONSUMER_BASED_SORTING_ENABLED_DEFAULTVALUE));
         String[] aggType = sliceMetaData.getMeasuresAggregator();
-
+        ValueCompressionModel compressionModel = getValueCompressionModel(storeLocation);
         type = new char[measureCount];
-        Arrays.fill(type, 'c');
-        type[measureCount - 1] = 'n';
+        type = compressionModel.getType();
+
         boolean isByteArrayInMeasure = true;
 
         String levelCardinalityFilePath = storeLocation + File.separator +
@@ -304,7 +305,7 @@ public class MolapDataWriterStep extends BaseStep implements StepInterface {
                     "Problem while reading the cardinality from level metadata file", e1);
         }
 
-        updateFactHandler(isByteArrayInMeasure, aggType, dimLens, storeLocation);
+        updateFactHandler(isByteArrayInMeasure, aggType, dimLens, storeLocation, compressionModel);
         try {
             dataHandler.initialise();
         } catch (MolapDataWriterException e) {
@@ -388,6 +389,14 @@ public class MolapDataWriterStep extends BaseStep implements StepInterface {
                 "************************************************ Total number of records processed"
                         + recordCounter);
         finalMergerThread.clear();
+    }
+
+    private ValueCompressionModel getValueCompressionModel(String storeLocation) {
+        String measureMetaDataFileLoc =
+                storeLocation + MolapCommonConstants.MEASURE_METADATA_FILE_NAME + this.tableName
+                        + MolapCommonConstants.MEASUREMETADATA_FILE_EXT;
+        return ValueCompressionUtil
+                .getValueCompressionModel(measureMetaDataFileLoc, this.measureCount);
     }
 
     /**
@@ -521,7 +530,7 @@ public class MolapDataWriterStep extends BaseStep implements StepInterface {
     }
 
     private void updateFactHandler(boolean isByteArrayInMeasure, String[] aggType, int[] dimLens,
-            String storeLocation) {
+            String storeLocation, ValueCompressionModel compressionModel) {
         boolean isColumnar =
                 Boolean.parseBoolean(MolapCommonConstants.IS_COLUMNAR_STORAGE_DEFAULTVALUE);
 
@@ -530,7 +539,18 @@ public class MolapDataWriterStep extends BaseStep implements StepInterface {
                     this.tableName, meta.isGroupByEnabled(), measureCount, mdkeyLength, mdKeyIndex,
                     aggType, meta.getAggregatorClass(), storeLocation,
                     MolapDataProcessorUtil.getDimLens(meta.getFactDimLensString()),
-                    isByteArrayInMeasure, meta.isUpdateMemberRequest(),dimLens,meta.getFactLevels(),meta.getAggregateLevels(), true, meta.getCurrentRestructNumber(),this.meta.gethighCardCount(),null);
+                    isByteArrayInMeasure, meta.isUpdateMemberRequest(), dimLens,
+                    meta.getFactLevels(), meta.getAggregateLevels(), true,
+                    meta.getCurrentRestructNumber(), this.meta.gethighCardCount(),
+                    null, compressionModel);
+        } else {
+            dataHandler = new MolapFactDataHandler(meta.getSchemaName(), meta.getCubeName(),
+                    this.tableName, meta.isGroupByEnabled(), measureCount, mdkeyLength, mdKeyIndex,
+                    aggType, meta.getAggregatorClass(), storeLocation,
+                    MolapDataProcessorUtil.getDimLens(meta.getFactDimLensString()),
+                    isByteArrayInMeasure, meta.isUpdateMemberRequest(), dimLens,
+                    meta.getFactLevels(), meta.getAggregateLevels(), true,
+                    meta.getCurrentRestructNumber());
         }
 
     }

@@ -86,7 +86,8 @@ public class UnCompressNonDecimalMaxMinDefault implements UnCompressValue<double
         return null;
     }
 
-    @Override public MolapReadDataHolder getValues(int decimal, double maxVal) {
+    @Override public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
+        double maxVal = (double) maxValueObject;
         double[] vals = new double[value.length];
         MolapReadDataHolder holder = new MolapReadDataHolder();
         for (int i = 0; i < vals.length; i++) {

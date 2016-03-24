@@ -64,6 +64,12 @@ public class MultiplyExpression  extends BinaryArithmeticExpression
         case IntegerType:
             multiplyExprRightRes.set(DataType.IntegerType, val1.getInt() * val2.getInt());
             break;
+            case LongType:
+                multiplyExprRightRes.set(DataType.LongType, val1.getLong() * val2.getLong());
+                break;
+            case DecimalType:
+                multiplyExprRightRes.set(DataType.DecimalType, val1.getDecimal().multiply(val2.getDecimal()));
+                break;
         default:
             throw new FilterUnsupportedException("Incompatible datatype for applying Add Expression Filter "
                     + multiplyExprLeftRes.getDataType());

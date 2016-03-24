@@ -140,6 +140,7 @@ case class OlapRelation(schemaName: String,
     	val output: DataType = metaData.cube.getDimension(dim.name).getDataType().toString.toLowerCase match {
     	  case "array" => OlapMetastoreTypes.toDataType(s"array<${getArrayChildren(dim.name)}>")
     	  case "struct" => OlapMetastoreTypes.toDataType(s"struct<${getStructChildren(dim.name)}>")
+    	  case "int" => OlapMetastoreTypes.toDataType("double")
     	  case dType => OlapMetastoreTypes.toDataType(dType)
     	  }
 
@@ -154,7 +155,11 @@ case class OlapRelation(schemaName: String,
     val filteredMeasureAttr = cubeMeta.schema.cubes(0).measures.filter { aMsr => (null == aMsr.visible) || (aMsr.visible) }
     new LinkedHashSet(filteredMeasureAttr.toSeq).toSeq.map(x => AttributeReference(
       x.name,
-      OlapMetastoreTypes.toDataType("double"),
+      OlapMetastoreTypes.toDataType(metaData.cube.getMeasure(x.name).getDataType().toString.toLowerCase match
+      {
+        case "int" => "double"
+        case _ => metaData.cube.getMeasure(x.name).getDataType().toString.toLowerCase
+      }),
       nullable = true)(qualifiers = tableName +: alias.toSeq))
   }
 

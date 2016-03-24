@@ -473,7 +473,7 @@ public final class MolapQueryParseUtil
         String selectedTableName = null;
         double minNoOfrecords = 0;
         MeasureMetaDataModel model = null;
-        double[] maxValue = null;
+        Object[] maxValue = null;
         Iterator<String> aggTblItr = aggtables.iterator();
         while(aggTblItr.hasNext())
         {
@@ -501,7 +501,7 @@ public final class MolapQueryParseUtil
                         model = ValueCompressionUtil.readMeasureMetaDataFile(msrMetadataFilePath,
                                 tableMeasureCountMapping.get(aggTableName));
                         maxValue = model.getMaxValue();
-                        recordCount = recordCount + maxValue[maxValue.length - 1];
+                        recordCount = recordCount + (double)maxValue[maxValue.length - 1];
                     }
                 }
             }

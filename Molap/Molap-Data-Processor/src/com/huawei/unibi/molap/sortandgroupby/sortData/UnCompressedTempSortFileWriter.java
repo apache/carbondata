@@ -70,7 +70,8 @@ public class UnCompressedTempSortFileWriter extends AbstractTempSortFileWriter {
             for (int counter = 0; counter < measureCount; counter++) {
                 if (null != row[fieldIndex]) {
                     dataOutputStream.write((byte) 1);
-                    dataOutputStream.writeDouble(RemoveDictionaryUtil.getMeasure(fieldIndex, row));
+                    dataOutputStream
+                            .writeDouble((Double) RemoveDictionaryUtil.getMeasure(fieldIndex, row));
                 } else {
                     dataOutputStream.write((byte) 0);
                 }

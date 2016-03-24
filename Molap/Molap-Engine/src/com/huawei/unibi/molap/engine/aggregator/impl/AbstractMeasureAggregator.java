@@ -115,13 +115,13 @@ public abstract class AbstractMeasureAggregator implements MeasureAggregator//,I
     }
      
     @Override
-    public void agg(double arg0, double arg1) 
+    public void agg(double arg0)
     {
 
     }
     
     @Override
-    public void setNewValue(double arg0) 
+    public void setNewValue(Object arg0)
     {
 
     }

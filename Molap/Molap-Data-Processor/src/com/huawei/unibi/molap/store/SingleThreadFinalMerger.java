@@ -191,7 +191,7 @@ public class SingleThreadFinalMerger {
                     MolapSortTempFileChunkHolder molapSortTempFileChunkHolder =
                             new MolapSortTempFileChunkHolder(tmpFile, measureCount, mdkeyLength,
                                     fileBufferSize, isFactMdkeyInInputRow, factMdkeyLength,
-                                    aggregators, highCardCount);
+                                    aggregators, highCardCount, type);
                     // initialize
                     molapSortTempFileChunkHolder.initialize();
                     molapSortTempFileChunkHolder.readRow();

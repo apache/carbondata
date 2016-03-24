@@ -29,6 +29,7 @@ public class SqlStatement {
         STRING,
         BOOLEAN,
         ARRAY,
-        STRUCT
+        STRUCT,
+        DECIMAL
     }
 }

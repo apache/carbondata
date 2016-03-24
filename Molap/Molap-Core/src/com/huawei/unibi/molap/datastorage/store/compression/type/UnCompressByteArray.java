@@ -19,6 +19,7 @@
 
 package com.huawei.unibi.molap.datastorage.store.compression.type;
 
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,10 +31,27 @@ import com.huawei.unibi.molap.datastorage.store.compression.Compressor;
 import com.huawei.unibi.molap.datastorage.store.compression.SnappyCompression;
 import com.huawei.unibi.molap.datastorage.store.compression.ValueCompressonHolder.UnCompressValue;
 import com.huawei.unibi.molap.datastorage.store.dataholder.MolapReadDataHolder;
+import com.huawei.unibi.molap.util.DataTypeUtil;
 import com.huawei.unibi.molap.util.MolapCoreLogEvent;
 import com.huawei.unibi.molap.util.ValueCompressionUtil.DataType;
 
 public class UnCompressByteArray implements UnCompressValue<byte[]> {
+    public UnCompressByteArray(ByteArrayType type) {
+        if (type == ByteArrayType.BYTE_ARRAY) {
+            arrayType = ByteArrayType.BYTE_ARRAY;
+        } else {
+            arrayType = ByteArrayType.BIG_DECIMAL;
+        }
+
+    }
+
+    public static enum ByteArrayType {
+        BYTE_ARRAY,
+        BIG_DECIMAL
+    }
+
+    private ByteArrayType arrayType;
+
     /**
      * Attribute for Molap LOGGER
      */
@@ -69,13 +87,13 @@ public class UnCompressByteArray implements UnCompressValue<byte[]> {
     }
 
     @Override public UnCompressValue compress() {
-        UnCompressByteArray byte1 = new UnCompressByteArray();
+        UnCompressByteArray byte1 = new UnCompressByteArray(arrayType);
         byte1.setValue(byteCompressor.compress(value));
         return byte1;
     }
 
     @Override public UnCompressValue uncompress(DataType dataType) {
-        UnCompressValue byte1 = new UnCompressByteArray();
+        UnCompressValue byte1 = new UnCompressByteArray(arrayType);
         byte1.setValue(byteCompressor.unCompress(value));
         return byte1;
     }
@@ -85,10 +103,10 @@ public class UnCompressByteArray implements UnCompressValue<byte[]> {
     }
 
     @Override public UnCompressValue getCompressorObject() {
-        return new UnCompressByteArray();
+        return new UnCompressByteArray(arrayType);
     }
 
-    @Override public MolapReadDataHolder getValues(int decimal, double maxValue) {
+    @Override public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
         List<byte[]> valsList = new ArrayList<byte[]>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
         ByteBuffer buffer = ByteBuffer.wrap(value);
         buffer.rewind();
@@ -103,7 +121,17 @@ public class UnCompressByteArray implements UnCompressValue<byte[]> {
 
         }
         MolapReadDataHolder holder = new MolapReadDataHolder();
-        holder.setReadableByteValues(valsList.toArray(new byte[valsList.size()][]));
+        byte[][] value = new byte[valsList.size()][];
+        valsList.toArray(value);
+        if (arrayType == ByteArrayType.BIG_DECIMAL) {
+            BigDecimal[] bigDecimalValues = new BigDecimal[value.length];
+            for (int i = 0; i < value.length; i++) {
+                bigDecimalValues[i] = DataTypeUtil.byteToBigDecimal(value[i]);
+            }
+            holder.setReadableBigDecimalValues(bigDecimalValues);
+            return holder;
+        }
+        holder.setReadableByteValues(value);
         return holder;
     }
 

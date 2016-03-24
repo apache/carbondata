@@ -93,6 +93,8 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
 
     private int currentRestructNumber;
 
+    private String measureDataType;
+
     private String highCardinalityDims;
 
     /**
@@ -110,6 +112,7 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
         measureCount = "";
         updateMemberRequest = "";
         currentRestructNumber = -1;
+        measureDataType = "";
     }
 
     /**
@@ -136,6 +139,7 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
                 .append(XMLHandler.addTagValue("isUpdateMemberRequest", this.updateMemberRequest));
         retval.append("    ")
                 .append(XMLHandler.addTagValue("currentRestructNumber", currentRestructNumber));
+        retval.append("    ").append(XMLHandler.addTagValue("measureDataType", measureDataType));
         return retval.toString();
     }
 
@@ -160,6 +164,7 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
             this.complexDimensionCount = XMLHandler.getTagValue(stepnode, "complexDimensionCount");
             this.measureCount = XMLHandler.getTagValue(stepnode, "measureCount");
             this.updateMemberRequest = XMLHandler.getTagValue(stepnode, "isUpdateMemberRequest");
+            this.measureDataType = XMLHandler.getTagValue(stepnode, "measureDataType");
             currentRestructNumber =
                     Integer.parseInt(XMLHandler.getTagValue(stepnode, "currentRestructNumber"));
         } catch (Exception e) {
@@ -194,6 +199,7 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
                     this.updateMemberRequest);
             rep.saveStepAttribute(idTransformation, idStep, "currentRestructNumber",
                     currentRestructNumber);
+            rep.saveStepAttribute(idTransformation, idStep, "measureDataType", measureDataType);
         } catch (Exception e) {
             throw new KettleException(BaseMessages
                     .getString(PKG, "TemplateStep.Exception.UnableToSaveStepInfoToRepository",
@@ -223,6 +229,7 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
                     rep.getStepAttributeString(idStep, "complexDimensionCount");
             this.measureCount = rep.getStepAttributeString(idStep, "measureCount");
             this.updateMemberRequest = rep.getStepAttributeString(idStep, "isUpdateMemberRequest");
+            this.measureDataType = rep.getStepAttributeString(idStep, "measureDataType");
             this.currentRestructNumber =
                     (int) rep.getStepAttributeInteger(idStep, "currentRestructNumber");
         } catch (Exception ex) {
@@ -415,6 +422,14 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
      */
     public void setCurrentRestructNumber(int currentRestructNum) {
         this.currentRestructNumber = currentRestructNum;
+    }
+
+    public String getMeasureDataType() {
+        return measureDataType;
+    }
+
+    public void setMeasureDataType(String measureDataType) {
+        this.measureDataType = measureDataType;
     }
 
     public String getHighCardinalityDims() {

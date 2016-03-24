@@ -21,7 +21,7 @@ package com.huawei.unibi.molap.engine.schema.metadata;
 
 public class SliceUniqueValueInfo
 {
-    private double[] uniqueValue;
+    private Object[] uniqueValue;
     
     private String[] cols;
     
@@ -39,7 +39,7 @@ public class SliceUniqueValueInfo
      * getUniqueValue
      * @return double[]
      */
-    public double[] getUniqueValue()
+    public Object[] getUniqueValue()
     {
         return uniqueValue;
     }
@@ -48,7 +48,7 @@ public class SliceUniqueValueInfo
      * setUniqueValue
      * @param uniqueValue1 void
      */
-    public void setUniqueValue(double[] uniqueValue1)
+    public void setUniqueValue(Object[] uniqueValue1)
     {
         this.uniqueValue = uniqueValue1;
     }

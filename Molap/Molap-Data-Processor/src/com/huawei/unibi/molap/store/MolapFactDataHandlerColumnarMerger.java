@@ -101,7 +101,7 @@ public class MolapFactDataHandlerColumnarMerger implements MolapFactHandler {
     /**
      * uniqueValue
      */
-    private double[] uniqueValue;
+    private Object[] uniqueValue;
 
     /**
      * leaf node size
@@ -269,8 +269,8 @@ public class MolapFactDataHandlerColumnarMerger implements MolapFactHandler {
                 dataHolder[otherMeasureIndex[i]].setWritableDoubleValueByIndex(entryCount,
                         uniqueValue[otherMeasureIndex[i]]);
             } else {
-                dataHolder[otherMeasureIndex[i]].setWritableDoubleValueByIndex(entryCount,
-                        (Double) row[otherMeasureIndex[i]]);
+                dataHolder[otherMeasureIndex[i]]
+                        .setWritableDoubleValueByIndex(entryCount, row[otherMeasureIndex[i]]);
             }
         }
         for (int i = 0; i < customMeasureIndex.length; i++) {
@@ -530,7 +530,7 @@ public class MolapFactDataHandlerColumnarMerger implements MolapFactHandler {
         List<Integer> customMeasureIndexList =
                 new ArrayList<Integer>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
         for (int i = 0; i < type.length; i++) {
-            if (type[i] != 'c') {
+            if (type[i] != 'c' && type[i] != 'b') {
                 otherMeasureIndexList.add(i);
             } else {
                 customMeasureIndexList.add(i);

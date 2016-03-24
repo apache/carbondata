@@ -94,7 +94,7 @@ public class QueryDataFileReader
         byte[] keyArray = fileHolder.readByteArray(this.filePath, leafNodeInfo.getKeyOffset(),
                 leafNodeInfo.getKeyLength());
         MeasureAggregator[] measureAggregators = AggUtil.getAggregators(info.getAggType(), false, info.getKeyGenerator(), info
-                        .getCubeUniqueName(),info.getMsrMinValue(),info.getHighCardinalityTypes());
+                        .getCubeUniqueName(),info.getMsrMinValue(),info.getHighCardinalityTypes(), info.getDataTypes());
 
         DataInputStream[] msrStreams = new DataInputStream[leafNodeInfo.getMeasureLength().length];
 
@@ -121,7 +121,7 @@ public class QueryDataFileReader
                 wrapper.setMaskedKey(key);
                 queryResult.add(wrapper, measureAggregators);
                 measureAggregators = AggUtil.getAggregators(info.getAggType(), false, info.getKeyGenerator(), info
-                        .getCubeUniqueName(),info.getMsrMinValue(),info.getHighCardinalityTypes());
+                        .getCubeUniqueName(),info.getMsrMinValue(),info.getHighCardinalityTypes(), info.getDataTypes());
             }
         }
         catch(IOException e)

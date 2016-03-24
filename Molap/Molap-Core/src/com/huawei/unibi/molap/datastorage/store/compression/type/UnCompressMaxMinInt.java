@@ -88,7 +88,8 @@ public class UnCompressMaxMinInt implements UnCompressValue<int[]> {
         return new UnCompressMaxMinByte();
     }
 
-    @Override public MolapReadDataHolder getValues(int decVal, double maxValue) {
+    @Override public MolapReadDataHolder getValues(int decVal, Object maxValueObject) {
+        double maxValue = (double) maxValueObject;
         double[] vals = new double[value.length];
         MolapReadDataHolder dataHolder = new MolapReadDataHolder();
         for (int i = 0; i < vals.length; i++) {

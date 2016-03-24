@@ -89,6 +89,12 @@ public class EqualToExpression extends BinaryConditionalExpression
         case TimestampType:
             result = val1.getTime().equals(val2.getTime());
             break;
+            case LongType:
+                result = val1.getLong().equals(val2.getLong());
+                break;
+            case DecimalType:
+                result = val1.getDecimal().compareTo(val2.getDecimal()) == 0;
+                break;
         default:
             break;
         }

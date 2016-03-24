@@ -199,17 +199,21 @@ public class MolapSortKeys {
 
     private MolapSortKeyHashbasedAggregator hashedBasedAgg;
 
-    private double[] mergedMinValue;
+    private int highCardinalityCount;
+
+    private Object[] mergedMinValue;
 
     public MolapSortKeys(String tabelName, int measureCount, int mdkeyIndex, int mdkeylength,
             CheckPointInterface checkpoint, SortObserver observer, boolean autoAggRequest,
             boolean isFactMdkeyInInputRow, int factMdkeyLength, String[] aggregators,
             String[] aggregatorClass, int[] factDims, String schemaName, String cubeName,
-            boolean isUpdateMemberRequest) {
+            boolean isUpdateMemberRequest, int highCardinalityCount, char[] type) {
         // set table name
         this.tableName = tabelName;
         // set measure count
         this.measureCount = measureCount;
+
+        this.highCardinalityCount = highCardinalityCount;
         // set mdkey index
         this.mdKeyIndex = mdkeyIndex;
         // set mdkey length
@@ -230,12 +234,7 @@ public class MolapSortKeys {
         }
 
         this.aggregators = aggregators;
-        type = new char[measureCount];
-        Arrays.fill(type, MolapCommonConstants.BYTE_VALUE_MEASURE);
-        for (int i = 0; i < type.length; i++) {
-            this.type[i] = MolapUtil.getType(this.aggregators[i]);
-        }
-        type[type.length - 1] = 'n';
+        this.type = type;
         this.aggregatorClass = aggregatorClass;
         this.factKetGenerator = KeyGeneratorFactory.getKeyGenerator(factDims);
         this.isUpdateMemberRequest = isUpdateMemberRequest;
@@ -784,7 +783,7 @@ public class MolapSortKeys {
                                 || isUpdateMemberRequest), this.isFactMdkeyInInputRow,
                         this.factMdkeyLength, sortTempFileNoOFRecordsInCompression,
                         isSortTempFileCompressionEnabled, type, prefetch, bufferSize,
-                        this.aggregators);
+                        this.aggregators, this.highCardinalityCount);
         executorService.submit(merger);
     }
 
@@ -855,24 +854,8 @@ public class MolapSortKeys {
                 row = recordHolderList[i];
                 MeasureAggregator[] aggregator =
                         (MeasureAggregator[]) row[aggregatorIndexInRowObject];
-                for (int j = 0; j < aggregator.length; j++) {
-                    if (type[j] == MolapCommonConstants.BYTE_VALUE_MEASURE) {
-                        byte[] byteArray = aggregator[j].getByteArray();
-                        stream.writeInt(byteArray.length);
-                        stream.write(byteArray);
-                    } else {
-                        // if measure value is null than aggregator will return
-                        // first time true as no record has been added, so writing null value
-                        if (aggregator[j].isFirstTime()) {
-                            stream.writeByte(MolapCommonConstants.MEASURE_NULL_VALUE);
-                        } else {
-                            // else writing not null value followed by data
-                            stream.writeByte(MolapCommonConstants.MEASURE_NOT_NULL_VALUE);
-                            stream.writeDouble(aggregator[j].getValue());
-                        }
-
-                    }
-                }
+                MolapDataProcessorUtil
+                        .writeMeasureAggregatorsToSortTempFile(type, stream, aggregator);
                 stream.writeDouble((Double) row[aggregatorIndexInRowObject + 1]);
 
                 // write the high cardinality if present.

@@ -225,7 +225,7 @@ public class GroupByHolder
     {
         CalculatedMeasureAggregator aggregator = new CalculatedMeasureAggregatorImpl(calcFunction);
         aggregator.calculateCalcMeasure(aggs);
-        return aggregator.getValue();
+        return aggregator.getDoubleValue();
     }
     
     /**

@@ -22,60 +22,72 @@ package com.huawei.unibi.molap.engine.aggregator.impl;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.HashSet;
 import java.util.Set;
 
 import com.huawei.unibi.molap.constants.MolapCommonConstants;
+import com.huawei.unibi.molap.datastorage.store.dataholder.MolapReadDataHolder;
 import com.huawei.unibi.molap.engine.aggregator.MeasureAggregator;
 
 public class DistinctStringCountAggregator implements MeasureAggregator
 {
     private static final long serialVersionUID = 6313463368629960186L;
 
-    private Set<String> valueSet;
+    private Set<String> valueSetForStr;
 
     public DistinctStringCountAggregator()
     {
-        this.valueSet = new HashSet<String>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+        this.valueSetForStr = new HashSet<String>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
     }
 
-    public void agg(double newVal, byte[] key, int offset, int length)
+    public void agg(double newVal)
     {
     }
 
     public void agg(String newVal)
     {
-        this.valueSet.add(newVal);
+        this.valueSetForStr.add(newVal);
     }
 
-    public void agg(double newVal, double factCount)
-    {
-    }
+//    public void agg(double newVal, double factCount)
+//    {
+//    }
 
     private void agg(Set<String> set2)
     {
-        this.valueSet.addAll(set2);
+        this.valueSetForStr.addAll(set2);
     }
 
     public void merge(MeasureAggregator aggregator)
     {
         DistinctStringCountAggregator distinctCountAggregator = (DistinctStringCountAggregator)aggregator;
-        agg(distinctCountAggregator.valueSet);
+        agg(distinctCountAggregator.valueSetForStr);
     }
 
-    public double getValue()
+    public Double getDoubleValue()
     {
-        return this.valueSet.size();
+        return (double)this.valueSetForStr.size();
+    }
+
+    public Long getLongValue()
+    {
+        return (long)this.valueSetForStr.size();
+    }
+
+    public BigDecimal getBigDecimalValue()
+    {
+        return new BigDecimal(this.valueSetForStr.size());
     }
 
     public Object getValueObject()
     {
-        return Integer.valueOf(this.valueSet.size());
+        return Integer.valueOf(this.valueSetForStr.size());
     }
 
-    public void setNewValue(double newValue)
+    public void setNewValue(Object newValue)
     {
     }
 
@@ -86,10 +98,10 @@ public class DistinctStringCountAggregator implements MeasureAggregator
 
     public void writeData(DataOutput output) throws IOException
     {
-        int length = this.valueSet.size() * 8;
+        int length = this.valueSetForStr.size() * 8;
         ByteBuffer byteBuffer = ByteBuffer.allocate(length + 4);
         byteBuffer.putInt(length);
-        for(String val : this.valueSet)
+        for(String val : this.valueSetForStr)
         {
             byte[] b = val.getBytes(Charset.defaultCharset());
             byteBuffer.putInt(b.length);
@@ -103,19 +115,19 @@ public class DistinctStringCountAggregator implements MeasureAggregator
     {
         int length = inPut.readInt();
         length /= 8;
-        this.valueSet = new HashSet<String>(length + 1, 1.0F);
+        this.valueSetForStr = new HashSet<String>(length + 1, 1.0F);
         for(int i = 0;i < length;i++)
         {
             byte[] b = new byte[inPut.readInt()];
             inPut.readFully(b);
-            this.valueSet.add(new String(b, Charset.defaultCharset()));
+            this.valueSetForStr.add(new String(b, Charset.defaultCharset()));
         }
     }
 
     public MeasureAggregator getCopy()
     {
         DistinctStringCountAggregator aggregator = new DistinctStringCountAggregator();
-        aggregator.valueSet = new HashSet<String>(this.valueSet);
+        aggregator.valueSetForStr = new HashSet<String>(this.valueSetForStr);
         return aggregator;
     }
     
@@ -126,8 +138,8 @@ public class DistinctStringCountAggregator implements MeasureAggregator
      
     public int compareTo(MeasureAggregator o)
     {
-        double val = getValue();
-        double otherVal = o.getValue();
+        double val = getDoubleValue();
+        double otherVal = o.getDoubleValue();
         if(val > otherVal)
         {
             return 1;
@@ -140,9 +152,15 @@ public class DistinctStringCountAggregator implements MeasureAggregator
     }
 
     @Override
-    public void agg(Object newVal, byte[] key, int offset, int length)
+    public void agg(Object newVal)
     {
-        this.valueSet.add((String)newVal);
+        this.valueSetForStr.add((String)newVal);
+    }
+
+    @Override
+    public void agg(MolapReadDataHolder newVal, int index)
+    {
+//        valueSetForStr.add(newVal.getReadableDoubleValueByIndex(index));
     }
 
     @Override
@@ -159,7 +177,7 @@ public class DistinctStringCountAggregator implements MeasureAggregator
     
     public String toString()
     {
-        return valueSet.size()+"";
+        return valueSetForStr.size()+"";
     }
 
     @Override

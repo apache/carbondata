@@ -1350,7 +1350,7 @@ public class MolapDef {
          */
         public static final String[] _type_values =
                 { "String", "Numeric", "Integer", "Boolean", "Date", "Time", "Timestamp", "Array",
-                        "Struct" };
+                        "Struct", "BigInt", "Decimal" };
         /**
          * Allowable values for {@link #internalType}.
          */
@@ -1782,7 +1782,8 @@ public class MolapDef {
          * Allowable values for {@link #type}.
          */
         public static final String[] _type_values =
-                { "String", "Numeric", "Integer", "Boolean", "Date", "Time", "Timestamp" };
+                { "String", "Numeric", "Integer", "Boolean", "Date", "Time", "Timestamp", "BigInt",
+                        "Decimal" };
         /**
          *
          */
@@ -1883,8 +1884,8 @@ public class MolapDef {
          * Allowable values for {@link #datatype}.
          */
         public static final String[] _datatype_values =
-                { "String", "Numeric", "Integer", "Boolean", "Date", "Time", "Timestamp",
-                        "custom" };
+                { "String", "Numeric", "Integer", "Boolean", "Date", "Time", "Timestamp", "custom",
+                        "BigInt", "Decimal" };
         /**
          *
          */
@@ -3246,7 +3247,8 @@ public class MolapDef {
          * Allowable values for {@link #type}.
          */
         public static final String[] _type_values =
-                { "String", "Numeric", "Integer", "Boolean", "Date", "Time", "Timestamp" };
+                { "String", "Numeric", "Integer", "Boolean", "Date", "Time", "Timestamp", "BigInt",
+                        "Decimal" };
         /**
          *
          */
@@ -5386,8 +5388,8 @@ public class MolapDef {
          * Allowable values for {@link #type}.
          */
         public static final String[] _type_values =
-                { "String", "Numeric", "Integer", "Boolean", "Date", "Time", "Timestamp",
-                        "Member" };
+                { "String", "Numeric", "Integer", "Boolean", "Date", "Time", "Timestamp", "Member",
+                        "BigInt", "Decimal" };
         /**
          *
          */

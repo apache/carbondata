@@ -159,7 +159,13 @@ public class SortKeyStep extends BaseStep {
             // get all fields 
             this.meta.getFields(data.getOutputRowMeta(), getStepname(), null, null, this);
 
-            // TODO : send high cardinality count.
+            String measureDataType = meta.getMeasureDataType();
+            String[] msrdataTypes = null;
+            if (measureDataType.length() > 0) {
+                msrdataTypes = measureDataType.split(MolapCommonConstants.AMPERSAND_SPC_CHARACTER);
+            } else {
+                msrdataTypes = new String[0];
+            }
 
             this.meta.setHighCardinalityCount(
                     RemoveDictionaryUtil.extractHighCardCount(meta.getHighCardinalityDims()));
@@ -167,7 +173,7 @@ public class SortKeyStep extends BaseStep {
             this.sortDataRows = new SortDataRows(meta.getTabelName(),
                     meta.getDimensionCount() - meta.getComplexDimensionCount(),
                     meta.getComplexDimensionCount(), meta.getMeasureCount(), this.observer,
-                    meta.getCurrentRestructNumber(), meta.getHighCardinalityCount());
+                    meta.getCurrentRestructNumber(), meta.getHighCardinalityCount(), msrdataTypes);
             try {
                 // initialize sort
                 this.sortDataRows.initialize(meta.getSchemaName(), meta.getCubeName());
@@ -227,10 +233,8 @@ public class SortKeyStep extends BaseStep {
             String logMessage = "Summary: Molap Sort Key Step: Read: " + readCounter + ": Write: "
                     + writeCounter;
             LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, logMessage);
-            putRow(data.getOutputRowMeta(), new Object[0]);
-
             this.sortDataRows.writeMeasureMetadataFile();
-
+            putRow(data.getOutputRowMeta(), new Object[0]);
             setOutputDone();
             return false;
         } catch (MolapSortKeyAndGroupByException e) {

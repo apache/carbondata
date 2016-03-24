@@ -23,7 +23,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-
+import java.math.BigDecimal;
 import com.huawei.unibi.molap.datastorage.store.columnar.ColumnarKeyStoreMetadata;
 import com.huawei.unibi.molap.engine.wrappers.ByteArrayWrapper;
 import com.huawei.unibi.molap.metadata.MolapMetadata.Dimension;
@@ -37,11 +37,23 @@ public class NonFilterScanResult extends AbstractColumnarScanResult
     {
         super(keySize,selectedDimensionIndex);
     }
-    public double getNormalMeasureValue(int measureOrdinal)
+
+    public  double getDoubleValue(int measureOrdinal)
     {
         return measureBlocks[measureOrdinal].getReadableDoubleValueByIndex(currentRow);
     }
-    public byte[] getCustomMeasureValue(int measureOrdinal)
+
+    public  BigDecimal getBigDecimalValue(int measureOrdinal)
+    {
+        return measureBlocks[measureOrdinal].getReadableBigDecimalValueByIndex(currentRow);
+    }
+
+    public  long getLongValue(int measureOrdinal)
+    {
+        return measureBlocks[measureOrdinal].getReadableLongValueByIndex(currentRow);
+    }
+
+    public byte[] getByteArrayValue(int measureOrdinal)
     {
         return measureBlocks[measureOrdinal].getReadableByteArrayValueByIndex(currentRow);
     }
@@ -71,10 +83,10 @@ public class NonFilterScanResult extends AbstractColumnarScanResult
         return getKeyArray(++sourcePosition,null);
     }
     @Override
-    public byte[] getHighCardinalityDimDataForAgg(Dimension dimension)
+    public byte[] getHighCardinalityDimDataForAgg(int dimOrdinal)
     {
         
-            ColumnarKeyStoreMetadata columnarKeyStoreMetadata = columnarKeyStoreDataHolder[dimension.getOrdinal()]
+            ColumnarKeyStoreMetadata columnarKeyStoreMetadata = columnarKeyStoreDataHolder[dimOrdinal]
                     .getColumnarKeyStoreMetadata();
             if(null != columnarKeyStoreMetadata.getMapOfColumnarKeyBlockDataForDirectSurroagtes())
             {
@@ -100,5 +112,10 @@ public class NonFilterScanResult extends AbstractColumnarScanResult
             throws IOException
     {
         getComplexSurrogateKey(currentRow, complexType, dataOutputStream);
+    }
+	
+	public  int getRowIndex()
+    {
+        return currentRow;
     }
 }

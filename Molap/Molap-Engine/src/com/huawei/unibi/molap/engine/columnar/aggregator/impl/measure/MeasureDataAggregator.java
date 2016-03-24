@@ -32,7 +32,7 @@ public abstract class MeasureDataAggregator
     
     protected int noOfMeasuresInQuery;
 
-    protected double[] uniqueValues;
+    protected Object[] uniqueValues;
     
     protected int[] measureOrdinal;
     

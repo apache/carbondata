@@ -128,7 +128,7 @@ public final class ValueCompressonHolder {
 
         UnCompressValue getCompressorObject();
 
-        MolapReadDataHolder getValues(int decimal, double maxValue);
+        MolapReadDataHolder getValues(int decimal, Object maxValue);
 
     }
 

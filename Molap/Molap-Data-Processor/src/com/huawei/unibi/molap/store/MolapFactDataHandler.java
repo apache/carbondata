@@ -111,7 +111,7 @@ public class MolapFactDataHandler implements MolapFactHandler {
     /**
      * uniqueValue
      */
-    private double[] uniqueValue;
+    private Object[] uniqueValue;
 
     /**
      * leaf node size
@@ -343,8 +343,8 @@ public class MolapFactDataHandler implements MolapFactHandler {
                 dataHolder[otherMeasureIndex[i]].setWritableDoubleValueByIndex(entryCount,
                         uniqueValue[otherMeasureIndex[i]]);
             } else {
-                dataHolder[otherMeasureIndex[i]].setWritableDoubleValueByIndex(entryCount,
-                        (Double) row[otherMeasureIndex[i]]);
+                dataHolder[otherMeasureIndex[i]]
+                        .setWritableDoubleValueByIndex(entryCount, row[otherMeasureIndex[i]]);
             }
         }
         for (int i = 0; i < customMeasureIndex.length; i++) {

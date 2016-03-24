@@ -34,6 +34,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -74,12 +75,7 @@ import com.huawei.unibi.molap.store.writer.MolapFactDataWriterImplForIntIndex;
 import com.huawei.unibi.molap.store.writer.MolapFactDataWriterImplForIntIndexAndAggBlock;
 import com.huawei.unibi.molap.store.writer.MolapFactDataWriterImplForIntIndexAndAggBlockCompressed;
 import com.huawei.unibi.molap.store.writer.exception.MolapDataWriterException;
-import com.huawei.unibi.molap.util.MolapDataProcessorLogEvent;
-import com.huawei.unibi.molap.util.MolapDataProcessorUtil;
-import com.huawei.unibi.molap.util.MolapProperties;
-import com.huawei.unibi.molap.util.MolapUtil;
-import com.huawei.unibi.molap.util.RemoveDictionaryUtil;
-import com.huawei.unibi.molap.util.ValueCompressionUtil;
+import com.huawei.unibi.molap.util.*;
 import com.huawei.unibi.molap.vo.HybridStoreModel;
 
 
@@ -151,8 +147,8 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
 	/**
      * uniqueValue
      */
-    private double[] uniqueValue;
-    
+    private Object[] uniqueValue;
+
     /**
      * index of mdkey in incoming rows
      */
@@ -310,6 +306,8 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
 
 	private int[] primitiveDimLens;
 
+    private char[] type;
+
 	private int[] completeDimLens;
     
 //    private String[] aggregator;
@@ -327,7 +325,6 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
      * @param aggregators
      * @param aggregatorClass
      * @param highCardCount 
-     * @param extension
      */
     public MolapFactDataHandlerColumnar(String schemaName, String cubeName,
             String tableName, boolean isGroupByEnabled, int measureCount,
@@ -335,12 +332,14 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
             String[] aggregatorClass, String storeLocation, int[] factDimLens,
             boolean isMergingRequestForCustomAgg, boolean isUpdateMemberRequest,  int[] dimLens, String[] factLevels,
             String[] aggLevels, boolean isDataWritingRequest, int currentRestructNum, int highCardCount, 
-            int dimensionCount, Map<Integer,GenericDataType> complexIndexMap, int[] primitiveDimLens, HybridStoreModel hybridStoreModel)
+            int dimensionCount, Map<Integer,GenericDataType> complexIndexMap, int[] primitiveDimLens, HybridStoreModel hybridStoreModel,
+            ValueCompressionModel compressionModel)
     {
     	this(schemaName, cubeName, tableName, isGroupByEnabled, measureCount, 
     			mdkeyLength, mdKeyIndex, aggregators, aggregatorClass, storeLocation, 
     			factDimLens, isMergingRequestForCustomAgg, isUpdateMemberRequest, 
-    			dimLens, factLevels, aggLevels, isDataWritingRequest, currentRestructNum, highCardCount,hybridStoreModel);
+    			dimLens, factLevels, aggLevels, isDataWritingRequest, currentRestructNum,
+                highCardCount,hybridStoreModel,compressionModel);
     	this.dimensionCount = dimensionCount;
     	this.complexIndexMap = complexIndexMap;
     	this.primitiveDimLens = primitiveDimLens;
@@ -421,7 +420,8 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
             int mdkeyLength, int mdKeyIndex, String[] aggregators,
             String[] aggregatorClass, String storeLocation, int[] factDimLens,
             boolean isMergingRequestForCustomAgg, boolean isUpdateMemberRequest,  int[] dimLens, String[] factLevels,
-            String[] aggLevels, boolean isDataWritingRequest, int currentRestructNum, int highCardCount,HybridStoreModel hybridStoreModel)
+            String[] aggLevels, boolean isDataWritingRequest, int currentRestructNum, int highCardCount,HybridStoreModel hybridStoreModel,
+            ValueCompressionModel compressionModel)
     {
         this.schemaName = schemaName;
         this.cubeName = cubeName;
@@ -445,7 +445,7 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
         this.currentRestructNumber = currentRestructNum;
         isIntBasedIndexer = Boolean
                 .parseBoolean(MolapCommonConstants.IS_INT_BASED_INDEXER_DEFAULTVALUE);
-        
+        this.compressionModel = compressionModel;
         isCompressedKeyBlock = Boolean
                 .parseBoolean(MolapCommonConstants.IS_COMPRESSED_KEYBLOCK_DEFAULTVALUE);
         
@@ -502,11 +502,7 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
      * This method will be used to get and update the step properties which will
      * required to run this step
      * 
-     * @param totalRowLength
-     *            total number of records in reacords
-     * @param mdkeyLength
-     *            lenght of mdkey
-     * @throws MolapDataWriterException 
+     * @throws MolapDataWriterException
      * 
      */
     public void initialise() throws MolapDataWriterException
@@ -597,36 +593,42 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
         }
         //Add all columns to keyDataHolder
         keyDataHolder.setWritableByteArrayValueByIndex(entryCount, this.mdKeyIndex, row);
-        
-     // CHECKSTYLE:OFF Approval No:Approval-351
-        for(int k = 0;k < otherMeasureIndex.length;k++) 
-        {
-            if(null == row[otherMeasureIndex[k]])
-            {
-                dataHolder[otherMeasureIndex[k]].setWritableDoubleValueByIndex(
-                        entryCount, uniqueValue[otherMeasureIndex[k]]);
-            }
-            else
-            {
-                dataHolder[otherMeasureIndex[k]].setWritableDoubleValueByIndex(
-                        entryCount, (Double)row[otherMeasureIndex[k]]);
+
+        // CHECKSTYLE:OFF Approval No:Approval-351
+        for (int k = 0; k < otherMeasureIndex.length; k++) {
+            if (type[otherMeasureIndex[k]] == MolapCommonConstants.BIG_INT_MEASURE) {
+            if (null == row[otherMeasureIndex[k]]) {
+                    dataHolder[otherMeasureIndex[k]].setWritableLongValueByIndex(entryCount,
+                        uniqueValue[otherMeasureIndex[k]]);
+            } else {
+                    dataHolder[otherMeasureIndex[k]]
+                            .setWritableLongValueByIndex(entryCount, row[otherMeasureIndex[k]]);
+                }
+            } else {
+                if (null == row[otherMeasureIndex[k]]) {
+                dataHolder[otherMeasureIndex[k]].setWritableDoubleValueByIndex(entryCount,
+                            uniqueValue[otherMeasureIndex[k]]);
+                } else {
+                    dataHolder[otherMeasureIndex[k]]
+                            .setWritableDoubleValueByIndex(entryCount, row[otherMeasureIndex[k]]);
+                }
             }
         }
-        for(int i = 0;i < customMeasureIndex.length;i++) 
-        {
-            b= (byte[])row[customMeasureIndex[i]];
-//            if(isUpdateMemberRequest)
-//            {
-                byteBuffer=ByteBuffer.allocate(b.length+MolapCommonConstants.INT_SIZE_IN_BYTE);
-                byteBuffer.putInt(b.length);
-                byteBuffer.put(b);
-                byteBuffer.flip();
-                b=byteBuffer.array();
-//            }
-            dataHolder[customMeasureIndex[i]].setWritableByteArrayValueByIndex(
-                    entryCount,b);
+        for (int i = 0; i < customMeasureIndex.length; i++) {
+            if (null == row[customMeasureIndex[i]]
+                    && type[customMeasureIndex[i]] == MolapCommonConstants.BIG_DECIMAL_MEASURE) {
+                BigDecimal val = (BigDecimal) uniqueValue[customMeasureIndex[i]];
+                b = DataTypeUtil.bigDecimalToByte(val);
+            } else {
+            b = (byte[]) row[customMeasureIndex[i]];
+            }
+            byteBuffer = ByteBuffer.allocate(b.length + MolapCommonConstants.INT_SIZE_IN_BYTE);
+            byteBuffer.putInt(b.length);
+            byteBuffer.put(b);
+            byteBuffer.flip();
+            b = byteBuffer.array();
+            dataHolder[customMeasureIndex[i]].setWritableByteArrayValueByIndex(entryCount, b);
         }
-        // CHECKSTYLE:ON
         this.entryCount++;
         // if entry count reaches to leaf node size then we are ready to
         // write
@@ -1025,7 +1027,7 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
 									complexDataType.getColumnarDataForComplexType(columnsArray, ByteBuffer.wrap(byteArrayOutput.toByteArray()));
 									byteArrayOutput.close();
 								} 
-                             	catch (IOException e) 
+                             	catch (IOException e)
                              	{
 									throw new MolapDataWriterException("Problem while bit packing and writing complex datatype", e);
 								} 
@@ -1226,21 +1228,9 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
     }
     /**
      * Below method will be to configure fact file writing configuration
-     * @param instance
      * @throws MolapDataWriterException
      */
-    private void setWritingConfiguration(int mdkeySize)
-            throws MolapDataWriterException
-    {
-        String measureMetaDataFileLoc = this.storeLocation
-                + MolapCommonConstants.MEASURE_METADATA_FILE_NAME 
-                + this.tableName
-                + MolapCommonConstants.MEASUREMETADATA_FILE_EXT;
-        // get the compression model
-        // this will used max, min and decimal point value present in the
-        // and the measure count to get the compression for each measure
-        this.compressionModel = ValueCompressionUtil.getValueCompressionModel(
-                measureMetaDataFileLoc, this.measureCount);
+    private void setWritingConfiguration(int mdkeySize) throws MolapDataWriterException {
         this.uniqueValue = compressionModel.getUniqueValue();
         // get leaf node size
         this.leafNodeSize = Integer.parseInt(MolapProperties.getInstance().getProperty(
@@ -1321,24 +1311,26 @@ public class MolapFactDataHandlerColumnar implements MolapFactHandler
         {
             customMeasureIndex[i]=customMeasureIndexList.get(i);
         }
-        
-        this.dataHolder= new MolapWriteDataHolder[this.measureCount];
-         for(int i = 0;i < otherMeasureIndex.length;i++)
-          {
-              this.dataHolder[otherMeasureIndex[i]]=new MolapWriteDataHolder();
-              this.dataHolder[otherMeasureIndex[i]].initialiseDoubleValues(this.leafNodeSize);
-          }
-          for(int i = 0;i < customMeasureIndex.length;i++)
-          {
-              this.dataHolder[customMeasureIndex[i]]=new MolapWriteDataHolder();
-              this.dataHolder[customMeasureIndex[i]].initialiseByteArrayValues(leafNodeSize);
-          }
-          
-          keyDataHolder = new MolapWriteDataHolder();
-          keyDataHolder.initialiseByteArrayValues(leafNodeSize);
-          highCardkeyDataHolder = new MolapWriteDataHolder();
-          highCardkeyDataHolder.initialiseByteArrayValues(leafNodeSize);
-          
+
+        this.dataHolder = new MolapWriteDataHolder[this.measureCount];
+        for (int i = 0; i < otherMeasureIndex.length; i++) {
+            this.dataHolder[otherMeasureIndex[i]] = new MolapWriteDataHolder();
+            if (type[otherMeasureIndex[i]] == MolapCommonConstants.BIG_INT_MEASURE) {
+                this.dataHolder[otherMeasureIndex[i]].initialiseLongValues(this.leafNodeSize);
+            } else {
+            this.dataHolder[otherMeasureIndex[i]].initialiseDoubleValues(this.leafNodeSize);
+        }
+        }
+        for (int i = 0; i < customMeasureIndex.length; i++) {
+            this.dataHolder[customMeasureIndex[i]] = new MolapWriteDataHolder();
+            this.dataHolder[customMeasureIndex[i]].initialiseByteArrayValues(leafNodeSize);
+        }
+
+        keyDataHolder = new MolapWriteDataHolder();
+        keyDataHolder.initialiseByteArrayValues(leafNodeSize);
+        highCardkeyDataHolder = new MolapWriteDataHolder();
+        highCardkeyDataHolder.initialiseByteArrayValues(leafNodeSize);
+
         initialisedataHolder();
         // create data writer instance
 //        this.dataWriter = new MolapFactDataWriterImpl(this.storeLocation,

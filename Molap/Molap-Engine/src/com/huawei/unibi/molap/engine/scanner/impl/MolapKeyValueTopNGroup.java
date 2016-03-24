@@ -121,8 +121,24 @@ public class MolapKeyValueTopNGroup extends MolapValue
     
     private int compareTop(MolapKeyValueGroup r1, MolapKeyValueGroup r2)
     {
-        Number left = (Number)r1.getValues()[0].getValue();
-        Number right = (Number)r2.getValues()[0].getValue();
+        Number left;
+        Number right;
+        if(r1.getValues()[0].toString().contains("Long"))
+        {
+            left = (Number)r1.getValues()[0].getLongValue();
+            right = (Number)r2.getValues()[0].getLongValue();
+        }
+        else if(r1.getValues()[0].toString().contains("Decimal"))
+        {
+            left = (Number)r1.getValues()[0].getBigDecimalValue();
+            right = (Number)r2.getValues()[0].getBigDecimalValue();
+        }
+        else
+        {
+            left = (Number)r1.getValues()[0].getDoubleValue();
+            right = (Number)r2.getValues()[0].getDoubleValue();
+        }
+        //TODO Jay
         if(left.doubleValue() > right.doubleValue())
         {
             return 1;
@@ -163,8 +179,11 @@ public class MolapKeyValueTopNGroup extends MolapValue
      */
     private int compareBottom(MolapKeyValueGroup r1, MolapKeyValueGroup r2)
     {
-        Number left = (Number)r1.getValues()[0].getValue();
-        Number right = (Number)r2.getValues()[0].getValue();
+        Number left;
+        Number right;
+        left = (Number)r1.getValues()[0].getDoubleValue();
+        right = (Number)r2.getValues()[0].getDoubleValue();
+
         if(left.doubleValue() > right.doubleValue())
         {
             return -1;

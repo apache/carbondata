@@ -48,6 +48,7 @@ import com.huawei.unibi.molap.keygenerator.KeyGenerator;
 import com.huawei.unibi.molap.keygenerator.factory.KeyGeneratorFactory;
 import com.huawei.unibi.molap.metadata.MolapMetadata.Dimension;
 import com.huawei.unibi.molap.metadata.MolapMetadata.Measure;
+import com.huawei.unibi.molap.olap.SqlStatement;
 
 /**
  * Abstract class used for query execution and to use to initialize all the properties used for query execution
@@ -138,12 +139,6 @@ public abstract class AbstractQueryExecutor implements QueryExecutor
         executerProperties.aggExpMeasures = new ArrayList<Measure>();
         fillDimensionsFromExpression(queryModel.getExpressions(), executerProperties.aggExpDimensions, executerProperties.aggExpMeasures);
         
-        executerProperties.uniqueValue = QueryExecutorUtility.updateUniqueForSlices(queryModel.getFactTable(),
-                queryModel.isAggTable(), executerProperties.slices);
-        
-        double[] msrMinValue = QueryExecutorUtility.getMinValueOfSlices(queryModel.getFactTable(),
-                queryModel.isAggTable(), executerProperties.slices);
-        
         executerProperties.dimSortOrder = new byte[0];
         
         int aggTypeCount = queryModel.getMsrs().size() + queryModel.getExpressions().size();
@@ -154,6 +149,17 @@ public abstract class AbstractQueryExecutor implements QueryExecutor
             aggTypeCount+=iterator.next().getAggList().size();
         }
         executerProperties.aggTypes= new String[aggTypeCount];
+        executerProperties.dataTypes = new SqlStatement.Type[aggTypeCount];
+
+        //initialize all measuretypes
+        List<Measure> measures = queryModel.getCube().getMeasures(queryModel.getCube().getFactTableName());
+        SqlStatement.Type[] allMeasureTypes = new SqlStatement.Type[measures.size()];
+        for(int j = 0;j < measures.size();j++)
+        {
+            allMeasureTypes[j] = measures.get(j).getDataType();
+        }
+
+//        Cube cube = queryModel.getCube();
         executerProperties.isHighCardinality=new boolean[aggTypeCount];
         int index=0;
         iterator = queryModel.getDimensionAggInfo().iterator();
@@ -172,23 +178,37 @@ public abstract class AbstractQueryExecutor implements QueryExecutor
             List<String> aggList = iterator.next().getAggList();
             for(int j = 0;j < aggList.size();j++)
             {
-
                 executerProperties.aggTypes[index] = aggList.get(j);
+                executerProperties.dataTypes[index] = SqlStatement.Type.STRING;
                 index++;
             }
         }
         
         for(int i = 0;i < queryModel.getExpressions().size();i++)
         {
-            executerProperties.aggTypes[index++] = MolapCommonConstants.CUSTOM;
+            executerProperties.aggTypes[index] = MolapCommonConstants.CUSTOM;
+            executerProperties.dataTypes[index] = SqlStatement.Type.STRING;
+            index++;
         }
-        
         
         for(int i = 0;i < queryModel.getMsrs().size();i++)
         {
-            executerProperties.aggTypes[index++] = queryModel.getMsrs().get(i).getAggName();
+            Measure measure = queryModel.getMsrs().get(i);
+            executerProperties.aggTypes[index] = measure.getAggName();
+            executerProperties.dataTypes[index] = measure.getDataType();
+            executerProperties.measureOrdinalMap.put(measure.getOrdinal(),index);
+            index++;
         }
         
+        // need to initialize data type first
+        executerProperties.uniqueValue = QueryExecutorUtility.updateUniqueForSlices(queryModel.getFactTable(),
+                queryModel.isAggTable(), executerProperties.slices,  allMeasureTypes);
+
+        Object[] msrMinValue = QueryExecutorUtility.getMinValueOfSlices(queryModel.getFactTable(),
+                queryModel.isAggTable(), executerProperties.slices, allMeasureTypes);
+
+
+
         executerProperties.aggExpressionStartIndex = executerProperties.aggTypes.length
                 - queryModel.getExpressions().size() - queryModel.getMsrs().size();
         
@@ -196,7 +216,13 @@ public abstract class AbstractQueryExecutor implements QueryExecutor
                 - queryModel.getMsrs().size();
         
 
-        executerProperties.msrMinValue = new double[executerProperties.aggTypes.length];
+        executerProperties.msrMinValue = new Object[executerProperties.aggTypes.length];
+
+        // force initialize object[]
+        for(int j = 0; j < executerProperties.aggTypes.length; j++)
+        {
+            executerProperties.msrMinValue[j] = 0.0;
+        }
 
 //        System.arraycopy(msrMinValue, 0, executerProperties.msrMinValue, executerProperties.measureStartIndex,
 //                queryModel.getMsrs().size());

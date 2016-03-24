@@ -88,7 +88,7 @@ public class AggregateTableAggregator extends DataAggregator
 //        byte[] byteValue= null;
 //        for(int i = 0;i < customMeasureIndex.length;i++)
 //        {
-//            byteValue = keyValue.getCustomMeasureValue(measureOrdinal[customMeasureIndex[i]]);
+//            byteValue = keyValue.getByteArrayValue(measureOrdinal[customMeasureIndex[i]]);
 //            currentMsrRowData[customMeasureIndex[i]].agg(byteValue, null,
 //                    0, 0);
 //        }
@@ -153,7 +153,7 @@ public class AggregateTableAggregator extends DataAggregator
 //        byte[] byteValue = null;
 //        for(int i = 0;i < customMeasureIndex.length;i++)
 //        {
-//            byteValue = keyValue.getCustomMeasureValue(measureOrdinal[customMeasureIndex[i]]);
+//            byteValue = keyValue.getByteArrayValue(measureOrdinal[customMeasureIndex[i]]);
 //            currentMsrRowData[customMeasureIndex[i]].agg(byteValue,null,
 //                    0, 0);
 //        }

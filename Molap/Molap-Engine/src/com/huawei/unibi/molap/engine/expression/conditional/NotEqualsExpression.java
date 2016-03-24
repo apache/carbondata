@@ -75,6 +75,12 @@ public class NotEqualsExpression extends BinaryConditionalExpression
         case TimestampType:
             result = val1.getTime().longValue() != val2.getTime().longValue();
             break;
+        case LongType:
+            result = elRes.getLong().longValue() != (erRes.getLong()).longValue();
+            break;
+        case DecimalType:
+            result = elRes.getDecimal().compareTo(erRes.getDecimal()) != 0;
+            break;
         default:
             break;
         }

@@ -53,7 +53,20 @@ public class EqualsMeasureFilterImpl implements MeasureFilter
         {
             return 0 == Double.compare(calcFunction.calculate(msrValue), filterValue) ? true : false;            
         }
-        return 0 == Double.compare(msrValue[index].getValue(), filterValue) ? true : false;
+        double value;
+        if(msrValue[index].toString().contains("Long"))
+        {
+            value = msrValue[index].getLongValue();
+        }
+        else if(msrValue[index].toString().contains("Decimal"))
+        {
+            value = msrValue[index].getBigDecimalValue().doubleValue();
+        }
+        else
+        {
+            value = msrValue[index].getDoubleValue();
+        }
+        return 0 == Double.compare(value, filterValue) ? true : false;
     }
 
     /**

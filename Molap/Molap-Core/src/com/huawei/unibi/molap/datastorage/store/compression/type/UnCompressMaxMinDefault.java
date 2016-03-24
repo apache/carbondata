@@ -90,7 +90,8 @@ public class UnCompressMaxMinDefault implements UnCompressValue<double[]> {
     }
 
     //TODO SIMIAN
-    @Override public MolapReadDataHolder getValues(int decimal, double maxValue) {
+    @Override public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
+        double maxValue = (double) maxValueObject;
         double[] vals = new double[value.length];
         MolapReadDataHolder dataHolderInfoObj = new MolapReadDataHolder();
         for (int i = 0; i < vals.length; i++) {

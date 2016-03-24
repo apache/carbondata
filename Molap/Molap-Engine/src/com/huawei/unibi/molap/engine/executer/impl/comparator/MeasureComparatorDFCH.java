@@ -19,6 +19,7 @@
 
 package com.huawei.unibi.molap.engine.executer.impl.comparator;
 
+import java.math.BigDecimal;
 import java.util.Comparator;
 
 import com.huawei.unibi.molap.engine.executer.pagination.impl.DataFileChunkHolder;
@@ -56,16 +57,33 @@ public class MeasureComparatorDFCH implements Comparator<DataFileChunkHolder>
     {
         int cmp=0;
         
-        double msrValue1 = t1.getMeasures()[this.msrIndex].getValue();
-        double msrValue2 = t2.getMeasures()[this.msrIndex].getValue();
-        
-        if(msrValue1<msrValue2)
+        if (t1.getMeasures()[this.msrIndex].toString().contains("Long"))
+        {
+            long msrValue1Long = t1.getMeasures()[this.msrIndex].getLongValue();
+            long msrValue2Long = t2.getMeasures()[this.msrIndex].getLongValue();
+            if (msrValue1Long < msrValue2Long) {
+                cmp = -1;
+            } else if (msrValue1Long > msrValue2Long) {
+                cmp = 1;
+            }
+        }
+        else if (t1.getMeasures()[this.msrIndex].toString().contains("Decimal")) {
+            BigDecimal msrValue1Decimal = t1.getMeasures()[this.msrIndex].getBigDecimalValue();
+            BigDecimal msrValue2Decimal = t2.getMeasures()[this.msrIndex].getBigDecimalValue();
+            cmp = msrValue1Decimal.compareTo(msrValue2Decimal);
+        }
+        else
+        {
+            double msrValue1Double = t1.getMeasures()[this.msrIndex].getDoubleValue();
+            double msrValue2Double = t2.getMeasures()[this.msrIndex].getDoubleValue();
+            if(msrValue1Double < msrValue2Double)
         {
             cmp=-1;
         }
-        else if(msrValue1>msrValue2)
+            else if(msrValue1Double > msrValue2Double)
         {
             cmp=1;
+        }
         }
         if(this.sortOrder==1 || this.sortOrder==3)
         {

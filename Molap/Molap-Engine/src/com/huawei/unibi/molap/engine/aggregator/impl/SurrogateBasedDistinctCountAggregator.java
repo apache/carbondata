@@ -26,8 +26,10 @@ import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 
+import com.huawei.unibi.molap.datastorage.store.dataholder.MolapReadDataHolder;
 import org.roaringbitmap.RoaringBitmap;
 
 import com.huawei.iweb.platform.logging.LogService;
@@ -83,7 +85,7 @@ public class SurrogateBasedDistinctCountAggregator implements MeasureAggregator
      * just need to add the unique values to agg set
      */
     @Override
-    public void agg(double newVal, byte[] key, int offset, int length)
+    public void agg(double newVal)
     {//CHECKSTYLE:OFF    Approval No:Approval-V3R8C00_013
         int a = (int)newVal;//CHECKSTYLE:ON
         bitSet.add(a);
@@ -94,17 +96,18 @@ public class SurrogateBasedDistinctCountAggregator implements MeasureAggregator
      * 
      * @param newVal
      *            new value
-     * @param key
-     *            mdkey
-     * @param offset
-     *            key offset
-     * @param length
-     *            length to be considered
      * 
      */
     @Override
-    public void agg(Object newVal, byte[] key, int offset, int length)
+    public void agg(Object newVal)
     {
+        // Object include double
+        if(newVal instanceof Double)
+        {
+            agg((double)newVal);
+            return;
+        }
+
         byte[] values = (byte[])newVal;
         ByteBuffer buffer = ByteBuffer.wrap(values);
         buffer.rewind();
@@ -115,6 +118,11 @@ public class SurrogateBasedDistinctCountAggregator implements MeasureAggregator
         }
     }
 
+    public void agg(MolapReadDataHolder newVal,int index)
+    {
+        int a = (int)newVal.getReadableDoubleValueByIndex(index);//CHECKSTYLE:ON
+        bitSet.add(a);
+    }
     /**
      * Below method will be used to get the value byte array
      */
@@ -125,11 +133,11 @@ public class SurrogateBasedDistinctCountAggregator implements MeasureAggregator
     }
 
     
-    @Override
-    public void agg(double newVal, double factCount)
-    {
-        
-    }
+//    @Override
+//    public void agg(double newVal, double factCount)
+//    {
+//
+//    }
 
     private void agg(RoaringBitmap bitSet2)
     {
@@ -149,14 +157,36 @@ public class SurrogateBasedDistinctCountAggregator implements MeasureAggregator
     }
 
     @Override
-    public double getValue()
+    public Double getDoubleValue()
     {
         if(computedFixedValue == null)
         {
             readData();
-            return bitSet.getCardinality();
+            return (double)bitSet.getCardinality();
         }
         return computedFixedValue;
+    }
+
+    @Override
+    public Long getLongValue()
+    {
+        if(computedFixedValue == null)
+        {
+            readData();
+            return (long)bitSet.getCardinality();
+        }
+        return computedFixedValue.longValue();
+    }
+
+    @Override
+    public BigDecimal getBigDecimalValue()
+    {
+        if(computedFixedValue == null)
+        {
+            readData();
+            return new BigDecimal(bitSet.getCardinality());
+        }
+        return new BigDecimal(computedFixedValue);
     }
 
     @Override
@@ -167,13 +197,13 @@ public class SurrogateBasedDistinctCountAggregator implements MeasureAggregator
 
     /**
      * 
-     * @see com.huawei.unibi.molap.engine.aggregator.MeasureAggregator#setNewValue(double)
+     * @see com.huawei.unibi.molap.engine.aggregator.MeasureAggregator#setNewValue(Object)
      * 
      */
     @Override
-    public void setNewValue(double newValue)
+    public void setNewValue(Object newValue)
     {
-        computedFixedValue = newValue;
+        computedFixedValue = (Double)newValue;
         bitSet = null;
     }
 
@@ -213,8 +243,8 @@ public class SurrogateBasedDistinctCountAggregator implements MeasureAggregator
     @Override
     public int compareTo(MeasureAggregator object)
     {
-        double val = getValue();
-        double otherVal = object.getValue();
+        double val = getDoubleValue();
+        double otherVal = object.getDoubleValue();
         if(val > otherVal) 
         {
             return 1;

@@ -72,11 +72,21 @@ public class ExpressionAggregator
                 Dimension dimension = referredColumns.get(j);
                 if(dimension instanceof Measure)
                 {
-                    row[j]=keyValue.getNormalMeasureValue(dimension.getOrdinal());
+                    switch(dimension.getDataType())
+                    {
+                        case LONG:
+                            row[j] = keyValue.getLongValue(dimension.getOrdinal());
+                            break;
+                        case DECIMAL:
+                            row[j] = keyValue.getBigDecimalValue(dimension.getOrdinal());
+                            break;
+                        default:
+                            row[j] = keyValue.getDoubleValue(dimension.getOrdinal());
+                    }
                 }
                 else if(dimension.isHighCardinalityDim())
                 {
-                   byte[] directSurrogate= keyValue.getHighCardinalityDimDataForAgg(dimension);
+                   byte[] directSurrogate= keyValue.getHighCardinalityDimDataForAgg(dimension.getOrdinal());
                    row[j]=DataTypeConverter.getDataBasedOnDataType(new String(directSurrogate),
                            dimension.getDataType());
                 }

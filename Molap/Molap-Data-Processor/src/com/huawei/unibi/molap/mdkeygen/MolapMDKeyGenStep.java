@@ -34,7 +34,6 @@ import com.huawei.unibi.molap.dataprocessor.queue.impl.DataProcessorQueue;
 import com.huawei.unibi.molap.dataprocessor.queue.impl.RecordComparator;
 import com.huawei.unibi.molap.dataprocessor.record.holder.DataProcessorRecordHolder;
 import com.huawei.unibi.molap.datastorage.store.compression.MeasureMetaDataModel;
-import com.huawei.unibi.molap.exception.MolapDataProcessorException;
 import com.huawei.unibi.molap.file.manager.composite.FileData;
 import com.huawei.unibi.molap.file.manager.composite.IFileManagerComposite;
 import com.huawei.unibi.molap.file.manager.composite.LoadFolderData;
@@ -329,12 +328,6 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface {
 
             //Start the reading records process.
             startReadingProcess();
-
-            // writre data to measure meta file
-            try {
-                MolapDataProcessorUtil
-                        .writeMeasureMetaDataToFile(maxValue, minValue, decimalLength, uniqueValue,
-                                type, new byte[this.maxValue.length], measureMetaDataFileLocation);
                 FileData fileData = (FileData) fileManager.get(0);
                 String storePath = fileData.getStorePath();
                 String inProgFileName = fileData.getFileName();
@@ -344,9 +337,6 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface {
                 File destFile = new File(changedFileName);
                 currentFile.renameTo(destFile);
                 fileData.setName(changedFileName);
-            } catch (MolapDataProcessorException e) {
-                throw new KettleException("Problem while writing the measure meta file", e);
-            }
             LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "Record Procerssed For table: " + this.tableName);
             String logMessage =
@@ -807,16 +797,6 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface {
                 + MolapCommonConstants.FILE_INPROGRESS_STATUS;
 
         String measuremetaDataFilepath = sortTempFileLoc + File.separator + metaDataFileName;
-
-        try {
-            MolapDataProcessorUtil
-                    .writeMeasureMetaDataToFile(this.maxValue, this.minValue, this.decimalLength,
-                            this.uniqueValue, this.type, new byte[this.maxValue.length],
-                            measuremetaDataFilepath);
-        } catch (MolapDataProcessorException e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-                    "Not able to write temp measure metadatafile.");
-        }
 
         // first check if the metadata file already present the take backup and
         // rename inprofress file to

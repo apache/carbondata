@@ -93,7 +93,7 @@ class OlapContext(val sc: SparkContext, metadataPath: String) extends HiveContex
   }
 
   @DeveloperApi
-  implicit def toAggregates(aggregate: MeasureAggregator): Double = aggregate.getValue()
+  implicit def toAggregates(aggregate: MeasureAggregator): Double = aggregate.getDoubleValue()
 
   /**
     * Loads a CSV file (according to RFC 4180) and returns the result as a [[SchemaRDD]].

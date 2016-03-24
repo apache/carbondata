@@ -65,6 +65,12 @@ public class SubstractExpression  extends BinaryArithmeticExpression
           case IntegerType:
             subtractExprRightRes.set(DataType.IntegerType, val1.getInt()-val2.getInt());
             break;
+            case LongType:
+                subtractExprRightRes.set(DataType.LongType, val1.getLong() - val2.getLong());
+                break;
+            case DecimalType:
+                subtractExprRightRes.set(DataType.DecimalType, val1.getDecimal().subtract(val2.getDecimal()));
+                break;
         default:
             throw new FilterUnsupportedException("Incompatible datatype for applying Add Expression Filter "
                     + subtractExprLeftRes.getDataType());

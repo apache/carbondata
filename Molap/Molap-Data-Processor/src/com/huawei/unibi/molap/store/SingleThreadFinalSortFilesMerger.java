@@ -97,14 +97,17 @@ public class SingleThreadFinalSortFilesMerger {
      */
     private String tempFileLocation;
 
+    private char[] aggType;
+
     public SingleThreadFinalSortFilesMerger(String tempFileLocation, String tableName,
             int dimensionCount, int complexDimensionCount, int measureCount,
-            int highCardinalityCount) {
+            int highCardinalityCount, char[] aggType) {
         this.tempFileLocation = tempFileLocation;
         this.tableName = tableName;
         this.dimensionCount = dimensionCount;
         this.complexDimensionCount = complexDimensionCount;
         this.measureCount = measureCount;
+        this.aggType = aggType;
         this.highCardinalityCount = highCardinalityCount;
     }
 
@@ -174,7 +177,7 @@ public class SingleThreadFinalSortFilesMerger {
                     SortTempFileChunkHolder sortTempFileChunkHolder =
                             new SortTempFileChunkHolder(tempFile, dimensionCount,
                                     complexDimensionCount, measureCount, fileBufferSize,
-                                    highCardinalityCount);
+                                    highCardinalityCount, aggType);
 
                     // initialize
                     sortTempFileChunkHolder.initialize();

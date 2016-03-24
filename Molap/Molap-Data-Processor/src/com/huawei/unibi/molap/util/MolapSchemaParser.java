@@ -3693,61 +3693,27 @@ private static String getDimensionTable(String dimName, String levelName, Cube c
         return normHierString;
     
     }
-    
-    /**
-     * @param cube
-     * @return
-     */
-    public static String getMeasuresDataType(Cube cube)
-    {
+
+    public static String getMeasuresDataType(Cube cube) {
         StringBuilder measureDataTypeString = new StringBuilder();
         MolapDef.Measure[] measures = cube.measures;
-        
-        for(MolapDef.Measure measure : measures)
-        {
-           Annotations annotations = measure.annotations;
-           if(null == annotations)
-           {
-               continue;
-           }
-           Annotation[] array = measure.annotations.array;
-           for(int i=0; i< array.length; i++)
-           {
-               if(array[i].name.equals(MolapCommonConstants.MEASURE_SRC_DATA_TYPE))
-               {
-                   measureDataTypeString.append(measure.column);
-                    measureDataTypeString.append(MolapCommonConstants.COLON_SPC_CHARACTER);
-                   if(array[i].cdata.equalsIgnoreCase("String"))
-                   {
-                       if(isMeasureColumnAsSomeOtherAggregator(measure.column, cube))
-                       {
-                           measureDataTypeString.append("false");
-                       }
-                       else
-                       {
-                           measureDataTypeString.append("true");
-                       }
-                   }
-                   else
-                   {
-                       measureDataTypeString.append("false");
-                   }
-                    measureDataTypeString.append(MolapCommonConstants.AMPERSAND_SPC_CHARACTER);
-               }
-           }
+
+        for (MolapDef.Measure measure : measures) {
+            measureDataTypeString.append(measure.datatype)
+                    .append(MolapCommonConstants.AMPERSAND_SPC_CHARACTER);
         }
-        
+
         String measureTypeString = measureDataTypeString.toString();
 
-        if(measureTypeString.length() > 0
-                && measureTypeString.endsWith(MolapCommonConstants.AMPERSAND_SPC_CHARACTER))
-        {
+        if (measureTypeString.length() > 0 && measureTypeString
+                .endsWith(MolapCommonConstants.AMPERSAND_SPC_CHARACTER)) {
             measureTypeString = measureTypeString.substring(0,
-                    measureTypeString.length() - MolapCommonConstants.AMPERSAND_SPC_CHARACTER.length());
+                    measureTypeString.length() - MolapCommonConstants.AMPERSAND_SPC_CHARACTER
+                            .length());
         }
-        
+
         return measureTypeString;
-    
+
     }
     /**
      * 

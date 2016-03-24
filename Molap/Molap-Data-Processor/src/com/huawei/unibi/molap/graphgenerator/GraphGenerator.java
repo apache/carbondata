@@ -1566,6 +1566,7 @@ public class GraphGenerator {
         sortRowsMeta.setIsUpdateMemberRequest(isUpdateMemberRequest + "");
         sortRowsMeta.setMeasureCount(graphConfiguration.getMeasureCount() + "");
         sortRowsMeta.setHighCardinalityDims(graphConfiguration.getHighCardinalityDims());
+        sortRowsMeta.setMeasureDataType(graphConfiguration.getMeasureDataTypeInfo());
         StepMeta sortRowsStep = new StepMeta(
                 GraphGeneratorConstants.SORT_KEY_AND_GROUPBY + graphConfiguration.getTableName(),
                 (StepMetaInterface) sortRowsMeta);

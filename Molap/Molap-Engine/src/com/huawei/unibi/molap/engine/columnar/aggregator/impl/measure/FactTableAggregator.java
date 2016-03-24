@@ -22,12 +22,13 @@ package com.huawei.unibi.molap.engine.columnar.aggregator.impl.measure;
 import com.huawei.unibi.molap.engine.aggregator.MeasureAggregator;
 import com.huawei.unibi.molap.engine.columnar.aggregator.ColumnarAggregatorInfo;
 import com.huawei.unibi.molap.engine.columnar.keyvalue.AbstractColumnarScanResult;
+import com.huawei.unibi.molap.olap.SqlStatement;
 
 public class FactTableAggregator extends MeasureDataAggregator
 {
     private boolean[] isMeasureExists;
     
-    private double[] measureDefaultValue;
+    private Object[] measureDefaultValue;
     
     public FactTableAggregator(ColumnarAggregatorInfo columnaraggreagtorInfo)
     {
@@ -45,16 +46,33 @@ public class FactTableAggregator extends MeasureDataAggregator
      */
     public void aggregateMeasure(AbstractColumnarScanResult keyValue, MeasureAggregator[] currentMsrRowData)
     {
+        Object value = null;
+        SqlStatement.Type dataType = null;
         for(int i = 0;i < noOfMeasuresInQuery;i++)
         {
-            double value = isMeasureExists[i]?keyValue.getNormalMeasureValue(measureOrdinal[i]):measureDefaultValue[i];
-            if(isMeasureExists[i] && uniqueValues[measureOrdinal[i]] != value)
+            if(isMeasureExists[i])
             {
-                currentMsrRowData[columnaraggreagtorInfo.getMeasureStartIndex()+i].agg(value, null, 0, 0);
+                int index = columnaraggreagtorInfo.getMeasureOrdinalMap().get(measureOrdinal[i]);
+                dataType = this.columnaraggreagtorInfo.getDataTypes()[index];
+                switch (dataType)
+                {
+                    case LONG:
+                        value = keyValue.getLongValue(measureOrdinal[i]);
+                        break;
+                    case DECIMAL:
+                        value = keyValue.getBigDecimalValue(measureOrdinal[i]);
+                        break;
+                    default:
+                        value = keyValue.getDoubleValue(measureOrdinal[i]);
+                }
             }
-            else if(!isMeasureExists[i])
+            else
             {
-                currentMsrRowData[columnaraggreagtorInfo.getMeasureStartIndex()+i].agg(measureDefaultValue[i], null, 0, 0);
+                value = measureDefaultValue[i];
+            }
+            if(!uniqueValues[measureOrdinal[i]].equals(value))
+            {
+                currentMsrRowData[columnaraggreagtorInfo.getMeasureStartIndex()+i].agg(value);
             }
         }
     }

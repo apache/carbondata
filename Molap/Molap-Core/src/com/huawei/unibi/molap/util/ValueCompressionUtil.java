@@ -22,6 +22,7 @@ package com.huawei.unibi.molap.util;
 import java.io.DataInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
@@ -117,31 +118,45 @@ public final class ValueCompressionUtil {
      * @return : the best compression type
      * @see
      */
-    private static CompressionFinder getCompressionType(double maxValue, double minValue,
+    private static CompressionFinder getCompressionType(Object maxValue, Object minValue,
             int decimal, char aggregatorType, byte dataTypeSelected) {
-        if (aggregatorType == 'c') {
+        // 'c' for aggregate table,'b' fo rBigdecimal, 'l' for long,'n' for double
+        switch (aggregatorType) {
+        case 'c':
             return new CompressionFinder(COMPRESSION_TYPE.CUSTOM, DataType.DATA_BYTE,
                     DataType.DATA_BYTE);
+        case 'b':
+            return new CompressionFinder(COMPRESSION_TYPE.CUSTOM_BIGDECIMAL, DataType.DATA_BYTE,
+                    DataType.DATA_BYTE);
+        case 'l':
+            return new CompressionFinder(COMPRESSION_TYPE.NONE, DataType.DATA_LONG,
+                    DataType.DATA_LONG);
+        default:
+            break;
         }
         // None Decimal
         if (decimal == 0) {
-            if (getSize(getDataType(maxValue, decimal, dataTypeSelected)) > getSize(
-                    getDataType(maxValue - minValue, decimal, dataTypeSelected))) {
+            if (getSize(getDataType((double) maxValue, decimal, dataTypeSelected)) > getSize(
+                    getDataType((double) maxValue - (double) minValue, decimal,
+                            dataTypeSelected))) {
                 return new CompressionFinder(COMPRESSION_TYPE.MAX_MIN, DataType.DATA_DOUBLE,
-                        getDataType(maxValue - minValue, decimal, dataTypeSelected));
+                        getDataType((double) maxValue - (double) minValue, decimal,
+                                dataTypeSelected));
             } else {
                 return new CompressionFinder(COMPRESSION_TYPE.NONE, DataType.DATA_DOUBLE,
-                        getDataType(maxValue, decimal, dataTypeSelected));
+                        getDataType((double) maxValue, decimal, dataTypeSelected));
             }
         }
         // decimal
         else {
-            DataType actualDataType = getDataType(maxValue, decimal, dataTypeSelected);
-            DataType diffDataType = getDataType(maxValue - minValue, decimal, dataTypeSelected);
+            DataType actualDataType = getDataType((double) maxValue, decimal, dataTypeSelected);
+            DataType diffDataType =
+                    getDataType((double) maxValue - (double) minValue, decimal, dataTypeSelected);
             DataType maxNonDecDataType =
-                    getDataType(Math.pow(10, decimal) * maxValue, 0, dataTypeSelected);
+                    getDataType(Math.pow(10, decimal) * (double) maxValue, 0, dataTypeSelected);
             DataType diffNonDecDataType =
-                    getDataType(Math.pow(10, decimal) * (maxValue - minValue), 0, dataTypeSelected);
+                    getDataType(Math.pow(10, decimal) * ((double) maxValue - (double) minValue), 0,
+                            dataTypeSelected);
 
             CompressionFinder[] finders = new CompressionFinder[] {
                     new CompressionFinder(actualDataType, actualDataType,
@@ -195,29 +210,45 @@ public final class ValueCompressionUtil {
         }
     }
 
+    public static Object getCompressedValues(COMPRESSION_TYPE compType, long[] values,
+            DataType changedDataType, long maxValue, int decimal) {
+        Object o;
+        switch (compType) {
+        case NONE:
+        default:
+            return values;
+        }
+    }
+
     private static UnCompressValue[] getUncompressedValues(COMPRESSION_TYPE[] compType,
-            DataType[] changedDataType) {
+            DataType[] actualDataType, DataType[] changedDataType) {
 
         UnCompressValue[] compressValue = new UnCompressValue[changedDataType.length];
         for (int i = 0; i < changedDataType.length; i++) {
             switch (compType[i]) {
             case NONE:
 
-                compressValue[i] = unCompressNone(changedDataType[i], null);
+                compressValue[i] = unCompressNone(changedDataType[i], actualDataType[i]);
                 break;
 
             case MAX_MIN:
 
-                compressValue[i] = unCompressMaxMin(changedDataType[i], null);
+                compressValue[i] = unCompressMaxMin(changedDataType[i], actualDataType[i]);
                 break;
 
             case NON_DECIMAL_CONVERT:
 
-                compressValue[i] = unCompressNonDecimal(changedDataType[i], null);
+                compressValue[i] = unCompressNonDecimal(changedDataType[i], DataType.DATA_DOUBLE);
                 break;
 
             case CUSTOM:
-                compressValue[i] = new UnCompressByteArray();
+                compressValue[i] =
+                        new UnCompressByteArray(UnCompressByteArray.ByteArrayType.BYTE_ARRAY);
+                break;
+
+            case CUSTOM_BIGDECIMAL:
+                compressValue[i] =
+                        new UnCompressByteArray(UnCompressByteArray.ByteArrayType.BIG_DECIMAL);
                 break;
 
             default:
@@ -503,6 +534,9 @@ public final class ValueCompressionUtil {
      * uncompress data for example: int -> double
      */
     public static UnCompressValue unCompressNone(DataType compDataType, DataType actualDataType) {
+        if (actualDataType == DataType.DATA_LONG) {
+            return new UnCompressDefaultLong();
+        } else {
         switch (compDataType) {
         case DATA_BYTE:
 
@@ -530,11 +564,22 @@ public final class ValueCompressionUtil {
 
         }
     }
+    }
 
     /**
      * uncompress data 1. value = maxValue - subValue 2. value: int->double
      */
     public static UnCompressValue unCompressMaxMin(DataType compDataType, DataType actualDataType) {
+        if (actualDataType == DataType.DATA_LONG) {
+            switch (compDataType) {
+            case DATA_BYTE:
+                return new UnCompressMaxMinByteForLong();
+            case DATA_LONG:
+                return new UnCompressMaxMinDefaultLong();
+            default:
+                return new UnCompressMaxMinDefaultLong();
+            }
+        } else {
         switch (compDataType) {
         case DATA_BYTE:
 
@@ -561,6 +606,7 @@ public final class ValueCompressionUtil {
             return new UnCompressMaxMinDefault();
 
         }
+    }
     }
 
     /**
@@ -641,27 +687,26 @@ public final class ValueCompressionUtil {
     public static MeasureMetaDataModel readMeasureMetaDataFile(String measureMetaDataFileLocation,
             int measureCount) {
         DataInputStream stream = null;
-        double[] maxValue = new double[measureCount];
-        double[] minValue = new double[measureCount];
-        double[] uniqueValue = new double[measureCount];
+        Object[] maxValue = new Object[measureCount];
+        Object[] minValue = new Object[measureCount];
+        Object[] uniqueValue = new Object[measureCount];
         int[] decimalLength = new int[measureCount];
         char[] aggType = new char[measureCount];
         byte[] dataTypeSelected = new byte[measureCount];
-        double[] minValueFactForAgg = new double[measureCount];
+        Object[] minValueFactForAgg = new Object[measureCount];
         Arrays.fill(dataTypeSelected, (byte) 1);
         Arrays.fill(aggType, 'n');
         int currentIndex = 0;
-        int totalSize = measureCount * MolapCommonConstants.DOUBLE_SIZE_IN_BYTE * 3
-                + measureCount * MolapCommonConstants.INT_SIZE_IN_BYTE
-                + measureCount * MolapCommonConstants.CHAR_SIZE_IN_BYTE;
         byte[] metaBytes = null;
-        ByteBuffer allocate = ByteBuffer.allocate(totalSize);
+        ByteBuffer allocate = null;
         try {
             stream = FileFactory.getDataInputStream(measureMetaDataFileLocation,
                     FileFactory.getFileType(measureMetaDataFileLocation));
             if (null != stream) {
-                metaBytes = new byte[stream.available()];
-                stream.read(metaBytes);
+                int totalSize = stream.readInt();
+                metaBytes = new byte[totalSize];
+                stream.readFully(metaBytes);
+                allocate = ByteBuffer.allocate(totalSize);
                 allocate = ByteBuffer.wrap(metaBytes);
             }
         } catch (FileNotFoundException f) {
@@ -677,12 +722,17 @@ public final class ValueCompressionUtil {
             MolapUtil.closeStreams(stream);
         }
         allocate.rewind();
+
+        for (int i = 0; i < aggType.length; i++) {
+            aggType[currentIndex++] = allocate.getChar();
+        }
+        currentIndex = 0;
         for (int i = 0; i < maxValue.length; i++) {
-            maxValue[currentIndex++] = allocate.getDouble();
+            maxValue[currentIndex++] = getValueBasedOnAggType(allocate, aggType[i]);
         }
         currentIndex = 0;
         for (int i = 0; i < minValue.length; i++) {
-            minValue[currentIndex++] = allocate.getDouble();
+            minValue[currentIndex++] = getValueBasedOnAggType(allocate, aggType[i]);
         }
         currentIndex = 0;
         for (int i = 0; i < decimalLength.length; i++) {
@@ -690,14 +740,7 @@ public final class ValueCompressionUtil {
         }
         currentIndex = 0;
         for (int i = 0; i < uniqueValue.length; i++) {
-            uniqueValue[currentIndex++] = allocate.getDouble();
-        }
-
-        if (allocate.hasRemaining()) {
-            currentIndex = 0;
-            for (int i = 0; i < aggType.length; i++) {
-                aggType[currentIndex++] = allocate.getChar();
-            }
+            uniqueValue[currentIndex++] = getValueBasedOnAggType(allocate, aggType[i]);
         }
         if (allocate.hasRemaining()) {
             currentIndex = 0;
@@ -720,12 +763,26 @@ public final class ValueCompressionUtil {
 
     }
 
+    private static Object getValueBasedOnAggType(ByteBuffer allocate, char type) {
+        if (type == MolapCommonConstants.BIG_INT_MEASURE) {
+            return allocate.getLong();
+        } else if (type == MolapCommonConstants.BIG_DECIMAL_MEASURE) {
+            int len = allocate.getInt();
+            byte[] buff = new byte[len];
+            allocate.get(buff);
+            BigDecimal val = DataTypeUtil.byteToBigDecimal(buff);
+            return val;
+        } else {
+            return allocate.getDouble();
+        }
+    }
+
     private static ValueCompressionModel getValueCompressionModel(
             MeasureMetaDataModel measureMDMdl) {
         int measureCount = measureMDMdl.getMeasureCount();
-        double[] minValue = measureMDMdl.getMinValue();
-        double[] maxValue = measureMDMdl.getMaxValue();
-        double[] uniqueValue = measureMDMdl.getUniqueValue();
+        Object[] minValue = measureMDMdl.getMinValue();
+        Object[] maxValue = measureMDMdl.getMaxValue();
+        Object[] uniqueValue = measureMDMdl.getUniqueValue();
         int[] decimal = measureMDMdl.getDecimal();
         char[] type = measureMDMdl.getType();
         byte[] dataTypeSelected = measureMDMdl.getDataTypeSelected();
@@ -733,16 +790,7 @@ public final class ValueCompressionUtil {
         DataType[] actualType = new DataType[measureCount];
         DataType[] changedType = new DataType[measureCount];
         COMPRESSION_TYPE[] compType = new COMPRESSION_TYPE[measureCount];
-        double tempValue;
         for (int i = 0; i < measureCount; i++) {
-            tempValue = uniqueValue[i];
-            if (maxValue[i] > 0 && tempValue < 0) {
-                tempValue = -1 * tempValue;
-            }
-            if (tempValue > maxValue[i]) {
-                maxValue[i] = tempValue;
-            }
-
             CompressionFinder compresssionFinder = ValueCompressionUtil
                     .getCompressionType(maxValue[i], minValue[i], decimal[i], type[i],
                             dataTypeSelected[i]);
@@ -754,6 +802,7 @@ public final class ValueCompressionUtil {
         compressionModel.setDecimal(decimal);
         compressionModel.setChangedDataType(changedType);
         compressionModel.setCompType(compType);
+        compressionModel.setActualDataType(actualType);
         compressionModel.setMinValue(minValue);
         compressionModel.setUniqueValue(uniqueValue);
         compressionModel.setType(type);
@@ -761,6 +810,7 @@ public final class ValueCompressionUtil {
         compressionModel.setDataTypeSelected(dataTypeSelected);
         UnCompressValue[] values = ValueCompressionUtil
                 .getUncompressedValues(compressionModel.getCompType(),
+                        compressionModel.getActualDataType(),
                         compressionModel.getChangedDataType());
         compressionModel.setUnCompressValues(values);
         return compressionModel;
@@ -875,7 +925,9 @@ public final class ValueCompressionUtil {
         /**
          * custome
          */
-        CUSTOM
+        CUSTOM,
+
+        CUSTOM_BIGDECIMAL
     }
 
     /**
