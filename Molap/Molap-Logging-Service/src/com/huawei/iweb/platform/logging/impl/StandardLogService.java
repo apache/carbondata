@@ -23,7 +23,6 @@ import static com.huawei.iweb.platform.logging.Level.AUDIT;
 import static com.huawei.iweb.platform.logging.Level.DEBUG;
 import static com.huawei.iweb.platform.logging.Level.ERROR;
 import static com.huawei.iweb.platform.logging.Level.INFO;
-import static com.huawei.iweb.platform.logging.Level.SECURE;
 import static com.huawei.iweb.platform.logging.Level.WARN;
 
 import java.net.InetAddress;
@@ -147,11 +146,6 @@ public final class StandardLogService implements LogService
     public boolean isWarnEnabled()
     {
         return logger.isEnabledFor(org.apache.log4j.Level.WARN);
-    }
-
-    public void secure(LogEvent event , Object... inserts)
-    {
-        logMessage(SECURE , event , null , inserts);
     }
 
     public void audit(LogEvent event , Object... inserts)

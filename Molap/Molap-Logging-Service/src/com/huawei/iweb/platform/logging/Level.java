@@ -28,9 +28,8 @@ public enum Level {
 	DEBUG(1),
 	INFO(2),
 	ERROR(3),
-	SECURE(4),
-	AUDIT(5),
-	WARN(6);
+	AUDIT(4),
+	WARN(5);
 
 	/**
 	 *Constructor.
