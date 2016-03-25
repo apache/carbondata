@@ -96,7 +96,7 @@ public class LocalDataAggregatorImpl implements DataAggregator
     /**
      * Unique values represents null values of measure.
      */
-    protected double[] uniqueValues;
+    protected Object[] uniqueValues;
     
     
     protected ByteArrayWrapper dimensionsRowWrapper = new ByteArrayWrapper();
@@ -127,7 +127,7 @@ public class LocalDataAggregatorImpl implements DataAggregator
     /**
      * msrDft
      */
-    protected double[] msrDft;
+    protected Object[] msrDft;
     
     /**
      * LOGGER.
@@ -297,11 +297,10 @@ public class LocalDataAggregatorImpl implements DataAggregator
         }
         for(int i = 0;i < queryMsrs.length;i++)
         {
-            double value = available.getValue(measureOrdinal[i]);
-            if(uniqueValues[measureOrdinal[i]] != value)
+            Object value = available.getValue(measureOrdinal[i], queryMsrs[measureOrdinal[i]].getDataType());
+            if(!uniqueValues[measureOrdinal[i]].equals(value))
             {
-                currentMsrRowData[i].agg(value, available.backKeyArray,
-                    available.keyOffset, available.keyLength);
+                currentMsrRowData[i].agg(value);
             }
         }
     }
@@ -327,24 +326,22 @@ public class LocalDataAggregatorImpl implements DataAggregator
      */
     protected void aggregateMsrsForAggTable(KeyValue available, MeasureAggregator[] currentMsrRowData)
     {
-        double countValue = available.getValue(measureOrdinal[countMsrIndex]);
         
         for(int i = 0;i < avgMsrIndexes.length;i++)
         {
-            double value = available.getValue(measureOrdinal[avgMsrIndexes[i]]);
-            if(uniqueValues[measureOrdinal[avgMsrIndexes[i]]] != value)
+            Object value = available.getValue(measureOrdinal[avgMsrIndexes[i]], queryMsrs[measureOrdinal[avgMsrIndexes[i]]].getDataType());
+            if(!uniqueValues[measureOrdinal[avgMsrIndexes[i]]].equals(value))
             {
-                currentMsrRowData[avgMsrIndexes[i]].agg(value,countValue);
+               currentMsrRowData[avgMsrIndexes[i]].agg(available.getMsrData(measureOrdinal[avgMsrIndexes[i]]),available.getRow());
             }
         }
         
         for(int i = 0;i < otherMsrIndexes.length;i++)
         {
-            double value = available.getValue(measureOrdinal[otherMsrIndexes[i]]);
-            if(uniqueValues[measureOrdinal[otherMsrIndexes[i]]] != value)
+            Object value = available.getValue(measureOrdinal[otherMsrIndexes[i]], queryMsrs[measureOrdinal[otherMsrIndexes[i]]].getDataType());
+            if(!uniqueValues[measureOrdinal[otherMsrIndexes[i]]].equals(value))
             {
-                currentMsrRowData[otherMsrIndexes[i]].agg(value, available.backKeyArray,
-                    available.keyOffset, available.keyLength);
+                currentMsrRowData[otherMsrIndexes[i]].agg(value);
             }
         }
     }

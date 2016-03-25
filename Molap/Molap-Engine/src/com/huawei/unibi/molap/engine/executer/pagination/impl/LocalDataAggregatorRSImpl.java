@@ -112,16 +112,14 @@ public class LocalDataAggregatorRSImpl extends LocalDataAggregatorImpl
         }
         for(int i = 0;i < queryMsrs.length;i++)
         {
-            double value = msrExists[i] ? available.getValue(measureOrdinal[i]) : msrDft[i];
-            if(msrExists[i] && uniqueValues[measureOrdinal[i]] != value)
+            Object value = msrExists[i] ? available.getValue(measureOrdinal[i], queryMsrs[measureOrdinal[i]].getDataType()) : msrDft[i];
+            if(msrExists[i] && !uniqueValues[measureOrdinal[i]].equals(value))
             {
-                currentMsrRowData[i].agg(value, available.getBackKeyArray(), available.getKeyOffset(),
-                        available.getKeyLength());
+                currentMsrRowData[i].agg(value);
             }
             else if(!msrExists[i])
             {
-                currentMsrRowData[i].agg(value, available.getBackKeyArray(), available.getKeyOffset(),
-                        available.getKeyLength());
+                currentMsrRowData[i].agg(value);
             }
         }
     }
@@ -133,35 +131,33 @@ public class LocalDataAggregatorRSImpl extends LocalDataAggregatorImpl
      */
     protected void aggregateMsrsForAggTable(KeyValue available, MeasureAggregator[] currentMsrRowData)
     {
-        double countValue = available.getValue(measureOrdinal[countMsrIndex]);
         
         for(int i = 0;i < avgMsrIndexes.length;i++)
         {
             int index = avgMsrIndexes[i];
-            double value = msrExists[i] ? available.getValue(measureOrdinal[index]) : msrDft[index];
-            if(msrExists[index] && uniqueValues[measureOrdinal[index]] != value)
+            Object value = msrExists[i] ? available.getValue(measureOrdinal[index], queryMsrs[measureOrdinal[index]].getDataType()) : msrDft[index];
+            if(msrExists[index] && !uniqueValues[measureOrdinal[index]].equals(value))
             {
-                currentMsrRowData[index].agg(value, countValue);
+                currentMsrRowData[index].agg(available.getMsrData(measureOrdinal[index]), available.getRow());
             }
+
             else if(!msrExists[index])
             {
-                currentMsrRowData[index].agg(value, countValue);
+                currentMsrRowData[index].agg(available.getMsrData(measureOrdinal[index]), available.getRow());
             }
         }
         
         for(int i = 0;i < otherMsrIndexes.length;i++)
         {
             int index = otherMsrIndexes[i];
-            double value = msrExists[i] ? available.getValue(measureOrdinal[index]) : msrDft[index];
-            if(msrExists[index] && uniqueValues[measureOrdinal[index]] != value)
+            Object value = msrExists[i] ? available.getValue(measureOrdinal[index], queryMsrs[measureOrdinal[index]].getDataType()) : msrDft[index];
+            if(msrExists[index] && !uniqueValues[measureOrdinal[index]].equals(value))
             {
-                currentMsrRowData[index].agg(value, available.getBackKeyArray(), available.getKeyOffset(),
-                        available.getKeyLength());
+                currentMsrRowData[index].agg(value);
             }
             else if(!msrExists[index])
             {
-                currentMsrRowData[index].agg(value, available.getBackKeyArray(), available.getKeyOffset(),
-                        available.getKeyLength());
+                currentMsrRowData[index].agg(value);
             }
         }
     }

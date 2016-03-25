@@ -63,6 +63,12 @@ public class DivideExpression extends BinaryArithmeticExpression
           case IntegerType:
             divideExprRightRes.set(DataType.IntegerType, val1.getInt()/val2.getInt());
             break;
+            case LongType:
+                divideExprRightRes.set(DataType.LongType, val1.getLong()/val2.getLong());
+                break;
+            case DecimalType:
+                divideExprRightRes.set(DataType.DecimalType, val1.getDecimal().divide(val2.getDecimal()));
+                break;
         default:
             throw new FilterUnsupportedException("Incompatible datatype for applying Add Expression Filter " + divideExprLeftRes.getDataType());
         }

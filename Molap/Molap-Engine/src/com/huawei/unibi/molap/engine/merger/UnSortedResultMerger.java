@@ -110,7 +110,7 @@ public class UnSortedResultMerger implements Callable<Void>
                 // reads the temp files and creates ResultTempFileReader object.
                 ResultTempFileReader molapSortTempFileChunkHolder = new ResultTempFileReader(file.getAbsolutePath(),
                         dataProcessorInfo.getKeySize(), AggUtil.getAggregators(dataProcessorInfo.getAggType(), false, dataProcessorInfo.getKeyGenerator(), dataProcessorInfo
-                                .getCubeUniqueName(),dataProcessorInfo.getMsrMinValue(),dataProcessorInfo.getHighCardinalityTypes()),
+                                .getCubeUniqueName(),dataProcessorInfo.getMsrMinValue(),dataProcessorInfo.getHighCardinalityTypes(), dataProcessorInfo.getDataTypes()),
                                 dataProcessorInfo.getFileBufferSize());
                 // initialize
                 molapSortTempFileChunkHolder.initialize();
@@ -156,7 +156,7 @@ public class UnSortedResultMerger implements Callable<Void>
                     dataProcessor.processRow(poll.getKey(), poll.getMeasures());
 
                 poll.setMeasureAggs(AggUtil.getAggregators(dataProcessorInfo.getAggType(), false, dataProcessorInfo.getKeyGenerator(), dataProcessorInfo
-                        .getCubeUniqueName(),dataProcessorInfo.getMsrMinValue(),dataProcessorInfo.getHighCardinalityTypes()));
+                        .getCubeUniqueName(),dataProcessorInfo.getMsrMinValue(),dataProcessorInfo.getHighCardinalityTypes(), dataProcessorInfo.getDataTypes()));
                 }
             }
             catch(DataProcessorException e)

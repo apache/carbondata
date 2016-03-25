@@ -23,12 +23,12 @@ public class MeasureMetaDataModel {
     /**
      * maxValue
      */
-    private double[] maxValue;
+    private Object[] maxValue;
 
     /**
      * minValue
      */
-    private double[] minValue;
+    private Object[] minValue;
 
     /**
      * decimal
@@ -43,7 +43,7 @@ public class MeasureMetaDataModel {
     /**
      * uniqueValue
      */
-    private double[] uniqueValue;
+    private Object[] uniqueValue;
 
     /**
      * type
@@ -55,7 +55,7 @@ public class MeasureMetaDataModel {
      */
     private byte[] dataTypeSelected;
 
-    private double[] minValueFactForAgg;
+    private Object[] minValueFactForAgg;
 
     public MeasureMetaDataModel() {
 
@@ -71,8 +71,8 @@ public class MeasureMetaDataModel {
      * @param uniqueValue
      * @param type
      */
-    public MeasureMetaDataModel(double[] minValue, double[] maxValue, int[] decimal,
-            int measureCount, double[] uniqueValue, char[] type, byte[] dataTypeSelected) {
+    public MeasureMetaDataModel(Object[] minValue, Object[] maxValue, int[] decimal,
+            int measureCount, Object[] uniqueValue, char[] type, byte[] dataTypeSelected) {
         this.minValue = minValue;
         this.maxValue = maxValue;
         this.decimal = decimal;
@@ -87,7 +87,7 @@ public class MeasureMetaDataModel {
      *
      * @return
      */
-    public double[] getMaxValue() {
+    public Object[] getMaxValue() {
         return maxValue;
     }
 
@@ -96,7 +96,7 @@ public class MeasureMetaDataModel {
      *
      * @param maxValue
      */
-    public void setMaxValue(double[] maxValue) {
+    public void setMaxValue(Object[] maxValue) {
         this.maxValue = maxValue;
     }
 
@@ -105,7 +105,7 @@ public class MeasureMetaDataModel {
      *
      * @return
      */
-    public double[] getMinValue() {
+    public Object[] getMinValue() {
         return minValue;
     }
 
@@ -114,7 +114,7 @@ public class MeasureMetaDataModel {
      *
      * @param minValue
      */
-    public void setMinValue(double[] minValue) {
+    public void setMinValue(Object[] minValue) {
         this.minValue = minValue;
     }
 
@@ -159,7 +159,7 @@ public class MeasureMetaDataModel {
      *
      * @return
      */
-    public double[] getUniqueValue() {
+    public Object[] getUniqueValue() {
         return uniqueValue;
     }
 
@@ -168,7 +168,7 @@ public class MeasureMetaDataModel {
      *
      * @param uniqueValue
      */
-    public void setUniqueValue(double[] uniqueValue) {
+    public void setUniqueValue(Object[] uniqueValue) {
         this.uniqueValue = uniqueValue;
     }
 
@@ -203,14 +203,14 @@ public class MeasureMetaDataModel {
     /**
      * @return the minValueFactForAgg
      */
-    public double[] getMinValueFactForAgg() {
+    public Object[] getMinValueFactForAgg() {
         return minValueFactForAgg;
     }
 
     /**
      * @param minValueFactForAgg the minValueFactForAgg to set
      */
-    public void setMinValueFactForAgg(double[] minValueFactForAgg) {
+    public void setMinValueFactForAgg(Object[] minValueFactForAgg) {
         this.minValueFactForAgg = minValueFactForAgg;
     }
 

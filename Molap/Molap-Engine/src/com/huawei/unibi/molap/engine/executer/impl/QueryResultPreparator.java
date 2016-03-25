@@ -25,7 +25,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
+import java.math.BigDecimal;
 import com.huawei.iweb.platform.logging.LogService;
 import com.huawei.iweb.platform.logging.LogServiceFactory;
 import com.huawei.unibi.molap.constants.MolapCommonConstants;
@@ -147,8 +147,21 @@ public class QueryResultPreparator
             
             if(executerProperties.isFunctionQuery)
             {
-                Double sizeOfList= d[0].getValue();
+                if(d[0].toString().contains("Long"))
+                {
+                    Long sizeOfListL= d[0].getLongValue();
+                    return getEmptyChunkResult(sizeOfListL.intValue());
+                }
+                else if(d[0].toString().contains("Decimal"))
+                {
+                    BigDecimal sizeOfListD= d[0].getBigDecimalValue();
+                    return getEmptyChunkResult(sizeOfListD.intValue());
+                }
+                else
+                {
+                    Double sizeOfList= d[0].getDoubleValue();
                 return getEmptyChunkResult(sizeOfList.intValue());
+            }
             }
             
             //CHECKSTYLE:OFF Approval No:Approval-V1R2C10_001
@@ -326,7 +339,22 @@ public class QueryResultPreparator
                     }
                     else
                     {
-                        row[queryModel.getMsrs().get(i).getQueryOrder()] = msrAgg[executerProperties.measureStartIndex+i].getValue();
+                        Object msrVal;
+                        switch (executerProperties.dataTypes[executerProperties.measureStartIndex+i])
+                        {
+                            case LONG:
+                                msrVal = msrAgg[executerProperties.measureStartIndex+i].getLongValue();
+                                break;
+                            case DECIMAL:
+                                msrVal = msrAgg[executerProperties.measureStartIndex+i].getBigDecimalValue();
+                                break;
+                            default:
+                                msrVal = msrAgg[executerProperties.measureStartIndex+i].getDoubleValue();
+                        }
+                        row[queryModel.getMsrs().get(i).getQueryOrder()] =
+                                DataTypeConverter.getMeasureDataBasedOnDataType(
+                                        msrVal == null ? null : msrVal,
+                                        queryModel.getMsrs().get(i).getDataType());
                     }
                 }
                 int index=0;
@@ -335,7 +363,17 @@ public class QueryResultPreparator
                     DimensionAggregatorInfo dimensionAggregatorInfo = queryModel.getDimensionAggInfo().get(i);
                     for(int j = 0;j < dimensionAggregatorInfo.getOrderList().size();j++)
                     {
-                        row[dimensionAggregatorInfo.getOrderList().get(j)] = msrAgg[index++].getValue();
+                        switch (queryModel.getDims()[i].getDataType())
+                        {
+                            case LONG:
+                                row[dimensionAggregatorInfo.getOrderList().get(j)] = msrAgg[index++].getLongValue();
+                                break;
+                            case DECIMAL:
+                                row[dimensionAggregatorInfo.getOrderList().get(j)] = msrAgg[index++].getBigDecimalValue();
+                                break;
+                            default:
+                                row[dimensionAggregatorInfo.getOrderList().get(j)] = msrAgg[index++].getDoubleValue();
+                        }
                     }
                 }
             }
@@ -401,8 +439,8 @@ public class QueryResultPreparator
                         && partitionColumns.contains(dimensionAggregatorInfo.getColumnName())
                         && dimensionAggregatorInfo.getAggList().get(j).equals(MolapCommonConstants.DISTINCT_COUNT))
                 {
-                    double value = ((MeasureAggregator)surrogateResult[dimensionCount + rowIndex][columnIndex])
-                            .getValue();
+                    double value = ((MeasureAggregator)surrogateResult[dimensionCount + rowIndex][columnIndex]).getDoubleValue();
+
                     MeasureAggregator countAggregator = new CountAggregator();
                     countAggregator.setNewValue(value);
                     v[index++] = countAggregator;
@@ -419,8 +457,7 @@ public class QueryResultPreparator
                         MeasureAggregator distinctCountAggregator = new DistinctCountAggregator(0);
                         while(iterator.hasNext())
                         {
-                            distinctCountAggregator.agg(getGlobalSurrogates(mappedDim, iterator.next()),
-                                    null, 0, 0);
+                            distinctCountAggregator.agg(getGlobalSurrogates(mappedDim, iterator.next()));
                         }
                         v[index++] = distinctCountAggregator;
                         currentSliceIndex=0;
@@ -435,7 +472,7 @@ public class QueryResultPreparator
                                     executerProperties.slices).toString();
                              if(!member.equals(MolapCommonConstants.MEMBER_DEFAULT_VAL))
                              {
-                                distinctCountAggregatorObjct.agg(member, null, 0, 0);
+                                distinctCountAggregatorObjct.agg(member);
                              }
                         }
                         v[index++] = distinctCountAggregatorObjct;
@@ -503,14 +540,14 @@ public class QueryResultPreparator
                                         (Integer)iterator.next(), executerProperties.slices).toString();
                                 if(!member.equals(MolapCommonConstants.MEMBER_DEFAULT_VAL))
                                 {
-                                    distinctCountAggregatorObjct.agg(member, null, 0, 0);
+                                    distinctCountAggregatorObjct.agg(member);
                                 }
                             }
                             v[executerProperties.measureStartIndex + i] = distinctCountAggregatorObjct;
                         }
                         else
                         {
-                            double value = ((DistinctCountAggregator)surrogateResult[dimensionCount + rowIndex][columnIndex]).getValue();
+                            double value = ((DistinctCountAggregator)surrogateResult[dimensionCount + rowIndex][columnIndex]).getDoubleValue();
                             MeasureAggregator countAggregator = new CountAggregator();
                             countAggregator.setNewValue(value);
                             v[executerProperties.measureStartIndex + i] = countAggregator;
@@ -526,8 +563,7 @@ public class QueryResultPreparator
 
                         while(iterator.hasNext())
                         {
-                            distinctCountAggregator.agg(getGlobalSurrogates(mappedDim, iterator.next() - minValue),
-                                    null, 0, 0);
+                            distinctCountAggregator.agg(getGlobalSurrogates(mappedDim, iterator.next() - minValue));
                         }
                         v[executerProperties.measureStartIndex + i] = distinctCountAggregator;
                         currentSliceIndex = 0;

@@ -22,6 +22,7 @@ package com.huawei.unibi.molap.sortandgroupby.step;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Arrays;
@@ -34,14 +35,14 @@ import com.huawei.unibi.molap.csvreader.checkpoint.CheckPointInterface;
 import com.huawei.unibi.molap.engine.aggregator.MeasureAggregator;
 import com.huawei.unibi.molap.exception.MolapDataProcessorException;
 import com.huawei.unibi.molap.keygenerator.factory.KeyGeneratorFactory;
+import com.huawei.unibi.molap.metadata.MolapMetadata;
+import com.huawei.unibi.molap.metadata.MolapMetadata.Cube;
+import com.huawei.unibi.molap.metadata.MolapMetadata.Measure;
 import com.huawei.unibi.molap.metadata.SliceMetaData;
 import com.huawei.unibi.molap.schema.metadata.SortObserver;
 import com.huawei.unibi.molap.sortandgroupby.exception.MolapSortKeyAndGroupByException;
 import com.huawei.unibi.molap.sortandgroupby.sortKey.MolapSortKeys;
-import com.huawei.unibi.molap.util.MolapDataProcessorLogEvent;
-import com.huawei.unibi.molap.util.MolapDataProcessorUtil;
-import com.huawei.unibi.molap.util.MolapProperties;
-import com.huawei.unibi.molap.util.MolapUtil;
+import com.huawei.unibi.molap.util.*;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.Trans;
@@ -112,11 +113,13 @@ public class MolapSortKeyAndGroupByStep extends BaseStep {
     /**
      * minValue
      */
-    private double[] minValue;
+    private Object[] minValue;
+
     /**
      * minValue
      */
-    private double[] maxValue;
+    private Object[] maxValue;
+
     /**
      * minValue
      */
@@ -124,7 +127,8 @@ public class MolapSortKeyAndGroupByStep extends BaseStep {
     /**
      * minValue
      */
-    private double[] uniqueValue;
+    private Object[] uniqueValue;
+
     /**
      * minValue
      */
@@ -225,7 +229,8 @@ public class MolapSortKeyAndGroupByStep extends BaseStep {
             if (meta.isFactMdKeyInInputRow() && meta.isAutoAggRequest()) {
                 factMDkeySize = ((byte[]) row[row.length - 1]).length;
             }
-
+            initAggregators(row);
+            aggType = getAggtype();
             initializeMeasureIndex(row);
             initialize();
             this.mdkeyIndex = row.length - 1;
@@ -236,8 +241,8 @@ public class MolapSortKeyAndGroupByStep extends BaseStep {
                             meta.isFactMdKeyInInputRow(), factMDkeySize, this.aggregators,
                             meta.getAggregatorClass(),
                             MolapDataProcessorUtil.getDimLens(meta.getFactDimLensString()),
-                            meta.getSchemaName(), meta.getCubeName(), meta.isUpdateMemberRequest());
-
+                            meta.getSchemaName(), meta.getCubeName(), meta.isUpdateMemberRequest(),
+                            meta.getHighCardinalityCount(), aggType);
             try {
                 // initialize sort
                 this.molapSortKeys.initialize(meta.getSchemaName(), meta.getCubeName(),
@@ -267,6 +272,24 @@ public class MolapSortKeyAndGroupByStep extends BaseStep {
         }
 
         return true;
+    }
+
+    private char[] getAggtype() {
+        String[] aggMeasures = meta.getAggregateMeasuresColumnNameString()
+                .split(MolapCommonConstants.HASH_SPC_CHARACTER);
+        char[] aggType = new char[aggMeasures.length];
+        Arrays.fill(aggType, MolapCommonConstants.SUM_COUNT_VALUE_MEASURE);
+        Cube cube = MolapMetadata.getInstance()
+                .getCube(meta.getSchemaName() + '_' + meta.getCubeName());
+        for (int i = 0; i < aggMeasures.length - 1; i++) {
+            Measure measure = cube.getMeasure(cube.getFactTableName(), aggMeasures[i]);
+            if (null == measure) {
+                aggType[i] = MolapUtil.getType(this.aggregators[i]);
+            } else {
+                aggType[i] = DataTypeUtil.getAggType(measure.getDataType(), this.aggregators[i]);
+            }
+        }
+        return aggType;
     }
 
     /**
@@ -329,55 +352,89 @@ public class MolapSortKeyAndGroupByStep extends BaseStep {
      */
     private void initializeMeasureIndex(Object[] row) {
         MeasureAggregator[] aggregator = (MeasureAggregator[]) row[0];
-        minValue = new double[aggregator.length + 1];
-        maxValue = new double[aggregator.length + 1];
-        uniqueValue = new double[aggregator.length + 1];
+        minValue = new Object[aggregator.length + 1];
+        maxValue = new Object[aggregator.length + 1];
+        uniqueValue = new Object[aggregator.length + 1];
         decimalLength = new int[aggregator.length + 1];
-        aggType = new char[aggregator.length + 1];
-        Arrays.fill(aggType, 'c');
-        this.aggregators = new String[aggregator.length + 1];
         for (int i = 0; i < aggregator.length; i++) {
-            String agg = MolapDataProcessorUtil.getAggType(aggregator[i]);
-            this.aggregators[i] = agg;
-            aggType[i] = MolapUtil.getType(agg);
+            if (aggType[i] == MolapCommonConstants.BIG_INT_MEASURE) {
+                maxValue[i] = Long.MIN_VALUE;
+            } else if (aggType[i] == MolapCommonConstants.SUM_COUNT_VALUE_MEASURE) {
             maxValue[i] = -Double.MAX_VALUE;
+            } else if (aggType[i] == MolapCommonConstants.BIG_DECIMAL_MEASURE) {
+                maxValue[i] = new BigDecimal(0.0);
+            } else {
+                maxValue[i] = 0.0;
+            }
+            if (aggType[i] == MolapCommonConstants.BIG_INT_MEASURE) {
+                minValue[i] = Long.MAX_VALUE;
+            } else if (aggType[i] == MolapCommonConstants.SUM_COUNT_VALUE_MEASURE) {
             minValue[i] = Double.MAX_VALUE;
+            } else if (aggType[i] == MolapCommonConstants.BIG_DECIMAL_MEASURE) {
+                minValue[i] = new BigDecimal(Double.MAX_VALUE);
+            } else {
+                minValue[i] = 0.0;
+            }
             decimalLength[i] = 0;
         }
-        this.aggregators[aggregators.length - 1] = MolapCommonConstants.COUNT;
-        this.aggType[aggregators.length - 1] = 'n';
-        minValue[minValue.length - 1] = 1;
+        minValue[minValue.length - 1] = 1.0;
+        maxValue[maxValue.length - 1] = 1.0;
+        uniqueValue[minValue.length - 1] = 0.0;
+        decimalLength[decimalLength.length - 1] = 0;
         calculateMaxMinUnique(row);
+    }
+
+    private void initAggregators(Object[] row) {
+        MeasureAggregator[] aggregator = (MeasureAggregator[]) row[0];
+        this.aggregators = new String[aggregator.length + 1];
+        for (int i = 0; i < aggregator.length; i++) {
+            this.aggregators[i] = MolapDataProcessorUtil.getAggType(aggregator[i]);
+        }
+        this.aggregators[aggregators.length - 1] = MolapCommonConstants.COUNT;
     }
 
     /**
      * This method will be used to update the max value for each measure
      */
-    protected void calculateMaxMinUnique(Object[] row) {
+    private void calculateMaxMinUnique(Object[] row) {
         MeasureAggregator[] aggregator = (MeasureAggregator[]) row[0];
         for (int i = 0; i < aggregator.length; i++) {
-            if (MolapCommonConstants.BYTE_VALUE_MEASURE == aggType[i]) {
-                continue;
-            }
-
-            double value = (Double) aggregator[i].getValue();
-            maxValue[i] = (maxValue[i] > value ? maxValue[i] : value);
-            minValue[i] = (minValue[i] < value ? minValue[i] : value);
-            uniqueValue[i] = minValue[i] - 1;
+            if (aggType[i] == MolapCommonConstants.SUM_COUNT_VALUE_MEASURE) {
+                double prevMaxVal = (double) maxValue[i];
+                double prevMinVal = (double) minValue[i];
+                double value = aggregator[i].getDoubleValue();
+                maxValue[i] = (prevMaxVal > value ? maxValue[i] : value);
+                minValue[i] = (prevMinVal < value ? minValue[i] : value);
+                uniqueValue[i] = (double) minValue[i] - 1;
+                int num = (value % 1 == 0) ? 0 : decimalPointers;
+                decimalLength[i] = (decimalLength[i] > num ? decimalLength[i] : num);
+            } else if (aggType[i] == MolapCommonConstants.BIG_INT_MEASURE) {
+                long prevMaxVal = (long) maxValue[i];
+                long prevMinVal = (long) minValue[i];
+                long value = aggregator[i].getLongValue();
+                maxValue[i] = (prevMaxVal > value ? maxValue[i] : value);
+                minValue[i] = (prevMinVal < value ? minValue[i] : value);
+                uniqueValue[i] = (long) minValue[i] - 1;
             int num = (value % 1 == 0) ? 0 : decimalPointers;
             decimalLength[i] = (decimalLength[i] > num ? decimalLength[i] : num);
+            } else if (aggType[i] == MolapCommonConstants.BIG_DECIMAL_MEASURE) {
+                BigDecimal val = (BigDecimal) minValue[i];
+                BigDecimal newVal = aggregator[i].getBigDecimalValue();
+                val = val.min(newVal);
+                minValue[i] = val;
+                uniqueValue[i] = (val.subtract(new BigDecimal(1.0)));
+            } else {
+                uniqueValue[i] = 0.0;
+            }
         }
         double value = (Double) row[1];
         row[1] = 1.0d;
-        minValue[minValue.length - 1] =
-                (minValue[minValue.length - 1] < value ? minValue[minValue.length - 1] : value);
-        maxValue[maxValue.length - 1] =
-                (maxValue[maxValue.length - 1] > value ? maxValue[maxValue.length - 1] : value);
-        uniqueValue[minValue.length - 1] = minValue[minValue.length - 1] - 1;
-        int num = (value % 1 == 0) ? 0 : decimalPointers;
-        decimalLength[decimalLength.length - 1] = (decimalLength[decimalLength.length - 1] > num ?
-                decimalLength[decimalLength.length - 1] :
-                num);
+        minValue[minValue.length - 1] = ((double) minValue[minValue.length - 1] < value ?
+                minValue[minValue.length - 1] :
+                value);
+        maxValue[maxValue.length - 1] = ((double) maxValue[maxValue.length - 1] > value ?
+                maxValue[maxValue.length - 1] :
+                value);
     }
 
     /**

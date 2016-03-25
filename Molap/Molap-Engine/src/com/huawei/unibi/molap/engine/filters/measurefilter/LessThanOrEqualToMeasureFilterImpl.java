@@ -54,7 +54,20 @@ public class LessThanOrEqualToMeasureFilterImpl implements MeasureFilter
         {
             return calcFunction.calculate(msrValue) <= filterValue;
         }
-        return msrValue[index].getValue() <= filterValue;
+        if(msrValue[index].toString().contains("Long"))
+        {
+            return msrValue[index].getLongValue() <= filterValue;
+        }
+        else if(msrValue[index].toString().contains("Long"))
+        {
+            return msrValue[index].getBigDecimalValue().doubleValue() <= filterValue;
+        }
+        else
+        {
+            return msrValue[index].getDoubleValue() <= filterValue;
+
+        }
+        //TODO Jay
     }
     
     /**

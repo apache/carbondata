@@ -26,8 +26,10 @@ import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 
+import com.huawei.unibi.molap.datastorage.store.dataholder.MolapReadDataHolder;
 import org.roaringbitmap.IntIterator;
 import org.roaringbitmap.RoaringBitmap;
 
@@ -74,10 +76,21 @@ public class DistinctCountAggregator implements MeasureAggregator
     
     private double minValue;
 
-    public DistinctCountAggregator(double minValue)
+    public DistinctCountAggregator(Object minValue)
     {
         valueSet = new RoaringBitmap();
-        this.minValue = minValue;
+        if (minValue instanceof BigDecimal)
+        {
+            this.minValue = ((BigDecimal)minValue).doubleValue();
+        }
+        else if (minValue instanceof Long)
+        {
+            this.minValue = ((Long)minValue).doubleValue();
+        }
+        else
+        {
+            this.minValue = (Double) minValue;
+        }
     }
     
     public DistinctCountAggregator()
@@ -89,7 +102,7 @@ public class DistinctCountAggregator implements MeasureAggregator
      * just need to add the unique values to agg set
      */
     @Override
-    public void agg(double newVal, byte[] key, int offset, int length)
+    public void agg(double newVal)
     {
         valueSet.add((int)(newVal-minValue));
     }
@@ -99,38 +112,39 @@ public class DistinctCountAggregator implements MeasureAggregator
      * 
      * @param newVal
      *            new value
-     * @param key
-     *            mdkey
-     * @param offset
-     *            key offset
-     * @param length
-     *            length to be considered
      * 
      */
     @Override
-    public void agg(Object newVal, byte[] key, int offset, int length)
+    public void agg(Object newVal)
     {
-//        byte[] values = (byte[])newVal;
-//        ByteArrayInputStream stream = new ByteArrayInputStream(values);
-//        DataInputStream outputStream = new DataInputStream(stream);
-//        RoaringBitmap bitmap = new RoaringBitmap();
-//        try
+        // Object include double
+//        if(newVal instanceof Double)
 //        {
-//            bitmap.deserialize(outputStream);
+//            agg((double)newVal);
+//            return;
 //        }
-//        catch(IOException e)
-//        {
-//            e.printStackTrace();
-//        }
-//        valueSet.or(bitmap);
-        byte[] values = (byte[])newVal;
+        if(newVal instanceof byte[])
+        {
+            byte[] values = (byte[]) newVal;
         ByteBuffer buffer = ByteBuffer.wrap(values);
         buffer.rewind();
         //CHECKSTYLE:OFF    Approval No:Approval-V3R8C00_018
-        while(buffer.hasRemaining())
-        { //CHECKSTYLE:ON
+            while (buffer.hasRemaining()) { //CHECKSTYLE:ON
             valueSet.add(buffer.getInt());
         }
+            return;
+        }
+        else
+        {
+            double value = new Double(newVal.toString());
+            agg(value);
+        }
+    }
+
+    @Override
+    public void agg(MolapReadDataHolder newVal, int index)
+    {
+
     }
 
     /**
@@ -169,11 +183,11 @@ public class DistinctCountAggregator implements MeasureAggregator
     }
 
     
-    @Override
-    public void agg(double newVal, double factCount)
-    {
-        
-    }
+//    @Override
+//    public void agg(double newVal, double factCount)
+//    {
+//
+//    }
 
 //    private void agg(Set<Double> set2)
 //    {
@@ -225,15 +239,38 @@ public class DistinctCountAggregator implements MeasureAggregator
     }
 
     @Override
-    public double getValue()
+    public Double getDoubleValue()
     {
         if(computedFixedValue == null)
         {
             readData();
-            return valueSet.getCardinality();
+            return (double)valueSet.getCardinality();
         }
         return computedFixedValue;
     }
+
+    @Override
+    public Long getLongValue()
+    {
+        if(computedFixedValue == null)
+        {
+            readData();
+            return (long)valueSet.getCardinality();
+        }
+        return computedFixedValue.longValue();
+    }
+
+    @Override
+    public BigDecimal getBigDecimalValue()
+    {
+        if(computedFixedValue == null)
+        {
+            readData();
+            return new BigDecimal(valueSet.getCardinality());
+        }
+        return new BigDecimal(computedFixedValue);
+    }
+
 
     @Override
     public Object getValueObject()
@@ -243,13 +280,13 @@ public class DistinctCountAggregator implements MeasureAggregator
 
     /**
      * 
-     * @see com.huawei.unibi.molap.engine.aggregator.MeasureAggregator#setNewValue(double)
+     * @see com.huawei.unibi.molap.engine.aggregator.MeasureAggregator#setNewValue(Object)
      * 
      */
     @Override
-    public void setNewValue(double newValue)
+    public void setNewValue(Object newValue)
     {
-        computedFixedValue = newValue;
+        computedFixedValue = (Double)newValue;
         valueSet = null;
     }
 
@@ -345,8 +382,8 @@ public class DistinctCountAggregator implements MeasureAggregator
     @Override
     public int compareTo(MeasureAggregator measureAggr)
     {
-        double compFixedVal = getValue();
-        double otherVal = measureAggr.getValue();
+        double compFixedVal = getDoubleValue();
+        double otherVal = measureAggr.getDoubleValue();
         if(compFixedVal > otherVal)
         {
             return 1;
@@ -409,7 +446,7 @@ public class DistinctCountAggregator implements MeasureAggregator
         double currentMinValue = buffer.getDouble();
         while(buffer.hasRemaining())
         {
-            agg(buffer.getInt()+currentMinValue, null, 0, 0);
+            agg(buffer.getInt()+currentMinValue);
         }
     }
 

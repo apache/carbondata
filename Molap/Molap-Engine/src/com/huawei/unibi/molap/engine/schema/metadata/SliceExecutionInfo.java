@@ -19,6 +19,7 @@
 
 package com.huawei.unibi.molap.engine.schema.metadata;
 
+import java.util.HashMap;
 import java.util.List;
 //import java.util.Set;
 
@@ -38,6 +39,7 @@ import com.huawei.unibi.molap.engine.filters.measurefilter.GroupMeasureFilterMod
 import com.huawei.unibi.molap.keygenerator.KeyGenerator;
 import com.huawei.unibi.molap.keygenerator.columnar.ColumnarSplitter;
 import com.huawei.unibi.molap.metadata.MolapMetadata.Dimension;
+import com.huawei.unibi.molap.olap.SqlStatement;
 import com.huawei.unibi.molap.vo.HybridStoreModel;
 
 public class SliceExecutionInfo
@@ -87,7 +89,7 @@ public class SliceExecutionInfo
     /**
      * Unique values represents null values of measure.
      */
-    private double[] uniqueValues; 
+    private Object[] uniqueValues;
     
     /**
      * schemaName
@@ -272,7 +274,7 @@ public class SliceExecutionInfo
     /**
      * minValue
      */
-    private double[] msrMinValue;
+    private Object[] msrMinValue;
     
     /**
      * measurIndex
@@ -312,7 +314,7 @@ public class SliceExecutionInfo
     /**
      * msrDefaultValue
      */
-    private double[] msrDefaultValue;
+    private Object[] msrDefaultValue;
 
     private byte[] sortedDimensionsIndex;
     
@@ -327,6 +329,9 @@ public class SliceExecutionInfo
     private boolean[] highCardinalityTypes;
     
     private HybridStoreModel hybridStoreMeta;
+	private HashMap<Integer,Integer> measureOrdinalMap;
+	
+	private SqlStatement.Type[] dataTypes;
     
     private Dimension[] dimensions;
     
@@ -445,7 +450,7 @@ public class SliceExecutionInfo
     /**
      * @return the uniqueValues
      */
-    public double[] getUniqueValues()
+    public Object[] getUniqueValues()
     {
         return uniqueValues;
     }
@@ -453,7 +458,7 @@ public class SliceExecutionInfo
     /**
      * @param uniqueValues the uniqueValues to set
      */
-    public void setUniqueValues(final double[] uniqueValues)
+    public void setUniqueValues(final Object[] uniqueValues)
     {
         this.uniqueValues = uniqueValues;
     }
@@ -992,12 +997,12 @@ public class SliceExecutionInfo
         this.expressions = expressions;
     }
     
-    public double[] getMsrMinValue()
+    public Object[] getMsrMinValue()
     {
         return msrMinValue;
     }
 
-    public void setMsrMinValue(double[] msrMinValue)
+    public void setMsrMinValue(Object[] msrMinValue)
     {
         this.msrMinValue = msrMinValue;
     }
@@ -1063,12 +1068,12 @@ public class SliceExecutionInfo
         this.expressionStartIndex = expressionStartIndex;
     }
 
-    public double[] getMsrDefaultValue()
+    public Object[] getMsrDefaultValue()
     {
         return msrDefaultValue;
     }
 
-    public void setMsrDefaultValue(double[] msrDefaultValue)
+    public void setMsrDefaultValue(Object[] msrDefaultValue)
     {
         this.msrDefaultValue = msrDefaultValue;
     }
@@ -1154,6 +1159,15 @@ public class SliceExecutionInfo
         return this.hybridStoreMeta;
     }
 
+    public SqlStatement.Type[] getDataTypes()
+    {
+        return dataTypes;
+    }
+
+    public void setDataTypes(SqlStatement.Type[] dataTypes)
+    {
+        this.dataTypes = dataTypes;
+    }
     /**
      * setHighCardinalityType.
      * @param highCardinalityTypes
@@ -1170,5 +1184,15 @@ public class SliceExecutionInfo
     public boolean[] getHighCardinalityTypes()
     {
         return highCardinalityTypes;
+    }
+
+    public void setMeasureOrdinalMap(HashMap<Integer,Integer> measureOrdinal)
+    {
+        this.measureOrdinalMap = measureOrdinal;
+    }
+	
+    public HashMap<Integer,Integer> getMeasureOrdinalMap()
+    {
+        return measureOrdinalMap;
     }
 }

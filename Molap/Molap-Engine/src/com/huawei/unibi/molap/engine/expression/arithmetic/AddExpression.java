@@ -65,6 +65,12 @@ public class AddExpression extends BinaryArithmeticExpression
           case IntegerType:
                 addExprRightRes.set(DataType.IntegerType, val1.getInt()+val2.getInt());
             break;
+            case LongType:
+                addExprRightRes.set(DataType.LongType, val1.getLong() + val2.getLong());
+                break;
+            case DecimalType:
+                addExprRightRes.set(DataType.DecimalType, val1.getDecimal().add(val2.getDecimal()));
+                break;
         default:
             throw new FilterUnsupportedException("Incompatible datatype for applying Add Expression Filter " + val1.getDataType());
         }

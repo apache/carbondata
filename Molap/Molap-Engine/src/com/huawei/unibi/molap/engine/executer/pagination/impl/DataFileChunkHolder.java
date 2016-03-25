@@ -34,6 +34,8 @@ import com.huawei.unibi.molap.engine.aggregator.MeasureAggregator;
 import com.huawei.unibi.molap.engine.executer.pagination.exception.MolapPaginationException;
 import com.huawei.unibi.molap.engine.util.MolapEngineLogEvent;
 import com.huawei.unibi.molap.engine.wrappers.ByteArrayWrapper;
+import com.huawei.unibi.molap.metadata.MolapMetadata;
+import com.huawei.unibi.molap.olap.SqlStatement;
 import com.huawei.unibi.molap.util.MolapUtil;
 
 public class DataFileChunkHolder
@@ -81,6 +83,12 @@ public class DataFileChunkHolder
     private ByteArrayWrapper byteArrayWrapper;
     
     /**
+     * measureType
+     */
+    public SqlStatement.Type[]   measureType;
+
+    
+    /**
      * MolapSortTempFileChunkHolder Constructor
      * 
      * @param inFile
@@ -91,7 +99,7 @@ public class DataFileChunkHolder
      *          mdkey length 
      *
      */
-    public DataFileChunkHolder(File inFile, int keySize, MeasureAggregator[] measureAggregator, int fileBufferSize)
+    public DataFileChunkHolder(File inFile, int keySize,MolapMetadata.Measure[] measures, MeasureAggregator[] measureAggregator, int fileBufferSize)
     {
         // set temp file 
         this.inFile = inFile;
@@ -104,6 +112,10 @@ public class DataFileChunkHolder
         // byte array wrapper
         this.byteArrayWrapper= new ByteArrayWrapper(); 
         // out stream
+        for(int i = 0;i<measures.length;i++)
+        {
+            this.measureType[i] = measures[i].getDataType();
+        }
     }
         
 

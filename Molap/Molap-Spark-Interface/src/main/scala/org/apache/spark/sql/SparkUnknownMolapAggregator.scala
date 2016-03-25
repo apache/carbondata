@@ -25,7 +25,8 @@ import com.huawei.unibi.molap.engine.aggregator.{CustomMeasureAggregator, Measur
 import com.huawei.unibi.molap.engine.expression.ColumnExpression
 import com.huawei.unibi.molap.engine.molapfilterinterface.RowIntf
 import org.apache.spark.sql.catalyst.expressions.{AggregateExpression1, AggregateFunction1, GenericMutableRow}
-
+import com.huawei.unibi.molap.datastorage.store.dataholder.MolapReadDataHolder
+import java.util.ArrayList
 import scala.collection.JavaConverters._
 
 /**
@@ -51,21 +52,33 @@ class SparkUnknownMolapAggregator(partialAggregate: AggregateExpression1) extend
 
   var isRowsAggregated: Boolean = false
 
-  override def agg(newVal: Double, key: Array[Byte], offset: Int, length: Int) = {
+  override def agg(newVal: Double) = {
 
-    throw new UnsupportedOperationException("agg(double, byte[],int,int) is not a valid method for aggregation");
+    throw new UnsupportedOperationException("agg(double) is not a valid method for aggregation");
   }
 
-  override def agg(newVal: Any, key: Array[Byte], offset: Int, length: Int) = {
-    throw new UnsupportedOperationException("agg(Object, .byte[],int,int) is not a valid method for aggregation");
+  override def agg(newVal: Any) = {
+    throw new UnsupportedOperationException("agg(Object) is not a valid method for aggregation");
+  }
+
+  override def agg(newVal: MolapReadDataHolder, index: Int) = {
+    throw new UnsupportedOperationException("agg(MolapReadDataHolder, int) is not a valid method for aggregation");
   }
 
   override def getByteArray(): Array[Byte] = {
     throw new UnsupportedOperationException("getByteArray  is not implemented yet");
   }
 
-  override def getValue(): Double = {
+  override def getDoubleValue(): java.lang.Double = {
     throw new UnsupportedOperationException("getValue() is not a valid method for result");
+  }
+
+  override def getLongValue(): java.lang.Long = {
+    throw new UnsupportedOperationException("getLongValue() is not a valid method for result");
+  }
+
+  override def getBigDecimalValue(): java.math.BigDecimal = {
+    throw new UnsupportedOperationException("getBigDecimalValue() is not a valid method for result");
   }
 
   override def getValueObject(): Object = {
@@ -131,12 +144,8 @@ class SparkUnknownMolapAggregator(partialAggregate: AggregateExpression1) extend
     return new SparkUnknownMolapAggregator(partialAggregate)
   }
 
-  override def setNewValue(newValue: Double) = {
+  override def setNewValue(newVal: Object) = {
 
-  }
-
-  override def agg(newVal: Double, factCount: Double) {
-    throw new UnsupportedOperationException("agg(Double, Double) is not a valid method for aggregation");
   }
 
   override def getColumns() = {
@@ -151,6 +160,14 @@ class SparkUnknownMolapAggregator(partialAggregate: AggregateExpression1) extend
     val values = row.getValues().toSeq.map { value =>
       value match {
         case s: String => org.apache.spark.unsafe.types.UTF8String.fromString(s)
+        // solve: java.math.BigDecimal cannot be cast to org.apache.spark.sql.types.Decimal
+        case d: java.math.BigDecimal =>      {
+            val javaDecVal = new java.math.BigDecimal(d.toString())
+            val scalaDecVal = new scala.math.BigDecimal(javaDecVal)
+            val decConverter = new org.apache.spark.sql.types.Decimal()
+
+            decConverter.set(scalaDecVal)
+        }
         case _ => value
       }
     }

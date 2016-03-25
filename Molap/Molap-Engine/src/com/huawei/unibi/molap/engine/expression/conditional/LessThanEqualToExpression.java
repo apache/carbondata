@@ -67,6 +67,12 @@ public class LessThanEqualToExpression extends BinaryConditionalExpression
         case TimestampType:
             result = elRes.getTime()<=(erRes.getTime());
             break;
+        case LongType:
+            result = elRes.getLong() <= (erRes.getLong());
+            break;
+        case DecimalType:
+            result = elRes.getDecimal().compareTo(erRes.getDecimal()) <= 0;
+            break;
         default:
             break;
         }

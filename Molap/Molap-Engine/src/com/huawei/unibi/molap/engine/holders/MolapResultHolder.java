@@ -116,7 +116,17 @@ public class MolapResultHolder implements Serializable
         result = new Object[d.length][1];
         for(int i = 0;i < d.length;i++)
         {
-            result[i][0] = d[i].getValue();
+            switch(dataTypes.get(i))
+            {
+                case LONG:
+                    result[i][0] = d[i].getLongValue();
+                    break;
+                case DECIMAL:
+                    result[i][0] = d[i].getBigDecimalValue();
+                    break;
+                default:
+                    result[i][0] = d[i].getDoubleValue();
+            }
         }
     }
 

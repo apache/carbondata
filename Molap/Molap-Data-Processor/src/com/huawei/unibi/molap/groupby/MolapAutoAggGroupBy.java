@@ -20,6 +20,7 @@
 package com.huawei.unibi.molap.groupby;
 
 import java.io.*;
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
@@ -31,7 +32,6 @@ import com.huawei.unibi.molap.engine.aggregator.MeasureAggregator;
 import com.huawei.unibi.molap.engine.aggregator.impl.AbstractMeasureAggregator;
 import com.huawei.unibi.molap.engine.aggregator.impl.CustomAggregatorHelper;
 import com.huawei.unibi.molap.engine.aggregator.util.AggUtil;
-import com.huawei.unibi.molap.exception.MolapDataProcessorException;
 import com.huawei.unibi.molap.groupby.exception.MolapGroupByException;
 import com.huawei.unibi.molap.keygenerator.KeyGenerator;
 import com.huawei.unibi.molap.keygenerator.factory.KeyGeneratorFactory;
@@ -74,12 +74,12 @@ public class MolapAutoAggGroupBy {
     /**
      * max value for each measure
      */
-    protected double[] maxValue;
+    protected Object[] maxValue;
 
     /**
      * min value for each measure
      */
-    protected double[] minValue;
+    protected Object[] minValue;
 
     /**
      * decimal length of each measure
@@ -89,7 +89,7 @@ public class MolapAutoAggGroupBy {
     /**
      * uniqueValue
      */
-    protected double[] uniqueValue;
+    protected Object[] uniqueValue;
 
     /**
      * max value for each measure
@@ -177,7 +177,7 @@ public class MolapAutoAggGroupBy {
     /**
      * mergedMinValue
      */
-    protected double[] mergedMinValue;
+    protected Object[] mergedMinValue;
     /**
      * customAggHelper
      */
@@ -207,10 +207,10 @@ public class MolapAutoAggGroupBy {
      * below method will be used to initialise the max min decimal
      */
     private void initialiseMaxMinDecimal(String extension) {
-        this.maxValue = new double[this.aggType.length];
-        this.minValue = new double[this.aggType.length];
+        this.maxValue = new Object[this.aggType.length];
+        this.minValue = new Object[this.aggType.length];
         this.decimalLength = new int[this.aggType.length];
-        this.uniqueValue = new double[this.aggType.length];
+        this.uniqueValue = new Object[this.aggType.length];
         for (int i = 0; i < this.aggType.length; i++) {
             maxValue[i] = -Double.MAX_VALUE;
             minValue[i] = Double.MAX_VALUE;
@@ -224,9 +224,6 @@ public class MolapAutoAggGroupBy {
                 this.type[i] = 'c';
             }
         }
-        mergedMinValue = MolapDataProcessorUtil
-                .updateMergedMinValue(schemaName, cubeName, tableName, this.aggType.length,
-                        extension, currentRestructNumber);
     }
 
     /**
@@ -308,8 +305,7 @@ public class MolapAutoAggGroupBy {
             if (null != row[i]) {
                 this.isNotNullValue[i] = true;
                 double value = (Double) row[i];
-                aggregators[i].agg(value, (byte[]) row[row.length - 1], 0,
-                        ((byte[]) row[row.length - 1]).length);
+                aggregators[i].agg(value);
             }
         }
         prvKey = (byte[]) row[this.keyIndex];
@@ -351,7 +347,7 @@ public class MolapAutoAggGroupBy {
     private void initialiseAggegators() {
         aggregators = AggUtil.getAggregators(Arrays.asList(this.aggType),
                 Arrays.asList(this.aggClassName), false, factKetGenerator, cubeUniqueName,
-                mergedMinValue);
+                mergedMinValue, this.type);
         isNotNullValue = new boolean[this.aggType.length];
         for (int i = 0; i < aggType.length; i++) {
             if (aggType[i].equals(MolapCommonConstants.CUSTOM)) {
@@ -380,7 +376,18 @@ public class MolapAutoAggGroupBy {
                 if (type[i] != 'c') {
                     if (isNotNullValue[i]) {
                         writeStream.write(1);
-                        writeStream.writeDouble(aggregators[i].getValue());
+                        switch (type[i]) {
+                        case 'l':
+
+                            writeStream.writeLong(aggregators[i].getLongValue());
+                            break;
+                        case 'b':
+
+                            writeStream.writeUTF(aggregators[i].getBigDecimalValue().toString());
+                            break;
+                        default:
+                            writeStream.writeDouble(aggregators[i].getDoubleValue());
+                        }
                     } else {
                         writeStream.write(0);
                     }
@@ -421,23 +428,6 @@ public class MolapAutoAggGroupBy {
             MolapUtil.deleteFoldersAndFiles(file);
         } catch (MolapUtilException e1) {
             throw new MolapGroupByException("Problem while deleting the measure meta data file ",
-                    e1);
-        }
-        try {
-            for (int i = 0; i < aggType.length; i++) {
-                if (aggType[i].equals(MolapCommonConstants.DISTINCT_COUNT) || aggType[i]
-                        .equals(MolapCommonConstants.CUSTOM)) {
-                    type[i] = 'c';
-                } else {
-                    type[i] = 'n';
-                }
-            }
-            MolapDataProcessorUtil
-                    .writeMeasureMetaDataToFileForAgg(maxValue, minValue, decimalLength,
-                            uniqueValue, this.type, new byte[this.maxValue.length], mergedMinValue,
-                            measureMetaDataFileLocation);
-        } catch (MolapDataProcessorException e1) {
-            throw new MolapGroupByException("Problem while writing the measure meta data file ",
                     e1);
         }
         try {
@@ -522,8 +512,7 @@ public class MolapAutoAggGroupBy {
         for (int i = 0; i < aggregators.length; i++) {
             if (null != row[i]) {
                 double value = (Double) row[i];
-                aggregators[i].agg(value, (byte[]) row[row.length - 1], 0,
-                        ((byte[]) row[row.length - 1]).length);
+                aggregators[i].agg(value);
             }
         }
         calculateMaxMinUnique();
@@ -534,12 +523,38 @@ public class MolapAutoAggGroupBy {
      */
     protected void calculateMaxMinUnique() {
         for (int i = 0; i < aggregators.length; i++) {
+            int num;
             if (isNotNullValue[i]) {
-                double value = (Double) aggregators[i].getValue();
-                maxValue[i] = (maxValue[i] > value ? maxValue[i] : value);
-                minValue[i] = (minValue[i] < value ? minValue[i] : value);
-                uniqueValue[i] = minValue[i] - 1;
-                int num = (value % 1 == 0) ? 0 : decimalPointers;
+                switch (type[i]) {
+                case 'l':
+                    long valueL = aggregators[i].getLongValue();
+                    maxValue[i] = ((long) maxValue[i] > valueL ? maxValue[i] : valueL);
+                    minValue[i] = ((double) minValue[i] < valueL ? minValue[i] : valueL);
+                    uniqueValue[i] = (double) minValue[i] - 1;
+                    num = (valueL % 1 == 0) ? 0 : decimalPointers;
+
+                    break;
+                case 'b':
+
+                    BigDecimal valueD = aggregators[i].getBigDecimalValue();
+                    maxValue[i] = (new BigDecimal(maxValue[i].toString()).compareTo(valueD) == 1 ?
+                            maxValue[i] :
+                            valueD);
+                    minValue[i] = (new BigDecimal(maxValue[i].toString()).compareTo(valueD) == -1 ?
+                            minValue[i] :
+                            valueD);
+                    uniqueValue[i] = (double) minValue[i] - 1;
+                    num = (valueD.doubleValue() % 1 == 0) ? 0 : decimalPointers;
+                    break;
+                default:
+
+                    double value = aggregators[i].getDoubleValue();
+                    maxValue[i] = ((double) maxValue[i] > value ? maxValue[i] : value);
+                    minValue[i] = ((double) minValue[i] < value ? minValue[i] : value);
+                    uniqueValue[i] = (double) minValue[i] - 1;
+                    num = (value % 1 == 0) ? 0 : decimalPointers;
+                }
+
                 decimalLength[i] = (decimalLength[i] > num ? decimalLength[i] : num);
             }
         }

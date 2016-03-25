@@ -191,7 +191,7 @@ public class DataFileMerger implements Callable<Void>
             for(File file : dataOutFiles)
             {
                 // create chunk holder
-                DataFileChunkHolder molapSortTempFileChunkHolder = new DataFileChunkHolder(file, this.keySize,
+                DataFileChunkHolder molapSortTempFileChunkHolder = new DataFileChunkHolder(file, this.keySize,this.measures,
                         AggUtil.getAggregators(this.measures,calculatedMeasures, false, keyGenerator, slice.getCubeUniqueName()), this.fileBufferSize);
                 // initialize
                 molapSortTempFileChunkHolder.initialize();

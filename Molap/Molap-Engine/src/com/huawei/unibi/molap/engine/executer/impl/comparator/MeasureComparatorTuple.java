@@ -19,6 +19,7 @@
 
 package com.huawei.unibi.molap.engine.executer.impl.comparator;
 
+import java.math.BigDecimal;
 import java.util.Comparator;
 
 import com.huawei.unibi.molap.engine.executer.Tuple;
@@ -63,16 +64,33 @@ public class MeasureComparatorTuple implements Comparator<Tuple>
         {
             return cmp;
         }
-        double msrValue1 = t1.getMeasures()[this.msrIndex].getValue();
-        double msrValue2 = t2.getMeasures()[this.msrIndex].getValue();
         
-        if(msrValue1<msrValue2)
+        if (t1.getMeasures()[this.msrIndex].toString().contains("Long"))
         {
-            cmp=-1;
+            long msrValue1L = t1.getMeasures()[this.msrIndex].getLongValue();
+            long msrValue2L = t2.getMeasures()[this.msrIndex].getLongValue();
+            if (msrValue1L < msrValue2L) {
+                cmp = -1;
+            } else if (msrValue1L > msrValue2L) {
+                cmp = 1;
         }
-        else if(msrValue1>msrValue2)
+        }
+        else if (t1.getMeasures()[this.msrIndex].toString().contains("Decimal"))
         {
-            cmp=1;
+            BigDecimal msrValue1B = t1.getMeasures()[this.msrIndex].getBigDecimalValue();
+            BigDecimal msrValue2B = t2.getMeasures()[this.msrIndex].getBigDecimalValue();
+            cmp =  msrValue1B.compareTo(msrValue2B);
+        }
+        else
+        {
+            double msrValue1D = t1.getMeasures()[this.msrIndex].getDoubleValue();
+            double msrValue2D = t2.getMeasures()[this.msrIndex].getDoubleValue();
+            if (msrValue1D < msrValue2D) {
+                cmp = -1;
+            } else if (msrValue1D > msrValue2D)
+            {
+                cmp = 1;
+            }
         }
         if(this.sortOrder==1 || this.sortOrder==3)
         {

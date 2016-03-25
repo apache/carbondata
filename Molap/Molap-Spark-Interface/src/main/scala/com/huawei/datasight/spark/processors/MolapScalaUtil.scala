@@ -39,6 +39,7 @@ object MolapScalaUtil {
       case ArrayType(_,_) => MolapDataType.ArrayType
       case StructType(_) => MolapDataType.StructType
       case NullType => MolapDataType.NullType
+      case _ => MolapDataType.DecimalType
     }
 
   def convertSparkToMolapSchemaDataType(dataType: String): String =

@@ -25,6 +25,7 @@ import com.huawei.unibi.molap.datastorage.store.FileHolder;
 import com.huawei.unibi.molap.datastorage.store.MeasureDataWrapper;
 import com.huawei.unibi.molap.datastorage.store.dataholder.MolapReadDataHolder;
 import com.huawei.unibi.molap.keygenerator.KeyGenerator;
+import com.huawei.unibi.molap.olap.SqlStatement;
 
 /**
  * This Class will hold key and value where key will be mdkey and value will be
@@ -219,11 +220,29 @@ public class KeyValue
         return backKeyArray;
     }
 
-    public double getValue(int col)
+    public Object getValue(int col, SqlStatement.Type dataType)
     {
-        return msrData[col].getReadableDoubleValueByIndex(row);//[row];//.get(row, col);
+        switch(dataType)   //get measure type and distinguish the get methods of MolapReadDataHolder
+        {
+            case LONG:
+                return msrData[col].getReadableLongValueByIndex(row);
+            case DECIMAL:
+                return msrData[col].getReadableBigDecimalValueByIndex(row);
+            default:
+                return msrData[col].getReadableDoubleValueByIndex(row);
+        }
+    }
+
+    /**
+     * get the MolapReadDataHolder[] for agg(MolapReadDataHolder newVal,int index)
+     * @return
+     */
+    public MolapReadDataHolder getMsrData(int col)
+    {
+        return msrData[col];
     }
     
+
     public byte[] getByteArrayValue(int col)
     {
         return msrData[col].getReadableByteArrayValueByIndex(row);//[row];//.get(row, col);

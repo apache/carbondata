@@ -77,6 +77,8 @@ public class FileMergerParameters {
      */
     private boolean prefetch;
 
+    private char[] aggType;
+
     /**
      * prefetchBufferSize
      */
@@ -168,6 +170,14 @@ public class FileMergerParameters {
 
     public void setPrefetchBufferSize(int prefetchBufferSize) {
         this.prefetchBufferSize = prefetchBufferSize;
+    }
+
+    public char[] getAggType() {
+        return aggType;
+    }
+
+    public void setAggType(char[] aggType) {
+        this.aggType = aggType;
     }
 
     /**

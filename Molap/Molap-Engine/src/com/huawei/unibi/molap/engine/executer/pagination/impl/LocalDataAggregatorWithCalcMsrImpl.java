@@ -100,7 +100,7 @@ public class LocalDataAggregatorWithCalcMsrImpl implements DataAggregator
     /**
      * Unique values represents null values of measure.
      */
-    protected double[] uniqueValues;
+    protected Object[] uniqueValues;
     
     
     protected ByteArrayWrapper dimensionsRowWrapper = new ByteArrayWrapper();
@@ -299,11 +299,10 @@ public class LocalDataAggregatorWithCalcMsrImpl implements DataAggregator
         }
         for(int i = 0;i < msrLength;i++)
         {
-            double value = available.getValue(measureOrdinal[i]);
-            if(uniqueValues[measureOrdinal[i]] != value)
+            Object value = available.getValue(measureOrdinal[i], queryMsrs[measureOrdinal[i]].getDataType());
+            if(!uniqueValues[measureOrdinal[i]].equals(value))
             {
-                currentMsrRowData[i].agg(value, available.backKeyArray, available.keyOffset,
-                        available.keyLength);
+                currentMsrRowData[i].agg(value);
             }
         }
     }
@@ -316,24 +315,21 @@ public class LocalDataAggregatorWithCalcMsrImpl implements DataAggregator
     
     private void aggregateMsrsForAggTable(KeyValue available, MeasureAggregator[] currentMsrRowData)
     {
-        double countValue = available.getValue(measureOrdinal[countMsrIndex]);
-        
         for(int k = 0;k < avgMsrIndexes.length;k++)
         {
-            double value = available.getValue(measureOrdinal[avgMsrIndexes[k]]);
-            if(uniqueValues[measureOrdinal[avgMsrIndexes[k]]] != value)
+            Object value = available.getValue(measureOrdinal[avgMsrIndexes[k]], queryMsrs[avgMsrIndexes[k]].getDataType());
+            if(!uniqueValues[measureOrdinal[avgMsrIndexes[k]]].equals(value))
             {
-                currentMsrRowData[avgMsrIndexes[k]].agg(value,countValue);
+                currentMsrRowData[avgMsrIndexes[k]].agg(available.getMsrData(measureOrdinal[avgMsrIndexes[k]]),available.getRow());
             } 
         }
         
         for(int i = 0;i < otherMsrIndexes.length;i++)
         {
-            double value = available.getValue(measureOrdinal[otherMsrIndexes[i]]);
-            if(uniqueValues[measureOrdinal[otherMsrIndexes[i]]] != value)
+            Object value = available.getValue(measureOrdinal[otherMsrIndexes[i]], queryMsrs[otherMsrIndexes[i]].getDataType());
+            if(!uniqueValues[measureOrdinal[otherMsrIndexes[i]]].equals(value))
             {
-                currentMsrRowData[otherMsrIndexes[i]].agg(value, available.backKeyArray,
-                    available.keyOffset, available.keyLength);
+                currentMsrRowData[otherMsrIndexes[i]].agg(value);
             }
         }
     }

@@ -55,6 +55,7 @@ import com.huawei.unibi.molap.metadata.SliceMetaData;
 import com.huawei.unibi.molap.util.MolapProperties;
 import com.huawei.unibi.molap.util.MolapUtil;
 import com.huawei.unibi.molap.vo.HybridStoreModel;
+import com.huawei.unibi.molap.olap.SqlStatement;
 
 public class CubeDataStore
 {
@@ -109,17 +110,17 @@ public class CubeDataStore
     /**
      * unique value
      */
-    private double[] uniqueValue;
+    private Object[] uniqueValue;
     
     /**
      * min value
      */
-    private double[] minValue;
+    private Object[] minValue;
     
     /**
      * min value
      */
-    private double[] minValueFactForAgg;
+    private Object[] minValueFactForAgg;
     /**
      * type
      */
@@ -677,12 +678,25 @@ public class CubeDataStore
         return keyGenerator;
     }
 
-    public double[] getUniqueValue()
+    public Object[] getUniqueValue()
     {
         return uniqueValue;
     }
     
-    public double[] getMinValue()
+    public void setDataTypes(SqlStatement.Type[] dataTypes)
+    {
+        this.dataTypes = dataTypes;
+    }
+
+    public SqlStatement.Type[] getDataTypes()
+    {
+        return dataTypes;
+    }
+
+    protected SqlStatement.Type[] dataTypes;
+
+    
+    public Object[] getMinValue()
     {
         return minValue;
     }
@@ -698,7 +712,7 @@ public class CubeDataStore
     /**
      * @return the minValueFactForAgg
      */
-    public double[] getMinValueFactForAgg()
+    public Object[] getMinValueFactForAgg()
     {
         return minValueFactForAgg;
     }

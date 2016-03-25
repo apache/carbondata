@@ -21,6 +21,7 @@ package com.huawei.unibi.molap.engine.aggregator.util;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
 import java.util.List;
 
 import com.huawei.iweb.platform.logging.LogService;
@@ -29,24 +30,34 @@ import com.huawei.unibi.molap.constants.MolapCommonConstants;
 import com.huawei.unibi.molap.engine.aggregator.CustomMeasureAggregator;
 import com.huawei.unibi.molap.engine.aggregator.CustomMolapAggregateExpression;
 import com.huawei.unibi.molap.engine.aggregator.MeasureAggregator;
-import com.huawei.unibi.molap.engine.aggregator.impl.AvgAggregator;
-import com.huawei.unibi.molap.engine.aggregator.impl.AvgOfAvgAggregator;
+import com.huawei.unibi.molap.engine.aggregator.impl.AvgBigDecimalAggregator;
+import com.huawei.unibi.molap.engine.aggregator.impl.AvgDoubleAggregator;
+import com.huawei.unibi.molap.engine.aggregator.impl.AvgLongAggregator;
+import com.huawei.unibi.molap.engine.aggregator.impl.AvgOfAvgBigDecimalAggregator;
+import com.huawei.unibi.molap.engine.aggregator.impl.AvgOfAvgDoubleAggregator;
+import com.huawei.unibi.molap.engine.aggregator.impl.AvgOfAvgLongAggregator;
 import com.huawei.unibi.molap.engine.aggregator.impl.CalculatedMeasureAggregatorImpl;
 import com.huawei.unibi.molap.engine.aggregator.impl.CountAggregator;
 import com.huawei.unibi.molap.engine.aggregator.impl.DistinctCountAggregator;
-import com.huawei.unibi.molap.engine.aggregator.impl.DistinctCountAggregatorObjectSet;
 import com.huawei.unibi.molap.engine.aggregator.impl.DistinctStringCountAggregator;
-import com.huawei.unibi.molap.engine.aggregator.impl.DummyAggregator;
+import com.huawei.unibi.molap.engine.aggregator.impl.DummyBigDecimalAggregator;
+import com.huawei.unibi.molap.engine.aggregator.impl.DummyDoubleAggregator;
+import com.huawei.unibi.molap.engine.aggregator.impl.DummyLongAggregator;
 import com.huawei.unibi.molap.engine.aggregator.impl.MaxAggregator;
 import com.huawei.unibi.molap.engine.aggregator.impl.MinAggregator;
-import com.huawei.unibi.molap.engine.aggregator.impl.SumAggregator;
-import com.huawei.unibi.molap.engine.aggregator.impl.SumDistinctAggregator;
-import com.huawei.unibi.molap.engine.aggregator.impl.SurrogateBasedDistinctCountAggregator;
+import com.huawei.unibi.molap.engine.aggregator.impl.SumBigDecimalAggregator;
+import com.huawei.unibi.molap.engine.aggregator.impl.SumDistinctBigDecimalAggregator;
+import com.huawei.unibi.molap.engine.aggregator.impl.SumDistinctDoubleAggregator;
+import com.huawei.unibi.molap.engine.aggregator.impl.SumDistinctLongAggregator;
+import com.huawei.unibi.molap.engine.aggregator.impl.SumDoubleAggregator;
+import com.huawei.unibi.molap.engine.aggregator.impl.SumLongAggregator;
+import com.huawei.unibi.molap.engine.executer.MolapQueryExecutorModel;
 import com.huawei.unibi.molap.engine.executer.calcexp.MolapCalcFunction;
 import com.huawei.unibi.molap.engine.util.MolapEngineLogEvent;
 import com.huawei.unibi.molap.keygenerator.KeyGenerator;
 import com.huawei.unibi.molap.metadata.CalculatedMeasure;
 import com.huawei.unibi.molap.metadata.MolapMetadata.Measure;
+import com.huawei.unibi.molap.olap.SqlStatement;
 
 /**
  *
@@ -68,9 +79,75 @@ public final class AggUtil
     private static final LogService LOGGER = LogServiceFactory
             .getLogService(AggUtil.class.getName());
 
+    /**
+     * type of Measure
+     */
+    private static HashMap<Integer,SqlStatement.Type> queryMeasureType= new HashMap<>();
 
     /**
-     * 
+     * measure ordinal number
+     */
+    public static int[] measureOrdinal;
+
+    /**
+     * all measures
+     */
+    public static SqlStatement.Type[] allMeasures;
+    /**
+     * initialize measureType
+     */
+    public static void initMeasureType(MolapQueryExecutorModel queryModel)
+    {
+        int ordinal;
+//This part is used to initialize measure types for normal query
+        measureOrdinal = new int[queryModel.getMsrs().size()];
+        for(int i = 0; i < queryModel.getMsrs().size();i++)
+        {
+            ordinal = queryModel.getMsrs().get(i).getOrdinal();
+            queryMeasureType.put(ordinal,queryModel.getMsrs().get(i).getDataType());
+            measureOrdinal[i] = ordinal;
+        }
+//This psrt is used to initialize all mesure types.
+        List<Measure> measures = queryModel.getCube().getMeasures(queryModel.getCube().getFactTableName());
+        allMeasures = new SqlStatement.Type[measures.size()];
+        for(int j = 0;j < measures.size();j++)
+        {
+            allMeasures[j] = measures.get(j).getDataType();
+        }
+    }
+
+    /**
+     * initialize measureType
+     */
+    public static void initMeasureType(Measure[] measures)
+    {
+        int ordinal;
+        measureOrdinal = new int[measures.length];
+        for(int i = 0; i < measures.length;i++)
+        {
+            ordinal = measures[i].getOrdinal();
+            queryMeasureType.put(ordinal, measures[i].getDataType());
+            measureOrdinal[i] = ordinal;
+        }
+    }
+
+    /**
+     * get selected measureType
+     */
+    public static SqlStatement.Type getMeasureType(int measureOdinal)
+    {
+// return measureType.get(measureOdinal);
+        if(allMeasures.length != 0)
+        {
+            return allMeasures[measureOdinal];
+        }
+        else
+        {
+            return queryMeasureType.get(measureOdinal);
+        }
+    }
+
+    /**
      * This method will return aggregate instance based on aggregate name
      * 
      * @param aggregatorType
@@ -86,17 +163,28 @@ public final class AggUtil
      * 
      */
     public static MeasureAggregator getAggregator(String aggregatorType,boolean isHighCardinality, boolean hasFactCount, KeyGenerator generator,
-           boolean isSurrogateBasedDistinctCountRequired, double minValue) 
+                                                  boolean isSurrogateBasedDistinctCountRequired, Object minValue, SqlStatement.Type dataType)
     {
         // this will be used for aggregate table because aggregate tables will
         // have one of the measure as fact count
         if(hasFactCount && MolapCommonConstants.AVERAGE.equalsIgnoreCase(aggregatorType))
         {
-            return new AvgOfAvgAggregator();
+            switch(dataType)
+            {
+                case LONG:
+
+                    return new AvgOfAvgLongAggregator();
+                case DECIMAL:
+
+                    return new AvgOfAvgBigDecimalAggregator();
+                default:
+
+                    return new AvgOfAvgDoubleAggregator();
+            }
         }
         else
         {
-            return getAggregator(aggregatorType,isHighCardinality, generator,isSurrogateBasedDistinctCountRequired, minValue);
+            return getAggregator(aggregatorType, isHighCardinality, generator,isSurrogateBasedDistinctCountRequired, minValue, dataType);
         }
     }
 
@@ -115,7 +203,12 @@ public final class AggUtil
      * 
      * 
      */
-    private static MeasureAggregator getAggregator(String aggregatorType,boolean isHighCardinality, KeyGenerator generator,boolean isSurrogateGeneratedDistinctCount, double minValue)
+
+    /*
+        get  Aggregator by dataType and aggregatorType
+     */
+    private static MeasureAggregator getAggregator(String aggregatorType,boolean isHighCardinality, KeyGenerator generator,
+                                                   boolean isSurrogateGeneratedDistinctCount, Object minValue, SqlStatement.Type dataType)
     {
         // get the MeasureAggregator based on aggregate type
         if(MolapCommonConstants.MIN.equalsIgnoreCase(aggregatorType))
@@ -134,7 +227,18 @@ public final class AggUtil
         //
         else if(MolapCommonConstants.AVERAGE.equalsIgnoreCase(aggregatorType))
         {
-            return new AvgAggregator();
+            switch(dataType)
+            {
+                case LONG:
+
+                    return new AvgLongAggregator();
+                case DECIMAL:
+
+                    return new AvgBigDecimalAggregator();
+                default:
+
+                    return new AvgDoubleAggregator();
+            }
         }
         //
         else if(MolapCommonConstants.DISTINCT_COUNT.equalsIgnoreCase(aggregatorType))
@@ -147,15 +251,49 @@ public final class AggUtil
         }
         else if(MolapCommonConstants.SUM.equalsIgnoreCase(aggregatorType))
         {
-            return new SumAggregator();
+//            return new SumAggregator();
+            switch(dataType)
+            {
+                case LONG:
+
+                    return new SumLongAggregator();
+                case DECIMAL:
+
+                    return new SumBigDecimalAggregator();
+                default:
+
+                    return new SumDoubleAggregator();
+            }
         }
         else if(MolapCommonConstants.SUM_DISTINCT.equalsIgnoreCase(aggregatorType))
         {
-            return new SumDistinctAggregator();
+            switch(dataType)
+            {
+                case LONG:
+
+                    return new SumDistinctLongAggregator();
+                case DECIMAL:
+
+                    return new SumDistinctBigDecimalAggregator();
+                default:
+
+                    return new SumDistinctDoubleAggregator();
+            }
         }
         else if(MolapCommonConstants.DUMMY.equalsIgnoreCase(aggregatorType))
         {
-            return new DummyAggregator();
+            switch(dataType)
+            {
+                case LONG:
+
+                    return new DummyLongAggregator();
+                case DECIMAL:
+
+                    return new DummyBigDecimalAggregator();
+                default:
+
+                    return new DummyDoubleAggregator();
+            }
         }
         else
         {
@@ -267,7 +405,8 @@ public final class AggUtil
             else
             {
                 
-                aggregator = getAggregator(aggName, hasFactCount, generator, measures[i].isSurrogateGenerated() && isSurrogateBasedDistinctCountRequired, measures[i].getMinValue());
+                aggregator = getAggregator(aggName, hasFactCount, generator, measures[i].isSurrogateGenerated() && isSurrogateBasedDistinctCountRequired,
+                        measures[i].getMinValue(), measures[i].getDataType());
             }
 //            if (aggregator == null) {
 //                 throw MondrianResource.instance().UnknownAggregator.ex(
@@ -319,7 +458,8 @@ public final class AggUtil
             else
             {
                 
-                aggregator = getAggregator(aggName, hasFactCount, generator,measures[i].isSurrogateGenerated() && isSurrogateBasedDistinctCountRequired, measures[i].getMinValue());
+                aggregator = getAggregator(aggName, hasFactCount, generator,measures[i].isSurrogateGenerated() && isSurrogateBasedDistinctCountRequired,
+                        measures[i].getMinValue(), measures[i].getDataType());
             }
 //            if (aggregator == null) {
 //                 throw MondrianResource.instance().UnknownAggregator.ex(
@@ -377,7 +517,8 @@ public final class AggUtil
             else
             {
                 
-                aggregatorInfo = getAggregator(aggName, hasFactCount, generator,measures[i].isSurrogateGenerated() && isSurrogateBasedDistinctCountRequired, measures[i].getMinValue());
+                aggregatorInfo = getAggregator(aggName, hasFactCount, generator,measures[i].isSurrogateGenerated() && isSurrogateBasedDistinctCountRequired,
+                        measures[i].getMinValue(), measures[i].getDataType());
             }
 //            if (aggregator == null) {
 //                 throw MondrianResource.instance().UnknownAggregator.ex(
@@ -410,13 +551,13 @@ public final class AggUtil
      * 
      */
     public static MeasureAggregator[] getAggregators(List<String> aggregateNames, boolean hasFactCount,
-            KeyGenerator generator)
+                                                     KeyGenerator generator, SqlStatement.Type[] dataTypes)
     {
         int valueSize = aggregateNames.size();
         MeasureAggregator[] aggregators = new MeasureAggregator[valueSize];
         for(int i = 0;i < valueSize;i++)
         {
-            aggregators[i] = getAggregator(aggregateNames.get(i), hasFactCount, generator,false, 0);
+            aggregators[i] = getAggregator(aggregateNames.get(i), hasFactCount, generator,false, 0, dataTypes[i]);
         }
         return aggregators;
     }
@@ -437,7 +578,7 @@ public final class AggUtil
      * 
      */
     public static MeasureAggregator[] getAggregators(List<String> aggregateNames, List<String> aggregatorClassName,boolean hasFactCount,
-            KeyGenerator generator,String cubeUniqueName, double[] minValue)
+                                                     KeyGenerator generator,String cubeUniqueName, Object[] minValue, char[] type)
     {
         int valueSize = aggregateNames.size();
         MeasureAggregator[] aggregators = new MeasureAggregator[valueSize];
@@ -449,58 +590,69 @@ public final class AggUtil
             }
             else
             {
-                aggregators[i] = getAggregator(aggregateNames.get(i), hasFactCount, generator,false,minValue[i]);
+                SqlStatement.Type dataType = null;
+                switch (type[i])
+                {
+                    case 'l':
+                        dataType = SqlStatement.Type.LONG;
+                        break;
+                    case 'b':
+                        dataType = SqlStatement.Type.DECIMAL;
+                        break;
+                    default:
+                        dataType = SqlStatement.Type.DOUBLE;
+
+                }
+                aggregators[i] = getAggregator(aggregateNames.get(i), hasFactCount, generator,false,minValue[i], dataType);
             }
         }
         return aggregators;
     }
-    
-    /**
+/**
      * 
-     * This method will aggregate values to aggreator passed as a parameter and
-     * return the aggregated value
-     * 
-     * @param measureAggregator
-     * @param value1
-     * @param value2
-     * @param factCount
-     * @param factCount2
-     * @return return aggreagted value
-     * 
+ * @param aggType
+ * @param hasFactCount
+ * @param generator
+ * @param cubeUniqueName
+ * @param minValue
+ * @param highCardinalityTypes
+ * @param dataTypes
+ * @return
      */
-    public static double aggregate(MeasureAggregator measureAggregator, double value1, double value2,
-            double factCount, double factCount2)  
-    {
-        // aggregate first value
-        measureAggregator.agg(value1, factCount); 
-        // aggregate second value
-        measureAggregator.agg(value2, factCount2);
-        // return the aggregated values
-        return measureAggregator.getValue();
-    }
-
     public static MeasureAggregator[] getAggregators(String[] aggType, boolean hasFactCount,
-            KeyGenerator generator, String cubeUniqueName, double[] minValue,boolean[] highCardinalityTypes)
+                                                     KeyGenerator generator, String cubeUniqueName, Object[] minValue,boolean[] highCardinalityTypes, SqlStatement.Type[] dataTypes)
     {
         MeasureAggregator[] aggregators = new MeasureAggregator[aggType.length];
         for(int i = 0;i < aggType.length;i++)
         {
+            SqlStatement.Type dataType = dataTypes[i];
             if(null!=highCardinalityTypes)
             {
-            aggregators[i]  = getAggregator(aggType[i],highCardinalityTypes[i], hasFactCount, generator, false, minValue[i]);
+            aggregators[i]  = getAggregator(aggType[i],highCardinalityTypes[i], hasFactCount, generator, false, minValue[i], dataType);
             }
             else
             {
-                aggregators[i]  = getAggregator(aggType[i],false, hasFactCount, generator, false, minValue[i]);
+                aggregators[i]  = getAggregator(aggType[i],false, hasFactCount, generator, false, minValue[i], dataType);
             }
         }
         return aggregators;
         
     }
-    
+/**
+ * 
+ * @param aggType
+ * @param aggregateExpressions
+ * @param hasFactCount
+ * @param generator
+ * @param cubeUniqueName
+ * @param minValue
+ * @param highCardinalityTypes
+ * @param dataTypes
+ * @return
+ */
     public static MeasureAggregator[] getAggregators(String[] aggType,
             List<CustomMolapAggregateExpression> aggregateExpressions, boolean hasFactCount, KeyGenerator generator,
-            String cubeUniqueName, double[] minValue,boolean[] highCardinalityTypes)
+            String cubeUniqueName, Object[] minValue,boolean[] highCardinalityTypes, SqlStatement.Type[] dataTypes)
     {
         MeasureAggregator[] aggregators = new MeasureAggregator[aggType.length];
         int customIndex=0;
@@ -521,13 +673,14 @@ public final class AggUtil
             }
             else
             {
+				SqlStatement.Type dataType = dataTypes[i];
                 if(null != highCardinalityTypes)
                 {
-                    aggregators[i] = getAggregator(aggType[i],highCardinalityTypes[i], hasFactCount, generator, false, minValue[i]);
+                    aggregators[i] = getAggregator(aggType[i],highCardinalityTypes[i], hasFactCount, generator, false, minValue[i], dataType);
                 }
                 else
                 {
-                    aggregators[i] = getAggregator(aggType[i],false, hasFactCount, generator, false, minValue[i]);
+                    aggregators[i] = getAggregator(aggType[i],false, hasFactCount, generator, false, minValue[i], dataType);
                 }
             }
         }

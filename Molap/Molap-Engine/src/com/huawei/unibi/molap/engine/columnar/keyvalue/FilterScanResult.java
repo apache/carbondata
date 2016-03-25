@@ -23,7 +23,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-
+import java.math.BigDecimal;
 import com.huawei.unibi.molap.datastorage.store.columnar.ColumnarKeyStoreMetadata;
 import com.huawei.unibi.molap.engine.wrappers.ByteArrayWrapper;
 import com.huawei.unibi.molap.metadata.MolapMetadata.Dimension;
@@ -39,12 +39,22 @@ public class FilterScanResult extends AbstractColumnarScanResult
         super(keySize, selectedDimensionIndex);
     }
 
-    public double getNormalMeasureValue(int measureOrdinal)
+    public  double getDoubleValue(int measureOrdinal)
     {
         return measureBlocks[measureOrdinal].getReadableDoubleValueByIndex(rowMapping[currentRow]);
     }
 
-    public byte[] getCustomMeasureValue(int measureOrdinal)
+    public BigDecimal getBigDecimalValue(int measureOrdinal)
+    {
+        return measureBlocks[measureOrdinal].getReadableBigDecimalValueByIndex(rowMapping[currentRow]);
+    }
+
+    public  long getLongValue(int measureOrdinal)
+    {
+        return measureBlocks[measureOrdinal].getReadableLongValueByIndex(rowMapping[currentRow]);
+    }
+
+    public byte[] getByteArrayValue(int measureOrdinal)
     {
         return measureBlocks[measureOrdinal].getReadableByteArrayValueByIndex(rowMapping[currentRow]);
     }
@@ -74,9 +84,9 @@ public class FilterScanResult extends AbstractColumnarScanResult
     }
 
     @Override
-    public byte[] getHighCardinalityDimDataForAgg(Dimension dimension)
+    public byte[] getHighCardinalityDimDataForAgg(int  dimOrdinal)
     {
-        ColumnarKeyStoreMetadata columnarKeyStoreMetadata = columnarKeyStoreDataHolder[dimension.getOrdinal()]
+        ColumnarKeyStoreMetadata columnarKeyStoreMetadata = columnarKeyStoreDataHolder[dimOrdinal]
                 .getColumnarKeyStoreMetadata();
         if(null != columnarKeyStoreMetadata.getMapOfColumnarKeyBlockDataForDirectSurroagtes())
         {
@@ -84,9 +94,9 @@ public class FilterScanResult extends AbstractColumnarScanResult
                     .getMapOfColumnarKeyBlockDataForDirectSurroagtes();
             if(null==columnarKeyStoreMetadata.getColumnReverseIndex())
             {
-                return mapOfDirectSurrogates.get(rowMapping[++sourcePosition]);
+                return mapOfDirectSurrogates.get(rowMapping[currentRow]);
             }
-            return mapOfDirectSurrogates.get(columnarKeyStoreMetadata.getColumnReverseIndex()[rowMapping[++sourcePosition]]);
+            return mapOfDirectSurrogates.get(columnarKeyStoreMetadata.getColumnReverseIndex()[rowMapping[currentRow]]);
         }
         return null;
 
@@ -96,5 +106,10 @@ public class FilterScanResult extends AbstractColumnarScanResult
     public void getComplexDimDataForAgg(GenericQueryType complexType, DataOutputStream dataOutputStream) throws IOException
     {
         getComplexSurrogateKey(rowMapping[currentRow], complexType, dataOutputStream);
+    }
+	
+	 public  int getRowIndex()
+    {
+        return rowMapping[currentRow];
     }
 }

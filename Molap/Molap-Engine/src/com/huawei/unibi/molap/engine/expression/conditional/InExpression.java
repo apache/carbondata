@@ -79,6 +79,12 @@ public class InExpression extends BinaryConditionalExpression
                         case TimestampType:
                             val=new ExpressionResult(val.getDataType(),expressionResVal.getTime());
                             break;
+                        case LongType:
+                            val=new ExpressionResult(val.getDataType(),expressionResVal.getLong());
+                            break;
+                        case DecimalType:
+                            val=new ExpressionResult(val.getDataType(),expressionResVal.getDecimal());
+                            break;
                         default:
                             break;
                         }

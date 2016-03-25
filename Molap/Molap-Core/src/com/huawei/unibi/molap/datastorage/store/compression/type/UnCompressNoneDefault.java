@@ -89,7 +89,7 @@ public class UnCompressNoneDefault implements UnCompressValue<double[]> {
         this.value = ValueCompressionUtil.convertToDoubleArray(buffer, value.length);
     }
 
-    @Override public MolapReadDataHolder getValues(int decimal, double maxValue) {
+    @Override public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
         MolapReadDataHolder dataHolder = new MolapReadDataHolder();
         dataHolder.setReadableDoubleValues(value);
         return dataHolder;

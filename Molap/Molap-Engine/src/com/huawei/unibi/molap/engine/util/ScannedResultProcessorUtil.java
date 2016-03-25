@@ -278,6 +278,7 @@ public final class ScannedResultProcessorUtil
         dataProcessorInfo.setHighCardinalityTypes(info.getHighCardinalityTypes());
         dataProcessorInfo.setMsrMinValue(info.getMsrMinValue());
         dataProcessorInfo.setSortedDimensionIndex(info.getSortedDimensionsIndex());
+        dataProcessorInfo.setDataTypes(info.getDataTypes());
         return dataProcessorInfo;
     }
 

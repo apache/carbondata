@@ -263,7 +263,7 @@ public class ProducerThread implements Callable<Void> {
             molapSortTempFileChunkHolder =
                     new MolapSortTempFileChunkHolder(tempFile, this.measureCount, this.mdKeyLength,
                             this.fileBufferSize, isFactMdkeyInInputRow, factMdkeyLength,
-                            new String[0]);
+                            new String[0], 0, new char[0]);
             // initialize
             molapSortTempFileChunkHolder.initialize();
             molapSortTempFileChunkHolder.readRow();

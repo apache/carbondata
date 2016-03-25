@@ -45,7 +45,7 @@ case class SqlUdf(fn: (InternalRow) => Any, exprs: Expression*) extends Expressi
   override def eval(input: InternalRow): Any = {
     val exprEvals = exprs.map {
       _.eval(input) match {
-        case d: MeasureAggregator => d.getValue()
+        case d: MeasureAggregator => d.getDoubleValue()
         case others => others
       }
     }

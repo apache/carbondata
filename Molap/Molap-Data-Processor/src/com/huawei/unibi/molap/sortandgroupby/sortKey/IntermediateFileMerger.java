@@ -31,6 +31,7 @@ import com.huawei.unibi.molap.constants.MolapCommonConstants;
 import com.huawei.unibi.molap.engine.aggregator.MeasureAggregator;
 import com.huawei.unibi.molap.sortandgroupby.exception.MolapSortKeyAndGroupByException;
 import com.huawei.unibi.molap.util.MolapDataProcessorLogEvent;
+import com.huawei.unibi.molap.util.MolapDataProcessorUtil;
 import com.huawei.unibi.molap.util.MolapUtil;
 import com.huawei.unibi.molap.util.MolapUtilException;
 
@@ -160,6 +161,11 @@ public class IntermediateFileMerger implements Callable<Void> {
     private String[] aggregator;
 
     /**
+     * highCardinalityCount
+     */
+    private int highCardinalityCount;
+
+    /**
      * IntermediateFileMerger Constructor
      *
      * @param intermediateFiles intermediateFiles
@@ -172,7 +178,7 @@ public class IntermediateFileMerger implements Callable<Void> {
             int fileWriteBufferSize, boolean isRenamingRequired, boolean isFactMdkeyInInputRow,
             int factMdkeyLength, int sortTempFileNoOFRecordsInCompression,
             boolean isSortTempFileCompressionEnabled, char[] type, boolean prefetch,
-            int prefetchBufferSize, String[] aggregator) {
+            int prefetchBufferSize, String[] aggregator, int highCardinalityCount) {
         this.intermediateFiles = intermediateFiles;
         this.measureCount = measureCount;
         this.mdKeyLength = mdKeyLength;
@@ -190,6 +196,7 @@ public class IntermediateFileMerger implements Callable<Void> {
         this.prefetch = prefetch;
         this.prefetchBufferSize = prefetchBufferSize;
         this.aggregator = aggregator;
+        this.highCardinalityCount = highCardinalityCount;
     }
 
     @Override public Void call() throws Exception {
@@ -338,7 +345,8 @@ public class IntermediateFileMerger implements Callable<Void> {
             molapSortTempFileChunkHolder =
                     new MolapSortTempFileChunkHolder(tempFile, this.measureCount, this.mdKeyLength,
                             this.fileReadBufferSize, this.isFactMdkeyInInputRow,
-                            this.factMdkeyLength, this.aggregator);
+                            this.factMdkeyLength, this.aggregator, this.highCardinalityCount,
+                            this.type);
             // initialize
             molapSortTempFileChunkHolder.initialize();
             molapSortTempFileChunkHolder.readRow();
@@ -423,12 +431,16 @@ public class IntermediateFileMerger implements Callable<Void> {
             int aggregatorIndexInRowObject = 0;
             // get row from record holder list
             MeasureAggregator[] aggregator = (MeasureAggregator[]) row[aggregatorIndexInRowObject];
-            for (int j = 0; j < aggregator.length; j++) {
-                byte[] byteArray = aggregator[j].getByteArray();
-                stream.writeInt(byteArray.length);
-                stream.write(byteArray);
+            MolapDataProcessorUtil.writeMeasureAggregatorsToSortTempFile(type, stream, aggregator);
+            stream.writeDouble((Double) row[aggregatorIndexInRowObject + 1]);
+
+            // writing the high cardinality data.
+            if (highCardinalityCount > 0) {
+                int highCardIndex = this.mdKeyIndex - 1;
+                byte[] singleHighCardArr = (byte[]) row[highCardIndex];
+                stream.write(singleHighCardArr);
             }
-            stream.writeDouble((Double) row[this.mdKeyIndex - 1]);
+
             // write mdkye
             stream.write((byte[]) row[this.mdKeyIndex]);
             if (this.isFactMdkeyInInputRow) {

@@ -25,9 +25,11 @@ package com.huawei.unibi.molap.engine.aggregator.impl.dim;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.HashSet;
 
 import com.huawei.unibi.molap.constants.MolapCommonConstants;
+import com.huawei.unibi.molap.datastorage.store.dataholder.MolapReadDataHolder;
 import com.huawei.unibi.molap.engine.aggregator.MeasureAggregator;
 import com.huawei.unibi.molap.engine.wrappers.ByteArrayWrapper;
 
@@ -43,7 +45,7 @@ public class DistinctCountAggregatorForDim implements MeasureAggregator
      */
     private static final long serialVersionUID = 1860704158506108621L;
     
-    private HashSet<ByteArrayWrapper> valueSet = new HashSet<ByteArrayWrapper>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+    private HashSet<ByteArrayWrapper> valueSetForDim = new HashSet<ByteArrayWrapper>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
     
     private byte[] maxKey;
     
@@ -51,7 +53,6 @@ public class DistinctCountAggregatorForDim implements MeasureAggregator
     
     private int maskByteLen;
     
-    private ByteArrayWrapper wrapper;
     
     /**
      * For Spark MOLAP to avoid heavy object transfer it better to flatten the Aggregators. There is no aggregation expected after setting this value.  
@@ -63,7 +64,6 @@ public class DistinctCountAggregatorForDim implements MeasureAggregator
     	this.maxKey = maxKey;
     	this.maskByteRanges = maskByteRanges;
     	maskByteLen = maskByteRanges.length;
-    	wrapper = new ByteArrayWrapper();
     }
     
     public DistinctCountAggregatorForDim()
@@ -71,19 +71,11 @@ public class DistinctCountAggregatorForDim implements MeasureAggregator
     	
     }
     
-    //we are not comparing the Aggregator values 
-    /* public boolean equals(MeasureAggregator msrAggregator){
-         return compareTo(msrAggregator)==0;
-     }*/
-     
-    
-    
-    //TODO SIMIAN
     @Override
     public int compareTo(MeasureAggregator msrAggrInfo) 
     {
-        double val = getValue();
-        double otherVal = msrAggrInfo.getValue();
+        double val = getDoubleValue();
+        double otherVal = msrAggrInfo.getDoubleValue();
         if(val > otherVal)
         {
             return 1;
@@ -96,74 +88,84 @@ public class DistinctCountAggregatorForDim implements MeasureAggregator
     }
 
     @Override
-    public void agg(double newVal, byte[] key, int offset, int length)
-    {
-    	wrapper.setData(key, offset, maxKey, maskByteRanges, maskByteLen);
-    	if(valueSet.add(wrapper))
+    public void agg(double newVal)
     	{
-    		wrapper = new ByteArrayWrapper();
-    	}
+       
     }
 
     @Override
-    public void agg(Object newVal, byte[] key, int offset, int length)
+    public void agg(Object newVal)
     {
-        wrapper.setData(key, offset, maxKey, maskByteRanges, maskByteLen);
-        if(valueSet.add(wrapper))
-        {
-            wrapper = new ByteArrayWrapper();
+     
         }
+
+    @Override
+    public void agg(MolapReadDataHolder newVal, int index)
+    {
+
     }
 
     @Override
     public byte[] getByteArray()
     {
-        // TODO Auto-generated method stub
         return null;
     }
 
-    @Override
-    public void agg(double newVal, double factCount)
-    {
-        // TODO Auto-generated method stub
-        
-    }
 
     @Override
-    public double getValue()
+    public Double getDoubleValue()
     {
         if(computedFixedValue == null)
         {
-            return valueSet.size();
+            return (double)valueSetForDim.size();
         }
         return computedFixedValue;
+    }
+        
+    @Override
+    public Long getLongValue()
+    {
+        if(computedFixedValue == null)
+        {
+            return (long)valueSetForDim.size();
+        }
+        return computedFixedValue.longValue();
+    }
+
+    @Override
+    public BigDecimal getBigDecimalValue()
+    {
+        if(computedFixedValue == null)
+        {
+            return new BigDecimal(valueSetForDim.size());
+        }
+        return new BigDecimal(computedFixedValue);
     }
 
     @Override
     public Object getValueObject()
     {
-        return valueSet.size();
+        return valueSetForDim.size();
     }
 
     @Override
     public void merge(MeasureAggregator aggregator)
     {
     	DistinctCountAggregatorForDim countAggregatorForDim = (DistinctCountAggregatorForDim)aggregator;
-    	valueSet.addAll(countAggregatorForDim.valueSet);
+    	valueSetForDim.addAll(countAggregatorForDim.valueSetForDim);
         
     }
 
     @Override
-    public void setNewValue(double newValue)
+    public void setNewValue(Object newValue)
     {
-        computedFixedValue = newValue;
-        valueSet = null;
+        computedFixedValue = (Double)newValue;
+        valueSetForDim = null;
     }
 
     @Override
     public boolean isFirstTime()
     {
-        // TODO Auto-generated method stub
         return false;
     }
 
@@ -171,7 +173,7 @@ public class DistinctCountAggregatorForDim implements MeasureAggregator
     public MeasureAggregator getCopy()
     {
     	DistinctCountAggregatorForDim countAggregatorForDim = new DistinctCountAggregatorForDim();
-    	countAggregatorForDim.valueSet = new HashSet<ByteArrayWrapper>(valueSet);
+    	countAggregatorForDim.valueSetForDim = new HashSet<ByteArrayWrapper>(valueSetForDim);
     	countAggregatorForDim.maskByteLen = maskByteLen;
     	countAggregatorForDim.maskByteRanges = maskByteRanges.clone();
     	countAggregatorForDim.maxKey = maxKey.clone();
@@ -195,7 +197,6 @@ public class DistinctCountAggregatorForDim implements MeasureAggregator
     @Override
     public MeasureAggregator get()
     {
-        // TODO Auto-generated method stub
         return this;
     }
 
@@ -203,7 +204,6 @@ public class DistinctCountAggregatorForDim implements MeasureAggregator
     public void merge(byte[] value)
     {
         // TODO Auto-generated method stub
-        
     }
 
 }

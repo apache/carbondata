@@ -22,11 +22,13 @@ package com.huawei.unibi.molap.engine.aggregator.impl;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.Set;
 
 import com.huawei.unibi.molap.constants.MolapCommonConstants;
+import com.huawei.unibi.molap.datastorage.store.dataholder.MolapReadDataHolder;
 import com.huawei.unibi.molap.engine.aggregator.MeasureAggregator;
 
 public class DistinctCountAggregatorObjectSet implements MeasureAggregator
@@ -40,20 +42,20 @@ public class DistinctCountAggregatorObjectSet implements MeasureAggregator
     /**
      * 
      */
-    private Set<Object> valueSet;
+    private Set<Object> valueSetForObj;
 
     public DistinctCountAggregatorObjectSet()
     {
-        valueSet = new HashSet<Object>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+        valueSetForObj = new HashSet<Object>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
     }
 
     /**
      * just need to add the unique values to agg set
      */
     @Override
-    public void agg(double newVal, byte[] key, int offset, int length)
+    public void agg(double newVal)
     {
-        valueSet.add(newVal);
+        valueSetForObj.add(newVal);
     }
     
     /**
@@ -61,27 +63,32 @@ public class DistinctCountAggregatorObjectSet implements MeasureAggregator
      * 
      * @param newVal
      *            new value
-     * @param key
-     *            mdkey
-     * @param offset
-     *            key offset
-     * @param length
-     *            length to be considered
      * 
      */
     @Override
-    public void agg(Object newVal, byte[] key, int offset, int length)
+    public void agg(Object newVal)
     {
+        // Object include double
+        if(newVal instanceof Double)
+        {
+            agg((double)newVal);
+            return;
+        }
         byte[] values = (byte[])newVal;
         ByteBuffer buffer = ByteBuffer.wrap(values);
         buffer.rewind();
         //CHECKSTYLE:OFF    Approval No:Approval-V3R8C00_018
         while(buffer.hasRemaining())
         { //CHECKSTYLE:ON
-            valueSet.add(buffer.getDouble());
+            valueSetForObj.add(buffer.getDouble());
         }
     }
 
+    @Override
+    public void agg(MolapReadDataHolder newVal, int index)
+    {
+        valueSetForObj.add(newVal.getReadableDoubleValueByIndex(index));
+    }
     /**
      * Below method will be used to get the value byte array
      */
@@ -92,15 +99,15 @@ public class DistinctCountAggregatorObjectSet implements MeasureAggregator
     }
 
     
-    @Override
-    public void agg(double newVal, double factCount)
-    {
-        
-    }
+//    @Override
+//    public void agg(double newVal, double factCount)
+//    {
+//
+//    }
 
     private void agg(Set<Object> set2)
     {
-        valueSet.addAll(set2);
+        valueSetForObj.addAll(set2);
     }
 
     /**
@@ -110,39 +117,42 @@ public class DistinctCountAggregatorObjectSet implements MeasureAggregator
     public void merge(MeasureAggregator aggregator)
     {
         DistinctCountAggregatorObjectSet distinctCountAggregator = (DistinctCountAggregatorObjectSet)aggregator;
-        agg(distinctCountAggregator.valueSet);
+        agg(distinctCountAggregator.valueSetForObj);
     }
 
     @Override
-    public double getValue()
+    public Double getDoubleValue()
     {
-        return valueSet.size();
+        return (double)valueSetForObj.size();
+    }
+
+    @Override
+    public Long getLongValue()
+    {
+        return (long)valueSetForObj.size();
+    }
+
+    @Override
+    public BigDecimal getBigDecimalValue()
+    {
+        return new BigDecimal(valueSetForObj.size());
     }
 
     @Override
     public Object getValueObject()
     {
-        return valueSet.size();
-    }
-
-    /**
-     * 
-     * @see com.huawei.unibi.molap.engine.aggregator.MeasureAggregator#setNewValue(double)
-     * 
-     */
-    @Override
-    public void setNewValue(double newValue)
-    {
+        return valueSetForObj.size();
     }
     
     /**
      * 
-     * @see com.huawei.unibi.molap.engine.aggregator.MeasureAggregator#setNewValue(double)
+     * @see com.huawei.unibi.molap.engine.aggregator.MeasureAggregator#setNewValue(Object)
      * 
      */
+    @Override
     public void setNewValue(Object newValue)
     {
-        valueSet.add(newValue);
+        valueSetForObj.add(newValue);
     }
 
     @Override
@@ -168,7 +178,7 @@ public class DistinctCountAggregatorObjectSet implements MeasureAggregator
     {
 
         DistinctCountAggregatorObjectSet aggregator = new DistinctCountAggregatorObjectSet();
-        aggregator.valueSet = new HashSet<Object>(valueSet);
+        aggregator.valueSetForObj = new HashSet<Object>(valueSetForObj);
         return aggregator;
     }
     
@@ -180,13 +190,13 @@ public class DistinctCountAggregatorObjectSet implements MeasureAggregator
     @Override
     public int compareTo(MeasureAggregator measureAggr)
     {
-        double valueSetSize = getValue();
-        double otherVal = measureAggr.getValue();
-        if(valueSetSize > otherVal)
+        double valueSetForObjSize = getDoubleValue();
+        double otherVal = measureAggr.getDoubleValue();
+        if(valueSetForObjSize > otherVal)
         {
             return 1;
         }
-        if(valueSetSize < otherVal)
+        if(valueSetForObjSize < otherVal)
         {
             return -1; 
         }
@@ -201,7 +211,7 @@ public class DistinctCountAggregatorObjectSet implements MeasureAggregator
     
     public String toString()
     {
-         return valueSet.size()+"";
+         return valueSetForObj.size()+"";
     }
 
     @Override

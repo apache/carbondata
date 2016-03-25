@@ -50,10 +50,10 @@ public class RemoveDictionaryUtil {
             dimArray[i] = (Integer) out[i];
         }
 
-        Double[] measureArray = new Double[out.length - dimCount];
+        Object[] measureArray = new Object[out.length - dimCount];
         int index = 0;
         for (int j = dimCount; j < out.length; j++) {
-            measureArray[index++] = (Double) out[j];
+            measureArray[index++] = out[j];
         }
 
         newOutArr[IgnoreDictionary.DIMENSION_INDEX_IN_ROW.getIndex()] = dimArray;
@@ -187,8 +187,8 @@ public class RemoveDictionaryUtil {
      * @param row
      * @return
      */
-    public static Double getMeasure(int index, Object[] row) {
-        Double[] measures = (Double[]) row[IgnoreDictionary.MEASURES_INDEX_IN_ROW.getIndex()];
+    public static Object getMeasure(int index, Object[] row) {
+        Object[] measures = (Object[]) row[IgnoreDictionary.MEASURES_INDEX_IN_ROW.getIndex()];
         return measures[index];
     }
 
@@ -198,7 +198,7 @@ public class RemoveDictionaryUtil {
     }
 
     public static void prepareOutObj(Object[] out, Integer[] dimArray, byte[] byteBufferArr,
-            Double[] measureArray) {
+            Object[] measureArray) {
 
         out[IgnoreDictionary.DIMENSION_INDEX_IN_ROW.getIndex()] = dimArray;
         out[IgnoreDictionary.BYTE_ARRAY_INDEX_IN_ROW.getIndex()] = byteBufferArr;
@@ -207,28 +207,19 @@ public class RemoveDictionaryUtil {
     }
 
     /**
+     * @param row
+     * @return
+     */
+    public static Integer[] getCompleteDimensions(Object[] row) {
+
+        return (Integer[]) row[0];
+        }
+
+    /**
      * This will extract the high cardinality count from the string.
      */
     public static int extractHighCardCount(String highCardinalityDim) {
-
-        if (null == highCardinalityDim) {
-            return 0;
-        }
-
-        String[] highCard = highCardinalityDim.split(MolapCommonConstants.COMA_SPC_CHARACTER);
-        int[] highCardDimsLocal = new int[highCard.length];
-        List<String> list1 = new ArrayList<String>(MolapCommonConstants.CONSTANT_SIZE_TEN);
-        // int[] lenshighCard = new int[highCard.length];
-
-        for (int i = 0; i < highCardDimsLocal.length; i++) {
-            String[] dim = highCard[i].split(MolapCommonConstants.COLON_SPC_CHARACTER);
-            list1.add(dim[0]);
-            highCardDimsLocal[i] = Integer.parseInt(dim[1]);
-            Integer.parseInt(dim[2]);
-
-        }
-
-        return list1.toArray(new String[list1.size()]).length;
+        return extractHighCardDimsArr(highCardinalityDim).length;
     }
 
     /**
@@ -307,15 +298,10 @@ public class RemoveDictionaryUtil {
         }
 
         String[] highCard = highCardinalityDim.split(MolapCommonConstants.COMA_SPC_CHARACTER);
-        int[] highCardDimsLocal = new int[highCard.length];
         List<String> list1 = new ArrayList<String>(MolapCommonConstants.CONSTANT_SIZE_TEN);
-
-        for (int i = 0; i < highCardDimsLocal.length; i++) {
+        for (int i = 0; i < highCard.length; i++) {
             String[] dim = highCard[i].split(MolapCommonConstants.COLON_SPC_CHARACTER);
             list1.add(dim[0]);
-            highCardDimsLocal[i] = Integer.parseInt(dim[1]);
-            Integer.parseInt(dim[2]);
-
         }
 
         return list1.toArray(new String[list1.size()]);

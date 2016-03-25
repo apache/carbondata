@@ -26,6 +26,11 @@ public class MolapWriteDataHolder {
     private double[] doubleValues;
 
     /**
+     * longValues
+     */
+    private long[] longValues;
+
+    /**
      * byteValues
      */
     private byte[][] byteValues;
@@ -57,8 +62,13 @@ public class MolapWriteDataHolder {
         doubleValues = new double[size];
     }
 
+    public void reset() {
+        size = 0;
+        totalSize = 0;
+    }
+
     /**
-     * method to initialise byte array
+     * Method to initialise double array
      *
      * @param size
      */
@@ -72,13 +82,36 @@ public class MolapWriteDataHolder {
     }
 
     /**
+     * Method to initialise long array
+     *
+     * @param size
+     */
+    public void initialiseLongValues(int size) {
+        if (size < 1) {
+            throw new IllegalArgumentException("Invalid array size");
+        }
+        longValues = new long[size];
+    }
+
+    /**
      * set double value by index
      *
      * @param index
      * @param value
      */
-    public void setWritableDoubleValueByIndex(int index, double value) {
-        doubleValues[index] = value;
+    public void setWritableDoubleValueByIndex(int index, Object value) {
+        doubleValues[index] = (Double) value;
+        size++;
+    }
+
+    /**
+     * set double value by index
+     *
+     * @param index
+     * @param value
+     */
+    public void setWritableLongValueByIndex(int index, Object value) {
+        longValues[index] = (Long) value;
         size++;
     }
 
@@ -148,8 +181,17 @@ public class MolapWriteDataHolder {
         return columnByteValues;
     }
 
-    public void reset() {
-        size = 0;
-        totalSize = 0;
+    /**
+     * Get Writable Double Values
+     *
+     * @return
+     */
+    public long[] getWritableLongValues() {
+        if (size < longValues.length) {
+            long[] temp = new long[size];
+            System.arraycopy(longValues, 0, temp, 0, size);
+            longValues = temp;
+        }
+        return longValues;
     }
 }

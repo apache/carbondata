@@ -1300,6 +1300,16 @@ public final class MolapCommonConstants {
      */
     public static final char BYTE_VALUE_MEASURE = 'c';
     /**
+     * BIG_DECIMAL_MEASURE
+     */
+    public static final char BIG_DECIMAL_MEASURE = 'b';
+
+    /**
+     * BIG_INT_MEASURE
+     */
+    public static final char BIG_INT_MEASURE = 'l';
+
+    /**
      * MEASURE_NOT_NULL_VALUE
      */
 

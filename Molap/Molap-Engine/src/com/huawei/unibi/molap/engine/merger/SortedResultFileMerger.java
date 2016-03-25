@@ -106,7 +106,7 @@ public class SortedResultFileMerger implements Callable<Void>
                 ResultTempFileReader molapSortTempFileChunkHolder = new ResultTempFileReader(file.getAbsolutePath(),
                         dataProcessorInfo.getKeySize(), AggUtil.getAggregators(dataProcessorInfo.getAggType(), false,
                                 dataProcessorInfo.getKeyGenerator(), dataProcessorInfo.getCubeUniqueName(),
-                                dataProcessorInfo.getMsrMinValue(),null),
+                                dataProcessorInfo.getMsrMinValue(),null, dataProcessorInfo.getDataTypes()),
                                 dataProcessorInfo.getFileBufferSize());
                 // initialize
                 molapSortTempFileChunkHolder.initialize();
@@ -180,7 +180,7 @@ public class SortedResultFileMerger implements Callable<Void>
         }
 
         dataFile.setMeasureAggs(AggUtil.getAggregators(dataProcessorInfo.getAggType(), false, dataProcessorInfo.getKeyGenerator(), dataProcessorInfo
-                .getCubeUniqueName(),dataProcessorInfo.getMsrMinValue(),null));
+                .getCubeUniqueName(),dataProcessorInfo.getMsrMinValue(),null, dataProcessorInfo.getDataTypes()));
         try
         {
             // read the next row to process and add to the heap.

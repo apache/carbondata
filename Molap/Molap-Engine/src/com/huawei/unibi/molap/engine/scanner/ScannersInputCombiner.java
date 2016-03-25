@@ -35,6 +35,7 @@ import com.huawei.unibi.molap.engine.schema.metadata.Pair;
 import com.huawei.unibi.molap.keygenerator.KeyGenerator;
 import com.huawei.unibi.molap.metadata.LeafNodeInfo;
 import com.huawei.unibi.molap.metadata.LeafNodeInfoColumnar;
+import com.huawei.unibi.molap.olap.SqlStatement;
 import com.huawei.unibi.molap.util.ByteUtil;
 
 /**
@@ -70,6 +71,9 @@ public class ScannersInputCombiner implements DataInputStream
      */
     private List<String> aggNames;
 
+
+    private SqlStatement.Type[] dataTypes;
+
     /**
      * 
      */
@@ -86,12 +90,13 @@ public class ScannersInputCombiner implements DataInputStream
 //    private int[] decimalLength;
 
     public ScannersInputCombiner(List<Scanner> scanners, KeyGenerator keyGenerator, List<String> aggNames,
-            boolean hasFactCount)
+            boolean hasFactCount, SqlStatement.Type[] dataTypes)
     {
         this.aggNames = aggNames;
         this.scanners = scanners;
         this.keyGenerator = keyGenerator;
         this.hasFactCount = hasFactCount;
+        this.dataTypes = dataTypes;
     }
 
     /**
@@ -120,14 +125,25 @@ public class ScannersInputCombiner implements DataInputStream
             if(lastKey == null)
             {
                 lastKey = key;
-                lastAggs = AggUtil.getAggregators(aggNames, hasFactCount, null);
+                lastAggs = AggUtil.getAggregators(aggNames, hasFactCount, null, dataTypes);
             }
 
             else if(ByteUtil.compare(key, lastKey) != 0)
             {
                 for(int k = 0;k < lastAggs.length;k++)
                 {
-                    lastData[k] = lastAggs[k].getValue();
+                    switch (dataTypes[k])
+                    {
+                        case LONG:
+                            lastData[k] = lastAggs[k].getLongValue();
+                            break;
+                        case DECIMAL:
+                            lastData[k] = lastAggs[k].getBigDecimalValue().doubleValue();
+                            break;
+                        default:
+                            lastData[k] = lastAggs[k].getDoubleValue();
+                    }
+
 //                    setDecimals(k, lastData[k]);
                 }
 
@@ -135,7 +151,7 @@ public class ScannersInputCombiner implements DataInputStream
                 data.setValue(lastData);
 
                 lastKey = key;
-                lastAggs = AggUtil.getAggregators(aggNames, hasFactCount, keyGenerator);
+                lastAggs = AggUtil.getAggregators(aggNames, hasFactCount, keyGenerator, dataTypes);
 
                 // calculate max ,min ,decimal num of measure for value
                 // compression
@@ -144,7 +160,7 @@ public class ScannersInputCombiner implements DataInputStream
                 // Just aggregate with old data
                 for(int j = 0;j < lastAggs.length;j++)
                 {
-                    lastAggs[j].agg(vals[j], vals[lastData.length - 1]);
+                    lastAggs[j].agg(vals[j]);
                 }
                 return data;
             }
@@ -152,17 +168,28 @@ public class ScannersInputCombiner implements DataInputStream
             // Just aggregate with old data
             for(int j = 0;j < lastAggs.length;j++)
             {
-                lastAggs[j].agg(vals[j], vals[lastData.length - 1]);
+                lastAggs[j].agg(vals[j]);
             }
         }
 
         // Handle left out row
         if(lastKey != null)
         {
-            for(int k = 0;k < lastAggs.length;k++)
+            for(int i = 0;i < lastAggs.length;i++)
             {
-                lastData[k] = lastAggs[k].getValue();
+                switch (dataTypes[i])
+                {
+                    case LONG:
+                        lastData[i] = lastAggs[i].getLongValue();
+                        break;
+                    case DECIMAL:
+                        lastData[i] = lastAggs[i].getBigDecimalValue().doubleValue();
+                        break;
+                    default:
+                        lastData[i] = lastAggs[i].getDoubleValue();
+                }
 //                setDecimals(k, lastData[k]);
+                lastData[i] = lastAggs[i].getDoubleValue();
             }
             data = new Pair(lastKey, lastData);
 //            caliculateMaxMin(data);

@@ -29,6 +29,7 @@ import com.huawei.unibi.molap.engine.datastorage.InMemoryCube;
 import com.huawei.unibi.molap.engine.reader.ResultTempFileReader;
 import com.huawei.unibi.molap.keygenerator.KeyGenerator;
 import com.huawei.unibi.molap.metadata.MolapMetadata.Dimension;
+import com.huawei.unibi.molap.olap.SqlStatement;
 
 /**
  * 
@@ -69,7 +70,7 @@ public class DataProcessorInfo
     /**
      * msrMinValue
      */
-    private double[] msrMinValue;
+    private Object[] msrMinValue;
 
     /**
      * maskedByteRangeForsorting
@@ -119,6 +120,11 @@ public class DataProcessorInfo
     private int blockSize;
 
     private byte[] sortedDimIndex;
+
+    /**
+     * array of sql datatypes of mesaures and dimensions
+     */
+    protected SqlStatement.Type[] dataTypes;
 
     private boolean[] highCardinalityTypes;
 
@@ -436,12 +442,12 @@ public class DataProcessorInfo
         this.aggType = aggType;
     }
 
-    public double[] getMsrMinValue()
+    public Object[] getMsrMinValue()
     {
         return msrMinValue;
     }
 
-    public void setMsrMinValue(double[] msrMinValue)
+    public void setMsrMinValue(Object[] msrMinValue)
     {
         this.msrMinValue = msrMinValue;
     }
@@ -454,6 +460,16 @@ public class DataProcessorInfo
     public byte[] getSortedDimensionIndex()
     {
         return sortedDimIndex;
+    }
+
+    public SqlStatement.Type[] getDataTypes()
+    {
+        return dataTypes;
+    }
+
+    public void setDataTypes(SqlStatement.Type[] dataTypes)
+    {
+        this.dataTypes = dataTypes;
     }
 
     public void setHighCardinalityTypes(boolean[] highCardinalityTypes)

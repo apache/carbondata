@@ -147,6 +147,8 @@ public class ColumnarSliceExecuter implements Callable<Void>
         aggregatorInfo.setQueryDimensionsLength(sliceInfo.getQueryDimensions().length);
         aggregatorInfo.setComplexQueryDims(sliceInfo.getComplexQueryDimensions());
         aggregatorInfo.setDimensions(sliceInfo.getDimensions());
+		aggregatorInfo.setDataTypes(sliceInfo.getDataTypes());
+        aggregatorInfo.setMeasureOrdinalMap(sliceInfo.getMeasureOrdinalMap());
         return aggregatorInfo;
     }
 

@@ -23,6 +23,7 @@ import com.huawei.unibi.molap.constants.MolapCommonConstants;
 import com.huawei.unibi.molap.engine.aggregator.MeasureAggregator;
 import com.huawei.unibi.molap.engine.columnar.aggregator.ColumnarAggregatorInfo;
 import com.huawei.unibi.molap.engine.columnar.keyvalue.AbstractColumnarScanResult;
+import com.huawei.unibi.molap.olap.SqlStatement;
 import com.huawei.unibi.molap.util.MolapUtil;
 
 public class AggregateTableAggregator extends FactTableAggregator
@@ -46,20 +47,33 @@ public class AggregateTableAggregator extends FactTableAggregator
     public void aggregateMeasure(AbstractColumnarScanResult keyValue, MeasureAggregator[] currentMsrRowData)
     {
         byte[] byteValue= null;
-        double doubleValue= 0;
+        Object measureValue= 0;
         for(int i = 0;i < noOfMeasuresInQuery;i++)
         {
             if(type[i]==MolapCommonConstants.SUM_COUNT_VALUE_MEASURE)
             {
-                doubleValue = keyValue.getNormalMeasureValue(measureOrdinal[i]);
-                if(uniqueValues[measureOrdinal[i]] != doubleValue)
+                int index = columnaraggreagtorInfo.getMeasureOrdinalMap().get(measureOrdinal[i]);
+                SqlStatement.Type dataType = this.columnaraggreagtorInfo.getDataTypes()[index];
+//                measureValue = keyValue.getNormalMeasureValue(measureOrdinal[i], dataType);
+                switch (dataType)
                 {
-                    currentMsrRowData[columnaraggreagtorInfo.getMeasureStartIndex() + i].agg(doubleValue, null, 0, 0);
+                    case LONG:
+                        measureValue = keyValue.getLongValue(measureOrdinal[i]);
+                        break;
+                    case DECIMAL:
+                        measureValue = keyValue.getBigDecimalValue(measureOrdinal[i]);
+                        break;
+                    default:
+                        measureValue = keyValue.getDoubleValue(measureOrdinal[i]);
+                }
+                if(!uniqueValues[measureOrdinal[i]].equals(measureValue))
+                {
+                    currentMsrRowData[columnaraggreagtorInfo.getMeasureStartIndex() + i].agg(measureValue);
                 }
             }
             else
             {
-                byteValue = keyValue.getCustomMeasureValue(measureOrdinal[i]);
+                byteValue = keyValue.getByteArrayValue(measureOrdinal[i]);
                 currentMsrRowData[columnaraggreagtorInfo.getMeasureStartIndex() + i].merge(byteValue);
             }
         }

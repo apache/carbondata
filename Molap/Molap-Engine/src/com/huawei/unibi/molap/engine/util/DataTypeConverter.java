@@ -98,6 +98,15 @@ public final class DataTypeConverter
                     LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "Cannot convert" + TIMESTAMP.toString() + " to Time/Long type value"+e.getMessage());
                     return null;
                 }
+            case DECIMAL:
+                if(data.isEmpty())
+                {
+                    return null;
+                }
+                java.math.BigDecimal javaDecVal = new java.math.BigDecimal(data);
+                scala.math.BigDecimal scalaDecVal = new scala.math.BigDecimal(javaDecVal);
+                org.apache.spark.sql.types.Decimal decConverter = new org.apache.spark.sql.types.Decimal();
+                return decConverter.set(scalaDecVal);
             default:
                 return data;
         }
@@ -117,4 +126,41 @@ public final class DataTypeConverter
 
     }
     
+    public static Object getMeasureDataBasedOnDataType(Object data, SqlStatement.Type dataType)
+    {
+
+        if(null==data)
+        {
+            return null;
+        }
+        try
+        {
+            switch(dataType)
+            {
+                case DOUBLE:
+
+                    return (Double)data;
+                case LONG:
+
+                    return (Long)data;
+
+                case DECIMAL:
+
+                    java.math.BigDecimal javaDecVal = new java.math.BigDecimal(data.toString());
+                    scala.math.BigDecimal scalaDecVal = new scala.math.BigDecimal(javaDecVal);
+                    org.apache.spark.sql.types.Decimal decConverter = new org.apache.spark.sql.types.Decimal();
+                    return decConverter.set(scalaDecVal);
+                default:
+
+                    return data;
+            }
+        }
+        catch(NumberFormatException ex)
+        {
+            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "Problem while converting data type"+data);
+            return null;
+        }
+
+    }
+
 }

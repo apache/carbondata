@@ -36,7 +36,7 @@ public class MolapColumnarLeafTupleDataIterator
     /**
      * unique value if slice
      */
-    private double[] uniqueValue;
+    private Object[] uniqueValue;
 
     /**
      * hash next
@@ -124,15 +124,15 @@ public class MolapColumnarLeafTupleDataIterator
      */
     private Object[] getMeasure() {
         Object[] measures = new Object[measureCount];
-        double values = 0;
+        Object values = 0;
         for (int i = 0; i < measures.length; i++) {
             if (aggType[i] == 'n') {
-                values = keyValue.getNormalMeasureValue(i);
-                if (this.isMeasureUpdateResuired && values != uniqueValue[i]) {
+                values = keyValue.getDoubleValue(i);
+                if (this.isMeasureUpdateResuired && !values.equals(uniqueValue[i])) {
                     measures[i] = values;
                 }
             } else {
-                measures[i] = keyValue.getCustomMeasureValue(i);
+                measures[i] = keyValue.getByteArrayValue(i);
             }
         }
         return measures;

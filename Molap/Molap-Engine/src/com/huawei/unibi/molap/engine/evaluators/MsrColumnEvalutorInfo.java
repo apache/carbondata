@@ -27,13 +27,15 @@ public class MsrColumnEvalutorInfo
     
     private boolean isCustomMeasureValue;
     
-    private double uniqueValue;
+    private Object uniqueValue;
     
     private String aggregator;
     
     private boolean isMeasureExistsInCurrentSlice=true;
     
-    private double defaultValue;
+    private Object defaultValue;
+
+    private char type;
 
     public int getColumnIndex()
     {
@@ -65,14 +67,24 @@ public class MsrColumnEvalutorInfo
         this.isCustomMeasureValue = isCustomMeasureValue;
     }
 
-    public double getUniqueValue()
+    public Object getUniqueValue()
     {
         return uniqueValue;
     }
 
-    public void setUniqueValue(double uniqueValue)
+    public void setUniqueValue(Object uniqueValue)
     {
         this.uniqueValue = uniqueValue;
+    }
+
+    public char getType()
+    {
+        return type;
+    }
+
+    public void setType(char type)
+    {
+        this.type = type;
     }
 
     /**
@@ -105,7 +117,7 @@ public class MsrColumnEvalutorInfo
         this.isMeasureExistsInCurrentSlice = isMeasureExistsInCurrentSlice;
     }
 
-    public double getDefaultValue()
+    public Object getDefaultValue()
     {
         return defaultValue;
     }

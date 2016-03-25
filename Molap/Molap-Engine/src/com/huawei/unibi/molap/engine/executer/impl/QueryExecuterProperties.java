@@ -19,6 +19,7 @@
 
 package com.huawei.unibi.molap.engine.executer.impl;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -28,6 +29,7 @@ import com.huawei.unibi.molap.keygenerator.KeyGenerator;
 import com.huawei.unibi.molap.metadata.MolapMetadata.Dimension;
 import com.huawei.unibi.molap.metadata.MolapMetadata.Measure;
 import com.huawei.unibi.molap.vo.HybridStoreModel;
+import com.huawei.unibi.molap.olap.SqlStatement;
 
 public class QueryExecuterProperties
 {
@@ -69,7 +71,7 @@ public class QueryExecuterProperties
     /**
      * uniqueValue
      */
-    protected double[] uniqueValue;
+    protected Object[] uniqueValue;
     
     /**
      * mask bytes ranges
@@ -124,7 +126,7 @@ public class QueryExecuterProperties
     /**
      * msrMinValue
      */
-    protected double[] msrMinValue;
+    protected Object[] msrMinValue;
 
     /**
      * isFunctionQuery
@@ -160,5 +162,12 @@ public class QueryExecuterProperties
      */
     protected HybridStoreModel hybridStoreModel;
 
+    /**
+     * array of sql datatypes of mesaures and dimensions
+     */
+    protected SqlStatement.Type[] dataTypes;
+
+    protected HashMap<Integer,Integer> measureOrdinalMap = new HashMap<>();
+    
     
 }

@@ -95,6 +95,8 @@ class MolapSqlDDLParser()
   protected val NUMERIC = Keyword("NUMERIC")
   protected val ARRAY = Keyword("ARRAY")
   protected val STRUCT = Keyword("STRUCT")
+  protected val BIGINT = Keyword("BIGINT")
+  protected val DECIMAL = Keyword("DECIMAL")
   protected val OPTIONS = Keyword("OPTIONS")
   protected val OUTPATH = Keyword("OUTPATH")
   protected val OVERWRITE = Keyword("OVERWRITE")
@@ -467,7 +469,7 @@ class MolapSqlDDLParser()
   
   protected lazy val dimCol: Parser[Field] = anyFieldDef 
  
-  protected lazy val  primitiveTypes = STRING | INTEGER | TIMESTAMP | NUMERIC
+  protected lazy val  primitiveTypes = STRING | INTEGER | TIMESTAMP | NUMERIC | BIGINT | DECIMAL
   protected lazy val nestedType: Parser[Field]  =  structFieldType | arrayFieldType | primitiveFieldType
 
   protected lazy val anyFieldDef: Parser[Field]  = 
@@ -499,7 +501,7 @@ class MolapSqlDDLParser()
   }
   
   protected lazy val measureCol: Parser[Field] =
-    (ident | stringLit) ~ (INTEGER | NUMERIC).? ~ (AS ~> (ident | stringLit)).? ~ (IN ~>(ident|stringLit)).? ^^ {
+    (ident | stringLit) ~ (INTEGER | NUMERIC| BIGINT | DECIMAL).? ~ (AS ~> (ident | stringLit)).? ~ (IN ~>(ident|stringLit)).? ^^ {
       case e1 ~ e2 ~ e3 ~ e4 => Field(e1, e2, e3, Some(null))
     }
 
@@ -595,6 +597,8 @@ class MolapSqlDDLParser()
       case "numeric" => Field(field.column, Some("Numeric"), field.name, Some(null),field.parent,field.storeType)
       case "array" => Field(field.column, Some("Array"), field.name, field.children.map(f => f.map(normalizeType(_))),field.parent,field.storeType)
       case "struct" => Field(field.column, Some("Struct"), field.name, field.children.map(f => f.map(normalizeType(_))),field.parent,field.storeType)
+      case "bigint" => Field(field.column, Some("BigInt"), field.name, Some(null),field.parent,field.storeType)
+      case "decimal" => Field(field.column, Some("Decimal"), field.name, Some(null),field.parent,field.storeType)      
       case _ => field
     }
   }
@@ -619,6 +623,8 @@ class MolapSqlDDLParser()
           field.children.map(f => f.map(appendParentForEachChild(_, parentName +"."+ field.column))), parentName)
       case "Struct" => Field(parentName +"."+ field.column, Some("Struct"), Some(parentName +"."+ field.name.getOrElse(None)), 
           field.children.map(f => f.map(appendParentForEachChild(_, parentName +"."+ field.column))), parentName)
+      case "BigInt" => Field(parentName +"."+ field.column, Some("BigInt"), Some(parentName +"."+ field.name.getOrElse(None)), Some(null), parentName)
+      case "Decimal" => Field(parentName +"."+ field.column, Some("Decimal"), Some(parentName +"."+ field.name.getOrElse(None)), Some(null), parentName)
       case _ => field
     }
   }

@@ -19,6 +19,7 @@
 
 package com.huawei.unibi.molap.engine.columnar.aggregator;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -28,6 +29,7 @@ import com.huawei.unibi.molap.engine.complex.querytypes.GenericQueryType;
 import com.huawei.unibi.molap.engine.datastorage.InMemoryCube;
 import com.huawei.unibi.molap.keygenerator.KeyGenerator;
 import com.huawei.unibi.molap.metadata.MolapMetadata.Dimension;
+import com.huawei.unibi.molap.olap.SqlStatement;
 
 public class ColumnarAggregatorInfo
 {
@@ -60,7 +62,7 @@ public class ColumnarAggregatorInfo
     /**
      * uniqueValue
      */
-    private double[] uniqueValue;
+    private Object[] uniqueValue;
     
     /**
      * limit
@@ -95,7 +97,7 @@ public class ColumnarAggregatorInfo
     /**
      * minValue
      */
-    private double[] msrMinValue;
+    private Object[] msrMinValue;
     
     /**
      * measurIndex
@@ -140,12 +142,18 @@ public class ColumnarAggregatorInfo
     /**
      * msrDefaultValue
      */
-    private double[] msrDefaultValue;
+
+    private Object[] msrDefaultValue;
 
     /**
      * 
      */
     private boolean[] highCardinalityTypes;
+    
+    /**
+     * array of sql datatypes of mesaures and dimensions
+     */
+    protected SqlStatement.Type[] dataTypes;
     
   
     /**
@@ -245,7 +253,7 @@ public class ColumnarAggregatorInfo
     /**
      * @return the uniqueValue
      */
-    public double[] getUniqueValue()
+    public Object[] getUniqueValue()
     {
         return uniqueValue;
     }
@@ -253,7 +261,7 @@ public class ColumnarAggregatorInfo
     /**
      * @param uniqueValue the uniqueValue to set
      */
-    public void setUniqueValue(double[] uniqueValue)
+    public void setUniqueValue(Object[] uniqueValue)
     {
         this.uniqueValue = uniqueValue;
     }
@@ -318,12 +326,12 @@ public class ColumnarAggregatorInfo
         this.aggType = aggType;
     }
 
-    public double[] getMsrMinValue()
+    public Object[] getMsrMinValue()
     {
         return msrMinValue;
     }
 
-    public void setMsrMinValue(double[] msrMinValue)
+    public void setMsrMinValue(Object[] msrMinValue)
     {
         this.msrMinValue = msrMinValue;
     }
@@ -408,14 +416,24 @@ public class ColumnarAggregatorInfo
         this.isMeasureExistis = isMeasureExistis;
     }
 
-    public double[] getMsrDefaultValue()
+    public Object[] getMsrDefaultValue()
     {
         return msrDefaultValue;
     }
 
-    public void setMsrDefaultValue(double[] msrDefaultValue)
+    public void setMsrDefaultValue(Object[] msrDefaultValue)
     {
         this.msrDefaultValue = msrDefaultValue;
+    }
+
+    public SqlStatement.Type[] getDataTypes()
+    {
+        return dataTypes;
+    }
+
+    public void setDataTypes(SqlStatement.Type[] dataTypes)
+    {
+        this.dataTypes = dataTypes;
     }
 
     /**
@@ -434,6 +452,16 @@ public class ColumnarAggregatorInfo
     public boolean[] getHighCardinalityTypes()
     {
         return highCardinalityTypes;
+    }
+
+    private HashMap<Integer,Integer> measureOrdinalMap;
+    public void setMeasureOrdinalMap(HashMap<Integer,Integer> measureOrdinal)
+    {
+        this.measureOrdinalMap = measureOrdinal;
+    }
+    public HashMap<Integer,Integer> getMeasureOrdinalMap()
+    {
+        return measureOrdinalMap;
     }
 
 }

@@ -106,7 +106,7 @@ public class MapBasedResultAggregatorImpl implements ColumnarScannedResultAggreg
             {
                 currentMsrRowData = AggUtil.getAggregators(columnaraggreagtorInfo.getAggType(),
                         columnaraggreagtorInfo.getCustomExpressions(), isAggTable, null,
-                        columnaraggreagtorInfo.getCubeUniqueName(), columnaraggreagtorInfo.getMsrMinValue(),columnaraggreagtorInfo.getHighCardinalityTypes());
+                        columnaraggreagtorInfo.getCubeUniqueName(), columnaraggreagtorInfo.getMsrMinValue(),columnaraggreagtorInfo.getHighCardinalityTypes(), columnaraggreagtorInfo.getDataTypes());
                 aggData.put(dimensionsRowWrapper, currentMsrRowData);
             }
             dataAggregator.aggregateData(keyValue, currentMsrRowData,dimensionsRowWrapper);

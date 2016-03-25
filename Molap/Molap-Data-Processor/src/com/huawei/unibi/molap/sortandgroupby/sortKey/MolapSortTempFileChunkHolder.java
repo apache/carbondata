@@ -151,9 +151,9 @@ public class MolapSortTempFileChunkHolder {
      * @param measureCount measure count
      * @param mdKeyLength  mdkey length
      */
-    public MolapSortTempFileChunkHolder(File tempFile, int measureCount, int mdKeyLength,
+    private MolapSortTempFileChunkHolder(File tempFile, int measureCount, int mdKeyLength,
             int fileBufferSize, boolean isFactMdkeyInInputRow, int factMdkeyLength,
-            String[] aggregator) {
+            String[] aggregator, char[] type) {
         // set temp file
         this.tempFile = tempFile;
         // set measure count
@@ -169,10 +169,7 @@ public class MolapSortTempFileChunkHolder {
             this.outRecSize += 1;
         }
         this.aggregator = aggregator;
-        this.type = new char[aggregator.length];
-        for (int i = 0; i < aggregator.length; i++) {
-            this.type[i] = MolapUtil.getType(aggregator[i]);
-        }
+        this.type = type;
     }
 
     /**
@@ -189,9 +186,9 @@ public class MolapSortTempFileChunkHolder {
      */
     public MolapSortTempFileChunkHolder(File tmpFile, int measureCount2, int mdkeyLength2,
             int fileBufferSize2, boolean isFactMdkeyInInputRow2, int factMdkeyLength2,
-            String[] aggregators, int highCardCount) {
+            String[] aggregators, int highCardCount, char[] type) {
         this(tmpFile, measureCount2, mdkeyLength2, fileBufferSize2, isFactMdkeyInInputRow2,
-                factMdkeyLength2, aggregators);
+                factMdkeyLength2, aggregators, type);
         this.highCardCount = highCardCount;
     }
 
@@ -368,16 +365,21 @@ public class MolapSortTempFileChunkHolder {
         byte[] byteArray = null;
         try {
             for (int i = 0; i < this.aggregator.length - 1; i++) {
-                if (type[i] == MolapCommonConstants.BYTE_VALUE_MEASURE) {
+                if (type[i] == MolapCommonConstants.BYTE_VALUE_MEASURE
+                        || type[i] == MolapCommonConstants.BIG_DECIMAL_MEASURE) {
                     int length = stream.readInt();
                     byteArray = new byte[length];
                     stream.readFully(byteArray);
                     holder[i] = byteArray;
                 } else {
                     if (stream.readByte() == MolapCommonConstants.MEASURE_NOT_NULL_VALUE) {
+                        if (type[i] == MolapCommonConstants.BIG_INT_MEASURE) {
+                            holder[i] = stream.readLong();
+                        } else {
                         holder[i] = stream.readDouble();
                     }
                 }
+            }
             }
             holder[this.aggregator.length - 1] = stream.readDouble();
 

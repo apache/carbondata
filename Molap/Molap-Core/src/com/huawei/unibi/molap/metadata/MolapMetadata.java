@@ -66,6 +66,8 @@ import org.eigenbase.xom.NodeDef;
         TYPESMAPPING.put("Timestamp", SqlStatement.Type.TIMESTAMP);
         TYPESMAPPING.put("Array", SqlStatement.Type.ARRAY);
         TYPESMAPPING.put("Struct", SqlStatement.Type.STRUCT);
+        TYPESMAPPING.put("BigInt", SqlStatement.Type.LONG);
+        TYPESMAPPING.put("Decimal", SqlStatement.Type.DECIMAL);
     }
 
     static {
@@ -77,6 +79,8 @@ import org.eigenbase.xom.NodeDef;
         DBTYPEMAPPING.put("Date", "DATE");
         DBTYPEMAPPING.put("Time", "TIME");
         DBTYPEMAPPING.put("Timestamp", "DATETIME");
+        DBTYPEMAPPING.put("BigInt", "LONG");
+        DBTYPEMAPPING.put("Decimal", "DECIMAL");
     }
 
     private final ReadWriteLock lock = new ReentrantReadWriteLock();

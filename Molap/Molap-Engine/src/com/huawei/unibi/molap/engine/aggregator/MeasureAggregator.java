@@ -23,6 +23,8 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
+import java.math.BigDecimal;
+import com.huawei.unibi.molap.datastorage.store.dataholder.MolapReadDataHolder;
 
 /**
  *
@@ -35,59 +37,42 @@ import java.io.Serializable;
 
 public interface MeasureAggregator extends Serializable,Comparable<MeasureAggregator>
 {
-    /**
-     * Aggregate function which will aggregate the new value with older value
-     * 
-     * @param newVal
-     *            new value
-     * @param key
-     *            mdkey
-     * @param offset
-     *            key offset
-     * @param length
-     *            length to be considered
-     * 
-     */
-    void agg(double newVal, byte[] key, int offset, int length);
-    
-    
-    /**
-     * Aggregate function which will aggregate the new value with older value
-     * 
-     * @param newVal
-     *            new value
-     * @param key
-     *            mdkey
-     * @param offset
-     *            key offset
-     * @param length
-     *            length to be considered
-     * 
-     */
-    void agg(Object newVal, byte[] key, int offset, int length);
-//    
-    byte[] getByteArray();
-    
-    /**
-     * Overloaded Aggregate function will be used for Aggregate tables because
-     * aggregate table will have fact_count as a measure.
-     * 
-     * @param newVal
-     *            new value
-     * @param factCount
-     *            total fact count
-     * 
-     */
-    void agg(double newVal, double factCount);
 
     /**
-     * This method will return the aggregated value of the measure
+     * Below method will be used to aggregate the Double value 
      * 
-     * @return aggregated value
+     * @param newVal
+     */
+    void agg(double newVal);
+    
+    /**
+     * Below method will be used to aggregate the object value
      * 
+     * @param newVal
+     */
+    void agg(Object newVal);
+
+    /**
+     * Below method will be used to aggregate the value based on index 
+     * @param newVal
+     * @param index
+     */
+    void agg(MolapReadDataHolder newVal,int index);
+
+    /**
+     * Get the Serialize byte array 
+     * @return
+     */
+    byte[] getByteArray();
+    
+
+    /**
+     * This method will be used to set the new value
+     * 
+     * @param newValue
      * 
      */
-    double getValue();
+    void setNewValue(Object newValue);
 
     /**
      * This method return the object value of the MeasureAggregator
@@ -98,21 +83,30 @@ public interface MeasureAggregator extends Serializable,Comparable<MeasureAggreg
     Object getValueObject();
 
     /**
+     * This method return the object value of the MeasureAggregator
+     * 
+     * @return aggregated value
+     * 
+     */
+    Double getDoubleValue();
+
+    /**
+     * This method return the object value of the MeasureAggregator
+     * 
+     * @return aggregated value
+     * 
+     */
+    Long getLongValue();
+    
+    BigDecimal getBigDecimalValue();
+    /**
      * This method merge the aggregated value based on aggregator passed
      * 
      * @param aggregator
      *            type of aggregator
-     * 
-     */
-    void merge(MeasureAggregator aggregator);
-    
-    /**
-     * This method will be used to set the new value
-     * 
-     * @param newValue
      *
      */
-    void setNewValue(double newValue);
+    void merge(MeasureAggregator aggregator);
     
     /**
      * Is first time. It means it was never used for aggregating any value.
@@ -138,6 +132,10 @@ public interface MeasureAggregator extends Serializable,Comparable<MeasureAggreg
      */
     void readData(DataInput inPut) throws IOException;
     
+    /**
+     *
+     * @return
+     */
     MeasureAggregator get();
     
     /**
@@ -147,5 +145,4 @@ public interface MeasureAggregator extends Serializable,Comparable<MeasureAggreg
      * 
      */
     void merge(byte[] value);
-    
 }

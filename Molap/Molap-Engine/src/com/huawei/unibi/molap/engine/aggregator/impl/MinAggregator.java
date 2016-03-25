@@ -41,7 +41,7 @@ import com.huawei.unibi.molap.util.MolapUtil;
  * 
  * Version 1.0
  */
-public class MinAggregator implements MeasureAggregator
+public class MinAggregator extends AbstractMeasureAggregatorMaxMin
 {
 
     /**
@@ -51,40 +51,9 @@ public class MinAggregator implements MeasureAggregator
      */
     private static final long serialVersionUID = -8077547753784906280L;
 
-    /**
-     * aggregate value
-     */
-    private Comparable<Object> aggVal;
-    
-    /**
-     * 
-     */
-    private boolean firstTime = true;
-    
     private static final LogService LOGGER = LogServiceFactory.getLogService(MinAggregator.class.getName());
 
-    /**
-     * This method will update the min of values if new value is less than
-     * aggVal
-     * 
-     * @param newVal
-     *            new value
-     * @param key
-     *            mdkey
-     * @param offset
-     *            key offset
-     * @param length
-     *            length to be considered
-     * 
-     */
-    @Override
-    public void agg(double newVal, byte[] key, int offset, int length)
-    {
-        internalAgg((Double)newVal);
-        firstTime = false;
-    }
-
-    private void internalAgg(Object value)
+    protected void internalAgg(Object value)
     {
         if(value instanceof Comparable)
         {
@@ -94,27 +63,6 @@ public class MinAggregator implements MeasureAggregator
         }
     }
     
-    /**
-     * This method will update the min of values if new value is less than
-     * aggVal
-     * 
-     * @param newVal
-     *            new value
-     * @param key
-     *            mdkey
-     * @param offset
-     *            key offset
-     * @param length
-     *            length to be considered
-     * 
-     */
-    @Override
-    public void agg(Object newVal, byte[] key, int offset, int length)
-    {
-        internalAgg(newVal);
-        firstTime = false;
-    }
-
     /**
      * Below method will be used to get the value byte array
      */
@@ -146,19 +94,6 @@ public class MinAggregator implements MeasureAggregator
     }
     
     /**
-     * This method will return aggVal
-     * 
-     * @return min value
-     * 
-     */
-
-    @Override
-    public double getValue()
-    {
-        return (Double)((Object)aggVal);
-    }
-
-    /**
      * Merge the value, it will update the min aggregate value if aggregator
      * passed as an argument will have value less than aggVal
      * 
@@ -172,59 +107,10 @@ public class MinAggregator implements MeasureAggregator
         MinAggregator minAggregator = (MinAggregator)aggregator;
 //        if(!minAggregator.isFirstTime())
 //        {
-            agg(minAggregator.aggVal, null, 0, 0);
+            agg(minAggregator.aggVal);
 //        }
     }
 
-    /**
-     * Overloaded Aggregate function will be used for Aggregate tables because
-     * aggregate table will have fact_count as a measure. It will update the
-     * aggVal if aggVal is greater than newVal
-     * 
-     * @param newVal
-     *            new value
-     * @param factCount
-     *            total fact count
-     * 
-     */
-
-    @Override
-    public void agg(double newVal, double factCount)
-    {
-        agg(newVal, null, 0, 0);
-        firstTime = false;
-    }
-    
-
-    /**
-     * 
-     * @see com.huawei.unibi.molap.engine.aggregator.MeasureAggregator#setNewValue(double)
-     * 
-     */
-    @Override
-    public void setNewValue(double newValue)
-    {
-//        aggVal= newValue;
-    }
-    
-
-    /**
-     * This method return the min value as an object
-     * 
-     * @return min value as an object
-     */
-    @Override
-    public Object getValueObject()  
-    {
-        return aggVal;
-    }
-
-    @Override
-    public boolean isFirstTime()
-    {
-        return firstTime;
-    }
-    
     @Override
     public void writeData(DataOutput dataOutputVal1) throws IOException
     {
@@ -248,27 +134,6 @@ public class MinAggregator implements MeasureAggregator
         }
     }
 
-    @Override
-    public MeasureAggregator get()
-    {
-        return this;
-    }
-    
-    public String toString()
-    {
-        return aggVal+"";
-    }
-    
-    @Override
-    public int compareTo(MeasureAggregator o)
-    {
-        @SuppressWarnings("unchecked")
-        Comparable<Object> other = (Comparable<Object>)o.getValueObject();
-        
-        return aggVal.compareTo(other);
-    }    
-    
-
     @SuppressWarnings("unchecked")
     @Override
     public void readData(DataInput inPut) throws IOException
@@ -286,7 +151,6 @@ public class MinAggregator implements MeasureAggregator
         }
         catch(Exception e)
         {
-
             LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
                     "Problem while getting byte array in minaggregator: " + e.getMessage());       
          }finally{

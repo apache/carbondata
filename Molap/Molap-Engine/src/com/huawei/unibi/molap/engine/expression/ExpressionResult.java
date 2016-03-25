@@ -19,6 +19,7 @@
 
 package com.huawei.unibi.molap.engine.expression;
 
+import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -209,6 +210,8 @@ public class ExpressionResult
 
             case IntegerType:
                 return (Long)value;
+            case LongType:
+                return (Long)value;
             case DoubleType:
                 return (Long)value;
             case TimestampType:
@@ -231,6 +234,57 @@ public class ExpressionResult
                     + " to Long type value");
         }
     
+    }
+
+    //Add to judge for BigDecimal
+    public BigDecimal getDecimal() throws FilterUnsupportedException
+    {
+        if(value == null)
+        {
+            return null;
+        }
+        try
+        {
+            switch(this.getDataType())
+            {
+                case StringType:
+                    try
+                    {
+                        return new BigDecimal(value.toString());
+                    }
+                    catch(NumberFormatException e)
+                    {
+                        throw new FilterUnsupportedException(e);
+                    }
+
+                case IntegerType:
+                    return new BigDecimal((int)value);
+                case LongType:
+                    return new BigDecimal((long)value);
+                case DoubleType:
+                    return new BigDecimal((double)value);
+                case DecimalType:
+                    return new BigDecimal(value.toString());
+                case TimestampType:
+                    if(value instanceof Timestamp)
+                    {
+                        return new BigDecimal(1000*((Timestamp)value).getTime());
+                    }
+                    else
+                    {
+                        return new BigDecimal((long)value);
+                    }
+                default:
+                    throw new FilterUnsupportedException("Cannot convert" + this.getDataType().name()
+                            + " to Long type value");
+            }
+        }
+        catch(ClassCastException e)
+        {
+            throw new FilterUnsupportedException("Cannot convert" + this.getDataType().name()
+                    + " to Long type value");
+        }
+
     }
 
     public Long getTime() throws FilterUnsupportedException

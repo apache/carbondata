@@ -22,6 +22,7 @@ package com.huawei.unibi.molap.util;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.*;
@@ -78,8 +79,8 @@ public final class MolapDataProcessorUtil {
      * @throws IOException
      * @throws IOException
      */
-    private static void writeMeasureMetaDataToFileLocal(double[] maxValue, double[] minValue,
-            int[] decimalLength, double[] uniqueValue, char[] aggType, byte[] dataTypeSelected,
+    private static void writeMeasureMetaDataToFileLocal(Object[] maxValue, Object[] minValue,
+            int[] decimalLength, Object[] uniqueValue, char[] aggType, byte[] dataTypeSelected,
             double[] minValueFact, String measureMetaDataFileLocation)
             throws MolapDataProcessorException {
         int length = maxValue.length;
@@ -87,22 +88,48 @@ public final class MolapDataProcessorUtil {
         // of measure * (8*2)) +(number of measure *4)]
         // 8 for holding the double value and 4 for holding the int value, 8*2
         // because of max and min value
-        int totalSize = length * MolapCommonConstants.DOUBLE_SIZE_IN_BYTE * 3
-                + length * MolapCommonConstants.INT_SIZE_IN_BYTE
+        int totalSize = length * MolapCommonConstants.INT_SIZE_IN_BYTE
                 + length * MolapCommonConstants.CHAR_SIZE_IN_BYTE + length;
+        int uniqueValueLength = 0;
+        for (int j = 0; j < aggType.length; j++) {
+            if (aggType[j] == MolapCommonConstants.BIG_DECIMAL_MEASURE) {
+                BigDecimal val = (BigDecimal) uniqueValue[j];
+                byte[] buff = DataTypeUtil.bigDecimalToByte(val);
+                uniqueValueLength =
+                        uniqueValueLength + buff.length + MolapCommonConstants.INT_SIZE_IN_BYTE;
+                val = (BigDecimal) minValue[j];
+                buff = DataTypeUtil.bigDecimalToByte(val);
+                uniqueValueLength =
+                        uniqueValueLength + buff.length + MolapCommonConstants.INT_SIZE_IN_BYTE;
+                val = (BigDecimal) maxValue[j];
+                buff = DataTypeUtil.bigDecimalToByte(val);
+                uniqueValueLength =
+                        uniqueValueLength + buff.length + MolapCommonConstants.INT_SIZE_IN_BYTE;
+            } else {
+                uniqueValueLength =
+                        uniqueValueLength + 3 * MolapCommonConstants.DOUBLE_SIZE_IN_BYTE;
+            }
+        }
+        totalSize = totalSize + uniqueValueLength;
         if (minValueFact != null) {
             totalSize += length * MolapCommonConstants.DOUBLE_SIZE_IN_BYTE;
         }
-        ByteBuffer byteBuffer = ByteBuffer.allocate(totalSize);
+        //        +4 bytes for writing total length at the beginning of measure metadata file
+        ByteBuffer byteBuffer =
+                ByteBuffer.allocate(totalSize + MolapCommonConstants.INT_SIZE_IN_BYTE);
+        byteBuffer.putInt(totalSize);
+        for (int j = 0; j < aggType.length; j++) {
+            byteBuffer.putChar(aggType[j]);
+        }
 
         // add all the max
         for (int j = 0; j < maxValue.length; j++) {
-            byteBuffer.putDouble(maxValue[j]);
+            writeValue(byteBuffer, maxValue[j], aggType[j]);
         }
 
         // add all the min
         for (int j = 0; j < minValue.length; j++) {
-            byteBuffer.putDouble(minValue[j]);
+            writeValue(byteBuffer, minValue[j], aggType[j]);
         }
 
         // add all the decimal
@@ -111,13 +138,7 @@ public final class MolapDataProcessorUtil {
         }
 
         for (int j = 0; j < uniqueValue.length; j++) {
-            byteBuffer.putDouble(uniqueValue[j]);
-        }
-
-        if (null != aggType) {
-            for (int j = 0; j < aggType.length; j++) {
-                byteBuffer.putChar(aggType[j]);
-            }
+            writeValue(byteBuffer, uniqueValue[j], aggType[j]);
         }
 
         for (int j = 0; j < dataTypeSelected.length; j++) {
@@ -148,15 +169,28 @@ public final class MolapDataProcessorUtil {
         }
     }
 
-    public static void writeMeasureMetaDataToFile(double[] maxValue, double[] minValue,
-            int[] decimalLength, double[] uniqueValue, char[] aggType, byte[] dataTypeSelected,
+    private static void writeValue(ByteBuffer byteBuffer, Object value, char type) {
+        if (type == MolapCommonConstants.BIG_INT_MEASURE) {
+            byteBuffer.putLong((long) value);
+        } else if (type == MolapCommonConstants.BIG_DECIMAL_MEASURE) {
+            BigDecimal val = (BigDecimal) value;
+            byte[] buff = DataTypeUtil.bigDecimalToByte(val);
+            byteBuffer.putInt(buff.length);
+            byteBuffer.put(buff);
+        } else {
+            byteBuffer.putDouble((double) value);
+        }
+    }
+
+    public static void writeMeasureMetaDataToFile(Object[] maxValue, Object[] minValue,
+            int[] decimalLength, Object[] uniqueValue, char[] aggType, byte[] dataTypeSelected,
             String measureMetaDataFileLocation) throws MolapDataProcessorException {
         writeMeasureMetaDataToFileLocal(maxValue, minValue, decimalLength, uniqueValue, aggType,
                 dataTypeSelected, null, measureMetaDataFileLocation);
     }
 
-    public static void writeMeasureMetaDataToFileForAgg(double[] maxValue, double[] minValue,
-            int[] decimalLength, double[] uniqueValue, char[] aggType, byte[] dataTypeSelected,
+    public static void writeMeasureMetaDataToFileForAgg(Object[] maxValue, Object[] minValue,
+            int[] decimalLength, Object[] uniqueValue, char[] aggType, byte[] dataTypeSelected,
             double[] minValueAgg, String measureMetaDataFileLocation)
             throws MolapDataProcessorException {
         writeMeasureMetaDataToFileLocal(maxValue, minValue, decimalLength, uniqueValue, aggType,
@@ -799,7 +833,7 @@ public final class MolapDataProcessorUtil {
         return model;
     }
 
-    public static double[] updateMergedMinValue(String schemaName, String cubeName,
+    public static Object[] updateMergedMinValue(String schemaName, String cubeName,
             String tableName, int measureCount, String extension, int currentRestructNumber) {
         // get the table name
         String inputStoreLocation = schemaName + File.separator + cubeName;
@@ -830,7 +864,7 @@ public final class MolapDataProcessorUtil {
         String metaDataFileName = MolapCommonConstants.MEASURE_METADATA_FILE_NAME + tableName
                 + MolapCommonConstants.MEASUREMETADATA_FILE_EXT;
         String measureMetaDataFileLocation = storeLocation + metaDataFileName;
-        double[] mergedMinValue = ValueCompressionUtil
+        Object[] mergedMinValue = ValueCompressionUtil
                 .readMeasureMetaDataFile(measureMetaDataFileLocation, measureCount).getMinValue();
         return mergedMinValue;
     }
@@ -1043,19 +1077,24 @@ public final class MolapDataProcessorUtil {
      * @return
      */
     public static String getAggType(MeasureAggregator aggregator) {
-        if (aggregator instanceof SumAggregator) {
+        if (aggregator instanceof SumDoubleAggregator || aggregator instanceof SumLongAggregator
+                || aggregator instanceof SumBigDecimalAggregator) {
             return MolapCommonConstants.SUM;
         } else if (aggregator instanceof MaxAggregator) {
             return MolapCommonConstants.MAX;
         } else if (aggregator instanceof MinAggregator) {
             return MolapCommonConstants.MIN;
-        } else if (aggregator instanceof AvgAggregator) {
+        } else if (aggregator instanceof AvgDoubleAggregator
+                || aggregator instanceof AvgLongAggregator
+                || aggregator instanceof AvgBigDecimalAggregator) {
             return MolapCommonConstants.AVERAGE;
         } else if (aggregator instanceof CountAggregator) {
             return MolapCommonConstants.COUNT;
         } else if (aggregator instanceof DistinctCountAggregator) {
             return MolapCommonConstants.DISTINCT_COUNT;
-        } else if (aggregator instanceof SumDistinctAggregator) {
+        } else if (aggregator instanceof SumDistinctDoubleAggregator
+                || aggregator instanceof SumDistinctLongAggregator
+                || aggregator instanceof SumDistinctBigDecimalAggregator) {
             return MolapCommonConstants.SUM_DISTINCT;
         }
         return null;
@@ -1123,5 +1162,36 @@ public final class MolapDataProcessorUtil {
                 MolapUtil.readSliceMetaDataFile(fileLocation, currentRestructNumber);
 
         return sliceMetaData;
+    }
+
+    public static void writeMeasureAggregatorsToSortTempFile(char[] type, DataOutputStream stream,
+            MeasureAggregator[] aggregator) throws IOException {
+        for (int j = 0; j < aggregator.length; j++) {
+            if (type[j] == MolapCommonConstants.BYTE_VALUE_MEASURE) {
+                byte[] byteArray = aggregator[j].getByteArray();
+                stream.writeInt(byteArray.length);
+                stream.write(byteArray);
+            } else if (type[j] == MolapCommonConstants.BIG_DECIMAL_MEASURE) {
+                BigDecimal val = aggregator[j].getBigDecimalValue();
+                byte[] byteArray = DataTypeUtil.bigDecimalToByte(val);
+                stream.writeInt(byteArray.length);
+                stream.write(byteArray);
+            } else {
+                // if measure value is null than aggregator will return
+                // first time true as no record has been added, so writing null value  
+                if (aggregator[j].isFirstTime()) {
+                    stream.writeByte(MolapCommonConstants.MEASURE_NULL_VALUE);
+                } else {
+                    // else writing not null value followed by data
+                    stream.writeByte(MolapCommonConstants.MEASURE_NOT_NULL_VALUE);
+                    if (type[j] == MolapCommonConstants.BIG_INT_MEASURE) {
+                        stream.writeLong(aggregator[j].getLongValue());
+                    } else {
+                        stream.writeDouble(aggregator[j].getDoubleValue());
+                    }
+                }
+
+            }
+        }
     }
 }

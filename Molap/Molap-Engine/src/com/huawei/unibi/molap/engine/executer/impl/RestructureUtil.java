@@ -112,7 +112,7 @@ public final class RestructureUtil
     }
     
     public static void updateMeasureInfo(SliceMetaData sliceMataData, Measure[] measures, int[] measureOrdinal,
-            boolean[] msrExists, double[] newMsrsDftVal)
+            boolean[] msrExists, Object[] newMsrsDftVal)
     {
         String[] sMetaMsrs = sliceMataData.getMeasures();
         updateMsr(sliceMataData, measures, measureOrdinal, msrExists, newMsrsDftVal, sMetaMsrs);
@@ -127,7 +127,7 @@ public final class RestructureUtil
      * @param sMetaMsrs
      */
     public static void updateMsr(SliceMetaData sliceMataData, Measure[] measures, int[] measureOrdinal,
-            boolean[] msrExists, double[] newMsrsDftVal, String[] sMetaMsrs)
+            boolean[] msrExists, Object[] newMsrsDftVal, String[] sMetaMsrs)
     {
         for(int i = 0;i < measures.length;i++)
         {

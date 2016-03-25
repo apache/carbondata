@@ -34,20 +34,25 @@ public class ValueCompressionModel {
      */
     private DataType[] changedDataType;
     /**
+     * DataType[]  variable.
+     */
+    private DataType[] actualDataType;
+
+    /**
      * maxValue
      */
-    private double[] maxValue;
+    private Object[] maxValue;
     /**
      * minValue.
      */
-    private double[] minValue;
+    private Object[] minValue;
 
-    private double[] minValueFactForAgg;
+    private Object[] minValueFactForAgg;
 
     /**
      * uniqueValue
      */
-    private double[] uniqueValue;
+    private Object[] uniqueValue;
     /**
      * decimal.
      */
@@ -89,6 +94,13 @@ public class ValueCompressionModel {
     }
 
     /**
+     * @return the actualDataType
+     */
+    public DataType[] getActualDataType() {
+        return actualDataType;
+    }
+
+    /**
      * @param changedDataType the changedDataType to set
      */
     public void setChangedDataType(DataType[] changedDataType) {
@@ -96,16 +108,23 @@ public class ValueCompressionModel {
     }
 
     /**
+     * @param actualDataType
+     */
+    public void setActualDataType(DataType[] actualDataType) {
+        this.actualDataType = actualDataType;
+    }
+
+    /**
      * @return the maxValue
      */
-    public double[] getMaxValue() {
+    public Object[] getMaxValue() {
         return maxValue;
     }
 
     /**
      * @param maxValue the maxValue to set
      */
-    public void setMaxValue(double[] maxValue) {
+    public void setMaxValue(Object[] maxValue) {
         this.maxValue = maxValue;
     }
 
@@ -144,7 +163,7 @@ public class ValueCompressionModel {
      *
      * @return
      */
-    public double[] getMinValue() {
+    public Object[] getMinValue() {
         return minValue;
     }
 
@@ -153,7 +172,7 @@ public class ValueCompressionModel {
      *
      * @param minValue
      */
-    public void setMinValue(double[] minValue) {
+    public void setMinValue(Object[] minValue) {
         this.minValue = minValue;
     }
 
@@ -190,7 +209,7 @@ public class ValueCompressionModel {
      *
      * @return
      */
-    public double[] getUniqueValue() {
+    public Object[] getUniqueValue() {
         return uniqueValue;
     }
 
@@ -199,21 +218,21 @@ public class ValueCompressionModel {
      *
      * @param uniqueValue
      */
-    public void setUniqueValue(double[] uniqueValue) {
+    public void setUniqueValue(Object[] uniqueValue) {
         this.uniqueValue = uniqueValue;
     }
 
     /**
      * @return the minValueFactForAgg
      */
-    public double[] getMinValueFactForAgg() {
+    public Object[] getMinValueFactForAgg() {
         return minValueFactForAgg;
     }
 
     /**
      * @param minValueFactForAgg the minValueFactForAgg to set
      */
-    public void setMinValueFactForAgg(double[] minValueFactForAgg) {
+    public void setMinValueFactForAgg(Object[] minValueFactForAgg) {
         this.minValueFactForAgg = minValueFactForAgg;
     }
 }

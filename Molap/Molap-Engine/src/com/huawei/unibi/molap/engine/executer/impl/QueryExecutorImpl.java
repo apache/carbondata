@@ -331,10 +331,10 @@ public class QueryExecutorImpl extends AbstractQueryExecutor
         Measure[] measures = queryModel.getMsrs().toArray(new Measure[queryModel.getMsrs().size()]);
         int[] measureOrdinal = new int[measures.length];
         boolean[] msrExists = new boolean[measures.length];
-        double[] newMsrsDftVal = new double[measures.length];
+        Object[] newMsrsDftVal = new Object[measures.length];
         RestructureUtil.updateMeasureInfo(sliceMataData, measures, measureOrdinal, msrExists, newMsrsDftVal);
         
-        double[] sliceUniqueValues = null;
+        Object[] sliceUniqueValues = null;
         if(null!=slice.getDataCache(queryModel.getFactTable()))
         {
             sliceUniqueValues = slice.getDataCache(queryModel.getFactTable()).getUniqueValue();
@@ -358,6 +358,7 @@ public class QueryExecutorImpl extends AbstractQueryExecutor
         info.setTableName(queryModel.getFactTable());
         info.setKeyGenerator(slice.getKeyGenerator(queryModel.getFactTable()));
         info.setQueryDimensions(queryDimensions);
+        info.setDimensions(currentDimTables);
         info.setMeasureOrdinal(measureOrdinal);
         info.setCubeName(executerProperties.cubeName);
         info.setPartitionId(queryModel.getPartitionId());
@@ -480,7 +481,8 @@ public class QueryExecutorImpl extends AbstractQueryExecutor
         info.setExpressionStartIndex(executerProperties.aggExpressionStartIndex);
         info.setIsMeasureExistis(msrExists);
         info.setMsrDefaultValue(newMsrsDftVal);
-        
+        info.setDataTypes(executerProperties.dataTypes);
+        info.setMeasureOrdinalMap(executerProperties.measureOrdinalMap);
 //        updateDimensionAggregatorInfo(queryModel.getDimensionAggInfo(), slice.getDataCache(queryModel.getFactTable()));
         return info;
     }

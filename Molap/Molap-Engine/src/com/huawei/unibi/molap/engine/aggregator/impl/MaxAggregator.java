@@ -43,7 +43,7 @@ import com.huawei.unibi.molap.util.MolapUtil;
  * 
  * Version 1.0
  */
-public class MaxAggregator implements MeasureAggregator
+public class MaxAggregator extends AbstractMeasureAggregatorMaxMin
 {
 
     /**
@@ -52,40 +52,10 @@ public class MaxAggregator implements MeasureAggregator
      * 
      */
     private static final long serialVersionUID = -5850218739083899419L;
-    /**
-     * aggregate value
-     */
-    private Comparable<Object> aggVal;
-    
-    /**
-     * 
-     */
-    private boolean firstTime = true;
     
     private static final LogService LOGGER = LogServiceFactory.getLogService(MaxAggregator.class.getName());
     
-    /**
-     * This method will update the aggVal if aggVal is less than new value
-     * 
-     * @param newVal
-     *          new value
-     * @param key
-     *          mdkey 
-     * @param offset
-     *          key offset 
-     * @param length
-     *          length to be considered 
-     *
-     */
-    
-    @Override
-    public void agg(double newVal, byte[] key, int offset, int length)
-    {
-        internalAgg((Double)newVal);
-        firstTime = false;
-    }
-
-    private void internalAgg(Object value)
+    protected void internalAgg(Object value)
     {
         if(value instanceof Comparable)
         {
@@ -95,26 +65,6 @@ public class MaxAggregator implements MeasureAggregator
         }
     }
     
-    /**
-     * This method will update the aggVal if aggVal is less than new value
-     * 
-     * @param newVal
-     *          new value
-     * @param key
-     *          mdkey 
-     * @param offset
-     *          key offset 
-     * @param length
-     *          length to be considered 
-     *
-     */
-    @Override
-    public void agg(Object newVal, byte[] key, int offset, int length)
-    {
-        internalAgg(newVal);
-        firstTime = false;
-    }
-
     /**
      * Below method will be used to get the value byte array
      */
@@ -147,36 +97,6 @@ public class MaxAggregator implements MeasureAggregator
     }
     
     /**
-     * Overloaded Aggregate function will be used for Aggregate tables because
-     * aggregate table will have fact_count as a measure. It will update the
-     * aggVal if aggVal is less than newVal
-     * 
-     * @param newVal
-     *            new value
-     * @param factCount
-     *            total fact count
-     * 
-     */
-    @Override
-    public void agg(double newVal, double factCount)
-    {
-        agg(newVal, null, 0, 0);
-        firstTime = false;
-    }
-
-    /**
-     * This method will return max value
-     * 
-     * @return max value
-     *
-     */
-    @Override
-    public double getValue()
-    {
-        return (Double)((Object)aggVal);
-    }
-
-    /**
      * Merge the value, it will update the max aggregate value if aggregator
      * passed as an argument will have value greater than aggVal
      * 
@@ -190,22 +110,10 @@ public class MaxAggregator implements MeasureAggregator
         MaxAggregator maxAggregator = (MaxAggregator)aggregator;
 //        if(!maxAggregator.isFirstTime())
 //        {
-            agg(maxAggregator.aggVal, null, 0, 0);
+            agg(maxAggregator.aggVal);
 //        }
     }
 
-    /**
-     * This method return the max value as an object
-     * 
-     * @return max value as an object
-     */
-    @Override
-    public Object getValueObject()
-    {
-        return aggVal;
-    }
-
-      
     @Override
     public void writeData(DataOutput dataOutput) throws IOException 
     {
@@ -265,44 +173,6 @@ public class MaxAggregator implements MeasureAggregator
         return aggregator;
     }
     
-    /**
-     * 
-     * @see com.huawei.unibi.molap.engine.aggregator.MeasureAggregator#setNewValue(double)
-     * 
-     */
-    @Override
-    public void setNewValue(double newValue)
-    {
-//        aggVal= newValue;
-    }
-
-    @Override
-    public boolean isFirstTime()
-    {
-        return firstTime;
-    }
-    
-    @Override 
-    public MeasureAggregator get()
-    {
-        return this;
-
-    }
-    
-    @Override
-    public int compareTo(MeasureAggregator msrAggr)
-    {
-        @SuppressWarnings("unchecked")
-        Comparable<Object> other = (Comparable<Object>)msrAggr.getValueObject();
-        
-        return aggVal.compareTo(other);
-    }
-    
-    public String toString()
-    {
-        return aggVal+"";
-    }
-
     @Override
     public void merge(byte[] value)
     {

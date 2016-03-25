@@ -63,7 +63,7 @@ public class MolapSortKeyAggregator {
 
     private int resultSize;
 
-    private double[] mergedMinValue;
+    private Object[] mergedMinValue;
 
     /**
      * constructer.
@@ -74,7 +74,7 @@ public class MolapSortKeyAggregator {
      * @param type
      */
     public MolapSortKeyAggregator(String[] aggType, String[] aggClassName,
-            KeyGenerator factKeyGenerator, char[] type, double[] mergedMinValue) {
+            KeyGenerator factKeyGenerator, char[] type, Object[] mergedMinValue) {
         this.keyIndex = aggType.length;
         this.aggType = aggType;
         this.aggClassName = aggClassName;
@@ -133,8 +133,19 @@ public class MolapSortKeyAggregator {
         for (int i = 0; i < aggregators.length; i++) {
             if (type[i] != 'c') {
                 if (isNotNullValue[i]) {
-                    out[i] = aggregators[i].getValue();
+                    switch (type[i]) {
+                    case 'l':
 
+                        out[i] = aggregators[i].getLongValue();
+                        break;
+                    case 'b':
+
+                        out[i] = aggregators[i].getBigDecimalValue();
+                        break;
+                    default:
+
+                        out[i] = aggregators[i].getDoubleValue();
+                    }
                 } else {
                     out[i] = null;
                 }
@@ -149,7 +160,8 @@ public class MolapSortKeyAggregator {
 
     private void initialiseAggegators() {
         aggregators = AggUtil.getAggregators(Arrays.asList(this.aggType),
-                Arrays.asList(this.aggClassName), false, factKeyGenerator, null, mergedMinValue);
+                Arrays.asList(this.aggClassName), false, factKeyGenerator, null, mergedMinValue,
+                this.type);
         isNotNullValue = new boolean[this.aggType.length];
         for (int i = 0; i < aggType.length; i++) {
             if (aggType[i].equals(MolapCommonConstants.DISTINCT_COUNT)) {
@@ -169,8 +181,7 @@ public class MolapSortKeyAggregator {
         for (int i = 0; i < aggregators.length; i++) {
             if (null != row[i]) {
                 double value = (Double) row[i];
-                aggregators[i].agg(value, (byte[]) row[row.length - 1], 0,
-                        ((byte[]) row[row.length - 1]).length);
+                aggregators[i].agg(value);
             }
         }
 
@@ -186,8 +197,7 @@ public class MolapSortKeyAggregator {
             if (null != row[i]) {
                 this.isNotNullValue[i] = true;
                 double value = (Double) row[i];
-                aggregators[i].agg(value, (byte[]) row[row.length - 1], 0,
-                        ((byte[]) row[row.length - 1]).length);
+                aggregators[i].agg(value);
             }
         }
         prvKey = (byte[]) row[this.keyIndex];

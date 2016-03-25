@@ -117,7 +117,7 @@ public class MemberStore
             this.levelName = rolapLevel.getName();
             
             String datatype = rolapLevel.type; 
-            if(datatype.equals("Numeric") ||datatype.equals("Integer"))
+            if(datatype.equals("Numeric") || datatype.equals("Integer") || datatype.equals("BigInt"))
             {//CHECKSTYLE:ON
                 memberDataType = DataType.NUMBER;
             }

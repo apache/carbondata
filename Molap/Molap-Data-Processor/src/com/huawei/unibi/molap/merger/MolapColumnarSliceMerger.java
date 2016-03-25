@@ -268,15 +268,9 @@ public class MolapColumnarSliceMerger implements MolapSliceMerger {
             System.arraycopy(existingSliceCompressionModel.get(0).getDecimal(), 0, decimalLength, 0,
                     sliceMetaData.getMeasures().length);
             for (int i = 1; i < existingSliceCompressionModel.size(); i++) {
-                updateUniqueValue(existingSliceCompressionModel.get(i).getUniqueValue(),
-                        uniqueValue);
-                calculateMax(existingSliceCompressionModel.get(i).getMaxValue(), maxValue);
-                calculateMin(existingSliceCompressionModel.get(i).getMinValue(), minValue);
                 calculateDecimalLength(existingSliceCompressionModel.get(i).getDecimal(),
                         decimalLength);
             }
-            writeMeasureMetaFile(maxValue, minValue, uniqueValue, decimalLength,
-                    existingSliceCompressionModel.get(0).getType(), destinationLocation);
 
             // write level metadata
 
@@ -298,31 +292,6 @@ public class MolapColumnarSliceMerger implements MolapSliceMerger {
     }
 
     /**
-     * Below method will be used to write the measure files
-     *
-     * @throws SliceMergerException if any problem while writing the measure meta file
-     */
-    private void writeMeasureMetaFile(double[] maxValue, double[] minValue, double[] uniqueValue,
-            int[] decimalLength, char[] type, String destinationLocation)
-            throws SliceMergerException {
-        String msrMetaDataFile = destinationLocation + File.separator
-                + MolapCommonConstants.MEASURE_METADATA_FILE_NAME + this.tableName
-                + MolapCommonConstants.MEASUREMETADATA_FILE_EXT
-                + MolapCommonConstants.FILE_INPROGRESS_STATUS;
-        try {
-            MolapDataProcessorUtil
-                    .writeMeasureMetaDataToFile(maxValue, minValue, decimalLength, uniqueValue,
-                            type, new byte[maxValue.length], msrMetaDataFile);
-            String changedFileName = msrMetaDataFile.substring(0, msrMetaDataFile.lastIndexOf('.'));
-            File currentFile = new File(msrMetaDataFile);
-            File destFile = new File(changedFileName);
-            currentFile.renameTo(destFile);
-        } catch (MolapDataProcessorException e) {
-            throw new SliceMergerException("Problem While Writing the measure meta file" + e);
-        }
-    }
-
-    /**
      * This method will be used to get the compression model for slice
      *
      * @param path         slice path
@@ -334,36 +303,6 @@ public class MolapColumnarSliceMerger implements MolapSliceMerger {
                 path + MolapCommonConstants.MEASURE_METADATA_FILE_NAME + this.tableName
                         + MolapCommonConstants.MEASUREMETADATA_FILE_EXT, measureCount);
         return compressionModel;
-    }
-
-    /**
-     * This method will be used to update the max value for each measure
-     *
-     * @param currentMeasures
-     */
-    private double[] calculateMax(double[] currentMeasures, double[] maxValue) {
-        int arrayIndex = 0;
-        for (double value : currentMeasures) {
-
-            maxValue[arrayIndex] = (maxValue[arrayIndex] > value ? maxValue[arrayIndex] : value);
-            arrayIndex++;
-        }
-        return maxValue;
-    }
-
-    /**
-     * This method will be used to update the min value for each measure
-     *
-     * @param currentMeasures
-     */
-    private double[] calculateMin(double[] currentMeasures, double[] minValue) {
-        int arrayIndex = 0;
-        for (double value : currentMeasures) {
-
-            minValue[arrayIndex] = (minValue[arrayIndex] < value ? minValue[arrayIndex] : value);
-            arrayIndex++;
-        }
-        return minValue;
     }
 
     /**
@@ -381,15 +320,6 @@ public class MolapColumnarSliceMerger implements MolapSliceMerger {
             arrayIndex++;
         }
         return decimalLength;
-    }
-
-    private double[] updateUniqueValue(double[] currentUniqueValue, double[] uniqueValue) {
-        for (int i = 0; i < currentUniqueValue.length; i++) {
-            if (uniqueValue[i] > currentUniqueValue[i]) {
-                uniqueValue[i] = currentUniqueValue[i];
-            }
-        }
-        return uniqueValue;
     }
 
 }

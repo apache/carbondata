@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
+import java.math.BigDecimal;
 import com.huawei.iweb.platform.logging.LogService;
 import com.huawei.iweb.platform.logging.LogServiceFactory;
 import com.huawei.unibi.molap.datastorage.store.columnar.ColumnarKeyStoreDataHolder;
@@ -307,9 +307,15 @@ public abstract class AbstractColumnarScanResult
         }
         return totalNumberOfRows-count;
     }
-    public abstract double getNormalMeasureValue(int measureOrdinal);
+//    public abstract Object getNormalMeasureValue(int measureOrdinal, SqlStatement.Type dataType);
 
-    public abstract byte[] getCustomMeasureValue(int measureOrdinal);
+    public abstract double getDoubleValue(int measureOrdinal);
+
+    public abstract BigDecimal getBigDecimalValue(int measureOrdinal);
+
+    public abstract long getLongValue(int measureOrdinal);
+
+    public abstract byte[] getByteArrayValue(int measureOrdinal);
 
     public abstract byte[] getKeyArray(ByteArrayWrapper key);
     public abstract byte[] getKeyArray();
@@ -318,7 +324,7 @@ public abstract class AbstractColumnarScanResult
     
     public abstract int getDimDataForAgg(int dimOrdinal);
 
-    public abstract byte[] getHighCardinalityDimDataForAgg(Dimension dimension);
+    public abstract byte[] getHighCardinalityDimDataForAgg(int dimOrdinal);
     public abstract void getComplexDimDataForAgg(GenericQueryType complexType, DataOutputStream dataOutputStream) throws IOException;
 
 

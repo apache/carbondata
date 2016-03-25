@@ -33,7 +33,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
-
+import java.math.BigDecimal;
 import com.huawei.unibi.molap.constants.MolapCommonConstants;
 import com.huawei.unibi.molap.engine.aggregator.dimension.DimensionAggregatorInfo;
 import com.huawei.unibi.molap.engine.cache.QueryExecutorUtil;
@@ -72,31 +72,31 @@ public final class QueryExecutorUtility
     {
         
     }
-    public static double[] updateUniqueForSlices(String factTable,boolean isAgg,
-            List<InMemoryCube> slices)
+    public static Object[] updateUniqueForSlices(String factTable,boolean isAgg,
+            List<InMemoryCube> slices, SqlStatement.Type[] dataTypes)
     {
         List<SliceUniqueValueInfo> sliceUniqueValueInfos = new ArrayList<SliceUniqueValueInfo>(
                 null != slices ? slices.size() : 0);
         
-        double[] uniqueValue = null;
+        Object[] uniqueValue = null;
         processUniqueAndMinValueInfo(factTable, sliceUniqueValueInfos, true, isAgg, slices);
         if(sliceUniqueValueInfos.size() > 0)
         {
-           uniqueValue = mergerSliceUniqueValueInfo(sliceUniqueValueInfos);
+           uniqueValue = mergerSliceUniqueValueInfo(sliceUniqueValueInfos, dataTypes);
         }
         return uniqueValue;
     }
     
-    public static double[] getMinValueOfSlices(String factTable, boolean isAgg,
-            List<InMemoryCube> slices)
+    public static Object[] getMinValueOfSlices(String factTable, boolean isAgg,
+            List<InMemoryCube> slices, SqlStatement.Type[] dataTypes)
     {
         List<SliceUniqueValueInfo> sliceMinValueInfos = new ArrayList<SliceUniqueValueInfo>(
                 null != slices ? slices.size() : 0);
         processUniqueAndMinValueInfo(factTable, sliceMinValueInfos, false, isAgg, slices);
-        double[] minValues = new double[0];
+        Object[] minValues = new Object[0];
         if(sliceMinValueInfos.size() > 0)
         {
-            minValues = mergerSliceUniqueValueInfo(sliceMinValueInfos);
+            minValues = mergerSliceUniqueValueInfo(sliceMinValueInfos, dataTypes);
         }
         return minValues;
     }
@@ -114,7 +114,8 @@ public final class QueryExecutorUtility
             if(null != dataCache)
             {
                 sliceMataData = slices.get(i).getRsStore().getSliceMetaCache(factTable);
-                double[] currentUniqueValue = null;
+                Object[] currentUniqueValue = null;
+                SqlStatement.Type[]  dataType;
                 if(uniqueValue)
                 {
                     currentUniqueValue = slices.get(i).getDataCache(factTable).getUniqueValue();
@@ -144,7 +145,8 @@ public final class QueryExecutorUtility
      * @param sliceUniqueValueInfos
      * 
      */
-    private static double[] mergerSliceUniqueValueInfo(List<SliceUniqueValueInfo> sliceUniqueValueInfos)
+    private static Object[] mergerSliceUniqueValueInfo(List<SliceUniqueValueInfo> sliceUniqueValueInfos,
+                                                       SqlStatement.Type[] dataTypes)
     {
         int maxInfoIndex = 0;
         int lastMaxValue = 0;
@@ -157,9 +159,9 @@ public final class QueryExecutorUtility
             }
         }
         SliceUniqueValueInfo sliceUniqueValueInfo = sliceUniqueValueInfos.get(maxInfoIndex);
-        double[] maxSliceUniqueValue = sliceUniqueValueInfo.getUniqueValue();
+        Object[] maxSliceUniqueValue = sliceUniqueValueInfo.getUniqueValue();
         String[] cols = null;
-        double[] currentUniqueValue = null;
+        Object[] currentUniqueValue = null;
         for(int i = 0;i < sliceUniqueValueInfos.size();i++)
         {
             if(i == maxInfoIndex)
@@ -170,8 +172,19 @@ public final class QueryExecutorUtility
             currentUniqueValue = sliceUniqueValueInfos.get(i).getUniqueValue();
             for(int j = 0;j < cols.length;j++)
             {
-                maxSliceUniqueValue[j] = maxSliceUniqueValue[j] > currentUniqueValue[j] ? currentUniqueValue[j]
+                switch (dataTypes[j]) {
+                    case LONG:
+                        maxSliceUniqueValue[j] = (long) maxSliceUniqueValue[j] > (long) currentUniqueValue[j] ? currentUniqueValue[j]
+                                : maxSliceUniqueValue[j];
+                        break;
+                    case DECIMAL:
+                        maxSliceUniqueValue[j] = ((BigDecimal) maxSliceUniqueValue[j]).compareTo((BigDecimal) currentUniqueValue[j]) > 0 ? currentUniqueValue[j]
                         : maxSliceUniqueValue[j];
+                        break;
+                    default:
+                        maxSliceUniqueValue[j] = (double) maxSliceUniqueValue[j] > (double) currentUniqueValue[j] ? currentUniqueValue[j]
+                                : maxSliceUniqueValue[j];
+                }
             }
         }
         return maxSliceUniqueValue;
