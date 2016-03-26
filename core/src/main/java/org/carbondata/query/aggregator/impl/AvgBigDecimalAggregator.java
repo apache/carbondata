@@ -1,19 +1,22 @@
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/*!!Warning: This is a key information asset of Huawei Tech Co.,Ltd                                                         */
-/*CODEMARK:kOyQZYzjDpyGdBAEC2GaWmnksNUG9RKxzMKuuAYTdbJ5ajFrCnCGALet/FDi0nQqbEkSZoTs
-2wdXgejaKCr1dP3uE3wfvLHF9gW8+IdXbwdEVzw1icjfRowqz2DW4XzUpEhhSzBOwVynEHjc
-u0090YeyNJjyiBxlZZhvq198q+Px/O6umGvGwr5h9OKhpMctsfEvwH0Ku71ImcKU6VAJ7mHZ
-e2xQU1gqw8DAe8i5OCRnjPMmOC9dX8zPk/kKPGifGLgFauScMSF4Lt2p+I7MLQ==*/
-/*--------------------------------------------------------------------------------------------------------------------------*/
-/**
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
+
 package org.carbondata.query.aggregator.impl;
 
 import java.io.DataInput;
@@ -26,17 +29,6 @@ import org.carbondata.core.constants.MolapCommonConstants;
 import org.carbondata.core.datastorage.store.dataholder.MolapReadDataHolder;
 import org.carbondata.core.util.DataTypeUtil;
 import org.carbondata.query.aggregator.MeasureAggregator;
-
-/**
- * Project Name NSE V3R7C00
- * Module Name : Molap Engine
- * Author K00900841
- * Created Date :13-May-2013 3:35:33 PM
- * FileName : AvgAggregator.java
- * Class Description :
- * It will return average of aggregate values
- * Version 1.0
- */
 
 public class AvgBigDecimalAggregator extends AbstractMeasureAggregatorBasic {
 
@@ -66,11 +58,9 @@ public class AvgBigDecimalAggregator extends AbstractMeasureAggregatorBasic {
         if (newVal instanceof byte[]) {
             ByteBuffer buffer = ByteBuffer.wrap((byte[]) newVal);
             buffer.rewind();
-            //CHECKSTYLE:OFF    Approval No:Approval-V3R8C00_018
-            while (buffer.hasRemaining()) { //CHECKSTYLE:ON
+            while (buffer.hasRemaining()) {
                 byte[] valueByte = new byte[buffer.getInt()];
                 buffer.get(valueByte);
-                //                BigDecimal valueBigDecimal = new BigDecimal(new String(valueByte));
                 BigDecimal valueBigDecimal = DataTypeUtil.byteToBigDecimal(valueByte);
                 aggVal = aggVal.add(valueBigDecimal);
 
@@ -95,7 +85,6 @@ public class AvgBigDecimalAggregator extends AbstractMeasureAggregatorBasic {
         ByteBuffer buffer = ByteBuffer.wrap(value);
         byte[] valueByte = new byte[buffer.getInt()];
         buffer.get(valueByte);
-        //        BigDecimal valueBigDecimal = new BigDecimal(new String(valueByte));
         BigDecimal valueBigDecimal = DataTypeUtil.byteToBigDecimal(valueByte);
         if (firstTime) {
             aggVal = valueBigDecimal;
@@ -114,7 +103,6 @@ public class AvgBigDecimalAggregator extends AbstractMeasureAggregatorBasic {
         if (firstTime) {
             return new byte[0];
         }
-        //        byte[] bytes = aggVal.toString().getBytes();
         byte[] bytes = DataTypeUtil.bigDecimalToByte(aggVal);
         ByteBuffer allocate =
                 ByteBuffer.allocate(4 + bytes.length + MolapCommonConstants.DOUBLE_SIZE_IN_BYTE);
@@ -195,11 +183,6 @@ public class AvgBigDecimalAggregator extends AbstractMeasureAggregatorBasic {
         return avg;
     }
 
-    //we are not comparing any Aggregator values
-    /*public boolean equals(MeasureAggregator msrAggregator){
-        return compareTo(msrAggregator)==0;
-    }*/
-
     @Override
     public int compareTo(MeasureAggregator o) {
         BigDecimal val = getBigDecimalValue();
@@ -217,7 +200,6 @@ public class AvgBigDecimalAggregator extends AbstractMeasureAggregatorBasic {
 
         byte[] valueByte = new byte[buffer.getInt()];
         buffer.get(valueByte);
-        //        BigDecimal valueBigDecimal = new BigDecimal(new String(valueByte));
         BigDecimal valueBigDecimal = DataTypeUtil.byteToBigDecimal(valueByte);
         aggVal = aggVal.add(valueBigDecimal);
         count += buffer.getDouble();

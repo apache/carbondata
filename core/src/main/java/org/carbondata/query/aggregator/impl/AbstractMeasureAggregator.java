@@ -32,16 +32,10 @@ import org.carbondata.query.datastorage.Member;
  * Used for custom Molap Aggregator
  */
 public abstract class AbstractMeasureAggregator
-        implements MeasureAggregator//,ICustomRolapAggregator
+        implements MeasureAggregator
 {
-    /**
-     *
-     */
     private static final long serialVersionUID = 1L;
 
-    /**
-     *
-     */
     private KeyGenerator generator;
 
     private String cubeUniqueName;
@@ -66,25 +60,13 @@ public abstract class AbstractMeasureAggregator
         this.cubeUniqueName = cubeUniqueName;
     }
 
-    /**
-     * @param key
-     * @param offset
-     * @param length
-     * @param tableName
-     * @param columnName
-     * @param dimensionName
-     * @param hierarchyName
-     * @param keyOrdinal
-     * @return
-     */
     public String getDimValue(byte[] key, int offset, int length, String tableName,
             String columnName, String dimensionName, String hierarchyName, int keyOrdinal) {
         byte[] val = new byte[length];
         System.arraycopy(key, offset, val, 0, length);
-        long[] ls = generator.getKeyArray(val);// CHECKSTYLE:OFF Approval
+        long[] ls = generator.getKeyArray(val);
         if (!isDataLoadRequest) {
-            // No:Approval-280
-            Member memberByID = null;// slice.getMemberCache(columnName)
+            Member memberByID = null;
             List<InMemoryCube> slices =
                     InMemoryCubeStore.getInstance().getActiveSlices(cubeUniqueName);
             for (InMemoryCube slic : slices) {
@@ -99,12 +81,11 @@ public abstract class AbstractMeasureAggregator
             if (memberByID == null) {
                 return "-";
             }
-            return memberByID.toString();// CHECKSTYLE:ON
+            return memberByID.toString();
         } else {
-            //CHECKSTYLE:OFF    Approval No:Approval-V3R8C00_013
             return aggregatorHelper
                     .getDimValue(tableName, columnName, (int) ls[keyOrdinal], cubeName,
-                            schemaName);//CHECKSTYLE:ON
+                            schemaName);
         }
     }
 
@@ -120,7 +101,6 @@ public abstract class AbstractMeasureAggregator
 
     @Override
     public MeasureAggregator getCopy() {
-        // TODO Auto-generated method stub
         return null;
     }
 
