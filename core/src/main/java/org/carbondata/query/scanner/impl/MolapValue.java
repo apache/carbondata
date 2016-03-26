@@ -71,11 +71,13 @@ public class MolapValue implements Serializable, Comparable<MolapValue> {
         return another;
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
         return Arrays.toString(values);
     }
 
-    @Override public int compareTo(MolapValue o) {
+    @Override
+    public int compareTo(MolapValue o) {
         return values[topNIndex].compareTo(o.values[topNIndex]);
     }
 

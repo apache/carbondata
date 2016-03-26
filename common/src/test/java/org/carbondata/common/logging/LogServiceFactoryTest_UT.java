@@ -27,13 +27,16 @@ import org.junit.Test;
 
 public class LogServiceFactoryTest_UT extends TestCase {
 
-    @Before public void setUp() throws Exception {
+    @Before
+    public void setUp() throws Exception {
     }
 
-    @After public void tearDown() throws Exception {
+    @After
+    public void tearDown() throws Exception {
     }
 
-    @Test public void testGetLogService() {
+    @Test
+    public void testGetLogService() {
         LogService logger = LogServiceFactory.getLogService("sampleclass");
         assertTrue(logger instanceof StandardLogService);
     }

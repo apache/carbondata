@@ -23,7 +23,8 @@ import java.util.concurrent.Callable;
 
 public class CubeLoader implements Callable<CubeLoader> {
 
-    @Override public CubeLoader call() throws Exception {
+    @Override
+    public CubeLoader call() throws Exception {
         // TODO Auto-generated method stub
         return null;
     }

@@ -30,9 +30,9 @@ import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.olap.MolapDef.Cube;
 import org.carbondata.core.olap.MolapDef.CubeDimension;
 import org.carbondata.core.olap.MolapDef.Schema;
+import org.carbondata.core.util.MolapUtil;
 import org.carbondata.processing.util.MolapDataProcessorLogEvent;
 import org.carbondata.processing.util.MolapSchemaParser;
-import org.carbondata.core.util.MolapUtil;
 
 public class GlobalSurrogateGenerator {
     private static final LogService LOGGER =

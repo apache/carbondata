@@ -192,7 +192,8 @@ public class PostQueryAggregatorUtil {
             this.maskedKey = maskMaskKey;
         }
 
-        @Override public boolean equals(Object other) {
+        @Override
+        public boolean equals(Object other) {
             // check whether other is type of ByteArrayWrapper
             if (other instanceof ByteArrayWrapperExtended) {
                 return Arrays.equals(maskMaskKey, ((ByteArrayWrapperExtended) other).maskMaskKey);
@@ -203,7 +204,8 @@ public class PostQueryAggregatorUtil {
             return false;
         }
 
-        @Override public int hashCode() {
+        @Override
+        public int hashCode() {
             int len = maskMaskKey.length;
             int result = 1;
             for (int j = 0; j < len; j++) {

@@ -22,14 +22,16 @@ package org.carbondata.query.querystats;
 import org.junit.Test;
 
 public class PartitionAccumulatorTest {
-    @Test public void testAddInPlace() {
+    @Test
+    public void testAddInPlace() {
         PartitionAccumulator pac = new PartitionAccumulator();
         PartitionDetail partDetail1 = createPartitionDetail();
         PartitionDetail partDetail2 = createPartitionDetail();
         pac.addInPlace(partDetail1, partDetail2);
     }
 
-    @Test public void testAddAccumulator() {
+    @Test
+    public void testAddAccumulator() {
         PartitionAccumulator pac = new PartitionAccumulator();
         pac.zero(null);
         PartitionDetail partDetail1 = createPartitionDetail();
@@ -37,7 +39,8 @@ public class PartitionAccumulatorTest {
         pac.addAccumulator(partDetail1, partDetail2);
     }
 
-    @Test public void testAddAccumulator_nulldata() {
+    @Test
+    public void testAddAccumulator_nulldata() {
         PartitionAccumulator pac = new PartitionAccumulator();
         pac.zero(null);
         PartitionDetail partDetail1 = createPartitionDetail();

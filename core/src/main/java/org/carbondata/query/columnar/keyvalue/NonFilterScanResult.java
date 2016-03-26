@@ -65,12 +65,14 @@ public class NonFilterScanResult extends AbstractColumnarScanResult {
         return getSurrogateKey(currentRow, dimOrdinal);
     }
 
-    @Override public byte[] getKeyArray() {
+    @Override
+    public byte[] getKeyArray() {
         ++currentRow;
         return getKeyArray(++sourcePosition, null);
     }
 
-    @Override public byte[] getHighCardinalityDimDataForAgg(int dimOrdinal) {
+    @Override
+    public byte[] getHighCardinalityDimDataForAgg(int dimOrdinal) {
 
         ColumnarKeyStoreMetadata columnarKeyStoreMetadata =
                 columnarKeyStoreDataHolder[dimOrdinal].getColumnarKeyStoreMetadata();
@@ -88,7 +90,8 @@ public class NonFilterScanResult extends AbstractColumnarScanResult {
 
     }
 
-    @Override public void getComplexDimDataForAgg(GenericQueryType complexType,
+    @Override
+    public void getComplexDimDataForAgg(GenericQueryType complexType,
             DataOutputStream dataOutputStream) throws IOException {
         getComplexSurrogateKey(currentRow, complexType, dataOutputStream);
     }

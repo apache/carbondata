@@ -33,7 +33,8 @@ public class ColumnarIncludeFilterProcessor extends AbstractColumnarFilterProces
         super(filterModel);
     }
 
-    @Override public BitSet getFilteredIndexes(int keyBlockIndex, int numerOfRows,
+    @Override
+    public BitSet getFilteredIndexes(int keyBlockIndex, int numerOfRows,
             ColumnarKeyStoreDataHolder... keyBlockArray) {
         byte[][] filter = filterModel.getFilter()[keyBlockIndex];
         BitSet bitset = new BitSet(numerOfRows);
@@ -45,7 +46,8 @@ public class ColumnarIncludeFilterProcessor extends AbstractColumnarFilterProces
         return bitset;
     }
 
-    @Override public void getFilteredIndexes(int keyBlockIndex, int numerOfRows, BitSet set,
+    @Override
+    public void getFilteredIndexes(int keyBlockIndex, int numerOfRows, BitSet set,
             ColumnarKeyStoreDataHolder... keyBlockArray) {
         byte[][] filter = filterModel.getFilter()[keyBlockIndex];
         BitSet localBitSet = new BitSet(set.cardinality());

@@ -74,7 +74,8 @@ public class MolapDimensionLevel extends AbstractMolapLevel {
         return levelName;
     }
 
-    @Override public MolapLevelType getType() {
+    @Override
+    public MolapLevelType getType() {
 
         return MolapLevelType.DIMENSION;
     }

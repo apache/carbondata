@@ -38,7 +38,8 @@ public class MolapResultChunkImpl implements MolapResultChunk {
     /**
      * See interface comments
      */
-    @Override public List<MolapTuple> getRowTuples() {
+    @Override
+    public List<MolapTuple> getRowTuples() {
         return rowTuples;
     }
 
@@ -54,7 +55,8 @@ public class MolapResultChunkImpl implements MolapResultChunk {
     /**
      * See interface comments
      */
-    @Override public Object getCell(int columnIndex, int rowIndex) {
+    @Override
+    public Object getCell(int columnIndex, int rowIndex) {
         return data[rowIndex][columnIndex];
     }
 

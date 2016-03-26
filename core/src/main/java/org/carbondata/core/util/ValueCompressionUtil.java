@@ -1026,7 +1026,8 @@ public final class ValueCompressionUtil {
             this.compType = compType;
         }
 
-        @Override public boolean equals(Object obj) {
+        @Override
+        public boolean equals(Object obj) {
             boolean equals = false;
             if (obj instanceof CompressionFinder) {
                 CompressionFinder cf = (CompressionFinder) obj;
@@ -1039,7 +1040,8 @@ public final class ValueCompressionUtil {
             return equals;
         }
 
-        @Override public int hashCode() {
+        @Override
+        public int hashCode() {
             final int code = 31;
             int result = 1;
 
@@ -1048,7 +1050,8 @@ public final class ValueCompressionUtil {
             return result;
         }
 
-        @Override public int compareTo(CompressionFinder o) {
+        @Override
+        public int compareTo(CompressionFinder o) {
             int returnVal = 0;
             // the big size have high priority
             if (this.equals(o)) {

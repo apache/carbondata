@@ -24,48 +24,41 @@ import org.carbondata.processing.suggest.datastats.util.AggCombinationGeneratorU
 
 /**
  * This class will calculate size of table with given dimensions
- * @author A00902717
  *
+ * @author A00902717
  */
-public class TableSizeCalculator
-{
-	/**
-	 * distinct relationship between dimensions
-	 */
-	private Level[] distinctData;
+public class TableSizeCalculator {
+    /**
+     * distinct relationship between dimensions
+     */
+    private Level[] distinctData;
 
-	public TableSizeCalculator(Level[] distinctData)
-	{
-		this.distinctData=distinctData;
-	}
+    public TableSizeCalculator(Level[] distinctData) {
+        this.distinctData = distinctData;
+    }
 
-	/**
-	 * Calculate size of table having given ordinals
-	 * @param dimOrdinals
-	 * @return
-	 */
-	public long getApproximateRowSize(int[] dimOrdinals)
-	{
-		Level[] levels=new Level[dimOrdinals.length];
-		for(int i=0;i<dimOrdinals.length;i++)
-		{
-			for(int j=0;j<distinctData.length;j++)
-			{
-				if(distinctData[j].getOrdinal()==dimOrdinals[i])
-				{
-					levels[i]=distinctData[j];
-					break;
-				}
-			}
-			if(levels[i]==null)
-			{
-				return 0;
-			}
-		}
-		long noOfRowsScanned=AggCombinationGeneratorUtil.getMaxPossibleRows(levels).longValue();
-		return noOfRowsScanned;
+    /**
+     * Calculate size of table having given ordinals
+     *
+     * @param dimOrdinals
+     * @return
+     */
+    public long getApproximateRowSize(int[] dimOrdinals) {
+        Level[] levels = new Level[dimOrdinals.length];
+        for (int i = 0; i < dimOrdinals.length; i++) {
+            for (int j = 0; j < distinctData.length; j++) {
+                if (distinctData[j].getOrdinal() == dimOrdinals[i]) {
+                    levels[i] = distinctData[j];
+                    break;
+                }
+            }
+            if (levels[i] == null) {
+                return 0;
+            }
+        }
+        long noOfRowsScanned = AggCombinationGeneratorUtil.getMaxPossibleRows(levels).longValue();
+        return noOfRowsScanned;
 
-	}
-
+    }
 
 }

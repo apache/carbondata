@@ -35,9 +35,11 @@ public class ResourceBundleMessageFinderTest_UT extends TestCase {
     /**
      * @throws Exception
      */
-    @Before public void setUp() throws Exception {
+    @Before
+    public void setUp() throws Exception {
         new MockUp<ResourceBundleMessageFinder>() {
-            @SuppressWarnings("unused") @Mock
+            @SuppressWarnings("unused")
+            @Mock
             public String findLogEventMessage(Locale locale, LogEvent event) {
                 return "CPU Alarm";
             }
@@ -49,20 +51,25 @@ public class ResourceBundleMessageFinderTest_UT extends TestCase {
      * @Author k00742797
      * @Description : tearDown
      */
-    @After public void tearDown() throws Exception {
+    @After
+    public void tearDown() throws Exception {
     }
 
-    @Test public void testResourceBundleMessageFinder() {
+    @Test
+    public void testResourceBundleMessageFinder() {
         assertNotNull(new ResourceBundleMessageFinder());
     }
 
-    @Test public void testFindLogEventMessageLogEvent() {
+    @Test
+    public void testFindLogEventMessageLogEvent() {
         LogEvent logEvent = new LogEvent() {
-            @Override public String getModuleName() {
+            @Override
+            public String getModuleName() {
                 return "TEST";
             }
 
-            @Override public String getEventCode() {
+            @Override
+            public String getEventCode() {
                 return "TEST";
             }
         };
@@ -71,13 +78,16 @@ public class ResourceBundleMessageFinderTest_UT extends TestCase {
         Assert.assertEquals("CPU Alarm", eventMessage);
     }
 
-    @Test public void testFindLogEventMessageLocaleLogEvent() {
+    @Test
+    public void testFindLogEventMessageLocaleLogEvent() {
         LogEvent logEvent = new LogEvent() {
-            @Override public String getModuleName() {
+            @Override
+            public String getModuleName() {
                 return "TEST";
             }
 
-            @Override public String getEventCode() {
+            @Override
+            public String getEventCode() {
                 return "TEST";
             }
         };

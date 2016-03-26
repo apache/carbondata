@@ -57,7 +57,8 @@ public class ArrayWrapper implements Serializable, Comparable<ArrayWrapper> {
      * @return boolean
      * equal or not
      */
-    @Override public boolean equals(Object other) {
+    @Override
+    public boolean equals(Object other) {
         if (other instanceof ArrayWrapper) {
             return Arrays.equals(data, ((ArrayWrapper) other).data);
         }
@@ -70,7 +71,8 @@ public class ArrayWrapper implements Serializable, Comparable<ArrayWrapper> {
      *
      * @return hascode
      */
-    @Override public int hashCode() {
+    @Override
+    public int hashCode() {
         return Arrays.hashCode(data);
     }
 
@@ -90,7 +92,8 @@ public class ArrayWrapper implements Serializable, Comparable<ArrayWrapper> {
      *
      * @param other ArrayWrapper Object
      */
-    @Override public int compareTo(ArrayWrapper other) {
+    @Override
+    public int compareTo(ArrayWrapper other) {
         for (int i = 0; i < data.length; i++) {
             if (data[i] > other.data[i]) {
                 return 1;

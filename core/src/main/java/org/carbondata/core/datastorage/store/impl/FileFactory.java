@@ -222,7 +222,8 @@ public final class FileFactory {
         case LOCAL:
         default:
             File[] files = new File(folderPath).listFiles(new FileFilter() {
-                @Override public boolean accept(File pathname) {
+                @Override
+                public boolean accept(File pathname) {
                     if (pathname.isDirectory()) {
                         return false;
                     }

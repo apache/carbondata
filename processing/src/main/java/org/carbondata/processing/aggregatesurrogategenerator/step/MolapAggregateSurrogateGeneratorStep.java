@@ -23,8 +23,8 @@ import java.util.Arrays;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.processing.aggregatesurrogategenerator.AggregateSurrogateGenerator;
 import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.processing.aggregatesurrogategenerator.AggregateSurrogateGenerator;
 import org.carbondata.processing.util.MolapDataProcessorLogEvent;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowMetaInterface;

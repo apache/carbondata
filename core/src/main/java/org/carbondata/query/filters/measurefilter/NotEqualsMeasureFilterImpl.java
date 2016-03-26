@@ -47,7 +47,8 @@ public class NotEqualsMeasureFilterImpl implements MeasureFilter {
      *
      * @param filterValue
      */
-    @Override public boolean filter(MeasureAggregator[] msrValue) {
+    @Override
+    public boolean filter(MeasureAggregator[] msrValue) {
         if (calcFunction != null) {
             return calcFunction.calculate(msrValue) != filterValue;
         }
@@ -66,7 +67,8 @@ public class NotEqualsMeasureFilterImpl implements MeasureFilter {
      *
      * @param filterValue
      */
-    @Override public boolean filter(double[] msrValue, int msrStartIndex) {
+    @Override
+    public boolean filter(double[] msrValue, int msrStartIndex) {
         return msrValue[index + msrStartIndex] != filterValue;
     }
 

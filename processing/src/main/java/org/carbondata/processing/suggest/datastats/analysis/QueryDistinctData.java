@@ -24,99 +24,92 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import org.carbondata.common.logging.LogService;
+import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.metadata.MolapMetadata.Dimension;
 import org.carbondata.processing.suggest.autoagg.exception.AggSuggestException;
 import org.carbondata.processing.suggest.datastats.LoadSampler;
 import org.carbondata.processing.suggest.datastats.model.Level;
-import org.carbondata.common.logging.LogService;
-import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.query.querystats.Preference;
 import org.carbondata.query.util.MolapEngineLogEvent;
-import org.carbondata.core.metadata.MolapMetadata.Dimension;
 
 /**
  * This class takes sample data from each load and run it over complete store
  *
  * @author A00902717
- *
  */
-public class QueryDistinctData
-{
+public class QueryDistinctData {
 
-	/**
-	 * Attribute for Molap LOGGER
-	 */
-	private static final LogService LOGGER = LogServiceFactory
-			.getLogService(QueryDistinctData.class.getName());
+    /**
+     * Attribute for Molap LOGGER
+     */
+    private static final LogService LOGGER =
+            LogServiceFactory.getLogService(QueryDistinctData.class.getName());
 
-	private long startTime;
+    private long startTime;
 
-	private long endTime;
+    private long endTime;
 
-	private LoadSampler loadSampler;
+    private LoadSampler loadSampler;
 
-	public QueryDistinctData(LoadSampler loadSampler)
-	{
-		this.loadSampler = loadSampler;
+    public QueryDistinctData(LoadSampler loadSampler) {
+        this.loadSampler = loadSampler;
 
-	}
+    }
 
-	public Level[] queryDistinctData(String partitionId) throws AggSuggestException
-	{
-		Level[] dimensionDistinctData = handlePartition(partitionId);
+    public Level[] queryDistinctData(String partitionId) throws AggSuggestException {
+        Level[] dimensionDistinctData = handlePartition(partitionId);
 
-		endTime = System.currentTimeMillis();
-		long timeTaken = endTime - startTime;
-		LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
-				"Time taken to compute distinct value[millsec]:" + timeTaken);
-		return dimensionDistinctData;
+        endTime = System.currentTimeMillis();
+        long timeTaken = endTime - startTime;
+        LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                "Time taken to compute distinct value[millsec]:" + timeTaken);
+        return dimensionDistinctData;
 
-	}
+    }
 
-	private Level[] handlePartition(String partitionId) throws AggSuggestException
-	{
-		//ordinal as key, and dimension cardinality as value
-		Map<Integer,Integer> cardinality = loadSampler.getLastLoadCardinality();
+    private Level[] handlePartition(String partitionId) throws AggSuggestException {
+        //ordinal as key, and dimension cardinality as value
+        Map<Integer, Integer> cardinality = loadSampler.getLastLoadCardinality();
 
-		startTime = System.currentTimeMillis();
-		List<Dimension> allDimensions = loadSampler.getDimensions();
+        startTime = System.currentTimeMillis();
+        List<Dimension> allDimensions = loadSampler.getDimensions();
 
-		LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
-				"Reading Sample data for dimension:" + allDimensions.size());
+        LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                "Reading Sample data for dimension:" + allDimensions.size());
 
-		/**
-		 * For each dimension, what are other dimension distinct value
-		 */
+        /**
+         * For each dimension, what are other dimension distinct value
+         */
 
-		Level[] distinctResult = new Level[allDimensions.size()];
-		ArrayList<Level> levelToAnalyse = new ArrayList<Level>(allDimensions.size());
-		int dimCounter=0;
-		for(Dimension dimension:allDimensions)
-		{
-			Level level = new Level(dimension.getOrdinal(), cardinality.get(dimension.getOrdinal()));
-			level.setName(dimension.getColName());
-			distinctResult[dimCounter] = level;
-			if (cardinality.get(dimension.getOrdinal()) > Preference.IGNORE_CARDINALITY)
-			{
-				levelToAnalyse.add(distinctResult[dimCounter]);
-			}
-			dimCounter++;
-		}
-		//sort based on cardinality
-		Collections.sort(levelToAnalyse);
+        Level[] distinctResult = new Level[allDimensions.size()];
+        ArrayList<Level> levelToAnalyse = new ArrayList<Level>(allDimensions.size());
+        int dimCounter = 0;
+        for (Dimension dimension : allDimensions) {
+            Level level =
+                    new Level(dimension.getOrdinal(), cardinality.get(dimension.getOrdinal()));
+            level.setName(dimension.getColName());
+            distinctResult[dimCounter] = level;
+            if (cardinality.get(dimension.getOrdinal()) > Preference.IGNORE_CARDINALITY) {
+                levelToAnalyse.add(distinctResult[dimCounter]);
+            }
+            dimCounter++;
+        }
+        //sort based on cardinality
+        Collections.sort(levelToAnalyse);
 
-		SampleAnalyzer sampleDataAnalyzer = new SampleAnalyzer(loadSampler,
-				distinctResult);
-		sampleDataAnalyzer.execute(levelToAnalyse, partitionId);
-		return distinctResult;
+        SampleAnalyzer sampleDataAnalyzer = new SampleAnalyzer(loadSampler, distinctResult);
+        sampleDataAnalyzer.execute(levelToAnalyse, partitionId);
+        return distinctResult;
 
-	}
+    }
 
-	/**
-	 * This will put result in file
-	 *
-	 * @param loadResultData
-	 */
-	/*private void outputResult(Level[] dimensionDistinctData)
+    /**
+     * This will put result in file
+     *
+     * @param loadResultData
+     */
+    /*private void outputResult(Level[] dimensionDistinctData)
 	{
 		StringBuffer buffer = new StringBuffer();
 		List<Dimension> allDimensions = cube.getDimensions(loadSampler

@@ -32,49 +32,40 @@ import org.carbondata.core.util.MolapUtil;
  * This class contains compressed Columnkey block of store and Measure value
  *
  * @author A00902717
- *
  */
-public class FactDataNode
-{
+public class FactDataNode {
 
-	/**
-	 * Compressed keyblocks
-	 */
-	private ColumnarKeyStore keyStore;
+    /**
+     * Compressed keyblocks
+     */
+    private ColumnarKeyStore keyStore;
 
+    private int maxKeys;
 
-	private int maxKeys;
+    public FactDataNode(int maxKeys, int[] eachBlockSize, boolean isFileStore,
+            FileHolder fileHolder, LeafNodeInfoColumnar leafNodeInfo,
+            ValueCompressionModel compressionModel) {
 
+        this.maxKeys = maxKeys;
 
-	public FactDataNode(int maxKeys, int[] eachBlockSize, boolean isFileStore,
-			FileHolder fileHolder, LeafNodeInfoColumnar leafNodeInfo,
-			ValueCompressionModel compressionModel)
-	{
+        ColumnarKeyStoreInfo columnarStoreInfo =
+                MolapUtil.getColumnarKeyStoreInfo(leafNodeInfo, eachBlockSize, null);
+        keyStore = StoreFactory.createColumnarKeyStore(columnarStoreInfo, fileHolder, isFileStore);
 
-		this.maxKeys = maxKeys;
+    }
 
-		ColumnarKeyStoreInfo columnarStoreInfo = MolapUtil
-				.getColumnarKeyStoreInfo(leafNodeInfo, eachBlockSize,null);
-		keyStore = StoreFactory.createColumnarKeyStore(columnarStoreInfo,
-				fileHolder, isFileStore);
+    public ColumnarKeyStoreDataHolder[] getColumnData(FileHolder fileHolder, int[] dimensions,
+            boolean[] needCompression) {
 
-	}
+        ColumnarKeyStoreDataHolder[] keyDataHolderUncompressed =
+                keyStore.getUnCompressedKeyArray(fileHolder, dimensions, needCompression);
 
-	public ColumnarKeyStoreDataHolder[] getColumnData(FileHolder fileHolder,
-			int[] dimensions, boolean[] needCompression)
-	{
+        return keyDataHolderUncompressed;
 
-	   	ColumnarKeyStoreDataHolder[] keyDataHolderUncompressed = keyStore
-				.getUnCompressedKeyArray(fileHolder, dimensions,
-						needCompression);
+    }
 
-		return keyDataHolderUncompressed;
-
-	}
-
-	public int getMaxKeys()
-	{
-		return maxKeys;
-	}
+    public int getMaxKeys() {
+        return maxKeys;
+    }
 
 }

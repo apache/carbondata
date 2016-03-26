@@ -99,7 +99,8 @@ public class ScannersInputCombiner implements DataInputStream {
         this.dataTypes = dataTypes;
     }
 
-    @Override public Pair<byte[], double[]> getNextHierTuple() {
+    @Override
+    public Pair<byte[], double[]> getNextHierTuple() {
         Pair<byte[], double[]> data;
 
         double[] lastData = null;
@@ -242,7 +243,8 @@ public class ScannersInputCombiner implements DataInputStream {
         }
 //        decimalLength[i] = (decimalLength[i] > num ? decimalLength[i] : num);
     }*/
-    @Override public void initInput() {
+    @Override
+    public void initInput() {
         //
         if (scanners.size() > 0) {
             Iterator<Scanner> itr = scanners.iterator();
@@ -272,7 +274,8 @@ public class ScannersInputCombiner implements DataInputStream {
         }
     }
 
-    @Override public void closeInput() {
+    @Override
+    public void closeInput() {
         // TODO Auto-generated method stub
     }
 
@@ -289,8 +292,8 @@ public class ScannersInputCombiner implements DataInputStream {
             m++;
         }
     }*/
-
-    @Override public ValueCompressionModel getValueCompressionMode() {
+    @Override
+    public ValueCompressionModel getValueCompressionMode() {
         // TODO Auto-generated method stub
         return null;
     }
@@ -298,7 +301,8 @@ public class ScannersInputCombiner implements DataInputStream {
     /**
      * @see DataInputStream#getLeafNodeInfo()
      */
-    @Override public List<LeafNodeInfoColumnar> getLeafNodeInfoColumnar() {
+    @Override
+    public List<LeafNodeInfoColumnar> getLeafNodeInfoColumnar() {
         // TODO Auto-generated method stub
         return null;
     }
@@ -306,12 +310,14 @@ public class ScannersInputCombiner implements DataInputStream {
     /**
      * @see DataInputStream#getLeafNodeInfo()
      */
-    @Override public List<LeafNodeInfo> getLeafNodeInfo() {
+    @Override
+    public List<LeafNodeInfo> getLeafNodeInfo() {
         // TODO Auto-generated method stub
         return null;
     }
 
-    @Override public byte[] getStartKey() {
+    @Override
+    public byte[] getStartKey() {
         // TODO Auto-generated method stub
         return null;
     }
@@ -356,7 +362,8 @@ public class ScannersInputCombiner implements DataInputStream {
      * Version 1.0
      */
     private class KeyComparator implements Comparator<RowTempFile> {
-        @Override public int compare(RowTempFile o1, RowTempFile o2) {
+        @Override
+        public int compare(RowTempFile o1, RowTempFile o2) {
             int i = 0;
             int j = 0;
             for (; i < keyGenerator.getKeySizeInBytes(); i++, j++) {

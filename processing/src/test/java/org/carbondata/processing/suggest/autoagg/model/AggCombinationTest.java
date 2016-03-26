@@ -18,17 +18,14 @@
  */
 
 package org.carbondata.processing.suggest.autoagg.model;
-import junit.framework.Assert;
 
 import org.junit.Test;
 
-public class AggCombinationTest
-{
+public class AggCombinationTest {
 
-	@Test
-	public void testAggCombinationWithNullLevel()
-	{
-		/*try
+    @Test
+    public void testAggCombinationWithNullLevel() {
+        /*try
 		{
 			AggCombination comb=new AggCombination(null,Request.DATA_STATS);
 			Assert.assertTrue(false);
@@ -38,8 +35,6 @@ public class AggCombinationTest
 			Assert.assertTrue(true);
 		}*/
 
-	}
-
-
+    }
 
 }

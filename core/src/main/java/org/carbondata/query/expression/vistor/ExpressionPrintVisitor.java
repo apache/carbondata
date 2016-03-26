@@ -21,7 +21,8 @@ package org.carbondata.query.expression.vistor;
 
 public class ExpressionPrintVisitor implements ExpressionVisitor {
 
-    @Override public void visit() {
+    @Override
+    public void visit() {
         // TODO Auto-generated method stub
 
     }

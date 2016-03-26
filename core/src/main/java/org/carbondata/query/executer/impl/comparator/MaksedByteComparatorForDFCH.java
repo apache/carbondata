@@ -59,7 +59,8 @@ public class MaksedByteComparatorForDFCH implements Comparator<DataFileChunkHold
      * @param o1
      * @param o2
      */
-    @Override public int compare(DataFileChunkHolder dataFileChunkHolder1,
+    @Override
+    public int compare(DataFileChunkHolder dataFileChunkHolder1,
             DataFileChunkHolder dataFileChunkHolder2) {
         int compare = 0;
         byte[] o1 = dataFileChunkHolder1.getRow();

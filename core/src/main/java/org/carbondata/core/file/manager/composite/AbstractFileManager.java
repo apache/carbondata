@@ -28,16 +28,19 @@ public abstract class AbstractFileManager implements IFileManagerComposite {
      */
     protected List<IFileManagerComposite> listOfFileData = new ArrayList<IFileManagerComposite>(10);
 
-    @Override public void add(IFileManagerComposite customData) {
+    @Override
+    public void add(IFileManagerComposite customData) {
         listOfFileData.add(customData);
     }
 
-    @Override public void remove(IFileManagerComposite customData) {
+    @Override
+    public void remove(IFileManagerComposite customData) {
         listOfFileData.remove(customData);
 
     }
 
-    @Override public IFileManagerComposite get(int i) {
+    @Override
+    public IFileManagerComposite get(int i) {
         return listOfFileData.get(i);
     }
 

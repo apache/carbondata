@@ -31,14 +31,14 @@ import org.carbondata.core.constants.MolapCommonConstants;
 import org.carbondata.core.csvreader.checkpoint.CheckPointHanlder;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
+import org.carbondata.core.keygenerator.KeyGenException;
+import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.writer.LevelValueWriter;
 import org.carbondata.processing.dimension.load.command.DimensionLoadCommand;
 import org.carbondata.processing.dimension.load.info.DimensionLoadInfo;
-import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.processing.schema.metadata.HierarchiesInfo;
 import org.carbondata.processing.surrogatekeysgenerator.csvbased.MolapCSVBasedDimSurrogateKeyGen;
 import org.carbondata.processing.util.MolapDataProcessorLogEvent;
-import org.carbondata.core.util.MolapUtil;
-import org.carbondata.core.writer.LevelValueWriter;
 import org.pentaho.di.core.exception.KettleException;
 
 public class CSVDimensionLoadCommand implements DimensionLoadCommand {
@@ -68,7 +68,8 @@ public class CSVDimensionLoadCommand implements DimensionLoadCommand {
      * @throws KettleException
      * @see DimensionLoadCommand#execute()
      */
-    @Override public void execute() throws KettleException {
+    @Override
+    public void execute() throws KettleException {
         loadData(dimensionLoadInfo);
     }
 

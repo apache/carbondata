@@ -31,7 +31,8 @@ public class ColumnarIncludeExculeFilterProcessor extends ColumnarIncludeFilterP
     }
 
     //  TODO SIMIAN
-    @Override public BitSet getFilteredIndexes(int keyBlockIndx, int numerOfRows,
+    @Override
+    public BitSet getFilteredIndexes(int keyBlockIndx, int numerOfRows,
             ColumnarKeyStoreDataHolder... keyBlockArray) {
         BitSet bitset = new BitSet(numerOfRows);
         boolean isExcludeFilterPresent = null != filterModel.getExcludeFilter()[keyBlockIndx];
@@ -80,7 +81,8 @@ public class ColumnarIncludeExculeFilterProcessor extends ColumnarIncludeFilterP
         set.and(localBitSet);
     }
 
-    @Override public void getFilteredIndexes(int keyBlockIndex, int numerOfRows, BitSet bitset,
+    @Override
+    public void getFilteredIndexes(int keyBlockIndex, int numerOfRows, BitSet bitset,
             ColumnarKeyStoreDataHolder... keyBlockArray) {
         boolean isExcludeFilterPresent = null != filterModel.getExcludeFilter()[keyBlockIndex];
         if (null != filterModel.getFilter()[keyBlockIndex]) {

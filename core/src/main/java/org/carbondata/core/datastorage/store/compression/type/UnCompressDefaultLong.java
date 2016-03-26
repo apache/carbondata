@@ -21,7 +21,8 @@ public class UnCompressDefaultLong extends UnCompressNoneLong {
         return null;
     }
 
-    @Override public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
+    @Override
+    public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
         MolapReadDataHolder dataHolder = new MolapReadDataHolder();
         long[] vals = new long[value.length];
         for (int i = 0; i < vals.length; i++) {

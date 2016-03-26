@@ -39,7 +39,8 @@ public class ColumnarStorageScannerImpl extends AbstractColumnarStorageScanner {
         limit = columnarStorageScannerInfo.getColumnarAggregatorInfo().getLimit();
     }
 
-    @Override public void scanStore() {
+    @Override
+    public void scanStore() {
         while (leafIterator.hasNext()) {
             blockDataHolder.setLeafDataBlock(leafIterator.next());
             addToQueryStats(blockDataHolder);

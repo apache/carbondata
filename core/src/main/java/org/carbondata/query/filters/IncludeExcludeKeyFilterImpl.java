@@ -67,7 +67,8 @@ public class IncludeExcludeKeyFilterImpl extends KeyFilterImpl {
     /**
      * @see KeyFilterImpl#filterKey(KeyValue)
      */
-    @Override public boolean filterKey(KeyValue key) {
+    @Override
+    public boolean filterKey(KeyValue key) {
         //
         if (super.filterKey(key)) {
 
@@ -92,7 +93,8 @@ public class IncludeExcludeKeyFilterImpl extends KeyFilterImpl {
     /**
      * @see KeyFilterImpl#filterKey(KeyValue)
      */
-    @Override public boolean filterKey(byte[] key) {
+    @Override
+    public boolean filterKey(byte[] key) {
         //
         if (super.filterKey(key)) {
 

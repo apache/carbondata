@@ -64,7 +64,8 @@ public class MaksedByteComparatorBAW implements Comparator<DataFileWriter.KeyVal
      * @param o1
      * @param o2
      */
-    @Override public int compare(DataFileWriter.KeyValueHolder byteArrayWrapper1,
+    @Override
+    public int compare(DataFileWriter.KeyValueHolder byteArrayWrapper1,
             DataFileWriter.KeyValueHolder byteArrayWrapper2) {
         int cmp = 0;
         byte[] o1 = byteArrayWrapper1.key.getMaskedKey();

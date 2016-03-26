@@ -138,7 +138,8 @@ public class MultiDimKeyVarLengthVariableSplitGenerator extends MultiDimKeyVarLe
         return ints;
     }
 
-    @Override public byte[][] splitKey(byte[] key) {
+    @Override
+    public byte[][] splitKey(byte[] key) {
         byte[][] split = new byte[blockKeySize.length][];
         int copyIndex = 0;
         for (int i = 0; i < split.length; i++) {
@@ -149,15 +150,18 @@ public class MultiDimKeyVarLengthVariableSplitGenerator extends MultiDimKeyVarLe
         return split;
     }
 
-    @Override public byte[][] generateAndSplitKey(long[] keys) throws KeyGenException {
+    @Override
+    public byte[][] generateAndSplitKey(long[] keys) throws KeyGenException {
         return splitKey(generateKey(keys));
     }
 
-    @Override public byte[][] generateAndSplitKey(int[] keys) throws KeyGenException {
+    @Override
+    public byte[][] generateAndSplitKey(int[] keys) throws KeyGenException {
         return splitKey(generateKey(keys));
     }
 
-    @Override public long[] getKeyArray(byte[][] key) {
+    @Override
+    public long[] getKeyArray(byte[][] key) {
         byte[] fullKey = new byte[getKeySizeInBytes()];
         int copyIndex = 0;
         for (int i = 0; i < key.length; i++) {
@@ -167,7 +171,8 @@ public class MultiDimKeyVarLengthVariableSplitGenerator extends MultiDimKeyVarLe
         return getKeyArray(fullKey);
     }
 
-    @Override public byte[] getKeyByteArray(byte[][] key) {
+    @Override
+    public byte[] getKeyByteArray(byte[][] key) {
         byte[] fullKey = new byte[getKeySizeInBytes()];
         int copyIndex = 0;
         for (int i = 0; i < key.length; i++) {
@@ -177,11 +182,13 @@ public class MultiDimKeyVarLengthVariableSplitGenerator extends MultiDimKeyVarLe
         return fullKey;
     }
 
-    @Override public byte[] getKeyByteArray(byte[][] key, int[] columnIndexes) {
+    @Override
+    public byte[] getKeyByteArray(byte[][] key, int[] columnIndexes) {
         return null;
     }
 
-    @Override public long[] getKeyArray(byte[][] key, int[] columnIndexes) {
+    @Override
+    public long[] getKeyArray(byte[][] key, int[] columnIndexes) {
         return null;
     }
 
@@ -189,7 +196,8 @@ public class MultiDimKeyVarLengthVariableSplitGenerator extends MultiDimKeyVarLe
         return blockKeySize;
     }
 
-    @Override public int getKeySizeByBlock(int[] blockIndexes) {
+    @Override
+    public int getKeySizeByBlock(int[] blockIndexes) {
         /*int size=0;
         for(int i = 0;i < blockIndexes.length;i++)
         {

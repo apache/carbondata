@@ -24,8 +24,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.processing.sortandgroupby.exception.MolapSortKeyAndGroupByException;
 import org.carbondata.core.util.MolapUtil;
+import org.carbondata.processing.sortandgroupby.exception.MolapSortKeyAndGroupByException;
 import org.carbondata.processing.util.RemoveDictionaryUtil;
 
 public class UnCompressedTempSortFileWriter extends AbstractTempSortFileWriter {

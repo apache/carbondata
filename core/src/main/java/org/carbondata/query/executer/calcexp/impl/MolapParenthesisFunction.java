@@ -32,11 +32,13 @@ public class MolapParenthesisFunction extends AbstractMolapCalcFunction {
      */
     private static final long serialVersionUID = 1059864932134112437L;
 
-    @Override public double calculate(MeasureAggregator[] msrAggs) {
+    @Override
+    public double calculate(MeasureAggregator[] msrAggs) {
         return leftOperand.calculate(msrAggs);
     }
 
-    @Override public void compile(CalcExpressionModel model, Exp exp) {
+    @Override
+    public void compile(CalcExpressionModel model, Exp exp) {
         //        ResolvedFunCall funCall = (ResolvedFunCall)exp;
         //        Exp[] args = funCall.getArgs();
         //        leftOperand = getOperand(args[0],model);

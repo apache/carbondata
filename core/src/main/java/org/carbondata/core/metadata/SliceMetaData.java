@@ -194,7 +194,8 @@ public class SliceMetaData implements Serializable {
         this.keyGenerator = keyGenerator;
     }
 
-    @Override public int hashCode() {
+    @Override
+    public int hashCode() {
         final int prime = 31;
         int result = 1;
         result = prime * result + Arrays.hashCode(dimensions);
@@ -207,7 +208,8 @@ public class SliceMetaData implements Serializable {
         return result;
     }
 
-    @Override public boolean equals(Object obj) {
+    @Override
+    public boolean equals(Object obj) {
         if (obj instanceof SliceMetaData) {
             SliceMetaData other = (SliceMetaData) obj;
             if (Arrays.equals(dimensions, other.dimensions) && Arrays

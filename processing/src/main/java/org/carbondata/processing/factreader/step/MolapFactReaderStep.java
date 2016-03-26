@@ -33,10 +33,26 @@ import java.util.concurrent.TimeUnit;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.iterator.MolapIterator;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.keygenerator.columnar.impl.MultiDimKeyVarLengthEquiSplitGenerator;
 import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
+import org.carbondata.core.metadata.MolapMetadata;
+import org.carbondata.core.metadata.MolapMetadata.Cube;
+import org.carbondata.core.metadata.MolapMetadata.Dimension;
+import org.carbondata.core.metadata.MolapMetadata.Measure;
+import org.carbondata.core.metadata.SliceMetaData;
+import org.carbondata.core.olap.MolapDef;
+import org.carbondata.core.olap.MolapDef.AggLevel;
+import org.carbondata.core.olap.MolapDef.AggMeasure;
+import org.carbondata.core.olap.MolapDef.Schema;
+import org.carbondata.core.olap.SqlStatement;
+import org.carbondata.core.util.MolapProperties;
+import org.carbondata.core.util.MolapUtil;
+import org.carbondata.processing.util.MolapDataProcessorLogEvent;
+import org.carbondata.processing.util.MolapSchemaParser;
+import org.carbondata.processing.util.RemoveDictionaryUtil;
 import org.carbondata.query.aggregator.CustomMolapAggregateExpression;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.aggregator.dimension.DimensionAggregatorInfo;
@@ -53,25 +69,6 @@ import org.carbondata.query.executer.pagination.impl.QueryResult.QueryResultIter
 import org.carbondata.query.schema.metadata.SliceExecutionInfo;
 import org.carbondata.query.util.QueryExecutorUtility;
 import org.carbondata.query.wrappers.ByteArrayWrapper;
-import org.carbondata.core.iterator.MolapIterator;
-import org.carbondata.core.keygenerator.KeyGenException;
-import org.carbondata.core.keygenerator.KeyGenerator;
-import org.carbondata.core.keygenerator.columnar.impl.MultiDimKeyVarLengthEquiSplitGenerator;
-import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
-import org.carbondata.core.metadata.MolapMetadata;
-import org.carbondata.core.metadata.MolapMetadata.Cube;
-import org.carbondata.core.metadata.MolapMetadata.Dimension;
-import org.carbondata.core.metadata.MolapMetadata.Measure;
-import org.carbondata.core.metadata.SliceMetaData;
-import org.carbondata.core.olap.MolapDef;
-import org.carbondata.core.olap.MolapDef.AggLevel;
-import org.carbondata.core.olap.MolapDef.AggMeasure;
-import org.carbondata.core.olap.MolapDef.Schema;
-import org.carbondata.core.olap.SqlStatement;
-import org.carbondata.processing.util.MolapDataProcessorLogEvent;
-import org.carbondata.processing.util.MolapSchemaParser;
-import org.carbondata.processing.util.RemoveDictionaryUtil;
-import org.carbondata.core.util.*;
 import org.eigenbase.xom.Parser;
 import org.eigenbase.xom.XOMUtil;
 import org.pentaho.di.core.exception.KettleException;
@@ -105,6 +102,12 @@ public class MolapFactReaderStep extends BaseStep implements StepInterface {
      * lock
      */
     private static final Object LOCK = new Object();
+    /**
+     * array of sql datatypes of mesaures and dimensions
+     */
+    protected SqlStatement.Type[] dataTypes;
+    protected HashMap<Integer, Integer> measureOrdinalMap = new HashMap<>();
+    List<DimensionAggregatorInfo> dimAggInfo;
     /**
      * meta
      */
@@ -144,16 +147,6 @@ public class MolapFactReaderStep extends BaseStep implements StepInterface {
     private Dimension[] currentQueryDims;
     private Measure[] currentQueryMeasures;
     private String[] aggTypes;
-
-    List<DimensionAggregatorInfo> dimAggInfo;
-
-    /**
-     * array of sql datatypes of mesaures and dimensions
-     */
-    protected SqlStatement.Type[] dataTypes;
-
-    protected HashMap<Integer, Integer> measureOrdinalMap = new HashMap<>();
-
     /**
      * this is used to store the mapping of high card dims along with agg types.
      */
@@ -320,7 +313,8 @@ public class MolapFactReaderStep extends BaseStep implements StepInterface {
         info.setSchemaName(meta.getSchemaName());
         info.setQueryId(System.currentTimeMillis() + "");
         info.setDetailQuery(false);
-        int[] maskByteRanges = QueryExecutorUtil.getMaskedByte(queryDimensions, globalKeyGenerator, null);
+        int[] maskByteRanges =
+                QueryExecutorUtil.getMaskedByte(queryDimensions, globalKeyGenerator, null);
         info.setMaskedKeyByteSize(maskByteRanges.length);
         int[] maskedBytesLocal =
                 new int[slice.getKeyGenerator(cube.getFactTableName()).getKeySizeInBytes()];
@@ -333,7 +327,8 @@ public class MolapFactReaderStep extends BaseStep implements StepInterface {
         info.setMaskedBytePositions(maskedBytes);
 
         // get the mask byte range based on dimension present in the query
-        maskByteRanges = QueryExecutorUtil.getMaskedByte(currentQueryDims, globalKeyGenerator, null);
+        maskByteRanges =
+                QueryExecutorUtil.getMaskedByte(currentQueryDims, globalKeyGenerator, null);
 
         // update the masked byte
         QueryExecutorUtil.updateMaskedKeyRanges(maskedBytes, maskByteRanges);

@@ -33,7 +33,7 @@ import org.carbondata.core.datastorage.store.dataholder.MolapReadDataHolder;
 import org.carbondata.query.aggregator.MeasureAggregator;
 
 /**
- *  * The distinct count aggregator
+ * * The distinct count aggregator
  * Ex:
  * ID NAME Sales
  * <p>1 a 200
@@ -63,14 +63,16 @@ public class DistinctCountAggregatorSet implements MeasureAggregator {
     /**
      * just need to add the unique values to agg set
      */
-    @Override public void agg(double newVal) {
+    @Override
+    public void agg(double newVal) {
         valueSet.add(newVal);
     }
 
     /**
      * Below method will be used to get the value byte array
      */
-    @Override public byte[] getByteArray() {
+    @Override
+    public byte[] getByteArray() {
         Iterator<Double> iterator = valueSet.iterator();
         ByteBuffer buffer =
                 ByteBuffer.allocate(valueSet.size() * MolapCommonConstants.DOUBLE_SIZE_IN_BYTE);
@@ -89,7 +91,8 @@ public class DistinctCountAggregatorSet implements MeasureAggregator {
      *
      * @param newVal new value
      */
-    @Override public void agg(Object newVal) {
+    @Override
+    public void agg(Object newVal) {
         // Object include double
         if (newVal instanceof Double) {
             agg((double) newVal);
@@ -104,7 +107,8 @@ public class DistinctCountAggregatorSet implements MeasureAggregator {
         }
     }
 
-    @Override public void agg(MolapReadDataHolder newVal, int index) {
+    @Override
+    public void agg(MolapReadDataHolder newVal, int index) {
         valueSet.add(newVal.getReadableDoubleValueByIndex(index));
     }
 
@@ -121,50 +125,58 @@ public class DistinctCountAggregatorSet implements MeasureAggregator {
     /**
      * merge the valueset so that we get the count of unique values
      */
-    @Override public void merge(MeasureAggregator aggregator) {
+    @Override
+    public void merge(MeasureAggregator aggregator) {
         DistinctCountAggregatorSet distinctCountAggregator =
                 (DistinctCountAggregatorSet) aggregator;
         agg(distinctCountAggregator.valueSet);
     }
 
-    @Override public Double getDoubleValue() {
+    @Override
+    public Double getDoubleValue() {
         if (computedFixedValue == null) {
             return (double) valueSet.size();
         }
         return computedFixedValue;
     }
 
-    @Override public Long getLongValue() {
+    @Override
+    public Long getLongValue() {
         if (computedFixedValue == null) {
             return (long) valueSet.size();
         }
         return computedFixedValue.longValue();
     }
 
-    @Override public BigDecimal getBigDecimalValue() {
+    @Override
+    public BigDecimal getBigDecimalValue() {
         if (computedFixedValue == null) {
             return new BigDecimal(valueSet.size());
         }
         return new BigDecimal(computedFixedValue);
     }
 
-    @Override public Object getValueObject() {
+    @Override
+    public Object getValueObject() {
         return valueSet.size();
     }
 
-    @Override public boolean isFirstTime() {
+    @Override
+    public boolean isFirstTime() {
         return false;
     }
 
     /**
      * @see MeasureAggregator#setNewValue(Object)
      */
-    @Override public void setNewValue(Object newValue) {
+    @Override
+    public void setNewValue(Object newValue) {
         computedFixedValue = (Double) newValue;
         valueSet = null;
     }
 
-    @Override public void writeData(DataOutput dataOutputVal) throws IOException {
+    @Override
+    public void writeData(DataOutput dataOutputVal) throws IOException {
 
         if (computedFixedValue != null) {
             ByteBuffer byteBuffer = ByteBuffer.allocate(4 + 8);
@@ -184,7 +196,8 @@ public class DistinctCountAggregatorSet implements MeasureAggregator {
         }
     }
 
-    @Override public void readData(DataInput inPutVal) throws IOException {
+    @Override
+    public void readData(DataInput inPutVal) throws IOException {
         int length = inPutVal.readInt();
 
         if (length == -1) {
@@ -200,7 +213,8 @@ public class DistinctCountAggregatorSet implements MeasureAggregator {
 
     }
 
-    @Override public MeasureAggregator getCopy() {
+    @Override
+    public MeasureAggregator getCopy() {
 
         DistinctCountAggregatorSet aggregator = new DistinctCountAggregatorSet();
         aggregator.valueSet = new HashSet<Double>(valueSet);
@@ -219,7 +233,8 @@ public class DistinctCountAggregatorSet implements MeasureAggregator {
         return computedFixedValue + "";
     }
 
-    @Override public int compareTo(MeasureAggregator msr) {
+    @Override
+    public int compareTo(MeasureAggregator msr) {
         double msrVal = getDoubleValue();
         double otherMsrVal = msr.getDoubleValue();
         if (msrVal > otherMsrVal) {
@@ -231,11 +246,13 @@ public class DistinctCountAggregatorSet implements MeasureAggregator {
         return 0;
     }
 
-    @Override public MeasureAggregator get() {
+    @Override
+    public MeasureAggregator get() {
         return this;
     }
 
-    @Override public void merge(byte[] value) {
+    @Override
+    public void merge(byte[] value) {
         // TODO Auto-generated method stub
 
     }

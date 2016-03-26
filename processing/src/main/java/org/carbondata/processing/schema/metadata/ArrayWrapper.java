@@ -41,7 +41,8 @@ public class ArrayWrapper implements Serializable {
         this.data = data;
     }
 
-    @Override public boolean equals(Object other) {
+    @Override
+    public boolean equals(Object other) {
         if (other instanceof ArrayWrapper) {
             return Arrays.equals(data, ((ArrayWrapper) other).data);
         } else {
@@ -50,7 +51,8 @@ public class ArrayWrapper implements Serializable {
 
     }
 
-    @Override public int hashCode() {
+    @Override
+    public int hashCode() {
         return Arrays.hashCode(data);
     }
 

@@ -48,12 +48,14 @@ public class UnCompressNonDecimalMaxMinLong
      */
     private long[] value;
 
-    @Override public void setValue(long[] value) {
+    @Override
+    public void setValue(long[] value) {
         this.value = value;
 
     }
 
-    @Override public ValueCompressonHolder.UnCompressValue getNew() {
+    @Override
+    public ValueCompressonHolder.UnCompressValue getNew() {
         try {
             return (ValueCompressonHolder.UnCompressValue) clone();
         } catch (CloneNotSupportedException exc) {
@@ -62,23 +64,27 @@ public class UnCompressNonDecimalMaxMinLong
         return null;
     }
 
-    @Override public ValueCompressonHolder.UnCompressValue compress() {
+    @Override
+    public ValueCompressonHolder.UnCompressValue compress() {
 
         UnCompressNonDecimalMaxMinByte uNonDecByte = new UnCompressNonDecimalMaxMinByte();
         uNonDecByte.setValue(longCompressor.compress(value));
         return uNonDecByte;
     }
 
-    @Override public ValueCompressonHolder.UnCompressValue uncompress(
+    @Override
+    public ValueCompressonHolder.UnCompressValue uncompress(
             ValueCompressionUtil.DataType dataType) {
         return null;
     }
 
-    @Override public byte[] getBackArrayData() {
+    @Override
+    public byte[] getBackArrayData() {
         return ValueCompressionUtil.convertToBytes(value);
     }
 
-    @Override public void setValueInBytes(byte[] value) {
+    @Override
+    public void setValueInBytes(byte[] value) {
         ByteBuffer buff = ByteBuffer.wrap(value);
         this.value = ValueCompressionUtil.convertToLongArray(buff, value.length);
     }
@@ -86,11 +92,13 @@ public class UnCompressNonDecimalMaxMinLong
     /**
      * @see ValueCompressonHolder.UnCompressValue#getCompressorObject()
      */
-    @Override public ValueCompressonHolder.UnCompressValue getCompressorObject() {
+    @Override
+    public ValueCompressonHolder.UnCompressValue getCompressorObject() {
         return new UnCompressNonDecimalMaxMinByte();
     }
 
-    @Override public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
+    @Override
+    public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
         double maxValue = (double) maxValueObject;
         double[] vals = new double[value.length];
         MolapReadDataHolder molapDataHolder = new MolapReadDataHolder();

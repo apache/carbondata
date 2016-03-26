@@ -65,7 +65,7 @@ import org.w3c.dom.Node;
 public class CsvInputMeta extends BaseStepMeta
         implements StepMetaInterface, InputFileMetaInterface, StepMetaInjectionInterface {
     private static final Class<?> PKG = CsvInput.class;
-            // for i18n purposes, needed by Translator2!!   $NON-NLS-1$
+    // for i18n purposes, needed by Translator2!!   $NON-NLS-1$
 
     private String filename;
 

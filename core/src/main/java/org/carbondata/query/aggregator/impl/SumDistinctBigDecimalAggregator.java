@@ -51,13 +51,15 @@ public class SumDistinctBigDecimalAggregator extends AbstractMeasureAggregatorBa
      *
      * @param newVal new value
      */
-    @Override public void agg(Object newVal) {
+    @Override
+    public void agg(Object newVal) {
         valueSet.add(newVal instanceof BigDecimal ?
                 (BigDecimal) newVal :
                 new BigDecimal(newVal.toString()));
     }
 
-    @Override public void agg(MolapReadDataHolder newVal, int index) {
+    @Override
+    public void agg(MolapReadDataHolder newVal, int index) {
         BigDecimal valueBigDecimal = newVal.getReadableBigDecimalValueByIndex(index);
         valueSet.add(valueBigDecimal);
     }
@@ -65,7 +67,8 @@ public class SumDistinctBigDecimalAggregator extends AbstractMeasureAggregatorBa
     /**
      * Below method will be used to get the value byte array
      */
-    @Override public byte[] getByteArray() {
+    @Override
+    public byte[] getByteArray() {
         Iterator<BigDecimal> iterator = valueSet.iterator();
         ByteBuffer buffer =
                 ByteBuffer.allocate(valueSet.size() * MolapCommonConstants.DOUBLE_SIZE_IN_BYTE);
@@ -87,13 +90,15 @@ public class SumDistinctBigDecimalAggregator extends AbstractMeasureAggregatorBa
     /**
      * merge the valueset so that we get the count of unique values
      */
-    @Override public void merge(MeasureAggregator aggregator) {
+    @Override
+    public void merge(MeasureAggregator aggregator) {
         SumDistinctBigDecimalAggregator distinctAggregator =
                 (SumDistinctBigDecimalAggregator) aggregator;
         agg(distinctAggregator.valueSet);
     }
 
-    @Override public BigDecimal getBigDecimalValue() {
+    @Override
+    public BigDecimal getBigDecimalValue() {
         if (computedFixedValue == null) {
             BigDecimal result = new BigDecimal(0);
             for (BigDecimal aValue : valueSet) {
@@ -104,23 +109,27 @@ public class SumDistinctBigDecimalAggregator extends AbstractMeasureAggregatorBa
         return computedFixedValue;
     }
 
-    @Override public Object getValueObject() {
+    @Override
+    public Object getValueObject() {
         return getBigDecimalValue();
     }
 
     /**
      * @see MeasureAggregator#setNewValue(Object)
      */
-    @Override public void setNewValue(Object newValue) {
+    @Override
+    public void setNewValue(Object newValue) {
         computedFixedValue = (BigDecimal) newValue;
         valueSet = null;
     }
 
-    @Override public boolean isFirstTime() {
+    @Override
+    public boolean isFirstTime() {
         return false;
     }
 
-    @Override public void writeData(DataOutput dataOutput) throws IOException {
+    @Override
+    public void writeData(DataOutput dataOutput) throws IOException {
         if (computedFixedValue != null) {
             //            byte[] bytes = computedFixedValue.toString().getBytes();
             byte[] bytes = DataTypeUtil.bigDecimalToByte(computedFixedValue);
@@ -145,7 +154,8 @@ public class SumDistinctBigDecimalAggregator extends AbstractMeasureAggregatorBa
         }
     }
 
-    @Override public void readData(DataInput inPut) throws IOException {
+    @Override
+    public void readData(DataInput inPut) throws IOException {
         int length = inPut.readInt();
 
         if (length == -1) {
@@ -160,7 +170,8 @@ public class SumDistinctBigDecimalAggregator extends AbstractMeasureAggregatorBa
         }
     }
 
-    @Override public void merge(byte[] value) {
+    @Override
+    public void merge(byte[] value) {
         if (0 == value.length) {
             return;
         }
@@ -182,13 +193,15 @@ public class SumDistinctBigDecimalAggregator extends AbstractMeasureAggregatorBa
         return computedFixedValue + "";
     }
 
-    @Override public MeasureAggregator getCopy() {
+    @Override
+    public MeasureAggregator getCopy() {
         SumDistinctBigDecimalAggregator aggregator = new SumDistinctBigDecimalAggregator();
         aggregator.valueSet = new HashSet<BigDecimal>(valueSet);
         return aggregator;
     }
 
-    @Override public int compareTo(MeasureAggregator msr) {
+    @Override
+    public int compareTo(MeasureAggregator msr) {
         BigDecimal msrValObj = getBigDecimalValue();
         BigDecimal otherVal = msr.getBigDecimalValue();
 

@@ -37,11 +37,9 @@ import org.carbondata.query.queryinterface.filter.MolapFilterInfo;
 import org.carbondata.query.queryinterface.query.metadata.MolapDimensionLevelFilter;
 
 /**
- *
- * Module Name : MOLAP 
+ * Module Name : MOLAP
  * Author M00903915
  * Created Date :05-Jan-2015 8:05:45 PM
- *
  * Class Description : This class is used to get the filter applied at the each dimension level.
  * Version 1.0
  */
@@ -59,11 +57,12 @@ public class MolapFilterWrapper {
     }
 
     /**
-     * the method is used to construct the wrapperList 
+     * the method is used to construct the wrapperList
+     *
+     * @param dim         instance of dimension
+     * @param filterValue instance of MolapDimensionLevelFilter
      * @Author M00903915
      * @Description : addDimensionAndFilter
-     * @param dim instance of dimension
-     * @param filterValue instance of MolapDimensionLevelFilter
      */
     public void addDimensionAndFilter(Dimension dim, MolapDimensionLevelFilter filterValue) {
         Wrapper wrapper = new Wrapper();
@@ -73,13 +72,12 @@ public class MolapFilterWrapper {
     }
 
     /**
-     *
      * @param cube
      * @param b
-     * @Author M00903915
-     * @Description : getFilters
      * @return The method returns the Map of the filters for each dimension level
      * dimensionLevel is the key and the fileter is the value.
+     * @Author M00903915
+     * @Description : getFilters
      */
     public Map<Dimension, MolapFilterInfo> getFilters(boolean isAnalyzerQuery, Cube cube) {
         Collections.sort(this.wrapperList, new WrapperComparator());
@@ -227,13 +225,12 @@ public class MolapFilterWrapper {
     }
 
     /**
-     *
      * @param dimension
-     * @Author M00903915
-     * @Description : getMolapFilterInfo
      * @param dimLevelFilter instance of MolapDimensionLevelFilter
      * @param cube
      * @return return the instance of MolapaFileterInfo
+     * @Author M00903915
+     * @Description : getMolapFilterInfo
      */
     private MolapFilterInfo getMolapFilterInfo(Dimension dimension,
             MolapDimensionLevelFilter dimLevelFilter, Cube cube) {
@@ -292,11 +289,10 @@ public class MolapFilterWrapper {
     }
 
     /**
-     *
-     * @Author M00903915
-     * @Description : getMolapFilterInfo
      * @param dimLevelFilter instance of MolapDimensionLevelFilter
      * @return return the instance of MolapaFileterInfo
+     * @Author M00903915
+     * @Description : getMolapFilterInfo
      */
     private MolapFilterInfo getMolapFilterInfoForSingleFilter(
             MolapDimensionLevelFilter dimLevelFilter) {
@@ -354,15 +350,15 @@ public class MolapFilterWrapper {
 
     /**
      * The comparator class used to sort the List<Wrapper> according to the ordinal value of the dimension.
-     * Module Name : 
+     * Module Name :
      * Author M00903915
      * Created Date :05-Jan-2015 8:15:32 PM
-     *
      * Class Description :
      * Version 1.0
      */
     private class WrapperComparator implements Comparator<Wrapper> {
-        @Override public int compare(Wrapper o1, Wrapper o2) {
+        @Override
+        public int compare(Wrapper o1, Wrapper o2) {
             int cpmValue = o1.dimension.getOrdinal() - o2.dimension.getOrdinal();
             return cpmValue * -1;
         }
@@ -371,10 +367,9 @@ public class MolapFilterWrapper {
 
     /**
      * The class to to wrap the filter with dimension.
-     * Module Name : 
+     * Module Name :
      * Author M00903915
      * Created Date :05-Jan-2015 8:17:04 PM
-     *
      * Class Description :
      * Version 1.0
      */

@@ -46,7 +46,8 @@ public class UnCompressMaxMinLong implements ValueCompressonHolder.UnCompressVal
      */
     protected long[] value;
 
-    @Override public ValueCompressonHolder.UnCompressValue getNew() {
+    @Override
+    public ValueCompressonHolder.UnCompressValue getNew() {
         try {
             return (ValueCompressonHolder.UnCompressValue) clone();
         } catch (CloneNotSupportedException e) {
@@ -55,27 +56,32 @@ public class UnCompressMaxMinLong implements ValueCompressonHolder.UnCompressVal
         return null;
     }
 
-    @Override public ValueCompressonHolder.UnCompressValue compress() {
+    @Override
+    public ValueCompressonHolder.UnCompressValue compress() {
         UnCompressMaxMinByte unCompressByte = new UnCompressMaxMinByte();
         unCompressByte.setValue(longCompressor.compress(value));
         return unCompressByte;
     }
 
-    @Override public void setValue(long[] value) {
+    @Override
+    public void setValue(long[] value) {
         this.value = value;
 
     }
 
-    @Override public ValueCompressonHolder.UnCompressValue uncompress(
+    @Override
+    public ValueCompressonHolder.UnCompressValue uncompress(
             ValueCompressionUtil.DataType dataType) {
         return null;
     }
 
-    @Override public byte[] getBackArrayData() {
+    @Override
+    public byte[] getBackArrayData() {
         return ValueCompressionUtil.convertToBytes(value);
     }
 
-    @Override public void setValueInBytes(byte[] value) {
+    @Override
+    public void setValueInBytes(byte[] value) {
         ByteBuffer buffer = ByteBuffer.wrap(value);
         this.value = ValueCompressionUtil.convertToLongArray(buffer, value.length);
     }
@@ -83,11 +89,13 @@ public class UnCompressMaxMinLong implements ValueCompressonHolder.UnCompressVal
     /**
      * @see ValueCompressonHolder.UnCompressValue#getCompressorObject()
      */
-    @Override public ValueCompressonHolder.UnCompressValue getCompressorObject() {
+    @Override
+    public ValueCompressonHolder.UnCompressValue getCompressorObject() {
         return new UnCompressMaxMinByte();
     }
 
-    @Override public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
+    @Override
+    public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
         double maxValue = (double) maxValueObject;
         double[] vals = new double[value.length];
         MolapReadDataHolder data = new MolapReadDataHolder();

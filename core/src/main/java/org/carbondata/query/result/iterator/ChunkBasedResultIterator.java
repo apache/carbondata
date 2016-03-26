@@ -38,11 +38,13 @@ public class ChunkBasedResultIterator implements MolapIterator<ChunkResult> {
 
     }
 
-    @Override public boolean hasNext() {
+    @Override
+    public boolean hasNext() {
         return queryResultIterator.hasNext();
     }
 
-    @Override public ChunkResult next() {
+    @Override
+    public ChunkResult next() {
         return queryResultPreparator.prepareQueryOutputResult(queryResultIterator.next());
     }
 

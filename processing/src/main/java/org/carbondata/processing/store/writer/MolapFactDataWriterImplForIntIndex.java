@@ -30,9 +30,9 @@ import org.carbondata.core.datastorage.store.columnar.IndexStorage;
 import org.carbondata.core.datastorage.store.compression.SnappyCompression.SnappyByteCompression;
 import org.carbondata.core.file.manager.composite.IFileManagerComposite;
 import org.carbondata.core.keygenerator.mdkey.NumberCompressor;
+import org.carbondata.core.util.MolapProperties;
 import org.carbondata.processing.store.writer.exception.MolapDataWriterException;
 import org.carbondata.processing.util.MolapDataProcessorLogEvent;
-import org.carbondata.core.util.MolapProperties;
 
 public class MolapFactDataWriterImplForIntIndex extends AbstractFactDataWriter<int[]> {
     private static final LogService LOGGER =
@@ -53,7 +53,8 @@ public class MolapFactDataWriterImplForIntIndex extends AbstractFactDataWriter<i
                 "********************************Integer based will be used");
     }
 
-    @Override public void writeDataToFile(IndexStorage<int[]>[] keyStorageArray, byte[][] dataArray,
+    @Override
+    public void writeDataToFile(IndexStorage<int[]>[] keyStorageArray, byte[][] dataArray,
             int entryCount, byte[] startKey, byte[] endKey) throws MolapDataWriterException {
         updateLeafNodeFileChannel();
 

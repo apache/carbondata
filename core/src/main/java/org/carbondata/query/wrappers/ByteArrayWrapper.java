@@ -212,7 +212,8 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializa
      *
      * @param other ArrayWrapper Object
      */
-    @Override public int compareTo(ByteArrayWrapper other) {
+    @Override
+    public int compareTo(ByteArrayWrapper other) {
         int compareTo = UnsafeComparer.INSTANCE.compareTo(maskedKey, other.maskedKey);
         if (compareTo == 0) {
             if (null != listOfDirectSurrogateVal) {

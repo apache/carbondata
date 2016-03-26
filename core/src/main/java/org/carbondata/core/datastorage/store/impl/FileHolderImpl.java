@@ -65,7 +65,8 @@ public class FileHolderImpl implements FileHolder {
      * @param length   number of bytes to be read
      * @return read byte array
      */
-    @Override public byte[] readByteArray(String filePath, long offset, int length) {
+    @Override
+    public byte[] readByteArray(String filePath, long offset, int length) {
         FileChannel fileChannel = updateCache(filePath);
         ByteBuffer byteBffer = read(fileChannel, length, offset);
         return byteBffer.array();
@@ -79,7 +80,8 @@ public class FileHolderImpl implements FileHolder {
      * @param length   number of bytes to be read
      * @return read byte array
      */
-    @Override public ByteBuffer readByteBuffer(String filePath, long offset, int length) {
+    @Override
+    public ByteBuffer readByteBuffer(String filePath, long offset, int length) {
         FileChannel fileChannel = updateCache(filePath);
         ByteBuffer byteBffer = read(fileChannel, length, offset);
         return byteBffer;
@@ -88,7 +90,8 @@ public class FileHolderImpl implements FileHolder {
     /**
      * This method will be used to close all the streams currently present in the cache
      */
-    @Override public void finish() {
+    @Override
+    public void finish() {
 
         for (Entry<String, FileChannel> entry : fileNameAndStreamCache.entrySet()) {
             try {
@@ -112,7 +115,8 @@ public class FileHolderImpl implements FileHolder {
      * @param offset   reading start position,
      * @return read int
      */
-    @Override public int readInt(String filePath, long offset) {
+    @Override
+    public int readInt(String filePath, long offset) {
         FileChannel fileChannel = updateCache(filePath);
         ByteBuffer byteBffer = read(fileChannel, MolapCommonConstants.INT_SIZE_IN_BYTE, offset);
         return byteBffer.getInt();
@@ -125,7 +129,8 @@ public class FileHolderImpl implements FileHolder {
      * @param filePath fully qualified file path
      * @return read int
      */
-    @Override public int readInt(String filePath) {
+    @Override
+    public int readInt(String filePath) {
         FileChannel fileChannel = updateCache(filePath);
         ByteBuffer byteBffer = read(fileChannel, MolapCommonConstants.INT_SIZE_IN_BYTE);
         return byteBffer.getInt();
@@ -139,7 +144,8 @@ public class FileHolderImpl implements FileHolder {
      * @param offset   reading start position,
      * @return read int
      */
-    @Override public long readDouble(String filePath, long offset) {
+    @Override
+    public long readDouble(String filePath, long offset) {
         FileChannel fileChannel = updateCache(filePath);
         ByteBuffer byteBffer = read(fileChannel, MolapCommonConstants.LONG_SIZE_IN_BYTE, offset);
         return byteBffer.getLong();
@@ -208,7 +214,8 @@ public class FileHolderImpl implements FileHolder {
     /**
      * @see FileHolder#getFileSize(String)
      */
-    @Override public long getFileSize(String filePath) {
+    @Override
+    public long getFileSize(String filePath) {
         long size = 0;
 
         try {
@@ -227,7 +234,8 @@ public class FileHolderImpl implements FileHolder {
      * @param length   number of bytes to be read
      * @return read byte array
      */
-    @Override public byte[] readByteArray(String filePath, int length) {
+    @Override
+    public byte[] readByteArray(String filePath, int length) {
         FileChannel fileChannel = updateCache(filePath);
         ByteBuffer byteBffer = read(fileChannel, length);
         return byteBffer.array();
@@ -241,7 +249,8 @@ public class FileHolderImpl implements FileHolder {
      * @param offset   reading start position,
      * @return read long
      */
-    @Override public long readLong(String filePath, long offset) {
+    @Override
+    public long readLong(String filePath, long offset) {
         FileChannel fileChannel = updateCache(filePath);
         ByteBuffer byteBffer = read(fileChannel, MolapCommonConstants.LONG_SIZE_IN_BYTE, offset);
         return byteBffer.getLong();

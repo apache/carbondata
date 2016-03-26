@@ -88,7 +88,8 @@ public class MolapPredicates implements Serializable {
     /* (non-Javadoc)
      * @see java.lang.Object#hashCode()
      */
-    @Override public int hashCode() {
+    @Override
+    public int hashCode() {
         final int prime = 31;
         int result = 1;
         result = prime * result + Arrays.hashCode(exclude);
@@ -100,7 +101,8 @@ public class MolapPredicates implements Serializable {
     /* (non-Javadoc)
      * @see java.lang.Object#equals(java.lang.Object)
      */
-    @Override public boolean equals(Object obj) {
+    @Override
+    public boolean equals(Object obj) {
         if (obj instanceof MolapPredicates) {
             if (this == obj) {
                 return true;

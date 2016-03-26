@@ -19,7 +19,6 @@
 
 package org.carbondata.processing.suggest.querystats;
 
-public class QueryStatsAggTest
-{
+public class QueryStatsAggTest {
 
 }

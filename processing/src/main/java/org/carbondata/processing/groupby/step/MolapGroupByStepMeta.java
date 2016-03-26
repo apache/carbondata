@@ -63,7 +63,8 @@ public class MolapGroupByStepMeta extends BaseStepMeta implements StepMetaInterf
     /**
      * set the default value for all the properties
      */
-    @Override public void setDefault() {
+    @Override
+    public void setDefault() {
         aggTypeString = "";
         actualColumnName = "";
         columnName = "";
@@ -107,8 +108,9 @@ public class MolapGroupByStepMeta extends BaseStepMeta implements StepMetaInterf
      * @param counters  Counters to reference.
      * @throws KettleXMLException When an unexpected XML error occurred. (malformed etc.)
      */
-    @Override public void loadXML(Node stepnode, List<DatabaseMeta> databases,
-            Map<String, Counter> counters) throws KettleXMLException {
+    @Override
+    public void loadXML(Node stepnode, List<DatabaseMeta> databases, Map<String, Counter> counters)
+            throws KettleXMLException {
         try {
             aggTypeString = XMLHandler.getTagValue(stepnode, "aggTypeString");
 
@@ -130,7 +132,8 @@ public class MolapGroupByStepMeta extends BaseStepMeta implements StepMetaInterf
      * @param idStep           The step ID
      * @throws KettleException When an unexpected error occurred (database, network, etc)
      */
-    @Override public void saveRep(Repository rep, ObjectId idTransformation, ObjectId idStep)
+    @Override
+    public void saveRep(Repository rep, ObjectId idTransformation, ObjectId idStep)
             throws KettleException {
         try {
             rep.saveStepAttribute(idTransformation, idStep, "aggTypeString",
@@ -160,7 +163,8 @@ public class MolapGroupByStepMeta extends BaseStepMeta implements StepMetaInterf
      * @param counters  The counters to reference
      * @throws KettleException When an unexpected error occurred (database, network, etc)
      */
-    @Override public void readRep(Repository rep, ObjectId idStep, List<DatabaseMeta> databases,
+    @Override
+    public void readRep(Repository rep, ObjectId idStep, List<DatabaseMeta> databases,
             Map<String, Counter> counters) throws KettleException {
         // TODO Auto-generated method stub
         try {
@@ -188,9 +192,9 @@ public class MolapGroupByStepMeta extends BaseStepMeta implements StepMetaInterf
      * @param output   The output step names
      * @param info     The fields that are used as information by the step
      */
-    @Override public void check(List<CheckResultInterface> remarks, TransMeta transMeta,
-            StepMeta stepMeta, RowMetaInterface prev, String[] input, String[] output,
-            RowMetaInterface info) {
+    @Override
+    public void check(List<CheckResultInterface> remarks, TransMeta transMeta, StepMeta stepMeta,
+            RowMetaInterface prev, String[] input, String[] output, RowMetaInterface info) {
         CheckResult checkResultInfo;
 
         // See if we have input streams leading to this step!
@@ -216,8 +220,9 @@ public class MolapGroupByStepMeta extends BaseStepMeta implements StepMetaInterf
      * @param transMeta         The transformation info
      * @param trans             The launching transformation
      */
-    @Override public StepInterface getStep(StepMeta stepMeta, StepDataInterface stepDataInterface,
-            int copyNr, TransMeta transMeta, Trans trans) {
+    @Override
+    public StepInterface getStep(StepMeta stepMeta, StepDataInterface stepDataInterface, int copyNr,
+            TransMeta transMeta, Trans trans) {
         return new MolapGroupByStep(stepMeta, stepDataInterface, copyNr, transMeta, trans);
     }
 
@@ -228,7 +233,8 @@ public class MolapGroupByStepMeta extends BaseStepMeta implements StepMetaInterf
      *
      * @return The appropriate StepDataInterface class.
      */
-    @Override public StepDataInterface getStepData() {
+    @Override
+    public StepDataInterface getStepData() {
         return new MolapGroupByStepData();
     }
 

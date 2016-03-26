@@ -45,7 +45,8 @@ public class ColumnWithIndex implements Comparable<ColumnWithIndex> {
         return index;
     }
 
-    @Override public int compareTo(ColumnWithIndex o) {
+    @Override
+    public int compareTo(ColumnWithIndex o) {
         return ByteUtil.UnsafeComparer.INSTANCE.compareTo(column, o.column);
     }
 

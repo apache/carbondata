@@ -29,9 +29,9 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.util.MolapUtil;
 import org.carbondata.processing.schema.metadata.HierarchiesInfo;
 import org.carbondata.processing.util.MolapDataProcessorUtil;
-import org.carbondata.core.util.MolapUtil;
 import org.pentaho.di.core.CheckResultInterface;
 import org.pentaho.di.core.Counter;
 import org.pentaho.di.core.database.DatabaseMeta;

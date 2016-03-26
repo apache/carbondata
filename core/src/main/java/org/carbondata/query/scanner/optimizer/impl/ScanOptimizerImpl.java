@@ -40,7 +40,8 @@ public class ScanOptimizerImpl implements ScanOptimizer {
         LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "UNSUPPORT Operation");
     }
 
-    @Override public byte[] getNextKey(final long[] originalKey, final byte[] transKey) {
+    @Override
+    public byte[] getNextKey(final long[] originalKey, final byte[] transKey) {
         LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "UNSUPPORT Operation");
         return new byte[0];
     }

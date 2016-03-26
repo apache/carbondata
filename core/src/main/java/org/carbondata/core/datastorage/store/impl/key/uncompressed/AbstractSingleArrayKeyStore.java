@@ -49,7 +49,8 @@ public abstract class AbstractSingleArrayKeyStore implements NodeKeyStore {
      * @param index index of mdkey
      * @param value mdkey
      */
-    @Override public void put(int index, byte[] value) {
+    @Override
+    public void put(int index, byte[] value) {
         System.arraycopy(value, 0, datastore, ((index) * sizeOfEachElement), sizeOfEachElement);
     }
 
@@ -61,7 +62,8 @@ public abstract class AbstractSingleArrayKeyStore implements NodeKeyStore {
      *
      * @return writable array
      */
-    @Override public byte[] getWritableKeyArray() {
+    @Override
+    public byte[] getWritableKeyArray() {
         // create and allocate size for byte buffer
         //  4 bytes for size of array(for array length) + size of array(for array)
         return datastore;
@@ -75,7 +77,8 @@ public abstract class AbstractSingleArrayKeyStore implements NodeKeyStore {
      * @return uncompressed keys
      * will return uncompressed key
      */
-    @Override public byte[] getBackArray(FileHolder fileHolder) {
+    @Override
+    public byte[] getBackArray(FileHolder fileHolder) {
         return datastore;
     }
 
@@ -86,7 +89,8 @@ public abstract class AbstractSingleArrayKeyStore implements NodeKeyStore {
      * @param fileHolder file holder will be used to read the file
      * @return key
      */
-    @Override public byte[] get(int index, FileHolder fileHolder) {
+    @Override
+    public byte[] get(int index, FileHolder fileHolder) {
         // create new array of size of each element
         byte[] copy = new byte[sizeOfEachElement];
 
@@ -101,7 +105,8 @@ public abstract class AbstractSingleArrayKeyStore implements NodeKeyStore {
     /**
      * This method will clear the store and create the new empty store
      */
-    @Override public void clear() {
+    @Override
+    public void clear() {
         datastore = new byte[this.totalNumberOfElements * this.sizeOfEachElement];
     }
 }

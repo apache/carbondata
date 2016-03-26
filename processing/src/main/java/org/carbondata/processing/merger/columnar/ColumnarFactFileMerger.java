@@ -24,7 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.util.*;
+import org.carbondata.core.util.MolapSliceAndFiles;
 import org.carbondata.processing.factreader.FactReaderInfo;
 import org.carbondata.processing.factreader.MolapSurrogateTupleHolder;
 import org.carbondata.processing.merger.columnar.iterator.MolapDataIterator;

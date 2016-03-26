@@ -23,13 +23,13 @@ import java.util.AbstractQueue;
 import java.util.Comparator;
 import java.util.PriorityQueue;
 
+import org.carbondata.core.util.ByteUtil;
 import org.carbondata.processing.factreader.MolapSurrogateTupleHolder;
 import org.carbondata.processing.merger.columnar.ColumnarFactFileMerger;
 import org.carbondata.processing.merger.columnar.iterator.MolapDataIterator;
 import org.carbondata.processing.merger.exeception.SliceMergerException;
 import org.carbondata.processing.schema.metadata.MolapColumnarFactMergerInfo;
 import org.carbondata.processing.store.writer.exception.MolapDataWriterException;
-import org.carbondata.core.util.ByteUtil;
 
 public class NonTimeBasedMergerColumnar extends ColumnarFactFileMerger {
 
@@ -47,7 +47,8 @@ public class NonTimeBasedMergerColumnar extends ColumnarFactFileMerger {
         }
     }
 
-    @Override public void mergerSlice() throws SliceMergerException {
+    @Override
+    public void mergerSlice() throws SliceMergerException {
         // index
         int index = 0;
         try {
@@ -97,7 +98,8 @@ public class NonTimeBasedMergerColumnar extends ColumnarFactFileMerger {
     private class MolapMdkeyComparator
             implements Comparator<MolapDataIterator<MolapSurrogateTupleHolder>> {
 
-        @Override public int compare(MolapDataIterator<MolapSurrogateTupleHolder> o1,
+        @Override
+        public int compare(MolapDataIterator<MolapSurrogateTupleHolder> o1,
                 MolapDataIterator<MolapSurrogateTupleHolder> o2) {
             return ByteUtil.UnsafeComparer.INSTANCE
                     .compareTo(o1.getNextData().getMdKey(), o2.getNextData().getMdKey());

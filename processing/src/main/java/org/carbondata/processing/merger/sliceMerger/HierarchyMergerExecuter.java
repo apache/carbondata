@@ -27,9 +27,9 @@ import org.carbondata.core.constants.MolapCommonConstants;
 import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.core.datastorage.store.filesystem.MolapFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
+import org.carbondata.core.util.MolapUtil;
 import org.carbondata.processing.merger.Util.RowTempFile;
 import org.carbondata.processing.merger.exeception.SliceMergerException;
-import org.carbondata.core.util.MolapUtil;
 
 public class HierarchyMergerExecuter {
     /**

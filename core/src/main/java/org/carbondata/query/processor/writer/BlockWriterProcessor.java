@@ -112,7 +112,8 @@ public class BlockWriterProcessor implements DataProcessorExt {
         this.outputLocation = outputLocation;
     }
 
-    @Override public void initialise(DataProcessorInfo model) throws DataProcessorException {
+    @Override
+    public void initialise(DataProcessorInfo model) throws DataProcessorException {
         this.model = model;
         this.queryId = model.getQueryId();
         this.dataWriter =
@@ -140,7 +141,8 @@ public class BlockWriterProcessor implements DataProcessorExt {
         }
     }
 
-    @Override public void processRow(final byte[] key, final MeasureAggregator[] value)
+    @Override
+    public void processRow(final byte[] key, final MeasureAggregator[] value)
             throws DataProcessorException {
         try {
             if (this.entryCount == this.model.getBlockSize()) {
@@ -201,7 +203,8 @@ public class BlockWriterProcessor implements DataProcessorExt {
         return b;
     }
 
-    @Override public void finish() throws DataProcessorException {
+    @Override
+    public void finish() throws DataProcessorException {
         try {
             if (this.entryCount > 0) {
 
@@ -222,11 +225,13 @@ public class BlockWriterProcessor implements DataProcessorExt {
         }
     }
 
-    @Override public MolapIterator<QueryResult> getQueryResultIterator() {
+    @Override
+    public MolapIterator<QueryResult> getQueryResultIterator() {
         return new FileBasedResultIteartor(outputLocation + '/' + queryId + "_0", model);
     }
 
-    @Override public void processRow(ByteArrayWrapper key, MeasureAggregator[] value)
+    @Override
+    public void processRow(ByteArrayWrapper key, MeasureAggregator[] value)
             throws DataProcessorException {
         // TODO Auto-generated method stub
 

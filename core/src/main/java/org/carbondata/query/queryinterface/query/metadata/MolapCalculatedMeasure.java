@@ -92,7 +92,8 @@ public class MolapCalculatedMeasure extends MolapMeasure {
     /**
      * See interface comments
      */
-    @Override public MolapLevelType getType() {
+    @Override
+    public MolapLevelType getType() {
         return MolapLevelType.CALCULATED_MEASURE;
     }
 

@@ -32,11 +32,13 @@ public class MolapQueryDummyProcessor implements DataProcessor {
 
     private QueryResult result = new QueryResult();
 
-    @Override public void initModel(PaginationModel model) throws MolapPaginationException {
+    @Override
+    public void initModel(PaginationModel model) throws MolapPaginationException {
         limit = model.getLimit();
     }
 
-    @Override public void processRow(byte[] key, MeasureAggregator[] measures)
+    @Override
+    public void processRow(byte[] key, MeasureAggregator[] measures)
             throws MolapPaginationException {
         if (limit == -1 || result.size() < limit) {
             ByteArrayWrapper arrayWrapper = new ByteArrayWrapper();
@@ -45,7 +47,8 @@ public class MolapQueryDummyProcessor implements DataProcessor {
         }
     }
 
-    @Override public void finish() throws MolapPaginationException {
+    @Override
+    public void finish() throws MolapPaginationException {
 
     }
 
@@ -56,7 +59,8 @@ public class MolapQueryDummyProcessor implements DataProcessor {
     /**
      * processGroup
      */
-    @Override public void processGroup(GroupByHolder groupByHolder) {
+    @Override
+    public void processGroup(GroupByHolder groupByHolder) {
         // No need to implement any thing
 
     }

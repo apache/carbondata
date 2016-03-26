@@ -44,11 +44,13 @@ public class ByteArrayHolder implements Comparable<ByteArrayHolder> {
         this.primaryKey = primaryKey;
     }
 
-    @Override public int compareTo(ByteArrayHolder o) {
+    @Override
+    public int compareTo(ByteArrayHolder o) {
         return ByteUtil.compare(mdKey, o.mdKey);
     }
 
-    @Override public boolean equals(Object obj) {
+    @Override
+    public boolean equals(Object obj) {
         // TODO Auto-generated method stub
         if (obj instanceof ByteArrayHolder) {
             if (0 == ByteUtil.compare(mdKey, ((ByteArrayHolder) obj).mdKey)) {
@@ -58,7 +60,8 @@ public class ByteArrayHolder implements Comparable<ByteArrayHolder> {
         return false;
     }
 
-    @Override public int hashCode() {
+    @Override
+    public int hashCode() {
         int prime = 31;
         int result = prime * Arrays.hashCode(mdKey);
         result = result + prime * primaryKey;

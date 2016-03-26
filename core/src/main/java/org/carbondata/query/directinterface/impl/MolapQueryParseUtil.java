@@ -482,7 +482,8 @@ public final class MolapQueryParseUtil {
                 FileFactory.getMolapFile(baseStorePath, FileFactory.getFileType(baseStorePath));
         // List of directories
         MolapFile[] listFiles = molapFile.listFiles(new MolapFileFilter() {
-            @Override public boolean accept(MolapFile pathname) {
+            @Override
+            public boolean accept(MolapFile pathname) {
                 if (pathname.isDirectory()) {
                     if (pathname.getAbsolutePath().indexOf(filterType) > -1) {
                         return true;

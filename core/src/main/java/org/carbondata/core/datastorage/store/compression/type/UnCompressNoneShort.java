@@ -49,12 +49,14 @@ public class UnCompressNoneShort implements ValueCompressonHolder.UnCompressValu
      */
     private short[] shortValue;
 
-    @Override public void setValue(short[] shortValue) {
+    @Override
+    public void setValue(short[] shortValue) {
         this.shortValue = shortValue;
 
     }
 
-    @Override public ValueCompressonHolder.UnCompressValue getNew() {
+    @Override
+    public ValueCompressonHolder.UnCompressValue getNew() {
         try {
             return (ValueCompressonHolder.UnCompressValue) clone();
         } catch (CloneNotSupportedException cns1) {
@@ -63,7 +65,8 @@ public class UnCompressNoneShort implements ValueCompressonHolder.UnCompressValu
         return null;
     }
 
-    @Override public ValueCompressonHolder.UnCompressValue compress() {
+    @Override
+    public ValueCompressonHolder.UnCompressValue compress() {
 
         UnCompressNoneByte byte1 = new UnCompressNoneByte();
         byte1.setValue(shortCompressor.compress(shortValue));
@@ -72,15 +75,18 @@ public class UnCompressNoneShort implements ValueCompressonHolder.UnCompressValu
 
     }
 
-    @Override public ValueCompressonHolder.UnCompressValue uncompress(DataType dataType) {
+    @Override
+    public ValueCompressonHolder.UnCompressValue uncompress(DataType dataType) {
         return null;
     }
 
-    @Override public byte[] getBackArrayData() {
+    @Override
+    public byte[] getBackArrayData() {
         return ValueCompressionUtil.convertToBytes(shortValue);
     }
 
-    @Override public void setValueInBytes(byte[] value) {
+    @Override
+    public void setValueInBytes(byte[] value) {
         ByteBuffer buffer = ByteBuffer.wrap(value);
         shortValue = ValueCompressionUtil.convertToShortArray(buffer, value.length);
     }
@@ -88,11 +94,13 @@ public class UnCompressNoneShort implements ValueCompressonHolder.UnCompressValu
     /**
      * @see ValueCompressonHolder.UnCompressValue#getCompressorObject()
      */
-    @Override public ValueCompressonHolder.UnCompressValue getCompressorObject() {
+    @Override
+    public ValueCompressonHolder.UnCompressValue getCompressorObject() {
         return new UnCompressNoneByte();
     }
 
-    @Override public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
+    @Override
+    public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
         MolapReadDataHolder dataHolder = new MolapReadDataHolder();
         double[] vals = new double[shortValue.length];
         for (int i = 0; i < vals.length; i++) {

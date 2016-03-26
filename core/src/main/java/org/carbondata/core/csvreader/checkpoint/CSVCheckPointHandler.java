@@ -64,7 +64,8 @@ public class CSVCheckPointHandler implements CheckPointInterface {
      * @return check point cache
      * @throws CheckPointException will throw exception in case of any error while getting the cache
      */
-    @Override public Map<String, Long> getCheckPointCache() throws CheckPointException {
+    @Override
+    public Map<String, Long> getCheckPointCache() throws CheckPointException {
         // create cache
         Map<String, Long> checkPointCache =
                 new HashMap<String, Long>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -121,8 +122,8 @@ public class CSVCheckPointHandler implements CheckPointInterface {
      * @param checkPointCache check point cache
      * @throws CheckPointException problem while storing the checkpoint cache
      */
-    @Override public void saveCheckPointCache(Map<String, Long> checkPointCache)
-            throws CheckPointException {
+    @Override
+    public void saveCheckPointCache(Map<String, Long> checkPointCache) throws CheckPointException {
         byte[] nameBytes = null;
         DataOutputStream stream = null;
         String actualFileName =
@@ -187,11 +188,13 @@ public class CSVCheckPointHandler implements CheckPointInterface {
      *
      * @return
      */
-    @Override public int getCheckPointInfoFieldCount() {
+    @Override
+    public int getCheckPointInfoFieldCount() {
         return CSV_CHECKPOINT_FIELD_INFO_COUNT;
     }
 
-    @Override public void updateInfoFields(Object[] inputRow, Object[] outputRow) {
+    @Override
+    public void updateInfoFields(Object[] inputRow, Object[] outputRow) {
         outputRow[outputRow.length - 2] = inputRow[inputRow.length - 2];
         outputRow[outputRow.length - 1] = inputRow[inputRow.length - 1];
     }

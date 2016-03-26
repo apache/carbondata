@@ -34,7 +34,8 @@ public class MolapEqualFunction extends AbstractMolapCalcFunction {
     /**
      * If true then this function returns 1 and if false then 0.
      */
-    @Override public double calculate(MeasureAggregator[] msrAggs) {
+    @Override
+    public double calculate(MeasureAggregator[] msrAggs) {
         double left = leftOperand.calculate(msrAggs);
         double right = rightOperand.calculate(msrAggs);
         //CHECKSTYLE:OFF    Approval No:Approval-212

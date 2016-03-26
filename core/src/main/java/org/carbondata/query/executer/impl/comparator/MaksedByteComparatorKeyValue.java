@@ -54,8 +54,8 @@ public class MaksedByteComparatorKeyValue implements Comparator<KeyValueHolder> 
      * @param o1
      * @param o2
      */
-    @Override public int compare(KeyValueHolder byteArrayWrapper1,
-            KeyValueHolder byteArrayWrapper2) {
+    @Override
+    public int compare(KeyValueHolder byteArrayWrapper1, KeyValueHolder byteArrayWrapper2) {
         byte[] o1 = byteArrayWrapper1.key.getMaskedKey();
         byte[] o2 = byteArrayWrapper2.key.getMaskedKey();
         int cmp = 0;

@@ -33,7 +33,8 @@ public abstract class AbstractLogicalFilterEvaluator implements FilterEvaluator 
         this.rightEvalutor = rightEvalutor;
     }
 
-    @Override public void resolve(FilterEvaluatorInfo info) {
+    @Override
+    public void resolve(FilterEvaluatorInfo info) {
 
     }
 

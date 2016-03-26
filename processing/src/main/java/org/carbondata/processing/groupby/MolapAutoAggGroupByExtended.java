@@ -23,6 +23,7 @@ public class MolapAutoAggGroupByExtended extends MolapAutoAggGroupBy {
 
     /**
      * MolapAutoAggGroupByExtended Constructor
+     *
      * @param aggType
      * @param aggClassName
      * @param schemaName
@@ -41,7 +42,6 @@ public class MolapAutoAggGroupByExtended extends MolapAutoAggGroupBy {
      * Below method will be used to add new row
      *
      * @param row
-     *
      */
     protected void addNewRow(Object[] row) {
         for (int i = 0; i < aggregators.length; i++) {
@@ -58,9 +58,7 @@ public class MolapAutoAggGroupByExtended extends MolapAutoAggGroupBy {
      * This method will be used to update the measure value based on aggregator
      * type
      *
-     * @param row
-     *            row
-     *
+     * @param row row
      */
     protected void updateMeasureValue(Object[] row) {
         for (int i = 0; i < aggregators.length; i++) {

@@ -22,13 +22,13 @@ package org.carbondata.processing.merger.columnar.iterator.impl;
 import org.carbondata.core.constants.MolapCommonConstants;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.datastorage.store.filesystem.MolapFile;
-import org.carbondata.query.columnar.keyvalue.AbstractColumnarScanResult;
+import org.carbondata.core.util.ValueCompressionUtil;
 import org.carbondata.processing.factreader.FactReaderInfo;
 import org.carbondata.processing.factreader.MolapSurrogateTupleHolder;
 import org.carbondata.processing.factreader.columnar.MolapColumnarLeafNodeIterator;
 import org.carbondata.processing.iterator.MolapIterator;
 import org.carbondata.processing.merger.columnar.iterator.MolapDataIterator;
-import org.carbondata.core.util.ValueCompressionUtil;
+import org.carbondata.query.columnar.keyvalue.AbstractColumnarScanResult;
 
 public class MolapColumnarLeafTupleDataIterator
         implements MolapDataIterator<MolapSurrogateTupleHolder> {
@@ -138,11 +138,13 @@ public class MolapColumnarLeafTupleDataIterator
         return measures;
     }
 
-    @Override public boolean hasNext() {
+    @Override
+    public boolean hasNext() {
         return hasNext;
     }
 
-    @Override public void fetchNextData() {
+    @Override
+    public void fetchNextData() {
         MolapSurrogateTupleHolder tuple = new MolapSurrogateTupleHolder();
         tuple.setSurrogateKey(keyValue.getKeyArray());
         tuple.setMeasures(getMeasure());
@@ -156,7 +158,8 @@ public class MolapColumnarLeafTupleDataIterator
         this.currentTuple = tuple;
     }
 
-    @Override public MolapSurrogateTupleHolder getNextData() {
+    @Override
+    public MolapSurrogateTupleHolder getNextData() {
         return this.currentTuple;
     }
 }

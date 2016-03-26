@@ -56,7 +56,8 @@ public class IntArrayWrapper implements Serializable, Comparable<IntArrayWrapper
      * @return boolean
      * equal or not
      */
-    @Override public boolean equals(Object other) {
+    @Override
+    public boolean equals(Object other) {
         if (other instanceof IntArrayWrapper) {
             return Arrays.equals(data, ((IntArrayWrapper) other).data);
         }
@@ -69,7 +70,8 @@ public class IntArrayWrapper implements Serializable, Comparable<IntArrayWrapper
      *
      * @return hascode
      */
-    @Override public int hashCode() {
+    @Override
+    public int hashCode() {
         return Arrays.hashCode(data);
     }
 
@@ -89,7 +91,8 @@ public class IntArrayWrapper implements Serializable, Comparable<IntArrayWrapper
      *
      * @param other ArrayWrapper Object
      */
-    @Override public int compareTo(IntArrayWrapper other) {
+    @Override
+    public int compareTo(IntArrayWrapper other) {
         for (int i = 0; i < data.length; i++) {
             if (data[i] > other.data[i]) {
                 return 1;

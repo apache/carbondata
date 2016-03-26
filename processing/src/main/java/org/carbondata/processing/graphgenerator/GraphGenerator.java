@@ -24,26 +24,28 @@ import java.util.*;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.util.*;
-import org.carbondata.processing.aggregatesurrogategenerator.step.MolapAggregateSurrogateGeneratorMeta;
-import org.carbondata.processing.api.dataloader.DataLoadModel;
-import org.carbondata.processing.api.dataloader.SchemaInfo;
-import org.carbondata.processing.autoaggregategraphgenerator.step.MolapAutoAGGGraphGeneratorMeta;
 import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.processing.csvreader.CsvReaderMeta;
 import org.carbondata.core.csvreader.checkpoint.CheckPointHanlder;
-import org.carbondata.processing.csvreaderstep.CsvInputMeta;
-import org.carbondata.processing.factreader.step.MolapFactReaderMeta;
-import org.carbondata.processing.graphgenerator.configuration.GraphConfigurationInfo;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
-import org.carbondata.processing.mdkeygen.MDKeyGenStepMeta;
-import org.carbondata.processing.merger.step.MolapSliceMergerStepMeta;
 import org.carbondata.core.metadata.SliceMetaData;
 import org.carbondata.core.olap.MolapDef.Cube;
 import org.carbondata.core.olap.MolapDef.CubeDimension;
 import org.carbondata.core.olap.MolapDef.Measure;
 import org.carbondata.core.olap.MolapDef.Schema;
+import org.carbondata.core.util.MolapProperties;
+import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.util.MolapUtilException;
+import org.carbondata.processing.aggregatesurrogategenerator.step.MolapAggregateSurrogateGeneratorMeta;
+import org.carbondata.processing.api.dataloader.DataLoadModel;
+import org.carbondata.processing.api.dataloader.SchemaInfo;
+import org.carbondata.processing.autoaggregategraphgenerator.step.MolapAutoAGGGraphGeneratorMeta;
+import org.carbondata.processing.csvreader.CsvReaderMeta;
+import org.carbondata.processing.csvreaderstep.CsvInputMeta;
+import org.carbondata.processing.factreader.step.MolapFactReaderMeta;
+import org.carbondata.processing.graphgenerator.configuration.GraphConfigurationInfo;
+import org.carbondata.processing.mdkeygen.MDKeyGenStepMeta;
+import org.carbondata.processing.merger.step.MolapSliceMergerStepMeta;
 import org.carbondata.processing.schema.metadata.AggregateTable;
 import org.carbondata.processing.sortandgroupby.sortDataStep.SortKeyStepMeta;
 import org.carbondata.processing.sortandgroupby.step.MolapSortKeyAndGroupByStepMeta;
@@ -1634,7 +1636,8 @@ public class GraphGenerator {
         graphConfiguration.setHeirAndDimLens(
                 MolapSchemaParser.getHeirAndCardinalityString(dimensions, schema));
         //setting dimension store types
-        graphConfiguration.setDimensionStoreTypeString(MolapSchemaParser.getDimensionsStoreType(cube, schema));
+        graphConfiguration.setDimensionStoreTypeString(
+                MolapSchemaParser.getDimensionsStoreType(cube, schema));
         graphConfiguration
                 .setPrimaryKeyString(MolapSchemaParser.getPrimaryKeyString(dimensions, schema));
         graphConfiguration

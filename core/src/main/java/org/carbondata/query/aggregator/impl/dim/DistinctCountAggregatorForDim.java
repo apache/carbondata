@@ -68,7 +68,8 @@ public class DistinctCountAggregatorForDim implements MeasureAggregator {
 
     }
 
-    @Override public int compareTo(MeasureAggregator msrAggrInfo) {
+    @Override
+    public int compareTo(MeasureAggregator msrAggrInfo) {
         double val = getDoubleValue();
         double otherVal = msrAggrInfo.getDoubleValue();
         if (val > otherVal) {
@@ -80,64 +81,76 @@ public class DistinctCountAggregatorForDim implements MeasureAggregator {
         return 0;
     }
 
-    @Override public void agg(double newVal) {
+    @Override
+    public void agg(double newVal) {
 
     }
 
-    @Override public void agg(Object newVal) {
+    @Override
+    public void agg(Object newVal) {
 
     }
 
-    @Override public void agg(MolapReadDataHolder newVal, int index) {
+    @Override
+    public void agg(MolapReadDataHolder newVal, int index) {
 
     }
 
-    @Override public byte[] getByteArray() {
+    @Override
+    public byte[] getByteArray() {
         return null;
     }
 
-    @Override public Double getDoubleValue() {
+    @Override
+    public Double getDoubleValue() {
         if (computedFixedValue == null) {
             return (double) valueSetForDim.size();
         }
         return computedFixedValue;
     }
 
-    @Override public Long getLongValue() {
+    @Override
+    public Long getLongValue() {
         if (computedFixedValue == null) {
             return (long) valueSetForDim.size();
         }
         return computedFixedValue.longValue();
     }
 
-    @Override public BigDecimal getBigDecimalValue() {
+    @Override
+    public BigDecimal getBigDecimalValue() {
         if (computedFixedValue == null) {
             return new BigDecimal(valueSetForDim.size());
         }
         return new BigDecimal(computedFixedValue);
     }
 
-    @Override public Object getValueObject() {
+    @Override
+    public Object getValueObject() {
         return valueSetForDim.size();
     }
 
-    @Override public void merge(MeasureAggregator aggregator) {
+    @Override
+    public void merge(MeasureAggregator aggregator) {
         DistinctCountAggregatorForDim countAggregatorForDim =
                 (DistinctCountAggregatorForDim) aggregator;
         valueSetForDim.addAll(countAggregatorForDim.valueSetForDim);
 
     }
 
-    @Override public void setNewValue(Object newValue) {
+    @Override
+    public void setNewValue(Object newValue) {
         computedFixedValue = (Double) newValue;
         valueSetForDim = null;
     }
 
-    @Override public boolean isFirstTime() {
+    @Override
+    public boolean isFirstTime() {
         return false;
     }
 
-    @Override public MeasureAggregator getCopy() {
+    @Override
+    public MeasureAggregator getCopy() {
         DistinctCountAggregatorForDim countAggregatorForDim = new DistinctCountAggregatorForDim();
         countAggregatorForDim.valueSetForDim = new HashSet<ByteArrayWrapper>(valueSetForDim);
         countAggregatorForDim.maskByteLen = maskByteLen;
@@ -146,21 +159,25 @@ public class DistinctCountAggregatorForDim implements MeasureAggregator {
         return countAggregatorForDim;
     }
 
-    @Override public void writeData(DataOutput output) throws IOException {
+    @Override
+    public void writeData(DataOutput output) throws IOException {
         // TODO Auto-generated method stub
 
     }
 
-    @Override public void readData(DataInput inPut) throws IOException {
+    @Override
+    public void readData(DataInput inPut) throws IOException {
         // TODO Auto-generated method stub
 
     }
 
-    @Override public MeasureAggregator get() {
+    @Override
+    public MeasureAggregator get() {
         return this;
     }
 
-    @Override public void merge(byte[] value) {
+    @Override
+    public void merge(byte[] value) {
         // TODO Auto-generated method stub
     }
 

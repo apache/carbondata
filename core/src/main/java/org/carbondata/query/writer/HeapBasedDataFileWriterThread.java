@@ -78,7 +78,8 @@ public class HeapBasedDataFileWriterThread extends ResultWriter {
     /**
      * @see java.util.concurrent.Callable#call()
      */
-    @Override public Void call() throws Exception {
+    @Override
+    public Void call() throws Exception {
         DataOutputStream dataOutput = null;
         try {
             if (!new File(this.outLocation).mkdirs()) {

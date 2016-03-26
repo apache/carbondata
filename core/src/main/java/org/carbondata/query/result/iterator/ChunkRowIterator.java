@@ -35,7 +35,8 @@ public class ChunkRowIterator implements MolapIterator<RowResult> {
         }
     }
 
-    @Override public boolean hasNext() {
+    @Override
+    public boolean hasNext() {
         if (null != currentchunk) {
             if ((currentchunk.hasNext())) {
                 return true;
@@ -51,7 +52,8 @@ public class ChunkRowIterator implements MolapIterator<RowResult> {
         return false;
     }
 
-    @Override public RowResult next() {
+    @Override
+    public RowResult next() {
         return currentchunk.next();
     }
 

@@ -67,7 +67,8 @@ public class MolapUtilException extends Exception {
     /**
      * getLocalizedMessage
      */
-    @Override public String getLocalizedMessage() {
+    @Override
+    public String getLocalizedMessage() {
         return super.getLocalizedMessage();
     }
 

@@ -58,7 +58,8 @@ public class MaksedByteComparatorForTuple implements Comparator<Tuple> {
      * @param o1
      * @param o2
      */
-    @Override public int compare(Tuple tuple1, Tuple tuple2) {
+    @Override
+    public int compare(Tuple tuple1, Tuple tuple2) {
         int cmp = 0;
         byte[] key1 = tuple1.getKey();
         byte[] key2 = tuple2.getKey();

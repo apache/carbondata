@@ -32,15 +32,15 @@ import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.datastorage.store.filesystem.MolapFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.datastorage.util.StoreFactory;
-import org.carbondata.query.columnar.keyvalue.AbstractColumnarScanResult;
-import org.carbondata.query.columnar.keyvalue.NonFilterScanResult;
-import org.carbondata.processing.factreader.FactReaderInfo;
-import org.carbondata.processing.iterator.MolapIterator;
 import org.carbondata.core.keygenerator.columnar.ColumnarSplitter;
 import org.carbondata.core.keygenerator.columnar.impl.MultiDimKeyVarLengthEquiSplitGenerator;
 import org.carbondata.core.metadata.LeafNodeInfoColumnar;
 import org.carbondata.core.util.MolapProperties;
 import org.carbondata.core.util.MolapUtil;
+import org.carbondata.processing.factreader.FactReaderInfo;
+import org.carbondata.processing.iterator.MolapIterator;
+import org.carbondata.query.columnar.keyvalue.AbstractColumnarScanResult;
+import org.carbondata.query.columnar.keyvalue.NonFilterScanResult;
 
 public class MolapColumnarLeafNodeIterator implements MolapIterator<AbstractColumnarScanResult> {
     /**
@@ -205,10 +205,14 @@ public class MolapColumnarLeafNodeIterator implements MolapIterator<AbstractColu
 
     private void getNewLeafData() {
         LeafNodeInfoColumnar leafNodeInfo = leafNodeInfoList.get(currentCount++);
-        keyStore = StoreFactory.createColumnarKeyStore(MolapUtil.getColumnarKeyStoreInfo(leafNodeInfo, blockKeySize,null), fileHolder,true);
-        this.dataStore = StoreFactory.createDataStore(true, compressionModel, leafNodeInfo.getMeasureOffset(),
-                leafNodeInfo.getMeasureLength(), leafNodeInfo.getFileName(), fileHolder).getBackData(null, fileHolder);
-        this.entryCount=leafNodeInfo.getNumberOfKeys();
+        keyStore = StoreFactory.createColumnarKeyStore(
+                MolapUtil.getColumnarKeyStoreInfo(leafNodeInfo, blockKeySize, null), fileHolder,
+                true);
+        this.dataStore = StoreFactory
+                .createDataStore(true, compressionModel, leafNodeInfo.getMeasureOffset(),
+                        leafNodeInfo.getMeasureLength(), leafNodeInfo.getFileName(), fileHolder)
+                .getBackData(null, fileHolder);
+        this.entryCount = leafNodeInfo.getNumberOfKeys();
         this.keyValue.reset();
         this.keyValue.setNumberOfRows(this.entryCount);
         this.keyValue.setMeasureBlock(this.dataStore.getValues());
@@ -226,7 +230,8 @@ public class MolapColumnarLeafNodeIterator implements MolapIterator<AbstractColu
     /**
      * check some more leaf are present in the b tree
      */
-    @Override public boolean hasNext() {
+    @Override
+    public boolean hasNext() {
         if (currentCount < leafSize) {
             return true;
         } else {
@@ -238,7 +243,8 @@ public class MolapColumnarLeafNodeIterator implements MolapIterator<AbstractColu
     /**
      * below method will be used to get the leaf node
      */
-    @Override public AbstractColumnarScanResult next() {
+    @Override
+    public AbstractColumnarScanResult next() {
         getNewLeafData();
         return keyValue;
     }

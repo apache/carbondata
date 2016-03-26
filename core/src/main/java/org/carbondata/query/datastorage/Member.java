@@ -48,7 +48,8 @@ public class Member {
         return name;
     }
 
-    @Override public boolean equals(Object obj) {
+    @Override
+    public boolean equals(Object obj) {
         if (obj instanceof Member) {
             if (this == obj) {
                 return true;
@@ -63,14 +64,16 @@ public class Member {
     /**
      * @see Object#hashCode()
      */
-    @Override public int hashCode() {
+    @Override
+    public int hashCode() {
         final int prime = 31;
         int result = 1;
         result = prime * result + Arrays.hashCode(name);
         return result;
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
         // return str;
         return new String(name);
     }

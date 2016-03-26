@@ -41,12 +41,12 @@ import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.carbondata.core.metadata.SliceMetaData;
 import org.carbondata.core.olap.LevelType;
+import org.carbondata.core.util.MolapProperties;
+import org.carbondata.core.util.MolapUtil;
 import org.carbondata.processing.schema.metadata.HierarchiesInfo;
 import org.carbondata.processing.schema.metadata.MolapInfo;
 import org.carbondata.processing.util.MolapDataProcessorLogEvent;
 import org.carbondata.processing.util.MolapDataProcessorUtil;
-import org.carbondata.core.util.MolapProperties;
-import org.carbondata.core.util.MolapUtil;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.database.ConnectionPoolUtil;
 import org.pentaho.di.core.database.Database;
@@ -351,7 +351,8 @@ public class MolapSeqGenStep extends BaseStep implements StepInterface {
         ExecutorService exec = Executors.newFixedThreadPool(numberOfNodes);
 
         Callable<Void> callable = new Callable<Void>() {
-            @Override public Void call() throws Exception {
+            @Override
+            public Void call() throws Exception {
                 try {
                     doProcess();
                 } catch (KettleException e) {

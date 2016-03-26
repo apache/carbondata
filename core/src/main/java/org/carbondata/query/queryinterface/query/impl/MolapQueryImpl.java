@@ -83,7 +83,8 @@ public class MolapQueryImpl implements MolapQuery {
     /**
      * see interface comments.
      */
-    @Override public void addDimensionLevel(MolapDimensionLevel dimensionLevel,
+    @Override
+    public void addDimensionLevel(MolapDimensionLevel dimensionLevel,
             MolapDimensionLevelFilter filter, SortType sortType, AxisType axis) {
         sortType = sortType == null ? SortType.NONE : sortType;
         axises[axis.getIndex()].add(dimensionLevel, sortType, null, filter);
@@ -92,7 +93,8 @@ public class MolapQueryImpl implements MolapQuery {
     /**
      * see interface comments.
      */
-    @Override public void addMeasure(MolapMeasure measure, List<MolapMeasureFilter> filters,
+    @Override
+    public void addMeasure(MolapMeasure measure, List<MolapMeasureFilter> filters,
             SortType sortType) {
         sortType = sortType == null ? SortType.NONE : sortType;
         axises[AxisType.COLUMN.getIndex()].add(measure, sortType, filters, null);
@@ -102,30 +104,32 @@ public class MolapQueryImpl implements MolapQuery {
     /**
      * see interface comments.
      */
-    @Override public void addSlice(MolapDimensionLevel dimensionLevel,
-            MolapDimensionLevelFilter filter) {
+    @Override
+    public void addSlice(MolapDimensionLevel dimensionLevel, MolapDimensionLevelFilter filter) {
         axises[SLICE].add(dimensionLevel, null, null, filter);
     }
 
     /**
      * see interface comments.
      */
-    @Override public void addSlice(MolapMeasure measure, List<MolapMeasureFilter> filters) {
+    @Override
+    public void addSlice(MolapMeasure measure, List<MolapMeasureFilter> filters) {
         axises[SLICE].add(measure, null, filters, null);
     }
 
     /**
      * see interface comments.
      */
-    @Override public void addTopCount(MolapDimensionLevel dimensionLevel, MolapMeasure measure,
-            int count) {
+    @Override
+    public void addTopCount(MolapDimensionLevel dimensionLevel, MolapMeasure measure, int count) {
         topCounts.add(new TopCount(dimensionLevel, measure, count, TopCount.TopNType.TOP));
     }
 
     /**
      * see interface comments.
      */
-    @Override public void addBottomCount(MolapDimensionLevel dimensionLevel, MolapMeasure measure,
+    @Override
+    public void addBottomCount(MolapDimensionLevel dimensionLevel, MolapMeasure measure,
             int count) {
         topCounts.add(new TopCount(dimensionLevel, measure, count, TopCount.TopNType.BOTTOM));
     }
@@ -147,7 +151,8 @@ public class MolapQueryImpl implements MolapQuery {
     /**
      * See interface comments
      */
-    @Override public void showLevelProperties(boolean showProerties) {
+    @Override
+    public void showLevelProperties(boolean showProerties) {
         propertiesRequired = showProerties;
     }
 
@@ -163,7 +168,8 @@ public class MolapQueryImpl implements MolapQuery {
     /**
      * See interface comments
      */
-    @Override public void setExactHirarchyLevelsMatch(boolean exactLevelsMatch) {
+    @Override
+    public void setExactHirarchyLevelsMatch(boolean exactLevelsMatch) {
         this.exactLevelsMatch = exactLevelsMatch;
     }
 
@@ -181,7 +187,8 @@ public class MolapQueryImpl implements MolapQuery {
         return extraProperties;
     }
 
-    @Override public void setExtraProperties(Map<String, Object> extraProperties) {
+    @Override
+    public void setExtraProperties(Map<String, Object> extraProperties) {
         this.extraProperties = extraProperties;
     }
 
@@ -211,7 +218,8 @@ public class MolapQueryImpl implements MolapQuery {
     /**
      * setTimeZone
      */
-    @Override public void setTimeZone(String timeZone) {
+    @Override
+    public void setTimeZone(String timeZone) {
         this.timeZone = timeZone;
     }
 

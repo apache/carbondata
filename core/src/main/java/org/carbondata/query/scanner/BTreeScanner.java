@@ -82,11 +82,13 @@ public abstract class BTreeScanner implements Scanner {
         this.fileHolder = fileHolder;
     }
 
-    @Override public KeyValue getNext() {
+    @Override
+    public KeyValue getNext() {
         return currKey;
     }
 
-    @Override public boolean isDone() {
+    @Override
+    public boolean isDone() {
         return !hasNext();
     }
 
@@ -98,7 +100,8 @@ public abstract class BTreeScanner implements Scanner {
      */
     protected abstract boolean hasNext();
 
-    @Override public void setDataStore(DataStore dataStore, DataStoreBlock block, int currIndex) {
+    @Override
+    public void setDataStore(DataStore dataStore, DataStoreBlock block, int currIndex) {
         this.store = dataStore;
         this.block = block;
         if (block != null) {

@@ -147,7 +147,8 @@ public class HDFSFileDataInputStream extends AbstractFileDataInputStream {
      * com.huawei.unibi.molap.engine.datastorage.streams.DataInputStream#initInput
      * ()
      */
-    @Override public void initInput() {
+    @Override
+    public void initInput() {
         //
         try {
             LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
@@ -184,7 +185,8 @@ public class HDFSFileDataInputStream extends AbstractFileDataInputStream {
      * com.huawei.unibi.molap.engine.datastorage.streams.DataInputStream#closeInput
      * ()
      */
-    @Override public void closeInput() {
+    @Override
+    public void closeInput() {
         if (fsChannel != null) {
             //
             try {
@@ -260,7 +262,8 @@ public class HDFSFileDataInputStream extends AbstractFileDataInputStream {
         return listOfNodeInfo;
     }
 
-    @Override public ValueCompressionModel getValueCompressionMode() {
+    @Override
+    public ValueCompressionModel getValueCompressionMode() {
         return valueCompressionModel;
     }
 
@@ -271,7 +274,8 @@ public class HDFSFileDataInputStream extends AbstractFileDataInputStream {
      * @see com.huawei.unibi.molap.engine.datastorage.streams.DataInputStream#
      * getNextHierTuple()
      */
-    @Override public Pair getNextHierTuple() {
+    @Override
+    public Pair getNextHierTuple() {
         // We are adding surrogate key also with mdkey.
         int lineLength = mdkeysize + 4;
         byte[] line = new byte[lineLength];

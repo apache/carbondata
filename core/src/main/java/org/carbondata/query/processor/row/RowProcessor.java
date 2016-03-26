@@ -35,24 +35,28 @@ public class RowProcessor implements DataProcessorExt {
         this.dataProcessor = dataProcessor;
     }
 
-    @Override public void initialise(DataProcessorInfo model) throws DataProcessorException {
+    @Override
+    public void initialise(DataProcessorInfo model) throws DataProcessorException {
         dataProcessor.initialise(model);
     }
 
-    @Override public void processRow(byte[] key, MeasureAggregator[] value)
-            throws DataProcessorException {
+    @Override
+    public void processRow(byte[] key, MeasureAggregator[] value) throws DataProcessorException {
         dataProcessor.processRow(key, value);
     }
 
-    @Override public void finish() throws DataProcessorException {
+    @Override
+    public void finish() throws DataProcessorException {
         dataProcessor.finish();
     }
 
-    @Override public MolapIterator<QueryResult> getQueryResultIterator() {
+    @Override
+    public MolapIterator<QueryResult> getQueryResultIterator() {
         return dataProcessor.getQueryResultIterator();
     }
 
-    @Override public void processRow(ByteArrayWrapper key, MeasureAggregator[] value)
+    @Override
+    public void processRow(ByteArrayWrapper key, MeasureAggregator[] value)
             throws DataProcessorException {
         dataProcessor.processRow(key, value);
 

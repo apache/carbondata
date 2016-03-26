@@ -179,7 +179,8 @@ public class DataProcessTaskStatus implements IDataProcessStatus, Serializable {
         this.desc = desc;
     }
 
-    @Override public String getKey() {
+    @Override
+    public String getKey() {
         return key;
     }
 
@@ -187,7 +188,8 @@ public class DataProcessTaskStatus implements IDataProcessStatus, Serializable {
         this.key = key;
     }
 
-    @Override public String getStatus() {
+    @Override
+    public String getStatus() {
         return status;
     }
 

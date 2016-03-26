@@ -28,195 +28,163 @@ import org.carbondata.core.constants.MolapCommonConstants;
 import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
-import org.carbondata.query.datastorage.streams.DataInputStream;
-import org.carbondata.query.util.MolapEngineLogEvent;
 import org.carbondata.core.keygenerator.columnar.impl.MultiDimKeyVarLengthEquiSplitGenerator;
 import org.carbondata.core.metadata.LeafNodeInfoColumnar;
 import org.carbondata.core.metadata.MolapMetadata.Cube;
 import org.carbondata.core.util.MolapProperties;
 import org.carbondata.core.util.MolapUtil;
+import org.carbondata.query.datastorage.streams.DataInputStream;
+import org.carbondata.query.util.MolapEngineLogEvent;
 
 /**
  * This class will read given fact file
  *
  * @author A00902717
- *
  */
-public class FactDataHandler
-{
+public class FactDataHandler {
 
-	/**
-	 * Attribute for Molap LOGGER
-	 */
-	private static final LogService LOGGER = LogServiceFactory
-			.getLogService(FactDataHandler.class.getName());
+    /**
+     * Attribute for Molap LOGGER
+     */
+    private static final LogService LOGGER =
+            LogServiceFactory.getLogService(FactDataHandler.class.getName());
 
-	private ValueCompressionModel compressionModel;
+    private ValueCompressionModel compressionModel;
 
-	private LevelMetaInfo levelMetaInfo;
+    private LevelMetaInfo levelMetaInfo;
 
-	private boolean[] aggKeyBlock;
+    private boolean[] aggKeyBlock;
 
-	private int[] keyBlockSize;
+    private int[] keyBlockSize;
 
-	private boolean isFileStore;
+    private boolean isFileStore;
 
-	private Cube metaCube;
+    private Cube metaCube;
 
-	private String tableName;
+    private String tableName;
 
-	private FileHolder fileHolder;
+    private FileHolder fileHolder;
 
-	private int[] dimensionCardinality;
+    private int[] dimensionCardinality;
 
-	private int keySize;
+    private int keySize;
 
-	private List<DataInputStream> streams;
+    private List<DataInputStream> streams;
 
-	private List<FactDataNode> factDataNodes;
+    private List<FactDataNode> factDataNodes;
 
-	public FactDataHandler(Cube metaCube, LevelMetaInfo levelMetaInfo, String tableName, int keySize, List<DataInputStream> streams)
-	{
-		this.metaCube = metaCube;
-		this.levelMetaInfo = levelMetaInfo;
-		this.tableName = tableName;
-		this.keySize=keySize;
-		this.streams=streams;
-		initialise();
+    public FactDataHandler(Cube metaCube, LevelMetaInfo levelMetaInfo, String tableName,
+            int keySize, List<DataInputStream> streams) {
+        this.metaCube = metaCube;
+        this.levelMetaInfo = levelMetaInfo;
+        this.tableName = tableName;
+        this.keySize = keySize;
+        this.streams = streams;
+        initialise();
 
-	}
+    }
 
-	private void initialise()
-	{
-		// Initializing dimension cardinality
-		dimensionCardinality = levelMetaInfo.getDimCardinality();
-		aggKeyBlock = new boolean[dimensionCardinality.length];
+    private void initialise() {
+        // Initializing dimension cardinality
+        dimensionCardinality = levelMetaInfo.getDimCardinality();
+        aggKeyBlock = new boolean[dimensionCardinality.length];
 
-		boolean isAggKeyBlock = Boolean.parseBoolean(MolapCommonConstants.AGGREAGATE_COLUMNAR_KEY_BLOCK_DEFAULTVALUE);
-        if(isAggKeyBlock)
-        {
-            int highCardinalityValue = Integer.parseInt(MolapProperties.getInstance().getProperty(
-                    MolapCommonConstants.HIGH_CARDINALITY_VALUE,
-                    MolapCommonConstants.HIGH_CARDINALITY_VALUE_DEFAULTVALUE));
-            for(int i = 0;i < dimensionCardinality.length;i++)
-            {
-                if(dimensionCardinality[i] < highCardinalityValue)
-                {
+        boolean isAggKeyBlock = Boolean.parseBoolean(
+                MolapCommonConstants.AGGREAGATE_COLUMNAR_KEY_BLOCK_DEFAULTVALUE);
+        if (isAggKeyBlock) {
+            int highCardinalityValue = Integer.parseInt(MolapProperties.getInstance()
+                    .getProperty(MolapCommonConstants.HIGH_CARDINALITY_VALUE,
+                            MolapCommonConstants.HIGH_CARDINALITY_VALUE_DEFAULTVALUE));
+            for (int i = 0; i < dimensionCardinality.length; i++) {
+                if (dimensionCardinality[i] < highCardinalityValue) {
                     aggKeyBlock[i] = true;
                 }
             }
         }
 
+        // Initializing keyBlockSize
+        int dimSet = Integer.parseInt(
+                MolapCommonConstants.DIMENSION_SPLIT_VALUE_IN_COLUMNAR_DEFAULTVALUE);
+        keyBlockSize = new MultiDimKeyVarLengthEquiSplitGenerator(
+                MolapUtil.getIncrementedCardinalityFullyFilled(dimensionCardinality.clone()),
+                (byte) dimSet).getBlockKeySize();
 
-		// Initializing keyBlockSize
-		int dimSet = Integer
-				.parseInt(MolapCommonConstants.DIMENSION_SPLIT_VALUE_IN_COLUMNAR_DEFAULTVALUE);
-		keyBlockSize = new MultiDimKeyVarLengthEquiSplitGenerator(
-				MolapUtil.getIncrementedCardinalityFullyFilled(dimensionCardinality
-						.clone()), (byte) dimSet).getBlockKeySize();
+        // Initializing isFileStore
+        initializeFileStore();
 
-		// Initializing isFileStore
-		initializeFileStore();
+        // Initializing fileHolder
+        fileHolder = FileFactory.getFileHolder(FileFactory.getFileType());
+    }
 
-		// Initializing fileHolder
-		fileHolder = FileFactory.getFileHolder(FileFactory.getFileType());
-	}
+    private void initializeFileStore() {
+        String schemaAndcubeName = metaCube.getCubeName();
+        String schemaName = metaCube.getSchemaName();
+        String cubeName = schemaAndcubeName
+                .substring(schemaAndcubeName.indexOf(schemaName + '_') + schemaName.length() + 1,
+                        schemaAndcubeName.length());
+        String modeValue = metaCube.getMode();
+        if (modeValue.equalsIgnoreCase(MolapCommonConstants.MOLAP_MODE_DEFAULT_VAL)) {
+            isFileStore = true;
+        }
 
-	private void initializeFileStore()
-	{
-		String schemaAndcubeName = metaCube.getCubeName();
-		String schemaName = metaCube.getSchemaName();
-		String cubeName = schemaAndcubeName.substring(
-				schemaAndcubeName.indexOf(schemaName + '_')
-						+ schemaName.length() + 1, schemaAndcubeName.length());
-		String modeValue = metaCube.getMode();
-		if (modeValue
-				.equalsIgnoreCase(MolapCommonConstants.MOLAP_MODE_DEFAULT_VAL))
-		{
-			isFileStore = true;
-		}
+        if (!isFileStore) {
+            boolean parseBoolean = Boolean.parseBoolean(MolapProperties.getInstance()
+                    .getProperty(MolapCommonConstants.MOLAP_IS_LOAD_FACT_TABLE_IN_MEMORY,
+                            MolapCommonConstants.MOLAP_IS_LOAD_FACT_TABLE_IN_MEMORY_DEFAULTVALUE));
+            if (!parseBoolean && tableName.equals(metaCube.getFactTableName())) {
+                LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                        "Mode set for cube " + schemaName + ':' + cubeName + "as mode=" + modeValue
+                                + ": but as "
+                                + MolapCommonConstants.MOLAP_IS_LOAD_FACT_TABLE_IN_MEMORY
+                                + " is false it will be file mode");
+                isFileStore = true;
+            }
+        }
+    }
 
-		if (!isFileStore)
-		{
-			boolean parseBoolean = Boolean
-					.parseBoolean(MolapProperties
-							.getInstance()
-							.getProperty(
-									MolapCommonConstants.MOLAP_IS_LOAD_FACT_TABLE_IN_MEMORY,
-									MolapCommonConstants.MOLAP_IS_LOAD_FACT_TABLE_IN_MEMORY_DEFAULTVALUE));
-			if (!parseBoolean && tableName.equals(metaCube.getFactTableName()))
-			{
-				LOGGER.info(
-						MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
-						"Mode set for cube "
-								+ schemaName
-								+ ':'
-								+ cubeName
-								+ "as mode="
-								+ modeValue
-								+ ": but as "
-								+ MolapCommonConstants.MOLAP_IS_LOAD_FACT_TABLE_IN_MEMORY
-								+ " is false it will be file mode");
-				isFileStore = true;
-			}
-		}
-	}
+    /**
+     * This method reads given fact stream
+     */
+    public FactDataReader getFactDataReader() {
+        compressionModel = streams.get(0).getValueCompressionMode();
+        long st = System.currentTimeMillis();
 
-	/**
-	 * This method reads given fact stream
-	 *
-	 */
-	public FactDataReader getFactDataReader()
-	{
-		compressionModel = streams.get(0).getValueCompressionMode();
-		long st = System.currentTimeMillis();
+        factDataNodes = new ArrayList<FactDataNode>(streams.size());
+        for (DataInputStream factStream : streams) {
+            List<LeafNodeInfoColumnar> leafNodeInfoList = factStream.getLeafNodeInfoColumnar();
+            // Coverity fix added null check
+            if (null != leafNodeInfoList) {
+                if (leafNodeInfoList.size() > 0) {
+                    leafNodeInfoList.get(0).getFileName();
+                    LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                            "Processing : " + (leafNodeInfoList.get(0).getFileName()) + " : " + (
+                                    System.currentTimeMillis() - st));
+                    st = System.currentTimeMillis();
 
-		factDataNodes= new ArrayList<FactDataNode>(streams.size());
-		for (DataInputStream factStream : streams)
-		{
-			List<LeafNodeInfoColumnar> leafNodeInfoList = factStream
-					.getLeafNodeInfoColumnar();
-			// Coverity fix added null check
-			if (null != leafNodeInfoList)
-			{
-				if (leafNodeInfoList.size() > 0)
-				{
-					leafNodeInfoList.get(0).getFileName();
-					LOGGER.info(
-							MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
-							"Processing : "
-									+ (leafNodeInfoList.get(0).getFileName())
-									+ " : " + (System.currentTimeMillis() - st));
-					st = System.currentTimeMillis();
+                }
+                for (LeafNodeInfoColumnar leafNodeInfo : leafNodeInfoList) {
+                    leafNodeInfo.setAggKeyBlock(aggKeyBlock);
 
-				}
-				for (LeafNodeInfoColumnar leafNodeInfo : leafNodeInfoList)
-				{
-					leafNodeInfo.setAggKeyBlock(aggKeyBlock);
+                    FactDataNode factDataNode =
+                            new FactDataNode(leafNodeInfo.getNumberOfKeys(), keyBlockSize,
+                                    isFileStore, fileHolder, leafNodeInfo, compressionModel);
+                    factDataNodes.add(factDataNode);
 
-					FactDataNode factDataNode = new FactDataNode(
-							leafNodeInfo.getNumberOfKeys(), keyBlockSize,
-							isFileStore, fileHolder, leafNodeInfo,
-							compressionModel);
-					factDataNodes.add(factDataNode);
+                }
+            }
+        }
+        return new FactDataReader(factDataNodes, keySize, fileHolder);
 
+    }
 
-				}
-			}
-		}
-		return new FactDataReader(factDataNodes,keySize,fileHolder);
-
-	}
-
-
-	/**
-	 * This method returns cardinality of given dimension
-	 * @param dimensionOrdinal
-	 * @return
-	 */
-	public int getDimensionCardinality(int dimensionOrdinal)
-	{
-		return dimensionCardinality[dimensionOrdinal];
-	}
+    /**
+     * This method returns cardinality of given dimension
+     *
+     * @param dimensionOrdinal
+     * @return
+     */
+    public int getDimensionCardinality(int dimensionOrdinal) {
+        return dimensionCardinality[dimensionOrdinal];
+    }
 
 }

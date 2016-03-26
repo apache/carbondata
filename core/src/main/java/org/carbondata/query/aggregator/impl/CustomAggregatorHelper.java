@@ -49,9 +49,9 @@ import org.carbondata.core.util.MolapUtil;
 import org.carbondata.query.util.MolapEngineLogEvent;
 
 /**
- * Project Name NSE V3R8C10 
+ * Project Name NSE V3R8C10
  * Module Name : MOLAP Data Processor
- * Author :k00900841 
+ * Author :k00900841
  * Created Date:10-Aug-2014
  * FileName : CustomeAggregatorHelper.java
  * Class Description : Helper class for custom aggregator to get dim values
@@ -82,13 +82,15 @@ public class CustomAggregatorHelper {
 
     /**
      * Below method will be used to get the file list
+     *
      * @param baseStorePath
      * @param fileNameSearchPattern
      * @return
      */
     private static File[] getFilesArray(File baseStorePath, final String fileNameSearchPattern) {
         File[] listFiles = baseStorePath.listFiles(new FileFilter() {
-            @Override public boolean accept(File pathname) {
+            @Override
+            public boolean accept(File pathname) {
                 if (pathname.getName().indexOf(fileNameSearchPattern) > -1) {
                     return true;
                 }
@@ -100,6 +102,7 @@ public class CustomAggregatorHelper {
 
     /**
      * Below method will be used to get the member
+     *
      * @param tableName
      * @param columnName
      * @param key
@@ -119,6 +122,7 @@ public class CustomAggregatorHelper {
 
     /**
      * Below method will be used to fill the level cache
+     *
      * @param tableName
      * @param columnName
      * @param cubeName
@@ -150,11 +154,11 @@ public class CustomAggregatorHelper {
 
     /**
      * Below method will be used to read the level files
+     *
      * @param memberFile
      * @param fileName
      * @throws IOException
      * @throws KettleException
-     *
      */
     private void readLevelFileAndUpdateCache(File memberFile, String fileName) throws IOException {
         FileInputStream fos = null;
@@ -230,13 +234,13 @@ public class CustomAggregatorHelper {
      *
      * @param baseStorePath
      * @return
-     *
      */
     private File[] checkAndUpdateFolderList(String baseStorePath) {
         File folders = new File(baseStorePath);
         //
         File[] rsFolders = folders.listFiles(new FileFilter() {
-            @Override public boolean accept(File pathname) {
+            @Override
+            public boolean accept(File pathname) {
                 boolean check = false;
                 check = pathname.isDirectory()
                         && pathname.getAbsolutePath().indexOf(MolapCommonConstants.LOAD_FOLDER)

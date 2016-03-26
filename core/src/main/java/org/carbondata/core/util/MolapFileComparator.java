@@ -33,7 +33,8 @@ public class MolapFileComparator implements Comparator<File> {
         this.fileExt = fileExt;
     }
 
-    @Override public int compare(File file1, File file2) {
+    @Override
+    public int compare(File file1, File file2) {
         String firstFileName = file1.getName().split(fileExt)[0];
         String secondFileName = file2.getName().split(fileExt)[0];
         int lastIndexOfO1 = firstFileName.lastIndexOf('_');

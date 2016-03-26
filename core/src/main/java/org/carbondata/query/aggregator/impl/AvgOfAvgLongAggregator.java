@@ -22,28 +22,20 @@ import org.carbondata.core.datastorage.store.dataholder.MolapReadDataHolder;
 
 /**
  * Project Name NSE V3R7C00
- *
  * Module Name : Molap Engine
- *
  * Author K00900841
- *
  * Created Date :13-May-2013 3:35:33 PM
- *
  * FileName : AvgOfAvgAggregator.java
- *
  * Class Description : This class will be used for aggregate tables. It is
  * overriding agg method. It will be used for getting the average of fact
  * count(average value)
- *
  * Version 1.0
  */
 
 public class AvgOfAvgLongAggregator extends AvgLongAggregator {
 
     /**
-     *
-     *serialVersionUID
-     *
+     * serialVersionUID
      */
     private static final long serialVersionUID = 6482976744603672084L;
 
@@ -51,13 +43,11 @@ public class AvgOfAvgLongAggregator extends AvgLongAggregator {
      * Overloaded Aggregate function will be used for Aggregate tables because
      * aggregate table will have fact_count as a measure.
      *
-     * @param newVal
-     *          new value
-     * @param index
-     *          index
-     *
+     * @param newVal new value
+     * @param index  index
      */
-    @Override public void agg(MolapReadDataHolder newVal, int index) {
+    @Override
+    public void agg(MolapReadDataHolder newVal, int index) {
         byte[] value = newVal.getReadableByteArrayValueByIndex(index);
         ByteBuffer buffer = ByteBuffer.wrap(value);
         double newValue = buffer.getLong();

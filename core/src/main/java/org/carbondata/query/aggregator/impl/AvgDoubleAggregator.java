@@ -27,14 +27,12 @@ import org.carbondata.query.aggregator.MeasureAggregator;
 
 /**
  * @author z00305190
- *
  */
 
 public class AvgDoubleAggregator extends AbstractMeasureAggregatorBasic {
 
     /**
      * serialVersionUID
-     *
      */
     private static final long serialVersionUID = 5463736686281089871L;
 
@@ -52,11 +50,10 @@ public class AvgDoubleAggregator extends AbstractMeasureAggregatorBasic {
      * Average Aggregate function which will add all the aggregate values and it
      * will increment the total count every time, for average value
      *
-     * @param newVal
-     *            new value
-     *
+     * @param newVal new value
      */
-    @Override public void agg(double newVal) {
+    @Override
+    public void agg(double newVal) {
         aggVal += newVal;
         count++;
         firstTime = false;
@@ -66,11 +63,10 @@ public class AvgDoubleAggregator extends AbstractMeasureAggregatorBasic {
      * Average Aggregate function which will add all the aggregate values and it
      * will increment the total count every time, for average value
      *
-     * @param newVal
-     *            new value
-     *
+     * @param newVal new value
      */
-    @Override public void agg(Object newVal) {
+    @Override
+    public void agg(Object newVal) {
         if (newVal instanceof byte[]) {
             ByteBuffer buffer = ByteBuffer.wrap((byte[]) newVal);
             buffer.rewind();
@@ -87,7 +83,8 @@ public class AvgDoubleAggregator extends AbstractMeasureAggregatorBasic {
         firstTime = false;
     }
 
-    @Override public void agg(MolapReadDataHolder newVal, int index) {
+    @Override
+    public void agg(MolapReadDataHolder newVal, int index) {
         byte[] value = newVal.getReadableByteArrayValueByIndex(index);
         ByteBuffer buffer = ByteBuffer.wrap(value);
         aggVal += buffer.getDouble();
@@ -98,7 +95,8 @@ public class AvgDoubleAggregator extends AbstractMeasureAggregatorBasic {
     /**
      * Below method will be used to get the value byte array
      */
-    @Override public byte[] getByteArray() {
+    @Override
+    public byte[] getByteArray() {
         if (firstTime) {
             return new byte[0];
         }
@@ -112,9 +110,9 @@ public class AvgDoubleAggregator extends AbstractMeasureAggregatorBasic {
      * Return the average of the aggregate values
      *
      * @return average aggregate value
-     *
      */
-    @Override public Double getDoubleValue() {
+    @Override
+    public Double getDoubleValue() {
         return aggVal / count;
     }
 
@@ -122,11 +120,10 @@ public class AvgDoubleAggregator extends AbstractMeasureAggregatorBasic {
      * This method merge the aggregated value, in average aggregator it will add
      * count and aggregate value
      *
-     * @param aggregator
-     *            Avg Aggregator
-     *
+     * @param aggregator Avg Aggregator
      */
-    @Override public void merge(MeasureAggregator aggregator) {
+    @Override
+    public void merge(MeasureAggregator aggregator) {
         AvgDoubleAggregator avgAggregator = (AvgDoubleAggregator) aggregator;
         if (!avgAggregator.isFirstTime()) {
             aggVal += avgAggregator.aggVal;
@@ -140,35 +137,38 @@ public class AvgDoubleAggregator extends AbstractMeasureAggregatorBasic {
      *
      * @return average value as an object
      */
-    @Override public Object getValueObject() {
+    @Override
+    public Object getValueObject() {
         // TODO Auto-generated method stub
         return aggVal / count;
     }
 
     /**
-     *
      * @see MeasureAggregator#setNewValue(Object)
-     *
      */
-    @Override public void setNewValue(Object newValue) {
+    @Override
+    public void setNewValue(Object newValue) {
         aggVal = (Double) newValue;
         count = 1;
     }
 
-    @Override public void writeData(DataOutput output) throws IOException {
+    @Override
+    public void writeData(DataOutput output) throws IOException {
         output.writeBoolean(firstTime);
         output.writeDouble(aggVal);
         output.writeDouble(count);
 
     }
 
-    @Override public void readData(DataInput inPut) throws IOException {
+    @Override
+    public void readData(DataInput inPut) throws IOException {
         firstTime = inPut.readBoolean();
         aggVal = inPut.readDouble();
         count = inPut.readDouble();
     }
 
-    @Override public MeasureAggregator getCopy() {
+    @Override
+    public MeasureAggregator getCopy() {
         AvgDoubleAggregator avg = new AvgDoubleAggregator();
         avg.aggVal = aggVal;
         avg.count = count;
@@ -181,7 +181,8 @@ public class AvgDoubleAggregator extends AbstractMeasureAggregatorBasic {
         return compareTo(msrAggregator)==0;
     }*/
 
-    @Override public int compareTo(MeasureAggregator o) {
+    @Override
+    public int compareTo(MeasureAggregator o) {
         double val = getDoubleValue();
         double otherVal = o.getDoubleValue();
         if (val > otherVal) {
@@ -193,7 +194,8 @@ public class AvgDoubleAggregator extends AbstractMeasureAggregatorBasic {
         return 0;
     }
 
-    @Override public void merge(byte[] value) {
+    @Override
+    public void merge(byte[] value) {
         if (0 == value.length) {
             return;
         }

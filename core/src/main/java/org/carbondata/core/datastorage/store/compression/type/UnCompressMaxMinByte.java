@@ -49,12 +49,14 @@ public class UnCompressMaxMinByte implements UnCompressValue<byte[]> {
 
     //TODO SIMIAN
 
-    @Override public void setValue(byte[] value) {
+    @Override
+    public void setValue(byte[] value) {
         this.value = value;
 
     }
 
-    @Override public UnCompressValue getNew() {
+    @Override
+    public UnCompressValue getNew() {
         try {
             return (UnCompressValue) clone();
         } catch (CloneNotSupportedException e) {
@@ -63,35 +65,41 @@ public class UnCompressMaxMinByte implements UnCompressValue<byte[]> {
         return null;
     }
 
-    @Override public UnCompressValue compress() {
+    @Override
+    public UnCompressValue compress() {
 
         UnCompressMaxMinByte byte1 = new UnCompressMaxMinByte();
         byte1.setValue(byteCompressor.compress(value));
         return byte1;
     }
 
-    @Override public UnCompressValue uncompress(DataType dataType) {
+    @Override
+    public UnCompressValue uncompress(DataType dataType) {
         UnCompressValue byte1 = ValueCompressionUtil.unCompressMaxMin(dataType, dataType);
         ValueCompressonHolder.unCompress(dataType, byte1, value);
         return byte1;
     }
 
-    @Override public byte[] getBackArrayData() {
+    @Override
+    public byte[] getBackArrayData() {
         return value;
     }
 
-    @Override public void setValueInBytes(byte[] value) {
+    @Override
+    public void setValueInBytes(byte[] value) {
         this.value = value;
     }
 
     /**
      * @see ValueCompressonHolder.UnCompressValue#getCompressorObject()
      */
-    @Override public UnCompressValue getCompressorObject() {
+    @Override
+    public UnCompressValue getCompressorObject() {
         return new UnCompressMaxMinByte();
     }
 
-    @Override public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
+    @Override
+    public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
         double maxValue = (double) maxValueObject;
         double[] vals = new double[value.length];
         MolapReadDataHolder dataHolder = new MolapReadDataHolder();

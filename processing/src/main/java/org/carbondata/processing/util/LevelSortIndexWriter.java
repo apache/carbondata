@@ -61,7 +61,8 @@ public class LevelSortIndexWriter {
     public void updateLevelFiles(String storeFilePath) {
         File file = new File(storeFilePath);
         File[] levelFilesPresent = file.listFiles(new FileFilter() {
-            @Override public boolean accept(File pathname) {
+            @Override
+            public boolean accept(File pathname) {
                 return pathname.getName().endsWith(MolapCommonConstants.LEVEL_FILE_EXTENSION);
             }
         });

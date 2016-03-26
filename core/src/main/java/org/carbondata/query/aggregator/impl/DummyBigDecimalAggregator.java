@@ -18,24 +18,29 @@ public class DummyBigDecimalAggregator extends AbstractMeasureAggregatorDummy {
      */
     private BigDecimal aggVal;
 
-    @Override public void agg(Object newVal) {
+    @Override
+    public void agg(Object newVal) {
         aggVal = (BigDecimal) newVal;
     }
 
-    @Override public void agg(MolapReadDataHolder newVal, int index) {
+    @Override
+    public void agg(MolapReadDataHolder newVal, int index) {
         aggVal = newVal.getReadableBigDecimalValueByIndex(index);
     }
 
-    @Override public BigDecimal getBigDecimalValue() {
+    @Override
+    public BigDecimal getBigDecimalValue() {
         return aggVal;
     }
 
-    @Override public Object getValueObject() {
+    @Override
+    public Object getValueObject() {
         // TODO Auto-generated method stub
         return aggVal;
     }
 
-    @Override public void setNewValue(Object newValue) {
+    @Override
+    public void setNewValue(Object newValue) {
         // TODO Auto-generated method stub
         aggVal = (BigDecimal) newValue;
     }

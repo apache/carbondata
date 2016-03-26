@@ -43,7 +43,8 @@ public class HeavyCompressedDoubleArrayDataInMemoryStore
         super(compressionModel);
     }
 
-    @Override public MeasureDataWrapper getBackData(int[] cols, FileHolder fileHolder) {
+    @Override
+    public MeasureDataWrapper getBackData(int[] cols, FileHolder fileHolder) {
         if (null == compressionModel) {
             return null;
         }
@@ -66,7 +67,8 @@ public class HeavyCompressedDoubleArrayDataInMemoryStore
         return new CompressedDataMeasureDataWrapper(vals);
     }
 
-    @Override public MeasureDataWrapper getBackData(int cols, FileHolder fileHolder) {
+    @Override
+    public MeasureDataWrapper getBackData(int cols, FileHolder fileHolder) {
         if (null == compressionModel) {
             return null;
         }

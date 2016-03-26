@@ -29,10 +29,12 @@ import java.util.concurrent.Callable;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.util.DataTypeUtil;
+import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.util.MolapUtilException;
 import org.carbondata.processing.sortandgroupby.exception.MolapSortKeyAndGroupByException;
 import org.carbondata.processing.util.MolapDataProcessorLogEvent;
 import org.carbondata.processing.util.RemoveDictionaryUtil;
-import org.carbondata.core.util.*;
 
 public class IntermediateFileMerger implements Callable<Void> {
     /**
@@ -91,7 +93,8 @@ public class IntermediateFileMerger implements Callable<Void> {
         this.fileCounter = mergerParameters.getIntermediateFiles().length;
     }
 
-    @Override public Void call() throws Exception {
+    @Override
+    public Void call() throws Exception {
         boolean isFailed = false;
         try {
             startSorting();

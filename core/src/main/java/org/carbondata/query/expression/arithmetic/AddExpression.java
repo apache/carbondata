@@ -33,7 +33,8 @@ public class AddExpression extends BinaryArithmeticExpression {
         super(left, right);
     }
 
-    @Override public ExpressionResult evaluate(RowIntf value) throws FilterUnsupportedException {
+    @Override
+    public ExpressionResult evaluate(RowIntf value) throws FilterUnsupportedException {
         ExpressionResult addExprLeftRes = left.evaluate(value);
         ExpressionResult addExprRightRes = right.evaluate(value);
         ExpressionResult val1 = addExprLeftRes;
@@ -72,11 +73,13 @@ public class AddExpression extends BinaryArithmeticExpression {
         return addExprRightRes;
     }
 
-    @Override public ExpressionType getFilterExpressionType() {
+    @Override
+    public ExpressionType getFilterExpressionType() {
         return ExpressionType.ADD;
     }
 
-    @Override public String getString() {
+    @Override
+    public String getString() {
         return "Add(" + left.getString() + ',' + right.getString() + ',';
     }
 }

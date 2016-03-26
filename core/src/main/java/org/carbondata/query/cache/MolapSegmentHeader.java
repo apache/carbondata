@@ -131,7 +131,8 @@ public class MolapSegmentHeader implements Serializable {
     /* (non-Javadoc)
      * @see java.lang.Object#hashCode()
      */
-    @Override public int hashCode() {
+    @Override
+    public int hashCode() {
         if (hashcode == 0) {
             final int prime = 31;
             int result = 1;
@@ -144,7 +145,8 @@ public class MolapSegmentHeader implements Serializable {
         return hashcode;
     }
 
-    @Override public boolean equals(Object obj) {
+    @Override
+    public boolean equals(Object obj) {
         if (obj instanceof MolapSegmentHeader) {
             if (this == obj) {
                 return true;

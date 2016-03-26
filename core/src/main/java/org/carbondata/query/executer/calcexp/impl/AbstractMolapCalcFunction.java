@@ -36,7 +36,8 @@ public abstract class AbstractMolapCalcFunction implements MolapCalcFunction {
 
     protected boolean conditionValue;
 
-    @Override public void compile(CalcExpressionModel model, Exp exp) {
+    @Override
+    public void compile(CalcExpressionModel model, Exp exp) {
         //        ResolvedFunCall funCall = (ResolvedFunCall)exp;
 
         //        Exp[] args = funCall.getArgs();

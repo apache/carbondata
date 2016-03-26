@@ -188,7 +188,8 @@ public class CSBTreeColumnarLeafNode extends CSBNode {
         // We shouldn't ever be here
     }
 
-    @Override public KeyValue getNextKeyValue(int index) {
+    @Override
+    public KeyValue getNextKeyValue(int index) {
         return null;
     }
 
@@ -216,21 +217,25 @@ public class CSBTreeColumnarLeafNode extends CSBNode {
     public void setFirstEntry(byte[] key, double[] value) {
     }
 
-    @Override public byte[] getBackKeyArray(FileHolder fileHolder) {
+    @Override
+    public byte[] getBackKeyArray(FileHolder fileHolder) {
         return null;
         //        return keyStore.getBackArray(fileHolder);
     }
 
-    @Override public short getValueSize() {
+    @Override
+    public short getValueSize() {
         // TODO Auto-generated method stub
         return dataStore.getLength();
     }
 
-    @Override public MeasureDataWrapper getNodeMsrDataWrapper(int[] cols, FileHolder fileHolder) {
+    @Override
+    public MeasureDataWrapper getNodeMsrDataWrapper(int[] cols, FileHolder fileHolder) {
         return dataStore.getBackData(cols, fileHolder);
     }
 
-    @Override public byte[] getKey(int keyIndex, FileHolder fileHolder) {
+    @Override
+    public byte[] getKey(int keyIndex, FileHolder fileHolder) {
         return null;
     }
 
@@ -240,7 +245,8 @@ public class CSBTreeColumnarLeafNode extends CSBNode {
         return keyStore.getUnCompressedKeyArray(fileHolder, blockIndex, needCompressedData);
     }
 
-    @Override public long getNodeNumber() {
+    @Override
+    public long getNodeNumber() {
         // TODO Auto-generated method stub
         return nodeNumber;
     }
@@ -251,7 +257,8 @@ public class CSBTreeColumnarLeafNode extends CSBNode {
         return keyStore.getUnCompressedKeyArray(fileHolder, blockIndex, needCompressedData);
     }
 
-    @Override public MeasureDataWrapper getNodeMsrDataWrapper(int cols, FileHolder fileHolder) {
+    @Override
+    public MeasureDataWrapper getNodeMsrDataWrapper(int cols, FileHolder fileHolder) {
         return dataStore.getBackData(cols, fileHolder);
     }
 

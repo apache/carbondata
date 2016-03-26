@@ -32,13 +32,15 @@ import java.util.concurrent.TimeUnit;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.util.DataTypeUtil;
+import org.carbondata.core.util.MolapProperties;
+import org.carbondata.core.util.MolapUtil;
 import org.carbondata.processing.exception.MolapDataProcessorException;
 import org.carbondata.processing.schema.metadata.SortObserver;
 import org.carbondata.processing.sortandgroupby.exception.MolapSortKeyAndGroupByException;
 import org.carbondata.processing.util.MolapDataProcessorLogEvent;
 import org.carbondata.processing.util.MolapDataProcessorUtil;
 import org.carbondata.processing.util.RemoveDictionaryUtil;
-import org.carbondata.core.util.*;
 
 public class SortDataRows {
     /**
@@ -278,7 +280,7 @@ public class SortDataRows {
             if (aggType[i] == MolapCommonConstants.BIG_INT_MEASURE) {
                 maxValue[i] = Long.MIN_VALUE;
             } else if (aggType[i] == MolapCommonConstants.SUM_COUNT_VALUE_MEASURE) {
-            maxValue[i] = -Double.MAX_VALUE;
+                maxValue[i] = -Double.MAX_VALUE;
             } else if (aggType[i] == MolapCommonConstants.BIG_DECIMAL_MEASURE) {
                 maxValue[i] = new BigDecimal(0.0);
             } else {
@@ -290,7 +292,7 @@ public class SortDataRows {
             if (aggType[i] == MolapCommonConstants.BIG_INT_MEASURE) {
                 minValue[i] = Long.MAX_VALUE;
             } else if (aggType[i] == MolapCommonConstants.SUM_COUNT_VALUE_MEASURE) {
-            minValue[i] = Double.MAX_VALUE;
+                minValue[i] = Double.MAX_VALUE;
             } else if (aggType[i] == MolapCommonConstants.BIG_DECIMAL_MEASURE) {
                 minValue[i] = new BigDecimal(Double.MAX_VALUE);
             } else {
@@ -399,7 +401,8 @@ public class SortDataRows {
     private void sortAndWriteToFile(final File destFile, final Object[][] recordHolderListLocal,
             final int entryCountLocal) throws MolapSortKeyAndGroupByException {
         writerExecutorService.submit(new Callable<Void>() {
-            @Override public Void call() throws Exception {
+            @Override
+            public Void call() throws Exception {
                 String newFileName = "";
                 File finalFile = null;
                 try {
@@ -478,7 +481,7 @@ public class SortDataRows {
                 if (aggType[i] == MolapCommonConstants.BIG_INT_MEASURE) {
                     max[i] = Long.MIN_VALUE;
                 } else if (aggType[i] == MolapCommonConstants.SUM_COUNT_VALUE_MEASURE) {
-                max[i] = -Double.MAX_VALUE;
+                    max[i] = -Double.MAX_VALUE;
                 } else {
                     max[i] = 0.0;
                 }
@@ -488,7 +491,7 @@ public class SortDataRows {
                 if (aggType[i] == MolapCommonConstants.BIG_INT_MEASURE) {
                     min[i] = Long.MAX_VALUE;
                 } else if (aggType[i] == MolapCommonConstants.SUM_COUNT_VALUE_MEASURE) {
-                min[i] = Double.MAX_VALUE;
+                    min[i] = Double.MAX_VALUE;
                 } else if (aggType[i] == MolapCommonConstants.BIG_DECIMAL_MEASURE) {
                     min[i] = new BigDecimal(Double.MAX_VALUE);
                 } else {
@@ -529,9 +532,9 @@ public class SortDataRows {
                     if (null != RemoveDictionaryUtil.getMeasure(fieldIndex, row)) {
                         stream.write((byte) 1);
                         if (aggType[mesCount] == MolapCommonConstants.SUM_COUNT_VALUE_MEASURE) {
-                        Double val = (Double) RemoveDictionaryUtil.getMeasure(fieldIndex, row);
-                        stream.writeDouble(val);
-                        measures[mesCount] = val;
+                            Double val = (Double) RemoveDictionaryUtil.getMeasure(fieldIndex, row);
+                            stream.writeDouble(val);
+                            measures[mesCount] = val;
                         } else if (aggType[mesCount] == MolapCommonConstants.BIG_INT_MEASURE) {
                             Long val = (Long) RemoveDictionaryUtil.getMeasure(fieldIndex, row);
                             stream.writeLong(val);
@@ -573,8 +576,8 @@ public class SortDataRows {
                         long minVal = (long) min[count];
                         max[count] = (maxVal > value ? max[count] : value);
                         min[count] = (minVal < value ? min[count] : value);
-                    int num = (value % 1 == 0) ? 0 : decimalPointers;
-                    decimal[count] = (decimal[count] > num ? decimal[count] : num);
+                        int num = (value % 1 == 0) ? 0 : decimalPointers;
+                        decimal[count] = (decimal[count] > num ? decimal[count] : num);
                     } else if (aggType[count] == MolapCommonConstants.BIG_DECIMAL_MEASURE) {
                         BigDecimal value = (BigDecimal) measures[count];
                         BigDecimal minVal = (BigDecimal) min[count];

@@ -107,7 +107,8 @@ public class MolapQueryDataWriter implements DataProcessor {
     /**
      * Intialize with model
      */
-    @Override public void initModel(PaginationModel model) throws MolapPaginationException {
+    @Override
+    public void initModel(PaginationModel model) throws MolapPaginationException {
         this.model = model;
         this.blockSize = model.getBlockSize();
         this.outLocation = model.getOutLocation();
@@ -184,7 +185,8 @@ public class MolapQueryDataWriter implements DataProcessor {
         }
     }
 
-    @Override public void processRow(byte[] key, MeasureAggregator[] measures)
+    @Override
+    public void processRow(byte[] key, MeasureAggregator[] measures)
             throws MolapPaginationException {
         try {
             if (this.entryCount == this.blockSize) {
@@ -223,7 +225,8 @@ public class MolapQueryDataWriter implements DataProcessor {
     /**
      * processGroup
      */
-    @Override public void processGroup(GroupByHolder groupByHolder) {
+    @Override
+    public void processGroup(GroupByHolder groupByHolder) {
         // No need to implement any thing
 
     }

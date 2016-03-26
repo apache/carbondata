@@ -48,11 +48,13 @@ public class FileData extends AbstractFileManager {
         this.storePath = storePath;
     }
 
-    @Override public boolean rename(IFileManagerComposite composite) {
+    @Override
+    public boolean rename(IFileManagerComposite composite) {
         return false;
     }
 
-    @Override public void setName(String name) {
+    @Override
+    public void setName(String name) {
         this.fileName = name;
     }
 

@@ -27,11 +27,11 @@ import java.util.concurrent.Callable;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.util.ByteUtil;
 import org.carbondata.processing.sortandgroupby.sortKey.MolapSortKeyException;
 import org.carbondata.processing.store.writer.exception.MolapDataWriterException;
 import org.carbondata.processing.threadbasedmerger.container.Container;
 import org.carbondata.processing.threadbasedmerger.iterator.RecordIterator;
-import org.carbondata.core.util.ByteUtil;
 import org.carbondata.processing.util.MolapDataProcessorLogEvent;
 
 public class ProducerCosumerFinalMergerThread implements Callable<Void> {
@@ -86,7 +86,8 @@ public class ProducerCosumerFinalMergerThread implements Callable<Void> {
         this.producerContainer = producerContainer;
     }
 
-    @Override public Void call() throws Exception {
+    @Override
+    public Void call() throws Exception {
         RecordIterator[] iterators = new RecordIterator[this.producerContainer.size()];
         RecordIterator iterator = null;
         //CHECKSTYLE:OFF    Approval No:Approval-V3R8C00_015

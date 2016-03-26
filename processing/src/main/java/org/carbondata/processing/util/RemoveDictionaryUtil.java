@@ -213,7 +213,7 @@ public class RemoveDictionaryUtil {
     public static Integer[] getCompleteDimensions(Object[] row) {
 
         return (Integer[]) row[0];
-        }
+    }
 
     /**
      * This will extract the high cardinality count from the string.

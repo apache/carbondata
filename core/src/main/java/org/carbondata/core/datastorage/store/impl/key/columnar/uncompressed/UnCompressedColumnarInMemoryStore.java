@@ -33,7 +33,8 @@ public class UnCompressedColumnarInMemoryStore extends AbstractColumnarKeyStore 
         super(columnarStoreInfo, true, fileHolder);
     }
 
-    @Override public ColumnarKeyStoreDataHolder[] getUnCompressedKeyArray(FileHolder fileHolder,
+    @Override
+    public ColumnarKeyStoreDataHolder[] getUnCompressedKeyArray(FileHolder fileHolder,
             int[] blockIndex, boolean[] needCompressedData) {
         int columnarKeyBlockIndex = 0;
         int[] columnIndex = null;

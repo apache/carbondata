@@ -30,16 +30,18 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.MolapCommonConstants;
 import org.carbondata.core.csvreader.checkpoint.CheckPointHanlder;
 import org.carbondata.core.csvreader.checkpoint.CheckPointInterface;
-import org.carbondata.core.util.*;
-import org.carbondata.processing.dataprocessor.queue.impl.DataProcessorQueue;
-import org.carbondata.processing.dataprocessor.queue.impl.RecordComparator;
-import org.carbondata.processing.dataprocessor.record.holder.DataProcessorRecordHolder;
 import org.carbondata.core.datastorage.store.compression.MeasureMetaDataModel;
 import org.carbondata.core.file.manager.composite.FileData;
 import org.carbondata.core.file.manager.composite.IFileManagerComposite;
 import org.carbondata.core.file.manager.composite.LoadFolderData;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
+import org.carbondata.core.util.MolapProperties;
+import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.util.ValueCompressionUtil;
+import org.carbondata.processing.dataprocessor.queue.impl.DataProcessorQueue;
+import org.carbondata.processing.dataprocessor.queue.impl.RecordComparator;
+import org.carbondata.processing.dataprocessor.record.holder.DataProcessorRecordHolder;
 import org.carbondata.processing.util.MolapDataProcessorLogEvent;
 import org.carbondata.processing.util.MolapDataProcessorUtil;
 import org.pentaho.di.core.exception.KettleException;
@@ -330,15 +332,15 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface {
 
             //Start the reading records process.
             startReadingProcess();
-                FileData fileData = (FileData) fileManager.get(0);
-                String storePath = fileData.getStorePath();
-                String inProgFileName = fileData.getFileName();
-                String changedFileName = measureMetaDataFileLocation
-                        .substring(0, measureMetaDataFileLocation.lastIndexOf('.'));
-                File currentFile = new File(storePath + File.separator + inProgFileName);
-                File destFile = new File(changedFileName);
-                currentFile.renameTo(destFile);
-                fileData.setName(changedFileName);
+            FileData fileData = (FileData) fileManager.get(0);
+            String storePath = fileData.getStorePath();
+            String inProgFileName = fileData.getFileName();
+            String changedFileName = measureMetaDataFileLocation
+                    .substring(0, measureMetaDataFileLocation.lastIndexOf('.'));
+            File currentFile = new File(storePath + File.separator + inProgFileName);
+            File destFile = new File(changedFileName);
+            currentFile.renameTo(destFile);
+            fileData.setName(changedFileName);
             LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "Record Procerssed For table: " + this.tableName);
             String logMessage =
@@ -753,7 +755,8 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface {
     private void putRowInSeqence() throws KettleStepException {
         putRowFuture = putRowExecutorService.submit(new Callable<Void>() {
 
-            @Override public Void call() throws Exception {
+            @Override
+            public Void call() throws Exception {
                 try {
 
                     while (!dataQueue.isEmpty()) {
@@ -927,7 +930,8 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface {
     }
 
     private class DoProcess implements Callable<Void> {
-        @Override public Void call() throws Exception {
+        @Override
+        public Void call() throws Exception {
             try {
                 if (CheckPointHanlder.IS_CHECK_POINT_NEEDED && !meta.isAutoAggRequest()) {
                     doProcessWithCheckPoint();

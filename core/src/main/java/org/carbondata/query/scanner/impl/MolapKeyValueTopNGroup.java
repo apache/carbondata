@@ -59,7 +59,8 @@ public class MolapKeyValueTopNGroup extends MolapValue {
         }
     }
 
-    @Override public MolapValue mergeKeyVal(MolapValue another) {
+    @Override
+    public MolapValue mergeKeyVal(MolapValue another) {
         MolapKeyValueTopNGroup group = (MolapKeyValueTopNGroup) another;
         Iterator<MolapKeyValueGroup> iterator = group.holders.iterator();
         while (iterator.hasNext()) {
@@ -117,7 +118,8 @@ public class MolapKeyValueTopNGroup extends MolapValue {
         return 0;
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
         Iterator<MolapKeyValueGroup> iter = getGroups().iterator();
         StringBuffer bf = new StringBuffer();
         while (iter.hasNext()) {

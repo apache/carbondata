@@ -68,7 +68,8 @@ public class ListBasedResultAggregatorImpl implements ColumnarScannedResultAggre
         limit = columnaraggreagtorInfo.getLimit();
     }
 
-    @Override public int aggregateData(AbstractColumnarScanResult keyValue) {
+    @Override
+    public int aggregateData(AbstractColumnarScanResult keyValue) {
         this.keys = new ArrayList<ByteArrayWrapper>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
         this.values =
                 new ArrayList<MeasureAggregator[]>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -101,7 +102,8 @@ public class ListBasedResultAggregatorImpl implements ColumnarScannedResultAggre
         return rowCounter;
     }
 
-    @Override public Result getResult(RestructureHolder restructureHolder) {
+    @Override
+    public Result getResult(RestructureHolder restructureHolder) {
         List<ByteArrayWrapper> finalKeys =
                 new ArrayList<ByteArrayWrapper>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
         List<MeasureAggregator[]> finalValues =

@@ -25,7 +25,8 @@ import org.carbondata.processing.dataprocessor.record.holder.DataProcessorRecord
 
 public class RecordComparator implements Comparator<DataProcessorRecordHolder> {
 
-    @Override public int compare(DataProcessorRecordHolder o1, DataProcessorRecordHolder o2) {
+    @Override
+    public int compare(DataProcessorRecordHolder o1, DataProcessorRecordHolder o2) {
 
         if (o1 == null) {
             return -1;

@@ -47,7 +47,8 @@ public class LocalDataAggregatorRSImpl extends LocalDataAggregatorImpl {
     /* (non-Javadoc)
      * @see com.huawei.unibi.molap.engine.executer.pagination.DataAggregator#aggregate(byte[], com.huawei.unibi.molap.engine.aggregator.MeasureAggregator[])
      */
-    @Override public void aggregate(Scanner scanner) {
+    @Override
+    public void aggregate(Scanner scanner) {
         long startTime = System.currentTimeMillis();
         try {
 

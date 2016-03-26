@@ -148,8 +148,8 @@ public class InMemoryQueryExecutor extends AbstractMolapExecutor implements RowC
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(InMemoryQueryExecutor.class.getName());
 
-    @Override public void execute(MolapQueryExecutorModel queryModel)
-            throws IOException, KeyGenException {
+    @Override
+    public void execute(MolapQueryExecutorModel queryModel) throws IOException, KeyGenException {
         LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "UNSUPPORT Operation");
     }
 
@@ -161,47 +161,53 @@ public class InMemoryQueryExecutor extends AbstractMolapExecutor implements RowC
 
     }
 
-    @Override public void executeDimensionCount(Dimension dimension, MolapResultHolder hIterator)
+    @Override
+    public void executeDimensionCount(Dimension dimension, MolapResultHolder hIterator)
             throws IOException {
         LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "UNSUPPORT Operation");
 
     }
 
-    @Override public void executeAggTableCount(String table, MolapResultHolder hIterator)
-            throws IOException {
+    @Override
+    public void executeAggTableCount(String table, MolapResultHolder hIterator) throws IOException {
         LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "UNSUPPORT Operation");
 
     }
 
-    @Override public long executeTableCount(String table) throws IOException {
+    @Override
+    public long executeTableCount(String table) throws IOException {
         LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "UNSUPPORT Operation");
         return 0;
     }
 
-    @Override public void executeDimension(String hName, Dimension dim, final int[] dims,
+    @Override
+    public void executeDimension(String hName, Dimension dim, final int[] dims,
             Map<Dimension, MolapFilterInfo> constraints, MolapResultHolder hIterator)
             throws IOException {
         LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "UNSUPPORT Operation");
 
     }
 
-    @Override public void interruptExecutor() {
+    @Override
+    public void interruptExecutor() {
         LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "UNSUPPORT Operation");
 
     }
 
-    @Override public void rowLimitExceeded() throws Exception {
+    @Override
+    public void rowLimitExceeded() throws Exception {
         LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "UNSUPPORT Operation");
 
     }
 
-    @Override protected Long getMaxValue(Dimension dim) throws IOException {
+    @Override
+    protected Long getMaxValue(Dimension dim) throws IOException {
         LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "UNSUPPORT Operation");
         return 0L;
     }
 
-    @Override public long[] getSurrogates(List<String> dimMem, Dimension dimName)
-            throws IOException {
+    @Override
+    public long[] getSurrogates(List<String> dimMem, Dimension dimName) throws IOException {
         LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "UNSUPPORT Operation");
         return new long[0];
     }

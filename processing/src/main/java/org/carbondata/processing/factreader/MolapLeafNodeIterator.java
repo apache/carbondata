@@ -29,10 +29,10 @@ import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.datastorage.store.filesystem.MolapFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.datastorage.util.StoreFactory;
-import org.carbondata.processing.iterator.MolapIterator;
 import org.carbondata.core.metadata.LeafNodeInfo;
 import org.carbondata.core.util.MolapProperties;
 import org.carbondata.core.util.MolapUtil;
+import org.carbondata.processing.iterator.MolapIterator;
 
 public class MolapLeafNodeIterator implements MolapIterator<MolapLeafNodeTuplesHolder> {
     /**
@@ -147,7 +147,8 @@ public class MolapLeafNodeIterator implements MolapIterator<MolapLeafNodeTuplesH
     /**
      * check some more leaf are present in the b tree
      */
-    @Override public boolean hasNext() {
+    @Override
+    public boolean hasNext() {
         if (currentCount < leafSize) {
             return true;
         } else {
@@ -159,7 +160,8 @@ public class MolapLeafNodeIterator implements MolapIterator<MolapLeafNodeTuplesH
     /**
      * below method will be used to get the leaf node
      */
-    @Override public MolapLeafNodeTuplesHolder next() {
+    @Override
+    public MolapLeafNodeTuplesHolder next() {
         MolapLeafNodeTuplesHolder holder = new MolapLeafNodeTuplesHolder();
         getNewLeafData();
         holder.setEntryCount(this.entryCount);

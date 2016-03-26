@@ -33,7 +33,8 @@ public class TimeBasedMergerColumnar extends ColumnarFactFileMerger {
         super(molapColumnarFactMergerInfo, currentRestructNumber);
     }
 
-    @Override public void mergerSlice() throws SliceMergerException {
+    @Override
+    public void mergerSlice() throws SliceMergerException {
         try {
             dataHandler.initialise();
             for (MolapDataIterator<MolapSurrogateTupleHolder> leaftTupleIterator : leafTupleIteratorList) {

@@ -34,10 +34,10 @@ import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
 import org.carbondata.core.file.manager.composite.FileData;
 import org.carbondata.core.file.manager.composite.IFileManagerComposite;
 import org.carbondata.core.file.manager.composite.LoadFolderData;
+import org.carbondata.core.util.MolapUtil;
 import org.carbondata.processing.merger.Util.MolapSliceMergerUtil;
 import org.carbondata.processing.merger.exeception.SliceMergerException;
 import org.carbondata.processing.util.MolapDataProcessorLogEvent;
-import org.carbondata.core.util.MolapUtil;
 
 public class DimesionMappingFileMerger {
 
@@ -145,7 +145,8 @@ public class DimesionMappingFileMerger {
 
         MolapFile[] listFiles = storeFolder.listFiles(new MolapFileFilter() {
 
-            @Override public boolean accept(MolapFile pathname) {
+            @Override
+            public boolean accept(MolapFile pathname) {
                 if ((!pathname.isDirectory()) && !pathname.getName().contains("msrMetaData")
                         && !pathname.getName().endsWith(MolapCommonConstants.FACT_FILE_EXT)
                         && !pathname.getName().endsWith(".hierarchy")) {

@@ -40,12 +40,14 @@ public class AggregateTableDerivativeComposite implements AggregateTableDerivati
         this.aggregateTable = aggregateTable;
     }
 
-    @Override public void add(AggregateTableDerivative aggregateTableDerivative) {
+    @Override
+    public void add(AggregateTableDerivative aggregateTableDerivative) {
         childrens.add(aggregateTableDerivative);
 
     }
 
-    @Override public AggregateTableDerivative get(int i) {
+    @Override
+    public AggregateTableDerivative get(int i) {
         return childrens.get(i);
     }
 
@@ -57,7 +59,8 @@ public class AggregateTableDerivativeComposite implements AggregateTableDerivati
         return childrens.size();
     }
 
-    @Override public void remove(AggregateTableDerivative aggregateTableDerivative) {
+    @Override
+    public void remove(AggregateTableDerivative aggregateTableDerivative) {
         childrens.remove(aggregateTableDerivative);
 
     }

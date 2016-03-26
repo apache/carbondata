@@ -31,7 +31,8 @@ public class MolapMultiplyFunction extends AbstractMolapCalcFunction {
      */
     private static final long serialVersionUID = -4372447898911845753L;
 
-    @Override public double calculate(MeasureAggregator[] msrAggs) {
+    @Override
+    public double calculate(MeasureAggregator[] msrAggs) {
         double left = leftOperand.calculate(msrAggs);
         double right = null != rightOperand ? rightOperand.calculate(msrAggs) : 1.0;
         return left * right;

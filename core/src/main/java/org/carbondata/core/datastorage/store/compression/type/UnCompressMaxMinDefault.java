@@ -49,12 +49,14 @@ public class UnCompressMaxMinDefault implements ValueCompressonHolder.UnCompress
      */
     private double[] value;
 
-    @Override public void setValue(double[] value) {
+    @Override
+    public void setValue(double[] value) {
         this.value = (double[]) value;
 
     }
 
-    @Override public ValueCompressonHolder.UnCompressValue getNew() {
+    @Override
+    public ValueCompressonHolder.UnCompressValue getNew() {
         try {
             return (ValueCompressonHolder.UnCompressValue) clone();
         } catch (CloneNotSupportedException ex5) {
@@ -63,21 +65,25 @@ public class UnCompressMaxMinDefault implements ValueCompressonHolder.UnCompress
         return null;
     }
 
-    @Override public ValueCompressonHolder.UnCompressValue compress() {
+    @Override
+    public ValueCompressonHolder.UnCompressValue compress() {
         UnCompressMaxMinByte byte1 = new UnCompressMaxMinByte();
         byte1.setValue(doubleCompressor.compress(value));
         return byte1;
     }
 
-    @Override public ValueCompressonHolder.UnCompressValue uncompress(DataType dataType) {
+    @Override
+    public ValueCompressonHolder.UnCompressValue uncompress(DataType dataType) {
         return null;
     }
 
-    @Override public byte[] getBackArrayData() {
+    @Override
+    public byte[] getBackArrayData() {
         return ValueCompressionUtil.convertToBytes(value);
     }
 
-    @Override public void setValueInBytes(byte[] value) {
+    @Override
+    public void setValueInBytes(byte[] value) {
         ByteBuffer buffer = ByteBuffer.wrap(value);
         this.value = ValueCompressionUtil.convertToDoubleArray(buffer, value.length);
     }
@@ -85,12 +91,14 @@ public class UnCompressMaxMinDefault implements ValueCompressonHolder.UnCompress
     /**
      * @see ValueCompressonHolder.UnCompressValue#getCompressorObject()
      */
-    @Override public ValueCompressonHolder.UnCompressValue getCompressorObject() {
+    @Override
+    public ValueCompressonHolder.UnCompressValue getCompressorObject() {
         return new UnCompressMaxMinByte();
     }
 
     //TODO SIMIAN
-    @Override public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
+    @Override
+    public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
         double maxValue = (double) maxValueObject;
         double[] vals = new double[value.length];
         MolapReadDataHolder dataHolderInfoObj = new MolapReadDataHolder();

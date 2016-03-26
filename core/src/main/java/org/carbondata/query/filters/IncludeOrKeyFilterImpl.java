@@ -67,7 +67,8 @@ public class IncludeOrKeyFilterImpl extends KeyFilterImpl {
     /**
      * @see KeyFilterImpl#filterKey(KeyValue)
      */
-    @Override public boolean filterKey(KeyValue key) {
+    @Override
+    public boolean filterKey(KeyValue key) {
         //
         if (!super.filterKey(key)) {
 

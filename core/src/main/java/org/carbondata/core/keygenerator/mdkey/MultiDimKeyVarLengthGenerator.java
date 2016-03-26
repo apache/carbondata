@@ -40,22 +40,26 @@ public class MultiDimKeyVarLengthGenerator extends AbstractKeyGenerator {
         }
     }
 
-    @Override public byte[] generateKey(long[] keys) throws KeyGenException {
+    @Override
+    public byte[] generateKey(long[] keys) throws KeyGenException {
 
         return bits.getBytes(keys);
     }
 
-    @Override public byte[] generateKey(int[] keys) throws KeyGenException {
+    @Override
+    public byte[] generateKey(int[] keys) throws KeyGenException {
 
         return bits.getBytes(keys);
     }
 
-    @Override public long[] getKeyArray(byte[] key) {
+    @Override
+    public long[] getKeyArray(byte[] key) {
 
         return bits.getKeyArray(key);
     }
 
-    @Override public long getKey(byte[] key, int index) {
+    @Override
+    public long getKey(byte[] key, int index) {
 
         return bits.getKeyArray(key)[index];
     }
@@ -64,7 +68,8 @@ public class MultiDimKeyVarLengthGenerator extends AbstractKeyGenerator {
         return bits.getByteSize();
     }
 
-    @Override public long[] getSubKeyArray(byte[] key, int index, int size) {
+    @Override
+    public long[] getSubKeyArray(byte[] key, int index, int size) {
         if (index < 0 || size == 0) {
             return null;
         }
@@ -74,16 +79,19 @@ public class MultiDimKeyVarLengthGenerator extends AbstractKeyGenerator {
         return rtn;
     }
 
-    @Override public int[] getKeyByteOffsets(int index) {
+    @Override
+    public int[] getKeyByteOffsets(int index) {
         return byteRangesForKeys[index];
     }
 
-    @Override public int getDimCount() {
+    @Override
+    public int getDimCount() {
 
         return bits.getDimCount();
     }
 
-    @Override public boolean equals(Object obj) {
+    @Override
+    public boolean equals(Object obj) {
         if (obj instanceof MultiDimKeyVarLengthGenerator) {
             MultiDimKeyVarLengthGenerator other = (MultiDimKeyVarLengthGenerator) obj;
             return bits.equals(other.bits);
@@ -92,15 +100,18 @@ public class MultiDimKeyVarLengthGenerator extends AbstractKeyGenerator {
         return false;
     }
 
-    @Override public int hashCode() {
+    @Override
+    public int hashCode() {
         return bits.hashCode();
     }
 
-    @Override public long[] getKeyArray(byte[] key, int[] maskedByteRanges) {
+    @Override
+    public long[] getKeyArray(byte[] key, int[] maskedByteRanges) {
         return bits.getKeyArray(key, maskedByteRanges);
     }
 
-    @Override public int getStartAndEndKeySizeWithOnlyPrimitives() {
+    @Override
+    public int getStartAndEndKeySizeWithOnlyPrimitives() {
         return startAndEndKeySizeWithPrimitives;
     }
 

@@ -55,7 +55,8 @@ public class ColumnarDetailQueryParallelSliceExecutor implements SliceExecuter {
         this.latestInfo = latestInfo;
     }
 
-    @Override public MolapIterator<QueryResult> executeSlices(List<SliceExecutionInfo> infos,
+    @Override
+    public MolapIterator<QueryResult> executeSlices(List<SliceExecutionInfo> infos,
             int[] sliceIndex) throws QueryExecutionException {
         long startTime = System.currentTimeMillis();
         ColumnarSliceExecuter task = null;

@@ -186,7 +186,8 @@ public final class MolapUtil {
 
         // List of directories
         MolapFile[] listFiles = molapFile.listFiles(new MolapFileFilter() {
-            @Override public boolean accept(MolapFile pathname) {
+            @Override
+            public boolean accept(MolapFile pathname) {
                 if (isDirectory && pathname.isDirectory()) {
                     if (pathname.getAbsolutePath().indexOf(filterType) > -1) {
                         return true;
@@ -607,7 +608,8 @@ public final class MolapUtil {
         try {
             UserGroupInformation.getLoginUser().doAs(new PrivilegedExceptionAction<Void>() {
 
-                @Override public Void run() throws Exception {
+                @Override
+                public Void run() throws Exception {
                     for (int i = 0; i < path.length; i++) {
                         if (null != path[i]) {
                             deleteRecursive(new File(path[i]));
@@ -633,7 +635,8 @@ public final class MolapUtil {
         try {
             UserGroupInformation.getLoginUser().doAs(new PrivilegedExceptionAction<Void>() {
 
-                @Override public Void run() throws Exception {
+                @Override
+                public Void run() throws Exception {
                     for (int i = 0; i < path.length; i++) {
                         deleteRecursive(path[i]);
                     }
@@ -671,7 +674,8 @@ public final class MolapUtil {
         try {
             UserGroupInformation.getLoginUser().doAs(new PrivilegedExceptionAction<Void>() {
 
-                @Override public Void run() throws Exception {
+                @Override
+                public Void run() throws Exception {
                     for (int i = 0; i < file.length; i++) {
                         deleteRecursive(file[i]);
                     }
@@ -690,7 +694,8 @@ public final class MolapUtil {
         try {
             UserGroupInformation.getLoginUser().doAs(new PrivilegedExceptionAction<Void>() {
 
-                @Override public Void run() throws Exception {
+                @Override
+                public Void run() throws Exception {
                     for (int i = 0; i < file.length; i++) {
                         deleteRecursiveSilent(file[i]);
                     }
@@ -1057,7 +1062,8 @@ public final class MolapUtil {
             final String fileNameExt) {
         File file = new File(location);
         File[] listFiles = file.listFiles(new FileFilter() {
-            @Override public boolean accept(File pathname) {
+            @Override
+            public boolean accept(File pathname) {
                 String name = pathname.getName();
 
                 return name.startsWith(fileNameInitial) && name.endsWith(fileNameExt);
@@ -1449,7 +1455,8 @@ public final class MolapUtil {
      */
     public static MolapFile[] listFiles(MolapFile file) {
         MolapFile[] listFiles = file.listFiles(new MolapFileFilter() {
-            @Override public boolean accept(MolapFile pathname) {
+            @Override
+            public boolean accept(MolapFile pathname) {
                 return pathname.getName().startsWith(MolapCommonConstants.LOAD_FOLDER) && !pathname
                         .getName().endsWith(MolapCommonConstants.FILE_INPROGRESS_STATUS);
             }
@@ -1496,7 +1503,8 @@ public final class MolapUtil {
         if (file.isDirectory()) {
             updatedFactFiles = file.listFiles(new MolapFileFilter() {
 
-                @Override public boolean accept(MolapFile pathname) {
+                @Override
+                public boolean accept(MolapFile pathname) {
                     return ((!pathname.isDirectory()) && (pathname.getName().startsWith(tableName))
                             && pathname.getName()
                             .endsWith(MolapCommonConstants.FACT_UPDATE_EXTENSION));
@@ -1718,7 +1726,8 @@ public final class MolapUtil {
     public static SliceMetaData readSliceMetaDataFile(MolapFile folderPath) {
         MolapFile[] sliceMetaDataPath = folderPath.listFiles(new MolapFileFilter() {
 
-            @Override public boolean accept(MolapFile file) {
+            @Override
+            public boolean accept(MolapFile file) {
                 return file.getName().startsWith("sliceMetaData");
             }
         });
@@ -1876,7 +1885,8 @@ public final class MolapUtil {
             this.file = file;
         }
 
-        @Override public Void call() throws Exception {
+        @Override
+        public Void call() throws Exception {
             deleteFoldersAndFiles(file);
             return null;
         }
@@ -1893,7 +1903,8 @@ public final class MolapUtil {
             this.fileExt = fileExt;
         }
 
-        @Override public int compare(MolapFile file1, MolapFile file2) {
+        @Override
+        public int compare(MolapFile file1, MolapFile file2) {
             String firstFileName = file1.getName().split(fileExt)[0];
             String secondFileName = file2.getName().split(fileExt)[0];
             int lastIndexOfO1 = firstFileName.lastIndexOf('_');
@@ -1932,7 +1943,8 @@ public final class MolapUtil {
 
     private static class SliceMetaDataFileComparator implements Comparator<MolapFile> {
 
-        @Override public int compare(MolapFile o1, MolapFile o2) {
+        @Override
+        public int compare(MolapFile o1, MolapFile o2) {
             int firstSliceNumber = Integer.parseInt(o1.getName().split("\\.")[1]);
             int secondSliceNumber = Integer.parseInt(o2.getName().split("\\.")[1]);
             return firstSliceNumber - secondSliceNumber;

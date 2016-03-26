@@ -38,7 +38,8 @@ public class InExpression extends BinaryConditionalExpression {
         super(left, right);
     }
 
-    @Override public ExpressionResult evaluate(RowIntf value) throws FilterUnsupportedException {
+    @Override
+    public ExpressionResult evaluate(RowIntf value) throws FilterUnsupportedException {
         ExpressionResult leftRsult = left.evaluate(value);
 
         if (setOfExprResult == null) {
@@ -89,11 +90,13 @@ public class InExpression extends BinaryConditionalExpression {
         return leftRsult;
     }
 
-    @Override public ExpressionType getFilterExpressionType() {
+    @Override
+    public ExpressionType getFilterExpressionType() {
         return ExpressionType.IN;
     }
 
-    @Override public String getString() {
+    @Override
+    public String getString() {
         return "IN(" + left.getString() + ',' + right.getString() + ')';
     }
 

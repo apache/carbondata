@@ -95,7 +95,8 @@ public class ConsumerThread implements Callable<Void> {
         this.mdKeyIndex = mdKeyIndex;
     }
 
-    @Override public Void call() throws Exception {
+    @Override
+    public Void call() throws Exception {
         RecordIterator[] iterators = new RecordIterator[producerContainer.size()];
         int i = 0;
         //CHECKSTYLE:OFF

@@ -29,10 +29,10 @@ import java.util.concurrent.Future;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.processing.sortandgroupby.exception.MolapSortKeyAndGroupByException;
-import org.carbondata.processing.util.MolapDataProcessorLogEvent;
 import org.carbondata.core.util.MolapProperties;
 import org.carbondata.core.util.MolapUtil;
+import org.carbondata.processing.sortandgroupby.exception.MolapSortKeyAndGroupByException;
+import org.carbondata.processing.util.MolapDataProcessorLogEvent;
 import org.carbondata.processing.util.RemoveDictionaryUtil;
 
 public class SortTempFileChunkHolder {
@@ -343,7 +343,7 @@ public class SortTempFileChunkHolder {
             for (int i = 0; i < this.measureCount; i++) {
                 if (stream.readByte() == 1) {
                     if (aggType[i] == MolapCommonConstants.SUM_COUNT_VALUE_MEASURE) {
-                    measures[index++] = stream.readDouble();
+                        measures[index++] = stream.readDouble();
                     } else if (aggType[i] == MolapCommonConstants.BIG_INT_MEASURE) {
                         measures[index++] = stream.readLong();
                     } else {
@@ -435,7 +435,8 @@ public class SortTempFileChunkHolder {
             isBackUpFilling = backUp;
         }
 
-        @Override public Void call() throws Exception {
+        @Override
+        public Void call() throws Exception {
             try {
                 if (isBackUpFilling) {
                     isBackupFilled = true;

@@ -86,7 +86,8 @@ public class RowWriterProcessor implements DataProcessor {
         this.outputLocation = outputLocation;
     }
 
-    @Override public void initialise(DataProcessorInfo model) throws DataProcessorException {
+    @Override
+    public void initialise(DataProcessorInfo model) throws DataProcessorException {
         try {
             filePath = outputLocation + '/' + model.getQueryId() + '/' + System.nanoTime() + ".tmp"
                     + MolapCommonConstants.QUERY_MERGED_FILE_EXT;
@@ -101,8 +102,8 @@ public class RowWriterProcessor implements DataProcessor {
         }
     }
 
-    @Override public void processRow(byte[] key, MeasureAggregator[] value)
-            throws DataProcessorException {
+    @Override
+    public void processRow(byte[] key, MeasureAggregator[] value) throws DataProcessorException {
         try {
             // write the key to output stream.
             dataOutput.write(key);
@@ -118,12 +119,14 @@ public class RowWriterProcessor implements DataProcessor {
         entryCount++;
     }
 
-    @Override public void processRow(ByteArrayWrapper key, MeasureAggregator[] value)
+    @Override
+    public void processRow(ByteArrayWrapper key, MeasureAggregator[] value)
             throws DataProcessorException {
         processRow(key.getMaskedKey(), value);
     }
 
-    @Override public void finish() throws DataProcessorException {
+    @Override
+    public void finish() throws DataProcessorException {
         try {
             // write the total number of entries(rows) written to the stream.
             dataOutput.writeInt(entryCount);
@@ -148,7 +151,8 @@ public class RowWriterProcessor implements DataProcessor {
         }
     }
 
-    @Override public MolapIterator<QueryResult> getQueryResultIterator() {
+    @Override
+    public MolapIterator<QueryResult> getQueryResultIterator() {
         // TODO Auto-generated method stub
         return null;
     }

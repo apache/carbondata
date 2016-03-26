@@ -25,37 +25,44 @@ public abstract class AbstractMeasureAggregatorMaxMin implements MeasureAggregat
 
     protected abstract void internalAgg(Object value);
 
-    @Override public void agg(double newVal) {
+    @Override
+    public void agg(double newVal) {
         internalAgg((Double) newVal);
         firstTime = false;
     }
 
-    @Override public void agg(Object newVal) {
+    @Override
+    public void agg(Object newVal) {
         internalAgg(newVal);
         firstTime = false;
     }
 
-    @Override public void agg(MolapReadDataHolder newVal, int index) {
+    @Override
+    public void agg(MolapReadDataHolder newVal, int index) {
         internalAgg(newVal.getReadableDoubleValueByIndex(index));
         firstTime = false;
     }
 
-    @Override public Double getDoubleValue() {
+    @Override
+    public Double getDoubleValue() {
         return (Double) ((Object) aggVal);
     }
 
-    @Override public Long getLongValue() {
+    @Override
+    public Long getLongValue() {
         return (Long) ((Object) aggVal);
     }
 
-    @Override public BigDecimal getBigDecimalValue() {
+    @Override
+    public BigDecimal getBigDecimalValue() {
         return (BigDecimal) ((Object) aggVal);
     }
 
     /**
      * @see MeasureAggregator#setNewValue(Object)
      */
-    @Override public void setNewValue(Object newValue) {
+    @Override
+    public void setNewValue(Object newValue) {
         //        aggVal= newValue;
     }
 
@@ -64,15 +71,18 @@ public abstract class AbstractMeasureAggregatorMaxMin implements MeasureAggregat
      *
      * @return max value as an object
      */
-    @Override public Object getValueObject() {
+    @Override
+    public Object getValueObject() {
         return aggVal;
     }
 
-    @Override public boolean isFirstTime() {
+    @Override
+    public boolean isFirstTime() {
         return firstTime;
     }
 
-    @Override public MeasureAggregator get() {
+    @Override
+    public MeasureAggregator get() {
         return this;
 
     }
@@ -81,9 +91,10 @@ public abstract class AbstractMeasureAggregatorMaxMin implements MeasureAggregat
         return aggVal + "";
     }
 
-    @Override public int compareTo(MeasureAggregator msrAggr) {
-        @SuppressWarnings("unchecked") Comparable<Object> other =
-                (Comparable<Object>) msrAggr.getValueObject();
+    @Override
+    public int compareTo(MeasureAggregator msrAggr) {
+        @SuppressWarnings("unchecked")
+        Comparable<Object> other = (Comparable<Object>) msrAggr.getValueObject();
 
         return aggVal.compareTo(other);
     }

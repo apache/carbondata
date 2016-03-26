@@ -24,13 +24,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import net.jpountz.xxhash.XXHash32;
+import net.jpountz.xxhash.XXHashFactory;
+import org.carbondata.core.keygenerator.KeyGenerator;
+import org.carbondata.core.util.MolapProperties;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.aggregator.util.AggUtil;
 import org.carbondata.query.wrappers.ByteArrayWrapper;
-import org.carbondata.core.keygenerator.KeyGenerator;
-import org.carbondata.core.util.MolapProperties;
-import net.jpountz.xxhash.XXHash32;
-import net.jpountz.xxhash.XXHashFactory;
 
 public class MolapSortKeyHashbasedAggregator {
     protected ByteArrayWrapper dimensionsRowWrapper;

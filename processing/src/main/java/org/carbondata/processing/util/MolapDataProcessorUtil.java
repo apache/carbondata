@@ -37,16 +37,16 @@ import org.carbondata.core.datastorage.store.filesystem.MolapFile;
 import org.carbondata.core.datastorage.store.filesystem.MolapFileFilter;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
+import org.carbondata.core.keygenerator.KeyGenerator;
+import org.carbondata.core.metadata.SliceMetaData;
+import org.carbondata.core.olap.MolapDef;
 import org.carbondata.core.util.*;
+import org.carbondata.processing.exception.MolapDataProcessorException;
+import org.carbondata.processing.sortandgroupby.exception.MolapSortKeyAndGroupByException;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.aggregator.impl.*;
 import org.carbondata.query.datastorage.InMemoryCube;
 import org.carbondata.query.datastorage.InMemoryCubeStore;
-import org.carbondata.processing.exception.MolapDataProcessorException;
-import org.carbondata.core.keygenerator.KeyGenerator;
-import org.carbondata.core.metadata.SliceMetaData;
-import org.carbondata.core.olap.MolapDef;
-import org.carbondata.processing.sortandgroupby.exception.MolapSortKeyAndGroupByException;
 import org.pentaho.di.core.CheckResult;
 import org.pentaho.di.core.CheckResultInterface;
 import org.pentaho.di.core.Const;
@@ -209,7 +209,8 @@ public final class MolapDataProcessorUtil {
         File file = new File(baseLocation);
         File[] rsFile = file.listFiles(new FileFilter() {
 
-            @Override public boolean accept(File pathname) {
+            @Override
+            public boolean accept(File pathname) {
                 return pathname.getName().startsWith(MolapCommonConstants.RESTRUCTRE_FOLDER);
             }
         });
@@ -224,7 +225,8 @@ public final class MolapDataProcessorUtil {
         File file = new File(baseLocation);
         File[] rsFile = file.listFiles(new FileFilter() {
 
-            @Override public boolean accept(File pathname) {
+            @Override
+            public boolean accept(File pathname) {
                 return pathname.getName().startsWith(MolapCommonConstants.RESTRUCTRE_FOLDER);
             }
         });
@@ -242,7 +244,8 @@ public final class MolapDataProcessorUtil {
         File file = new File(rsFiles + File.separator + tableName);
 
         File[] listFiles = file.listFiles(new FileFilter() {
-            @Override public boolean accept(File pathname) {
+            @Override
+            public boolean accept(File pathname) {
                 return (pathname.isDirectory() && pathname.getName()
                         .startsWith(MolapCommonConstants.LOAD_FOLDER));
             }
@@ -262,7 +265,8 @@ public final class MolapDataProcessorUtil {
         File file = new File(rsFiles + File.separator + tableName);
 
         File[] listFiles = file.listFiles(new FileFilter() {
-            @Override public boolean accept(File pathname) {
+            @Override
+            public boolean accept(File pathname) {
                 return (pathname.isDirectory() && pathname.getName()
                         .startsWith(MolapCommonConstants.LOAD_FOLDER) && !pathname.getName()
                         .contains(MolapCommonConstants.FILE_INPROGRESS_STATUS));
@@ -278,7 +282,8 @@ public final class MolapDataProcessorUtil {
      */
     public static File[] getAllLoadFolders(File tableFolder) {
         File[] listFiles = tableFolder.listFiles(new FileFilter() {
-            @Override public boolean accept(File pathname) {
+            @Override
+            public boolean accept(File pathname) {
                 return (pathname.isDirectory() && pathname.getName()
                         .startsWith(MolapCommonConstants.LOAD_FOLDER));
             }
@@ -291,7 +296,8 @@ public final class MolapDataProcessorUtil {
      */
     public static File[] getChildrenFolders(File parentFolder) {
         File[] listFiles = parentFolder.listFiles(new FileFilter() {
-            @Override public boolean accept(File pathname) {
+            @Override
+            public boolean accept(File pathname) {
                 return pathname.isDirectory();
             }
         });
@@ -309,7 +315,8 @@ public final class MolapDataProcessorUtil {
         File file = new File(sliceLocation.getAbsolutePath());
 
         File[] listFiles = file.listFiles(new FileFilter() {
-            @Override public boolean accept(File pathname) {
+            @Override
+            public boolean accept(File pathname) {
                 return pathname.getName().startsWith(tableName) && pathname.getName()
                         .endsWith(MolapCommonConstants.FACT_FILE_EXT);
             }
@@ -328,7 +335,8 @@ public final class MolapDataProcessorUtil {
         File file = new File(sliceLocation);
 
         File[] listFiles = file.listFiles(new FileFilter() {
-            @Override public boolean accept(File pathname) {
+            @Override
+            public boolean accept(File pathname) {
                 return (!(pathname.getName().startsWith(tableName)));
             }
         });
@@ -347,7 +355,8 @@ public final class MolapDataProcessorUtil {
         File file = new File(sliceLocation + File.separator + tableName);
 
         File[] listFiles = file.listFiles(new FileFilter() {
-            @Override public boolean accept(File pathname) {
+            @Override
+            public boolean accept(File pathname) {
                 return !pathname.getName().startsWith(tableName);
             }
         });
@@ -896,7 +905,8 @@ public final class MolapDataProcessorUtil {
         }
 
         MolapFile[] listFiles = molapFile.listFiles(new MolapFileFilter() {
-            @Override public boolean accept(MolapFile pathname) {
+            @Override
+            public boolean accept(MolapFile pathname) {
                 if (pathname.getName().indexOf(MolapCommonConstants.FILE_INPROGRESS_STATUS) > -1) {
                     return true;
                 }

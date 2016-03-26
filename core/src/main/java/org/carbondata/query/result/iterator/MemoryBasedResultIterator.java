@@ -31,11 +31,13 @@ public class MemoryBasedResultIterator implements MolapIterator<QueryResult> {
         this.result = result;
     }
 
-    @Override public boolean hasNext() {
+    @Override
+    public boolean hasNext() {
         return hasNext;
     }
 
-    @Override public QueryResult next() {
+    @Override
+    public QueryResult next() {
         hasNext = false;
         return result;
     }

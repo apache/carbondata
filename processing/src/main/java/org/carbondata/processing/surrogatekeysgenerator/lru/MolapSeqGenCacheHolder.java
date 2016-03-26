@@ -22,8 +22,8 @@ package org.carbondata.processing.surrogatekeysgenerator.lru;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.carbondata.processing.schema.metadata.ArrayWrapper;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import org.carbondata.processing.schema.metadata.ArrayWrapper;
 
 public class MolapSeqGenCacheHolder {
     /**

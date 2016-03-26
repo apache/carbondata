@@ -48,7 +48,8 @@ public class UnCompressNoneByte implements UnCompressValue<byte[]> {
      */
     private byte[] value;
 
-    @Override public UnCompressValue getNew() {
+    @Override
+    public UnCompressValue getNew() {
         try {
             return (UnCompressValue) clone();
         } catch (CloneNotSupportedException e) {
@@ -57,38 +58,45 @@ public class UnCompressNoneByte implements UnCompressValue<byte[]> {
         return null;
     }
 
-    @Override public void setValue(byte[] value) {
+    @Override
+    public void setValue(byte[] value) {
         this.value = value;
     }
 
-    @Override public UnCompressValue uncompress(DataType dataType) {
+    @Override
+    public UnCompressValue uncompress(DataType dataType) {
         UnCompressValue byte1 = ValueCompressionUtil.unCompressNone(dataType, dataType);
         ValueCompressonHolder.unCompress(dataType, byte1, value);
         return byte1;
     }
 
-    @Override public UnCompressValue compress() {
+    @Override
+    public UnCompressValue compress() {
         UnCompressNoneByte byte1 = new UnCompressNoneByte();
         byte1.setValue(byteCompressor.compress(value));
         return byte1;
     }
 
-    @Override public byte[] getBackArrayData() {
+    @Override
+    public byte[] getBackArrayData() {
         return value;
     }
 
-    @Override public void setValueInBytes(byte[] value) {
+    @Override
+    public void setValueInBytes(byte[] value) {
         this.value = value;
     }
 
     /**
      * @see ValueCompressonHolder.UnCompressValue#getCompressorObject()
      */
-    @Override public UnCompressValue getCompressorObject() {
+    @Override
+    public UnCompressValue getCompressorObject() {
         return new UnCompressNoneByte();
     }
 
-    @Override public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
+    @Override
+    public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
         MolapReadDataHolder dataHldr = new MolapReadDataHolder();
         double[] vals = new double[value.length];
         for (int i = 0; i < vals.length; i++) {

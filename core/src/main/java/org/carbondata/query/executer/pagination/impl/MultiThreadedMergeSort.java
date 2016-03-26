@@ -205,7 +205,8 @@ public final class MultiThreadedMergeSort {
             // this.endPos = endPos;
         }
 
-        @Override public SortThread call() throws Exception {
+        @Override
+        public SortThread call() throws Exception {
             Arrays.sort(data, comparator);
             return this;
         }
@@ -226,7 +227,8 @@ public final class MultiThreadedMergeSort {
             this.comparator1 = comparator;
         }
 
-        @Override public KeyValueHolder[] call() throws Exception {
+        @Override
+        public KeyValueHolder[] call() throws Exception {
             KeyValueHolder[] src = new KeyValueHolder[array1.length + array2.length];
             merge(src, array1, array2, comparator1);
             return src;

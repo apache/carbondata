@@ -40,18 +40,21 @@ public class LocalMolapFile implements MolapFile {
         this.file = file;
     }
 
-    @Override public String getAbsolutePath() {
+    @Override
+    public String getAbsolutePath() {
         return file.getAbsolutePath();
     }
 
-    @Override public MolapFile[] listFiles(final MolapFileFilter fileFilter) {
+    @Override
+    public MolapFile[] listFiles(final MolapFileFilter fileFilter) {
         if (!file.isDirectory()) {
             return null;
         }
 
         File[] files = file.listFiles(new FileFilter() {
 
-            @Override public boolean accept(File pathname) {
+            @Override
+            public boolean accept(File pathname) {
                 return fileFilter.accept(new LocalMolapFile(pathname));
             }
         });
@@ -69,19 +72,23 @@ public class LocalMolapFile implements MolapFile {
         return molapFiles;
     }
 
-    @Override public String getName() {
+    @Override
+    public String getName() {
         return file.getName();
     }
 
-    @Override public boolean isDirectory() {
+    @Override
+    public boolean isDirectory() {
         return file.isDirectory();
     }
 
-    @Override public boolean exists() {
+    @Override
+    public boolean exists() {
         return file.exists();
     }
 
-    @Override public String getCanonicalPath() {
+    @Override
+    public String getCanonicalPath() {
         try {
             return file.getCanonicalPath();
         } catch (IOException e) {
@@ -91,15 +98,18 @@ public class LocalMolapFile implements MolapFile {
         return null;
     }
 
-    @Override public MolapFile getParentFile() {
+    @Override
+    public MolapFile getParentFile() {
         return new LocalMolapFile(file.getParentFile());
     }
 
-    @Override public String getPath() {
+    @Override
+    public String getPath() {
         return file.getPath();
     }
 
-    @Override public long getSize() {
+    @Override
+    public long getSize() {
         return file.length();
     }
 
@@ -111,7 +121,8 @@ public class LocalMolapFile implements MolapFile {
         return file.delete();
     }
 
-    @Override public MolapFile[] listFiles() {
+    @Override
+    public MolapFile[] listFiles() {
 
         if (!file.isDirectory()) {
             return null;
@@ -129,7 +140,8 @@ public class LocalMolapFile implements MolapFile {
 
     }
 
-    @Override public boolean createNewFile() {
+    @Override
+    public boolean createNewFile() {
         try {
             return file.createNewFile();
         } catch (IOException e) {
@@ -137,19 +149,23 @@ public class LocalMolapFile implements MolapFile {
         }
     }
 
-    @Override public boolean mkdirs() {
+    @Override
+    public boolean mkdirs() {
         return file.mkdirs();
     }
 
-    @Override public long getLastModifiedTime() {
+    @Override
+    public long getLastModifiedTime() {
         return file.lastModified();
     }
 
-    @Override public boolean setLastModifiedTime(long timestamp) {
+    @Override
+    public boolean setLastModifiedTime(long timestamp) {
         return file.setLastModified(timestamp);
     }
 
-    @Override public boolean renameForce(String changetoName) {
+    @Override
+    public boolean renameForce(String changetoName) {
         File destFile = new File(changetoName);
         if (destFile.exists()) {
             if (destFile.delete()) {

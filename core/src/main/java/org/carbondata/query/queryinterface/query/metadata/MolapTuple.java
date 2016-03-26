@@ -52,14 +52,16 @@ public class MolapTuple implements Serializable {
         return tuple;
     }
 
-    @Override public int hashCode() {
+    @Override
+    public int hashCode() {
         final int prime = 31;
         int result = 1;
         result = prime * result + Arrays.hashCode(tuple);
         return result;
     }
 
-    @Override public boolean equals(Object obj) {
+    @Override
+    public boolean equals(Object obj) {
         if (obj instanceof MolapTuple) {
             if (this == obj) {
                 return true;

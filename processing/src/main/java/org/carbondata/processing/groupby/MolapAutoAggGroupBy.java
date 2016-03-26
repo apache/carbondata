@@ -27,17 +27,19 @@ import java.util.Arrays;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.keygenerator.KeyGenerator;
+import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
+import org.carbondata.core.util.MolapProperties;
+import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.util.MolapUtilException;
 import org.carbondata.processing.dataprocessor.manager.MolapDataProcessorManager;
+import org.carbondata.processing.groupby.exception.MolapGroupByException;
+import org.carbondata.processing.util.MolapDataProcessorLogEvent;
+import org.carbondata.processing.util.MolapDataProcessorUtil;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.aggregator.impl.AbstractMeasureAggregator;
 import org.carbondata.query.aggregator.impl.CustomAggregatorHelper;
 import org.carbondata.query.aggregator.util.AggUtil;
-import org.carbondata.processing.groupby.exception.MolapGroupByException;
-import org.carbondata.core.keygenerator.KeyGenerator;
-import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
-import org.carbondata.processing.util.MolapDataProcessorLogEvent;
-import org.carbondata.processing.util.MolapDataProcessorUtil;
-import org.carbondata.core.util.*;
 
 public class MolapAutoAggGroupBy {
     /**

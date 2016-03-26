@@ -40,7 +40,8 @@ public class MolapSingleMeasureFunction extends AbstractMolapCalcFunction {
     public MolapSingleMeasureFunction() {
     }
 
-    @Override public double calculate(MeasureAggregator[] msrAggs) {
+    @Override
+    public double calculate(MeasureAggregator[] msrAggs) {
         double value;
         if (msrAggs[index].toString().contains("Long")) {
             value = msrAggs[index].getLongValue();
@@ -53,7 +54,8 @@ public class MolapSingleMeasureFunction extends AbstractMolapCalcFunction {
         return msrAggs[index].isFirstTime() ? 0 : value;
     }
 
-    @Override public void compile(CalcExpressionModel model, Exp exp) {
+    @Override
+    public void compile(CalcExpressionModel model, Exp exp) {
         //        MemberExpr expr = (MemberExpr)exp;
         //        RolapBaseCubeMeasure cubeMeasure = (RolapBaseCubeMeasure)expr.getMember();
         //        List<Measure> msrsList = model.getMsrsList();

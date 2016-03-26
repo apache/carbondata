@@ -101,7 +101,8 @@ public class KeyFilterImpl implements InMemoryFilter {
     /**
      * Filters the keys
      */
-    @Override public boolean filterKey(KeyValue key) {
+    @Override
+    public boolean filterKey(KeyValue key) {
 
         byte[][] allowedValuesForDim;
         for (int i = 0; i < dimensionOffset.length; i++) {
@@ -186,7 +187,8 @@ public class KeyFilterImpl implements InMemoryFilter {
         return 1;
     }
 
-    @Override public byte[] getNextJump(KeyValue key) {
+    @Override
+    public byte[] getNextJump(KeyValue key) {
         byte[] bKey = new byte[key.getKeyLength()];
         System.arraycopy(key.getArray(), key.getKeyOffset(), bKey, 0, bKey.length);
         return bKey;

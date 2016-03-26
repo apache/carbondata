@@ -61,7 +61,8 @@ public class MeasureFilterProcessor implements DataProcessor {
         this.afterTopN = afterTopN;
     }
 
-    @Override public void initModel(PaginationModel model) throws MolapPaginationException {
+    @Override
+    public void initModel(PaginationModel model) throws MolapPaginationException {
 
         this.dataProcessor.initModel(model);
         measureFilters = MeasureFilterFactory.getFilterMeasures(
@@ -72,7 +73,8 @@ public class MeasureFilterProcessor implements DataProcessor {
         }
     }
 
-    @Override public void processRow(byte[] key, MeasureAggregator[] measures)
+    @Override
+    public void processRow(byte[] key, MeasureAggregator[] measures)
             throws MolapPaginationException {
         if (filterMeasure(measures)) {
             this.dataProcessor.processRow(key, measures);
@@ -88,12 +90,13 @@ public class MeasureFilterProcessor implements DataProcessor {
         return true;
     }
 
-    @Override public void finish() throws MolapPaginationException {
+    @Override
+    public void finish() throws MolapPaginationException {
         this.dataProcessor.finish();
     }
 
-    @Override public void processGroup(GroupByHolder groupByHolder)
-            throws MolapPaginationException {
+    @Override
+    public void processGroup(GroupByHolder groupByHolder) throws MolapPaginationException {
         if (filterMeasure(groupByHolder.getMeasureAggregators())) {
             if (passGroupBy) {
                 dataProcessor.processGroup(groupByHolder);

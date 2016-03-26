@@ -28,7 +28,8 @@ public class MolapAddFunction extends AbstractMolapCalcFunction {
      */
     private static final long serialVersionUID = 8480394704920748842L;
 
-    @Override public double calculate(MeasureAggregator[] msrAggs) {
+    @Override
+    public double calculate(MeasureAggregator[] msrAggs) {
         double left = leftOperand.calculate(msrAggs);
         double right = null != rightOperand ? rightOperand.calculate(msrAggs) : 0.0;
         return left + right;

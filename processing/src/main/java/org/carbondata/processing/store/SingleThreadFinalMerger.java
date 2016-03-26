@@ -32,12 +32,12 @@ import java.util.concurrent.TimeUnit;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.util.MolapProperties;
 import org.carbondata.processing.sortandgroupby.exception.MolapSortKeyAndGroupByException;
 import org.carbondata.processing.sortandgroupby.sortKey.MolapSortTempFileChunkHolder;
 import org.carbondata.processing.store.writer.exception.MolapDataWriterException;
 import org.carbondata.processing.util.MolapDataProcessorLogEvent;
 import org.carbondata.processing.util.MolapDataProcessorUtil;
-import org.carbondata.core.util.MolapProperties;
 
 public class SingleThreadFinalMerger {
 
@@ -186,7 +186,8 @@ public class SingleThreadFinalMerger {
         for (final File tmpFile : files) {
 
             Callable<Void> runnable = new Callable<Void>() {
-                @Override public Void call() throws MolapSortKeyAndGroupByException {
+                @Override
+                public Void call() throws MolapSortKeyAndGroupByException {
                     // create chunk holder
                     MolapSortTempFileChunkHolder molapSortTempFileChunkHolder =
                             new MolapSortTempFileChunkHolder(tmpFile, measureCount, mdkeyLength,

@@ -21,11 +21,11 @@ package org.carbondata.processing.merger.columnar.iterator.impl;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.processing.factreader.MolapSurrogateTupleHolder;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.KeyGenerator;
-import org.carbondata.processing.merger.columnar.iterator.MolapDataIterator;
 import org.carbondata.core.util.MolapCoreLogEvent;
+import org.carbondata.processing.factreader.MolapSurrogateTupleHolder;
+import org.carbondata.processing.merger.columnar.iterator.MolapDataIterator;
 
 /**
  * This class is a wrapper class over MolapColumnarLeafTupleDataIterator.
@@ -48,15 +48,18 @@ public class MolapLeafTupleWrapperIterator implements MolapDataIterator<MolapSur
         this.globalKeyGen = globalKeyGen;
     }
 
-    @Override public boolean hasNext() {
+    @Override
+    public boolean hasNext() {
         return iterator.hasNext();
     }
 
-    @Override public void fetchNextData() {
+    @Override
+    public void fetchNextData() {
         iterator.fetchNextData();
     }
 
-    @Override public MolapSurrogateTupleHolder getNextData() {
+    @Override
+    public MolapSurrogateTupleHolder getNextData() {
         MolapSurrogateTupleHolder nextData = iterator.getNextData();
         byte[] mdKey = nextData.getMdKey();
         long[] keyArray = localKeyGen.getKeyArray(mdKey);

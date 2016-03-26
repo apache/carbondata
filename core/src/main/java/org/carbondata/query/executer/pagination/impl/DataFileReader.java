@@ -133,7 +133,7 @@ public class DataFileReader {
                         msrStreams[j] = new DataInputStream(new ByteArrayInputStream(
                                 SnappyByteCompression.INSTANCE.unCompress(fileHolder
                                         .readByteArray(filePath.getAbsolutePath(), leafNodeInfo
-                                                .getMeasureOffset()[measureIndexToRead[j]],
+                                                        .getMeasureOffset()[measureIndexToRead[j]],
                                                 leafNodeInfo
                                                         .getMeasureLength()[measureIndexToRead[j]]))));
                     }

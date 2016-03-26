@@ -75,7 +75,8 @@ public final class LRUCache {
                     private static final long serialVersionUID = 1L;
                     //CHECKSTYLE:ON
 
-                    @Override public boolean removeEldestEntry(
+                    @Override
+                    public boolean removeEldestEntry(
                             Map.Entry<String, MolapSeqGenCacheHolder> eldest) {
                         if (size() > lruCacheSize) {
                             cache.remove(eldest.getKey());
@@ -85,7 +86,8 @@ public final class LRUCache {
                         return false; // size exceeded the max allowed
                     }
 
-                    @Override public MolapSeqGenCacheHolder get(Object key) {
+                    @Override
+                    public MolapSeqGenCacheHolder get(Object key) {
                         MolapSeqGenCacheHolder m = super.get(key);
                         if (null != m) {
                             m.setLastAccessTime(System.currentTimeMillis());

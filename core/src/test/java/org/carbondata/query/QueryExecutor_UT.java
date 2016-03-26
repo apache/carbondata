@@ -31,9 +31,8 @@ package org.carbondata.query;
 import junit.framework.TestCase;
 
 /**
- *
- * Project Name NSE V3R7C10 
- * Module Name : Molap Engine 
+ * Project Name NSE V3R7C10
+ * Module Name : Molap Engine
  * Author A00903119
  * Created Date :25-Jul-2013 3:42:29 PM FileName : QueryExecutor_UT Class
  * Description : UT class for QueryExecutor Version 1.0

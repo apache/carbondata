@@ -96,7 +96,8 @@ public class SortMeasureProcessor implements DataProcessor {
      * com.huawei.unibi.molap.engine.processor.DataProcessor#initialise(com.
      * huawei.unibi.molap.engine.processor.DataProcessorInfo)
      */
-    @Override public void initialise(DataProcessorInfo model) throws DataProcessorException {
+    @Override
+    public void initialise(DataProcessorInfo model) throws DataProcessorException {
         dataProcessorInfo = model;
         createComparatorChain();
         createHeap();
@@ -112,12 +113,13 @@ public class SortMeasureProcessor implements DataProcessor {
      * com.huawei.unibi.molap.engine.processor.DataProcessor#processRow(byte[],
      * com.huawei.unibi.molap.engine.aggregator.MeasureAggregator[])
      */
-    @Override public void processRow(byte[] key, MeasureAggregator[] value)
-            throws DataProcessorException {
+    @Override
+    public void processRow(byte[] key, MeasureAggregator[] value) throws DataProcessorException {
         addRow(key, value);
     }
 
-    @Override public void processRow(ByteArrayWrapper key, MeasureAggregator[] value)
+    @Override
+    public void processRow(ByteArrayWrapper key, MeasureAggregator[] value)
             throws DataProcessorException {
         processRow(key.getMaskedKey(), value);
     }
@@ -127,7 +129,8 @@ public class SortMeasureProcessor implements DataProcessor {
      * 
      * @see com.huawei.unibi.molap.engine.processor.DataProcessor#finish()
      */
-    @Override public void finish() throws DataProcessorException {
+    @Override
+    public void finish() throws DataProcessorException {
 
         if (isFileBased) {
             writeData();
@@ -283,7 +286,8 @@ public class SortMeasureProcessor implements DataProcessor {
         createHeap();
     }
 
-    @Override public MolapIterator<QueryResult> getQueryResultIterator() {
+    @Override
+    public MolapIterator<QueryResult> getQueryResultIterator() {
         // TODO Auto-generated method stub
         return null;
     }

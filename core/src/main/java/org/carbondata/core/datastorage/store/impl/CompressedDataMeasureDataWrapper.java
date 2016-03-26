@@ -30,7 +30,8 @@ public class CompressedDataMeasureDataWrapper implements MeasureDataWrapper {
         this.values = values;
     }
 
-    @Override public MolapReadDataHolder[] getValues() {
+    @Override
+    public MolapReadDataHolder[] getValues() {
         return values;
     }
 

@@ -77,17 +77,20 @@ public class ColumnExpression extends LeafExpression {
         this.dataType = dataType;
     }
 
-    @Override public ExpressionResult evaluate(RowIntf value) {
+    @Override
+    public ExpressionResult evaluate(RowIntf value) {
         ExpressionResult expressionResult = new ExpressionResult(dataType, value.getVal(colIndex));
         return expressionResult;
     }
 
-    @Override public ExpressionType getFilterExpressionType() {
+    @Override
+    public ExpressionType getFilterExpressionType() {
         // TODO Auto-generated method stub
         return null;
     }
 
-    @Override public String getString() {
+    @Override
+    public String getString() {
         // TODO Auto-generated method stub
         return "ColumnExpression(" + columnName + ')';
     }

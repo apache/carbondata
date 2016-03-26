@@ -322,7 +322,8 @@ public final class StandardLogService implements LogService {
      *
      * @param msg audit log message
      */
-    @Override public void audit(String msg) {
+    @Override
+    public void audit(String msg) {
         String hostName = "";
 
         try {

@@ -23,11 +23,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.carbondata.core.constants.MolapCommonConstants;
 import org.carbondata.processing.datatypes.ArrayDataType;
 import org.carbondata.processing.datatypes.GenericDataType;
 import org.carbondata.processing.datatypes.PrimitiveDataType;
 import org.carbondata.processing.datatypes.StructDataType;
-import org.carbondata.core.constants.MolapCommonConstants;
 import org.carbondata.processing.util.MolapDataProcessorUtil;
 import org.pentaho.di.core.CheckResultInterface;
 import org.pentaho.di.core.Counter;
@@ -99,15 +99,15 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
 
     private int currentRestructNumber;
 
-        /**
+    /**
      * this states whether given dimension is columnar or row based store
      * true: columnar
      * false: row
      */
-	private String dimensionsStoreType;
-	private String  highCardinalityDims;
+    private String dimensionsStoreType;
+    private String highCardinalityDims;
 
-	 /**
+    /**
      * highCardinalityCount
      */
     private int highCardinalityCount;
@@ -119,14 +119,15 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
         super();
     }
 
-    @Override public void setDefault() {
+    @Override
+    public void setDefault() {
         tableName = "";
         numberOfCores = "";
         aggregateLevels = "";
         cubeName = "";
         schemaName = "";
         dimensionsStoreType = "";
-        highCardinalityDims="";
+        highCardinalityDims = "";
         currentRestructNumber = -1;
     }
 
@@ -141,7 +142,8 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
         retval.append("    ")
                 .append(XMLHandler.addTagValue("highCardinalityDims", highCardinalityDims));
         retval.append("    ").append(XMLHandler.addTagValue("measureCount", measureCount));
-        retval.append("    ").append(XMLHandler.addTagValue("dimensionsStoreType", dimensionsStoreType));
+        retval.append("    ")
+                .append(XMLHandler.addTagValue("dimensionsStoreType", dimensionsStoreType));
         retval.append("    ").append(XMLHandler.addTagValue("dimensionCount", dimensionCount));
         retval.append("    ").append(XMLHandler.addTagValue("complexDimsCount", complexDimsCount));
         retval.append("    ")
@@ -162,7 +164,7 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
             cubeName = XMLHandler.getTagValue(stepnode, "cubeName");
             highCardinalityDims = XMLHandler.getTagValue(stepnode, "highCardinalityDims");
             measureCount = XMLHandler.getTagValue(stepnode, "measureCount");
-            dimensionsStoreType=XMLHandler.getTagValue(stepnode, "dimensionsStoreType");
+            dimensionsStoreType = XMLHandler.getTagValue(stepnode, "dimensionsStoreType");
             dimensionCount = XMLHandler.getTagValue(stepnode, "dimensionCount");
             complexDimsCount = XMLHandler.getTagValue(stepnode, "complexDimsCount");
             complexTypeString = XMLHandler.getTagValue(stepnode, "complexTypeString");
@@ -173,7 +175,8 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
         }
     }
 
-    @Override public void saveRep(Repository rep, ObjectId idTransformation, ObjectId idStep)
+    @Override
+    public void saveRep(Repository rep, ObjectId idTransformation, ObjectId idStep)
             throws KettleException {
         try {
             rep.saveStepAttribute(idTransformation, idStep, "TableName", tableName);
@@ -184,7 +187,8 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
             rep.saveStepAttribute(idTransformation, idStep, "highCardinalityDims",
                     highCardinalityDims);
             rep.saveStepAttribute(idTransformation, idStep, "measureCount", measureCount);
-            rep.saveStepAttribute(idTransformation,idStep,"dimensionsStoreType",dimensionsStoreType);
+            rep.saveStepAttribute(idTransformation, idStep, "dimensionsStoreType",
+                    dimensionsStoreType);
             rep.saveStepAttribute(idTransformation, idStep, "dimensionCount", dimensionCount);
             rep.saveStepAttribute(idTransformation, idStep, "complexDimsCount", complexDimsCount);
             rep.saveStepAttribute(idTransformation, idStep, "complexTypeString", complexTypeString);
@@ -198,7 +202,8 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
 
     }
 
-    @Override public void readRep(Repository rep, ObjectId idStep, List<DatabaseMeta> databases,
+    @Override
+    public void readRep(Repository rep, ObjectId idStep, List<DatabaseMeta> databases,
             Map<String, Counter> counters) throws KettleException {
         try {
             tableName = rep.getStepAttributeString(idStep, "TableName");
@@ -208,7 +213,7 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
             cubeName = rep.getStepAttributeString(idStep, "cubeName");
             highCardinalityDims = rep.getStepAttributeString(idStep, "highCardinalityDims");
             measureCount = rep.getStepAttributeString(idStep, "measureCount");
-            dimensionsStoreType=rep.getStepAttributeString(idStep, "dimensionsStoreType");
+            dimensionsStoreType = rep.getStepAttributeString(idStep, "dimensionsStoreType");
             dimensionCount = rep.getStepAttributeString(idStep, "dimensionCount");
             complexDimsCount = rep.getStepAttributeString(idStep, "complexDimsCount");
             complexTypeString = rep.getStepAttributeString(idStep, "complexTypeString");
@@ -232,7 +237,8 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
         MolapDataProcessorUtil.checkResult(remarks, stepMeta, input);
     }
 
-    @Override public StepDataInterface getStepData() {
+    @Override
+    public StepDataInterface getStepData() {
         return new MDKeyGenStepData();
     }
 
@@ -393,20 +399,18 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
     public void setHighCardinalityCount(int highCardinalityCount) {
         this.highCardinalityCount = highCardinalityCount;
     }
-    public void setDimensionsStoreTypeString(String dimensionStoreType)
-	{
-		this.dimensionsStoreType=dimensionStoreType;
 
-	}
+    public void setDimensionsStoreTypeString(String dimensionStoreType) {
+        this.dimensionsStoreType = dimensionStoreType;
 
-	public String getDimensionsStoreType()
-	{
-		return this.dimensionsStoreType;
-	}
+    }
 
-    public void initialize()
-    {
-    	complexTypes = getComplexTypesMap(complexTypeString);
+    public String getDimensionsStoreType() {
+        return this.dimensionsStoreType;
+    }
+
+    public void initialize() {
+        complexTypes = getComplexTypesMap(complexTypeString);
     }
 
     private Map<String, GenericDataType> getComplexTypesMap(String complexTypeString) {

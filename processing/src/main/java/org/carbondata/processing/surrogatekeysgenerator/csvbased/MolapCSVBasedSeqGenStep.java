@@ -28,26 +28,13 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.*;
 
-import org.carbondata.core.util.DataTypeUtil;
-import org.carbondata.core.util.MolapProperties;
-import org.carbondata.core.util.MolapUtil;
-import org.carbondata.core.util.MolapVersion;
-import org.carbondata.processing.datatypes.GenericDataType;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.common.logging.impl.StandardLogService;
 import org.carbondata.core.constants.MolapCommonConstants;
 import org.carbondata.core.csvreader.checkpoint.CheckPointHanlder;
 import org.carbondata.core.csvreader.checkpoint.CheckPointInterface;
-import org.carbondata.processing.dataprocessor.manager.MolapDataProcessorManager;
-import org.carbondata.processing.dataprocessor.queue.impl.DataProcessorQueue;
-import org.carbondata.processing.dataprocessor.queue.impl.RecordComparator;
-import org.carbondata.processing.dataprocessor.record.holder.DataProcessorRecordHolder;
-import org.carbondata.processing.dimension.load.command.DimensionLoadCommand;
-import org.carbondata.processing.dimension.load.command.impl.CSVDimensionLoadCommand;
-import org.carbondata.processing.dimension.load.command.impl.DimenionLoadCommandHelper;
-import org.carbondata.processing.dimension.load.command.invoker.DimensionLoadActionInvoker;
-import org.carbondata.processing.dimension.load.info.DimensionLoadInfo;
 import org.carbondata.core.file.manager.composite.FileData;
 import org.carbondata.core.file.manager.composite.IFileManagerComposite;
 import org.carbondata.core.file.manager.composite.LoadFolderData;
@@ -55,14 +42,27 @@ import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.carbondata.core.metadata.SliceMetaData;
+import org.carbondata.core.util.DataTypeUtil;
+import org.carbondata.core.util.MolapProperties;
+import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.util.MolapVersion;
+import org.carbondata.core.writer.ByteArrayHolder;
+import org.carbondata.core.writer.HierarchyValueWriterForCSV;
+import org.carbondata.processing.dataprocessor.manager.MolapDataProcessorManager;
+import org.carbondata.processing.dataprocessor.queue.impl.DataProcessorQueue;
+import org.carbondata.processing.dataprocessor.queue.impl.RecordComparator;
+import org.carbondata.processing.dataprocessor.record.holder.DataProcessorRecordHolder;
+import org.carbondata.processing.datatypes.GenericDataType;
+import org.carbondata.processing.dimension.load.command.DimensionLoadCommand;
+import org.carbondata.processing.dimension.load.command.impl.CSVDimensionLoadCommand;
+import org.carbondata.processing.dimension.load.command.impl.DimenionLoadCommandHelper;
+import org.carbondata.processing.dimension.load.command.invoker.DimensionLoadActionInvoker;
+import org.carbondata.processing.dimension.load.info.DimensionLoadInfo;
 import org.carbondata.processing.schema.metadata.HierarchiesInfo;
 import org.carbondata.processing.schema.metadata.MolapInfo;
 import org.carbondata.processing.sortandgroupby.exception.MolapSortKeyAndGroupByException;
 import org.carbondata.processing.surrogatekeysgenerator.lru.LRUCache;
 import org.carbondata.processing.surrogatekeysgenerator.lru.MolapSeqGenCacheHolder;
-import org.carbondata.core.writer.ByteArrayHolder;
-import org.carbondata.core.writer.HierarchyValueWriterForCSV;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import org.carbondata.processing.util.MolapDataProcessorLogEvent;
 import org.carbondata.processing.util.MolapDataProcessorUtil;
 import org.carbondata.processing.util.RemoveDictionaryUtil;
@@ -657,8 +657,8 @@ public class MolapCSVBasedSeqGenStep extends BaseStep {
     private List<String> getDenormalizedHierarchies() {
         List<String> hierList = Arrays.asList(meta.hierNames);
         List<String> denormHiers = new ArrayList<String>(10);
-        for (Iterator<Entry<String, int[]>> iterator =
-             meta.hirches.entrySet().iterator(); iterator.hasNext(); ) {
+        for (Iterator<Entry<String, int[]>> iterator = meta.hirches.entrySet().iterator(); iterator
+                .hasNext(); ) {
             Entry<String, int[]> entry = iterator.next();
             String name = entry.getKey();
 
@@ -847,7 +847,8 @@ public class MolapCSVBasedSeqGenStep extends BaseStep {
         exec = Executors.newFixedThreadPool(numberOfNodes);
 
         Callable<Void> callable = new Callable<Void>() {
-            @Override public Void call() throws RuntimeException {
+            @Override
+            public Void call() throws RuntimeException {
                 StandardLogService
                         .setThreadName(StandardLogService.getPartitionID(meta.getCubeName()), null);
                 try {
@@ -1114,7 +1115,8 @@ public class MolapCSVBasedSeqGenStep extends BaseStep {
 
         putRowFuture = putRowExecutorService.submit(new Callable<Void>() {
 
-            @Override public Void call() throws Exception {
+            @Override
+            public Void call() throws Exception {
                 try {
                     while (!dataQueue.isEmpty()) {
                         DataProcessorRecordHolder recordHolders = dataQueue.poll();

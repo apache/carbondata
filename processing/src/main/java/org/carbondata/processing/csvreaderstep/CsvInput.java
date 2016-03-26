@@ -36,12 +36,12 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.vfs.FileObject;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.MolapCommonConstants;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.processing.util.MolapDataProcessorLogEvent;
-import org.apache.commons.vfs.FileObject;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.ResultFile;
 import org.pentaho.di.core.exception.KettleConversionException;
@@ -65,7 +65,7 @@ import org.pentaho.di.trans.steps.textfileinput.EncodingType;
  */
 public class CsvInput extends BaseStep implements StepInterface {
     private static final Class<?> PKG = CsvInput.class;
-            // for i18n purposes, needed by Translator2!!   $NON-NLS-1$
+    // for i18n purposes, needed by Translator2!!   $NON-NLS-1$
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(CsvInput.class.getName());
     private CsvInputMeta meta;
@@ -280,8 +280,7 @@ public class CsvInput extends BaseStep implements StepInterface {
                 if (log.isRowLevel()) {
                     log.logRowlevel(
                             BaseMessages.getString(PKG, "CsvInput.Log.ConvertLineToRowTitle"),
-                            BaseMessages.getString(PKG,
-                                    "CsvInput.Log.EndOfEmptyLineFound"));
+                            BaseMessages.getString(PKG, "CsvInput.Log.EndOfEmptyLineFound"));
                 }
                 strings.add(""); //$NON-NLS-1$
                 //                  fieldnr++;
@@ -439,7 +438,8 @@ public class CsvInput extends BaseStep implements StepInterface {
                 Integer.toString(data.filenames.length))); //$NON-NLS-1$
     }
 
-    @Override public void dispose(StepMetaInterface smi, StepDataInterface sdi) {
+    @Override
+    public void dispose(StepMetaInterface smi, StepDataInterface sdi) {
         try {
             // Close the previous file...
             //
@@ -744,9 +744,9 @@ public class CsvInput extends BaseStep implements StepInterface {
                         //
                         if (data.endBuffer >= data.bufferSize) {
                             newLineFound = true; // consider it a newline to break out of the upper
-                                                // while loop
+                            // while loop
                             newLines += 2; // to remove the enclosures in case of missing
-                                            // newline on last line.
+                            // newline on last line.
                             endOfBuffer = true;
                             break;
                         }

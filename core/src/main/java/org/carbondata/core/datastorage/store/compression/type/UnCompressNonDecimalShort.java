@@ -46,16 +46,19 @@ public class UnCompressNonDecimalShort implements ValueCompressonHolder.UnCompre
      */
     private short[] value;
 
-    @Override public void setValue(short[] value) {
+    @Override
+    public void setValue(short[] value) {
         this.value = value;
 
     }
 
-    @Override public byte[] getBackArrayData() {
+    @Override
+    public byte[] getBackArrayData() {
         return ValueCompressionUtil.convertToBytes(value);
     }
 
-    @Override public ValueCompressonHolder.UnCompressValue getNew() {
+    @Override
+    public ValueCompressonHolder.UnCompressValue getNew() {
         try {
             return (ValueCompressonHolder.UnCompressValue) clone();
         } catch (CloneNotSupportedException exception1) {
@@ -65,18 +68,21 @@ public class UnCompressNonDecimalShort implements ValueCompressonHolder.UnCompre
         return null;
     }
 
-    @Override public ValueCompressonHolder.UnCompressValue compress() {
+    @Override
+    public ValueCompressonHolder.UnCompressValue compress() {
         UnCompressNonDecimalByte byte1 = new UnCompressNonDecimalByte();
         byte1.setValue(shortCompressor.compress(value));
         return byte1;
     }
 
-    @Override public ValueCompressonHolder.UnCompressValue uncompress(
+    @Override
+    public ValueCompressonHolder.UnCompressValue uncompress(
             ValueCompressionUtil.DataType dataType) {
         return null;
     }
 
-    @Override public void setValueInBytes(byte[] value) {
+    @Override
+    public void setValueInBytes(byte[] value) {
         ByteBuffer buffer = ByteBuffer.wrap(value);
         this.value = ValueCompressionUtil.convertToShortArray(buffer, value.length);
     }
@@ -84,11 +90,13 @@ public class UnCompressNonDecimalShort implements ValueCompressonHolder.UnCompre
     /**
      * @see ValueCompressonHolder.UnCompressValue#getCompressorObject()
      */
-    @Override public ValueCompressonHolder.UnCompressValue getCompressorObject() {
+    @Override
+    public ValueCompressonHolder.UnCompressValue getCompressorObject() {
         return new UnCompressNonDecimalByte();
     }
 
-    @Override public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
+    @Override
+    public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
         MolapReadDataHolder dataHolder = new MolapReadDataHolder();
         double[] vals = new double[value.length];
         for (int i = 0; i < vals.length; i++) {

@@ -32,7 +32,8 @@ public class ColumnarUniqueBlockIncludeExcludeFilterInfo
         super(filterModel);
     }
 
-    @Override public BitSet getFilteredIndexes(int keyBlockIndex, int numerOfRows,
+    @Override
+    public BitSet getFilteredIndexes(int keyBlockIndex, int numerOfRows,
             ColumnarKeyStoreDataHolder... keyBlockArray) {
         BitSet bitset = new BitSet(numerOfRows);
         boolean isExcludeFilterPresent = null != filterModel.getExcludeFilter()[keyBlockIndex];
@@ -52,7 +53,8 @@ public class ColumnarUniqueBlockIncludeExcludeFilterInfo
     }
 
     //TODO SIMIAN
-    @Override public void getFilteredIndexes(int keyBlockIdx, int numerOfRows, BitSet bitset,
+    @Override
+    public void getFilteredIndexes(int keyBlockIdx, int numerOfRows, BitSet bitset,
             ColumnarKeyStoreDataHolder... keyBlockArray) {
         boolean isExcludeFilterPresent = null != filterModel.getExcludeFilter()[keyBlockIdx];
         if (null != filterModel.getFilter()[keyBlockIdx]) {

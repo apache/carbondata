@@ -42,7 +42,8 @@ public class CompressedTempSortFileReader extends AbstractTempSortFileReader {
      *
      * @return row
      */
-    @Override public Object[][] getRow() {
+    @Override
+    public Object[][] getRow() {
         int recordLength = fileHolder.readInt(filePath);
         int byteArrayLength = fileHolder.readInt(filePath);
         byte[] byteArrayFromFile = SnappyByteCompression.INSTANCE

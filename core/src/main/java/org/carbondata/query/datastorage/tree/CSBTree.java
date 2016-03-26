@@ -847,7 +847,8 @@ public class CSBTree implements DataStore {
         return node;
     }
 
-    @Override public long[][] getRanges() {
+    @Override
+    public long[][] getRanges() {
         if (null != rangeValues) {
             return rangeValues.clone();
             //            temp1 = new long[rangeValues.length][rangeValues[0].length];
@@ -937,11 +938,13 @@ public class CSBTree implements DataStore {
         }
     }
 
-    @Override public ValueCompressionModel getCompressionModel() {
+    @Override
+    public ValueCompressionModel getCompressionModel() {
         return compressionModel;
     }
 
-    @Override public void build(DataInputStream source, boolean hasFactCount) {
+    @Override
+    public void build(DataInputStream source, boolean hasFactCount) {
         int num = 0;
         int grpCounter;
         int nInternal = 0;
@@ -1078,7 +1081,8 @@ public class CSBTree implements DataStore {
                 "Compress Time:" + (compressionEnd - compressionStart) + "ms");
     }
 
-    @Override public DataStoreBlock getBlock(byte[] key, FileHolder fileHolder, boolean isFirst) {
+    @Override
+    public DataStoreBlock getBlock(byte[] key, FileHolder fileHolder, boolean isFirst) {
         CSBNode node = root;
         if (isFirst) {
             while (!node.isLeafNode()) {

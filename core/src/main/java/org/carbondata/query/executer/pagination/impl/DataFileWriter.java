@@ -195,7 +195,8 @@ public class DataFileWriter implements Callable<Void> {
     /**
      * @see Callable#call()
      */
-    @Override public Void call() throws Exception {
+    @Override
+    public Void call() throws Exception {
         BufferedOutputStream bout = null;
         DataOutputStream dataOutput = null;
         try {
@@ -539,14 +540,16 @@ public class DataFileWriter implements Callable<Void> {
         /* (non-Javadoc)
          * @see java.lang.Object#hashCode()
          */
-        @Override public int hashCode() {
+        @Override
+        public int hashCode() {
             return key.hashCode();
         }
 
         /* (non-Javadoc)
          * @see java.lang.Object#equals(java.lang.Object)
          */
-        @Override public boolean equals(Object obj) {
+        @Override
+        public boolean equals(Object obj) {
             if (null == obj || !(obj instanceof KeyValueHolder)) {
                 return false;
             }

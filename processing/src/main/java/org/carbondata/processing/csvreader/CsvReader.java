@@ -24,10 +24,10 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Map;
 
+import org.apache.commons.vfs.FileObject;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.processing.util.MolapDataProcessorLogEvent;
-import org.apache.commons.vfs.FileObject;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.vfs.KettleVFS;
 import org.pentaho.di.trans.Trans;
@@ -77,8 +77,8 @@ public class CsvReader extends CsvInput {
     /**
      * below method will be used to initialise file reader
      */
-    @Override protected void initializeFileReader(FileObject fileObject)
-            throws FileNotFoundException {
+    @Override
+    protected void initializeFileReader(FileObject fileObject) throws FileNotFoundException {
         super.initializeFileReader(fileObject);
         Map<String, Long> fileNameOffSetCache = meta.getFileNameOffSetCache();
         Long offset = fileNameOffSetCache.get(KettleVFS.getFilename(fileObject));
@@ -92,7 +92,8 @@ public class CsvReader extends CsvInput {
     /**
      * Below method will be used to initialize the step
      */
-    @Override public boolean init(StepMetaInterface smi, StepDataInterface sdi) {
+    @Override
+    public boolean init(StepMetaInterface smi, StepDataInterface sdi) {
         meta = (CsvReaderMeta) smi;
         data = (CsvReaderData) sdi;
         if (super.init(smi, sdi)) {
@@ -108,7 +109,8 @@ public class CsvReader extends CsvInput {
     /**
      * Below method will be used to add the check point details to row
      */
-    @Override protected void addRowDetails(Object[] outputRowData) {
+    @Override
+    protected void addRowDetails(Object[] outputRowData) {
         if (data.isAddingRowNumber) {
             outputRowData[data.rownumFieldIndex] = data.totalBytesFilesFinished + data.startBuffer;
         }
@@ -121,7 +123,8 @@ public class CsvReader extends CsvInput {
     /**
      * Below method will be used to open next file
      */
-    @Override protected boolean openNextFile() throws KettleException {
+    @Override
+    protected boolean openNextFile() throws KettleException {
         data.totalBytesFilesFinished = 0;
         return super.openNextFile();
     }
@@ -146,7 +149,8 @@ public class CsvReader extends CsvInput {
         }
     }
 
-    @Override public void dispose(StepMetaInterface smi, StepDataInterface sdi) {
+    @Override
+    public void dispose(StepMetaInterface smi, StepDataInterface sdi) {
 
         if (null == smi && null == sdi) {
             return;

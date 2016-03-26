@@ -49,7 +49,8 @@ public class HDFSFileHolderImpl implements FileHolder {
                 MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
     }
 
-    @Override public byte[] readByteArray(String filePath, long offset, int length) {
+    @Override
+    public byte[] readByteArray(String filePath, long offset, int length) {
 
         FSDataInputStream fileChannel = updateCache(filePath);
         byte[] byteBffer = read(fileChannel, length, offset);
@@ -115,7 +116,8 @@ public class HDFSFileHolderImpl implements FileHolder {
         return byteBffer;
     }
 
-    @Override public int readInt(String filePath, long offset) {
+    @Override
+    public int readInt(String filePath, long offset) {
         FSDataInputStream fileChannel = updateCache(filePath);
         int i = -1;
         try {
@@ -128,7 +130,8 @@ public class HDFSFileHolderImpl implements FileHolder {
         return i;
     }
 
-    @Override public long readDouble(String filePath, long offset) {
+    @Override
+    public long readDouble(String filePath, long offset) {
         FSDataInputStream fileChannel = updateCache(filePath);
         long i = -1;
         try {
@@ -141,7 +144,8 @@ public class HDFSFileHolderImpl implements FileHolder {
         return i;
     }
 
-    @Override public void finish() {
+    @Override
+    public void finish() {
         for (Entry<String, FSDataInputStream> entry : fileNameAndStreamCache.entrySet()) {
             try {
                 FSDataInputStream channel = entry.getValue();
@@ -156,7 +160,8 @@ public class HDFSFileHolderImpl implements FileHolder {
 
     }
 
-    @Override public long getFileSize(String filePath) {
+    @Override
+    public long getFileSize(String filePath) {
         long size = 0;
 
         try {
@@ -168,20 +173,23 @@ public class HDFSFileHolderImpl implements FileHolder {
         return size;
     }
 
-    @Override public byte[] readByteArray(String filePath, int length) {
+    @Override
+    public byte[] readByteArray(String filePath, int length) {
         FSDataInputStream fileChannel = updateCache(filePath);
         byte[] byteBffer = read(fileChannel, length);
         return byteBffer;
     }
 
-    @Override public ByteBuffer readByteBuffer(String filePath, long offset, int length) {
+    @Override
+    public ByteBuffer readByteBuffer(String filePath, long offset, int length) {
         FSDataInputStream fileChannel = updateCache(filePath);
         ByteBuffer buffer = ByteBuffer.wrap(read(fileChannel, length, offset));
         buffer.rewind();
         return buffer;
     }
 
-    @Override public long readLong(String filePath, long offset) {
+    @Override
+    public long readLong(String filePath, long offset) {
         FSDataInputStream fileChannel = updateCache(filePath);
         long i = -1;
         try {
@@ -192,7 +200,8 @@ public class HDFSFileHolderImpl implements FileHolder {
         return i;
     }
 
-    @Override public int readInt(String filePath) {
+    @Override
+    public int readInt(String filePath) {
         FSDataInputStream fileChannel = updateCache(filePath);
         int i = -1;
         try {

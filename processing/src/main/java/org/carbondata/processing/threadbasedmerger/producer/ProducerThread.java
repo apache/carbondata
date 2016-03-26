@@ -149,7 +149,8 @@ public class ProducerThread implements Callable<Void> {
     /**
      * Run method
      */
-    @Override public Void call() throws Exception {
+    @Override
+    public Void call() throws Exception {
         try {
             while (fileCounter > 0 || isCurrentFilled) {
                 this.container.fillContainer(currentBuffer);

@@ -37,7 +37,8 @@ public class CompressedColumnarFileKeyStore extends AbstractColumnarKeyStore {
         super(columnarStoreInfo, false, null);
     }
 
-    @Override public ColumnarKeyStoreDataHolder[] getUnCompressedKeyArray(FileHolder fileHolder,
+    @Override
+    public ColumnarKeyStoreDataHolder[] getUnCompressedKeyArray(FileHolder fileHolder,
             int[] blockIndex, boolean[] needCompressedData) {
         ColumnarKeyStoreDataHolder[] columnarKeyStoreDataHolders =
                 new ColumnarKeyStoreDataHolder[blockIndex.length];

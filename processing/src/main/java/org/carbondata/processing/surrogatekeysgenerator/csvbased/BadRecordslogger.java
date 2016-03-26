@@ -29,8 +29,8 @@ import org.carbondata.core.constants.MolapCommonConstants;
 import org.carbondata.core.datastorage.store.filesystem.MolapFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
-import org.carbondata.processing.util.MolapDataProcessorLogEvent;
 import org.carbondata.core.util.MolapUtil;
+import org.carbondata.processing.util.MolapDataProcessorLogEvent;
 
 public class BadRecordslogger {
 

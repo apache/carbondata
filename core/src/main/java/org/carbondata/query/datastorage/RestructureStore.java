@@ -190,7 +190,8 @@ public class RestructureStore implements Comparable<RestructureStore> {
     /* (non-Javadoc)
      * @see java.lang.Object#hashCode()
      */
-    @Override public int hashCode() {
+    @Override
+    public int hashCode() {
         final int prime = 31;
         int result = 1;
         result = prime * result + ((folderName == null) ? 0 : folderName.hashCode());
@@ -200,7 +201,8 @@ public class RestructureStore implements Comparable<RestructureStore> {
     /* (non-Javadoc)
      * @see java.lang.Object#equals(java.lang.Object)
      */
-    @Override public boolean equals(Object obj) {
+    @Override
+    public boolean equals(Object obj) {
         if (obj instanceof RestructureStore) {
             if (this == obj) {
                 return true;
@@ -254,7 +256,8 @@ public class RestructureStore implements Comparable<RestructureStore> {
         this.sliceMetaPathMap.put(tableName, sliceMetaDataPath);
     }
 
-    @Override public int compareTo(RestructureStore arg0) {
+    @Override
+    public int compareTo(RestructureStore arg0) {
         // TODO Auto-generated method stub
         return restructureId - arg0.restructureId;
     }

@@ -50,18 +50,21 @@ public class SumDistinctLongAggregator extends AbstractMeasureAggregatorBasic {
      *
      * @param newVal new value
      */
-    @Override public void agg(Object newVal) {
+    @Override
+    public void agg(Object newVal) {
         valueSet.add(newVal instanceof Long ? (Long) newVal : new Long(newVal.toString()));
     }
 
-    @Override public void agg(MolapReadDataHolder newVal, int index) {
+    @Override
+    public void agg(MolapReadDataHolder newVal, int index) {
         valueSet.add(newVal.getReadableLongValueByIndex(index));
     }
 
     /**
      * Below method will be used to get the value byte array
      */
-    @Override public byte[] getByteArray() {
+    @Override
+    public byte[] getByteArray() {
         Iterator<Long> iterator = valueSet.iterator();
         ByteBuffer buffer =
                 ByteBuffer.allocate(valueSet.size() * MolapCommonConstants.DOUBLE_SIZE_IN_BYTE);
@@ -80,12 +83,14 @@ public class SumDistinctLongAggregator extends AbstractMeasureAggregatorBasic {
     /**
      * merge the valueset so that we get the count of unique values
      */
-    @Override public void merge(MeasureAggregator aggregator) {
+    @Override
+    public void merge(MeasureAggregator aggregator) {
         SumDistinctLongAggregator distinctAggregator = (SumDistinctLongAggregator) aggregator;
         agg(distinctAggregator.valueSet);
     }
 
-    @Override public Long getLongValue() {
+    @Override
+    public Long getLongValue() {
         if (computedFixedValue == null) {
             long result = 0;
             for (Long aValue : valueSet) {
@@ -96,23 +101,27 @@ public class SumDistinctLongAggregator extends AbstractMeasureAggregatorBasic {
         return computedFixedValue;
     }
 
-    @Override public Object getValueObject() {
+    @Override
+    public Object getValueObject() {
         return getLongValue();
     }
 
     /**
      * @see MeasureAggregator#setNewValue(Object)
      */
-    @Override public void setNewValue(Object newValue) {
+    @Override
+    public void setNewValue(Object newValue) {
         computedFixedValue = (Long) newValue;
         valueSet = null;
     }
 
-    @Override public boolean isFirstTime() {
+    @Override
+    public boolean isFirstTime() {
         return false;
     }
 
-    @Override public void writeData(DataOutput dataOutput) throws IOException {
+    @Override
+    public void writeData(DataOutput dataOutput) throws IOException {
         if (computedFixedValue != null) {
             ByteBuffer byteBuffer = ByteBuffer.allocate(4 + 8);
             byteBuffer.putInt(-1);
@@ -131,7 +140,8 @@ public class SumDistinctLongAggregator extends AbstractMeasureAggregatorBasic {
         }
     }
 
-    @Override public void readData(DataInput inPut) throws IOException {
+    @Override
+    public void readData(DataInput inPut) throws IOException {
         int length = inPut.readInt();
 
         if (length == -1) {
@@ -147,7 +157,8 @@ public class SumDistinctLongAggregator extends AbstractMeasureAggregatorBasic {
 
     }
 
-    @Override public void merge(byte[] value) {
+    @Override
+    public void merge(byte[] value) {
         if (0 == value.length) {
             return;
         }
@@ -165,13 +176,15 @@ public class SumDistinctLongAggregator extends AbstractMeasureAggregatorBasic {
         return computedFixedValue + "";
     }
 
-    @Override public MeasureAggregator getCopy() {
+    @Override
+    public MeasureAggregator getCopy() {
         SumDistinctLongAggregator aggregator = new SumDistinctLongAggregator();
         aggregator.valueSet = new HashSet<Long>(valueSet);
         return aggregator;
     }
 
-    @Override public int compareTo(MeasureAggregator msr) {
+    @Override
+    public int compareTo(MeasureAggregator msr) {
         long msrValObj = getLongValue();
         long otherVal = msr.getLongValue();
         if (msrValObj > otherVal) {

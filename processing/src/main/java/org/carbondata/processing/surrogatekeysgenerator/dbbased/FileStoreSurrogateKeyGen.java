@@ -26,6 +26,7 @@ import java.nio.charset.Charset;
 import java.util.*;
 import java.util.Map.Entry;
 
+import org.apache.commons.codec.binary.Base64;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.MolapCommonConstants;
@@ -34,12 +35,11 @@ import org.carbondata.core.file.manager.composite.IFileManagerComposite;
 import org.carbondata.core.file.manager.composite.LoadFolderData;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.KeyGenerator;
-import org.carbondata.processing.schema.metadata.MolapInfo;
-import org.carbondata.processing.util.MolapDataProcessorLogEvent;
 import org.carbondata.core.util.MolapProperties;
 import org.carbondata.core.util.MolapUtil;
 import org.carbondata.core.writer.LevelValueWriter;
-import org.apache.commons.codec.binary.Base64;
+import org.carbondata.processing.schema.metadata.MolapInfo;
+import org.carbondata.processing.util.MolapDataProcessorLogEvent;
 import org.pentaho.di.core.exception.KettleException;
 
 public class FileStoreSurrogateKeyGen extends MolapDimSurrogateKeyGen {
@@ -212,7 +212,8 @@ public class FileStoreSurrogateKeyGen extends MolapDimSurrogateKeyGen {
         File folders = new File(baseStorePath);
         //
         File[] rsFolders = folders.listFiles(new FileFilter() {
-            @Override public boolean accept(File pathname) {
+            @Override
+            public boolean accept(File pathname) {
                 if (pathname.isDirectory()
                         && pathname.getAbsolutePath().indexOf(MolapCommonConstants.LOAD_FOLDER)
                         > -1) {
@@ -233,7 +234,8 @@ public class FileStoreSurrogateKeyGen extends MolapDimSurrogateKeyGen {
         return rsFolders;
     }
 
-    @Override protected byte[] getHierFromStore(int[] val, String hier) throws KettleException
+    @Override
+    protected byte[] getHierFromStore(int[] val, String hier) throws KettleException
 
     {
 
@@ -252,7 +254,8 @@ public class FileStoreSurrogateKeyGen extends MolapDimSurrogateKeyGen {
 
     }
 
-    @Override protected int getSurrogateFromStore(String value, int index, Object[] properties)
+    @Override
+    protected int getSurrogateFromStore(String value, int index, Object[] properties)
             throws KettleException {
         max[index]++;
         int key = max[index];
@@ -457,7 +460,8 @@ public class FileStoreSurrogateKeyGen extends MolapDimSurrogateKeyGen {
 
     }
 
-    @Override protected byte[] getNormalizedHierFromStore(int[] val, String hier,
+    @Override
+    protected byte[] getNormalizedHierFromStore(int[] val, String hier,
             HierarchyValueWriter hierWriter) throws KettleException {
         byte[] bytes;
         try {

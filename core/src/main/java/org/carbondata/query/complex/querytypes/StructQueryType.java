@@ -49,7 +49,8 @@ public class StructQueryType implements GenericQueryType {
         this.blockIndex = blockIndex;
     }
 
-    @Override public void addChildren(GenericQueryType newChild) {
+    @Override
+    public void addChildren(GenericQueryType newChild) {
         if (this.getName().equals(newChild.getParentname())) {
             this.children.add(newChild);
         } else {
@@ -60,24 +61,29 @@ public class StructQueryType implements GenericQueryType {
 
     }
 
-    @Override public String getName() {
+    @Override
+    public String getName() {
         return name;
     }
 
-    @Override public void setName(String name) {
+    @Override
+    public void setName(String name) {
         this.name = name;
     }
 
-    @Override public String getParentname() {
+    @Override
+    public String getParentname() {
         return parentname;
     }
 
-    @Override public void setParentname(String parentname) {
+    @Override
+    public void setParentname(String parentname) {
         this.parentname = parentname;
 
     }
 
-    @Override public void getAllPrimitiveChildren(List<GenericQueryType> primitiveChild) {
+    @Override
+    public void getAllPrimitiveChildren(List<GenericQueryType> primitiveChild) {
         for (int i = 0; i < children.size(); i++) {
             GenericQueryType child = children.get(i);
             if (child instanceof PrimitiveQueryType) {
@@ -88,23 +94,28 @@ public class StructQueryType implements GenericQueryType {
         }
     }
 
-    @Override public int getSurrogateIndex() {
+    @Override
+    public int getSurrogateIndex() {
         return 0;
     }
 
-    @Override public void setSurrogateIndex(int surrIndex) {
+    @Override
+    public void setSurrogateIndex(int surrIndex) {
 
     }
 
-    @Override public int getBlockIndex() {
+    @Override
+    public int getBlockIndex() {
         return blockIndex;
     }
 
-    @Override public void setBlockIndex(int blockIndex) {
+    @Override
+    public void setBlockIndex(int blockIndex) {
         this.blockIndex = blockIndex;
     }
 
-    @Override public int getColsCount() {
+    @Override
+    public int getColsCount() {
         int colsCount = 1;
         for (int i = 0; i < children.size(); i++) {
             colsCount += children.get(i).getColsCount();
@@ -112,7 +123,8 @@ public class StructQueryType implements GenericQueryType {
         return colsCount;
     }
 
-    @Override public void parseBlocksAndReturnComplexColumnByteArray(
+    @Override
+    public void parseBlocksAndReturnComplexColumnByteArray(
             ColumnarKeyStoreDataHolder[] columnarKeyStoreDataHolder, int rowNumber,
             DataOutputStream dataOutputStream) throws IOException {
         byte[] input = new byte[8];
@@ -157,13 +169,15 @@ public class StructQueryType implements GenericQueryType {
         }
     }
 
-    @Override public void setKeySize(int[] keyBlockSize) {
+    @Override
+    public void setKeySize(int[] keyBlockSize) {
         for (int i = 0; i < children.size(); i++) {
             children.get(i).setKeySize(keyBlockSize);
         }
     }
 
-    @Override public Object getDataBasedOnDataTypeFromSurrogates(List<InMemoryCube> slices,
+    @Override
+    public Object getDataBasedOnDataTypeFromSurrogates(List<InMemoryCube> slices,
             ByteBuffer surrogateData, Dimension[] dimensions) {
         int childLength = surrogateData.getInt();
         Object[] fields = new Object[childLength];
@@ -175,7 +189,8 @@ public class StructQueryType implements GenericQueryType {
         return new GenericInternalRowWithSchema(fields, (StructType) getSchemaType());
     }
 
-    @Override public DataType getSchemaType() {
+    @Override
+    public DataType getSchemaType() {
         StructField[] fields = new StructField[children.size()];
         for (int i = 0; i < children.size(); i++) {
             fields[i] = new StructField(children.get(i).getName(), children.get(i).getSchemaType(),
@@ -184,15 +199,18 @@ public class StructQueryType implements GenericQueryType {
         return new StructType(fields);
     }
 
-    @Override public int getKeyOrdinalForQuery() {
+    @Override
+    public int getKeyOrdinalForQuery() {
         return keyOrdinalForQuery;
     }
 
-    @Override public void setKeyOrdinalForQuery(int keyOrdinalForQuery) {
+    @Override
+    public void setKeyOrdinalForQuery(int keyOrdinalForQuery) {
         this.keyOrdinalForQuery = keyOrdinalForQuery;
     }
 
-    @Override public void fillRequiredBlockData(BlockDataHolder blockDataHolder) {
+    @Override
+    public void fillRequiredBlockData(BlockDataHolder blockDataHolder) {
         if (null == blockDataHolder.getColumnarKeyStore()[blockIndex]) {
             blockDataHolder.getColumnarKeyStore()[blockIndex] = blockDataHolder.getLeafDataBlock()
                     .getColumnarKeyStore(blockDataHolder.getFileHolder(), blockIndex, false);

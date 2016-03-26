@@ -31,7 +31,8 @@ public class AuditExtendedRollingFileAppenderTest_UT {
 
     private AuditExtendedRollingFileAppender rAppender = null;
 
-    @Before public void setUp() throws Exception {
+    @Before
+    public void setUp() throws Exception {
         rAppender = new AuditExtendedRollingFileAppender();
         Deencapsulation.setField(rAppender, "fileName", "audit.log");
         Deencapsulation.setField(rAppender, "maxBackupIndex", 1);
@@ -39,18 +40,21 @@ public class AuditExtendedRollingFileAppenderTest_UT {
 
     }
 
-    @After public void tearDown() throws Exception {
+    @After
+    public void tearDown() throws Exception {
 
     }
 
-    @Test public void testRollOver() {
+    @Test
+    public void testRollOver() {
         rAppender.rollOver();
         rAppender.rollOver();
         rAppender.rollOver();
         Assert.assertTrue(true);
     }
 
-    @Test public void testCleanLogs() {
+    @Test
+    public void testCleanLogs() {
         final String startName = "audit";
         final String folderPath = "./";
         int maxBackupIndex = 1;
@@ -59,7 +63,8 @@ public class AuditExtendedRollingFileAppenderTest_UT {
         Assert.assertTrue(true);
     }
 
-    @Test public void testSubAppendLoggingEvent() {
+    @Test
+    public void testSubAppendLoggingEvent() {
         Logger logger = Logger.getLogger(this.getClass());
         LoggingEvent event = new LoggingEvent(null, logger, 0L, AuditLevel.AUDIT, null, null);
 

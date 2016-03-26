@@ -32,15 +32,17 @@ import org.carbondata.core.constants.MolapCommonConstants;
 import org.carbondata.core.csvreader.checkpoint.CheckPointHanlder;
 import org.carbondata.core.csvreader.checkpoint.CheckPointInterface;
 import org.carbondata.core.csvreader.checkpoint.exception.CheckPointException;
-import org.carbondata.core.util.*;
-import org.carbondata.query.aggregator.MeasureAggregator;
-import org.carbondata.processing.groupby.exception.MolapGroupByException;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
+import org.carbondata.core.util.MolapProperties;
+import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.util.MolapUtilException;
+import org.carbondata.processing.groupby.exception.MolapGroupByException;
 import org.carbondata.processing.schema.metadata.SortObserver;
 import org.carbondata.processing.sortandgroupby.exception.MolapSortKeyAndGroupByException;
 import org.carbondata.processing.util.MolapDataProcessorLogEvent;
 import org.carbondata.processing.util.MolapDataProcessorUtil;
+import org.carbondata.query.aggregator.MeasureAggregator;
 
 public class MolapSortKeys {
 
@@ -263,7 +265,8 @@ public class MolapSortKeys {
                 + MolapCommonConstants.SORT_TEMP_FILE_LOCATION + File.separator + tableName;
         File file = new File(baseLocation);
         File[] tempFiles = file.listFiles(new FileFilter() {
-            @Override public boolean accept(File pathname) {
+            @Override
+            public boolean accept(File pathname) {
                 String name = pathname.getName();
                 return name.startsWith(tableName) && (
                         name.endsWith(MolapCommonConstants.SORT_TEMP_FILE_EXT) || name
@@ -307,10 +310,11 @@ public class MolapSortKeys {
         File loadFolder = new File(storeLocation);
         File[] factFiles = loadFolder.listFiles(new FileFilter() {
 
-            @Override public boolean accept(File pathname) {
+            @Override
+            public boolean accept(File pathname) {
                 if (pathname.getName().endsWith(MolapCommonConstants.FACT_FILE_EXT) || pathname
                         .getName().endsWith(MolapCommonConstants.FACT_FILE_EXT
-                                        + MolapCommonConstants.FILE_INPROGRESS_STATUS)) {
+                                + MolapCommonConstants.FILE_INPROGRESS_STATUS)) {
                     return true;
                 }
                 return false;
@@ -478,7 +482,8 @@ public class MolapSortKeys {
         deleteAllBakFile();
         // get the all the files with only ".sorttemp" extension which are not merger by intermediate merger
         File[] listFiles = file.listFiles(new FileFilter() {
-            @Override public boolean accept(File pathname) {
+            @Override
+            public boolean accept(File pathname) {
                 return pathname.getName().startsWith(tableName) && pathname.getAbsolutePath()
                         .endsWith(MolapCommonConstants.SORT_TEMP_FILE_EXT);
             }
@@ -497,7 +502,8 @@ public class MolapSortKeys {
         File file = new File(tempFileLocation);
         // get all the check point files
         File[] checkPointFiles = file.listFiles(new FileFilter() {
-            @Override public boolean accept(File pathname) {
+            @Override
+            public boolean accept(File pathname) {
                 return pathname.getName().startsWith(tableName) && pathname.getName()
                         .endsWith(MolapCommonConstants.BAK_EXT);
             }
@@ -727,7 +733,8 @@ public class MolapSortKeys {
             final int entryCountLocal, final int mdKeyIndexLocal,
             final Map<String, Long> checkPointMapLocal) throws MolapSortKeyAndGroupByException {
         writerExecutorService.submit(new Callable<Void>() {
-            @Override public Void call() throws Exception {
+            @Override
+            public Void call() throws Exception {
                 String newFileName = "";
                 File finalFile = null;
                 try {

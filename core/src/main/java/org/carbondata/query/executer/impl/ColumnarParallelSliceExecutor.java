@@ -54,7 +54,8 @@ public class ColumnarParallelSliceExecutor implements SliceExecuter {
      */
     private ExecutorService execService;
 
-    @Override public MolapIterator<QueryResult> executeSlices(List<SliceExecutionInfo> infos,
+    @Override
+    public MolapIterator<QueryResult> executeSlices(List<SliceExecutionInfo> infos,
             int[] sliceIndex) throws QueryExecutionException {
         ColumnarSliceExecuter task = null;
         SliceExecutionInfo latestInfo = infos.get(infos.size() - 1);

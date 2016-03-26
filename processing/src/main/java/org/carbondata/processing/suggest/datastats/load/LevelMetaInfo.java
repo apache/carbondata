@@ -24,65 +24,49 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.MolapCommonConstants;
 import org.carbondata.core.datastorage.store.filesystem.MolapFile;
 import org.carbondata.core.datastorage.store.filesystem.MolapFileFilter;
-import org.carbondata.query.util.MolapEngineLogEvent;
 import org.carbondata.core.util.MolapUtil;
 import org.carbondata.core.util.MolapUtilException;
+import org.carbondata.query.util.MolapEngineLogEvent;
 
 /**
  * This class will have information about level metadata
- * @author A00902717
  *
+ * @author A00902717
  */
-public class LevelMetaInfo
-{
+public class LevelMetaInfo {
 
-
-    private static final LogService LOGGER = LogServiceFactory
-            .getLogService(LevelMetaInfo.class.getName());
+    private static final LogService LOGGER =
+            LogServiceFactory.getLogService(LevelMetaInfo.class.getName());
 
     private int[] dimCardinality;
 
-	public LevelMetaInfo(MolapFile file,String tableName)
-	{
-		initialise(file,tableName);
-	}
-	private void initialise(MolapFile file,final String tableName)
-	{
+    public LevelMetaInfo(MolapFile file, String tableName) {
+        initialise(file, tableName);
+    }
 
-		if (file.isDirectory())
-		{
-			MolapFile[] files = file.listFiles(new MolapFileFilter()
-			{
-				public boolean accept(MolapFile pathname)
-				{
-					return (!pathname.isDirectory())
-							&& pathname
-									.getName()
-									.startsWith(
-											MolapCommonConstants.LEVEL_METADATA_FILE)
-							&& pathname.getName().endsWith(
-									tableName + ".metadata");
-				}
+    private void initialise(MolapFile file, final String tableName) {
 
-			});
-			try
-			{
-				dimCardinality = MolapUtil
-						.getCardinalityFromLevelMetadataFile(files[0]
-								.getAbsolutePath());
-			}
-			catch (MolapUtilException e)
-			{
-				LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
-			}
-		}
+        if (file.isDirectory()) {
+            MolapFile[] files = file.listFiles(new MolapFileFilter() {
+                public boolean accept(MolapFile pathname) {
+                    return (!pathname.isDirectory()) && pathname.getName()
+                            .startsWith(MolapCommonConstants.LEVEL_METADATA_FILE) && pathname
+                            .getName().endsWith(tableName + ".metadata");
+                }
 
-	}
-	public int[] getDimCardinality()
-	{
-		return dimCardinality;
-	}
+            });
+            try {
+                dimCardinality =
+                        MolapUtil.getCardinalityFromLevelMetadataFile(files[0].getAbsolutePath());
+            } catch (MolapUtilException e) {
+                LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
+            }
+        }
 
+    }
 
+    public int[] getDimCardinality() {
+        return dimCardinality;
+    }
 
 }

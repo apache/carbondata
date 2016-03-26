@@ -24,29 +24,29 @@ import java.io.IOException;
 import java.util.*;
 import java.util.Map.Entry;
 
+import org.apache.commons.vfs.FileSystemException;
+import org.apache.commons.vfs.FileSystemManager;
+import org.apache.commons.vfs.impl.DefaultFileSystemManager;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.processing.api.dataloader.SchemaInfo;
-import org.carbondata.processing.constants.DataProcessorConstants;
 import org.carbondata.core.constants.MolapCommonConstants;
 import org.carbondata.core.csvreader.checkpoint.CheckPointHanlder;
 import org.carbondata.core.csvreader.checkpoint.CheckPointType;
-import org.carbondata.processing.csvreaderstep.CsvInputMeta;
-import org.carbondata.processing.dataprocessor.IDataProcessStatus;
 import org.carbondata.core.datastorage.store.filesystem.MolapFile;
 import org.carbondata.core.datastorage.store.filesystem.MolapFileFilter;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
-import org.carbondata.processing.etl.DataLoadingException;
 import org.carbondata.core.olap.MolapDef.Cube;
 import org.carbondata.core.olap.MolapDef.Schema;
+import org.carbondata.core.util.MolapProperties;
+import org.carbondata.processing.api.dataloader.SchemaInfo;
+import org.carbondata.processing.constants.DataProcessorConstants;
+import org.carbondata.processing.csvreaderstep.CsvInputMeta;
+import org.carbondata.processing.dataprocessor.IDataProcessStatus;
+import org.carbondata.processing.etl.DataLoadingException;
 import org.carbondata.processing.surrogatekeysgenerator.csvbased.BadRecordslogger;
 import org.carbondata.processing.util.MolapDataProcessorLogEvent;
-import org.carbondata.core.util.MolapProperties;
 import org.carbondata.processing.util.MolapSchemaParser;
-import org.apache.commons.vfs.FileSystemException;
-import org.apache.commons.vfs.FileSystemManager;
-import org.apache.commons.vfs.impl.DefaultFileSystemManager;
 import org.pentaho.di.core.KettleEnvironment;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleXMLException;
@@ -566,7 +566,8 @@ public class DataGraphExecuter {
                     MolapFile fileDir = FileFactory.getMolapFile(csvFilePath, fileType);
                     MolapFile[] listFiles = fileDir.listFiles(new MolapFileFilter() {
 
-                        @Override public boolean accept(MolapFile pathname) {
+                        @Override
+                        public boolean accept(MolapFile pathname) {
                             if (pathname.getName().endsWith(MolapCommonConstants.CSV_FILE_EXTENSION)
                                     || pathname.getName().endsWith(
                                     MolapCommonConstants.CSV_FILE_EXTENSION
@@ -599,8 +600,8 @@ public class DataGraphExecuter {
                                 schema, ",");
                     } else {
                         validateCSV(schemaInfo, model.getTableName(), FileFactory.getMolapFile(
-                                        csvFilePath + MolapCommonConstants.FILE_INPROGRESS_STATUS,
-                                        fileType), partitionId, schema, ",");
+                                csvFilePath + MolapCommonConstants.FILE_INPROGRESS_STATUS,
+                                fileType), partitionId, schema, ",");
                     }
 
                 }

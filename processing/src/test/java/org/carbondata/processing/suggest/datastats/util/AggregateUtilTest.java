@@ -19,204 +19,162 @@
 
 package org.carbondata.processing.suggest.datastats.util;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 
 import junit.framework.Assert;
 import mockit.Mock;
 import mockit.MockUp;
-
 import org.carbondata.core.datastorage.store.impl.FileFactory;
-import org.carbondata.core.olap.SqlStatement.*;
+import org.carbondata.core.olap.SqlStatement.Type;
 import org.carbondata.query.expression.DataType;
 import org.junit.Test;
 
-public class AggregateUtilTest
-{
-	@Test
-	public void testGetDataType_Double()
-	{
+public class AggregateUtilTest {
+    @Test
+    public void testGetDataType_Double() {
 
-		Type type = Type.DOUBLE;
-		DataType dataType = DataStatsUtil.getDataType(type);
-		Assert.assertEquals(dataType, DataType.DoubleType);
-	}
+        Type type = Type.DOUBLE;
+        DataType dataType = DataStatsUtil.getDataType(type);
+        Assert.assertEquals(dataType, DataType.DoubleType);
+    }
 
-	@Test
-	public void testGetDataType_Long()
-	{
-		Type type = Type.LONG;
-		DataType dataType = DataStatsUtil.getDataType(type);
-		Assert.assertEquals(dataType, DataType.LongType);
-	}
+    @Test
+    public void testGetDataType_Long() {
+        Type type = Type.LONG;
+        DataType dataType = DataStatsUtil.getDataType(type);
+        Assert.assertEquals(dataType, DataType.LongType);
+    }
 
-	@Test
-	public void testGetDataType_Boolean()
-	{
-		Type type = Type.BOOLEAN;
-		DataType dataType = DataStatsUtil.getDataType(type);
-		Assert.assertEquals(dataType, DataType.BooleanType);
-	}
+    @Test
+    public void testGetDataType_Boolean() {
+        Type type = Type.BOOLEAN;
+        DataType dataType = DataStatsUtil.getDataType(type);
+        Assert.assertEquals(dataType, DataType.BooleanType);
+    }
 
-	@Test
-	public void testGetDataType_Default()
-	{
-		Type type = Type.TIMESTAMP;
-		DataType dataType = DataStatsUtil.getDataType(type);
-		Assert.assertEquals(dataType, DataType.IntegerType);
-	}
+    @Test
+    public void testGetDataType_Default() {
+        Type type = Type.TIMESTAMP;
+        DataType dataType = DataStatsUtil.getDataType(type);
+        Assert.assertEquals(dataType, DataType.IntegerType);
+    }
 
-	@Test
-	public void testSerializeObject_InvalidPath_throwIOException()
-	{
+    @Test
+    public void testSerializeObject_InvalidPath_throwIOException() {
 
+        new MockUp<FileFactory>() {
 
-		new MockUp<FileFactory>()
-		{
+            @Mock
+            public boolean isFileExist(String filePath, FileFactory.FileType fileType,
+                    boolean performcheck) throws IOException {
+                throw new IOException();
+            }
 
-			@Mock
-			public boolean isFileExist(String filePath, FileFactory.FileType fileType,
-					boolean performcheck) throws IOException
-			{
-				throw new IOException();
-			}
+        };
+        DataStatsUtil.serializeObject(null, "test", "test");
+    }
 
-		};
-		DataStatsUtil.serializeObject(null, "test", "test");
-	}
-	@Test
-	public void testSerializeObject_InvalidPath_DirectoryCreationFailed()
-	{
+    @Test
+    public void testSerializeObject_InvalidPath_DirectoryCreationFailed() {
 
+        new MockUp<FileFactory>() {
 
-		new MockUp<FileFactory>()
-		{
+            @Mock
+            public boolean isFileExist(String filePath, FileFactory.FileType fileType,
+                    boolean performcheck) throws IOException {
+                return false;
+            }
 
-			@Mock
-			public boolean isFileExist(String filePath, FileFactory.FileType fileType,
-					boolean performcheck) throws IOException
-			{
-				return false;
-			}
-			@Mock
-			public boolean mkdirs(String filePath, FileFactory.FileType fileType) throws IOException
-			{
-				 return false;
-			}
+            @Mock
+            public boolean mkdirs(String filePath, FileFactory.FileType fileType)
+                    throws IOException {
+                return false;
+            }
 
-		};
-		DataStatsUtil.createDirectory("test");
-	}
+        };
+        DataStatsUtil.createDirectory("test");
+    }
 
-	@Test
-	public void testSerializeObject_ErrorGettingDataOutputStream()
-	{
+    @Test
+    public void testSerializeObject_ErrorGettingDataOutputStream() {
 
+        new MockUp<FileFactory>() {
 
-		new MockUp<FileFactory>()
-		{
+            @Mock
+            public DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType)
+                    throws IOException {
+                throw new IOException();
+            }
 
-			@Mock
-			public DataOutputStream getDataOutputStream(String path,FileFactory.FileType fileType) throws IOException
-			{
-				throw new IOException();
-			}
+        };
+        DataStatsUtil.serializeObject(null, "test", "test");
+    }
 
+    @Test
+    public void testSerializeObject_ErrorGettingObjectOutputStream() {
 
-		};
-		DataStatsUtil.serializeObject(null, "test", "test");
-	}
+        new MockUp<ObjectOutputStream>() {
 
-	@Test
-	public void testSerializeObject_ErrorGettingObjectOutputStream()
-	{
+            @Mock
+            public void writeObject(Object object) throws IOException {
+                throw new IOException();
+            }
 
+        };
+        DataStatsUtil.serializeObject(null, "test", "test");
+    }
 
-		new MockUp<ObjectOutputStream>()
-		{
+    @Test
+    public void testreadSerializedFile_FileDoesnotExist() {
 
-			@Mock
-			public void writeObject(Object object) throws IOException
-			{
-				throw new IOException();
-			}
+        new MockUp<FileFactory>() {
 
+            @Mock
+            public boolean isFileExist(String filePath, FileFactory.FileType fileType,
+                    boolean performFileCheck) throws IOException {
+                throw new IOException();
+            }
 
-		};
-		DataStatsUtil.serializeObject(null, "test", "test");
-	}
+        };
+        Assert.assertNull(DataStatsUtil.readSerializedFile("test"));
+    }
 
+    @Test
+    public void testreadSerializedFile_ErrorGettingDataOutputStream() {
 
-	@Test
-	public void testreadSerializedFile_FileDoesnotExist()
-	{
+        new MockUp<FileFactory>() {
 
+            @Mock
+            public DataInputStream getDataInputStream(String path, FileFactory.FileType fileType)
+                    throws IOException {
+                throw new IOException();
+            }
 
-		new MockUp<FileFactory>()
-		{
+        };
+        Assert.assertNull(DataStatsUtil.readSerializedFile("test"));
+    }
 
-			@Mock
-			public boolean isFileExist(String filePath,FileFactory.FileType fileType, boolean performFileCheck) throws IOException
-			{
-				throw new IOException();
-			}
+    @Test
+    public void testreadSerializedFile_ErrorGettingObjectInputStream() {
 
+        new MockUp<FileFactory>() {
 
-		};
-		Assert.assertNull(DataStatsUtil.readSerializedFile("test"));
-	}
+            @Mock
+            public DataInputStream getDataInputStream(String path, FileFactory.FileType fileType)
+                    throws IOException {
+                return new DataInputStream(new FileInputStream(new File("test")));
+            }
 
-	@Test
-	public void testreadSerializedFile_ErrorGettingDataOutputStream()
-	{
+        };
+        new MockUp<ObjectInputStream>() {
 
+            @Mock
+            public Object readObject() throws IOException {
+                throw new IOException();
+            }
 
-		new MockUp<FileFactory>()
-		{
-
-			@Mock
-			public DataInputStream getDataInputStream(String path,FileFactory.FileType fileType) throws IOException
-			{
-				throw new IOException();
-			}
-
-
-		};
-		Assert.assertNull(DataStatsUtil.readSerializedFile("test"));
-	}
-	@Test
-	public void testreadSerializedFile_ErrorGettingObjectInputStream()
-	{
-
-		new MockUp<FileFactory>()
-		{
-
-			@Mock
-			public DataInputStream getDataInputStream(String path,FileFactory.FileType fileType) throws IOException
-			{
-				return new DataInputStream(new FileInputStream(new File("test")));
-			}
-
-
-		};
-		new MockUp<ObjectInputStream>()
-		{
-
-			@Mock
-			public Object readObject() throws IOException
-			{
-				throw new IOException();
-			}
-
-
-		};
-		Assert.assertNull(DataStatsUtil.readSerializedFile("test"));
-	}
-
+        };
+        Assert.assertNull(DataStatsUtil.readSerializedFile("test"));
+    }
 
 }

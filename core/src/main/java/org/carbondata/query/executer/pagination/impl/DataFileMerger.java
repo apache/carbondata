@@ -142,7 +142,8 @@ public class DataFileMerger implements Callable<Void> {
         if (path.exists()) {
             this.dataOutFiles = path.listFiles(new FileFilter() {
 
-                @Override public boolean accept(File pathname) {
+                @Override
+                public boolean accept(File pathname) {
                     return pathname.getName().endsWith(MolapCommonConstants.QUERY_OUT_FILE_EXT)
                             || pathname.getName()
                             .endsWith(MolapCommonConstants.QUERY_MERGED_FILE_EXT);
@@ -167,7 +168,8 @@ public class DataFileMerger implements Callable<Void> {
     /**
      * @see Callable#call()
      */
-    @Override public Void call() throws Exception {
+    @Override
+    public Void call() throws Exception {
         try {
             for (File file : dataOutFiles) {
                 // create chunk holder

@@ -25,15 +25,18 @@ public class LoadFolderData extends AbstractFileManager {
      */
     private String folderName;
 
-    @Override public void add(IFileManagerComposite customData) {
+    @Override
+    public void add(IFileManagerComposite customData) {
         super.add(customData);
     }
 
-    @Override public boolean rename(IFileManagerComposite composite) {
+    @Override
+    public boolean rename(IFileManagerComposite composite) {
         return false;
     }
 
-    @Override public void setName(String name) {
+    @Override
+    public void setName(String name) {
         this.folderName = name;
 
     }

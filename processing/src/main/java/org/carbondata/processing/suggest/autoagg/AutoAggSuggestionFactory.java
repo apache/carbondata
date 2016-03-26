@@ -26,26 +26,23 @@ import org.carbondata.processing.suggest.querystats.QSAutoAggSuggestionService;
 /**
  * This class will given instance of AggregateService based on request type
  * request type can be based on DATA or QUERY
- * @author A00902717
  *
+ * @author A00902717
  */
-public final class AutoAggSuggestionFactory
-{
-	private AutoAggSuggestionFactory()
-	{
+public final class AutoAggSuggestionFactory {
+    private AutoAggSuggestionFactory() {
 
-	}
-	public static AutoAggSuggestionService getAggregateService(Request requestType)
-	{
-		switch (requestType)
-		{
-		case DATA_STATS:
-			return new DSAutoAggSuggestionService();
-		case QUERY_STATS:
-			return new QSAutoAggSuggestionService();
-		default:
-			return new DSAutoAggSuggestionService();
-		}
-	}
+    }
+
+    public static AutoAggSuggestionService getAggregateService(Request requestType) {
+        switch (requestType) {
+        case DATA_STATS:
+            return new DSAutoAggSuggestionService();
+        case QUERY_STATS:
+            return new QSAutoAggSuggestionService();
+        default:
+            return new DSAutoAggSuggestionService();
+        }
+    }
 
 }

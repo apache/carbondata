@@ -237,11 +237,13 @@ public class BlockIndexerStorageForInt implements IndexStorage<int[]> {
         return shortArray;
     }
 
-    @Override public int[] getDataIndexMap() {
+    @Override
+    public int[] getDataIndexMap() {
         return dataIndexMap;
     }
 
-    @Override public int getTotalSize() {
+    @Override
+    public int getTotalSize() {
         return totalSize;
     }
 }

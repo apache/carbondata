@@ -27,23 +27,27 @@ import org.carbondata.query.executer.pagination.exception.MolapPaginationExcepti
 
 public class CalculatedExprProcessor implements DataProcessor {
 
-    @Override public void initModel(PaginationModel model) throws MolapPaginationException {
+    @Override
+    public void initModel(PaginationModel model) throws MolapPaginationException {
         // TODO Auto-generated method stub
 
     }
 
-    @Override public void processRow(byte[] key, MeasureAggregator[] measures)
+    @Override
+    public void processRow(byte[] key, MeasureAggregator[] measures)
             throws MolapPaginationException {
         // TODO Auto-generated method stub
 
     }
 
-    @Override public void finish() throws MolapPaginationException {
+    @Override
+    public void finish() throws MolapPaginationException {
         // TODO Auto-generated method stub
 
     }
 
-    @Override public void processGroup(GroupByHolder groupByHolder) {
+    @Override
+    public void processGroup(GroupByHolder groupByHolder) {
         // TODO Auto-generated method stub
 
     }

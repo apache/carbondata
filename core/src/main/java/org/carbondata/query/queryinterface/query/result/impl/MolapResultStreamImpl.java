@@ -40,7 +40,8 @@ public class MolapResultStreamImpl implements MolapResultStream {
     /**
      * See interface comments
      */
-    @Override public List<MolapTuple> getColumnTuples() {
+    @Override
+    public List<MolapTuple> getColumnTuples() {
 
         return molapTuples;
     }
@@ -48,14 +49,16 @@ public class MolapResultStreamImpl implements MolapResultStream {
     /**
      * See interface comments
      */
-    @Override public boolean hasNext() {
+    @Override
+    public boolean hasNext() {
         return next[i++];
     }
 
     /**
      * See interface comments
      */
-    @Override public MolapResultChunk getResult() {
+    @Override
+    public MolapResultChunk getResult() {
 
         return chunk;
     }

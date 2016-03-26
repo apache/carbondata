@@ -33,7 +33,8 @@ public class UniqueBlockEqualsEvalutor extends NonUniqueBlockEqualsEvalutor {
         super(exp, isExpressionResolve, isIncludeFilter);
     }
 
-    @Override public BitSet applyFilter(BlockDataHolder dataBlockHolder,
+    @Override
+    public BitSet applyFilter(BlockDataHolder dataBlockHolder,
             FilterProcessorPlaceHolder placeHolder) {
         if (null == dataBlockHolder.getColumnarKeyStore()[dimColEvaluatorInfoList.get(0)
                 .getColumnIndex()]) {

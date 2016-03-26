@@ -34,9 +34,7 @@ import org.carbondata.query.expression.ColumnExpression;
 import org.carbondata.query.molapfilterinterface.RowIntf;
 
 /**
- *
  * @author K00900207
- *
  */
 public interface CustomMeasureAggregator extends MeasureAggregator {
     /**
@@ -46,9 +44,7 @@ public interface CustomMeasureAggregator extends MeasureAggregator {
     void agg(RowIntf row);
 
     /**
-     *
      * @return List of columns required for the aggregator
-     *
      */
     List<ColumnExpression> getColumns();
 

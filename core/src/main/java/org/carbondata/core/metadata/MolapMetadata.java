@@ -40,7 +40,8 @@ import org.eigenbase.xom.NodeDef;
 /**
  * It has all meta related to the cube. like dimensions and fact table and aggregate tables etc.
  */
-@SuppressWarnings("deprecation") public final class MolapMetadata {
+@SuppressWarnings("deprecation")
+public final class MolapMetadata {
 
     /**
      * Attribute for Molap LOGGER
@@ -952,7 +953,8 @@ import org.eigenbase.xom.NodeDef;
 
         private String actualTableName;
 
-        @Override public int hashCode() {
+        @Override
+        public int hashCode() {
             final int prime = 31;
             int result = 1;
             result = prime * result + ((molapDimName == null) ? 0 : molapDimName.hashCode());
@@ -962,7 +964,8 @@ import org.eigenbase.xom.NodeDef;
             return result;
         }
 
-        @Override public boolean equals(Object obj) {
+        @Override
+        public boolean equals(Object obj) {
             if (this == obj) {
                 return true;
             }
@@ -1119,7 +1122,8 @@ import org.eigenbase.xom.NodeDef;
             return copy;
         }
 
-        @Override public boolean equals(Object obj) {
+        @Override
+        public boolean equals(Object obj) {
             Measure that = null;
 
             if (obj instanceof Measure) {
@@ -1136,7 +1140,8 @@ import org.eigenbase.xom.NodeDef;
 
         }
 
-        @Override public int hashCode() {
+        @Override
+        public int hashCode() {
             return colName.hashCode();
         }
 
@@ -1602,7 +1607,8 @@ import org.eigenbase.xom.NodeDef;
             this.keyOrdinal = keyOrdinal;
         }
 
-        @Override public int hashCode() {
+        @Override
+        public int hashCode() {
             final int prime = 31;
             int result = 1;
             result = prime * result + ((dimName == null) ? 0 : dimName.hashCode());
@@ -1611,7 +1617,8 @@ import org.eigenbase.xom.NodeDef;
             return result;
         }
 
-        @Override public boolean equals(Object obj) {
+        @Override
+        public boolean equals(Object obj) {
             if (this == obj) {
                 return true;
             }

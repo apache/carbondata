@@ -34,10 +34,10 @@ import org.carbondata.core.constants.MolapCommonConstants;
 import org.carbondata.core.file.manager.composite.FileData;
 import org.carbondata.core.file.manager.composite.IFileManagerComposite;
 import org.carbondata.core.metadata.LeafNodeInfo;
-import org.carbondata.processing.store.writer.exception.MolapDataWriterException;
-import org.carbondata.processing.util.MolapDataProcessorLogEvent;
 import org.carbondata.core.util.MolapProperties;
 import org.carbondata.core.util.MolapUtil;
+import org.carbondata.processing.store.writer.exception.MolapDataWriterException;
+import org.carbondata.processing.util.MolapDataProcessorLogEvent;
 
 public class MolapDataWriter {
     private static final LogService LOGGER =
@@ -232,7 +232,8 @@ public class MolapDataWriter {
         int filesCnt = 0;
         File[] dataFiles = new File(storeLocation).listFiles(new FileFilter() {
 
-            @Override public boolean accept(File f) {
+            @Override
+            public boolean accept(File f) {
                 if (!f.isDirectory() && f.getName().startsWith(tableName) && f.getName()
                         .contains(MolapCommonConstants.FACT_FILE_EXT)) {
                     return true;
@@ -606,7 +607,8 @@ public class MolapDataWriter {
             this.nodeHolderList = nodeHolderList;
         }
 
-        @Override public Void call() throws Exception {
+        @Override
+        public Void call() throws Exception {
             writeData(channel, nodeHolderList);
             return null;
         }

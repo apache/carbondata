@@ -32,7 +32,7 @@ import org.roaringbitmap.IntIterator;
 import org.roaringbitmap.RoaringBitmap;
 
 /**
- *  * The distinct count aggregator
+ * * The distinct count aggregator
  * Ex:
  * ID NAME Sales
  * <p>1 a 200
@@ -81,7 +81,8 @@ public class DistinctCountAggregator implements MeasureAggregator {
     /**
      * just need to add the unique values to agg set
      */
-    @Override public void agg(double newVal) {
+    @Override
+    public void agg(double newVal) {
         valueSet.add((int) (newVal - minValue));
     }
 
@@ -90,7 +91,8 @@ public class DistinctCountAggregator implements MeasureAggregator {
      *
      * @param newVal new value
      */
-    @Override public void agg(Object newVal) {
+    @Override
+    public void agg(Object newVal) {
         // Object include double
         //        if(newVal instanceof Double)
         //        {
@@ -112,14 +114,16 @@ public class DistinctCountAggregator implements MeasureAggregator {
         }
     }
 
-    @Override public void agg(MolapReadDataHolder newVal, int index) {
+    @Override
+    public void agg(MolapReadDataHolder newVal, int index) {
 
     }
 
     /**
      * Below method will be used to get the value byte array
      */
-    @Override public byte[] getByteArray() {
+    @Override
+    public byte[] getByteArray() {
         if (valueSet.getCardinality() == 0) {
             return new byte[0];
         }
@@ -181,7 +185,8 @@ public class DistinctCountAggregator implements MeasureAggregator {
     /**
      * merge the valueset so that we get the count of unique values
      */
-    @Override public void merge(MeasureAggregator aggregator) {
+    @Override
+    public void merge(MeasureAggregator aggregator) {
         DistinctCountAggregator distinctCountAggregator = (DistinctCountAggregator) aggregator;
         readData();
         distinctCountAggregator.readData();
@@ -190,7 +195,8 @@ public class DistinctCountAggregator implements MeasureAggregator {
         }
     }
 
-    @Override public Double getDoubleValue() {
+    @Override
+    public Double getDoubleValue() {
         if (computedFixedValue == null) {
             readData();
             return (double) valueSet.getCardinality();
@@ -198,7 +204,8 @@ public class DistinctCountAggregator implements MeasureAggregator {
         return computedFixedValue;
     }
 
-    @Override public Long getLongValue() {
+    @Override
+    public Long getLongValue() {
         if (computedFixedValue == null) {
             readData();
             return (long) valueSet.getCardinality();
@@ -206,7 +213,8 @@ public class DistinctCountAggregator implements MeasureAggregator {
         return computedFixedValue.longValue();
     }
 
-    @Override public BigDecimal getBigDecimalValue() {
+    @Override
+    public BigDecimal getBigDecimalValue() {
         if (computedFixedValue == null) {
             readData();
             return new BigDecimal(valueSet.getCardinality());
@@ -214,23 +222,27 @@ public class DistinctCountAggregator implements MeasureAggregator {
         return new BigDecimal(computedFixedValue);
     }
 
-    @Override public Object getValueObject() {
+    @Override
+    public Object getValueObject() {
         return valueSet.getCardinality();
     }
 
     /**
      * @see MeasureAggregator#setNewValue(Object)
      */
-    @Override public void setNewValue(Object newValue) {
+    @Override
+    public void setNewValue(Object newValue) {
         computedFixedValue = (Double) newValue;
         valueSet = null;
     }
 
-    @Override public boolean isFirstTime() {
+    @Override
+    public boolean isFirstTime() {
         return false;
     }
 
-    @Override public void writeData(DataOutput output) throws IOException {
+    @Override
+    public void writeData(DataOutput output) throws IOException {
 
         if (computedFixedValue != null) {
             ByteBuffer byteBuffer = ByteBuffer.allocate(4 + 8);
@@ -256,7 +268,8 @@ public class DistinctCountAggregator implements MeasureAggregator {
         }
     }
 
-    @Override public void readData(DataInput inPut) throws IOException {
+    @Override
+    public void readData(DataInput inPut) throws IOException {
         //        int length = inPut.readInt();
         //
         //        if(length ==-1)
@@ -293,13 +306,15 @@ public class DistinctCountAggregator implements MeasureAggregator {
         }
     }
 
-    @Override public MeasureAggregator getCopy() {
+    @Override
+    public MeasureAggregator getCopy() {
         DistinctCountAggregator aggr = new DistinctCountAggregator(minValue);
         aggr.valueSet = valueSet.clone();//new HashSet<Double>(valueSet);
         return aggr;
     }
 
-    @Override public int compareTo(MeasureAggregator measureAggr) {
+    @Override
+    public int compareTo(MeasureAggregator measureAggr) {
         double compFixedVal = getDoubleValue();
         double otherVal = measureAggr.getDoubleValue();
         if (compFixedVal > otherVal) {
@@ -311,7 +326,8 @@ public class DistinctCountAggregator implements MeasureAggregator {
         return 0;
     }
 
-    @Override public MeasureAggregator get() {
+    @Override
+    public MeasureAggregator get() {
         ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
         DataOutputStream outputStream = new DataOutputStream(byteStream);
         try {
@@ -341,7 +357,8 @@ public class DistinctCountAggregator implements MeasureAggregator {
         return minValue;
     }
 
-    @Override public void merge(byte[] value) {
+    @Override
+    public void merge(byte[] value) {
         if (0 == value.length) {
             return;
         }

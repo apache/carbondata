@@ -129,9 +129,7 @@ public class MolapAutoAggregateSliceMergerMeta extends BaseStepMeta implements S
     private int currentRestructNumber;
 
     /**
-     *
      * MolapDataWriterStepMeta constructor to initialize this class
-     *
      */
     public MolapAutoAggregateSliceMergerMeta() {
         super();
@@ -139,9 +137,9 @@ public class MolapAutoAggregateSliceMergerMeta extends BaseStepMeta implements S
 
     /**
      * set the default value for all the properties
-     *
      */
-    @Override public void setDefault() {
+    @Override
+    public void setDefault() {
         tabelName = "";
         mdkeySize = "";
         measureCount = "";
@@ -199,8 +197,7 @@ public class MolapAutoAggregateSliceMergerMeta extends BaseStepMeta implements S
      * Get the XML that represents the values in this step
      *
      * @return the XML that represents the metadata in this step
-     * @throws KettleException
-     *             in case there is a conversion or XML encoding error
+     * @throws KettleException in case there is a conversion or XML encoding error
      */
     public String getXML() {
         StringBuffer strBuff = new StringBuffer(150);
@@ -223,17 +220,14 @@ public class MolapAutoAggregateSliceMergerMeta extends BaseStepMeta implements S
     /**
      * Load the values for this step from an XML Node
      *
-     * @param stepnode
-     *            the Node to get the info from
-     * @param databases
-     *            The available list of databases to reference to
-     * @param counters
-     *            Counters to reference.
-     * @throws KettleXMLException
-     *             When an unexpected XML error occurred. (malformed etc.)
+     * @param stepnode  the Node to get the info from
+     * @param databases The available list of databases to reference to
+     * @param counters  Counters to reference.
+     * @throws KettleXMLException When an unexpected XML error occurred. (malformed etc.)
      */
-    @Override public void loadXML(Node stepnode, List<DatabaseMeta> databases,
-            Map<String, Counter> counters) throws KettleXMLException {
+    @Override
+    public void loadXML(Node stepnode, List<DatabaseMeta> databases, Map<String, Counter> counters)
+            throws KettleXMLException {
         try {
             tabelName = XMLHandler.getTagValue(stepnode, "TableName");
             mdkeySize = XMLHandler.getTagValue(stepnode, "MDKeySize");
@@ -255,16 +249,13 @@ public class MolapAutoAggregateSliceMergerMeta extends BaseStepMeta implements S
     /**
      * Save the steps data into a Kettle repository
      *
-     * @param repository
-     *            The Kettle repository to save to
-     * @param idTransformation
-     *            The transformation ID
-     * @param idStep
-     *            The step ID
-     * @throws KettleException
-     *             When an unexpected error occurred (database, network, etc)
+     * @param repository       The Kettle repository to save to
+     * @param idTransformation The transformation ID
+     * @param idStep           The step ID
+     * @throws KettleException When an unexpected error occurred (database, network, etc)
      */
-    @Override public void saveRep(Repository repository, ObjectId idTransformation, ObjectId idStep)
+    @Override
+    public void saveRep(Repository repository, ObjectId idTransformation, ObjectId idStep)
             throws KettleException {
         try {
             repository.saveStepAttribute(idTransformation, idStep, "TableName",
@@ -297,18 +288,14 @@ public class MolapAutoAggregateSliceMergerMeta extends BaseStepMeta implements S
     /**
      * Read the steps information from a Kettle repository
      *
-     * @param rep
-     *            The repository to read from
-     * @param idStep
-     *            The step ID
-     * @param databases
-     *            The databases to reference
-     * @param counters
-     *            The counters to reference
-     * @throws KettleException
-     *             When an unexpected error occurred (database, network, etc)
+     * @param rep       The repository to read from
+     * @param idStep    The step ID
+     * @param databases The databases to reference
+     * @param counters  The counters to reference
+     * @throws KettleException When an unexpected error occurred (database, network, etc)
      */
-    @Override public void readRep(Repository rep, ObjectId idStep, List<DatabaseMeta> databases,
+    @Override
+    public void readRep(Repository rep, ObjectId idStep, List<DatabaseMeta> databases,
             Map<String, Counter> counters) throws KettleException {
         try {
             tabelName = rep.getStepAttributeString(idStep, "TableName");
@@ -332,23 +319,17 @@ public class MolapAutoAggregateSliceMergerMeta extends BaseStepMeta implements S
     /**
      * Checks the settings of this step and puts the findings in a remarks List.
      *
-     * @param remarks
-     *            The list to put the remarks in @see
-     *            org.pentaho.di.core.CheckResult
-     * @param stepMeta
-     *            The stepMeta to help checking
-     * @param prev
-     *            The fields coming from the previous step
-     * @param input
-     *            The input step names
-     * @param output
-     *            The output step names
-     * @param info
-     *            The fields that are used as information by the step
+     * @param remarks  The list to put the remarks in @see
+     *                 org.pentaho.di.core.CheckResult
+     * @param stepMeta The stepMeta to help checking
+     * @param prev     The fields coming from the previous step
+     * @param input    The input step names
+     * @param output   The output step names
+     * @param info     The fields that are used as information by the step
      */
-    @Override public void check(List<CheckResultInterface> remarks, TransMeta transMeta,
-            StepMeta stepMeta, RowMetaInterface prev, String[] input, String[] output,
-            RowMetaInterface info) {
+    @Override
+    public void check(List<CheckResultInterface> remarks, TransMeta transMeta, StepMeta stepMeta,
+            RowMetaInterface prev, String[] input, String[] output, RowMetaInterface info) {
 
         CheckResult chkRes = null;
 
@@ -368,20 +349,16 @@ public class MolapAutoAggregateSliceMergerMeta extends BaseStepMeta implements S
     /**
      * Get the executing step, needed by Trans to launch a step.
      *
-     * @param stepMeta
-     *            The step info
-     * @param stepDataInterface
-     *            the step data interface linked to this step. Here the step can
-     *            store temporary data, database connections, etc.
-     * @param copyNr
-     *            The copy nr to get
-     * @param transMeta
-     *            The transformation info
-     * @param trans
-     *            The launching transformation
+     * @param stepMeta          The step info
+     * @param stepDataInterface the step data interface linked to this step. Here the step can
+     *                          store temporary data, database connections, etc.
+     * @param copyNr            The copy nr to get
+     * @param transMeta         The transformation info
+     * @param trans             The launching transformation
      */
-    @Override public StepInterface getStep(StepMeta stepMeta, StepDataInterface stepDataInterface,
-            int copyNr, TransMeta transMeta, Trans trans) {
+    @Override
+    public StepInterface getStep(StepMeta stepMeta, StepDataInterface stepDataInterface, int copyNr,
+            TransMeta transMeta, Trans trans) {
         return new MolapAutoAggregateSliceMergerStep(stepMeta, stepDataInterface, copyNr, transMeta,
                 trans);
     }
@@ -393,7 +370,8 @@ public class MolapAutoAggregateSliceMergerMeta extends BaseStepMeta implements S
      *
      * @return The appropriate StepDataInterface class.
      */
-    @Override public StepDataInterface getStepData() {
+    @Override
+    public StepDataInterface getStepData() {
         return new MolapAutoAggregateSliceMergerData();
     }
 
@@ -401,7 +379,6 @@ public class MolapAutoAggregateSliceMergerMeta extends BaseStepMeta implements S
      * This method will be used to get the heir and its key suze string
      *
      * @return heirAndKeySize
-     *
      */
     public String getHeirAndKeySize() {
         return heirAndKeySize;
@@ -411,7 +388,6 @@ public class MolapAutoAggregateSliceMergerMeta extends BaseStepMeta implements S
      * This method will be used to set the heir and key size string
      *
      * @param heirAndKeySize
-     *
      */
     public void setHeirAndKeySize(String heirAndKeySize) {
         this.heirAndKeySize = heirAndKeySize;
@@ -425,8 +401,7 @@ public class MolapAutoAggregateSliceMergerMeta extends BaseStepMeta implements S
     }
 
     /**
-     * @param cubeName
-     *            the cubeName to set
+     * @param cubeName the cubeName to set
      */
     public void setCubeName(String cubeName) {
         this.cubeName = cubeName;
@@ -440,8 +415,7 @@ public class MolapAutoAggregateSliceMergerMeta extends BaseStepMeta implements S
     }
 
     /**
-     * @param tableNames
-     *            the tableNames to set
+     * @param tableNames the tableNames to set
      */
     public void setTableNames(String[] tableNames) {
         this.tableNames = tableNames;
@@ -455,8 +429,7 @@ public class MolapAutoAggregateSliceMergerMeta extends BaseStepMeta implements S
     }
 
     /**
-     * @param mapOfTableAndMdkeySize
-     *            the mapOfTableAndMdkeySize to set
+     * @param mapOfTableAndMdkeySize the mapOfTableAndMdkeySize to set
      */
     public void setMapOfTableAndMdkeySize(Map<String, Integer> mapOfTableAndMdkeySize) {
         this.mapOfTableAndMdkeySize = mapOfTableAndMdkeySize;
@@ -470,8 +443,7 @@ public class MolapAutoAggregateSliceMergerMeta extends BaseStepMeta implements S
     }
 
     /**
-     * @param schemaName
-     *            the schemaName to set
+     * @param schemaName the schemaName to set
      */
     public void setSchemaName(String schemaName) {
         this.schemaName = schemaName;
@@ -485,8 +457,7 @@ public class MolapAutoAggregateSliceMergerMeta extends BaseStepMeta implements S
     }
 
     /**
-     * @param mapOfTableAndMeasureCount
-     *            the mapOfTableAndMeasureCount to set
+     * @param mapOfTableAndMeasureCount the mapOfTableAndMeasureCount to set
      */
     public void setMapOfTableAndMeasureCount(Map<String, Integer> mapOfTableAndMeasureCount) {
         this.mapOfTableAndMeasureCount = mapOfTableAndMeasureCount;

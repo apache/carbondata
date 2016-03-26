@@ -50,17 +50,20 @@ public class UnCompressNonDecimalLong implements UnCompressValue<long[]> {
      */
     private long[] value;
 
-    @Override public void setValue(long[] value) {
+    @Override
+    public void setValue(long[] value) {
         this.value = value;
     }
 
-    @Override public UnCompressValue compress() {
+    @Override
+    public UnCompressValue compress() {
         UnCompressNonDecimalByte byte1 = new UnCompressNonDecimalByte();
         byte1.setValue(longCompressor.compress(value));
         return byte1;
     }
 
-    @Override public UnCompressValue getNew() {
+    @Override
+    public UnCompressValue getNew() {
         try {
             return (UnCompressValue) clone();
         } catch (CloneNotSupportedException e) {
@@ -69,15 +72,18 @@ public class UnCompressNonDecimalLong implements UnCompressValue<long[]> {
         return null;
     }
 
-    @Override public UnCompressValue uncompress(DataType dataType) {
+    @Override
+    public UnCompressValue uncompress(DataType dataType) {
         return null;
     }
 
-    @Override public byte[] getBackArrayData() {
+    @Override
+    public byte[] getBackArrayData() {
         return ValueCompressionUtil.convertToBytes(value);
     }
 
-    @Override public void setValueInBytes(byte[] bytes) {
+    @Override
+    public void setValueInBytes(byte[] bytes) {
         ByteBuffer buffer = ByteBuffer.wrap(bytes);
         this.value = ValueCompressionUtil.convertToLongArray(buffer, bytes.length);
     }
@@ -85,11 +91,13 @@ public class UnCompressNonDecimalLong implements UnCompressValue<long[]> {
     /**
      * @see ValueCompressonHolder.UnCompressValue#getCompressorObject()
      */
-    @Override public UnCompressValue getCompressorObject() {
+    @Override
+    public UnCompressValue getCompressorObject() {
         return new UnCompressNonDecimalByte();
     }
 
-    @Override public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
+    @Override
+    public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
         double[] vals = new double[value.length];
         for (int i = 0; i < vals.length; i++) {
             vals[i] = value[i] / Math.pow(10, decimal);

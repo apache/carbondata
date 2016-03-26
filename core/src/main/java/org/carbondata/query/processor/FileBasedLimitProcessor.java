@@ -37,30 +37,34 @@ public class FileBasedLimitProcessor implements DataProcessorExt {
         this.processor = processor;
     }
 
-    @Override public void initialise(DataProcessorInfo model) throws DataProcessorException {
+    @Override
+    public void initialise(DataProcessorInfo model) throws DataProcessorException {
         this.processor.initialise(model);
         this.limit = model.getLimit();
     }
 
-    @Override public void processRow(byte[] key, MeasureAggregator[] value)
-            throws DataProcessorException {
+    @Override
+    public void processRow(byte[] key, MeasureAggregator[] value) throws DataProcessorException {
         if (limit == -1 || counter < limit) {
             processor.processRow(key, value);
             counter++;
         }
     }
 
-    @Override public void finish() throws DataProcessorException {
+    @Override
+    public void finish() throws DataProcessorException {
         processor.finish();
 
     }
 
-    @Override public MolapIterator<QueryResult> getQueryResultIterator() {
+    @Override
+    public MolapIterator<QueryResult> getQueryResultIterator() {
         // TODO Auto-generated method stub
         return processor.getQueryResultIterator();
     }
 
-    @Override public void processRow(ByteArrayWrapper key, MeasureAggregator[] value)
+    @Override
+    public void processRow(ByteArrayWrapper key, MeasureAggregator[] value)
             throws DataProcessorException {
         if (limit == -1 || counter < limit) {
             processor.processRow(key, value);

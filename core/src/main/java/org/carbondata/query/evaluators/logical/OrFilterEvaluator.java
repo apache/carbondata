@@ -30,7 +30,8 @@ public class OrFilterEvaluator extends AbstractLogicalFilterEvaluator {
         super(leftEvalutor, rightEvalutor);
     }
 
-    @Override public BitSet applyFilter(BlockDataHolder blockDataHolder,
+    @Override
+    public BitSet applyFilter(BlockDataHolder blockDataHolder,
             FilterProcessorPlaceHolder placeHolder) {
         BitSet leftFilters = leftEvalutor.applyFilter(blockDataHolder, placeHolder);
         BitSet rightFilters = rightEvalutor.applyFilter(blockDataHolder, placeHolder);
@@ -38,7 +39,8 @@ public class OrFilterEvaluator extends AbstractLogicalFilterEvaluator {
         return leftFilters;
     }
 
-    @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
+    @Override
+    public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
         BitSet leftFilters = leftEvalutor.isScanRequired(blockMaxValue, blockMinValue);
         BitSet rightFilters = rightEvalutor.isScanRequired(blockMaxValue, blockMinValue);
         leftFilters.or(rightFilters);

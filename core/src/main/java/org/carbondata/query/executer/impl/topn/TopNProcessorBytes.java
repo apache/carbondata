@@ -131,7 +131,8 @@ public class TopNProcessorBytes
         //        this.aggregators = aggregators;
     }
 
-    @Override public void initModel(PaginationModel model) throws MolapPaginationException {
+    @Override
+    public void initModel(PaginationModel model) throws MolapPaginationException {
         this.groupMaskedBytes = model.getGroupMaskedBytes();
         this.topMeasureIndex = model.getTopMeasureIndex();
         this.topNCount = model.getTopNCount();
@@ -183,11 +184,13 @@ public class TopNProcessorBytes
     //        }
     //    }
 
-    @Override public void processRow(byte[] key, MeasureAggregator[] measures) {
+    @Override
+    public void processRow(byte[] key, MeasureAggregator[] measures) {
         //       addRow(key, measures);
     }
 
-    @Override public void processGroup(GroupByHolder groupByHolder) {
+    @Override
+    public void processGroup(GroupByHolder groupByHolder) {
         if (!group.addHolder(groupByHolder)) {
             group = new TopNHolderGroup(groupMaskedBytes, topNCount, topNType,
                     maskedBytesPosForGroup, topnOnColumns);
@@ -196,7 +199,8 @@ public class TopNProcessorBytes
         }
     }
 
-    @Override public void finish() throws MolapPaginationException {
+    @Override
+    public void finish() throws MolapPaginationException {
 
         if (processor instanceof MeasureFilterProcessor) {
             for (TopNHolderGroup holderGroup : groups) {

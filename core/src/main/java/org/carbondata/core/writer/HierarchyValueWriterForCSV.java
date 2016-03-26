@@ -113,7 +113,8 @@ public class HierarchyValueWriterForCSV {
 
         File[] listFiles = storeFolder.listFiles(new FileFilter() {
 
-            @Override public boolean accept(File file) {
+            @Override
+            public boolean accept(File file) {
                 if (file.getName().indexOf(meString) > -1)
 
                 {

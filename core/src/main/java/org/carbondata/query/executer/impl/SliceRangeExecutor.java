@@ -33,7 +33,8 @@ import org.carbondata.query.wrappers.ByteArrayWrapper;
  */
 public class SliceRangeExecutor implements Callable<Map<ByteArrayWrapper, MeasureAggregator[]>> {
 
-    @Override public Map<ByteArrayWrapper, MeasureAggregator[]> call() throws Exception {
+    @Override
+    public Map<ByteArrayWrapper, MeasureAggregator[]> call() throws Exception {
         // TODO Auto-generated method stub
         return null;
     }

@@ -51,7 +51,8 @@ public class FileSizeBasedLRU {
      * @param diskSize
      * @param hashMap
      */
-    @SuppressWarnings("unchecked") public FileSizeBasedLRU(int intialSize, final long diskSize) {
+    @SuppressWarnings("unchecked")
+    public FileSizeBasedLRU(int intialSize, final long diskSize) {
         fCacheSize = intialSize;
         diskSizeLimit = diskSize;
         // If the cache is to be used by multiple threads,
@@ -85,7 +86,8 @@ public class FileSizeBasedLRU {
                         return false;   //size exceeded the max allowed
                     }
 
-                    @Override public LRUCacheValue put(LRUCacheKey key, LRUCacheValue value) {
+                    @Override
+                    public LRUCacheValue put(LRUCacheKey key, LRUCacheValue value) {
                         //                    if(!key.isCompleted())
                         //                    {
                         //                        Long removeSize = super.remove(key);
@@ -185,7 +187,8 @@ public class FileSizeBasedLRU {
     /**
      * To string
      */
-    @Override public String toString() {
+    @Override
+    public String toString() {
         // TODO Auto-generated method stub
         return fCacheMap.toString();
     }

@@ -291,7 +291,8 @@ public final class ScannedResultProcessorUtil {
     public static MolapFile[] getFiles(final String location, final String[] extension) {
         MolapFile molapFile = FileFactory.getMolapFile(location, FileFactory.getFileType(location));
         MolapFile[] list = molapFile.listFiles(new MolapFileFilter() {
-            @Override public boolean accept(MolapFile file) {
+            @Override
+            public boolean accept(MolapFile file) {
                 for (int i = 0; i < extension.length; i++) {
                     if (file.getName().endsWith(extension[i])) {
                         return true;

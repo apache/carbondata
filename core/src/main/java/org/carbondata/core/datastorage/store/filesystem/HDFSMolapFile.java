@@ -66,7 +66,8 @@ public class HDFSMolapFile implements MolapFile {
         this.fileStatus = fileStatus;
     }
 
-    @Override public boolean createNewFile() {
+    @Override
+    public boolean createNewFile() {
         Path path = fileStatus.getPath();
         try {
             return fs.createNewFile(path);
@@ -76,11 +77,13 @@ public class HDFSMolapFile implements MolapFile {
 
     }
 
-    @Override public String getAbsolutePath() {
+    @Override
+    public String getAbsolutePath() {
         return fileStatus.getPath().toString();
     }
 
-    @Override public MolapFile[] listFiles(final MolapFileFilter fileFilter) {
+    @Override
+    public MolapFile[] listFiles(final MolapFileFilter fileFilter) {
         FileStatus[] listStatus = null;
         try {
             if (null != fileStatus && fileStatus.isDir()) {
@@ -88,7 +91,8 @@ public class HDFSMolapFile implements MolapFile {
                 listStatus = path.getFileSystem(FileFactory.getConfiguration())
                         .listStatus(path, new PathFilter() {
 
-                            @Override public boolean accept(Path path) {
+                            @Override
+                            public boolean accept(Path path) {
 
                                 return fileFilter.accept(new HDFSMolapFile(path));
                             }
@@ -105,15 +109,18 @@ public class HDFSMolapFile implements MolapFile {
         return getFiles(listStatus);
     }
 
-    @Override public String getName() {
+    @Override
+    public String getName() {
         return fileStatus.getPath().getName();
     }
 
-    @Override public boolean isDirectory() {
+    @Override
+    public boolean isDirectory() {
         return fileStatus.isDir();
     }
 
-    @Override public boolean exists() {
+    @Override
+    public boolean exists() {
         try {
             if (null != fileStatus) {
                 fs = fileStatus.getPath().getFileSystem(FileFactory.getConfiguration());
@@ -126,19 +133,23 @@ public class HDFSMolapFile implements MolapFile {
         return false;
     }
 
-    @Override public String getCanonicalPath() {
+    @Override
+    public String getCanonicalPath() {
         return getAbsolutePath();
     }
 
-    @Override public MolapFile getParentFile() {
+    @Override
+    public MolapFile getParentFile() {
         return new HDFSMolapFile(fileStatus.getPath().getParent());
     }
 
-    @Override public String getPath() {
+    @Override
+    public String getPath() {
         return getAbsolutePath();
     }
 
-    @Override public long getSize() {
+    @Override
+    public long getSize() {
         return fileStatus.getLen();
     }
 
@@ -166,7 +177,8 @@ public class HDFSMolapFile implements MolapFile {
         }
     }
 
-    @Override public MolapFile[] listFiles() {
+    @Override
+    public MolapFile[] listFiles() {
 
         FileStatus[] listStatus = null;
         try {
@@ -202,7 +214,8 @@ public class HDFSMolapFile implements MolapFile {
         return files;
     }
 
-    @Override public boolean mkdirs() {
+    @Override
+    public boolean mkdirs() {
         Path path = fileStatus.getPath();
         try {
             return fs.mkdirs(path);
@@ -211,11 +224,13 @@ public class HDFSMolapFile implements MolapFile {
         }
     }
 
-    @Override public long getLastModifiedTime() {
+    @Override
+    public long getLastModifiedTime() {
         return fileStatus.getModificationTime();
     }
 
-    @Override public boolean setLastModifiedTime(long timestamp) {
+    @Override
+    public boolean setLastModifiedTime(long timestamp) {
         try {
             fs.setTimes(fileStatus.getPath(), timestamp, timestamp);
         } catch (IOException e) {
@@ -224,7 +239,8 @@ public class HDFSMolapFile implements MolapFile {
         return true;
     }
 
-    @Override public boolean renameForce(String changetoName) {
+    @Override
+    public boolean renameForce(String changetoName) {
         FileSystem fs;
         try {
             fs = fileStatus.getPath().getFileSystem(FileFactory.getConfiguration());

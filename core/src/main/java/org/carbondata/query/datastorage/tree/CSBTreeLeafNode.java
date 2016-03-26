@@ -189,7 +189,8 @@ public class CSBTreeLeafNode extends CSBNode {
         // We shouldn't ever be here
     }
 
-    @Override public KeyValue getNextKeyValue(int index) {
+    @Override
+    public KeyValue getNextKeyValue(int index) {
         // return new KeyValue<byte[], double[]>(keyStore.get(index),
         // values[index]);
         // return new KeyValue<byte[], double[]>(keyStore.get(index),
@@ -238,21 +239,25 @@ public class CSBTreeLeafNode extends CSBNode {
     //        dataStore.compress(compressionModel);
     //    }
 
-    @Override public byte[] getBackKeyArray(FileHolder fileHolder) {
+    @Override
+    public byte[] getBackKeyArray(FileHolder fileHolder) {
 
         return keyStore.getBackArray(fileHolder);
     }
 
-    @Override public short getValueSize() {
+    @Override
+    public short getValueSize() {
         // TODO Auto-generated method stub
         return dataStore.getLength();
     }
 
-    @Override public MeasureDataWrapper getNodeMsrDataWrapper(int[] cols, FileHolder fileHolder) {
+    @Override
+    public MeasureDataWrapper getNodeMsrDataWrapper(int[] cols, FileHolder fileHolder) {
         return dataStore.getBackData(cols, fileHolder);
     }
 
-    @Override public byte[] getKey(int keyIndex, FileHolder fileHolder) {
+    @Override
+    public byte[] getKey(int keyIndex, FileHolder fileHolder) {
         return keyStore.get(keyIndex, fileHolder);
     }
 
@@ -270,21 +275,25 @@ public class CSBTreeLeafNode extends CSBNode {
         return null;
     }
 
-    @Override public long getNodeNumber() {
+    @Override
+    public long getNodeNumber() {
         // TODO Auto-generated method stub
         return 0;
     }
 
-    @Override public MeasureDataWrapper getNodeMsrDataWrapper(int cols, FileHolder fileHolder) {
+    @Override
+    public MeasureDataWrapper getNodeMsrDataWrapper(int cols, FileHolder fileHolder) {
         return dataStore.getBackData(cols, fileHolder);
     }
 
-    @Override public byte[][] getBlockMaxData() {
+    @Override
+    public byte[][] getBlockMaxData() {
         // TODO Auto-generated method stub
         return null;
     }
 
-    @Override public byte[][] getBlockMinData() {
+    @Override
+    public byte[][] getBlockMinData() {
         // TODO Auto-generated method stub
         return null;
     }

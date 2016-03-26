@@ -21,8 +21,8 @@ package org.carbondata.processing.sortandgroupby.sortData;
 
 import java.io.*;
 
-import org.carbondata.processing.sortandgroupby.exception.MolapSortKeyAndGroupByException;
 import org.carbondata.core.util.MolapUtil;
+import org.carbondata.processing.sortandgroupby.exception.MolapSortKeyAndGroupByException;
 
 public abstract class AbstractTempSortFileWriter implements TempSortFileWriter {
 
@@ -75,8 +75,8 @@ public abstract class AbstractTempSortFileWriter implements TempSortFileWriter {
     /**
      * Below method will be used to initialize the stream and write the entry count
      */
-    @Override public void initiaize(File file, int entryCount)
-            throws MolapSortKeyAndGroupByException {
+    @Override
+    public void initiaize(File file, int entryCount) throws MolapSortKeyAndGroupByException {
         try {
             stream = new DataOutputStream(
                     new BufferedOutputStream(new FileOutputStream(file), writeBufferSize));
@@ -91,7 +91,8 @@ public abstract class AbstractTempSortFileWriter implements TempSortFileWriter {
     /**
      * Below method will be used to close the stream
      */
-    @Override public void finish() {
+    @Override
+    public void finish() {
         MolapUtil.closeStreams(stream);
     }
 }

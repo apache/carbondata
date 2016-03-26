@@ -94,7 +94,8 @@ public class MolapMDKeyGenStepMeta extends BaseStepMeta implements StepMetaInter
         super();
     }
 
-    @Override public void setDefault() {
+    @Override
+    public void setDefault() {
         tableName = "";
         aggregateLevels = "";
         numberOfCores = "";
@@ -126,7 +127,8 @@ public class MolapMDKeyGenStepMeta extends BaseStepMeta implements StepMetaInter
         return retval.toString();
     }
 
-    @Override public void saveRep(Repository rep, ObjectId idTransformation, ObjectId idStep)
+    @Override
+    public void saveRep(Repository rep, ObjectId idTransformation, ObjectId idStep)
             throws KettleException {
         try {
             rep.saveStepAttribute(idTransformation, idStep, "TableName", tableName); //$NON-NLS-1$
@@ -175,7 +177,8 @@ public class MolapMDKeyGenStepMeta extends BaseStepMeta implements StepMetaInter
         return retval;
     }
 
-    @Override public void readRep(Repository rep, ObjectId idStep, List<DatabaseMeta> databases,
+    @Override
+    public void readRep(Repository rep, ObjectId idStep, List<DatabaseMeta> databases,
             Map<String, Counter> counters) throws KettleException {
         try {
             tableName = rep.getStepAttributeString(idStep, "TableName");
@@ -208,7 +211,8 @@ public class MolapMDKeyGenStepMeta extends BaseStepMeta implements StepMetaInter
         return new MolapMDKeyGenStep(stepMeta, stepDataInterface, copyNr, transMeta, trans);
     }
 
-    @Override public StepDataInterface getStepData() {
+    @Override
+    public StepDataInterface getStepData() {
         return new MolapMDKeyGenStepData();
     }
 

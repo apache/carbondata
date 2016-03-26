@@ -23,23 +23,23 @@ import java.io.*;
 import java.util.*;
 import java.util.Map.Entry;
 
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.processing.dimension.load.info.DimensionLoadInfo;
 import org.carbondata.core.file.manager.composite.FileData;
 import org.carbondata.core.file.manager.composite.IFileManagerComposite;
 import org.carbondata.core.file.manager.composite.LoadFolderData;
 import org.carbondata.core.keygenerator.KeyGenerator;
-import org.carbondata.processing.merger.Util.MolapSliceMergerUtil;
 import org.carbondata.core.metadata.SliceMetaData;
-import org.carbondata.processing.surrogatekeysgenerator.csvbased.MolapCSVBasedDimSurrogateKeyGen;
-import org.carbondata.processing.surrogatekeysgenerator.csvbased.RealTimeDataPropertyReader;
-import org.carbondata.processing.util.MolapDataProcessorLogEvent;
 import org.carbondata.core.util.MolapProperties;
 import org.carbondata.core.util.MolapUtil;
 import org.carbondata.core.util.MolapUtilException;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import org.carbondata.processing.dimension.load.info.DimensionLoadInfo;
+import org.carbondata.processing.merger.Util.MolapSliceMergerUtil;
+import org.carbondata.processing.surrogatekeysgenerator.csvbased.MolapCSVBasedDimSurrogateKeyGen;
+import org.carbondata.processing.surrogatekeysgenerator.csvbased.RealTimeDataPropertyReader;
+import org.carbondata.processing.util.MolapDataProcessorLogEvent;
 import org.pentaho.di.core.exception.KettleException;
 
 public final class DimenionLoadCommandHelper {
@@ -152,7 +152,8 @@ public final class DimenionLoadCommandHelper {
 
         File[] allHierarchyFiles = loadFolder.listFiles(new FileFilter() {
 
-            @Override public boolean accept(File pathname) {
+            @Override
+            public boolean accept(File pathname) {
                 if (pathname.getName().indexOf(MolapCommonConstants.HIERARCHY_FILE_EXTENSION)
                         > -1) {
                     return true;
@@ -163,7 +164,8 @@ public final class DimenionLoadCommandHelper {
 
         File[] uniqueHierarchyFiles = loadFolder.listFiles(new FileFilter() {
 
-            @Override public boolean accept(File file) {
+            @Override
+            public boolean accept(File file) {
                 if (file.getName().indexOf(MolapCommonConstants.HIERARCHY_FILE_EXTENSION + '0')
                         > -1) {
                     return true;
@@ -225,7 +227,8 @@ public final class DimenionLoadCommandHelper {
 
         File[] allLevelFiles = loadFolder.listFiles(new FileFilter() {
 
-            @Override public boolean accept(File pathname) {
+            @Override
+            public boolean accept(File pathname) {
                 if (pathname.getName().indexOf(MolapCommonConstants.LEVEL_FILE_EXTENSION) > -1) {
                     return true;
                 }
@@ -235,7 +238,8 @@ public final class DimenionLoadCommandHelper {
 
         File[] uniqueLevelFiles = loadFolder.listFiles(new FileFilter() {
 
-            @Override public boolean accept(File file) {
+            @Override
+            public boolean accept(File file) {
                 if (file.getName().endsWith(MolapCommonConstants.LEVEL_FILE_EXTENSION + '0')) {
                     return true;
                 }

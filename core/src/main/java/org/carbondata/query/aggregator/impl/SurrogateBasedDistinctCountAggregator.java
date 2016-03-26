@@ -71,7 +71,8 @@ public class SurrogateBasedDistinctCountAggregator implements MeasureAggregator 
     /**
      * just need to add the unique values to agg set
      */
-    @Override public void agg(double newVal) {//CHECKSTYLE:OFF    Approval No:Approval-V3R8C00_013
+    @Override
+    public void agg(double newVal) {//CHECKSTYLE:OFF    Approval No:Approval-V3R8C00_013
         int a = (int) newVal;//CHECKSTYLE:ON
         bitSet.add(a);
     }
@@ -81,7 +82,8 @@ public class SurrogateBasedDistinctCountAggregator implements MeasureAggregator 
      *
      * @param newVal new value
      */
-    @Override public void agg(Object newVal) {
+    @Override
+    public void agg(Object newVal) {
         // Object include double
         if (newVal instanceof Double) {
             agg((double) newVal);
@@ -106,7 +108,8 @@ public class SurrogateBasedDistinctCountAggregator implements MeasureAggregator 
     /**
      * Below method will be used to get the value byte array
      */
-    @Override public byte[] getByteArray() {
+    @Override
+    public byte[] getByteArray() {
         return null;
     }
 
@@ -123,7 +126,8 @@ public class SurrogateBasedDistinctCountAggregator implements MeasureAggregator 
     /**
      * merge the valueset so that we get the count of unique values
      */
-    @Override public void merge(MeasureAggregator aggregator) {
+    @Override
+    public void merge(MeasureAggregator aggregator) {
         SurrogateBasedDistinctCountAggregator distinctCountAggregator =
                 (SurrogateBasedDistinctCountAggregator) aggregator;
         readData();
@@ -131,7 +135,8 @@ public class SurrogateBasedDistinctCountAggregator implements MeasureAggregator 
         agg(distinctCountAggregator.bitSet);
     }
 
-    @Override public Double getDoubleValue() {
+    @Override
+    public Double getDoubleValue() {
         if (computedFixedValue == null) {
             readData();
             return (double) bitSet.getCardinality();
@@ -139,7 +144,8 @@ public class SurrogateBasedDistinctCountAggregator implements MeasureAggregator 
         return computedFixedValue;
     }
 
-    @Override public Long getLongValue() {
+    @Override
+    public Long getLongValue() {
         if (computedFixedValue == null) {
             readData();
             return (long) bitSet.getCardinality();
@@ -147,7 +153,8 @@ public class SurrogateBasedDistinctCountAggregator implements MeasureAggregator 
         return computedFixedValue.longValue();
     }
 
-    @Override public BigDecimal getBigDecimalValue() {
+    @Override
+    public BigDecimal getBigDecimalValue() {
         if (computedFixedValue == null) {
             readData();
             return new BigDecimal(bitSet.getCardinality());
@@ -155,32 +162,38 @@ public class SurrogateBasedDistinctCountAggregator implements MeasureAggregator 
         return new BigDecimal(computedFixedValue);
     }
 
-    @Override public Object getValueObject() {
+    @Override
+    public Object getValueObject() {
         return bitSet.getCardinality();
     }
 
     /**
      * @see MeasureAggregator#setNewValue(Object)
      */
-    @Override public void setNewValue(Object newValue) {
+    @Override
+    public void setNewValue(Object newValue) {
         computedFixedValue = (Double) newValue;
         bitSet = null;
     }
 
-    @Override public boolean isFirstTime() {
+    @Override
+    public boolean isFirstTime() {
         return false;
     }
 
-    @Override public void writeData(DataOutput output) throws IOException {
+    @Override
+    public void writeData(DataOutput output) throws IOException {
         bitSet.serialize(output);
     }
 
-    @Override public void readData(DataInput inPut) throws IOException {
+    @Override
+    public void readData(DataInput inPut) throws IOException {
         bitSet = new RoaringBitmap();
         bitSet.deserialize(inPut);
     }
 
-    @Override public MeasureAggregator getCopy() {
+    @Override
+    public MeasureAggregator getCopy() {
         SurrogateBasedDistinctCountAggregator aggregator =
                 new SurrogateBasedDistinctCountAggregator();
         aggregator.bitSet = bitSet.clone();
@@ -192,7 +205,8 @@ public class SurrogateBasedDistinctCountAggregator implements MeasureAggregator 
          return compareTo(msrAggregator)==0;
      }*/
 
-    @Override public int compareTo(MeasureAggregator object) {
+    @Override
+    public int compareTo(MeasureAggregator object) {
         double val = getDoubleValue();
         double otherVal = object.getDoubleValue();
         if (val > otherVal) {
@@ -204,7 +218,8 @@ public class SurrogateBasedDistinctCountAggregator implements MeasureAggregator 
         return 0;
     }
 
-    @Override public MeasureAggregator get() {
+    @Override
+    public MeasureAggregator get() {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         DataOutputStream outputStream = new DataOutputStream(stream);
         try {
@@ -233,7 +248,8 @@ public class SurrogateBasedDistinctCountAggregator implements MeasureAggregator 
         }
     }
 
-    @Override public void merge(byte[] value) {
+    @Override
+    public void merge(byte[] value) {
         // TODO Auto-generated method stub
 
     }

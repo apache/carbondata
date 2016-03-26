@@ -31,10 +31,10 @@ import org.carbondata.core.datastorage.store.filesystem.MolapFile;
 import org.carbondata.core.datastorage.store.filesystem.MolapFileFilter;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
-import org.carbondata.processing.merger.exeception.SliceMergerException;
-import org.carbondata.processing.util.MolapDataProcessorLogEvent;
 import org.carbondata.core.util.MolapUtil;
 import org.carbondata.core.writer.ByteArrayHolder;
+import org.carbondata.processing.merger.exeception.SliceMergerException;
+import org.carbondata.processing.util.MolapDataProcessorLogEvent;
 
 public final class MolapSliceMergerUtil {
     /**
@@ -342,7 +342,8 @@ public final class MolapSliceMergerUtil {
 
         MolapFile[] files = storeFolder.listFiles(new MolapFileFilter() {
 
-            @Override public boolean accept(MolapFile pathname) {
+            @Override
+            public boolean accept(MolapFile pathname) {
                 if (!(pathname.isDirectory()) && pathname.getName().endsWith(".hierarchy")) {
                     return true;
                 }

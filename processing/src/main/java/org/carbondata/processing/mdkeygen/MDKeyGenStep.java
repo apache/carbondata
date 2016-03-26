@@ -20,18 +20,29 @@
 package org.carbondata.processing.mdkeygen;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 
-import org.carbondata.core.util.*;
+import org.carbondata.common.logging.LogService;
+import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.common.logging.impl.StandardLogService;
+import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
+import org.carbondata.core.file.manager.composite.FileData;
+import org.carbondata.core.file.manager.composite.IFileManagerComposite;
+import org.carbondata.core.file.manager.composite.LoadFolderData;
+import org.carbondata.core.keygenerator.KeyGenException;
+import org.carbondata.core.keygenerator.KeyGenerator;
+import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
+import org.carbondata.core.util.MolapProperties;
+import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.util.MolapUtilException;
+import org.carbondata.core.util.ValueCompressionUtil;
 import org.carbondata.core.vo.HybridStoreModel;
+import org.carbondata.processing.datatypes.GenericDataType;
 import org.carbondata.processing.store.MolapFactDataHandlerColumnar;
 import org.carbondata.processing.store.MolapFactHandler;
+import org.carbondata.processing.store.SingleThreadFinalSortFilesMerger;
 import org.carbondata.processing.store.writer.exception.MolapDataWriterException;
 import org.carbondata.processing.util.MolapDataProcessorLogEvent;
 import org.carbondata.processing.util.RemoveDictionaryUtil;
@@ -46,20 +57,6 @@ import org.pentaho.di.trans.step.StepDataInterface;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
 
-import org.carbondata.processing.datatypes.GenericDataType;
-import org.carbondata.common.logging.LogService;
-import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.common.logging.impl.StandardLogService;
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
-import org.carbondata.core.file.manager.composite.FileData;
-import org.carbondata.core.file.manager.composite.IFileManagerComposite;
-import org.carbondata.core.file.manager.composite.LoadFolderData;
-import org.carbondata.core.keygenerator.KeyGenException;
-import org.carbondata.core.keygenerator.KeyGenerator;
-import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
-import org.carbondata.processing.store.SingleThreadFinalSortFilesMerger;
-
 public class MDKeyGenStep extends BaseStep {
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(MDKeyGenStep.class.getName());
@@ -70,7 +67,7 @@ public class MDKeyGenStep extends BaseStep {
     private MDKeyGenStepData data;
 
     /**
-     *  molap mdkey generator step meta
+     * molap mdkey generator step meta
      */
     private MDKeyGenStepMeta meta;
 
@@ -89,7 +86,7 @@ public class MDKeyGenStep extends BaseStep {
      */
     private IFileManagerComposite fileManager;
 
-    private Map<Integer,GenericDataType> complexIndexMap;
+    private Map<Integer, GenericDataType> complexIndexMap;
 
     /**
      * readCounter
@@ -128,12 +125,9 @@ public class MDKeyGenStep extends BaseStep {
      * @param copyNr
      * @param transMeta
      * @param trans
-     *
      */
-    public MDKeyGenStep(StepMeta stepMeta,
-            StepDataInterface stepDataInterface, int copyNr,
-            TransMeta transMeta, Trans trans)
-    {
+    public MDKeyGenStep(StepMeta stepMeta, StepDataInterface stepDataInterface, int copyNr,
+            TransMeta transMeta, Trans trans) {
         super(stepMeta, stepDataInterface, copyNr, transMeta, trans);
     }
 
@@ -142,10 +136,8 @@ public class MDKeyGenStep extends BaseStep {
      * reading a row from input (getRow()) and passing a row to output
      * (putRow)).
      *
-     * @param smi
-     *            The steps metadata to work with
-     * @param sdi
-     *            The steps temporary working data to work with (database
+     * @param smi The steps metadata to work with
+     * @param sdi The steps temporary working data to work with (database
      *            connections, result sets, caches, temporary variables, etc.)
      * @return false if no more rows can be processed or an error occurred.
      * @throws KettleException
@@ -178,28 +170,28 @@ public class MDKeyGenStep extends BaseStep {
             return true;
         }
 
-            try {
+        try {
             initDataHandler();
-                dataHandler.initialise();
-                finalMerger.startFinalMerge();
-                while (finalMerger.hasNext()) {
-                    Object[] r = finalMerger.next();
-                    Object[] outputRow = process(r);
-                    dataHandler.addDataToStore(outputRow);
-                    writeCounter++;
-                }
-            } catch (MolapDataWriterException e) {
-                LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
-                        "Failed for: " + this.tableName);
-            throw new KettleException("Error while initializing data handler : " + e.getMessage());
-            } finally {
-                try {
-                    dataHandler.finish();
-                } catch (MolapDataWriterException e) {
-                    LOGGER.debug(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-                            "Error in  closing data handler ");
-                }
+            dataHandler.initialise();
+            finalMerger.startFinalMerge();
+            while (finalMerger.hasNext()) {
+                Object[] r = finalMerger.next();
+                Object[] outputRow = process(r);
+                dataHandler.addDataToStore(outputRow);
+                writeCounter++;
             }
+        } catch (MolapDataWriterException e) {
+            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+                    "Failed for: " + this.tableName);
+            throw new KettleException("Error while initializing data handler : " + e.getMessage());
+        } finally {
+            try {
+                dataHandler.finish();
+            } catch (MolapDataWriterException e) {
+                LOGGER.debug(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                        "Error in  closing data handler ");
+            }
+        }
         LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                 "Record Procerssed For table: " + this.tableName);
         String logMessage =
@@ -210,10 +202,8 @@ public class MDKeyGenStep extends BaseStep {
         return false;
     }
 
-    private void processingComplete()
-    {
-        if(null != dataHandler)
-        {
+    private void processingComplete() {
+        if (null != dataHandler) {
             dataHandler.closeHandler();
         }
         setOutputDone();
@@ -222,128 +212,116 @@ public class MDKeyGenStep extends BaseStep {
     /**
      * This method will be used to get and update the step properties which will
      * required to run this step
-     * @throws MolapUtilException
      *
+     * @throws MolapUtilException
      */
-    private boolean setStepConfiguration()
-    {
+    private boolean setStepConfiguration() {
         this.tableName = meta.getTableName();
         MolapProperties instance = MolapProperties.getInstance();
-        String tempLocationKey = meta.getSchemaName()+'_'+meta.getCubeName();
-        String baseStorelocation = instance.getProperty(
-                tempLocationKey,
-                MolapCommonConstants.STORE_LOCATION_DEFAULT_VAL)
-                + File.separator + meta.getSchemaName() + File.separator + meta.getCubeName();
+        String tempLocationKey = meta.getSchemaName() + '_' + meta.getCubeName();
+        String baseStorelocation = instance.getProperty(tempLocationKey,
+                MolapCommonConstants.STORE_LOCATION_DEFAULT_VAL) + File.separator + meta
+                .getSchemaName() + File.separator + meta.getCubeName();
 
         int restructFolderNumber = meta.getCurrentRestructNumber()/*MolapUtil.checkAndReturnNextRestructFolderNumber(baseStorelocation,"RS_")*/;
 
-        String restructFolderlocation = baseStorelocation + File.separator
-                + MolapCommonConstants.RESTRUCTRE_FOLDER + restructFolderNumber
-                + File.separator + this.tableName;
+        String restructFolderlocation =
+                baseStorelocation + File.separator + MolapCommonConstants.RESTRUCTRE_FOLDER
+                        + restructFolderNumber + File.separator + this.tableName;
 
-        int counter = MolapUtil
-                .checkAndReturnCurrentLoadFolderNumber(restructFolderlocation);
+        int counter = MolapUtil.checkAndReturnCurrentLoadFolderNumber(restructFolderlocation);
 
         // This check is just to get the absolute path because from the property file Relative path 
         // will come and sometimes FileOutPutstream was not able to Create the file.
         File file = new File(restructFolderlocation);
         storeLocation = file.getAbsolutePath() + File.separator + MolapCommonConstants.LOAD_FOLDER
-                        + counter;
+                + counter;
 
         fileManager = new LoadFolderData();
         fileManager.setName(MolapCommonConstants.LOAD_FOLDER + counter
                 + MolapCommonConstants.FILE_INPROGRESS_STATUS);
 
-        storeLocation = storeLocation
-                + MolapCommonConstants.FILE_INPROGRESS_STATUS;
+        storeLocation = storeLocation + MolapCommonConstants.FILE_INPROGRESS_STATUS;
 
-        if(!(new File(storeLocation).exists()))
-        {
-              LOGGER.error(
-                      MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-                      "Load Folder Not Present for writing measure metadata  : "
-                              + storeLocation);
-              return false;
+        if (!(new File(storeLocation).exists())) {
+            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                    "Load Folder Not Present for writing measure metadata  : " + storeLocation);
+            return false;
         }
 
         this.meta.setHighCardinalityCount(
                 RemoveDictionaryUtil.extractHighCardCount(this.meta.getHighCardinalityDims()));
 
         String levelCardinalityFilePath = storeLocation + File.separator +
-				MolapCommonConstants.LEVEL_METADATA_FILE + meta.getTableName() + ".metadata";
+                MolapCommonConstants.LEVEL_METADATA_FILE + meta.getTableName() + ".metadata";
 
-		try {
-			int[] dimLensWithComplex = MolapUtil.getCardinalityFromLevelMetadataFile(levelCardinalityFilePath);
-			List<Integer> dimsLenList = new ArrayList<Integer>();
-			for(int eachDimLen : dimLensWithComplex)
-			{
-				if(eachDimLen != 0)
-					dimsLenList.add(eachDimLen);
-			}
-			dimLens = new int[dimsLenList.size()];
-			for(int i=0;i<dimsLenList.size();i++)
-			{
-				dimLens[i] = dimsLenList.get(i);
-			}
-		} catch (MolapUtilException e) {
-			LOGGER.error(
-                    MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        try {
+            int[] dimLensWithComplex =
+                    MolapUtil.getCardinalityFromLevelMetadataFile(levelCardinalityFilePath);
+            List<Integer> dimsLenList = new ArrayList<Integer>();
+            for (int eachDimLen : dimLensWithComplex) {
+                if (eachDimLen != 0) dimsLenList.add(eachDimLen);
+            }
+            dimLens = new int[dimsLenList.size()];
+            for (int i = 0; i < dimsLenList.size(); i++) {
+                dimLens[i] = dimsLenList.get(i);
+            }
+        } catch (MolapUtilException e) {
+            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "Level cardinality file :: " + e.getMessage());
-			return false;
-		}
-		String[] dimStoreType = meta.getDimensionsStoreType().split(",");
-		boolean[] dimensionStoreType = new boolean[dimLens.length];
-		for(int i=0;i<dimensionStoreType.length;i++)
-		{
-				dimensionStoreType[i]=Boolean.parseBoolean(dimStoreType[i]);
-		}
-		this.hybridStoreModel = MolapUtil.getHybridStoreMeta(dimLens,
-					dimensionStoreType,null);
-		dimLens=hybridStoreModel.getHybridCardinality();
-		data.generator = new KeyGenerator[dimLens.length + 1];
-		for(int i=0;i<dimLens.length;i++)
-		{
-			data.generator[i] = KeyGeneratorFactory.getKeyGenerator(new int[]{dimLens[i]});
-		}
+            return false;
+        }
+        String[] dimStoreType = meta.getDimensionsStoreType().split(",");
+        boolean[] dimensionStoreType = new boolean[dimLens.length];
+        for (int i = 0; i < dimensionStoreType.length; i++) {
+            dimensionStoreType[i] = Boolean.parseBoolean(dimStoreType[i]);
+        }
+        this.hybridStoreModel = MolapUtil.getHybridStoreMeta(dimLens, dimensionStoreType, null);
+        dimLens = hybridStoreModel.getHybridCardinality();
+        data.generator = new KeyGenerator[dimLens.length + 1];
+        for (int i = 0; i < dimLens.length; i++) {
+            data.generator[i] = KeyGeneratorFactory.getKeyGenerator(new int[] { dimLens[i] });
+        }
 
-//      this.dimensionCount = dimLens.length;
-      this.dimensionCount = meta.getDimensionCount();
+        //      this.dimensionCount = dimLens.length;
+        this.dimensionCount = meta.getDimensionCount();
 
-      int simpleDimsCount = this.dimensionCount - meta.getComplexDimsCount()-meta.getHighCardinalityCount();
-      int[] simpleDimsLen = new int[simpleDimsCount];
-      for(int i=0;i<simpleDimsCount;i++)
-      {
-      	simpleDimsLen[i] = dimLens[i];
-      }
+        int simpleDimsCount =
+                this.dimensionCount - meta.getComplexDimsCount() - meta.getHighCardinalityCount();
+        int[] simpleDimsLen = new int[simpleDimsCount];
+        for (int i = 0; i < simpleDimsCount; i++) {
+            simpleDimsLen[i] = dimLens[i];
+        }
 
-      //Actual primitive dimension used to generate start & end key
+        //Actual primitive dimension used to generate start & end key
 
-      //data.generator[dimLens.length] = KeyGeneratorFactory.getKeyGenerator(simpleDimsLen);
-      data.generator[dimLens.length] = KeyGeneratorFactory.getKeyGenerator(hybridStoreModel.getHybridCardinality(),hybridStoreModel.getDimensionPartitioner());
+        //data.generator[dimLens.length] = KeyGeneratorFactory.getKeyGenerator(simpleDimsLen);
+        data.generator[dimLens.length] = KeyGeneratorFactory
+                .getKeyGenerator(hybridStoreModel.getHybridCardinality(),
+                        hybridStoreModel.getDimensionPartitioner());
 
-      //To Set MDKey Index of each primitive type in complex type
-      int surrIndex = simpleDimsCount;
-      Iterator<Entry<String,GenericDataType>> complexMap = meta.getComplexTypes().entrySet().iterator();
-      complexIndexMap = new HashMap<Integer,GenericDataType>(meta.getComplexDimsCount());
-      while(complexMap.hasNext())
-      {
-          Entry<String,GenericDataType> complexDataType = complexMap.next();
-          complexDataType.getValue().setOutputArrayIndex(0);
-          complexIndexMap.put(simpleDimsCount, complexDataType.getValue());
-          simpleDimsCount++;
-          List<GenericDataType> primitiveTypes = new ArrayList<GenericDataType>();
-          complexDataType.getValue().getAllPrimitiveChildren(primitiveTypes);
-          for(GenericDataType eachPrimitive : primitiveTypes)
-          {
-          	eachPrimitive.setSurrogateIndex(surrIndex++);
-          }
-      }
-
+        //To Set MDKey Index of each primitive type in complex type
+        int surrIndex = simpleDimsCount;
+        Iterator<Entry<String, GenericDataType>> complexMap =
+                meta.getComplexTypes().entrySet().iterator();
+        complexIndexMap = new HashMap<Integer, GenericDataType>(meta.getComplexDimsCount());
+        while (complexMap.hasNext()) {
+            Entry<String, GenericDataType> complexDataType = complexMap.next();
+            complexDataType.getValue().setOutputArrayIndex(0);
+            complexIndexMap.put(simpleDimsCount, complexDataType.getValue());
+            simpleDimsCount++;
+            List<GenericDataType> primitiveTypes = new ArrayList<GenericDataType>();
+            complexDataType.getValue().getAllPrimitiveChildren(primitiveTypes);
+            for (GenericDataType eachPrimitive : primitiveTypes) {
+                eachPrimitive.setSurrogateIndex(surrIndex++);
+            }
+        }
 
         this.measureCount = meta.getMeasureCount();
 
-        String metaDataFileName = MolapCommonConstants.MEASURE_METADATA_FILE_NAME
-                + this.tableName + MolapCommonConstants.MEASUREMETADATA_FILE_EXT + MolapCommonConstants.FILE_INPROGRESS_STATUS;
+        String metaDataFileName = MolapCommonConstants.MEASURE_METADATA_FILE_NAME + this.tableName
+                + MolapCommonConstants.MEASUREMETADATA_FILE_EXT
+                + MolapCommonConstants.FILE_INPROGRESS_STATUS;
 
         FileData fileData = new FileData(metaDataFileName, storeLocation);
         fileManager.add(fileData);
@@ -356,10 +334,10 @@ public class MDKeyGenStep extends BaseStep {
 
     private void initDataHandler() {
         ValueCompressionModel valueCompressionModel = getValueCompressionModel(storeLocation);
-        int simpleDimsCount = this.dimensionCount - meta.getComplexDimsCount()-meta.getHighCardinalityCount();
+        int simpleDimsCount =
+                this.dimensionCount - meta.getComplexDimsCount() - meta.getHighCardinalityCount();
         int[] simpleDimsLen = new int[simpleDimsCount];
-        for(int i=0;i<simpleDimsCount;i++)
-        {
+        for (int i = 0; i < simpleDimsCount; i++) {
             simpleDimsLen[i] = dimLens[i];
         }
         aggType = valueCompressionModel.getType();
@@ -372,14 +350,14 @@ public class MDKeyGenStep extends BaseStep {
                     data.generator[dimLens.length].getKeySizeInBytes(), measureCount + 1, null,
                     null, storeLocation, dimLens, false, false, dimLens, null, null, true,
                     meta.getCurrentRestructNumber(), meta.getHighCardinalityCount(), dimensionCount,
-                    complexIndexMap, simpleDimsLen,this.hybridStoreModel, valueCompressionModel);
+                    complexIndexMap, simpleDimsLen, this.hybridStoreModel, valueCompressionModel);
         } else {
             dataHandler = new MolapFactDataHandlerColumnar(meta.getSchemaName(), meta.getCubeName(),
                     this.tableName, false, measureCount,
                     data.generator[dimLens.length].getKeySizeInBytes(), measureCount, null, null,
                     storeLocation, dimLens, false, false, dimLens, null, null, true,
                     meta.getCurrentRestructNumber(), meta.getHighCardinalityCount(), dimensionCount,
-                    complexIndexMap, simpleDimsLen,this.hybridStoreModel, valueCompressionModel);
+                    complexIndexMap, simpleDimsLen, this.hybridStoreModel, valueCompressionModel);
         }
     }
 
@@ -395,48 +373,41 @@ public class MDKeyGenStep extends BaseStep {
      * This method will be used for setting the output interface.
      * Output interface is how this step will process the row to next step
      */
-    private void setStepOutputInterface()
-    {
+    private void setStepOutputInterface() {
         ValueMetaInterface[] out = new ValueMetaInterface[measureCount + 1];
 
-        for(int i =0; i < measureCount; i++)
-        {
+        for (int i = 0; i < measureCount; i++) {
             out[i] = new ValueMeta("measure" + i, ValueMetaInterface.TYPE_NUMBER,
                     ValueMetaInterface.STORAGE_TYPE_NORMAL);
-            out[i].setStorageMetadata(new ValueMeta("measure" + i,
-                    ValueMetaInterface.TYPE_NUMBER, ValueMetaInterface.STORAGE_TYPE_NORMAL));
+            out[i].setStorageMetadata(new ValueMeta("measure" + i, ValueMetaInterface.TYPE_NUMBER,
+                    ValueMetaInterface.STORAGE_TYPE_NORMAL));
         }
 
         out[out.length - 1] = new ValueMeta("id", ValueMetaInterface.TYPE_BINARY,
                 ValueMetaInterface.STORAGE_TYPE_BINARY_STRING);
-        out[out.length - 1].setStorageMetadata(new ValueMeta("id",
-                ValueMetaInterface.TYPE_STRING, ValueMetaInterface.STORAGE_TYPE_NORMAL));
+        out[out.length - 1].setStorageMetadata(new ValueMeta("id", ValueMetaInterface.TYPE_STRING,
+                ValueMetaInterface.STORAGE_TYPE_NORMAL));
         out[out.length - 1].setLength(256);
         out[out.length - 1].setStringEncoding(MolapCommonConstants.BYTE_ENCODING);
-        out[out.length - 1].getStorageMetadata().setStringEncoding(MolapCommonConstants.BYTE_ENCODING);
+        out[out.length - 1].getStorageMetadata()
+                .setStringEncoding(MolapCommonConstants.BYTE_ENCODING);
 
         data.outputRowMeta.setValueMetaList(Arrays.asList(out));
     }
 
     /**
-     *
      * This method will be used to get the row from previous step and then it
      * will generate the mdkey and then send the mdkey to next step
      *
      * @param row input row
      * @throws KettleException
-     *
      */
-    private Object[] process(Object[] row) throws KettleException
-    {
+    private Object[] process(Object[] row) throws KettleException {
         Object[] outputRow = null;
         // adding one for the high cardinality dims byte array.
-        if(meta.getHighCardinalityCount() > 0 || meta.getComplexDimsCount() > 0)
-        {
-        	outputRow = new Object[measureCount + 1 + 1];
-        }
-        else
-        {
+        if (meta.getHighCardinalityCount() > 0 || meta.getComplexDimsCount() > 0) {
+            outputRow = new Object[measureCount + 1 + 1];
+        } else {
             outputRow = new Object[measureCount + 1];
         }
         int[] keys = new int[this.dimensionCount];
@@ -452,33 +423,30 @@ public class MDKeyGenStep extends BaseStep {
                 outputRow[l++] = (Double) RemoveDictionaryUtil.getMeasure(index++, row);
             }
         }
-        outputRow[l] =  RemoveDictionaryUtil.getByteArrayForNoDictionaryCols(row);
+        outputRow[l] = RemoveDictionaryUtil.getByteArrayForNoDictionaryCols(row);
 
         //copy all columnar dimension to key array
-        int[] columnarStoreOrdinals=hybridStoreModel.getColumnStoreOrdinals();
-        int[] columnarDataKeys=new int[columnarStoreOrdinals.length];
-        for(int i=0;i<columnarStoreOrdinals.length;i++)
-        {
-        	Object key = RemoveDictionaryUtil.getDimension(columnarStoreOrdinals[i], row);
-        	columnarDataKeys[i]=(Integer)key;
+        int[] columnarStoreOrdinals = hybridStoreModel.getColumnStoreOrdinals();
+        int[] columnarDataKeys = new int[columnarStoreOrdinals.length];
+        for (int i = 0; i < columnarStoreOrdinals.length; i++) {
+            Object key = RemoveDictionaryUtil.getDimension(columnarStoreOrdinals[i], row);
+            columnarDataKeys[i] = (Integer) key;
         }
         //copy all row dimension in row key array
-        int[] rowStoreOrdinals=hybridStoreModel.getRowStoreOrdinals();
+        int[] rowStoreOrdinals = hybridStoreModel.getRowStoreOrdinals();
         int[] rowDataKeys = new int[rowStoreOrdinals.length];
-        for(int i=0;i<rowStoreOrdinals.length;i++)
-        {
-        	Object key=RemoveDictionaryUtil.getDimension(rowStoreOrdinals[i], row);
-        	rowDataKeys[i]=(Integer)key;
+        for (int i = 0; i < rowStoreOrdinals.length; i++) {
+            Object key = RemoveDictionaryUtil.getDimension(rowStoreOrdinals[i], row);
+            rowDataKeys[i] = (Integer) key;
         }
-        try
-        {
-        	int[] completeKeys=new int[columnarDataKeys.length+rowDataKeys.length];
-        	System.arraycopy(rowDataKeys, 0, completeKeys, 0, rowDataKeys.length);
-        	System.arraycopy(columnarDataKeys, 0, completeKeys, rowDataKeys.length, columnarDataKeys.length);
-        	outputRow[outputRow.length-1]=data.generator[data.generator.length-1].generateKey(completeKeys);
-        }
-        catch(KeyGenException e)
-        {
+        try {
+            int[] completeKeys = new int[columnarDataKeys.length + rowDataKeys.length];
+            System.arraycopy(rowDataKeys, 0, completeKeys, 0, rowDataKeys.length);
+            System.arraycopy(columnarDataKeys, 0, completeKeys, rowDataKeys.length,
+                    columnarDataKeys.length);
+            outputRow[outputRow.length - 1] =
+                    data.generator[data.generator.length - 1].generateKey(completeKeys);
+        } catch (KeyGenException e) {
             throw new KettleException("Unbale to generate the mdkey", e);
         }
 
@@ -488,16 +456,13 @@ public class MDKeyGenStep extends BaseStep {
     /**
      * Initialize and do work where other steps need to wait for...
      *
-     * @param smi
-     *            The metadata to work with
-     * @param sdi
-     *            The data to initialize
+     * @param smi The metadata to work with
+     * @param sdi The data to initialize
      * @return step initialize or not
      */
-    public boolean init(StepMetaInterface smi, StepDataInterface sdi)
-    {
-        meta = (MDKeyGenStepMeta)smi;
-        data = (MDKeyGenStepData)sdi;
+    public boolean init(StepMetaInterface smi, StepDataInterface sdi) {
+        meta = (MDKeyGenStepMeta) smi;
+        data = (MDKeyGenStepData) sdi;
 
         return super.init(smi, sdi);
     }
@@ -505,18 +470,15 @@ public class MDKeyGenStep extends BaseStep {
     /**
      * Dispose of this step: close files, empty logs, etc.
      *
-     * @param smi
-     *            The metadata to work with
-     * @param sdi
-     *            The data to dispose of
+     * @param smi The metadata to work with
+     * @param sdi The data to dispose of
      */
-    public void dispose(StepMetaInterface smi, StepDataInterface sdi)
-    {
-        meta = (MDKeyGenStepMeta)smi;
-        data = (MDKeyGenStepData)sdi;
+    public void dispose(StepMetaInterface smi, StepDataInterface sdi) {
+        meta = (MDKeyGenStepMeta) smi;
+        data = (MDKeyGenStepData) sdi;
         super.dispose(smi, sdi);
-        dataHandler= null;
-        finalMerger= null;
+        dataHandler = null;
+        finalMerger = null;
     }
 
 }

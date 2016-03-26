@@ -143,7 +143,8 @@ public class MolapDataWriterStepMeta extends BaseStepMeta implements StepMetaInt
     /**
      * set the default value for all the properties
      */
-    @Override public void setDefault() {
+    @Override
+    public void setDefault() {
         tabelName = "";
         leafNodeSize = "";
         maxLeafNode = "";
@@ -207,8 +208,9 @@ public class MolapDataWriterStepMeta extends BaseStepMeta implements StepMetaInt
      * @param counters  Counters to reference.
      * @throws KettleXMLException When an unexpected XML error occurred. (malformed etc.)
      */
-    @Override public void loadXML(Node stepnode, List<DatabaseMeta> databases,
-            Map<String, Counter> counters) throws KettleXMLException {
+    @Override
+    public void loadXML(Node stepnode, List<DatabaseMeta> databases, Map<String, Counter> counters)
+            throws KettleXMLException {
         try {
             tabelName = XMLHandler.getTagValue(stepnode, "TableName");
             leafNodeSize = XMLHandler.getTagValue(stepnode, "LeafNodeSize");
@@ -254,7 +256,8 @@ public class MolapDataWriterStepMeta extends BaseStepMeta implements StepMetaInt
      * @param idStep           The step ID
      * @throws KettleException When an unexpected error occurred (database, network, etc)
      */
-    @Override public void saveRep(Repository rep, ObjectId idTransformation, ObjectId idStep)
+    @Override
+    public void saveRep(Repository rep, ObjectId idTransformation, ObjectId idStep)
             throws KettleException {
         try {
             //
@@ -309,7 +312,8 @@ public class MolapDataWriterStepMeta extends BaseStepMeta implements StepMetaInt
      * @param counters  The counters to reference
      * @throws KettleException When an unexpected error occurred (database, network, etc)
      */
-    @Override public void readRep(Repository rep, ObjectId idStep, List<DatabaseMeta> databases,
+    @Override
+    public void readRep(Repository rep, ObjectId idStep, List<DatabaseMeta> databases,
             Map<String, Counter> counters) throws KettleException {
         try {
 
@@ -352,9 +356,9 @@ public class MolapDataWriterStepMeta extends BaseStepMeta implements StepMetaInt
      * @param output   The output step names
      * @param info     The fields that are used as information by the step
      */
-    @Override public void check(List<CheckResultInterface> remarks, TransMeta transMeta,
-            StepMeta stepMeta, RowMetaInterface prev, String[] input, String[] output,
-            RowMetaInterface info) {
+    @Override
+    public void check(List<CheckResultInterface> remarks, TransMeta transMeta, StepMeta stepMeta,
+            RowMetaInterface prev, String[] input, String[] output, RowMetaInterface info) {
         //
         CheckResult checkRes;
 
@@ -383,8 +387,9 @@ public class MolapDataWriterStepMeta extends BaseStepMeta implements StepMetaInt
      * @param transMeta         The transformation info
      * @param trans             The launching transformation
      */
-    @Override public StepInterface getStep(StepMeta stepMeta, StepDataInterface stepDataInterface,
-            int copyNr, TransMeta transMeta, Trans trans) {
+    @Override
+    public StepInterface getStep(StepMeta stepMeta, StepDataInterface stepDataInterface, int copyNr,
+            TransMeta transMeta, Trans trans) {
         return new MolapDataWriterStep(stepMeta, stepDataInterface, copyNr, transMeta, trans);
     }
 
@@ -395,7 +400,8 @@ public class MolapDataWriterStepMeta extends BaseStepMeta implements StepMetaInt
      *
      * @return The appropriate StepDataInterface class.
      */
-    @Override public StepDataInterface getStepData() {
+    @Override
+    public StepDataInterface getStepData() {
         return new MolapDataWriterStepData();
     }
 

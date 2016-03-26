@@ -28,7 +28,8 @@ public class ColumnWithIntIndexForHighCard extends ColumnWithIntIndex
         super(column, index);
     }
 
-    @Override public int compareTo(ColumnWithIntIndex o) {
+    @Override
+    public int compareTo(ColumnWithIntIndex o) {
         return UnsafeComparer.INSTANCE
                 .compareTo(column, 2, column.length - 2, o.column, 2, o.column.length - 2);
     }

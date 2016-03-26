@@ -36,17 +36,20 @@ public class StartsWithExpression extends MolapFilterInfo implements FilterLikeE
     private static final long serialVersionUID = 3813284333559000811L;
     private LikeExpression likeContainsExpression;
 
-    @Override public LikeExpression getLikeExpression() {
+    @Override
+    public LikeExpression getLikeExpression() {
         // TODO Auto-generated method stub
         return likeContainsExpression;
     }
 
-    @Override public void setLikeExpression(LikeExpression expressionName) {
+    @Override
+    public void setLikeExpression(LikeExpression expressionName) {
         likeContainsExpression = expressionName;
 
     }
 
-    @Override public void processLikeExpressionFilters(List<String> listFilterExpression,
+    @Override
+    public void processLikeExpressionFilters(List<String> listFilterExpression,
             List<InMemoryCube> slices, Entry<Dimension, MolapFilterInfo> entry,
             ContentMatchFilterInfo matchFilterInfo, boolean hasNameColumn, Locale locale) {
         // TODO Auto-generated method stub

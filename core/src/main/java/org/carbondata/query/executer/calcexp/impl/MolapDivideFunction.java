@@ -36,7 +36,8 @@ public class MolapDivideFunction extends AbstractMolapCalcFunction {
 
     }
 
-    @Override public double calculate(MeasureAggregator[] msrAggs) {
+    @Override
+    public double calculate(MeasureAggregator[] msrAggs) {
         double left = leftOperand.calculate(msrAggs);
         double right = null != rightOperand ? rightOperand.calculate(msrAggs) : 1.0;
         return (left / right);

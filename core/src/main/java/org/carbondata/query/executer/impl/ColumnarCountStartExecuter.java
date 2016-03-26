@@ -43,7 +43,8 @@ public class ColumnarCountStartExecuter implements SliceExecuter {
         this.tableName = tableName;
     }
 
-    @Override public MolapIterator<QueryResult> executeSlices(List<SliceExecutionInfo> infos,
+    @Override
+    public MolapIterator<QueryResult> executeSlices(List<SliceExecutionInfo> infos,
             int[] sliceIndex) throws QueryExecutionException {
         long count = 0;
         for (InMemoryCube slice : slices) {

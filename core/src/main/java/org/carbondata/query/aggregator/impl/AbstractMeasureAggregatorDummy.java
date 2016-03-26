@@ -20,51 +20,61 @@ import org.carbondata.query.aggregator.MeasureAggregator;
 public abstract class AbstractMeasureAggregatorDummy extends AbstractMeasureAggregatorBasic {
     private static final long serialVersionUID = 1L;
 
-    @Override public int compareTo(MeasureAggregator o) {
+    @Override
+    public int compareTo(MeasureAggregator o) {
         if (equals(o)) {
             return 0;
         }
         return -1;
     }
 
-    @Override public boolean equals(Object arg0) {
+    @Override
+    public boolean equals(Object arg0) {
         return super.equals(arg0);
     }
 
-    @Override public int hashCode() {
+    @Override
+    public int hashCode() {
         return super.hashCode();
     }
 
-    @Override public byte[] getByteArray() {
+    @Override
+    public byte[] getByteArray() {
         // TODO Auto-generated method stub
         return null;
     }
 
-    @Override public void merge(MeasureAggregator aggregator) {
+    @Override
+    public void merge(MeasureAggregator aggregator) {
         // TODO Auto-generated method stub
 
     }
 
-    @Override public boolean isFirstTime() {
+    @Override
+    public boolean isFirstTime() {
         // TODO Auto-generated method stub
         return false;
     }
 
-    @Override public MeasureAggregator getCopy() {
+    @Override
+    public MeasureAggregator getCopy() {
         // TODO Auto-generated method stub
         return null;
     }
 
-    @Override public void writeData(DataOutput output) throws IOException {
+    @Override
+    public void writeData(DataOutput output) throws IOException {
         // TODO Auto-generated method stub
 
     }
 
-    @Override public void readData(DataInput inPut) throws IOException {
+    @Override
+    public void readData(DataInput inPut) throws IOException {
         // TODO Auto-generated method stub
     }
 
-    @Override public void merge(byte[] value) {
+    @Override
+    public void merge(byte[] value) {
         // TODO Auto-generated method stub
 
     }

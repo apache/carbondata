@@ -33,7 +33,8 @@ public class FileUtilTest_UT extends TestCase {
     /**
      * @throws Exception
      */
-    @Before public void setUp() throws Exception {
+    @Before
+    public void setUp() throws Exception {
         File f = new File("myfile.txt");
         if (!f.exists()) {
             f.createNewFile();
@@ -43,14 +44,16 @@ public class FileUtilTest_UT extends TestCase {
     /**
      * @throws Exception
      */
-    @After public void tearDown() throws Exception {
+    @After
+    public void tearDown() throws Exception {
         File f = new File("myfile.txt");
         if (f.exists()) {
             f.delete();
         }
     }
 
-    @Test public void testClose() {
+    @Test
+    public void testClose() {
         try {
             FileInputStream in = new FileInputStream(new File("myfile.txt"));
             FileUtil.close(in);

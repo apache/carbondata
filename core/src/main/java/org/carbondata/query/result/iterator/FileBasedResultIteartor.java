@@ -78,11 +78,13 @@ public class FileBasedResultIteartor implements MolapIterator<QueryResult> {
         }
     }
 
-    @Override public boolean hasNext() {
+    @Override
+    public boolean hasNext() {
         return hasNext;
     }
 
-    @Override public QueryResult next() {
+    @Override
+    public QueryResult next() {
         QueryResult prepareResultFromFile = null;
         try {
             prepareResultFromFile =

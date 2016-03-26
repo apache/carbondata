@@ -16,28 +16,34 @@ public class DummyDoubleAggregator extends AbstractMeasureAggregatorDummy {
      */
     private double aggVal;
 
-    @Override public void agg(double newVal) {
+    @Override
+    public void agg(double newVal) {
         aggVal = newVal;
     }
 
-    @Override public void agg(Object newVal) {
+    @Override
+    public void agg(Object newVal) {
         aggVal = (Double) newVal;
     }
 
-    @Override public void agg(MolapReadDataHolder newVal, int index) {
+    @Override
+    public void agg(MolapReadDataHolder newVal, int index) {
         aggVal = newVal.getReadableDoubleValueByIndex(index);
     }
 
-    @Override public Double getDoubleValue() {
+    @Override
+    public Double getDoubleValue() {
         return aggVal;
     }
 
-    @Override public Object getValueObject() {
+    @Override
+    public Object getValueObject() {
         // TODO Auto-generated method stub
         return aggVal;
     }
 
-    @Override public void setNewValue(Object newValue) {
+    @Override
+    public void setNewValue(Object newValue) {
         // TODO Auto-generated method stub
         aggVal = (Double) newValue;
     }

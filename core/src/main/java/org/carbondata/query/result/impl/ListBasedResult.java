@@ -60,7 +60,8 @@ public class ListBasedResult implements Result<List<ByteArrayWrapper>, List<Meas
         listSize = keys.size();
     }
 
-    @Override public boolean hasNext() {
+    @Override
+    public boolean hasNext() {
         if (allKeys.size() == 0) {
             return false;
         }
@@ -76,7 +77,8 @@ public class ListBasedResult implements Result<List<ByteArrayWrapper>, List<Meas
         return counter < listSize;
     }
 
-    @Override public ByteArrayWrapper getKey() {
+    @Override
+    public ByteArrayWrapper getKey() {
         try {
             return keys.get(currentCounter);
         } catch (IndexOutOfBoundsException e) {
@@ -85,7 +87,8 @@ public class ListBasedResult implements Result<List<ByteArrayWrapper>, List<Meas
         return null;
     }
 
-    @Override public MeasureAggregator[] getValue() {
+    @Override
+    public MeasureAggregator[] getValue() {
         return values.get(currentCounter);
     }
 
@@ -98,15 +101,18 @@ public class ListBasedResult implements Result<List<ByteArrayWrapper>, List<Meas
         }
     }
 
-    @Override public int size() {
+    @Override
+    public int size() {
         return listSize;
     }
 
-    @Override public List<ByteArrayWrapper> getKeys() {
+    @Override
+    public List<ByteArrayWrapper> getKeys() {
         return keys;
     }
 
-    @Override public List<MeasureAggregator[]> getValues() {
+    @Override
+    public List<MeasureAggregator[]> getValues() {
         return values;
     }
 }

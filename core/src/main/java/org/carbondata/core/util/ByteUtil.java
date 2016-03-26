@@ -99,7 +99,8 @@ public final class ByteUtil {
         static {
             THEUNSAFE =
                     (sun.misc.Unsafe) AccessController.doPrivileged(new PrivilegedAction<Object>() {
-                        @Override public Object run() {
+                        @Override
+                        public Object run() {
                             try {
                                 Field f = sun.misc.Unsafe.class.getDeclaredField("theUnsafe");
                                 f.setAccessible(true);

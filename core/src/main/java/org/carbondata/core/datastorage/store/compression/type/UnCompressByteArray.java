@@ -51,6 +51,7 @@ public class UnCompressByteArray implements ValueCompressonHolder.UnCompressValu
      * value.
      */
     private byte[] value;
+
     public UnCompressByteArray(ByteArrayType type) {
         if (type == ByteArrayType.BYTE_ARRAY) {
             arrayType = ByteArrayType.BYTE_ARRAY;
@@ -60,17 +61,20 @@ public class UnCompressByteArray implements ValueCompressonHolder.UnCompressValu
 
     }
 
-    @Override public void setValue(byte[] value) {
+    @Override
+    public void setValue(byte[] value) {
         this.value = value;
 
     }
 
-    @Override public void setValueInBytes(byte[] value) {
+    @Override
+    public void setValueInBytes(byte[] value) {
         this.value = value;
 
     }
 
-    @Override public ValueCompressonHolder.UnCompressValue<byte[]> getNew() {
+    @Override
+    public ValueCompressonHolder.UnCompressValue<byte[]> getNew() {
         try {
             return (ValueCompressonHolder.UnCompressValue) clone();
         } catch (CloneNotSupportedException e) {
@@ -79,28 +83,33 @@ public class UnCompressByteArray implements ValueCompressonHolder.UnCompressValu
         return null;
     }
 
-    @Override public ValueCompressonHolder.UnCompressValue compress() {
+    @Override
+    public ValueCompressonHolder.UnCompressValue compress() {
         UnCompressByteArray byte1 = new UnCompressByteArray(arrayType);
         byte1.setValue(byteCompressor.compress(value));
         return byte1;
     }
 
-    @Override public ValueCompressonHolder.UnCompressValue uncompress(
+    @Override
+    public ValueCompressonHolder.UnCompressValue uncompress(
             ValueCompressionUtil.DataType dataType) {
         ValueCompressonHolder.UnCompressValue byte1 = new UnCompressByteArray(arrayType);
         byte1.setValue(byteCompressor.unCompress(value));
         return byte1;
     }
 
-    @Override public byte[] getBackArrayData() {
+    @Override
+    public byte[] getBackArrayData() {
         return this.value;
     }
 
-    @Override public ValueCompressonHolder.UnCompressValue getCompressorObject() {
+    @Override
+    public ValueCompressonHolder.UnCompressValue getCompressorObject() {
         return new UnCompressByteArray(arrayType);
     }
 
-    @Override public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
+    @Override
+    public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
         List<byte[]> valsList = new ArrayList<byte[]>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
         ByteBuffer buffer = ByteBuffer.wrap(value);
         buffer.rewind();

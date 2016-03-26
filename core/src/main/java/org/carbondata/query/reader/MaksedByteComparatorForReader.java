@@ -54,7 +54,8 @@ public class MaksedByteComparatorForReader implements Comparator<ResultTempFileR
      * @param o1
      * @param o2
      */
-    @Override public int compare(ResultTempFileReader dataFileChunkHolder1,
+    @Override
+    public int compare(ResultTempFileReader dataFileChunkHolder1,
             ResultTempFileReader dataFileChunkHolder2) {
         int cmp = 0;
         byte[] o1 = dataFileChunkHolder1.getRow();

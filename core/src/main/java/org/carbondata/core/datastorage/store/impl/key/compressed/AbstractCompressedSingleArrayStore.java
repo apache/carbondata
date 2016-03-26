@@ -59,7 +59,8 @@ public abstract class AbstractCompressedSingleArrayStore implements NodeKeyStore
     /**
      * This method will be used to insert key to store
      */
-    @Override public void put(int index, byte[] value) {
+    @Override
+    public void put(int index, byte[] value) {
         System.arraycopy(value, 0, datastore, ((index) * sizeOfEachElement), sizeOfEachElement);
     }
 
@@ -71,7 +72,8 @@ public abstract class AbstractCompressedSingleArrayStore implements NodeKeyStore
      *
      * @return writable array (compressed or normal)
      */
-    @Override public byte[] getWritableKeyArray() {
+    @Override
+    public byte[] getWritableKeyArray() {
         // compress the data store
         byte[] compressedKeys = COMPRESSOR.compress(datastore);
         return compressedKeys;
@@ -86,7 +88,8 @@ public abstract class AbstractCompressedSingleArrayStore implements NodeKeyStore
      * @return uncompressed keys
      * will return uncompressed key
      */
-    @Override public byte[] getBackArray(FileHolder fileHolder) {
+    @Override
+    public byte[] getBackArray(FileHolder fileHolder) {
         return COMPRESSOR.unCompress(datastore);
     }
 
@@ -97,7 +100,8 @@ public abstract class AbstractCompressedSingleArrayStore implements NodeKeyStore
      * @param fileHolder file holder will be used to read the file
      * @return key
      */
-    @Override public byte[] get(int index, FileHolder fileHolder) {
+    @Override
+    public byte[] get(int index, FileHolder fileHolder) {
         // uncompress the store data
         byte[] unCompress = COMPRESSOR.unCompress(datastore);
         // create new array of size of each element
@@ -113,7 +117,8 @@ public abstract class AbstractCompressedSingleArrayStore implements NodeKeyStore
     /**
      * This method will clear the store and create the new empty store
      */
-    @Override public void clear() {
+    @Override
+    public void clear() {
         datastore = new byte[this.totalNumberOfElements * this.sizeOfEachElement];
     }
 }

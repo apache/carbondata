@@ -28,12 +28,12 @@ import java.util.concurrent.Callable;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.query.aggregator.MeasureAggregator;
+import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.util.MolapUtilException;
 import org.carbondata.processing.sortandgroupby.exception.MolapSortKeyAndGroupByException;
 import org.carbondata.processing.util.MolapDataProcessorLogEvent;
 import org.carbondata.processing.util.MolapDataProcessorUtil;
-import org.carbondata.core.util.MolapUtil;
-import org.carbondata.core.util.MolapUtilException;
+import org.carbondata.query.aggregator.MeasureAggregator;
 
 public class IntermediateFileMerger implements Callable<Void> {
 
@@ -199,7 +199,8 @@ public class IntermediateFileMerger implements Callable<Void> {
         this.highCardinalityCount = highCardinalityCount;
     }
 
-    @Override public Void call() throws Exception {
+    @Override
+    public Void call() throws Exception {
         boolean isFailed = false;
         try {
             startSorting();

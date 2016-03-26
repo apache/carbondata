@@ -178,14 +178,16 @@ public class QueryDetail implements Comparable<QueryDetail>, Serializable {
 
     }
 
-    @Override public int hashCode() {
+    @Override
+    public int hashCode() {
         final int prime = 31;
         int result = 1;
         result = prime * result + Arrays.hashCode(dimOrdinals);
         return result;
     }
 
-    @Override public boolean equals(Object obj) {
+    @Override
+    public boolean equals(Object obj) {
         if (this == obj) {
             return true;
         }
@@ -202,7 +204,8 @@ public class QueryDetail implements Comparable<QueryDetail>, Serializable {
         return true;
     }
 
-    @Override public int compareTo(QueryDetail o) {
+    @Override
+    public int compareTo(QueryDetail o) {
         // sort based on weightage
         int res = Long.valueOf(o.weightage).compareTo(this.weightage);
         if (res != 0) {

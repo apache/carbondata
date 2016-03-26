@@ -22,28 +22,28 @@ package org.carbondata.processing.dataprocessor.dataretention;
 import java.io.IOException;
 import java.util.*;
 
-import org.carbondata.core.load.LoadMetadataDetails;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.MolapCommonConstants;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.datastorage.store.filesystem.MolapFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
+import org.carbondata.core.keygenerator.KeyGenerator;
+import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
+import org.carbondata.core.load.LoadMetadataDetails;
+import org.carbondata.core.metadata.LeafNodeInfoColumnar;
+import org.carbondata.core.metadata.SliceMetaData;
+import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.util.MolapUtilException;
+import org.carbondata.core.util.ValueCompressionUtil;
 import org.carbondata.processing.exception.MolapDataProcessorException;
 import org.carbondata.processing.factreader.FactReaderInfo;
 import org.carbondata.processing.factreader.MolapSurrogateTupleHolder;
 import org.carbondata.processing.factreader.columnar.MolapColumnarLeafTupleIterator;
-import org.carbondata.core.keygenerator.KeyGenerator;
-import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
-import org.carbondata.core.metadata.LeafNodeInfoColumnar;
-import org.carbondata.core.metadata.SliceMetaData;
 import org.carbondata.processing.schema.metadata.MolapColumnarFactMergerInfo;
 import org.carbondata.processing.store.MolapFactDataHandlerColumnarMerger;
 import org.carbondata.processing.store.writer.exception.MolapDataWriterException;
 import org.carbondata.processing.util.MolapDataProcessorLogEvent;
-import org.carbondata.core.util.MolapUtil;
-import org.carbondata.core.util.MolapUtilException;
-import org.carbondata.core.util.ValueCompressionUtil;
 
 //import java.util.Iterator;
 
@@ -182,9 +182,8 @@ public class DataRetentionHandler {
         for (LoadMetadataDetails loadMetadata : listOfLoadMetadataDetails) {
 
             if (loadMetadata.getLoadName().equals(molapFile.getName()
-                            .substring(molapFile.getName().lastIndexOf('_') + 1,
-                                    molapFile.getName().length()))
-                    && MolapCommonConstants.MARKED_FOR_DELETE
+                    .substring(molapFile.getName().lastIndexOf('_') + 1,
+                            molapFile.getName().length())) && MolapCommonConstants.MARKED_FOR_DELETE
                     .equalsIgnoreCase(loadMetadata.getLoadStatus())) {
                 status = true;
                 break;

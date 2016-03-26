@@ -35,24 +35,27 @@ public class DimensionFilterProcessor implements DataProcessor {
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(DimensionFilterProcessor.class.getName());
 
-    @Override public void initModel(PaginationModel model) throws MolapPaginationException {
+    @Override
+    public void initModel(PaginationModel model) throws MolapPaginationException {
         LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "UNSUPPORT Operation");
 
     }
 
-    @Override public void processRow(byte[] key, MeasureAggregator[] measures)
+    @Override
+    public void processRow(byte[] key, MeasureAggregator[] measures)
             throws MolapPaginationException {
         LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "UNSUPPORT Operation");
 
     }
 
-    @Override public void processGroup(GroupByHolder groupByHolder)
-            throws MolapPaginationException {
+    @Override
+    public void processGroup(GroupByHolder groupByHolder) throws MolapPaginationException {
         LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "UNSUPPORT Operation");
 
     }
 
-    @Override public void finish() throws MolapPaginationException {
+    @Override
+    public void finish() throws MolapPaginationException {
         LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "UNSUPPORT Operation");
 
     }

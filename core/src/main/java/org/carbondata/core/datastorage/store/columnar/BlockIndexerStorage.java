@@ -221,7 +221,8 @@ public class BlockIndexerStorage implements IndexStorage<short[]> {
         return dataIndexMap;
     }
 
-    @Override public int getTotalSize() {
+    @Override
+    public int getTotalSize() {
         return totalSize;
     }
 }

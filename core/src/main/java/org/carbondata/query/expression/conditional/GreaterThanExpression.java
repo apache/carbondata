@@ -34,7 +34,8 @@ public class GreaterThanExpression extends BinaryConditionalExpression {
         // TODO Auto-generated constructor stub
     }
 
-    @Override public ExpressionResult evaluate(RowIntf value) throws FilterUnsupportedException {
+    @Override
+    public ExpressionResult evaluate(RowIntf value) throws FilterUnsupportedException {
         ExpressionResult exprLeftRes = left.evaluate(value);
         ExpressionResult exprRightRes = right.evaluate(value);
         ExpressionResult val1 = exprLeftRes;
@@ -76,11 +77,13 @@ public class GreaterThanExpression extends BinaryConditionalExpression {
         return val1;
     }
 
-    @Override public ExpressionType getFilterExpressionType() {
+    @Override
+    public ExpressionType getFilterExpressionType() {
         return ExpressionType.GREATERTHAN;
     }
 
-    @Override public String getString() {
+    @Override
+    public String getString() {
         return "GreaterThan(" + left.getString() + ',' + right.getString() + ')';
     }
 

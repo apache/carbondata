@@ -197,7 +197,8 @@ public class MolapDataWriter {
         int fileCnt = 0;
         File[] dataFiles = new File(storeLocation).listFiles(new FileFilter() {
 
-            @Override public boolean accept(File file) {
+            @Override
+            public boolean accept(File file) {
                 if (!file.isDirectory() && file.getName().startsWith(tableName) && file.getName()
                         .contains(fileExtension)) {
                     return true;

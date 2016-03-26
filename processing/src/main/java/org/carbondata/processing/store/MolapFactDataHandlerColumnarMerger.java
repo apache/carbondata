@@ -25,6 +25,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
 
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.MolapCommonConstants;
@@ -38,20 +40,18 @@ import org.carbondata.core.datastorage.util.StoreFactory;
 import org.carbondata.core.file.manager.composite.FileData;
 import org.carbondata.core.file.manager.composite.IFileManagerComposite;
 import org.carbondata.core.file.manager.composite.LoadFolderData;
-import org.carbondata.processing.groupby.MolapAutoAggGroupBy;
-import org.carbondata.processing.groupby.MolapAutoAggGroupByExtended;
-import org.carbondata.processing.groupby.exception.MolapGroupByException;
 import org.carbondata.core.keygenerator.columnar.ColumnarSplitter;
 import org.carbondata.core.keygenerator.columnar.impl.MultiDimKeyVarLengthEquiSplitGenerator;
-import org.carbondata.processing.schema.metadata.MolapColumnarFactMergerInfo;
-import org.carbondata.processing.store.writer.exception.MolapDataWriterException;
-import org.carbondata.processing.util.MolapDataProcessorLogEvent;
 import org.carbondata.core.util.MolapProperties;
 import org.carbondata.core.util.MolapUtil;
 import org.carbondata.core.util.ValueCompressionUtil;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
+import org.carbondata.processing.groupby.MolapAutoAggGroupBy;
+import org.carbondata.processing.groupby.MolapAutoAggGroupByExtended;
+import org.carbondata.processing.groupby.exception.MolapGroupByException;
+import org.carbondata.processing.schema.metadata.MolapColumnarFactMergerInfo;
 import org.carbondata.processing.store.writer.*;
+import org.carbondata.processing.store.writer.exception.MolapDataWriterException;
+import org.carbondata.processing.util.MolapDataProcessorLogEvent;
 
 public class MolapFactDataHandlerColumnarMerger implements MolapFactHandler {
 
@@ -642,7 +642,8 @@ public class MolapFactDataHandlerColumnarMerger implements MolapFactHandler {
             this.dataHolderLocal = dataHolderLocal;
         }
 
-        @Override public IndexStorage call() throws Exception {
+        @Override
+        public IndexStorage call() throws Exception {
             writeDataToFile(this.data, dataHolderLocal, entryCountLocal, startkeyLocal,
                     endKeyLocal);
             return null;
@@ -660,8 +661,9 @@ public class MolapFactDataHandlerColumnarMerger implements MolapFactHandler {
             this.data = data;
         }
 
-        @Override public IndexStorage call() throws Exception {
-            return new BlockIndexerStorageForInt(this.data, aggKeyBlock[this.index], true,false);
+        @Override
+        public IndexStorage call() throws Exception {
+            return new BlockIndexerStorageForInt(this.data, aggKeyBlock[this.index], true, false);
 
         }
 

@@ -36,7 +36,8 @@ public class NonUniqueBlockNotEqualsEvaluator extends AbstractConditionalEvaluto
         super(exp, isExpressionResolve, isIncludeFilter);
     }
 
-    @Override public BitSet applyFilter(BlockDataHolder blockDataHolderArray,
+    @Override
+    public BitSet applyFilter(BlockDataHolder blockDataHolderArray,
             FilterProcessorPlaceHolder placeHolder) {
         if (null == blockDataHolderArray.getColumnarKeyStore()[dimColEvaluatorInfoList.get(0)
                 .getColumnIndex()]) {
@@ -207,7 +208,8 @@ public class NonUniqueBlockNotEqualsEvaluator extends AbstractConditionalEvaluto
         return bitSet;
     }*/
 
-    @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
+    @Override
+    public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
         BitSet bitSet = new BitSet(1);
         bitSet.flip(0, 1);
         return bitSet;

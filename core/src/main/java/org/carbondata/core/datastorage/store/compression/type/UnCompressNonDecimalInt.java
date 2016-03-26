@@ -48,12 +48,14 @@ public class UnCompressNonDecimalInt implements UnCompressValue<int[]> {
      */
     private int[] value;
 
-    @Override public void setValue(int[] value) {
+    @Override
+    public void setValue(int[] value) {
         this.value = (int[]) value;
 
     }
 
-    @Override public UnCompressValue getNew() {
+    @Override
+    public UnCompressValue getNew() {
         try {
             return (UnCompressValue) clone();
         } catch (CloneNotSupportedException csne1) {
@@ -62,17 +64,20 @@ public class UnCompressNonDecimalInt implements UnCompressValue<int[]> {
         return null;
     }
 
-    @Override public UnCompressValue compress() {
+    @Override
+    public UnCompressValue compress() {
         UnCompressNonDecimalByte byte1 = new UnCompressNonDecimalByte();
         byte1.setValue(intCompressor.compress(value));
         return byte1;
     }
 
-    @Override public byte[] getBackArrayData() {
+    @Override
+    public byte[] getBackArrayData() {
         return ValueCompressionUtil.convertToBytes(value);
     }
 
-    @Override public void setValueInBytes(byte[] bytesArr) {
+    @Override
+    public void setValueInBytes(byte[] bytesArr) {
         ByteBuffer buffer = ByteBuffer.wrap(bytesArr);
         this.value = ValueCompressionUtil.convertToIntArray(buffer, bytesArr.length);
     }
@@ -80,11 +85,13 @@ public class UnCompressNonDecimalInt implements UnCompressValue<int[]> {
     /**
      * @see ValueCompressonHolder.UnCompressValue#getCompressorObject()
      */
-    @Override public UnCompressValue getCompressorObject() {
+    @Override
+    public UnCompressValue getCompressorObject() {
         return new UnCompressNonDecimalByte();
     }
 
-    @Override public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
+    @Override
+    public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
         double[] vals = new double[value.length];
         for (int k = 0; k < vals.length; k++) {
             vals[k] = value[k] / Math.pow(10, decimal);
@@ -94,7 +101,8 @@ public class UnCompressNonDecimalInt implements UnCompressValue<int[]> {
         return dataHolder;
     }
 
-    @Override public UnCompressValue uncompress(DataType dataType) {
+    @Override
+    public UnCompressValue uncompress(DataType dataType) {
         return null;
     }
 

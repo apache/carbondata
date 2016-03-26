@@ -26,7 +26,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-import org.carbondata.core.load.LoadMetadataDetails;
+import org.apache.commons.codec.binary.Base64;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.MolapCommonConstants;
@@ -34,9 +34,11 @@ import org.carbondata.core.datastorage.store.filesystem.MolapFile;
 import org.carbondata.core.datastorage.store.filesystem.MolapFileFilter;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
+import org.carbondata.core.load.LoadMetadataDetails;
+import org.carbondata.core.util.MolapFileFolderComparator;
+import org.carbondata.core.util.MolapProperties;
+import org.carbondata.core.util.MolapUtil;
 import org.carbondata.processing.util.MolapDataProcessorLogEvent;
-import org.carbondata.core.util.*;
-import org.apache.commons.codec.binary.Base64;
 
 public final class MolapDataRetentionUtil {
 
@@ -164,7 +166,8 @@ public final class MolapDataRetentionUtil {
 
         MolapFile[] listFiles = storeFolder.listFiles(new MolapFileFilter() {
 
-            @Override public boolean accept(MolapFile pathname) {
+            @Override
+            public boolean accept(MolapFile pathname) {
                 if (pathname.getName().indexOf(fileNameSearchPattern) > -1 && !pathname.getName()
                         .endsWith(MolapCommonConstants.FILE_INPROGRESS_STATUS)) {
                     return true;
@@ -198,7 +201,8 @@ public final class MolapDataRetentionUtil {
      */
     private static MolapFile[] listFiles(MolapFile file) {
         MolapFile[] listFiles = file.listFiles(new MolapFileFilter() {
-            @Override public boolean accept(MolapFile pathname) {
+            @Override
+            public boolean accept(MolapFile pathname) {
                 return pathname.getName().startsWith(MolapCommonConstants.LOAD_FOLDER) && !pathname
                         .getName().endsWith(MolapCommonConstants.FILE_INPROGRESS_STATUS);
             }

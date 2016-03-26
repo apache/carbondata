@@ -268,7 +268,8 @@ public class MolapSQLQuery {
     /**
      * toString method
      */
-    @Override public String toString() {
+    @Override
+    public String toString() {
         return buildQuery();
     }
 

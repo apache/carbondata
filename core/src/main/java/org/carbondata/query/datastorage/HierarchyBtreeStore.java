@@ -101,7 +101,8 @@ public class HierarchyBtreeStore implements DataStore {
         build(factStream, false);
     }
 
-    @Override public void build(DataInputStream factStream, boolean hasFactCount) {
+    @Override
+    public void build(DataInputStream factStream, boolean hasFactCount) {
         // Number of tuples
         int num = 0;
         Pair<byte[], double[]> entry;
@@ -246,19 +247,23 @@ public class HierarchyBtreeStore implements DataStore {
     //        }
     //    }
 
-    @Override public KeyValue get(byte[] key, Scanner scanner) {
+    @Override
+    public KeyValue get(byte[] key, Scanner scanner) {
         return search(key, false, scanner);
     }
 
-    @Override public KeyValue getNext(byte[] key, Scanner scanner) {
+    @Override
+    public KeyValue getNext(byte[] key, Scanner scanner) {
         return search(key, true, scanner);
     }
 
-    @Override public long size() {
+    @Override
+    public long size() {
         return nTotalKeys;
     }
 
-    @Override public long[][] getRanges() {
+    @Override
+    public long[][] getRanges() {
         // TODO Auto-generated method stub
         return null;
     }
@@ -373,17 +378,20 @@ public class HierarchyBtreeStore implements DataStore {
         return node;
     }
 
-    @Override public long getRangeSplitValue() {
+    @Override
+    public long getRangeSplitValue() {
         // TODO Auto-generated method stub
         return 0;
     }
 
-    @Override public void build(List<DataInputStream> factStream, boolean hasFactCount) {
+    @Override
+    public void build(List<DataInputStream> factStream, boolean hasFactCount) {
         // TODO Auto-generated method stub
 
     }
 
-    @Override public ValueCompressionModel getCompressionModel() {
+    @Override
+    public ValueCompressionModel getCompressionModel() {
         // TODO Auto-generated method stub
         return null;
     }
@@ -433,7 +441,8 @@ public class HierarchyBtreeStore implements DataStore {
             return null;
         }
 
-        @Override public short getValueSize() {
+        @Override
+        public short getValueSize() {
             return 0;
         }
 

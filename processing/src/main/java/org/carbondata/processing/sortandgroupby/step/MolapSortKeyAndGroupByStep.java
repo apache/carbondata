@@ -32,19 +32,21 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.MolapCommonConstants;
 import org.carbondata.core.csvreader.checkpoint.CheckPointHanlder;
 import org.carbondata.core.csvreader.checkpoint.CheckPointInterface;
-import org.carbondata.core.util.*;
-import org.carbondata.query.aggregator.MeasureAggregator;
-import org.carbondata.processing.exception.MolapDataProcessorException;
 import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.carbondata.core.metadata.MolapMetadata;
 import org.carbondata.core.metadata.MolapMetadata.Cube;
 import org.carbondata.core.metadata.MolapMetadata.Measure;
 import org.carbondata.core.metadata.SliceMetaData;
+import org.carbondata.core.util.DataTypeUtil;
+import org.carbondata.core.util.MolapProperties;
+import org.carbondata.core.util.MolapUtil;
+import org.carbondata.processing.exception.MolapDataProcessorException;
 import org.carbondata.processing.schema.metadata.SortObserver;
 import org.carbondata.processing.sortandgroupby.exception.MolapSortKeyAndGroupByException;
 import org.carbondata.processing.sortandgroupby.sortKey.MolapSortKeys;
 import org.carbondata.processing.util.MolapDataProcessorLogEvent;
 import org.carbondata.processing.util.MolapDataProcessorUtil;
+import org.carbondata.query.aggregator.MeasureAggregator;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.Trans;
@@ -362,7 +364,7 @@ public class MolapSortKeyAndGroupByStep extends BaseStep {
             if (aggType[i] == MolapCommonConstants.BIG_INT_MEASURE) {
                 maxValue[i] = Long.MIN_VALUE;
             } else if (aggType[i] == MolapCommonConstants.SUM_COUNT_VALUE_MEASURE) {
-            maxValue[i] = -Double.MAX_VALUE;
+                maxValue[i] = -Double.MAX_VALUE;
             } else if (aggType[i] == MolapCommonConstants.BIG_DECIMAL_MEASURE) {
                 maxValue[i] = new BigDecimal(0.0);
             } else {
@@ -371,7 +373,7 @@ public class MolapSortKeyAndGroupByStep extends BaseStep {
             if (aggType[i] == MolapCommonConstants.BIG_INT_MEASURE) {
                 minValue[i] = Long.MAX_VALUE;
             } else if (aggType[i] == MolapCommonConstants.SUM_COUNT_VALUE_MEASURE) {
-            minValue[i] = Double.MAX_VALUE;
+                minValue[i] = Double.MAX_VALUE;
             } else if (aggType[i] == MolapCommonConstants.BIG_DECIMAL_MEASURE) {
                 minValue[i] = new BigDecimal(Double.MAX_VALUE);
             } else {
@@ -417,8 +419,8 @@ public class MolapSortKeyAndGroupByStep extends BaseStep {
                 maxValue[i] = (prevMaxVal > value ? maxValue[i] : value);
                 minValue[i] = (prevMinVal < value ? minValue[i] : value);
                 uniqueValue[i] = (long) minValue[i] - 1;
-            int num = (value % 1 == 0) ? 0 : decimalPointers;
-            decimalLength[i] = (decimalLength[i] > num ? decimalLength[i] : num);
+                int num = (value % 1 == 0) ? 0 : decimalPointers;
+                decimalLength[i] = (decimalLength[i] > num ? decimalLength[i] : num);
             } else if (aggType[i] == MolapCommonConstants.BIG_DECIMAL_MEASURE) {
                 BigDecimal val = (BigDecimal) minValue[i];
                 BigDecimal newVal = aggregator[i].getBigDecimalValue();

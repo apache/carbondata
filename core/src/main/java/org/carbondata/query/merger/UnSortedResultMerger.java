@@ -93,7 +93,8 @@ public class UnSortedResultMerger implements Callable<Void> {
     /**
      * @see Callable#call()
      */
-    @Override public Void call() throws Exception {
+    @Override
+    public Void call() throws Exception {
         try {
             this.dataProcessor.initialise(dataProcessorInfo);
 

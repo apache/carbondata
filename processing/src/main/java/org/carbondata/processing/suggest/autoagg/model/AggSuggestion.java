@@ -30,52 +30,45 @@ import org.carbondata.processing.suggest.datastats.util.AggCombinationGeneratorU
  * Details of single aggregate combination
  *
  * @author p70884
- *
  */
-public class AggSuggestion implements Serializable
-{
+public class AggSuggestion implements Serializable {
 
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
-	private BigInteger possibleRows = BigInteger.valueOf(1);
+    /**
+     *
+     */
+    private static final long serialVersionUID = 1L;
+    private BigInteger possibleRows = BigInteger.valueOf(1);
 
-	private Level[] aggCombinationLevels;
+    private Level[] aggCombinationLevels;
 
-	public AggSuggestion(Level[] levelDetails, Request requestType)
-	{
-		this.aggCombinationLevels = levelDetails;
-		if (requestType == Request.DATA_STATS)
-		{
-			initCalculatedInfo();
-		}
+    public AggSuggestion(Level[] levelDetails, Request requestType) {
+        this.aggCombinationLevels = levelDetails;
+        if (requestType == Request.DATA_STATS) {
+            initCalculatedInfo();
+        }
 
-	}
+    }
 
-	private void initCalculatedInfo()
-	{
+    private void initCalculatedInfo() {
 
-		this.possibleRows = AggCombinationGeneratorUtil
-				.getMaxPossibleRows(aggCombinationLevels);
+        this.possibleRows = AggCombinationGeneratorUtil.getMaxPossibleRows(aggCombinationLevels);
 
-	}
+    }
 
-	/************** GETTers and SETTers ***************************************/
+    /**************
+     * GETTers and SETTers
+     ***************************************/
 
-	public Level[] getAggLevels()
-	{
-		return aggCombinationLevels;
-	}
+    public Level[] getAggLevels() {
+        return aggCombinationLevels;
+    }
 
-	public BigInteger getPossibleRows()
-	{
-		return possibleRows;
-	}
+    public BigInteger getPossibleRows() {
+        return possibleRows;
+    }
 
-	public String toString()
-	{
-		return Arrays.toString(aggCombinationLevels) + ':' + getPossibleRows();
-	}
+    public String toString() {
+        return Arrays.toString(aggCombinationLevels) + ':' + getPossibleRows();
+    }
 
 }

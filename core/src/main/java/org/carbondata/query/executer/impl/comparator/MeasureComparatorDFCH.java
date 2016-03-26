@@ -52,7 +52,8 @@ public class MeasureComparatorDFCH implements Comparator<DataFileChunkHolder> {
      * @param o1
      * @param o2
      */
-    @Override public int compare(DataFileChunkHolder t1, DataFileChunkHolder t2) {
+    @Override
+    public int compare(DataFileChunkHolder t1, DataFileChunkHolder t2) {
         int cmp = 0;
 
         if (t1.getMeasures()[this.msrIndex].toString().contains("Long")) {

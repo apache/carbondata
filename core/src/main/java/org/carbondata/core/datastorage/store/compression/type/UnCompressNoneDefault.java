@@ -48,12 +48,14 @@ public class UnCompressNoneDefault implements UnCompressValue<double[]> {
      */
     private double[] value;
 
-    @Override public void setValue(double[] value) {
+    @Override
+    public void setValue(double[] value) {
         this.value = value;
 
     }
 
-    @Override public UnCompressValue getNew() {
+    @Override
+    public UnCompressValue getNew() {
         try {
             return (UnCompressValue) clone();
         } catch (CloneNotSupportedException exception1) {
@@ -63,34 +65,40 @@ public class UnCompressNoneDefault implements UnCompressValue<double[]> {
         return null;
     }
 
-    @Override public UnCompressValue compress() {
+    @Override
+    public UnCompressValue compress() {
         UnCompressNoneByte byte1 = new UnCompressNoneByte();
         byte1.setValue(doubleCompressor.compress(value));
 
         return byte1;
     }
 
-    @Override public UnCompressValue uncompress(DataType dataType) {
+    @Override
+    public UnCompressValue uncompress(DataType dataType) {
         return null;
     }
 
     /**
      * @see ValueCompressonHolder.UnCompressValue#getCompressorObject()
      */
-    @Override public UnCompressValue getCompressorObject() {
+    @Override
+    public UnCompressValue getCompressorObject() {
         return new UnCompressNoneByte();
     }
 
-    @Override public byte[] getBackArrayData() {
+    @Override
+    public byte[] getBackArrayData() {
         return ValueCompressionUtil.convertToBytes(value);
     }
 
-    @Override public void setValueInBytes(byte[] value) {
+    @Override
+    public void setValueInBytes(byte[] value) {
         ByteBuffer buffer = ByteBuffer.wrap(value);
         this.value = ValueCompressionUtil.convertToDoubleArray(buffer, value.length);
     }
 
-    @Override public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
+    @Override
+    public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
         MolapReadDataHolder dataHolder = new MolapReadDataHolder();
         dataHolder.setReadableDoubleValues(value);
         return dataHolder;

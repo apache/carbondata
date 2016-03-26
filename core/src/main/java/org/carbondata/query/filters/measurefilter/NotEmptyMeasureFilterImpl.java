@@ -28,11 +28,13 @@ public class NotEmptyMeasureFilterImpl implements MeasureFilter {
         this.index = index;
     }
 
-    @Override public boolean filter(MeasureAggregator[] msrValue) {
+    @Override
+    public boolean filter(MeasureAggregator[] msrValue) {
         return !msrValue[index].isFirstTime();
     }
 
-    @Override public boolean filter(double[] msrValue, int msrStartIndex) {
+    @Override
+    public boolean filter(double[] msrValue, int msrStartIndex) {
         return false;
     }
 

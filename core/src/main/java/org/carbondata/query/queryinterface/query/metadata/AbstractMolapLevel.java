@@ -30,14 +30,16 @@ public abstract class AbstractMolapLevel implements MolapLevel {
     /**
      * See interface comments
      */
-    @Override public String getDimensionName() {
+    @Override
+    public String getDimensionName() {
         return null;
     }
 
     /**
      * See interface comments
      */
-    @Override public String getHierarchyName() {
+    @Override
+    public String getHierarchyName() {
         return null;
     }
 

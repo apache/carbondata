@@ -27,8 +27,8 @@ import java.io.IOException;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.datastorage.store.compression.SnappyCompression.SnappyByteCompression;
-import org.carbondata.processing.util.MolapDataProcessorLogEvent;
 import org.carbondata.core.util.MolapUtil;
+import org.carbondata.processing.util.MolapDataProcessorLogEvent;
 
 public class MolapCompressedSortTempFileReader extends AbstractSortTempFileReader {
     /**

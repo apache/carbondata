@@ -50,67 +50,82 @@ public class CalculatedMeasureAggregatorImpl implements CalculatedMeasureAggrega
     public CalculatedMeasureAggregatorImpl() {
     }
 
-    @Override public void agg(double newVal) {
+    @Override
+    public void agg(double newVal) {
 
     }
 
-    @Override public void agg(MolapReadDataHolder newVal, int index) {
+    @Override
+    public void agg(MolapReadDataHolder newVal, int index) {
 
     }
 
-    @Override public void agg(Object newVal) {
+    @Override
+    public void agg(Object newVal) {
 
     }
 
-    @Override public byte[] getByteArray() {
+    @Override
+    public byte[] getByteArray() {
         return null;
     }
 
-    @Override public Double getDoubleValue() {
+    @Override
+    public Double getDoubleValue() {
         return val;
     }
 
-    @Override public Long getLongValue() {
+    @Override
+    public Long getLongValue() {
         return (long) val;
     }
 
-    @Override public BigDecimal getBigDecimalValue() {
+    @Override
+    public BigDecimal getBigDecimalValue() {
         return new BigDecimal(val);
     }
 
-    @Override public Object getValueObject() {
+    @Override
+    public Object getValueObject() {
         // TODO Auto-generated method stub
         return null;
     }
 
-    @Override public void merge(MeasureAggregator aggregator) {
+    @Override
+    public void merge(MeasureAggregator aggregator) {
         // TODO Auto-generated method stub
 
     }
 
-    @Override public void setNewValue(Object newValue) {
+    @Override
+    public void setNewValue(Object newValue) {
         // TODO Auto-generated method stub
 
     }
 
-    @Override public boolean isFirstTime() {
+    @Override
+    public boolean isFirstTime() {
         // TODO Auto-generated method stub
         return false;
     }
 
-    @Override public void writeData(DataOutput output) throws IOException {
+    @Override
+    public void writeData(DataOutput output) throws IOException {
         output.writeDouble(val);
     }
 
-    @Override public void readData(DataInput inPut) throws IOException {
+    @Override
+    public void readData(DataInput inPut) throws IOException {
         val = inPut.readDouble();
     }
 
-    @Override public void calculateCalcMeasure(MeasureAggregator[] aggregators) {
+    @Override
+    public void calculateCalcMeasure(MeasureAggregator[] aggregators) {
         val = function.calculate(aggregators);
     }
 
-    @Override public MeasureAggregator getCopy() {
+    @Override
+    public MeasureAggregator getCopy() {
         return this;
     }
     //we are not comparing the values
@@ -120,7 +135,8 @@ public class CalculatedMeasureAggregatorImpl implements CalculatedMeasureAggrega
     }
     */
 
-    @Override public int compareTo(MeasureAggregator msrObj) {
+    @Override
+    public int compareTo(MeasureAggregator msrObj) {
         double msrVal1 = getDoubleValue();
         double otherMsrVal1 = msrObj.getDoubleValue();
         if (msrVal1 > otherMsrVal1) {
@@ -132,11 +148,13 @@ public class CalculatedMeasureAggregatorImpl implements CalculatedMeasureAggrega
         return 0;
     }
 
-    @Override public MeasureAggregator get() {
+    @Override
+    public MeasureAggregator get() {
         return this;
     }
 
-    @Override public void merge(byte[] value) {
+    @Override
+    public void merge(byte[] value) {
         // TODO Auto-generated method stub
 
     }

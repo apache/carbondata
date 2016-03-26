@@ -36,11 +36,13 @@ public class BtreeLeafNodeIterator implements MolapIterator<DataStoreBlock> {
         this.totalNumberOfBlocksToScan = totalNumberOfBlocksToScan;
     }
 
-    @Override public boolean hasNext() {
+    @Override
+    public boolean hasNext() {
         return hasNext;
     }
 
-    @Override public DataStoreBlock next() {
+    @Override
+    public DataStoreBlock next() {
         DataStoreBlock datablockTemp = datablock;
         datablock = datablock.getNext();
         blockCounter++;

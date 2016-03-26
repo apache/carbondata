@@ -48,12 +48,14 @@ public class UnCompressNonDecimalMaxMinInt implements UnCompressValue<int[]> {
      */
     private int[] value;
 
-    @Override public void setValue(int[] value) {
+    @Override
+    public void setValue(int[] value) {
         this.value = value;
 
     }
 
-    @Override public UnCompressValue getNew() {
+    @Override
+    public UnCompressValue getNew() {
         try {
             return (UnCompressValue) clone();
         } catch (CloneNotSupportedException ex1) {
@@ -62,7 +64,8 @@ public class UnCompressNonDecimalMaxMinInt implements UnCompressValue<int[]> {
         return null;
     }
 
-    @Override public UnCompressValue compress() {
+    @Override
+    public UnCompressValue compress() {
 
         UnCompressNonDecimalMaxMinByte byte1 = new UnCompressNonDecimalMaxMinByte();
         byte1.setValue(intCompressor.compress(value));
@@ -70,11 +73,13 @@ public class UnCompressNonDecimalMaxMinInt implements UnCompressValue<int[]> {
 
     }
 
-    @Override public byte[] getBackArrayData() {
+    @Override
+    public byte[] getBackArrayData() {
         return ValueCompressionUtil.convertToBytes(value);
     }
 
-    @Override public void setValueInBytes(byte[] value) {
+    @Override
+    public void setValueInBytes(byte[] value) {
         ByteBuffer buffer = ByteBuffer.wrap(value);
         this.value = ValueCompressionUtil.convertToIntArray(buffer, value.length);
     }
@@ -82,11 +87,13 @@ public class UnCompressNonDecimalMaxMinInt implements UnCompressValue<int[]> {
     /**
      * @see ValueCompressonHolder.UnCompressValue#getCompressorObject()
      */
-    @Override public UnCompressValue getCompressorObject() {
+    @Override
+    public UnCompressValue getCompressorObject() {
         return new UnCompressNonDecimalMaxMinByte();
     }
 
-    @Override public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
+    @Override
+    public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
         double maxValue = (double) maxValueObject;
         double[] vals = new double[value.length];
         MolapReadDataHolder dataHolderInfo = new MolapReadDataHolder();
@@ -104,7 +111,8 @@ public class UnCompressNonDecimalMaxMinInt implements UnCompressValue<int[]> {
         return dataHolderInfo;
     }
 
-    @Override public UnCompressValue uncompress(DataType dataType) {
+    @Override
+    public UnCompressValue uncompress(DataType dataType) {
         return null;
     }
 

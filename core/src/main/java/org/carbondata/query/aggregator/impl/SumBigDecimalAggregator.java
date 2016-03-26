@@ -28,13 +28,11 @@ import org.carbondata.query.aggregator.MeasureAggregator;
 
 /**
  * @author z00305190
- *
  */
 public class SumBigDecimalAggregator extends AbstractMeasureAggregatorBasic {
 
     /**
      * serialVersionUID
-     *
      */
     private static final long serialVersionUID = 623750056131364540L;
 
@@ -46,11 +44,10 @@ public class SumBigDecimalAggregator extends AbstractMeasureAggregatorBasic {
     /**
      * This method will update the aggVal it will add new value to aggVal
      *
-     * @param newVal
-     *            new value
-     *
+     * @param newVal new value
      */
-    @Override public void agg(Object newVal) {
+    @Override
+    public void agg(Object newVal) {
         if (firstTime) {
             aggVal = (BigDecimal) newVal;
             firstTime = false;
@@ -68,7 +65,8 @@ public class SumBigDecimalAggregator extends AbstractMeasureAggregatorBasic {
     /**
      * Below method will be used to get the value byte array
      */
-    @Override public byte[] getByteArray() {
+    @Override
+    public byte[] getByteArray() {
         if (firstTime) {
             return new byte[0];
         }
@@ -85,9 +83,9 @@ public class SumBigDecimalAggregator extends AbstractMeasureAggregatorBasic {
      * This method will return aggVal
      *
      * @return sum value
-     *
      */
-    @Override public BigDecimal getBigDecimalValue() {
+    @Override
+    public BigDecimal getBigDecimalValue() {
         return aggVal;
     }
 
@@ -98,7 +96,8 @@ public class SumBigDecimalAggregator extends AbstractMeasureAggregatorBasic {
      *            SumAggregator
      * 
      */
-    @Override public void merge(MeasureAggregator aggregator) {
+    @Override
+    public void merge(MeasureAggregator aggregator) {
         if (!aggregator.isFirstTime()) {
             agg(aggregator.getBigDecimalValue());
         }
@@ -109,38 +108,42 @@ public class SumBigDecimalAggregator extends AbstractMeasureAggregatorBasic {
      *
      * @return sum value as an object
      */
-    @Override public Object getValueObject() {
+    @Override
+    public Object getValueObject() {
         return aggVal;
     }
 
     /**
-     *
      * @see MeasureAggregator#setNewValue(Object)
-     *
      */
-    @Override public void setNewValue(Object newValue) {
+    @Override
+    public void setNewValue(Object newValue) {
         aggVal = (BigDecimal) newValue;
     }
 
-    @Override public void readData(DataInput inPut) throws IOException {
+    @Override
+    public void readData(DataInput inPut) throws IOException {
         firstTime = inPut.readBoolean();
         aggVal = new BigDecimal(inPut.readUTF());
     }
 
-    @Override public void writeData(DataOutput output) throws IOException {
+    @Override
+    public void writeData(DataOutput output) throws IOException {
         output.writeBoolean(firstTime);
         output.writeUTF(aggVal.toString());
 
     }
 
-    @Override public MeasureAggregator getCopy() {
+    @Override
+    public MeasureAggregator getCopy() {
         SumBigDecimalAggregator aggr = new SumBigDecimalAggregator();
         aggr.aggVal = aggVal;
         aggr.firstTime = firstTime;
         return aggr;
     }
 
-    @Override public void merge(byte[] value) {
+    @Override
+    public void merge(byte[] value) {
         if (0 == value.length) {
             return;
         }
@@ -158,7 +161,8 @@ public class SumBigDecimalAggregator extends AbstractMeasureAggregatorBasic {
         return aggVal + "";
     }
 
-    @Override public int compareTo(MeasureAggregator o) {
+    @Override
+    public int compareTo(MeasureAggregator o) {
         BigDecimal value = getBigDecimalValue();
         BigDecimal otherVal = o.getBigDecimalValue();
 

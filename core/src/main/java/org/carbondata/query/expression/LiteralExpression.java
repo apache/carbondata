@@ -53,17 +53,20 @@ public class LiteralExpression extends LeafExpression {
 
     }
 
-    @Override public ExpressionResult evaluate(RowIntf value) {
+    @Override
+    public ExpressionResult evaluate(RowIntf value) {
         ExpressionResult expressionResult = new ExpressionResult(dataType, this.value);
         return expressionResult;
     }
 
-    @Override public ExpressionType getFilterExpressionType() {
+    @Override
+    public ExpressionType getFilterExpressionType() {
         // TODO Auto-generated method stub
         return ExpressionType.LITERAL;
     }
 
-    @Override public String getString() {
+    @Override
+    public String getString() {
         // TODO Auto-generated method stub
         return "LiteralExpression(" + value + ')';
     }

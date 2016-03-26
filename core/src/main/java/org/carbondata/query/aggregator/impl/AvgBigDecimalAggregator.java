@@ -28,19 +28,13 @@ import org.carbondata.core.util.DataTypeUtil;
 import org.carbondata.query.aggregator.MeasureAggregator;
 
 /**
- * Project Name NSE V3R7C00 
- *
+ * Project Name NSE V3R7C00
  * Module Name : Molap Engine
- *
  * Author K00900841
- *
  * Created Date :13-May-2013 3:35:33 PM
- *
  * FileName : AvgAggregator.java
- *
  * Class Description :
  * It will return average of aggregate values
- *
  * Version 1.0
  */
 
@@ -48,7 +42,6 @@ public class AvgBigDecimalAggregator extends AbstractMeasureAggregatorBasic {
 
     /**
      * serialVersionUID
-     *
      */
     private static final long serialVersionUID = 5463736686281089871L;
 
@@ -66,11 +59,10 @@ public class AvgBigDecimalAggregator extends AbstractMeasureAggregatorBasic {
      * Average Aggregate function which will add all the aggregate values and it
      * will increment the total count every time, for average value
      *
-     * @param newVal
-     *            new value
-     *
+     * @param newVal new value
      */
-    @Override public void agg(Object newVal) {
+    @Override
+    public void agg(Object newVal) {
         if (newVal instanceof byte[]) {
             ByteBuffer buffer = ByteBuffer.wrap((byte[]) newVal);
             buffer.rewind();
@@ -97,7 +89,8 @@ public class AvgBigDecimalAggregator extends AbstractMeasureAggregatorBasic {
         count++;
     }
 
-    @Override public void agg(MolapReadDataHolder newVal, int index) {
+    @Override
+    public void agg(MolapReadDataHolder newVal, int index) {
         byte[] value = newVal.getReadableByteArrayValueByIndex(index);
         ByteBuffer buffer = ByteBuffer.wrap(value);
         byte[] valueByte = new byte[buffer.getInt()];
@@ -116,7 +109,8 @@ public class AvgBigDecimalAggregator extends AbstractMeasureAggregatorBasic {
     /**
      * Below method will be used to get the value byte array
      */
-    @Override public byte[] getByteArray() {
+    @Override
+    public byte[] getByteArray() {
         if (firstTime) {
             return new byte[0];
         }
@@ -136,9 +130,9 @@ public class AvgBigDecimalAggregator extends AbstractMeasureAggregatorBasic {
      * Return the average of the aggregate values
      *
      * @return average aggregate value
-     *
      */
-    @Override public BigDecimal getBigDecimalValue() {
+    @Override
+    public BigDecimal getBigDecimalValue() {
         return aggVal.divide(new BigDecimal(count), 6);
     }
 
@@ -146,11 +140,10 @@ public class AvgBigDecimalAggregator extends AbstractMeasureAggregatorBasic {
      * This method merge the aggregated value, in average aggregator it will add
      * count and aggregate value
      *
-     * @param aggregator
-     *            Avg Aggregator
-     *
+     * @param aggregator Avg Aggregator
      */
-    @Override public void merge(MeasureAggregator aggregator) {
+    @Override
+    public void merge(MeasureAggregator aggregator) {
         AvgBigDecimalAggregator avgAggregator = (AvgBigDecimalAggregator) aggregator;
         if (!avgAggregator.isFirstTime()) {
             aggVal = aggVal.add(avgAggregator.aggVal);
@@ -164,34 +157,37 @@ public class AvgBigDecimalAggregator extends AbstractMeasureAggregatorBasic {
      *
      * @return average value as an object
      */
-    @Override public Object getValueObject() {
+    @Override
+    public Object getValueObject() {
         return aggVal.divide(new BigDecimal(count));
     }
 
     /**
-     *
      * @see MeasureAggregator#setNewValue(Object)
-     *
      */
-    @Override public void setNewValue(Object newValue) {
+    @Override
+    public void setNewValue(Object newValue) {
         aggVal = (BigDecimal) newValue;
         count = 1;
     }
 
-    @Override public void writeData(DataOutput output) throws IOException {
+    @Override
+    public void writeData(DataOutput output) throws IOException {
         output.writeBoolean(firstTime);
         output.writeUTF(aggVal.toString());
         output.writeDouble(count);
 
     }
 
-    @Override public void readData(DataInput inPut) throws IOException {
+    @Override
+    public void readData(DataInput inPut) throws IOException {
         firstTime = inPut.readBoolean();
         aggVal = new BigDecimal(inPut.readUTF());
         count = inPut.readDouble();
     }
 
-    @Override public MeasureAggregator getCopy() {
+    @Override
+    public MeasureAggregator getCopy() {
         AvgBigDecimalAggregator avg = new AvgBigDecimalAggregator();
         avg.aggVal = aggVal;
         avg.count = count;
@@ -204,14 +200,16 @@ public class AvgBigDecimalAggregator extends AbstractMeasureAggregatorBasic {
         return compareTo(msrAggregator)==0;
     }*/
 
-    @Override public int compareTo(MeasureAggregator o) {
+    @Override
+    public int compareTo(MeasureAggregator o) {
         BigDecimal val = getBigDecimalValue();
         BigDecimal otherVal = o.getBigDecimalValue();
 
         return val.compareTo(otherVal);
     }
 
-    @Override public void merge(byte[] value) {
+    @Override
+    public void merge(byte[] value) {
         if (0 == value.length) {
             return;
         }

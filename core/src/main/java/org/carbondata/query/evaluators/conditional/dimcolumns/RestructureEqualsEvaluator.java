@@ -33,7 +33,8 @@ public class RestructureEqualsEvaluator extends AbastractRSConditionalEvalutor {
         super(exp, defaultValue, surrogate, isExpressionResolve, true);
     }
 
-    @Override public BitSet applyFilter(BlockDataHolder blockDataHolder,
+    @Override
+    public BitSet applyFilter(BlockDataHolder blockDataHolder,
             FilterProcessorPlaceHolder placeHolder) {
         BitSet bitSet = new BitSet(blockDataHolder.getLeafDataBlock().getnKeys());
         byte[][] filterValues = dimColEvaluatorInfoList.get(0).getFilterValues();
@@ -43,7 +44,8 @@ public class RestructureEqualsEvaluator extends AbastractRSConditionalEvalutor {
         return bitSet;
     }
 
-    @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
+    @Override
+    public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
         BitSet bitSet = new BitSet(1);
         bitSet.set(0);
         return bitSet;

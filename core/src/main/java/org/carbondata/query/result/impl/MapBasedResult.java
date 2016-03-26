@@ -44,16 +44,19 @@ public class MapBasedResult implements Result<Map<ByteArrayWrapper, MeasureAggre
         this.resultIterator = scannerResult.entrySet().iterator();
     }
 
-    @Override public ByteArrayWrapper getKey() {
+    @Override
+    public ByteArrayWrapper getKey() {
         tuple = this.resultIterator.next();
         return tuple.getKey();
     }
 
-    @Override public MeasureAggregator[] getValue() {
+    @Override
+    public MeasureAggregator[] getValue() {
         return tuple.getValue();
     }
 
-    @Override public boolean hasNext() {
+    @Override
+    public boolean hasNext() {
         return this.resultIterator.hasNext();
     }
 
@@ -64,7 +67,8 @@ public class MapBasedResult implements Result<Map<ByteArrayWrapper, MeasureAggre
         this.resultIterator = scannerResult.entrySet().iterator();
     }
 
-    @Override public void merge(Result<Map<ByteArrayWrapper, MeasureAggregator[]>, Void> result) {
+    @Override
+    public void merge(Result<Map<ByteArrayWrapper, MeasureAggregator[]>, Void> result) {
         ByteArrayWrapper key = null;
         MeasureAggregator[] value = null;
         Map<ByteArrayWrapper, MeasureAggregator[]> otherResult = result.getKeys();
@@ -88,15 +92,18 @@ public class MapBasedResult implements Result<Map<ByteArrayWrapper, MeasureAggre
         }
     }
 
-    @Override public int size() {
+    @Override
+    public int size() {
         return resulSize;
     }
 
-    @Override public Map<ByteArrayWrapper, MeasureAggregator[]> getKeys() {
+    @Override
+    public Map<ByteArrayWrapper, MeasureAggregator[]> getKeys() {
         return this.scannerResult;
     }
 
-    @Override public Void getValues() {
+    @Override
+    public Void getValues() {
         return null;
     }
 }

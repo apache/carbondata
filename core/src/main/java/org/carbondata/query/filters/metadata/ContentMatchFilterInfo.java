@@ -97,7 +97,8 @@ public class ContentMatchFilterInfo extends MolapFilterInfo {
     /**
      * hashCode
      */
-    @Override public int hashCode() {
+    @Override
+    public int hashCode() {
         final int prime = 31;
         int res = 1;
         res = prime * res + ((excludedMembers == null) ? 0 : excludedMembers.hashCode());
@@ -108,7 +109,8 @@ public class ContentMatchFilterInfo extends MolapFilterInfo {
     /**
      * equals
      */
-    @Override public boolean equals(Object obj) {
+    @Override
+    public boolean equals(Object obj) {
         if (obj instanceof ContentMatchFilterInfo) {
 
             if (this == obj) {

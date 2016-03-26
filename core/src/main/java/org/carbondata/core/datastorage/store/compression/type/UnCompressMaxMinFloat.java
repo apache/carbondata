@@ -49,12 +49,14 @@ public class UnCompressMaxMinFloat implements UnCompressValue<float[]> {
      */
     private float[] value;
 
-    @Override public void setValue(float[] value) {
+    @Override
+    public void setValue(float[] value) {
         this.value = (float[]) value;
 
     }
 
-    @Override public UnCompressValue getNew() {
+    @Override
+    public UnCompressValue getNew() {
         try {
             return (UnCompressValue) clone();
         } catch (CloneNotSupportedException ex4) {
@@ -63,22 +65,26 @@ public class UnCompressMaxMinFloat implements UnCompressValue<float[]> {
         return null;
     }
 
-    @Override public UnCompressValue compress() {
+    @Override
+    public UnCompressValue compress() {
 
         UnCompressMaxMinByte byte1 = new UnCompressMaxMinByte();
         byte1.setValue(floatCompressor.compress(value));
         return byte1;
     }
 
-    @Override public UnCompressValue uncompress(DataType dTypeVal) {
+    @Override
+    public UnCompressValue uncompress(DataType dTypeVal) {
         return null;
     }
 
-    @Override public byte[] getBackArrayData() {
+    @Override
+    public byte[] getBackArrayData() {
         return ValueCompressionUtil.convertToBytes(value);
     }
 
-    @Override public void setValueInBytes(byte[] value) {
+    @Override
+    public void setValueInBytes(byte[] value) {
         ByteBuffer buffer = ByteBuffer.wrap(value);
         this.value = ValueCompressionUtil.convertToFloatArray(buffer, value.length);
     }
@@ -86,11 +92,13 @@ public class UnCompressMaxMinFloat implements UnCompressValue<float[]> {
     /**
      * @see ValueCompressonHolder.UnCompressValue#getCompressorObject()
      */
-    @Override public UnCompressValue getCompressorObject() {
+    @Override
+    public UnCompressValue getCompressorObject() {
         return new UnCompressMaxMinByte();
     }
 
-    @Override public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
+    @Override
+    public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
         double maxValue = (double) maxValueObject;
         double[] vals = new double[value.length];
         MolapReadDataHolder dataHolderVal = new MolapReadDataHolder();

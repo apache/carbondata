@@ -38,7 +38,8 @@ public class AggreagtedRowProcessor extends RowProcessor {
         super(dataProcessor);
     }
 
-    @Override public void processRow(final byte[] key, final MeasureAggregator[] value)
+    @Override
+    public void processRow(final byte[] key, final MeasureAggregator[] value)
             throws DataProcessorException {
         if (prevKey != null) {
             if (ByteUtil.compare(key, prevKey) == 0) {

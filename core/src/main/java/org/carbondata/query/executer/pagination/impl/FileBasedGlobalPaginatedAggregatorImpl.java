@@ -34,35 +34,40 @@ import org.carbondata.query.wrappers.ByteArrayWrapper;
  */
 public class FileBasedGlobalPaginatedAggregatorImpl implements GlobalPaginatedAggregator {
 
-    @Override public Map<ByteArrayWrapper, MeasureAggregator[]> getPage(int fromRow, int toRow)
+    @Override
+    public Map<ByteArrayWrapper, MeasureAggregator[]> getPage(int fromRow, int toRow)
             throws IOException {
         // TODO Auto-generated method stub
         return null;
     }
 
-    @Override public QueryResult getResult() throws IOException {
+    @Override
+    public QueryResult getResult() throws IOException {
         // TODO Auto-generated method stub
         return null;
     }
 
-    @Override public void writeToDisk(Map<ByteArrayWrapper, MeasureAggregator[]> data,
+    @Override
+    public void writeToDisk(Map<ByteArrayWrapper, MeasureAggregator[]> data,
             RestructureHolder restructureHolder) throws Exception {
         // TODO Auto-generated method stub
 
     }
 
-    @Override public void writeToDisk(Result data, RestructureHolder restructureHolder)
-            throws Exception {
+    @Override
+    public void writeToDisk(Result data, RestructureHolder restructureHolder) throws Exception {
         // TODO Auto-generated method stub
 
     }
 
-    @Override public void mergeDataFile(boolean cacheRequired) {
+    @Override
+    public void mergeDataFile(boolean cacheRequired) {
         // TODO Auto-generated method stub
 
     }
 
-    @Override public int getRowCount() {
+    @Override
+    public int getRowCount() {
         // TODO Auto-generated method stub
         return 0;
     }

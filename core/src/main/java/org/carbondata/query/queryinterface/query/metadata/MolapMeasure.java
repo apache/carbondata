@@ -61,7 +61,8 @@ public class MolapMeasure extends AbstractMolapLevel {
     /**
      * See interface comments
      */
-    @Override public MolapLevelType getType() {
+    @Override
+    public MolapLevelType getType() {
         return MolapLevelType.MEASURE;
     }
 

@@ -390,7 +390,8 @@ public class MolapResultHolder implements Serializable {
         this.values = values;
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
         StringBuffer buffer = new StringBuffer();
         for (int i = 0; i < result.length; i++) {
             StringBuffer b = new StringBuffer();

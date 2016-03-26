@@ -32,7 +32,8 @@ public class MolapFileFolderComparator implements Comparator<MolapFile> {
      * @param o2 Second file
      * @return compare result
      */
-    @Override public int compare(MolapFile o1, MolapFile o2) {
+    @Override
+    public int compare(MolapFile o1, MolapFile o2) {
         String firstFileName = o1.getName();
         String secondFileName = o2.getName();
         int lastIndexOfO1 = firstFileName.lastIndexOf('_');

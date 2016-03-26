@@ -20,19 +20,16 @@
 package org.carbondata.processing.suggest.autoagg;
 
 import org.carbondata.processing.suggest.autoagg.model.RequestTest;
+import org.carbondata.processing.suggest.datastats.util.CommonUtilTest;
+import org.carbondata.processing.suggest.datastats.util.DataStatsUtilTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
-import org.carbondata.processing.suggest.datastats.util.CommonUtilTest;
-import org.carbondata.processing.suggest.datastats.util.DataStatsUtilTest;
-
 @RunWith(Suite.class)
-@Suite.SuiteClasses({
-        DataStatsAggregateServiceTest.class,
-        QueryStatsAggServiceTest.class,MergeDistinctDataTest.class,CommonUtilTest.class,DataStatsUtilTest.class
-        ,RequestTest.class,RestructureTest.class,FactDataHandlerTest.class
-})
-public class AggregateTestSuite
-{
+@Suite.SuiteClasses({ DataStatsAggregateServiceTest.class, QueryStatsAggServiceTest.class,
+                            MergeDistinctDataTest.class, CommonUtilTest.class,
+                            DataStatsUtilTest.class, RequestTest.class, RestructureTest.class,
+                            FactDataHandlerTest.class })
+public class AggregateTestSuite {
 
 }

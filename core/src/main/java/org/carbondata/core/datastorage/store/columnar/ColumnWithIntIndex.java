@@ -62,7 +62,8 @@ public class ColumnWithIntIndex implements Comparable<ColumnWithIntIndex> {
         this.index = index;
     }
 
-    @Override public int compareTo(ColumnWithIntIndex o) {
+    @Override
+    public int compareTo(ColumnWithIntIndex o) {
         return ByteUtil.UnsafeComparer.INSTANCE.compareTo(column, o.column);
     }
 

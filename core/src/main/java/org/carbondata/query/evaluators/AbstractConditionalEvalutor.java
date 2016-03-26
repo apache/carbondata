@@ -57,7 +57,8 @@ public abstract class AbstractConditionalEvalutor implements FilterEvaluator {
         this.isIncludeFilter = isIncludeFilter;
     }
 
-    @Override public void resolve(FilterEvaluatorInfo info) {
+    @Override
+    public void resolve(FilterEvaluatorInfo info) {
         DimColumnEvaluatorInfo dimColumnEvaluatorInfo = new DimColumnEvaluatorInfo();
         if ((!isExpressionResolve) && exp instanceof BinaryConditionalExpression) {
             BinaryConditionalExpression binaryConditionalExpression =

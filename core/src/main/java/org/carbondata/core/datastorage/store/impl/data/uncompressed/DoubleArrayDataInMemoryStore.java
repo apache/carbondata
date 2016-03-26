@@ -129,7 +129,8 @@ public class DoubleArrayDataInMemoryStore extends AbstractDoubleArrayDataStore {
         super(compressionModel);
     }
 
-    @Override public MeasureDataWrapper getBackData(int[] cols, FileHolder fileHolder) {
+    @Override
+    public MeasureDataWrapper getBackData(int[] cols, FileHolder fileHolder) {
         if (null == compressionModel) {
             return null;
         }
@@ -150,7 +151,8 @@ public class DoubleArrayDataInMemoryStore extends AbstractDoubleArrayDataStore {
         return new CompressedDataMeasureDataWrapper(vals);
     }
 
-    @Override public MeasureDataWrapper getBackData(int cols, FileHolder fileHolder) {
+    @Override
+    public MeasureDataWrapper getBackData(int cols, FileHolder fileHolder) {
         if (null == compressionModel) {
             return null;
         }

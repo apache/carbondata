@@ -92,7 +92,8 @@ public class Dataset {
         this.columns = columns;
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
         return "<DS: Name= " + name + ", Columns= " + columns.toString() + '>';
     }
 
@@ -110,7 +111,8 @@ public class Dataset {
             this.name = name;
         }
 
-        @Override public String toString() {
+        @Override
+        public String toString() {
             return name;
         }
 

@@ -48,7 +48,8 @@ public class UnCompressNonDecimalDefault
      */
     private double[] value;
 
-    @Override public ValueCompressonHolder.UnCompressValue getNew() {
+    @Override
+    public ValueCompressonHolder.UnCompressValue getNew() {
         try {
             return (ValueCompressonHolder.UnCompressValue) clone();
         } catch (CloneNotSupportedException cnse1) {
@@ -57,35 +58,42 @@ public class UnCompressNonDecimalDefault
         return null;
     }
 
-    @Override public ValueCompressonHolder.UnCompressValue compress() {
+    @Override
+    public ValueCompressonHolder.UnCompressValue compress() {
         UnCompressNonDecimalByte byte1 = new UnCompressNonDecimalByte();
         byte1.setValue(doubleCompressor.compress(value));
         return byte1;
     }
 
-    @Override public ValueCompressonHolder.UnCompressValue uncompress(DataType dataType) {
+    @Override
+    public ValueCompressonHolder.UnCompressValue uncompress(DataType dataType) {
         return null;
     }
 
-    @Override public void setValue(double[] value) {
+    @Override
+    public void setValue(double[] value) {
         this.value = value;
 
     }
 
-    @Override public void setValueInBytes(byte[] value) {
+    @Override
+    public void setValueInBytes(byte[] value) {
         ByteBuffer buffer = ByteBuffer.wrap(value);
         this.value = ValueCompressionUtil.convertToDoubleArray(buffer, value.length);
     }
 
-    @Override public byte[] getBackArrayData() {
+    @Override
+    public byte[] getBackArrayData() {
         return ValueCompressionUtil.convertToBytes(value);
     }
 
-    @Override public ValueCompressonHolder.UnCompressValue getCompressorObject() {
+    @Override
+    public ValueCompressonHolder.UnCompressValue getCompressorObject() {
         return new UnCompressNonDecimalByte();
     }
 
-    @Override public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
+    @Override
+    public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
         double[] dblVals = new double[value.length];
         for (int i = 0; i < dblVals.length; i++) {
             dblVals[i] = value[i] / Math.pow(10, decimal);

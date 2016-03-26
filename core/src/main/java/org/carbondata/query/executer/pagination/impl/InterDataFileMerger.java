@@ -153,7 +153,8 @@ public class InterDataFileMerger implements Callable<Void> {
     /**
      * @see Callable#call()
      */
-    @Override public Void call() throws Exception {
+    @Override
+    public Void call() throws Exception {
         try {
             for (File fileInfo : dataOutFiles) {
                 // create chunk holder

@@ -50,7 +50,8 @@ public class DistinctCountAggregatorObjectSet implements MeasureAggregator {
     /**
      * just need to add the unique values to agg set
      */
-    @Override public void agg(double newVal) {
+    @Override
+    public void agg(double newVal) {
         valueSetForObj.add(newVal);
     }
 
@@ -59,7 +60,8 @@ public class DistinctCountAggregatorObjectSet implements MeasureAggregator {
      *
      * @param newVal new value
      */
-    @Override public void agg(Object newVal) {
+    @Override
+    public void agg(Object newVal) {
         // Object include double
         if (newVal instanceof Double) {
             agg((double) newVal);
@@ -74,14 +76,16 @@ public class DistinctCountAggregatorObjectSet implements MeasureAggregator {
         }
     }
 
-    @Override public void agg(MolapReadDataHolder newVal, int index) {
+    @Override
+    public void agg(MolapReadDataHolder newVal, int index) {
         valueSetForObj.add(newVal.getReadableDoubleValueByIndex(index));
     }
 
     /**
      * Below method will be used to get the value byte array
      */
-    @Override public byte[] getByteArray() {
+    @Override
+    public byte[] getByteArray() {
         return null;
     }
 
@@ -98,48 +102,58 @@ public class DistinctCountAggregatorObjectSet implements MeasureAggregator {
     /**
      * merge the valueset so that we get the count of unique values
      */
-    @Override public void merge(MeasureAggregator aggregator) {
+    @Override
+    public void merge(MeasureAggregator aggregator) {
         DistinctCountAggregatorObjectSet distinctCountAggregator =
                 (DistinctCountAggregatorObjectSet) aggregator;
         agg(distinctCountAggregator.valueSetForObj);
     }
 
-    @Override public Double getDoubleValue() {
+    @Override
+    public Double getDoubleValue() {
         return (double) valueSetForObj.size();
     }
 
-    @Override public Long getLongValue() {
+    @Override
+    public Long getLongValue() {
         return (long) valueSetForObj.size();
     }
 
-    @Override public BigDecimal getBigDecimalValue() {
+    @Override
+    public BigDecimal getBigDecimalValue() {
         return new BigDecimal(valueSetForObj.size());
     }
 
-    @Override public Object getValueObject() {
+    @Override
+    public Object getValueObject() {
         return valueSetForObj.size();
     }
 
     /**
      * @see MeasureAggregator#setNewValue(Object)
      */
-    @Override public void setNewValue(Object newValue) {
+    @Override
+    public void setNewValue(Object newValue) {
         valueSetForObj.add(newValue);
     }
 
-    @Override public boolean isFirstTime() {
+    @Override
+    public boolean isFirstTime() {
         return false;
     }
 
-    @Override public void writeData(DataOutput output) throws IOException {
+    @Override
+    public void writeData(DataOutput output) throws IOException {
 
     }
 
-    @Override public void readData(DataInput inPut) throws IOException {
+    @Override
+    public void readData(DataInput inPut) throws IOException {
 
     }
 
-    @Override public MeasureAggregator getCopy() {
+    @Override
+    public MeasureAggregator getCopy() {
 
         DistinctCountAggregatorObjectSet aggregator = new DistinctCountAggregatorObjectSet();
         aggregator.valueSetForObj = new HashSet<Object>(valueSetForObj);
@@ -151,7 +165,8 @@ public class DistinctCountAggregatorObjectSet implements MeasureAggregator {
          return compareTo(msrAggregator)==0;
      }*/
 
-    @Override public int compareTo(MeasureAggregator measureAggr) {
+    @Override
+    public int compareTo(MeasureAggregator measureAggr) {
         double valueSetForObjSize = getDoubleValue();
         double otherVal = measureAggr.getDoubleValue();
         if (valueSetForObjSize > otherVal) {
@@ -163,7 +178,8 @@ public class DistinctCountAggregatorObjectSet implements MeasureAggregator {
         return 0;
     }
 
-    @Override public MeasureAggregator get() {
+    @Override
+    public MeasureAggregator get() {
         return this;
     }
 
@@ -171,7 +187,8 @@ public class DistinctCountAggregatorObjectSet implements MeasureAggregator {
         return valueSetForObj.size() + "";
     }
 
-    @Override public void merge(byte[] value) {
+    @Override
+    public void merge(byte[] value) {
         // TODO Auto-generated method stub
 
     }

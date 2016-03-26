@@ -21,7 +21,8 @@ package org.carbondata.processing.csvreaderstep;
 
 public class MultiByteLittleCrLfMatcher implements CrLfMatcherInterface {
 
-    @Override public boolean isReturn(byte[] source, int location) {
+    @Override
+    public boolean isReturn(byte[] source, int location) {
         if (location >= 1) {
             return source[location - 1] == 0x0d && source[location] == 0x00;
         } else {
@@ -29,7 +30,8 @@ public class MultiByteLittleCrLfMatcher implements CrLfMatcherInterface {
         }
     }
 
-    @Override public boolean isLineFeed(byte[] source, int location) {
+    @Override
+    public boolean isLineFeed(byte[] source, int location) {
         if (location >= 1) {
             return source[location - 1] == 0x0a && source[location] == 0x00;
         } else {

@@ -77,7 +77,8 @@ public class CalculatedMeasure extends Measure {
         this.distCountDim = distCountDim;
     }
 
-    @Override public boolean equals(Object obj) {
+    @Override
+    public boolean equals(Object obj) {
         Measure that = null;
 
         if (obj instanceof Measure) {
@@ -94,7 +95,8 @@ public class CalculatedMeasure extends Measure {
 
     }
 
-    @Override public int hashCode() {
+    @Override
+    public int hashCode() {
         return getName().hashCode();
     }
 

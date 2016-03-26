@@ -27,21 +27,26 @@ import org.junit.Test;
 
 public class AuditLevelTest_UT extends TestCase {
 
-    @Before public void setUp() throws Exception {
+    @Before
+    public void setUp() throws Exception {
     }
 
-    @After public void tearDown() throws Exception {
+    @After
+    public void tearDown() throws Exception {
     }
 
-    @Test public void testAuditLevel() {
+    @Test
+    public void testAuditLevel() {
         assertEquals(AuditLevel.AUDIT.toInt(), 55000);
     }
 
-    @Test public void testToLevelIntLevel() {
+    @Test
+    public void testToLevelIntLevel() {
         assertSame(AuditLevel.AUDIT, AuditLevel.toLevel(55000, Level.DEBUG));
     }
 
-    @Test public void testToLevelStringLevel() {
+    @Test
+    public void testToLevelStringLevel() {
         assertSame(AuditLevel.AUDIT, AuditLevel.toLevel("AUDIT", Level.DEBUG));
     }
 

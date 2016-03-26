@@ -35,7 +35,8 @@ public class ListExpression extends Expression {
         this.children = children;
     }
 
-    @Override public ExpressionResult evaluate(RowIntf value) throws FilterUnsupportedException {
+    @Override
+    public ExpressionResult evaluate(RowIntf value) throws FilterUnsupportedException {
         List<ExpressionResult> listOfExprRes = new ArrayList<ExpressionResult>(10);
 
         for (Expression expr : children) {
@@ -44,12 +45,14 @@ public class ListExpression extends Expression {
         return new ExpressionResult(listOfExprRes);
     }
 
-    @Override public ExpressionType getFilterExpressionType() {
+    @Override
+    public ExpressionType getFilterExpressionType() {
         // TODO Auto-generated method stub
         return ExpressionType.LIST;
     }
 
-    @Override public String getString() {
+    @Override
+    public String getString() {
         // TODO Auto-generated method stub
         return null;
     }

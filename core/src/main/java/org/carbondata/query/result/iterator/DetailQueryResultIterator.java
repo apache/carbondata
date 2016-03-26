@@ -110,11 +110,13 @@ public class DetailQueryResultIterator implements MolapIterator<ChunkResult> {
 
     }
 
-    @Override public boolean hasNext() {
+    @Override
+    public boolean hasNext() {
         return currentCounter < totalNumberOfNode;
     }
 
-    @Override public ChunkResult next() {
+    @Override
+    public ChunkResult next() {
         updateSliceIndexToBeExecuted();
         MolapIterator<QueryResult> executeSlices = null;
         try {

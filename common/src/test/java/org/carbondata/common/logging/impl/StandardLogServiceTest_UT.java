@@ -39,28 +39,37 @@ public class StandardLogServiceTest_UT extends TestCase {
     /**
      * @throws Exception
      */
-    @Before public void setUp() throws Exception {
+    @Before
+    public void setUp() throws Exception {
 
         new MockUp<Category>() {
-            @SuppressWarnings("unused") @Mock public boolean isDebugEnabled() {
+            @SuppressWarnings("unused")
+            @Mock
+            public boolean isDebugEnabled() {
                 return true;
             }
 
-            @SuppressWarnings("unused") @Mock public boolean isEnabledFor(Priority level) {
+            @SuppressWarnings("unused")
+            @Mock
+            public boolean isEnabledFor(Priority level) {
                 return true;
             }
 
-            @SuppressWarnings("unused") @Mock public boolean isInfoEnabled() {
+            @SuppressWarnings("unused")
+            @Mock
+            public boolean isInfoEnabled() {
                 return true;
             }
         };
 
         event = new LogEvent() {
-            @Override public String getModuleName() {
+            @Override
+            public String getModuleName() {
                 return "TEST";
             }
 
-            @Override public String getEventCode() {
+            @Override
+            public String getEventCode() {
                 return "TEST";
             }
         };
@@ -73,10 +82,12 @@ public class StandardLogServiceTest_UT extends TestCase {
      * @Author k00742797
      * @Description : tearDown
      */
-    @After public void tearDown() throws Exception {
+    @After
+    public void tearDown() throws Exception {
     }
 
-    @Test public void testStandardLogService() {
+    @Test
+    public void testStandardLogService() {
         if (logService != null && logService instanceof StandardLogService) {
             Assert.assertTrue(true);
         } else {
@@ -84,78 +95,94 @@ public class StandardLogServiceTest_UT extends TestCase {
         }
     }
 
-    @Test public void testIsDebugEnabled() {
+    @Test
+    public void testIsDebugEnabled() {
         Assert.assertEquals(true, logService.isDebugEnabled());
     }
 
-    @Test public void testIsWarnEnabled() {
+    @Test
+    public void testIsWarnEnabled() {
         Assert.assertEquals(true, logService.isWarnEnabled());
     }
 
-    @Test public void testSecureLogEventObjectArray() {
+    @Test
+    public void testSecureLogEventObjectArray() {
         Assert.assertTrue(true);
     }
 
-    @Test public void testAuditLogEventObjectArray() {
+    @Test
+    public void testAuditLogEventObjectArray() {
         logService.audit(event, "testing", "testing");
         Assert.assertTrue(true);
     }
 
-    @Test public void testDebugLogEventObjectArray() {
+    @Test
+    public void testDebugLogEventObjectArray() {
         logService.debug(event, "testing", "testing");
         Assert.assertTrue(true);
     }
 
-    @Test public void testDebugLogEventThrowableObjectArray() {
+    @Test
+    public void testDebugLogEventThrowableObjectArray() {
         logService.debug(event, new Exception("test"), "testing", "testing");
         Assert.assertTrue(true);
     }
 
-    @Test public void testErrorLogEventObjectArray() {
+    @Test
+    public void testErrorLogEventObjectArray() {
         logService.error(event, "testing", "testing");
         Assert.assertTrue(true);
     }
 
-    @Test public void testErrorLogEventThrowableObjectArray() {
+    @Test
+    public void testErrorLogEventThrowableObjectArray() {
         Exception exception = new Exception("test");
         logService.error(event, exception, "testing", "testing");
         Assert.assertTrue(true);
     }
 
-    @Test public void testInfoLogEventObjectArray() {
+    @Test
+    public void testInfoLogEventObjectArray() {
         logService.info(event, "testing", "testing");
         Assert.assertTrue(true);
     }
 
-    @Test public void testInfoLogEventThrowableObjectArray() {
+    @Test
+    public void testInfoLogEventThrowableObjectArray() {
         logService.info(event, new Exception("test"), "testing", "testing");
         Assert.assertTrue(true);
     }
 
-    @Test public void testIsInfoEnabled() {
+    @Test
+    public void testIsInfoEnabled() {
         Assert.assertEquals(true, logService.isInfoEnabled());
     }
 
-    @Test public void testWarn() {
+    @Test
+    public void testWarn() {
         logService.warn(event, new Exception("test"), "testing", "testing");
         Assert.assertTrue(true);
 
     }
 
-    @Test public void testDeleteLogs() {
+    @Test
+    public void testDeleteLogs() {
         Assert.assertTrue(true);
     }
 
-    @Test public void testFlushLogs() {
+    @Test
+    public void testFlushLogs() {
         Assert.assertTrue(true);
     }
 
-    @Test public void testSetEventProperties() {
+    @Test
+    public void testSetEventProperties() {
         logService.setEventProperties("CLIENT_IP", "127.0.0.1");
         Assert.assertTrue(true);
     }
 
-    @Test public void testIsDoLog() {
+    @Test
+    public void testIsDoLog() {
         StandardLogService.setDoLog(true);
         Assert.assertEquals(true, StandardLogService.isDoLog());
 
@@ -164,12 +191,14 @@ public class StandardLogServiceTest_UT extends TestCase {
 
     }
 
-    @Test public void testSetDoLog() {
+    @Test
+    public void testSetDoLog() {
         StandardLogService.setDoLog(true);
         Assert.assertEquals(true, StandardLogService.isDoLog());
     }
 
-    @Test public void testAuditString() {
+    @Test
+    public void testAuditString() {
         logService.audit("audit message");
         Assert.assertTrue(true);
     }

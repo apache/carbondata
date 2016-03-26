@@ -31,7 +31,8 @@ public class CsvReaderData extends CsvInputData {
     /**
      * method to resize byte buffer array
      */
-    @Override public void resizeByteBufferArray() {
+    @Override
+    public void resizeByteBufferArray() {
         totalBytesFilesFinished = totalBytesFilesFinished + startBuffer;
         super.resizeByteBufferArray();
     }

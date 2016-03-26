@@ -27,15 +27,16 @@ import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.concurrent.Callable;
 
+import org.apache.commons.codec.binary.Base64;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.MolapCommonConstants;
 import org.carbondata.core.datastorage.store.filesystem.MolapFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
+import org.carbondata.core.util.MolapProperties;
+import org.carbondata.core.util.MolapUtil;
 import org.carbondata.query.datastorage.DataType;
 import org.carbondata.query.util.MemberSortModel;
-import org.carbondata.core.util.*;
-import org.apache.commons.codec.binary.Base64;
 
 /**
  * Below class is responsible for creating the level sort index data file
@@ -87,7 +88,8 @@ public class LevelSortIndexWriterThread implements Callable<Void> {
     /**
      * call method which will execute the task
      */
-    @Override public Void call() throws Exception {
+    @Override
+    public Void call() throws Exception {
         MemberSortModel[] data = getLevelData();
         createSortIndex(data);
         writeUpdatedLevelFile();

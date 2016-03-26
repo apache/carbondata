@@ -207,7 +207,8 @@ public class DimensionHierarichyStore {
                     depth++;
                     executorService.submit(new Callable<Void>() {
 
-                        @Override public Void call() throws Exception {
+                        @Override
+                        public Void call() throws Exception {
                             loadDimensionLevels(fileStore, hCache, dimNames, tempLevel,
                                     hCache.getHierName(), tableName, hCache.getDimensionName());
                             return null;

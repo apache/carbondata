@@ -23,8 +23,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.carbondata.processing.datatypes.GenericDataType;
 import org.carbondata.core.keygenerator.KeyGenerator;
+import org.carbondata.processing.datatypes.GenericDataType;
 
 public class MolapInfo {
 

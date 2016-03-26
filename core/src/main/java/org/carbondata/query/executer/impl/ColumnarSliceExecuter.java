@@ -97,7 +97,8 @@ public class ColumnarSliceExecuter implements Callable<Void> {
         return columnarStorageScannerInfo;
     }
 
-    @Override public Void call() throws Exception {
+    @Override
+    public Void call() throws Exception {
         StandardLogService.setThreadName(partitionID, queryID);
         try {
             this.columnarstorageScanner.scanStore();

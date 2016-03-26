@@ -132,19 +132,23 @@ public class DistinctStringCountAggregator implements MeasureAggregator {
         return 0;
     }
 
-    @Override public void agg(Object newVal) {
+    @Override
+    public void agg(Object newVal) {
         this.valueSetForStr.add((String) newVal);
     }
 
-    @Override public void agg(MolapReadDataHolder newVal, int index) {
+    @Override
+    public void agg(MolapReadDataHolder newVal, int index) {
         //        valueSetForStr.add(newVal.getReadableDoubleValueByIndex(index));
     }
 
-    @Override public byte[] getByteArray() {
+    @Override
+    public byte[] getByteArray() {
         return null;
     }
 
-    @Override public MeasureAggregator get() {
+    @Override
+    public MeasureAggregator get() {
         return this;
     }
 
@@ -152,7 +156,8 @@ public class DistinctStringCountAggregator implements MeasureAggregator {
         return valueSetForStr.size() + "";
     }
 
-    @Override public void merge(byte[] value) {
+    @Override
+    public void merge(byte[] value) {
         // TODO Auto-generated method stub
 
     }

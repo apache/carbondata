@@ -36,17 +36,20 @@ public class ContainsExpression extends MolapFilterInfo implements FilterLikeExp
     private static final long serialVersionUID = -1463266055265811771L;
     private LikeExpression likeContainsExpr;
 
-    @Override public LikeExpression getLikeExpression() {
+    @Override
+    public LikeExpression getLikeExpression() {
         // TODO Auto-generated method stub 
         return likeContainsExpr;
     }
 
-    @Override public void setLikeExpression(LikeExpression expressionName) {
+    @Override
+    public void setLikeExpression(LikeExpression expressionName) {
         likeContainsExpr = expressionName;
 
     }
 
-    @Override public void processLikeExpressionFilters(List<String> listFilterExpression,
+    @Override
+    public void processLikeExpressionFilters(List<String> listFilterExpression,
             List<InMemoryCube> slices, Entry<Dimension, MolapFilterInfo> entry,
             ContentMatchFilterInfo matchFilterInfo, boolean hasNameColumn, Locale locale) {
         // TODO Auto-generated method stub

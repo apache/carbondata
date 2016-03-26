@@ -77,7 +77,8 @@ public class MapBasedResultAggregatorImpl implements ColumnarScannedResultAggreg
         isAggTable = columnaraggreagtorInfo.getCountMsrIndex() > -1;
     }
 
-    @Override public int aggregateData(AbstractColumnarScanResult keyValue) {
+    @Override
+    public int aggregateData(AbstractColumnarScanResult keyValue) {
         ByteArrayWrapper dimensionsRowWrapper = null;
         while (keyValue.hasNext()) {
             dimensionsRowWrapper = new ByteArrayWrapper();
@@ -111,7 +112,8 @@ public class MapBasedResultAggregatorImpl implements ColumnarScannedResultAggreg
         return 0;
     }
 
-    @Override public Result getResult(RestructureHolder restructureHolder) {
+    @Override
+    public Result getResult(RestructureHolder restructureHolder) {
         Result<Map<ByteArrayWrapper, MeasureAggregator[]>, Void> result = new MapBasedResult();
         result.addScannedResult(updateScannedResult(restructureHolder), null);
         return result;

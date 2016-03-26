@@ -193,7 +193,8 @@ public class MolapSortKeyAndGroupByStepMeta extends BaseStepMeta implements Step
     /**
      * set the default value for all the properties
      */
-    @Override public void setDefault() {
+    @Override
+    public void setDefault() {
         this.tabelName = "";
         aggregatorClassString = "";
         outputRowSize = "";
@@ -264,7 +265,7 @@ public class MolapSortKeyAndGroupByStepMeta extends BaseStepMeta implements Step
         strBuffValue.append("    ")
                 .append(XMLHandler.addTagValue("factStorePath", this.factStorePath));
         strBuffValue.append("    ").append(XMLHandler
-                        .addTagValue("aggregateMeasuresString", this.aggregateMeasuresString));
+                .addTagValue("aggregateMeasuresString", this.aggregateMeasuresString));
         strBuffValue.append("    ")
                 .append(XMLHandler.addTagValue("factMeasureString", this.factMeasureString));
         strBuffValue.append("    ").append(XMLHandler.addTagValue("cubeName", cubeName));
@@ -283,8 +284,8 @@ public class MolapSortKeyAndGroupByStepMeta extends BaseStepMeta implements Step
         strBuffValue.append("    ")
                 .append(XMLHandler.addTagValue("aggregatorString", aggregatorString));
         strBuffValue.append("    ").append(XMLHandler
-                        .addTagValue("aggregateMeasuresColumnNameString",
-                                aggregateMeasuresColumnNameString));
+                .addTagValue("aggregateMeasuresColumnNameString",
+                        aggregateMeasuresColumnNameString));
         strBuffValue.append("    ")
                 .append(XMLHandler.addTagValue("isManualAutoAggRequest", manualAutoAggRequest));
         strBuffValue.append("    ")

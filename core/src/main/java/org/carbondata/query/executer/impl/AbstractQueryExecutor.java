@@ -334,7 +334,8 @@ public abstract class AbstractQueryExecutor implements QueryExecutor {
             this.tableName = tableName;
         }
 
-        @Override public int compare(InMemoryCube o1, InMemoryCube o2) {
+        @Override
+        public int compare(InMemoryCube o1, InMemoryCube o2) {
             int loadId1 = !o1.getTableName().equals(tableName) ? Integer.MIN_VALUE : o1.getLoadId();
             int loadId2 = !o2.getTableName().equals(tableName) ? Integer.MIN_VALUE : o2.getLoadId();
             if (loadId1 < 0) {

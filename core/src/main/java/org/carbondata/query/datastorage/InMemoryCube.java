@@ -490,7 +490,8 @@ public class InMemoryCube implements Comparable<InMemoryCube> {
         return loadNumber;
     }
 
-    @Override public int compareTo(InMemoryCube memCubeInstance) {
+    @Override
+    public int compareTo(InMemoryCube memCubeInstance) {
         String loadNameOfCurrntObj = this.getLoadName();
         String loadNameCurrntObj;
 
@@ -518,7 +519,8 @@ public class InMemoryCube implements Comparable<InMemoryCube> {
         return idOfCurrentObj - idOfCompObj;
     }
 
-    @Override public boolean equals(Object obj) {
+    @Override
+    public boolean equals(Object obj) {
         if (obj == this) {
             return true;
         }
@@ -529,7 +531,8 @@ public class InMemoryCube implements Comparable<InMemoryCube> {
         return compareTo(memCubeInstance) == 0;
     }
 
-    @Override public int hashCode() {
+    @Override
+    public int hashCode() {
         final int prime = 31;
         int result = 1;
         result = prime * result + ((loadName == null) ? 0 : loadName.hashCode());

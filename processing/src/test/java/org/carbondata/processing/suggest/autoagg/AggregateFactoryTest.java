@@ -21,13 +21,11 @@ package org.carbondata.processing.suggest.autoagg;
 
 import org.junit.Test;
 
-public class AggregateFactoryTest
-{
+public class AggregateFactoryTest {
 
-	@Test
-	public void testForDefaultInstantiation()
-	{
-		//Assert.assertTrue(AutoAggSuggestionFactory.getAggregateService(null) instanceof DSAutoAggSuggestionService);
+    @Test
+    public void testForDefaultInstantiation() {
+        //Assert.assertTrue(AutoAggSuggestionFactory.getAggregateService(null) instanceof DSAutoAggSuggestionService);
 
-	}
+    }
 }

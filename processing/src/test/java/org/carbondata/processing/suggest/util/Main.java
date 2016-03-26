@@ -49,159 +49,143 @@ import org.carbondata.query.queryinterface.filter.MolapFilterInfo;
 import org.carbondata.query.querystats.Preference;
 import org.carbondata.query.result.RowResult;
 
-public class Main
-{
+public class Main {
 
-	public static void main(String[] args) throws QueryExecutionException
-	{
+    public static void main(String[] args) throws QueryExecutionException {
 
 		/*long a=Long.parseLong("00111111111111111111111111111111111111111111111111101011010000101",2);
-		long b=Long.parseLong(  "00011111111111111111111111111111111111111111111111101011010000101",2);
+        long b=Long.parseLong(  "00011111111111111111111111111111111111111111111111101011010000101",2);
 		System.out.print(Long.toBinaryString(a-b));*/
 
-		// utility();
+        // utility();
 
-		String basePath = null, metaPath = null;
+        String basePath = null, metaPath = null;
 
-
-		 basePath="hdfs://10.19.92.135:54310/VmallData/VmallStore/";
-		 metaPath=basePath+"schemas/default/Vmall_user_prof1/metadata";
+        basePath = "hdfs://10.19.92.135:54310/VmallData/VmallStore/";
+        metaPath = basePath + "schemas/default/Vmall_user_prof1/metadata";
 		 
 
 		/*basePath = "D:/githuawei/spark_cube/CI/FTScenarios/Small/store/";
 		metaPath = basePath + "schemas/default/Small/metadata";*/
 
-
-		  basePath="D:/githuawei/spark_cube/CI/FTScenarios/DynCar/store/";
-		  metaPath=basePath+"schemas/default/Carbon_DR_FT/metadata";
+        basePath = "D:/githuawei/spark_cube/CI/FTScenarios/DynCar/store/";
+        metaPath = basePath + "schemas/default/Carbon_DR_FT/metadata";
 		 
 		/*
 		 * basePath="/opt/ashok/test/DynCar/";
 		 * metaPath=basePath+"schemas/default/Carbon_DR_FT/metadata";
 		 */
 
-		MolapProperties.getInstance().addProperty("molap.storelocation",
-				basePath + "store");
-		// MolapProperties.getInstance().addProperty("molap.schemaslocation",
-		// basePath+"schemas");
-		MolapProperties.getInstance().addProperty("molap.number.of.cores", "4");
-		MolapProperties.getInstance().addProperty(
-				"molap.smartJump.avoid.percent", "70");
-		MolapProperties.getInstance().addProperty(
-				Preference.AGG_LOAD_COUNT, "4");
-		MolapProperties.getInstance().addProperty(
-				Preference.AGG_FACT_COUNT, "2");
-		MolapProperties.getInstance().addProperty(
-				Preference.AGG_REC_COUNT, "5");
-		//MolapProperties.getInstance().addProperty("aggregate.columnar.keyblock","false");
+        MolapProperties.getInstance().addProperty("molap.storelocation", basePath + "store");
+        // MolapProperties.getInstance().addProperty("molap.schemaslocation",
+        // basePath+"schemas");
+        MolapProperties.getInstance().addProperty("molap.number.of.cores", "4");
+        MolapProperties.getInstance().addProperty("molap.smartJump.avoid.percent", "70");
+        MolapProperties.getInstance().addProperty(Preference.AGG_LOAD_COUNT, "4");
+        MolapProperties.getInstance().addProperty(Preference.AGG_FACT_COUNT, "2");
+        MolapProperties.getInstance().addProperty(Preference.AGG_REC_COUNT, "5");
+        //MolapProperties.getInstance().addProperty("aggregate.columnar.keyblock","false");
 
-		AutoAggSuggestionService aggServer =
-				AutoAggSuggestionFactory.getAggregateService(Request.DATA_STATS);
-		MolapDef.Schema schema = TestUtil.readMetaData(metaPath).get(0);
-		MolapDef.Cube cube = schema.cubes[0];
+        AutoAggSuggestionService aggServer =
+                AutoAggSuggestionFactory.getAggregateService(Request.DATA_STATS);
+        MolapDef.Schema schema = TestUtil.readMetaData(metaPath).get(0);
+        MolapDef.Cube cube = schema.cubes[0];
 
+        LoadModel loadModel =
+                TestUtil.createLoadModel(schema.name, cube.name, schema, cube, basePath + "store",
+                        basePath + "schemas/default/Carbon_DR_FT/");
+        List<String> combs;
+        try {
+            combs = aggServer.getAggregateDimensions(loadModel);
+            //			List<String> combs=aggServer.getAggregateScripts(loadModel);
+            for (String comb : combs) {
+                System.out.println(comb);
+            }
 
-		LoadModel loadModel=TestUtil.createLoadModel(schema.name, cube.name, schema, cube,basePath+"store",basePath+"schemas/default/Carbon_DR_FT/");
-		List<String> combs;
-		try {
-			combs = aggServer.getAggregateDimensions(loadModel);
-//			List<String> combs=aggServer.getAggregateScripts(loadModel);
-			for(String comb:combs)
-			{
-				System.out.println(comb);
-			}
+        } catch (AggSuggestException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
 
-		} catch (AggSuggestException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+        // serialize(dimCos);
+        //executeQuery(schema,cube);
 
-		// serialize(dimCos);
-		//executeQuery(schema,cube);
+    }
 
-	}
+    public static void executeQuery(MolapDef.Schema schema, MolapDef.Cube cube)
+            throws QueryExecutionException {
+        LoadSampler loadSampler = new LoadSampler();
+        LoadModel loadModel = new LoadModel();
 
-	public static void executeQuery(MolapDef.Schema schema,MolapDef.Cube cube) throws QueryExecutionException
-	{
-		LoadSampler loadSampler=new LoadSampler();
-		LoadModel loadModel = new LoadModel();
+        // Schema schema = AggregateUtil.readMetaData(schemaPath).get(0);
+        loadModel.setTableName(cube.fact.getAlias());
+        loadModel.setSchema(schema);
+        loadModel.setCube(cube);
 
-		// Schema schema = AggregateUtil.readMetaData(schemaPath).get(0);
-		loadModel.setTableName(cube.fact.getAlias());
-		loadModel.setSchema(schema);
-		loadModel.setCube(cube);
+        loadModel.setPartitionId("0");
 
-		loadModel.setPartitionId("0");
+        //	loadSampler.loadCube(loadModel);
 
+        MolapQueryExecutorModel model = createQueryExecutorModel(loadSampler);
+        QueryExecutor queryExecutor =
+                DataStatsUtil.getQueryExecuter(loadSampler.getMetaCube(), cube.fact.getAlias());
+        MolapIterator<RowResult> rowIterator = queryExecutor.execute(model);
+        System.out.println("hello");
+    }
 
-	//	loadSampler.loadCube(loadModel);
-
-		MolapQueryExecutorModel model=createQueryExecutorModel(loadSampler);
-		QueryExecutor queryExecutor= DataStatsUtil
-				.getQueryExecuter(loadSampler.getMetaCube(), cube.fact.getAlias());
-		MolapIterator<RowResult> rowIterator =queryExecutor.execute(model);
-		System.out.println("hello");
-	}
-
-	public static MolapQueryExecutorModel createQueryExecutorModel(LoadSampler loadSampler)
-	{
-		MolapMetadata.Cube cube=loadSampler.getMetaCube();
-		MolapQueryExecutorModel executorModel = new MolapQueryExecutorModel();
-		executorModel.setSparkExecution(true);
-		String factTableName = cube.getFactTableName();
-		executorModel.setCube(cube);
+    public static MolapQueryExecutorModel createQueryExecutorModel(LoadSampler loadSampler) {
+        MolapMetadata.Cube cube = loadSampler.getMetaCube();
+        MolapQueryExecutorModel executorModel = new MolapQueryExecutorModel();
+        executorModel.setSparkExecution(true);
+        String factTableName = cube.getFactTableName();
+        executorModel.setCube(cube);
         executorModel.sethIterator(new MolapResultHolder(new ArrayList<SqlStatement.Type>()));
         executorModel.setFactTable(factTableName);
 
-        List<MolapMetadata.Dimension> allDimensions = cube.getDimensions(loadSampler.getTableName());
-        MolapMetadata.Dimension[] dimensions=new MolapMetadata.Dimension[1];
-        dimensions[0]=allDimensions.get(49);
+        List<MolapMetadata.Dimension> allDimensions =
+                cube.getDimensions(loadSampler.getTableName());
+        MolapMetadata.Dimension[] dimensions = new MolapMetadata.Dimension[1];
+        dimensions[0] = allDimensions.get(49);
         dimensions[0].setQueryOrder(0);
         executorModel.setDims(dimensions);
         executorModel.setMsrs(new ArrayList<MolapMetadata.Measure>());
 
+        List<DimensionAggregatorInfo> dimensionAggregatorInfos =
+                new ArrayList<DimensionAggregatorInfo>(
+                        MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
 
+        executorModel.setConstraints(new HashMap<MolapMetadata.Dimension, MolapFilterInfo>());
+        executorModel.setDimensionAggInfo(dimensionAggregatorInfos);
+        executorModel.setActualDimsRows(executorModel.getDims());
+        executorModel.setActualDimsCols(new MolapMetadata.Dimension[0]);
+        executorModel.setCalcMeasures(new ArrayList<MolapMetadata.Measure>());
+        executorModel.setAnalyzerDims(executorModel.getDims());
+        executorModel
+                .setConstraintsAfterTopN(new HashMap<MolapMetadata.Dimension, MolapFilterInfo>());
+        executorModel.setLimit(-1);
+        executorModel.setDetailQuery(false);
+        executorModel.setQueryId(System.nanoTime() + "");
+        executorModel.setOutLocation(MolapProperties.getInstance()
+                .getProperty(MolapCommonConstants.STORE_LOCATION_HDFS));
+        return executorModel;
+    }
 
+    public static void utility() {
+        for (int i = 0; i < 5; i++) {
+            String path =
+                    "hdfs://10.19.92.135:54310//VmallData/VmallStore/store/default_0/Vmall_user_prof1_0/RS_0/Vmall_FACT/Load_"
+                            + i;
+            MolapFile file = FileFactory.getMolapFile(path, FileFactory.getFileType(path));
+            LevelMetaInfo level = new LevelMetaInfo(file, "Vmall_FACT");
+            int[] data = level.getDimCardinality();
+            System.out.println("Load_" + i + ":" + Arrays.toString(data));
 
-
-
-
-           List<DimensionAggregatorInfo> dimensionAggregatorInfos= new ArrayList<DimensionAggregatorInfo>(
-				   MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
-
-           executorModel.setConstraints(new HashMap<MolapMetadata.Dimension, MolapFilterInfo>());
-           executorModel.setDimensionAggInfo(dimensionAggregatorInfos);
-           executorModel.setActualDimsRows(executorModel.getDims());
-           executorModel.setActualDimsCols(new MolapMetadata.Dimension[0]);
-           executorModel.setCalcMeasures(new ArrayList<MolapMetadata.Measure>());
-           executorModel.setAnalyzerDims(executorModel.getDims());
-           executorModel.setConstraintsAfterTopN(new HashMap<MolapMetadata.Dimension, MolapFilterInfo>());
-           executorModel.setLimit(-1);
-           executorModel.setDetailQuery(false);
-           executorModel.setQueryId(System.nanoTime() + "");
-           executorModel.setOutLocation(MolapProperties.getInstance()
-   				.getProperty(MolapCommonConstants.STORE_LOCATION_HDFS));
-           return executorModel;
-	}
-
-
-	public static void utility()
-	{
-		for (int i = 0; i < 5; i++)
-		{
-			String path = "hdfs://10.19.92.135:54310//VmallData/VmallStore/store/default_0/Vmall_user_prof1_0/RS_0/Vmall_FACT/Load_"
-					+ i;
-			MolapFile file = FileFactory.getMolapFile(path, FileFactory.getFileType(path));
-			LevelMetaInfo level = new LevelMetaInfo(file, "Vmall_FACT");
-			int[] data = level.getDimCardinality();
-			System.out.println("Load_" + i + ":" + Arrays.toString(data));
-
-		}
-		System.exit(0);
+        }
+        System.exit(0);
 		/*
 		 * Arrays.sort(data); int max=data[data.length-1]; for(int d:data) {
 		 * double res=(double)(100*d)/max; System.out.println(d+"->"+res); }
 		 */
 
-	}
+    }
 }

@@ -176,7 +176,8 @@ public class LocalDataAggregatorWithCalcMsrImpl implements DataAggregator {
     /* (non-Javadoc)
      * @see com.huawei.unibi.molap.engine.executer.pagination.DataAggregator#aggregate(byte[], com.huawei.unibi.molap.engine.aggregator.MeasureAggregator[])
      */
-    @Override public void aggregate(Scanner scanner) {
+    @Override
+    public void aggregate(Scanner scanner) {
         long startTime = System.currentTimeMillis();
         try {
 
@@ -307,12 +308,14 @@ public class LocalDataAggregatorWithCalcMsrImpl implements DataAggregator {
                 MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
     }
 
-    @Override public void finish() throws Exception {
+    @Override
+    public void finish() throws Exception {
         //        rowCount += data.size();
         paginatedAggregator.writeToDisk(data, info.getRestructureHolder());
     }
 
-    @Override public void interrupt() {
+    @Override
+    public void interrupt() {
         interrupted = true;
     }
 

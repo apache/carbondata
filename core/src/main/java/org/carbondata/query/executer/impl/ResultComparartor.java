@@ -36,7 +36,8 @@ public class ResultComparartor implements Comparator<double[]> {
         this.sortOrder = sortOrder;
     }
 
-    @Override public int compare(double[] o1, double[] o2) {
+    @Override
+    public int compare(double[] o1, double[] o2) {
         int compareResult = 0;
         if (o1[sortIndex] < o2[sortIndex]) {
             compareResult = -1;

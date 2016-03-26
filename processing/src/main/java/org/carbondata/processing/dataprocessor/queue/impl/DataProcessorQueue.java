@@ -49,7 +49,8 @@ public class DataProcessorQueue implements Queue<DataProcessorRecordHolder> {
 
     }
 
-    @Override public boolean offer(DataProcessorRecordHolder obj) {
+    @Override
+    public boolean offer(DataProcessorRecordHolder obj) {
         if (counter.get() == qSize) {
             return false;
         } else {
@@ -60,7 +61,9 @@ public class DataProcessorQueue implements Queue<DataProcessorRecordHolder> {
         }
     }
 
-    @SuppressWarnings("unchecked") @Override public DataProcessorRecordHolder poll() {
+    @SuppressWarnings("unchecked")
+    @Override
+    public DataProcessorRecordHolder poll() {
         if (priorityQueue.isEmpty()) {
             return null;
         } else {
@@ -69,7 +72,9 @@ public class DataProcessorQueue implements Queue<DataProcessorRecordHolder> {
         }
     }
 
-    @SuppressWarnings("unchecked") @Override public DataProcessorRecordHolder peek() {
+    @SuppressWarnings("unchecked")
+    @Override
+    public DataProcessorRecordHolder peek() {
         if (priorityQueue.isEmpty()) {
             return null;
         } else {

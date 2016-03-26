@@ -63,16 +63,19 @@ public class FilterScanResult extends AbstractColumnarScanResult {
         return getKeyArrayWithComplexTypes(rowMapping[++sourcePosition], complexQueryDims, keyVal);
     }
 
-    @Override public int getDimDataForAgg(int dimOrdinal) {
+    @Override
+    public int getDimDataForAgg(int dimOrdinal) {
         return getSurrogateKey(rowMapping[currentRow], dimOrdinal);
     }
 
-    @Override public byte[] getKeyArray() {
+    @Override
+    public byte[] getKeyArray() {
         ++currentRow;
         return getKeyArray(rowMapping[++sourcePosition], null);
     }
 
-    @Override public byte[] getHighCardinalityDimDataForAgg(int dimOrdinal) {
+    @Override
+    public byte[] getHighCardinalityDimDataForAgg(int dimOrdinal) {
         ColumnarKeyStoreMetadata columnarKeyStoreMetadata =
                 columnarKeyStoreDataHolder[dimOrdinal].getColumnarKeyStoreMetadata();
         if (null != columnarKeyStoreMetadata.getMapOfColumnarKeyBlockDataForDirectSurroagtes()) {
@@ -88,7 +91,8 @@ public class FilterScanResult extends AbstractColumnarScanResult {
 
     }
 
-    @Override public void getComplexDimDataForAgg(GenericQueryType complexType,
+    @Override
+    public void getComplexDimDataForAgg(GenericQueryType complexType,
             DataOutputStream dataOutputStream) throws IOException {
         getComplexSurrogateKey(rowMapping[currentRow], complexType, dataOutputStream);
     }

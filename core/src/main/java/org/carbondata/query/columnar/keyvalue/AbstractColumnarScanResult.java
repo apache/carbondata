@@ -118,7 +118,7 @@ public abstract class AbstractColumnarScanResult {
                         ((columnIndex) * columnarKeyStoreDataHolder[selectedDimensionIndex[i]]
                                 .getColumnarKeyStoreMetadata().getEachRowSize()), completeKeyArray,
                         destinationPosition, columnarKeyStoreDataHolder[selectedDimensionIndex[i]]
-                        .getColumnarKeyStoreMetadata().getEachRowSize());
+                                .getColumnarKeyStoreMetadata().getEachRowSize());
 
             } else {
 

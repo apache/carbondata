@@ -32,7 +32,8 @@ public class AndMeasureGroupFilterImpl implements MeasureFilter, MeasureGroupFil
         msrFilterIndices = MeasureFilterUtil.getMsrFilterIndexes(measureFilters);
     }
 
-    @Override public boolean filter(MeasureAggregator[] msrValue) {
+    @Override
+    public boolean filter(MeasureAggregator[] msrValue) {
         for (int j = 0; j < msrFilterIndices.length; j++) {
             MeasureFilter[] measureFilter = measureFilters[msrFilterIndices[j]];
             for (int k = 0; k < measureFilter.length; k++) {
@@ -44,7 +45,8 @@ public class AndMeasureGroupFilterImpl implements MeasureFilter, MeasureGroupFil
         return true;
     }
 
-    @Override public boolean filter(double[] msrValue, int msrStartIndex) {
+    @Override
+    public boolean filter(double[] msrValue, int msrStartIndex) {
         for (int j = 0; j < msrFilterIndices.length; j++) {
             MeasureFilter[] measureFilter = measureFilters[msrFilterIndices[j]];
             for (int k = 0; k < measureFilter.length; k++) {
@@ -56,7 +58,8 @@ public class AndMeasureGroupFilterImpl implements MeasureFilter, MeasureGroupFil
         return false;
     }
 
-    @Override public boolean isMsrFilterEnabled() {
+    @Override
+    public boolean isMsrFilterEnabled() {
         return msrFilterIndices.length > 0;
     }
 

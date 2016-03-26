@@ -28,6 +28,8 @@ import java.nio.charset.Charset;
 import java.util.*;
 import java.util.Map.Entry;
 
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import org.apache.commons.codec.binary.Base64;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.MolapCommonConstants;
@@ -41,20 +43,18 @@ import org.carbondata.core.file.manager.composite.IFileManagerComposite;
 import org.carbondata.core.file.manager.composite.LoadFolderData;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.KeyGenerator;
-import org.carbondata.processing.schema.metadata.ArrayWrapper;
-import org.carbondata.processing.schema.metadata.MolapInfo;
-import org.carbondata.processing.surrogatekeysgenerator.dbbased.FileStoreSurrogateKeyGen;
-import org.carbondata.processing.surrogatekeysgenerator.lru.LRUCache;
-import org.carbondata.processing.surrogatekeysgenerator.lru.MolapSeqGenCacheHolder;
 import org.carbondata.core.util.ByteUtil;
-import org.carbondata.processing.util.MolapDataProcessorLogEvent;
 import org.carbondata.core.util.MolapProperties;
 import org.carbondata.core.util.MolapUtil;
 import org.carbondata.core.writer.ByteArrayHolder;
 import org.carbondata.core.writer.HierarchyValueWriterForCSV;
 import org.carbondata.core.writer.LevelValueWriter;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import org.apache.commons.codec.binary.Base64;
+import org.carbondata.processing.schema.metadata.ArrayWrapper;
+import org.carbondata.processing.schema.metadata.MolapInfo;
+import org.carbondata.processing.surrogatekeysgenerator.dbbased.FileStoreSurrogateKeyGen;
+import org.carbondata.processing.surrogatekeysgenerator.lru.LRUCache;
+import org.carbondata.processing.surrogatekeysgenerator.lru.MolapSeqGenCacheHolder;
+import org.carbondata.processing.util.MolapDataProcessorLogEvent;
 import org.pentaho.di.core.exception.KettleException;
 
 public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKeyGen {
@@ -276,7 +276,8 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
 
         MolapFile[] listFiles = storeFolder.listFiles(new MolapFileFilter() {
 
-            @Override public boolean accept(MolapFile pathname) {
+            @Override
+            public boolean accept(MolapFile pathname) {
                 if (pathname.getName().indexOf(fileNameSearchPattern) > -1 && !pathname.getName()
                         .endsWith(MolapCommonConstants.FILE_INPROGRESS_STATUS)) {
                     return true;
@@ -407,7 +408,8 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
         }
         MolapFile folders = FileFactory.getMolapFile(baseStorePath, fileType);
         MolapFile[] rsFolders = folders.listFiles(new MolapFileFilter() {
-            @Override public boolean accept(MolapFile pathname) {
+            @Override
+            public boolean accept(MolapFile pathname) {
                 boolean check = false;
                 if (CheckPointHanlder.IS_CHECK_POINT_NEEDED) {
                     check = pathname.isDirectory()
@@ -440,8 +442,8 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
 
     }
 
-    @Override protected byte[] getHierFromStore(int[] val, String hier, int primaryKey)
-            throws KettleException
+    @Override
+    protected byte[] getHierFromStore(int[] val, String hier, int primaryKey) throws KettleException
 
     {
 
@@ -457,7 +459,8 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
 
     }
 
-    @Override protected int getSurrogateFromStore(String value, int index, Object[] properties)
+    @Override
+    protected int getSurrogateFromStore(String value, int index, Object[] properties)
             throws KettleException {
         max[index]++;
         int key = max[index];
@@ -698,7 +701,8 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
 
     }
 
-    @Override public boolean isCacheFilled(String[] columns) {
+    @Override
+    public boolean isCacheFilled(String[] columns) {
         for (String column : columns) {
             Map<String, Integer> memberMap = getMemberCache().get(column);
             if (null != memberMap && memberMap.isEmpty()) {
@@ -710,7 +714,8 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
         return false;
     }
 
-    @Override public int getSurrogateKeyForPrimaryKey(String tuples, String columnName,
+    @Override
+    public int getSurrogateKeyForPrimaryKey(String tuples, String columnName,
             LevelValueWriter levelValueWriter) throws KettleException {
 
         Integer primSurrogate = null;
@@ -748,7 +753,8 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
         return fileManager;
     }
 
-    @Override protected byte[] getNormalizedHierFromStore(int[] val, String hier, int primaryKey,
+    @Override
+    protected byte[] getNormalizedHierFromStore(int[] val, String hier, int primaryKey,
             HierarchyValueWriterForCSV hierWriter) throws KettleException {
         byte[] bytes;
         try {
@@ -760,7 +766,8 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
         return bytes;
     }
 
-    @Override public int getSurrogateForMeasure(String tuple, String columnName, int index)
+    @Override
+    public int getSurrogateForMeasure(String tuple, String columnName, int index)
             throws KettleException {
 
         Integer measureSurrogate = null;
@@ -838,7 +845,8 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
         return measureSurrogate;
     }
 
-    @Override public void writeDataToFileAndCloseStreams() throws KettleException, KeyGenException {
+    @Override
+    public void writeDataToFileAndCloseStreams() throws KettleException, KeyGenException {
 
         // For closing Level value writer bufferred streams
         for (int i = 0; i < dimensionWriter.length; i++) {

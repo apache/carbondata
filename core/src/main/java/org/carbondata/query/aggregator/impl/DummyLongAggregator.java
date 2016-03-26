@@ -16,24 +16,29 @@ public class DummyLongAggregator extends AbstractMeasureAggregatorDummy {
      */
     private long aggVal;
 
-    @Override public void agg(Object newVal) {
+    @Override
+    public void agg(Object newVal) {
         aggVal = (Long) newVal;
     }
 
-    @Override public void agg(MolapReadDataHolder newVal, int index) {
+    @Override
+    public void agg(MolapReadDataHolder newVal, int index) {
         aggVal = newVal.getReadableLongValueByIndex(index);
     }
 
-    @Override public Long getLongValue() {
+    @Override
+    public Long getLongValue() {
         return aggVal;
     }
 
-    @Override public Object getValueObject() {
+    @Override
+    public Object getValueObject() {
         // TODO Auto-generated method stub
         return aggVal;
     }
 
-    @Override public void setNewValue(Object newValue) {
+    @Override
+    public void setNewValue(Object newValue) {
         // TODO Auto-generated method stub
         aggVal = (Long) newValue;
     }

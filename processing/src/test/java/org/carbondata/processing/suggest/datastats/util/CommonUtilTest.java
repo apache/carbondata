@@ -25,7 +25,6 @@ import java.io.IOException;
 import junit.framework.Assert;
 import mockit.Mock;
 import mockit.MockUp;
-
 import org.carbondata.core.constants.MolapCommonConstants;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.load.LoadMetadataDetails;
@@ -37,162 +36,139 @@ import org.eigenbase.xom.XOMException;
 import org.junit.Before;
 import org.junit.Test;
 
-public class CommonUtilTest
-{
-	static MolapDef.Schema schema;
-	static MolapDef.Cube cube;
+public class CommonUtilTest {
+    static MolapDef.Schema schema;
+    static MolapDef.Cube cube;
 
-	static String schemaName;
-	static String cubeName;
-	static String factTable;
+    static String schemaName;
+    static String cubeName;
+    static String factTable;
 
-	static String dataPath;
-	static String baseMetaPath;
-	private LoadModel loadModel;
-	private String metaPath;
+    static String dataPath;
+    static String baseMetaPath;
+    private LoadModel loadModel;
+    private String metaPath;
 
-	@Before
-	public void setUpBeforeClass() throws Exception
-	{
-		File file = new File("../../libraries/testData/Molap-Aggregation/store/");
-		String basePath = file.getCanonicalPath() + "/";
-		metaPath = basePath + "schemas/default/carbon/metadata";
+    @Before
+    public void setUpBeforeClass() throws Exception {
+        File file = new File("../../libraries/testData/Molap-Aggregation/store/");
+        String basePath = file.getCanonicalPath() + "/";
+        metaPath = basePath + "schemas/default/carbon/metadata";
 
-		schema = CommonUtil.readMetaData(metaPath).get(0);
-		cube = schema.cubes[0];
-		schemaName = schema.name;
-		cubeName = cube.name;
-		factTable = "carbon";
-		// dataPath="src/test/resources/store/store";
-		// baseMetaPath="src/test/resources/store/schemas";
-		dataPath = basePath + "store";
-		baseMetaPath = basePath + "schemas/default/carbon";
+        schema = CommonUtil.readMetaData(metaPath).get(0);
+        cube = schema.cubes[0];
+        schemaName = schema.name;
+        cubeName = cube.name;
+        factTable = "carbon";
+        // dataPath="src/test/resources/store/store";
+        // baseMetaPath="src/test/resources/store/schemas";
+        dataPath = basePath + "store";
+        baseMetaPath = basePath + "schemas/default/carbon";
 
-		dataPath = basePath + "store";
-		baseMetaPath = basePath + "schemas/default/carbon";
-		loadModel = TestUtil
-				.createLoadModel(schemaName, cubeName, schema, cube, dataPath, baseMetaPath);
+        dataPath = basePath + "store";
+        baseMetaPath = basePath + "schemas/default/carbon";
+        loadModel = TestUtil.createLoadModel(schemaName, cubeName, schema, cube, dataPath,
+                baseMetaPath);
 
-	}
+    }
 
-	@Test
-	public void testsetListOfValidSlices_updateLoad()
-	{
-		new MockUp<LoadMetadataDetails>()
-		{
+    @Test
+    public void testsetListOfValidSlices_updateLoad() {
+        new MockUp<LoadMetadataDetails>() {
 
-			@Mock
-			public String getLoadStatus()
-			{
-				return MolapCommonConstants.MARKED_FOR_UPDATE;
-			}
+            @Mock
+            public String getLoadStatus() {
+                return MolapCommonConstants.MARKED_FOR_UPDATE;
+            }
 
-		};
+        };
 
-		CommonUtil.setListOfValidSlices(baseMetaPath, loadModel);
-		Assert.assertTrue(true);
-	}
+        CommonUtil.setListOfValidSlices(baseMetaPath, loadModel);
+        Assert.assertTrue(true);
+    }
 
-	@Test
-	public void testsetListOfValidSlices_partitalSuccess()
-	{
-		new MockUp<LoadMetadataDetails>()
-		{
+    @Test
+    public void testsetListOfValidSlices_partitalSuccess() {
+        new MockUp<LoadMetadataDetails>() {
 
-			@Mock
-			public String getLoadStatus()
-			{
-				return MolapCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS;
-			}
+            @Mock
+            public String getLoadStatus() {
+                return MolapCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS;
+            }
 
-		};
+        };
 
-		CommonUtil.setListOfValidSlices(baseMetaPath, loadModel);
-		Assert.assertTrue(true);
-	}
+        CommonUtil.setListOfValidSlices(baseMetaPath, loadModel);
+        Assert.assertTrue(true);
+    }
 
-	@Test
-	public void testsetListOfValidSlices_throwException()
-	{
-		new MockUp<java.io.DataInputStream>()
-		{
+    @Test
+    public void testsetListOfValidSlices_throwException() {
+        new MockUp<java.io.DataInputStream>() {
 
-			@Mock
-			public void close() throws IOException
-			{
-				throw new IOException();
-			}
+            @Mock
+            public void close() throws IOException {
+                throw new IOException();
+            }
 
-		};
+        };
 
-		CommonUtil.setListOfValidSlices(baseMetaPath, loadModel);
-		Assert.assertTrue(true);
-	}
+        CommonUtil.setListOfValidSlices(baseMetaPath, loadModel);
+        Assert.assertTrue(true);
+    }
 
-	@Test
-	public void testsetListOfValidSlices_IOException()
-	{
-		new MockUp<FileFactory>()
-		{
+    @Test
+    public void testsetListOfValidSlices_IOException() {
+        new MockUp<FileFactory>() {
 
-			@Mock
-			public boolean isFileExist(String filePath, FileFactory.FileType fileType)
-					throws IOException
-			{
-				throw new IOException();
-			}
+            @Mock
+            public boolean isFileExist(String filePath, FileFactory.FileType fileType)
+                    throws IOException {
+                throw new IOException();
+            }
 
-		};
+        };
 
-		CommonUtil.setListOfValidSlices(baseMetaPath, loadModel);
-		Assert.assertTrue(true);
+        CommonUtil.setListOfValidSlices(baseMetaPath, loadModel);
+        Assert.assertTrue(true);
 
-	}
+    }
 
-	@Test
-	public void testReadMetaData_FileNotExist()
-	{
+    @Test
+    public void testReadMetaData_FileNotExist() {
 
-		Assert.assertNull(CommonUtil.readMetaData("test/resource"));
-	}
+        Assert.assertNull(CommonUtil.readMetaData("test/resource"));
+    }
 
-	@Test
-	public void testReadMetaData_nullSource()
-	{
-		Assert.assertNull(CommonUtil.readMetaData(null));
-	}
+    @Test
+    public void testReadMetaData_nullSource() {
+        Assert.assertNull(CommonUtil.readMetaData(null));
+    }
 
-	@Test
-	public void testReadMetaData_throwIOException()
-	{
-		new MockUp<java.io.DataInputStream>()
-		{
+    @Test
+    public void testReadMetaData_throwIOException() {
+        new MockUp<java.io.DataInputStream>() {
 
-			@Mock
-			public void readFully(byte b[]) throws IOException
-			{
-				throw new IOException();
-			}
+            @Mock
+            public void readFully(byte b[]) throws IOException {
+                throw new IOException();
+            }
 
-		};
-		Assert.assertNull(CommonUtil.readMetaData(metaPath));
-	}
+        };
+        Assert.assertNull(CommonUtil.readMetaData(metaPath));
+    }
 
-	@Test
-	public void testReadMetaData_throwXOMException()
-	{
-		new MockUp<CommonUtil>()
-		{
+    @Test
+    public void testReadMetaData_throwXOMException() {
+        new MockUp<CommonUtil>() {
 
-			@Mock
-			public MolapDef.Schema parseStringToSchema(String schema) throws XOMException
-			{
-				throw new XOMException();
-			}
+            @Mock
+            public MolapDef.Schema parseStringToSchema(String schema) throws XOMException {
+                throw new XOMException();
+            }
 
-		};
-		Assert.assertNull(CommonUtil.readMetaData(metaPath));
-	}
-
+        };
+        Assert.assertNull(CommonUtil.readMetaData(metaPath));
+    }
 
 }

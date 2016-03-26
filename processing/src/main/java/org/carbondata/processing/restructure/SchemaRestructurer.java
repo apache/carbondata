@@ -23,6 +23,8 @@ import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.*;
 
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang3.ArrayUtils;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.MolapCommonConstants;
@@ -34,9 +36,10 @@ import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.carbondata.core.metadata.SliceMetaData;
 import org.carbondata.core.olap.MolapDef;
 import org.carbondata.core.olap.MolapDef.*;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.lang3.ArrayUtils;
-import org.carbondata.core.util.*;
+import org.carbondata.core.util.MolapCoreLogEvent;
+import org.carbondata.core.util.MolapProperties;
+import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.util.MolapUtilException;
 import org.carbondata.processing.util.LevelSortIndexWriterThread;
 import org.carbondata.processing.util.MolapDataProcessorLogEvent;
 import org.carbondata.processing.util.MolapSchemaParser;
@@ -258,8 +261,8 @@ public class SchemaRestructurer {
                 }
                 levelFilePrefix = tableName + '_';
                 createLevelFiles(newLevelFolderPath, levelFilePrefix
-                                + ((MolapDef.Dimension) aDimension).hierarchies[0].levels[0].column
-                                + MolapCommonConstants.LEVEL_FILE_EXTENSION, defaultVal);
+                        + ((MolapDef.Dimension) aDimension).hierarchies[0].levels[0].column
+                        + MolapCommonConstants.LEVEL_FILE_EXTENSION, defaultVal);
                 LevelSortIndexWriterThread levelFileUpdater = new LevelSortIndexWriterThread(
                         newLevelFolderPath + levelFilePrefix
                                 + ((MolapDef.Dimension) aDimension).hierarchies[0].levels[0].column
@@ -556,7 +559,8 @@ public class SchemaRestructurer {
 
         // List of directories
         MolapFile[] listFolders = molapFile.listFiles(new MolapFileFilter() {
-            @Override public boolean accept(MolapFile pathname) {
+            @Override
+            public boolean accept(MolapFile pathname) {
                 if (pathname.isDirectory()) {
                     if (pathname.getName().startsWith("agg_")) {
                         return true;

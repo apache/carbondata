@@ -108,15 +108,18 @@ public abstract class AbstractMeasureAggregator
         }
     }
 
-    @Override public void agg(double arg0) {
+    @Override
+    public void agg(double arg0) {
 
     }
 
-    @Override public void setNewValue(Object arg0) {
+    @Override
+    public void setNewValue(Object arg0) {
 
     }
 
-    @Override public MeasureAggregator getCopy() {
+    @Override
+    public MeasureAggregator getCopy() {
         // TODO Auto-generated method stub
         return null;
     }

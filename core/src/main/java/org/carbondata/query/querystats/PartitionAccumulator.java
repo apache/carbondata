@@ -36,16 +36,19 @@ public class PartitionAccumulator implements AccumulatorParam<PartitionDetail>, 
      */
     private static final long serialVersionUID = 1L;
 
-    @Override public PartitionDetail addInPlace(PartitionDetail part1, PartitionDetail part2) {
+    @Override
+    public PartitionDetail addInPlace(PartitionDetail part1, PartitionDetail part2) {
 
         return mergePartitions(part1, part2);
     }
 
-    @Override public PartitionDetail zero(PartitionDetail part) {
+    @Override
+    public PartitionDetail zero(PartitionDetail part) {
         return part;
     }
 
-    @Override public PartitionDetail addAccumulator(PartitionDetail part1, PartitionDetail part2) {
+    @Override
+    public PartitionDetail addAccumulator(PartitionDetail part1, PartitionDetail part2) {
         return mergePartitions(part1, part2);
     }
 

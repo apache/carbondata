@@ -63,7 +63,8 @@ public class MemberSortModel implements Comparable<MemberSortModel> {
     /**
      * Compare
      */
-    @Override public int compareTo(MemberSortModel o) {
+    @Override
+    public int compareTo(MemberSortModel o) {
         switch (memberDataType) {
         case NUMBER:
             Double d1 = null;
@@ -106,7 +107,8 @@ public class MemberSortModel implements Comparable<MemberSortModel> {
     /**
      * @see Object#hashCode()
      */
-    @Override public int hashCode() {
+    @Override
+    public int hashCode() {
         final int prime = 31;
         int result = 1;
         result = prime * result + ((memberName == null) ? 0 : memberName.hashCode());
@@ -116,7 +118,8 @@ public class MemberSortModel implements Comparable<MemberSortModel> {
     /**
      * @see Object#equals(Object)
      */
-    @Override public boolean equals(Object obj) {
+    @Override
+    public boolean equals(Object obj) {
         if (obj instanceof MemberSortModel) {
             if (this == obj) {
                 return true;

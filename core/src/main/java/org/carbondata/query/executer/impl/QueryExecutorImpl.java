@@ -71,7 +71,8 @@ public class QueryExecutorImpl extends AbstractQueryExecutor {
         super(dimList, schemaName, cubeName);
     }
 
-    @Override public MolapIterator<RowResult> execute(MolapQueryExecutorModel queryModel)
+    @Override
+    public MolapIterator<RowResult> execute(MolapQueryExecutorModel queryModel)
             throws QueryExecutionException {
         // setting the query current thread name
         //        Thread.currentThread().setName("Query Thread" + queryModel.getQueryId());
@@ -176,7 +177,8 @@ public class QueryExecutorImpl extends AbstractQueryExecutor {
      * @param queryModel
      * @return MolapIterator<RowResult>
      */
-    @Override public MolapIterator<RowResult> executeDimension(MolapQueryExecutorModel queryModel)
+    @Override
+    public MolapIterator<RowResult> executeDimension(MolapQueryExecutorModel queryModel)
             throws QueryExecutionException {
         StandardLogService.setThreadName(
                 StandardLogService.getPartitionID(queryModel.getCube().getOnlyCubeName()),

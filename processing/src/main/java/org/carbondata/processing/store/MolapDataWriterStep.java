@@ -33,7 +33,10 @@ import org.carbondata.core.constants.MolapCommonConstants;
 import org.carbondata.core.csvreader.checkpoint.CheckPointHanlder;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.metadata.SliceMetaData;
-import org.carbondata.core.util.*;
+import org.carbondata.core.util.MolapProperties;
+import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.util.MolapUtilException;
+import org.carbondata.core.util.ValueCompressionUtil;
 import org.carbondata.processing.store.writer.exception.MolapDataWriterException;
 import org.carbondata.processing.threadbasedmerger.consumer.ConsumerThread;
 import org.carbondata.processing.threadbasedmerger.container.Container;
@@ -407,7 +410,8 @@ public class MolapDataWriterStep extends BaseStep implements StepInterface {
         ExecutorService executorService = null;
         File file = new File(tempFileLocation);
         File[] tempFiles = file.listFiles(new FileFilter() {
-            @Override public boolean accept(File pathname) {
+            @Override
+            public boolean accept(File pathname) {
                 return pathname.getName().startsWith(tableName);
             }
         });
@@ -542,8 +546,8 @@ public class MolapDataWriterStep extends BaseStep implements StepInterface {
                     MolapDataProcessorUtil.getDimLens(meta.getFactDimLensString()),
                     isByteArrayInMeasure, meta.isUpdateMemberRequest(), dimLens,
                     meta.getFactLevels(), meta.getAggregateLevels(), true,
-                    meta.getCurrentRestructNumber(), this.meta.gethighCardCount(),
-                    null, compressionModel);
+                    meta.getCurrentRestructNumber(), this.meta.gethighCardCount(), null,
+                    compressionModel);
         } else {
             dataHandler = new MolapFactDataHandler(meta.getSchemaName(), meta.getCubeName(),
                     this.tableName, meta.isGroupByEnabled(), measureCount, mdkeyLength, mdKeyIndex,

@@ -22,11 +22,11 @@ package org.carbondata.processing.surrogatekeysgenerator.csvbased;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+import org.carbondata.core.constants.MolapCommonConstants;
 import org.carbondata.processing.datatypes.ArrayDataType;
 import org.carbondata.processing.datatypes.GenericDataType;
 import org.carbondata.processing.datatypes.PrimitiveDataType;
 import org.carbondata.processing.datatypes.StructDataType;
-import org.carbondata.core.constants.MolapCommonConstants;
 import org.carbondata.processing.schema.metadata.HierarchiesInfo;
 import org.carbondata.processing.util.MolapDataProcessorUtil;
 import org.carbondata.processing.util.RemoveDictionaryUtil;
@@ -790,8 +790,8 @@ public class MolapCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaInt
     }
 
     private Map<String, Boolean> getMeasureDatatypeMap(String measureDataType) {
-            return new HashMap<String, Boolean>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
-        }
+        return new HashMap<String, Boolean>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+    }
 
     private void updateMeasureAggregator(String msrAggregatorString) {
         String[] split = msrAggregatorString.split(MolapCommonConstants.SEMICOLON_SPC_CHARACTER);

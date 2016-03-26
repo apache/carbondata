@@ -44,12 +44,13 @@ public class AtomicFileOperationsImpl implements AtomicFileOperations {
         this.fileType = fileType;
     }
 
-    @Override public DataInputStream openForRead() throws IOException {
+    @Override
+    public DataInputStream openForRead() throws IOException {
         return FileFactory.getDataInputStream(filePath, fileType);
     }
 
-    @Override public DataOutputStream openForWrite(FileWriteOperation operation)
-            throws IOException {
+    @Override
+    public DataOutputStream openForWrite(FileWriteOperation operation) throws IOException {
 
         filePath = filePath.replace("\\", "/");
 
@@ -70,7 +71,8 @@ public class AtomicFileOperationsImpl implements AtomicFileOperations {
     /* (non-Javadoc)
      * @see com.huawei.unibi.molap.datastorage.store.fileperations.AtomicFileOperations#close()
      */
-    @Override public void close() throws IOException {
+    @Override
+    public void close() throws IOException {
 
         if (null != dataOutStream) {
             dataOutStream.close();

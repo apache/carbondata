@@ -70,7 +70,8 @@ public class SingleArrayKeyFileStore extends AbstractSingleArrayKeyStore {
      * @return uncompressed
      * keys will return uncompressed key
      */
-    @Override public byte[] getBackArray(FileHolder fileHolder) {
+    @Override
+    public byte[] getBackArray(FileHolder fileHolder) {
         if (null != fileHolder) {
             return fileHolder.readByteArray(filePath, offset, length);
         } else {
@@ -87,7 +88,8 @@ public class SingleArrayKeyFileStore extends AbstractSingleArrayKeyStore {
      * @param fileHolder file holder will be used to read the file
      * @return key
      */
-    @Override public byte[] get(int index, FileHolder fileHolder) {
+    @Override
+    public byte[] get(int index, FileHolder fileHolder) {
         // read from file based on offset and index, fileholder will read that
         // much byte from that offset,
         byte[] unCompress = fileHolder.readByteArray(filePath, offset, length);

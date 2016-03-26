@@ -22,12 +22,12 @@ package org.carbondata.processing.factreader.columnar;
 import org.carbondata.core.constants.MolapCommonConstants;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.datastorage.store.filesystem.MolapFile;
-import org.carbondata.query.columnar.keyvalue.AbstractColumnarScanResult;
+import org.carbondata.core.metadata.LeafNodeInfoColumnar;
+import org.carbondata.core.util.ValueCompressionUtil;
 import org.carbondata.processing.factreader.FactReaderInfo;
 import org.carbondata.processing.factreader.MolapSurrogateTupleHolder;
 import org.carbondata.processing.iterator.MolapIterator;
-import org.carbondata.core.metadata.LeafNodeInfoColumnar;
-import org.carbondata.core.util.ValueCompressionUtil;
+import org.carbondata.query.columnar.keyvalue.AbstractColumnarScanResult;
 
 public class MolapColumnarLeafTupleIterator implements MolapIterator<MolapSurrogateTupleHolder> {
 
@@ -152,14 +152,16 @@ public class MolapColumnarLeafTupleIterator implements MolapIterator<MolapSurrog
      * below method will be used to check whether any data is present in the
      * slice
      */
-    @Override public boolean hasNext() {
+    @Override
+    public boolean hasNext() {
         return hasNext;
     }
 
     /**
      * below method will be used to get the slice tuple
      */
-    @Override public MolapSurrogateTupleHolder next() {
+    @Override
+    public MolapSurrogateTupleHolder next() {
         MolapSurrogateTupleHolder tuple = new MolapSurrogateTupleHolder();
         tuple.setSurrogateKey(keyValue.getKeyArray());
         tuple.setMeasures(getMeasure());

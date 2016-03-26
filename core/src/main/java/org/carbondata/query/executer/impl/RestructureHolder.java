@@ -63,7 +63,8 @@ public class RestructureHolder {
     /* (non-Javadoc)
      * @see java.lang.Object#hashCode()
      */
-    @Override public int hashCode() {
+    @Override
+    public int hashCode() {
         final int prime = 31;
         int result = 1;
         int hashCode = 0;
@@ -78,7 +79,8 @@ public class RestructureHolder {
     /* (non-Javadoc)
      * @see java.lang.Object#equals(java.lang.Object)
      */
-    @Override public boolean equals(Object obj) {
+    @Override
+    public boolean equals(Object obj) {
 
         if (obj instanceof RestructureHolder) {
             if (this == obj) {

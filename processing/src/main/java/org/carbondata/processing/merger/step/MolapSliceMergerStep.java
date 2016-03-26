@@ -31,13 +31,15 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.common.logging.impl.StandardLogService;
 import org.carbondata.core.constants.MolapCommonConstants;
 import org.carbondata.core.csvreader.checkpoint.CheckPointHanlder;
+import org.carbondata.core.util.MolapProperties;
+import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.util.MolapUtilException;
 import org.carbondata.processing.dimension.load.command.impl.DimenionLoadCommandHelper;
 import org.carbondata.processing.merger.Util.MolapSliceMergerUtil;
 import org.carbondata.processing.merger.exeception.SliceMergerException;
 import org.carbondata.processing.util.LevelSortIndexWriter;
 import org.carbondata.processing.util.MolapDataProcessorLogEvent;
 import org.carbondata.processing.util.MolapDataProcessorUtil;
-import org.carbondata.core.util.*;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.Trans;
@@ -186,7 +188,8 @@ public class MolapSliceMergerStep extends BaseStep {
         File sortTmpLocation = new File(sortTmpFolderLoc);
         File[] filesToDelete = sortTmpLocation.listFiles(new FileFilter() {
 
-            @Override public boolean accept(File pathname) {
+            @Override
+            public boolean accept(File pathname) {
                 if (pathname.getName()
                         .indexOf(meta.getTabelName() + MolapCommonConstants.CHECKPOINT_EXT) > -1 ||
                         pathname.getName().indexOf(
@@ -309,7 +312,8 @@ public class MolapSliceMergerStep extends BaseStep {
         File[] inProgressNewFiles = null;
         inProgressNewFiles = file.listFiles(new FileFilter() {
 
-            @Override public boolean accept(File file1) {
+            @Override
+            public boolean accept(File file1) {
                 if (file1.getName().endsWith(MolapCommonConstants.FILE_INPROGRESS_STATUS)) {
                     return true;
                 }

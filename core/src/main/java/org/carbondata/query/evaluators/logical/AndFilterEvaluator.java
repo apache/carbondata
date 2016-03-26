@@ -31,7 +31,8 @@ public class AndFilterEvaluator extends AbstractLogicalFilterEvaluator {
         super(leftEvalutor, rightEvalutor);
     }
 
-    @Override public BitSet applyFilter(BlockDataHolder blockDataHolder,
+    @Override
+    public BitSet applyFilter(BlockDataHolder blockDataHolder,
             FilterProcessorPlaceHolder placeHolder) {
         BitSet leftFilters = leftEvalutor.applyFilter(blockDataHolder, placeHolder);
         if (leftFilters.isEmpty()) {
@@ -45,7 +46,8 @@ public class AndFilterEvaluator extends AbstractLogicalFilterEvaluator {
         return leftFilters;
     }
 
-    @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
+    @Override
+    public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
         BitSet leftFilters = leftEvalutor.isScanRequired(blockMaxValue, blockMinValue);
         if (leftFilters.isEmpty()) {
             return leftFilters;

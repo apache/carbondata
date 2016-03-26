@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.*;
 
+import org.apache.commons.codec.binary.Base64;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.MolapCommonConstants;
@@ -38,11 +39,10 @@ import org.carbondata.core.datastorage.store.filesystem.MolapFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
 import org.carbondata.core.olap.MolapDef.*;
-import org.carbondata.processing.util.MolapDataProcessorLogEvent;
 import org.carbondata.core.util.MolapProperties;
-import org.carbondata.processing.util.MolapSchemaParser;
 import org.carbondata.core.util.MolapUtil;
-import org.apache.commons.codec.binary.Base64;
+import org.carbondata.processing.util.MolapDataProcessorLogEvent;
+import org.carbondata.processing.util.MolapSchemaParser;
 
 public class LevelGlobalSurrogateGeneratorThread implements Callable<Void> {
     /**
@@ -112,7 +112,8 @@ public class LevelGlobalSurrogateGeneratorThread implements Callable<Void> {
         return localMemberMap;
     }
 
-    @Override public Void call() throws Exception {
+    @Override
+    public Void call() throws Exception {
 
         long currentTimeMillis = System.currentTimeMillis();
         long currentTimeMillis1 = System.currentTimeMillis();
@@ -328,8 +329,7 @@ public class LevelGlobalSurrogateGeneratorThread implements Callable<Void> {
             for (int j = 0; j < partitionLocation[i].length - 1; j++) {
                 MolapFile molapFile = FileFactory
                         .getMolapFile(partitionLocation[i][j] + '/' + levelFileName, FileFactory
-                                        .getFileType(
-                                                partitionLocation[i][j] + '/' + levelFileName));
+                                .getFileType(partitionLocation[i][j] + '/' + levelFileName));
                 if (molapFile.exists()) {
                     maxKeyAssigned = getMaxKeyAssigned(molapFile);
                     if (maxKey < maxKeyAssigned) {
@@ -404,7 +404,8 @@ public class LevelGlobalSurrogateGeneratorThread implements Callable<Void> {
             this.minValue = minValue;
         }
 
-        @Override public Void call() throws Exception {
+        @Override
+        public Void call() throws Exception {
             writeGlobalSurrogateKeyFile(path, key, value, fileName, currentMaxKey, minValue);
             return null;
         }

@@ -39,15 +39,11 @@ import org.carbondata.query.datastorage.InMemoryCubeStore;
 import org.carbondata.query.util.MolapEngineLogEvent;
 
 /**
- *
  * @author m00258959
- *
  */
 public final class MolapLRULevelCache {
     /**
-     *
      * constant for converting MB into bytes
-     *
      */
     private static final int BYTE_CONVERSION_CONSTANT = 1024 * 1024;
     /**
@@ -56,28 +52,20 @@ public final class MolapLRULevelCache {
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(InMemoryCubeStore.class.getName());
     /**
-     *
      * instance
-     *
      */
     private static MolapLRULevelCache instance = new MolapLRULevelCache();
     /**
-     *
      * Map that will contain key as cube unique name and value as cache Holder
      * object
-     *
      */
     private Map<String, LevelInfo> levelCache;
     /**
-     *
      * lruCacheSize
-     *
      */
     private long levelCacheMemorySize;
     /**
-     *
      * totalSize size of the cache
-     *
      */
     private long currentSize;
 
@@ -103,9 +91,7 @@ public final class MolapLRULevelCache {
     }
 
     /**
-     *
      * @return
-     *
      */
     public static MolapLRULevelCache getInstance() {
         return instance;
@@ -127,7 +113,6 @@ public final class MolapLRULevelCache {
      *
      * @param sizeToBeRemoved
      * @return
-     *
      */
     public List<String> getKeysToBeremoved(long size) {
         List<String> toBeDeletedKeys =
@@ -169,11 +154,9 @@ public final class MolapLRULevelCache {
     }
 
     /**
-     *
      * @param key
      * @param levelInfo
      * @return
-     *
      */
     private boolean canBeRemoved(String key, LevelInfo levelInfo) {
         if (!levelInfo.isLoaded() || levelInfo.getAccessCount() > 0) {
@@ -183,10 +166,8 @@ public final class MolapLRULevelCache {
     }
 
     /**
-     *
      * @param key
      * @return
-     *
      */
     public void removeAllKeysForGivenCube(final String key) {
         synchronized (levelCache) {
@@ -207,9 +188,7 @@ public final class MolapLRULevelCache {
     }
 
     /**
-     *
      * @param key
-     *
      */
     public void remove(String key) {
         synchronized (levelCache) {
@@ -220,10 +199,8 @@ public final class MolapLRULevelCache {
     }
 
     /**
-     *
      * @param cubeUniqueName
      * @param levelInfo
-     *
      */
     public void put(final String cubeUniqueName, LevelInfo levelInfo) {
         synchronized (levelCache) {
@@ -238,19 +215,15 @@ public final class MolapLRULevelCache {
     }
 
     /**
-     *
      * @return
-     *
      */
     public long getLRUCacheSize() {
         return levelCacheMemorySize;
     }
 
     /**
-     *
      * @param key
      * @return
-     *
      */
     public LevelInfo get(String key) {
         synchronized (levelCache) {
@@ -259,9 +232,7 @@ public final class MolapLRULevelCache {
     }
 
     /**
-     *
      * @return Returns the currentSize.
-     *
      */
     public long getCurrentSize() {
         synchronized (levelCache) {
@@ -270,10 +241,7 @@ public final class MolapLRULevelCache {
     }
 
     /**
-     *
      * @param key
-     *
-     *
      */
     public void unloadLevelInCache(String key) {
         synchronized (levelCache) {
@@ -284,10 +252,7 @@ public final class MolapLRULevelCache {
     }
 
     /**
-     *
      * @param key
-     *
-     *
      */
     public void loadLevelInCache(String key) {
         synchronized (levelCache) {

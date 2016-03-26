@@ -91,7 +91,8 @@ public class SortedResultFileMerger implements Callable<Void> {
     /**
      * @see Callable#call()
      */
-    @Override public Void call() throws Exception {
+    @Override
+    public Void call() throws Exception {
         try {
             dataProcessor.initialise(dataProcessorInfo);
             // For each intermediate result file.

@@ -34,7 +34,8 @@ public class NotExpression extends UnaryExpression {
         super(child);
     }
 
-    @Override public ExpressionResult evaluate(RowIntf value) throws FilterUnsupportedException {
+    @Override
+    public ExpressionResult evaluate(RowIntf value) throws FilterUnsupportedException {
         ExpressionResult expResult = child.evaluate(value);
         expResult.set(DataType.BooleanType, !(expResult.getBoolean()));
         switch (expResult.getDataType()) {
@@ -48,11 +49,13 @@ public class NotExpression extends UnaryExpression {
         return expResult;
     }
 
-    @Override public ExpressionType getFilterExpressionType() {
+    @Override
+    public ExpressionType getFilterExpressionType() {
         return ExpressionType.NOT;
     }
 
-    @Override public String getString() {
+    @Override
+    public String getString() {
         return "Not(" + child.getString() + ')';
     }
 }

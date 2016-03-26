@@ -46,7 +46,8 @@ public class EqualsMeasureFilterImpl implements MeasureFilter {
      *
      * @param filterValue
      */
-    @Override public boolean filter(MeasureAggregator[] msrValue) {
+    @Override
+    public boolean filter(MeasureAggregator[] msrValue) {
         if (calcFunction != null) {
             return 0 == Double.compare(calcFunction.calculate(msrValue), filterValue) ?
                     true :
@@ -68,7 +69,8 @@ public class EqualsMeasureFilterImpl implements MeasureFilter {
      *
      * @param filterValue
      */
-    @Override public boolean filter(double[] msrValue, int msrStartIndex) {
+    @Override
+    public boolean filter(double[] msrValue, int msrStartIndex) {
         return 0 == Double.compare(msrValue[index + msrStartIndex], filterValue) ? true : false;
     }
 

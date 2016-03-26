@@ -224,7 +224,8 @@ public final class InMemoryCubeStore {
                 if (FileFactory.isFileExist(basePath, fileType)) {
                     file = FileFactory.getMolapFile(basePath, fileType);
                     list = file.listFiles(new MolapFileFilter() {
-                        @Override public boolean accept(MolapFile pathname) {
+                        @Override
+                        public boolean accept(MolapFile pathname) {
                             String name = pathname.getName();
                             String[] splits = name.split(RS_FOLDER_NAME);
                             if (2 == splits.length) {
@@ -995,7 +996,8 @@ public final class InMemoryCubeStore {
         MolapFile[] files = null;
         if (file.isDirectory()) {
             files = file.listFiles(new MolapFileFilter() {
-                @Override public boolean accept(MolapFile pathname) {
+                @Override
+                public boolean accept(MolapFile pathname) {
                     String name = pathname.getName();
                     if (pathname.isDirectory() && name.startsWith(folderStsWith) && !(
                             name.indexOf(MolapCommonConstants.FILE_INPROGRESS_STATUS) > -1)) {

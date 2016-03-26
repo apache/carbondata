@@ -36,7 +36,8 @@ public class ColumnarStorageAggregatedScannerImpl extends AbstractColumnarStorag
                         columnarStorageScannerInfo.getColumnarAggregatorInfo()));
     }
 
-    @Override public void scanStore() {
+    @Override
+    public void scanStore() {
         while (leafIterator.hasNext()) {
             blockDataHolder.setLeafDataBlock(leafIterator.next());
             addToQueryStats(blockDataHolder);

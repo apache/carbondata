@@ -31,17 +31,17 @@ import org.carbondata.core.constants.MolapCommonConstants;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.datastorage.store.filesystem.MolapFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
-import org.carbondata.core.util.*;
-import org.carbondata.processing.exception.MolapDataProcessorException;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
-import org.carbondata.processing.merger.columnar.ColumnarFactFileMerger;
-import org.carbondata.processing.merger.columnar.impl.NonTimeBasedMergerColumnar;
-import org.carbondata.processing.merger.exeception.SliceMergerException;
 import org.carbondata.core.metadata.LeafNodeInfoColumnar;
 import org.carbondata.core.metadata.SliceMetaData;
 import org.carbondata.core.olap.MolapDef.Cube;
 import org.carbondata.core.olap.MolapDef.Schema;
+import org.carbondata.core.util.*;
+import org.carbondata.processing.exception.MolapDataProcessorException;
+import org.carbondata.processing.merger.columnar.ColumnarFactFileMerger;
+import org.carbondata.processing.merger.columnar.impl.NonTimeBasedMergerColumnar;
+import org.carbondata.processing.merger.exeception.SliceMergerException;
 import org.carbondata.processing.schema.metadata.MolapColumnarFactMergerInfo;
 import org.carbondata.processing.util.MolapDataProcessorLogEvent;
 import org.carbondata.processing.util.MolapSchemaParser;
@@ -89,7 +89,8 @@ public class MolapColumnarSliceMerger implements MolapSliceMerger {
         this.mergedLoadName = molapSliceMergerInfo.getMergedLoadName();
     }
 
-    @Override public boolean fullMerge(int currentRestructNumber) throws SliceMergerException {
+    @Override
+    public boolean fullMerge(int currentRestructNumber) throws SliceMergerException {
 
         String hdfsLocation =
                 MolapProperties.getInstance().getProperty(MolapCommonConstants.STORE_LOCATION_HDFS)

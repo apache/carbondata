@@ -46,12 +46,14 @@ public class UnCompressNoneFloat implements ValueCompressonHolder.UnCompressValu
      */
     private float[] value;
 
-    @Override public void setValue(float[] value) {
+    @Override
+    public void setValue(float[] value) {
         this.value = value;
 
     }
 
-    @Override public ValueCompressonHolder.UnCompressValue getNew() {
+    @Override
+    public ValueCompressonHolder.UnCompressValue getNew() {
         try {
             return (ValueCompressonHolder.UnCompressValue) clone();
         } catch (CloneNotSupportedException ex5) {
@@ -60,7 +62,8 @@ public class UnCompressNoneFloat implements ValueCompressonHolder.UnCompressValu
         return null;
     }
 
-    @Override public ValueCompressonHolder.UnCompressValue compress() {
+    @Override
+    public ValueCompressonHolder.UnCompressValue compress() {
         UnCompressNoneByte byte1 = new UnCompressNoneByte();
         byte1.setValue(floatCompressor.compress(value));
 
@@ -68,7 +71,8 @@ public class UnCompressNoneFloat implements ValueCompressonHolder.UnCompressValu
 
     }
 
-    @Override public void setValueInBytes(byte[] value) {
+    @Override
+    public void setValueInBytes(byte[] value) {
         ByteBuffer buffer = ByteBuffer.wrap(value);
         this.value = ValueCompressionUtil.convertToFloatArray(buffer, value.length);
     }
@@ -76,11 +80,13 @@ public class UnCompressNoneFloat implements ValueCompressonHolder.UnCompressValu
     /**
      * @see ValueCompressonHolder.UnCompressValue#getCompressorObject()
      */
-    @Override public ValueCompressonHolder.UnCompressValue getCompressorObject() {
+    @Override
+    public ValueCompressonHolder.UnCompressValue getCompressorObject() {
         return new UnCompressNoneByte();
     }
 
-    @Override public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
+    @Override
+    public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
         double[] vals = new double[value.length];
         MolapReadDataHolder dataHolder = new MolapReadDataHolder();
         for (int i = 0; i < vals.length; i++) {
@@ -90,12 +96,14 @@ public class UnCompressNoneFloat implements ValueCompressonHolder.UnCompressValu
         return dataHolder;
     }
 
-    @Override public ValueCompressonHolder.UnCompressValue uncompress(
+    @Override
+    public ValueCompressonHolder.UnCompressValue uncompress(
             ValueCompressionUtil.DataType dataType) {
         return null;
     }
 
-    @Override public byte[] getBackArrayData() {
+    @Override
+    public byte[] getBackArrayData() {
         return ValueCompressionUtil.convertToBytes(value);
     }
 

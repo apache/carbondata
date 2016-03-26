@@ -33,7 +33,8 @@ public class MultiplyExpression extends BinaryArithmeticExpression {
         super(left, right);
     }
 
-    @Override public ExpressionResult evaluate(RowIntf value) throws FilterUnsupportedException {
+    @Override
+    public ExpressionResult evaluate(RowIntf value) throws FilterUnsupportedException {
         ExpressionResult multiplyExprLeftRes = left.evaluate(value);
         ExpressionResult multiplyExprRightRes = right.evaluate(value);
         ExpressionResult val1 = multiplyExprLeftRes;
@@ -73,11 +74,13 @@ public class MultiplyExpression extends BinaryArithmeticExpression {
         return multiplyExprRightRes;
     }
 
-    @Override public ExpressionType getFilterExpressionType() {
+    @Override
+    public ExpressionType getFilterExpressionType() {
         return ExpressionType.MULTIPLY;
     }
 
-    @Override public String getString() {
+    @Override
+    public String getString() {
         return "Substract(" + left.getString() + ',' + right.getString() + ')';
     }
 }

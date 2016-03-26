@@ -43,8 +43,8 @@ public class MinAggregator extends AbstractMeasureAggregatorMaxMin {
 
     protected void internalAgg(Object value) {
         if (value instanceof Comparable) {
-            @SuppressWarnings("unchecked") Comparable<Object> newValue =
-                    ((Comparable<Object>) value);
+            @SuppressWarnings("unchecked")
+            Comparable<Object> newValue = ((Comparable<Object>) value);
             aggVal = (aggVal == null || aggVal.compareTo(newValue) > 0) ? newValue : aggVal;
         }
     }
@@ -52,7 +52,8 @@ public class MinAggregator extends AbstractMeasureAggregatorMaxMin {
     /**
      * Below method will be used to get the value byte array
      */
-    @Override public byte[] getByteArray() {
+    @Override
+    public byte[] getByteArray() {
         byte[] objectBytes = new byte[0];
         if (firstTime) {
             return objectBytes;
@@ -79,7 +80,8 @@ public class MinAggregator extends AbstractMeasureAggregatorMaxMin {
      *
      * @param aggregator MinAggregator
      */
-    @Override public void merge(MeasureAggregator aggregator) {
+    @Override
+    public void merge(MeasureAggregator aggregator) {
         MinAggregator minAggregator = (MinAggregator) aggregator;
         //        if(!minAggregator.isFirstTime())
         //        {
@@ -87,7 +89,8 @@ public class MinAggregator extends AbstractMeasureAggregatorMaxMin {
         //        }
     }
 
-    @Override public void writeData(DataOutput dataOutputVal1) throws IOException {
+    @Override
+    public void writeData(DataOutput dataOutputVal1) throws IOException {
         ByteArrayOutputStream bos = null;
         ObjectOutput out = null;
         try {
@@ -107,8 +110,9 @@ public class MinAggregator extends AbstractMeasureAggregatorMaxMin {
         }
     }
 
-    @SuppressWarnings("unchecked") @Override public void readData(DataInput inPut)
-            throws IOException {
+    @SuppressWarnings("unchecked")
+    @Override
+    public void readData(DataInput inPut) throws IOException {
         ByteArrayInputStream bis = null;
         ObjectInput in = null;
         try {
@@ -126,14 +130,16 @@ public class MinAggregator extends AbstractMeasureAggregatorMaxMin {
         }
     }
 
-    @Override public MeasureAggregator getCopy() {
+    @Override
+    public MeasureAggregator getCopy() {
         MinAggregator aggregator = new MinAggregator();
         aggregator.aggVal = aggVal;
         aggregator.firstTime = firstTime;
         return aggregator;
     }
 
-    @Override public void merge(byte[] value) {
+    @Override
+    public void merge(byte[] value) {
         if (0 == value.length) {
             return;
         }

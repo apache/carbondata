@@ -44,7 +44,8 @@ public class MolapUnComressedSortTempFileReader extends AbstractSortTempFileRead
      *
      * @return row
      */
-    @Override public Object[][] getRow() {
+    @Override
+    public Object[][] getRow() {
         int recordSize = fileHolder.readInt(filePath);
         int byteArrayLength = fileHolder.readInt(filePath);
         byte[] readByteArray = fileHolder.readByteArray(filePath, byteArrayLength);

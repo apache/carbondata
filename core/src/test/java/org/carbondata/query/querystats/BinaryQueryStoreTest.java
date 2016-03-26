@@ -49,7 +49,8 @@ public class BinaryQueryStoreTest {
         return queryStatsPath.toString();
     }
 
-    @Before public void setUpBeforeClass() throws Exception {
+    @Before
+    public void setUpBeforeClass() throws Exception {
         try {
             File file = new File("src/test/resources/schemas/");
             basePath = file.getCanonicalPath() + "/";
@@ -64,10 +65,12 @@ public class BinaryQueryStoreTest {
         }
     }
 
-    @Test public void testLogQueryAndReadQuery() {
+    @Test
+    public void testLogQueryAndReadQuery() {
         new MockUp<FileFactory>() {
 
-            @Mock public DataOutputStream getDataOutputStreamUsingAppend(String path,
+            @Mock
+            public DataOutputStream getDataOutputStreamUsingAppend(String path,
                     FileFactory.FileType fileType) throws IOException {
                 return new DataOutputStream(
                         new BufferedOutputStream(new FileOutputStream(path, true), 1024));
@@ -158,14 +161,16 @@ public class BinaryQueryStoreTest {
 
     }
 
-    @Test public void testLogQuery_directoryDoesntexist() {
+    @Test
+    public void testLogQuery_directoryDoesntexist() {
         QueryDetail queryDetail = createQueryDetail();
         String queryStatsPath = getQueryStatsPath(queryDetail.getMetaPath());
         QueryStore queryStore = new BinaryQueryStore();
 
         new MockUp<FileFactory>() {
 
-            @Mock public boolean isFileExist(String filePath, FileFactory.FileType fileType,
+            @Mock
+            public boolean isFileExist(String filePath, FileFactory.FileType fileType,
                     boolean performcheck) throws IOException {
                 return false;
             }
@@ -181,7 +186,8 @@ public class BinaryQueryStoreTest {
 
     }
 
-    @Test public void testLogQuery_ThrowExceptionReadingQueryStats() {
+    @Test
+    public void testLogQuery_ThrowExceptionReadingQueryStats() {
         QueryDetail queryDetail = createQueryDetail();
         String queryStatsPath = getQueryStatsPath(queryDetail.getMetaPath());
         File file = new File(queryStatsPath + File.separator + Preference.QUERYSTATS_FILE_NAME);
@@ -191,7 +197,8 @@ public class BinaryQueryStoreTest {
 
         new MockUp<FileFactory>() {
 
-            @Mock public DataOutputStream getDataOutputStreamUsingAppend(String path,
+            @Mock
+            public DataOutputStream getDataOutputStreamUsingAppend(String path,
                     FileFactory.FileType fileType) throws IOException {
                 throw new IOException();
             }
@@ -210,20 +217,23 @@ public class BinaryQueryStoreTest {
 
     }
 
-    @Test public void testPartitionStatsCollector_getPartionDetail() {
+    @Test
+    public void testPartitionStatsCollector_getPartionDetail() {
         QueryDetail queryDetail = createQueryDetail();
         Assert.assertNotNull(
                 PartitionStatsCollector.getInstance().getPartionDetail(queryDetail.getQueryId()));
     }
 
-    @Test public void testPartitionStatsCollector_removePartionDetail() {
+    @Test
+    public void testPartitionStatsCollector_removePartionDetail() {
         QueryDetail queryDetail = createQueryDetail();
         PartitionStatsCollector.getInstance().removePartitionDetail(queryDetail.getQueryId());
         Assert.assertNull(
                 PartitionStatsCollector.getInstance().getPartionDetail(queryDetail.getQueryId()));
     }
 
-    @Test public void testWriteQueryToFile_ThrowException() {
+    @Test
+    public void testWriteQueryToFile_ThrowException() {
         BinaryQueryStore qs = new BinaryQueryStore();
         qs.writeQueryToFile(null, "test");
         File f = new File("test");
@@ -232,24 +242,29 @@ public class BinaryQueryStoreTest {
 
     }
 
-    @Test public void testQueryStatsCollectorgetInitialPartitionAccumulatorValue() {
+    @Test
+    public void testQueryStatsCollectorgetInitialPartitionAccumulatorValue() {
         Assert.assertNull(QueryStatsCollector.getInstance().getInitialPartitionAccumulatorValue());
     }
 
-    @Test public void testQueryStatsCollector() {
+    @Test
+    public void testQueryStatsCollector() {
         Assert.assertNotNull(QueryStatsCollector.getInstance().getPartitionAccumulatorParam());
     }
 
-    @Test public void testLogQueryStats_ThrowException() {
+    @Test
+    public void testLogQueryStats_ThrowException() {
         QueryStatsCollector.getInstance().logQueryStats(null);
         Assert.assertTrue(true);
     }
 
-    @Test public void testWriteQueryToFile_failedToRename() {
+    @Test
+    public void testWriteQueryToFile_failedToRename() {
         try {
             new MockUp<LocalMolapFile>() {
 
-                @Mock boolean renameTo(String changetoName) {
+                @Mock
+                boolean renameTo(String changetoName) {
                     return false;
                 }
             };
@@ -267,11 +282,13 @@ public class BinaryQueryStoreTest {
 
     }
 
-    @Test public void testLogQuery_throwException() {
+    @Test
+    public void testLogQuery_throwException() {
         try {
             new MockUp<FileFactory>() {
 
-                @Mock public boolean isFileExist(String filePath, FileFactory.FileType fileType,
+                @Mock
+                public boolean isFileExist(String filePath, FileFactory.FileType fileType,
                         boolean performFileCheck) throws IOException {
                     throw new IOException();
                 }
@@ -290,11 +307,13 @@ public class BinaryQueryStoreTest {
 
     }
 
-    @Test public void testReadQueryDetail_NoQuery() {
+    @Test
+    public void testReadQueryDetail_NoQuery() {
         try {
             new MockUp<java.io.DataInputStream>() {
 
-                @Mock public int readInt() throws IOException {
+                @Mock
+                public int readInt() throws IOException {
                     return -1;
                 }
             };

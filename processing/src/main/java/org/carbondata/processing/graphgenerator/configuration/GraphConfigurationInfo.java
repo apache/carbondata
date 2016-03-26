@@ -165,42 +165,34 @@ public class GraphConfigurationInfo {
      */
     private String measureDataTypeInfo;
 
-     /**
-      * true represent columnar store
-      * false represent row store
-      */
-     private String dimensionStoreType;
-
-     public String getDimensionStoreTypeString()
-	 {
-		return dimensionStoreType;
-	 }
-
-	 public void setDimensionStoreTypeString(String dimensionStoreType)
-	 {
-		this.dimensionStoreType = dimensionStoreType;
-	 }
-
-	/**
+    /**
+     * true represent columnar store
+     * false represent row store
+     */
+    private String dimensionStoreType;
+    /**
      * columnAndTableName_ColumnMapForAgg
      */
     private String columnAndTableNameColumnMapForAgg;
-
     /**
      * denormColumns
      */
     private String denormColumns;
-
     private String[] aggClass;
-
     /**
      * type
      */
     private char[] type;
-
     private int currentRestructNumber;
-
     private String levelAnddataType;
+
+    public String getDimensionStoreTypeString() {
+        return dimensionStoreType;
+    }
+
+    public void setDimensionStoreTypeString(String dimensionStoreType) {
+        this.dimensionStoreType = dimensionStoreType;
+    }
 
     /**
      * @return the connectionName

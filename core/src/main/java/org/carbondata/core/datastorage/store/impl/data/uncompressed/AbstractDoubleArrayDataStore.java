@@ -43,7 +43,8 @@ public abstract class AbstractDoubleArrayDataStore implements NodeMeasureDataSto
         }
     }
 
-    @Override public byte[][] getWritableMeasureDataArray(MolapWriteDataHolder[] dataHolder) {
+    @Override
+    public byte[][] getWritableMeasureDataArray(MolapWriteDataHolder[] dataHolder) {
         values = new ValueCompressonHolder.UnCompressValue[compressionModel
                 .getUnCompressValues().length];
         for (int i = 0; i < compressionModel.getUnCompressValues().length; i++) {
@@ -78,7 +79,8 @@ public abstract class AbstractDoubleArrayDataStore implements NodeMeasureDataSto
         return resturnValue;
     }
 
-    @Override public short getLength() {
+    @Override
+    public short getLength() {
         return values != null ? (short) values.length : 0;
     }
 

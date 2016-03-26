@@ -100,7 +100,8 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
     /**
      * set the default value for all the properties
      */
-    @Override public void setDefault() {
+    @Override
+    public void setDefault() {
         this.tabelName = "";
         factDimLensString = "";
         outputRowSize = "";

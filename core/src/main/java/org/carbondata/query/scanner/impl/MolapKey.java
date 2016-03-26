@@ -57,7 +57,8 @@ public class MolapKey implements Serializable, Comparable<MolapKey> {
     /* (non-Javadoc)
      * @see java.lang.Object#hashCode()
      */
-    @Override public int hashCode() {
+    @Override
+    public int hashCode() {
         final int prime = 31;
         int result = 1;
         result = prime * result + Arrays.hashCode(key);
@@ -67,7 +68,8 @@ public class MolapKey implements Serializable, Comparable<MolapKey> {
     /* (non-Javadoc)
      * @see java.lang.Object#equals(java.lang.Object)
      */
-    @Override public boolean equals(Object obj) {
+    @Override
+    public boolean equals(Object obj) {
         if (this == obj) {
             return true;
         }
@@ -84,11 +86,13 @@ public class MolapKey implements Serializable, Comparable<MolapKey> {
         return true;
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
         return Arrays.toString(key);
     }
 
-    @Override public int compareTo(MolapKey other) {
+    @Override
+    public int compareTo(MolapKey other) {
         Object[] oKey = other.key;
 
         int l = 0;

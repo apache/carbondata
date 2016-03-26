@@ -23,27 +23,33 @@ public abstract class AbstractMeasureAggregatorBasic implements MeasureAggregato
 
     protected boolean firstTime = true;
 
-    @Override public void agg(double newVal) {
+    @Override
+    public void agg(double newVal) {
         //        valueSet.add(newVal);
     }
 
-    @Override public Double getDoubleValue() {
+    @Override
+    public Double getDoubleValue() {
         return null;
     }
 
-    @Override public Long getLongValue() {
+    @Override
+    public Long getLongValue() {
         return null;
     }
 
-    @Override public BigDecimal getBigDecimalValue() {
+    @Override
+    public BigDecimal getBigDecimalValue() {
         return null;
     }
 
-    @Override public boolean isFirstTime() {
+    @Override
+    public boolean isFirstTime() {
         return firstTime;
     }
 
-    @Override public MeasureAggregator get() {
+    @Override
+    public MeasureAggregator get() {
         return this;
     }
 }

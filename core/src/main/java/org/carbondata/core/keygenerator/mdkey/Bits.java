@@ -417,7 +417,8 @@ public class Bits implements Serializable {
         return byteSize;
     }
 
-    @Override public boolean equals(Object obj) {
+    @Override
+    public boolean equals(Object obj) {
         if (obj instanceof Bits) {
             Bits other = (Bits) obj;
             return Arrays.equals(lens, other.lens);
@@ -425,7 +426,8 @@ public class Bits implements Serializable {
         return false;
     }
 
-    @Override public int hashCode() {
+    @Override
+    public int hashCode() {
         return Arrays.hashCode(lens);
     }
 }

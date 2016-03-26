@@ -130,7 +130,8 @@ public class GroupByProcessor implements DataProcessor {
         this.msrFilterProcessorModel = msrFilterProcessorModel;
     }
 
-    @Override public void initModel(PaginationModel model) throws MolapPaginationException {
+    @Override
+    public void initModel(PaginationModel model) throws MolapPaginationException {
         //        this.groupMaskedBytes = model.getGroupMaskedBytes();
         if (null != msrFilterProcessorModel) {
             this.maskedBytes = msrFilterProcessorModel.getMaskedBytes();
@@ -193,12 +194,14 @@ public class GroupByProcessor implements DataProcessor {
         }
     }
 
-    @Override public void processRow(byte[] key, MeasureAggregator[] measures)
+    @Override
+    public void processRow(byte[] key, MeasureAggregator[] measures)
             throws MolapPaginationException {
         addRow(key, measures);
     }
 
-    @Override public void finish() throws MolapPaginationException {
+    @Override
+    public void finish() throws MolapPaginationException {
         if (holder.getRows().size() > 0) {
             processor.processGroup(holder);
         }
@@ -206,7 +209,8 @@ public class GroupByProcessor implements DataProcessor {
         processor.finish();
     }
 
-    @Override public void processGroup(GroupByHolder groupByHolder) {
+    @Override
+    public void processGroup(GroupByHolder groupByHolder) {
         //No implementation is required.
 
     }

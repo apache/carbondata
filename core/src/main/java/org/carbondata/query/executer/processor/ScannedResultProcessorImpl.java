@@ -130,7 +130,8 @@ public class ScannedResultProcessorImpl implements ScannedResultProcessor {
         }
     }
 
-    @Override public void addScannedResult(Result scannedResult) throws QueryExecutionException {
+    @Override
+    public void addScannedResult(Result scannedResult) throws QueryExecutionException {
         synchronized (processedFileMap) {
             scannedResultList.add(scannedResult);
             recordCounter += scannedResult.size();
@@ -188,8 +189,8 @@ public class ScannedResultProcessorImpl implements ScannedResultProcessor {
         }
     }
 
-    @Override public MolapIterator<QueryResult> getQueryResultIterator()
-            throws QueryExecutionException {
+    @Override
+    public MolapIterator<QueryResult> getQueryResultIterator() throws QueryExecutionException {
         execService.shutdown();
         try {
             execService.awaitTermination(1, TimeUnit.DAYS);
@@ -300,7 +301,8 @@ public class ScannedResultProcessorImpl implements ScannedResultProcessor {
             this.scannedResult = scannedResult;
         }
 
-        @Override public Void call() throws Exception {
+        @Override
+        public Void call() throws Exception {
             mergeScannedResultsAndWriteToFile(scannedResult);
             return null;
         }

@@ -54,7 +54,8 @@ public abstract class AbstractColumnarDataStoreProcessor implements DataStoreBlo
         keyValue.setKeyBlock(temp);
     }
 
-    @Override public AbstractColumnarScanResult getScannedData(BlockDataHolder blockDataHolder) {
+    @Override
+    public AbstractColumnarScanResult getScannedData(BlockDataHolder blockDataHolder) {
         fillKeyValue(blockDataHolder);
         return keyValue;
     }

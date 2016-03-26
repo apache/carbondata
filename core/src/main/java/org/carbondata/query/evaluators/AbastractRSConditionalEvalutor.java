@@ -55,7 +55,8 @@ public abstract class AbastractRSConditionalEvalutor implements FilterEvaluator 
         this.isIncludeFilter = isIncludeFilter;
     }
 
-    @Override public void resolve(FilterEvaluatorInfo info) {
+    @Override
+    public void resolve(FilterEvaluatorInfo info) {
         DimColumnEvaluatorInfo dimColumnEvaluatorInfo = new DimColumnEvaluatorInfo();
         if (!this.isExpressionResolve && exp instanceof BinaryConditionalExpression) {
             BinaryConditionalExpression binaryConditionalExpression =
@@ -128,12 +129,14 @@ public abstract class AbastractRSConditionalEvalutor implements FilterEvaluator 
         dimColEvaluatorInfoList.add(dimColumnEvaluatorInfo);
     }
 
-    @Override public FilterEvaluator getLeft() {
+    @Override
+    public FilterEvaluator getLeft() {
         // TODO Auto-generated method stub
         return null;
     }
 
-    @Override public FilterEvaluator getRight() {
+    @Override
+    public FilterEvaluator getRight() {
         // TODO Auto-generated method stub
         return null;
     }

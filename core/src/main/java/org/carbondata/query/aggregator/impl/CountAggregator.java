@@ -50,7 +50,8 @@ public class CountAggregator implements MeasureAggregator {
      *
      * @param newVal new value
      */
-    @Override public void agg(double newVal) {
+    @Override
+    public void agg(double newVal) {
         aggVal++;
     }
 
@@ -59,18 +60,21 @@ public class CountAggregator implements MeasureAggregator {
      *
      * @param newVal new value
      */
-    @Override public void agg(Object newVal) {
+    @Override
+    public void agg(Object newVal) {
         aggVal++;
     }
 
-    @Override public void agg(MolapReadDataHolder newVal, int index) {
+    @Override
+    public void agg(MolapReadDataHolder newVal, int index) {
         aggVal++;
     }
 
     /**
      * Below method will be used to get the value byte array
      */
-    @Override public byte[] getByteArray() {
+    @Override
+    public byte[] getByteArray() {
         ByteBuffer buffer = ByteBuffer.allocate(MolapCommonConstants.DOUBLE_SIZE_IN_BYTE);
         buffer.putDouble(aggVal);
         return buffer.array();
@@ -81,15 +85,18 @@ public class CountAggregator implements MeasureAggregator {
      *
      * @return total count
      */
-    @Override public Double getDoubleValue() {
+    @Override
+    public Double getDoubleValue() {
         return aggVal;
     }
 
-    @Override public Long getLongValue() {
+    @Override
+    public Long getLongValue() {
         return (long) aggVal;
     }
 
-    @Override public BigDecimal getBigDecimalValue() {
+    @Override
+    public BigDecimal getBigDecimalValue() {
         return new BigDecimal(aggVal);
     }
 
@@ -98,7 +105,8 @@ public class CountAggregator implements MeasureAggregator {
      *
      * @param aggregator count aggregator
      */
-    @Override public void merge(MeasureAggregator aggregator) {
+    @Override
+    public void merge(MeasureAggregator aggregator) {
         CountAggregator countAggregator = (CountAggregator) aggregator;
         aggVal += countAggregator.aggVal;
     }
@@ -126,31 +134,37 @@ public class CountAggregator implements MeasureAggregator {
      * @return count value as an object
      */
 
-    @Override public Object getValueObject() {
+    @Override
+    public Object getValueObject() {
         return aggVal;
     }
 
     /**
      * @see MeasureAggregator#setNewValue(Object)
      */
-    @Override public void setNewValue(Object newValue) {
+    @Override
+    public void setNewValue(Object newValue) {
         aggVal += Double.parseDouble(String.valueOf(newValue));
     }
 
-    @Override public boolean isFirstTime() {
+    @Override
+    public boolean isFirstTime() {
         return false;
     }
 
-    @Override public void writeData(DataOutput output) throws IOException {
+    @Override
+    public void writeData(DataOutput output) throws IOException {
         output.writeDouble(aggVal);
 
     }
 
-    @Override public void readData(DataInput inPut) throws IOException {
+    @Override
+    public void readData(DataInput inPut) throws IOException {
         aggVal = inPut.readDouble();
     }
 
-    @Override public MeasureAggregator getCopy() {
+    @Override
+    public MeasureAggregator getCopy() {
         CountAggregator aggregator = new CountAggregator();
         aggregator.aggVal = aggVal;
         return aggregator;
@@ -161,7 +175,8 @@ public class CountAggregator implements MeasureAggregator {
         return compareTo(msrAggregator)==0;
     }*/
 
-    @Override public void merge(byte[] value) {
+    @Override
+    public void merge(byte[] value) {
         if (0 == value.length) {
             return;
         }
@@ -169,7 +184,8 @@ public class CountAggregator implements MeasureAggregator {
         aggVal += buffer.getDouble();
     }
 
-    @Override public int compareTo(MeasureAggregator obj) {
+    @Override
+    public int compareTo(MeasureAggregator obj) {
         double val = getDoubleValue();
         double otherVal = obj.getDoubleValue();
         if (val > otherVal) {
@@ -181,7 +197,8 @@ public class CountAggregator implements MeasureAggregator {
         return 0;
     }
 
-    @Override public MeasureAggregator get() {
+    @Override
+    public MeasureAggregator get() {
         return this;
     }
 

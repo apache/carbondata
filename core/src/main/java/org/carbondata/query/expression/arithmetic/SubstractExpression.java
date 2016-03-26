@@ -34,7 +34,8 @@ public class SubstractExpression extends BinaryArithmeticExpression {
         super(left, right);
     }
 
-    @Override public ExpressionResult evaluate(RowIntf value) throws FilterUnsupportedException {
+    @Override
+    public ExpressionResult evaluate(RowIntf value) throws FilterUnsupportedException {
         ExpressionResult subtractExprLeftRes = left.evaluate(value);
         ExpressionResult subtractExprRightRes = right.evaluate(value);
         ExpressionResult val1 = subtractExprLeftRes;
@@ -73,11 +74,13 @@ public class SubstractExpression extends BinaryArithmeticExpression {
         return subtractExprRightRes;
     }
 
-    @Override public ExpressionType getFilterExpressionType() {
+    @Override
+    public ExpressionType getFilterExpressionType() {
         return ExpressionType.SUBSTRACT;
     }
 
-    @Override public String getString() {
+    @Override
+    public String getString() {
         return "Substract(" + left.getString() + ',' + right.getString() + ')';
     }
 }

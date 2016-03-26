@@ -79,7 +79,8 @@ public class ScannedResultDataFileWriterThread extends ResultWriter {
     /**
      * @see java.util.concurrent.Callable#call()
      */
-    @Override public Void call() throws Exception {
+    @Override
+    public Void call() throws Exception {
         DataOutputStream dataOutput = null;
         MolapFile molapFile = null;
         String destPath = null;

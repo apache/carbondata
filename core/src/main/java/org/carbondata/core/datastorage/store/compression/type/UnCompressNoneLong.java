@@ -46,12 +46,14 @@ public class UnCompressNoneLong implements ValueCompressonHolder.UnCompressValue
      */
     protected long[] value;
 
-    @Override public void setValue(long[] value) {
+    @Override
+    public void setValue(long[] value) {
         this.value = value;
 
     }
 
-    @Override public ValueCompressonHolder.UnCompressValue getNew() {
+    @Override
+    public ValueCompressonHolder.UnCompressValue getNew() {
         try {
             return (ValueCompressonHolder.UnCompressValue) clone();
         } catch (CloneNotSupportedException clnNotSupportedExc) {
@@ -61,7 +63,8 @@ public class UnCompressNoneLong implements ValueCompressonHolder.UnCompressValue
         return null;
     }
 
-    @Override public ValueCompressonHolder.UnCompressValue compress() {
+    @Override
+    public ValueCompressonHolder.UnCompressValue compress() {
         UnCompressNoneByte byte1 = new UnCompressNoneByte();
         byte1.setValue(longCompressor.compress(value));
         return byte1;
@@ -73,11 +76,13 @@ public class UnCompressNoneLong implements ValueCompressonHolder.UnCompressValue
         return null;
     }
 
-    @Override public byte[] getBackArrayData() {
+    @Override
+    public byte[] getBackArrayData() {
         return ValueCompressionUtil.convertToBytes(value);
     }
 
-    @Override public void setValueInBytes(byte[] byteValue) {
+    @Override
+    public void setValueInBytes(byte[] byteValue) {
         ByteBuffer buffer = ByteBuffer.wrap(byteValue);
         this.value = ValueCompressionUtil.convertToLongArray(buffer, byteValue.length);
     }
@@ -85,11 +90,13 @@ public class UnCompressNoneLong implements ValueCompressonHolder.UnCompressValue
     /**
      * @see ValueCompressonHolder.UnCompressValue#getCompressorObject()
      */
-    @Override public ValueCompressonHolder.UnCompressValue getCompressorObject() {
+    @Override
+    public ValueCompressonHolder.UnCompressValue getCompressorObject() {
         return new UnCompressNoneByte();
     }
 
-    @Override public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
+    @Override
+    public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
         MolapReadDataHolder dataHolder = new MolapReadDataHolder();
         double[] vals = new double[value.length];
         for (int i = 0; i < vals.length; i++) {

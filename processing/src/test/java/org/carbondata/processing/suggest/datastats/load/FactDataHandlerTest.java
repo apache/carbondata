@@ -19,101 +19,92 @@
 
 package org.carbondata.processing.suggest.datastats.load;
 
+import mockit.Mock;
+import mockit.MockUp;
 import org.carbondata.core.constants.MolapCommonConstants;
 import org.carbondata.core.metadata.MolapMetadata;
-import org.carbondata.core.olap.MolapDef;
 import org.carbondata.core.util.MolapProperties;
 import org.junit.Test;
 
-import mockit.Mock;
-import mockit.MockUp;
+public class FactDataHandlerTest {
 
-public class FactDataHandlerTest
-{
+    @Test
+    public void testInitialise_falseAggKeyBlock() {
+        MolapProperties.getInstance()
+                .addProperty(MolapCommonConstants.AGGREAGATE_COLUMNAR_KEY_BLOCK, "false");
+        MolapProperties.getInstance()
+                .addProperty(MolapCommonConstants.MOLAP_IS_LOAD_FACT_TABLE_IN_MEMORY, "false");
+        LevelMetaInfo levelInfo = new MockUp<LevelMetaInfo>() {
+            @Mock
+            public int[] getDimCardinality() {
+                return new int[] { 10, 12 };
+            }
 
-	@Test
-	public void testInitialise_falseAggKeyBlock()
-	{
-		MolapProperties.getInstance().addProperty( MolapCommonConstants.AGGREAGATE_COLUMNAR_KEY_BLOCK, "false");
-		MolapProperties.getInstance().addProperty(MolapCommonConstants.MOLAP_IS_LOAD_FACT_TABLE_IN_MEMORY, "false");
-		LevelMetaInfo levelInfo=new MockUp<LevelMetaInfo>()
-		{
-			@Mock
-			public int[] getDimCardinality()
-			{
-				return new int[]{10,12};
-			}
+        }.getMockInstance();
 
-		}.getMockInstance();
+        MolapMetadata.Cube cube = new MockUp<MolapMetadata.Cube>() {
+            @Mock
+            public String getCubeName() {
+                return "default_test";
+            }
 
-		MolapMetadata.Cube cube=new MockUp<MolapMetadata.Cube>()
-		{
-			@Mock
-			public String getCubeName()
-			{
-				return "default_test";
-			}
-			@Mock
-			public String getSchemaName()
-			{
-				return "default";
-			}
-			@Mock
-			public String getMode()
-			{
-				return "store";
+            @Mock
+            public String getSchemaName() {
+                return "default";
+            }
 
-			}
-			@Mock
-			public String getFactTableName()
-			{
-				return "factTable";
-			}
+            @Mock
+            public String getMode() {
+                return "store";
 
-		}.getMockInstance();
+            }
 
-		FactDataHandler factHandler=new FactDataHandler(cube,levelInfo, "factTable", 0, null);
-	}
-	@Test
-	public void testInitialise_trueAggKeyBlock_TestHighCardinality()
-	{
-		MolapProperties.getInstance().addProperty( MolapCommonConstants.AGGREAGATE_COLUMNAR_KEY_BLOCK, "true");
-		LevelMetaInfo levelInfo=new MockUp<LevelMetaInfo>()
-				{
-					@Mock
-					public int[] getDimCardinality()
-					{
-						return new int[]{1000010,12};
-					}
+            @Mock
+            public String getFactTableName() {
+                return "factTable";
+            }
 
-				}.getMockInstance();
+        }.getMockInstance();
 
-				MolapMetadata.Cube cube=new MockUp<MolapMetadata.Cube>()
-				{
-					@Mock
-					public String getCubeName()
-					{
-						return "default_test";
-					}
-					@Mock
-					public String getSchemaName()
-					{
-						return "default";
-					}
-					@Mock
-					public String getMode()
-					{
-						return "store";
+        FactDataHandler factHandler = new FactDataHandler(cube, levelInfo, "factTable", 0, null);
+    }
 
-					}
-					@Mock
-					public String getFactTableName()
-					{
-						return "factTable";
-					}
+    @Test
+    public void testInitialise_trueAggKeyBlock_TestHighCardinality() {
+        MolapProperties.getInstance()
+                .addProperty(MolapCommonConstants.AGGREAGATE_COLUMNAR_KEY_BLOCK, "true");
+        LevelMetaInfo levelInfo = new MockUp<LevelMetaInfo>() {
+            @Mock
+            public int[] getDimCardinality() {
+                return new int[] { 1000010, 12 };
+            }
 
-				}.getMockInstance();
+        }.getMockInstance();
 
-				FactDataHandler factHandler=new FactDataHandler(cube,levelInfo, "factTable", 0, null);
-	}
+        MolapMetadata.Cube cube = new MockUp<MolapMetadata.Cube>() {
+            @Mock
+            public String getCubeName() {
+                return "default_test";
+            }
+
+            @Mock
+            public String getSchemaName() {
+                return "default";
+            }
+
+            @Mock
+            public String getMode() {
+                return "store";
+
+            }
+
+            @Mock
+            public String getFactTableName() {
+                return "factTable";
+            }
+
+        }.getMockInstance();
+
+        FactDataHandler factHandler = new FactDataHandler(cube, levelInfo, "factTable", 0, null);
+    }
 }

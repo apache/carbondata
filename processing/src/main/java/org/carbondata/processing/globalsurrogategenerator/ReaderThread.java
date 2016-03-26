@@ -31,7 +31,8 @@ public class ReaderThread implements Callable<Map<String, Integer>> {
         this.file = file;
     }
 
-    @Override public Map<String, Integer> call() throws Exception {
+    @Override
+    public Map<String, Integer> call() throws Exception {
         return LevelGlobalSurrogateGeneratorThread.readLevelFileAndUpdateCache(file);
     }
 }

@@ -38,20 +38,23 @@ public class MemoryBasedLimitProcessor implements DataProcessorExt {
         result = new QueryResult();
     }
 
-    @Override public void initialise(DataProcessorInfo model) throws DataProcessorException {
+    @Override
+    public void initialise(DataProcessorInfo model) throws DataProcessorException {
         limit = model.getLimit();
     }
 
-    @Override public void finish() throws DataProcessorException {
+    @Override
+    public void finish() throws DataProcessorException {
 
     }
 
-    @Override public MolapIterator<QueryResult> getQueryResultIterator() {
+    @Override
+    public MolapIterator<QueryResult> getQueryResultIterator() {
         return new MemoryBasedResultIterator(result);
     }
 
-    @Override public void processRow(byte[] key, MeasureAggregator[] value)
-            throws DataProcessorException {
+    @Override
+    public void processRow(byte[] key, MeasureAggregator[] value) throws DataProcessorException {
 
         if (limit == -1 || result.size() < limit) {
             ByteArrayWrapper arrayWrapper = new ByteArrayWrapper();

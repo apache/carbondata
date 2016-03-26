@@ -33,7 +33,8 @@ public class DivideExpression extends BinaryArithmeticExpression {
         super(left, right);
     }
 
-    @Override public ExpressionResult evaluate(RowIntf value) throws FilterUnsupportedException {
+    @Override
+    public ExpressionResult evaluate(RowIntf value) throws FilterUnsupportedException {
         ExpressionResult divideExprLeftRes = left.evaluate(value);
         ExpressionResult divideExprRightRes = right.evaluate(value);
         ExpressionResult val1 = divideExprLeftRes;
@@ -72,11 +73,13 @@ public class DivideExpression extends BinaryArithmeticExpression {
         return divideExprRightRes;
     }
 
-    @Override public ExpressionType getFilterExpressionType() {
+    @Override
+    public ExpressionType getFilterExpressionType() {
         return ExpressionType.DIVIDE;
     }
 
-    @Override public String getString() {
+    @Override
+    public String getString() {
         return "Divide(" + left.getString() + ',' + right.getString() + ')';
     }
 }

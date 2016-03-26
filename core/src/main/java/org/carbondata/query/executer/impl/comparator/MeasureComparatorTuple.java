@@ -56,7 +56,8 @@ public class MeasureComparatorTuple implements Comparator<Tuple> {
      * @param o1
      * @param o2
      */
-    @Override public int compare(Tuple t1, Tuple t2) {
+    @Override
+    public int compare(Tuple t1, Tuple t2) {
         int cmp = 0;
         if (this.msrIndex < 0 || this.msrIndex >= t1.getMeasures().length) {
             return cmp;

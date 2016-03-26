@@ -29,11 +29,13 @@ public class MolapConstCalcFunction extends AbstractMolapCalcFunction {
     private static final long serialVersionUID = -3394986838338896821L;
     private double literal;
 
-    @Override public double calculate(MeasureAggregator[] msrAggs) {
+    @Override
+    public double calculate(MeasureAggregator[] msrAggs) {
         return literal;
     }
 
-    @Override public void compile(CalcExpressionModel model, Exp exp) {
+    @Override
+    public void compile(CalcExpressionModel model, Exp exp) {
         //        Literal expr = (Literal)exp;
         //        literal = expr.getIntValue();
 

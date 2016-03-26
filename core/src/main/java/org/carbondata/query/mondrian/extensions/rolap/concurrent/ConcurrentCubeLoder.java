@@ -23,32 +23,38 @@ import java.util.LinkedList;
 
 public class ConcurrentCubeLoder implements ICubeLoader {
 
-    @Override public void submit(CubeLoader cubeLoader) {
+    @Override
+    public void submit(CubeLoader cubeLoader) {
         // TODO Auto-generated method stub
 
     }
 
-    @Override public void start() {
+    @Override
+    public void start() {
         // TODO Auto-generated method stub
 
     }
 
-    @Override public boolean isDone() {
+    @Override
+    public boolean isDone() {
         // TODO Auto-generated method stub
         return false;
     }
 
-    @Override public void minThresholdReached() {
+    @Override
+    public void minThresholdReached() {
         // TODO Auto-generated method stub
 
     }
 
-    @Override public void maxThresholdReached() {
+    @Override
+    public void maxThresholdReached() {
         // TODO Auto-generated method stub
 
     }
 
-    @Override public LinkedList<CubeLoader> getFailedCubes() {
+    @Override
+    public LinkedList<CubeLoader> getFailedCubes() {
         // TODO Auto-generated method stub
         return null;
     }

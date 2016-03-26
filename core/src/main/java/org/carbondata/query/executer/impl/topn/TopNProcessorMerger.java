@@ -58,14 +58,16 @@ public class TopNProcessorMerger implements DataProcessor {
         this.comparator = comparator;
     }
 
-    @Override public void initModel(PaginationModel model) throws MolapPaginationException {
+    @Override
+    public void initModel(PaginationModel model) throws MolapPaginationException {
         this.model = model;
         this.executorService = Executors.newFixedThreadPool(4);
         futures = new ArrayList<Future<Map<ByteArrayWrapper, MeasureAggregator[]>>>(
                 MolapCommonConstants.CONSTANT_SIZE_TEN);
     }
 
-    @Override public void processRow(byte[] key, MeasureAggregator[] measures)
+    @Override
+    public void processRow(byte[] key, MeasureAggregator[] measures)
             throws MolapPaginationException {
         keys.add(key);
         aggregators.add(measures);
@@ -91,7 +93,8 @@ public class TopNProcessorMerger implements DataProcessor {
         //        futures.add(future);
     }
 
-    @Override public void finish() throws MolapPaginationException {
+    @Override
+    public void finish() throws MolapPaginationException {
         if (count > 0) {
             submit();
         }
@@ -121,7 +124,8 @@ public class TopNProcessorMerger implements DataProcessor {
         }
     }
 
-    @Override public void processGroup(GroupByHolder groupByHolder) {
+    @Override
+    public void processGroup(GroupByHolder groupByHolder) {
 
     }
 

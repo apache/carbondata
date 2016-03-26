@@ -34,7 +34,8 @@ public class EqualToExpression extends BinaryConditionalExpression {
         super(left, right);
     }
 
-    @Override public ExpressionResult evaluate(RowIntf value) throws FilterUnsupportedException {
+    @Override
+    public ExpressionResult evaluate(RowIntf value) throws FilterUnsupportedException {
         ExpressionResult elRes = left.evaluate(value);
         ExpressionResult erRes = right.evaluate(value);
 
@@ -97,11 +98,13 @@ public class EqualToExpression extends BinaryConditionalExpression {
         return val1;
     }
 
-    @Override public ExpressionType getFilterExpressionType() {
+    @Override
+    public ExpressionType getFilterExpressionType() {
         return ExpressionType.EQUALS;
     }
 
-    @Override public String getString() {
+    @Override
+    public String getString() {
         return "EqualTo(" + left.getString() + ',' + right.getString() + ')';
     }
 

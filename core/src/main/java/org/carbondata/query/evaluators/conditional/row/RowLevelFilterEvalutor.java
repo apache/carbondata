@@ -58,7 +58,8 @@ public class RowLevelFilterEvalutor extends AbstractConditionalEvalutor {
         super(exp, isExpressionResolve, isIncludeFilter);
     }
 
-    @Override public void resolve(FilterEvaluatorInfo info) {
+    @Override
+    public void resolve(FilterEvaluatorInfo info) {
         DimColumnEvaluatorInfo dimColumnEvaluatorInfo = null;
         MsrColumnEvalutorInfo msrColumnEvalutorInfo = null;
         int index = 0;
@@ -132,7 +133,8 @@ public class RowLevelFilterEvalutor extends AbstractConditionalEvalutor {
         }
     }
 
-    @Override public BitSet applyFilter(BlockDataHolder blockDataHolder,
+    @Override
+    public BitSet applyFilter(BlockDataHolder blockDataHolder,
             FilterProcessorPlaceHolder placeHolder) {
         for (DimColumnEvaluatorInfo dimColumnEvaluatorInfo : dimColEvaluatorInfoList) {
             if (dimColumnEvaluatorInfo.getDims().getDataType() != Type.ARRAY
@@ -350,7 +352,8 @@ public class RowLevelFilterEvalutor extends AbstractConditionalEvalutor {
         return member;
     }
 
-    @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
+    @Override
+    public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
         BitSet bitSet = new BitSet(1);
         bitSet.set(0);
         return bitSet;

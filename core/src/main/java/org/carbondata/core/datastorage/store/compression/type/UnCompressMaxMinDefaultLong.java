@@ -16,7 +16,8 @@ public class UnCompressMaxMinDefaultLong extends UnCompressMaxMinLong {
     private static Compressor<long[]> longCompressor =
             SnappyCompression.SnappyLongCompression.INSTANCE;
 
-    @Override public ValueCompressonHolder.UnCompressValue getNew() {
+    @Override
+    public ValueCompressonHolder.UnCompressValue getNew() {
         try {
             return (ValueCompressonHolder.UnCompressValue) clone();
         } catch (CloneNotSupportedException ex5) {
@@ -25,21 +26,25 @@ public class UnCompressMaxMinDefaultLong extends UnCompressMaxMinLong {
         return null;
     }
 
-    @Override public ValueCompressonHolder.UnCompressValue compress() {
+    @Override
+    public ValueCompressonHolder.UnCompressValue compress() {
         UnCompressMaxMinByteForLong byte1 = new UnCompressMaxMinByteForLong();
         byte1.setValue(longCompressor.compress(value));
         return byte1;
     }
 
-    @Override public byte[] getBackArrayData() {
+    @Override
+    public byte[] getBackArrayData() {
         return ValueCompressionUtil.convertToBytes(value);
     }
 
-    @Override public ValueCompressonHolder.UnCompressValue getCompressorObject() {
+    @Override
+    public ValueCompressonHolder.UnCompressValue getCompressorObject() {
         return new UnCompressMaxMinByteForLong();
     }
 
-    @Override public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
+    @Override
+    public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
         long maxValue = (long) maxValueObject;
         long[] vals = new long[value.length];
         MolapReadDataHolder dataHolderInfoObj = new MolapReadDataHolder();

@@ -35,19 +35,22 @@ public class LoggingServiceTest_FT extends TestCase {
     private static LogService logger =
             LogServiceFactory.getLogService(LoggingServiceTest_FT.class.getName());
 
-    @Before public void setUp() throws Exception {
+    @Before
+    public void setUp() throws Exception {
         MDC.put("MODULE", "Function Test");
         MDC.put("USER_NAME", "testuser");
         MDC.put("CLIENT_IP", "127.0.0.1");
         MDC.put("OPERATRION", "log");
     }
 
-    @Test public void testIsAuditFileCreated() {
+    @Test
+    public void testIsAuditFileCreated() {
         File f = new File("./unibiaudit.log");
         Assert.assertFalse(f.exists());
     }
 
-    @Test public void testAudit() {
+    @Test
+    public void testAudit() {
 
         String expectedAuditLine =
                 "[main] AUDIT [com.huawei.iweb.platform.logging.ft.LoggingServiceTest_FT] 127.0.0.1 testuser Function Test log- audit message created";

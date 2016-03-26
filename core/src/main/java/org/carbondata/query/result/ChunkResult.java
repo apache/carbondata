@@ -54,11 +54,13 @@ public class ChunkResult implements MolapIterator<RowResult> {
         this.values = values;
     }
 
-    @Override public boolean hasNext() {
+    @Override
+    public boolean hasNext() {
         return counter < keys.size();
     }
 
-    @Override public RowResult next() {
+    @Override
+    public RowResult next() {
         RowResult rowResult = new RowResult();
         rowResult.setKey(keys.get(counter));
         rowResult.setValue(values.get(counter));

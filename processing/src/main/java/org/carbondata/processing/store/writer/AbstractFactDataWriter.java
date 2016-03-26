@@ -34,10 +34,10 @@ import org.carbondata.core.constants.MolapCommonConstants;
 import org.carbondata.core.file.manager.composite.FileData;
 import org.carbondata.core.file.manager.composite.IFileManagerComposite;
 import org.carbondata.core.metadata.LeafNodeInfoColumnar;
-import org.carbondata.processing.store.writer.exception.MolapDataWriterException;
-import org.carbondata.processing.util.MolapDataProcessorLogEvent;
 import org.carbondata.core.util.MolapProperties;
 import org.carbondata.core.util.MolapUtil;
+import org.carbondata.processing.store.writer.exception.MolapDataWriterException;
+import org.carbondata.processing.util.MolapDataProcessorLogEvent;
 
 public abstract class AbstractFactDataWriter<T> implements MolapFactDataWriter<T>
 
@@ -233,7 +233,8 @@ public abstract class AbstractFactDataWriter<T> implements MolapFactDataWriter<T
         int fileInitialCount = 0;
         File[] dataFiles = new File(storeLocation).listFiles(new FileFilter() {
 
-            @Override public boolean accept(File pathVal) {
+            @Override
+            public boolean accept(File pathVal) {
                 if (!pathVal.isDirectory() && pathVal.getName().startsWith(tableName) && pathVal
                         .getName().contains(MolapCommonConstants.FACT_FILE_EXT)) {
                     return true;
@@ -281,7 +282,6 @@ public abstract class AbstractFactDataWriter<T> implements MolapFactDataWriter<T
      * <entrycount>
      * <keylength><keyoffset><measure1length><measure1offset><measure2length
      * ><measure2offset>
-     *
      */
     protected void writeleafMetaDataToFile(List<LeafNodeInfoColumnar> infoList, FileChannel channel)
             throws MolapDataWriterException {
@@ -534,12 +534,14 @@ public abstract class AbstractFactDataWriter<T> implements MolapFactDataWriter<T
     protected abstract long writeDataToFile(NodeHolder nodeHolder, FileChannel channel)
             throws MolapDataWriterException;
 
-    @Override public int getLeafMetadataSize() {
+    @Override
+    public int getLeafMetadataSize() {
         return leafNodeInfoList.size();
 
     }
 
-    @Override public String getTempStoreLocation() {
+    @Override
+    public String getTempStoreLocation() {
 
         return this.fileName;
     }
@@ -558,7 +560,8 @@ public abstract class AbstractFactDataWriter<T> implements MolapFactDataWriter<T
             this.nodeHolderList = nodeHolderList;
         }
 
-        @Override public Void call() throws Exception {
+        @Override
+        public Void call() throws Exception {
             writeData(channel, nodeHolderList);
             return null;
         }

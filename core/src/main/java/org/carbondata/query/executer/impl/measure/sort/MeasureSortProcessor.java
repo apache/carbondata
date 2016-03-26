@@ -132,7 +132,8 @@ public class MeasureSortProcessor implements DataProcessor {
      *
      * @throws MolapPaginationException
      */
-    @Override public void initModel(PaginationModel model) throws MolapPaginationException {
+    @Override
+    public void initModel(PaginationModel model) throws MolapPaginationException {
         this.model = model;
         this.msrSortModel = model.getMsrSortModel();
         this.maskedByteRangeForSorting = model.getMaskedByteRangeForSorting();
@@ -156,7 +157,8 @@ public class MeasureSortProcessor implements DataProcessor {
      * @param key
      * @param measures
      */
-    @Override public void processRow(byte[] key, MeasureAggregator[] measures)
+    @Override
+    public void processRow(byte[] key, MeasureAggregator[] measures)
             throws MolapPaginationException {
         addRow(key, measures);
     }
@@ -231,7 +233,8 @@ public class MeasureSortProcessor implements DataProcessor {
      *
      * @throws MolapPaginationException
      */
-    @Override public void finish() throws MolapPaginationException {
+    @Override
+    public void finish() throws MolapPaginationException {
         if (paginationEnabled) {
             writeData();
             List compratorList = new ArrayList(MolapCommonConstants.CONSTANT_SIZE_TEN);
@@ -293,7 +296,8 @@ public class MeasureSortProcessor implements DataProcessor {
         }
     }
 
-    @Override public void processGroup(GroupByHolder groupByHolder) {
+    @Override
+    public void processGroup(GroupByHolder groupByHolder) {
         // No need to implement any thing.
 
     }
