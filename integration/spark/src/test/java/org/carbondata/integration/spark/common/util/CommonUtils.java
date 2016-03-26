@@ -1,0 +1,106 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+package org.carbondata.integration.spark.common.util;
+
+import java.io.*;
+
+import org.apache.spark.sql.cubemodel.Partitioner;
+import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.datastorage.store.impl.FileFactory;
+import org.carbondata.core.olap.MolapDef.Schema;
+import org.carbondata.core.util.MolapProperties;
+import org.carbondata.integration.spark.common.cubemeta.CubeMetadata;
+import org.eigenbase.xom.DOMWrapper;
+import org.eigenbase.xom.Parser;
+import org.eigenbase.xom.XOMException;
+import org.eigenbase.xom.XOMUtil;
+
+public class CommonUtils {
+    public static String parseXMLPathToSchemaString(String schemaXMLPath)
+            throws XOMException, IOException {
+        FileFactory.FileType fileType = FileFactory.getFileType(schemaXMLPath);
+        InputStreamReader fileReader =
+                new InputStreamReader(FileFactory.getDataInputStream(schemaXMLPath, fileType));
+        BufferedReader bufReader = new BufferedReader(fileReader);
+        StringBuilder sb = new StringBuilder();
+        String line = bufReader.readLine();
+        while (line != null) {
+            sb.append(line).append("\n");
+            line = bufReader.readLine();
+        }
+        bufReader.close();
+
+        return sb.toString();
+    }
+
+    public static Schema createSchemaObjectFromXMLString(String schemaXML) throws XOMException {
+        Parser xmlParser = XOMUtil.createDefaultParser();
+        ByteArrayInputStream baoi = new ByteArrayInputStream(schemaXML.getBytes());
+        DOMWrapper defin = xmlParser.parse(baoi);
+        return new Schema(defin);
+    }
+
+    public static CubeMetadata readCubeMetaDataFile(String schemaName, String cubeName)
+            throws UnsupportedEncodingException, ClassNotFoundException, IOException {
+        String storePath =
+                MolapProperties.getInstance().getProperty(MolapCommonConstants.STORE_LOCATION);
+        String cubeMetadataFile =
+                storePath + "/schemas/" + schemaName + "/" + cubeName + "/metadata";
+        FileFactory.FileType fileType = FileFactory.getFileType(storePath);
+        CubeMetadata cubeMeta = new CubeMetadata();
+        if (FileFactory.isFileExist(cubeMetadataFile, fileType)) {
+            //load metadata
+            DataInputStream in = FileFactory.getDataInputStream(cubeMetadataFile, fileType);
+            int schemaNameLen = in.readInt();
+            byte[] schemaNameBytes = new byte[schemaNameLen];
+            in.readFully(schemaNameBytes);
+            cubeMeta.setSchemaName(new String(schemaNameBytes, "UTF8"));
+
+            int cubeNameLen = in.readInt();
+            byte[] cubeNameBytes = new byte[cubeNameLen];
+            in.readFully(cubeNameBytes);
+            cubeMeta.setCubeName(new String(cubeNameBytes, "UTF8"));
+
+            int dataPathLen = in.readInt();
+            byte[] dataPathBytes = new byte[dataPathLen];
+            in.readFully(dataPathBytes);
+            cubeMeta.setDataPath(new String(dataPathBytes, "UTF8"));
+
+            int versionLength = in.readInt();
+            byte[] versionBytes = new byte[versionLength];
+            in.readFully(versionBytes);
+
+            int schemaLen = in.readInt();
+            byte[] schemaBytes = new byte[schemaLen];
+            in.readFully(schemaBytes);
+            cubeMeta.setSchema(new String(schemaBytes, "UTF8"));
+
+            int partitionLength = in.readInt();
+            byte[] partitionBytes = new byte[partitionLength];
+            in.readFully(partitionBytes);
+            ByteArrayInputStream inStream = new ByteArrayInputStream(partitionBytes);
+            ObjectInputStream objStream = new ObjectInputStream(inStream);
+            cubeMeta.setPartitioner((Partitioner) objStream.readObject());
+            objStream.close();
+            in.close();
+        }
+        return cubeMeta;
+    }
+}
