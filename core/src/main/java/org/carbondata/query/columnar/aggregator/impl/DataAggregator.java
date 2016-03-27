@@ -28,6 +28,7 @@ import org.carbondata.query.columnar.keyvalue.AbstractColumnarScanResult;
 import org.carbondata.query.wrappers.ByteArrayWrapper;
 
 public class DataAggregator {
+
     private MeasureDataAggregator msrAggregator;
 
     private DimensionDataAggreagtor dimensionDataAggreagtor;

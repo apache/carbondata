@@ -198,14 +198,11 @@ public class PrimitiveQueryType implements GenericQueryType {
 
     @Override
     public int getKeyOrdinalForQuery() {
-        // TODO Auto-generated method stub
         return 0;
     }
 
     @Override
     public void setKeyOrdinalForQuery(int keyOrdinalForQuery) {
-        // TODO Auto-generated method stub
-
     }
 
     @Override

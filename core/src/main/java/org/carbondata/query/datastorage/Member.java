@@ -54,7 +54,6 @@ public class Member {
             if (this == obj) {
                 return true;
             }
-            //            return Arrays.equals(name, ((Member)obj).name);
             return ByteUtil.UnsafeComparer.INSTANCE.equals(name, ((Member) obj).name);
         } else {
             return false;
@@ -74,7 +73,6 @@ public class Member {
 
     @Override
     public String toString() {
-        // return str;
         return new String(name);
     }
 

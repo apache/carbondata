@@ -50,8 +50,6 @@ import org.carbondata.query.scanner.Scanner;
 import org.carbondata.query.util.CarbonDataInputStreamFactory;
 import org.carbondata.query.util.CarbonEngineLogEvent;
 
-//import org.carbondata.core.engine.scanner.impl.NonFilterTreeScanner;
-
 public class TableDataStore {
 
     /**
@@ -283,13 +281,6 @@ public class TableDataStore {
         // Build tree from streams
         try {
             long t1 = System.currentTimeMillis();
-            //            if(false)
-            //            {
-            //                data.build(streams.get(0), hasFactCount());
-            //            }
-            //            else
-            //            {
-            // data.build(streams, aggregateNames, hasFactCount());
             if (!isColumnar) {
                 data.build(streams, hasFactCount());
             } else {
@@ -454,87 +445,6 @@ public class TableDataStore {
             data = getDataStoreDS(keyGenerator, numberOfValues, null, null, false);
         }
     }
-    //    public void loadDataFromSlices(List<CubeDataStore> dataStores, String fileStore)
-    //    {
-    //        List<Scanner> scanners = new ArrayList<Scanner>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-    //        // Make scanners from old slices
-    //        CubeDataStore cubeDataStore = dataStores.get(0);
-    //        int[] msrOrdinal2 = cubeDataStore.getMsrOrdinal();
-    //        ValueCompressionModel compressionModel = cubeDataStore.getData().getCompressionModel();
-    //        FileHolder fileHolder = FileFactory.getFileHolder(FileFactory.getFileType(fileStore));
-    //        setScannerForSlices(scanners, cubeDataStore, msrOrdinal2,fileHolder);
-    //        double[] maxValue = compressionModel.getMaxValue();
-    //
-    //        int[] decimalLength = compressionModel.getDecimal();
-    //
-    //        double[] minValue = compressionModel.getMinValue();
-    //
-    //        for(int i = 1;i < dataStores.size();i++)
-    //        {
-    //            CubeDataStore cubeDataStore2 = dataStores.get(i);
-    //            ValueCompressionModel compressionModel1 = cubeDataStore.getData().getCompressionModel();
-    //            compare(maxValue, minValue, decimalLength, compressionModel1);
-    //            setScannerForSlices(scanners, cubeDataStore2, msrOrdinal2,fileHolder);
-    //        }
-    //        // Make scanner from file store
-    //        if(fileStore != null)
-    //        {
-    //            // TODO avoid create new tree and merge here. Try loading directly
-    //            // from files
-    //            CubeDataStore dataStore = new CubeDataStore(tableName, metaCube, smd);
-    //            dataStore.loadDataFromFile(fileStore);
-    //            // setScannerForSlices(scanners, dataStore, msrOrdinal2);
-    //            KeyValue keyValue = new KeyValue();
-    //            Scanner scanner = new NonFilterTreeScanner(new byte[0], null, keyGenerator, keyValue, msrOrdinal2, fileHolder);
-    //            dataStore.data.getNext(new byte[0], scanner);
-    //            scanners.add(scanner);
-    //            ValueCompressionModel compressionModel1= cubeDataStore.getData().getCompressionModel();
-    //            if (null != compressionModel1)
-    //            {
-    //                compare(maxValue, minValue, decimalLength, compressionModel1);
-    //            }
-    //        }
-    //
-    //        ScannersInputCombiner inputStream = new ScannersInputCombiner(scanners, keyGenerator, aggregateNames,
-    //                hasFactCount());
-    //        inputStream.initInput();
-    //        // TODO need to call build method with only onse stream
-    //        List<DataInputStream> list = new ArrayList<DataInputStream>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-    //        list.add(inputStream);
-    //
-    //        if(isColumnar)
-    //        {
-    //            data.build(list, hasFactCount());
-    //        }
-    //        else
-    //        {
-    //            data.buildColumnar(list, hasFactCount());
-    //        }
-    //        fileHolder.finish();
-    //    }
-
-   /* private void compare(double[] maxValue, double[] minValue, int[] decimal,
-            ValueCompressionModel valueCompressionModel)
-    {
-        double[] maxValue2 = valueCompressionModel.getMaxValue();
-
-        double[] minValue2 = valueCompressionModel.getMinValue();
-        int[] decimal2 = valueCompressionModel.getDecimal();
-        for(int j = 0;j < maxValue.length;j++)
-        {
-            maxValue[j] = maxValue[j] > (maxValue2[j]) ? maxValue[j] : (maxValue2[j]);
-            minValue[j] = minValue[j] < (minValue2[j]) ? minValue[j] : (minValue2[j]);
-            decimal[j] = decimal[j] > (decimal2[j]) ? decimal[j] : (decimal2[j]);
-        }
-    }*/
-
-    /*private void setScannerForSlices(List<Scanner> scanners, CubeDataStore store, int[] msrOrdinal, FileHolder fileHolder)
-    {
-        KeyValue keyValue = new KeyValue();
-        Scanner scanner = new NonFilterTreeScanner(new byte[0], null, keyGenerator, keyValue, msrOrdinal, fileHolder);
-        store.data.getNext(new byte[0], scanner);
-        scanners.add(scanner);
-    }*/
 
     private int[] getKeyBlockSizeWithComplexTypes(int[] dimCardinality) {
         int[] keyBlockSize = new int[dimCardinality.length];
@@ -558,10 +468,6 @@ public class TableDataStore {
     public KeyValue getNextAvailableData(byte[] key, Scanner scanner) {
         return data.getNext(key, scanner);
     }
-    /*
-     * public Scanner<byte[], double[]> getScanner(byte[] startKey, byte[]
-     * endKey) { return factData.getScanner(startKey, endKey); }
-     */
 
     public DataStoreBlock getDataStoreBlock(byte[] key, FileHolder fileHolder, boolean isFirst) {
         return data.getBlock(key, fileHolder, isFirst);

@@ -17,9 +17,6 @@
  * under the License.
  */
 
-/**
- *
- */
 package org.carbondata.query.datastorage.streams.impl;
 
 import java.nio.ByteBuffer;
@@ -31,9 +28,6 @@ import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.metadata.LeafNodeInfo;
 import org.carbondata.query.datastorage.streams.DataInputStream;
 
-/**
- * @author m00258959
- */
 public abstract class AbstractFileDataInputStream implements DataInputStream {
 
     /**
@@ -121,9 +115,9 @@ public abstract class AbstractFileDataInputStream implements DataInputStream {
             info.setMeasureOffset(msrOffset);
             listOfNodeInfo.add(info);
         }
-        // Fixed DTS:DTS2013092610515
         // if fact file empty then list size will 0 then it will throw index out of bound exception
-        // if memory is less and cube loading failed that time list will be empty so it will throw out of bound exception
+        // if memory is less and cube loading failed that time list will be empty so it will throw
+        // out of bound exception
         if (listOfNodeInfo.size() > 0) {
             startKey = listOfNodeInfo.get(0).getStartKey();
         }

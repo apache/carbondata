@@ -86,7 +86,6 @@ public class NonFilterScanResult extends AbstractColumnarScanResult {
                     .get(columnarKeyStoreMetadata.getColumnReverseIndex()[currentRow]);
         }
         return null;
-        // TODO Auto-generated method stub
 
     }
 

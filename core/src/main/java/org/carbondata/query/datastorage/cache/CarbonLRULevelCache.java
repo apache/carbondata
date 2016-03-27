@@ -17,15 +17,6 @@
  * under the License.
  */
 
-/**
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- */
 package org.carbondata.query.datastorage.cache;
 
 import java.util.*;
@@ -38,9 +29,6 @@ import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.query.datastorage.InMemoryTableStore;
 import org.carbondata.query.util.CarbonEngineLogEvent;
 
-/**
- * @author m00258959
- */
 public final class CarbonLRULevelCache {
     /**
      * constant for converting MB into bytes
@@ -86,21 +74,15 @@ public final class CarbonLRULevelCache {
             initCache();
         } else {
             LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-                    "Level cache size not configured. Therefore default behvior will be considered and all levels files will be laoded in memory");
+                    "Level cache size not configured. Therefore default behvior will be considered "
+                            + "and all levels files will be laoded in memory");
         }
     }
 
-    /**
-     * @return
-     */
     public static CarbonLRULevelCache getInstance() {
         return instance;
     }
 
-    /**
-     *
-     *
-     */
     private void initCache() {
         levelCache = Collections.synchronizedMap(
                 new LinkedHashMap<String, LevelInfo>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE,
@@ -111,8 +93,6 @@ public final class CarbonLRULevelCache {
      * This method will give the list of all the keys that can be deleted from
      * the level LRU cache
      *
-     * @param sizeToBeRemoved
-     * @return
      */
     public List<String> getKeysToBeremoved(long size) {
         List<String> toBeDeletedKeys =

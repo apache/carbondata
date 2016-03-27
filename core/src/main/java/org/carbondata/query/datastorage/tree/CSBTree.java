@@ -41,29 +41,18 @@ import org.carbondata.query.datastorage.streams.DataInputStream;
 import org.carbondata.query.scanner.Scanner;
 import org.carbondata.query.util.CarbonEngineLogEvent;
 
-//import org.carbondata.core.engine.datastorage.Pair;
-
 /**
  * Cache Sensitive B+-Tree to implement a search structure that is stored
  * entirely in-memory and is efficient in terms CPU cache misses entailed in
  * search operation
  */
 public class CSBTree implements DataStore {
-    // Maximum key value
-    // private static int MAXIMUM_KEY;
 
     /**
      * Number of keys per page
      */
     private static final int DEFAULT_PAGESIZE = 32;
 
-    /**
-     *
-     */
-    //    private static final int CACHELINESIZE = 128;
-
-    // Maximum number of keys in a Leaf node
-    // private int maxKeys;
     /**
      * Attribute for Carbon LOGGER
      */
@@ -102,13 +91,6 @@ public class CSBTree implements DataStore {
      */
     private String tableName;
 
-    /**
-     *
-     */
-    // private List<Pair<long[], String>> rangeFiles;
-    /**
-     *
-     */
     private long[][] rangeValues;
     /**
      * Total number of entries in CSB-Tree
@@ -153,7 +135,6 @@ public class CSBTree implements DataStore {
             String tableName, boolean isFileStore, int[] keyBlockSize, boolean[] aggKeyBlock) {
         super();
 
-        // this.valueCount = valueCount;
         this.keyGenerator = keyGenerator;
         this.tableName = tableName;
         this.hybridStoreModel = hybridStoreModel;
@@ -168,13 +149,9 @@ public class CSBTree implements DataStore {
                 .getProperty(CarbonCommonConstants.LEAFNODE_SIZE,
                         CarbonCommonConstants.LEAFNODE_SIZE_DEFAULT_VAL));
 
-        //        dataFolderLoc = MondrianProperties.instance().getProperty("com.huawei.datastore.datalocation", "D:/data");
-       /* isFileStore = Boolean.parseBoolean(MondrianProperties.instance().getProperty(
-                "com.huawei.datastore.isfileStore", "false"));*/
         this.isFileStore = isFileStore;
         this.keyBlockSize = keyBlockSize;
         setRangeSplitvalue();
-        //System.out.println("Range Split value for parallel execution of a tree : " + rangeSplitValue);
         this.aggKeyBlock = aggKeyBlock;
     }
 
@@ -183,7 +160,6 @@ public class CSBTree implements DataStore {
             boolean isFileStore) {
         super();
 
-        // this.valueCount = valueCount;
         this.keyGenerator = keyGenerator;
         this.tableName = tableName;
 
@@ -197,13 +173,8 @@ public class CSBTree implements DataStore {
                 .getProperty(CarbonCommonConstants.LEAFNODE_SIZE,
                         CarbonCommonConstants.LEAFNODE_SIZE_DEFAULT_VAL));
 
-        //        dataFolderLoc = MondrianProperties.instance().getProperty("com.huawei.datastore.datalocation", "D:/data");
-       /* isFileStore = Boolean.parseBoolean(MondrianProperties.instance().getProperty(
-                "com.huawei.datastore.isfileStore", "false"));*/
         this.isFileStore = isFileStore;
-        //  nCacheKeys = 1;
         setRangeSplitvalue();
-        //System.out.println("Range Split value for parallel execution of a tree : " + rangeSplitValue);
     }
 
     /**
@@ -221,31 +192,6 @@ public class CSBTree implements DataStore {
         leafMaxEntry = Integer.parseInt(CarbonProperties.getInstance()
                 .getProperty("com.huawei.datastore.leafnodesize", DEFAULT_PAGESIZE + ""));
 
-        // Number of keys that will fit in a cacheline
-       /* if(keySize >= CACHELINESIZE / 2)
-        {
-            nCacheKeys = 1;
-        }
-        else
-        {
-            // We will assume that keySize is rounded to nearest 4-bytes. Here
-            // are different values
-            // possible for number of keys in a cacheline for different key
-            // sizes. We need hard coded
-            // binary searches for all potential values of keys that can fit in
-            // a cacheline
-            // keySize - nCacheKeys
-            // 4 32
-            // 8 16
-            // 12 10
-            // 16 8
-            // 20 6
-            // 24 5
-            // 32 4
-            // 36,40 3
-            // > 40 2
-            nCacheKeys = CACHELINESIZE / keySize;
-        }*/
     }
 
     /**
@@ -261,7 +207,6 @@ public class CSBTree implements DataStore {
 
         LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                 "Range Split value for parallel execution of a tree : " + rangeSplitValue);
-        //System.out.println("Range Split value for parallel execution of a tree : " + rangeSplitValue);
 
         try {
             cpuUsagePercentage = Integer.parseInt(CarbonProperties.getInstance()
@@ -298,7 +243,6 @@ public class CSBTree implements DataStore {
         long nodeNumber = 0;
         for (DataInputStream source : sources) {
             List<LeafNodeInfoColumnar> leafNodeInfoList = source.getLeafNodeInfoColumnar();
-            //Coverity fix added null check
             if (null != leafNodeInfoList) {
                 if (leafNodeInfoList.size() > 0) {
                     leafNodeInfoList.get(0).getFileName();
@@ -346,9 +290,7 @@ public class CSBTree implements DataStore {
             }
         }
 
-        //        rangeVals = caclulateRanges(num, nodeGroups, rangeVals, fileHolder);
         if (num == 0) {
-            //            root = new CSBInternalNode(upperMaxEntry, keyGenerator.getKeySizeInBytes(), tableName);
             root = new CSBInternalNode(upperMaxEntry,
                     keyGenerator.getStartAndEndKeySizeWithOnlyPrimitives(), tableName);
             return;
@@ -387,7 +329,6 @@ public class CSBTree implements DataStore {
         long st = System.currentTimeMillis();
         for (DataInputStream source : sources) {
             List<LeafNodeInfo> leafNodeInfoList = source.getLeafNodeInfo();
-            //Coverity fix added null check
             if (null != leafNodeInfoList) {
                 if (leafNodeInfoList.size() > 0) {
                     leafNodeInfoList.get(0).getFileName();
@@ -478,7 +419,6 @@ public class CSBTree implements DataStore {
             nInternal = 0;
             for (int i = 0; i < nHigh; i++) {
                 // Create a new internal node
-                //                curNode = new CSBInternalNode(upperMaxEntry, keyGenerator.getKeySizeInBytes(), tableName);
                 curNode = new CSBInternalNode(upperMaxEntry,
                         keyGenerator.getStartAndEndKeySizeWithOnlyPrimitives(), tableName);
 
@@ -508,10 +448,8 @@ public class CSBTree implements DataStore {
                 // Point the internal node to its children node group
                 curNode.setChildren(childNodeGroups.get(i));
 
-                //   int len = getLength(childNodeGroups.get(i));
                 // Fill the internal node with keys based on its child nodes
                 for (int j = 0; j < nNodes; j++) {
-                    //curNode.setKey(j, childNodeGroups.get(i)[j + 1].getMinKey());
                     curNode.setKey(j, interNSKeyList.get(i).get(j));
                     if (j == 0 && null != interNSKeys) {
                         interNSKeys.add(interNSKeyList.get(i).get(j));
@@ -539,15 +477,11 @@ public class CSBTree implements DataStore {
         rangeSplitValue = num / cpuUsagePercentage;
         LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                 "New Range Split Value: " + rangeSplitValue);
-        //System.out.println("New Range Split Value: " + rangeSplitValue);
 
         if (rangeSplitValue > 0) {
             CSBTreePart fullPart = new CSBTreePart();
             fullPart.internalNodeGroups = nodeGroups;
-            //            fullPart.nInternal = nodeGroups.size();
             fullPart.totalKeys = num;
-            //            fullPart.leafCount = nLeaf;
-            //
             List<CSBTreePart> treePart = new ArrayList<CSBTreePart>(1);
             treePart.add(fullPart);
             processRanges(treePart, fullPart, fileHolder);
@@ -568,7 +502,6 @@ public class CSBTree implements DataStore {
         return search(key, true, scanner);
     }
 
-    //TODO SIMIAN
 
     /**
      * Search CSB tree for key. Returns null if there is no match. Uses standard
@@ -651,7 +584,6 @@ public class CSBTree implements DataStore {
                 }
                 keyValue = new KeyValue();
                 keyValue.setKeyLength(keyGenerator.getKeySizeInBytes());
-                // keyValue.setBlock(node);
                 keyValue.setBlock(node, bakArray, fileHolder);
                 keyValue.setRow(mid);
                 keyValue.setValueLength(node.getValueSize());
@@ -663,7 +595,6 @@ public class CSBTree implements DataStore {
                 if (node.getNext() != null) {
                     keyValue = new KeyValue();
                     keyValue.setKeyLength(keyGenerator.getKeySizeInBytes());
-                    // keyValue.setBlock(node);
                     keyValue.setBlock(node, bakArray, fileHolder);
                     keyValue.setRow(mid);
                     keyValue.setValueLength(node.getValueSize());
@@ -729,8 +660,6 @@ public class CSBTree implements DataStore {
         node = node.getChild(childNodeIndex);
         return node;
     }
-
-    //TODO SIMIAN
 
     /**
      * @param key
@@ -851,11 +780,6 @@ public class CSBTree implements DataStore {
     public long[][] getRanges() {
         if (null != rangeValues) {
             return rangeValues.clone();
-            //            temp1 = new long[rangeValues.length][rangeValues[0].length];
-            //            for(int i = 0;i < rangeValues.length;i++)
-            //            {
-            //                System.arraycopy(rangeValues[i], 0, temp1[i], 0, rangeValues[i].length);
-            //            }
         }
         return null;
     }
@@ -868,13 +792,10 @@ public class CSBTree implements DataStore {
         long maxKeysinGroup = upperMaxChildren * leafMaxEntry;
 
         // Identify the required group number and key index in group
-        int addition = keyNumber % maxKeysinGroup == 0 ?
-                0 :
-                1;//CHECKSTYLE:OFF    Approval No:Approval-375,376
+        int addition = keyNumber % maxKeysinGroup == 0 ? 0 : 1;
         int groupNumber = (int) (keyNumber / (maxKeysinGroup)) + addition;
         int keyNumInGroup = (int) (keyNumber - (groupNumber - 1) * maxKeysinGroup);
         CSBNode[] group = part.internalNodeGroups.get(groupNumber - 1);
-        //CHECKSTYLE:ON
         // Identify the required leaf node and key index in node
         addition = keyNumInGroup % leafMaxEntry == 0 ? 0 : 1;
         int leafNumber = keyNumInGroup / leafMaxEntry + addition;
@@ -896,7 +817,6 @@ public class CSBTree implements DataStore {
      * Identify the split ranges.
      *
      * @param treeParts
-     * @param count
      * @param fullPart
      */
     public void processRanges(List<CSBTreePart> treeParts, CSBTreePart fullPart,
@@ -960,7 +880,6 @@ public class CSBTree implements DataStore {
         List<byte[]> leafNSKeyList = null;
         compressionModel = source.getValueCompressionMode();
         List<LeafNodeInfo> leafNodeInfoList = source.getLeafNodeInfo();
-        //Coverity fix :Added null check
         if (null != leafNodeInfoList) {
             for (LeafNodeInfo leafNodeInfo : leafNodeInfoList) {
                 num += leafNodeInfo.getNumberOfKeys();
@@ -1044,12 +963,9 @@ public class CSBTree implements DataStore {
                 // Point the internal node to its children node group
                 curNode.setChildren(childNodeGroups.get(k));
 
-                // int len = getLength(childNodeGroups.get(i));
                 // Fill the internal node with keys based on its child nodes
                 List<byte[]> tmpList = null;
                 for (int j = 0; j < nNodes; j++) {
-                    // curNode.setKey(j, childNodeGroups.get(i)[j +
-                    // 1].getMinKey());
                     tmpList = interNSKeyList.get(k);
                     if (null != tmpList) {
                         curNode.setKey(j, tmpList.get(j + 1));
@@ -1096,15 +1012,6 @@ public class CSBTree implements DataStore {
         return node;
     }
 
-    /**
-     * Project Name NSE V3R7C00
-     * Module Name : CARBON
-     * Author :C00900810
-     * Created Date :25-Jun-2013
-     * FileName : CSBTree.java
-     * Class Description :
-     * Version 1.0
-     */
     private class CSBTreePart {
         /**
          *
@@ -1120,38 +1027,8 @@ public class CSBTree implements DataStore {
         /**
          *
          */
-        //        private int leafCount;
-
-        /**
-         *
-         */
         private ArrayList<CSBNode[]> internalNodeGroups =
                 new ArrayList<CSBNode[]>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
 
-        /**
-         *
-         */
-        //        private int nInternal;
-
-        /**
-         *
-         */
-        //  private int emptyKeys;
-
-        /**
-         *
-         */
-        //   private List<Pair<long[], String>> rangeFiles = new ArrayList<Pair<long[], String>>();
-
-        /**
-         *
-         */
-        //  private RandomAccessFile raf;
-
-        // for compression
-        /**
-         *
-         */
-        //        protected ValueCompressionModel valueModel;
     }
 }

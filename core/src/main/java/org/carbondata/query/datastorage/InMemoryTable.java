@@ -238,10 +238,8 @@ public class InMemoryTable implements Comparable<InMemoryTable> {
             keyGenerator = KeyGeneratorFactory
                     .getKeyGenerator(hybridStoreModel.getHybridCardinality(),
                             hybridStoreModel.getDimensionPartitioner());
-            //            keyGenerator = KeyGeneratorFactory.getKeyGenerator(dimensionCardinality);
-            //keyGenerator = KeyGeneratorFactory.getKeyGenerator(findRequiredDimensionForStartAndEndKey());
             int startAndEndKeySizeWithPrimitives = keyGenerator
-                    .getKeySizeInBytes();// KeyGeneratorFactory.getKeyGenerator(findRequiredDimensionForStartAndEndKey()).getKeySizeInBytes();
+                    .getKeySizeInBytes();
             keyGenerator.setStartAndEndKeySizeWithOnlyPrimitives(startAndEndKeySizeWithPrimitives);
         }
         // Process fact and aggregate data cache

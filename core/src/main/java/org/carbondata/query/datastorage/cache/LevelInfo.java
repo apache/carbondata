@@ -17,20 +17,8 @@
  * under the License.
  */
 
-/**
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- */
 package org.carbondata.query.datastorage.cache;
 
-/**
- * @author m00258959
- */
 public class LevelInfo {
 
     /**
@@ -154,16 +142,10 @@ public class LevelInfo {
         return accessCount;
     }
 
-    /**
-     * @param accessCount The accessCount to set.
-     */
     public synchronized void incrementAccessCount() {
         this.accessCount++;
     }
 
-    /**
-     * @param accessCount The accessCount to set.
-     */
     public synchronized void decrementAccessCount() {
         this.accessCount--;
     }

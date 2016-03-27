@@ -119,10 +119,6 @@ public class ListBasedResultAggregatorImpl implements ColumnarScannedResultAggre
         return result;
     }
 
-    /**
-     * @param scannedResult
-     * @param restructureHolder
-     */
     private void updateScannedResult(RestructureHolder restructureHolder,
             List<ByteArrayWrapper> finalKeys, List<MeasureAggregator[]> finalValues) {
         if (!restructureHolder.updateRequired) {

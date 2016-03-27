@@ -47,50 +47,6 @@ public final class QueryExecutorUtil {
     }
 
     /**
-     * Get surrogates
-     *
-     * @param slices
-     * @param columnName
-     * @param name
-     * @return
-     */
-    public static void getMemberIdByName(List<InMemoryTable> slices, Dimension columnName,
-            String name, List<Long> surrogatesActual) {
-        List<Long> surrogates = new ArrayList<Long>(10);
-        if (null != slices && null != columnName)//Coverity Fix add
-        {
-            long surr = 0;
-            boolean hasNameColumn = columnName.isHasNameColumn() && !columnName.isActualCol();
-            for (InMemoryTable slice : slices) {
-
-                long surrLoc = (long) slice.getMemberCache(
-                        columnName.getTableName() + '_' + columnName.getColName() + '_' + columnName
-                                .getDimName() + '_' + columnName.getHierName())
-                        .getMemberId(name, columnName.isActualCol());
-                if (surrLoc > 0) {
-                    surr = surrLoc;
-                }
-
-            }//CHECKSTYLE:ON
-
-            if (hasNameColumn && surrogates.size() == 0) {
-                surrogates.add(Long.MAX_VALUE);
-                //LOGGER.error(CarbonEngineLogEvent.U
-                LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-                        " Member does not exist for name column :" + name);
-            }
-            if (surr > 0) {
-                surrogates.add(surr);
-            } else if (!hasNameColumn) {
-                LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-                        " Member does not exist for level " + columnName.getName() + " : " + name);
-                surrogates.add(Long.MAX_VALUE);
-            }
-        }
-        surrogatesActual.addAll(surrogates);
-    }
-
-    /**
      * To get the max key based on dimensions. i.e. all other dimensions will be
      * set to 0 bits and the required query dimension will be masked with all
      * 1's so that we can mask key and then compare while aggregating
@@ -179,13 +135,9 @@ public final class QueryExecutorUtil {
 
         byte[] maskedKey = new byte[byteIndexs.length];
 
-        //For better performance.
-        //         System.arraycopy(mdKey, 0, maskedKey, 0, byteIndexs.length);
-        //CHECKSTYLE:OFF    Approval No:Approval-284
         for (int i = 0; i < byteIndexs.length; i++) {
             maskedKey[i] = mdKey[byteIndexs[i]];
         }
-        //CHECKSTYLE:ON
         for (int i = 0; i < byteIndexs.length; i++) {
             for (int k = 0; k < maskedKeyRanges.length; k++) {
                 if (byteIndexs[i] == maskedKeyRanges[k]) {
@@ -196,86 +148,6 @@ public final class QueryExecutorUtil {
         }
 
         return maskedKey;
-    }
-
-    /**
-     * getMaskedBytesForRollUp.
-     *
-     * @param dims
-     * @param generator
-     * @param maskedKeyRanges
-     * @param ranges
-     * @return
-     * @throws KeyGenException
-     */
-    public static byte[] getMaskedBytesForRollUp(int[] dims, KeyGenerator generator,
-            int[] maskedKeyRanges, List<Integer> ranges) throws KeyGenException {
-        Set<Integer> integers = new TreeSet<Integer>();
-
-        //
-        for (int i = 0; i < dims.length; i++) {
-
-            int[] range = generator.getKeyByteOffsets(dims[i]);
-            for (int j = range[0]; j <= range[1]; j++) {
-                integers.add(j);
-            }
-        }
-        //
-        int[] byteIndexs = new int[integers.size()];
-        int j = 0;
-        for (Iterator<Integer> iterator = integers.iterator(); iterator.hasNext(); ) {
-            Integer integer = (Integer) iterator.next();
-            byteIndexs[j++] = integer.intValue();
-        }
-
-        long[] key = new long[generator.getDimCount()];
-        for (int i = 0; i < dims.length; i++) {
-            key[dims[i]] = Long.MAX_VALUE;
-        }
-
-        return getMaskedKey(generator, maskedKeyRanges, ranges, byteIndexs, key);
-    }
-
-    /**
-     * This method will return the ranges for the masked Bytes
-     * based on the key Generator.
-     *
-     * @param queryDimensions
-     * @param generator
-     * @return
-     */
-    public static int[] getRangesForMaskedByte(int[] queryDimensions, KeyGenerator generator) {
-
-        return getRanges(queryDimensions, generator);
-    }
-
-    //TODO SIMIAN
-
-    /**
-     * @param queryDimensions
-     * @param generator
-     * @return
-     */
-    private static int[] getRanges(int[] queryDimensions, KeyGenerator generator) {
-        Set<Integer> integers = new TreeSet<Integer>();
-        //
-        for (int i = 0; i < queryDimensions.length; i++) {
-
-            int[] range = generator.getKeyByteOffsets(queryDimensions[i]);
-            for (int j = range[0]; j <= range[1]; j++) {
-                integers.add(j);
-            }
-
-        }
-        //
-        int[] byteIndexs = new int[integers.size()];
-        int j = 0;
-        for (Iterator<Integer> iterator = integers.iterator(); iterator.hasNext(); ) {
-            Integer integer = (Integer) iterator.next();
-            byteIndexs[j++] = integer.intValue();
-        }
-
-        return byteIndexs;
     }
 
     /**
@@ -314,13 +186,15 @@ public final class QueryExecutorUtil {
                 continue;
             } else if (queryDimensions[i].getDataType() == SqlStatement.Type.STRUCT) continue;
             else if (queryDimensions[i].getParentName() != null) continue;
-                //if querydimension is row store based, than add all row store ordinal in mask, because row store ordinal rangesare overalapped
-                //for e.g its possible
-                //dimension1 range: 0-1
-                //dimension2 range: 1-2
-                //hence to read only dimension2, you have to mask dimension1 also
+            //if querydimension is row store based, than add all row store ordinal in mask, because
+            //row store ordinal rangesare overalapped
+            //for e.g its possible
+            //dimension1 range: 0-1
+            //dimension2 range: 1-2
+            //hence to read only dimension2, you have to mask dimension1 also
             else if (!queryDimensions[i].isColumnar()) {
-                //if all row store ordinal is already added in range than no need to consider it again
+                //if all row store ordinal is already added in range than no need to consider
+                // it again
                 if (!isRowAdded) {
                     isRowAdded = true;
                     int[] rowOrdinals = hm.getRowStoreOrdinals();

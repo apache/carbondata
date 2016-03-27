@@ -254,7 +254,8 @@ public class DimensionDataAggreagtor {
     private void aggregateDirectDurrogateDims(AbstractColumnarScanResult keyValue,
             MeasureAggregator[] currentMsrRowData, Dimension dim, int index,
             ByteArrayWrapper dimensionsRowWrapper) {
-        //since new byte array wrapper is been created and send for aggregation again system has to set the data to the byte array wrapper
+        //since new byte array wrapper is been created and send for aggregation again system has to
+        //set the data to the byte array wrapper
         if (null == dimensionsRowWrapper.getDirectSurrogateKeyList() || dimensionsRowWrapper
                 .getDirectSurrogateKeyList().isEmpty()) {
             dimensionsRowWrapper.addToDirectSurrogateKeyList(

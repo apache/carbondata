@@ -33,14 +33,8 @@ import org.carbondata.query.aggregator.MeasureAggregator;
 
 public class DistinctCountAggregatorObjectSet implements MeasureAggregator {
 
-    /**
-     *
-     */
     private static final long serialVersionUID = 6313463368629960186L;
 
-    /**
-     *
-     */
     private Set<Object> valueSetForObj;
 
     public DistinctCountAggregatorObjectSet() {
@@ -70,8 +64,7 @@ public class DistinctCountAggregatorObjectSet implements MeasureAggregator {
         byte[] values = (byte[]) newVal;
         ByteBuffer buffer = ByteBuffer.wrap(values);
         buffer.rewind();
-        //CHECKSTYLE:OFF    Approval No:Approval-V3R8C00_018
-        while (buffer.hasRemaining()) { //CHECKSTYLE:ON
+        while (buffer.hasRemaining()) {
             valueSetForObj.add(buffer.getDouble());
         }
     }
@@ -88,12 +81,6 @@ public class DistinctCountAggregatorObjectSet implements MeasureAggregator {
     public byte[] getByteArray() {
         return null;
     }
-
-    //    @Override
-    //    public void agg(double newVal, double factCount)
-    //    {
-    //
-    //    }
 
     private void agg(Set<Object> set2) {
         valueSetForObj.addAll(set2);
@@ -129,9 +116,6 @@ public class DistinctCountAggregatorObjectSet implements MeasureAggregator {
         return valueSetForObj.size();
     }
 
-    /**
-     * @see MeasureAggregator#setNewValue(Object)
-     */
     @Override
     public void setNewValue(Object newValue) {
         valueSetForObj.add(newValue);
@@ -160,11 +144,6 @@ public class DistinctCountAggregatorObjectSet implements MeasureAggregator {
         return aggregator;
     }
 
-    //we are not comparing the Aggregator values 
-    /* public boolean equals(MeasureAggregator msrAggregator){
-         return compareTo(msrAggregator)==0;
-     }*/
-
     @Override
     public int compareTo(MeasureAggregator measureAggr) {
         double valueSetForObjSize = getDoubleValue();
@@ -189,8 +168,6 @@ public class DistinctCountAggregatorObjectSet implements MeasureAggregator {
 
     @Override
     public void merge(byte[] value) {
-        // TODO Auto-generated method stub
-
     }
 
 }

@@ -31,48 +31,6 @@ public class TableSlicePathInfo {
      */
     private String loadPath;
 
-    /**
-     *
-     */
-    //    private String rsFolder;
-
-    /**
-     *
-     */
-    //    private String loadFolder;
-
-    /**
-     *
-     */
-    //    private String rsPath;
-
-    /**
-     *
-     */
-    //    private String cubeName;
-    //
-    //    /**
-    //     *
-    //     */
-    ////    private String tableName;
-    //
-    //    /**
-    //     *
-    //     */
-    //    private String schemaName;
-
-    /**
-     *
-     */
-    //    private String cubeUniqueName;
-
-    /**
-     *
-     * Comment for <code>logger</code>
-     * Comment for <code>LOGGER</code>
-     *
-     */
-    //  private static final LogService LOGGER = LogServiceFactory.getLogService(CubeSlicePathInfo.class.getName());
 
     /**
      * @param loadPath
@@ -89,17 +47,6 @@ public class TableSlicePathInfo {
         CarbonFile loadPathFolder =
                 FileFactory.getCarbonFile(loadFolderPath, FileFactory.getFileType(loadFolderPath));
         loadPath = loadPathFolder.getCanonicalPath();
-        //        loadFolder = loadPathFolder.getName();
-        //        CarbonFile tableFolder = loadPathFolder.getParentFile();
-        //        tableName = tableFolder.getName();
-        //        CarbonFile rsPathFolder = tableFolder.getParentFile();
-        //
-        //        rsFolder = rsPathFolder.getName();
-        //        rsPath = rsPathFolder.getPath();
-        //        CarbonFile cubeFolder = rsPathFolder.getParentFile();
-        //        cubeName = cubeFolder.getName();
-        //        schemaName = cubeFolder.getParentFile().getName();
-        //        cubeUniqueName=schemaName+'_'+cubeName;
     }
 
     /**
@@ -109,61 +56,5 @@ public class TableSlicePathInfo {
         return loadPath;
     }
 
-    /**
-     * @return
-     */
-    /*public String getRsFolder()
-    {
-        return rsFolder;
-    }
-
-    *//**
-     * @return
-     *//*
-    public String getLoadFolder()
-    {
-        return loadFolder;
-    }
-    
-    *//**
-     * @return
-     *//*
-    public String getRsPath()
-    {
-        return rsPath;
-    }
-
-    *//**
-     * @return
-     *//*
-    public String getCubeName()
-    {
-        return cubeName;
-    }
-
-    *//**
-     * @return
-     *//*
-    public String getTableName()
-    {
-        return tableName;
-    }
-    
-    *//**
-     * @return
-     *//*
-    public String getSchemaName()
-    {
-        return schemaName;
-    }
-
-    *//**
-     * getCubeUniqueName
-     * @return String
-     *//*
-    public String getCubeUniqueName()
-    {
-        return cubeUniqueName;
-    }*/
 
 }

@@ -195,9 +195,6 @@ public final class InMemoryTableStore {
 
     /**
      * @param sliceUpdatedLoadPaths
-     * @param carbonCube             cube to be loaded
-     *                              Example basepath Content structure
-     *                              RS_0
      */
     public void loadCube(CarbonDef.Schema schema, Cube metadataCube, String partitionId,
             List<String> listLoadFolders, List<String> sliceUpdatedLoadPaths,
@@ -213,8 +210,6 @@ public final class InMemoryTableStore {
             listLoadFolders =
                     removeAlreadyLoadedFoldersFromList(listLoadFolders, sliceUpdatedLoadPaths,
                             slices, factTableName);
-            //        String basePath = CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION,
-            //                CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
             basePath = basePath + File.separator + schema.name + File.separator + cubeName;
 
             FileType fileType = FileFactory.getFileType(basePath);
@@ -393,7 +388,6 @@ public final class InMemoryTableStore {
     /**
      * This method will update the level access count in level LRU cache
      *
-     * @param cubeUniqueName
      */
     public void updateLevelAccessCountInLRUCache(final String levelCacheUniqueId) {
         CarbonLRULevelCache instance = CarbonLRULevelCache.getInstance();
@@ -683,63 +677,6 @@ public final class InMemoryTableStore {
         return listLoadFolders;
     }
 
-    /**
-     * @param carbonCube
-     * @param basePath
-     */
-    //    public void updateCube(CarbonDef.Cube carbonCube,String basePath, CarbonDef.Schema schema)
-    //    {
-    //        String cubeUniqueName = schema.name+'_'+carbonCube.name;
-    //        List<RestructureStore> inmemoryCubeList = cubeSliceMap.get(cubeUniqueName);
-    //        //
-    //        CarbonFile[] sortedFolderListList = getSortedFolderListList(basePath,RS_FOLDER_NAME);
-    //        //
-    //        if(null == sortedFolderListList)
-    //        {
-    //            LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,"sortedFolderListList is null so returned");
-    //            return;
-    //        }
-    //        for(CarbonFile rsFolder : sortedFolderListList)
-    //        {
-    //
-    //            CarbonFile[] tableFiles = rsFolder.listFiles(new CarbonFileFilter()
-    //            {
-    //                public boolean accept(CarbonFile pathname)
-    //                {
-    //                    return (pathname.isDirectory());
-    //                }
-    //            });
-    //            RestructureStore rsStore = findRestructureStore(inmemoryCubeList,rsFolder.getName());
-    //            //Coverity Fix added null check
-    //            if(null != rsStore)
-    //            {
-    //                for(CarbonFile tableFolder : tableFiles)
-    //                {
-    //                    SliceMetaData smd = readSliceMetaDataFile(tableFolder.getAbsolutePath() + File.separator
-    //                            + CarbonCommonConstants.SLICE_METADATA_FILENAME);
-    //                    rsStore.setSliceMetaCache(smd, tableFolder.getName());
-    //                    List<InMemoryCube> slices = rsStore.getSlices(tableFolder.getName());
-    //                    for(InMemoryCube slice : slices)
-    //                    {
-    //                        slice.setCarbonCube(carbonCube);
-    //                    }
-    //
-    //                }
-    //            }
-    //        }
-    //    }
-
-    //    private RestructureStore findRestructureStore(List<RestructureStore> inmemoryCubeList,String folderName)
-    //    {
-    //        for(RestructureStore restructureStore : inmemoryCubeList)
-    //        {
-    //            if(restructureStore.getFolderName().equals(folderName))
-    //            {
-    //                return restructureStore;
-    //            }
-    //        }
-    //        return null;
-    //    }
     private SliceMetaData readSliceMetaDataFile(String path) {
         SliceMetaData readObject = null;
         InputStream stream = null;
@@ -764,67 +701,6 @@ public final class InMemoryTableStore {
         return readObject;
     }
 
-    /**
-     * @param carbonCube
-     * @param basePath
-     * @return
-     */
-    //    private List<RestructureStore> loadSliceFromFile(CarbonDef.Cube carbonCube,String basePath, CarbonDef.Schema schema)
-    //    {
-    //        List<RestructureStore> slices = null;
-    //        //
-    //        CarbonFile[] files = getSortedFolderListList(basePath,RS_FOLDER_NAME);
-    //
-    //        slices = new ArrayList<RestructureStore>();
-    //        //Coverity Fix
-    //        if( null == files)
-    //        {
-    //            LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG," files are null so return empty array");
-    //            return slices;
-    //        }
-    //
-    //        int restructureId=0;
-    //        for(CarbonFile rsFolder : files)
-    //        {
-    //            //
-    //            CarbonFile[] tableFiles = rsFolder.listFiles(new CarbonFileFilter()
-    //            {
-    //                public boolean accept(CarbonFile pathname)
-    //                {
-    //                    return (pathname.isDirectory());
-    //                }
-    //            });
-    //            RestructureStore rsStore = new RestructureStore(rsFolder.getName(),restructureId++);
-    ////            rsStore.setFolderName(rsFolder.getName());
-    //            for(CarbonFile tableFolder : tableFiles)
-    //            {
-    //                //
-    //                SliceMetaData smd = readSliceMetaDataFile(tableFolder.getAbsolutePath() + File.separator
-    //                        + CarbonCommonConstants.SLICE_METADATA_FILENAME);
-    //                String tableName = tableFolder.getName();
-    //                rsStore.setSliceMetaCache(smd, tableName);
-    //                CarbonFile[] loadFiles = getSortedFolderListList(tableFolder.getAbsolutePath(),FOLDER_NAME);
-    //                for(CarbonFile loadFolder : loadFiles)
-    //                {
-    //                    InMemoryCube cubeCache = new InMemoryCube(schema,carbonCube);
-    //                    cubeCache.setRsStore(rsStore);
-    //                    cubeCache.loadCacheFromFile(loadFolder.getAbsolutePath(),tableName);
-    //                    rsStore.setSlice(cubeCache, tableName);
-    //                }
-    //
-    //            }
-    //            slices.add(rsStore);
-    //
-    //        }
-    //        return slices;
-    //    }
-
-    /**
-     * @param carbonCube
-     * @param basePath
-     * @param sliceUpdatedLoadPaths
-     * @return
-     */
     public List<RestructureStore> loadSliceFromFile(final CarbonDef.Cube carbonCube, String basePath,
             final CarbonDef.Schema schema, final List<String> loadFolderNames,
             final List<String> sliceUpdatedLoadPaths, final List<RestructureStore> slices,
@@ -833,7 +709,6 @@ public final class InMemoryTableStore {
         CarbonFile[] files =
                 getSortedFolderListList(basePath, RS_FOLDER_NAME, currentRestructNumber, true);
 
-        // Coverity Fix
         if (null == files) {
             LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                     " files are null so return empty array");
@@ -844,7 +719,6 @@ public final class InMemoryTableStore {
         Set<String> tableNames = new HashSet<String>(20);
         for (final CarbonFile rsFolder : files) {
 
-            //
             CarbonFile[] tableFiles = rsFolder.listFiles(new CarbonFileFilter() {
                 public boolean accept(CarbonFile pathname) {
                     return (pathname.isDirectory());
@@ -853,9 +727,7 @@ public final class InMemoryTableStore {
 
             final RestructureStore rsStore =
                     new RestructureStore(rsFolder.getName(), restructureId++);
-            //            boolean updateReq = false;
             final List<Byte> flagList = new CopyOnWriteArrayList<Byte>();
-            // rsStore.setFolderName(rsFolder.getName());
             for (CarbonFile tableFolder : tableFiles) {
                 ExecutorService executorService = Executors.newFixedThreadPool(5);
                 SliceMetaData smd = readSliceMetaDataFile(
@@ -923,7 +795,8 @@ public final class InMemoryTableStore {
                         LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
                     }
                 }
-                //sort the loads based on the load id since multiple threads are handling addition of slices in rsStore instance.
+                //sort the loads based on the load id since multiple threads are handling addition
+                // of slices in rsStore instance.
                 tableNames.add(tableName);
             }
             if (flagList.size() > 0) {
@@ -1020,11 +893,7 @@ public final class InMemoryTableStore {
                 }
             });
             Arrays.sort(files, new Comparator<CarbonFile>() {
-                /**
-                 * @param o1
-                 * @param o2
-                 * @return
-                 */
+
                 public int compare(CarbonFile o1, CarbonFile o2) {
                     try {
                         //
@@ -1058,7 +927,6 @@ public final class InMemoryTableStore {
                                     loadName.indexOf(CarbonCommonConstants.MERGERD_EXTENSION)));
 
                         }
-                        //                        int f2 = Integer.parseInt(secondFolder.split("_")[1]);
                         return (f1 < f2) ? -1 : (f1 == f2 ? 0 : 1);
                     } catch (Exception e) {
                         LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
@@ -1073,7 +941,6 @@ public final class InMemoryTableStore {
     /**
      * Add the slice to cube.
      *
-     * @param cubeName
      * @param deltaCube
      */
     public void registerSlice(InMemoryTable deltaCube, RestructureStore rsStore) {
@@ -1092,7 +959,6 @@ public final class InMemoryTableStore {
     }
 
     /**
-     * @param cubeName
      * @param rsFolder
      * @return
      */
@@ -1114,7 +980,6 @@ public final class InMemoryTableStore {
     /**
      * Add the slice to cube.
      *
-     * @param cubeName
      * @param deltaCube
      */
     public void unRegisterSlice(String cubeUniqueName, InMemoryTable deltaCube) {
@@ -1128,7 +993,6 @@ public final class InMemoryTableStore {
     /**
      * Gives the slices available for the cube
      *
-     * @param cubeName
      * @return
      */
     public List<InMemoryTable> getActiveSlices(String cubeUniqueName) {
@@ -1148,7 +1012,6 @@ public final class InMemoryTableStore {
     /**
      * Gives the slices available for the cube.
      *
-     * @param cubeName
      * @return
      */
     public synchronized List<Long> getActiveSliceIds(String cubeUniqueName) {
@@ -1162,7 +1025,6 @@ public final class InMemoryTableStore {
     /**
      * Give the Slice references for given list of id values.
      *
-     * @param cubeName
      * @param ids
      * @return
      */
@@ -1177,63 +1039,11 @@ public final class InMemoryTableStore {
     }
 
     /**
-     * add listener to end executing queries and clean the cube.
-     *
-     * @param cubeName
-     * @return
-     * @author Sojer z00218041
-     */
-    public void clearExecutingQueryAndCube(InMemoryTable inMemoryTable, List<InMemoryTable> toRemove) {
-        List<Long> queries = QueryMapper.getQueriesPerSlice(inMemoryTable);
-        if (queries.size() > 0) {
-            SliceListener listener = new SliceListener(inMemoryTable);
-            for (Long query : queries) {
-                listener.registerQuery(query);
-                QueryMapper.registerSliceListener(listener, query);
-            }
-        } else {
-            toRemove.add(inMemoryTable);
-            // TODO if it is sync,we can use flow code
-            /*
-             * //slice is ready to clean
-             * InMemoryCubeStore.getInstance().unRegisterSlice
-             * (inMemoryCube.getCubeName(), inMemoryCube); inMemoryCube.clean();
-             * afterClearAllQueriesAndCubes();
-             */
-        }
-
-        // Mark the slices inactive
-        inMemoryTable.setCubeMerged();
-    }
-
-    /**
      * run this method to do data switch after Restructuring It will add
      * listeners to end executing queries and clean the cubes.
      *
-     * @author Sojer z00218041 2012-7-27
      */
     public void clearQueriesAndSlices(String cubeUniqueName) {
-        //        List<RestructureStore> sliceList = cubeSliceMap.get(cubeName);
-        //        if(sliceList != null && sliceList.size() > 0)
-        //        {
-        //            List<InMemoryCube> toRemove = new ArrayList<InMemoryCube>();
-        //            SLICE_LIST_CONCURRENT = true;
-        //            for(InMemoryCube inMemoryCube : sliceList)
-        //            {
-        //                clearExecutingQueryAndCube(inMemoryCube, toRemove);
-        //            }
-        //
-        //            // remove the slices without query directly
-        //            for(InMemoryCube imcube : toRemove)
-        //            {
-        //                imcube.clean();
-        //            }
-        //            sliceList.removeAll(toRemove);
-        //
-        //            SLICE_LIST_CONCURRENT = false;
-        //
-        //            afterClearQueriesAndCubes(cubeName);
-        //        }
 
     }
 
@@ -1242,7 +1052,6 @@ public final class InMemoryTableStore {
      * reload or flush cache now called by clearQueriesAndCubes(cubeName) and
      * QueryMapper.invokeListeners(Long,cubeName)
      *
-     * @author Sojer z00218041 2012-7-26
      */
     public void afterClearQueriesAndCubes(String cubeUniqueName) {
         if (getQueryExecuteStatus(cubeUniqueName) == QUERY_WAITING) {
@@ -1251,10 +1060,8 @@ public final class InMemoryTableStore {
                 // flush schema model in CarbonSchema.Pool
                 CarbonDef.Schema carbonSchema = mapCubeToSchema.get(cubeUniqueName);
                 if (carbonSchema != null) {
-                    //                    new CacheControlImpl().flushSchema(carbonSchema);
                     mapCubeToSchema.remove(cubeUniqueName);
                     // re create connection (load in-memory)
-                    //                    recreateConnAfterFlushSchema(carbonSchema);
                 }
 
                 // receive new query
@@ -1277,19 +1084,9 @@ public final class InMemoryTableStore {
      *
      * @param cubeName
      * @return boolean
-     * @author Sojer z00218041 2012-8-9
      */
     private boolean isAllSlicesCleared(String cubeName) {
         List<RestructureStore> sliceList = cubeSliceMap.get(cubeName);
-        /*if(sliceList != null && sliceList.size() > 0)
-        {
-            return false;
-        }
-        else
-        {
-            return true;
-        }*/
-
         return (sliceList != null && sliceList.size() > 0);
     }
 
@@ -1298,7 +1095,6 @@ public final class InMemoryTableStore {
      * Restructuring of data is in progess, the query will be wait
      *
      * @return
-     * @author Sojer z00218041 2012-7-31
      */
     public boolean isQueryWaiting(String cubeUniqueName) {
         return getQueryExecuteStatus(cubeUniqueName) == InMemoryTableStore.QUERY_WAITING;
@@ -1308,38 +1104,18 @@ public final class InMemoryTableStore {
      * judge if the query can be executed or blocked. While Restructuring of
      * schema is in progess, the query will be blocked
      *
-     * @author Sojer z00218041 2012-7-26
      */
     public boolean isQueryBlock(String cubeUniqueName) {
         return getQueryExecuteStatus(cubeUniqueName) == QUERY_BLOCK
                 || getQueryExecuteStatus(cubeUniqueName) == QUERY_FINISHED_FOR_RELOAD;
     }
 
-    /**
-     * judge if the clean task of switch for Restructuring of schema is done,
-     * then ready for ETL publish schema XML file
-     *
-     * @author Sojer z00218041 2012-7-26
-     */
-    //    public boolean isReadyToReloadSchema(List<String> cubeUniqueNames)
-    //    {
-    //        for(String cubeUniqueName : cubeUniqueNames)
-    //        {
-    //            if(getQueryExecuteStatus(cubeUniqueName) != QUERY_FINISHED_FOR_RELOAD
-    //                    && getQueryExecuteStatus(cubeUniqueName) != QUERY_BLOCK)
-    //            {
-    //                return false;
-    //            }
-    //        }
-    //        return true;
-    //    }
 
     /**
      * ETL inform mondrian the schema XML file has published then flush Schema
      * in CarbonSchema.Pool And Reload it, in order to reload the in-memory cache
      * that has been clear
      *
-     * @author Sojer z00218041 2012-7-26
      */
     public void informSchemaPublished(String schemaName) {
         Set<Entry<String, CarbonDef.Schema>> entrySet = mapCubeToSchema.entrySet();
@@ -1350,41 +1126,21 @@ public final class InMemoryTableStore {
 
             if (entry.getValue().getName().equals(schemaName)) {
                 // flush schema model in CarbonSchema.Pool
-                //                new CacheControlImpl().flushSchema(entry.getValue());
                 // remove entry
                 iter.remove();
                 // re create connection (load in-memory).Because there are 1
                 // more cubes map to the schema, so use a flag to control only
                 // re create one time
                 if (!hasReCreate) {
-                    //                    recreateConnAfterFlushSchema(entry.getValue());
                     hasReCreate = true;
                 }
-                // break;
             }
         }
     }
 
-    //    /**
-    //     * create a new CarbonConnection here ,so the users not use to wait for the
-    //     * loading of in-memory when they query
-    //     *
-    //     * @author Sojer z00218041 2012-9-14
-    //     */
-    //    private void recreateConnAfterFlushSchema(CarbonSchema carbonSchema)
-    //    {
-    //        carbonSchema.getInternalConnection().getCacheControl(null).flushSchema(carbonSchema);
-    //        CarbonMetadata.getInstance().removeCube(carbonSchema.getName());
-    //        CarbonConnection rc = carbonSchema.getInternalConnection();
-    //        DriverManager.getConnection(rc.getConnectInfo(), null, rc.getDataSource());
-    //    }
-
     /**
      * get waiting type of cube. if not exist,then init as QUERY_AVAILABLE
      *
-     * @param cubeName
-     * @return
-     * @author Sojer z00218041 2012-8-7
      */
     public byte getQueryExecuteStatus(String cubeUniqueName) {
         if (!queryExecuteStatusMap.containsKey(cubeUniqueName)) {
@@ -1397,7 +1153,6 @@ public final class InMemoryTableStore {
      * while Restructuring of data and reload cache to Mondrian, set query on
      * waiting set QUERY_EXECUTE_STATUS to specified cube
      *
-     * @author Sojer z00218041 2012-7-27
      */
     public void setQueryExecuteStatus(String cubeUniqueName, byte queryExecuteStatus) {
         queryExecuteStatusMap.put(cubeUniqueName, queryExecuteStatus);
@@ -1406,34 +1161,15 @@ public final class InMemoryTableStore {
     /**
      * get the status if sliceList is in iterating
      *
-     * @return
-     * @author Sojer z00218041 2012-8-7
      */
     public boolean isSliceListConcurrent() {
         return SLICE_LIST_CONCURRENT;
     }
 
     /**
-     * switch After Restructure of Schema, make the query block and then clean
-     * queries and InMemory cache,then flush the CarbonSchema corresponding the
-     * cube
-     *
-     * @author Sojer z00218041 2012-7-27
-     */
-    //    public void switchAfterRestructureSchema(List<String> cubeUniqueNames)
-    //    {
-    //        for(String cubeUniqueName : cubeUniqueNames)
-    //        {
-    //            setQueryExecuteStatus(cubeUniqueName, QUERY_BLOCK);
-    //            clearQueriesAndSlices(cubeUniqueName);
-    //        }
-    //    }
-
-    /**
      * switch After Restructure of Data, make the query wait and then clean
      * queries and InMemory cache, then reload to InMemory cache.
      *
-     * @author Sojer z00218041 2012-7-27
      */
     public void switchAfterRestructureData(List<String> cubeUniqueNames) {
         for (String cubeUniqueName : cubeUniqueNames) {
@@ -1445,7 +1181,6 @@ public final class InMemoryTableStore {
     /**
      * Get all the name of cubes in Memory.
      *
-     * @return added by liupeng 00204190
      */
     public String[] getCubeNames() {
         String[] s = new String[0];

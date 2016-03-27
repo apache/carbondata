@@ -39,7 +39,6 @@ public class FactTableAggregator extends MeasureDataAggregator {
     /**
      * aggregateMsrs
      *
-     * @param available
      * @param currentMsrRowData
      */
     public void aggregateMeasure(AbstractColumnarScanResult keyValue,

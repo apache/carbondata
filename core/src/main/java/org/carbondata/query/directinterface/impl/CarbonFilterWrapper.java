@@ -17,15 +17,6 @@
  * under the License.
  */
 
-/**
- * Project Name: NSE V300R008C10 UniBI
- * FileName : UpdateCarbonSchemaCommadHandler.java
- * =============================Copyright Notice ==============================
- * This file contains proprietary information of Huawei Technologies Co. Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2015;
- * ============================================================================
- */
 package org.carbondata.query.directinterface.impl;
 
 import java.util.*;
@@ -36,13 +27,6 @@ import org.carbondata.query.filters.metadata.ContentMatchFilterInfo;
 import org.carbondata.query.queryinterface.filter.CarbonFilterInfo;
 import org.carbondata.query.queryinterface.query.metadata.CarbonDimensionLevelFilter;
 
-/**
- * Module Name : CARBON
- * Author M00903915
- * Created Date :05-Jan-2015 8:05:45 PM
- * Class Description : This class is used to get the filter applied at the each dimension level.
- * Version 1.0
- */
 public class CarbonFilterWrapper {
     /**
      *
@@ -61,7 +45,6 @@ public class CarbonFilterWrapper {
      *
      * @param dim         instance of dimension
      * @param filterValue instance of CarbonDimensionLevelFilter
-     * @Author M00903915
      * @Description : addDimensionAndFilter
      */
     public void addDimensionAndFilter(Dimension dim, CarbonDimensionLevelFilter filterValue) {
@@ -73,10 +56,8 @@ public class CarbonFilterWrapper {
 
     /**
      * @param cube
-     * @param b
      * @return The method returns the Map of the filters for each dimension level
      * dimensionLevel is the key and the fileter is the value.
-     * @Author M00903915
      * @Description : getFilters
      */
     public Map<Dimension, CarbonFilterInfo> getFilters(boolean isAnalyzerQuery, Cube cube) {
@@ -229,7 +210,6 @@ public class CarbonFilterWrapper {
      * @param dimLevelFilter instance of CarbonDimensionLevelFilter
      * @param cube
      * @return return the instance of CarbonaFileterInfo
-     * @Author M00903915
      * @Description : getCarbonFilterInfo
      */
     private CarbonFilterInfo getCarbonFilterInfo(Dimension dimension,
@@ -243,34 +223,14 @@ public class CarbonFilterWrapper {
             filterInfo = new CarbonFilterInfo();
         }
 
-        //        for(Object object : dimLevelFilter.getIncludeFilter())
-        //        {
-        //            filterInfo.addIncludedMembers(object.toString());
-        //        }
-        //
-        //        for(Object object : dimLevelFilter.getExcludeFilter())
-        //        {
-        //            filterInfo.addExcludedMembers(object.toString());
-        //        }
-
         if (filterInfo instanceof ContentMatchFilterInfo) {
             ContentMatchFilterInfo info = new ContentMatchFilterInfo();
             List<String> contains = new ArrayList<String>(10);
-            // CHECKSTYLE:OFF
-            // Already Approved - Refer approval IDs: V3R8C00_003 :
-            // Checkstyle_Approval.xlsx
-            // at location: /03.SW Folder/Approval Record/Static Check Approvals
             for (String object : dimLevelFilter.getContainsFilter()) {
-                //CHECKSTYLE:ON
                 contains.add(object);
             }
             List<String> notContains = new ArrayList<String>(10);
-            // CHECKSTYLE:OFF
-            // Already Approved - Refer approval IDs: V3R8C00_003 :
-            // Checkstyle_Approval.xlsx
-            // at location: /03.SW Folder/Approval Record/Static Check Approvals
             for (String object : dimLevelFilter.getDoesNotContainsFilter()) {
-                //CHECKSTYLE:ON
                 notContains.add(object);
             }
             ((ContentMatchFilterInfo) filterInfo).setExcludedContentMatchMembers(notContains);
@@ -291,7 +251,6 @@ public class CarbonFilterWrapper {
     /**
      * @param dimLevelFilter instance of CarbonDimensionLevelFilter
      * @return return the instance of CarbonaFileterInfo
-     * @Author M00903915
      * @Description : getCarbonFilterInfo
      */
     private CarbonFilterInfo getCarbonFilterInfoForSingleFilter(
@@ -304,10 +263,6 @@ public class CarbonFilterWrapper {
         } else {
             filterInfo = new CarbonFilterInfo();
         }
-        // CHECKSTYLE:OFF
-        // Already Approved - Refer approval IDs: V3R8C00_003 :
-        // Checkstyle_Approval.xlsx
-        // at location: /03.SW Folder/Approval Record/Static Check Approvals
         for (Object object : dimLevelFilter.getIncludeFilter()) {
             filterInfo.addIncludedMembers(object.toString());
         }
@@ -319,22 +274,12 @@ public class CarbonFilterWrapper {
         if (filterInfo instanceof ContentMatchFilterInfo) {
             ContentMatchFilterInfo info = new ContentMatchFilterInfo();
             List<String> contains = new ArrayList<String>(10);
-            // CHECKSTYLE:OFF
-            // Already Approved - Refer approval IDs: V3R8C00_003 :
-            // Checkstyle_Approval.xlsx
-            // at location: /03.SW Folder/Approval Record/Static Check Approvals
             for (String str : dimLevelFilter.getContainsFilter()) {
-                //CHECKSTYLE:ON
                 contains.add(str);
             }
 
             List<String> notContains = new ArrayList<String>(10);
-            // CHECKSTYLE:OFF
-            // Already Approved - Refer approval IDs: V3R8C00_003 :
-            // Checkstyle_Approval.xlsx
-            // at location: /03.SW Folder/Approval Record/Static Check Approvals
             for (String object : dimLevelFilter.getDoesNotContainsFilter()) {
-                //CHECKSTYLE:ON
                 notContains.add(object);
             }
             ((ContentMatchFilterInfo) filterInfo).setExcludedContentMatchMembers(notContains);
@@ -349,12 +294,8 @@ public class CarbonFilterWrapper {
     }
 
     /**
-     * The comparator class used to sort the List<Wrapper> according to the ordinal value of the dimension.
-     * Module Name :
-     * Author M00903915
-     * Created Date :05-Jan-2015 8:15:32 PM
-     * Class Description :
-     * Version 1.0
+     * The comparator class used to sort the List<Wrapper> according to the
+     * ordinal value of the dimension.
      */
     private class WrapperComparator implements Comparator<Wrapper> {
         @Override
@@ -367,11 +308,6 @@ public class CarbonFilterWrapper {
 
     /**
      * The class to to wrap the filter with dimension.
-     * Module Name :
-     * Author M00903915
-     * Created Date :05-Jan-2015 8:17:04 PM
-     * Class Description :
-     * Version 1.0
      */
     private class Wrapper {
         private Dimension dimension;

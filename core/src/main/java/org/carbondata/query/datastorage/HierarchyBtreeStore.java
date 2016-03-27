@@ -114,20 +114,11 @@ public class HierarchyBtreeStore implements DataStore {
         ArrayList<CSBNode[]> nodeGroups =
                 new ArrayList<CSBNode[]>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
         CSBNode[] currentGroup = null;
-        //      List<Long[]> rangeVals=new ArrayList<Long[]>();
-
         // Scan input stream until all tuples are read
 
-        //Coverity Fix: added null check
         if (null != factStream) {
             while ((entry = factStream.getNextHierTuple()) != null) {
                 num++;
-
-                //          if(num%rangeSplitValue==0)
-                //          {
-                //              //store the Key array as long value
-                //              rangeVals.add(keyGenerator.getKeyArray(entry.getKey()));
-                //          }
 
                 if ((num - 1) % leafMaxEntry == 0) {
                     // Create a new leaf node
@@ -230,23 +221,6 @@ public class HierarchyBtreeStore implements DataStore {
 
     }
 
-    //    private void compressTree()
-    //    {
-    //        compressNode(root);
-    //    }
-    //
-    //    private void compressNode(CSBNode node)
-    //    {
-    //        if(node != null)
-    //        {
-    //            node.compress(null);
-    //            for(int i = 0;i <= node.getnKeys();i++)
-    //            {
-    //                compressNode(node.getChild(i));
-    //            }
-    //        }
-    //    }
-
     @Override
     public KeyValue get(byte[] key, Scanner scanner) {
         return search(key, false, scanner);
@@ -270,7 +244,6 @@ public class HierarchyBtreeStore implements DataStore {
 
     public KeyValue search(byte[] key, boolean bNext, Scanner scanner) {
         CSBNode node = root;
-        //        FileHolder fileHolder = scanner.getFileHolder();
         while ((null != node) && (!node.isLeafNode())) {
             //added method for source monitor fix
             node = binarySearchOnKeys(key, node);
@@ -380,43 +353,28 @@ public class HierarchyBtreeStore implements DataStore {
 
     @Override
     public long getRangeSplitValue() {
-        // TODO Auto-generated method stub
         return 0;
     }
 
     @Override
     public void build(List<DataInputStream> factStream, boolean hasFactCount) {
-        // TODO Auto-generated method stub
-
     }
 
     @Override
     public ValueCompressionModel getCompressionModel() {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public DataStoreBlock getBlock(byte[] startKey, FileHolder fileHolderImpl, boolean isFirst) {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public void buildColumnar(List<DataInputStream> factStream, boolean hasFactCount, Cube cube) {
-        // TODO Auto-generated method stub
 
     }
 
-    /**
-     * Project Name NSE V3R7C00
-     * Module Name : CARBON
-     * Author :C00900810
-     * Created Date :25-Jun-2013
-     * FileName : HierarchyBtreeStore.java
-     * Class Description :
-     * Version 1.0
-     */
     private static class HierarchyTreeLeafNode extends CSBTreeLeafNode {
 
         /**

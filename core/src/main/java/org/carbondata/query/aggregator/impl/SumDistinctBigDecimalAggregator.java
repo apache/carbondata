@@ -1,3 +1,22 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.carbondata.query.aggregator.impl;
 
 import java.io.DataInput;
@@ -15,7 +34,6 @@ import org.carbondata.core.util.DataTypeUtil;
 import org.carbondata.query.aggregator.MeasureAggregator;
 
 /**
- * @author K00900207
  *         The sum distinct aggregator
  *         Ex:
  *         ID NAME Sales
@@ -72,9 +90,7 @@ public class SumDistinctBigDecimalAggregator extends AbstractMeasureAggregatorBa
         Iterator<BigDecimal> iterator = valueSet.iterator();
         ByteBuffer buffer =
                 ByteBuffer.allocate(valueSet.size() * CarbonCommonConstants.DOUBLE_SIZE_IN_BYTE);
-        // CHECKSTYLE:OFF Approval No:Approval-V3R8C00_018
-        while (iterator.hasNext()) { // CHECKSTYLE:ON
-            //            byte[] bytes = iterator.next().toString().getBytes();
+        while (iterator.hasNext()) {
             byte[] bytes = DataTypeUtil.bigDecimalToByte(iterator.next());
             buffer.putInt(bytes.length);
             buffer.put(bytes);
@@ -114,9 +130,6 @@ public class SumDistinctBigDecimalAggregator extends AbstractMeasureAggregatorBa
         return getBigDecimalValue();
     }
 
-    /**
-     * @see MeasureAggregator#setNewValue(Object)
-     */
     @Override
     public void setNewValue(Object newValue) {
         computedFixedValue = (BigDecimal) newValue;
@@ -131,7 +144,6 @@ public class SumDistinctBigDecimalAggregator extends AbstractMeasureAggregatorBa
     @Override
     public void writeData(DataOutput dataOutput) throws IOException {
         if (computedFixedValue != null) {
-            //            byte[] bytes = computedFixedValue.toString().getBytes();
             byte[] bytes = DataTypeUtil.bigDecimalToByte(computedFixedValue);
             ByteBuffer byteBuffer = ByteBuffer.allocate(4 + 4 + bytes.length);
             byteBuffer.putInt(-1);
@@ -180,7 +192,6 @@ public class SumDistinctBigDecimalAggregator extends AbstractMeasureAggregatorBa
         while (buffer.hasRemaining()) {
             byte[] valueByte = new byte[buffer.getInt()];
             buffer.get(valueByte);
-            //            BigDecimal valueBigDecimal = new BigDecimal(new String(valueByte));
             BigDecimal valueBigDecimal = DataTypeUtil.byteToBigDecimal(valueByte);
             agg(valueBigDecimal);
         }

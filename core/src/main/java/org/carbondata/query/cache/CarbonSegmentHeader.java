@@ -92,27 +92,12 @@ public class CarbonSegmentHeader implements Serializable {
     }
 
     /**
-     * @param cubeName the cubeName to set
-     */
-    //    public void setCubeName(String cubeName)
-    //    {
-    //        this.cubeUniqueName = cubeName;
-    //    }
-
-    /**
      * @return the factTableName
      */
     public String getFactTableName() {
         return factTableName;
     }
 
-    /**
-     * @param factTableName the factTableName to set
-     */
-    //    public void setFactTableName(String factTableName)
-    //    {
-    //        this.factTableName = factTableName;
-    //    }
 
     /**
      * @return the preds
@@ -128,9 +113,6 @@ public class CarbonSegmentHeader implements Serializable {
         this.preds = preds;
     }
 
-    /* (non-Javadoc)
-     * @see java.lang.Object#hashCode()
-     */
     @Override
     public int hashCode() {
         if (hashcode == 0) {
@@ -196,159 +178,6 @@ public class CarbonSegmentHeader implements Serializable {
                 return false;
             }
         }
-        return true;
-    }
-
-    /**
-     * equalsForSubSet
-     *
-     * @param other
-     * @return
-     */
-    public boolean equalsForSubSetOfPreds(CarbonSegmentHeader other) {
-
-        if (!cubeUniqueName.equals(other.cubeUniqueName) || (dims.length > 0 && !Arrays
-                .equals(dims, other.dims)) || !factTableName.equals(other.factTableName)
-                || !isPredSubSet(preds, other.preds, other.dims)) {
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * equalsForSubSet
-     *
-     * @param other
-     * @return
-     */
-    public boolean equalsForSubSetOfPredsForSegmentQuery(CarbonSegmentHeader other) {
-      /*  if(!cubeUniqueName.equals(other.cubeUniqueName) || !factTableName.equals(other.factTableName)
-                || !isDimensionSubSet(dims, other.dims) || !isPredSubSetForSegmentQuery(preds, other.dims))
-        {
-            return false;
-        }
-
-        return true;*/
-        return !(!cubeUniqueName.equals(other.cubeUniqueName) || !factTableName
-                .equals(other.factTableName) || !isDimensionSubSet(dims, other.dims)
-                || !isPredSubSetForSegmentQuery(preds, other.dims));
-    }
-
-    private boolean isDimensionSubSet(int[] dims1, int[] dims2) {
-        for (int i = 0; i < dims1.length; i++) {
-            if (Arrays.binarySearch(dims2, dims1[i]) < 0) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private boolean isPredSubSetForSegmentQuery(List<CarbonPredicates> preds, int[] dims) {
-        return isAllPredPresentOnDims(dims, preds);
-    }
-
-    private boolean isPredSubSet(List<CarbonPredicates> preds, List<CarbonPredicates> otherPreds,
-            int[] otherDims) {
-        if (isAllPredPresentOnDims(otherDims, otherPreds)) {
-            if (hasExcludeFilters(preds) || hasExcludeFilters(otherPreds)) {
-                return false;
-            }
-            if (otherPreds == null || otherPreds.size() == 0) {
-                return true;
-            }
-            if (preds == null || preds.size() == 0) {
-                return false;
-            }
-            if (preds.size() != otherPreds.size()) {
-                return false;
-            }
-            for (int i = 0; i < preds.size(); i++) {
-                CarbonPredicates carbonPredicates = preds.get(i);
-                boolean found = false;
-                for (int j = 0; j < otherPreds.size(); j++) {
-                    if (otherPreds.get(j).getOrdinal() == carbonPredicates.getOrdinal()) {
-                        found = true;
-                        if (!isFilterSubSet(carbonPredicates.getInclude(),
-                                otherPreds.get(j).getInclude())) {
-                            return false;
-                        }
-                    }
-                }
-                if (!found) {
-                    return false;
-                }
-            }
-
-        } else {
-            return false;
-        }
-        return true;
-    }
-
-    private boolean hasExcludeFilters(List<CarbonPredicates> preds) {
-        if (preds != null && preds.size() > 0) {
-            for (CarbonPredicates pred : preds) {
-                if ((pred.getExclude() != null && pred.getExclude().length > 0) || (
-                        pred.getIncludeOr() != null && pred.getIncludeOr().length > 0)) {
-                    return true;
-                }
-            }
-
-        }
-        return false;
-    }
-
-    private boolean isFilterSubSet(long[] filterIds, long[] otherfilterIds) {
-        for (int i = 0; i < filterIds.length; i++) {
-            boolean found = false;
-            for (int j = 0; j < otherfilterIds.length; j++) {
-                if (filterIds[i] == otherfilterIds[j]) {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * Is all predicates are part of rows also
-     *
-     * @param dims
-     * @param preds
-     * @return
-     */
-    public boolean isAllPredPresentOnDims(int[] dims, List<CarbonPredicates> preds) {
-        if (preds == null) {
-            return true;
-        }
-        for (int i = 0; i < preds.size(); i++) {
-            boolean found = false;
-            int ordinal = preds.get(i).getOrdinal();
-            for (int j = 0; j < dims.length; j++) {
-                if (ordinal == dims[j]) {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    public boolean equalsWithOutPreds(CarbonSegmentHeader header) {
-        if (!cubeUniqueName.equals(header.cubeUniqueName) || !Arrays.equals(dims, header.dims)
-                || !factTableName.equals(header.factTableName)) {
-            return false;
-        }
-
         return true;
     }
 

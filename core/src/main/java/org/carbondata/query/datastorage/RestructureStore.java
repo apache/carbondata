@@ -115,9 +115,6 @@ public class RestructureStore implements Comparable<RestructureStore> {
         return slices.get(tableName);
     }
 
-    /**
-     * @param slices the slices to set
-     */
     public synchronized void setSlice(InMemoryTable slice, String tableName) {
         List<InMemoryTable> sliceList = slices.get(tableName);
         if (sliceList == null) {
@@ -138,36 +135,12 @@ public class RestructureStore implements Comparable<RestructureStore> {
     }
 
     /**
-     * @param slices the slices to remove
-     */
-    public void removeSlice(InMemoryTable slice, String tableName) {
-        List<InMemoryTable> sliceList = slices.get(tableName);
-        if (sliceList != null) {
-            sliceList.remove(slice);
-        }
-    }
-
-    /**
-     * @return the sliceMetaCacheMap
-     */
-    public Map<String, SliceMetaData> getSliceMetaCacheMap() {
-        return sliceMetaCacheMap;
-    }
-
-    public void setSliceMetaCacheMap(Map<String, SliceMetaData> sliceMetaCacheMap) {
-        this.sliceMetaCacheMap = sliceMetaCacheMap;
-    }
-
-    /**
      * @return the sliceMetaCacheMap
      */
     public SliceMetaData getSliceMetaCache(String tableName) {
         return sliceMetaCacheMap.get(tableName);
     }
 
-    /**
-     * @param sliceMetaCacheMap the sliceMetaCacheMap to set
-     */
     public void setSliceMetaCache(SliceMetaData sliceMetaData, String tableName) {
         this.sliceMetaCacheMap.put(tableName, sliceMetaData);
     }
@@ -179,17 +152,6 @@ public class RestructureStore implements Comparable<RestructureStore> {
         return folderName;
     }
 
-    /**
-     * @param folderName the folderName to set
-     */
-    //    public void setFolderName(String folderName)
-    //    {
-    //        this.folderName = folderName;
-    //    }
-
-    /* (non-Javadoc)
-     * @see java.lang.Object#hashCode()
-     */
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -226,14 +188,6 @@ public class RestructureStore implements Comparable<RestructureStore> {
         this.slices = slices;
     }
 
-    public int getRestructureId() {
-        return restructureId;
-    }
-
-    public void setRestructureId(int restructureId) {
-        this.restructureId = restructureId;
-    }
-
     /**
      * @return Returns the sliceMetaPathMap.
      */
@@ -258,7 +212,6 @@ public class RestructureStore implements Comparable<RestructureStore> {
 
     @Override
     public int compareTo(RestructureStore arg0) {
-        // TODO Auto-generated method stub
         return restructureId - arg0.restructureId;
     }
 }

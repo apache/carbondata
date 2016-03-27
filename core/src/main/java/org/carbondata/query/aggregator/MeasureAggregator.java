@@ -31,7 +31,6 @@ import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
  * Class Description : MeasureAggregator interface. It will be implemented by
  * all the aggregator functions eg: sum, avg, max, min, etc, will be used for
  * aggregate the measure value based on kind of aggregator
- * Version 1.0
  */
 
 public interface MeasureAggregator extends Serializable, Comparable<MeasureAggregator> {
@@ -119,20 +118,15 @@ public interface MeasureAggregator extends Serializable, Comparable<MeasureAggre
     /**
      * Write the state of the class to buffer
      *
-     * @param buffer
      */
     void writeData(DataOutput output) throws IOException;
 
     /**
      * Read the state of the class and set to the object
      *
-     * @param buffer
      */
     void readData(DataInput inPut) throws IOException;
 
-    /**
-     * @return
-     */
     MeasureAggregator get();
 
     /**

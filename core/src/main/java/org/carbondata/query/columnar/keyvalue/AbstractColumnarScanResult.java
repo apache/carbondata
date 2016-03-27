@@ -95,7 +95,8 @@ public abstract class AbstractColumnarScanResult {
         for (int i = 0; i < selectedDimensionIndex.length; i++) {
             if (columnarKeyStoreDataHolder[selectedDimensionIndex[i]].getColumnarKeyStoreMetadata()
                     .isDirectSurrogateColumn()) {
-                //Incase of high cardinality system has to update the byte array with high cardinality dimension values.
+                //Incase of high cardinality system has to update the byte array with high
+                //cardinality dimension values.
                 updateByteArrayWithDirectSurrogateKeyVal(keyVal, columnIndex,
                         columnarKeyStoreDataHolder[selectedDimensionIndex[i]]);
                 continue;
@@ -112,7 +113,6 @@ public abstract class AbstractColumnarScanResult {
                                 .getColumnarKeyStoreMetadata().getEachRowSize());
             } else if (!columnarKeyStoreDataHolder[selectedDimensionIndex[i]]
                     .getColumnarKeyStoreMetadata().isSorted()) {
-                //handleRowStore(columnarKeyStoreDataHolder[selectedDimensionIndex[i]].getKeyBlockData(),columnarKeyStoreDataHolder[selectedDimensionIndex[i]].getColumnarKeyStoreMetadata().getEachRowSize(),row);
                 System.arraycopy(
                         columnarKeyStoreDataHolder[selectedDimensionIndex[i]].getKeyBlockData(),
                         ((columnIndex) * columnarKeyStoreDataHolder[selectedDimensionIndex[i]]
@@ -137,9 +137,10 @@ public abstract class AbstractColumnarScanResult {
     }
 
     /**
-     * Incase of high cardinality system has to update the byte array with high cardinality dimension values separately
-     * since its not part of Key generator. Based on column reverse index value the high cardinality data has been get
-     * from the mapOfColumnarKeyBlockDataForDirectSurroagtes.
+     * Incase of high cardinality system has to update the byte array with high cardinality
+     * dimension values separately since its not part of Key generator. Based on column reverse
+     * index value the high cardinality data has been get from the
+     * mapOfColumnarKeyBlockDataForDirectSurroagtes.
      *
      * @param key
      * @param colIndex
@@ -185,8 +186,6 @@ public abstract class AbstractColumnarScanResult {
 
     protected List<byte[]> getKeyArrayWithComplexTypes(int columnIndex,
             Map<Integer, GenericQueryType> complexQueryDims, ByteArrayWrapper keyVal) {
-        //        byte[] completeKeyArray = new byte[keySize];
-        //        int destinationPosition = 0;
         int keyArrayLength = 0;
         List<byte[]> completeComplexKey = new ArrayList<byte[]>();
         List<byte[]> completePrimitiveKey = new ArrayList<byte[]>();
@@ -198,7 +197,8 @@ public abstract class AbstractColumnarScanResult {
                                 .getColumnarKeyStoreMetadata().getEachRowSize()];
                 if (columnarKeyStoreDataHolder[selectedDimensionIndex[i]]
                         .getColumnarKeyStoreMetadata().isDirectSurrogateColumn()) {
-                    //Incase of high cardinality system has to update the byte array with high cardinality dimension values.
+                    //Incase of high cardinality system has to update the byte array with high
+                    //cardinality dimension values.
                     updateByteArrayWithDirectSurrogateKeyVal(keyVal, columnIndex,
                             columnarKeyStoreDataHolder[selectedDimensionIndex[i]]);
                     continue;
@@ -284,7 +284,6 @@ public abstract class AbstractColumnarScanResult {
         }
         return totalNumberOfRows - count;
     }
-    //    public abstract Object getNormalMeasureValue(int measureOrdinal, SqlStatement.Type dataType);
 
     public abstract double getDoubleValue(int measureOrdinal);
 

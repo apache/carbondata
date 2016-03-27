@@ -17,15 +17,6 @@
  * under the License.
  */
 
-/**
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2014
- * =====================================
- */
 package org.carbondata.query.aggregator.impl;
 
 import java.io.File;
@@ -48,15 +39,6 @@ import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.util.CarbonEngineLogEvent;
 
-/**
- * Project Name NSE V3R8C10
- * Module Name : CARBON Data Processor
- * Author :k00900841
- * Created Date:10-Aug-2014
- * FileName : CustomeAggregatorHelper.java
- * Class Description : Helper class for custom aggregator to get dim values
- * Class Version 1.0
- */
 public class CustomAggregatorHelper {
     /**
      * LOGGER
@@ -130,17 +112,14 @@ public class CustomAggregatorHelper {
      */
     private void loadLevelFile(String tableName, String columnName, String cubeName,
             String schemaName) {
-        String baseLocation = CarbonUtil.getCarbonStorePath(schemaName, cubeName)/*CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION,
-                CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL)*/;
+        String baseLocation = CarbonUtil.getCarbonStorePath(schemaName, cubeName);
         baseLocation = baseLocation + File.separator + schemaName + File.separator + cubeName;
         if (loadFolderList.size() == 0) {
             checkAndUpdateFolderList(baseLocation);
         }
         try {
             File[] filesArray = null;
-            //CHECKSTYLE:OFF    Approval No:Approval-367
             for (File loadFoler : loadFolderList) {
-                //CHECKSTYLE:ON
                 filesArray = getFilesArray(loadFoler, tableName + '_' + columnName);
                 for (int i = 0; i < filesArray.length; i++) {
                     readLevelFileAndUpdateCache(filesArray[i], tableName + '_' + columnName);
@@ -158,7 +137,6 @@ public class CustomAggregatorHelper {
      * @param memberFile
      * @param fileName
      * @throws IOException
-     * @throws KettleException
      */
     private void readLevelFileAndUpdateCache(File memberFile, String fileName) throws IOException {
         FileInputStream fos = null;
@@ -183,7 +161,7 @@ public class CustomAggregatorHelper {
             ByteBuffer row = null;
             int toread = 0;
             byte[] bb = null;
-            String value = null;// CHECKSTYLE:OFF Approval No:Approval-361
+            String value = null;
             int surrogateValue = 0;
 
             boolean enableEncoding = Boolean.valueOf(CarbonProperties.getInstance()
@@ -215,9 +193,7 @@ public class CustomAggregatorHelper {
                 surrogateValue = row.getInt();
                 memberMap.put(surrogateValue, value);
 
-                // check if max key is less than Surrogate key then update the
-                // max
-                // key
+                // check if max key is less than Surrogate key then update the max key
                 if (maxKey < surrogateValue) {
                     maxKey = surrogateValue;
                 }
@@ -250,8 +226,7 @@ public class CustomAggregatorHelper {
                 } else {
                     File[] checkFolder = checkAndUpdateFolderList(pathname.getAbsolutePath());
                     if (null != checkFolder) {
-                        //CHECKSTYLE:OFF    Approval No:Approval-367
-                        for (File f : checkFolder) {//CHECKSTYLE:ON
+                        for (File f : checkFolder) {
                             loadFolderList.add(f);
                         }
                     }

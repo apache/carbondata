@@ -40,21 +40,6 @@ import org.carbondata.query.util.CarbonEngineLogEvent;
 
 public class FileDataInputStream extends AbstractFileDataInputStream {
 
-    //    /**
-    //     *
-    //     */
-    //    private String filesLocation;
-    //
-    //    /**
-    //     *
-    //     */
-    //    private int mdkeysize;
-    //
-    //    /**
-    //     *
-    //     */
-    //    private int msrCount;
-
     /**
      * Attribute for Carbon LOGGER
      */
@@ -77,50 +62,14 @@ public class FileDataInputStream extends AbstractFileDataInputStream {
      */
     private String tableName;
 
-    //    /**
-    //     *
-    //     */
-    //    private long offSet;
-
-    //    /**
-    //     *
-    //     */
-    //    private FileHolder fileHolder;
-    /**
-     *
-     */
     private FileChannel channel;
-    /**
-     *
-     */
+
     private ValueCompressionModel valueCompressionModel;
 
-    //    /**
-    //     *
-    //     */
-    //    private int totalMetaDataLength;
-    /**
-     *
-     */
     private BufferedInputStream in;
-    /**
-     *
-     */
+
     private long fileSize;
 
-    //    /**
-    //     * start key
-    //     */
-    //    private byte[] startKey;
-
-    /**
-     * @param filesLocation
-     * @param mdkeysize
-     * @param msrCount
-     * @param aggregateNames
-     * @param tableName
-     * @param hasFactCount
-     */
     public FileDataInputStream(String filesLocation, int mdkeysize, int msrCount,
             boolean hasFactCount, String persistenceFileLocation, String tableName) {
         super(filesLocation, mdkeysize, msrCount);
@@ -134,13 +83,6 @@ public class FileDataInputStream extends AbstractFileDataInputStream {
         fileHolder = FileFactory.getFileHolder(FileFactory.getFileType(filesLocation));
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * com.huawei.unibi.carbon.engine.datastorage.streams.DataInputStream#initInput
-     * ()
-     */
     @Override
     public void initInput() {
         //
@@ -210,7 +152,6 @@ public class FileDataInputStream extends AbstractFileDataInputStream {
             byte[][] columnMinMaxData = new byte[buffer.getInt()][];
             for (int i = 0; i < columnMinMaxData.length; i++) {
                 columnMinMaxData[i] = new byte[buffer.getInt()];
-                //TODO read the short value inorder to get the column min max data for direct surrogate
                 buffer.get(columnMinMaxData[i]);
             }
             info.setColumnMinMaxData(columnMinMaxData);
@@ -245,63 +186,15 @@ public class FileDataInputStream extends AbstractFileDataInputStream {
             info.setMeasureOffset(msrOffset);
             listOfNodeInfo.add(info);
         }
-        // Fixed DTS:DTS2013092610515
         // if fact file empty then list size will 0 then it will throw index out of bound exception
-        // if memory is less and cube loading failed that time list will be empty so it will throw out of bound exception
+        // if memory is less and cube loading failed that time list will be empty so it will throw
+        // out of bound exception
         if (listOfNodeInfo.size() > 0) {
             startKey = listOfNodeInfo.get(0).getStartKey();
         }
         return listOfNodeInfo;
     }
 
-    //    public List<LeafNodeInfo> getLeafNodeInfo()
-    //    {
-    //        //
-    //        List<LeafNodeInfo> listOfNodeInfo = new ArrayList<LeafNodeInfo>();
-    //        ByteBuffer buffer = ByteBuffer.wrap(this.fileHolder.readByteArray(filesLocation, offSet, totalMetaDataLength));
-    //        buffer.rewind();
-    //        while(buffer.hasRemaining())
-    //        {
-    //            //
-    //            int []msrLength= new int [msrCount];
-    //            long []msrOffset = new long[msrCount];
-    //            LeafNodeInfo info = new LeafNodeInfo();
-    //            byte[] startKey = new byte[this.mdkeysize];
-    //            byte[] endKey = new byte[this.mdkeysize];
-    //            info.setFileName(this.filesLocation);
-    //            info.setNumberOfKeys(buffer.getInt());
-    //            info.setKeyLength(buffer.getInt());
-    //            info.setKeyOffset(buffer.getLong());
-    //            buffer.get(startKey);
-    //            //
-    //            buffer.get(endKey);
-    //            info.setStartKey(startKey);
-    //            for(int i = 0;i < this.msrCount;i++)
-    //            {
-    //                msrLength[i]=buffer.getInt();
-    //                msrOffset[i]=buffer.getLong();
-    //            }
-    //            info.setMeasureLength(msrLength);
-    //            info.setMeasureOffset(msrOffset);
-    //            listOfNodeInfo.add(info);
-    //        }
-    //        // Fixed DTS:DTS2013092610515
-    //        // if fact file empty then list size will 0 then it will throw index out of bound exception
-    //        // if memory is less and cube loading failed that time list will be empty so it will throw out of bound exception
-    //        if(listOfNodeInfo.size()>0)
-    //        {
-    //            startKey = listOfNodeInfo.get(0).getStartKey();
-    //        }
-    //        return listOfNodeInfo;
-    //    }
-    //
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * com.huawei.unibi.carbon.engine.datastorage.streams.DataInputStream#closeInput
-     * ()
-     */
     @Override
     public void closeInput() {
         if (channel != null) {
@@ -316,7 +209,6 @@ public class FileDataInputStream extends AbstractFileDataInputStream {
         if (null != fileHolder) {
             fileHolder.finish();
         }
-        //
         if (null != in) {
             try {
                 in.close();
@@ -332,12 +224,6 @@ public class FileDataInputStream extends AbstractFileDataInputStream {
         return valueCompressionModel;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see com.huawei.unibi.carbon.engine.datastorage.streams.DataInputStream#
-     * getNextHierTuple()
-     */
     @Override
     public Pair getNextHierTuple() {
         // We are adding surrogate key also with mdkey.

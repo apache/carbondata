@@ -74,7 +74,8 @@ public class FilterDataStoreProcessor extends AbstractColumnarDataStoreProcessor
                 if (dataStoreBlock instanceof CSBTreeColumnarLeafNode) {
                     String factFile = ((CSBTreeColumnarLeafNode) dataStoreBlock).getFactFile();
                     LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-                            "Skipping fact file because it is not required to scan based on filter condtion:"
+                            "Skipping fact file because it is not required to "
+                                    + "scan based on filter condtion:"
                                     + factFile);
                 }
                 return;
@@ -104,16 +105,12 @@ public class FilterDataStoreProcessor extends AbstractColumnarDataStoreProcessor
                 keyBlocks[i] = blockDataHolder.getLeafDataBlock()
                         .getColumnarKeyStore(columnarDataStoreBlockInfo.getFileHolder(),
                                 columnarDataStoreBlockInfo.getAllSelectedDimensions()[i], false);
-            } else {      //CHECKSTYLE:OFF    Approval No:Approval-V1R2C10_001
+            } else {
                 keyBlocks[i] = blockDataHolder.getColumnarKeyStore()[columnarDataStoreBlockInfo
                         .getAllSelectedDimensions()[i]];
-                //                if(columnarDataStoreBlockInfo.getIsUniqueBlock()[columnarDataStoreBlockInfo.getAllSelectedDimensions()[i]])
-                //                {
                 if (null != keyBlocks[i].getColumnarKeyStoreMetadata().getDataIndex()) {
                     keyBlocks[i].unCompress();
                 }
-                //                }
-                //CHECKSTYLE:ON
             }
         }
 
@@ -128,7 +125,7 @@ public class FilterDataStoreProcessor extends AbstractColumnarDataStoreProcessor
                 new CarbonReadDataHolder[columnarDataStoreBlockInfo.getTotalNumberOfMeasures()];
         for (int i = 0; i < columnarDataStoreBlockInfo.getAllSelectedMeasures().length; i++) {
             if (null == blockDataHolder.getMeasureBlocks()[columnarDataStoreBlockInfo
-                    .getAllSelectedMeasures()[i]]) {      //CHECKSTYLE:OFF    Approval No:Approval-V1R2C10_001
+                    .getAllSelectedMeasures()[i]]) {
                 msrBlocks[columnarDataStoreBlockInfo.getAllSelectedMeasures()[i]] =
                         blockDataHolder.getLeafDataBlock().getNodeMsrDataWrapper(
                                 columnarDataStoreBlockInfo.getAllSelectedMeasures()[i],
@@ -139,7 +136,7 @@ public class FilterDataStoreProcessor extends AbstractColumnarDataStoreProcessor
                 msrBlocks[columnarDataStoreBlockInfo.getAllSelectedMeasures()[i]] =
                         blockDataHolder.getMeasureBlocks()[columnarDataStoreBlockInfo
                                 .getAllSelectedMeasures()[i]];
-            }//CHECKSTYLE:ON
+            }
         }
         keyValue.setMeasureBlock(msrBlocks);
         keyValue.setNumberOfRows(indexes.length);

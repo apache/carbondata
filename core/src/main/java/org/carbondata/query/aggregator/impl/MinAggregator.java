@@ -29,7 +29,6 @@ import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
  * Class Description : It will return min of values
- * Version 1.0
  */
 public class MinAggregator extends AbstractMeasureAggregatorMaxMin {
 
@@ -83,10 +82,7 @@ public class MinAggregator extends AbstractMeasureAggregatorMaxMin {
     @Override
     public void merge(MeasureAggregator aggregator) {
         MinAggregator minAggregator = (MinAggregator) aggregator;
-        //        if(!minAggregator.isFirstTime())
-        //        {
         agg(minAggregator.aggVal);
-        //        }
     }
 
     @Override

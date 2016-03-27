@@ -26,9 +26,7 @@ import java.util.List;
 import org.carbondata.core.metadata.CarbonMetadata.Dimension;
 
 public class CustomCarbonAggregateExpression implements Serializable {
-    /**
-     *
-     */
+
     private static final long serialVersionUID = 1L;
 
     /**

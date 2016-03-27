@@ -93,18 +93,11 @@ public class DistinctCountAggregator implements MeasureAggregator {
      */
     @Override
     public void agg(Object newVal) {
-        // Object include double
-        //        if(newVal instanceof Double)
-        //        {
-        //            agg((double)newVal);
-        //            return;
-        //        }
         if (newVal instanceof byte[]) {
             byte[] values = (byte[]) newVal;
             ByteBuffer buffer = ByteBuffer.wrap(values);
             buffer.rewind();
-            //CHECKSTYLE:OFF    Approval No:Approval-V3R8C00_018
-            while (buffer.hasRemaining()) { //CHECKSTYLE:ON
+            while (buffer.hasRemaining()) {
                 valueSet.add(buffer.getInt());
             }
             return;
@@ -130,37 +123,12 @@ public class DistinctCountAggregator implements MeasureAggregator {
         IntIterator iterator = valueSet.getIntIterator();
         ByteBuffer buffer = ByteBuffer.allocate(valueSet.getCardinality() * 4 + 8);
         buffer.putDouble(minValue);
-        //CHECKSTYLE:OFF    Approval No:Approval-V3R8C00_018
-        while (iterator.hasNext()) { //CHECKSTYLE:ON
+        while (iterator.hasNext()) {
             buffer.putInt(iterator.next());
         }
         buffer.rewind();
         return buffer.array();
-        //        ByteArrayOutputStream bo = new ByteArrayOutputStream();
-        //        DataOutputStream dos = new DataOutputStream(bo);
-        //        try
-        //        {
-        //            valueSet.serialize(dos);
-        //            dos.close();
-        //        }
-        //        catch(IOException e)
-        //        {
-        //            // TODO Auto-generated catch block
-        //            e.printStackTrace();
-        //        }
-        //        return bo.toByteArray();
     }
-
-    //    @Override
-    //    public void agg(double newVal, double factCount)
-    //    {
-    //
-    //    }
-
-    //    private void agg(Set<Double> set2)
-    //    {
-    //        valueSet.addAll(set2);
-    //    }
 
     private void agg(RoaringBitmap set2, double minValue) {
         if (this.minValue == minValue) {
@@ -227,9 +195,6 @@ public class DistinctCountAggregator implements MeasureAggregator {
         return valueSet.getCardinality();
     }
 
-    /**
-     * @see MeasureAggregator#setNewValue(Object)
-     */
     @Override
     public void setNewValue(Object newValue) {
         computedFixedValue = (Double) newValue;
@@ -251,15 +216,6 @@ public class DistinctCountAggregator implements MeasureAggregator {
             byteBuffer.flip();
             output.write(byteBuffer.array());
         } else {
-            //            int length = valueSet.size()*8;
-            //            ByteBuffer byteBuffer = ByteBuffer.allocate(length+4+1);
-            //            byteBuffer.putInt(length);
-            //            for(double val : valueSet)
-            //            {
-            //                byteBuffer.putDouble(val);
-            //            }
-            //            byteBuffer.flip();
-            //            output.write(byteBuffer.array());
             if (valueSet != null) {
                 valueSet.serialize(output);
             } else {
@@ -270,22 +226,6 @@ public class DistinctCountAggregator implements MeasureAggregator {
 
     @Override
     public void readData(DataInput inPut) throws IOException {
-        //        int length = inPut.readInt();
-        //
-        //        if(length ==-1)
-        //        {
-        //            computedFixedValue = inPut.readDouble();
-        //            valueSet = null;
-        //        }
-        //        else
-        //        {
-        //            length = length/8;
-        //            valueSet = new HashSet<Double>(length+1,1.0f);
-        //            for(int i = 0;i < length;i++)
-        //            {
-        //                valueSet.add(inPut.readDouble());
-        //            }
-        //        }
         valueSet = new RoaringBitmap();
         valueSet.deserialize(inPut);
     }
@@ -299,8 +239,6 @@ public class DistinctCountAggregator implements MeasureAggregator {
                 outputStream.close();
                 data = null;
             } catch (IOException e) {
-                // TODO Auto-generated catch block
-                //                e.printStackTrace();
                 LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e, e.getMessage());
             }
         }
@@ -309,7 +247,7 @@ public class DistinctCountAggregator implements MeasureAggregator {
     @Override
     public MeasureAggregator getCopy() {
         DistinctCountAggregator aggr = new DistinctCountAggregator(minValue);
-        aggr.valueSet = valueSet.clone();//new HashSet<Double>(valueSet);
+        aggr.valueSet = valueSet.clone();
         return aggr;
     }
 
@@ -333,7 +271,6 @@ public class DistinctCountAggregator implements MeasureAggregator {
         try {
             writeData(outputStream);
         } catch (IOException ex) {
-            //            ex.printStackTrace();
             LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, ex, ex.getMessage());
         }
         data = byteStream.toByteArray();
@@ -370,16 +307,4 @@ public class DistinctCountAggregator implements MeasureAggregator {
         }
     }
 
-    //    @Override
-    //    public void writeExternal(ObjectOutput out) throws IOException
-    //    {
-    //        valueSet.serialize(out);
-    //
-    //    }
-    //
-    //    @Override
-    //    public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException
-    //    {
-    //        readData(in);
-    //    }
 }

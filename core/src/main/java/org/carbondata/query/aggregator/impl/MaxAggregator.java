@@ -30,7 +30,6 @@ import org.carbondata.query.util.CarbonEngineLogEvent;
 /**
  * Class Description :
  * It will return max of values
- * Version 1.0
  */
 public class MaxAggregator extends AbstractMeasureAggregatorMaxMin {
 
@@ -85,10 +84,7 @@ public class MaxAggregator extends AbstractMeasureAggregatorMaxMin {
     @Override
     public void merge(MeasureAggregator aggregator) {
         MaxAggregator maxAggregator = (MaxAggregator) aggregator;
-        //        if(!maxAggregator.isFirstTime())
-        //        {
         agg(maxAggregator.aggVal);
-        //        }
     }
 
     @Override

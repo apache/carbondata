@@ -93,10 +93,10 @@ public class CSBTreeColumnarLeafNode extends CSBNode {
         int highCardColsCount = 0;
         for (int i = 0; i < columnMinMaxData.length; i++) {
 
-            //For high cardinality dimension engine has to ignore the length and store the min and max value
-            //of dimension members.
-            //Primitives types + high Card Cols + complex columns. Incrementing highcard cols & used it
-            // to identify complex columns block size.
+            //For high cardinality dimension engine has to ignore the length and store the min and
+            // max value of dimension members.
+            //Primitives types + high Card Cols + complex columns. Incrementing highcard cols &
+            // used it to identify complex columns block size.
             if (cubeDimensions[i].highCardinality || i >= eachBlockSize.length) {
                 highCardColsCount++;
                 ByteBuffer byteBuffer = ByteBuffer.allocate(columnMinMaxData[i].length);
@@ -152,9 +152,6 @@ public class CSBTreeColumnarLeafNode extends CSBNode {
         return nextNode;
     }
 
-    /**
-     * @param nextnode the nextnode to set
-     */
     public void setNext(CSBNode nextNode) {
         this.nextNode = nextNode;
     }
@@ -194,9 +191,6 @@ public class CSBTreeColumnarLeafNode extends CSBNode {
         return null;
     }
 
-    /**
-     * @param nextnode the nextnode to set
-     */
     public void setNextNode(CSBNode nextNode) {
         this.nextNode = nextNode;
     }
@@ -221,12 +215,10 @@ public class CSBTreeColumnarLeafNode extends CSBNode {
     @Override
     public byte[] getBackKeyArray(FileHolder fileHolder) {
         return null;
-        //        return keyStore.getBackArray(fileHolder);
     }
 
     @Override
     public short getValueSize() {
-        // TODO Auto-generated method stub
         return dataStore.getLength();
     }
 
@@ -248,7 +240,6 @@ public class CSBTreeColumnarLeafNode extends CSBNode {
 
     @Override
     public long getNodeNumber() {
-        // TODO Auto-generated method stub
         return nodeNumber;
     }
 

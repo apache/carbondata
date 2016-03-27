@@ -83,10 +83,6 @@ public class DimensionAggregatorInfo implements Serializable {
         orderList.add(index);
     }
 
-    public byte[] getNullValueMdkey() {
-        return nullValueMdkey;
-    }
-
     public void setNullValueMdkey(byte[] nullValueMdkey) {
         this.nullValueMdkey = nullValueMdkey;
     }
@@ -123,10 +119,6 @@ public class DimensionAggregatorInfo implements Serializable {
 
     public List<Integer> getOrderList() {
         return orderList;
-    }
-
-    public void setOrderList(List<Integer> orderList) {
-        this.orderList = orderList;
     }
 
     public boolean isDimensionPresentInCurrentSlice() {

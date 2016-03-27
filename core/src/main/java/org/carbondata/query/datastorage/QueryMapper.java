@@ -103,28 +103,6 @@ public final class QueryMapper {
      */
     public static void queryStart(String cubeUniqueName, long queryID) {
 
-        // TODO temporary
-        // Load slice from D:\hiers\part2
-        // CubeSliceLoader.maxAllowedSlices=1;
-        // if(loadSlice)
-        // {
-        // CubeSliceLoader sliceLoader = new CubeSliceLoader();
-        // sliceLoader.loadSliceFromFiles("sur", "D:/hiers/part2/");
-        // }
-        // loadSlice=!loadSlice;
-        //
-        // //TODO flush cache for each query for time being
-        // InMemoryCubeStore
-        // .getInstance()
-        // .getActiveSlices(cubeName)
-        // .get(0)
-        // .getCarbonCube()
-        // .getSchema()
-        // .getInternalConnection()
-        // .getCacheControl(null)
-        // .flushSchema(
-        // InMemoryCubeStore.getInstance().getActiveSlices(cubeName).get(0).getCarbonCube().getSchema());
-
         Long threadId = Thread.currentThread().getId();
 
         synchronized (QueryMapper.class) {
@@ -146,8 +124,6 @@ public final class QueryMapper {
             LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                     "QueryMapper :: Thread " + threadId + " is executing query " + queryID
                             + " on cube " + cubeUniqueName);
-            //System.out.println("QueryMapper :: Thread " + threadId + " is executing query " + queryID + " on cube "
-            //   + cubeName);
 
             // Register available cube slices for query (Thread)
             if (InMemoryTableStore.getInstance().findCache(cubeUniqueName)) {
@@ -165,9 +141,7 @@ public final class QueryMapper {
      * Register the query on this thread, and copy the slices applicable from
      * the parent thread to the current thread.
      *
-     * @param cubeName
      * @param queryID
-     * @param threadID
      */
     public static void queryStart(String cubeUniqueName, long queryID, long parentThreadId) {
         Long threadId = Thread.currentThread().getId();
@@ -188,9 +162,7 @@ public final class QueryMapper {
     /**
      * Unregister the query on this thread
      *
-     * @param cubeName
      * @param queryID
-     * @param threadID
      */
     public static void queryEnd(String cubeUniqueName, long queryID) {
         queryEnd(cubeUniqueName, queryID, true);
@@ -199,9 +171,7 @@ public final class QueryMapper {
     /**
      * Unregister the query on this thread
      *
-     * @param cubeName
      * @param queryID
-     * @param threadID
      */
     public static synchronized void queryEnd(String cubeUniqueName, long queryID, boolean publish) {
         Long threadId = Thread.currentThread().getId();
@@ -257,7 +227,6 @@ public final class QueryMapper {
     /**
      * How many queries working on this cube?
      *
-     * @param cubeName
      * @return
      */
     public static synchronized int getActiveQueriesCount(String cubeUniqueName) {
@@ -277,23 +246,6 @@ public final class QueryMapper {
         return (executionToSlicesMap.get(threadId) == null ?
                 null :
                 new ArrayList<Long>(executionToSlicesMap.get(threadId)));
-    }
-
-    /**
-     * @param listener
-     * @param threadID
-     */
-    public static synchronized void registerSliceListener(SliceListener listener, long queryId) {
-        // Long queryId =
-        // executionMap.get(listener.getCubeName()).get(threadID);
-
-        List<SliceListener> list = listeners.get(queryId);
-        if (list == null) {
-            list = new ArrayList<SliceListener>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-            listeners.put(queryId, list);
-        }
-
-        list.add(listener);
     }
 
 }

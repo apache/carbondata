@@ -17,15 +17,6 @@
  * under the License.
  */
 
-/**
- * Copyright Notice
- * =====================================
- * This file contains proprietary information of
- * Huawei Technologies India Pvt Ltd.
- * Copying or reproduction without prior written approval is prohibited.
- * Copyright (c) 2013
- * =====================================
- */
 package org.carbondata.query.aggregator;
 
 import java.util.List;
@@ -33,9 +24,6 @@ import java.util.List;
 import org.carbondata.query.expression.ColumnExpression;
 import org.carbondata.query.carbonfilterinterface.RowIntf;
 
-/**
- * @author K00900207
- */
 public interface CustomMeasureAggregator extends MeasureAggregator {
     /**
      * Aggregate method with generic row interface where RowIntf holds value for

@@ -16,7 +16,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.carbondata.query.aggregator.util;
 
 import java.lang.reflect.Constructor;
@@ -41,7 +40,6 @@ import org.carbondata.query.util.CarbonEngineLogEvent;
 /**
  * Class Description : AggUtil class for aggregate classes It will return
  * aggregator instance for measures
- * Version 1.0
  */
 public final class AggUtil {
 
@@ -105,7 +103,6 @@ public final class AggUtil {
      * get selected measureType
      */
     public static SqlStatement.Type getMeasureType(int measureOdinal) {
-        // return measureType.get(measureOdinal);
         if (allMeasures.length != 0) {
             return allMeasures[measureOdinal];
         } else {
@@ -119,7 +116,6 @@ public final class AggUtil {
      * @param aggregatorType aggregator Type
      * @param hasFactCount   whether table has fact count or not
      * @param generator      key generator
-     * @param slice          slice
      * @return MeasureAggregator
      */
     public static MeasureAggregator getAggregator(String aggregatorType, boolean isHighCardinality,
@@ -152,7 +148,6 @@ public final class AggUtil {
      *
      * @param aggregatorType aggregate name
      * @param generator      key generator
-     * @param slice          slice
      * @return MeasureAggregator
      */
 
@@ -193,7 +188,6 @@ public final class AggUtil {
             }
             return new DistinctCountAggregator(minValue);
         } else if (CarbonCommonConstants.SUM.equalsIgnoreCase(aggregatorType)) {
-            //            return new SumAggregator();
             switch (dataType) {
             case LONG:
 
@@ -286,53 +280,6 @@ public final class AggUtil {
      * @param hasFactCount
      * @return
      */
-    public static MeasureAggregator[] getAggregatorsWithCubeName(Measure[] measures,
-            boolean hasFactCount, KeyGenerator generator, String cubeUniqueName) {
-        MeasureAggregator[] aggregators = new MeasureAggregator[measures.length];
-
-        int count = 0;
-        for (int i = 0; i < measures.length; i++) {
-            if (measures[i].getAggName().equals(CarbonCommonConstants.DISTINCT_COUNT) && measures[i]
-                    .isSurrogateGenerated()) {
-                count++;
-            }
-        }
-        boolean isSurrogateBasedDistinctCountRequired = true;
-        if (count > 1) {
-            isSurrogateBasedDistinctCountRequired = false;
-        }
-
-        MeasureAggregator aggregator = null;
-        for (int i = 0; i < measures.length; i++) {
-            // based on MeasureAggregator name create the MeasureAggregator
-            // object
-            String aggName = measures[i].getAggName();
-            if (aggName.equals(CarbonCommonConstants.CUSTOM)) {
-                aggregator = getCustomAggregator(aggName, measures[i].getAggClassName(), generator,
-                        cubeUniqueName);
-            } else {
-
-                aggregator = getAggregator(aggName, hasFactCount, generator,
-                        measures[i].isSurrogateGenerated() && isSurrogateBasedDistinctCountRequired,
-                        measures[i].getMinValue(), measures[i].getDataType());
-            }
-            //            if (aggregator == null) {
-            //                 throw MondrianResource.instance().UnknownAggregator.ex(
-            //                         aggName," Aggregator not found");
-            //            }
-            aggregators[i] = aggregator;
-        }
-        return aggregators;
-    }
-
-    /**
-     * This method determines what agg needs to be given for each individual
-     * measures and based on hasFactCount, suitable avg ... aggs will be choosen
-     *
-     * @param measures
-     * @param hasFactCount
-     * @return
-     */
     public static MeasureAggregator[] getAggregators(Measure[] measures,
             CalculatedMeasure[] calculatedMeasures, boolean hasFactCount, KeyGenerator generator,
             String slice) {
@@ -364,10 +311,6 @@ public final class AggUtil {
                         measures[i].isSurrogateGenerated() && isSurrogateBasedDistinctCountRequired,
                         measures[i].getMinValue(), measures[i].getDataType());
             }
-            //            if (aggregator == null) {
-            //                 throw MondrianResource.instance().UnknownAggregator.ex(
-            //                         aggName," Aggregator not found");
-            //            }
             aggregators[i] = aggregatorInfo;
         }
 
@@ -384,7 +327,6 @@ public final class AggUtil {
      * @param aggregateNames list of MeasureAggregator name
      * @param hasFactCount   is fact count present
      * @param generator      key generator
-     * @param slice          slice
      * @return MeasureAggregator array which will hold agrregator for each
      * aggregateNames
      */
@@ -405,7 +347,6 @@ public final class AggUtil {
      * @param aggregateNames list of MeasureAggregator name
      * @param hasFactCount   is fact count present
      * @param generator      key generator
-     * @param slice          slice
      * @return MeasureAggregator array which will hold agrregator for each
      * aggregateNames
      */
@@ -440,16 +381,6 @@ public final class AggUtil {
         return aggregators;
     }
 
-    /**
-     * @param aggType
-     * @param hasFactCount
-     * @param generator
-     * @param cubeUniqueName
-     * @param minValue
-     * @param highCardinalityTypes
-     * @param dataTypes
-     * @return
-     */
     public static MeasureAggregator[] getAggregators(String[] aggType, boolean hasFactCount,
             KeyGenerator generator, String cubeUniqueName, Object[] minValue,
             boolean[] highCardinalityTypes, SqlStatement.Type[] dataTypes) {
@@ -469,17 +400,6 @@ public final class AggUtil {
 
     }
 
-    /**
-     * @param aggType
-     * @param aggregateExpressions
-     * @param hasFactCount
-     * @param generator
-     * @param cubeUniqueName
-     * @param minValue
-     * @param highCardinalityTypes
-     * @param dataTypes
-     * @return
-     */
     public static MeasureAggregator[] getAggregators(String[] aggType,
             List<CustomCarbonAggregateExpression> aggregateExpressions, boolean hasFactCount,
             KeyGenerator generator, String cubeUniqueName, Object[] minValue,

@@ -31,13 +31,12 @@ import org.carbondata.query.datastorage.storeInterfaces.KeyValue;
 import org.carbondata.query.schema.metadata.Pair;
 
 public class CSBTreeLeafNode extends CSBNode {
+
     /**
      * Number of keys in the node
      */
     protected int nKeys;
 
-    // Previous node
-    // CSBNode prevNode;
     /**
      * Key array
      */
@@ -47,8 +46,6 @@ public class CSBTreeLeafNode extends CSBNode {
      */
     private CSBNode nextNode;
 
-    // Key array
-    // byte [] [] keys;
     /**
      * Value array
      */
@@ -56,15 +53,11 @@ public class CSBTreeLeafNode extends CSBNode {
 
     public CSBTreeLeafNode(int maxKeys, int keySizeInBytes, int valueCount, boolean isFileStore,
             boolean isDataStoreReq) {
-        // TODO Auto-generated constructor stub
-
-        //      prevNode = null;
 
         keyStore = StoreFactory.createKeyStore(maxKeys, keySizeInBytes, isFileStore);
         if (isDataStoreReq) {
             dataStore = StoreFactory.createDataStore(null);
         }
-        //      values = new double[maxKeys][];
     }
 
     public CSBTreeLeafNode(int maxKeys, int keySizeInBytes, boolean isFileStore,
@@ -80,21 +73,6 @@ public class CSBTreeLeafNode extends CSBNode {
     }
 
     /**
-     * @return the prevnode
-     */
-    // public CSBNode getPrevNode() {
-    // return prevNode;
-    // }
-
-    /**
-     * @param prevnode
-     *            the prevnode to set
-     */
-    // public void setPrevNode(CSBNode prevNode) {
-    // this.prevNode = prevNode;
-    // }
-
-    /**
      * @return the nKeys
      */
     public int getnKeys() {
@@ -108,30 +86,6 @@ public class CSBTreeLeafNode extends CSBNode {
         this.nKeys = nKeys;
     }
 
-    //    /**
-    //     * @return the entries
-    //     */
-    //    public byte[] getMinKey()
-    //    {
-    //        return keyStore.get(0);
-    //    }
-    //
-    //    /**
-    //     * @return the entries
-    //     */
-    //    public byte[] getFirstKey()
-    //    {
-    //        return keyStore.get(0);
-    //    }
-    //
-    //    /**
-    //     * @return the entries
-    //     */
-    //    public byte[] getLastKey()
-    //    {
-    //        return keyStore.get(nKeys - 1);
-    //    }
-
     /**
      * @return the nextnode
      */
@@ -139,26 +93,6 @@ public class CSBTreeLeafNode extends CSBNode {
         return nextNode;
     }
 
-    //    public CSBTreeLeafNode(int maxKeys, int keySizeInBytes, int valueCount,String filePath, boolean isFileStore, long offset, int length, FileHolder fileHolder, ValueCompressionModel compressionModel)
-    //    {
-    //        // TODO Auto-generated constructor stub
-    //        nKeys = 0;
-    //        // prevNode = null;
-    //        nextNode = null;
-    //        //keyStore = StoreFactory.createStore(maxKeys, keySizeInBytes, true, raFile, tableName, filePath);
-    //        keyStore= StoreFactory.createKeyStore(maxKeys, keySizeInBytes, true, isFileStore, offset, filePath, length, fileHolder);
-    //        //long [] measuresOffsets = new long [offset.length-1];
-    //        //System.arraycopy(offset, 1, measuresOffsets, 0, measuresOffsets.length);
-    //        //int [] measuresLength = new int [length.length-1];
-    //        //System.arraycopy(length, 1, measuresLength, 0, measuresLength.length);
-    //        //dataStore = StoreFactory.createDataStore(maxKeys, valueCount, raFile, tableName, filePath);
-    //        dataStore = StoreFactory.createDataStore(maxKeys, valueCount, isFileStore, compressionModel, measuresOffsets, measuresLength, filePath);
-    //        // values = new double[maxKeys][];
-    //    }
-
-    /**
-     * @param nextnode the nextnode to set
-     */
     public void setNext(CSBNode nextNode) {
         this.nextNode = nextNode;
     }
@@ -177,8 +111,7 @@ public class CSBTreeLeafNode extends CSBNode {
      * @param keyindex the key number to set
      */
     public double[] getValue(int keyindex) {
-        // return values[keyindex];
-        return null;// dataStore.get(keyindex);
+        return null;
     }
 
     public boolean isLeafNode() {
@@ -191,10 +124,6 @@ public class CSBTreeLeafNode extends CSBNode {
 
     @Override
     public KeyValue getNextKeyValue(int index) {
-        // return new KeyValue<byte[], double[]>(keyStore.get(index),
-        // values[index]);
-        // return new KeyValue<byte[], double[]>(keyStore.get(index),
-        // dataStore.get(index));
         return null;
     }
 
@@ -217,9 +146,6 @@ public class CSBTreeLeafNode extends CSBNode {
         nKeys--;
     }
 
-    /**
-     * @param nextnode the nextnode to set
-     */
     public void setNextNode(CSBNode nextNode) {
         this.nextNode = nextNode;
     }
@@ -229,15 +155,7 @@ public class CSBTreeLeafNode extends CSBNode {
      */
     public void setFirstEntry(byte[] key, double[] value) {
         keyStore.put(0, key);
-        //        dataStore.put(0, value);
     }
-
-    //    @Override
-    //    public void compress(ValueCompressionModel compressionModel)
-    //    {
-    //        keyStore.compress();
-    //        dataStore.compress(compressionModel);
-    //    }
 
     @Override
     public byte[] getBackKeyArray(FileHolder fileHolder) {
@@ -247,7 +165,6 @@ public class CSBTreeLeafNode extends CSBNode {
 
     @Override
     public short getValueSize() {
-        // TODO Auto-generated method stub
         return dataStore.getLength();
     }
 
@@ -264,20 +181,17 @@ public class CSBTreeLeafNode extends CSBNode {
     @Override
     public ColumnarKeyStoreDataHolder[] getColumnarKeyStore(FileHolder fileHolder, int[] blockIndex,
             boolean[] needCompressedData) {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public ColumnarKeyStoreDataHolder getColumnarKeyStore(FileHolder fileHolder, int blockIndex,
             boolean needCompressedData) {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public long getNodeNumber() {
-        // TODO Auto-generated method stub
         return 0;
     }
 
@@ -288,13 +202,11 @@ public class CSBTreeLeafNode extends CSBNode {
 
     @Override
     public byte[][] getBlockMaxData() {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public byte[][] getBlockMinData() {
-        // TODO Auto-generated method stub
         return null;
     }
 }

@@ -48,10 +48,6 @@ public class DistinctStringCountAggregator implements MeasureAggregator {
         this.valueSetForStr.add(newVal);
     }
 
-    //    public void agg(double newVal, double factCount)
-    //    {
-    //    }
-
     private void agg(Set<String> set2) {
         this.valueSetForStr.addAll(set2);
     }
@@ -115,11 +111,6 @@ public class DistinctStringCountAggregator implements MeasureAggregator {
         return aggregator;
     }
 
-    //we are not comparing the Aggregator values 
-    /* public boolean equals(MeasureAggregator msrAggregator){
-         return compareTo(msrAggregator)==0;
-     }*/
-
     public int compareTo(MeasureAggregator o) {
         double val = getDoubleValue();
         double otherVal = o.getDoubleValue();
@@ -139,7 +130,6 @@ public class DistinctStringCountAggregator implements MeasureAggregator {
 
     @Override
     public void agg(CarbonReadDataHolder newVal, int index) {
-        //        valueSetForStr.add(newVal.getReadableDoubleValueByIndex(index));
     }
 
     @Override
@@ -158,8 +148,6 @@ public class DistinctStringCountAggregator implements MeasureAggregator {
 
     @Override
     public void merge(byte[] value) {
-        // TODO Auto-generated method stub
-
     }
 
 }

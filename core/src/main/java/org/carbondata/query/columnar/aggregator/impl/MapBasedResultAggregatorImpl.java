@@ -64,10 +64,8 @@ public class MapBasedResultAggregatorImpl implements ColumnarScannedResultAggreg
             DataAggregator dataAggregator) {
         this.columnaraggreagtorInfo = columnaraggreagtorInfo;
 
-        //CHECKSTYLE:OFF Approval No:Approval-V1R2C10_005
         boolean useXXHASH = Boolean.valueOf(
                 CarbonProperties.getInstance().getProperty("carbon.enableXXHash", "false"));
-        //CHECKSTYLE:ON
 
         if (useXXHASH) {
             xxHash32 = XXHashFactory.fastestInstance().hash32();
@@ -119,10 +117,6 @@ public class MapBasedResultAggregatorImpl implements ColumnarScannedResultAggreg
         return result;
     }
 
-    /**
-     * @param scannedResult
-     * @param restructureHolder
-     */
     private Map<ByteArrayWrapper, MeasureAggregator[]> updateScannedResult(
             RestructureHolder restructureHolder) {
         if (!restructureHolder.updateRequired) {

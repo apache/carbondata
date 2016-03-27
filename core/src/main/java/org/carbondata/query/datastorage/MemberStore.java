@@ -40,18 +40,12 @@ public class MemberStore {
      */
     private CarbonDef.Level carbonLevel;
 
-    /**
-     * member Cache
-     */
-    // private Map<Member, Member> cache = new HashMap<Member, Member>();
     private Member[][] cache;
 
     /**
      * globalCache
      */
     private int[] globalCache;
-
-    //    private Map<Integer,Integer> globalCacheMap = new HashMap<Integer,Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
     /**
      * Sort index after members are started
@@ -64,8 +58,6 @@ public class MemberStore {
     private int[][] sortReverseOrderIndex;
 
     private int sortReverseOrderIndexSize;
-
-    // private List<Member> allMembers = new ArrayList<Member>();
 
     /**
      * Column name ffrom schema
@@ -86,11 +78,6 @@ public class MemberStore {
      * Min member surrogate
      */
     private int minMember;
-
-    //    /**
-    //     * Whether it is number or string
-    //     */
-    //    private DataType memberDataType;
 
     private int minValue;
 
@@ -237,7 +224,6 @@ public class MemberStore {
     }
 
     /**
-     * @param id
      * @return
      */
     public Member getMemberByID(int localSurrogate) {
@@ -252,10 +238,6 @@ public class MemberStore {
         return null;
     }
 
-    /**
-     * @param minValue2
-     * @param map
-     */
     public void addAll(Member[][] memberArray, int minValue, int maxValue,
             List<int[][]> sortOrderAndReverseOrderIndex) {
         if (null == memberArray) {

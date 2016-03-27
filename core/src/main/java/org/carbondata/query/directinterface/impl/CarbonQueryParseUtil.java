@@ -115,16 +115,6 @@ public final class CarbonQueryParseUtil {
         fillMeta(queryImpl, cube, factTableName, model);
         model.setFactTableName(factTableName);
 
-        //Find out the suitable table (aggregation table or fact table)
-        /*Object pageRequire = queryImpl.getExtraProperties().get(CarbonQuery.PAGINATION_REQUIRED);
-        boolean isPaginationrequired=false;
-        if(pageRequire != null)
-        {
-            isPaginationrequired = Boolean.parseBoolean(pageRequire.toString());
-        }*/
-        //Find out the suitable table (aggregation table or fact table)
-        //        if(model.isAnalyzer() )
-        //        {
         List<Dimension> dims = new ArrayList<Dimension>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
         dims.addAll(model.getQueryDims());
         dims.addAll(model.getConstraints().keySet());
@@ -167,46 +157,9 @@ public final class CarbonQueryParseUtil {
         return model;
     }
 
-    /**
-     * @param cube
-     * @param model
-     * @throws IOException
-     */
-    public static String getSuitableTable(Cube cube, List<Dimension> dims, String schemaName,
-            String cubeName) throws IOException {
-        List<String> aggtables = new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-
-        String factTableName = cube.getFactTableName();
-
-        Set<String> tablesList = cube.getTablesList();
-        buildAggTablesList(cube, dims, aggtables, factTableName, tablesList);
-
-        if (aggtables.size() == 0) {
-            return cube.getFactTableName();
-        }
-
-        //        CarbonExecutor executor = new InMemoryQueryExecutor(null,schemaName, cubeName);
-        //        String selectedTabName = cube.getFactTableName();
-        //        long selectedTabCount = Long.MAX_VALUE;
-        //        for(String tableName : aggtables)
-        //        {
-        //            long count = executor.executeTableCount(tableName);
-        //            if(true) //count > 0
-        //            {
-        //                if(count < selectedTabCount)
-        //                {
-        //                    selectedTabCount = count;
-        //                    selectedTabName = tableName;
-        //                }
-        //            }
-        //        }
-        return cube.getFactTableName();
-    }
 
     /**
      * @param cube
-     * @param model
-     * @throws IOException
      */
     public static String getSuitableTable(Cube cube, List<Dimension> dims, List<Measure> measures)
             throws IOException {
@@ -254,11 +207,8 @@ public final class CarbonQueryParseUtil {
         return getTabName(cube, aggtablesMsrs);
     }
 
-    // TODO SIMIAN
-
     /**
      * @param cube
-     * @param model
      * @throws IOException
      */
     public static String getSuitableTable(Map<String, DimensionAggregatorInfo> dimAggregatorInfos,
@@ -560,19 +510,6 @@ public final class CarbonQueryParseUtil {
      */
     public static boolean isDimensionMeasureInAggTable(AggMeasure[] aggMeasures, Dimension dim,
             String agg) {
-        // AggMeasure[] aggMeasures = null;
-        // CarbonDef.Table table = (CarbonDef.Table)schema.cubes[0].fact;
-        // CarbonDef.AggTable[] aggTables = table.aggTables;
-        // String aggTableName = null;
-        // for(int i = 0;i < aggTables.length;i++)
-        // {
-        // aggTableName = ((CarbonDef.AggName)aggTables[i]).getNameAttribute();
-        // if(aggTableName.equals(aggTable))
-        // {
-        // aggMeasures = aggTables[i].measures;
-        // break;
-        // }
-        // }
         String dimensionFullName = "";
         dimensionFullName =
                 '[' + dim.getDimName() + "].[" + dim.getHierName() + "].[" + dim.getName() + ']';
@@ -584,41 +521,6 @@ public final class CarbonQueryParseUtil {
         return false;
     }
 
-    //    /**
-    //     *
-    //     * @param schema
-    //     * @param cube
-    //     * @param dim
-    //     * @param aggTable
-    //     * @return
-    //     *
-    //     */
-    //    public static boolean isLevelInAggTable(Schema schema, Cube cube, Dimension dim, String aggTable)
-    //    {
-    //        AggLevel[] aggLevels = null;
-    //        CarbonDef.Table table = (CarbonDef.Table)schema.cubes[0].fact;
-    //        CarbonDef.AggTable[] aggTables = table.aggTables;
-    //        String aggTableName = null;
-    //        for(int i = 0;i < aggTables.length;i++)
-    //        {
-    //            aggTableName = ((CarbonDef.AggName)aggTables[i]).getNameAttribute();
-    //            if(aggTableName.equals(aggTable))
-    //            {
-    //                aggLevels = aggTables[i].levels;
-    //                break;
-    //            }
-    //        }
-    //        String dimensionFullName = "";
-    //        dimensionFullName = '[' + dim.getDimName() + "].[" + dim.getHierName() + "].[" + dim.getName() + ']';
-    //        for(AggLevel agglevel : aggLevels)
-    //        {
-    //            if(dimensionFullName.equals(agglevel.name))
-    //            {
-    //                return true;
-    //            }
-    //        }
-    //        return false;
-    //    }
 
     /**
      * @param cube
@@ -626,19 +528,15 @@ public final class CarbonQueryParseUtil {
      * @return
      */
     private static String getTabName(Cube cube, List<String> aggtablesMsrs) {
-        //        CarbonExecutor executor = new InMemoryQueryExecutor(null);
         String selectedTabName = cube.getFactTableName();
         long selectedTabCount = Long.MAX_VALUE;
         for (String tableName : aggtablesMsrs) {
             long count =
                     cube.getDimensions(tableName).size();//executor.executeTableCount(tableName);
-            //            if(true) //count > 0
-            //            {
             if (count < selectedTabCount) {
                 selectedTabCount = count;
                 selectedTabName = tableName;
             }
-            //            }
         }
         return selectedTabName;
     }
@@ -797,12 +695,6 @@ public final class CarbonQueryParseUtil {
             }
         }
 
-        //        for(Entry<String, CarbonFilterWrapper> entry : filetrWrapperConstMap.entrySet())
-        //        {
-        //            CarbonFilterWrapper value = entry.getValue();
-        //            fillConstraints(queryImpl, constraints, value, cube);
-        //        }
-
         queryDims.addAll(queryDimsRows);
         queryDims.addAll(queryDimsCols);
         model.setQueryDims(queryDims);
@@ -861,29 +753,6 @@ public final class CarbonQueryParseUtil {
         return errors;
     }
 
-/*
-    *//**
-     *
-     * @param queryImpl
-     * @param constraints
-     * @param value
-     *
-     *//*
-    private static void fillConstraints(CarbonQueryImpl queryImpl, Map<Dimension, CarbonFilterInfo> constraints,
-            CarbonFilterWrapper value, Cube cube)
-    {
-        if((null != queryImpl.getExtraProperties())
-                && "true".equals(queryImpl.getExtraProperties().get("ANALYZER_QUERY")))
-        {
-            constraints.putAll(value.getFilters(true, cube));
-        }
-        else
-        {
-            constraints.putAll(value.getFilters(false, cube));
-        }
-    }
-
-*/
 
     /**
      * @param cube
@@ -965,10 +834,7 @@ public final class CarbonQueryParseUtil {
             CarbonMeasure measure) {
         if (!cube.getFactTableName().equals(factTableName)) {
             Measure msr = cube.getMeasure(cube.getFactTableName(), measure.getName());
-            //  if(msr instanceof CalculatedMeasure)
-            //  {
             return msr;
-            //}
         }
         return null;
     }
@@ -981,7 +847,6 @@ public final class CarbonQueryParseUtil {
      * @param constraints
      * @param sortTypes
      * @param errors
-     * @param i
      * @param holder
      */
     private static void processDimension(Cube cube, String factTableName,
@@ -998,29 +863,6 @@ public final class CarbonQueryParseUtil {
         Dimension dim = cube.getDimensionByLevelName(dimensionLevel.getDimensionName(),
                 dimensionLevel.getHierarchyName(), dimensionLevel.getName(), factTableName);
         if (dim == null) {
-            //            if(holder.getLevel().getType().equals(CarbonLevelType.DYNAMIC_DIMENSION))
-            //            {
-            //                Dimension dimension = new Dimension(dimensionLevel.getName(), 0, dimensionLevel.getName(),cube);
-            //                dimension.setHierName(dimensionLevel.getHierarchyName());
-            //                dimension.setDimName(dimensionLevel.getDimensionName());
-            //
-            //                if(axisType == AxisType.ROW)
-            //                {
-            //                    if(!queryDimsRowsIncludeDynamicLevels.contains(dimension))
-            //                    {
-            //                        queryDimsRowsIncludeDynamicLevels.add(dimension);
-            //                    }
-            //                }
-            //                else if(axisType == AxisType.COLUMN)
-            //                {
-            //                    if(!queryDimsColsIncludeDynamicLevels.contains(dimension))
-            //                    {
-            //                        queryDimsColsIncludeDynamicLevels.add(dimension);
-            //                    }
-            //                }
-            //
-            //                sortTypesIncludeDynamicLevels.add(getSortByte(holder.getSortType()));
-            //            }
             errors.add(dimensionLevel.getName());
         } else {
             if (axisType == AxisType.ROW) {
@@ -1045,7 +887,6 @@ public final class CarbonQueryParseUtil {
 
         }
         CarbonDimensionLevelFilter dimLevelFilter = holder.getDimLevelFilter();
-        //SorceMonitor Fix
         updateConstraints(constraints, constraintsAfterTopN, isAnalyzerQuery, dim, dimLevelFilter,
                 filetrWrapperConstMap);
     }
@@ -1125,21 +966,11 @@ public final class CarbonQueryParseUtil {
                 }
 
                 constraints.put(dim, carbonFilterInfoCurrent);
-                //                CarbonFilterWrapper carbonFilterWrapper = filetrWrapperConstMap.get(dim.getDimName() + '_' +dim.getHierName());
-                //
-                //                if(null == carbonFilterWrapper)
-                //                {
-                //                    carbonFilterWrapper = new CarbonFilterWrapper();
-                //                    filetrWrapperConstMap.put(dim.getDimName() + '_' + dim.getHierName(), carbonFilterWrapper);
-                //
-                //                }
-                //                carbonFilterWrapper.addDimensionAndFilter(dim, dimLevelFilter);
 
             }
         }
     }
 
-    //TODO SIMIAN
     private static CarbonFilterInfo createFilterForTopNAfter(
             CarbonFilterInfo carbonFilterInfoCurrent) {
         List<String> includedMembers = carbonFilterInfoCurrent.getIncludedMembers();
@@ -1410,10 +1241,9 @@ public final class CarbonQueryParseUtil {
             }
         }
         /**
-         * Modified for DTS2013092604161
          *
          * Getting StringIndexOutOfBoundsException and NullPointerException in
-         * UniBIServer.log while creating carbon report with empty data
+         * log while creating carbon report with empty data
          *
          */
         boolean isProperRange = i + 1 <= length && openBracketIndex < i + 1;

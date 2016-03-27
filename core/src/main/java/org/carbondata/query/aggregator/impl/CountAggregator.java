@@ -31,7 +31,6 @@ import org.carbondata.query.aggregator.MeasureAggregator;
 
 /**
  * Class Description : It will return total count of values
- * Version 1.0
  */
 public class CountAggregator implements MeasureAggregator {
 

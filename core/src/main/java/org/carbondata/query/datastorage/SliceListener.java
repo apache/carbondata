@@ -80,35 +80,15 @@ public class SliceListener {
         }
 
         if (queries.size() == 0) {
-            // to avoid ConcurrentModificationException while sliceListiterating
-            //By:Sojer z00218041
-            /**
-             * This code is commented for checkstyle issue where
-             * SLICE_LIST_CONCURRENT = false; where the loop will never run
-             *
-             * @author C00900810
-             */
-            // try
-            // {
-            // while(InMemoryCubeStore.getInstance().isSliceListConcurrent())
-            // {
-            // Thread.sleep(1);
-            // }
-            // }
-            // catch(InterruptedException e)
-            // {
-            // LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-            // "InterruptedException");
-            // }
+
             LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                     "SliceListener: Unregistering slice " + slice.getID());
-            //System.out.println("SliceListener: Unregistering slice " + slice.getID());
 
             //Yes this slice is ready to clear
             InMemoryTableStore.getInstance().unRegisterSlice(slice.getCubeUniqueName(), slice);
             slice.clean();
 
-            // By Sojer z00218041 if the query is in waiting and old execution
+            // if the query is in waiting and old execution
             // finished, change QUERY_EXECUTE_STATUS and deal with cache
             InMemoryTableStore.getInstance().afterClearQueriesAndCubes(slice.getCubeUniqueName());
         }

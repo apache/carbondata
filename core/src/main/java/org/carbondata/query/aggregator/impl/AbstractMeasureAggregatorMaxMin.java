@@ -75,7 +75,6 @@ public abstract class AbstractMeasureAggregatorMaxMin implements MeasureAggregat
      */
     @Override
     public void setNewValue(Object newValue) {
-        //        aggVal= newValue;
     }
 
     /**

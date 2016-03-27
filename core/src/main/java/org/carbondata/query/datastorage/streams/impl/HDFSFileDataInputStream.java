@@ -17,9 +17,6 @@
  * under the License.
  */
 
-/**
- *
- */
 package org.carbondata.query.datastorage.streams.impl;
 
 import java.io.FileNotFoundException;
@@ -43,9 +40,6 @@ import org.carbondata.core.util.ValueCompressionUtil;
 import org.carbondata.query.schema.metadata.Pair;
 import org.carbondata.query.util.CarbonEngineLogEvent;
 
-/**
- * @author R00900208
- */
 public class HDFSFileDataInputStream extends AbstractFileDataInputStream {
     /**
      * Attribute for Carbon LOGGER
@@ -58,95 +52,23 @@ public class HDFSFileDataInputStream extends AbstractFileDataInputStream {
      */
     private static final String HIERARCHY_FILE_EXTENSION = ".hierarchy";
 
-    //    /**
-    //     *
-    //     */
-    //    private String filesLocation;
-
-    //    /**
-    //     *
-    //     */
-    //    private int mdkeysize;
-    //
-    //    /**
-    //     *
-    //     */
-    //    private int msrCount;
-
-    /**
-     *
-     */
     private String persistenceFileLocation;
 
-    /**
-     *
-     */
-    //    protected boolean hasFactCount;
-
-    /**
-     *
-     */
     private String tableName;
 
-    /**
-     *
-     */
     private FSDataInputStream fsChannel;
 
-    /**
-     *
-     */
     private ValueCompressionModel valueCompressionModel;
 
-    //    /**
-    //     *
-    //     */
-    //    private long offSet;
-
-    //    /**
-    //     *
-    //     */
-    //    private FileHolder fileHolder;
-
-    /**
-     *
-     */
     private long fileSize;
 
-    //    /**
-    //     *
-    //     */
-    //    private int totalMetaDataLength;
-
-    //    /**
-    //     * start key
-    //     */
-    //    private byte[] startKey;
-
-    /**
-     * @param filesLocation
-     * @param mdkeysize
-     * @param msrCount
-     * @param aggregateNames
-     * @param tableName
-     * @param hasFactCount
-     */
     public HDFSFileDataInputStream(String filesLocation, int mdkeysize, int msrCount,
             boolean hasFactCount, String persistenceFileLocation, String tableName) {
         super(filesLocation, mdkeysize, msrCount);
-        //        this.hasFactCount = hasFact_count;
-        //        this.lastKey = null;
         this.persistenceFileLocation = persistenceFileLocation;
         this.tableName = tableName;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * com.huawei.unibi.carbon.engine.datastorage.streams.DataInputStream#initInput
-     * ()
-     */
     @Override
     public void initInput() {
         //
@@ -162,7 +84,6 @@ public class HDFSFileDataInputStream extends AbstractFileDataInputStream {
                 FileStatus fileStatus = fs.getFileStatus(pt);
                 fileSize = fileStatus.getLen() - CarbonCommonConstants.LONG_SIZE_IN_BYTE;
                 offSet = fileHolder.readDouble(filesLocation, fileSize);
-                //
                 valueCompressionModel = ValueCompressionUtil.getValueCompressionModel(
                         this.persistenceFileLocation
                                 + CarbonCommonConstants.MEASURE_METADATA_FILE_NAME + tableName
@@ -178,13 +99,6 @@ public class HDFSFileDataInputStream extends AbstractFileDataInputStream {
         }
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * com.huawei.unibi.carbon.engine.datastorage.streams.DataInputStream#closeInput
-     * ()
-     */
     @Override
     public void closeInput() {
         if (fsChannel != null) {
@@ -253,9 +167,9 @@ public class HDFSFileDataInputStream extends AbstractFileDataInputStream {
             nodeInfo.setMeasureOffset(msrOffset);
             listOfNodeInfo.add(nodeInfo);
         }
-        // Fixed DTS:DTS2013092610515
         // if fact file empty then list size will 0 then it will throw index out of bound exception
-        // if memory is less and cube loading failed that time list will be empty so it will throw out of bound exception
+        // if memory is less and cube loading failed that time list will be empty so it will throw
+        // out of bound exception
         if (listOfNodeInfo.size() > 0) {
             startKey = listOfNodeInfo.get(0).getStartKey();
         }
@@ -267,13 +181,6 @@ public class HDFSFileDataInputStream extends AbstractFileDataInputStream {
         return valueCompressionModel;
     }
 
-    //TODO SIMIAN
-    /*
-     * (non-Javadoc)
-     * 
-     * @see com.huawei.unibi.carbon.engine.datastorage.streams.DataInputStream#
-     * getNextHierTuple()
-     */
     @Override
     public Pair getNextHierTuple() {
         // We are adding surrogate key also with mdkey.

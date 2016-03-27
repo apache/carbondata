@@ -31,14 +31,8 @@ import org.carbondata.query.executer.calcexp.CarbonCalcFunction;
 
 public class CalculatedMeasureAggregatorImpl implements CalculatedMeasureAggregator {
 
-    /**
-     *
-     */
     private static final long serialVersionUID = -3735752250785327377L;
 
-    /**
-     *
-     */
     private CarbonCalcFunction function;
 
     private double val;
@@ -87,25 +81,19 @@ public class CalculatedMeasureAggregatorImpl implements CalculatedMeasureAggrega
 
     @Override
     public Object getValueObject() {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public void merge(MeasureAggregator aggregator) {
-        // TODO Auto-generated method stub
-
     }
 
     @Override
     public void setNewValue(Object newValue) {
-        // TODO Auto-generated method stub
-
     }
 
     @Override
     public boolean isFirstTime() {
-        // TODO Auto-generated method stub
         return false;
     }
 
@@ -128,12 +116,6 @@ public class CalculatedMeasureAggregatorImpl implements CalculatedMeasureAggrega
     public MeasureAggregator getCopy() {
         return this;
     }
-    //we are not comparing the values
-  /*  
-    public boolean equals(MeasureAggregator msrAggregator){
-        return compareTo(msrAggregator)==0;
-    }
-    */
 
     @Override
     public int compareTo(MeasureAggregator msrObj) {
@@ -155,8 +137,6 @@ public class CalculatedMeasureAggregatorImpl implements CalculatedMeasureAggrega
 
     @Override
     public void merge(byte[] value) {
-        // TODO Auto-generated method stub
-
     }
 
 }

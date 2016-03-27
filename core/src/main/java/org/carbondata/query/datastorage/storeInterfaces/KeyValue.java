@@ -146,8 +146,6 @@ public class KeyValue {
      * This will be used to set the block of data store with measure value
      *
      * @param block
-     * @param data  array
-     *              it will be leaf node data
      */
     public void setBlock(DataStoreBlock block, byte[] backKeyArray, FileHolder fileHolder) {
         msrData = block.getNodeMsrDataWrapper(msrCols, fileHolder).getValues();
@@ -179,7 +177,8 @@ public class KeyValue {
     }
 
     public Object getValue(int col, SqlStatement.Type dataType) {
-        switch (dataType)   //get measure type and distinguish the get methods of CarbonReadDataHolder
+        //get measure type and distinguish the get methods of CarbonReadDataHolder
+        switch (dataType)
         {
         case LONG:
             return msrData[col].getReadableLongValueByIndex(row);
@@ -356,11 +355,10 @@ public class KeyValue {
             double[] cp = new double[msrData.length];
             for (int i = 0; i < cp.length; i++) {
                 cp[i] = msrData[i].getReadableDoubleValueByIndex(
-                        row);//[row];//.getValue(index, decimal[i], maxValue[i]);
+                        row);
             }
             return cp;
 
-            //            return msrData[].get(row);
         }
         return val;
     }

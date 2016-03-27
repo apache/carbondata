@@ -51,7 +51,6 @@ public class CSBInternalNode extends CSBNode {
      */
     public CSBInternalNode(int maxKeys, int keySizeInBytes, String tableName) {
         // Create a new internal node with space for maxKeys
-        //   keyStore = StoreFactory.createStore(maxKeys, keySizeInBytes, false, null, tableName, null);
         keyStore = StoreFactory.createKeyStore(maxKeys, keySizeInBytes, false);
     }
 
@@ -77,24 +76,6 @@ public class CSBInternalNode extends CSBNode {
     }
 
     /**
-     * @return the entries
-     */
-    //    public byte[] getFirstKey()
-    //    {
-    //        // return keys[0];
-    //        return keyStore.get(0);
-    //    }
-    //
-    //    /**
-    //     * @return the entries
-    //     */
-    //    public byte[] getLastKey()
-    //    {
-    //        // return keys[nKeys - 1];
-    //        return keyStore.get(nKeys - 1);
-    //    }
-
-    /**
      * @param children the children to set
      */
     public void setChildren(CSBNode[] children) {
@@ -109,35 +90,10 @@ public class CSBInternalNode extends CSBNode {
         return children[childIndex];
     }
 
-    /**
-     * @return the keys
-     */
-    // public byte[][] getKeys()
-    // {
-    // return keys;
-    // }
-
-    /**
-     * @param keyindex
-     *            the key number to set
-     */
-
-    /**
-     * @param keyindex the key number to set
-     */
     public double[] getValue(int keyindex) {
         // We shouldn't ever be here
         return null;
     }
-
-    /**
-     * @param keys
-     *            the keys to set
-     */
-    // public void setKeys(byte[][] keys)
-    // {
-    // this.keys = keys;
-    // }
 
     /**
      * @param keyindex the key number to set
@@ -155,9 +111,6 @@ public class CSBInternalNode extends CSBNode {
         return false;
     }
 
-    /**
-     * @param prevnode the prevnode to set
-     */
     public void setPrevNode(CSBNode prevNode) {
         // We shouln't ever be here
     }
@@ -169,9 +122,6 @@ public class CSBInternalNode extends CSBNode {
         return null;
     }
 
-    /**
-     * @param nextnode the nextnode to set
-     */
     public void setNext(CSBNode nextNode) {
         // We shouldn't ever be here
     }
@@ -181,16 +131,9 @@ public class CSBInternalNode extends CSBNode {
         return null;
     }
 
-    /**
-     * @param nextnode the nextnode to set
-     */
     public void setNextNode(CSBNode nextNode) {
         // We shouldn't ever be here
     }
-
-    /*
-     * public void addEntry(KeyValue<byte[], double[]> entry) { }
-     */
 
     @Override
     public byte[] getBackKeyArray(FileHolder fileHolder) {
@@ -220,20 +163,17 @@ public class CSBInternalNode extends CSBNode {
     @Override
     public ColumnarKeyStoreDataHolder[] getColumnarKeyStore(FileHolder fileHolder, int[] blockIndex,
             boolean[] needCompressedData) {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public long getNodeNumber() {
-        // TODO Auto-generated method stub
         return 0;
     }
 
     @Override
     public ColumnarKeyStoreDataHolder getColumnarKeyStore(FileHolder fileHolder, int blockIndex,
             boolean needCompressedData) {
-        // TODO Auto-generated method stub
         return null;
     }
 
@@ -244,13 +184,11 @@ public class CSBInternalNode extends CSBNode {
 
     @Override
     public byte[][] getBlockMaxData() {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public byte[][] getBlockMinData() {
-        // TODO Auto-generated method stub
         return null;
     }
 

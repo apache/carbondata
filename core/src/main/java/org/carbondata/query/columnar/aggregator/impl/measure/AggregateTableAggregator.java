@@ -40,7 +40,6 @@ public class AggregateTableAggregator extends FactTableAggregator {
     /**
      * aggregateMsrs
      *
-     * @param available
      * @param currentMsrRowData
      */
     public void aggregateMeasure(AbstractColumnarScanResult keyValue,
@@ -51,7 +50,6 @@ public class AggregateTableAggregator extends FactTableAggregator {
             if (type[i] == CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE) {
                 int index = columnaraggreagtorInfo.getMeasureOrdinalMap().get(measureOrdinal[i]);
                 SqlStatement.Type dataType = this.columnaraggreagtorInfo.getDataTypes()[index];
-                //                measureValue = keyValue.getNormalMeasureValue(measureOrdinal[i], dataType);
                 switch (dataType) {
                 case LONG:
                     measureValue = keyValue.getLongValue(measureOrdinal[i]);
