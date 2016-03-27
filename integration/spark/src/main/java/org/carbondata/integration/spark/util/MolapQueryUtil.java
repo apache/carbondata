@@ -808,6 +808,8 @@ public final class MolapQueryUtil {
             String partitionID, List<String> sliceLoadPaths, List<String> sliceUpdatedLoadPaths,
             String factTableName, long cubeCreationTime) {
         String basePath = MolapUtil.getCarbonStorePath(schema.name, schema.cubes[0].name);
+        InMemoryCubeStore.getInstance().
+                loadCubeMetadataIfRequired(schema, schema.cubes[0], partitionID, cubeCreationTime);
         InMemoryCubeStore.getInstance()
                 .loadCube(schema, cube, partitionID, sliceLoadPaths, sliceUpdatedLoadPaths,
                         factTableName, basePath, currentRestructNumber, cubeCreationTime);

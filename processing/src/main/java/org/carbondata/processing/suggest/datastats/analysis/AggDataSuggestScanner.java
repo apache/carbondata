@@ -35,7 +35,6 @@ import org.carbondata.query.wrappers.ByteArrayWrapper;
 /**
  * This is store scanner, it returns given no of rows of records
  *
- * @author A00902717
  */
 public class AggDataSuggestScanner extends AbstractColumnarScanResult {
     protected int[] dataBlockSize;
@@ -43,7 +42,6 @@ public class AggDataSuggestScanner extends AbstractColumnarScanResult {
 
     public AggDataSuggestScanner(int keySize, int[] selectedDimensionIndex) {
         super(keySize, selectedDimensionIndex);
-        // TODO Auto-generated constructor stub
     }
 
     public void setKeyBlock(ColumnarKeyStoreDataHolder[] columnarKeyStoreDataHolder) {
@@ -60,7 +58,6 @@ public class AggDataSuggestScanner extends AbstractColumnarScanResult {
 
     public HashSet<Integer> getLimitedDataBlock(int noOfRows) {
 
-        // int[] surrogates = new int[numberOfOutputRows()];
         byte[] completeKeyArray = null;
 
         HashSet<Integer> uniqueData = new HashSet<Integer>(noOfRows);
@@ -84,32 +81,6 @@ public class AggDataSuggestScanner extends AbstractColumnarScanResult {
 
     }
 
-    /**
-     * it returns complete data from given column
-     *
-     * @param column
-     * @param noOfRows
-     * @return
-     */
-    /*
-	 * public byte[][] getDataBlock(int column) { byte[][] columnsData = new
-	 * byte[numberOfOutputRows()][]; // int[] surrogates = new
-	 * int[numberOfOutputRows()]; byte[] completeKeyArray = null;
-	 * 
-	 * for (int j = 0; j < numberOfOutputRows(); j++) { completeKeyArray = new
-	 * byte[dataBlockSize[column]];
-	 * 
-	 * System.arraycopy(dataBlock[column], j * dataBlockSize[column],
-	 * completeKeyArray, 0, dataBlockSize[column]);
-	 * 
-	 * byte[] actual = new byte[4]; int destPos = 4 - dataBlockSize[column];
-	 * System.arraycopy(completeKeyArray, 0, actual, destPos,
-	 * dataBlockSize[column]);
-	 * 
-	 * columnsData[j] = completeKeyArray;
-	 * 
-	 * } return columnsData; }
-	 */
     public double getDoubleValue(int measureOrdinal) {
         return 0.0;
     }
