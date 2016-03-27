@@ -100,7 +100,7 @@ public abstract class AbstractCarbonExecutor implements CarbonExecutor {
     /**
      * Set the start and end Key.
      *
-     * @see CarbonExecutor#setStartAndEndKeys(long[], long[], long[][], long[][], com.huawei.unibi.molap.metadata.MolapMetadata.Dimension[])
+     * @see CarbonExecutor#setStartAndEndKeys(long[], long[], long[][], long[][], com.huawei.unibi.carbon.metadata.CarbonMetadata.Dimension[])
      */
     public void setStartAndEndKeys(long[] startKey, long[] endKey, long[][] incldPredKeys,
             long[][] incldOrPredKeys, long[][] excldPredKeys, Dimension[] tables)
@@ -243,10 +243,10 @@ public abstract class AbstractCarbonExecutor implements CarbonExecutor {
         //                lens[i] = dims[i].getNoOfbits();
         //            }
         //        }
-        //        byte dimSet=Byte.parseByte(MolapProperties.getInstance().getProperty(
-        //                MolapCommonConstants.DIMENSION_SPLIT_VALUE_IN_COLUMNAR,
-        //                MolapCommonConstants.DIMENSION_SPLIT_VALUE_IN_COLUMNAR_DEFAULTVALUE));
-        //        return new MultiDimKeyVarLengthEquiSplitGenerator(MolapUtil.getIncrementedCardinalityFullyFilled(lens),(byte)1);
+        //        byte dimSet=Byte.parseByte(CarbonProperties.getInstance().getProperty(
+        //                CarbonCommonConstants.DIMENSION_SPLIT_VALUE_IN_COLUMNAR,
+        //                CarbonCommonConstants.DIMENSION_SPLIT_VALUE_IN_COLUMNAR_DEFAULTVALUE));
+        //        return new MultiDimKeyVarLengthEquiSplitGenerator(CarbonUtil.getIncrementedCardinalityFullyFilled(lens),(byte)1);
         return null;
     }
 

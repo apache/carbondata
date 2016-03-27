@@ -83,7 +83,7 @@ public class ParallelSliceExecutorImpl implements ParallelSliceExecutor {
     //    /**
     //     *
     //     */
-    //    private MolapResultHolder resultHolder;
+    //    private CarbonResultHolder resultHolder;
     //
     //    private boolean interrupted;
     //
@@ -92,7 +92,7 @@ public class ParallelSliceExecutorImpl implements ParallelSliceExecutor {
     //     *
     //     * @param info
     //     */
-    //    public ParallelSliceExecutorImpl(List<SliceExecutionInfo> infos,SliceExecutionInfo latestInfo,QueryRowCounter rowCounter,int rowLimit,MolapResultHolder resultHolder)
+    //    public ParallelSliceExecutorImpl(List<SliceExecutionInfo> infos,SliceExecutionInfo latestInfo,QueryRowCounter rowCounter,int rowLimit,CarbonResultHolder resultHolder)
     //    {
     //        this.infos = infos;
     //        this.latestInfo = latestInfo;
@@ -101,13 +101,13 @@ public class ParallelSliceExecutorImpl implements ParallelSliceExecutor {
     //        this.rowLimit = rowLimit;
     //        if(infos.get(0).isPaginationRequired())
     //        {
-    //            this.rowLimit = Integer.parseInt(MolapProperties.getInstance().getProperty(
-    //                    MolapCommonConstants.PAGINATED_INTERNAL_FILE_ROW_LIMIT,
-    //                    MolapCommonConstants.PAGINATED_INTERNAL_FILE_ROW_LIMIT_DEFAULT));
+    //            this.rowLimit = Integer.parseInt(CarbonProperties.getInstance().getProperty(
+    //                    CarbonCommonConstants.PAGINATED_INTERNAL_FILE_ROW_LIMIT,
+    //                    CarbonCommonConstants.PAGINATED_INTERNAL_FILE_ROW_LIMIT_DEFAULT));
     //        }
     //        else
     //        {
-    //            rowLimit = Integer.parseInt(MolapProperties.getInstance().getProperty(MolapCommonConstants.MOLAP_RESULT_SIZE_KEY,MolapCommonConstants.MOLAP_RESULT_SIZE_DEFAULT));
+    //            rowLimit = Integer.parseInt(CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_RESULT_SIZE_KEY,CarbonCommonConstants.CARBON_RESULT_SIZE_DEFAULT));
     //        }
     //        long[][][] ranges = infos.get(0).getRanges();
     //        if(ranges != null && ranges.length > 1)
@@ -121,7 +121,7 @@ public class ParallelSliceExecutorImpl implements ParallelSliceExecutor {
     //    /**
     //     * create  {@link SliceRangeExecutor} instance and submit to execute task in parallel.
     //     *
-    //     * @see com.huawei.unibi.molap.engine.executer.ParallelSliceExecutor#executeSliceInParallel(long[][][], java.lang.String)
+    //     * @see com.huawei.unibi.carbon.engine.executer.ParallelSliceExecutor#executeSliceInParallel(long[][][], java.lang.String)
     //     *
     //     */
     //    @Override
@@ -215,7 +215,7 @@ public class ParallelSliceExecutorImpl implements ParallelSliceExecutor {
     ////                    }
     ////                    catch(InterruptedException e)
     ////                    {
-    ////                        LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e, e.getMessage());
+    ////                        LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e, e.getMessage());
     ////                    }
     //                }
     //                else
@@ -232,7 +232,7 @@ public class ParallelSliceExecutorImpl implements ParallelSliceExecutor {
     ////                    }
     //                    catch(Exception e)
     //                    {
-    //                        LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e, e.getMessage());
+    //                        LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e, e.getMessage());
     //                    }
     //                }
     //                // execService.shutdown();
@@ -252,7 +252,7 @@ public class ParallelSliceExecutorImpl implements ParallelSliceExecutor {
     ////        }
     //        catch (Exception e)
     //        {
-    //            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e, e.getMessage());
+    //            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e, e.getMessage());
     //        }
     ////        while(!lru.isSizeInLimits())
     ////        {
@@ -267,10 +267,10 @@ public class ParallelSliceExecutorImpl implements ParallelSliceExecutor {
     ////            rangeExecutors.add(task);
     ////            result = task.call();
     ////        }
-    //        LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+    //        LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
     //                "Lru Cache Size " + lru.getCurrentSize() +" MB");
     //
-    //        LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+    //        LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
     //                "Total time taken for scan " + (System.currentTimeMillis() - startTime));
     //
     //        try
@@ -278,9 +278,9 @@ public class ParallelSliceExecutorImpl implements ParallelSliceExecutor {
     //            int[] rowRange = sliceExecutionInfo.getRowRange();
     //            if(rowRange != null)
     //            {
-    //                String outLocation = MolapProperties.getInstance().getProperty(MolapCommonConstants.STORE_LOCATION,
-    //                        MolapCommonConstants.STORE_LOCATION_DEFAULT_VAL)
-    //                        + File.separator + MolapCommonConstants.PAGINATED_CACHE_FOLDER;
+    //                String outLocation = CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION,
+    //                        CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL)
+    //                        + File.separator + CarbonCommonConstants.PAGINATED_CACHE_FOLDER;
     //
     //                DataFileReader fileReader = new DataFileReader(holder.getByteCount(),outLocation,
     //                        sliceExecutionInfo.getQueryId(), holder.getGenerator(), sliceExecutionInfo.getQueryMsrs(), sliceExecutionInfo.getCalculatedMeasures(),sliceExecutionInfo.getMeasureIndexToRead(),sliceExecutionInfo.getSlice());
@@ -321,7 +321,7 @@ public class ParallelSliceExecutorImpl implements ParallelSliceExecutor {
     //        }
     //        catch(IOException e)
     //        {
-    //            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,e, "Error during reading the page");
+    //            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,e, "Error during reading the page");
     //        }
     //        return new HashMap<ByteArrayWrapper, MeasureAggregator[]>();
     //    }

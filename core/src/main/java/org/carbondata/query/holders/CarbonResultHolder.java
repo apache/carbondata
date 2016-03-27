@@ -75,7 +75,7 @@ public class CarbonResultHolder implements Serializable {
     private int rowLimit = -1;
 
     /**
-     * MolapResultHolder Constructor
+     * CarbonResultHolder Constructor
      *
      * @param dataTypes SQL data types
      */

@@ -27,7 +27,7 @@ import org.carbondata.query.aggregator.MeasureAggregator;
 
 /**
  * AbstractMeasureAggregatorDummy
- * Used for custom Molap Aggregator dummy
+ * Used for custom Carbon Aggregator dummy
  */
 public abstract class AbstractMeasureAggregatorDummy extends AbstractMeasureAggregatorBasic {
     private static final long serialVersionUID = 1L;

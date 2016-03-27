@@ -44,7 +44,7 @@ import org.carbondata.query.wrappers.ByteArrayWrapper;
 
 /**
  * Project Name  : Carbon
- * Module Name   : MOLAP Data Processor
+ * Module Name   : CARBON Data Processor
  * Author    : R00903928,k00900841
  * Created Date  : 27-Aug-2015
  * FileName   : BlockWriterProcessor.java
@@ -186,7 +186,7 @@ public class BlockWriterProcessor implements DataProcessorExt {
                 msrDataOutStreams[i].close();
             }
         } catch (IOException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
         }
     }
 
@@ -220,7 +220,7 @@ public class BlockWriterProcessor implements DataProcessorExt {
         } finally {
             close();
             this.dataWriter.closeChannle();
-            LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                     "Total row count for query " + queryId + " : " + rowCount);
         }
     }

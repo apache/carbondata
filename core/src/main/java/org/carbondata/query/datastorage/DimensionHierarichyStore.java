@@ -36,7 +36,7 @@ import org.carbondata.query.util.CarbonEngineLogEvent;
 
 public class DimensionHierarichyStore {
     /**
-     * Attribute for Molap LOGGER
+     * Attribute for Carbon LOGGER
      */
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(DimensionHierarichyStore.class.getName());
@@ -176,7 +176,7 @@ public class DimensionHierarichyStore {
         }
         catch(IOException e)
         {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e, 
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e,
                     "IOException happened while processing cache");
         }
     }*/
@@ -230,7 +230,7 @@ public class DimensionHierarichyStore {
                 // }
             }
         } catch (IOException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
             return false;
         }
 

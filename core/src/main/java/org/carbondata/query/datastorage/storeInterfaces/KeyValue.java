@@ -179,7 +179,7 @@ public class KeyValue {
     }
 
     public Object getValue(int col, SqlStatement.Type dataType) {
-        switch (dataType)   //get measure type and distinguish the get methods of MolapReadDataHolder
+        switch (dataType)   //get measure type and distinguish the get methods of CarbonReadDataHolder
         {
         case LONG:
             return msrData[col].getReadableLongValueByIndex(row);
@@ -191,7 +191,7 @@ public class KeyValue {
     }
 
     /**
-     * get the MolapReadDataHolder[] for agg(MolapReadDataHolder newVal,int index)
+     * get the CarbonReadDataHolder[] for agg(CarbonReadDataHolder newVal,int index)
      *
      * @return
      */

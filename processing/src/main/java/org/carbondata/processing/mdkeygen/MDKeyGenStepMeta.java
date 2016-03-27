@@ -221,7 +221,7 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
                     (int) rep.getStepAttributeInteger(idStep, "currentRestructNumber");
         } catch (Exception e) {
             throw new KettleException(BaseMessages.getString(pkg,
-                    "MolapMDKeyStepMeta.Exception.UnexpectedErrorInReadingStepInfo"), e);
+                    "CarbonMDKeyStepMeta.Exception.UnexpectedErrorInReadingStepInfo"), e);
         }
     }
 

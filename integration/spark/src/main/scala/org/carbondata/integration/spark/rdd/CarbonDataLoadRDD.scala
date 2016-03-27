@@ -51,7 +51,7 @@ class CarbonLoadPartition(rddId: Int, val idx: Int, @transient val tableSplit: T
 
 class CarbonDataLoadRDD[K, V](
                               sc: SparkContext,
-                              result: Result[K, V], molapLoadModel: CarbonLoadModel,
+                              result: Result[K, V], carbonLoadModel: CarbonLoadModel,
                               var storeLocation: String,
                               hdfsStoreLocation: String,
                               kettleHomePath: String,
@@ -67,11 +67,11 @@ class CarbonDataLoadRDD[K, V](
 
   override def getPartitions: Array[Partition] = {
     var splits = Array[TableSplit]();
-    if (molapLoadModel.isDirectLoad()) {
-      splits = CarbonQueryUtil.getTableSplitsForDirectLoad(molapLoadModel.getFactFilePath(), partitioner.nodeList, partitioner.partitionCount)
+    if (carbonLoadModel.isDirectLoad()) {
+      splits = CarbonQueryUtil.getTableSplitsForDirectLoad(carbonLoadModel.getFactFilePath(), partitioner.nodeList, partitioner.partitionCount)
     }
     else {
-      splits = CarbonQueryUtil.getTableSplits(molapLoadModel.getSchemaName(), molapLoadModel.getCubeName(), null, partitioner)
+      splits = CarbonQueryUtil.getTableSplits(carbonLoadModel.getSchemaName(), carbonLoadModel.getCubeName(), null, partitioner)
     }
     //
     val result = new Array[Partition](splits.length)
@@ -95,31 +95,31 @@ class CarbonDataLoadRDD[K, V](
       var model: CarbonLoadModel = _
 
       try {
-        val molapPropertiesFilePath = System.getProperty("molap.properties.filepath", null)
-        if (null == molapPropertiesFilePath) {
-          System.setProperty("molap.properties.filepath", System.getProperty("user.dir") + '/' + "conf" + '/' + "molap.properties");
+        val carbonPropertiesFilePath = System.getProperty("carbon.properties.filepath", null)
+        if (null == carbonPropertiesFilePath) {
+          System.setProperty("carbon.properties.filepath", System.getProperty("user.dir") + '/' + "conf" + '/' + "carbon.properties");
         }
         val split = theSplit.asInstanceOf[CarbonLoadPartition]
         logInfo("Input split: " + split.serializableHadoopSplit.value)
-        CarbonProperties.getInstance().addProperty("molap.is.columnar.storage", "true");
-        CarbonProperties.getInstance().addProperty("molap.dimension.split.value.in.columnar", "1");
-        CarbonProperties.getInstance().addProperty("molap.is.fullyfilled.bits", "true");
+        CarbonProperties.getInstance().addProperty("carbon.is.columnar.storage", "true");
+        CarbonProperties.getInstance().addProperty("carbon.dimension.split.value.in.columnar", "1");
+        CarbonProperties.getInstance().addProperty("carbon.is.fullyfilled.bits", "true");
         CarbonProperties.getInstance().addProperty("is.int.based.indexer", "true");
         CarbonProperties.getInstance().addProperty("aggregate.columnar.keyblock", "true");
         CarbonProperties.getInstance().addProperty("high.cardinality.value", "100000");
         CarbonProperties.getInstance().addProperty("is.compressed.keyblock", "false");
-        CarbonProperties.getInstance().addProperty("molap.leaf.node.size", "120000");
+        CarbonProperties.getInstance().addProperty("carbon.leaf.node.size", "120000");
         if (storeLocation == null) {
           storeLocation = System.getProperty("java.io.tmpdir")
-          storeLocation = storeLocation + "/molapstore/" + System.nanoTime()
+          storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()
         }
 
-        if (molapLoadModel.isDirectLoad()) {
-          model = molapLoadModel.getCopyWithPartition(split.serializableHadoopSplit.value.getPartition().getUniqueID(),
-            split.serializableHadoopSplit.value.getPartition().getFilesPath, molapLoadModel.getCsvHeader(), molapLoadModel.getCsvDelimiter())
+        if (carbonLoadModel.isDirectLoad()) {
+          model = carbonLoadModel.getCopyWithPartition(split.serializableHadoopSplit.value.getPartition().getUniqueID(),
+            split.serializableHadoopSplit.value.getPartition().getFilesPath, carbonLoadModel.getCsvHeader(), carbonLoadModel.getCsvDelimiter())
         }
         else {
-          model = molapLoadModel.getCopyWithPartition(split.serializableHadoopSplit.value.getPartition().getUniqueID())
+          model = carbonLoadModel.getCopyWithPartition(split.serializableHadoopSplit.value.getPartition().getUniqueID())
         }
         partitionID = split.serializableHadoopSplit.value.getPartition().getUniqueID()
         StandardLogService.setThreadName(partitionID, null)
@@ -141,11 +141,11 @@ class CarbonDataLoadRDD[K, V](
               logInfo("Bad Record Found")
             } else {
               dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
-              LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, e)
+              LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, e)
             }
             case e: Exception =>
               dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
-              LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, e)
+              LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, e)
           } finally {
             if (!CarbonCommonConstants.STORE_LOADSTATUS_FAILURE.equals(dataloadStatus)) {
               val newSlice = CarbonCommonConstants.LOAD_FOLDER + loadCount
@@ -156,7 +156,7 @@ class CarbonDataLoadRDD[K, V](
                 case e: Exception =>
                   isCopyFailed = true
                   dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
-                  LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, e)
+                  LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, e)
               }
               if (!isCopyFailed)
                 dataloadStatus = checkAndLoadAggregationTable
@@ -209,7 +209,7 @@ class CarbonDataLoadRDD[K, V](
       }
 
       def loadCubeSlices(listOfLoadFolders: java.util.List[String], listOfUpdatedLoadFolders: java.util.List[String]) = {
-        CarbonProperties.getInstance().addProperty("molap.cache.used", "false");
+        CarbonProperties.getInstance().addProperty("carbon.cache.used", "false");
         val cube = InMemoryTableStore.getInstance.loadCubeMetadataIfRequired(model.getSchema, model.getSchema.cubes(0), null, schemaLastUpdatedTime)
         CarbonQueryUtil.createDataSource(currentRestructNumber, model.getSchema, cube, null, listOfLoadFolders, listOfUpdatedLoadFolders, model.getTableName, hdfsStoreLocation, cubeCreationTime)
       }
@@ -291,7 +291,7 @@ class CarbonDataLoadRDD[K, V](
             }
           } catch {
             case e: Exception =>
-              LogServiceFactory.getLogService.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, e)
+              LogServiceFactory.getLogService.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, e)
               dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
           } finally {
             updateLevelCacheStatus(levelCacheKeys)
@@ -302,7 +302,7 @@ class CarbonDataLoadRDD[K, V](
               }
               catch {
                 case e: Exception =>
-                  LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, e)
+                  LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, e)
                   return CarbonCommonConstants.STORE_LOADSTATUS_FAILURE;
               }
             } else {

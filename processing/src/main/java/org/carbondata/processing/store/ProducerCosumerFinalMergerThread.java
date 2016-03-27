@@ -125,7 +125,7 @@ public class ProducerCosumerFinalMergerThread implements Callable<Void> {
                     iterators[1].next();
                     counter++;
                 }
-                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "************************************************ Total number of records processed"
                                 + counter);
             } else if (producerCounter == 1) {
@@ -134,7 +134,7 @@ public class ProducerCosumerFinalMergerThread implements Callable<Void> {
                     iterators[0].next();
                     counter++;
                 }
-                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "************************************************ Total number of records processed"
                                 + counter);
             } else {
@@ -143,7 +143,7 @@ public class ProducerCosumerFinalMergerThread implements Callable<Void> {
                 fillBuffer();
             }
         } catch (Exception e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
             throw new CarbonDataWriterException(e.getMessage(), e);
         }
 
@@ -199,7 +199,7 @@ public class ProducerCosumerFinalMergerThread implements Callable<Void> {
             this.recordHolderHeap.add(poll);
         }
 
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                 "************************************************ Total number of records processed"
                         + counter);
     }

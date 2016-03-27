@@ -56,13 +56,13 @@ public class FactDataHandlerTest {
     public void setUpBeforeClass() throws Exception {
         try {
 
-            File file = new File("../../libraries/testData/Molap-Aggregation/store/");
+            File file = new File("../../libraries/testData/Carbon-Aggregation/store/");
             String basePath = file.getCanonicalPath() + "/";
             String metaPath = basePath + "schemas/default/carbon/metadata";
 
-            CarbonProperties.getInstance().addProperty("molap.storelocation", basePath + "store");
-            CarbonProperties.getInstance().addProperty("molap.number.of.cores", "4");
-            CarbonProperties.getInstance().addProperty("molap.agg.benefitRatio", "10");
+            CarbonProperties.getInstance().addProperty("carbon.storelocation", basePath + "store");
+            CarbonProperties.getInstance().addProperty("carbon.number.of.cores", "4");
+            CarbonProperties.getInstance().addProperty("carbon.agg.benefitRatio", "10");
             CarbonProperties.getInstance().addProperty(Preference.AGG_LOAD_COUNT, "2");
             CarbonProperties.getInstance().addProperty(Preference.AGG_FACT_COUNT, "2");
             CarbonProperties.getInstance().addProperty(Preference.AGG_REC_COUNT, "5");
@@ -97,13 +97,13 @@ public class FactDataHandlerTest {
 
         };
         CarbonProperties.getInstance()
-                .addProperty(CarbonCommonConstants.MOLAP_IS_LOAD_FACT_TABLE_IN_MEMORY, "false");
+                .addProperty(CarbonCommonConstants.CARBON_IS_LOAD_FACT_TABLE_IN_MEMORY, "false");
         CarbonMetadata.getInstance().loadCube(schema, schema.name, cube.name, cube);
         CarbonMetadata.Cube metaCube =
                 CarbonMetadata.getInstance().getCube(schema.name + "_" + cube.name);
         String levelMetaPath = dataPath + "/default_0/carbon_0/RS_0/carbon/Load_0";
         CarbonFile file =
-                FileFactory.getMolapFile(levelMetaPath, FileFactory.getFileType(levelMetaPath));
+                FileFactory.getCarbonFile(levelMetaPath, FileFactory.getFileType(levelMetaPath));
 
         LevelMetaInfo levelMetaInfo = new LevelMetaInfo(file, loadModel.getTableName());
         FactDataHandler factDataHandler =

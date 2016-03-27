@@ -41,7 +41,7 @@ import org.carbondata.query.util.CarbonEngineLogEvent;
 public final class QueryMapper {
 
     /**
-     * Attribute for Molap LOGGER
+     * Attribute for Carbon LOGGER
      */
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(QueryMapper.class.getName());
@@ -143,7 +143,7 @@ public final class QueryMapper {
             // Register the thread for query
             cubeMap.put(threadId, queryID);
 
-            LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                     "QueryMapper :: Thread " + threadId + " is executing query " + queryID
                             + " on cube " + cubeUniqueName);
             //System.out.println("QueryMapper :: Thread " + threadId + " is executing query " + queryID + " on cube "
@@ -154,7 +154,7 @@ public final class QueryMapper {
                 List<Long> slices =
                         InMemoryTableStore.getInstance().getActiveSliceIds(cubeUniqueName);
                 executionToSlicesMap.put(threadId, slices);
-                LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                         "QueryMapper :: Available slices : " + slices);
                 //System.out.println("QueryMapper :: Available slices : " + slices);
             }

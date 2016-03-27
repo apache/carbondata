@@ -41,7 +41,7 @@ import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.metadata.SliceMetaData;
 import org.carbondata.core.carbon.CarbonDef;
 import org.carbondata.core.util.*;
-import org.carbondata.processing.exception.MolapDataProcessorException;
+import org.carbondata.processing.exception.CarbonDataProcessorException;
 import org.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.aggregator.impl.*;
@@ -69,14 +69,14 @@ public final class CarbonDataProcessorUtil {
      * Measure metadat file will be in below format <max value for each
      * measures><min value for each measures><decimal length of each measures>
      *
-     * @throws MolapDataProcessorException
+     * @throws CarbonDataProcessorException
      * @throws IOException
      * @throws IOException
      */
     private static void writeMeasureMetaDataToFileLocal(Object[] maxValue, Object[] minValue,
             int[] decimalLength, Object[] uniqueValue, char[] aggType, byte[] dataTypeSelected,
             double[] minValueFact, String measureMetaDataFileLocation)
-            throws MolapDataProcessorException {
+            throws CarbonDataProcessorException {
         int length = maxValue.length;
         // calculating the total size of buffer, which is nothing but [(number
         // of measure * (8*2)) +(number of measure *4)]
@@ -156,7 +156,7 @@ public final class CarbonDataProcessorUtil {
             // write the byte buffer to file
             channel.write(byteBuffer);
         } catch (IOException exception) {
-            throw new MolapDataProcessorException(
+            throw new CarbonDataProcessorException(
                     "Problem while writing the measure meta data file", exception);
         } finally {
             CarbonUtil.closeStreams(channel, stream);
@@ -178,7 +178,7 @@ public final class CarbonDataProcessorUtil {
 
     public static void writeMeasureMetaDataToFile(Object[] maxValue, Object[] minValue,
             int[] decimalLength, Object[] uniqueValue, char[] aggType, byte[] dataTypeSelected,
-            String measureMetaDataFileLocation) throws MolapDataProcessorException {
+            String measureMetaDataFileLocation) throws CarbonDataProcessorException {
         writeMeasureMetaDataToFileLocal(maxValue, minValue, decimalLength, uniqueValue, aggType,
                 dataTypeSelected, null, measureMetaDataFileLocation);
     }
@@ -186,7 +186,7 @@ public final class CarbonDataProcessorUtil {
     public static void writeMeasureMetaDataToFileForAgg(Object[] maxValue, Object[] minValue,
             int[] decimalLength, Object[] uniqueValue, char[] aggType, byte[] dataTypeSelected,
             double[] minValueAgg, String measureMetaDataFileLocation)
-            throws MolapDataProcessorException {
+            throws CarbonDataProcessorException {
         writeMeasureMetaDataToFileLocal(maxValue, minValue, decimalLength, uniqueValue, aggType,
                 dataTypeSelected, minValueAgg, measureMetaDataFileLocation);
     }
@@ -359,18 +359,18 @@ public final class CarbonDataProcessorUtil {
     /**
      * This method will be used to for sending the new slice signal to engine
      *
-     * @throws MolapDataProcessorException
+     * @throws CarbonDataProcessorException
      * @throws KettleException             if any problem while informing the engine
      */
     public static void sendLoadSignalToEngine(String storeLocation)
-            throws MolapDataProcessorException {
+            throws CarbonDataProcessorException {
         if (!Boolean.parseBoolean(
                 CarbonProperties.getInstance().getProperty("send.signal.load", "true"))) {
             return;
         }
         try {
             // inform engine to load new slice
-            Class<?> c = Class.forName("com.huawei.unibi.molap.engine.datastorage.CubeSliceLoader");
+            Class<?> c = Class.forName("com.huawei.unibi.carbon.engine.datastorage.CubeSliceLoader");
             Class[] argTypes = new Class[] {};
             // get the instance of CubeSliceLoader
             Method main = c.getDeclaredMethod("getInstance", argTypes);
@@ -383,22 +383,22 @@ public final class CarbonDataProcessorUtil {
             String[] a = { storeLocation };
             declaredMethod.invoke(invoke, a);
         } catch (ClassNotFoundException classNotFoundException) {
-            throw new MolapDataProcessorException("Problem While informing BI Server",
+            throw new CarbonDataProcessorException("Problem While informing BI Server",
                     classNotFoundException);
         } catch (NoSuchMethodException noSuchMethodException) {
-            throw new MolapDataProcessorException("Problem While informing BI Server",
+            throw new CarbonDataProcessorException("Problem While informing BI Server",
                     noSuchMethodException);
         } catch (IllegalAccessException illegalAccessException) {
-            throw new MolapDataProcessorException("Problem While informing BI Server",
+            throw new CarbonDataProcessorException("Problem While informing BI Server",
                     illegalAccessException);
         } catch (InvocationTargetException invocationTargetException) {
-            throw new MolapDataProcessorException("Problem While informing BI Server",
+            throw new CarbonDataProcessorException("Problem While informing BI Server",
                     invocationTargetException);
         }
     }
 
     public static void sendUpdateSignaltoEngine(String storeLocation)
-            throws MolapDataProcessorException {
+            throws CarbonDataProcessorException {
         if (!Boolean.parseBoolean(
                 CarbonProperties.getInstance().getProperty("send.signal.load", "true"))) {
             return;
@@ -406,7 +406,7 @@ public final class CarbonDataProcessorUtil {
         try {
             // inform engine to load new slice
             Class<?> sliceLoaderClass =
-                    Class.forName("com.huawei.unibi.molap.engine.datastorage.CubeSliceLoader");
+                    Class.forName("com.huawei.unibi.carbon.engine.datastorage.CubeSliceLoader");
             Class[] argTypes = new Class[] {};
             // get the instance of CubeSliceLoader
             Method instanceMethod = sliceLoaderClass.getDeclaredMethod("getInstance", argTypes);
@@ -420,16 +420,16 @@ public final class CarbonDataProcessorUtil {
             String[] a = { storeLocation };
             updateMethod.invoke(invoke, a);
         } catch (ClassNotFoundException classNotFoundException) {
-            throw new MolapDataProcessorException("Problem While informing BI Server",
+            throw new CarbonDataProcessorException("Problem While informing BI Server",
                     classNotFoundException);
         } catch (NoSuchMethodException noSuchMethodException) {
-            throw new MolapDataProcessorException("Problem While informing BI Server",
+            throw new CarbonDataProcessorException("Problem While informing BI Server",
                     noSuchMethodException);
         } catch (IllegalAccessException illegalAccessException) {
-            throw new MolapDataProcessorException("Problem While informing BI Server",
+            throw new CarbonDataProcessorException("Problem While informing BI Server",
                     illegalAccessException);
         } catch (InvocationTargetException invocationTargetException) {
-            throw new MolapDataProcessorException("Problem While informing BI Server",
+            throw new CarbonDataProcessorException("Problem While informing BI Server",
                     invocationTargetException);
         }
     }
@@ -437,18 +437,18 @@ public final class CarbonDataProcessorUtil {
     /**
      * This method will be used to for sending the new slice signal to engine
      *
-     * @throws MolapDataProcessorException
+     * @throws CarbonDataProcessorException
      * @throws KettleException             if any problem while informing the engine
      */
     public static void sendDeleteSignalToEngine(String[] storeLocation)
-            throws MolapDataProcessorException {
+            throws CarbonDataProcessorException {
         if (!Boolean.parseBoolean(
                 CarbonProperties.getInstance().getProperty("send.signal.load", "true"))) {
             return;
         }
         try {
             // inform engine to load new slice
-            Class<?> c = Class.forName("com.huawei.unibi.molap.engine.datastorage.CubeSliceLoader");
+            Class<?> c = Class.forName("com.huawei.unibi.carbon.engine.datastorage.CubeSliceLoader");
             Class[] argTypes = new Class[] {};
             // get the instance of CubeSliceLoader
             Method main = c.getDeclaredMethod("getInstance", argTypes);
@@ -460,16 +460,16 @@ public final class CarbonDataProcessorUtil {
             Object[] objectStoreLocation = { storeLocation };
             declaredMethod.invoke(invoke, objectStoreLocation);
         } catch (ClassNotFoundException classNotFoundException) {
-            throw new MolapDataProcessorException("Problem While informing BI Server",
+            throw new CarbonDataProcessorException("Problem While informing BI Server",
                     classNotFoundException);
         } catch (NoSuchMethodException noSuchMethodException) {
-            throw new MolapDataProcessorException("Problem While informing BI Server",
+            throw new CarbonDataProcessorException("Problem While informing BI Server",
                     noSuchMethodException);
         } catch (IllegalAccessException illegalAccessException) {
-            throw new MolapDataProcessorException("Problem While informing BI Server",
+            throw new CarbonDataProcessorException("Problem While informing BI Server",
                     illegalAccessException);
         } catch (InvocationTargetException invocationTargetException) {
-            throw new MolapDataProcessorException("Problem While informing BI Server",
+            throw new CarbonDataProcessorException("Problem While informing BI Server",
                     invocationTargetException);
         }
     }
@@ -491,19 +491,19 @@ public final class CarbonDataProcessorUtil {
             Object value = declaredMethod.invoke(newInstance, schemaName, cubeName);
             return ((Boolean) value).booleanValue();
         } catch (ClassNotFoundException classNotFoundException) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "Error while clearing the cache " + classNotFoundException);
         } catch (NoSuchMethodException noSuchMethodException) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "Error while clearing the cache " + noSuchMethodException);
         } catch (IllegalAccessException illegalAccessException) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "Error while clearing the cache " + illegalAccessException);
         } catch (InvocationTargetException invocationTargetException) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "Error while clearing the cache " + invocationTargetException);
         } catch (InstantiationException e) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "Error while clearing the cache " + e);
         }
         return false;
@@ -515,14 +515,14 @@ public final class CarbonDataProcessorUtil {
      * @throws KettleException if any problem while informing the engine
      */
     public static void sendUpdateSignalToEngine(String newSliceLocation, String[] oldSliceLocation,
-            boolean isUpdateMemberCall) throws MolapDataProcessorException {
+            boolean isUpdateMemberCall) throws CarbonDataProcessorException {
         if (!Boolean.parseBoolean(
                 CarbonProperties.getInstance().getProperty("send.signal.load", "true"))) {
             return;
         }
         try {
             // inform engine to load new slice
-            Class<?> c = Class.forName("com.huawei.unibi.molap.engine.datastorage.CubeSliceLoader");
+            Class<?> c = Class.forName("com.huawei.unibi.carbon.engine.datastorage.CubeSliceLoader");
             Class[] argTypes = new Class[] {};
             // get the instance of CubeSliceLoader
             Method main = c.getDeclaredMethod("getInstance", argTypes);
@@ -535,16 +535,16 @@ public final class CarbonDataProcessorUtil {
             declaredMethod
                     .invoke(invoke, newSliceLocation, oldSliceLocation, true, isUpdateMemberCall);
         } catch (ClassNotFoundException classNotFoundException) {
-            throw new MolapDataProcessorException("Problem While informing BI Server",
+            throw new CarbonDataProcessorException("Problem While informing BI Server",
                     classNotFoundException);
         } catch (NoSuchMethodException noSuchMethodException) {
-            throw new MolapDataProcessorException("Problem While informing BI Server",
+            throw new CarbonDataProcessorException("Problem While informing BI Server",
                     noSuchMethodException);
         } catch (IllegalAccessException illegalAccessException) {
-            throw new MolapDataProcessorException("Problem While informing BI Server",
+            throw new CarbonDataProcessorException("Problem While informing BI Server",
                     illegalAccessException);
         } catch (InvocationTargetException invocationTargetException) {
-            throw new MolapDataProcessorException("Problem While informing BI Server",
+            throw new CarbonDataProcessorException("Problem While informing BI Server",
                     invocationTargetException);
         }
     }
@@ -582,7 +582,7 @@ public final class CarbonDataProcessorUtil {
 
             }
         } catch (Exception e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
                     "recordFilesNeedsToDeleted");
         } finally {
             CarbonUtil.closeStreams(writer);
@@ -612,7 +612,7 @@ public final class CarbonDataProcessorUtil {
     }
 
     public static void deleteFileAsPerRetentionFileRecord(String folderName)
-            throws MolapDataProcessorException {
+            throws CarbonDataProcessorException {
         String deletionRecordFilePath =
                 folderName + File.separator + CarbonCommonConstants.RETENTION_RECORD;
 
@@ -626,7 +626,7 @@ public final class CarbonDataProcessorUtil {
                 fileTobeDeleted = new File(sCurrentLine);
                 if (fileTobeDeleted.exists()) {
                     if (!fileTobeDeleted.delete()) {
-                        LOGGER.debug(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                        LOGGER.debug(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                                 "Could not delete the file : " + fileTobeDeleted.getAbsolutePath());
                     }
                 }
@@ -635,9 +635,9 @@ public final class CarbonDataProcessorUtil {
 
         } catch (FileNotFoundException e) {
 
-            throw new MolapDataProcessorException("Data Deletion is Failed...");
+            throw new CarbonDataProcessorException("Data Deletion is Failed...");
         } catch (IOException e) {
-            throw new MolapDataProcessorException("Data Deletion is Failed...");
+            throw new CarbonDataProcessorException("Data Deletion is Failed...");
         } finally {
             CarbonUtil.closeStreams(reader);
         }
@@ -878,7 +878,7 @@ public final class CarbonDataProcessorUtil {
     public static void renameBadRecordsFromInProgressToNormal(String storeLocation) {
         // get the base store location
         String badLogStoreLocation = CarbonProperties.getInstance()
-                .getProperty(CarbonCommonConstants.MOLAP_BADRECORDS_LOC);
+                .getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC);
         badLogStoreLocation = badLogStoreLocation + File.separator + storeLocation;
 
         FileType fileType = FileFactory.getFileType(badLogStoreLocation);
@@ -887,7 +887,7 @@ public final class CarbonDataProcessorUtil {
                 return;
             }
         } catch (IOException e1) {
-            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "bad record folder does not exist");
         }
         CarbonFile carbonFile = null;
@@ -921,7 +921,7 @@ public final class CarbonDataProcessorUtil {
 
             if (badFiles.exists()) {
                 if (!badFiles.delete()) {
-                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                             "Unable to delete File : " + badFiles.getName());
                 }
             }
@@ -968,11 +968,11 @@ public final class CarbonDataProcessorUtil {
         // See if we have input streams leading to this step!
         if (input.length > 0) {
             cr = new CheckResult(CheckResult.TYPE_RESULT_OK, BaseMessages
-                    .getString(pkg, "MolapStep.Check.StepIsReceivingInfoFromOtherSteps"), stepMeta);
+                    .getString(pkg, "CarbonStep.Check.StepIsReceivingInfoFromOtherSteps"), stepMeta);
             remarks.add(cr);
         } else {
             cr = new CheckResult(CheckResult.TYPE_RESULT_ERROR,
-                    BaseMessages.getString(pkg, "MolapStep.Check.NoInputReceivedFromOtherSteps"),
+                    BaseMessages.getString(pkg, "CarbonStep.Check.NoInputReceivedFromOtherSteps"),
                     stepMeta);
             remarks.add(cr);
         }
@@ -980,11 +980,11 @@ public final class CarbonDataProcessorUtil {
         // also check that each expected key fields are acually coming
         if (prev != null && prev.size() > 0) {
             cr = new CheckResult(CheckResultInterface.TYPE_RESULT_OK,
-                    BaseMessages.getString(pkg, "MolapStep.Check.AllFieldsFoundInInput"), stepMeta);
+                    BaseMessages.getString(pkg, "CarbonStep.Check.AllFieldsFoundInInput"), stepMeta);
             remarks.add(cr);
         } else {
             String errorMessage =
-                    BaseMessages.getString(pkg, "MolapStep.Check.CouldNotReadFromPreviousSteps")
+                    BaseMessages.getString(pkg, "CarbonStep.Check.CouldNotReadFromPreviousSteps")
                             + Const.CR;
             cr = new CheckResult(CheckResultInterface.TYPE_RESULT_ERROR, errorMessage, stepMeta);
             remarks.add(cr);
@@ -1021,7 +1021,7 @@ public final class CarbonDataProcessorUtil {
             try {
                 CarbonUtil.deleteFoldersAndFiles(file);
             } catch (CarbonUtilException e) {
-                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
             }
         }
     }

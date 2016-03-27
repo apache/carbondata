@@ -31,7 +31,7 @@ public class TopCount implements Serializable {
     private static final long serialVersionUID = -8571684898961076954L;
 
     /**
-     * MolapDimensionLevel
+     * CarbonDimensionLevel
      */
     private CarbonDimensionLevel level;
 

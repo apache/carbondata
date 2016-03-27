@@ -55,7 +55,7 @@ public class ResultAnalyzer {
      */
     public void analyze(CarbonIterator<RowResult> rowIterator, ArrayList<Level> dimensions,
             Map<Integer, Integer> distinctOfMasterDim) {
-        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                 "Scanning query Result:" + System.currentTimeMillis());
 
         //Object:master data
@@ -152,7 +152,7 @@ public class ResultAnalyzer {
             distinctOfMasterDim.put(level.getOrdinal(), avg.intValue() == 0 ? 1 : avg.intValue());
 
         }
-        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                 "Finished Scanning query Result:" + System.currentTimeMillis());
 
     }

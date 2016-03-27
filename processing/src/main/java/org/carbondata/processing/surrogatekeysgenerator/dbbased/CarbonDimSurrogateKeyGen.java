@@ -143,7 +143,7 @@ public abstract class CarbonDimSurrogateKeyGen {
         key = cache.get(tuples);
         if (key == null) {
             if (max[index] >= carbonInfo.getMaxKeys()[index]) {
-                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "Invalid cardinality. Key size exceeded cardinality for: " + carbonInfo
                                 .getDimColNames()[index]);
                 return -1;

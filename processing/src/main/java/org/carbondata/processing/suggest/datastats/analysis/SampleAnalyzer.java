@@ -78,7 +78,7 @@ public class SampleAnalyzer {
     public void execute(List<Level> dimOrdCard, String partitionId) throws AggSuggestException {
         int totalDimensions = loadSampler.getDimensions().size();
 
-        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                 "Processing cardinality:" + dimOrdCard);
         for (int i = 0; i < dimOrdCard.size(); i++) {
 
@@ -123,7 +123,7 @@ public class SampleAnalyzer {
                 distinctOfMasterDim.put(dim.getOrdinal(), res);
 
             }
-            LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                     "From 0 to " + i + " is calculated data");
             // find out distinct data for remaining dimensions
             ArrayList<Level> leftOut = new ArrayList<Level>(dimOrdCard.size());
@@ -162,17 +162,17 @@ public class SampleAnalyzer {
         // Sample data
         List<String> realDatas = loadSampler.getSampleData(dimension, cubeUniqueName);
 
-        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                 "Load size for dimension[" + dimension.getColName() + "]:" + realDatas.size());
         long queryExecutionStart = System.currentTimeMillis();
-        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                 "Started with sample data:" + realDatas);
         //query on bplus tree
         querySampleDataOnBTree(dimension, realDatas, slaves, distinctOfMasterDim);
 
         long queryExecutionEnd = System.currentTimeMillis();
         long queryExecutionTimeTaken = queryExecutionEnd - queryExecutionStart;
-        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                 "Finished with sample data,time taken[ms]:" + queryExecutionTimeTaken);
 
     }

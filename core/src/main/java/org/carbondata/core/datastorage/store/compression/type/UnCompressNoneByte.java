@@ -32,7 +32,7 @@ import org.carbondata.core.util.ValueCompressionUtil.DataType;
 
 public class UnCompressNoneByte implements UnCompressValue<byte[]> {
     /**
-     * Attribute for Molap LOGGER
+     * Attribute for Carbon LOGGER
      */
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(UnCompressNoneByte.class.getName());
@@ -53,7 +53,7 @@ public class UnCompressNoneByte implements UnCompressValue<byte[]> {
         try {
             return (UnCompressValue) clone();
         } catch (CloneNotSupportedException e) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, e, e.getMessage());
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e, e.getMessage());
         }
         return null;
     }

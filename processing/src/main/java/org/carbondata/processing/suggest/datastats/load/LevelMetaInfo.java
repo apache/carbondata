@@ -59,7 +59,7 @@ public class LevelMetaInfo {
                 dimCardinality =
                         CarbonUtil.getCardinalityFromLevelMetadataFile(files[0].getAbsolutePath());
             } catch (CarbonUtilException e) {
-                LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
+                LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
             }
         }
 

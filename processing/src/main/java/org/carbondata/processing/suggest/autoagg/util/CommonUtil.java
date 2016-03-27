@@ -61,7 +61,7 @@ public final class CommonUtil {
 
     public static void setListOfValidSlices(String metaPath, LoadModel loadModel) {
         String loadMetaPath = metaPath + File.separator + CarbonCommonConstants.LOADMETADATA_FILENAME
-                + CarbonCommonConstants.MOLAP_METADATA_EXTENSION;
+                + CarbonCommonConstants.CARBON_METADATA_EXTENSION;
         List<String> listOfValidSlices = new ArrayList<String>(10);
         DataInputStream dataInputStream = null;
         Gson gsonObjectToRead = new Gson();
@@ -116,7 +116,7 @@ public final class CommonUtil {
             }
 
         } catch (IOException e) {
-            LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, "IO Exception @: " + e.getMessage());
+            LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "IO Exception @: " + e.getMessage());
         } finally {
             CarbonUtil.closeStreams(dataInputStream);
         }
@@ -135,7 +135,7 @@ public final class CommonUtil {
             return null;
         }
         FileType fileType = FileFactory.getFileType(metaDataPath);
-        CarbonFile metaDataFile = FileFactory.getMolapFile(metaDataPath, fileType);
+        CarbonFile metaDataFile = FileFactory.getCarbonFile(metaDataPath, fileType);
         if (!metaDataFile.exists()) {
             return null;
         }
@@ -188,9 +188,9 @@ public final class CommonUtil {
 
             return list;
         } catch (IOException e) {
-            LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e.getMessage());
+            LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e.getMessage());
         } catch (XOMException e) {
-            LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e.getMessage());
+            LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e.getMessage());
         } finally {
             CarbonUtil.closeStreams(in);
         }

@@ -27,7 +27,7 @@ import java.math.BigDecimal;
 import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.carbondata.query.aggregator.CalculatedMeasureAggregator;
 import org.carbondata.query.aggregator.MeasureAggregator;
-import org.carbondata.query.executer.calcexp.MolapCalcFunction;
+import org.carbondata.query.executer.calcexp.CarbonCalcFunction;
 
 public class CalculatedMeasureAggregatorImpl implements CalculatedMeasureAggregator {
 
@@ -39,11 +39,11 @@ public class CalculatedMeasureAggregatorImpl implements CalculatedMeasureAggrega
     /**
      *
      */
-    private MolapCalcFunction function;
+    private CarbonCalcFunction function;
 
     private double val;
 
-    public CalculatedMeasureAggregatorImpl(MolapCalcFunction function) {
+    public CalculatedMeasureAggregatorImpl(CarbonCalcFunction function) {
         this.function = function;
     }
 

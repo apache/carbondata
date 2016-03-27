@@ -34,7 +34,7 @@ import org.carbondata.query.util.CarbonEngineLogEvent;
  */
 public class SliceListener {
     /**
-     * Attribute for Molap LOGGER
+     * Attribute for Carbon LOGGER
      */
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(SliceListener.class.getName());
@@ -71,7 +71,7 @@ public class SliceListener {
     }
 
     public void fireQueryFinish(Long queryId) {
-        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                 "SliceListener: query finished " + queryId);
         //System.out.println("SliceListener: query finished " + queryId);
         //Don't remove till some one makes it as in active
@@ -97,10 +97,10 @@ public class SliceListener {
             // }
             // catch(InterruptedException e)
             // {
-            // LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            // LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
             // "InterruptedException");
             // }
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                     "SliceListener: Unregistering slice " + slice.getID());
             //System.out.println("SliceListener: Unregistering slice " + slice.getID());
 

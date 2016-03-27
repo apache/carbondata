@@ -38,7 +38,7 @@ import org.carbondata.core.metadata.SliceMetaData;
 import org.carbondata.core.carbon.CarbonDef.Cube;
 import org.carbondata.core.carbon.CarbonDef.Schema;
 import org.carbondata.core.util.*;
-import org.carbondata.processing.exception.MolapDataProcessorException;
+import org.carbondata.processing.exception.CarbonDataProcessorException;
 import org.carbondata.processing.merger.columnar.ColumnarFactFileMerger;
 import org.carbondata.processing.merger.columnar.impl.NonTimeBasedMergerColumnar;
 import org.carbondata.processing.merger.exeception.SliceMergerException;
@@ -53,11 +53,11 @@ public class CarbonColumnarSliceMerger implements CarbonSliceMerger {
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(CarbonColumnarSliceMerger.class.getName());
     /**
-     * molap schema object
+     * carbon schema object
      */
     private Schema schema;
     /**
-     * molap cube object
+     * carbon cube object
      */
     private Cube cube;
     /**
@@ -96,7 +96,7 @@ public class CarbonColumnarSliceMerger implements CarbonSliceMerger {
                 CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION_HDFS)
                         + '/' + schema.name + '/' + cube.name;
 
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                 "HDFS Location: " + hdfsLocation);
         String localStore = CarbonProperties.getInstance()
                 .getProperty(CarbonCommonConstants.STORE_LOCATION,
@@ -116,7 +116,7 @@ public class CarbonColumnarSliceMerger implements CarbonSliceMerger {
                 return false;
             }
         } catch (IOException e) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "Error occurred :: " + e.getMessage());
         }
 
@@ -154,7 +154,7 @@ public class CarbonColumnarSliceMerger implements CarbonSliceMerger {
      * startMerge
      *
      * @throws SliceMergerException
-     * @throws MolapDataProcessorException
+     * @throws CarbonDataProcessorException
      */
     public void startMerge(List<CarbonSliceAndFiles> slicesFromHDFS, SliceMetaData sliceMetaData,
             String destinationLocation, int currentRestructNumber) throws SliceMergerException {
@@ -165,7 +165,7 @@ public class CarbonColumnarSliceMerger implements CarbonSliceMerger {
         }
     }
 
-    private CarbonColumnarFactMergerInfo getMolapColumnarFactMergerInfo(
+    private CarbonColumnarFactMergerInfo getCarbonColumnarFactMergerInfo(
             List<CarbonSliceAndFiles> slicesFromHDFS, String[] aggType, String[] aggClass,
             SliceMetaData readSliceMetaDataFile, String destinationLocation,
             KeyGenerator globalKeyGen) {
@@ -254,7 +254,7 @@ public class CarbonColumnarSliceMerger implements CarbonSliceMerger {
 
         }
         for (int i = 0; i < sliceLocation.length; i++) {
-            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "Slice Merger Start Merging for slice: " + sliceLocation[i]);
         }
         double[] uniqueValue = new double[sliceMetaData.getMeasures().length];
@@ -286,9 +286,9 @@ public class CarbonColumnarSliceMerger implements CarbonSliceMerger {
 
             // pass global key generator;
             factMerger = new NonTimeBasedMergerColumnar(
-                    getMolapColumnarFactMergerInfo(slicesFromHDFS, aggType, aggClass, sliceMetaData,
+                    getCarbonColumnarFactMergerInfo(slicesFromHDFS, aggType, aggClass, sliceMetaData,
                             destinationLocation, globalKeyGen), currentRestructNumber);
-            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "Starting fact file merging: ");
             factMerger.mergerSlice();
         }

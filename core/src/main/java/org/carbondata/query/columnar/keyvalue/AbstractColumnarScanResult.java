@@ -238,7 +238,7 @@ public abstract class AbstractColumnarScanResult {
                     //                    keyArrayLength += byteStream.toByteArray().length;
                     byteStream.close();
                 } catch (IOException e) {
-                    LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
+                    LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
                 }
                 i += (complexType.getColsCount() - 1);
             }

@@ -86,7 +86,7 @@ public final class FileFactory {
         return FileType.LOCAL;
     }
 
-    public static CarbonFile getMolapFile(String path, FileType fileType) {
+    public static CarbonFile getCarbonFile(String path, FileType fileType) {
         switch (fileType) {
         case LOCAL:
             return new LocalCarbonFile(path);

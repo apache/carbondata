@@ -29,20 +29,20 @@ import org.apache.log4j.Logger;
  */
 public final class FileUtil {
 
-    public static final String MOLAP_PROPERTIES_FILE_PATH = "../../../conf/molap.properties";
+    public static final String CARBON_PROPERTIES_FILE_PATH = "../../../conf/carbon.properties";
     private static final Logger LOG = Logger.getLogger(FileUtil.class.getName());
-    private static Properties molapProperties;
+    private static Properties carbonProperties;
 
     private FileUtil() {
 
     }
 
-    public static Properties getMolapProperties() {
-        if (null == molapProperties) {
+    public static Properties getCarbonProperties() {
+        if (null == carbonProperties) {
             loadProperties();
         }
 
-        return molapProperties;
+        return carbonProperties;
     }
 
     /**
@@ -61,9 +61,9 @@ public final class FileUtil {
     }
 
     private static void loadProperties() {
-        String property = System.getProperty("molap.properties.filepath");
+        String property = System.getProperty("carbon.properties.filepath");
         if (null == property) {
-            property = MOLAP_PROPERTIES_FILE_PATH;
+            property = CARBON_PROPERTIES_FILE_PATH;
         }
         File file = new File(property);
 
@@ -72,19 +72,19 @@ public final class FileUtil {
             if (file.exists()) {
                 fis = new FileInputStream(file);
 
-                molapProperties = new Properties();
-                molapProperties.load(fis);
+                carbonProperties = new Properties();
+                carbonProperties.load(fis);
             }
         } catch (FileNotFoundException e) {
-            LOG.error("Could not find molap properties file in the path " + property);
+            LOG.error("Could not find carbon properties file in the path " + property);
         } catch (IOException e) {
-            LOG.error("Error while reading molap properties file in the path " + property);
+            LOG.error("Error while reading carbon properties file in the path " + property);
         } finally {
             if (null != fis) {
                 try {
                     fis.close();
                 } catch (IOException e) {
-                    LOG.error("Error while closing the file stream for molap.properties");
+                    LOG.error("Error while closing the file stream for carbon.properties");
                 }
             }
         }

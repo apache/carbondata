@@ -229,17 +229,17 @@ class CarbonMetastoreCatalog(hive: HiveContext, val metadataPath: String,client:
 
   def loadMetadata(metadataPath: String): MetaData = {
     if (metadataPath == null) return null
-    //    System.setProperty("com.huawei.iweb.LogService", "com.huawei.unibi.molap.log.CarbonLogService");
+    //    System.setProperty("com.huawei.iweb.LogService", "com.huawei.unibi.carbon.log.CarbonLogService");
     val fileType = FileFactory.getFileType(metadataPath)
 
     
-    CarbonProperties.getInstance().addProperty("molap.storelocation", metadataPath);
+    CarbonProperties.getInstance().addProperty("carbon.storelocation", metadataPath);
 
     val metaDataBuffer = new ArrayBuffer[TableMeta]
     
     if(useUniquePath){
       if (FileFactory.isFileExist(metadataPath, fileType)) {
-        val file = FileFactory.getMolapFile(metadataPath, fileType)
+        val file = FileFactory.getCarbonFile(metadataPath, fileType)
         val schemaFolders = file.listFiles();
 
         schemaFolders.foreach(schemaFolder => {
@@ -275,7 +275,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val metadataPath: String,client:
       try {
           
       if (FileFactory.isFileExist(schemasPath, fileType)) {
-	      val file = FileFactory.getMolapFile(schemasPath, fileType)
+	      val file = FileFactory.getCarbonFile(schemasPath, fileType)
 	      val schemaFolders = file.listFiles();
 
         schemaFolders.foreach(schemaFolder => {
@@ -415,14 +415,14 @@ class CarbonMetastoreCatalog(hive: HiveContext, val metadataPath: String,client:
     //Debug code to print complexTypes
 //    val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog.
 //    	lookupRelation2(Seq(cubeMeta.schemaName, cubeMeta.cubeName))(sqlContext).asInstanceOf[CarbonRelation]
-//    val complexTypes = cubeMeta.schema.cubes(0).dimensions.filter(aDim => aDim.asInstanceOf[MolapDef.Dimension].hierarchies(0).levels.length > 1).map(dim => dim.name)
+//    val complexTypes = cubeMeta.schema.cubes(0).dimensions.filter(aDim => aDim.asInstanceOf[CarbonDef.Dimension].hierarchies(0).levels.length > 1).map(dim => dim.name)
 //    val complexTypeStrings = relation.output.filter(attr => complexTypes.contains(attr.name)).map(attr => (attr.name, attr.dataType.simpleString))
 //    complexTypeStrings.map(a => println(a._1 +" "+a._2))
     if (!FileFactory.isFileExist(cubeMetaDataPath, fileType)) {
       FileFactory.mkdirs(cubeMetaDataPath, fileType)
     }
 
-    val file = FileFactory.getMolapFile(cubeMetaDataPath, fileType)
+    val file = FileFactory.getCarbonFile(cubeMetaDataPath, fileType)
 
     val out = FileFactory.getDataOutputStream(cubeMetaDataPath + "/" + "metadata", fileType)
 
@@ -454,7 +454,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val metadataPath: String,client:
 
       metadata.cubesMeta += cubeMeta
       logInfo(s"Cube $cubeName for schema $schemaName created successfully.")
-    LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "Cube " + cubeName + " for schema " + schemaName + " created successfully.")
+    LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "Cube " + cubeName + " for schema " + schemaName + " created successfully.")
     updateSchemasUpdatedTime(schemaName, cubeName)
     metadataPath + "/" + schemaName + "/" + cubeName
     //  updateCubeCreationTimeMap(schemaName, cubeName)
@@ -692,7 +692,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val metadataPath: String,client:
 
     val mondAgg = new CarbonDef.AggName()
     mondAgg.name = aggTableName
-    val bufferOfMolapAggName = new ArrayBuffer[CarbonDef.AggName]
+    val bufferOfCarbonAggName = new ArrayBuffer[CarbonDef.AggName]
     val list = CarbonMetadata.getInstance().getAggLevelsForAggTable(cube, aggTableName, aggTableColumns.toList)
     val array = list.toBuffer;
     mondAgg.levels = array.toArray
@@ -704,8 +704,8 @@ class CarbonMetastoreCatalog(hive: HiveContext, val metadataPath: String,client:
       LOGGER.audit(s"Failed to create the aggregate table $aggTableName for cube $schemaName.$cubeName. Already an aggregate table exists with same columns")
       sys.error(s"Already an aggregate table exists with same columns")
     }
-    bufferOfMolapAggName.add(mondAgg)
-    schema.cubes(0).fact.asInstanceOf[CarbonDef.Table].aggTables = (schema.cubes(0).fact.asInstanceOf[CarbonDef.Table].aggTables.toSeq ++ bufferOfMolapAggName).toArray
+    bufferOfCarbonAggName.add(mondAgg)
+    schema.cubes(0).fact.asInstanceOf[CarbonDef.Table].aggTables = (schema.cubes(0).fact.asInstanceOf[CarbonDef.Table].aggTables.toSeq ++ bufferOfCarbonAggName).toArray
     return schema
   }
 
@@ -736,7 +736,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val metadataPath: String,client:
     } else { 
       metadataPath + "/schemas/" + schemaName + "/" + cubeName + "/metadata"
     }
-    val oldMetadataFile = FileFactory.getMolapFile(metadataFilePath, fileType)
+    val oldMetadataFile = FileFactory.getCarbonFile(metadataFilePath, fileType)
 
     /*if(oldMetadataFile.exists())
     {
@@ -746,12 +746,12 @@ class CarbonMetastoreCatalog(hive: HiveContext, val metadataPath: String,client:
     val tempMetadataFilePath = metadataFilePath + CarbonCommonConstants.UPDATING_METADATA
 
     if (FileFactory.isFileExist(tempMetadataFilePath, fileType)) {
-      FileFactory.getMolapFile(tempMetadataFilePath, fileType).delete()
+      FileFactory.getCarbonFile(tempMetadataFilePath, fileType).delete()
     }
 
     FileFactory.createNewFile(tempMetadataFilePath, fileType)
 
-    val tempMetadataFile = FileFactory.getMolapFile(tempMetadataFilePath, fileType)
+    val tempMetadataFile = FileFactory.getCarbonFile(tempMetadataFilePath, fileType)
 
     metadata.cubesMeta.map { c =>
       if (c.schemaName.equalsIgnoreCase(schemaName) && c.cubeName.equalsIgnoreCase(cubeName)) {
@@ -850,7 +850,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val metadataPath: String,client:
     	val fileType = FileFactory.getFileType(metadatFilePath)
 
       if (FileFactory.isFileExist(metadatFilePath, fileType)) {
-    	    val file = FileFactory.getMolapFile(metadatFilePath, fileType)
+    	    val file = FileFactory.getCarbonFile(metadatFilePath, fileType)
           CarbonUtil.renameCubeForDeletion(partitionCount, storePath, schemaName, cubeName)
     	    CarbonUtil.deleteFoldersAndFilesSilent(file)
     	}
@@ -858,7 +858,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val metadataPath: String,client:
     	val partitionLocation = storePath + File.separator + "partition" + File.separator + schemaName + File.separator + cubeName
     	val partitionFileType = FileFactory.getFileType(partitionLocation)
       if (FileFactory.isFileExist(partitionLocation, partitionFileType)) {
-    	   CarbonUtil.deleteFoldersAndFiles(FileFactory.getMolapFile(partitionLocation, partitionFileType))
+    	   CarbonUtil.deleteFoldersAndFiles(FileFactory.getCarbonFile(partitionLocation, partitionFileType))
     	}
     }
 
@@ -872,7 +872,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val metadataPath: String,client:
     metadata.cubesMeta -= metadata.cubesMeta.filter(c => (c.schemaName.equalsIgnoreCase(schemaName) && (c.cubeName.equalsIgnoreCase(cubeName))))(0)
     CarbonMetadata.getInstance().removeCube(schemaName + '_' + cubeName)
     logInfo(s"Cube $cubeName of $schemaName schema dropped syccessfully.")
-    LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "Cube " + cubeName + " of " + schemaName + " schema dropped syccessfully.");
+    LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "Cube " + cubeName + " of " + schemaName + " schema dropped syccessfully.");
 
   }
 
@@ -903,18 +903,18 @@ class CarbonMetastoreCatalog(hive: HiveContext, val metadataPath: String,client:
   
     if(useUniquePath)
   {
-      cubeModifiedTimeStore.put(schemaName + '_' + cubeName, FileFactory.getMolapFile(timestampFile, timestampFileType).getLastModifiedTime())
+      cubeModifiedTimeStore.put(schemaName + '_' + cubeName, FileFactory.getCarbonFile(timestampFile, timestampFileType).getLastModifiedTime())
     }
     else
 	  {
-      cubeModifiedTimeStore.put("default", FileFactory.getMolapFile(timestampFile, timestampFileType).getLastModifiedTime())
+      cubeModifiedTimeStore.put("default", FileFactory.getCarbonFile(timestampFile, timestampFileType).getLastModifiedTime())
 	  }
 	  
   }
 
   def touchSchemasTimestampFile(schemaName : String, cubeName : String) {
    val (timestampFile, timestampFileType) = getTimestampFileAndType(schemaName, cubeName)
-	  FileFactory.getMolapFile(timestampFile, timestampFileType).setLastModifiedTime(System.currentTimeMillis())
+	  FileFactory.getCarbonFile(timestampFile, timestampFileType).setLastModifiedTime(System.currentTimeMillis())
   }
 
   def checkSchemasModifiedTimeAndReloadCubes() {
@@ -923,7 +923,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val metadataPath: String,client:
         val (timestampFile, timestampFileType) = getTimestampFileAndType(c.schemaName, c.cubeName)
 
         if (FileFactory.isFileExist(timestampFile, timestampFileType)) {
-          if (!(FileFactory.getMolapFile(timestampFile, timestampFileType).getLastModifiedTime() == cubeModifiedTimeStore.get(c.schemaName + "_" + c.cubeName))) {
+          if (!(FileFactory.getCarbonFile(timestampFile, timestampFileType).getLastModifiedTime() == cubeModifiedTimeStore.get(c.schemaName + "_" + c.cubeName))) {
 		    refreshCache
 		  }
 	  }
@@ -931,7 +931,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val metadataPath: String,client:
     } else {
       val (timestampFile, timestampFileType) = getTimestampFileAndType("", "")
       if (FileFactory.isFileExist(timestampFile, timestampFileType)) {
-        if (!(FileFactory.getMolapFile(timestampFile, timestampFileType).
+        if (!(FileFactory.getCarbonFile(timestampFile, timestampFileType).
           getLastModifiedTime() == cubeModifiedTimeStore.get("default"))) {
           refreshCache
   }
@@ -947,7 +947,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val metadataPath: String,client:
     var schemaLastUpdatedTime = System.currentTimeMillis
     val (timestampFile, timestampFileType) = getTimestampFileAndType(schemaName, cubeName)
     if (FileFactory.isFileExist(timestampFile, timestampFileType)) {
-      schemaLastUpdatedTime = FileFactory.getMolapFile(timestampFile, timestampFileType).getLastModifiedTime()
+      schemaLastUpdatedTime = FileFactory.getCarbonFile(timestampFile, timestampFileType).getLastModifiedTime()
     }
     schemaLastUpdatedTime
   }

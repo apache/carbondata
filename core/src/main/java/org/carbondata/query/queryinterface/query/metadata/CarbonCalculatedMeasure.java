@@ -93,8 +93,8 @@ public class CarbonCalculatedMeasure extends CarbonMeasure {
      * See interface comments
      */
     @Override
-    public MolapLevelType getType() {
-        return MolapLevelType.CALCULATED_MEASURE;
+    public CarbonLevelType getType() {
+        return CarbonLevelType.CALCULATED_MEASURE;
     }
 
 }

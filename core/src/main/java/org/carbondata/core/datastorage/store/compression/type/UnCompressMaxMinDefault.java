@@ -34,7 +34,7 @@ import org.carbondata.core.util.ValueCompressionUtil.DataType;
 public class UnCompressMaxMinDefault implements ValueCompressonHolder.UnCompressValue<double[]> {
 
     /**
-     * Attribute for Molap LOGGER
+     * Attribute for Carbon LOGGER
      */
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(UnCompressMaxMinDefault.class.getName());
@@ -60,7 +60,7 @@ public class UnCompressMaxMinDefault implements ValueCompressonHolder.UnCompress
         try {
             return (ValueCompressonHolder.UnCompressValue) clone();
         } catch (CloneNotSupportedException ex5) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, ex5, ex5.getMessage());
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, ex5, ex5.getMessage());
         }
         return null;
     }

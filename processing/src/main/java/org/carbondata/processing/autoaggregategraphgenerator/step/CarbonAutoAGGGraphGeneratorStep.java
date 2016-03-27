@@ -121,16 +121,16 @@ public class CarbonAutoAGGGraphGeneratorStep extends BaseStep implements StepInt
                         .generateGraph(meta.getFactTableName(), meta.getFactStoreLocation(),
                                 generator.getAllAggTables(), true, meta.getAggTables());
 
-                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "Loaded From Table: " + poll.factTableName + " : " + meta.getAggTables());
                 executeAggregateGeneration(generateGraph);
                 //				}
 
-                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "Record Procerssed For Auto Aggregate Table: ");
                 String logMessage =
-                        "Summary: Molap Fact Reader Step: Read: " + 1 + ": Write: " + writeCounter;
-                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, logMessage);
+                        "Summary: Carbon Fact Reader Step: Read: " + 1 + ": Write: " + writeCounter;
+                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, logMessage);
                 putRow(data.outputRowMeta, new Object[0]);
                 setOutputDone();
                 return false;

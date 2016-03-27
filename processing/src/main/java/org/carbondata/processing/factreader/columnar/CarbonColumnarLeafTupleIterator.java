@@ -68,7 +68,7 @@ public class CarbonColumnarLeafTupleIterator implements CarbonIterator<CarbonSur
      */
 
     /**
-     * MolapSliceTupleIterator constructor to initialise
+     * CarbonSliceTupleIterator constructor to initialise
      *
      * @param mdkeyLength mdkey length
      */

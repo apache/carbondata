@@ -41,7 +41,7 @@ import org.carbondata.query.util.CarbonEngineLogEvent;
 public class QueryDistinctData {
 
     /**
-     * Attribute for Molap LOGGER
+     * Attribute for Carbon LOGGER
      */
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(QueryDistinctData.class.getName());
@@ -62,7 +62,7 @@ public class QueryDistinctData {
 
         endTime = System.currentTimeMillis();
         long timeTaken = endTime - startTime;
-        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                 "Time taken to compute distinct value[millsec]:" + timeTaken);
         return dimensionDistinctData;
 
@@ -75,7 +75,7 @@ public class QueryDistinctData {
         startTime = System.currentTimeMillis();
         List<Dimension> allDimensions = loadSampler.getDimensions();
 
-        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                 "Reading Sample data for dimension:" + allDimensions.size());
 
         /**
@@ -138,7 +138,7 @@ public class QueryDistinctData {
 			buffer.append('\n');
 
 		}
-		LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+		LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
 				'\n' + buffer.toString());
 
 	}*/

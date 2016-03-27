@@ -20,7 +20,7 @@
 package org.carbondata.query.filters.measurefilter;
 
 import org.carbondata.query.aggregator.MeasureAggregator;
-import org.carbondata.query.executer.calcexp.MolapCalcFunction;
+import org.carbondata.query.executer.calcexp.CarbonCalcFunction;
 
 public class NotEqualsMeasureFilterImpl implements MeasureFilter {
 
@@ -28,7 +28,7 @@ public class NotEqualsMeasureFilterImpl implements MeasureFilter {
 
     private int index;
 
-    private MolapCalcFunction calcFunction;
+    private CarbonCalcFunction calcFunction;
 
     /**
      * Constructor that takes filter value
@@ -36,7 +36,7 @@ public class NotEqualsMeasureFilterImpl implements MeasureFilter {
      * @param filterValue
      */
     public NotEqualsMeasureFilterImpl(double filterValue, int index,
-            MolapCalcFunction calcFunction) {
+            CarbonCalcFunction calcFunction) {
         this.filterValue = filterValue;
         this.index = index;
         this.calcFunction = calcFunction;

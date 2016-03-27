@@ -146,26 +146,26 @@ public class SingleThreadFinalSortFilesMerger {
                 .getFileBufferSize(this.fileCounter, CarbonProperties.getInstance(),
                         CarbonCommonConstants.CONSTANT_SIZE_TEN);
 
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                 "Number of temp file: " + this.fileCounter);
 
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                 "File Buffer Size: " + this.fileBufferSize);
 
         // create record holder heap
         createRecordHolderQueue(files);
 
         // iterate over file list and create chunk holder and add to heap
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                 "Started adding first record from each file");
         int maxThreadForSorting = 0;
         try {
             maxThreadForSorting = Integer.parseInt(CarbonProperties.getInstance()
-                    .getProperty(CarbonCommonConstants.MOLAP_MAX_THREAD_FOR_SORTING,
-                            CarbonCommonConstants.MOLAP_MAX_THREAD_FOR_SORTING_DEFAULTVALUE));
+                    .getProperty(CarbonCommonConstants.CARBON_MAX_THREAD_FOR_SORTING,
+                            CarbonCommonConstants.CARBON_MAX_THREAD_FOR_SORTING_DEFAULTVALUE));
         } catch (NumberFormatException e) {
             maxThreadForSorting = Integer.parseInt(
-                    CarbonCommonConstants.MOLAP_MAX_THREAD_FOR_SORTING_DEFAULTVALUE);
+                    CarbonCommonConstants.CARBON_MAX_THREAD_FOR_SORTING_DEFAULTVALUE);
         }
         ExecutorService service = Executors.newFixedThreadPool(maxThreadForSorting);
 
@@ -202,7 +202,7 @@ public class SingleThreadFinalSortFilesMerger {
             throw new CarbonDataWriterException(e.getMessage(), e);
         }
 
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                 "Heap Size" + this.recordHolderHeapLocal.size());
     }
 

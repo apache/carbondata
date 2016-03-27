@@ -23,9 +23,9 @@ import org.carbondata.common.logging.LogEvent;
 
 public enum CarbonDataProcessorLogEvent implements LogEvent {
     /**
-     * MOLAPENGINE_MSG
+     * CARBONENGINE_MSG
      */
-    UNIBI_MOLAPDATAPROCESSOR_MSG("carbon.processing");
+    UNIBI_CARBONDATAPROCESSOR_MSG("carbon.processing");
 
     private String eventCode;
 

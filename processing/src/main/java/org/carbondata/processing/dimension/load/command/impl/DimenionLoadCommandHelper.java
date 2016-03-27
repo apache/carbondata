@@ -302,7 +302,7 @@ public final class DimenionLoadCommandHelper {
         try {
             CarbonUtil.deleteFiles(fileToMerge.toArray(new File[fileToMerge.size()]));
         } catch (CarbonUtilException e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "Not able to delete the files" + fileToMerge.toString());
             throw new IOException(e);
         }
@@ -330,7 +330,7 @@ public final class DimenionLoadCommandHelper {
             File destFile = new File(storePath + File.separator + changedFileName);
 
             if (!currentFile.renameTo(destFile)) {
-                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "Not able to rename the level Files to normal format");
                 throw new IOException("Not able to rename the level Files to normal format");
             }
@@ -430,7 +430,7 @@ public final class DimenionLoadCommandHelper {
     public boolean checkModifiedTableInSliceMetaData(String tableName,
             DimensionLoadInfo dimensionLoadInfo, int currentRestructNumber) throws KettleException {
         String storeLocation =
-                updateStoreLocationAndPopulateMolapInfo(dimensionLoadInfo.getMeta().getSchemaName(),
+                updateStoreLocationAndPopulateCarbonInfo(dimensionLoadInfo.getMeta().getSchemaName(),
                         dimensionLoadInfo.getMeta().getCubeName());
         //
 
@@ -478,7 +478,7 @@ public final class DimenionLoadCommandHelper {
         return true;
     }
 
-    private String updateStoreLocationAndPopulateMolapInfo(String schemaName, String cubeName) {
+    private String updateStoreLocationAndPopulateCarbonInfo(String schemaName, String cubeName) {
         String tempLocationKey = schemaName + '_' + cubeName;
         String schemaCubeName = schemaName + '/' + cubeName;
         String storeLocation = CarbonProperties.getInstance()

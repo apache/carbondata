@@ -130,7 +130,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
      */
     private CarbonCSVBasedSeqGenData data;
     /**
-     * MolapSeqGenStepMeta1
+     * CarbonSeqGenStepMeta1
      */
     private CarbonCSVBasedSeqGenMeta meta;
     /**
@@ -402,7 +402,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
                     carbonInfo.setPropTypes(meta.getPropTypes());
                     carbonInfo.setTimDimIndex(meta.timeDimeIndex);
                     carbonInfo.setDimHierRel(meta.getDimTableArray());
-                    carbonInfo.setBaseStoreLocation(updateStoreLocationAndPopulateMolapInfo(
+                    carbonInfo.setBaseStoreLocation(updateStoreLocationAndPopulateCarbonInfo(
                             meta.getSchemaName() + '/' + meta.getCubeName()));
                     carbonInfo.setTableName(meta.getTableName());
                     carbonInfo.setPrimaryKeyMap(meta.getPrimaryKeyMap());
@@ -562,16 +562,16 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
             if (writeCounter == 0) {
                 putRow(data.getOutputRowMeta(), new Object[outSize]);
             }
-            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "Record Procerssed For table: " + meta.getTableName());
             String logMessage =
-                    "Summary: Molap CSV Based Seq Gen Step : " + readCounter + ": Write: "
+                    "Summary: Carbon CSV Based Seq Gen Step : " + readCounter + ": Write: "
                             + writeCounter;
-            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, logMessage);
+            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, logMessage);
             setOutputDone();
 
         } catch (Exception ex) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, ex);
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, ex);
             throw new RuntimeException(ex);
         }
 
@@ -627,30 +627,30 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
         // in data surrogatekeygen will not be initialized so it can throw NPE.
         if (data.getSurrogateKeyGen() == null) {
             setOutputDone();
-            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "Record Procerssed For table: " + meta.getTableName());
             String logMessage =
-                    "Summary: Molap CSV Based Seq Gen Step:  Read: " + readCounter + ": Write: "
+                    "Summary: Carbon CSV Based Seq Gen Step:  Read: " + readCounter + ": Write: "
                             + writeCounter;
-            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, logMessage);
+            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, logMessage);
             return false;
         }
         try {
             data.getSurrogateKeyGen().writeHeirDataToFileAndCloseStreams();
             updateAndWriteSliceMetadataFile();
         } catch (KeyGenException e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
                     "Not able to get Key genrator");
             throw new KettleException();
         }
 
         setOutputDone();
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                 "Record Procerssed For table: " + meta.getTableName());
         String logMessage =
-                "Summary: Molap CSV Based Seq Gen Step:  Read: " + readCounter + ": Write: "
+                "Summary: Carbon CSV Based Seq Gen Step:  Read: " + readCounter + ": Write: "
                         + writeCounter;
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, logMessage);
+        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, logMessage);
         return false;
     }
 
@@ -795,7 +795,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
                 boolean renameTo = currentFile.renameTo(destFile);
 
                 if (!renameTo) {
-                    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                             "Not Able to Rename File : " + currentFile.getName());
                 }
             }
@@ -813,7 +813,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
                 .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
         store = store + File.separator + meta.getSchemaName() + '/' + meta.getCubeName();
 
-        int rsCounter = meta.getCurrentRestructNumber()/*MolapUtil.checkAndReturnNextRestructFolderNumber(store,"RS_")*/;
+        int rsCounter = meta.getCurrentRestructNumber()/*CarbonUtil.checkAndReturnNextRestructFolderNumber(store,"RS_")*/;
 
         store = store + File.separator + CarbonCommonConstants.RESTRUCTRE_FOLDER + rsCounter
                 + File.separator + meta.getTableName();
@@ -827,7 +827,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
 
     private String getBadLogStoreLocation(String storeLocation) {
         String badLogStoreLocation = CarbonProperties.getInstance()
-                .getProperty(CarbonCommonConstants.MOLAP_BADRECORDS_LOC);
+                .getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC);
         badLogStoreLocation = badLogStoreLocation + File.separator + storeLocation;
 
         return badLogStoreLocation;
@@ -858,7 +858,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
                         doProcess();
                     }
                 } catch (Throwable e) {
-                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
                             "Thread is terminated due to error");
                     threadStatusObserver.notifyFailed(e);
                 }
@@ -934,11 +934,11 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
      * @throws KettleException
      */
     private void updateAndWriteSliceMetadataFile() throws KettleException {
-        String storeLocation = updateStoreLocationAndPopulateMolapInfo(
+        String storeLocation = updateStoreLocationAndPopulateCarbonInfo(
                 meta.getSchemaName() + '/' + meta.getCubeName());
         //
 
-        int restructFolderNumber = meta.getCurrentRestructNumber()/*MolapUtil.checkAndReturnNextRestructFolderNumber(storeLocation,"RS_")*/;
+        int restructFolderNumber = meta.getCurrentRestructNumber()/*CarbonUtil.checkAndReturnNextRestructFolderNumber(storeLocation,"RS_")*/;
 
         String sliceMetaDataFilePath =
                 storeLocation + File.separator + CarbonCommonConstants.RESTRUCTRE_FOLDER
@@ -1025,10 +1025,10 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
 
     private void processRecord() {
         if (readCounter % logCounter == 0) {
-            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "Record Procerssed For table: " + meta.getTableName());
-            String logMessage = "Molap Csv Based Seq Gen Step: Record Read : " + readCounter;
-            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, logMessage);
+            String logMessage = "Carbon Csv Based Seq Gen Step: Record Read : " + readCounter;
+            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, logMessage);
         }
     }
 
@@ -1073,15 +1073,15 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
 
             }
         } catch (RuntimeException e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "Exception happened while processing rows in Do Process", e);
             throw e;
         } catch (Exception e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "Exception happened while processing rows in Do Process", e);
             throw new RuntimeException(e);
         } catch (Throwable t) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "Exception happened while processing rows in Do Process", t);
             throw new RuntimeException(t);
         }
@@ -1139,7 +1139,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
                     }
 
                 } catch (Throwable t) {
-                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                             "Not able to process rows to next step");
                     throw new KettleException(t);
                 }
@@ -1148,7 +1148,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
         });
     }
 
-    private String updateStoreLocationAndPopulateMolapInfo(String schemaCubeName) {
+    private String updateStoreLocationAndPopulateCarbonInfo(String schemaCubeName) {
         //
         String tempLocationKey = meta.getSchemaName() + '_' + meta.getCubeName();
         String strLoc = CarbonProperties.getInstance()
@@ -2024,10 +2024,10 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
             Map<String, int[]> hirches, int[] dimLens, String[] dimCols) {
         //
         String timeHierNameVal = "";
-        if (meta.getMolapTime() == null || "".equals(meta.getMolapTime())) {
+        if (meta.getCarbonTime() == null || "".equals(meta.getCarbonTime())) {
             timeHierNameVal = "";
         } else {
-            String[] hies = meta.getMolapTime().split(":");
+            String[] hies = meta.getCarbonTime().split(":");
             timeHierNameVal = hies[1];
         }
 
@@ -2120,8 +2120,8 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
         try {
             closeConnections();
             boolean isCacheEnabled = Boolean.parseBoolean(CarbonProperties.getInstance()
-                    .getProperty(CarbonCommonConstants.MOLAP_SEQ_GEN_INMEMORY_LRU_CACHE_ENABLED,
-                            CarbonCommonConstants.MOLAP_SEQ_GEN_INMEMORY_LRU_CACHE_ENABLED_DEFAULT_VALUE));
+                    .getProperty(CarbonCommonConstants.CARBON_SEQ_GEN_INMEMORY_LRU_CACHE_ENABLED,
+                            CarbonCommonConstants.CARBON_SEQ_GEN_INMEMORY_LRU_CACHE_ENABLED_DEFAULT_VALUE));
             if (null != surKeyGen) {
 
                 if (isCacheEnabled) {
@@ -2134,7 +2134,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
                     holder.setTimeDimCache(surKeyGen.getTimeDimCache());
                     holder.setMeasureMaxSurroagetMap(surKeyGen.getMeasureMaxSurroagetMap());
                     String cacheKey = meta.getSchemaName() + '_' + meta.getCubeName();
-                    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                             "************************************Storing in SEQ GEN LRU cache");
                     LRUCache.getIntance().put(cacheKey, holder);
                 }
@@ -2148,7 +2148,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
                 surKeyGen.close();
             }
         } catch (Exception e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
         }
         nrmlizedHierWriterMap = null;
         data.clean();
@@ -2172,7 +2172,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
                     versionWriter.close();
                 }
             } catch (IOException e) {
-                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
             }
         }
     }
@@ -2235,7 +2235,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
          */
         public void notifyFailed(Throwable exception) throws RuntimeException {
             exec.shutdownNow();
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, exception);
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, exception);
             throw new RuntimeException(exception);
         }
     }

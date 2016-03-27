@@ -76,14 +76,14 @@ public class QueryNormalizer {
 
     public boolean addQueryDetail(QueryDetail queryDetail) {
         if (queryDetail.getRecordSize() == 0) {
-            LOGGER.debug(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                     "Filtering query as its result size is 0");
             return false;
         }
         int actualBenefitRatio =
                 (int) (queryDetail.getNoOfRowsScanned() / queryDetail.getRecordSize());
         if (actualBenefitRatio < benefitRatio) {
-            LOGGER.debug(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                     "Filtering query as it doesn't meet benefit ration criteria");
             return false;
         }
@@ -149,7 +149,7 @@ public class QueryNormalizer {
                     TimeUnit.MILLISECONDS.toSeconds(queryDetail.getTotalExecutionTime())
                             - performanceGoal;
             if (performanceGap < 0) {
-                LOGGER.debug(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                         "Filtering query as it doesn't meet performance goal criteria");
                 itr.remove();
                 continue;

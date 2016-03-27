@@ -136,7 +136,7 @@ public class LevelValueWriter {
                         File changetoName = new File(storeFolder + File.separator + levelFileName);
 
                         if (inprogressFile.renameTo(changetoName)) {
-                            LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                            LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                                     "Renaming the level Files while creating the new instance on server startup.");
                         }
                     }
@@ -146,10 +146,10 @@ public class LevelValueWriter {
                         // Need to skip because the case can come in which server went down while files were merging and the other level
                         // files were not deleted, and the current file status is inrogress. so again we will merge the files and
                         // rename to normal file
-                        LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                        LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                                 "Need to skip as this can be case in which level file already renamed.");
                         if (levelFile.delete()) {
-                            LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                            LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                                     "Deleted the Inprogress level Files.");
                         }
                     } else {
@@ -162,7 +162,7 @@ public class LevelValueWriter {
                         File changetoName = new File(storeFolder + File.separator + levelFileName);
 
                         if (inprogressFile.renameTo(changetoName)) {
-                            LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                            LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                                     "Renaming the level Files while creating the new instance on server startup.");
                         }
 
@@ -195,7 +195,7 @@ public class LevelValueWriter {
         try {
             parsedVal = Integer.parseInt(val);
         } catch (NumberFormatException nfe) {
-            LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "Level File is already renamed so there will not be"
                             + "any need to keep the counter");
         }
@@ -230,7 +230,7 @@ public class LevelValueWriter {
 
         try {
             out = new FileOutputStream(f);
-            //            int bufferSize = Integer.parseInt(MolapProperties.getInstance().getProperty("molap.level.write.bufferinkb", "64"));
+            //            int bufferSize = Integer.parseInt(CarbonProperties.getInstance().getProperty("carbon.level.write.bufferinkb", "64"));
             dataOutputStream = new DataOutputStream(new BufferedOutputStream(out,
                     CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
                             * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR));
@@ -291,7 +291,7 @@ public class LevelValueWriter {
         File existFinalName = new File(this.storeFolderLocation + File.separator + changedFileName);
 
         if (!inProgressFile.renameTo(existFinalName)) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "Not able to rename file : " + inprogressFileName);
         }
 
@@ -299,7 +299,7 @@ public class LevelValueWriter {
         try {
             intialize();
         } catch (KettleException e) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "Not able to create the output stream for File :" + memberFileName + (counter
                             - 1));
         }
@@ -382,7 +382,7 @@ public class LevelValueWriter {
                 try {
                     stream.close();
                 } catch (IOException e) {
-                    LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, e,
+                    LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e,
                             "Unable to close Steam ");
                 }
             }
@@ -391,7 +391,7 @@ public class LevelValueWriter {
 
         isDeleted = f.delete();
         if (!isDeleted) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "Unable to delete the file " + f.getAbsolutePath());
         }
     }

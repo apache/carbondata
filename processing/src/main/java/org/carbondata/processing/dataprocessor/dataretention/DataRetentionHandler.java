@@ -36,7 +36,7 @@ import org.carbondata.core.metadata.SliceMetaData;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.CarbonUtilException;
 import org.carbondata.core.util.ValueCompressionUtil;
-import org.carbondata.processing.exception.MolapDataProcessorException;
+import org.carbondata.processing.exception.CarbonDataProcessorException;
 import org.carbondata.processing.factreader.FactReaderInfo;
 import org.carbondata.processing.factreader.CarbonSurrogateTupleHolder;
 import org.carbondata.processing.factreader.columnar.CarbonColumnarLeafTupleIterator;
@@ -106,7 +106,7 @@ public class DataRetentionHandler {
      * undergone for deletion or updation.
      *
      * @return Map<String, String> , Data load name and status
-     * @throws MolapDataProcessorException
+     * @throws CarbonDataProcessorException
      */
     public Map<String, String> updateFactFileBasedOnDataRetentionPolicy()
 
@@ -121,7 +121,7 @@ public class DataRetentionHandler {
             if (null == loadFiles) {
                 continue;
             }
-            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "System is going Data retention policy based on member" + columnValue
                             + " For column:" + columnName);
 
@@ -147,7 +147,7 @@ public class DataRetentionHandler {
                         continue;
                     }
                 } catch (CarbonUtilException e) {
-                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                             "Failed to apply retention policy.", e);
                 }
 
@@ -166,8 +166,8 @@ public class DataRetentionHandler {
                                 carbonFile.getName(), carbonFile.getAbsolutePath(), restrucureNum);
 
                     }
-                } catch (MolapDataProcessorException e) {
-                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                } catch (CarbonDataProcessorException e) {
+                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                             "Failed to apply retention policy.", e);
                 }
             }
@@ -259,14 +259,14 @@ public class DataRetentionHandler {
                     .getAllLoadFolderSlices(schemaName, cubeName, tableName, this.hdsfStoreLocation,
                             restrucureNum);
             for (CarbonFile carbonFile : rsLoadFiles) {
-                CarbonFile[] molapLevelFile = CarbonDataRetentionUtil
+                CarbonFile[] carbonLevelFile = CarbonDataRetentionUtil
                         .getFilesArray(carbonFile.getAbsolutePath(),
                                 fileNameSearchPattern.toString());
                 // Retrieving the surrogate key.
-                if (molapLevelFile.length > 0) {
+                if (carbonLevelFile.length > 0) {
 
                     CarbonDataRetentionUtil
-                            .getSurrogateKeyForRetentionMember(molapLevelFile[0], columnName,
+                            .getSurrogateKeyForRetentionMember(carbonLevelFile[0], columnName,
                                     columnValue, dateFormat, retentionSurrogateKeyMap);
                 }
             }
@@ -293,7 +293,7 @@ public class DataRetentionHandler {
 
     private void applyDataRetentionPolicy(String absoluteFactFilePath,
             Map<String, String> loadDetails, String loadName, String loadPath, int restrucureNum)
-            throws MolapDataProcessorException {
+            throws CarbonDataProcessorException {
         if (null != loadName) {
             loadName = loadName.substring(loadName.indexOf('_') + 1, loadName.length());
         }
@@ -307,13 +307,13 @@ public class DataRetentionHandler {
             fileToBeUpdated = factFiles[i].getAbsolutePath();
             if (null != fileToBeUpdated) {
                 try {
-                    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                             "Following load file will be marked for update: " + loadName);
                     loadDetails.put(loadName, CarbonCommonConstants.MARKED_FOR_UPDATE);
                     processFactFileAsPerFileToBeUpdatedDetails(leafNodeInfoList, fileToBeUpdated,
                             loadPath, loadDetails, loadName, restrucureNum);
-                } catch (MolapDataProcessorException e) {
-                    throw new MolapDataProcessorException(e.getMessage());
+                } catch (CarbonDataProcessorException e) {
+                    throw new CarbonDataProcessorException(e.getMessage());
                 }
             }
         }
@@ -322,7 +322,7 @@ public class DataRetentionHandler {
     private void processFactFileAsPerFileToBeUpdatedDetails(
             List<LeafNodeInfoColumnar> leafNodeInfoList, String fileToBeUpdated, String loadPath,
             Map<String, String> loadDetails, String loadName, int restructureNumber)
-            throws MolapDataProcessorException {
+            throws CarbonDataProcessorException {
 
         ValueCompressionModel valueCompressionModel = ValueCompressionUtil.getValueCompressionModel(
                 loadSliceLocation + CarbonCommonConstants.MEASURE_METADATA_FILE_NAME + tableName
@@ -355,11 +355,11 @@ public class DataRetentionHandler {
                     return;
                 }
                 while (columnarLeafTupleItr.hasNext()) {
-                    CarbonSurrogateTupleHolder molapSurrogateTuHolder = columnarLeafTupleItr.next();
-                    byte[] mdKeyFromStore = molapSurrogateTuHolder.getMdKey();
-                    Object[] row = new Object[molapSurrogateTuHolder.getMeasures().length + 1];
-                    System.arraycopy(molapSurrogateTuHolder.getMeasures(), 0, row, 0,
-                            molapSurrogateTuHolder.getMeasures().length);
+                    CarbonSurrogateTupleHolder carbonSurrogateTuHolder = columnarLeafTupleItr.next();
+                    byte[] mdKeyFromStore = carbonSurrogateTuHolder.getMdKey();
+                    Object[] row = new Object[carbonSurrogateTuHolder.getMeasures().length + 1];
+                    System.arraycopy(carbonSurrogateTuHolder.getMeasures(), 0, row, 0,
+                            carbonSurrogateTuHolder.getMeasures().length);
 
                     // comparing the MD keys with retention member retention
                     // keys
@@ -371,7 +371,7 @@ public class DataRetentionHandler {
                         surrKey = (int) storeTupleSurrogates[surrogateKeyIndex];
                         res = retentionSurrogateKeyMap.get(surrKey);
                     } catch (Exception e) {
-                        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                                 "Member needs to be added in updated fact file surrogate key is : "
                                         + surrKey);
                     }
@@ -388,13 +388,13 @@ public class DataRetentionHandler {
                                 fileToBeUpdated + CarbonCommonConstants.FACT_DELETE_EXTENSION,
                                 FileFactory.getFileType(fileToBeUpdated));
                     } catch (IOException e) {
-                        throw new MolapDataProcessorException(e.getMessage());
+                        throw new CarbonDataProcessorException(e.getMessage());
                     }
                     loadDetails.put(loadName, CarbonCommonConstants.MARKED_FOR_DELETE);
                     return;
                 }
             } catch (CarbonDataWriterException e) {
-                throw new MolapDataProcessorException(e.getMessage());
+                throw new CarbonDataProcessorException(e.getMessage());
             } finally {
                 if (counter != 0) {
                     mergerInstance.finish();
@@ -405,9 +405,9 @@ public class DataRetentionHandler {
             }
 
         } catch (CarbonUtilException e) {
-            throw new MolapDataProcessorException(e.getMessage());
+            throw new CarbonDataProcessorException(e.getMessage());
         } catch (CarbonDataWriterException e) {
-            throw new MolapDataProcessorException(e.getMessage());
+            throw new CarbonDataProcessorException(e.getMessage());
         }
     }
 

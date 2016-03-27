@@ -138,10 +138,10 @@ public abstract class ColumnarFactFileMerger {
      *
      * @throws SliceMergerException
      */
-    protected void addRow(CarbonSurrogateTupleHolder molapTuple) throws SliceMergerException {
-        Object[] row = new Object[molapTuple.getMeasures().length + 1];
-        System.arraycopy(molapTuple.getMeasures(), 0, row, 0, molapTuple.getMeasures().length);
-        row[row.length - 1] = molapTuple.getMdKey();
+    protected void addRow(CarbonSurrogateTupleHolder carbonTuple) throws SliceMergerException {
+        Object[] row = new Object[carbonTuple.getMeasures().length + 1];
+        System.arraycopy(carbonTuple.getMeasures(), 0, row, 0, carbonTuple.getMeasures().length);
+        row[row.length - 1] = carbonTuple.getMdKey();
         try {
             this.dataHandler.addDataToStore(row);
         } catch (CarbonDataWriterException e) {

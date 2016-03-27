@@ -150,7 +150,7 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
 
       case ExtractEquiJoinKeys(Inner, leftKeys, rightKeys, condition, PhysicalOperation(projectList, predicates, l@LogicalRelation(carbonRelation: CarbonDatasourceRelation, _)), right)
         if (canPushDownJoin(right, condition)) =>
-        LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, s"pushing down for ExtractEquiJoinKeys:right")
+        LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, s"pushing down for ExtractEquiJoinKeys:right")
         val olap = olapScan(projectList, predicates, carbonRelation.olapRelation, None, None, None, false, true)
         val pushedDownJoin = FilterPushJoin(
           leftKeys: Seq[Expression],
@@ -164,7 +164,7 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
 
       case ExtractEquiJoinKeys(Inner, leftKeys, rightKeys, condition, left, PhysicalOperation(projectList, predicates, l@LogicalRelation(carbonRelation: CarbonDatasourceRelation, _)))
         if (canPushDownJoin(left, condition)) =>
-        LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, s"pushing down for ExtractEquiJoinKeys:left")
+        LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, s"pushing down for ExtractEquiJoinKeys:left")
         val olap = olapScan(projectList, predicates, carbonRelation.olapRelation, None, None, None, false, true)
 
         val pushedDownJoin = FilterPushJoin(
@@ -284,26 +284,26 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
       exprs.flatMap(_.collect { case a: AggregateExpression => a })
 
     def canPushDownJoin(otherRDDPlan: LogicalPlan, joinCondition: Option[Expression]): Boolean = {
-      val pushdowmJoinEnabled = sqlContext.sparkContext.conf.getBoolean("spark.molap.pushdown.join.as.filter", true)
+      val pushdowmJoinEnabled = sqlContext.sparkContext.conf.getBoolean("spark.carbon.pushdown.join.as.filter", true)
 
       if (!pushdowmJoinEnabled) return false
 
-      val isJoinOnMolapCube = otherRDDPlan match {
+      val isJoinOnCarbonCube = otherRDDPlan match {
         case other@PhysicalOperation(projectList, predicates, l@LogicalRelation(carbonRelation: CarbonDatasourceRelation, _)) => true
         case _ => false
       }
 
-      //TODO remove the isJoinOnMolapCube check 
-      if (isJoinOnMolapCube) {
-        println("For now If both left & right are molap cubes, let's not join")
-        return false //For now If both left & right are molap cubes, let's not join
+      //TODO remove the isJoinOnCarbonCube check
+      if (isJoinOnCarbonCube) {
+        println("For now If both left & right are carbon cubes, let's not join")
+        return false //For now If both left & right are carbon cubes, let's not join
       }
 
       otherRDDPlan match {
         case BroadcastHint(p) => true
         case p if sqlContext.conf.autoBroadcastJoinThreshold > 0 &&
           p.statistics.sizeInBytes <= sqlContext.conf.autoBroadcastJoinThreshold => {
-          LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, "canPushDownJoin statistics:" + p.statistics.sizeInBytes)
+          LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, "canPushDownJoin statistics:" + p.statistics.sizeInBytes)
           true
         }
         case _ => false

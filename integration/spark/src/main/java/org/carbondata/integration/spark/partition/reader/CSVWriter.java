@@ -389,7 +389,7 @@ public class CSVWriter implements Closeable, Flushable {
         try {
             flush();
         } catch (IOException e) {
-            LOGGER.debug(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, "Error while flushing");
+            LOGGER.debug(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "Error while flushing");
         }
     }
 }

@@ -62,12 +62,12 @@ public class MDKeyGenStep extends BaseStep {
             LogServiceFactory.getLogService(MDKeyGenStep.class.getName());
 
     /**
-     * molap mdkey generator step data class
+     * carbon mdkey generator step data class
      */
     private MDKeyGenStepData data;
 
     /**
-     * molap mdkey generator step meta
+     * carbon mdkey generator step meta
      */
     private MDKeyGenStepMeta meta;
 
@@ -118,7 +118,7 @@ public class MDKeyGenStep extends BaseStep {
     private HybridStoreModel hybridStoreModel;
 
     /**
-     * MolapMDKeyGenStep
+     * CarbonMDKeyGenStep
      *
      * @param stepMeta
      * @param stepDataInterface
@@ -181,23 +181,23 @@ public class MDKeyGenStep extends BaseStep {
                 writeCounter++;
             }
         } catch (CarbonDataWriterException e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
                     "Failed for: " + this.tableName);
             throw new KettleException("Error while initializing data handler : " + e.getMessage());
         } finally {
             try {
                 dataHandler.finish();
             } catch (CarbonDataWriterException e) {
-                LOGGER.debug(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.debug(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "Error in  closing data handler ");
             }
         }
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                 "Record Procerssed For table: " + this.tableName);
         String logMessage =
-                "Finished Molap Mdkey Generation Step: Read: " + readCounter + ": Write: "
+                "Finished Carbon Mdkey Generation Step: Read: " + readCounter + ": Write: "
                         + writeCounter;
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, logMessage);
+        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, logMessage);
         processingComplete();
         return false;
     }
@@ -223,7 +223,7 @@ public class MDKeyGenStep extends BaseStep {
                 CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL) + File.separator + meta
                 .getSchemaName() + File.separator + meta.getCubeName();
 
-        int restructFolderNumber = meta.getCurrentRestructNumber()/*MolapUtil.checkAndReturnNextRestructFolderNumber(baseStorelocation,"RS_")*/;
+        int restructFolderNumber = meta.getCurrentRestructNumber()/*CarbonUtil.checkAndReturnNextRestructFolderNumber(baseStorelocation,"RS_")*/;
 
         String restructFolderlocation =
                 baseStorelocation + File.separator + CarbonCommonConstants.RESTRUCTRE_FOLDER
@@ -244,7 +244,7 @@ public class MDKeyGenStep extends BaseStep {
         storeLocation = storeLocation + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
 
         if (!(new File(storeLocation).exists())) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "Load Folder Not Present for writing measure metadata  : " + storeLocation);
             return false;
         }
@@ -267,7 +267,7 @@ public class MDKeyGenStep extends BaseStep {
                 dimLens[i] = dimsLenList.get(i);
             }
         } catch (CarbonUtilException e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "Level cardinality file :: " + e.getMessage());
             return false;
         }

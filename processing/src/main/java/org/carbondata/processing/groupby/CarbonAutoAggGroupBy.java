@@ -52,8 +52,8 @@ public class CarbonAutoAggGroupBy {
      * decimalPointers
      */
     private final byte decimalPointers = Byte.parseByte(CarbonProperties.getInstance()
-            .getProperty(CarbonCommonConstants.MOLAP_DECIMAL_POINTERS,
-                    CarbonCommonConstants.MOLAP_DECIMAL_POINTERS_DEFAULT));
+            .getProperty(CarbonCommonConstants.CARBON_DECIMAL_POINTERS,
+                    CarbonCommonConstants.CARBON_DECIMAL_POINTERS_DEFAULT));
 
     /**
      * key array index
@@ -241,8 +241,8 @@ public class CarbonAutoAggGroupBy {
         this.tmpFile = new File(this.storeLocation + File.separator + tableName + System.nanoTime()
                 + ".groubyfile");
         this.bufferSize = Integer.parseInt(CarbonProperties.getInstance()
-                .getProperty(CarbonCommonConstants.MOLAP_SORT_FILE_WRITE_BUFFER_SIZE,
-                        CarbonCommonConstants.MOLAP_SORT_FILE_WRITE_BUFFER_SIZE_DEFAULT_VALUE));
+                .getProperty(CarbonCommonConstants.CARBON_SORT_FILE_WRITE_BUFFER_SIZE,
+                        CarbonCommonConstants.CARBON_SORT_FILE_WRITE_BUFFER_SIZE_DEFAULT_VALUE));
         try {
             // open output stream on temop file
             this.writeStream = new DataOutputStream(
@@ -267,7 +267,7 @@ public class CarbonAutoAggGroupBy {
         this.storeLocation = baseLocation + File.separator + schemaName + File.separator + cubeName
                 + File.separator + CarbonCommonConstants.GROUP_BY_TEMP_FILE_LOCATION + File.separator
                 + this.tableName;
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                 "temp file location" + this.storeLocation);
 
         // if check point is not enabled then delete if any older file exists in
@@ -275,7 +275,7 @@ public class CarbonAutoAggGroupBy {
         deleteGroupByTempLocationIfExists();
         // create new sort temp directory
         if (!new File(this.storeLocation).mkdirs()) {
-            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "Sort Temp Location Already Exists");
         }
     }
@@ -293,7 +293,7 @@ public class CarbonAutoAggGroupBy {
             try {
                 CarbonUtil.deleteFoldersAndFiles(file);
             } catch (CarbonUtilException e) {
-                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
                 throw new CarbonGroupByException(e);
             }
         }
@@ -478,7 +478,7 @@ public class CarbonAutoAggGroupBy {
                     buffer.putInt(readInt);
                     byteArray = new byte[readInt];
                     if (readingStream.read(byteArray) < 0) {
-                        LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                        LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                                 "Problme while reading the Custom Measure.");
                     }
                     buffer.put(byteArray);
@@ -492,7 +492,7 @@ public class CarbonAutoAggGroupBy {
             byteArray = new byte[mdKeyLength];
 
             if (readingStream.read(byteArray) < 0) {
-                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "Problme while reading the Mdkey.");
             }
             // setting the mdkey

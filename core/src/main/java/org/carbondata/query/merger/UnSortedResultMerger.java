@@ -36,11 +36,11 @@ import org.carbondata.query.reader.exception.ResultReaderException;
 import org.carbondata.query.schema.metadata.DataProcessorInfo;
 import org.carbondata.query.util.CarbonEngineLogEvent;
 
-//import org.carbondata.core.engine.executer.calcexp.MolapCalcFunction;
+//import org.carbondata.core.engine.executer.calcexp.CarbonCalcFunction;
 
 /**
  * Project Name  : Carbon
- * Module Name   : MOLAP Data Processor
+ * Module Name   : CARBON Data Processor
  * Author    : R00903928,k00900841
  * Created Date  : 27-Aug-2015
  * FileName   : UnSortedResultMerger.java
@@ -101,7 +101,7 @@ public class UnSortedResultMerger implements Callable<Void> {
             // For each intermediate result file.
             for (CarbonFile file : files) {
                 // reads the temp files and creates ResultTempFileReader object.
-                ResultTempFileReader molapSortTempFileChunkHolder =
+                ResultTempFileReader carbonSortTempFileChunkHolder =
                         new ResultTempFileReader(file.getAbsolutePath(),
                                 dataProcessorInfo.getKeySize(),
                                 AggUtil.getAggregators(dataProcessorInfo.getAggType(), false,
@@ -112,14 +112,14 @@ public class UnSortedResultMerger implements Callable<Void> {
                                         dataProcessorInfo.getDataTypes()),
                                 dataProcessorInfo.getFileBufferSize());
                 // initialize
-                molapSortTempFileChunkHolder.initialize();
+                carbonSortTempFileChunkHolder.initialize();
                 // add to list
-                this.recordHolderList.add(molapSortTempFileChunkHolder);
+                this.recordHolderList.add(carbonSortTempFileChunkHolder);
             }
             // iterate through list and for each file process the each row of data.
             writeRecordToFile();
         } catch (ResultReaderException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
             throw new ResultMergerException(e);
         } finally {
             dataProcessor.finish();

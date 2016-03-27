@@ -175,28 +175,28 @@ class CubeProcessor(cm: CubeModel, sqlContext: SQLContext) {
     // Check if there is any duplicate measures or dimensions. Its based on the dimension name and measure name
     levels.groupBy(_.name).foreach(f => if (f._2.size > 1) {
       val name = f._1
-      LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, s"Duplicate dimensions found with name : $name")
+      LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, s"Duplicate dimensions found with name : $name")
       LOGGER.audit(s"Validation failed for Create/Alter Cube Operation - Duplicate dimensions found with name : $name")
       sys.error(s"Duplicate dimensions found with name : $name")
     })
 
     levels.groupBy(_.column).foreach(f => if (f._2.size > 1) {
       val name = f._1
-      LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, s"Duplicate dimensions found with column name : $name")
+      LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, s"Duplicate dimensions found with column name : $name")
       LOGGER.audit(s"Validation failed for Create/Alter Cube Operation - Duplicate dimensions found with column name : $name")
       sys.error(s"Duplicate dimensions found with column name : $name")
     })
 
     measures.groupBy(_.name).foreach(f => if (f._2.size > 1) {
       val name = f._1
-      LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, s"Duplicate measures found with name : $name")
+      LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, s"Duplicate measures found with name : $name")
       LOGGER.audit(s"Validation failed for Create/Alter Cube Operation - Duplicate measures found with name : $name")
       sys.error(s"Duplicate measures found with name : $name")
     })
 
     measures.groupBy(_.column).foreach(f => if (f._2.size > 1) {
       val name = f._1
-      LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, s"Duplicate measures found with column name : $name")
+      LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, s"Duplicate measures found with column name : $name")
       LOGGER.audit(s"Validation failed for Create/Alter Cube Operation - Duplicate measures found with column name : $name")
       sys.error(s"Duplicate measures found with column name : $name")
     })
@@ -207,7 +207,7 @@ class CubeProcessor(cm: CubeModel, sqlContext: SQLContext) {
     cm.aggregation.foreach(a => {
       if (levelsArray.contains(a.msrName)) {
         val fault = a.msrName
-        LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, s"Aggregator should not be defined for dimension fields [$fault]")
+        LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, s"Aggregator should not be defined for dimension fields [$fault]")
         LOGGER.audit(s"Validation failed for Create/Alter Cube Operation - Aggregator should not be defined for dimension fields [$fault]")
         sys.error(s"Aggregator should not be defined for dimension fields [$fault]")
       }
@@ -215,7 +215,7 @@ class CubeProcessor(cm: CubeModel, sqlContext: SQLContext) {
 
     levelsNdMesures.groupBy(x => x).foreach(f => if (f._2.size > 1) {
       val name = f._1
-      LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, s"Dimension and Measure defined with same name : $name")
+      LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, s"Dimension and Measure defined with same name : $name")
       LOGGER.audit(s"Validation failed for Create/Alter Cube Operation - Dimension and Measure defined with same name : $name")
       sys.error(s"Dimension and Measure defined with same name : $name")
     })
@@ -312,13 +312,13 @@ class CubeProcessor(cm: CubeModel, sqlContext: SQLContext) {
         }
 
 
-        //Special Case, where Partition count alone is sent to Molap for dataloading
+        //Special Case, where Partition count alone is sent to Carbon for dataloading
         if (part.partitionClass.isEmpty() && part.partitionColumn(0).isEmpty()) {
           Partitioner("org.carbondata.integration.spark.partition.api.impl.SampleDataPartitionerImpl", Array(""), part.partitionCount, null)
         }
         else if (definedpartCols.size > 0) {
           val msg = definedpartCols.mkString(", ")
-          LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, s"partition columns specified are not part of Dimension columns : $msg")
+          LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, s"partition columns specified are not part of Dimension columns : $msg")
           LOGGER.audit(s"Validation failed for Create/Alter Cube Operation - partition columns specified are not part of Dimension columns : $msg")
           sys.error(s"partition columns specified are not part of Dimension columns : $msg")
         }
@@ -426,7 +426,7 @@ private[sql] case class ShowCreateCube(cm: CubeModel, override val output: Seq[A
       }
 
       val columns = rawColumns.filter(c => !c._2.equalsIgnoreCase(CarbonCommonConstants.BINARY_TYPE))
-      if (rawColumns.size > columns.size) LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, "BinaryType is not supported. Ignoring all the Binary fields.")
+      if (rawColumns.size > columns.size) LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, "BinaryType is not supported. Ignoring all the Binary fields.")
 
       val (numericColArray, nonNumericColArray) = columns.partition(p => numericTypes.map(x => x.toLowerCase()).contains(p._2.toLowerCase()))
 
@@ -455,19 +455,19 @@ private[sql] case class ShowCreateCube(cm: CubeModel, override val output: Seq[A
       measures = measureColArray.map(field => {
         if (cm.msrCols.size > 0) {
           val definedField = cm.msrCols.filter(f => f.column.equalsIgnoreCase(field._1))
-          if (definedField.size > 0 && definedField.head.name.isDefined) Measure(definedField.head.name.getOrElse(field._1), field._1, CarbonScalaUtil.convertSparkToMolapSchemaDataType(field._2))
-          else Measure(field._1, field._1, CarbonScalaUtil.convertSparkToMolapSchemaDataType(field._2))
+          if (definedField.size > 0 && definedField.head.name.isDefined) Measure(definedField.head.name.getOrElse(field._1), field._1, CarbonScalaUtil.convertSparkToCarbonSchemaDataType(field._2))
+          else Measure(field._1, field._1, CarbonScalaUtil.convertSparkToCarbonSchemaDataType(field._2))
         }
-        else Measure(field._1, field._1, CarbonScalaUtil.convertSparkToMolapSchemaDataType(field._2))
+        else Measure(field._1, field._1, CarbonScalaUtil.convertSparkToCarbonSchemaDataType(field._2))
       })
 
       levels = dimColArray.map(field => {
         if (cm.dimCols.size > 0) {
           val definedField = cm.dimCols.filter(f => f.column.equalsIgnoreCase(field._1))
-          if (definedField.size > 0 && definedField.head.name.isDefined) Level(definedField.head.name.getOrElse(field._1), field._1, Int.MaxValue, CarbonScalaUtil.convertSparkToMolapSchemaDataType(field._2))
-          else Level(field._1, field._1, Int.MaxValue, CarbonScalaUtil.convertSparkToMolapSchemaDataType(field._2))
+          if (definedField.size > 0 && definedField.head.name.isDefined) Level(definedField.head.name.getOrElse(field._1), field._1, Int.MaxValue, CarbonScalaUtil.convertSparkToCarbonSchemaDataType(field._2))
+          else Level(field._1, field._1, Int.MaxValue, CarbonScalaUtil.convertSparkToCarbonSchemaDataType(field._2))
         }
-        else Level(field._1, field._1, Int.MaxValue, CarbonScalaUtil.convertSparkToMolapSchemaDataType(field._2))
+        else Level(field._1, field._1, Int.MaxValue, CarbonScalaUtil.convertSparkToCarbonSchemaDataType(field._2))
       })
 
       if (cm.dimRelations.size > 0) {
@@ -485,7 +485,7 @@ private[sql] case class ShowCreateCube(cm: CubeModel, override val output: Seq[A
 
           if (!right) {
             val rcl = relationEntry.relation.rightColumn
-            LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, s"Dimension field defined in the relation [$rcl] is not present in the Dimension source")
+            LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, s"Dimension field defined in the relation [$rcl] is not present in the Dimension source")
             sys.error(s"Dimension field defined in the relation [$rcl] is not present in the Dimension source")
           }
 
@@ -496,7 +496,7 @@ private[sql] case class ShowCreateCube(cm: CubeModel, override val output: Seq[A
           }
 
           val relColumns = rawRelColumns.filter(c => !c._2.equalsIgnoreCase(CarbonCommonConstants.BINARY_TYPE))
-          if (rawRelColumns.size > relColumns.size) LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, "BinaryType is not supported. Ignoring all the Binary fields.")
+          if (rawRelColumns.size > relColumns.size) LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, "BinaryType is not supported. Ignoring all the Binary fields.")
 
           // Remove the relation column from fact table as it is already considered in dimension table
           levels = levels.dropWhile(p => p.column.equalsIgnoreCase(relationEntry.relation.leftColumn) && !specifiedCols.map(x => x.toLowerCase()).contains(p.column.toLowerCase()))
@@ -504,8 +504,8 @@ private[sql] case class ShowCreateCube(cm: CubeModel, override val output: Seq[A
 
           var dimFileLevels: Seq[Level] = Seq[Level]() 
             relColumns.map(field => {
-//            		dimFileLevels ++ = CarbonScalaUtil.convertSparkColumnToMolapLevel(field)
-            		Level(field._1, field._1, Int.MaxValue, CarbonScalaUtil.convertSparkToMolapSchemaDataType(field._2))
+//            		dimFileLevels ++ = CarbonScalaUtil.convertSparkColumnToCarbonLevel(field)
+            		Level(field._1, field._1, Int.MaxValue, CarbonScalaUtil.convertSparkToCarbonSchemaDataType(field._2))
             	}
               )
           val dimFileHierarchies = dimFileLevels.map(field => Hierarchy(relationEntry.tableName, Some(dimFileLevels.find(dl => dl.name.equalsIgnoreCase(relationEntry.relation.rightColumn)).get.column), Seq(field), Some(relationEntry.tableName)))
@@ -538,7 +538,7 @@ private[sql] case class ShowCreateCube(cm: CubeModel, override val output: Seq[A
 
           if (dimFileLevels.filter(l => l.name.equalsIgnoreCase(relationEntry.relation.rightColumn)).length <= 0) {
             val rcl = relationEntry.relation.rightColumn
-            LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, s"Dimension field defined in the relation [$rcl] is not present in the Dimension source")
+            LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, s"Dimension field defined in the relation [$rcl] is not present in the Dimension source")
             sys.error(s"Dimension field defined in the relation [$rcl] is not present in the Dimension source")
           }
 
@@ -556,13 +556,13 @@ private[sql] case class ShowCreateCube(cm: CubeModel, override val output: Seq[A
     // Check if there is any duplicate measures or dimensions. Its based on the dimension name and measure name
     levelsToCheckDuplicate.groupBy(_.name).foreach(f => if (f._2.size > 1) {
       val name = f._1
-      LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, s"Duplicate dimensions found with name : $name")
+      LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, s"Duplicate dimensions found with name : $name")
       sys.error(s"Duplicate dimensions found with name : $name")
     })
 
     measures.groupBy(_.name).foreach(f => if (f._2.size > 1) {
       val name = f._1
-      LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, s"Duplicate measures found with name : $name")
+      LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, s"Duplicate measures found with name : $name")
       sys.error(s"Duplicate measures found with name : $name")
     })
 
@@ -572,14 +572,14 @@ private[sql] case class ShowCreateCube(cm: CubeModel, override val output: Seq[A
     cm.aggregation.foreach(a => {
       if (levelsArray.contains(a.msrName)) {
         val fault = a.msrName
-        LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, s"Aggregator should not be defined for dimension fields [$fault]")
+        LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, s"Aggregator should not be defined for dimension fields [$fault]")
         sys.error(s"Aggregator should not be defined for dimension fields [$fault]")
       }
     })
 
     levelsNdMesures.groupBy(x => x).foreach(f => if (f._2.size > 1) {
       val name = f._1
-      LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, s"Dimension and Measure defined with same name : $name")
+      LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, s"Dimension and Measure defined with same name : $name")
       sys.error(s"Dimension and Measure defined with same name : $name")
     })
 
@@ -650,7 +650,7 @@ private[sql] case class ShowCreateCube(cm: CubeModel, override val output: Seq[A
 
         if (definedpartCols.size > 0) {
           val msg = definedpartCols.mkString(", ")
-          LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, s"partition columns specified are not part of Dimension columns : $msg")
+          LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, s"partition columns specified are not part of Dimension columns : $msg")
           sys.error(s"partition columns specified are not part of Dimension columns : $msg")
         }
 
@@ -673,7 +673,7 @@ private[sql] case class ShowCreateCube(cm: CubeModel, override val output: Seq[A
         dataFrame = sqlContext.load("com.databricks.spark.csv", Map("path" -> factFile, "header" -> "true", "inferSchema" -> "true"))
       }
       else {
-        LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, s"Input source file $factFile does not exists")
+        LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, s"Input source file $factFile does not exists")
         sys.error(s"Input source file $factFile does not exists")
       }
     }
@@ -691,7 +691,7 @@ private[sql] case class ShowCreateCube(cm: CubeModel, override val output: Seq[A
         }
       }
       else {
-        LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, s"Input source table $tableName does not exists")
+        LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, s"Input source table $tableName does not exists")
         sys.error(s"Input source table $tableName does not exists")
       }
     }
@@ -724,7 +724,7 @@ private[sql] case class ShowCreateCube(cm: CubeModel, override val output: Seq[A
   * These are the assumptions made
   * 1.We have a single hierarchy under a dimension tag and a single level under a hierarchy tag
   * 2.The names of dimensions and measures are case insensitive
-  * 3.MolapCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE is always added as a measure.So we need to ignore this to check duplicates
+  * 3.CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE is always added as a measure.So we need to ignore this to check duplicates
   */
 private[sql] case class AlterCube(
                                    cm: CubeModel,
@@ -750,13 +750,13 @@ private[sql] case class AlterCube(
     val tmpCube = CarbonMetadata.getInstance().getCube(schemaName + "_" + cubeName)
     if (null == tmpCube) {
       LOGGER.audit(s"Altering cube with Schema name [$schemaName] and cube name [$cubeName] failed. Cube $schemaName.$cubeName does not exist")
-      LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, s"Cube $schemaName.$cubeName does not exist")
+      LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, s"Cube $schemaName.$cubeName does not exist")
       sys.error(s"Cube $schemaName.$cubeName does not exist")
     }
 
-    val molapLock = new MetadataLock(tmpCube.getMetaDataFilepath())
+    val carbonLock = new MetadataLock(tmpCube.getMetaDataFilepath())
     try {
-      if (molapLock.lockWithRetries()) {
+      if (carbonLock.lockWithRetries()) {
         logInfo("Successfully able to get the cube metadata file lock")
       }
       else {
@@ -770,7 +770,7 @@ private[sql] case class AlterCube(
 
       if (null == relation) {
         LOGGER.audit(s"Altering cube with Schema name [$schemaName] and cube name [$cubeName] failed")
-        LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, s"Cube $schemaName.$cubeName does not exist")
+        LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, s"Cube $schemaName.$cubeName does not exist")
         sys.error(s"Cube $schemaName.$cubeName does not exist")
       }
       val foundDropColsList = new ArrayBuffer[String]
@@ -786,7 +786,7 @@ private[sql] case class AlterCube(
       if (partitionCols.exists(partCol => dropColsList.contains(partCol.toLowerCase()))) {
         val partitionColsString = partitionCols.mkString(",")
         LOGGER.audit(s"Altering cube with Schema name [$schemaName] and cube name [$cubeName] failed")
-        LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, s"Cannot Delete the partition column(s).")
+        LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, s"Cannot Delete the partition column(s).")
         sys.error(s"Cannot Delete the partition column(s).Partition columns are [$partitionColsString]")
       }
 
@@ -794,19 +794,19 @@ private[sql] case class AlterCube(
         .getCube(relation.cubeMeta.schemaName + '_' + relation.cubeMeta.cubeName)
         .getMetaDataFilepath
       val fileType = FileFactory.getFileType(metaDataPath)
-      val file = FileFactory.getMolapFile(metaDataPath, fileType)
+      val file = FileFactory.getCarbonFile(metaDataPath, fileType)
 
       val (_, _, _, tmpSchemaXML, _,_) = CarbonEnv.getInstance(sqlContext).carbonCatalog.readCubeMetaDataFile(file, fileType)
 
-      val molapDefSchema = CarbonMetastoreCatalog.parseStringToSchema(tmpSchemaXML)
+      val carbonDefSchema = CarbonMetastoreCatalog.parseStringToSchema(tmpSchemaXML)
 
       val validDropMsrList = new ArrayBuffer[String]
       val validDropDimList = new ArrayBuffer[String]
 
       //remove the deleted measures from the schema
-      processDroppedMeasures(molapDefSchema, curTime, dropColsList.toList, foundDropColsList, validDropMsrList)
+      processDroppedMeasures(carbonDefSchema, curTime, dropColsList.toList, foundDropColsList, validDropMsrList)
       //remove the deleted dimensions from the schema
-      processDroppedDimensions(molapDefSchema, curTime, dropColsList.toList, foundDropColsList, validDropDimList)
+      processDroppedDimensions(carbonDefSchema, curTime, dropColsList.toList, foundDropColsList, validDropDimList)
 
       //if there are invalid dimensions/measures fail the command
       if ((dropColsList diff foundDropColsList).length > 0) {
@@ -817,7 +817,7 @@ private[sql] case class AlterCube(
         //trim the last ,
         notFoundString = notFoundString.substring(0, notFoundString.length() - 1)
         LOGGER.audit(s"Altering cube with Schema name [$schemaName] and cube name [$cubeName] Failed")
-        LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, s"Altering cube with Schema name [$schemaName] and cube name [$cubeName] Failed.The following dimensions/measures are not present in the cube : [$notFoundString]")
+        LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, s"Altering cube with Schema name [$schemaName] and cube name [$cubeName] Failed.The following dimensions/measures are not present in the cube : [$notFoundString]")
         sys.error(s"Altering cube with Schema name [$schemaName] and cube name [$cubeName] Failed.The following dimensions/measures are not present in the cube : [$notFoundString]")
       }
 
@@ -831,17 +831,17 @@ private[sql] case class AlterCube(
       //        }
 
       //check if any duplicate measures or dimensions are being added to the cube.
-      val duplicatesFound = checkDuplicateDimsAndMsrs(molapDefSchema.cubes(0), cubeXML.dimensions, cubeXML.measures)
+      val duplicatesFound = checkDuplicateDimsAndMsrs(carbonDefSchema.cubes(0), cubeXML.dimensions, cubeXML.measures)
       if (duplicatesFound) {
         LOGGER.audit(s"Altering cube with Schema name [$schemaName] and cube name [$cubeName] failed")
-        LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, s"Cube already contains the dimensions/measures being added")
+        LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, s"Cube already contains the dimensions/measures being added")
         sys.error(s"Cube already contains the dimensions/measures being added.")
       }
 
       if (cm.withKeyword.equalsIgnoreCase(CarbonCommonConstants.WITH) && cm.simpleDimRelations.size > 0) {
-        if (!validateDimRelations(molapDefSchema.cubes(0), cubeXML)) {
+        if (!validateDimRelations(carbonDefSchema.cubes(0), cubeXML)) {
           LOGGER.audit(s"Altering cube with Schema name [$schemaName] and cube name [$cubeName] failed")
-          LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+          LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
             s"There is an error in the relation defined. Dimension field defined in the relation is not included in the Dimension source Or the existing relation is not present in the Cube")
           sys.error(s"There is an error in the relation defined. Dimension field defined in the relation is not included in the Dimension source Or the existing relation is not present in the Cube.")
         }
@@ -850,12 +850,12 @@ private[sql] case class AlterCube(
       //      relation.cubeMeta.schema.cubes(0).dimensions = relation.cubeMeta.schema.cubes(0).dimensions ++ cubeXML.dimensions
       //      relation.cubeMeta.schema.cubes(0).measures = relation.cubeMeta.schema.cubes(0).measures ++ cubeXML.measures
 
-      molapDefSchema.cubes(0).dimensions = molapDefSchema.cubes(0).dimensions ++ cubeXML.dimensions
-      molapDefSchema.cubes(0).measures = molapDefSchema.cubes(0).measures ++ cubeXML.measures
+      carbonDefSchema.cubes(0).dimensions = carbonDefSchema.cubes(0).dimensions ++ cubeXML.dimensions
+      carbonDefSchema.cubes(0).measures = carbonDefSchema.cubes(0).measures ++ cubeXML.measures
 
       //need to remove the existing cube and load it again
-      //      MolapMetadata.getInstance().loadCube(relation.cubeMeta.schema, relation.cubeMeta.schema.cubes(0))
-      //      relation.cubeMeta.cube = MolapMetadata.getInstance().getCube(relation.cubeMeta.schemaName + '_' + relation.cubeMeta.cubeName)
+      //      CarbonMetadata.getInstance().loadCube(relation.cubeMeta.schema, relation.cubeMeta.schema.cubes(0))
+      //      relation.cubeMeta.cube = CarbonMetadata.getInstance().getCube(relation.cubeMeta.schemaName + '_' + relation.cubeMeta.cubeName)
 
       var status = true
       //if (needNewRSFolder) {
@@ -865,7 +865,7 @@ private[sql] case class AlterCube(
         sqlContext.asInstanceOf[HiveContext],
         sqlContext.sparkContext,
         relation.cubeMeta.schema,
-        molapDefSchema,
+        carbonDefSchema,
         relation.cubeMeta.schemaName,
         relation.cubeMeta.cubeName,
         relation.cubeMeta.dataPath,
@@ -880,7 +880,7 @@ private[sql] case class AlterCube(
 
       if (status) {
         //          if (!needNewRSFolder) {
-        //            CarbonEnv.getInstance(sqlContext).carbonCatalog.updateCube(/*relation.cubeMeta.schema*/molapDefSchema, false)(sqlContext)
+        //            CarbonEnv.getInstance(sqlContext).carbonCatalog.updateCube(/*relation.cubeMeta.schema*/carbonDefSchema, false)(sqlContext)
         //          }
 
         val updatedRelation = CarbonEnv.getInstance(sqlContext).carbonCatalog.lookupRelation1(
@@ -903,12 +903,12 @@ private[sql] case class AlterCube(
       }
       else {
         LOGGER.audit(s"Altering cube with Schema name [$schemaName] and cube name [$cubeName] Failed")
-        LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, s"Altering cube with Schema name [$schemaName] and cube name [$cubeName] Failed")
+        LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, s"Altering cube with Schema name [$schemaName] and cube name [$cubeName] Failed")
         sys.error(s"Altering cube with Schema name [$schemaName] and cube name [$cubeName] Failed")
       }
     } finally {
-      if (molapLock != null) {
-        if (molapLock.unlock()) {
+      if (carbonLock != null) {
+        if (carbonLock.unlock()) {
           logInfo("Cube MetaData Unlocked Successfully after altering")
         } else {
           logError("Unable to unlock Cube MetaData")
@@ -979,7 +979,7 @@ private[sql] case class AlterCube(
           val dimLevels = split._1
           if (dimLevels.filter(l => l.name.equalsIgnoreCase(eachDimRelation.relation.rightColumn)).length <= 0) {
             val rcl = eachDimRelation.relation.rightColumn
-            LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, s"Dimension field defined in the relation [$rcl] is not included in the Dimension source")
+            LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, s"Dimension field defined in the relation [$rcl] is not included in the Dimension source")
             //sys.error(s"Dimension field defined in the relation [$rcl] is not included in the Dimension source")
             matchResult = false
           }
@@ -1126,18 +1126,18 @@ private[sql] case class AlterCube(
   }
 
   private def processDroppedMeasures(
-                                      molapDefSchema: CarbonDef.Schema,
+                                      carbonDefSchema: CarbonDef.Schema,
                                       curTime: Long, dropColsList: List[String],
                                       foundDropColsList: ArrayBuffer[String],
                                       validDropMsrList: ArrayBuffer[String]) = {
-    molapDefSchema.cubes(0).measures = molapDefSchema.cubes(0).measures.map { aMsr =>
+    carbonDefSchema.cubes(0).measures = carbonDefSchema.cubes(0).measures.map { aMsr =>
       if (dropColsList.contains(aMsr.name.toLowerCase())) {
         if (!foundDropColsList.contains(aMsr.name.toLowerCase())) {
           foundDropColsList.add(aMsr.name.toLowerCase())
           validDropMsrList.add(aMsr.name)
         }
         aMsr.visible = false
-        updateAggTablesMeasures(curTime, aMsr, molapDefSchema.cubes(0).fact.asInstanceOf[CarbonDef.Table].aggTables)
+        updateAggTablesMeasures(curTime, aMsr, carbonDefSchema.cubes(0).fact.asInstanceOf[CarbonDef.Table].aggTables)
         aMsr.name = aMsr.name + "_" + curTime
         aMsr.column = aMsr.column + '_' + curTime
       }
@@ -1146,13 +1146,13 @@ private[sql] case class AlterCube(
   }
 
   private def processDroppedDimensions(
-                                        molapDefSchema: CarbonDef.Schema,
+                                        carbonDefSchema: CarbonDef.Schema,
                                         curTime: Long,
                                         dropColsList: List[String],
                                         foundDropColsList: ArrayBuffer[String],
                                         validDropDimList: ArrayBuffer[String]) = {
     //the assumption here is that the dimension,hierarchy and level names will be same.
-    molapDefSchema.cubes(0).dimensions = molapDefSchema.cubes(0).dimensions.map { eachDim =>
+    carbonDefSchema.cubes(0).dimensions = carbonDefSchema.cubes(0).dimensions.map { eachDim =>
       //iterate through hierarchies and levels and mark the level as visible=false.Not only the dimension itself
       (eachDim.asInstanceOf[CarbonDef.Dimension]).hierarchies = (eachDim.asInstanceOf[CarbonDef.Dimension]).hierarchies.map { eachHierarchy =>
         eachHierarchy.levels = eachHierarchy.levels.map { eachLevel =>
@@ -1162,7 +1162,7 @@ private[sql] case class AlterCube(
               validDropDimList.add(eachLevel.name)
             }
             eachLevel.visible = false
-            updateAggTablesDimensions(curTime, eachLevel.name, eachHierarchy.name, eachDim.name, molapDefSchema.cubes(0).fact.asInstanceOf[CarbonDef.Table].aggTables)
+            updateAggTablesDimensions(curTime, eachLevel.name, eachHierarchy.name, eachDim.name, carbonDefSchema.cubes(0).fact.asInstanceOf[CarbonDef.Table].aggTables)
             eachLevel.name = eachLevel.name + '_' + curTime
             eachLevel.column = eachLevel.column + '_' + curTime
             eachHierarchy.visible = false
@@ -1253,7 +1253,7 @@ private[sql] case class CreateCube(cm: CubeModel) extends RunnableCommand {
 
         if (dimLevels.filter(l => l.name.equalsIgnoreCase(relationEntry.relation.rightColumn)).length <= 0) {
           val rcl = relationEntry.relation.rightColumn
-          LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, s"Dimension field defined in the relation [$rcl] is not included in the Dimension source")
+          LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, s"Dimension field defined in the relation [$rcl] is not included in the Dimension source")
           LOGGER.audit(s"Validation failed for Create Cube Operation - Dimension field defined in the relation [$rcl] is not included in the Dimension source")
           sys.error(s"Dimension field defined in the relation [$rcl] is not included in the Dimension source")
         }
@@ -1469,35 +1469,35 @@ private[sql] case class LoadCubeAPI(schemaName: String, cubeName: String, factPa
     val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog.lookupRelation1(
       Option(schemaName), cubeName, None)(sqlContext).asInstanceOf[CarbonRelation]
     if (relation == null) sys.error(s"Cube $schemaName.$cubeName does not exist")
-    val molapLoadModel = new CarbonLoadModel()
-    molapLoadModel.setCubeName(cubeName)
-    molapLoadModel.setSchemaName(schemaName)
+    val carbonLoadModel = new CarbonLoadModel()
+    carbonLoadModel.setCubeName(cubeName)
+    carbonLoadModel.setSchemaName(schemaName)
     if (dimFilesPath == "") {
-      molapLoadModel.setDimFolderPath(null)
+      carbonLoadModel.setDimFolderPath(null)
     }
     else {
-      molapLoadModel.setDimFolderPath(dimFilesPath)
+      carbonLoadModel.setDimFolderPath(dimFilesPath)
     }
-    molapLoadModel.setFactFilePath(factPath)
+    carbonLoadModel.setFactFilePath(factPath)
 
     val table = relation.cubeMeta.schema.cubes(0).fact.asInstanceOf[CarbonDef.Table]
-    molapLoadModel.setAggTables(table.aggTables.map(t => t.asInstanceOf[CarbonDef.AggName].name))
-    molapLoadModel.setTableName(table.name)
-    molapLoadModel.setSchema(relation.cubeMeta.schema);
+    carbonLoadModel.setAggTables(table.aggTables.map(t => t.asInstanceOf[CarbonDef.AggName].name))
+    carbonLoadModel.setTableName(table.name)
+    carbonLoadModel.setSchema(relation.cubeMeta.schema);
     var storeLocation = CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION_TEMP_PATH, System.getProperty("java.io.tmpdir"))
-    storeLocation = storeLocation + "/molapstore/" + System.currentTimeMillis()
+    storeLocation = storeLocation + "/carbonstore/" + System.currentTimeMillis()
 
-    val columinar = sqlContext.getConf("molap.is.columnar.storage", "true").toBoolean
-    var kettleHomePath = sqlContext.getConf("molap.kettle.home", null)
-    if (kettleHomePath == null) sys.error(s"molap.kettle.home is not set")
+    val columinar = sqlContext.getConf("carbon.is.columnar.storage", "true").toBoolean
+    var kettleHomePath = sqlContext.getConf("carbon.kettle.home", null)
+    if (kettleHomePath == null) sys.error(s"carbon.kettle.home is not set")
 
-    val molapLock = new MetadataLock(CarbonMetadata.getInstance().getCube(schemaName + "_" + cubeName).getMetaDataFilepath())
+    val carbonLock = new MetadataLock(CarbonMetadata.getInstance().getCube(schemaName + "_" + cubeName).getMetaDataFilepath())
     try {
-      CarbonDataRDDFactory.loadMolapData(sqlContext, molapLoadModel, storeLocation, relation.cubeMeta.dataPath, kettleHomePath, relation.cubeMeta.partitioner, columinar, false);
+      CarbonDataRDDFactory.loadCarbonData(sqlContext, carbonLoadModel, storeLocation, relation.cubeMeta.dataPath, kettleHomePath, relation.cubeMeta.partitioner, columinar, false);
 
     } finally {
-      if (molapLock != null) {
-        if (molapLock.unlock()) {
+      if (carbonLock != null) {
+        if (carbonLock.unlock()) {
           logInfo("Cube MetaData Unlocked Successfully after data load")
         } else {
           logError("Unable to unlock Cube MetaData")
@@ -1526,9 +1526,9 @@ private[sql] case class LoadCube(
       LOGGER.audit("Data loading failed. cube not found: " + schemaName + "_" + cubeName)
       sys.error("Data loading failed. cube not found: " + schemaName + "_" + cubeName)
     }
-    val molapLock = new MetadataLock(CarbonMetadata.getInstance().getCube(schemaName + "_" + cubeName).getMetaDataFilepath())
+    val carbonLock = new MetadataLock(CarbonMetadata.getInstance().getCube(schemaName + "_" + cubeName).getMetaDataFilepath())
     try {
-      if (molapLock.lockWithRetries()) {
+      if (carbonLock.lockWithRetries()) {
         logInfo("Successfully able to get the cube metadata file lock")
       }
       else {
@@ -1539,41 +1539,41 @@ private[sql] case class LoadCube(
       val relation =
         CarbonEnv.getInstance(sqlContext).carbonCatalog.lookupRelation1(Option(schemaName), cubeName, None)(sqlContext).asInstanceOf[CarbonRelation]
       if (relation == null) sys.error(s"Cube $schemaName.$cubeName does not exist")
-      val molapLoadModel = new CarbonLoadModel()
-      molapLoadModel.setCubeName(relation.cubeMeta.cubeName)
-      molapLoadModel.setSchemaName(relation.cubeMeta.schemaName)
+      val carbonLoadModel = new CarbonLoadModel()
+      carbonLoadModel.setCubeName(relation.cubeMeta.cubeName)
+      carbonLoadModel.setSchemaName(relation.cubeMeta.schemaName)
       if (dimFilesPath.isEmpty) {
-        molapLoadModel.setDimFolderPath(null)
+        carbonLoadModel.setDimFolderPath(null)
       }
       else {
         val x = dimFilesPath.map(f => f.table + ":" + CarbonUtil.checkAndAppendHDFSUrl(f.loadPath))
-        molapLoadModel.setDimFolderPath(x.mkString(","))
+        carbonLoadModel.setDimFolderPath(x.mkString(","))
       }
 
       val table = relation.cubeMeta.schema.cubes(0).fact.asInstanceOf[CarbonDef.Table]
-      molapLoadModel.setAggTables(table.aggTables.map(t => t.asInstanceOf[CarbonDef.AggName].name))
-      molapLoadModel.setTableName(table.name)
-      molapLoadModel.setSchema(relation.cubeMeta.schema);
+      carbonLoadModel.setAggTables(table.aggTables.map(t => t.asInstanceOf[CarbonDef.AggName].name))
+      carbonLoadModel.setTableName(table.name)
+      carbonLoadModel.setSchema(relation.cubeMeta.schema);
       var storeLocation = CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION_TEMP_PATH, System.getProperty("java.io.tmpdir"))
       
 
       var partitionLocation = relation.cubeMeta.dataPath + "/partition/" + relation.cubeMeta.schemaName + "/" + relation.cubeMeta.cubeName + "/"
       val fileType = FileFactory.getFileType(partitionLocation)
       if (FileFactory.isFileExist(partitionLocation, fileType)) {
-        val file = FileFactory.getMolapFile(partitionLocation, fileType)
+        val file = FileFactory.getCarbonFile(partitionLocation, fileType)
         CarbonUtil.deleteFoldersAndFiles(file)
       }
       partitionLocation += System.currentTimeMillis()
       FileFactory.mkdirs(partitionLocation, fileType)
 
-      storeLocation = storeLocation + "/molapstore/" + System.nanoTime()
+      storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()
 
-      val columinar = sqlContext.getConf("molap.is.columnar.storage", "true").toBoolean
-      var kettleHomePath = sqlContext.getConf("molap.kettle.home", null)
+      val columinar = sqlContext.getConf("carbon.is.columnar.storage", "true").toBoolean
+      var kettleHomePath = sqlContext.getConf("carbon.kettle.home", null)
       if (null == kettleHomePath) {
-        kettleHomePath = CarbonProperties.getInstance.getProperty("molap.kettle.home");
+        kettleHomePath = CarbonProperties.getInstance.getProperty("carbon.kettle.home");
       }
-      if (kettleHomePath == null) sys.error(s"molap.kettle.home is not set")
+      if (kettleHomePath == null) sys.error(s"carbon.kettle.home is not set")
 
       val delimiter = partionValues.getOrElse("delimiter", "")
       val quoteChar = partionValues.getOrElse("quotechar", "")
@@ -1595,25 +1595,25 @@ private[sql] case class LoadCube(
       }
       else
       {
-    	  molapLoadModel.setComplexDelimiterLevel1(CarbonUtil.escapeComplexDelimiterChar(complex_delimiter_level_1))
-    	  molapLoadModel.setComplexDelimiterLevel2(CarbonUtil.escapeComplexDelimiterChar(complex_delimiter_level_2))
+    	  carbonLoadModel.setComplexDelimiterLevel1(CarbonUtil.escapeComplexDelimiterChar(complex_delimiter_level_1))
+    	  carbonLoadModel.setComplexDelimiterLevel2(CarbonUtil.escapeComplexDelimiterChar(complex_delimiter_level_2))
       }
 
       var partitionStatus = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
       try {
         //First system has to partition the data first and then call the load data
         if (null == relation.cubeMeta.partitioner.partitionColumn || relation.cubeMeta.partitioner.partitionColumn(0).isEmpty) {
-          LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, "Initiating Direct Load for the Cube : (" +
+          LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, "Initiating Direct Load for the Cube : (" +
             schemaName + "." + cubeName + ")")
-          molapLoadModel.setFactFilePath(factPath)
-          molapLoadModel.setCsvDelimiter(CarbonUtil.unescapeChar(delimiter))
-          molapLoadModel.setCsvHeader(fileHeader)
-          molapLoadModel.setDirectLoad(true)
+          carbonLoadModel.setFactFilePath(factPath)
+          carbonLoadModel.setCsvDelimiter(CarbonUtil.unescapeChar(delimiter))
+          carbonLoadModel.setCsvHeader(fileHeader)
+          carbonLoadModel.setDirectLoad(true)
         }
         else {
-          LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, "Initiating Data Partitioning for the Cube : (" +
+          LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, "Initiating Data Partitioning for the Cube : (" +
             schemaName + "." + cubeName + ")")
-          molapLoadModel.setFactFilePath(partitionLocation)
+          carbonLoadModel.setFactFilePath(partitionLocation)
           partitionStatus = CarbonContext.partitionData(
             schemaName,
             cubeName,
@@ -1624,17 +1624,17 @@ private[sql] case class LoadCube(
             fileHeader,
             escapeChar, booleanValForMultiLine)(sqlContext.asInstanceOf[HiveContext])
         }
-        CarbonDataRDDFactory.loadMolapData(sqlContext, molapLoadModel, storeLocation, relation.cubeMeta.dataPath, kettleHomePath,
+        CarbonDataRDDFactory.loadCarbonData(sqlContext, carbonLoadModel, storeLocation, relation.cubeMeta.dataPath, kettleHomePath,
           relation.cubeMeta.partitioner, columinar, false, partitionStatus);
         try {
           val loadMetadataFilePath = CarbonLoaderUtil
-            .extractLoadMetadataFileLocation(molapLoadModel)
+            .extractLoadMetadataFileLocation(carbonLoadModel)
 
           val details = CarbonUtil
             .readLoadMetadata(loadMetadataFilePath)
           if (null != details) {
             var listOfLoadFolders = CarbonLoaderUtil.getListOfValidSlices(details)
-            // MolapProperties.getInstance.getProperty("molap.kettle.home","false")
+            // CarbonProperties.getInstance.getProperty("carbon.kettle.home","false")
             if (null != listOfLoadFolders && listOfLoadFolders.size() > 0 && CarbonProperties.getInstance.getProperty(CarbonCommonConstants.LOADCUBE_DATALOAD, "false") == "true") {
               var hc: HiveContext = sqlContext.asInstanceOf[HiveContext]
               hc.sql(" select count(*) from " + schemaName + "." + cubeName).collect()
@@ -1644,34 +1644,34 @@ private[sql] case class LoadCube(
         }
         catch {
           case ex: Exception =>
-            LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, "Btree loading is failed after data loading process.")
+            LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, "Btree loading is failed after data loading process.")
 
 
         }
       }
       catch {
         case ex: Exception =>
-          LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, ex)
+          LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, ex)
           LOGGER.audit("Dataload failure. Please check the logs")
           sys.error("Dataload failure. Please check the logs")
       }
       finally {
         //Once the data load is successfule delete the unwanted partition files
         try {
-          val file = FileFactory.getMolapFile(partitionLocation, FileFactory.getFileType(partitionLocation))
+          val file = FileFactory.getCarbonFile(partitionLocation, FileFactory.getFileType(partitionLocation))
           CarbonUtil.deleteFoldersAndFiles(file)
         } catch {
           case ex: Exception =>
-            LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, ex)
+            LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, ex)
             LOGGER.audit("Dataload failure. Problem deleting the partition folder")
             sys.error("Problem deleting the partition folder")
         }
 
-        // MolapUtil.deleteFoldersAndFiles(molapFiles);
+        // CarbonUtil.deleteFoldersAndFiles(carbonFiles);
       }
     } finally {
-      if (molapLock != null) {
-        if (molapLock.unlock()) {
+      if (carbonLock != null) {
+        if (carbonLock.unlock()) {
           logInfo("Cube MetaData Unlocked Successfully after data load")
         } else {
           logError("Unable to unlock Cube MetaData")
@@ -1697,9 +1697,9 @@ private[sql] case class AddAggregatesToCube(
     val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog.lookupRelation1(Option(schemaName), cubeName, None)(sqlContext).asInstanceOf[CarbonRelation]
     if (relation == null) sys.error(s"Cube $schemaName.$cubeName does not exist")
     if (aggregateAttributes.size == 0) sys.error(s"No columns found in the query. Please provide the valid column names to create an aggregate table successfully")
-    val molapLock = new MetadataLock(CarbonMetadata.getInstance().getCube(schemaName + "_" + cubeName).getMetaDataFilepath())
+    val carbonLock = new MetadataLock(CarbonMetadata.getInstance().getCube(schemaName + "_" + cubeName).getMetaDataFilepath())
     try {
-      if (molapLock.lockWithRetries()) {
+      if (carbonLock.lockWithRetries()) {
         logInfo("Successfully able to get the cube metadata file lock")
       } else {
         LOGGER.audit(s"The aggregate table creation request failed as cube is locked for updation")
@@ -1711,7 +1711,7 @@ private[sql] case class AddAggregatesToCube(
       val path = cube.getMetaDataFilepath()
 
       val fileType = FileFactory.getFileType(path)
-      val file = FileFactory.getMolapFile(path, fileType)
+      val file = FileFactory.getCarbonFile(path, fileType)
       val (schemaName1, cubeNameInSchema, dataPath1, schema1, partitioner1,cubeCreationTime) = CarbonEnv.getInstance(sqlContext).carbonCatalog.readCubeMetaDataFile(file, fileType)
 
       val mondSchema = CarbonMetastoreCatalog.parseStringToSchema(schema1)
@@ -1721,8 +1721,8 @@ private[sql] case class AddAggregatesToCube(
       CarbonEnv.getInstance(sqlContext).carbonCatalog.updateCubeWithAggregatesDetail(relation.cubeMeta.schema, mondSchema)
       LOGGER.audit(s"The aggregate table creation request is successful :: $aggTableName")
     } finally {
-      if (molapLock != null) {
-        if (molapLock.unlock()) {
+      if (carbonLock != null) {
+        if (carbonLock.unlock()) {
           logInfo("Cube MetaData Unlocked Successfully after data load")
         } else {
           logError("Unable to unlock Cube MetaData")
@@ -1740,7 +1740,7 @@ private[sql] case class PartitionData(schemaName: String, cubeName: String, fact
   def run(sqlContext: SQLContext) = {
     val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog.lookupRelation1(Option(schemaName), cubeName, None)(sqlContext).asInstanceOf[CarbonRelation]
     val targetFolder = targetPath //relation.cubeMeta.dataPath.subSequence(0, relation.cubeMeta.dataPath.indexOf("/store"))+"/"+cubeName+System.currentTimeMillis()
-    partitionStatus = CarbonDataRDDFactory.partitionMolapData(sqlContext.sparkContext, schemaName, cubeName, factPath, targetFolder, CarbonQueryUtil.getAllColumns(relation.cubeMeta.schema), fileHeader, delimiter, quoteChar, escapeChar, multiLine, relation.cubeMeta.partitioner)
+    partitionStatus = CarbonDataRDDFactory.partitionCarbonData(sqlContext.sparkContext, schemaName, cubeName, factPath, targetFolder, CarbonQueryUtil.getAllColumns(relation.cubeMeta.schema), fileHeader, delimiter, quoteChar, escapeChar, multiLine, relation.cubeMeta.partitioner)
     if (partitionStatus == CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS) {
       logInfo("Bad Record Found while partitioning data")
     }
@@ -1760,25 +1760,25 @@ private[sql] case class LoadAggregationTable(
       cubeName,
       None)(sqlContext).asInstanceOf[CarbonRelation]
     if (relation == null) sys.error(s"Cube $schemaName.$cubeName does not exist")
-    val molapLoadModel = new CarbonLoadModel()
-    molapLoadModel.setCubeName(cubeName)
-    molapLoadModel.setSchemaName(schemaName)
+    val carbonLoadModel = new CarbonLoadModel()
+    carbonLoadModel.setCubeName(cubeName)
+    carbonLoadModel.setSchemaName(schemaName)
     val table = relation.cubeMeta.schema.cubes(0).fact.asInstanceOf[CarbonDef.Table]
-    molapLoadModel.setAggTableName(aggTableName)
-    molapLoadModel.setTableName(table.name)
-    molapLoadModel.setSchema(newSchema);
-    molapLoadModel.setAggLoadRequest(true)
+    carbonLoadModel.setAggTableName(aggTableName)
+    carbonLoadModel.setTableName(table.name)
+    carbonLoadModel.setSchema(newSchema);
+    carbonLoadModel.setAggLoadRequest(true)
     var storeLocation = CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION_TEMP_PATH, System.getProperty("java.io.tmpdir"))
-    storeLocation = storeLocation + "/molapstore/" + System.currentTimeMillis()
-    val columinar = sqlContext.getConf("molap.is.columnar.storage", "true").toBoolean
-    var kettleHomePath = sqlContext.getConf("molap.kettle.home", null)
+    storeLocation = storeLocation + "/carbonstore/" + System.currentTimeMillis()
+    val columinar = sqlContext.getConf("carbon.is.columnar.storage", "true").toBoolean
+    var kettleHomePath = sqlContext.getConf("carbon.kettle.home", null)
     if (null == kettleHomePath) {
-      kettleHomePath = CarbonProperties.getInstance.getProperty("molap.kettle.home");
+      kettleHomePath = CarbonProperties.getInstance.getProperty("carbon.kettle.home");
     }
-    if (kettleHomePath == null) sys.error(s"molap.kettle.home is not set")
-    CarbonDataRDDFactory.loadMolapData(
+    if (kettleHomePath == null) sys.error(s"carbon.kettle.home is not set")
+    CarbonDataRDDFactory.loadCarbonData(
       sqlContext,
-      molapLoadModel,
+      carbonLoadModel,
       storeLocation,
       relation.cubeMeta.dataPath,
       kettleHomePath,
@@ -1962,9 +1962,9 @@ private[sql] case class MergeCube(schemaName: String, cubeName: String, tableNam
   def run(sqlContext: SQLContext) = {
     val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog.lookupRelation2(Seq(schemaName, cubeName), None)(sqlContext).asInstanceOf[CarbonRelation]
     if (relation == null) sys.error(s"Cube $schemaName.$cubeName does not exist")
-    val molapLoadModel = new CarbonLoadModel()
-    molapLoadModel.setCubeName(cubeName)
-    molapLoadModel.setSchemaName(schemaName)
+    val carbonLoadModel = new CarbonLoadModel()
+    carbonLoadModel.setCubeName(cubeName)
+    carbonLoadModel.setSchemaName(schemaName)
     val table = relation.cubeMeta.schema.cubes(0).fact.asInstanceOf[CarbonDef.Table]
     var isTablePresent = false;
     if (table.name.equals(tableName)) isTablePresent = true
@@ -1975,11 +1975,11 @@ private[sql] case class MergeCube(schemaName: String, cubeName: String, tableNam
         isTablePresent = true
     }
     if (!isTablePresent) sys.error("Invalid table name!")
-    molapLoadModel.setTableName(tableName)
-    molapLoadModel.setSchema(relation.cubeMeta.schema);
+    carbonLoadModel.setTableName(tableName)
+    carbonLoadModel.setSchema(relation.cubeMeta.schema);
     var storeLocation = CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION_TEMP_PATH, System.getProperty("java.io.tmpdir"))
-    storeLocation = storeLocation + "/molapstore/" + System.currentTimeMillis()
-    CarbonDataRDDFactory.mergeMolapData(sqlContext, molapLoadModel, storeLocation, relation.cubeMeta.dataPath, relation.cubeMeta.partitioner)
+    storeLocation = storeLocation + "/carbonstore/" + System.currentTimeMillis()
+    CarbonDataRDDFactory.mergeCarbonData(sqlContext, carbonLoadModel, storeLocation, relation.cubeMeta.dataPath, relation.cubeMeta.partitioner)
     Seq.empty
   }
 }
@@ -1995,15 +1995,15 @@ private[sql] case class DropCubeCommand(ifExistsSet: Boolean, schemaNameOp: Opti
     if (null == tmpCube) {
       if (!ifExistsSet) {
         LOGGER.audit(s"Dropping cube with Schema name [$schemaName] and cube name [$cubeName] failed")
-        LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, s"Cube $schemaName.$cubeName does not exist")
+        LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, s"Cube $schemaName.$cubeName does not exist")
         sys.error(s"Cube $schemaName.$cubeName does not exist")
       }
     }
     else {
-      val molapLock = new MetadataLock(tmpCube.getMetaDataFilepath())
+      val carbonLock = new MetadataLock(tmpCube.getMetaDataFilepath())
 
       try {
-        if (molapLock.lockWithRetries()) {
+        if (carbonLock.lockWithRetries()) {
           logInfo("Successfully able to get the cube metadata file lock")
         }
         else {
@@ -2030,8 +2030,8 @@ private[sql] case class DropCubeCommand(ifExistsSet: Boolean, schemaNameOp: Opti
         }
       }
       finally {
-        if (molapLock != null) {
-          if (molapLock.unlock()) {
+        if (carbonLock != null) {
+          if (carbonLock.unlock()) {
             logInfo("Cube MetaData Unlocked Successfully after dropping the cube")
             CarbonUtil.deleteFoldersAndFiles(tmpCube.getMetaDataFilepath())
           } else {
@@ -2100,7 +2100,7 @@ private[sql] case class ShowLoads(
 
     if (loadMetadataDetailsArray.length != 0) {
 
-      val parser = new SimpleDateFormat(CarbonCommonConstants.MOLAP_TIMESTAMP)
+      val parser = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP)
 
       var loadMetadataDetailsSortedArray = loadMetadataDetailsArray.sortWith((l1, l2) => Integer.parseInt(l1.getLoadName()) > Integer.parseInt(l2.getLoadName()))
 
@@ -2311,16 +2311,16 @@ private[sql] case class CleanFiles(
       sys.error(s"Cube $schemaName.$cubeName does not exist")
     }
 
-    val molapLoadModel = new CarbonLoadModel()
-    molapLoadModel.setCubeName(relation.cubeMeta.cubeName)
-    molapLoadModel.setSchemaName(relation.cubeMeta.schemaName)
+    val carbonLoadModel = new CarbonLoadModel()
+    carbonLoadModel.setCubeName(relation.cubeMeta.cubeName)
+    carbonLoadModel.setSchemaName(relation.cubeMeta.schemaName)
     val table = relation.cubeMeta.schema.cubes(0).fact.asInstanceOf[CarbonDef.Table]
-    molapLoadModel.setAggTables(table.aggTables.map(t => t.asInstanceOf[CarbonDef.AggName].name))
-    molapLoadModel.setTableName(table.name)
+    carbonLoadModel.setAggTables(table.aggTables.map(t => t.asInstanceOf[CarbonDef.AggName].name))
+    carbonLoadModel.setTableName(table.name)
 
     CarbonDataRDDFactory.cleanFiles(
       sqlContext.sparkContext,
-      molapLoadModel,
+      carbonLoadModel,
       relation.cubeMeta.dataPath,
       relation.cubeMeta.partitioner)
     LOGGER.audit("The clean files request is successfull.");

@@ -46,7 +46,7 @@ public class Bits implements Serializable {
      */
     private static final long LONG_MAX = 0x7fffffffffffffffL;
     /**
-     * Attribute for Molap LOGGER
+     * Attribute for Carbon LOGGER
      */
     private static final LogService LOGGER = LogServiceFactory.getLogService(Bits.class.getName());
     /**
@@ -309,7 +309,7 @@ public class Bits implements Serializable {
             long mask = LONG_MAX >> (MAX_LENGTH - lens[i]);
             mask <<= pos;
             list.add(mask);
-            LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "mask1 : " + Long.toBinaryString(mask));
             ll += lens[i];
 

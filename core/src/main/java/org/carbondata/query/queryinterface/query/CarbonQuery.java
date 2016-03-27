@@ -85,7 +85,7 @@ public interface CarbonQuery extends Serializable {
     /**
      * Add level filter to the query. If this measure is already added to any axis,then no need to add again.
      *
-     * @param MolapMeasure measure
+     * @param CarbonMeasure measure
      */
     void addSlice(CarbonMeasure measure, List<CarbonMeasureFilter> filters);
 

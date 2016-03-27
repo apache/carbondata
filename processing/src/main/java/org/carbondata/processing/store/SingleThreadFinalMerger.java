@@ -163,24 +163,24 @@ public class SingleThreadFinalMerger {
         this.fileBufferSize = CarbonDataProcessorUtil
                 .getFileBufferSize(this.fileCounter, CarbonProperties.getInstance(),
                         CONSTANT_SIZE_TEN);
-        SINGLETHREADLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        SINGLETHREADLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                 "Number of temp file: " + this.fileCounter);
 
-        SINGLETHREADLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        SINGLETHREADLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                 "File Buffer Size: " + this.fileBufferSize);
         // create record holder heap
         createRecordHolderQueue(files);
         // iterate over file list and create chunk holder and add to heap
-        SINGLETHREADLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        SINGLETHREADLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                 "Started adding first record from each file");
         int maxThreadForSorting = 0;
         try {
             maxThreadForSorting = Integer.parseInt(CarbonProperties.getInstance()
-                    .getProperty(CarbonCommonConstants.MOLAP_MAX_THREAD_FOR_SORTING,
-                            CarbonCommonConstants.MOLAP_MAX_THREAD_FOR_SORTING_DEFAULTVALUE));
+                    .getProperty(CarbonCommonConstants.CARBON_MAX_THREAD_FOR_SORTING,
+                            CarbonCommonConstants.CARBON_MAX_THREAD_FOR_SORTING_DEFAULTVALUE));
         } catch (NumberFormatException ex) {
             maxThreadForSorting = Integer.parseInt(
-                    CarbonCommonConstants.MOLAP_MAX_THREAD_FOR_SORTING_DEFAULTVALUE);
+                    CarbonCommonConstants.CARBON_MAX_THREAD_FOR_SORTING_DEFAULTVALUE);
         }
         ExecutorService service = Executors.newFixedThreadPool(maxThreadForSorting);
         for (final File tmpFile : files) {
@@ -212,7 +212,7 @@ public class SingleThreadFinalMerger {
         } catch (Exception ex) {
             throw new CarbonDataWriterException(ex.getMessage(), ex);
         }
-        SINGLETHREADLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        SINGLETHREADLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                 "Heap Size" + this.recordHolderHeapLocal.size());
     }
 

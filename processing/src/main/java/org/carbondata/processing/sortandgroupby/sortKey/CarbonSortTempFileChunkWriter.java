@@ -35,7 +35,7 @@ public class CarbonSortTempFileChunkWriter implements CarbonSortTempFileWriter {
     private int recordPerLeaf;
 
     /**
-     * MolapCompressedSortTempFileChunkWriter
+     * CarbonCompressedSortTempFileChunkWriter
      *
      * @param writer
      */

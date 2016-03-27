@@ -33,7 +33,7 @@ import org.carbondata.query.queryinterface.filter.CarbonFilterInfo;
 import org.carbondata.query.queryinterface.query.metadata.DSLTransformation;
 
 /**
- * It is model object for molap query
+ * It is model object for carbon query
  */
 public class CarbonQueryModel {
     /**
@@ -165,7 +165,7 @@ public class CarbonQueryModel {
      * isPresent.
      */
     private boolean isPresent;
-    private List<DSLTransformation> molapTransformations;
+    private List<DSLTransformation> carbonTransformations;
 
     /**
      * @return the cube
@@ -500,17 +500,17 @@ public class CarbonQueryModel {
     }
 
     /**
-     * @return the molapTransformations
+     * @return the carbonTransformations
      */
-    public List<DSLTransformation> getMolapTransformations() {
-        return molapTransformations;
+    public List<DSLTransformation> getCarbonTransformations() {
+        return carbonTransformations;
     }
 
     /**
-     * @param molapTransformations the molapTransformations to set
+     * @param carbonTransformations the carbonTransformations to set
      */
-    public void setMolapTransformations(List<DSLTransformation> molapTransformations) {
-        this.molapTransformations = molapTransformations;
+    public void setCarbonTransformations(List<DSLTransformation> carbonTransformations) {
+        this.carbonTransformations = carbonTransformations;
     }
 
     /**

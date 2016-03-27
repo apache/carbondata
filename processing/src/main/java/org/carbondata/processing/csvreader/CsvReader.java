@@ -115,7 +115,7 @@ public class CsvReader extends CsvInput {
             outputRowData[data.rownumFieldIndex] = data.totalBytesFilesFinished + data.startBuffer;
         }
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.debug(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "### " + data.totalBytesRead);
         }
     }
@@ -140,12 +140,12 @@ public class CsvReader extends CsvInput {
         try {
             long skip = data.bufferedInputStream.skip(bytesAlreadyRead);
             if (skip > 0) {
-                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "Skipped bytes :" + skip);
             }
             data.totalBytesFilesFinished = bytesAlreadyRead;
         } catch (IOException e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
         }
     }
 

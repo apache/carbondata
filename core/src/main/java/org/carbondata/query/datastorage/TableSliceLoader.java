@@ -40,7 +40,7 @@ public final class TableSliceLoader {
     //    //public static int MAX_SLICE_COUNT = 4;
     //
     //    /**
-    //     * Attribute for Molap LOGGER
+    //     * Attribute for Carbon LOGGER
     //     */
     //    private static final LogService LOGGER = LogServiceFactory
     //            .getLogService(CubeSliceLoader.class.getName());
@@ -58,7 +58,7 @@ public final class TableSliceLoader {
     //        if(!(new File(filesLocaton).isDirectory()))
     //        {
     //
-    //            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+    //            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
     //                    "Unable to load cube slice as directory doesn't exist : " +
     //                    filesLocaton);
     //            return;
@@ -97,13 +97,13 @@ public final class TableSliceLoader {
     //        }
     //        catch(InterruptedException e)
     //        {
-    //            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+    //            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
     //                    e, "Thread Interrupted.");
     //        }
     //        // Tried but rolapCube not found
     //        if(null == rolapCube)
     //        {
-    //            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,"Error while slice loading : Unable to load cube : "+cubeUniqueName);
+    //            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,"Error while slice loading : Unable to load cube : "+cubeUniqueName);
     //            return;
     //        }
     //
@@ -125,12 +125,12 @@ public final class TableSliceLoader {
     //        rsStore.setSlice(newSlice, tableName);
     //        if(null != newSlice.getDataCache(cubeSlicePathInfo.getTableName()))
     //        {
-    //            ((MolapSchema)rolapCube.getSchema()).setCacheChanged(true);
-    //        MolapCacheManager.getInstance().flushCubeStartingWithKey(cubeSlicePathInfo.getCubeUniqueName(),
+    //            ((CarbonSchema)rolapCube.getSchema()).setCacheChanged(true);
+    //        CarbonCacheManager.getInstance().flushCubeStartingWithKey(cubeSlicePathInfo.getCubeUniqueName(),
     //                newSlice.getStartKey(cubeSlicePathInfo.getTableName()),
     //                newSlice.getKeyGenerator(cubeSlicePathInfo.getTableName()),cubeSlicePathInfo.getTableName());
     //        }
-    //        LOGGER.debug(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+    //        LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
     //                "Time Taken to load new slice: "
     //                + (System.currentTimeMillis() - currentTimeMillis));
     //    }
@@ -144,22 +144,22 @@ public final class TableSliceLoader {
     //        //
     //        try
     //        {
-    //            stream = FileFactory.getDataInputStream(path + File.separator + MolapCommonConstants.SLICE_METADATA_FILENAME, FileFactory.getFileType());//new FileInputStream(path + File.separator + MolapCommonConstants.SLICE_METADATA_FILENAME);
+    //            stream = FileFactory.getDataInputStream(path + File.separator + CarbonCommonConstants.SLICE_METADATA_FILENAME, FileFactory.getFileType());//new FileInputStream(path + File.separator + CarbonCommonConstants.SLICE_METADATA_FILENAME);
     //            objectInputStream = new ObjectInputStream(stream);
     //            readObject = (SliceMetaData)objectInputStream.readObject();
     //        }
     //        catch(ClassNotFoundException e)
     //        {
-    //            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e.getMessage());
+    //            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e.getMessage());
     //        }
     //        //
     //        catch (IOException e)
     //        {
-    //            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e.getMessage());
+    //            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e.getMessage());
     //        }
     //        finally
     //        {
-    //            MolapUtil.closeStreams(objectInputStream,stream);
+    //            CarbonUtil.closeStreams(objectInputStream,stream);
     //        }
     //        return readObject;
     //    }
@@ -352,14 +352,14 @@ public final class TableSliceLoader {
     //        //Validate and return after logging
     //        if(newSlicePath == null && slicePathsToDelete == null)
     //        {
-    //            LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "No update as path is null");
+    //            LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "No update as path is null");
     //            return;
     //        }
     //
     //        //Some slice is to be added, create Slice for this
     //        if(newSlicePath != null)
     //        {
-    //            LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "Trying to load new slice "
+    //            LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "Trying to load new slice "
     //                    + newSlicePath);
     //            // form the new slice and set it
     //            // Don't add it though, we need to block queries for that
@@ -383,13 +383,13 @@ public final class TableSliceLoader {
     //            }
     //            catch(InterruptedException e)
     //            {
-    //                LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+    //                LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
     //                        e, "Thread Interrupted.");
     //            }
     //            // Tried but rolapCube not found
     //            if(null == rolapCube)
     //            {
-    //                LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,"Error while slice loading : Unable to load cube : "+cubeSlicePathInfo.getCubeUniqueName());
+    //                LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,"Error while slice loading : Unable to load cube : "+cubeSlicePathInfo.getCubeUniqueName());
     //                return;
     //            }
     //            deleteSliceFromCube(cubeSlicePathInfo.getLoadPath());
@@ -400,14 +400,14 @@ public final class TableSliceLoader {
     //            if(flushFileCache && null != createdSlice.getDataCache(cubeSlicePathInfo.getTableName())
     //                    && !needtoFlushCompleteCubeCache)
     //            {
-    //                MolapCacheManager.getInstance().flushCubeStartingWithKey(cubeSlicePathInfo.getCubeUniqueName(),
+    //                CarbonCacheManager.getInstance().flushCubeStartingWithKey(cubeSlicePathInfo.getCubeUniqueName(),
     //                        createdSlice.getStartKey(cubeSlicePathInfo.getTableName()),
     //                        createdSlice.getKeyGenerator(cubeSlicePathInfo.getTableName()),
     //                        cubeSlicePathInfo.getTableName());
     //            }
     //            else if(null != createdSlice.getDataCache(cubeSlicePathInfo.getTableName()) && needtoFlushCompleteCubeCache)
     //            {
-    //                MolapCacheManager.getInstance().flushCube(cubeSlicePathInfo.getSchemaName(),
+    //                CarbonCacheManager.getInstance().flushCube(cubeSlicePathInfo.getSchemaName(),
     //                        cubeSlicePathInfo.getCubeName());
     //            }
     //        }
@@ -448,7 +448,7 @@ public final class TableSliceLoader {
     //        }
     //        catch(InterruptedException e)
     //        {
-    //            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+    //            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
     //                    e, "Thread Interrupted while waiting for queries to execute.");
     //        }
     //
@@ -460,7 +460,7 @@ public final class TableSliceLoader {
     //            {
     //                // delete slice from memory
     //                deleteSliceFromCube(toDeleteSlice);
-    //                LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+    //                LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
     //                        "Deleted slice: " + toDeleteSlice);
     //            }
     //        }
@@ -472,7 +472,7 @@ public final class TableSliceLoader {
     //                    cubeSlicePathInfo.getTableName());
     ////            InMemoryCubeStore.getInstance().registerSlice(cubeSlicePathInfo.getCubeName(),
     ////                    createdSlice,restructureStore);
-    //            LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+    //            LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
     //                    "Updated load from " + newSlicePath);
     //        }
     //
@@ -485,14 +485,14 @@ public final class TableSliceLoader {
     //            // Now Delete slicePathsToDelete from persistent data store as well
     //            if(null != slicePathsToDelete)
     //            {
-    //                MolapUtil.deleteFoldersAndFiles(slicePathsToDelete);
+    //                CarbonUtil.deleteFoldersAndFiles(slicePathsToDelete);
     //            }
     //
     //
     //        }
-    //        catch(MolapUtilException e)
+    //        catch(CarbonUtilException e)
     //        {
-    //            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+    //            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
     //                    "Problem while delete the olde slices", e);
     //        }
     //    }
@@ -530,7 +530,7 @@ public final class TableSliceLoader {
     //        }
     //        catch(InterruptedException e)
     //        {
-    //            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+    //            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
     //                    e, "Thread Interrupted while waiting for queries to execute.");
     //        }
     //
@@ -542,7 +542,7 @@ public final class TableSliceLoader {
     //            {
     //                // delete slice from memory
     //                deleteSliceFromCube(toDeleteSlice);
-    //                LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+    //                LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
     //                        "Deleted slice: " + toDeleteSlice);
     //            }
     ////        }
@@ -581,15 +581,15 @@ public final class TableSliceLoader {
     //            restructureStore.removeSlice(sliceToDelete, cubeSlicePathInfo.getTableName());
     //            if(sliceToDelete != null && null != sliceToDelete.getDataCache(cubeSlicePathInfo.getTableName()))
     //            {
-    //                MolapCacheManager.getInstance().flushCubeStartingWithKey(cubeSlicePathInfo.getCubeUniqueName(),
+    //                CarbonCacheManager.getInstance().flushCubeStartingWithKey(cubeSlicePathInfo.getCubeUniqueName(),
     //                        sliceToDelete.getStartKey(cubeSlicePathInfo.getTableName()),
     //                        sliceToDelete.getKeyGenerator(cubeSlicePathInfo.getTableName()),cubeSlicePathInfo.getTableName());
     //            }
     //        }else
     //        {
-    //            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "deleteSliceFromCube: restructureStore is null so not deleted "+ loadPath);
+    //            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "deleteSliceFromCube: restructureStore is null so not deleted "+ loadPath);
     //        }
-    //        LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "Deleted slice from " + loadPath);
+    //        LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "Deleted slice from " + loadPath);
     //    }
     //
     //    /**
@@ -605,7 +605,7 @@ public final class TableSliceLoader {
     //         */
     //        if(null != cube)
     //        {
-    //            ((MolapSchema)cube.getSchema()).setCacheChanged(true);
+    //            ((CarbonSchema)cube.getSchema()).setCacheChanged(true);
     //        }
     //        updateSlices(sliceLoadPath, null,false, false);
     //    }

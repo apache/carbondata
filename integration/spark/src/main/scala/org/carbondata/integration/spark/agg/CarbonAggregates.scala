@@ -98,7 +98,7 @@ case class AverageCarbon(child: Expression, castedDataType: DataType = null) ext
 
   override def dataType = MeasureAggregatorUDT
 
-  override def toString = s"AVGMolap($child)"
+  override def toString = s"AVGCarbon($child)"
 
   override def asPartial: SplitEvaluation = {
     val partialSum = Alias(AverageCarbon(child), "PartialAverage")()
@@ -131,7 +131,7 @@ case class SumCarbon(child: Expression, castedDataType: DataType = null) extends
 
   override def dataType = MeasureAggregatorUDT
 
-  override def toString = s"SUMMolap($child)"
+  override def toString = s"SUMCarbon($child)"
 
   override def asPartial: SplitEvaluation = {
     val partialSum = Alias(SumCarbon(child), "PartialSum")()
@@ -154,7 +154,7 @@ case class SumCarbonFinal(child: Expression, origDataType: DataType) extends Agg
 
   override def dataType = origDataType
 
-  override def toString = s"SUMMolapFinal($child)"
+  override def toString = s"SUMCarbonFinal($child)"
 
   override def newInstance() = new SumFunctionCarbon(child, this, true)
 }

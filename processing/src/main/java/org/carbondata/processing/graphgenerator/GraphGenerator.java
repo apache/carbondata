@@ -121,7 +121,7 @@ public class GraphGenerator {
      * OUTPUT_LOCATION
      */
     private final String outputLocation = CarbonProperties.getInstance()
-            .getProperty("store_output_location", "../unibi-solutions/system/molap/etl");
+            .getProperty("store_output_location", "../unibi-solutions/system/carbon/etl");
     /**
      * xAxixLocation
      */
@@ -208,7 +208,7 @@ public class GraphGenerator {
         this.currentRestructNumber = currentRestructNum;
         this.allocate = allocate > 1 ? allocate : 1;
         initialise();
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                 "************* Is Columnar Storage" + isColumnar);
     }
 
@@ -323,7 +323,7 @@ public class GraphGenerator {
             isDirCreated = file.mkdirs();
 
             if (!isDirCreated) {
-                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "Unable to create directory or Directory already exist" + file
                                 .getAbsolutePath());
                 throw new GraphGeneratorException("INTERNAL_SYSTEM_ERROR");
@@ -337,9 +337,9 @@ public class GraphGenerator {
                     KettleEnvironment.init();
                     kettleIntialized = false;
                 } catch (KettleException kettlExp) {
-                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                             "Invalid kettle path :: " + kettlExp.getMessage());
-                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, kettlExp);
+                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, kettlExp);
                     throw new GraphGeneratorException("Error While Initializing the Kettel Engine ",
                             kettlExp);
                 }
@@ -470,11 +470,11 @@ public class GraphGenerator {
             boolean isFactMdKeyInOutRow, boolean isManualCall, AggregateTable[] aggTablesArray,
             String factStorePath, int[] factCardinality, String[] aggregateLevels)
             throws GraphGeneratorException {
-        StepMeta molapFactReader = null;
-        molapFactReader =
-                getMolapFactReader(configurationInfoFact, true, isFactMdKeyInOutRow, aggTablesArray,
+        StepMeta carbonFactReader = null;
+        carbonFactReader =
+                getCarbonFactReader(configurationInfoFact, true, isFactMdKeyInOutRow, aggTablesArray,
                         factCardinality, factStorePath, aggregateLevels);
-        molapFactReader.setDistributes(false);
+        carbonFactReader.setDistributes(false);
         TransMeta trans = new TransMeta();
 
         if (!isManualCall) {
@@ -483,7 +483,7 @@ public class GraphGenerator {
             trans.setName("Manual AGG KTR");
         }
 
-        trans.addStep(molapFactReader);
+        trans.addStep(carbonFactReader);
         List<StepMeta> list = null;
         int stepMetaSize = stepMetaList.size();
         int listSize = 0;
@@ -501,7 +501,7 @@ public class GraphGenerator {
         for (int i = 0; i < stepMetaSize; i++) {
             list = stepMetaList.get(i);
             listSize = list.size();
-            hopMeta = new TransHopMeta(molapFactReader, list.get(0));
+            hopMeta = new TransHopMeta(carbonFactReader, list.get(0));
             trans.addTransHop(hopMeta);
             for (int j = 1; j < listSize; j++) {
                 hopMeta = new TransHopMeta(list.get(j - 1), list.get(j));
@@ -512,7 +512,7 @@ public class GraphGenerator {
         String graphFilePath = null;
         if (!isManualCall) {
             graphFilePath = outputLocation + File.separator + schemaName + File.separator + cubeName
-                    + File.separator + factTableName + CarbonCommonConstants.MOLAP_AUTO_AGG_CONST
+                    + File.separator + factTableName + CarbonCommonConstants.CARBON_AUTO_AGG_CONST
                     + aggTables + ".ktr";
         } else {
             graphFilePath = outputLocation + File.separator + schemaName + File.separator + cubeName
@@ -528,19 +528,19 @@ public class GraphGenerator {
             AggregateTable[] aggregateTableArray, int[] factCardinality, String factStorePath)
             throws GraphGeneratorException {
         List<StepMeta> stepMetaList = new ArrayList<StepMeta>(1);
-        StepMeta molapAggregateGeneratorStep =
-                getMolapAutoAggregateSurrogateKeyGeneratorStep(configurationInfoFact,
+        StepMeta carbonAggregateGeneratorStep =
+                getCarbonAutoAggregateSurrogateKeyGeneratorStep(configurationInfoFact,
                         configurationInfoAgg, aggregateTable, false, aggregateTableArray,
                         factCardinality, factStorePath);
-        stepMetaList.add(molapAggregateGeneratorStep);
-        StepMeta molapSortRowAndGroupByStep =
-                getMolapSortRowAndGroupByStep(configurationInfoAgg, aggregateTable, factStorePath,
+        stepMetaList.add(carbonAggregateGeneratorStep);
+        StepMeta carbonSortRowAndGroupByStep =
+                getCarbonSortRowAndGroupByStep(configurationInfoAgg, aggregateTable, factStorePath,
                         configurationInfoFact, aggregateTableArray, factCardinality, false);
-        stepMetaList.add(molapSortRowAndGroupByStep);
-        StepMeta molapDataWriter =
-                getMolapDataWriter(configurationInfoAgg, configurationInfoFact, aggregateTableArray,
+        stepMetaList.add(carbonSortRowAndGroupByStep);
+        StepMeta carbonDataWriter =
+                getCarbonDataWriter(configurationInfoAgg, configurationInfoFact, aggregateTableArray,
                         factCardinality);
-        stepMetaList.add(molapDataWriter);
+        stepMetaList.add(carbonDataWriter);
         return stepMetaList;
     }
 
@@ -560,7 +560,7 @@ public class GraphGenerator {
                         CarbonCommonConstants.GRAPH_ROWSET_SIZE_DEFAULT)));
 
         StepMeta inputStep = null;
-        StepMeta molapSurrogateKeyStep = null;
+        StepMeta carbonSurrogateKeyStep = null;
         StepMeta selectValueToChangeTheDataType = null;
         StepMeta getFileNames = null;
 
@@ -582,11 +582,11 @@ public class GraphGenerator {
                     getSelectValueToChangeTheDataType(configurationInfo, 1);
         }
 
-        molapSurrogateKeyStep = getMolapCSVBasedSurrogateKeyStep(configurationInfo);
+        carbonSurrogateKeyStep = getCarbonCSVBasedSurrogateKeyStep(configurationInfo);
         StepMeta sortStep = getSortStep(configurationInfo);
-        StepMeta molapMDKeyStep = getMDKeyStep(configurationInfo);
-        StepMeta molapSliceMergerStep = null;
-        molapSliceMergerStep = getSliceMeregerStep(configurationInfo, configurationInfoForFact);
+        StepMeta carbonMDKeyStep = getMDKeyStep(configurationInfo);
+        StepMeta carbonSliceMergerStep = null;
+        carbonSliceMergerStep = getSliceMeregerStep(configurationInfo, configurationInfoForFact);
 
         // add all steps to trans
         if (isCSV) {
@@ -598,29 +598,29 @@ public class GraphGenerator {
             trans.addStep(selectValueToChangeTheDataType);
         }
 
-        trans.addStep(molapSurrogateKeyStep);
+        trans.addStep(carbonSurrogateKeyStep);
         trans.addStep(sortStep);
-        trans.addStep(molapMDKeyStep);
+        trans.addStep(carbonMDKeyStep);
 
-        trans.addStep(molapSliceMergerStep);
+        trans.addStep(carbonSliceMergerStep);
         TransHopMeta getFilesInputTocsvFileInput = null;
         TransHopMeta inputStepToSelectValueHop = null;
         TransHopMeta tableInputToSelectValue = null;
 
         if (isCSV) {
             getFilesInputTocsvFileInput = new TransHopMeta(getFileNames, inputStep);
-            inputStepToSelectValueHop = new TransHopMeta(inputStep, molapSurrogateKeyStep);
+            inputStepToSelectValueHop = new TransHopMeta(inputStep, carbonSurrogateKeyStep);
         } else {
             inputStepToSelectValueHop = new TransHopMeta(inputStep, selectValueToChangeTheDataType);
             tableInputToSelectValue =
-                    new TransHopMeta(selectValueToChangeTheDataType, molapSurrogateKeyStep);
+                    new TransHopMeta(selectValueToChangeTheDataType, carbonSurrogateKeyStep);
         }
 
         // create hop
-        TransHopMeta surrogateKeyToSortHop = new TransHopMeta(molapSurrogateKeyStep, sortStep);
-        TransHopMeta sortToMDKeyHop = new TransHopMeta(sortStep, molapMDKeyStep);
+        TransHopMeta surrogateKeyToSortHop = new TransHopMeta(carbonSurrogateKeyStep, sortStep);
+        TransHopMeta sortToMDKeyHop = new TransHopMeta(sortStep, carbonMDKeyStep);
         TransHopMeta mdkeyToSliceMerger = null;
-        mdkeyToSliceMerger = new TransHopMeta(molapMDKeyStep, molapSliceMergerStep);
+        mdkeyToSliceMerger = new TransHopMeta(carbonMDKeyStep, carbonSliceMergerStep);
 
         if (isCSV) {
             trans.addTransHop(getFilesInputTocsvFileInput);
@@ -726,7 +726,7 @@ public class GraphGenerator {
             csvReaderMeta.setIncludingFilename(true);
             csvReaderMeta.setRowNumField("rownum");
         }
-        csvDataStep.setStepID("MolapCSVReaderStep");
+        csvDataStep.setStepID("CarbonCSVReaderStep");
         csvDataStep.setDraw(true);
         csvDataStep.setDescription("Read raw data from " + GraphGeneratorConstants.CSV_INPUT);
 
@@ -797,14 +797,14 @@ public class GraphGenerator {
         sliceMerger.setFactDimLensString("");
         sliceMerger.setLevelAnddataTypeString(configurationInfo.getLevelAnddataType());
         StepMeta sliceMergerMeta = new StepMeta(
-                GraphGeneratorConstants.MOLAP_SLICE_MERGER + configurationInfo.getTableName(),
+                GraphGeneratorConstants.CARBON_SLICE_MERGER + configurationInfo.getTableName(),
                 (StepMetaInterface) sliceMerger);
-        sliceMergerMeta.setStepID(GraphGeneratorConstants.MOLAP_SLICE_MERGER_ID);
+        sliceMergerMeta.setStepID(GraphGeneratorConstants.CARBON_SLICE_MERGER_ID);
         xAxixLocation += 120;
         sliceMergerMeta.setLocation(xAxixLocation, yAxixLocation);
         sliceMergerMeta.setDraw(true);
         sliceMergerMeta.setDescription(
-                "SliceMerger: " + GraphGeneratorConstants.MOLAP_SLICE_MERGER + configurationInfo
+                "SliceMerger: " + GraphGeneratorConstants.CARBON_SLICE_MERGER + configurationInfo
                         .getTableName());
         return sliceMergerMeta;
     }
@@ -823,18 +823,18 @@ public class GraphGenerator {
         meta.setFactTableName(tableName);
         meta.setAutoMode(Boolean.toString(schemaInfo.isAutoAggregateRequest()));
 
-        StepMeta aggTableMeta = new StepMeta(GraphGeneratorConstants.MOLAP_AUTO_AGG_GRAPH_GENERATOR,
+        StepMeta aggTableMeta = new StepMeta(GraphGeneratorConstants.CARBON_AUTO_AGG_GRAPH_GENERATOR,
                 (StepMetaInterface) meta);
-        aggTableMeta.setStepID(GraphGeneratorConstants.MOLAP_AUTO_AGG_GRAPH_GENERATOR_ID);
+        aggTableMeta.setStepID(GraphGeneratorConstants.CARBON_AUTO_AGG_GRAPH_GENERATOR_ID);
         xAxixLocation += 120;
         aggTableMeta.setLocation(xAxixLocation, yAxixLocation);
         aggTableMeta.setDraw(true);
         aggTableMeta.setDescription(
-                "SliceMerger: " + GraphGeneratorConstants.MOLAP_AUTO_AGG_GRAPH_GENERATOR);
+                "SliceMerger: " + GraphGeneratorConstants.CARBON_AUTO_AGG_GRAPH_GENERATOR);
         return aggTableMeta;
     }
 
-    private StepMeta getMolapFactReader(GraphConfigurationInfo configurationInfo,
+    private StepMeta getCarbonFactReader(GraphConfigurationInfo configurationInfo,
             boolean isReadOnlyInProgress, boolean isFactMdkeyInOutputRow,
             AggregateTable[] aggTables, int[] dimLens, String storeLocation,
             String[] aggregateLevels) {
@@ -898,18 +898,18 @@ public class GraphGenerator {
             factReader.setBlockIndexString(CarbonCommonConstants.HASH_SPC_CHARACTER);
         }
 
-        StepMeta factReaderMeta = new StepMeta(GraphGeneratorConstants.MOLAP_FACT_READER,
+        StepMeta factReaderMeta = new StepMeta(GraphGeneratorConstants.CARBON_FACT_READER,
                 (StepMetaInterface) factReader);
-        factReaderMeta.setStepID(GraphGeneratorConstants.MOLAP_FACT_READER_ID);
+        factReaderMeta.setStepID(GraphGeneratorConstants.CARBON_FACT_READER_ID);
         xAxixLocation += 120;
         factReaderMeta.setLocation(xAxixLocation, yAxixLocation);
         factReaderMeta.setDraw(true);
         factReaderMeta
-                .setDescription("Molap Fact Reader : " + GraphGeneratorConstants.MOLAP_FACT_READER);
+                .setDescription("Carbon Fact Reader : " + GraphGeneratorConstants.CARBON_FACT_READER);
         return factReaderMeta;
     }
 
-    private StepMeta getMolapAutoAggregateSurrogateKeyGeneratorStep(
+    private StepMeta getCarbonAutoAggregateSurrogateKeyGeneratorStep(
             GraphConfigurationInfo configurationInfoFact,
             GraphConfigurationInfo configurationInfoAgg, AggregateTable aggregateTable,
             boolean isManualAggregationRequest, AggregateTable[] aggTableArray,
@@ -997,17 +997,17 @@ public class GraphGenerator {
         meta.setFactDimLensString(
                 CarbonDataProcessorUtil.getLevelCardinalitiesString(factCardinality));
         StepMeta mdkeyStepMeta = new StepMeta(
-                GraphGeneratorConstants.MOLAP_AGGREGATE_SURROGATE_GENERATOR + configurationInfoAgg
+                GraphGeneratorConstants.CARBON_AGGREGATE_SURROGATE_GENERATOR + configurationInfoAgg
                         .getTableName(), (StepMetaInterface) meta);
         mdkeyStepMeta.setName(
-                GraphGeneratorConstants.MOLAP_AGGREGATE_SURROGATE_GENERATOR + configurationInfoAgg
+                GraphGeneratorConstants.CARBON_AGGREGATE_SURROGATE_GENERATOR + configurationInfoAgg
                         .getTableName());
-        mdkeyStepMeta.setStepID(GraphGeneratorConstants.MOLAP_AGGREGATE_SURROGATE_GENERATOR_ID);
+        mdkeyStepMeta.setStepID(GraphGeneratorConstants.CARBON_AGGREGATE_SURROGATE_GENERATOR_ID);
         xAxixLocation += 120;
         mdkeyStepMeta.setLocation(xAxixLocation, yAxixLocation);
         mdkeyStepMeta.setDraw(true);
         mdkeyStepMeta.setDescription("Generate Aggregate Data "
-                + GraphGeneratorConstants.MOLAP_AGGREGATE_SURROGATE_GENERATOR + configurationInfoAgg
+                + GraphGeneratorConstants.CARBON_AGGREGATE_SURROGATE_GENERATOR + configurationInfoAgg
                 .getTableName());
         return mdkeyStepMeta;
     }
@@ -1054,10 +1054,10 @@ public class GraphGenerator {
         return tableInputStep;
     }
 
-    private StepMeta getMolapCSVBasedSurrogateKeyStep(GraphConfigurationInfo graphConfiguration) {
+    private StepMeta getCarbonCSVBasedSurrogateKeyStep(GraphConfigurationInfo graphConfiguration) {
         //
         CarbonCSVBasedSeqGenMeta seqMeta = new CarbonCSVBasedSeqGenMeta();
-        seqMeta.setMolapdim(graphConfiguration.getDimensionString());
+        seqMeta.setCarbondim(graphConfiguration.getDimensionString());
         seqMeta.setComplexTypeString(graphConfiguration.getComplexTypeString());
         seqMeta.setBatchSize(Integer.parseInt(graphConfiguration.getBatchSize()));
         seqMeta.setHighCardinalityDims(graphConfiguration.getHighCardinalityDims());
@@ -1066,11 +1066,11 @@ public class GraphGenerator {
         seqMeta.setComplexDelimiterLevel1(schemaInfo.getComplexDelimiterLevel1());
         seqMeta.setComplexDelimiterLevel2(schemaInfo.getComplexDelimiterLevel2());
         seqMeta.setCurrentRestructNumber(graphConfiguration.getCurrentRestructNumber());
-        seqMeta.setMolapMetaHier(graphConfiguration.getMetaHeirString());
-        seqMeta.setMolapmsr(graphConfiguration.getMeasuresString());
-        seqMeta.setMolapProps(graphConfiguration.getPropertiesString());
-        seqMeta.setMolaphier(graphConfiguration.getHiersString());
-        seqMeta.setMolaphierColumn(graphConfiguration.getHierColumnString());
+        seqMeta.setCarbonMetaHier(graphConfiguration.getMetaHeirString());
+        seqMeta.setCarbonmsr(graphConfiguration.getMeasuresString());
+        seqMeta.setCarbonProps(graphConfiguration.getPropertiesString());
+        seqMeta.setCarbonhier(graphConfiguration.getHiersString());
+        seqMeta.setCarbonhierColumn(graphConfiguration.getHierColumnString());
         seqMeta.setMetaMetaHeirSQLQueries(graphConfiguration.getDimensionSqlQuery());
         seqMeta.setColumnAndTableNameColumnMapForAggString(
                 graphConfiguration.getColumnAndTableNameColumnMapForAgg());
@@ -1080,7 +1080,7 @@ public class GraphGenerator {
         seqMeta.setModifiedDimension(modifiedDimension);
         seqMeta.setForeignKeyHierarchyString(graphConfiguration.getForeignKeyHierarchyString());
         seqMeta.setPrimaryKeysString(graphConfiguration.getPrimaryKeyString());
-        seqMeta.setMolapMeasureNames(graphConfiguration.getMeasureNamesString());
+        seqMeta.setCarbonMeasureNames(graphConfiguration.getMeasureNamesString());
         seqMeta.setHeirNadDimsLensString(graphConfiguration.getHeirAndDimLens());
         seqMeta.setActualDimNames(graphConfiguration.getActualDimensionColumns());
         seqMeta.setNormHiers(graphConfiguration.getNormHiers());
@@ -1112,40 +1112,40 @@ public class GraphGenerator {
                 seqMeta.setCheckPointFileExits("true");
             }
         }
-        StepMeta mdkeyStepMeta = new StepMeta(GraphGeneratorConstants.MOLAP_SURROGATE_KEY_GENERATOR,
+        StepMeta mdkeyStepMeta = new StepMeta(GraphGeneratorConstants.CARBON_SURROGATE_KEY_GENERATOR,
                 (StepMetaInterface) seqMeta);
-        mdkeyStepMeta.setStepID(GraphGeneratorConstants.MOLAP_CSV_BASED_SURROAGATEGEN_ID);
+        mdkeyStepMeta.setStepID(GraphGeneratorConstants.CARBON_CSV_BASED_SURROAGATEGEN_ID);
         xAxixLocation += 120;
         //
         mdkeyStepMeta.setLocation(xAxixLocation, yAxixLocation);
         mdkeyStepMeta.setDraw(true);
         mdkeyStepMeta.setDescription("Generate Surrogate For Table Data: "
-                + GraphGeneratorConstants.MOLAP_SURROGATE_KEY_GENERATOR);
+                + GraphGeneratorConstants.CARBON_SURROGATE_KEY_GENERATOR);
         return mdkeyStepMeta;
     }
 
     private StepMeta getMDKeyStep(GraphConfigurationInfo graphConfiguration) {
-        MDKeyGenStepMeta molapMdKey = new MDKeyGenStepMeta();
-        molapMdKey.setNumberOfCores(graphConfiguration.getNumberOfCores());
-        molapMdKey.setTableName(graphConfiguration.getTableName());
-        molapMdKey.setSchemaName(schemaName);
-        molapMdKey.setCubeName(cubeName);
-        molapMdKey.setComplexTypeString(graphConfiguration.getComplexTypeString());
-        molapMdKey.setCurrentRestructNumber(graphConfiguration.getCurrentRestructNumber());
-        molapMdKey.setAggregateLevels(CarbonDataProcessorUtil
+        MDKeyGenStepMeta carbonMdKey = new MDKeyGenStepMeta();
+        carbonMdKey.setNumberOfCores(graphConfiguration.getNumberOfCores());
+        carbonMdKey.setTableName(graphConfiguration.getTableName());
+        carbonMdKey.setSchemaName(schemaName);
+        carbonMdKey.setCubeName(cubeName);
+        carbonMdKey.setComplexTypeString(graphConfiguration.getComplexTypeString());
+        carbonMdKey.setCurrentRestructNumber(graphConfiguration.getCurrentRestructNumber());
+        carbonMdKey.setAggregateLevels(CarbonDataProcessorUtil
                 .getLevelCardinalitiesString(graphConfiguration.getDimCardinalities(),
                         graphConfiguration.getDimensions()));
 
-        molapMdKey.setMeasureCount(graphConfiguration.getMeasureCount() + "");
-        molapMdKey.setDimensionsStoreTypeString(graphConfiguration.getDimensionStoreTypeString());
-        molapMdKey.setDimensionCount(graphConfiguration.getActualDims().length + "");
-        molapMdKey.setComplexDimsCount(graphConfiguration.getComplexTypeString().isEmpty() ?
+        carbonMdKey.setMeasureCount(graphConfiguration.getMeasureCount() + "");
+        carbonMdKey.setDimensionsStoreTypeString(graphConfiguration.getDimensionStoreTypeString());
+        carbonMdKey.setDimensionCount(graphConfiguration.getActualDims().length + "");
+        carbonMdKey.setComplexDimsCount(graphConfiguration.getComplexTypeString().isEmpty() ?
                 "0" :
                 graphConfiguration.getComplexTypeString().
                         split(CarbonCommonConstants.SEMICOLON_SPC_CHARACTER).length + "");
         StepMeta mdkeyStepMeta = new StepMeta(
                 GraphGeneratorConstants.MDKEY_GENERATOR + graphConfiguration.getTableName(),
-                (StepMetaInterface) molapMdKey);
+                (StepMetaInterface) carbonMdKey);
         mdkeyStepMeta.setName(
                 GraphGeneratorConstants.MDKEY_GENERATOR_ID + graphConfiguration.getTableName());
         mdkeyStepMeta.setStepID(GraphGeneratorConstants.MDKEY_GENERATOR_ID);
@@ -1156,28 +1156,28 @@ public class GraphGenerator {
         mdkeyStepMeta.setDescription(
                 "Generate MDKey For Table Data: " + GraphGeneratorConstants.MDKEY_GENERATOR
                         + graphConfiguration.getTableName());
-        molapMdKey.setHighCardinalityDims(graphConfiguration.getHighCardinalityDims());
+        carbonMdKey.setHighCardinalityDims(graphConfiguration.getHighCardinalityDims());
 
         return mdkeyStepMeta;
     }
 
-    private StepMeta getMolapDataWriter(GraphConfigurationInfo graphConfiguration,
+    private StepMeta getCarbonDataWriter(GraphConfigurationInfo graphConfiguration,
             GraphConfigurationInfo graphjConfigurationForFact, AggregateTable[] aggTableArray,
             int[] factDimCardinality) {
         //
-        CarbonDataWriterStepMeta molapDataWriter = getMolapDataWriter(graphConfiguration);
+        CarbonDataWriterStepMeta carbonDataWriter = getCarbonDataWriter(graphConfiguration);
         String[] factDimensions = graphjConfigurationForFact.getDimensions();
-        molapDataWriter.setCurrentRestructNumber(
+        carbonDataWriter.setCurrentRestructNumber(
                 CarbonUtil.getRestructureNumber(this.factStoreLocation, this.factTableName));
 
         // getting the high cardinality string from graphjConfigurationForFact.
         String[] highCardDims = RemoveDictionaryUtil
                 .extractHighCardDimsArr(graphjConfigurationForFact.getHighCardinalityDims());
         // using the string [] of high card dims , trying to get the count of the high cardinality dims in the agg query.
-        molapDataWriter.sethighCardCount(
+        carbonDataWriter.sethighCardCount(
                 getHighCardDimsCountInAggQuery(highCardDims, graphConfiguration.getDimensions()));
 
-        processAutoAggRequest(graphConfiguration, graphjConfigurationForFact, molapDataWriter);
+        processAutoAggRequest(graphConfiguration, graphjConfigurationForFact, carbonDataWriter);
 
         if (null != factDimCardinality) {
             SliceMetaData sliceMetaData = CarbonDataProcessorUtil
@@ -1186,11 +1186,11 @@ public class GraphGenerator {
                     .getKeyGenerator(factDimensions, graphConfiguration.getDimensions(),
                             factDimCardinality, sliceMetaData.getNewDimensions(),
                             sliceMetaData.getNewDimLens());
-            molapDataWriter.setFactDimLensString(
+            carbonDataWriter.setFactDimLensString(
                     CarbonDataProcessorUtil.getLevelCardinalitiesString(globalDimensioncardinality));
         }
 
-        molapDataWriter.setIsUpdateMemberRequest(isUpdateMemberRequest + "");
+        carbonDataWriter.setIsUpdateMemberRequest(isUpdateMemberRequest + "");
         StringBuilder builder = new StringBuilder();
 
         String[] dimensions = graphConfiguration.getDimensions();
@@ -1204,35 +1204,35 @@ public class GraphGenerator {
             mdkeySize = getMdkeySizeInCaseOfAutoAggregate(graphConfiguration.getDimensions(),
                     factDimensions, factDimCardinality);
         }
-        molapDataWriter.setMdkeyLength(mdkeySize);
-        molapDataWriter.setAggregateLevelsString(builder.toString());
+        carbonDataWriter.setMdkeyLength(mdkeySize);
+        carbonDataWriter.setAggregateLevelsString(builder.toString());
         builder = new StringBuilder();
         for (int i = 0; i < factDimensions.length - 1; i++) {
             builder.append(factDimensions[i]);
             builder.append(CarbonCommonConstants.HASH_SPC_CHARACTER);
         }
         builder.append(factDimensions[factDimensions.length - 1]);
-        molapDataWriter.setFactLevelsString(builder.toString());
+        carbonDataWriter.setFactLevelsString(builder.toString());
         //
-        StepMeta molapDataWriterStep = new StepMeta(
-                GraphGeneratorConstants.MOLAP_DATA_WRITER + graphConfiguration.getTableName(),
-                (StepMetaInterface) molapDataWriter);
-        molapDataWriterStep.setStepID(GraphGeneratorConstants.MOLAP_DATA_WRITER_ID);
+        StepMeta carbonDataWriterStep = new StepMeta(
+                GraphGeneratorConstants.CARBON_DATA_WRITER + graphConfiguration.getTableName(),
+                (StepMetaInterface) carbonDataWriter);
+        carbonDataWriterStep.setStepID(GraphGeneratorConstants.CARBON_DATA_WRITER_ID);
         xAxixLocation += 120;
         //
-        molapDataWriterStep.setLocation(xAxixLocation, yAxixLocation);
-        molapDataWriterStep.setDraw(true);
-        molapDataWriterStep.setName(
-                GraphGeneratorConstants.MOLAP_DATA_WRITER + graphConfiguration.getTableName());
-        molapDataWriterStep.setDescription(
-                "Write Molap Data To File: " + GraphGeneratorConstants.MOLAP_DATA_WRITER
+        carbonDataWriterStep.setLocation(xAxixLocation, yAxixLocation);
+        carbonDataWriterStep.setDraw(true);
+        carbonDataWriterStep.setName(
+                GraphGeneratorConstants.CARBON_DATA_WRITER + graphConfiguration.getTableName());
+        carbonDataWriterStep.setDescription(
+                "Write Carbon Data To File: " + GraphGeneratorConstants.CARBON_DATA_WRITER
                         + graphConfiguration.getTableName());
-        return molapDataWriterStep;
+        return carbonDataWriterStep;
     }
 
     private void processAutoAggRequest(GraphConfigurationInfo graphConfiguration,
             GraphConfigurationInfo graphjConfigurationForFact,
-            CarbonDataWriterStepMeta molapDataWriter) {
+            CarbonDataWriterStepMeta carbonDataWriter) {
         boolean isFactMdkeyInInputRow = false;
         if (isAutoAggRequest) {
             String[] aggType = graphConfiguration.getAggType();
@@ -1242,7 +1242,7 @@ public class GraphGenerator {
                 builder.append(CarbonCommonConstants.HASH_SPC_CHARACTER);
             }
             builder.append(aggType[aggType.length - 1]);
-            molapDataWriter.setAggregatorString(builder.toString());
+            carbonDataWriter.setAggregatorString(builder.toString());
             String[] aggClass = graphConfiguration.getAggClass();
             builder = new StringBuilder();
             for (int i = 0; i < aggClass.length - 1; i++) {
@@ -1250,7 +1250,7 @@ public class GraphGenerator {
                 builder.append(CarbonCommonConstants.HASH_SPC_CHARACTER);
             }
             builder.append(aggClass[aggClass.length - 1]);
-            molapDataWriter.setAggregatorClassString(builder.toString());
+            carbonDataWriter.setAggregatorClassString(builder.toString());
 
             for (int i = 0; i < aggType.length; i++) {
                 if (aggType[i].equals(CarbonCommonConstants.CUSTOM)) {
@@ -1261,31 +1261,31 @@ public class GraphGenerator {
             if (isUpdateMemberRequest) {
                 isFactMdkeyInInputRow = false;
             }
-            molapDataWriter.setIsFactMDkeyInInputRow(isFactMdkeyInInputRow + "");
+            carbonDataWriter.setIsFactMDkeyInInputRow(isFactMdkeyInInputRow + "");
             if (isFactMdkeyInInputRow) {
-                molapDataWriter.setFactMdkeyLength(graphjConfigurationForFact.getMdkeySize());
+                carbonDataWriter.setFactMdkeyLength(graphjConfigurationForFact.getMdkeySize());
             } else {
-                molapDataWriter.setFactMdkeyLength(0 + "");
+                carbonDataWriter.setFactMdkeyLength(0 + "");
             }
         } else {
-            molapDataWriter.setAggregatorClassString(CarbonCommonConstants.HASH_SPC_CHARACTER);
-            molapDataWriter.setAggregatorString(CarbonCommonConstants.HASH_SPC_CHARACTER);
-            molapDataWriter.setIsFactMDkeyInInputRow(isFactMdkeyInInputRow + "");
-            molapDataWriter.setFactMdkeyLength(0 + "");
+            carbonDataWriter.setAggregatorClassString(CarbonCommonConstants.HASH_SPC_CHARACTER);
+            carbonDataWriter.setAggregatorString(CarbonCommonConstants.HASH_SPC_CHARACTER);
+            carbonDataWriter.setIsFactMDkeyInInputRow(isFactMdkeyInInputRow + "");
+            carbonDataWriter.setFactMdkeyLength(0 + "");
 
         }
     }
 
-    private CarbonDataWriterStepMeta getMolapDataWriter(GraphConfigurationInfo graphConfiguration) {
-        CarbonDataWriterStepMeta molapDataWriter = new CarbonDataWriterStepMeta();
-        molapDataWriter.setCubeName(cubeName);
-        molapDataWriter.setSchemaName(schemaName);
-        molapDataWriter.setLeafNodeSize(graphConfiguration.getLeafNodeSize());
-        molapDataWriter.setMaxLeafNode(graphConfiguration.getMaxLeafInFile());
-        molapDataWriter.setTabelName(graphConfiguration.getTableName());
-        molapDataWriter.setMeasureCount(graphConfiguration.getMeasureCount());
-        molapDataWriter.setGroupByEnabled("true");
-        return molapDataWriter;
+    private CarbonDataWriterStepMeta getCarbonDataWriter(GraphConfigurationInfo graphConfiguration) {
+        CarbonDataWriterStepMeta carbonDataWriter = new CarbonDataWriterStepMeta();
+        carbonDataWriter.setCubeName(cubeName);
+        carbonDataWriter.setSchemaName(schemaName);
+        carbonDataWriter.setLeafNodeSize(graphConfiguration.getLeafNodeSize());
+        carbonDataWriter.setMaxLeafNode(graphConfiguration.getMaxLeafInFile());
+        carbonDataWriter.setTabelName(graphConfiguration.getTableName());
+        carbonDataWriter.setMeasureCount(graphConfiguration.getMeasureCount());
+        carbonDataWriter.setGroupByEnabled("true");
+        return carbonDataWriter;
     }
 
     private String getMdkeySizeInCaseOfAutoAggregate(String[] aggreateLevels, String[] factLevels,
@@ -1414,7 +1414,7 @@ public class GraphGenerator {
     /*
      * Obselete
      */
-    private StepMeta getMolapSortRowAndGroupByStep(GraphConfigurationInfo graphConfiguration,
+    private StepMeta getCarbonSortRowAndGroupByStep(GraphConfigurationInfo graphConfiguration,
             AggregateTable aggregateTable, String factStorePath,
             GraphConfigurationInfo configurationInfoFact, AggregateTable[] aggTableArray,
             int[] factCardinality, boolean isManualAggregationRequest)
@@ -1544,7 +1544,7 @@ public class GraphGenerator {
         xAxixLocation += 120;
         sortRowsStep.setLocation(xAxixLocation, yAxixLocation);
         sortRowsStep.setDraw(true);
-        sortRowsStep.setStepID(GraphGeneratorConstants.MOLAP_SORTKEY_AND_GROUPBY_ID);
+        sortRowsStep.setStepID(GraphGeneratorConstants.CARBON_SORTKEY_AND_GROUPBY_ID);
         sortRowsStep.setDescription(
                 "Sort Key: " + GraphGeneratorConstants.SORT_KEY_AND_GROUPBY + graphConfiguration
                         .getTableName());
@@ -1670,9 +1670,9 @@ public class GraphGenerator {
 
         graphConfiguration.setStoreLocation(this.schemaName + '/' + cube.name);
         graphConfiguration.setLeafNodeSize((instance
-                .getProperty("com.huawei.unibi.molap.leaf.node.size", DEFAULE_LEAF_NODE_SIZE)));
+                .getProperty("com.huawei.unibi.carbon.leaf.node.size", DEFAULE_LEAF_NODE_SIZE)));
         graphConfiguration.setMaxLeafInFile((instance
-                .getProperty("molap.max.leafnode.in.file", DEFAULE_MAX_LEAF_NODE_IN_FILE)));
+                .getProperty("carbon.max.leafnode.in.file", DEFAULE_MAX_LEAF_NODE_IN_FILE)));
         graphConfiguration.setNumberOfCores((instance
                 .getProperty(CarbonCommonConstants.NUM_CORES_LOADING, DEFAULT_NUMBER_CORES)));
 
@@ -1686,9 +1686,9 @@ public class GraphGenerator {
                 .getTableInputSQLQuery(dimensions, cube.measures,
                         CarbonSchemaParser.getFactTableName(cube), isQuotesRequired, schema));
         graphConfiguration
-                .setBatchSize((instance.getProperty("molap.batch.size", DEFAULT_BATCH_SIZE)));
+                .setBatchSize((instance.getProperty("carbon.batch.size", DEFAULT_BATCH_SIZE)));
         graphConfiguration
-                .setSortSize((instance.getProperty("molap.sort.size", DEFAULT_SORT_SIZE)));
+                .setSortSize((instance.getProperty("carbon.sort.size", DEFAULT_SORT_SIZE)));
         graphConfiguration.setDimensionSqlQuery(CarbonSchemaParser
                 .getDimensionSQLQueries(cube, dimensions, schema, isQuotesRequired, quote));
         graphConfiguration.setMetaHeirString(
@@ -1775,9 +1775,9 @@ public class GraphGenerator {
         graphConfiguration.setAggType(aggtable.getAggregator());
         graphConfiguration.setStoreLocation(this.schemaName + '/' + cube.name);
         graphConfiguration.setLeafNodeSize((instance
-                .getProperty("com.huawei.unibi.molap.leaf.node.size", DEFAULE_LEAF_NODE_SIZE)));
+                .getProperty("com.huawei.unibi.carbon.leaf.node.size", DEFAULE_LEAF_NODE_SIZE)));
         graphConfiguration.setMaxLeafInFile((instance
-                .getProperty("molap.max.leafnode.in.file", DEFAULE_MAX_LEAF_NODE_IN_FILE)));
+                .getProperty("carbon.max.leafnode.in.file", DEFAULE_MAX_LEAF_NODE_IN_FILE)));
         graphConfiguration.setNumberOfCores((instance
                 .getProperty(CarbonCommonConstants.NUM_CORES_LOADING, DEFAULT_NUMBER_CORES)));
 
@@ -1792,9 +1792,9 @@ public class GraphGenerator {
                 .getTableInputSQLQueryForAGG(aggtable.getAggLevels(), aggtable.getAggMeasure(),
                         aggtable.getAggregateTableName(), isQuotesRequired));
         graphConfiguration
-                .setBatchSize((instance.getProperty("molap.batch.size", DEFAULT_BATCH_SIZE)));
+                .setBatchSize((instance.getProperty("carbon.batch.size", DEFAULT_BATCH_SIZE)));
         graphConfiguration
-                .setSortSize((instance.getProperty("molap.sort.size", DEFAULT_SORT_SIZE)));
+                .setSortSize((instance.getProperty("carbon.sort.size", DEFAULT_SORT_SIZE)));
         //
         graphConfiguration.setAGG(true);
         graphConfiguration.setUsername(schemaInfo.getSrcUserName());
@@ -1809,7 +1809,7 @@ public class GraphGenerator {
         String type = DRIVERS.get(driverCls);
 
         if (null == type) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "Driver : \"" + driverCls + " \"Not Supported.");
             throw new GraphGeneratorException("Driver : \"" + driverCls + " \"Not Supported.");
         }
@@ -1829,7 +1829,7 @@ public class GraphGenerator {
         String type = DRIVERS.get(driverClass);
 
         if (null == type) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "Driver : \"" + driverClass + " \"Not Supported.");
             throw new GraphGeneratorException("Driver : \"" + driverClass + " \"Not Supported.");
         }

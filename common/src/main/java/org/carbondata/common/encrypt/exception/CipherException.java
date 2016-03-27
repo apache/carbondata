@@ -19,9 +19,6 @@
 
 package org.carbondata.common.encrypt.exception;
 
-/**
- * @author B71024
- */
 public class CipherException extends Exception {
 
     private static final long serialVersionUID = 1L;

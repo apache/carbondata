@@ -79,7 +79,7 @@ public class LoadHandler {
      * @return
      */
     public boolean isDataAvailable(CarbonFile loadFolder, String table) {
-        CarbonFile[] files = DataStatsUtil.getMolapFactFile(loadFolder, table);
+        CarbonFile[] files = DataStatsUtil.getCarbonFactFile(loadFolder, table);
         if (null == files || files.length == 0) {
             return false;
         }
@@ -89,7 +89,7 @@ public class LoadHandler {
     private FactDataHandler handleTableData(CarbonFile loadFolder, String table, int msrCount)
             throws AggSuggestException {
         // get list of fact file
-        CarbonFile[] files = DataStatsUtil.getMolapFactFile(loadFolder, table);
+        CarbonFile[] files = DataStatsUtil.getCarbonFactFile(loadFolder, table);
 
         // Create LevelMetaInfo to get each dimension cardinality
         LevelMetaInfo levelMetaInfo = new LevelMetaInfo(loadFolder, table);

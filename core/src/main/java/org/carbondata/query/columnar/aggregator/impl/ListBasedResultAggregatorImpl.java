@@ -161,7 +161,7 @@ public class ListBasedResultAggregatorImpl implements ColumnarScannedResultAggre
                 finalValues.add(values.get(i));
             }
         } catch (KeyGenException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
         }
     }
 }

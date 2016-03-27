@@ -160,9 +160,9 @@ public class SchemaRestructurer {
         SliceMetaData currentSliceMetaData =
                 CarbonUtil.readSliceMetaDataFile(sliceMetaDatapath, currentRestructFolderNumber);
         if (null == currentSliceMetaData) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "Failed to read current sliceMetaData from:" + sliceMetaDatapath);
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "May be dataloading is not done even once:" + sliceMetaDatapath);
             return true;
         }
@@ -172,7 +172,7 @@ public class SchemaRestructurer {
 
         if (!processDroppedDimsMsrs(prevRSFolderPathPrefix, currentRestructFolderNumber,
                 validDropDimList, validDropMsrList, origUnModifiedCube)) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "Failed to drop the dimension/measure");
             return false;
         }
@@ -207,7 +207,7 @@ public class SchemaRestructurer {
                         + newLoadCounter + File.separator;
 
         if (!createLoadFolder(newLevelFolderPath)) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "Failed to create load folder:" + newLevelFolderPath);
             return false;
         }
@@ -224,11 +224,11 @@ public class SchemaRestructurer {
                     tmpsliceMetaDataPath + File.separator + CarbonCommonConstants.LOAD_FOLDER
                             + curLoadCounter, factTableName);
             if (null == currDimCardinality) {
-                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "Level cardinality file is missing.Was empty load folder created to maintain load folder count in sync?");
             }
         } catch (CarbonUtilException e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e.getMessage());
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e.getMessage());
             return false;
         }
 
@@ -293,7 +293,7 @@ public class SchemaRestructurer {
         try {
             writeLevelCardinalityFile(newLevelFolderPath, factTableName, updatedCardinality);
         } catch (KettleException e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e.getMessage());
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e.getMessage());
             return false;
         }
 
@@ -433,7 +433,7 @@ public class SchemaRestructurer {
             //for drop case no need to creare a new RS folder, overwrite the existing slicemetadata
             if (!overWriteSliceMetaDataFile(sliceMetaDatapath, currentSliceMetaData,
                     currentRestructFolderNumber)) {
-                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "Failed to overwrite the slicemetadata in path:" + sliceMetaDatapath
                                 + " current RS is:" + currentRestructFolderNumber);
                 return false;
@@ -453,29 +453,29 @@ public class SchemaRestructurer {
                 pathTillRSFolderParent + File.separator + CarbonCommonConstants.RESTRUCTRE_FOLDER;
         String sliceMetaDatapath;
         String levelFilePath;
-        CarbonFile molapLevelFile = null;
-        FileType molapFileType = FileFactory.getFileType(prevRSFolderPathPrefix);
+        CarbonFile carbonLevelFile = null;
+        FileType carbonFileType = FileFactory.getFileType(prevRSFolderPathPrefix);
         for (int folderNumber = currentRestructFolderNumber; folderNumber >= 0; folderNumber--) {
             sliceMetaDatapath =
                     prevRSFolderPathPrefix + folderNumber + File.separator + factTableName;
             CarbonFile sliceMetaDataPathFolder =
-                    FileFactory.getMolapFile(sliceMetaDatapath, molapFileType);
+                    FileFactory.getCarbonFile(sliceMetaDatapath, carbonFileType);
             CarbonFile[] loadFoldersArray = CarbonUtil.listFiles(sliceMetaDataPathFolder);
             for (CarbonFile aFile : loadFoldersArray) {
                 for (String levelFileName : levelFilesToDelete) {
                     levelFilePath = aFile.getCanonicalPath() + File.separator + levelFileName;
                     try {
-                        if (FileFactory.isFileExist(levelFilePath, molapFileType)) {
+                        if (FileFactory.isFileExist(levelFilePath, carbonFileType)) {
                             CarbonFile carbonFile =
-                                    FileFactory.getMolapFile(levelFilePath, molapFileType);
+                                    FileFactory.getCarbonFile(levelFilePath, carbonFileType);
                             CarbonUtil.deleteFoldersAndFiles(carbonFile);
                         }
                     } catch (IOException e) {
-                        LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                        LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                                 "Failed to delete level file:" + levelFileName + " in:" + aFile
                                         .getName());
                     } catch (CarbonUtilException e) {
-                        LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                        LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                                 "Failed to delete level file:" + levelFileName + " in:" + aFile
                                         .getName());
                     }
@@ -500,7 +500,7 @@ public class SchemaRestructurer {
             aggTablePath = pathTillRSFolder + aggTableName + File.separator
                     + CarbonCommonConstants.LOAD_FOLDER + newLoadCounter + File.separator;
             if (!createLoadFolder(aggTablePath)) {
-                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "Failed to create load folder for aggregate table in restructure :: "
                                 + aggTablePath);
                 return false;
@@ -516,7 +516,7 @@ public class SchemaRestructurer {
                 return FileFactory.mkdirs(newLevelFolderPath, fileType);
             }
         } catch (IOException e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e.getMessage());
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e.getMessage());
             return false;
         }
         return true;
@@ -555,7 +555,7 @@ public class SchemaRestructurer {
 
     private CarbonFile[] getListOfAggTableFolders(String currentRSFolderPath) {
         CarbonFile carbonFile = FileFactory
-                .getMolapFile(currentRSFolderPath, FileFactory.getFileType(currentRSFolderPath));
+                .getCarbonFile(currentRSFolderPath, FileFactory.getFileType(currentRSFolderPath));
 
         // List of directories
         CarbonFile[] listFolders = carbonFile.listFiles(new CarbonFileFilter() {
@@ -693,7 +693,7 @@ public class SchemaRestructurer {
             stream = FileFactory.getDataOutputStream(levelFilePath + levelFileName, fileType);
             stream.write(buffer.array());
         } catch (IOException e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e.getMessage());
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e.getMessage());
             throw e;
         } finally {
             CarbonUtil.closeStreams(stream);
@@ -718,10 +718,10 @@ public class SchemaRestructurer {
                 outstream.writeInt(dimCardinality[i]);
             }
 
-            LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "Level cardinality file written to : " + levelCardinalityFilePath);
         } catch (IOException e) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "Error while writing level cardinality file : " + levelCardinalityFilePath + e
                             .getMessage());
             throw new KettleException("Not able to write level cardinality file", e);
@@ -754,10 +754,10 @@ public class SchemaRestructurer {
         try {
             //if tmp slicemetadata is present, that means cleanup was not correct, delete it
             if (FileFactory.isFileExist(tmpSliceMetaDataFileName, fileType)) {
-                FileFactory.getMolapFile(tmpSliceMetaDataFileName, fileType).delete();
+                FileFactory.getCarbonFile(tmpSliceMetaDataFileName, fileType).delete();
             }
             //write the updated slicemetadata to tmp file first
-            LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "Slice Metadata file Path: " + path + '/' + CarbonUtil
                             .getSliceMetaDataFileName(restructFolder));
             stream = FileFactory
@@ -765,14 +765,14 @@ public class SchemaRestructurer {
             objectOutputStream = new ObjectOutputStream(stream);
             objectOutputStream.writeObject(sliceMetaData);
         } catch (IOException e) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, e.getMessage());
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e.getMessage());
             createSuccess = false;
 
         } finally {
             CarbonUtil.closeStreams(objectOutputStream, stream);
             if (createSuccess) {
                 //if tmp slicemetadata creation is success, rename it to actual slicemetadata name
-                CarbonFile file = FileFactory.getMolapFile(tmpSliceMetaDataFileName, fileType);
+                CarbonFile file = FileFactory.getCarbonFile(tmpSliceMetaDataFileName, fileType);
                 return file.renameForce(presentSliceMetaDataFileName);
             }
         }

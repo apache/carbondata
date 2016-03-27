@@ -50,7 +50,7 @@ import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
  * Project Name NSE V3R8C10
- * Module Name : MOLAP Data Processor
+ * Module Name : CARBON Data Processor
  * Author :k00900841
  * Created Date:10-Aug-2014
  * FileName : CustomeAggregatorHelper.java
@@ -130,8 +130,8 @@ public class CustomAggregatorHelper {
      */
     private void loadLevelFile(String tableName, String columnName, String cubeName,
             String schemaName) {
-        String baseLocation = CarbonUtil.getCarbonStorePath(schemaName, cubeName)/*MolapProperties.getInstance().getProperty(MolapCommonConstants.STORE_LOCATION,
-                MolapCommonConstants.STORE_LOCATION_DEFAULT_VAL)*/;
+        String baseLocation = CarbonUtil.getCarbonStorePath(schemaName, cubeName)/*CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION,
+                CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL)*/;
         baseLocation = baseLocation + File.separator + schemaName + File.separator + cubeName;
         if (loadFolderList.size() == 0) {
             checkAndUpdateFolderList(baseLocation);
@@ -147,7 +147,7 @@ public class CustomAggregatorHelper {
                 }
             }
         } catch (IOException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                     "Problem while populating the cache");
         }
     }

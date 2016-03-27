@@ -62,11 +62,11 @@ import org.carbondata.query.queryinterface.query.CarbonQuery.AxisType;
 import org.carbondata.query.queryinterface.query.CarbonQuery.SortType;
 import org.carbondata.query.queryinterface.query.impl.CarbonQueryImpl;
 import org.carbondata.query.queryinterface.query.metadata.*;
-import org.carbondata.query.queryinterface.query.metadata.CarbonLevel.MolapLevelType;
+import org.carbondata.query.queryinterface.query.metadata.CarbonLevel.CarbonLevelType;
 import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
- * It is util class to parse the molap query object
+ * It is util class to parse the carbon query object
  */
 public final class CarbonQueryParseUtil {
     private static final LogService LOGGER =
@@ -77,7 +77,7 @@ public final class CarbonQueryParseUtil {
     }
 
     /**
-     * It parses the MOLAP query object and returns model object.
+     * It parses the CARBON query object and returns model object.
      *
      * @param carbonQuery
      * @param schemaName
@@ -85,7 +85,7 @@ public final class CarbonQueryParseUtil {
      * @return
      * @throws IOException
      */
-    public static CarbonQueryModel parseMolapQuery(CarbonQuery carbonQuery, String schemaName,
+    public static CarbonQueryModel parseCarbonQuery(CarbonQuery carbonQuery, String schemaName,
             String cubeName) throws IOException {
 
         CarbonQueryImpl queryImpl = (CarbonQueryImpl) carbonQuery;
@@ -94,7 +94,7 @@ public final class CarbonQueryParseUtil {
         String cubeUniqueName = schemaName + '_' + cubeName;
         Cube cube = metadata.getCube(cubeUniqueName);
         if (cube == null) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                     "Scheme or Cube name does not exist");
             throw new RuntimeException("Scheme or Cube name does not exist");
         }
@@ -116,7 +116,7 @@ public final class CarbonQueryParseUtil {
         model.setFactTableName(factTableName);
 
         //Find out the suitable table (aggregation table or fact table)
-        /*Object pageRequire = queryImpl.getExtraProperties().get(MolapQuery.PAGINATION_REQUIRED);
+        /*Object pageRequire = queryImpl.getExtraProperties().get(CarbonQuery.PAGINATION_REQUIRED);
         boolean isPaginationrequired=false;
         if(pageRequire != null)
         {
@@ -185,7 +185,7 @@ public final class CarbonQueryParseUtil {
             return cube.getFactTableName();
         }
 
-        //        MolapExecutor executor = new InMemoryQueryExecutor(null,schemaName, cubeName);
+        //        CarbonExecutor executor = new InMemoryQueryExecutor(null,schemaName, cubeName);
         //        String selectedTabName = cube.getFactTableName();
         //        long selectedTabCount = Long.MAX_VALUE;
         //        for(String tableName : aggtables)
@@ -464,7 +464,7 @@ public final class CarbonQueryParseUtil {
                 return true;
             }
         } catch (IOException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                     "@@@@@Problem checking file measuremetadata file existence@@@@");
         }
         return false;
@@ -477,7 +477,7 @@ public final class CarbonQueryParseUtil {
      */
     private static CarbonFile[] getLoadFolders(String baseStorePath, final String filterType) {
         CarbonFile carbonFile =
-                FileFactory.getMolapFile(baseStorePath, FileFactory.getFileType(baseStorePath));
+                FileFactory.getCarbonFile(baseStorePath, FileFactory.getFileType(baseStorePath));
         // List of directories
         CarbonFile[] listFiles = carbonFile.listFiles(new CarbonFileFilter() {
             @Override
@@ -532,16 +532,16 @@ public final class CarbonQueryParseUtil {
      * for each level,that level he needs to mention in query.
      *
      * @param dimensions
-     * @param molapDim
+     * @param carbonDim
      * @return
      */
-    public static Dimension findDimension(List<Dimension> dimensions, String molapDim) {
+    public static Dimension findDimension(List<Dimension> dimensions, String carbonDim) {
         Dimension findDim = null;
         for (Dimension dimension : dimensions) {
             // Its just a temp work around to use level name as unique name. we
             // need to provide a way to configure unique name
             // to user in schema.
-            if (dimension.getName().equalsIgnoreCase(molapDim)) {
+            if (dimension.getName().equalsIgnoreCase(carbonDim)) {
                 findDim = dimension.getDimCopy();
                 findDim.setActualCol(true);
                 break;
@@ -561,12 +561,12 @@ public final class CarbonQueryParseUtil {
     public static boolean isDimensionMeasureInAggTable(AggMeasure[] aggMeasures, Dimension dim,
             String agg) {
         // AggMeasure[] aggMeasures = null;
-        // MolapDef.Table table = (MolapDef.Table)schema.cubes[0].fact;
-        // MolapDef.AggTable[] aggTables = table.aggTables;
+        // CarbonDef.Table table = (CarbonDef.Table)schema.cubes[0].fact;
+        // CarbonDef.AggTable[] aggTables = table.aggTables;
         // String aggTableName = null;
         // for(int i = 0;i < aggTables.length;i++)
         // {
-        // aggTableName = ((MolapDef.AggName)aggTables[i]).getNameAttribute();
+        // aggTableName = ((CarbonDef.AggName)aggTables[i]).getNameAttribute();
         // if(aggTableName.equals(aggTable))
         // {
         // aggMeasures = aggTables[i].measures;
@@ -596,12 +596,12 @@ public final class CarbonQueryParseUtil {
     //    public static boolean isLevelInAggTable(Schema schema, Cube cube, Dimension dim, String aggTable)
     //    {
     //        AggLevel[] aggLevels = null;
-    //        MolapDef.Table table = (MolapDef.Table)schema.cubes[0].fact;
-    //        MolapDef.AggTable[] aggTables = table.aggTables;
+    //        CarbonDef.Table table = (CarbonDef.Table)schema.cubes[0].fact;
+    //        CarbonDef.AggTable[] aggTables = table.aggTables;
     //        String aggTableName = null;
     //        for(int i = 0;i < aggTables.length;i++)
     //        {
-    //            aggTableName = ((MolapDef.AggName)aggTables[i]).getNameAttribute();
+    //            aggTableName = ((CarbonDef.AggName)aggTables[i]).getNameAttribute();
     //            if(aggTableName.equals(aggTable))
     //            {
     //                aggLevels = aggTables[i].levels;
@@ -626,7 +626,7 @@ public final class CarbonQueryParseUtil {
      * @return
      */
     private static String getTabName(Cube cube, List<String> aggtablesMsrs) {
-        //        MolapExecutor executor = new InMemoryQueryExecutor(null);
+        //        CarbonExecutor executor = new InMemoryQueryExecutor(null);
         String selectedTabName = cube.getFactTableName();
         long selectedTabCount = Long.MAX_VALUE;
         for (String tableName : aggtablesMsrs) {
@@ -717,7 +717,7 @@ public final class CarbonQueryParseUtil {
             }
         }
         Object trans = extraProps.get(CarbonQuery.TRANSFORMATIONS);
-        model.setMolapTransformations((List) trans);
+        model.setCarbonTransformations((List) trans);
     }
 
     /**
@@ -783,7 +783,7 @@ public final class CarbonQueryParseUtil {
                 axisType = AxisType.SLICE;
             }
             for (CarbonLevelHolder holder : dims) {
-                if (holder.getLevel().getType().equals(MolapLevelType.DIMENSION)) {
+                if (holder.getLevel().getType().equals(CarbonLevelType.DIMENSION)) {
                     processDimension(cube, factTableName, queryDimsRows, queryDimsCols, constraints,
                             constraintsAfterTopN, sortTypes, errors, holder, axisType,
                             model.isAnalyzer(), filetrWrapperConstMap,
@@ -797,9 +797,9 @@ public final class CarbonQueryParseUtil {
             }
         }
 
-        //        for(Entry<String, MolapFilterWrapper> entry : filetrWrapperConstMap.entrySet())
+        //        for(Entry<String, CarbonFilterWrapper> entry : filetrWrapperConstMap.entrySet())
         //        {
-        //            MolapFilterWrapper value = entry.getValue();
+        //            CarbonFilterWrapper value = entry.getValue();
         //            fillConstraints(queryImpl, constraints, value, cube);
         //        }
 
@@ -869,8 +869,8 @@ public final class CarbonQueryParseUtil {
      * @param value
      *
      *//*
-    private static void fillConstraints(MolapQueryImpl queryImpl, Map<Dimension, MolapFilterInfo> constraints,
-            MolapFilterWrapper value, Cube cube)
+    private static void fillConstraints(CarbonQueryImpl queryImpl, Map<Dimension, CarbonFilterInfo> constraints,
+            CarbonFilterWrapper value, Cube cube)
     {
         if((null != queryImpl.getExtraProperties())
                 && "true".equals(queryImpl.getExtraProperties().get("ANALYZER_QUERY")))
@@ -906,8 +906,8 @@ public final class CarbonQueryParseUtil {
             boolean isBreakHierarchy) {
         CarbonMeasure measure = (CarbonMeasure) holder.getLevel();
         Measure msr = null;
-        if (measure.getType().equals(MolapLevelType.CALCULATED_MEASURE)) {
-            if (measure.getType().equals(MolapLevelType.CALCULATED_MEASURE)) {
+        if (measure.getType().equals(CarbonLevelType.CALCULATED_MEASURE)) {
+            if (measure.getType().equals(CarbonLevelType.CALCULATED_MEASURE)) {
                 CarbonCalculatedMeasure mcm = (CarbonCalculatedMeasure) measure;
                 CalculatedMeasure cmsr = new CalculatedMeasure(null, measure.getName());
                 if (mcm.getGroupDimensionLevel() != null) {
@@ -998,7 +998,7 @@ public final class CarbonQueryParseUtil {
         Dimension dim = cube.getDimensionByLevelName(dimensionLevel.getDimensionName(),
                 dimensionLevel.getHierarchyName(), dimensionLevel.getName(), factTableName);
         if (dim == null) {
-            //            if(holder.getLevel().getType().equals(MolapLevelType.DYNAMIC_DIMENSION))
+            //            if(holder.getLevel().getType().equals(CarbonLevelType.DYNAMIC_DIMENSION))
             //            {
             //                Dimension dimension = new Dimension(dimensionLevel.getName(), 0, dimensionLevel.getName(),cube);
             //                dimension.setHierName(dimensionLevel.getHierarchyName());
@@ -1065,7 +1065,7 @@ public final class CarbonQueryParseUtil {
             Dimension dim, CarbonDimensionLevelFilter dimLevelFilter,
             Map<String, CarbonFilterWrapper> filetrWrapperConstMap) {
         if (dimLevelFilter != null) {
-            CarbonFilterInfo carbonFilterInfoCurrent = getMolapFilterInfo(dimLevelFilter);
+            CarbonFilterInfo carbonFilterInfoCurrent = getCarbonFilterInfo(dimLevelFilter);
             if (dimLevelFilter.isAfterTopN()) {
                 if (isAnalyzerQuery) {
                     carbonFilterInfoCurrent = createFilterForTopNAfter(carbonFilterInfoCurrent);
@@ -1125,15 +1125,15 @@ public final class CarbonQueryParseUtil {
                 }
 
                 constraints.put(dim, carbonFilterInfoCurrent);
-                //                MolapFilterWrapper molapFilterWrapper = filetrWrapperConstMap.get(dim.getDimName() + '_' +dim.getHierName());
+                //                CarbonFilterWrapper carbonFilterWrapper = filetrWrapperConstMap.get(dim.getDimName() + '_' +dim.getHierName());
                 //
-                //                if(null == molapFilterWrapper)
+                //                if(null == carbonFilterWrapper)
                 //                {
-                //                    molapFilterWrapper = new MolapFilterWrapper();
-                //                    filetrWrapperConstMap.put(dim.getDimName() + '_' + dim.getHierName(), molapFilterWrapper);
+                //                    carbonFilterWrapper = new CarbonFilterWrapper();
+                //                    filetrWrapperConstMap.put(dim.getDimName() + '_' + dim.getHierName(), carbonFilterWrapper);
                 //
                 //                }
-                //                molapFilterWrapper.addDimensionAndFilter(dim, dimLevelFilter);
+                //                carbonFilterWrapper.addDimensionAndFilter(dim, dimLevelFilter);
 
             }
         }
@@ -1188,7 +1188,7 @@ public final class CarbonQueryParseUtil {
     }
 
     /**
-     * Convert MolapMeasureFilter to the MeasureFilterModel objects.
+     * Convert CarbonMeasureFilter to the MeasureFilterModel objects.
      *
      * @param msrFilters
      * @param isBreakHierarchy
@@ -1223,7 +1223,7 @@ public final class CarbonQueryParseUtil {
 
     }
 
-    private static CarbonFilterInfo getMolapFilterInfo(CarbonDimensionLevelFilter dimLevelFilter) {
+    private static CarbonFilterInfo getCarbonFilterInfo(CarbonDimensionLevelFilter dimLevelFilter) {
 
         CarbonFilterInfo filterInfo;
         if (dimLevelFilter.getContainsFilter().size() > 0
@@ -1267,7 +1267,7 @@ public final class CarbonQueryParseUtil {
                 dimensionLevel.getHierarchyName(), dimensionLevel.getName(), tableName);
         CarbonMeasure measure = topCount.getMsr();
         Measure msr = null;
-        if (measure.getType().equals(MolapLevelType.CALCULATED_MEASURE)) {
+        if (measure.getType().equals(CarbonLevelType.CALCULATED_MEASURE)) {
             msr = new CalculatedMeasure(null, measure.getName());
         } else {
             msr = cube.getMeasure(cube.getFactTableName(), measure.getName());
@@ -1308,7 +1308,7 @@ public final class CarbonQueryParseUtil {
         }
 
         TopNModel model = new TopNModel(topCount.getCount(),
-                TopNModel.MolapTopNType.valueOf(topCount.getType().name()), dim, msr);
+                TopNModel.CarbonTopNType.valueOf(topCount.getType().name()), dim, msr);
         model.setDimIndex(dimIndex);
         model.setMsrIndex(msrIndex);
         model.setAxisType(axisType);
@@ -1413,7 +1413,7 @@ public final class CarbonQueryParseUtil {
          * Modified for DTS2013092604161
          *
          * Getting StringIndexOutOfBoundsException and NullPointerException in
-         * UniBIServer.log while creating molap report with empty data
+         * UniBIServer.log while creating carbon report with empty data
          *
          */
         boolean isProperRange = i + 1 <= length && openBracketIndex < i + 1;

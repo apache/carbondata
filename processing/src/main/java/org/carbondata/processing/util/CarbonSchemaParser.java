@@ -69,7 +69,7 @@ public final class CarbonSchemaParser {
      * Get a Mondrian Schema,not connects to the DB
      *
      * @param catalogUrl The schema file path
-     * @return MolapDef.Schema
+     * @return CarbonDef.Schema
      */
     public static Schema loadXML(String catalogUrl) {
         Schema xmlSchema = null;
@@ -157,7 +157,7 @@ public final class CarbonSchemaParser {
             if (aggregateTable.length > 0) {
                 for (int i = 0; i < aggregateTable.length; i++) {
                     if (tableNames.contains(aggregateTable[i].getAggregateTableName())) {
-                        LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                        LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                                 "Invalid Schema: Two aggregate table having same name");
                         return false;
                     }
@@ -167,7 +167,7 @@ public final class CarbonSchemaParser {
                     aggregator = aggregateTable[i].getAggregator();
                     for (int j = 0; j < aggregator.length; j++) {
                         if (null == aggregator[j]) {
-                            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                                     "Invalid Schema: Invalid measure name in aggreagte table ");
                             return false;
                         }
@@ -176,14 +176,14 @@ public final class CarbonSchemaParser {
                 for (int i = 0; i < aggregateTable.length; i++) {
                     if (null == aggregateTable[i].getAggLevels()
                             || aggregateTable[i].getAggLevels().length < 1) {
-                        LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                        LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                                 "Invalid Schema: Invalid aggreagte table as levels are not present in aggregate table: "
                                         + aggregateTable[i].getAggregateTableName());
                         return false;
                     }
                     if (null == aggregateTable[i].getAggMeasure()
                             || aggregateTable[i].getAggMeasure().length < 1) {
-                        LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                        LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                                 "Invalid Schema: Invalid aggreagte table as measure are present in aggregate table: "
                                         + aggregateTable[i].getAggregateTableName());
                         return false;
@@ -215,7 +215,7 @@ public final class CarbonSchemaParser {
             for (Hierarchy hierarchy : hierarchies) {
                 if (isNormalizedCheck) {
                     if (hierarchy.normalized) {
-                        LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                        LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                                 "Nomalized Hierarchy is No Supported in Case of Auto Aggrgetaion : "
                                         + hierarchy.name);
                         return false;
@@ -227,22 +227,22 @@ public final class CarbonSchemaParser {
                 boolean primaryKeyPresent =
                         hierarchy.primaryKey != null && hierarchy.primaryKey.length() > 0;
                 if (!tablePresent && primaryKeyPresent) {
-                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                             "Table is not present for the hierarchy : " + hierarchy.name
                                     + " but primary key is present");
                     return false;
                 } else if (tablePresent && !primaryKeyPresent) {
-                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                             "Table is present for the hierarchy : " + hierarchy.name
                                     + " but primary key is not present");
                     return false;
                 } else if (!foreignKeyPresent && tablePresent && primaryKeyPresent) {
-                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                             "Table and primary key are present for the hierarchy : "
                                     + hierarchy.name + " but foreign key is missing for dimension");
                     return false;
                 } else if (foreignKeyPresent && !tablePresent) {
-                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                             "Table is not present for the hierarchy : " + hierarchy.name
                                     + " but foreign key is present");
                     return false;
@@ -975,10 +975,10 @@ public final class CarbonSchemaParser {
         }
 /*
         String dimstr = dimString.toString();
-        if(dimstr.length() > 0 && dimstr.endsWith(MolapCommonConstants.COMA_SPC_CHARACTER))
+        if(dimstr.length() > 0 && dimstr.endsWith(CarbonCommonConstants.COMA_SPC_CHARACTER))
         {
             dimstr = dimstr.substring(0, dimstr.length()
-                    - MolapCommonConstants.COMA_SPC_CHARACTER.length());
+                    - CarbonCommonConstants.COMA_SPC_CHARACTER.length());
         }*/
 
         return counter;
@@ -1265,8 +1265,8 @@ public final class CarbonSchemaParser {
             String timeString = "";
             String measureString = "";
 
-            // MolapDef.AggMeasure[] measures = aggTable.measures;
-            // MolapDef.AggLevel[] dimensions = aggTable.levels;
+            // CarbonDef.AggMeasure[] measures = aggTable.measures;
+            // CarbonDef.AggLevel[] dimensions = aggTable.levels;
 
             aggTblMap.put("AggTableName", aggTableName);
             aggTblMap.put("AggTableDim", dimensionString);
@@ -1717,7 +1717,7 @@ public final class CarbonSchemaParser {
         CarbonDef.AggTable[] aggTables = table.aggTables;
         int numberOfAggregates = aggTables.length;
         AggregateTable[] aggregates = new AggregateTable[numberOfAggregates];
-        // MolapDef.AggMeasure[] aggMeasures = new AggMeasure[numberOfAggregates];
+        // CarbonDef.AggMeasure[] aggMeasures = new AggMeasure[numberOfAggregates];
         List<List<String[]>> aggregatorList = new ArrayList<List<String[]>>(numberOfAggregates);
 
         for (int i = 0; i < aggregates.length; i++) {
@@ -1813,7 +1813,7 @@ public final class CarbonSchemaParser {
             if (aggTableName.equals(aggName)) {
                 CarbonDef.AggMeasure[] aggMeasures = aggTables[i].measures;
                 int numOfAgg = aggMeasures.length;
-                //            MolapDef.Measure[] measures = cube.measures;
+                //            CarbonDef.Measure[] measures = cube.measures;
                 //            int numOfMsr = measures.length;
 
                 String[] aggregators = new String[numOfAgg];
@@ -1996,9 +1996,9 @@ public final class CarbonSchemaParser {
 
         //Delete the last & character
       /*  String prop = propString.toString();
-        if(prop.length() > 0 && prop.endsWith(MolapCommonConstants.AMPERSAND_SPC_CHARACTER))
+        if(prop.length() > 0 && prop.endsWith(CarbonCommonConstants.AMPERSAND_SPC_CHARACTER))
         {
-            prop = prop.substring(0, prop.length()-MolapCommonConstants.AMPERSAND_SPC_CHARACTER.length());
+            prop = prop.substring(0, prop.length()-CarbonCommonConstants.AMPERSAND_SPC_CHARACTER.length());
         }*/
         return counter;
     }
@@ -2279,23 +2279,23 @@ public final class CarbonSchemaParser {
             //            if(level.nameColumn != null
             //                    && !"".equals(tableName + '_' + level.nameColumn))
             //            {
-            //                propString.append(MolapCommonConstants.COMA_SPC_CHARACTER);
+            //                propString.append(CarbonCommonConstants.COMA_SPC_CHARACTER);
             //                propString.append(tableName + '_' + level.nameColumn);
             //            }
             //
             //            // Next all properties
             //            for(Property property : level.properties)
             //            {
-            //                propString.append(MolapCommonConstants.COMA_SPC_CHARACTER);
+            //                propString.append(CarbonCommonConstants.COMA_SPC_CHARACTER);
             //                propString.append(tableName + '_' + property.column);
             //            }
             propString.append(CarbonCommonConstants.COLON_SPC_CHARACTER);
 
         }
         String prop = propString.toString();
-        //        if(prop.length()>0 && prop.endsWith(MolapCommonConstants.COLON_SPC_CHARACTER))
+        //        if(prop.length()>0 && prop.endsWith(CarbonCommonConstants.COLON_SPC_CHARACTER))
         //        {
-        //            prop=prop.substring(0, prop.length()-MolapCommonConstants.COLON_SPC_CHARACTER.length());
+        //            prop=prop.substring(0, prop.length()-CarbonCommonConstants.COLON_SPC_CHARACTER.length());
         //        }
         return prop;
     }
@@ -3406,10 +3406,10 @@ public final class CarbonSchemaParser {
         }
 /*
         String dimstr = dimString.toString();
-        if(dimstr.length() > 0 && dimstr.endsWith(MolapCommonConstants.COMA_SPC_CHARACTER))
+        if(dimstr.length() > 0 && dimstr.endsWith(CarbonCommonConstants.COMA_SPC_CHARACTER))
         {
             dimstr = dimstr.substring(0, dimstr.length()
-                    - MolapCommonConstants.COMA_SPC_CHARACTER.length());
+                    - CarbonCommonConstants.COMA_SPC_CHARACTER.length());
         }*/
 
         return counter;

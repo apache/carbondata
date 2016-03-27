@@ -77,14 +77,14 @@ public final class QueryPartitionHelper {
                 properties.load(fis);
             }
         } catch (Exception e) {
-            LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, e,
+            LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, e,
                     e.getMessage());
         } finally {
             if (null != fis) {
                 try {
                     fis.close();
                 } catch (IOException e) {
-                    LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, e,
+                    LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, e,
                             e.getMessage());
                 }
             }
@@ -106,11 +106,11 @@ public final class QueryPartitionHelper {
             defaultPartitionerClass = properties.getProperty("partitionerClass",
                    "org.carbondata.integration.spark.partition.api.impl.SampleDataPartitionerImpl");
 
-            LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+            LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
                     this.getClass().getSimpleName() + " is using following configurations.");
-            LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+            LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
                     "partitionerClass : " + defaultPartitionerClass);
-            LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+            LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
                     "nodeList : " + Arrays.toString(partitioner.nodeList()));
         }
 
@@ -127,13 +127,13 @@ public final class QueryPartitionHelper {
                 partitionerMap.put(cubeUniqueName, dataPartitioner);
                 loadBalancerMap.put(cubeUniqueName, loadBalancer);
             } catch (ClassNotFoundException e) {
-                LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, e,
+                LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, e,
                         e.getMessage());
             } catch (InstantiationException e) {
-                LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, e,
+                LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, e,
                         e.getMessage());
             } catch (IllegalAccessException e) {
-                LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, e,
+                LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, e,
                         e.getMessage());
             }
         }

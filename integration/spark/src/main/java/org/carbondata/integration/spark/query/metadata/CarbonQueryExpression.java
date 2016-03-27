@@ -29,7 +29,7 @@ import java.util.List;
 import org.carbondata.query.aggregator.MeasureAggregator;
 
 /**
- * To hold the reference to Molap column (measure or dimension in the given expression)
+ * To hold the reference to Carbon column (measure or dimension in the given expression)
  */
 public class CarbonQueryExpression implements Serializable {
 
@@ -50,7 +50,7 @@ public class CarbonQueryExpression implements Serializable {
      */
     private List<CarbonColumn> columns = new ArrayList<CarbonColumn>();
     /**
-     * Identified and delegated from Spark Layer for UDAF in Molap
+     * Identified and delegated from Spark Layer for UDAF in Carbon
      */
     private MeasureAggregator aggregator;
     /**

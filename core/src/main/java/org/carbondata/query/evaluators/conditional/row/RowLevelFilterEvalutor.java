@@ -186,7 +186,7 @@ public class RowLevelFilterEvalutor extends AbstractConditionalEvalutor {
                     set.set(index);
                 }
             } catch (FilterUnsupportedException e) {
-                LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e, e.getMessage());
+                LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e, e.getMessage());
             }
         }
         //CHECKSTYLE:ON
@@ -259,7 +259,7 @@ public class RowLevelFilterEvalutor extends AbstractConditionalEvalutor {
                                     dimColumnEvaluatorInfo.getDimensions());
                     byteStream.close();
                 } catch (IOException e) {
-                    LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e, e.getMessage());
+                    LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e, e.getMessage());
                 }
 
             }

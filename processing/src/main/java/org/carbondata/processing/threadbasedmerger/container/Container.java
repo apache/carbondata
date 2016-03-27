@@ -70,7 +70,7 @@ public class Container {
             {
                 Thread.sleep(10);
             } catch (InterruptedException e) {
-                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
             }
         }
 

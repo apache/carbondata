@@ -34,7 +34,7 @@ import org.junit.Test;
 /**
  *
  * Project Name NSE V3R7C00 
- * Module Name : Molap Data Processor Author K00900841
+ * Module Name : Carbon Data Processor Author K00900841
  * Created Date :21-May-2013 6:42:29 PM FileName : GraphGenerator_UT Class
  * Description : UT class for GraphGenerator Version 1.0
  */
@@ -43,7 +43,7 @@ public class GraphGenerator_UT extends TestCase {
     public void test() {
         assertTrue(true);
     }
-    //    private static final String OUTPUT_LOCATION = "../unibi-solutions/system/molap/etl";
+    //    private static final String OUTPUT_LOCATION = "../unibi-solutions/system/carbon/etl";
     //
     //    private GraphGenerator graphGenerator;
     //
@@ -53,8 +53,8 @@ public class GraphGenerator_UT extends TestCase {
     //    {
     //        File file = new File("");
     //        kettleProperty = System.getProperty("KETTLE_HOME");
-    //        System.setProperty("KETTLE_HOME", file.getAbsolutePath() + File.separator + "molapplugins" + File.separator
-    //                + "molapplugins");
+    //        System.setProperty("KETTLE_HOME", file.getAbsolutePath() + File.separator + "carbonplugins" + File.separator
+    //                + "carbonplugins");
     //        SchemaInfo schemaInfo = new SchemaInfo();
     //        schemaInfo.setSrcConUrl("jdbc:oracle:thin:@10.18.51.145:1521:orcl");
     //        schemaInfo.setSrcDriverName("oracle.jdbc.OracleDriver");
@@ -228,7 +228,7 @@ public class GraphGenerator_UT extends TestCase {
     //    @Test
     //    public void test_GraphGenerator_Check_SortTmpFolderIsPresentStoreLocation()
     //    {
-    //        File file = new File(MolapCommonConstants.STORE_LOCATION_DEFAULT_VAL+File.separator+"Vishal5SecondsTest"+File.separator+"VishalPerfCube"+File.separator+"sortrowtmp");
+    //        File file = new File(CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL+File.separator+"Vishal5SecondsTest"+File.separator+"VishalPerfCube"+File.separator+"sortrowtmp");
     //
     //        if(file.exists())
     //        {

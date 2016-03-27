@@ -50,7 +50,7 @@ public class DistinctCountAggregator implements MeasureAggregator {
      */
     private static final long serialVersionUID = 6313463368629960186L;
     /**
-     * For Spark MOLAP to avoid heavy object transfer it better to flatten the Aggregators. There is no aggregation expected after setting this value.
+     * For Spark CARBON to avoid heavy object transfer it better to flatten the Aggregators. There is no aggregation expected after setting this value.
      */
     private Double computedFixedValue;
     /**
@@ -301,7 +301,7 @@ public class DistinctCountAggregator implements MeasureAggregator {
             } catch (IOException e) {
                 // TODO Auto-generated catch block
                 //                e.printStackTrace();
-                LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e, e.getMessage());
+                LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e, e.getMessage());
             }
         }
     }
@@ -334,7 +334,7 @@ public class DistinctCountAggregator implements MeasureAggregator {
             writeData(outputStream);
         } catch (IOException ex) {
             //            ex.printStackTrace();
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, ex, ex.getMessage());
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, ex, ex.getMessage());
         }
         data = byteStream.toByteArray();
         valueSet = null;

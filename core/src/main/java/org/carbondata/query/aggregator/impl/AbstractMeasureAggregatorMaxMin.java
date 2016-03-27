@@ -26,7 +26,7 @@ import org.carbondata.query.aggregator.MeasureAggregator;
 
 /**
  * AbstractMeasureAggregatorMaxMin
- * Used for custom Molap Aggregator max  min
+ * Used for custom Carbon Aggregator max  min
  */
 public abstract class AbstractMeasureAggregatorMaxMin implements MeasureAggregator {
     private static final long serialVersionUID = 1L;

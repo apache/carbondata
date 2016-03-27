@@ -29,7 +29,7 @@ import java.util.List;
 import org.carbondata.core.constants.CarbonCommonConstants;
 
 /**
- * It is filter class for Molap dimension.
+ * It is filter class for Carbon dimension.
  */
 public class CarbonDimensionFilter implements Serializable {
     /**

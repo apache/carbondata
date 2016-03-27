@@ -31,8 +31,8 @@ public final class CheckPointHanlder {
      */
     public static final boolean IS_CHECK_POINT_NEEDED = Boolean.valueOf(
             CarbonProperties.getInstance()
-                    .getProperty(CarbonCommonConstants.MOLAP_DATALOAD_CHECKPOINT,
-                            CarbonCommonConstants.MOLAP_DATALOAD_CHECKPOINT_DEFAULTVALUE));
+                    .getProperty(CarbonCommonConstants.CARBON_DATALOAD_CHECKPOINT,
+                            CarbonCommonConstants.CARBON_DATALOAD_CHECKPOINT_DEFAULTVALUE));
     /**
      * dummyCheckPoint
      */

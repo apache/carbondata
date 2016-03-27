@@ -174,7 +174,7 @@ public class CarbonFactReaderStep extends BaseStep implements StepInterface {
     public boolean processRow(StepMetaInterface smi, StepDataInterface sdi) throws KettleException {
         try {
             if (first) {
-                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "File Based fact reader will be used For " + meta.getTableName());
                 meta = (CarbonFactReaderMeta) smi;
                 data = (CarbonFactReaderData) sdi;
@@ -189,7 +189,7 @@ public class CarbonFactReaderStep extends BaseStep implements StepInterface {
                             .getProperty(CarbonCommonConstants.NUM_CORES_LOADING,
                                     CarbonCommonConstants.DEFAULT_NUMBER_CORES));
                 } catch (NumberFormatException e) {
-                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                             "Invalid Value for: " + CarbonCommonConstants.NUM_CORES_LOADING
                                     + "Default Value: " + CarbonCommonConstants.DEFAULT_NUMBER_CORES
                                     + " will be used");
@@ -203,13 +203,13 @@ public class CarbonFactReaderStep extends BaseStep implements StepInterface {
             this.executorService.submit(c);
             this.executorService.shutdown();
             this.executorService.awaitTermination(1, TimeUnit.DAYS);
-            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "Record Procerssed For table: " + meta.getTableName());
             String logMessage =
-                    "Summary: Molap Fact Reader Step: Read: " + 0 + ": Write: " + writeCounter;
-            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, logMessage);
+                    "Summary: Carbon Fact Reader Step: Read: " + 0 + ": Write: " + writeCounter;
+            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, logMessage);
         } catch (Exception ex) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, ex);
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, ex);
             throw new RuntimeException(ex);
         }
         setOutputDone();
@@ -543,7 +543,7 @@ public class CarbonFactReaderStep extends BaseStep implements StepInterface {
                     String cubeUniqueName = meta.getSchemaName() + "_" + meta.getCubeName();
                     Cube cube = CarbonMetadata.getInstance().getCube(cubeUniqueName);
                     if (null == cube) {
-                        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                                 "cube not loaded: " + meta.getTableName());
                         return null;
                     }
@@ -579,7 +579,7 @@ public class CarbonFactReaderStep extends BaseStep implements StepInterface {
                         }
                     }
                     if (null == requiredSlice) {
-                        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                                 "No sctive slices for the request load folder : " + loadName);
                         return null;
                     }
@@ -587,7 +587,7 @@ public class CarbonFactReaderStep extends BaseStep implements StepInterface {
                             getSliceExecutionInfo(cube, activeSlices, requiredSlice, sliceMataData,
                                     currentSliceIndex);
                     if (null == latestSliceInfo) {
-                        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                                 "No slice execution info object created: " + meta.getTableName());
                         return null;
                     }
@@ -620,18 +620,18 @@ public class CarbonFactReaderStep extends BaseStep implements StepInterface {
                         putRow(data.outputRowMeta, next);
                         writeCounter++;
                         if (writeCounter % logCounter == 0) {
-                            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                                     "Record Procerssed For table: " + meta.getTableName());
-                            String logMessage = "Molap Fact Reader Step: Read: " + 0 + ": Write: "
+                            String logMessage = "Carbon Fact Reader Step: Read: " + 0 + ": Write: "
                                     + writeCounter;
-                            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                                     logMessage);
                         }
                         j = 0;
                     }
                 }
             } catch (Exception e) {
-                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e, "");
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e, "");
                 threadStatusObserver.notifyFailed(e);
                 throw e;
             }
@@ -652,7 +652,7 @@ public class CarbonFactReaderStep extends BaseStep implements StepInterface {
          */
         public void notifyFailed(Throwable exception) throws Exception {
             executorService.shutdownNow();
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, exception);
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, exception);
             throw new Exception(exception);
         }
     }

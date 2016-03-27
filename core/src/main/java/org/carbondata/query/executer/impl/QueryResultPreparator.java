@@ -79,7 +79,7 @@ public class QueryResultPreparator {
     }
 
     public ChunkResult prepareQueryOutputResult(QueryResult result) {
-        LOGGER.debug(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                 "###########################################------ Started preparing the result");
         if ((null == result || result.size() < 1)) {
             return new ChunkResult();
@@ -280,7 +280,7 @@ public class QueryResultPreparator {
                         row[dimensionAggregatorInfo.getOrderList().get(j)] = msrAgg[index++].get();
                     }
                 }
-                //                values.add(new MolapValue(msrAgg));
+                //                values.add(new CarbonValue(msrAgg));
                 for (int i = 0; i < queryModel.getExpressions().size(); i++) {
                     row[queryModel.getExpressions().get(i).getQueryOrder()] =
                             ((MeasureAggregator) surrogateResult[dimensionCount
@@ -348,7 +348,7 @@ public class QueryResultPreparator {
             values.add(new CarbonValue(new MeasureAggregator[0]));
             keys.add(new CarbonKey(row));
         }
-        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                 "###########################################------ Total Number of records"
                         + resultDataA[0].length);
         ChunkResult chunkResult = new ChunkResult();

@@ -25,9 +25,4 @@
    tooltip="Carbon Sort"
    category="Carbon"
    classname="org.carbondata.processing.sortandgroupby.sortDataStep.SortKeyStepMeta">
-		<libraries>
-		<library name="molap-core-3.70.0.jar"/>
-    	<library name="molap-dataprocessor-3.70.0.jar"/>
-		</libraries>
-		
 </plugin>

@@ -60,7 +60,7 @@ import org.carbondata.query.writer.exception.ResultWriterException;
 
 /**
  * Project Name  : Carbon
- * Module Name   : MOLAP Data Processor
+ * Module Name   : CARBON Data Processor
  * Author    : R00903928,k00900841
  * Created Date  : 27-Aug-2015
  * FileName   : ScannedResultProcessorImpl.java
@@ -148,7 +148,7 @@ public class ScannedResultProcessorImpl implements ScannedResultProcessor {
     private void mergeScannedResultsAndWriteToFile(List<Result> scannedResult)
             throws QueryExecutionException {
         long start = System.currentTimeMillis();
-        LOGGER.debug(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "Started a slice result merging");
+        LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "Started a slice result merging");
 
         for (int i = 0; i < scannedResult.size(); i++) {
             mergedScannedResult.merge(scannedResult.get(i));
@@ -158,7 +158,7 @@ public class ScannedResultProcessorImpl implements ScannedResultProcessor {
             if (!isFileBased) {
                 createSpillOverDirectory();
             }
-            //            mergerIntermediateFiles(interMediateLocation,new String[]{MolapCommonConstants.QUERY_OUT_FILE_EXT});
+            //            mergerIntermediateFiles(interMediateLocation,new String[]{CarbonCommonConstants.QUERY_OUT_FILE_EXT});
             writerExecutor.writeResult(mergedScannedResult, ScannedResultProcessorUtil
                             .getMergerChainComparator(info.getMaskedByteRangeForSorting(),
                                     info.getDimensionSortOrder(), info.getDimensionMaskKeys()),
@@ -167,7 +167,7 @@ public class ScannedResultProcessorImpl implements ScannedResultProcessor {
             isFileBased = true;
         }
 
-        LOGGER.debug(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                 "Finished current slice result merging in time (MS) " + (System.currentTimeMillis()
                         - start));
     }
@@ -182,7 +182,7 @@ public class ScannedResultProcessorImpl implements ScannedResultProcessor {
                             "Problem while creating Spill Over Directory");
                 }
             }
-            LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                     "********************************File based query execution");
         } catch (IOException e) {
             throw new QueryExecutionException(e);
@@ -195,7 +195,7 @@ public class ScannedResultProcessorImpl implements ScannedResultProcessor {
         try {
             execService.awaitTermination(1, TimeUnit.DAYS);
         } catch (InterruptedException e1) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                     "Problem in thread termination" + e1.getMessage());
         }
 
@@ -204,7 +204,7 @@ public class ScannedResultProcessorImpl implements ScannedResultProcessor {
             scannedResultList = null;
         }
 
-        LOGGER.debug(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                 "Finished result merging from all slices");
 
         DataProcessorExt processor = getProcessor();
@@ -283,13 +283,13 @@ public class ScannedResultProcessorImpl implements ScannedResultProcessor {
         try {
             writerExecutor.closeWriter();
         } catch (ResultWriterException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                     "Problem while closing stream" + e.getMessage());
         }
         try {
             mergerExecutor.closeMerger();
         } catch (ResultWriterException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                     "Problem while closing stream" + e.getMessage());
         }
     }

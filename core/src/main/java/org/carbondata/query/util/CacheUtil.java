@@ -87,7 +87,7 @@ public final class CacheUtil {
      */
     public static Member[][] getMembersList(String filesLocaton, byte nameColumnIndex,
             String dataType) {
-        LOGGER.debug(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                 "Reading members data from location: " + filesLocaton);
         //        File decryptedFile = decryptEncyptedFile(filesLocaton);
         Member[][] members = processMemberFile(filesLocaton, dataType);
@@ -110,7 +110,7 @@ public final class CacheUtil {
             return fileChannel.readInt();
         } catch (IOException e) {
             //            e.printStackTrace();
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e, e.getMessage());
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e, e.getMessage());
         } finally {
             CarbonUtil.closeStreams(fileChannel);
         }
@@ -133,7 +133,7 @@ public final class CacheUtil {
 
         } catch (IOException e) {
             //            e.printStackTrace();
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e, e.getMessage());
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e, e.getMessage());
         } finally {
             CarbonUtil.closeStreams(fileChannel);
         }
@@ -153,7 +153,7 @@ public final class CacheUtil {
                     .getDataInputStream(filesLocaton, FileFactory.getFileType(filesLocaton),
                             10240));
             CarbonFile memberFile =
-                    FileFactory.getMolapFile(filesLocaton, FileFactory.getFileType(filesLocaton));
+                    FileFactory.getCarbonFile(filesLocaton, FileFactory.getFileType(filesLocaton));
             long size = memberFile.getSize() - 4;
             long skipSize = size;
             long actualSkipSize = 0;
@@ -161,13 +161,13 @@ public final class CacheUtil {
                 actualSkipSize += fileChannel.skip(skipSize);
                 skipSize = skipSize - actualSkipSize;
             }
-            LOGGER.debug(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "Bytes skipped " + skipSize);
+            LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "Bytes skipped " + skipSize);
             int maxVal = fileChannel.readInt();
             return maxVal;
 
         } catch (IOException e) {
             //            e.printStackTrace();
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e, e.getMessage());
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e, e.getMessage());
         } finally {
             CarbonUtil.closeStreams(fileChannel);
         }
@@ -199,7 +199,7 @@ public final class CacheUtil {
             }
         } catch (IOException e) {
             //            e.printStackTrace();
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e, e.getMessage());
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e, e.getMessage());
         } finally {
             CarbonUtil.closeStreams(fileChannel);
         }
@@ -228,7 +228,7 @@ public final class CacheUtil {
             }
         } catch (IOException e) {
             //            e.printStackTrace();
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e, e.getMessage());
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e, e.getMessage());
         } finally {
             CarbonUtil.closeStreams(fileChannel);
         }
@@ -245,7 +245,7 @@ public final class CacheUtil {
      */
     //    private static File decryptEncyptedFile(String memberFile)
     //    {
-    //        String decryptedFilePath = memberFile + MolapCommonConstants.FILE_INPROGRESS_STATUS;
+    //        String decryptedFilePath = memberFile + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
     //
     //        try
     //        {
@@ -253,12 +253,12 @@ public final class CacheUtil {
     //        }
     //        catch(CipherException e)
     //        {
-    //            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "Error while decrypting File");
+    //            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "Error while decrypting File");
     //        }
     //        catch(IOException e)
     //        {
     //            LOGGER.error(
-    //                    MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+    //                    CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
     //                    e, "Not able to encrypt File");
     //        }
     //
@@ -307,19 +307,19 @@ public final class CacheUtil {
             fileChannel =
                     FileFactory.getDataInputStream(filename, FileFactory.getFileType(filename));
             FileType fileType = FileFactory.getFileType(filename);
-            CarbonFile memberFile = FileFactory.getMolapFile(filename, fileType);
+            CarbonFile memberFile = FileFactory.getCarbonFile(filename, fileType);
             members = populateMemberCache(fileChannel, memberFile, filename, dataType);
         } catch (FileNotFoundException f) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                     "@@@@@@  Member file is missing @@@@@@ : " + filename);
         } catch (IOException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                     "@@@@@@  Error while reading Member the file @@@@@@ : " + filename);
         } finally {
             CarbonUtil.closeStreams(fileChannel);
         }
 
-        LOGGER.debug(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                 "Time taken to process file " + filename + " is : " + (System.currentTimeMillis()
                         - startTime));
         return members;
@@ -346,22 +346,22 @@ public final class CacheUtil {
                 return;
             }
             FileType fileType = FileFactory.getFileType(filename);
-            CarbonFile memberFile = FileFactory.getMolapFile(filename, fileType);
+            CarbonFile memberFile = FileFactory.getCarbonFile(filename, fileType);
 
             fileChannel =
                     FileFactory.getDataInputStream(filename, FileFactory.getFileType(filename));
             populateMemberCache(fileChannel, memberFile, filename, dataType);
         } catch (FileNotFoundException f) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                     "@@@@@@  Member file is missing @@@@@@ : " + filename);
         } catch (IOException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                     "@@@@@@  Error while reading Member the file @@@@@@ : " + filename);
         } finally {
             CarbonUtil.closeStreams(fileChannel);
         }
 
-        LOGGER.debug(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                 "Time taken to process file " + filename + " is : " + (System.currentTimeMillis()
                         - startTime));
 
@@ -380,7 +380,7 @@ public final class CacheUtil {
             actualSkipSize += fileChannel.skip(skipSize);
             skipSize = skipSize - actualSkipSize;
         }
-        //        LOGGER.debug(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "Bytes skipped " + skipSize);
+        //        LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "Bytes skipped " + skipSize);
         int maxVal = fileChannel.readInt();
         CarbonUtil.closeStreams(fileChannel);
         fileChannel = FileFactory.getDataInputStream(fileName, FileFactory.getFileType(fileName));
@@ -473,7 +473,7 @@ public final class CacheUtil {
                     levelFileName + CarbonCommonConstants.LEVEL_SORT_INDEX_FILE_EXT,
                     FileFactory.getFileType(levelFileName));
             size = FileFactory
-                    .getMolapFile(levelFileName + CarbonCommonConstants.LEVEL_SORT_INDEX_FILE_EXT,
+                    .getCarbonFile(levelFileName + CarbonCommonConstants.LEVEL_SORT_INDEX_FILE_EXT,
                             FileFactory.getFileType(levelFileName)).getSize();
             // CHECKSTYLE:OFF Approval No:Approval-V1R2C10_005
             buffer = ByteBuffer.allocate((int) size);
@@ -482,7 +482,7 @@ public final class CacheUtil {
             sortIndexAndReverseIndexArray.add(getIndexArray(buffer));
             sortIndexAndReverseIndexArray.add(getIndexArray(buffer));
         } catch (IOException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
             throw e;
         } finally {
             CarbonUtil.closeStreams(dataInputStream);
@@ -540,7 +540,7 @@ public final class CacheUtil {
      */
     public static List<long[]> getHierarchiesList(String filesLocaton, int keyLength,
             KeyGenerator keyGen) {
-        LOGGER.debug(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                 "Reading hierarchies from location: " + filesLocaton);
 
         // hierarchies list , this will hold hierarchy surrogate key
@@ -559,7 +559,7 @@ public final class CacheUtil {
                 wrapHiers.add(new ArrayWrapper(keyGen.getKeyArray(line)));
             }
         } catch (IOException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                     "Error while reading the file: " + filesLocaton);
         } finally {
             try {
@@ -567,7 +567,7 @@ public final class CacheUtil {
                     reader.close();
                 }
             } catch (IOException e) {
-                LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                         "Error while closing the file stream for file " + filesLocaton);
             }
         }
@@ -643,7 +643,7 @@ public final class CacheUtil {
     public static long getMemberFileSize(String fileName) {
         if (isFileExists(fileName)) {
             FileType fileType = FileFactory.getFileType(fileName);
-            CarbonFile memberFile = FileFactory.getMolapFile(fileName, fileType);
+            CarbonFile memberFile = FileFactory.getCarbonFile(fileName, fileType);
             return memberFile.getSize();
         }
         return 0;
@@ -660,7 +660,7 @@ public final class CacheUtil {
                 return true;
             }
         } catch (IOException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                     "@@@@@@  Member file not found for size to be calculated @@@@@@ : " + fileName);
         }
         return false;

@@ -60,7 +60,7 @@ public final class GraphExecutionUtil {
      */
     public static CarbonFile getCsvFileToRead(String csvFilePath) {
         CarbonFile csvFile =
-                FileFactory.getMolapFile(csvFilePath, FileFactory.getFileType(csvFilePath));
+                FileFactory.getCarbonFile(csvFilePath, FileFactory.getFileType(csvFilePath));
 
         CarbonFile[] listFiles = null;
         if (csvFile.isDirectory()) {
@@ -102,7 +102,7 @@ public final class GraphExecutionUtil {
         FileType fileType = FileFactory.getFileType(csvFile.getAbsolutePath());
 
         if (!csvFile.exists()) {
-            csvFile = FileFactory.getMolapFile(
+            csvFile = FileFactory.getCarbonFile(
                     csvFile.getAbsolutePath() + CarbonCommonConstants.FILE_INPROGRESS_STATUS,
                     fileType);
         }
@@ -113,11 +113,11 @@ public final class GraphExecutionUtil {
                     new BufferedReader(new InputStreamReader(fileReader, Charset.defaultCharset()));
             readLine = bufferedReader.readLine();
         } catch (FileNotFoundException e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
                     "CSV Input File not found  " + e.getMessage());
             throw new DataLoadingException("CSV Input File not found ", e);
         } catch (IOException e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
                     "Not able to read CSV input File  " + e.getMessage());
             throw new DataLoadingException("Not able to read CSV input File ", e);
         } finally {
@@ -180,11 +180,11 @@ public final class GraphExecutionUtil {
         try {
             if (FileFactory.isFileExist(csvFilePath, FileFactory.getFileType(csvFilePath), false)) {
                 CarbonFile carbonFile =
-                        FileFactory.getMolapFile(csvFilePath, FileFactory.getFileType(csvFilePath));
+                        FileFactory.getCarbonFile(csvFilePath, FileFactory.getFileType(csvFilePath));
                 return carbonFile.isDirectory();
             }
         } catch (IOException e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
                     "Not able check path exists or not  " + e.getMessage() + "path: "
                             + csvFilePath);
         }
@@ -310,10 +310,10 @@ public final class GraphExecutionUtil {
             readLine = bufferedReader.readLine();
 
         } catch (FileNotFoundException e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
                     "CSV Input File not found  " + e.getMessage());
         } catch (IOException e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
                     "Not able to read CSV input File  " + e.getMessage());
         } finally {
             CarbonUtil.closeStreams(fileReader, bufferedReader);

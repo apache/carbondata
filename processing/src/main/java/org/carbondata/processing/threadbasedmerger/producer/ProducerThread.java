@@ -39,7 +39,7 @@ public class ProducerThread implements Callable<Void> {
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(ProducerThread.class.getName());
     /**
-     * molapSortHolderContainer
+     * carbonSortHolderContainer
      */
     private final Container container;
     /**
@@ -141,7 +141,7 @@ public class ProducerThread implements Callable<Void> {
             isCurrentFilled = true;
 
         } catch (CarbonSortKeyAndGroupByException e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
                     "Proble while creating the heap");
         }
     }
@@ -169,12 +169,12 @@ public class ProducerThread implements Callable<Void> {
             }
 
         } catch (InterruptedException ex) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, ex);
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, ex);
         } catch (Exception e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
             throw e;
         }
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                 "Producer Thread: " + this.counter + ": Done");
         this.container.setDone(true);
         return null;
@@ -190,7 +190,7 @@ public class ProducerThread implements Callable<Void> {
         try {
             buffer = getBuffer();
         } catch (CarbonSortKeyAndGroupByException e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
         }
         if (isForBackupFilling) {
             backUpBuffer = buffer;

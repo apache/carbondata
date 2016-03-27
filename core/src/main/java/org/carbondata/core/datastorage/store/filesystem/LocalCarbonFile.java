@@ -92,7 +92,7 @@ public class LocalCarbonFile implements CarbonFile {
         try {
             return file.getCanonicalPath();
         } catch (IOException e) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, e,
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e,
                     "Exception occured" + e.getMessage());
         }
         return null;

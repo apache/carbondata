@@ -51,7 +51,7 @@ public final class InMemoryTableStore {
      */
     public static final byte QUERY_WAITING = 2;
     /**
-     * Attribute for Molap LOGGER
+     * Attribute for Carbon LOGGER
      */
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(InMemoryTableStore.class.getName());
@@ -64,11 +64,11 @@ public final class InMemoryTableStore {
      */
     private static final byte QUERY_FINISHED_FOR_RELOAD = 3;
     /**
-     * folder name where molap data writer will write
+     * folder name where carbon data writer will write
      */
     private static final String FOLDER_NAME = "Load_";
     /**
-     * restructure folder name where molap data writer will write
+     * restructure folder name where carbon data writer will write
      */
     private static final String RS_FOLDER_NAME = "RS_";
     /**
@@ -154,7 +154,7 @@ public final class InMemoryTableStore {
      * @param cubeKey
      */
     public void clearCache(String cubeKey) {
-        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                 "Removed cube from InMemory : " + cubeKey);
         cubeSliceMap.remove(cubeKey);
         queryExecuteStatusMap.remove(cubeKey);
@@ -185,7 +185,7 @@ public final class InMemoryTableStore {
      * @throws Exception
      */
     public void flushCache() {
-        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "Removed all cubes from cache : ");
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "Removed all cubes from cache : ");
         cubeSliceMap.clear();
         queryExecuteStatusMap.clear();
         cubeNameAndCubeMap.clear();
@@ -213,8 +213,8 @@ public final class InMemoryTableStore {
             listLoadFolders =
                     removeAlreadyLoadedFoldersFromList(listLoadFolders, sliceUpdatedLoadPaths,
                             slices, factTableName);
-            //        String basePath = MolapProperties.getInstance().getProperty(MolapCommonConstants.STORE_LOCATION,
-            //                MolapCommonConstants.STORE_LOCATION_DEFAULT_VAL);
+            //        String basePath = CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION,
+            //                CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
             basePath = basePath + File.separator + schema.name + File.separator + cubeName;
 
             FileType fileType = FileFactory.getFileType(basePath);
@@ -222,7 +222,7 @@ public final class InMemoryTableStore {
             CarbonFile[] list = null;
             try {
                 if (FileFactory.isFileExist(basePath, fileType)) {
-                    file = FileFactory.getMolapFile(basePath, fileType);
+                    file = FileFactory.getCarbonFile(basePath, fileType);
                     list = file.listFiles(new CarbonFileFilter() {
                         @Override
                         public boolean accept(CarbonFile pathname) {
@@ -246,7 +246,7 @@ public final class InMemoryTableStore {
                     });
                 }
             } catch (IOException e) {
-                LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                         "File does not exist :: " + e.getMessage());
             }
             if (null != file && file.exists() && null != list && list.length != 0) {
@@ -352,7 +352,7 @@ public final class InMemoryTableStore {
         try {
             Thread.sleep(milliSeconds);
         } catch (InterruptedException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                     "Interruped exception occurred :: " + e.getMessage());
         }
     }
@@ -364,14 +364,14 @@ public final class InMemoryTableStore {
     private void validateCubeCreationTime(long cubeCreationTime, String cubeUniqueName,
             Cube metadataCube) {
         Long cubeCreationTimeInMap = cubeNameAndCreationTime.get(cubeUniqueName);
-        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                 "cube creation time in map :: " + cubeCreationTimeInMap);
-        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                 "cube creation time sent from driver :: " + cubeCreationTime);
         if (null == cubeCreationTimeInMap) {
             cubeNameAndCreationTime.put(cubeUniqueName, cubeCreationTime);
         } else if (cubeCreationTimeInMap != cubeCreationTime) {
-            LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                     "*******clearing cache as time are different*******");
             performCubeCacheCleanUp(cubeUniqueName, metadataCube);
             cubeNameAndCreationTime.put(cubeUniqueName, cubeCreationTime);
@@ -402,7 +402,7 @@ public final class InMemoryTableStore {
             if (levelInfo.getAccessCount() > 0) {
                 levelInfo.decrementAccessCount();
             }
-            LOGGER.debug(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                     "*****level access count updated for level " + levelCacheUniqueId
                             + " in level LRU cache to :: " + levelInfo.getAccessCount());
         }
@@ -559,7 +559,7 @@ public final class InMemoryTableStore {
             executorService.shutdown();
             executorService.awaitTermination(1, TimeUnit.DAYS);
         } catch (InterruptedException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
         }
     }
 
@@ -635,7 +635,7 @@ public final class InMemoryTableStore {
             if (null != dimensionCache) {
                 dimensionCache.unloadLevelFile(levelInfo.getTableName(), levelInfo.getName(),
                         levelInfo.getName(), levelInfo.getColumn());
-                LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                         "*****unloaded level file for cube " + cubeUniqueName
                                 + " with level name as " + levelInfo.getLoadName() + '_' + levelInfo
                                 .getColumn());
@@ -687,24 +687,24 @@ public final class InMemoryTableStore {
      * @param rolapCube
      * @param basePath
      */
-    //    public void updateCube(MolapDef.Cube rolapCube,String basePath, MolapDef.Schema schema)
+    //    public void updateCube(CarbonDef.Cube rolapCube,String basePath, CarbonDef.Schema schema)
     //    {
     //        String cubeUniqueName = schema.name+'_'+rolapCube.name;
     //        List<RestructureStore> inmemoryCubeList = cubeSliceMap.get(cubeUniqueName);
     //        //
-    //        MolapFile[] sortedFolderListList = getSortedFolderListList(basePath,RS_FOLDER_NAME);
+    //        CarbonFile[] sortedFolderListList = getSortedFolderListList(basePath,RS_FOLDER_NAME);
     //        //
     //        if(null == sortedFolderListList)
     //        {
-    //            LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,"sortedFolderListList is null so returned");
+    //            LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,"sortedFolderListList is null so returned");
     //            return;
     //        }
-    //        for(MolapFile rsFolder : sortedFolderListList)
+    //        for(CarbonFile rsFolder : sortedFolderListList)
     //        {
     //
-    //            MolapFile[] tableFiles = rsFolder.listFiles(new MolapFileFilter()
+    //            CarbonFile[] tableFiles = rsFolder.listFiles(new CarbonFileFilter()
     //            {
-    //                public boolean accept(MolapFile pathname)
+    //                public boolean accept(CarbonFile pathname)
     //                {
     //                    return (pathname.isDirectory());
     //                }
@@ -713,10 +713,10 @@ public final class InMemoryTableStore {
     //            //Coverity Fix added null check
     //            if(null != rsStore)
     //            {
-    //                for(MolapFile tableFolder : tableFiles)
+    //                for(CarbonFile tableFolder : tableFiles)
     //                {
     //                    SliceMetaData smd = readSliceMetaDataFile(tableFolder.getAbsolutePath() + File.separator
-    //                            + MolapCommonConstants.SLICE_METADATA_FILENAME);
+    //                            + CarbonCommonConstants.SLICE_METADATA_FILENAME);
     //                    rsStore.setSliceMetaCache(smd, tableFolder.getName());
     //                    List<InMemoryCube> slices = rsStore.getSlices(tableFolder.getName());
     //                    for(InMemoryCube slice : slices)
@@ -751,12 +751,12 @@ public final class InMemoryTableStore {
             objectInputStream = new ObjectInputStream(stream);
             readObject = (SliceMetaData) objectInputStream.readObject();
         } catch (ClassNotFoundException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
         } catch (FileNotFoundException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                     "@@@@@ SliceMetaData File is missing @@@@@ :" + path);
         } catch (IOException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                     "@@@@@ Error while reading SliceMetaData File @@@@@ :" + path);
         } finally {
             CarbonUtil.closeStreams(objectInputStream, stream);
@@ -769,42 +769,42 @@ public final class InMemoryTableStore {
      * @param basePath
      * @return
      */
-    //    private List<RestructureStore> loadSliceFromFile(MolapDef.Cube rolapCube,String basePath, MolapDef.Schema schema)
+    //    private List<RestructureStore> loadSliceFromFile(CarbonDef.Cube rolapCube,String basePath, CarbonDef.Schema schema)
     //    {
     //        List<RestructureStore> slices = null;
     //        //
-    //        MolapFile[] files = getSortedFolderListList(basePath,RS_FOLDER_NAME);
+    //        CarbonFile[] files = getSortedFolderListList(basePath,RS_FOLDER_NAME);
     //
     //        slices = new ArrayList<RestructureStore>();
     //        //Coverity Fix
     //        if( null == files)
     //        {
-    //            LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG," files are null so return empty array");
+    //            LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG," files are null so return empty array");
     //            return slices;
     //        }
     //
     //        int restructureId=0;
-    //        for(MolapFile rsFolder : files)
+    //        for(CarbonFile rsFolder : files)
     //        {
     //            //
-    //            MolapFile[] tableFiles = rsFolder.listFiles(new MolapFileFilter()
+    //            CarbonFile[] tableFiles = rsFolder.listFiles(new CarbonFileFilter()
     //            {
-    //                public boolean accept(MolapFile pathname)
+    //                public boolean accept(CarbonFile pathname)
     //                {
     //                    return (pathname.isDirectory());
     //                }
     //            });
     //            RestructureStore rsStore = new RestructureStore(rsFolder.getName(),restructureId++);
     ////            rsStore.setFolderName(rsFolder.getName());
-    //            for(MolapFile tableFolder : tableFiles)
+    //            for(CarbonFile tableFolder : tableFiles)
     //            {
     //                //
     //                SliceMetaData smd = readSliceMetaDataFile(tableFolder.getAbsolutePath() + File.separator
-    //                        + MolapCommonConstants.SLICE_METADATA_FILENAME);
+    //                        + CarbonCommonConstants.SLICE_METADATA_FILENAME);
     //                String tableName = tableFolder.getName();
     //                rsStore.setSliceMetaCache(smd, tableName);
-    //                MolapFile[] loadFiles = getSortedFolderListList(tableFolder.getAbsolutePath(),FOLDER_NAME);
-    //                for(MolapFile loadFolder : loadFiles)
+    //                CarbonFile[] loadFiles = getSortedFolderListList(tableFolder.getAbsolutePath(),FOLDER_NAME);
+    //                for(CarbonFile loadFolder : loadFiles)
     //                {
     //                    InMemoryCube cubeCache = new InMemoryCube(schema,rolapCube);
     //                    cubeCache.setRsStore(rsStore);
@@ -835,7 +835,7 @@ public final class InMemoryTableStore {
 
         // Coverity Fix
         if (null == files) {
-            LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                     " files are null so return empty array");
             return slices;
         }
@@ -920,7 +920,7 @@ public final class InMemoryTableStore {
                         executorService.shutdown();
                         executorService.awaitTermination(2, TimeUnit.DAYS);
                     } catch (InterruptedException e) {
-                        LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
+                        LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
                     }
                 }
                 //sort the loads based on the load id since multiple threads are handling addition of slices in rsStore instance.
@@ -992,7 +992,7 @@ public final class InMemoryTableStore {
      */
     private CarbonFile[] getSortedFolderListList(String path, final String folderStsWith,
             final int currentRestructNumber, final boolean isRSFolder) {
-        CarbonFile file = FileFactory.getMolapFile(path, FileFactory.getFileType(path));
+        CarbonFile file = FileFactory.getCarbonFile(path, FileFactory.getFileType(path));
         CarbonFile[] files = null;
         if (file.isDirectory()) {
             files = file.listFiles(new CarbonFileFilter() {
@@ -1061,7 +1061,7 @@ public final class InMemoryTableStore {
                         //                        int f2 = Integer.parseInt(secondFolder.split("_")[1]);
                         return (f1 < f2) ? -1 : (f1 == f2 ? 0 : 1);
                     } catch (Exception e) {
-                        LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
+                        LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
                         return o1.getName().compareTo(o2.getName());
                     }
                 }
@@ -1078,7 +1078,7 @@ public final class InMemoryTableStore {
      */
     public void registerSlice(InMemoryTable deltaCube, RestructureStore rsStore) {
         String cubeUniqueName = deltaCube.getCubeUniqueName();
-        LOGGER.debug(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                 "Adding new slice " + deltaCube.getID() + "For cube " + cubeUniqueName);
         if (null == cubeSliceMap.get(cubeUniqueName)) {
             List<RestructureStore> inMemoryCube =
@@ -1120,7 +1120,7 @@ public final class InMemoryTableStore {
     public void unRegisterSlice(String cubeUniqueName, InMemoryTable deltaCube) {
         if (cubeUniqueName != null && deltaCube != null) {
             cubeSliceMap.get(cubeUniqueName).remove(deltaCube);
-            LOGGER.debug(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                     "Removed slice " + deltaCube.getID() + "For cube " + cubeUniqueName);
         }
     }
@@ -1366,7 +1366,7 @@ public final class InMemoryTableStore {
     }
 
     //    /**
-    //     * create a new MolapConnection here ,so the users not use to wait for the
+    //     * create a new CarbonConnection here ,so the users not use to wait for the
     //     * loading of in-memory when they query
     //     *
     //     * @author Sojer z00218041 2012-9-14
@@ -1374,7 +1374,7 @@ public final class InMemoryTableStore {
     //    private void recreateConnAfterFlushSchema(RolapSchema rolapSchema)
     //    {
     //        rolapSchema.getInternalConnection().getCacheControl(null).flushSchema(rolapSchema);
-    //        MolapMetadata.getInstance().removeCube(rolapSchema.getName());
+    //        CarbonMetadata.getInstance().removeCube(rolapSchema.getName());
     //        RolapConnection rc = rolapSchema.getInternalConnection();
     //        DriverManager.getConnection(rc.getConnectInfo(), null, rc.getDataSource());
     //    }

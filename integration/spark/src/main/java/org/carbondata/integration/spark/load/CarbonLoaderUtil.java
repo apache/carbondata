@@ -96,7 +96,7 @@ public final class CarbonLoaderUtil {
             throws Exception {
         System.setProperty("KETTLE_HOME", kettleHomePath);
         if (!new File(storeLocation).mkdirs()) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "Error while new File(storeLocation).mkdirs() ");
         }
         String outPutLoc = storeLocation + "/etl";
@@ -168,7 +168,7 @@ public final class CarbonLoaderUtil {
 
         // Change to LOCAL for testing in local
         CarbonFile file =
-                FileFactory.getMolapFile(factStorepath, FileFactory.getFileType(factStorepath));
+                FileFactory.getCarbonFile(factStorepath, FileFactory.getFileType(factStorepath));
 
         if (!file.exists()) {
             return new String[0];
@@ -208,7 +208,7 @@ public final class CarbonLoaderUtil {
                     return aggStorepath;
                 }
             } catch (IOException e) {
-                LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+                LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
                         "Problem checking file existence :: " + e.getMessage());
             }
         }
@@ -219,7 +219,7 @@ public final class CarbonLoaderUtil {
             String hdfsStoreLocation, int currentRestructNumber) {
         String baseStorelocation =
                 hdfsStoreLocation + File.separator + schemaName + File.separator + cubeName;
-        int restructFolderNumber = currentRestructNumber/*MolapUtil
+        int restructFolderNumber = currentRestructNumber/*CarbonUtil
                 .checkAndReturnNextRestructFolderNumber(baseStorelocation,
                         "RS_")*/;
 
@@ -286,7 +286,7 @@ public final class CarbonLoaderUtil {
             }
             FileType fileType = FileFactory.getFileType(tableLoc);
             if (FileFactory.isFileExist(tableLoc, fileType)) {
-                CarbonFile carbonFile = FileFactory.getMolapFile(tableLoc, fileType);
+                CarbonFile carbonFile = FileFactory.getCarbonFile(tableLoc, fileType);
                 CarbonFile[] listFiles = carbonFile.listFiles(new CarbonFileFilter() {
                     @Override
                     public boolean accept(CarbonFile path) {
@@ -306,14 +306,14 @@ public final class CarbonLoaderUtil {
         try {
             FileType fileType = FileFactory.getFileType(path);
             if (FileFactory.isFileExist(path, fileType)) {
-                CarbonFile carbonFile = FileFactory.getMolapFile(path, fileType);
+                CarbonFile carbonFile = FileFactory.getCarbonFile(path, fileType);
                 CarbonUtil.deleteFoldersAndFiles(carbonFile);
             }
         } catch (IOException e) {
-            LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+            LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
                     "Unable to delete the given path :: " + e.getMessage());
         } catch (CarbonUtilException e) {
-            LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+            LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
                     "Unable to delete the given path :: " + e.getMessage());
         }
     }
@@ -330,7 +330,7 @@ public final class CarbonLoaderUtil {
                     return true;
                 }
             } catch (IOException e) {
-                LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+                LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
                         "Problem checking file existence :: " + e.getMessage());
             }
         }
@@ -459,11 +459,11 @@ public final class CarbonLoaderUtil {
         try {
             FileFactory.mkdirs(aggLoadFolderLocation, fileType);
         } catch (IOException e) {
-            LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+            LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
                     "Problem creating empty folder created for aggregation table :: " + e
                             .getMessage());
         }
-        LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+        LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
                 "Empty folder created for aggregation table");
     }
 
@@ -533,7 +533,7 @@ public final class CarbonLoaderUtil {
             int rsCounter = currentRestructNumber;
 
             if (rsCounter == -1) {
-                LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+                LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
                         "Unable to find the local store details (RS_-1) " + currentloadedStore);
                 return;
             }
@@ -546,7 +546,7 @@ public final class CarbonLoaderUtil {
             int loadCounter = CarbonUtil.checkAndReturnCurrentLoadFolderNumber(localLoadedTable);
 
             if (loadCounter == -1) {
-                LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+                LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
                         "Unable to find the local store details (Load_-1) " + currentloadedStore);
 
                 return;
@@ -556,7 +556,7 @@ public final class CarbonLoaderUtil {
                     localLoadedTable + File.separator + CarbonCommonConstants.LOAD_FOLDER
                             + loadCounter;
 
-            LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+            LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
                     "Local data loaded folder ... = " + localLoadFolder);
 
             /**
@@ -584,14 +584,14 @@ public final class CarbonLoaderUtil {
 
             String hdfsStoreLoadFolder = hdfsLoadedTable + File.separator + loadName;
 
-            LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+            LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
                     "HDFS data load folder ... = " + hdfsStoreLoadFolder);
 
             /**
              * Copy the data created through latest ETL run, to the HDFS store
              */
 
-            LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+            LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
                     "Copying " + localLoadFolder + " --> " + hdfsStoreLoadFolder);
 
             long time1 = System.currentTimeMillis();
@@ -603,7 +603,7 @@ public final class CarbonLoaderUtil {
             FileType fileType = FileFactory.getFileType(hdfsStoreLoadFolder);
             if (FileFactory.isFileExist(hdfsStoreLoadFolder, fileType)) {
                 CarbonFile carbonFile = FileFactory
-                        .getMolapFile(localLoadFolder, FileFactory.getFileType(localLoadFolder));
+                        .getCarbonFile(localLoadFolder, FileFactory.getFileType(localLoadFolder));
                 CarbonFile[] listFiles = carbonFile.listFiles();
                 for (int i = 0; i < listFiles.length; i++) {
                     fs.copyFromLocalFile(true, true, new Path(listFiles[i].getCanonicalPath()),
@@ -614,7 +614,7 @@ public final class CarbonLoaderUtil {
                         new Path(hdfsStoreLoadFolder));
             }
 
-            LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+            LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
                     "Copying sliceMetaData from " + localLoadedTable + " --> " + hdfsLoadedTable);
 
             /**
@@ -624,12 +624,12 @@ public final class CarbonLoaderUtil {
             fs.copyFromLocalFile(true, true,
                     new Path(localLoadedTable + ("/sliceMetaData" + "." + currentRestructNumber)),
                     new Path(hdfsLoadedTable + ("/sliceMetaData" + "." + sliceRestructNumber)));
-            LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+            LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
                     "Total HDFS copy time (ms):  " + (System.currentTimeMillis() - time1));
 
         } else {
-            LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
-                    "Separate molap.storelocation.hdfs is not configured for hdfs store path");
+            LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
+                    "Separate carbon.storelocation.hdfs is not configured for hdfs store path");
         }
     }
 
@@ -638,7 +638,7 @@ public final class CarbonLoaderUtil {
         CarbonFile carbonFile = null;
         try {
             if (FileFactory.isFileExist(location, fileType)) {
-                carbonFile = FileFactory.getMolapFile(location, fileType);
+                carbonFile = FileFactory.getCarbonFile(location, fileType);
                 CarbonFile[] listFiles = carbonFile.listFiles(new CarbonFileFilter() {
                     @Override
                     public boolean accept(CarbonFile path) {
@@ -656,7 +656,7 @@ public final class CarbonLoaderUtil {
                 }
             }
         } catch (IOException e) {
-            LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+            LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
                     "Inside renameFactFile. Problem checking file existence :: " + e.getMessage());
         }
     }
@@ -741,7 +741,7 @@ public final class CarbonLoaderUtil {
                 extractLoadMetadataFileLocation(loadModel.getSchema(), loadModel.getSchemaName(),
                         loadModel.getCubeName()) + File.separator
                         + CarbonCommonConstants.LOADMETADATA_FILENAME
-                        + CarbonCommonConstants.MOLAP_METADATA_EXTENSION;
+                        + CarbonCommonConstants.CARBON_METADATA_EXTENSION;
         Gson gsonObjectToRead = new Gson();
         List<LoadMetadataDetails> listOfLoadFolderDetails = null;
         DataInputStream dataInputStream = null;
@@ -760,7 +760,7 @@ public final class CarbonLoaderUtil {
 
                 BufferedReader buffReader = new BufferedReader(
                         new InputStreamReader(dataInputStream,
-                                CarbonCommonConstants.MOLAP_DEFAULT_STREAM_ENCODEFORMAT));
+                                CarbonCommonConstants.CARBON_DEFAULT_STREAM_ENCODEFORMAT));
                 listOfLoadFolderDetailsArray =
                         gsonObjectToRead.fromJson(buffReader, LoadMetadataDetails[].class);
             }
@@ -789,7 +789,7 @@ public final class CarbonLoaderUtil {
         String dataLoadLocation =
                 extractLoadMetadataFileLocation(schema, schemaName, cubeName) + File.separator
                         + CarbonCommonConstants.LOADMETADATA_FILENAME
-                        + CarbonCommonConstants.MOLAP_METADATA_EXTENSION;
+                        + CarbonCommonConstants.CARBON_METADATA_EXTENSION;
         DataOutputStream dataOutputStream;
         Gson gsonObjectToWrite = new Gson();
         BufferedWriter brWriter = null;
@@ -801,7 +801,7 @@ public final class CarbonLoaderUtil {
 
             dataOutputStream = writeOperation.openForWrite(FileWriteOperation.OVERWRITE);
             brWriter = new BufferedWriter(new OutputStreamWriter(dataOutputStream,
-                    CarbonCommonConstants.MOLAP_DEFAULT_STREAM_ENCODEFORMAT));
+                    CarbonCommonConstants.CARBON_DEFAULT_STREAM_ENCODEFORMAT));
 
             String metadataInstance = gsonObjectToWrite.toJson(listOfLoadFolderDetails.toArray());
             brWriter.write(metadataInstance);
@@ -811,7 +811,7 @@ public final class CarbonLoaderUtil {
                     brWriter.flush();
                 }
             } catch (Exception e) {
-                LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+                LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
                         "error in  flushing ", e, e.getMessage());
 
             }
@@ -837,7 +837,7 @@ public final class CarbonLoaderUtil {
     }
 
     public static String readCurrentTime() {
-        SimpleDateFormat sdf = new SimpleDateFormat(CarbonCommonConstants.MOLAP_TIMESTAMP);
+        SimpleDateFormat sdf = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP);
         String date = null;
 
         date = sdf.format(new Date());
@@ -998,8 +998,8 @@ public final class CarbonLoaderUtil {
                 CarbonUtil.deleteFoldersAndFiles(new File[] { new File(
                         localStore + File.separator + schemaName + File.separator + cubeName) });
             } catch (CarbonUtilException e) {
-                LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
-                        "Error while MolapUtil.deleteFoldersAndFiles ", e, e.getMessage());
+                LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
+                        "Error while CarbonUtil.deleteFoldersAndFiles ", e, e.getMessage());
             }
         }
     }
@@ -1021,7 +1021,7 @@ public final class CarbonLoaderUtil {
                 int rsCounter = currentRestructNumber;
 
                 if (rsCounter == -1) {
-                    LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+                    LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
                             "Unable to find the local store details (RS_-1) " + currentloadedStore);
                     return;
                 }
@@ -1034,7 +1034,7 @@ public final class CarbonLoaderUtil {
                 int loadCounter = CarbonUtil.checkAndReturnCurrentLoadFolderNumber(localLoadedTable);
 
                 if (loadCounter == -1) {
-                    LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+                    LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
                             "Unable to find the local store details (Load_-1) "
                                     + currentloadedStore);
 
@@ -1046,7 +1046,7 @@ public final class CarbonLoaderUtil {
                         localLoadedTable + File.separator + CarbonCommonConstants.LOAD_FOLDER
                                 + mergedLoadName;
 
-                LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+                LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
                         "Local data loaded folder ... = " + localLoadFolder);
 
                 //Identify the Load_X folder in the HDFS store
@@ -1067,11 +1067,11 @@ public final class CarbonLoaderUtil {
 
                 String hdfsStoreLoadFolder = hdfsLoadedTable + File.separator + localLoadName;
 
-                LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+                LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
                         "HDFS data load folder ... = " + hdfsStoreLoadFolder);
 
                 // Copy the data created through latest ETL run, to the HDFS store
-                LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+                LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
                         "Copying " + localLoadFolder + " --> " + hdfsStoreLoadFolder);
 
                 hdfsStoreLoadFolder = hdfsStoreLoadFolder.replace("\\", "/");
@@ -1081,16 +1081,16 @@ public final class CarbonLoaderUtil {
                 fs.copyFromLocalFile(true, true, new Path(localLoadFolder),
                         new Path(hdfsStoreLoadFolder));
 
-                LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+                LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
                         "Copying sliceMetaData from " + localLoadedTable + " --> "
                                 + hdfsLoadedTable);
 
             } else {
-                LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
-                        "Separate molap.storelocation.hdfs is not configured for hdfs store path");
+                LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
+                        "Separate carbon.storelocation.hdfs is not configured for hdfs store path");
             }
         } catch (Exception e) {
-            LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, e.getMessage());
+            LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e.getMessage());
         }
     }
 }

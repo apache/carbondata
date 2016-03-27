@@ -37,7 +37,7 @@ import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
  * Project Name  : Carbon
- * Module Name   : MOLAP Data Processor
+ * Module Name   : CARBON Data Processor
  * Author    : R00903928,k00900841
  * Created Date  : 27-Aug-2015
  * FileName   : FileBasedResultIteartor.java
@@ -52,29 +52,29 @@ public class FileBasedResultIteartor implements CarbonIterator<QueryResult> {
      */
     private List<LeafNodeInfo> leafNodeInfos;
     private int counter;
-    private QueryDataFileReader molapQueryDataFileReader;
+    private QueryDataFileReader carbonQueryDataFileReader;
     private boolean hasNext;
 
     public FileBasedResultIteartor(String path, DataProcessorInfo info) {
         readLeafNodeInfo(path, info);
-        molapQueryDataFileReader = new QueryDataFileReader(path, info);
+        carbonQueryDataFileReader = new QueryDataFileReader(path, info);
     }
 
     private void readLeafNodeInfo(String path, DataProcessorInfo info) {
-        CarbonFile carbonFile = FileFactory.getMolapFile(path, FileFactory.getFileType(path));
+        CarbonFile carbonFile = FileFactory.getCarbonFile(path, FileFactory.getFileType(path));
         try {
             if (FileFactory.isFileExist(path, FileFactory.getFileType(path))) {
                 leafNodeInfos = CarbonUtil
                         .getLeafNodeInfo(carbonFile, info.getAggType().length, info.getKeySize());
             } else {
-                LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                         "file doesnot exist " + path);
             }
             if (leafNodeInfos.size() > 0) {
                 hasNext = true;
             }
         } catch (IOException e) {
-            LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e.getMessage());
+            LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e.getMessage());
         }
     }
 
@@ -88,14 +88,14 @@ public class FileBasedResultIteartor implements CarbonIterator<QueryResult> {
         QueryResult prepareResultFromFile = null;
         try {
             prepareResultFromFile =
-                    molapQueryDataFileReader.prepareResultFromFile(leafNodeInfos.get(counter));
+                    carbonQueryDataFileReader.prepareResultFromFile(leafNodeInfos.get(counter));
         } catch (ResultReaderException e) {
-            molapQueryDataFileReader.close();
+            carbonQueryDataFileReader.close();
         }
         counter++;
         if (counter >= leafNodeInfos.size()) {
             hasNext = false;
-            molapQueryDataFileReader.close();
+            carbonQueryDataFileReader.close();
         }
         return prepareResultFromFile;
     }

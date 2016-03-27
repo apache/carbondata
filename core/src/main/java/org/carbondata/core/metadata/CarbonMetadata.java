@@ -44,7 +44,7 @@ import org.eigenbase.xom.NodeDef;
 public final class CarbonMetadata {
 
     /**
-     * Attribute for Molap LOGGER
+     * Attribute for Carbon LOGGER
      */
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(CarbonMetadata.class.getName());
@@ -52,7 +52,7 @@ public final class CarbonMetadata {
             new HashMap<String, SqlStatement.Type>(20);
     private static final HashMap<String, String> DBTYPEMAPPING = new HashMap<String, String>();
     /**
-     * MolapMetadata metadata.
+     * CarbonMetadata metadata.
      */
     private static CarbonMetadata metadata = null;
 
@@ -97,9 +97,9 @@ public final class CarbonMetadata {
     }
 
     /**
-     * create the instance of MolapMetadata.
+     * create the instance of CarbonMetadata.
      *
-     * @return MolapMetadata.
+     * @return CarbonMetadata.
      */
     public static synchronized CarbonMetadata getInstance() {
         if (metadata == null) {
@@ -302,7 +302,7 @@ public final class CarbonMetadata {
         for (String columnName : columnNames) {
             Dimension factDimension = cube.getDimension(columnName);
             if (null == factDimension) {
-                LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                         "factDimension is null for coulmn" + columnName);
                 continue;
             }
@@ -395,7 +395,7 @@ public final class CarbonMetadata {
 
                 Dimension factDimension = cube.getDimension(columnName);
                 if (null == factDimension) {
-                    LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                    LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                             "factDimension is null for coulmn" + columnName);
                     continue;
                 }
@@ -520,10 +520,10 @@ public final class CarbonMetadata {
             dimension.setDataType(makeSQLDataTye(lev.type));
             dimension.setParentName(lev.parentname);
             dimension.setOrdinalCol(false);
-            dimension.setTableName(levHolder.molapTableName);
-            dimension.setHierName(levHolder.molapHierName);
+            dimension.setTableName(levHolder.carbonTableName);
+            dimension.setHierName(levHolder.carbonHierName);
             dimension.setActualTableName(levHolder.actualTableName);
-            dimension.setDimName(levHolder.molapDimName);
+            dimension.setDimName(levHolder.carbonDimName);
             dimension.setColumnar(levHolder.rolapLevel.columnar);
             dimension.setDataBlockIndex(blockIndex++);
             boolean hasNameColumn = hasNameColumn(lev);
@@ -657,7 +657,7 @@ public final class CarbonMetadata {
         for (MondrianLevelHolder level : levelList) {
             CarbonDef.Level localLevel = level.rolapLevel;
 
-            if (levHolder.molapTableName.equals(level.molapTableName) && lev.column
+            if (levHolder.carbonTableName.equals(level.carbonTableName) && lev.column
                     .equals(localLevel.column)) {
                 if (levHolder == level) {
                     if (null != localLevel.nameColumn) {
@@ -689,7 +689,7 @@ public final class CarbonMetadata {
         for (MondrianLevelHolder level : levelList) {
             CarbonDef.Level localLevel = level.rolapLevel;
 
-            if (levHolder.molapTableName.equals(level.molapTableName) && lev.column
+            if (levHolder.carbonTableName.equals(level.carbonTableName) && lev.column
                     .equals(localLevel.column)) {
                 if (levHolder == level) {
                     if (null != localLevel.nameColumn) {
@@ -840,9 +840,9 @@ public final class CarbonMetadata {
                     if (ldef instanceof CarbonDef.Level) {
                         CarbonDef.Level lev = (CarbonDef.Level) ldef;
                         MondrianLevelHolder holder = new MondrianLevelHolder();
-                        holder.molapDimName = dimName;
-                        holder.molapHierName = hName;
-                        holder.molapLevelName = lev.name;
+                        holder.carbonDimName = dimName;
+                        holder.carbonHierName = hName;
+                        holder.carbonLevelName = lev.name;
                         holder.rolapLevel = lev;
                         String actualTableName =
                                 hier.relation == null ? factTableName : hier.relation.toString();
@@ -859,9 +859,9 @@ public final class CarbonMetadata {
                             actualTableName = actualTableName.split("\\.")[1];
                         }
                         if (factTableName.equals(tableName)) {
-                            holder.molapTableName = factTableName;
+                            holder.carbonTableName = factTableName;
                         } else {
-                            holder.molapTableName = tableName;
+                            holder.carbonTableName = tableName;
                         }
 
                         if (factTableName.equals(actualTableName)) {
@@ -943,13 +943,13 @@ public final class CarbonMetadata {
     private static class MondrianLevelHolder {
         private CarbonDef.Level rolapLevel;
 
-        private String molapDimName;
+        private String carbonDimName;
 
-        private String molapHierName;
+        private String carbonHierName;
 
-        private String molapLevelName;
+        private String carbonLevelName;
 
-        private String molapTableName;
+        private String carbonTableName;
 
         private String actualTableName;
 
@@ -957,10 +957,10 @@ public final class CarbonMetadata {
         public int hashCode() {
             final int prime = 31;
             int result = 1;
-            result = prime * result + ((molapDimName == null) ? 0 : molapDimName.hashCode());
-            result = prime * result + ((molapHierName == null) ? 0 : molapHierName.hashCode());
+            result = prime * result + ((carbonDimName == null) ? 0 : carbonDimName.hashCode());
+            result = prime * result + ((carbonHierName == null) ? 0 : carbonHierName.hashCode());
             result = prime * result + ((rolapLevel == null) ? 0 : rolapLevel.hashCode());
-            result = prime * result + ((molapLevelName == null) ? 0 : molapLevelName.hashCode());
+            result = prime * result + ((carbonLevelName == null) ? 0 : carbonLevelName.hashCode());
             return result;
         }
 
@@ -976,18 +976,18 @@ public final class CarbonMetadata {
                 return false;
             }
             MondrianLevelHolder other = (MondrianLevelHolder) obj;
-            if (molapDimName == null) {
-                if (other.molapDimName != null) {
+            if (carbonDimName == null) {
+                if (other.carbonDimName != null) {
                     return false;
                 }
-            } else if (!molapDimName.equals(other.molapDimName)) {
+            } else if (!carbonDimName.equals(other.carbonDimName)) {
                 return false;
             }
-            if (molapHierName == null) {
-                if (other.molapHierName != null) {
+            if (carbonHierName == null) {
+                if (other.carbonHierName != null) {
                     return false;
                 }
-            } else if (!molapHierName.equals(other.molapHierName)) {
+            } else if (!carbonHierName.equals(other.carbonHierName)) {
                 return false;
             }
             if (rolapLevel == null) {
@@ -997,11 +997,11 @@ public final class CarbonMetadata {
             } else if (!rolapLevel.equals(other.rolapLevel)) {
                 return false;
             }
-            if (molapLevelName == null) {
-                if (other.molapLevelName != null) {
+            if (carbonLevelName == null) {
+                if (other.carbonLevelName != null) {
                     return false;
                 }
-            } else if (!molapLevelName.equals(other.molapLevelName)) {
+            } else if (!carbonLevelName.equals(other.carbonLevelName)) {
                 return false;
             }
             return true;
@@ -1785,7 +1785,7 @@ public final class CarbonMetadata {
         private Map<String, Set<String>> metaTables =
                 new HashMap<String, Set<String>>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-        private String mode = CarbonCommonConstants.MOLAP_MODE_DEFAULT_VAL;
+        private String mode = CarbonCommonConstants.CARBON_MODE_DEFAULT_VAL;
 
         /**
          * measures.

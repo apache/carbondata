@@ -82,7 +82,7 @@ public class CarbonSortKeyHashbasedAggregator {
         this.type = type;
         //        this.xxHash32 = null;
         boolean useXXHASH = Boolean.valueOf(
-                CarbonProperties.getInstance().getProperty("molap.enableXXHash", "false"));
+                CarbonProperties.getInstance().getProperty("carbon.enableXXHash", "false"));
         if (useXXHASH) {
             xxHash32 = XXHashFactory.fastestInstance().hash32();
         }

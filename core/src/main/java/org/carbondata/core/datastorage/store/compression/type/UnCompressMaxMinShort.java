@@ -33,7 +33,7 @@ import org.carbondata.core.util.ValueCompressionUtil.DataType;
 
 public class UnCompressMaxMinShort implements ValueCompressonHolder.UnCompressValue<short[]> {
     /**
-     * Attribute for Molap LOGGER
+     * Attribute for Carbon LOGGER
      */
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(UnCompressMaxMinShort.class.getName());
@@ -68,7 +68,7 @@ public class UnCompressMaxMinShort implements ValueCompressonHolder.UnCompressVa
         try {
             return (ValueCompressonHolder.UnCompressValue) clone();
         } catch (CloneNotSupportedException ex3) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, ex3, ex3.getMessage());
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, ex3, ex3.getMessage());
         }
         return null;
     }
@@ -99,7 +99,7 @@ public class UnCompressMaxMinShort implements ValueCompressonHolder.UnCompressVa
     public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {
         double maxValue = (double) maxValueObject;
         double[] vals = new double[value.length];
-        CarbonReadDataHolder molapDataHolderObj = new CarbonReadDataHolder();
+        CarbonReadDataHolder carbonDataHolderObj = new CarbonReadDataHolder();
         for (int i = 0; i < vals.length; i++) {
             if (value[i] == 0) {
                 vals[i] = maxValue;
@@ -108,8 +108,8 @@ public class UnCompressMaxMinShort implements ValueCompressonHolder.UnCompressVa
             }
 
         }
-        molapDataHolderObj.setReadableDoubleValues(vals);
-        return molapDataHolderObj;
+        carbonDataHolderObj.setReadableDoubleValues(vals);
+        return carbonDataHolderObj;
     }
 
 }

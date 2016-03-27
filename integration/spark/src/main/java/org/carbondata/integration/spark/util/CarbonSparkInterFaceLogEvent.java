@@ -23,7 +23,7 @@ import org.carbondata.common.logging.LogEvent;
 
 public enum CarbonSparkInterFaceLogEvent implements LogEvent {
 
-    UNIBI_MOLAP_SPARK_INTERFACE_MSG("carbon.spark.interface");
+    UNIBI_CARBON_SPARK_INTERFACE_MSG("carbon.spark.interface");
 
     private String eventCode;
 

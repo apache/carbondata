@@ -75,7 +75,7 @@ public abstract class AbstractColumnarStorageScanner implements ColumnarStorageS
             this.scannedResultProcessor
                     .addScannedResult(columnarAggaregator.getResult(restructurHolder));
         } catch (Exception e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
         }
     }
 

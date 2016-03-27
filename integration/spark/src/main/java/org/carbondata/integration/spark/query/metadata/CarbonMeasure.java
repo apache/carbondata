@@ -176,12 +176,12 @@ public class CarbonMeasure implements CarbonColumn, Serializable {
         }
 
         public AggregatorType getAggType(String aggType) {
-            if ("summolap".equalsIgnoreCase(aggType) || "sum".equalsIgnoreCase(aggType)) {
+            if ("sumcarbon".equalsIgnoreCase(aggType) || "sum".equalsIgnoreCase(aggType)) {
                 return SUM;
-            } else if ("countmolap".equalsIgnoreCase(aggType) || "count"
+            } else if ("countcarbon".equalsIgnoreCase(aggType) || "count"
                     .equalsIgnoreCase(aggType)) {
                 return COUNT;
-            } else if ("avgmolap".equalsIgnoreCase(aggType) || "avg".equalsIgnoreCase(aggType)) {
+            } else if ("avgcarbon".equalsIgnoreCase(aggType) || "avg".equalsIgnoreCase(aggType)) {
                 return AVG;
             } else if (aggType.equalsIgnoreCase("CountDistinctCarbon") || aggType
                     .equalsIgnoreCase("distinct_count")) {

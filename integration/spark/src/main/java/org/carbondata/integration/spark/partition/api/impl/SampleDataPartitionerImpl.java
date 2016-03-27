@@ -70,15 +70,15 @@ public class SampleDataPartitionerImpl implements DataPartitioner {
         numberOfPartitions = partitioner.partitionCount();
 
         partitionColumn = partitioner.partitionColumn()[0];
-        LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+        LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
                 "SampleDataPartitionerImpl initializing with following properties.");
-        LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+        LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
                 "partitionCount: " + numberOfPartitions);
-        LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+        LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
                 "partitionColumn: " + partitionColumn);
-        LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+        LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
                 "basePath: " + basePath);
-        LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+        LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
                 "columns: " + Arrays.toString(columns));
 
         this.baseLocation = basePath;
@@ -137,8 +137,8 @@ public class SampleDataPartitionerImpl implements DataPartitioner {
 
         Map<CarbonDimension, CarbonDimensionFilter> filterMap = queryPlan.getDimensionFilters();
         for (Map.Entry<CarbonDimension, CarbonDimensionFilter> entry : filterMap.entrySet()) {
-            CarbonDimension molapDimension = entry.getKey();
-            if (partitionColumn.equalsIgnoreCase(molapDimension.getDimensionUniqueName())) {
+            CarbonDimension carbonDimension = entry.getKey();
+            if (partitionColumn.equalsIgnoreCase(carbonDimension.getDimensionUniqueName())) {
                 msisdnFilter = entry.getValue();
                 break;
             }

@@ -410,7 +410,7 @@ public class HierarchyBtreeStore implements DataStore {
 
     /**
      * Project Name NSE V3R7C00
-     * Module Name : MOLAP
+     * Module Name : CARBON
      * Author :C00900810
      * Created Date :25-Jun-2013
      * FileName : HierarchyBtreeStore.java

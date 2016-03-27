@@ -87,16 +87,16 @@ public class TableSlicePathInfo {
     private void formInfo(String loadFolderPath) {
         //
         CarbonFile loadPathFolder =
-                FileFactory.getMolapFile(loadFolderPath, FileFactory.getFileType(loadFolderPath));
+                FileFactory.getCarbonFile(loadFolderPath, FileFactory.getFileType(loadFolderPath));
         loadPath = loadPathFolder.getCanonicalPath();
         //        loadFolder = loadPathFolder.getName();
-        //        MolapFile tableFolder = loadPathFolder.getParentFile();
+        //        CarbonFile tableFolder = loadPathFolder.getParentFile();
         //        tableName = tableFolder.getName();
-        //        MolapFile rsPathFolder = tableFolder.getParentFile();
+        //        CarbonFile rsPathFolder = tableFolder.getParentFile();
         //
         //        rsFolder = rsPathFolder.getName();
         //        rsPath = rsPathFolder.getPath();
-        //        MolapFile cubeFolder = rsPathFolder.getParentFile();
+        //        CarbonFile cubeFolder = rsPathFolder.getParentFile();
         //        cubeName = cubeFolder.getName();
         //        schemaName = cubeFolder.getParentFile().getName();
         //        cubeUniqueName=schemaName+'_'+cubeName;

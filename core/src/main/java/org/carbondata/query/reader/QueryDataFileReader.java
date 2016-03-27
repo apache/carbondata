@@ -38,11 +38,11 @@ import org.carbondata.query.schema.metadata.DataProcessorInfo;
 import org.carbondata.query.util.CarbonEngineLogEvent;
 import org.carbondata.query.wrappers.ByteArrayWrapper;
 
-//import org.carbondata.core.engine.executer.calcexp.MolapCalcFunction;
+//import org.carbondata.core.engine.executer.calcexp.CarbonCalcFunction;
 
 /**
  * Project Name  : Carbon
- * Module Name   : MOLAP Data Processor
+ * Module Name   : CARBON Data Processor
  * Author    : R00903928,k00900841
  * Created Date  : 27-Aug-2015
  * FileName   : QueryDataFileReader.java
@@ -124,7 +124,7 @@ public class QueryDataFileReader {
                                 info.getHighCardinalityTypes(), info.getDataTypes());
             }
         } catch (IOException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e,
                     "Problem while reading the query out file");
             throw new ResultReaderException(e);
         } finally {
@@ -140,8 +140,8 @@ public class QueryDataFileReader {
     public void close() {
         if (null != fileHolder) {
             fileHolder.finish();
-            if (!(FileFactory.getMolapFile(filePath, FileFactory.getFileType(filePath)).delete())) {
-                LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            if (!(FileFactory.getCarbonFile(filePath, FileFactory.getFileType(filePath)).delete())) {
+                LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                         "Problem while deleting the pagination temp file" + filePath);
             }
         }

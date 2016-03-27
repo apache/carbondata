@@ -99,7 +99,7 @@ public class BinaryQueryStore implements QueryStore {
             }
             writeQueryToFile(queryDetail, dos);
         } catch (Exception e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                     "Error logging query for cube:" + queryDetail.getCubeName(), e);
 
         } finally {
@@ -216,7 +216,7 @@ public class BinaryQueryStore implements QueryStore {
             }
 
         } catch (Exception e) {
-            LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                     "Error reading querystats:" + queryStatsPath, e);
         } finally {
             CarbonUtil.closeStreams(dis);
@@ -243,15 +243,15 @@ public class BinaryQueryStore implements QueryStore {
             }
             dos.close();
             // renaming temporary file to original
-            if (FileFactory.getMolapFile(queryStatsPath, fileType).delete()) {
-                if (!FileFactory.getMolapFile(tempQueryStatsPath, fileType)
+            if (FileFactory.getCarbonFile(queryStatsPath, fileType).delete()) {
+                if (!FileFactory.getCarbonFile(tempQueryStatsPath, fileType)
                         .renameTo(queryStatsPath)) {
-                    LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                    LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                             "Error renaming querystats_temp to querystats:" + queryStatsPath);
                 }
             }
         } catch (Exception e) {
-            LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                     "Error rewriting querystats:" + queryStatsPath, e);
         } finally {
             CarbonUtil.closeStreams(dos);
@@ -282,18 +282,18 @@ public class BinaryQueryStore implements QueryStore {
             
         }
         
-        MolapFile cubeFile = FileFactory.getMolapFile(queryStatsPath, fileType);
-        MolapFile[] tableFiles = cubeFile.listFiles();
+        CarbonFile cubeFile = FileFactory.getCarbonFile(queryStatsPath, fileType);
+        CarbonFile[] tableFiles = cubeFile.listFiles();
 
         if(null==tableFiles)
         {
             cubeFile.delete();
             return true;
         }
-        for(MolapFile table : tableFiles)
+        for(CarbonFile table : tableFiles)
         {
-            MolapFile[] stats = table.listFiles();
-            for(MolapFile stat : stats)
+            CarbonFile[] stats = table.listFiles();
+            for(CarbonFile stat : stats)
             {
                 stat.delete();
             }

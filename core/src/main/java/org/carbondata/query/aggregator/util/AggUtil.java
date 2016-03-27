@@ -46,7 +46,7 @@ import org.carbondata.query.util.CarbonEngineLogEvent;
 public final class AggUtil {
 
     /**
-     * Attribute for Molap LOGGER
+     * Attribute for Carbon LOGGER
      */
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(AggUtil.class.getName());
@@ -243,37 +243,37 @@ public final class AggUtil {
                     customAggregatorClass.getDeclaredConstructor(KeyGenerator.class, String.class);
             return (MeasureAggregator) declaredConstructor.newInstance(generator, cubeUniqueName);
         } catch (ClassNotFoundException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e,
                     "No custom class named " + aggregatorClassName + " was found");
         }
         //
         catch (SecurityException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e,
                     "Security Exception while loading custom class " + aggregatorClassName);
         }
         //
         catch (NoSuchMethodException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e,
                     "Required constructor for custom class " + aggregatorClassName + " not found");
         } catch (IllegalArgumentException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e,
                     "IllegalArgumentException while loading custom class " + aggregatorClassName);
         }
         //
         catch (InstantiationException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e,
                     "InstantiationException while loading custom class " + aggregatorClassName);
         }
         //
         catch (IllegalAccessException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e,
                     "IllegalAccessException while loading custom class " + aggregatorClassName);
         } catch (InvocationTargetException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e,
                     "InvocationTargetException while loading custom class " + aggregatorClassName);
         }
         // return default sum aggregator in case something wrong happen and log it
-        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                 "Custom aggregator could not be loaded, " + "returning the default Sum Aggregator");
         return null;
     }
@@ -493,7 +493,7 @@ public final class AggUtil {
                 if (current != null && current.getAggregator() != null) {
                     aggregators[i] = (CustomMeasureAggregator) current.getAggregator().getCopy();
                 } else {
-                    LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                    LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                             "Unable to load custom aggregator");
                 }
             } else {

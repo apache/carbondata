@@ -47,7 +47,7 @@ import org.carbondata.query.schema.metadata.SliceExecutionInfo;
 import org.carbondata.query.wrappers.ByteArrayWrapper;
 
 /**
- * Project Name : Carbon Module Name : MOLAP Data Processor Author :
+ * Project Name : Carbon Module Name : CARBON Data Processor Author :
  * R00903928,k00900841 Created Date : 27-Aug-2015 FileName :
  * ScannedResultProcessorUtil.java Description : Utility class for the data
  * processing. Class Version : 1.0
@@ -281,7 +281,7 @@ public final class ScannedResultProcessorUtil {
     }
 
     /**
-     * Returns the list of Molap files with specific extension at a specified
+     * Returns the list of Carbon files with specific extension at a specified
      * location.
      *
      * @param location
@@ -289,7 +289,7 @@ public final class ScannedResultProcessorUtil {
      * @return
      */
     public static CarbonFile[] getFiles(final String location, final String[] extension) {
-        CarbonFile carbonFile = FileFactory.getMolapFile(location, FileFactory.getFileType(location));
+        CarbonFile carbonFile = FileFactory.getCarbonFile(location, FileFactory.getFileType(location));
         CarbonFile[] list = carbonFile.listFiles(new CarbonFileFilter() {
             @Override
             public boolean accept(CarbonFile file) {

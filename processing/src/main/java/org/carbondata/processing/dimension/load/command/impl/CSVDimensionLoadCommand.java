@@ -126,7 +126,7 @@ public class CSVDimensionLoadCommand implements DimensionLoadCommand {
                 dimensionLoadInfo.getSurrogateKeyGen().writeHeirDataToFileAndCloseStreams();
 
             } catch (KeyGenException e) {
-                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "Not able to close the stream for level value and hierarchy files.");
             }
         }
@@ -222,7 +222,7 @@ public class CSVDimensionLoadCommand implements DimensionLoadCommand {
             String dimCsvFile = fileMaps.get(tblName);
 
             if (null == dimCsvFile) {
-                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "For Dimension table : \"" + tblName + " \" CSV file path is NULL.");
                 throw new RuntimeException(
                         "For Dimension table : \"" + dimCsvFile + " \" , CSV file path is NULL.");
@@ -231,7 +231,7 @@ public class CSVDimensionLoadCommand implements DimensionLoadCommand {
             FileType fileType = FileFactory.getFileType(dimCsvFile);
 
             if (!FileFactory.isFileExist(dimCsvFile, fileType)) {
-                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "For Dimension table : \"" + tblName + " \" CSV file not presnt.");
                 throw new RuntimeException(
                         "For Dimension table : \"" + dimCsvFile + " \" ,CSV file not presnt.");
@@ -355,7 +355,7 @@ public class CSVDimensionLoadCommand implements DimensionLoadCommand {
                 File destFile = new File(storePath + File.separator + changedFileName);
 
                 if (!inProgress.renameTo(destFile)) {
-                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                             "Renaming of file is not successfull : " + inProgress
                                     .getAbsolutePath());
                 }

@@ -121,7 +121,7 @@ public class BadRecordslogger {
         String filePath = this.storePath + File.separator + this.fileName
                 + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
         if (null == logFile) {
-            logFile = FileFactory.getMolapFile(filePath, FileFactory.getFileType(filePath));
+            logFile = FileFactory.getCarbonFile(filePath, FileFactory.getFileType(filePath));
         }
 
         try {
@@ -138,16 +138,16 @@ public class BadRecordslogger {
                 outStream = FileFactory.getDataOutputStream(filePath, fileType);
 
                 bufferedWriter = new BufferedWriter(new OutputStreamWriter(outStream,
-                        CarbonCommonConstants.MOLAP_DEFAULT_STREAM_ENCODEFORMAT));
+                        CarbonCommonConstants.CARBON_DEFAULT_STREAM_ENCODEFORMAT));
 
             }
             bufferedWriter.write(logStrings.toString());
             bufferedWriter.newLine();
         } catch (FileNotFoundException e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "Bad Log Files not found");
         } catch (IOException e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "Error While writing bad log File");
         } finally {
             // if the Bad record file is created means it partially success

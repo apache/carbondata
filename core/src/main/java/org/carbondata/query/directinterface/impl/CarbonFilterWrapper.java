@@ -37,7 +37,7 @@ import org.carbondata.query.queryinterface.filter.CarbonFilterInfo;
 import org.carbondata.query.queryinterface.query.metadata.CarbonDimensionLevelFilter;
 
 /**
- * Module Name : MOLAP
+ * Module Name : CARBON
  * Author M00903915
  * Created Date :05-Jan-2015 8:05:45 PM
  * Class Description : This class is used to get the filter applied at the each dimension level.
@@ -60,7 +60,7 @@ public class CarbonFilterWrapper {
      * the method is used to construct the wrapperList
      *
      * @param dim         instance of dimension
-     * @param filterValue instance of MolapDimensionLevelFilter
+     * @param filterValue instance of CarbonDimensionLevelFilter
      * @Author M00903915
      * @Description : addDimensionAndFilter
      */
@@ -102,7 +102,7 @@ public class CarbonFilterWrapper {
             }
 
             if (filterStringList.size() > 0) {
-                carbonFilterInfo = getMolapFilterInfo(this.wrapperList.get(k).dimension,
+                carbonFilterInfo = getCarbonFilterInfo(this.wrapperList.get(k).dimension,
                         this.wrapperList.get(k).filter, cube);
                 carbonFilterInfo.addAllIncludedMembers(filterStringList);
                 constraints.put(this.wrapperList.get(k).dimension, carbonFilterInfo);
@@ -129,7 +129,7 @@ public class CarbonFilterWrapper {
             if (filterStringList.size() > 0) {
                 carbonFilterInfo = constraints.get(this.wrapperList.get(k).dimension);
                 if (null == carbonFilterInfo) {
-                    carbonFilterInfo = getMolapFilterInfo(this.wrapperList.get(k).dimension,
+                    carbonFilterInfo = getCarbonFilterInfo(this.wrapperList.get(k).dimension,
                             this.wrapperList.get(k).filter, cube);
                 }
                 carbonFilterInfo.addAllExcludedMembers(filterStringList);
@@ -147,7 +147,7 @@ public class CarbonFilterWrapper {
                         wrapper.filter.getExcludeFilter().size() < 1
                                 && wrapper.filter.getIncludeFilter().size() < 1)) {
                     constraints.put(wrapper.dimension,
-                            getMolapFilterInfoForSingleFilter(wrapper.filter));
+                            getCarbonFilterInfoForSingleFilter(wrapper.filter));
                 }
             }
         }
@@ -226,13 +226,13 @@ public class CarbonFilterWrapper {
 
     /**
      * @param dimension
-     * @param dimLevelFilter instance of MolapDimensionLevelFilter
+     * @param dimLevelFilter instance of CarbonDimensionLevelFilter
      * @param cube
-     * @return return the instance of MolapaFileterInfo
+     * @return return the instance of CarbonaFileterInfo
      * @Author M00903915
-     * @Description : getMolapFilterInfo
+     * @Description : getCarbonFilterInfo
      */
-    private CarbonFilterInfo getMolapFilterInfo(Dimension dimension,
+    private CarbonFilterInfo getCarbonFilterInfo(Dimension dimension,
             CarbonDimensionLevelFilter dimLevelFilter, Cube cube) {
 
         CarbonFilterInfo filterInfo = null;
@@ -289,12 +289,12 @@ public class CarbonFilterWrapper {
     }
 
     /**
-     * @param dimLevelFilter instance of MolapDimensionLevelFilter
-     * @return return the instance of MolapaFileterInfo
+     * @param dimLevelFilter instance of CarbonDimensionLevelFilter
+     * @return return the instance of CarbonaFileterInfo
      * @Author M00903915
-     * @Description : getMolapFilterInfo
+     * @Description : getCarbonFilterInfo
      */
-    private CarbonFilterInfo getMolapFilterInfoForSingleFilter(
+    private CarbonFilterInfo getCarbonFilterInfoForSingleFilter(
             CarbonDimensionLevelFilter dimLevelFilter) {
 
         CarbonFilterInfo filterInfo = null;

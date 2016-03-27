@@ -149,7 +149,7 @@ public class DimensionDataAggreagtor {
                         complexSurrogates = byteStream.toByteArray();
                         byteStream.close();
                     } catch (IOException e) {
-                        LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
+                        LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
                     }
                 }
                 for (int j = 0; j < dimCountAndDistinctCountAGGIndex[i].length; j++) {

@@ -68,7 +68,7 @@ public class CarbonLeafTupleWrapperIterator implements
         try {
             generateKey = globalKeyGen.generateKey(keyArray);
         } catch (KeyGenException e) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "Error occurred :: " + e.getMessage());
         }
         nextData.setSurrogateKey(generateKey);

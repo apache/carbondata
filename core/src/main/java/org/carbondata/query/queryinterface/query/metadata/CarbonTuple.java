@@ -23,7 +23,7 @@ import java.io.Serializable;
 import java.util.Arrays;
 
 /**
- * MolapTuple class , it contains the each row or column information of query result.
+ * CarbonTuple class , it contains the each row or column information of query result.
  */
 public class CarbonTuple implements Serializable {
     private static final long serialVersionUID = 6432454407461679716L;

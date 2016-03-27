@@ -200,13 +200,13 @@ public abstract class CarbonCSVBasedDimSurrogateKeyGen {
             if (currentFile.length() == 0) {
                 boolean isDeleted = currentFile.delete();
                 if (!isDeleted) {
-                    LOGGER.debug(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                    LOGGER.debug(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                             "Failed to delete file " + currentFile.getName());
                 }
             }
 
             if (!currentFile.renameTo(destFile)) {
-                LOGGER.debug(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.debug(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "Failed to rename from " + currentFile.getName() + " to " + destFile
                                 .getName());
             }
@@ -225,7 +225,7 @@ public abstract class CarbonCSVBasedDimSurrogateKeyGen {
                 if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(tuples)) {
                     tuples = null;
                 }
-                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "Invalid cardinality. Key size exceeded cardinality for: " + carbonInfo
                                 .getDimColNames()[index] + ": MemberValue: " + tuples);
                 return -1;

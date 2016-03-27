@@ -59,7 +59,7 @@ class CarbonContext(val sc: SparkContext, metadataPath: String) extends HiveCont
   experimental.extraStrategies = CarbonStrategy.getStrategy(self) :: Nil
 
   def loadSchema(schemaPath: String, encrypted: Boolean = true, aggTablesGen: Boolean = true, partitioner: Partitioner = null) {
-    CarbonContext.updateMolapPorpertiesPath(this)
+    CarbonContext.updateCarbonPorpertiesPath(this)
     CarbonEnv.getInstance(this).carbonCatalog.loadCube(schemaPath, encrypted, aggTablesGen, partitioner)(this)
   }
 
@@ -80,7 +80,7 @@ class CarbonContext(val sc: SparkContext, metadataPath: String) extends HiveCont
     if (dimFilesPath == null) {
       dimFilesPathLocal = dataPath
     }
-    CarbonContext.updateMolapPorpertiesPath(this)
+    CarbonContext.updateCarbonPorpertiesPath(this)
     LoadCubeAPI(schemaNameLocal, cubeName, dataPath, dimFilesPathLocal, null).run(this)
   }
 
@@ -160,10 +160,10 @@ class CarbonContext(val sc: SparkContext, metadataPath: String) extends HiveCont
     queryStatsCollector.addQueryStats(queryId, queryDetail)
     this.setConf("queryId", queryId)
 
-    CarbonContext.updateMolapPorpertiesPath(this)
+    CarbonContext.updateCarbonPorpertiesPath(this)
     val sqlString = sql.toUpperCase
     val LOGGER = LogServiceFactory.getLogService(CarbonContext.getClass().getName())
-    LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, s"Query [$sqlString]")
+    LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, s"Query [$sqlString]")
     val logicPlan: LogicalPlan = parseSql(sql)
     //val result = new SchemaRDD(this,logicPlan)
     val result = new CarbonDataFrameRDD(sql: String, this, logicPlan)
@@ -284,7 +284,7 @@ object CarbonContext {
                            fileHeader: String = null,
                            escapeChar: String = null,
                            multiLine: Boolean = false)(hiveContext: HiveContext): String = {
-    updateMolapPorpertiesPath(hiveContext)
+    updateCarbonPorpertiesPath(hiveContext)
     var schemaNameLocal = schemaName
     if (schemaNameLocal == null) {
       schemaNameLocal = "default"
@@ -294,11 +294,11 @@ object CarbonContext {
     partitionDataClass.partitionStatus
   }
 
-  final def updateMolapPorpertiesPath(hiveContext: HiveContext) {
-    val molapPropertiesFilePath = hiveContext.getConf("molap.properties.filepath", null)
-    val systemmolapPropertiesFilePath = System.getProperty("molap.properties.filepath", null);
-    if (null != molapPropertiesFilePath && null == systemmolapPropertiesFilePath) {
-      System.setProperty("molap.properties.filepath", molapPropertiesFilePath + "/" + "molap.properties")
+  final def updateCarbonPorpertiesPath(hiveContext: HiveContext) {
+    val carbonPropertiesFilePath = hiveContext.getConf("carbon.properties.filepath", null)
+    val systemcarbonPropertiesFilePath = System.getProperty("carbon.properties.filepath", null);
+    if (null != carbonPropertiesFilePath && null == systemcarbonPropertiesFilePath) {
+      System.setProperty("carbon.properties.filepath", carbonPropertiesFilePath + "/" + "carbon.properties")
     }
   }
 

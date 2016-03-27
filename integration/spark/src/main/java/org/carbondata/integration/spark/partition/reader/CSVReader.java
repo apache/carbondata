@@ -327,7 +327,7 @@ public class CSVReader implements Closeable, Iterable<String[]> {
             if ("Un-terminated quoted field at end of CSV line".equals(e.getMessage())) {
                 badRecordslogger.addBadRecordsToBilder(new String[] { nextLine }, 1,
                         "Un-terminated quoted field at end of CSV line", null);
-                LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+                LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
                         "Found Un-terminated quote @ line [" + this.lineNum + "] : Skipping Line : "
                                 + nextLine);
                 this.skippedLines += 1L;
@@ -337,9 +337,9 @@ public class CSVReader implements Closeable, Iterable<String[]> {
             }
         }
         if (null == nextLine) {
-            LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+            LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
                     "Total Number of Lines : " + --this.lineNum);
-            LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+            LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
                     "Number of Lines Skipped: " + this.skippedLines);
             //            System.out.println("Total Number of Lines : "+ --this.lineNum);
             //            System.out.println("Number of Lines Skipped: "+ this.skippedLines);
@@ -359,9 +359,9 @@ public class CSVReader implements Closeable, Iterable<String[]> {
             }
             String nextLine = getNextLine();
             if (!hasNext) {
-                LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+                LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
                         "Total Number of Lines : " + --this.lineNum);
-                LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+                LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
                         "Number of Lines Skipped: " + this.skippedLines);
                 //             System.out.println("Total Number of Lines : "+ --this.lineNum);
                 //             System.out.println("Number of Lines Skipped: "+ this.skippedLines);
@@ -378,12 +378,12 @@ public class CSVReader implements Closeable, Iterable<String[]> {
                 }
             } catch (IOException e) {
                 if ("Un-terminated quoted field after 10000 characters".equals(e.getMessage())) {
-                    LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+                    LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
                             "Un-terminated quoted field found after 10000 characters in MultiLine "
                                     + "(No. Of Line searched : "
                                     + linesread + " ) starting from Line :" + (
                                     this.lineNum - linesread + 1));
-                    LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+                    LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
                             "Skipped Line Info : " + firstLine);
                     parser.setPending(null);
                     this.skippedLines += 1;

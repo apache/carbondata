@@ -27,15 +27,15 @@ public final class Preference {
      * if benfit ratio is less than configured than ignore it else consider it
      */
     public static final int BENEFIT_RATIO = 10;
-    //molap configuration properties
+    //carbon configuration properties
     //sample load to consider for sampling
-    public static final String AGG_LOAD_COUNT = "molap.agg.loadCount";
+    public static final String AGG_LOAD_COUNT = "carbon.agg.loadCount";
     //no of partition to consider for sampling
-    public static final String AGG_PARTITION_COUNT = "molap.agg.partitionCount";
+    public static final String AGG_PARTITION_COUNT = "carbon.agg.partitionCount";
     // no of fact per load to consider for sampling
-    public static final String AGG_FACT_COUNT = "molap.agg.factCount";
+    public static final String AGG_FACT_COUNT = "carbon.agg.factCount";
     // no of record per fact to consider for sampling
-    public static final String AGG_REC_COUNT = "molap.agg.recordCount";
+    public static final String AGG_REC_COUNT = "carbon.agg.recordCount";
     //maximum aggregate combination suggestion
     public static final int AGG_COMBINATION_SIZE = 100;
     //query stats file saved on store
@@ -55,10 +55,10 @@ public final class Preference {
     /**
      * is it required to cache data stats suggestion
      */
-    public static final String DATA_STATS_SUGG_CACHE = "molap.agg.datastats.cache";
-    public static final String PERFORMANCE_GOAL_KEY = "molap.agg.query.performance.goal";
-    public static final String QUERY_STATS_EXPIRY_DAYS_KEY = "molap.agg.querystats.expiryday";
-    public static final String BENEFIT_RATIO_KEY = "molap.agg.benefit.ratio";
+    public static final String DATA_STATS_SUGG_CACHE = "carbon.agg.datastats.cache";
+    public static final String PERFORMANCE_GOAL_KEY = "carbon.agg.query.performance.goal";
+    public static final String QUERY_STATS_EXPIRY_DAYS_KEY = "carbon.agg.querystats.expiryday";
+    public static final String BENEFIT_RATIO_KEY = "carbon.agg.benefit.ratio";
 
     private Preference() {
 

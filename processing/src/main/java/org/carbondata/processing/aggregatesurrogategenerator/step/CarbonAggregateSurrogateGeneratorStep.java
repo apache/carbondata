@@ -78,7 +78,7 @@ public class CarbonAggregateSurrogateGeneratorStep extends BaseStep implements S
     private AggregateSurrogateGenerator aggregateRecordIterator;
 
     /**
-     * MolapAggregateSurrogateGeneratorStep Constructor to initialize the step
+     * CarbonAggregateSurrogateGeneratorStep Constructor to initialize the step
      *
      * @param stepMeta
      * @param stepDataInterface
@@ -141,12 +141,12 @@ public class CarbonAggregateSurrogateGeneratorStep extends BaseStep implements S
                         CarbonCommonConstants.DATA_LOAD_LOG_COUNTER_DEFAULT_COUNTER);
             }
             if (null == factTuple) {
-                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "Record Procerssed For table: " + meta.getTableName());
                 String logMessage =
-                        "Summary: Molap Auto Aggregate Generator Step: Read: " + readCounter
+                        "Summary: Carbon Auto Aggregate Generator Step: Read: " + readCounter
                                 + ": Write: " + writeCounter;
-                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, logMessage);
+                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, logMessage);
                 setOutputDone();
                 return false;
             }
@@ -154,15 +154,15 @@ public class CarbonAggregateSurrogateGeneratorStep extends BaseStep implements S
             putRow(data.outputRowMeta, this.aggregateRecordIterator.generateSurrogate(factTuple));
             writeCounter++;
             if (readCounter % logCounter == 0) {
-                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "Record Procerssed For table: " + meta.getTableName());
                 String logMessage =
-                        "Molap Auto Aggregate Generator Step: Read: " + readCounter + ": Write: "
+                        "Carbon Auto Aggregate Generator Step: Read: " + readCounter + ": Write: "
                                 + writeCounter;
-                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, logMessage);
+                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, logMessage);
             }
         } catch (Exception ex) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, ex);
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, ex);
             throw new RuntimeException(ex);
         }
         return true;

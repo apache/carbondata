@@ -20,7 +20,7 @@
 package org.carbondata.query.queryinterface.query.metadata;
 
 /**
- * It is abstract class for MolapLevel interface.
+ * It is abstract class for CarbonLevel interface.
  */
 public abstract class AbstractCarbonLevel implements CarbonLevel {
     private static final long serialVersionUID = -1487270452433379657L;

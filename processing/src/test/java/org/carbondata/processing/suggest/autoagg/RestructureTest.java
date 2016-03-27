@@ -49,7 +49,7 @@ public class RestructureTest {
     public void setUpBeforeClass() throws Exception {
         try {
 
-            File file = new File("../../libraries/testData/Molap-Aggregation/restructure/");
+            File file = new File("../../libraries/testData/Carbon-Aggregation/restructure/");
             String basePath = file.getCanonicalPath() + "/";
             String metaPath = basePath + "schemas/default/rs/metadata";
 

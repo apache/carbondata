@@ -25,9 +25,9 @@ public final class GraphGeneratorConstants {
      */
     public static final String TABLE_INPUT = "Table Input";
     /**
-     * MOLAP_SURROGATE_KEY_GENERATOR
+     * CARBON_SURROGATE_KEY_GENERATOR
      */
-    public static final String MOLAP_SURROGATE_KEY_GENERATOR = "Carbon Surrogate Key Generator";
+    public static final String CARBON_SURROGATE_KEY_GENERATOR = "Carbon Surrogate Key Generator";
     /**
      * MDKEY_GENERATOR
      */
@@ -41,26 +41,26 @@ public final class GraphGeneratorConstants {
      */
     public static final String SORT_KEY_AND_GROUPBY = "Sort keys And Group By Step";
     /**
-     * MOLAP_DATA_WRITER
+     * CARBON_DATA_WRITER
      */
-    public static final String MOLAP_DATA_WRITER = "Carbon Data Writer";
+    public static final String CARBON_DATA_WRITER = "Carbon Data Writer";
     /**
-     * MOLAP_SLICE_MERGER
+     * CARBON_SLICE_MERGER
      */
-    public static final String MOLAP_SLICE_MERGER = "Carbon Slice Merger";
+    public static final String CARBON_SLICE_MERGER = "Carbon Slice Merger";
     /**
-     * MOLAP_SLICE_MERGER
+     * CARBON_SLICE_MERGER
      */
-    public static final String MOLAP_FACT_READER = "Carbon Fact Reader";
+    public static final String CARBON_FACT_READER = "Carbon Fact Reader";
     /**
-     * MOLAP_SLICE_MERGER
+     * CARBON_SLICE_MERGER
      */
-    public static final String MOLAP_AGGREGATE_SURROGATE_GENERATOR =
+    public static final String CARBON_AGGREGATE_SURROGATE_GENERATOR =
             "Carbon Agg Surrogate Generator";
     /**
-     * MOLAP_AUTO_AGGREGATE_SLICE_MERGER_ID
+     * CARBON_AUTO_AGGREGATE_SLICE_MERGER_ID
      */
-    public static final String MOLAP_AUTO_AGG_GRAPH_GENERATOR = "Carbon Auto Agg Graph Generator";
+    public static final String CARBON_AUTO_AGG_GRAPH_GENERATOR = "Carbon Auto Agg Graph Generator";
     /**
      * SELECT_REQUIRED_VALUE
      */
@@ -70,41 +70,41 @@ public final class GraphGeneratorConstants {
      */
     public static final String CSV_INPUT = "CSV Input";
     /**
-     * MOLAP_MDKEY_GENERATOR_ID
+     * CARBON_MDKEY_GENERATOR_ID
      */
     public static final String MDKEY_GENERATOR_ID = "MDKeyGen";
     /**
-     * MOLAP_DATA_WRITER_ID
+     * CARBON_DATA_WRITER_ID
      */
-    public static final String MOLAP_DATA_WRITER_ID = "CarbonDataWriter";
+    public static final String CARBON_DATA_WRITER_ID = "CarbonDataWriter";
     /**
-     * MOLAP_SLICE_MERGER_ID
+     * CARBON_SLICE_MERGER_ID
      */
-    public static final String MOLAP_SLICE_MERGER_ID = "CarbonSliceMerger";
+    public static final String CARBON_SLICE_MERGER_ID = "CarbonSliceMerger";
     /**
-     * MOLAP_SLICE_MERGER_ID
+     * CARBON_SLICE_MERGER_ID
      */
-    public static final String MOLAP_SORTKEY_AND_GROUPBY_ID = "CarbonSortKeyGroupBy";
+    public static final String CARBON_SORTKEY_AND_GROUPBY_ID = "CarbonSortKeyGroupBy";
     /**
-     * MOLAP_SLICE_MERGER_ID
+     * CARBON_SLICE_MERGER_ID
      */
     public static final String SORTKEY_ID = "SortKey";
     /**
-     * MOLAP_CSV_BASED_SURROAGATEGEN_ID
+     * CARBON_CSV_BASED_SURROAGATEGEN_ID
      */
-    public static final String MOLAP_CSV_BASED_SURROAGATEGEN_ID = "CarbonCSVBasedSurrogateGen";
+    public static final String CARBON_CSV_BASED_SURROAGATEGEN_ID = "CarbonCSVBasedSurrogateGen";
     /**
-     * MOLAP_CSV_BASED_SURROAGATEGEN_ID
+     * CARBON_CSV_BASED_SURROAGATEGEN_ID
      */
-    public static final String MOLAP_FACT_READER_ID = "CarbonFactReader";
+    public static final String CARBON_FACT_READER_ID = "CarbonFactReader";
     /**
-     * MOLAP_CSV_BASED_SURROAGATEGEN_ID
+     * CARBON_CSV_BASED_SURROAGATEGEN_ID
      */
-    public static final String MOLAP_AUTO_AGG_GRAPH_GENERATOR_ID = "CarbonAutoAggGraphGenerator";
+    public static final String CARBON_AUTO_AGG_GRAPH_GENERATOR_ID = "CarbonAutoAggGraphGenerator";
     /**
-     * MOLAP_AGGREGATE_SURROGATE_GENERATOR_ID
+     * CARBON_AGGREGATE_SURROGATE_GENERATOR_ID
      */
-    public static final String MOLAP_AGGREGATE_SURROGATE_GENERATOR_ID =
+    public static final String CARBON_AGGREGATE_SURROGATE_GENERATOR_ID =
             "CarbonAggSurrogateGenerator";
 
     private GraphGeneratorConstants() {

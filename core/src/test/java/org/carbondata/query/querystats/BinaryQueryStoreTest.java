@@ -54,7 +54,7 @@ public class BinaryQueryStoreTest {
         try {
             File file = new File("src/test/resources/schemas/");
             basePath = file.getCanonicalPath() + "/";
-            CarbonProperties.getInstance().addProperty("molap.storelocation", basePath + "store");
+            CarbonProperties.getInstance().addProperty("carbon.storelocation", basePath + "store");
             CarbonProperties.getInstance().addProperty(Preference.PERFORMANCE_GOAL_KEY, "3");
             CarbonProperties.getInstance().addProperty(Preference.QUERY_STATS_EXPIRY_DAYS_KEY, "30");
             CarbonProperties.getInstance().addProperty(Preference.BENEFIT_RATIO_KEY, "10");

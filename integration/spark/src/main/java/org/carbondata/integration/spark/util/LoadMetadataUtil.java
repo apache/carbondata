@@ -19,7 +19,7 @@
 
 /**
  * Project Name  : Carbon
- * Module Name   : MOLAP Data Processor
+ * Module Name   : CARBON Data Processor
  * Author    : R00903928
  * Created Date  : 15-Sep-2015
  * FileName   : LoadMetadataUtil.java
@@ -94,7 +94,7 @@ public final class LoadMetadataUtil {
                         + rsCounter;
 
         CarbonFile rsFile =
-                FileFactory.getMolapFile(hdfsLoadedTable, FileFactory.getFileType(hdfsLoadedTable));
+                FileFactory.getCarbonFile(hdfsLoadedTable, FileFactory.getFileType(hdfsLoadedTable));
 
         CarbonFile[] aggFiles = rsFile.listFiles(new CarbonFileFilter() {
 

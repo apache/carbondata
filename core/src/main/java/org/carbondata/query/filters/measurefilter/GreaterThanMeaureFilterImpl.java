@@ -20,7 +20,7 @@
 package org.carbondata.query.filters.measurefilter;
 
 import org.carbondata.query.aggregator.MeasureAggregator;
-import org.carbondata.query.executer.calcexp.MolapCalcFunction;
+import org.carbondata.query.executer.calcexp.CarbonCalcFunction;
 
 public class GreaterThanMeaureFilterImpl implements MeasureFilter {
 
@@ -31,7 +31,7 @@ public class GreaterThanMeaureFilterImpl implements MeasureFilter {
     /**
      * Calc function
      */
-    private MolapCalcFunction calcFunction;
+    private CarbonCalcFunction calcFunction;
 
     /**
      * Constructor that takes filter value
@@ -39,7 +39,7 @@ public class GreaterThanMeaureFilterImpl implements MeasureFilter {
      * @param filterValue
      */
     public GreaterThanMeaureFilterImpl(double filterValue, int index,
-            MolapCalcFunction calcFunction) {
+            CarbonCalcFunction calcFunction) {
         this.filterValue = filterValue;
         this.index = index;
         this.calcFunction = calcFunction;

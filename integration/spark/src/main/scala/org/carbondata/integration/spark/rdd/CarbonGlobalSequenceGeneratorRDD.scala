@@ -49,7 +49,7 @@ class CarbonGlobalDimensionsPartition(
  */
 class CarbonGlobalSequenceGeneratorRDD[K, V](
                                              sc: SparkContext,
-                                             keyClass: KeyVal[K, V], molapLoadModel: CarbonLoadModel,
+                                             keyClass: KeyVal[K, V], carbonLoadModel: CarbonLoadModel,
                                              var storeLocation: String,
                                              hdfsStoreLocation: String,
                                              partitioner: Partitioner,
@@ -59,7 +59,7 @@ class CarbonGlobalSequenceGeneratorRDD[K, V](
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
 
   override def getPartitions: Array[Partition] = {
-    val splits = CarbonLoaderUtil.getDimensionSplit(molapLoadModel.getSchema(), molapLoadModel.getCubeName(), partitioner.partitionCount)
+    val splits = CarbonLoaderUtil.getDimensionSplit(carbonLoadModel.getSchema(), carbonLoadModel.getCubeName(), partitioner.partitionCount)
     val result = new Array[Partition](splits.length)
     for (i <- 0 until result.length) {
       //      result(i) = new CarbonDataPartition(id, i, splits(i))
@@ -77,9 +77,9 @@ class CarbonGlobalSequenceGeneratorRDD[K, V](
       val split = theSplit.asInstanceOf[CarbonGlobalDimensionsPartition]
       if (storeLocation == null) {
         storeLocation = System.getProperty("java.io.tmpdir")
-        storeLocation = storeLocation + "/molapstore/" + System.currentTimeMillis()
+        storeLocation = storeLocation + "/carbonstore/" + System.currentTimeMillis()
       }
-      CarbonLoaderUtil.generateGlobalSurrogates(molapLoadModel, hdfsStoreLocation, split.numberOfPartition, split.partitionColumn, split.serializableHadoopSplit, currentRestructNumber)
+      CarbonLoaderUtil.generateGlobalSurrogates(carbonLoadModel, hdfsStoreLocation, split.numberOfPartition, split.partitionColumn, split.serializableHadoopSplit, currentRestructNumber)
 
       var havePair = false
       var finished = false

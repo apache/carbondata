@@ -53,7 +53,7 @@ class CarbonPartition(rddId: Int, val index: Int, @transient val tableSplit: Tab
  */
 class CarbonDataRDD[K, V](
                           sc: SparkContext,
-                          molapQueryModel: CarbonQueryExecutorModel,
+                          carbonQueryModel: CarbonQueryExecutorModel,
                           schema: CarbonDef.Schema,
                           dataPath: String,
                           keyClass: KeyVal[K, V],
@@ -93,58 +93,58 @@ class CarbonDataRDD[K, V](
         val part = split.serializableHadoopSplit.value.getPartition().getUniqueID()
         partitionStatsCollector = PartitionStatsCollector.getInstance
         partitionDetail = new PartitionDetail(part)
-        partitionStatsCollector.addPartitionDetail(molapQueryModel.getQueryId, partitionDetail)
-        cubeUniqueName = molapQueryModel.getCube().getSchemaName() + '_' + part + '_' + molapQueryModel.getCube().getOnlyCubeName() + '_' + part
-        val metaDataPath: String = molapQueryModel.getCube().getMetaDataFilepath()
+        partitionStatsCollector.addPartitionDetail(carbonQueryModel.getQueryId, partitionDetail)
+        cubeUniqueName = carbonQueryModel.getCube().getSchemaName() + '_' + part + '_' + carbonQueryModel.getCube().getOnlyCubeName() + '_' + part
+        val metaDataPath: String = carbonQueryModel.getCube().getMetaDataFilepath()
         var currentRestructNumber = CarbonUtil.checkAndReturnCurrentRestructFolderNumber(metaDataPath, "RS_", false)
         if (-1 == currentRestructNumber) {
           currentRestructNumber = 0
         }
         queryStartTime = System.currentTimeMillis
-        molapQueryModel.setPartitionId(part)
+        carbonQueryModel.setPartitionId(part)
 
         logInfo("Input split: " + split.serializableHadoopSplit.value)
 
         if (part != null) {
-          val molapPropertiesFilePath = System.getProperty("molap.properties.filepath", null)
-          logInfo("*************************" + molapPropertiesFilePath)
-          if (null == molapPropertiesFilePath) {
-            System.setProperty("molap.properties.filepath", System.getProperty("user.dir") + '/' + "conf" + '/' + "molap.properties");
+          val carbonPropertiesFilePath = System.getProperty("carbon.properties.filepath", null)
+          logInfo("*************************" + carbonPropertiesFilePath)
+          if (null == carbonPropertiesFilePath) {
+            System.setProperty("carbon.properties.filepath", System.getProperty("user.dir") + '/' + "conf" + '/' + "carbon.properties");
           }
-          val listOfLoadFolders = CarbonQueryUtil.getSliceLoads(molapQueryModel, dataPath, part)
-          val listOfUpdatedLoadFolders = molapQueryModel.getListOfValidUpdatedSlices
-          val listOfAllLoadFolders = CarbonQueryUtil.getListOfSlices(molapQueryModel.getLoadMetadataDetails)
-          CarbonProperties.getInstance().addProperty("molap.storelocation", baseStoreLocation);
-          CarbonProperties.getInstance().addProperty("molap.cache.used", "false");
+          val listOfLoadFolders = CarbonQueryUtil.getSliceLoads(carbonQueryModel, dataPath, part)
+          val listOfUpdatedLoadFolders = carbonQueryModel.getListOfValidUpdatedSlices
+          val listOfAllLoadFolders = CarbonQueryUtil.getListOfSlices(carbonQueryModel.getLoadMetadataDetails)
+          CarbonProperties.getInstance().addProperty("carbon.storelocation", baseStoreLocation);
+          CarbonProperties.getInstance().addProperty("carbon.cache.used", "false");
           val cube = InMemoryTableStore.getInstance.loadCubeMetadataIfRequired(schema, schema.cubes(0), part, schemaLastUpdatedTime)
-          CarbonQueryUtil.createDataSource(currentRestructNumber, schema, cube, part, listOfLoadFolders, listOfUpdatedLoadFolders, molapQueryModel.getFactTable(), dataPath, cubeCreationTime)
+          CarbonQueryUtil.createDataSource(currentRestructNumber, schema, cube, part, listOfLoadFolders, listOfUpdatedLoadFolders, carbonQueryModel.getFactTable(), dataPath, cubeCreationTime)
           if (InMemoryTableStore.getInstance.isLevelCacheEnabled()) {
-            levelCacheKeys = CarbonQueryUtil.validateAndLoadRequiredSlicesInMemory(molapQueryModel, listOfAllLoadFolders, cubeUniqueName).toList
+            levelCacheKeys = CarbonQueryUtil.validateAndLoadRequiredSlicesInMemory(carbonQueryModel, listOfAllLoadFolders, cubeUniqueName).toList
           }
 
           logInfo("IF Columnar: " + columinar)
-          CarbonProperties.getInstance().addProperty("molap.is.columnar.storage", "true");
-          CarbonProperties.getInstance().addProperty("molap.dimension.split.value.in.columnar", "1");
-          CarbonProperties.getInstance().addProperty("molap.is.fullyfilled.bits", "true");
+          CarbonProperties.getInstance().addProperty("carbon.is.columnar.storage", "true");
+          CarbonProperties.getInstance().addProperty("carbon.dimension.split.value.in.columnar", "1");
+          CarbonProperties.getInstance().addProperty("carbon.is.fullyfilled.bits", "true");
           CarbonProperties.getInstance().addProperty("is.int.based.indexer", "true");
           CarbonProperties.getInstance().addProperty("aggregate.columnar.keyblock", "true");
           CarbonProperties.getInstance().addProperty("high.cardinality.value", "100000");
           CarbonProperties.getInstance().addProperty("is.compressed.keyblock", "false");
-          CarbonProperties.getInstance().addProperty("molap.leaf.node.size", "120000");
+          CarbonProperties.getInstance().addProperty("carbon.leaf.node.size", "120000");
 
-          molapQueryModel.setCube(cube)
-          molapQueryModel.setOutLocation(dataPath)
+          carbonQueryModel.setCube(cube)
+          carbonQueryModel.setOutLocation(dataPath)
         }
-        CarbonQueryUtil.updateDimensionWithHighCardinalityVal(schema, molapQueryModel)
+        CarbonQueryUtil.updateDimensionWithHighCardinalityVal(schema, carbonQueryModel)
 
-        if (CarbonQueryUtil.isQuickFilter(molapQueryModel)) {
-          rowIterator = CarbonQueryUtil.getQueryExecuter(molapQueryModel.getCube(), molapQueryModel.getFactTable()).executeDimension(molapQueryModel);
+        if (CarbonQueryUtil.isQuickFilter(carbonQueryModel)) {
+          rowIterator = CarbonQueryUtil.getQueryExecuter(carbonQueryModel.getCube(), carbonQueryModel.getFactTable()).executeDimension(carbonQueryModel);
         } else {
-          rowIterator = CarbonQueryUtil.getQueryExecuter(molapQueryModel.getCube(), molapQueryModel.getFactTable()).execute(molapQueryModel);
+          rowIterator = CarbonQueryUtil.getQueryExecuter(carbonQueryModel.getCube(), carbonQueryModel.getFactTable()).execute(carbonQueryModel);
         }
       } catch {
         case e: Exception =>
-          LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, e)
+          LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, e)
           updateCubeAndLevelCacheStatus(levelCacheKeys)
           if (null != e.getMessage) {
             sys.error("Exception occurred in query execution :: " + e.getMessage)
@@ -186,10 +186,10 @@ class CarbonDataRDD[K, V](
       }
 
       //merging partition stats to accumulator
-      val partAcc = molapQueryModel.getPartitionAccumulator
+      val partAcc = carbonQueryModel.getPartitionAccumulator
       partAcc.add(partitionDetail)
-      partitionStatsCollector.removePartitionDetail(molapQueryModel.getQueryId)
-      println("*************************** Total Time Taken to execute the query in Molap Side: " +
+      partitionStatsCollector.removePartitionDetail(carbonQueryModel.getQueryId)
+      println("*************************** Total Time Taken to execute the query in Carbon Side: " +
         (System.currentTimeMillis - queryStartTime))
     }
     iter

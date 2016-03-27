@@ -66,7 +66,7 @@ public final class CarbonDataRetentionUtil {
         try {
             columnValDateMember = convertToDateObjectFromStringVal(columnValue, format, true);
         } catch (ParseException e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
                     "Not able to get surrogate key for value : " + columnValue);
             return mapOfSurrKeyAndAvailStatus;
         }
@@ -103,7 +103,7 @@ public final class CarbonDataRetentionUtil {
                     storeDateMember = convertToDateObjectFromStringVal(memberName, format, false);
 
                 } catch (Exception e) {
-                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
                             "Not able to get surrogate key for value : " + memberName);
                     continue;
                 }
@@ -117,7 +117,7 @@ public final class CarbonDataRetentionUtil {
             }
 
         } catch (IOException e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
                     "Not able to read level file for Populating Cache : " + memberFile.getName());
 
         } finally {
@@ -137,8 +137,8 @@ public final class CarbonDataRetentionUtil {
 
             Date dateToConvert = null;
             String dateFormat = CarbonProperties.getInstance()
-                    .getProperty(CarbonCommonConstants.MOLAP_TIMESTAMP_FORMAT,
-                            CarbonCommonConstants.MOLAP_TIMESTAMP_DEFAULT_FORMAT);
+                    .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+                            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
             SimpleDateFormat simpleDateFormat = new SimpleDateFormat(dateFormat);
             // Format the date to Strings
 
@@ -162,7 +162,7 @@ public final class CarbonDataRetentionUtil {
     public static CarbonFile[] getFilesArray(String baseStorePath,
             final String fileNameSearchPattern) {
         FileType fileType = FileFactory.getFileType(baseStorePath);
-        CarbonFile storeFolder = FileFactory.getMolapFile(baseStorePath, fileType);
+        CarbonFile storeFolder = FileFactory.getCarbonFile(baseStorePath, fileType);
 
         CarbonFile[] listFiles = storeFolder.listFiles(new CarbonFileFilter() {
 
@@ -186,7 +186,7 @@ public final class CarbonDataRetentionUtil {
                         currentRestructNumber);
 
         CarbonFile file = FileFactory
-                .getMolapFile(hdfsLevelRSPath + '/', FileFactory.getFileType(hdfsLevelRSPath));
+                .getCarbonFile(hdfsLevelRSPath + '/', FileFactory.getFileType(hdfsLevelRSPath));
 
         CarbonFile[] listFiles = listFiles(file);
         if (null != listFiles) {

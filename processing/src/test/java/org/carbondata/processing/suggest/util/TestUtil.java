@@ -43,7 +43,7 @@ public class TestUtil {
             return null;
         }
         FileFactory.FileType fileType = FileFactory.getFileType(metaDataPath);
-        CarbonFile metaDataFile = FileFactory.getMolapFile(metaDataPath, fileType);
+        CarbonFile metaDataFile = FileFactory.getCarbonFile(metaDataPath, fileType);
         if (!metaDataFile.exists()) {
             return null;
         }
@@ -128,8 +128,8 @@ public class TestUtil {
     public static String getDataStatsAggCombination(String schemaName, String cubeName,
             String tableName) {
         StringBuffer dataStatsPath =
-                new StringBuffer(CarbonUtil.getCarbonStorePath(schemaName, cubeName)/*MolapProperties
-                .getInstance().getProperty(MolapCommonConstants.STORE_LOCATION)*/);
+                new StringBuffer(CarbonUtil.getCarbonStorePath(schemaName, cubeName)/*CarbonProperties
+                .getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION)*/);
         dataStatsPath.append(File.separator).append(Preference.AGGREGATE_STORE_DIR)
                 .append(File.separator).append(schemaName).append(File.separator).append(cubeName)
                 .append(File.separator).append(tableName).append(File.separator)

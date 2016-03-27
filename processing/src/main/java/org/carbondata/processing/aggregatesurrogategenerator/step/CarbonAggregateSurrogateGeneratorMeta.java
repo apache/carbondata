@@ -239,7 +239,7 @@ public class CarbonAggregateSurrogateGeneratorMeta extends BaseStepMeta
     public void check(List<CheckResultInterface> remarks, TransMeta transMeta, StepMeta stepMeta,
             RowMetaInterface prev, String[] input, String[] output, RowMetaInterface info) {
         CheckResult chkResRef = null;
-        // See if we have input streams leading to this step! 
+        //See if we have input streams leading to this step!
         if (input.length > 0) {
             chkResRef = new CheckResult(CheckResult.TYPE_RESULT_OK,
                     "Step is receiving info from other steps.", stepMeta);
@@ -396,7 +396,7 @@ public class CarbonAggregateSurrogateGeneratorMeta extends BaseStepMeta
             factStorePath = rep.getStepAttributeString(idStep, "factStorePath");
         } catch (Exception e) {
             throw new KettleException(BaseMessages.getString(PKG,
-                    "MolapMDKeyStepMeta.Exception.UnexpectedErrorInReadingStepInfo"), e);
+                    "CarbonMDKeyStepMeta.Exception.UnexpectedErrorInReadingStepInfo"), e);
         }
 
     }

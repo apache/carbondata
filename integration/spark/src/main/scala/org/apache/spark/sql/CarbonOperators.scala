@@ -34,7 +34,7 @@ import org.carbondata.query.expression.arithmetic.{AddExpression, DivideExpressi
 import org.carbondata.query.expression.conditional.{EqualToExpression, NotEqualsExpression, _}
 import org.carbondata.query.expression.logical.{AndExpression, OrExpression}
 import org.carbondata.query.expression.ColumnExpression
-import org.carbondata.query.expression.{ColumnExpression => MolapColumnExpression, Expression => MolapExpression, LiteralExpression => MolapLiteralExpression}
+import org.carbondata.query.expression.{ColumnExpression => CarbonColumnExpression, Expression => CarbonExpression, LiteralExpression => CarbonLiteralExpression}
 import org.carbondata.query.querystats.{QueryDetail, QueryStatsCollector}
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.catalyst.expressions._
@@ -220,7 +220,7 @@ case class CarbonCubeScan(
     }
   }
 
-  val buildMolapPlan: CarbonQueryPlan = {
+  val buildCarbonPlan: CarbonQueryPlan = {
     val plan: CarbonQueryPlan = new CarbonQueryPlan(relation.schemaName, relation.cubeName)
 
 
@@ -228,17 +228,17 @@ case class CarbonCubeScan(
     var queryOrder: Integer = 0
     attributes.map(
       attr => {
-        val molapDimension = CarbonQueryUtil.getMolapDimension(cube.getDimensions(cube.getFactTableName()), attr.name);
-        if (molapDimension != null) {
-          //TO-DO if we can add ordina in molapDimension, it will be good
+        val carbonDimension = CarbonQueryUtil.getCarbonDimension(cube.getDimensions(cube.getFactTableName()), attr.name);
+        if (carbonDimension != null) {
+          //TO-DO if we can add ordina in carbonDimension, it will be good
           allDims += attr.name
           val dim = new CarbonDimension(attr.name)
           dim.setQueryOrder(queryOrder);
           queryOrder = queryOrder + 1
           selectedDims += dim
         } else {
-          val molapMeasure = CarbonQueryUtil.getMolapMeasure(attr.name, cube.getMeasures(cube.getFactTableName()));
-          if (molapMeasure != null) {
+          val carbonMeasure = CarbonQueryUtil.getCarbonMeasure(attr.name, cube.getMeasures(cube.getFactTableName()));
+          if (carbonMeasure != null) {
             val m1 = new CarbonMeasure(attr.name)
             m1.setQueryOrder(queryOrder);
             queryOrder = queryOrder + 1
@@ -253,18 +253,18 @@ case class CarbonCubeScan(
     aggExprs match {
       case Some(a: Seq[Expression]) if (!forceDetailedQuery) =>
         a.foreach {
-          case attr@AttributeReference(_, _, _, _) => // Add all the references to molap query
-            val molapDimension = selectedDims.filter(m => m.getDimensionUniqueName.equalsIgnoreCase(attr.name))
-            if (molapDimension.size > 0) {
+          case attr@AttributeReference(_, _, _, _) => // Add all the references to carbon query
+            val carbonDimension = selectedDims.filter(m => m.getDimensionUniqueName.equalsIgnoreCase(attr.name))
+            if (carbonDimension.size > 0) {
               val dim = new CarbonDimension(attr.name)
               dim.setQueryOrder(queryOrder);
               plan.addDimension(dim);
               queryOrder = queryOrder + 1
             } else {
-              val molapMeasure = selectedMsrs.filter(m => m.getMeasure().equalsIgnoreCase(attr.name))
-              if (molapMeasure.size > 0) {
+              val carbonMeasure = selectedMsrs.filter(m => m.getMeasure().equalsIgnoreCase(attr.name))
+              if (carbonMeasure.size > 0) {
                 // added by vishal as we are adding for dimension so need to add to measure list  
-                // Molap does not support group by on measure column so throwing exception to make it detail query 
+                // Carbon does not support group by on measure column so throwing exception to make it detail query
                 throw new Exception("Some Aggregate functions cannot be pushed, force to detailequery")
               }
               else {
@@ -352,7 +352,7 @@ case class CarbonCubeScan(
     }
   }
 
-  def transformExpression(expr: Expression): MolapExpression = {
+  def transformExpression(expr: Expression): CarbonExpression = {
     expr match {
       case Or(left, right) => new OrExpression(transformExpression(left), transformExpression(right))
       case And(left, right) => new AndExpression(transformExpression(left), transformExpression(right))
@@ -369,13 +369,13 @@ case class CarbonCubeScan(
       case LessThan(left, right) => new LessThanExpression(transformExpression(left), transformExpression(right))
       case GreaterThanOrEqual(left, right) => new GreaterThanEqualToExpression(transformExpression(left), transformExpression(right))
       case LessThanOrEqual(left, right) => new LessThanEqualToExpression(transformExpression(left), transformExpression(right))
-      case AttributeReference(name, dataType, _, _) => new MolapColumnExpression(name.toString, CarbonScalaUtil.convertSparkToMolapDataType(dataType))
-      case Literal(name, dataType) => new MolapLiteralExpression(name, CarbonScalaUtil.convertSparkToMolapDataType(dataType))
+      case AttributeReference(name, dataType, _, _) => new CarbonColumnExpression(name.toString, CarbonScalaUtil.convertSparkToCarbonDataType(dataType))
+      case Literal(name, dataType) => new CarbonLiteralExpression(name, CarbonScalaUtil.convertSparkToCarbonDataType(dataType))
       case Cast(left, right) if (!left.isInstanceOf[Literal]) => transformExpression(left)
       case _ =>
         new SparkUnknownExpression(expr.transform {
           case AttributeReference(name, dataType, _, _) =>
-            CarbonBoundReference(new MolapColumnExpression(name.toString, CarbonScalaUtil.convertSparkToMolapDataType(dataType)), dataType, expr.nullable)
+            CarbonBoundReference(new CarbonColumnExpression(name.toString, CarbonScalaUtil.convertSparkToCarbonDataType(dataType)), dataType, expr.nullable)
         })
     }
   }
@@ -412,22 +412,22 @@ case class CarbonCubeScan(
     if (!extraPreds.isEmpty) {
       val exps = preProcessExpressions(extraPreds.toSeq)
       val expressionVal = transformExpression(exps.head)
-      val oldExpressionVal = buildMolapPlan.getFilterExpression()
+      val oldExpressionVal = buildCarbonPlan.getFilterExpression()
       if (null == oldExpressionVal) {
-        buildMolapPlan.setFilterExpression(expressionVal);
+        buildCarbonPlan.setFilterExpression(expressionVal);
       } else {
-        buildMolapPlan.setFilterExpression(new AndExpression(oldExpressionVal, expressionVal));
+        buildCarbonPlan.setFilterExpression(new AndExpression(oldExpressionVal, expressionVal));
       }
     }
 
     val conf = new Configuration();
-    val model = CarbonQueryUtil.createModel(buildMolapPlan, relation.cubeMeta.schema, relation.metaData.cube, relation.cubeMeta.dataPath, relation.cubeMeta.partitioner.partitionCount) //parseQuery(buildMolapPlan, relation.getSchemaPath)
-    val splits = CarbonQueryUtil.getTableSplits(relation.schemaName, cubeName, buildMolapPlan, relation.cubeMeta.partitioner)
+    val model = CarbonQueryUtil.createModel(buildCarbonPlan, relation.cubeMeta.schema, relation.metaData.cube, relation.cubeMeta.dataPath, relation.cubeMeta.partitioner.partitionCount) //parseQuery(buildCarbonPlan, relation.getSchemaPath)
+    val splits = CarbonQueryUtil.getTableSplits(relation.schemaName, cubeName, buildCarbonPlan, relation.cubeMeta.partitioner)
     val kv: KeyVal[CarbonKey, CarbonValue] = new KeyValImpl()
     //setting queryid
-    buildMolapPlan.setQueryId(oc.getConf("queryId", System.nanoTime() + ""))
+    buildCarbonPlan.setQueryId(oc.getConf("queryId", System.nanoTime() + ""))
     handleQueryStats(model)
-    CarbonQueryUtil.updateMolapExecuterModelWithLoadMetadata(model)
+    CarbonQueryUtil.updateCarbonExecuterModelWithLoadMetadata(model)
     CarbonQueryUtil.setPartitionColumn(model, relation.cubeMeta.partitioner.partitionColumn)
     println("Selected Table to Query ****** " + model.getFactTable())
     
@@ -453,7 +453,7 @@ case class CarbonCubeScan(
     * Adding few parameter like accumulator: to get details from executor and queryid to track the query at executor
     */
   def handleQueryStats(model: CarbonQueryExecutorModel) {
-    val queryStats: QueryDetail = QueryStatsCollector.getInstance.getQueryStats(buildMolapPlan.getQueryId)
+    val queryStats: QueryDetail = QueryStatsCollector.getInstance.getQueryStats(buildCarbonPlan.getQueryId)
 
     //registering accumulator
     val queryStatsCollector = QueryStatsCollector.getInstance
@@ -470,7 +470,7 @@ case class CarbonCubeScan(
       queryStats.setFactTableName(cube.getFactTableName)
       queryStats.setDimOrdinals(CarbonQueryUtil.getDimensionOrdinal(cube.getDimensions(cube.getFactTableName), allDims.toArray))
       //check if query has limit parameter
-      val limt: Int = buildMolapPlan.getLimit
+      val limt: Int = buildCarbonPlan.getLimit
       if (limt != -1) {
         queryStats.setLimitPassed(true)
       }

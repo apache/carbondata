@@ -53,12 +53,12 @@ public class CarbonAutoAggregateSliceMergerStep extends BaseStep {
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(CarbonAutoAggregateSliceMergerStep.class.getName());
     /**
-     * molap data writer step data class
+     * carbon data writer step data class
      */
     private CarbonAutoAggregateSliceMergerData data;
 
     /**
-     * molap data writer step meta
+     * carbon data writer step meta
      */
     private CarbonAutoAggregateSliceMergerMeta meta;
 
@@ -104,10 +104,10 @@ public class CarbonAutoAggregateSliceMergerStep extends BaseStep {
      */
     public boolean processRow(StepMetaInterface smi, StepDataInterface sdi) throws KettleException {
         try {
-            // molap data writer step meta
+            // carbon data writer step meta
             meta = (CarbonAutoAggregateSliceMergerMeta) smi;
 
-            // molap data writer step data
+            // carbon data writer step data
             data = (CarbonAutoAggregateSliceMergerData) sdi;
 
             // get row from previous step, blocks when needed!
@@ -125,12 +125,12 @@ public class CarbonAutoAggregateSliceMergerStep extends BaseStep {
                     renameFolders();
                 }
 
-                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "Record Procerssed For Auto Aggregation");
                 String logMessage =
-                        "Summary: Molap Slice Merger Step: Read: " + readCounter + ": Write: "
+                        "Summary: Carbon Slice Merger Step: Read: " + readCounter + ": Write: "
                                 + writeCounter;
-                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, logMessage);
+                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, logMessage);
                 //Delete the checkpoint and msrmetadata files from the sort
                 //tmp folder as the processing is finished.
                 if (CheckPointHanlder.IS_CHECK_POINT_NEEDED) {
@@ -155,7 +155,7 @@ public class CarbonAutoAggregateSliceMergerStep extends BaseStep {
             }
             readCounter++;
         } catch (Exception ex) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, ex);
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, ex);
             throw new RuntimeException(ex);
         }
         return true;
@@ -215,7 +215,7 @@ public class CarbonAutoAggregateSliceMergerStep extends BaseStep {
         try {
             CarbonUtil.deleteFiles(filesToDelete);
         } catch (CarbonUtilException e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "Unable to delete the checkpoints related files : " + Arrays
                             .toString(filesToDelete));
         }
@@ -273,7 +273,7 @@ public class CarbonAutoAggregateSliceMergerStep extends BaseStep {
                         CarbonSliceMergerUtil.getHeirAndKeySizeMap(meta.getHeirAndKeySize()));
 
             } catch (IOException e1) {
-                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "Not able to merge the level Files");
                 throw new SliceMergerException(e1.getMessage());
             }

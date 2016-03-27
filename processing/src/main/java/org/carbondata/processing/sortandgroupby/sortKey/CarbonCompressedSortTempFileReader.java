@@ -121,7 +121,7 @@ public class CarbonCompressedSortTempFileReader extends AbstractSortTempFileRead
                         byteArraySize = measureBuffer[j].readInt();
                         mdkey = new byte[byteArraySize];
                         if (measureBuffer[j].read(mdkey) < 0) {
-                            LOGGER.debug(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                            LOGGER.debug(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                                     "Problme while reading from stream");
                         }
                         record[index++] = mdkey;
@@ -141,7 +141,7 @@ public class CarbonCompressedSortTempFileReader extends AbstractSortTempFileRead
                 records[i] = record;
             }
         } catch (IOException e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "Problem while preparing output record ", e);
         }
         return records;

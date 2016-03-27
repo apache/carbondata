@@ -90,7 +90,7 @@ public class RealTimeDataPropertyReader {
     private void updateMap(String schemandCubeName,
             Map<String, Set<String>> columnAndMemberListaMap,
             Map<String, String> levelTypeColumnMap, Map<String, Integer> levelAndCardinalityMap) {
-        File realTimeDataFile = new File(CarbonCommonConstants.MOLAP_REALTIMEDATA_FILE);
+        File realTimeDataFile = new File(CarbonCommonConstants.CARBON_REALTIMEDATA_FILE);
 
         FileInputStream fileInputStream = null;
 
@@ -102,12 +102,12 @@ public class RealTimeDataPropertyReader {
             propFile.load(fileInputStream);
         } catch (FileNotFoundException e) {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "RealtimeData file not found.");
             }
         } catch (IOException e) {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "Unable to read RealtimeData file.");
             }
         } finally {
@@ -200,12 +200,12 @@ public class RealTimeDataPropertyReader {
 
         } catch (FileNotFoundException e) {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "RealtimeData file not found.");
             }
         } catch (IOException e) {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "Unable to read  RealtimeData file.");
             }
         } finally {

@@ -43,7 +43,7 @@ public class NonTimeBasedMergerColumnar extends ColumnarFactFileMerger {
         super(carbonColumnarFactMergerInfo, currentRestructNumber);
         if (leafTupleIteratorList.size() > 0) {
             recordHolderHeap = new PriorityQueue<CarbonDataIterator<CarbonSurrogateTupleHolder>>(
-                    leafTupleIteratorList.size(), new MolapMdkeyComparator());
+                    leafTupleIteratorList.size(), new CarbonMdkeyComparator());
         }
     }
 
@@ -95,7 +95,7 @@ public class NonTimeBasedMergerColumnar extends ColumnarFactFileMerger {
         }
     }
 
-    private class MolapMdkeyComparator
+    private class CarbonMdkeyComparator
             implements Comparator<CarbonDataIterator<CarbonSurrogateTupleHolder>> {
 
         @Override

@@ -124,7 +124,7 @@ public class HierarchyValueWriter {
                 try {
                     stream.close();
                 } catch (IOException e) {
-                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
                             "unable to close the stream ");
                 }
 
@@ -134,7 +134,7 @@ public class HierarchyValueWriter {
         // delete the file
         isDeleted = f.delete();
         if (!isDeleted) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "Unable to delete the file " + f.getAbsolutePath());
         }
 

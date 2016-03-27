@@ -33,7 +33,7 @@ public class FactDataHandlerTest {
         CarbonProperties.getInstance()
                 .addProperty(CarbonCommonConstants.AGGREAGATE_COLUMNAR_KEY_BLOCK, "false");
         CarbonProperties.getInstance()
-                .addProperty(CarbonCommonConstants.MOLAP_IS_LOAD_FACT_TABLE_IN_MEMORY, "false");
+                .addProperty(CarbonCommonConstants.CARBON_IS_LOAD_FACT_TABLE_IN_MEMORY, "false");
         LevelMetaInfo levelInfo = new MockUp<LevelMetaInfo>() {
             @Mock
             public int[] getDimCardinality() {

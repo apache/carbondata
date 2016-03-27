@@ -118,7 +118,7 @@ public class DSAutoAggSuggestionService implements AutoAggSuggestionService {
         //calculating the aggregate combination
         List<AggSuggestion> aggSuggest = autoAggregation.generateAggregate();
         long timeTaken = System.currentTimeMillis() - startTime;
-        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                 "Time taken to generate DataStats Aggreation combination for cube," + loadModel
                         .getSchemaName() + '.' + loadModel.getCubeName() + ':' + timeTaken);
 
@@ -194,7 +194,7 @@ public class DSAutoAggSuggestionService implements AutoAggSuggestionService {
             return driverDistinctData;
 
         } catch (Exception e) {
-            LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                     "Error getting distinct relationship", e);
             throw new AggSuggestException(e.getMessage(), e);
         }

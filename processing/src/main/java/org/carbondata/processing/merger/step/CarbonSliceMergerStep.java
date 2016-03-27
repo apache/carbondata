@@ -57,12 +57,12 @@ public class CarbonSliceMergerStep extends BaseStep {
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(CarbonSliceMergerStep.class.getName());
     /**
-     * molap data writer step data class
+     * carbon data writer step data class
      */
     private CarbonSliceMergerStepData data;
 
     /**
-     * molap data writer step meta
+     * carbon data writer step meta
      */
     private CarbonSliceMergerStepMeta meta;
 
@@ -103,11 +103,11 @@ public class CarbonSliceMergerStep extends BaseStep {
      */
     public boolean processRow(StepMetaInterface smi, StepDataInterface sdi) throws KettleException {
         try {
-            // molap data writer step meta
+            // carbon data writer step meta
             meta = (CarbonSliceMergerStepMeta) smi;
             StandardLogService
                     .setThreadName(StandardLogService.getPartitionID(meta.getCubeName()), null);
-            // molap data writer step data
+            // carbon data writer step data
             data = (CarbonSliceMergerStepData) sdi;
 
             // get row from previous step, blocks when needed!
@@ -122,12 +122,12 @@ public class CarbonSliceMergerStep extends BaseStep {
                     renameFolders();
                 }
 
-                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "Record Procerssed For table: " + meta.getTabelName());
                 String logMessage =
-                        "Summary: Molap Slice Merger Step: Read: " + readCounter + ": Write: "
+                        "Summary: Carbon Slice Merger Step: Read: " + readCounter + ": Write: "
                                 + writeCounter;
-                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, logMessage);
+                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, logMessage);
                 //Delete the checkpoint and msrmetadata files from the sort
                 //tmp folder as the processing is finished.
                 if (CheckPointHanlder.IS_CHECK_POINT_NEEDED && !meta.isGroupByEnabled()) {
@@ -150,7 +150,7 @@ public class CarbonSliceMergerStep extends BaseStep {
             }
             readCounter++;
         } catch (Exception ex) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, ex);
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, ex);
             throw new RuntimeException(ex);
         }
         return true;
@@ -206,7 +206,7 @@ public class CarbonSliceMergerStep extends BaseStep {
         try {
             CarbonUtil.deleteFiles(filesToDelete);
         } catch (CarbonUtilException e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "Unable to delete the checkpoints related files : " + Arrays
                             .toString(filesToDelete));
         }
@@ -264,7 +264,7 @@ public class CarbonSliceMergerStep extends BaseStep {
                         CarbonSliceMergerUtil.getHeirAndKeySizeMap(meta.getHeirAndKeySize()));
 
             } catch (IOException e1) {
-                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "Not able to merge the level Files");
                 throw new SliceMergerException(e1.getMessage());
             }
@@ -288,7 +288,7 @@ public class CarbonSliceMergerStep extends BaseStep {
                 throw new SliceMergerException(
                         "Problem while renaming inprogress folder to actual");
             }
-            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "Folder renamed successfully to :: " + destFolder.getAbsolutePath());
         }
 

@@ -32,7 +32,7 @@ public class CustomCarbonAggregateExpression implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
-     * Identified and delegated from Spark Layer for UDAF in Molap
+     * Identified and delegated from Spark Layer for UDAF in Carbon
      */
     private CustomMeasureAggregator aggregator;
 

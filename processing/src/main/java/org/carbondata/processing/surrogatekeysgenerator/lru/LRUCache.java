@@ -48,11 +48,11 @@ public final class LRUCache {
     private LRUCache() {
         try {
             lruCacheSize = Integer.parseInt(CarbonProperties.getInstance()
-                    .getProperty(CarbonCommonConstants.MOLAP_SEQ_GEN_INMEMORY_LRU_CACHE_SIZE,
-                            CarbonCommonConstants.MOLAP_SEQ_GEN_INMEMORY_LRU_CACHE_SIZE_DEFAULT_VALUE));
+                    .getProperty(CarbonCommonConstants.CARBON_SEQ_GEN_INMEMORY_LRU_CACHE_SIZE,
+                            CarbonCommonConstants.CARBON_SEQ_GEN_INMEMORY_LRU_CACHE_SIZE_DEFAULT_VALUE));
         } catch (NumberFormatException e) {
             lruCacheSize = Integer.parseInt(
-                    CarbonCommonConstants.MOLAP_SEQ_GEN_INMEMORY_LRU_CACHE_SIZE_DEFAULT_VALUE);
+                    CarbonCommonConstants.CARBON_SEQ_GEN_INMEMORY_LRU_CACHE_SIZE_DEFAULT_VALUE);
         }
         createCache();
     }

@@ -41,7 +41,7 @@ import org.carbondata.core.writer.exception.CarbonDataWriterException;
 
 public class CarbonDataWriter {
     /**
-     * Attribute for Molap LOGGER
+     * Attribute for Carbon LOGGER
      */
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(CarbonDataWriter.class.getName());
@@ -111,7 +111,7 @@ public class CarbonDataWriter {
     private int metadataOffset;
 
     /**
-     * MolapDataWriter constructor to initialize all the instance variables
+     * CarbonDataWriter constructor to initialize all the instance variables
      * required for wrting the data i to the file
      *
      * @param storeLocation current store location
@@ -183,10 +183,10 @@ public class CarbonDataWriter {
     public CarbonFile closeChannle() {
         CarbonUtil.closeStreams(this.fileDataOutStream);
 
-        CarbonFile carbonFile = FileFactory.getMolapFile(fileName, FileFactory.getFileType(fileName));
+        CarbonFile carbonFile = FileFactory.getCarbonFile(fileName, FileFactory.getFileType(fileName));
 
         if (!carbonFile.renameTo(fileName.substring(0, this.fileName.lastIndexOf('.')))) {
-            LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "file renaming failed from _0.querymerged to _0");
         }
 
@@ -255,7 +255,7 @@ public class CarbonDataWriter {
      * @param startKey   start key of leaf
      * @param endKey     end key of leaf
      * @throws CarbonDataWriterException
-     * @throws CarbonDataWriterException throws new MolapDataWriterException if any problem
+     * @throws CarbonDataWriterException throws new CarbonDataWriterException if any problem
      */
     public void writeDataToFile(byte[] keyArray, byte[][] dataArray, int entryCount,
             byte[] startKey, byte[] endKey) throws CarbonDataWriterException {
@@ -301,7 +301,7 @@ public class CarbonDataWriter {
      * @param startKey   start key of leaf
      * @param endKey     end key of leaf
      * @throws CarbonDataWriterException
-     * @throws CarbonDataWriterException throws new MolapDataWriterException if any problem
+     * @throws CarbonDataWriterException throws new CarbonDataWriterException if any problem
      */
     public void writeDataToFile(byte[] keyArray, byte[] dataArray, int[] msrLength, int entryCount,
             byte[] startKey, byte[] endKey) throws CarbonDataWriterException {
@@ -377,7 +377,7 @@ public class CarbonDataWriter {
      * @param keyArray     mdkey array
      * @param measureArray measure array
      * @return file offset offset is the current position of the file
-     * @throws CarbonDataWriterException if will throw MolapDataWriterException when any thing goes wrong
+     * @throws CarbonDataWriterException if will throw CarbonDataWriterException when any thing goes wrong
      *                                  while while writing the leaf file
      */
     private long writeDataToFile(byte[] keyArray, byte[] measureArray)
@@ -403,7 +403,7 @@ public class CarbonDataWriter {
      * <keylength><keyoffset><measure1length><measure1offset><measure2length
      * ><measure2offset>
      *
-     * @throws CarbonDataWriterException throw MolapDataWriterException when problem in writing the meta data
+     * @throws CarbonDataWriterException throw CarbonDataWriterException when problem in writing the meta data
      *                                  to file
      */
     public void writeleafMetaDataToFile() throws CarbonDataWriterException {

@@ -103,7 +103,7 @@ public class ColumnarSliceExecuter implements Callable<Void> {
         try {
             this.columnarstorageScanner.scanStore();
         } catch (Exception e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
         } finally {
             this.fileHolder.finish();
         }

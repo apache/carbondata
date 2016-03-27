@@ -34,7 +34,7 @@ import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonProperties;
 
 /**
- * Class Provides generic implementation of the lock in Molap.
+ * Class Provides generic implementation of the lock in Carbon.
  */
 public abstract class CarbonLock {
     private static final LogService LOGGER =
@@ -193,7 +193,7 @@ public abstract class CarbonLock {
                 try {
                     fileOutputStream.close();
                 } catch (IOException e) {
-                    LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, e.getMessage());
+                    LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e.getMessage());
                 }
             }
         }

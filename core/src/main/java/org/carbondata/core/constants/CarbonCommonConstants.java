@@ -93,21 +93,21 @@ public final class CarbonCommonConstants {
      */
     public static final String MEASURE_METADATA_PREFIX = "msrMetaData_";
     /**
-     * location of the molap member, hierarchy and fact files
+     * location of the carbon member, hierarchy and fact files
      */
-    public static final String STORE_LOCATION = "molap.storelocation";
+    public static final String STORE_LOCATION = "carbon.storelocation";
     /**
      * The keystore type
      */
-    public static final String KEYSTORE_TYPE = "molap.keystore.type";
+    public static final String KEYSTORE_TYPE = "carbon.keystore.type";
     /**
      * The value store type
      */
-    public static final String VALUESTORE_TYPE = "molap.valuestore.type";
+    public static final String VALUESTORE_TYPE = "carbon.valuestore.type";
     /**
      * online merge file size
      */
-    public static final String ONLINE_MERGE_FILE_SIZE = "molap.online.merge.file.size";
+    public static final String ONLINE_MERGE_FILE_SIZE = "carbon.online.merge.file.size";
     /**
      * online merge file size default value
      */
@@ -115,7 +115,7 @@ public final class CarbonCommonConstants {
     /**
      * offline merge file size
      */
-    public static final String OFFLINE_MERGE_FILE_SIZE = "molap.offline.merge.file.size";
+    public static final String OFFLINE_MERGE_FILE_SIZE = "carbon.offline.merge.file.size";
     /**
      * offline merge file size default value
      */
@@ -123,35 +123,35 @@ public final class CarbonCommonConstants {
     /**
      * Btree leafnode size
      */
-    public static final String LEAFNODE_SIZE = "molap.leaf.node.size";
+    public static final String LEAFNODE_SIZE = "carbon.leaf.node.size";
     /**
      * Hierarchy Btree leafnode size
      */
-    public static final String HIERARCHY_LEAFNODE_SIZE = "molap.hier.leaf.node.size";
+    public static final String HIERARCHY_LEAFNODE_SIZE = "carbon.hier.leaf.node.size";
     /**
      * max number of leaf nodes written in a single file
      */
-    public static final String MAX_FILE_SIZE = "molap.max.file.size";
+    public static final String MAX_FILE_SIZE = "carbon.max.file.size";
     /**
      * Number of cores to be used
      */
-    public static final String NUM_CORES = "molap.number.of.cores";
+    public static final String NUM_CORES = "carbon.number.of.cores";
     /**
-     * molap batchsize
+     * carbon batchsize
      */
-    public static final String BATCH_SIZE = "molap.batch.size";
+    public static final String BATCH_SIZE = "carbon.batch.size";
     /**
      * CARDINALITY_INCREMENT_VALUE
      */
-    public static final String CARDINALITY_INCREMENT_VALUE = "molap.cardinality.increment.value";
+    public static final String CARDINALITY_INCREMENT_VALUE = "carbon.cardinality.increment.value";
     /**
-     * molap sort size
+     * carbon sort size
      */
-    public static final String SORT_SIZE = "molap.sort.size";
+    public static final String SORT_SIZE = "carbon.sort.size";
     /**
-     * default location of the molap member, hierarchy and fact files
+     * default location of the carbon member, hierarchy and fact files
      */
-    public static final String STORE_LOCATION_DEFAULT_VAL = "../unibi-solutions/system/molap/store";
+    public static final String STORE_LOCATION_DEFAULT_VAL = "../unibi-solutions/system/carbon/store";
     /**
      * default keystore type
      */
@@ -213,85 +213,85 @@ public final class CarbonCommonConstants {
      */
     public static final int NUM_CORES_MAX_VAL = 32;
     /**
-     * default molap batchsize
+     * default carbon batchsize
      */
     public static final String BATCH_SIZE_DEFAULT_VAL = "1000";
     /**
-     * min molap batchsize
+     * min carbon batchsize
      */
     public static final int BATCH_SIZE_MIN_VAL = 500;
     /**
-     * max molap batchsize
+     * max carbon batchsize
      */
     public static final int BATCH_SIZE_MAX_VAL = 100000;
     /**
-     * default molap sort size
+     * default carbon sort size
      */
     public static final String SORT_SIZE_DEFAULT_VAL = "5000";
     /**
-     * min molap sort size
+     * min carbon sort size
      */
     public static final int SORT_SIZE_MIN_VAL = 1000;
     /**
-     * max molap sort size
+     * max carbon sort size
      */
     public static final int SORT_SIZE_MAX_VAL = 1000000;
     /**
-     * molap properties file path
+     * carbon properties file path
      */
-    //    public static final String MOLAP_PROPERTIES_FILE_PATH = "../unibi-solutions/system/molap/molap.properties";
-    public static final String MOLAP_PROPERTIES_FILE_PATH = "../../../conf/molap.properties";
+    //    public static final String CARBON_PROPERTIES_FILE_PATH = "../unibi-solutions/system/carbon/carbon.properties";
+    public static final String CARBON_PROPERTIES_FILE_PATH = "../../../conf/carbon.properties";
     /**
-     * MOLAP_BADRECORDS_ENCRYPTION
+     * CARBON_BADRECORDS_ENCRYPTION
      */
-    public static final String MOLAP_BADRECORDS_ENCRYPTION = "molap.badRecords.encryption";
+    public static final String CARBON_BADRECORDS_ENCRYPTION = "carbon.badRecords.encryption";
     /**
      * CARBON_DDL_BASE_HDFS_URL
      */
     public static final String CARBON_DDL_BASE_HDFS_URL = "carbon.ddl.base.hdfs.url";
     /**
-     * MOLAP_BADRECORDS_ENCRYPTION_DEFAULT_VAL
+     * CARBON_BADRECORDS_ENCRYPTION_DEFAULT_VAL
      */
-    public static final String MOLAP_BADRECORDS_ENCRYPTION_DEFAULT_VAL = "false";
+    public static final String CARBON_BADRECORDS_ENCRYPTION_DEFAULT_VAL = "false";
     /**
-     * molap properties file path
+     * carbon properties file path
      */
 
-    public static final String MOLAP_REALTIMEDATA_MAPPER_FILE_PATH =
-            "../unibi-solutions/system/molap/realtimedata.properties";
+    public static final String CARBON_REALTIMEDATA_MAPPER_FILE_PATH =
+            "../unibi-solutions/system/carbon/realtimedata.properties";
     /**
-     * how the MOLAP URL will start.
+     * how the CARBON URL will start.
      */
 
-    public static final String MOLAP_URL_START = "molap://";
+    public static final String CARBON_URL_START = "carbon://";
     /**
-     * molap url
+     * carbon url
      */
 
-    public static final String MOLAP_URL_KEY = "url";
+    public static final String CARBON_URL_KEY = "url";
     /**
-     * molap schema file path
+     * carbon schema file path
      */
 
-    public static final String MOLAP_SCHEMA_FILE_PATH = "schemafilepath";
+    public static final String CARBON_SCHEMA_FILE_PATH = "schemafilepath";
     /**
-     * molap key
+     * carbon key
      */
 
-    public static final String MOLAP_KEY = "molap";
+    public static final String CARBON_KEY = "carbon";
     /**
-     * molap mode key
+     * carbon mode key
      */
 
-    public static final String MOLAP_MODE_KEY = "mode";
+    public static final String CARBON_MODE_KEY = "mode";
     /**
-     * molap mode default val
+     * carbon mode default val
      */
-    public static final String MOLAP_MODE_DEFAULT_VAL = "file";
+    public static final String CARBON_MODE_DEFAULT_VAL = "file";
     /**
-     * molap mode in-memory val
+     * carbon mode in-memory val
      */
-    public static final String MOLAP_MODE_IN_MEM_VAL = "in-memory";
+    public static final String CARBON_MODE_IN_MEM_VAL = "in-memory";
     /**
      * Slice Meta data file.
      */
@@ -312,11 +312,11 @@ public final class CarbonCommonConstants {
     /**
      * location of the graphs files
      */
-    public static final String ETL_STORE_LOCATION = "../unibi-solutions/system/molap/etl";
+    public static final String ETL_STORE_LOCATION = "../unibi-solutions/system/carbon/etl";
     /**
      * location of the graphs files
      */
-    public static final String RESTRUCT_FILE_METADATA = "../unibi-solutions/system/molap/tmp";
+    public static final String RESTRUCT_FILE_METADATA = "../unibi-solutions/system/carbon/tmp";
     /**
      * Average constant
      */
@@ -354,9 +354,9 @@ public final class CarbonCommonConstants {
      */
     public static final String MEMBER_DEFAULT_VAL = "@NU#LL$!";
     /**
-     * MOLAP_CACHE_LOCATION
+     * CARBON_CACHE_LOCATION
      */
-    public static final String MOLAP_CACHE_LOCATION = "../unibi-solutions/system/molap/cache";
+    public static final String CARBON_CACHE_LOCATION = "../unibi-solutions/system/carbon/cache";
     /**
      * FILE STATUS IN-PROGRESS
      */
@@ -366,14 +366,14 @@ public final class CarbonCommonConstants {
      */
     public static final String GEN_COUNT_MEASURE = "$^&DEFAULT_GENERATED_COUNT_MEASURE$^&";
     /**
-     * MOLAP_BADRECORDS_LOCATION
+     * CARBON_BADRECORDS_LOCATION
      */
-    public static final String MOLAP_BADRECORDS_LOC = "molap.badRecords.location";
+    public static final String CARBON_BADRECORDS_LOC = "carbon.badRecords.location";
     /**
-     * MOLAP_BADRECORDS_LOCATION_DEFAULT
+     * CARBON_BADRECORDS_LOCATION_DEFAULT
      */
-    public static final String MOLAP_BADRECORDS_LOC_DEFAULT_VAL =
-            "../unibi-solutions/system/molap/badRecords";
+    public static final String CARBON_BADRECORDS_LOC_DEFAULT_VAL =
+            "../unibi-solutions/system/carbon/badRecords";
     /**
      * HIERARCHY_FILE_EXTENSION
      */
@@ -405,7 +405,7 @@ public final class CarbonCommonConstants {
     /**
      * SORT_BUFFER_SIZE
      */
-    public static final String SORT_BUFFER_SIZE = "molap.sort.buffer.size";
+    public static final String SORT_BUFFER_SIZE = "carbon.sort.buffer.size";
     /**
      * SORT_BUFFER_SIZE_DEFAULT_SIZE
      */
@@ -417,7 +417,7 @@ public final class CarbonCommonConstants {
     /**
      * DATA_LOAD_Q_SIZE
      */
-    public static final String DATA_LOAD_Q_SIZE = "molap.dataload.queuesize";
+    public static final String DATA_LOAD_Q_SIZE = "carbon.dataload.queuesize";
     /**
      * DATA_LOAD_Q_SIZE_DEFAULT
      */
@@ -433,41 +433,41 @@ public final class CarbonCommonConstants {
     /**
      * DATA_LOAD_Q_SIZE
      */
-    public static final String MOLAP_MEMBERUPDATE_DATA_LOAD_Q_SIZE =
-            "molap.memberupdate.dataloader.queuesize";
+    public static final String CARBON_MEMBERUPDATE_DATA_LOAD_Q_SIZE =
+            "carbon.memberupdate.dataloader.queuesize";
     /**
      * DATA_LOAD_Q_SIZE_MIN
      */
-    public static final int MOLAP_MEMBERUPDATE_DATA_LOAD_Q_SIZE_MIN = 1;
+    public static final int CARBON_MEMBERUPDATE_DATA_LOAD_Q_SIZE_MIN = 1;
     /**
      * DATA_LOAD_Q_SIZE_MAX
      */
-    public static final int MOLAP_MEMBERUPDATE_DATA_LOAD_Q_SIZE_MAX = 100;
+    public static final int CARBON_MEMBERUPDATE_DATA_LOAD_Q_SIZE_MAX = 100;
     /**
      * DATA_LOAD_Q_SIZE_DEFAULT
      */
-    public static final String MOLAP_MEMBERUPDATE_DATA_LOAD_Q_SIZE_DEFAULT = "100";
+    public static final String CARBON_MEMBERUPDATE_DATA_LOAD_Q_SIZE_DEFAULT = "100";
     /**
      * DATA_LOAD_CONC_EXE_SIZE
      */
-    public static final String MOLAP_MEMBERUPDATE_DATA_LOAD_CONC_EXE_SIZE =
-            "molap.memberupdate.dataload.concurrent.execution.size";
+    public static final String CARBON_MEMBERUPDATE_DATA_LOAD_CONC_EXE_SIZE =
+            "carbon.memberupdate.dataload.concurrent.execution.size";
     /**
      * DATA_LOAD_CONC_EXE_SIZE_DEFAULT
      */
-    public static final String MOLAP_MEMBERUPDATE_DATA_LOAD_CONC_EXE_SIZE_DEFAULT = "1";
+    public static final String CARBON_MEMBERUPDATE_DATA_LOAD_CONC_EXE_SIZE_DEFAULT = "1";
     /**
      * DATA_LOAD_CONC_EXE_SIZE_MIN
      */
-    public static final int MOLAP_MEMBERUPDATE_DATA_LOAD_CONC_EXE_SIZE_MIN = 1;
+    public static final int CARBON_MEMBERUPDATE_DATA_LOAD_CONC_EXE_SIZE_MIN = 1;
     /**
      * DATA_LOAD_CONC_EXE_SIZE_MAX
      */
-    public static final int MOLAP_MEMBERUPDATE_DATA_LOAD_CONC_EXE_SIZE_MAX = 5;
+    public static final int CARBON_MEMBERUPDATE_DATA_LOAD_CONC_EXE_SIZE_MAX = 5;
     /**
      * DATA_LOAD_CONC_EXE_SIZE
      */
-    public static final String DATA_LOAD_CONC_EXE_SIZE = "molap.dataload.concurrent.execution.size";
+    public static final String DATA_LOAD_CONC_EXE_SIZE = "carbon.dataload.concurrent.execution.size";
     /**
      * DATA_LOAD_CONC_EXE_SIZE_DEFAULT
      */
@@ -481,18 +481,18 @@ public final class CarbonCommonConstants {
      */
     public static final int DATA_LOAD_CONC_EXE_SIZE_MAX = 5;
     /**
-     * MOLAP_Realtime_data
+     * CARBON_Realtime_data
      */
-    public static final String MOLAP_REALTIMEDATA_FILE =
-            "../unibi-solutions/system/molap/realtimedata.properties";
+    public static final String CARBON_REALTIMEDATA_FILE =
+            "../unibi-solutions/system/carbon/realtimedata.properties";
     /**
-     * MOLAP_RESULT_SIZE_KEY
+     * CARBON_RESULT_SIZE_KEY
      */
-    public static final String MOLAP_RESULT_SIZE_KEY = "molap.result.limit";
+    public static final String CARBON_RESULT_SIZE_KEY = "carbon.result.limit";
     /**
-     * MOLAP_RESULT_SIZE_DEFAULT
+     * CARBON_RESULT_SIZE_DEFAULT
      */
-    public static final String MOLAP_RESULT_SIZE_DEFAULT = "5000";
+    public static final String CARBON_RESULT_SIZE_DEFAULT = "5000";
     /**
      * MYSQL_NULL_VALUE
      */
@@ -502,11 +502,11 @@ public final class CarbonCommonConstants {
      */
     public static final String MSSQL_NULL_VALUE = "mssql.null.value";
     /**
-     * MOLAP_RESULT_SIZE_DEFAULT
+     * CARBON_RESULT_SIZE_DEFAULT
      */
     public static final String ORACLE_NULL_VALUE = "oracle.null.value";
     /**
-     * MOLAP_RESULT_SIZE_DEFAULT
+     * CARBON_RESULT_SIZE_DEFAULT
      */
     public static final String LEVEL_FILE_EXTENSION = ".level";
     /**
@@ -532,7 +532,7 @@ public final class CarbonCommonConstants {
     /**
      * PAGINATED CACHE ALLOCATED SIZE in MB
      */
-    public static final String PAGINATED_CACHE_DISK_SIZE = "molap.paginated.cache.disk.size";
+    public static final String PAGINATED_CACHE_DISK_SIZE = "carbon.paginated.cache.disk.size";
     /**
      * PAGINATED CACHE ALLOCATED SIZE in bytes
      */
@@ -553,7 +553,7 @@ public final class CarbonCommonConstants {
      * PAGINATED Internal merge size limit
      */
     public static final String PAGINATED_INTERNAL_MERGE_SIZE_LIMIT =
-            "molap.paginated.internal.merge.size.limit";
+            "carbon.paginated.internal.merge.size.limit";
     /**
      * PAGINATED Internal merge size limit default in MB
      */
@@ -562,7 +562,7 @@ public final class CarbonCommonConstants {
      * PAGINATED Internal merge size limit
      */
     public static final String PAGINATED_INTERNAL_FILE_ROW_LIMIT =
-            "molap.paginated.internal.file.row.limit";
+            "carbon.paginated.internal.file.row.limit";
     /**
      * PAGINATED Internal merge size limit default in MB
      */
@@ -586,7 +586,7 @@ public final class CarbonCommonConstants {
     /**
      * GRAPH_ROWSET_SIZE
      */
-    public static final String GRAPH_ROWSET_SIZE = "molap.graph.rowset.size";
+    public static final String GRAPH_ROWSET_SIZE = "carbon.graph.rowset.size";
     /**
      * GRAPH_ROWSET_SIZE_DEFAULT
      */
@@ -611,7 +611,7 @@ public final class CarbonCommonConstants {
      * SORT_INTERMEDIATE_FILES_LIMIT
      */
     public static final String SORT_INTERMEDIATE_FILES_LIMIT =
-            "molap.sort.intermediate.files.limit";
+            "carbon.sort.intermediate.files.limit";
     /**
      * SORT_INTERMEDIATE_FILES_LIMIT_DEFAULT_VALUE
      */
@@ -623,7 +623,7 @@ public final class CarbonCommonConstants {
     /**
      * SORT_FILE_BUFFER_SIZE
      */
-    public static final String SORT_FILE_BUFFER_SIZE = "molap.sort.file.buffer.size";
+    public static final String SORT_FILE_BUFFER_SIZE = "carbon.sort.file.buffer.size";
     /**
      * SORT_FILE_BUFFER_SIZE_DEFAULT_VALUE
      */
@@ -635,16 +635,16 @@ public final class CarbonCommonConstants {
     /**
      * SORT_FILE_WRITE_BUFFER_SIZE
      */
-    public static final String MOLAP_SORT_FILE_WRITE_BUFFER_SIZE =
-            "molap.sort.file.write.buffer.size";
+    public static final String CARBON_SORT_FILE_WRITE_BUFFER_SIZE =
+            "carbon.sort.file.write.buffer.size";
     /**
      * SORT_FILE_WRITE_BUFFER_SIZE_DEFAULT_VALUE
      */
-    public static final String MOLAP_SORT_FILE_WRITE_BUFFER_SIZE_DEFAULT_VALUE = "50000";
+    public static final String CARBON_SORT_FILE_WRITE_BUFFER_SIZE_DEFAULT_VALUE = "50000";
     /**
      * IS_DATA_LOAD_LOG_ENABLED
      */
-    public static final String IS_DATA_LOAD_LOG_ENABLED = "molap.dataload.log.enabled";
+    public static final String IS_DATA_LOAD_LOG_ENABLED = "carbon.dataload.log.enabled";
     /**
      * IS_DATA_LOAD_LOG_ENABLED_DEFAULTVALUE
      */
@@ -653,7 +653,7 @@ public final class CarbonCommonConstants {
      * NUMBER_OF_THERADS_FOR_INTERMEDIATE_MERGING
      */
     public static final String NUMBER_OF_THERADS_FOR_INTERMEDIATE_MERGING =
-            "molap.sort.intermedaite.number.of.threads";
+            "carbon.sort.intermedaite.number.of.threads";
     /**
      * NUMBER_OF_THERADS_FOR_INTERMEDIATE_MERGING_DEFAULT_VALUE
      */
@@ -665,11 +665,11 @@ public final class CarbonCommonConstants {
     /**
      * Number of cores to be used while loading
      */
-    public static final String NUM_CORES_LOADING = "molap.number.of.cores.while.loading";
+    public static final String NUM_CORES_LOADING = "carbon.number.of.cores.while.loading";
     /**
      * CSV_READ_BUFFER_SIZE
      */
-    public static final String CSV_READ_BUFFER_SIZE = "molap.csv.read.buffersize.byte";
+    public static final String CSV_READ_BUFFER_SIZE = "carbon.csv.read.buffersize.byte";
     /**
      * CSV_READ_BUFFER_SIZE
      */
@@ -715,21 +715,21 @@ public final class CarbonCommonConstants {
      */
     public static final String HYPHEN_SPC_CHARACTER = "-#!:HYPHEN:!#-";
     /**
-     * MOLAP_DECIMAL_POINTERS
+     * CARBON_DECIMAL_POINTERS
      */
-    public static final String MOLAP_DECIMAL_POINTERS = "molap.decimal.pointers";
+    public static final String CARBON_DECIMAL_POINTERS = "carbon.decimal.pointers";
     /**
-     * MOLAP_DECIMAL_POINTERS_DEFAULT
+     * CARBON_DECIMAL_POINTERS_DEFAULT
      */
-    public static final String MOLAP_DECIMAL_POINTERS_DEFAULT = "5";
+    public static final String CARBON_DECIMAL_POINTERS_DEFAULT = "5";
     /**
-     * MOLAP_DECIMAL_POINTERS_AGG
+     * CARBON_DECIMAL_POINTERS_AGG
      */
-    public static final String MOLAP_DECIMAL_POINTERS_AGG = "molap.decimal.pointers.agg";
+    public static final String CARBON_DECIMAL_POINTERS_AGG = "carbon.decimal.pointers.agg";
     /**
-     * MOLAP_DECIMAL_POINTERS_AGG_DEFAULT
+     * CARBON_DECIMAL_POINTERS_AGG_DEFAULT
      */
-    public static final String MOLAP_DECIMAL_POINTERS_AGG_DEFAULT = "4";
+    public static final String CARBON_DECIMAL_POINTERS_AGG_DEFAULT = "4";
     /**
      * CHECKPOINT
      */
@@ -743,13 +743,13 @@ public final class CarbonCommonConstants {
      */
     public static final String SORT_TEMP_FILE_EXT = ".sorttemp";
     /**
-     * MOLAP_DATALOAD_CHECKPOINT
+     * CARBON_DATALOAD_CHECKPOINT
      */
-    public static final String MOLAP_DATALOAD_CHECKPOINT = "molap.dataload.checkpoint";
+    public static final String CARBON_DATALOAD_CHECKPOINT = "carbon.dataload.checkpoint";
     /**
-     * MOLAP_DATALOAD_CHECKPOINT_DEFAULTVALUE
+     * CARBON_DATALOAD_CHECKPOINT_DEFAULTVALUE
      */
-    public static final String MOLAP_DATALOAD_CHECKPOINT_DEFAULTVALUE = "false";
+    public static final String CARBON_DATALOAD_CHECKPOINT_DEFAULTVALUE = "false";
     /**
      * BAK_EXT
      */
@@ -759,45 +759,45 @@ public final class CarbonCommonConstants {
      */
     public static final String DONE_EXT = ".done";
     /**
-     * MOLAP_CHECKPOINT_QUEUE_THRESHOLD
+     * CARBON_CHECKPOINT_QUEUE_THRESHOLD
      */
-    public static final String MOLAP_CHECKPOINT_QUEUE_THRESHOLD =
-            "molap.checkpoint.queue.threshold";
+    public static final String CARBON_CHECKPOINT_QUEUE_THRESHOLD =
+            "carbon.checkpoint.queue.threshold";
     /**
-     * MOLAP_CHECKPOINT_CHUNK_SIZE
+     * CARBON_CHECKPOINT_CHUNK_SIZE
      */
-    public static final String MOLAP_CHECKPOINT_CHUNK_SIZE = "molap.checkpoint.chunk.size";
+    public static final String CARBON_CHECKPOINT_CHUNK_SIZE = "carbon.checkpoint.chunk.size";
     /**
-     * MOLAP_CHECKPOINT_QUEUE_INITIAL_CAPACITY
+     * CARBON_CHECKPOINT_QUEUE_INITIAL_CAPACITY
      */
-    public static final String MOLAP_CHECKPOINT_QUEUE_INITIAL_CAPACITY =
-            "molap.checkpoint.queue.initial.capacity";
+    public static final String CARBON_CHECKPOINT_QUEUE_INITIAL_CAPACITY =
+            "carbon.checkpoint.queue.initial.capacity";
     /**
-     * MOLAP_CHECKPOINT_TOCOPY_FROM_QUEUE
+     * CARBON_CHECKPOINT_TOCOPY_FROM_QUEUE
      */
-    public static final String MOLAP_CHECKPOINT_TOCOPY_FROM_QUEUE =
-            "molap.checkpoint.tocopy.from.queue";
+    public static final String CARBON_CHECKPOINT_TOCOPY_FROM_QUEUE =
+            "carbon.checkpoint.tocopy.from.queue";
     /**
-     * MOLAP_CHECKPOINT_QUEUE_THRESHOLD_DEFAULT_VAL
+     * CARBON_CHECKPOINT_QUEUE_THRESHOLD_DEFAULT_VAL
      */
-    public static final String MOLAP_CHECKPOINT_QUEUE_THRESHOLD_DEFAULT_VAL = "20";
+    public static final String CARBON_CHECKPOINT_QUEUE_THRESHOLD_DEFAULT_VAL = "20";
     /**
-     * MOLAP_CHECKPOINT_CHUNK_SIZE_DEFAULT_VAL
+     * CARBON_CHECKPOINT_CHUNK_SIZE_DEFAULT_VAL
      */
-    public static final String MOLAP_CHECKPOINT_CHUNK_SIZE_DEFAULT_VAL = "500";
+    public static final String CARBON_CHECKPOINT_CHUNK_SIZE_DEFAULT_VAL = "500";
     /**
-     * MOLAP_CHECKPOINT_QUEUE_INITIAL_CAPACITY_DEFAULT_VAL
+     * CARBON_CHECKPOINT_QUEUE_INITIAL_CAPACITY_DEFAULT_VAL
      */
-    public static final String MOLAP_CHECKPOINT_QUEUE_INITIAL_CAPACITY_DEFAULT_VAL = "25";
+    public static final String CARBON_CHECKPOINT_QUEUE_INITIAL_CAPACITY_DEFAULT_VAL = "25";
     /**
-     * MOLAP_CHECKPOINT_TOCOPY_FROM_QUEUE_DEFAULT_VAL
+     * CARBON_CHECKPOINT_TOCOPY_FROM_QUEUE_DEFAULT_VAL
      */
-    public static final String MOLAP_CHECKPOINT_TOCOPY_FROM_QUEUE_DEFAULT_VAL = "5";
+    public static final String CARBON_CHECKPOINT_TOCOPY_FROM_QUEUE_DEFAULT_VAL = "5";
     /**
      * IS_PRODUCERCONSUMER_BASED_SORTING
      */
     public static final String IS_PRODUCERCONSUMER_BASED_SORTING =
-            "molap.is.producer.consumer.based.sorting";
+            "carbon.is.producer.consumer.based.sorting";
     /**
      * PRODUCERCONSUMER_BASED_SORTING_ENABLED
      */
@@ -813,96 +813,96 @@ public final class CarbonCommonConstants {
     /**
      * BACKGROUND_MERGER_ENABLED
      */
-    public static final String BACKGROUND_MERGER_TYPE = "molap.background.merger.type";
+    public static final String BACKGROUND_MERGER_TYPE = "carbon.background.merger.type";
     /**
      * BACKGROUND_MERGER_TIME_INTERVAL_IN_MINUTE
      */
     public static final String BACKGROUND_MERGER_TIME_INTERVAL_IN_MINUTE =
-            "molap.background.merger.time.interval";
+            "carbon.background.merger.time.interval";
     /**
      * BACKGROUND_MERGER_TIME_INTERVAL_IN_MINUTE_DEFAULT_VALUE
      */
     public static final String BACKGROUND_MERGER_TIME_INTERVAL_IN_MINUTE_DEFAULT_VALUE = "30";
     /**
-     * MOLAP_SEQ_GEN_INMEMORY_LRU_CACHE_SIZE
+     * CARBON_SEQ_GEN_INMEMORY_LRU_CACHE_SIZE
      */
-    public static final String MOLAP_SEQ_GEN_INMEMORY_LRU_CACHE_SIZE =
-            "molap.seqgen.inmemory.lru.cache.size";
+    public static final String CARBON_SEQ_GEN_INMEMORY_LRU_CACHE_SIZE =
+            "carbon.seqgen.inmemory.lru.cache.size";
     /**
-     * MOLAP_SEQ_GEN_INMEMORY_LRU_CACHE_SIZE_DEFAULT_VALUE
+     * CARBON_SEQ_GEN_INMEMORY_LRU_CACHE_SIZE_DEFAULT_VALUE
      */
-    public static final String MOLAP_SEQ_GEN_INMEMORY_LRU_CACHE_SIZE_DEFAULT_VALUE = "4";
+    public static final String CARBON_SEQ_GEN_INMEMORY_LRU_CACHE_SIZE_DEFAULT_VALUE = "4";
     /**
-     * MOLAP_SEQ_GEN_INMEMORY_LRU_CACHE_ENABLED
+     * CARBON_SEQ_GEN_INMEMORY_LRU_CACHE_ENABLED
      */
-    public static final String MOLAP_SEQ_GEN_INMEMORY_LRU_CACHE_ENABLED =
-            "molap.seqgen.inmemory.lru.cache.enabled";
+    public static final String CARBON_SEQ_GEN_INMEMORY_LRU_CACHE_ENABLED =
+            "carbon.seqgen.inmemory.lru.cache.enabled";
     /**
-     * MOLAP_SEQ_GEN_INMEMORY_LRU_CACHE_ENABLED_DEFAULT_VALUE
+     * CARBON_SEQ_GEN_INMEMORY_LRU_CACHE_ENABLED_DEFAULT_VALUE
      */
-    public static final String MOLAP_SEQ_GEN_INMEMORY_LRU_CACHE_ENABLED_DEFAULT_VALUE = "false";
+    public static final String CARBON_SEQ_GEN_INMEMORY_LRU_CACHE_ENABLED_DEFAULT_VALUE = "false";
     /**
-     * MOLAP_SEQ_GEN_INMEMORY_LRU_CACHE_FLUSH_INTERVAL_INHOUR
+     * CARBON_SEQ_GEN_INMEMORY_LRU_CACHE_FLUSH_INTERVAL_INHOUR
      */
-    public static final String MOLAP_SEQ_GEN_INMEMORY_LRU_CACHE_FLUSH_INTERVAL_INHOUR =
-            "molap.seqgen.inmemory.lru.cache.flush.interval.in.minute";
+    public static final String CARBON_SEQ_GEN_INMEMORY_LRU_CACHE_FLUSH_INTERVAL_INHOUR =
+            "carbon.seqgen.inmemory.lru.cache.flush.interval.in.minute";
     /**
-     * MOLAP_SEQ_GEN_INMEMORY_LRU_CACHE_FLUSH_INTERVAL_INHOUR_DEFAULTVALUE
+     * CARBON_SEQ_GEN_INMEMORY_LRU_CACHE_FLUSH_INTERVAL_INHOUR_DEFAULTVALUE
      */
-    public static final String MOLAP_SEQ_GEN_INMEMORY_LRU_CACHE_FLUSH_INTERVAL_INHOUR_DEFAULTVALUE =
+    public static final String CARBON_SEQ_GEN_INMEMORY_LRU_CACHE_FLUSH_INTERVAL_INHOUR_DEFAULTVALUE =
             "300";
     /**
-     * MOLAP_MAX_THREAD_FOR_SORTING
+     * CARBON_MAX_THREAD_FOR_SORTING
      */
-    public static final String MOLAP_MAX_THREAD_FOR_SORTING = "molap.max.thread.for.sorting";
+    public static final String CARBON_MAX_THREAD_FOR_SORTING = "carbon.max.thread.for.sorting";
     /**
-     * MOLAP_MAX_THREAD_FOR_SORTING
+     * CARBON_MAX_THREAD_FOR_SORTING
      */
-    public static final String MOLAP_MAX_THREAD_FOR_SORTING_DEFAULTVALUE = "2";
+    public static final String CARBON_MAX_THREAD_FOR_SORTING_DEFAULTVALUE = "2";
     /**
-     * MOLAP_AUTOAGGREGATION_TYPE
+     * CARBON_AUTOAGGREGATION_TYPE
      */
-    public static final String MOLAP_AUTOAGGREGATION_TYPE = "molap.autoaggregation.type";
+    public static final String CARBON_AUTOAGGREGATION_TYPE = "carbon.autoaggregation.type";
     /**
-     * MOLAP_AUTOAGGREGATION_TYPE_MANUALVALUE
+     * CARBON_AUTOAGGREGATION_TYPE_MANUALVALUE
      */
-    public static final String MOLAP_MANUAL_TYPE_VALUE = "MANUAL";
+    public static final String CARBON_MANUAL_TYPE_VALUE = "MANUAL";
     /**
-     * MOLAP_AUTOAGGREGATION_TYPE_AUTOVALUE
+     * CARBON_AUTOAGGREGATION_TYPE_AUTOVALUE
      */
-    public static final String MOLAP_AUTO_TYPE_VALUE = "AUTO";
+    public static final String CARBON_AUTO_TYPE_VALUE = "AUTO";
     /**
-     * MOLAP_AUTOAGGREGATION_NO_OF_PARALLEL_AGGREGATETABLE_GENERATION
+     * CARBON_AUTOAGGREGATION_NO_OF_PARALLEL_AGGREGATETABLE_GENERATION
      */
-    public static final String MOLAP_AUTOAGGREGATION_NO_OF_PARALLEL_AGGREGATETABLE_GENERATION =
-            "molap.autoaggregation.no.of.parallel.aggregatetable.generation";
+    public static final String CARBON_AUTOAGGREGATION_NO_OF_PARALLEL_AGGREGATETABLE_GENERATION =
+            "carbon.autoaggregation.no.of.parallel.aggregatetable.generation";
     /**
-     * MOLAP_AUTOAGGREGATION_NO_OF_PARALLEL_AGGREGATETABLE_GENERATION_DEFAULT
+     * CARBON_AUTOAGGREGATION_NO_OF_PARALLEL_AGGREGATETABLE_GENERATION_DEFAULT
      */
     public static final String
-            MOLAP_AUTOAGGREGATION_NO_OF_PARALLEL_AGGREGATETABLE_GENERATION_DEFAULT = "1";
+            CARBON_AUTOAGGREGATION_NO_OF_PARALLEL_AGGREGATETABLE_GENERATION_DEFAULT = "1";
     /**
-     * MOLAP_AUTO_AGG_CONST
+     * CARBON_AUTO_AGG_CONST
      */
-    public static final String MOLAP_AUTO_AGG_CONST = "AutoAgg";
+    public static final String CARBON_AUTO_AGG_CONST = "AutoAgg";
     /**
-     * MOLAP_MANUAL_AGG_CONST
+     * CARBON_MANUAL_AGG_CONST
      */
-    public static final String MOLAP_MANUAL_AGG_CONST = "ManualAgg";
+    public static final String CARBON_MANUAL_AGG_CONST = "ManualAgg";
     /**
-     * MOLAP_SEND_LOAD_SIGNAL_TO_ENGINE
+     * CARBON_SEND_LOAD_SIGNAL_TO_ENGINE
      */
-    public static final String MOLAP_SEND_LOAD_SIGNAL_TO_ENGINE =
-            "molap.send.load.signal.to.engine";
+    public static final String CARBON_SEND_LOAD_SIGNAL_TO_ENGINE =
+            "carbon.send.load.signal.to.engine";
     /**
-     * MOLAP_SEND_LOAD_SIGNAL_TO_ENGINE_DEFAULTVALUE
+     * CARBON_SEND_LOAD_SIGNAL_TO_ENGINE_DEFAULTVALUE
      */
-    public static final String MOLAP_SEND_LOAD_SIGNAL_TO_ENGINE_DEFAULTVALUE = "true";
+    public static final String CARBON_SEND_LOAD_SIGNAL_TO_ENGINE_DEFAULTVALUE = "true";
     /**
      * IS_SORT_TEMP_FILE_COMPRESSION_ENABLED
      */
     public static final String IS_SORT_TEMP_FILE_COMPRESSION_ENABLED =
-            "molap.is.sort.temp.file.compression.enabled";
+            "carbon.is.sort.temp.file.compression.enabled";
     /**
      * IS_SORT_TEMP_FILE_COMPRESSION_ENABLED_DEFAULTVALUE
      */
@@ -911,82 +911,82 @@ public final class CarbonCommonConstants {
      * SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION
      */
     public static final String SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION =
-            "molap.sort.temp.file.no.of.records.for.compression";
+            "carbon.sort.temp.file.no.of.records.for.compression";
     /**
      * SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE
      */
     public static final String SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE = "50";
     /**
-     * MOLAP_BACKGROUND_MERGER_SIZE_IN_GB
+     * CARBON_BACKGROUND_MERGER_SIZE_IN_GB
      */
-    public static final String MOLAP_BACKGROUND_MERGER_FILE_SIZE =
-            "molap.background.merge.file.size";
+    public static final String CARBON_BACKGROUND_MERGER_FILE_SIZE =
+            "carbon.background.merge.file.size";
     /**
      * DEFAULT_COLLECTION_SIZE
      */
     public static final int DEFAULT_COLLECTION_SIZE = 16;
     /**
-     * MOLAP_DATALOAD_VALID_CSVFILE_SIZE
+     * CARBON_DATALOAD_VALID_CSVFILE_SIZE
      */
-    public static final String MOLAP_DATALOAD_VALID_CSVFILE_SIZE =
-            "molap.dataload.valid.csvfile.size(in GB)";
+    public static final String CARBON_DATALOAD_VALID_CSVFILE_SIZE =
+            "carbon.dataload.valid.csvfile.size(in GB)";
     /**
-     * MOLAP_DATALOAD_VALID_CSVFILE_SIZE_DEFAULTVALUE
+     * CARBON_DATALOAD_VALID_CSVFILE_SIZE_DEFAULTVALUE
      */
-    public static final String MOLAP_DATALOAD_VALID_CSVFILE_SIZE_DEFAULTVALUE = "5";
+    public static final String CARBON_DATALOAD_VALID_CSVFILE_SIZE_DEFAULTVALUE = "5";
     /**
-     * MOLAP_TIMESTAMP_DEFAULT_FORMAT
+     * CARBON_TIMESTAMP_DEFAULT_FORMAT
      */
-    public static final String MOLAP_TIMESTAMP_DEFAULT_FORMAT = "yyyy-MM-dd HH:mm:ss";
+    public static final String CARBON_TIMESTAMP_DEFAULT_FORMAT = "yyyy-MM-dd HH:mm:ss";
     /**
-     * MOLAP_TIMESTAMP_DEFAULT_FORMAT
+     * CARBON_TIMESTAMP_DEFAULT_FORMAT
      */
-    public static final String MOLAP_TIMESTAMP_FORMAT = "molap.timestamp.format";
+    public static final String CARBON_TIMESTAMP_FORMAT = "carbon.timestamp.format";
     /**
-     * MOLAP_DATALOAD_VALID_CSVFILE_SIZE
+     * CARBON_DATALOAD_VALID_CSVFILE_SIZE
      */
-    public static final String MOLAP_DATALOAD_VALID_NUMBAER_OF_CSVFILE =
-            "molap.dataload.csv.filecount";
+    public static final String CARBON_DATALOAD_VALID_NUMBAER_OF_CSVFILE =
+            "carbon.dataload.csv.filecount";
     /**
-     * MOLAP_DATALOAD_VALID_CSVFILE_SIZE_DEFAULTVALUE
+     * CARBON_DATALOAD_VALID_CSVFILE_SIZE_DEFAULTVALUE
      */
-    public static final String MOLAP_DATALOAD_VALID_NUMBAER_OF_CSVFILE_DEFAULTVALUE = "100";
+    public static final String CARBON_DATALOAD_VALID_NUMBAER_OF_CSVFILE_DEFAULTVALUE = "100";
     /**
-     * MOLAP_IS_GROUPBY_IN_SORT_DEFAULTVALUE
+     * CARBON_IS_GROUPBY_IN_SORT_DEFAULTVALUE
      */
-    public static final String MOLAP_IS_GROUPBY_IN_SORT_DEFAULTVALUE = "false";
+    public static final String CARBON_IS_GROUPBY_IN_SORT_DEFAULTVALUE = "false";
     /**
-     * MOLAP_IS_LOAD_FACT_TABLE_IN_MEMORY
+     * CARBON_IS_LOAD_FACT_TABLE_IN_MEMORY
      */
-    public static final String MOLAP_IS_LOAD_FACT_TABLE_IN_MEMORY =
-            "molap.is.load.facttable.in.memory";
+    public static final String CARBON_IS_LOAD_FACT_TABLE_IN_MEMORY =
+            "carbon.is.load.facttable.in.memory";
     /**
-     * MOLAP_IS_LOAD_FACT_TABLE_IN_MEMORY_DEFAULTVALUE
+     * CARBON_IS_LOAD_FACT_TABLE_IN_MEMORY_DEFAULTVALUE
      */
-    public static final String MOLAP_IS_LOAD_FACT_TABLE_IN_MEMORY_DEFAULTVALUE = "true";
+    public static final String CARBON_IS_LOAD_FACT_TABLE_IN_MEMORY_DEFAULTVALUE = "true";
     /**
-     * MOLAP_READ_ONLY_UNPROCESSED_LOAD_FOLER
+     * CARBON_READ_ONLY_UNPROCESSED_LOAD_FOLER
      */
-    public static final String MOLAP_READ_ONLY_UNPROCESSED_LOAD_FOLDER =
-            "molap.read.only.unprocessed.load.folder";
+    public static final String CARBON_READ_ONLY_UNPROCESSED_LOAD_FOLDER =
+            "carbon.read.only.unprocessed.load.folder";
     /**
-     * MOLAP_READ_ONLY_UNPROCESSED_LOAD_FOLDER_DEFAULT_VALUE
+     * CARBON_READ_ONLY_UNPROCESSED_LOAD_FOLDER_DEFAULT_VALUE
      */
-    public static final String MOLAP_READ_ONLY_UNPROCESSED_LOAD_FOLDER_DEFAULT_VALUE = "false";
+    public static final String CARBON_READ_ONLY_UNPROCESSED_LOAD_FOLDER_DEFAULT_VALUE = "false";
     /**
-     * MOLAP_READ_ONLY_UNPROCESSED_LOAD_FOLER
+     * CARBON_READ_ONLY_UNPROCESSED_LOAD_FOLER
      */
-    public static final String MOLAP_PARALLEL_AGGREGATE_CREATION_FROM_FACT =
-            "molap.parallel.aggregate.creation.from.fact";
+    public static final String CARBON_PARALLEL_AGGREGATE_CREATION_FROM_FACT =
+            "carbon.parallel.aggregate.creation.from.fact";
     /**
-     * MOLAP_READ_ONLY_UNPROCESSED_LOAD_FOLDER_DEFAULT_VALUE
+     * CARBON_READ_ONLY_UNPROCESSED_LOAD_FOLDER_DEFAULT_VALUE
      */
-    public static final String MOLAP_PARALLEL_AGGREGATE_CREATION_FROM_FACT_DEFAULT_VALUE = "false";
+    public static final String CARBON_PARALLEL_AGGREGATE_CREATION_FROM_FACT_DEFAULT_VALUE = "false";
     /**
      * IS_PRODUCERCONSUMER_BASED_SORTING
      */
     public static final String IS_PRODUCERCONSUMER_BASED_SORTING_IN_AGG =
-            "molap.is.producer.consumer.based.sorting.in.agg";
+            "carbon.is.producer.consumer.based.sorting.in.agg";
     /**
      * PRODUCERCONSUMER_BASED_SORTING_ENABLED
      */
@@ -1010,27 +1010,27 @@ public final class CarbonCommonConstants {
     /**
      * SPARK_STORE_LOCATION
      */
-    public static final String SPARK_STORE_LOCATION = "spark.molap.storelocation";
+    public static final String SPARK_STORE_LOCATION = "spark.carbon.storelocation";
     /**
      * STORE_LOCATION_HDFS
      */
-    public static final String STORE_LOCATION_HDFS = "molap.storelocation.hdfs";
+    public static final String STORE_LOCATION_HDFS = "carbon.storelocation.hdfs";
     /**
      * STORE_LOCATION_TEMP
      */
-    public static final String STORE_LOCATION_TEMP = "molap.storelocation.temp";
+    public static final String STORE_LOCATION_TEMP = "carbon.storelocation.temp";
     /**
      * STORE_LOCATION_TEMP_PATH
      */
-    public static final String STORE_LOCATION_TEMP_PATH = "molap.tempstore.location";
+    public static final String STORE_LOCATION_TEMP_PATH = "carbon.tempstore.location";
     /**
      * DATALOAD_KETTLE_PATH
      */
-    public static final String DATALOAD_KETTLE_PATH = "molap.dataload.kettleplugins.path";
+    public static final String DATALOAD_KETTLE_PATH = "carbon.dataload.kettleplugins.path";
     /**
      * IS_COLUMNAR_STORAGE
      */
-    public static final String IS_COLUMNAR_STORAGE = "molap.is.columnar.storage";
+    public static final String IS_COLUMNAR_STORAGE = "carbon.is.columnar.storage";
     /**
      * IS_COLUMNAR_STORAGE_DEFAULTVALUE
      */
@@ -1039,7 +1039,7 @@ public final class CarbonCommonConstants {
      * DIMENSION_SPLIT_VALUE_IN_COLUMNAR
      */
     public static final String DIMENSION_SPLIT_VALUE_IN_COLUMNAR =
-            "molap.dimension.split.value.in.columnar";
+            "carbon.dimension.split.value.in.columnar";
     /**
      * DIMENSION_SPLIT_VALUE_IN_COLUMNAR_DEFAULTVALUE
      */
@@ -1051,7 +1051,7 @@ public final class CarbonCommonConstants {
     /**
      * IS_FULLY_FILLED_BITS
      */
-    public static final String IS_FULLY_FILLED_BITS = "molap.is.fullyfilled.bits";
+    public static final String IS_FULLY_FILLED_BITS = "carbon.is.fullyfilled.bits";
     /**
      * IS_FULLY_FILLED_BITS_DEFAULT_VALUE
      */
@@ -1089,13 +1089,13 @@ public final class CarbonCommonConstants {
      */
     public static final String IS_COMPRESSED_KEYBLOCK_DEFAULTVALUE = "false";
     /**
-     * MOLAP_USE_HASHBASED_AGG_INSORT
+     * CARBON_USE_HASHBASED_AGG_INSORT
      */
-    public static final String MOLAP_USE_HASHBASED_AGG_INSORT = "molap.use.hashbased.agg.insort";
+    public static final String CARBON_USE_HASHBASED_AGG_INSORT = "carbon.use.hashbased.agg.insort";
     /**
-     * MOLAP_USE_HASHBASED_AGG_INSORT_DEFAULTVALUE
+     * CARBON_USE_HASHBASED_AGG_INSORT_DEFAULTVALUE
      */
-    public static final String MOLAP_USE_HASHBASED_AGG_INSORT_DEFAULTVALUE = "false";
+    public static final String CARBON_USE_HASHBASED_AGG_INSORT_DEFAULTVALUE = "false";
     public static final String SQLNULLVALUE = "#null";
     /**
      * CONSTANT_SIZE_TEN
@@ -1122,11 +1122,11 @@ public final class CarbonCommonConstants {
     /**
      * LOAD_STATUS
      */
-    public static final String MOLAP_METADATA_EXTENSION = ".metadata";
+    public static final String CARBON_METADATA_EXTENSION = ".metadata";
     /**
      * LOAD_STATUS
      */
-    public static final String MOLAP_DEFAULT_STREAM_ENCODEFORMAT = "UTF-8";
+    public static final String CARBON_DEFAULT_STREAM_ENCODEFORMAT = "UTF-8";
     /**
      * AGGREGATE_TABLE_START_TAG
      */
@@ -1144,9 +1144,9 @@ public final class CarbonCommonConstants {
      */
     public static final String MAX_QUERY_EXECUTION_TIME = "max.query.execution.time";
     /**
-     * MOLAP_TIMESTAMP
+     * CARBON_TIMESTAMP
      */
-    public static final String MOLAP_TIMESTAMP = "dd-MM-yyyy HH:mm:ss";
+    public static final String CARBON_TIMESTAMP = "dd-MM-yyyy HH:mm:ss";
     /**
      * METADATA_LOCK
      */
@@ -1163,12 +1163,12 @@ public final class CarbonCommonConstants {
      * NUMBER_OF_TRIES_FOR_LOAD_METADATA_LOCK
      */
     public static final String NUMBER_OF_TRIES_FOR_LOAD_METADATA_LOCK =
-            "molap.load.metadata.lock.retries";
+            "carbon.load.metadata.lock.retries";
     /**
      * MAX_TIMEOUT_FOR_LOAD_METADATA_LOCK
      */
     public static final String MAX_TIMEOUT_FOR_LOAD_METADATA_LOCK =
-            "molap.load.metadata.lock.retry.timeout.sec";
+            "carbon.load.metadata.lock.retry.timeout.sec";
     /**
      * MARKED_FOR_DELETION
      */
@@ -1247,7 +1247,7 @@ public final class CarbonCommonConstants {
      */
     public static final String SCHEMAS_MODIFIED_TIME_FILE = "modifiedTime.mdt";
     public static final String DEFAULT_INVISIBLE_DUMMY_MEASURE = "default_dummy_measure";
-    public static final String IS_FORCED_IN_MEMORY_CUBE = "molap.forced.in.memory.cube";
+    public static final String IS_FORCED_IN_MEMORY_CUBE = "carbon.forced.in.memory.cube";
     public static final String IS_FORCED_IN_MEMORY_CUBE_DEFAULT_VALUE = "false";
     /**
      * UPDATING_METADATA
@@ -1256,11 +1256,11 @@ public final class CarbonCommonConstants {
     /**
      * LOADCUBE_STARTUP.
      */
-    public static final String LOADCUBE_STARTUP = "molap.is.loadcube.startup";
+    public static final String LOADCUBE_STARTUP = "carbon.is.loadcube.startup";
     /**
      * LOADCUBE_DATALOAD.
      */
-    public static final String LOADCUBE_DATALOAD = "molap.is.loadcube.dataload";
+    public static final String LOADCUBE_DATALOAD = "carbon.is.loadcube.dataload";
     /**
      * sort index file extension
      */
@@ -1334,13 +1334,13 @@ public final class CarbonCommonConstants {
      */
     public static final String CARBON_ENABLE_QUICK_FILTER = "carbon.enable.quick.filter";
     /**
-     * MOLAP_PREFETCH_BUFFERSIZE
+     * CARBON_PREFETCH_BUFFERSIZE
      */
-    public static final int MOLAP_PREFETCH_BUFFERSIZE = 20000;
+    public static final int CARBON_PREFETCH_BUFFERSIZE = 20000;
     /**
-     * MOLAP_PREFETCH_IN_MERGE
+     * CARBON_PREFETCH_IN_MERGE
      */
-    public static final boolean MOLAP_PREFETCH_IN_MERGE_VALUE = false;
+    public static final boolean CARBON_PREFETCH_IN_MERGE_VALUE = false;
     /**
      * TEMPWRITEFILEEXTENSION
      */
@@ -1348,7 +1348,7 @@ public final class CarbonCommonConstants {
     /**
      * MERGE_THRESHOLD_VALUE
      */
-    public static final String MERGE_THRESHOLD_VALUE = "molap.merge.threshold";
+    public static final String MERGE_THRESHOLD_VALUE = "carbon.merge.threshold";
     /**
      * MERGE_THRESHOLD_DEFAULT_VAL
      */
@@ -1356,7 +1356,7 @@ public final class CarbonCommonConstants {
     /**
      * MERGE_FACTSIZE_THRESHOLD_VALUE
      */
-    public static final String MERGE_FACTSIZE_THRESHOLD_VALUE = "molap.merge.factsize.threshold";
+    public static final String MERGE_FACTSIZE_THRESHOLD_VALUE = "carbon.merge.factsize.threshold";
     /**
      * MERGE_FACTSIZE_THRESHOLD_DEFAULT_VAL
      */
@@ -1376,7 +1376,7 @@ public final class CarbonCommonConstants {
     /**
      * ENABLE_LOAD_MERGE
      */
-    public static final String ENABLE_LOAD_MERGE = "molap.enable.load.merge";
+    public static final String ENABLE_LOAD_MERGE = "carbon.enable.load.merge";
     /**
      * DEFAULT_ENABLE_LOAD_MERGE
      */

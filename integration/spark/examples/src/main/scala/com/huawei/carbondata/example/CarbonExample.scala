@@ -13,7 +13,7 @@ object CarbonExample {
       .setMaster("local[2]"))
 
     val oc = new CarbonContext(sc, hdfsCarbonBasePath)
-    oc.setConf("molap.kettle.home", "/home/root1/carbon/carbondata/processing/carbonplugins/")
+    oc.setConf("carbon.kettle.home", "/home/root1/carbon/carbondata/processing/carbonplugins/")
 
 //    oc.sql("drop cube alldatatypescube")
 

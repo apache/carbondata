@@ -51,7 +51,7 @@ public class PartitionImpl implements Partition {
     }
 
     /**
-     * @see com.huawei.datasight.molap.partiion.api.Partition#getUniqueID()
+     * @see com.huawei.datasight.carbon.partiion.api.Partition#getUniqueID()
      */
     @Override
     public String getUniqueID() {
@@ -59,7 +59,7 @@ public class PartitionImpl implements Partition {
     }
 
     /**
-     * @see com.huawei.datasight.molap.partiion.api.Partition#getFilePath()
+     * @see com.huawei.datasight.carbon.partiion.api.Partition#getFilePath()
      */
     @Override
     public String getFilePath() {
@@ -67,7 +67,7 @@ public class PartitionImpl implements Partition {
     }
 
     /**
-     * @see com.huawei.datasight.molap.partiion.api.Partition#getPartitionDetails()
+     * @see com.huawei.datasight.carbon.partiion.api.Partition#getPartitionDetails()
      */
     @Override
     public Map<String, CarbonDimensionLevelFilter> getPartitionDetails() {

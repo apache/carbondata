@@ -23,7 +23,7 @@ import org.apache.spark.sql.types._
 import org.carbondata.query.aggregator.MeasureAggregator
 
 /**
- * class to support user defined type for molap measure aggregators
+ * class to support user defined type for carbon measure aggregators
  * from spark 1.5, spark has made the data type strict and ANY is no more supported
  * for every data, we need to give the data type
  */

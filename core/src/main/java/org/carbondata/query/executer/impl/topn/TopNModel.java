@@ -24,7 +24,7 @@ import org.carbondata.core.metadata.CarbonMetadata.Measure;
 import org.carbondata.query.queryinterface.query.CarbonQuery.AxisType;
 
 /**
- * It is the model class for topN in MOLAP
+ * It is the model class for topN in CARBON
  */
 public class TopNModel {
 
@@ -35,7 +35,7 @@ public class TopNModel {
     /**
      * topNType
      */
-    private MolapTopNType topNType;
+    private CarbonTopNType topNType;
     /**
      * dimIndex
      */
@@ -101,7 +101,7 @@ public class TopNModel {
      * @param dimension
      * @param measure
      */
-    public TopNModel(int count, MolapTopNType topNType, Dimension dimension, Measure measure) {
+    public TopNModel(int count, CarbonTopNType topNType, Dimension dimension, Measure measure) {
         this.count = count;
         this.topNType = topNType;
         this.dimension = dimension;
@@ -118,7 +118,7 @@ public class TopNModel {
     /**
      * @return the topNType
      */
-    public MolapTopNType getTopNType() {
+    public CarbonTopNType getTopNType() {
         return topNType;
     }
 
@@ -288,7 +288,7 @@ public class TopNModel {
      *
      * @author R00900208
      */
-    public enum MolapTopNType {
+    public enum CarbonTopNType {
         /**
          * Top
          */

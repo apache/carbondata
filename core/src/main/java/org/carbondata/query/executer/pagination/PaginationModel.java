@@ -29,7 +29,7 @@ import org.carbondata.core.metadata.CarbonMetadata.Measure;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.datastorage.InMemoryTable;
 import org.carbondata.query.directinterface.impl.MeasureSortModel;
-import org.carbondata.query.executer.impl.topn.TopNModel.MolapTopNType;
+import org.carbondata.query.executer.impl.topn.TopNModel.CarbonTopNType;
 import org.carbondata.query.executer.pagination.lru.LRUCacheKey;
 import org.carbondata.query.filters.measurefilter.GroupMeasureFilterModel;
 import org.carbondata.query.filters.metadata.InMemFilterModel;
@@ -95,7 +95,7 @@ public class PaginationModel {
     /**
      * topNType
      */
-    private MolapTopNType topNType;
+    private CarbonTopNType topNType;
 
     /**
      * aggName
@@ -416,14 +416,14 @@ public class PaginationModel {
     /**
      * @return the topNType
      */
-    public MolapTopNType getTopNType() {
+    public CarbonTopNType getTopNType() {
         return topNType;
     }
 
     /**
      * @param topNType the topNType to set
      */
-    public void setTopNType(MolapTopNType topNType) {
+    public void setTopNType(CarbonTopNType topNType) {
         this.topNType = topNType;
     }
 

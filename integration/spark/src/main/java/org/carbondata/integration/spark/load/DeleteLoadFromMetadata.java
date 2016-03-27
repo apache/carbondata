@@ -19,7 +19,7 @@
 
 /**
  * Project Name  : Carbon
- * Module Name   : MOLAP Data Processor
+ * Module Name   : CARBON Data Processor
  * Author    : R00903928
  * Created Date  : 21-Sep-2015
  * FileName   : DeleteLoadFromMetadata.java
@@ -65,12 +65,12 @@ public final class DeleteLoadFromMetadata {
         List<String> invalidLoadIds = new ArrayList<String>(0);
         try {
             if (carbonLock.lockWithRetries()) {
-                LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                         "Metadata lock has been successfully acquired");
 
                 String dataLoadLocation = cubeFolderPath + CarbonCommonConstants.FILE_SEPARATOR
                         + CarbonCommonConstants.LOADMETADATA_FILENAME
-                        + CarbonCommonConstants.MOLAP_METADATA_EXTENSION;
+                        + CarbonCommonConstants.CARBON_METADATA_EXTENSION;
 
                 DataOutputStream dataOutputStream = null;
                 Gson gsonObjectToWrite = new Gson();
@@ -79,7 +79,7 @@ public final class DeleteLoadFromMetadata {
                 if (!FileFactory
                         .isFileExist(dataLoadLocation, FileFactory.getFileType(dataLoadLocation))) {
                     // log error.
-                    LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                    LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                             "Load metadata file is not present.");
                     return loadIds;
                 }
@@ -90,7 +90,7 @@ public final class DeleteLoadFromMetadata {
                     updateDeletionStatusInDetails(loadIds, listOfLoadFolderDetailsArray,
                             invalidLoadIds);
                     if (!invalidLoadIds.isEmpty()) {
-                        LOGGER.warn(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                        LOGGER.warn(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                                 "Load doesnt exist or it is already deleted , LoadSeqId-"
                                         + invalidLoadIds);
                     }
@@ -103,7 +103,7 @@ public final class DeleteLoadFromMetadata {
                     try {
                         dataOutputStream = fileWrite.openForWrite(FileWriteOperation.OVERWRITE);
                         brWriter = new BufferedWriter(new OutputStreamWriter(dataOutputStream,
-                                CarbonCommonConstants.MOLAP_DEFAULT_STREAM_ENCODEFORMAT));
+                                CarbonCommonConstants.CARBON_DEFAULT_STREAM_ENCODEFORMAT));
 
                         String metadataInstance =
                                 gsonObjectToWrite.toJson(listOfLoadFolderDetailsArray);
@@ -118,17 +118,17 @@ public final class DeleteLoadFromMetadata {
                     fileWrite.close();
 
                 } else {
-                    LOGGER.warn(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                    LOGGER.warn(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                             "Load doesnt exist or it is already deleted , LoadSeqId-" + loadIds);
                     return loadIds;
                 }
 
             } else {
-                LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                         "Unable to acquire the metadata lock");
             }
         } catch (IOException e) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, "IOException" + e.getMessage());
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "IOException" + e.getMessage());
         } finally {
             fileUnlock(carbonLock);
         }
@@ -138,10 +138,10 @@ public final class DeleteLoadFromMetadata {
 
     public static void fileUnlock(CarbonLock carbonLock) {
         if (carbonLock.unlock()) {
-            LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "Metadata lock has been successfully released");
         } else {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "Not able to release the metadata lock");
         }
     }
@@ -161,7 +161,7 @@ public final class DeleteLoadFromMetadata {
                             .equals(loadMetadata.getLoadStatus())) {
                         loadMetadata.setLoadStatus(CarbonCommonConstants.MARKED_FOR_DELETE);
                         loadMetadata.setDeletionTimestamp(CarbonLoaderUtil.readCurrentTime());
-                        LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+                        LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
                                 "LoadId " + loadId + " Marked for Delete");
                     } else {
                         // it is already deleted . can not delete it again.

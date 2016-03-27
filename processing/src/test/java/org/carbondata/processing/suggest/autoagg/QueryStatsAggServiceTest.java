@@ -50,13 +50,13 @@ public class QueryStatsAggServiceTest {
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
         try {
-            File file = new File("../../libraries/testData/Molap-Aggregation/store/");
+            File file = new File("../../libraries/testData/Carbon-Aggregation/store/");
             String basePath = file.getCanonicalPath() + "/";
             String metaPath = basePath + "schemas/default/carbon/metadata";
 
-            CarbonProperties.getInstance().addProperty("molap.storelocation", basePath + "store");
-            CarbonProperties.getInstance().addProperty("molap.number.of.cores", "4");
-            CarbonProperties.getInstance().addProperty("molap.smartJump.avoid.percent", "70");
+            CarbonProperties.getInstance().addProperty("carbon.storelocation", basePath + "store");
+            CarbonProperties.getInstance().addProperty("carbon.number.of.cores", "4");
+            CarbonProperties.getInstance().addProperty("carbon.smartJump.avoid.percent", "70");
             schema = CommonUtil.readMetaData(metaPath).get(0);
             cube = schema.cubes[0];
             schemaName = schema.name;
@@ -74,7 +74,7 @@ public class QueryStatsAggServiceTest {
     public void testDataStats_configuredBenefitRatio_getDimensions() {
         try {
 
-            CarbonProperties.getInstance().addProperty("molap.agg.benefit.ratio", "2");
+            CarbonProperties.getInstance().addProperty("carbon.agg.benefit.ratio", "2");
 
             AutoAggSuggestionService aggService =
                     AutoAggSuggestionFactory.getAggregateService(Request.QUERY_STATS);
@@ -131,7 +131,7 @@ public class QueryStatsAggServiceTest {
 
         try {
             //delete if serialized file exist
-            CarbonProperties.getInstance().addProperty("molap.agg.benefit.ratio", "2");
+            CarbonProperties.getInstance().addProperty("carbon.agg.benefit.ratio", "2");
             LoadModel loadModel =
                     TestUtil.createLoadModel(schemaName, cubeName, schema, cube, dataPath,
                             baseMetaPath);
@@ -174,7 +174,7 @@ public class QueryStatsAggServiceTest {
 
             };
 
-            CarbonProperties.getInstance().addProperty("molap.agg.benefit.ratio", "2");
+            CarbonProperties.getInstance().addProperty("carbon.agg.benefit.ratio", "2");
 
             AutoAggSuggestionService aggService =
                     AutoAggSuggestionFactory.getAggregateService(Request.QUERY_STATS);
@@ -204,7 +204,7 @@ public class QueryStatsAggServiceTest {
 
             };
 
-            CarbonProperties.getInstance().addProperty("molap.agg.benefit.ratio", "2");
+            CarbonProperties.getInstance().addProperty("carbon.agg.benefit.ratio", "2");
 
             AutoAggSuggestionService aggService =
                     AutoAggSuggestionFactory.getAggregateService(Request.QUERY_STATS);
@@ -234,7 +234,7 @@ public class QueryStatsAggServiceTest {
 
             };
 
-            CarbonProperties.getInstance().addProperty("molap.agg.benefit.ratio", "2");
+            CarbonProperties.getInstance().addProperty("carbon.agg.benefit.ratio", "2");
 
             AutoAggSuggestionService aggService =
                     AutoAggSuggestionFactory.getAggregateService(Request.QUERY_STATS);
@@ -264,7 +264,7 @@ public class QueryStatsAggServiceTest {
 
             };
 
-            CarbonProperties.getInstance().addProperty("molap.agg.benefit.ratio", "2");
+            CarbonProperties.getInstance().addProperty("carbon.agg.benefit.ratio", "2");
 
             AutoAggSuggestionService aggService =
                     AutoAggSuggestionFactory.getAggregateService(Request.QUERY_STATS);
@@ -294,7 +294,7 @@ public class QueryStatsAggServiceTest {
 
             };
 
-            CarbonProperties.getInstance().addProperty("molap.agg.benefit.ratio", "2");
+            CarbonProperties.getInstance().addProperty("carbon.agg.benefit.ratio", "2");
 
             AutoAggSuggestionService aggService =
                     AutoAggSuggestionFactory.getAggregateService(Request.QUERY_STATS);
@@ -324,7 +324,7 @@ public class QueryStatsAggServiceTest {
 
             };
 
-            CarbonProperties.getInstance().addProperty("molap.agg.benefit.ratio", "2");
+            CarbonProperties.getInstance().addProperty("carbon.agg.benefit.ratio", "2");
 
             AutoAggSuggestionService aggService =
                     AutoAggSuggestionFactory.getAggregateService(Request.QUERY_STATS);
@@ -354,7 +354,7 @@ public class QueryStatsAggServiceTest {
 
             };
 
-            CarbonProperties.getInstance().addProperty("molap.agg.benefit.ratio", "2");
+            CarbonProperties.getInstance().addProperty("carbon.agg.benefit.ratio", "2");
 
             AutoAggSuggestionService aggService =
                     AutoAggSuggestionFactory.getAggregateService(Request.QUERY_STATS);
@@ -384,7 +384,7 @@ public class QueryStatsAggServiceTest {
 
             };
 
-            CarbonProperties.getInstance().addProperty("molap.agg.benefit.ratio", "2");
+            CarbonProperties.getInstance().addProperty("carbon.agg.benefit.ratio", "2");
 
             AutoAggSuggestionService aggService =
                     AutoAggSuggestionFactory.getAggregateService(Request.QUERY_STATS);

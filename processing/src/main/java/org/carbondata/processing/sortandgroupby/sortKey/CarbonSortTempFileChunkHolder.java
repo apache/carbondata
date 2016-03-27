@@ -39,7 +39,7 @@ public class CarbonSortTempFileChunkHolder {
     /**
      * LOGGER
      */
-    private static final LogService MOLAPCHUNKHOLDERLOGGER =
+    private static final LogService CARBONCHUNKHOLDERLOGGER =
             LogServiceFactory.getLogService(CarbonSortTempFileChunkHolder.class.getName());
 
     /**
@@ -198,15 +198,15 @@ public class CarbonSortTempFileChunkHolder {
      * @throws CarbonSortKeyAndGroupByException problem while initializing
      */
     public void initialize() throws CarbonSortKeyAndGroupByException {
-        prefetch = CarbonCommonConstants.MOLAP_PREFETCH_IN_MERGE_VALUE;
+        prefetch = CarbonCommonConstants.CARBON_PREFETCH_IN_MERGE_VALUE;
         this.isSortTempFileCompressionEnabled = Boolean.parseBoolean(CarbonProperties.getInstance()
                 .getProperty(CarbonCommonConstants.IS_SORT_TEMP_FILE_COMPRESSION_ENABLED,
                         CarbonCommonConstants.IS_SORT_TEMP_FILE_COMPRESSION_ENABLED_DEFAULTVALUE));
         if (this.isSortTempFileCompressionEnabled) {
-            MOLAPCHUNKHOLDERLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            CARBONCHUNKHOLDERLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "Compression was used while writing the sortTempFile");
         }
-        bufferSize = CarbonCommonConstants.MOLAP_PREFETCH_BUFFERSIZE;
+        bufferSize = CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE;
 
         try {
             this.sortTempFileNoOFRecordsInCompression = Integer.parseInt(
@@ -214,8 +214,8 @@ public class CarbonSortTempFileChunkHolder {
                             CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION,
                             CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE));
             if (this.sortTempFileNoOFRecordsInCompression < 1) {
-                MOLAPCHUNKHOLDERLOGGER
-                        .error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                CARBONCHUNKHOLDERLOGGER
+                        .error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                                 "Invalid value of: "
                                         + CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION
                                         + ": Only Positive Integer value(greater than zero) is allowed.Default value will be used");
@@ -224,7 +224,7 @@ public class CarbonSortTempFileChunkHolder {
                         CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE);
             }
         } catch (NumberFormatException ex) {
-            MOLAPCHUNKHOLDERLOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            CARBONCHUNKHOLDERLOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "Invalid value of: "
                             + CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION
                             + ": Only Positive Integer value(greater than zero) is allowed.Default value will be used");
@@ -268,16 +268,16 @@ public class CarbonSortTempFileChunkHolder {
                 this.entryCount = stream.readInt();
             }
         } catch (FileNotFoundException fe) {
-            MOLAPCHUNKHOLDERLOGGER
-                    .error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, fe);
+            CARBONCHUNKHOLDERLOGGER
+                    .error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, fe);
             throw new CarbonSortKeyAndGroupByException(tempFile + " No Found", fe);
         } catch (IOException e) {
-            MOLAPCHUNKHOLDERLOGGER
-                    .error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
+            CARBONCHUNKHOLDERLOGGER
+                    .error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
             throw new CarbonSortKeyAndGroupByException(tempFile + " No Found", e);
         } catch (Exception e) {
-            MOLAPCHUNKHOLDERLOGGER
-                    .error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
+            CARBONCHUNKHOLDERLOGGER
+                    .error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
             throw new CarbonSortKeyAndGroupByException(tempFile + " Problem while reading", e);
         }
     }
@@ -298,8 +298,8 @@ public class CarbonSortTempFileChunkHolder {
                     new DataFetcher(false).call();
                     bufferRowCounter = 0;
                 } catch (Exception e) {
-                    MOLAPCHUNKHOLDERLOGGER
-                            .error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
+                    CARBONCHUNKHOLDERLOGGER
+                            .error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
                     throw new CarbonSortKeyAndGroupByException(tempFile + " Problem while reading",
                             e);
                 }
@@ -336,8 +336,8 @@ public class CarbonSortTempFileChunkHolder {
                 try {
                     submit.get();
                 } catch (Exception e) {
-                    MOLAPCHUNKHOLDERLOGGER
-                            .error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
+                    CARBONCHUNKHOLDERLOGGER
+                            .error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
                 }
                 bufferRowCounter = 0;
                 currentBuffer = backupBuffer;
@@ -400,16 +400,16 @@ public class CarbonSortTempFileChunkHolder {
             byteArray = new byte[mdKeyLength];
             // read mdkey
             if (stream.read(byteArray) < 0) {
-                MOLAPCHUNKHOLDERLOGGER
-                        .error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                CARBONCHUNKHOLDERLOGGER
+                        .error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                                 "Problme while reading the mdkey fom sort temp file");
             }
             holder[measureCount + 1] = byteArray;
             if (isFactMdkeyInInputRow) {
                 byteArray = new byte[this.factMdkeyLength];
                 if (stream.read(byteArray) < 0) {
-                    MOLAPCHUNKHOLDERLOGGER
-                            .error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                    CARBONCHUNKHOLDERLOGGER
+                            .error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                                     "Problme while reading the fact mdkey fom sort temp file");
                 }
                 holder[holder.length - 1] = byteArray;
@@ -419,7 +419,7 @@ public class CarbonSortTempFileChunkHolder {
             this.numberOfObjectRead++;
             // return out row
         } catch (IOException ex) {
-            MOLAPCHUNKHOLDERLOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            CARBONCHUNKHOLDERLOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "Problme while reading the madkey fom sort temp file", ex);
             throw new CarbonSortKeyAndGroupByException("Problem while reading the sort temp file ",
                     ex);
@@ -491,8 +491,8 @@ public class CarbonSortTempFileChunkHolder {
                     currentBuffer = reader.getRow();
                 }
             } catch (Exception e) {
-                MOLAPCHUNKHOLDERLOGGER
-                        .error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
+                CARBONCHUNKHOLDERLOGGER
+                        .error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
             }
             return null;
         }

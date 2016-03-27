@@ -38,7 +38,7 @@ import org.carbondata.core.datastorage.store.impl.FileFactory;
 public final class ValueCompressionUtil {
 
     /**
-     * Attribute for Molap LOGGER
+     * Attribute for Carbon LOGGER
      */
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(ValueCompressionUtil.class.getName());
@@ -713,14 +713,14 @@ public final class ValueCompressionUtil {
                 allocate = ByteBuffer.wrap(metaBytes);
             }
         } catch (FileNotFoundException f) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "@@@ msrMetadata File is missing @@@ ", f.getMessage());
-            LOGGER.debug(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, f, f.getMessage());
+            LOGGER.debug(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, f, f.getMessage());
         } catch (IOException exception) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "@@@ Error while reading msrMetadata File is missing @@@ ",
                     exception.getMessage());
-            LOGGER.debug(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, exception, exception.getMessage());
+            LOGGER.debug(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, exception, exception.getMessage());
         } finally {
             CarbonUtil.closeStreams(stream);
         }

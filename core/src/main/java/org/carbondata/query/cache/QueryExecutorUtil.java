@@ -75,14 +75,14 @@ public final class QueryExecutorUtil {
 
             if (hasNameColumn && surrogates.size() == 0) {
                 surrogates.add(Long.MAX_VALUE);
-                //LOGGER.error(MolapEngineLogEvent.U
-                LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                //LOGGER.error(CarbonEngineLogEvent.U
+                LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                         " Member does not exist for name column :" + name);
             }
             if (surr > 0) {
                 surrogates.add(surr);
             } else if (!hasNameColumn) {
-                LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                         " Member does not exist for level " + columnName.getName() + " : " + name);
                 surrogates.add(Long.MAX_VALUE);
             }

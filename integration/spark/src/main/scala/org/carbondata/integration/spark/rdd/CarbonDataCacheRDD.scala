@@ -87,16 +87,16 @@ class CarbonDataCacheRDD[K, V](
 
       if (columinar) {
         println("**************** Loading cube Columnar");
-        CarbonProperties.getInstance().addProperty("molap.is.columnar.storage", "true");
-        CarbonProperties.getInstance().addProperty("molap.dimension.split.value.in.columnar", "1");
-        CarbonProperties.getInstance().addProperty("molap.is.fullyfilled.bits", "true");
+        CarbonProperties.getInstance().addProperty("carbon.is.columnar.storage", "true");
+        CarbonProperties.getInstance().addProperty("carbon.dimension.split.value.in.columnar", "1");
+        CarbonProperties.getInstance().addProperty("carbon.is.fullyfilled.bits", "true");
         CarbonProperties.getInstance().addProperty("is.int.based.indexer", "true");
         CarbonProperties.getInstance().addProperty("aggregate.columnar.keyblock", "true");
         CarbonProperties.getInstance().addProperty("high.cardinality.value", "100000");
         CarbonProperties.getInstance().addProperty("is.compressed.keyblock", "false");
-        CarbonProperties.getInstance().addProperty("molap.leaf.node.size", "120000");
+        CarbonProperties.getInstance().addProperty("carbon.leaf.node.size", "120000");
       }
-      CarbonProperties.getInstance().addProperty("molap.storelocation", baseStoreLocation);
+      CarbonProperties.getInstance().addProperty("carbon.storelocation", baseStoreLocation);
       CarbonQueryUtil.createDataSource(currentRestructNumber, schema, null, split.serializableHadoopSplit.value.getPartition().getUniqueID(), null, null, null, cubeCreationTime);
 
       // Register an on-task-completion callback to close the input stream.

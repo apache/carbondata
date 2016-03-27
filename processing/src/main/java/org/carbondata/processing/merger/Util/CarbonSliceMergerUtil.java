@@ -163,7 +163,7 @@ public final class CarbonSliceMergerUtil {
                     writeIntoHierarchyFile(arrayHolder.getMdKey(), arrayHolder.getPrimaryKey(),
                             outPutFileChannel);
                 } catch (SliceMergerException e) {
-                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                             "Unable to write hierarchy file");
                     throw new IOException(e);
                 }
@@ -338,7 +338,7 @@ public final class CarbonSliceMergerUtil {
      */
     public static CarbonFile[] getSortedPathForFiles(String sliceLocation) {
         FileType fileType = FileFactory.getFileType(sliceLocation);
-        CarbonFile storeFolder = FileFactory.getMolapFile(sliceLocation, fileType);
+        CarbonFile storeFolder = FileFactory.getCarbonFile(sliceLocation, fileType);
 
         CarbonFile[] files = storeFolder.listFiles(new CarbonFileFilter() {
 

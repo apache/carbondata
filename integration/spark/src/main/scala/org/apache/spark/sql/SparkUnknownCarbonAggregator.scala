@@ -30,7 +30,7 @@ import org.carbondata.query.carbonfilterinterface.RowIntf
 import scala.collection.JavaConverters._
 
 /**
-  * Custom Aggregator serialized and used to pushdown all aggregate functions from spark layer with expressions to Molap layer
+  * Custom Aggregator serialized and used to pushdown all aggregate functions from spark layer with expressions to Carbon layer
   */
 @SerialVersionUID(-3787749110799088697l)
 class SparkUnknownCarbonAggregator(partialAggregate: AggregateExpression1) extends CustomMeasureAggregator {
@@ -62,7 +62,7 @@ class SparkUnknownCarbonAggregator(partialAggregate: AggregateExpression1) exten
   }
 
   override def agg(newVal: CarbonReadDataHolder, index: Int) = {
-    throw new UnsupportedOperationException("agg(MolapReadDataHolder, int) is not a valid method for aggregation");
+    throw new UnsupportedOperationException("agg(CarbonReadDataHolder, int) is not a valid method for aggregation");
   }
 
   override def getByteArray(): Array[Byte] = {

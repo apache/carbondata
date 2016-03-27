@@ -83,8 +83,8 @@ public class MemberSortModel implements Comparable<MemberSortModel> {
             return d1.compareTo(d2);
         case TIMESTAMP:
             SimpleDateFormat timeParser = new SimpleDateFormat(CarbonProperties.getInstance()
-                    .getProperty(CarbonCommonConstants.MOLAP_TIMESTAMP_FORMAT,
-                            CarbonCommonConstants.MOLAP_TIMESTAMP_DEFAULT_FORMAT));
+                    .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+                            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
             Date date1 = null;
             Date date2 = null;
             try {

@@ -44,7 +44,7 @@ import org.carbondata.query.util.CarbonEngineLogEvent;
 public class FactDataHandler {
 
     /**
-     * Attribute for Molap LOGGER
+     * Attribute for Carbon LOGGER
      */
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(FactDataHandler.class.getName());
@@ -123,19 +123,19 @@ public class FactDataHandler {
                 .substring(schemaAndcubeName.indexOf(schemaName + '_') + schemaName.length() + 1,
                         schemaAndcubeName.length());
         String modeValue = metaCube.getMode();
-        if (modeValue.equalsIgnoreCase(CarbonCommonConstants.MOLAP_MODE_DEFAULT_VAL)) {
+        if (modeValue.equalsIgnoreCase(CarbonCommonConstants.CARBON_MODE_DEFAULT_VAL)) {
             isFileStore = true;
         }
 
         if (!isFileStore) {
             boolean parseBoolean = Boolean.parseBoolean(CarbonProperties.getInstance()
-                    .getProperty(CarbonCommonConstants.MOLAP_IS_LOAD_FACT_TABLE_IN_MEMORY,
-                            CarbonCommonConstants.MOLAP_IS_LOAD_FACT_TABLE_IN_MEMORY_DEFAULTVALUE));
+                    .getProperty(CarbonCommonConstants.CARBON_IS_LOAD_FACT_TABLE_IN_MEMORY,
+                            CarbonCommonConstants.CARBON_IS_LOAD_FACT_TABLE_IN_MEMORY_DEFAULTVALUE));
             if (!parseBoolean && tableName.equals(metaCube.getFactTableName())) {
-                LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                         "Mode set for cube " + schemaName + ':' + cubeName + "as mode=" + modeValue
                                 + ": but as "
-                                + CarbonCommonConstants.MOLAP_IS_LOAD_FACT_TABLE_IN_MEMORY
+                                + CarbonCommonConstants.CARBON_IS_LOAD_FACT_TABLE_IN_MEMORY
                                 + " is false it will be file mode");
                 isFileStore = true;
             }
@@ -156,7 +156,7 @@ public class FactDataHandler {
             if (null != leafNodeInfoList) {
                 if (leafNodeInfoList.size() > 0) {
                     leafNodeInfoList.get(0).getFileName();
-                    LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                    LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                             "Processing : " + (leafNodeInfoList.get(0).getFileName()) + " : " + (
                                     System.currentTimeMillis() - st));
                     st = System.currentTimeMillis();

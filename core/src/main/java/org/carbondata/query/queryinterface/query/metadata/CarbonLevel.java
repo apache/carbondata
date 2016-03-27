@@ -22,16 +22,16 @@ package org.carbondata.query.queryinterface.query.metadata;
 import java.io.Serializable;
 
 /**
- * It is level interface for MOLAP dimension level and measure.
+ * It is level interface for CARBON dimension level and measure.
  */
 public interface CarbonLevel extends Serializable {
 
     /**
      * Type of level, either dimension level or measure.
      *
-     * @return MolapLevelType
+     * @return CarbonLevelType
      */
-    MolapLevelType getType();
+    CarbonLevelType getType();
 
     /**
      * Dimension name of the level it belonged to.
@@ -59,7 +59,7 @@ public interface CarbonLevel extends Serializable {
      *
      * @author R00900208
      */
-    public enum MolapLevelType {
+    public enum CarbonLevelType {
         /**
          * DIMENSION
          */

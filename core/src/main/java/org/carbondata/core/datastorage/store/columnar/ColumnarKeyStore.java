@@ -24,7 +24,7 @@ import org.carbondata.core.datastorage.store.FileHolder;
 public interface ColumnarKeyStore {
     /**
      * This method will be used to get the actual mdkeys array present in the
-     * molap store, it will read and uncomnpress the key
+     * carbon store, it will read and uncomnpress the key
      *
      * @param fileHolder
      * @return mdkey
@@ -34,7 +34,7 @@ public interface ColumnarKeyStore {
 
     /**
      * This method will be used to get the actual mdkeys array present in the
-     * molap store, it will read and uncomnpress the key
+     * carbon store, it will read and uncomnpress the key
      *
      * @param fileHolder
      * @return mdkey

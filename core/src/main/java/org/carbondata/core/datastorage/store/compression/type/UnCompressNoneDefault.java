@@ -34,7 +34,7 @@ import org.carbondata.core.util.ValueCompressionUtil.DataType;
 
 public class UnCompressNoneDefault implements UnCompressValue<double[]> {
     /**
-     * Attribute for Molap LOGGER
+     * Attribute for Carbon LOGGER
      */
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(UnCompressNoneDefault.class.getName());
@@ -59,7 +59,7 @@ public class UnCompressNoneDefault implements UnCompressValue<double[]> {
         try {
             return (UnCompressValue) clone();
         } catch (CloneNotSupportedException exception1) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, exception1,
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, exception1,
                     exception1.getMessage());
         }
         return null;

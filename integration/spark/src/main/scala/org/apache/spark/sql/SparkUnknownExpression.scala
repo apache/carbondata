@@ -32,9 +32,9 @@ class SparkUnknownExpression(sparkExp: SparkExpression) extends Expression with 
 
   children.addAll(getColumnList())
 
-  override def evaluate(molapRowInstance: RowIntf): ExpressionResult = {
+  override def evaluate(carbonRowInstance: RowIntf): ExpressionResult = {
 
-    val values = molapRowInstance.getValues().toSeq.map { value =>
+    val values = carbonRowInstance.getValues().toSeq.map { value =>
       value match {
         case s: String => org.apache.spark.unsafe.types.UTF8String.fromString(s)
         case d: java.math.BigDecimal =>      {
@@ -51,7 +51,7 @@ class SparkUnknownExpression(sparkExp: SparkExpression) extends Expression with 
         new GenericMutableRow(values.map(a => a.asInstanceOf[Any]).toArray)
       )
 
-      new ExpressionResult(CarbonScalaUtil.convertSparkToMolapDataType(sparkExp.dataType), sparkRes);
+      new ExpressionResult(CarbonScalaUtil.convertSparkToCarbonDataType(sparkExp.dataType), sparkRes);
     }
     catch {
       case e: Exception => throw new FilterUnsupportedException(e.getMessage());
@@ -94,13 +94,13 @@ class SparkUnknownExpression(sparkExp: SparkExpression) extends Expression with 
   def getColumnListFromExpressionTree(sparkCurrentExp: SparkExpression,
                                       list: java.util.List[ColumnExpression]): Unit = {
     sparkCurrentExp match {
-      case molapBoundRef: CarbonBoundReference => {
-        val foundExp = list.asScala.find(p => p.getColumnName() == molapBoundRef.colExp.getColumnName())
+      case carbonBoundRef: CarbonBoundReference => {
+        val foundExp = list.asScala.find(p => p.getColumnName() == carbonBoundRef.colExp.getColumnName())
         if (foundExp.isEmpty) {
-          molapBoundRef.colExp.setColIndex(list.size)
-          list.add(molapBoundRef.colExp)
+          carbonBoundRef.colExp.setColIndex(list.size)
+          list.add(carbonBoundRef.colExp)
         } else {
-          molapBoundRef.colExp.setColIndex(foundExp.get.getColIndex())
+          carbonBoundRef.colExp.setColIndex(foundExp.get.getColIndex())
         }
       }
       case _ => sparkCurrentExp.children.foreach(getColumnListFromExpressionTree(_, list))
@@ -111,7 +111,7 @@ class SparkUnknownExpression(sparkExp: SparkExpression) extends Expression with 
   def getAllColumnListFromExpressionTree(sparkCurrentExp: SparkExpression,
                                          list: java.util.List[ColumnExpression]): java.util.List[ColumnExpression] = {
     sparkCurrentExp match {
-      case molapBoundRef: CarbonBoundReference => list.add(molapBoundRef.colExp)
+      case carbonBoundRef: CarbonBoundReference => list.add(carbonBoundRef.colExp)
       case _ => sparkCurrentExp.children.foreach(getColumnListFromExpressionTree(_, list))
     }
     list

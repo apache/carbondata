@@ -25,7 +25,6 @@ import org.apache.log4j.spi.LoggingEvent;
  * Copied form log4j and modified for renaming files and restriction only for
  * audit logging
  *
- * @author k00742797
  */
 public class AuditExtendedRollingFileAppender extends ExtendedRollingFileAppender {
 

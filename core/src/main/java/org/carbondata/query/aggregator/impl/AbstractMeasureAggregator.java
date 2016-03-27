@@ -29,7 +29,7 @@ import org.carbondata.query.datastorage.Member;
 
 /**
  * AbstractMeasureAggregator
- * Used for custom Molap Aggregator
+ * Used for custom Carbon Aggregator
  */
 public abstract class AbstractMeasureAggregator
         implements MeasureAggregator

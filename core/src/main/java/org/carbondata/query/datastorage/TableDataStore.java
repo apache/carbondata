@@ -55,7 +55,7 @@ import org.carbondata.query.util.CarbonEngineLogEvent;
 public class TableDataStore {
 
     /**
-     * Attribute for Molap LOGGER
+     * Attribute for Carbon LOGGER
      */
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(TableDataStore.class.getName());
@@ -208,7 +208,7 @@ public class TableDataStore {
                 .substring(schemaAndcubeName.indexOf(schemaName + '_') + schemaName.length() + 1,
                         schemaAndcubeName.length());
         String modeValue = metaCube.getMode();
-        if (modeValue.equalsIgnoreCase(CarbonCommonConstants.MOLAP_MODE_DEFAULT_VAL)) {
+        if (modeValue.equalsIgnoreCase(CarbonCommonConstants.CARBON_MODE_DEFAULT_VAL)) {
             isFileStore = true;
         }
         boolean isForcedInMemoryCube = Boolean.parseBoolean(CarbonProperties.getInstance()
@@ -217,7 +217,7 @@ public class TableDataStore {
         if (isForcedInMemoryCube) {
             isFileStore = false;
         }
-        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                 "Mode set for cube " + schemaName + ':' + cubeName + "as mode=" + (isFileStore ?
                         "file" :
                         "In-Memory"));
@@ -232,7 +232,7 @@ public class TableDataStore {
     public boolean loadDataFromFile(String filesLocaton, int startAndEndKeySize) {
         // added for get the MDKey size by liupeng 00204190.
         CarbonFile file =
-                FileFactory.getMolapFile(filesLocaton, FileFactory.getFileType(filesLocaton));
+                FileFactory.getCarbonFile(filesLocaton, FileFactory.getFileType(filesLocaton));
         boolean hasFactCount = hasFactCount();
         int numberOfValues = metaCube.getMeasures(tableName).size() + (hasFactCount ? 1 : 0);
         StandardLogService
@@ -246,15 +246,15 @@ public class TableDataStore {
         if (file.isDirectory()) {
             //Verify any update status fact file is present so that the original fact will be ignored since
             //updation has happened as per retention policy.
-            CarbonFile[] files = getMolapFactFilesList(file);
+            CarbonFile[] files = getCarbonFactFilesList(file);
 
             if (files.length == 0) {
-                LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                         "@@@@ Fact file is missing for the table :" + tableName + " @@@@");
                 return false;
             }
             files = removeFactFileWithDeleteStatus(files);
-            files = getMolapFactFilesWithUpdateStatus(files);
+            files = getCarbonFactFilesWithUpdateStatus(files);
             if (files.length == 0) {
                 return false;
             }
@@ -297,10 +297,10 @@ public class TableDataStore {
             }
             //            }
 
-            LOGGER.debug(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                     "Fact increamental load build time is: " + (System.currentTimeMillis() - t1));
         } catch (Exception e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e, e.getMessage());
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e, e.getMessage());
         }
 
         // Close the readers
@@ -317,12 +317,12 @@ public class TableDataStore {
         Collections.addAll(listOfFactFileWithDelStatus, files);
         for (CarbonFile carbonFile : files) {
             if (carbonFile.getName().endsWith(CarbonCommonConstants.FACT_DELETE_EXTENSION)) {
-                for (CarbonFile molapArrayFiles : files) {
-                    String factFileNametoRemove = molapArrayFiles.getName().substring(0,
+                for (CarbonFile carbonArrayFiles : files) {
+                    String factFileNametoRemove = carbonArrayFiles.getName().substring(0,
                             carbonFile.getName()
                                     .indexOf(CarbonCommonConstants.FACT_DELETE_EXTENSION));
-                    if (molapArrayFiles.getName().equals(factFileNametoRemove)) {
-                        listOfFactFileWithDelStatus.remove(molapArrayFiles);
+                    if (carbonArrayFiles.getName().equals(factFileNametoRemove)) {
+                        listOfFactFileWithDelStatus.remove(carbonArrayFiles);
                         listOfFactFileWithDelStatus.remove(carbonFile);
                     }
                 }
@@ -332,12 +332,12 @@ public class TableDataStore {
         return listOfFactFileWithDelStatus.toArray(fileModified);
     }
 
-    private CarbonFile[] getMolapFactFilesWithUpdateStatus(CarbonFile[] files) {
+    private CarbonFile[] getCarbonFactFilesWithUpdateStatus(CarbonFile[] files) {
         List<CarbonFile> carbonFileList = new ArrayList<CarbonFile>(files.length);
 
-        for (CarbonFile molapFactFile : files) {
-            if (molapFactFile.getName().endsWith(CarbonCommonConstants.FACT_UPDATE_EXTENSION)) {
-                carbonFileList.add(molapFactFile);
+        for (CarbonFile carbonFactFile : files) {
+            if (carbonFactFile.getName().endsWith(CarbonCommonConstants.FACT_UPDATE_EXTENSION)) {
+                carbonFileList.add(carbonFactFile);
             }
         }
         if (carbonFileList.size() > 0) {
@@ -351,7 +351,7 @@ public class TableDataStore {
      * @param file
      * @return
      */
-    private CarbonFile[] getMolapFactFilesList(CarbonFile file) {
+    private CarbonFile[] getCarbonFactFilesList(CarbonFile file) {
         CarbonFile[] files = file.listFiles(new CarbonFileFilter() {
             public boolean accept(CarbonFile pathname) {
                 //verifying whether any fact file has been in update status as per retention policy.
@@ -384,7 +384,7 @@ public class TableDataStore {
                             o2.getName().substring(tableName.length() + 1).split("\\.")[0]);
                     return (f1 < f2) ? -1 : (f1 == f2 ? 0 : 1);
                 } catch (Exception e) {
-                    LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e.getMessage());
+                    LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e.getMessage());
                     return o1.getName().compareTo(o2.getName());
                 }
             }
@@ -456,7 +456,7 @@ public class TableDataStore {
     }
     //    public void loadDataFromSlices(List<CubeDataStore> dataStores, String fileStore)
     //    {
-    //        List<Scanner> scanners = new ArrayList<Scanner>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+    //        List<Scanner> scanners = new ArrayList<Scanner>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
     //        // Make scanners from old slices
     //        CubeDataStore cubeDataStore = dataStores.get(0);
     //        int[] msrOrdinal2 = cubeDataStore.getMsrOrdinal();
@@ -499,7 +499,7 @@ public class TableDataStore {
     //                hasFactCount());
     //        inputStream.initInput();
     //        // TODO need to call build method with only onse stream
-    //        List<DataInputStream> list = new ArrayList<DataInputStream>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+    //        List<DataInputStream> list = new ArrayList<DataInputStream>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
     //        list.add(inputStream);
     //
     //        if(isColumnar)

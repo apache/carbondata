@@ -32,7 +32,7 @@ public class SumDistinctBigDecimalAggregator extends AbstractMeasureAggregatorBa
     private static final long serialVersionUID = 6313463368629960155L;
 
     /**
-     * For Spark MOLAP to avoid heavy object transfer it better to flatten the
+     * For Spark CARBON to avoid heavy object transfer it better to flatten the
      * Aggregators. There is no aggregation expected after setting this value.
      */
     private BigDecimal computedFixedValue;

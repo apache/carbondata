@@ -59,7 +59,7 @@ public class InMemoryTable implements Comparable<InMemoryTable> {
      */
     private static final byte READY_TO_CLEAN = 1;
     /**
-     * Attribute for Molap LOGGER
+     * Attribute for Carbon LOGGER
      */
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(InMemoryTable.class.getName());
@@ -224,7 +224,7 @@ public class InMemoryTable implements Comparable<InMemoryTable> {
     public void loadCacheFromFile(String fileStore, String tableName, boolean loadOnlyLevelFiles) {
         ExecutorService executorService = Executors.newFixedThreadPool(1);
         String cubeUniqueName = schemaName + '_' + cubeName;
-        CarbonFile file = FileFactory.getMolapFile(fileStore, FileFactory.getFileType(fileStore));
+        CarbonFile file = FileFactory.getCarbonFile(fileStore, FileFactory.getFileType(fileStore));
         if (file.isDirectory()) {
             getDimensionCardinality(file, tableName);
             List<Dimension> dimensions = metaCube.getDimensions(tableName);
@@ -302,7 +302,7 @@ public class InMemoryTable implements Comparable<InMemoryTable> {
             executorService.shutdown();
             executorService.awaitTermination(2, TimeUnit.DAYS);
         } catch (InterruptedException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
         }
         this.tableName = tableName;
     }
@@ -335,7 +335,7 @@ public class InMemoryTable implements Comparable<InMemoryTable> {
         });
 
         if (files.length <= 0) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                     "Level Cardinality file not found in path : " + file.getAbsolutePath());
             return dimensionCardinality;
         }
@@ -344,7 +344,7 @@ public class InMemoryTable implements Comparable<InMemoryTable> {
             dimensionCardinality =
                     CarbonUtil.getCardinalityFromLevelMetadataFile(files[0].getAbsolutePath());
         } catch (CarbonUtilException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
         }
         return dimensionCardinality;
     }
@@ -484,7 +484,7 @@ public class InMemoryTable implements Comparable<InMemoryTable> {
                 loadNumber = Integer.parseInt(loadName.substring(lastIndexOf + 5));
             }
         } catch (NumberFormatException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e,
                     "Problem while getting the load number");
         }
         return loadNumber;

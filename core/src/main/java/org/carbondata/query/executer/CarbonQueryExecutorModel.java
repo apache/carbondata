@@ -40,7 +40,7 @@ import org.carbondata.query.queryinterface.filter.CarbonFilterInfo;
 import org.carbondata.query.querystats.PartitionDetail;
 
 /**
- * Its a model object for MolapExecutor interface
+ * Its a model object for CarbonExecutor interface
  */
 public class CarbonQueryExecutorModel implements Serializable {
     /**

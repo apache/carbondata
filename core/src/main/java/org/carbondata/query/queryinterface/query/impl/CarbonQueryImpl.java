@@ -28,7 +28,7 @@ import org.carbondata.query.queryinterface.query.CarbonQuery;
 import org.carbondata.query.queryinterface.query.metadata.*;
 
 /**
- * It is the implementation class for MolapQuery interface.
+ * It is the implementation class for CarbonQuery interface.
  */
 public class CarbonQueryImpl implements CarbonQuery {
     private static final long serialVersionUID = -1565369538375956018L;

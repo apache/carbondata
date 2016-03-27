@@ -74,7 +74,7 @@ public class ResultTempFileReader {
     private ByteArrayWrapper byteArrayWrapper;
 
     /**
-     * MolapSortTempFileChunkHolder Constructor
+     * CarbonSortTempFileChunkHolder Constructor
      *
      * @param inFile     temp file
      * @param recordSize measure count
@@ -98,7 +98,7 @@ public class ResultTempFileReader {
     /**
      * This method will be used to initialize
      *
-     * @throws MolapSortKeyAndGroupByException problem while initializing
+     * @throws CarbonSortKeyAndGroupByException problem while initializing
      */
     public void initialize() throws ResultReaderException {
         FileHolder fileHolder = null;
@@ -127,14 +127,14 @@ public class ResultTempFileReader {
     /**
      * This method will be used to read new row from file
      *
-     * @throws MolapSortKeyAndGroupByException problem while reading
+     * @throws CarbonSortKeyAndGroupByException problem while reading
      */
     public void readRow() throws ResultReaderException {
         try {
             byte[] mdKey = new byte[this.keySize];
             this.stream.readFully(mdKey);
 
-            //                LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "Problem while reading mdkey from pagination temp file");
+            //                LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "Problem while reading mdkey from pagination temp file");
 
             this.byteArrayWrapper.setMaskedKey(mdKey);
             for (int i = 0; i < this.measureAggregator.length; i++) {

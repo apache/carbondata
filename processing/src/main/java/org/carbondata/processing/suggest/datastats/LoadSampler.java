@@ -58,7 +58,7 @@ public class LoadSampler {
             LogServiceFactory.getLogService(LoadSampler.class.getName());
 
     /**
-     * folder name where molap data writer will write
+     * folder name where carbon data writer will write
      */
     //private static final String RS_FOLDER_NAME = "RS_";
 
@@ -110,7 +110,7 @@ public class LoadSampler {
 
         loadHandlers = new ArrayList<LoadHandler>();
         // Load data in memory
-        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                 "Loading data to BPlus tree started");
         metaCube = InMemoryTableStore.getInstance()
                 .loadCubeMetadataIfRequired(schema, cube, partitionId,
@@ -120,7 +120,7 @@ public class LoadSampler {
                 loadModel.getRestructureNo(), loadModel.getCubeCreationtime());
         //set visible dimensions
         this.visibleDimensions = getVisibleDimensions(cube);
-        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                 "Loading data to BPlus tree completed");
 
         //int restructureNo=Integer.parseInt(rsFolder.getName().substring(rsFolder.getName().indexOf('_')+1));
@@ -220,7 +220,7 @@ public class LoadSampler {
     }
 
     private CarbonFile[] getLoadFolderList(String path, final List<String> validLoads) {
-        CarbonFile file = FileFactory.getMolapFile(path, FileFactory.getFileType(path));
+        CarbonFile file = FileFactory.getCarbonFile(path, FileFactory.getFileType(path));
         CarbonFile[] files = null;
         if (file.isDirectory()) {
             files = file.listFiles(new CarbonFileFilter() {
@@ -263,7 +263,7 @@ public class LoadSampler {
                             DataStatsUtil.getNumberOfRows(dimension)));
                 }
             } catch (AggSuggestException e) {
-                LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e.getMessage());
+                LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e.getMessage());
             }
 
         }
@@ -282,7 +282,7 @@ public class LoadSampler {
 
             String data = getDimensionValueFromSurrogate(cubeUniqueName, levelName, surrogate);
             if (null == data) {
-                LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                         "Member value of dimension," + dimension.getName() + ",for surrogate,"
                                 + surrogate + ",is not found in level file");
                 continue;
@@ -291,7 +291,7 @@ public class LoadSampler {
             realDatas.add(data);
 
         }
-        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                 dimension.getName() + " Load size:" + loadHandlers.size() + ":Sample size:"
                         + realDatas.size());
         return realDatas;

@@ -89,7 +89,7 @@ public final class CarbonDataMergerUtil {
                 return null;
             }
         } catch (IOException e) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "Error occurred :: " + e.getMessage());
         }
 
@@ -149,7 +149,7 @@ public final class CarbonDataMergerUtil {
                             currentRestructNumber);
 
             CarbonFile parentLoadFolder =
-                    FileFactory.getMolapFile(loadPath, FileFactory.getFileType(loadPath));
+                    FileFactory.getCarbonFile(loadPath, FileFactory.getFileType(loadPath));
             CarbonFile[] loadFiles = parentLoadFolder.listFiles(new CarbonFileFilter() {
                 @Override
                 public boolean accept(CarbonFile file) {
@@ -245,7 +245,7 @@ public final class CarbonDataMergerUtil {
                 .createLoadFolderPath(carbonLoadModel, storeLocation, 0, currentRestructNumber);
 
         CarbonFile parentLoadFolder =
-                FileFactory.getMolapFile(loadPath, FileFactory.getFileType(loadPath));
+                FileFactory.getCarbonFile(loadPath, FileFactory.getFileType(loadPath));
 
         //get all the load files in the current RS
         CarbonFile[] loadFiles = parentLoadFolder.listFiles( new CarbonFileFilter() {
@@ -384,7 +384,7 @@ public final class CarbonDataMergerUtil {
                     .writeLoadMetadata(carbonLoadModel.getSchema(), carbonLoadModel.getSchemaName(),
                             carbonLoadModel.getCubeName(), Arrays.asList(loadDetails));
         } catch (IOException e) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "Error while writing metadata", e);
         }
 
@@ -408,7 +408,7 @@ public final class CarbonDataMergerUtil {
                     .createLoadFolderPath(loadModel, storeLocation, partitionId,
                             currentRestructNumber);
 
-            CarbonFile loadFolder = FileFactory.getMolapFile(path, FileFactory.getFileType(path));
+            CarbonFile loadFolder = FileFactory.getCarbonFile(path, FileFactory.getFileType(path));
 
             CarbonFile[] loads = loadFolder.listFiles(new CarbonFileFilter() {
                 @Override
@@ -430,7 +430,7 @@ public final class CarbonDataMergerUtil {
                     if (files != null) {
                         for (CarbonFile eachFile : files) {
                             if (!eachFile.delete()) {
-                                LOGGER.warn(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                                LOGGER.warn(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                                         "Unable to delete the file." + loadFolder
                                                 .getAbsolutePath());
                             }

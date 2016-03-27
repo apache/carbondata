@@ -113,7 +113,7 @@ public interface CarbonExecutor {
 
     /**
      * It interrupts the executor. The task which only can interrupt is through the method
-     * execute(MolapQueryExecutorModel queryModel)
+     * execute(CarbonQueryExecutorModel queryModel)
      */
     void interruptExecutor();
 

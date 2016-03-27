@@ -154,7 +154,7 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
                     dataIndexMapLength[idx] = compressedDataIndex[idx].length;
                     idx++;
                 } catch (Exception e) {
-                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
+                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
                 }
             }
         }
@@ -357,7 +357,7 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
         // key offset will be 8 bytes from current offset because first 4 bytes
         // will be for number of entry in leaf, then next 4 bytes will be for
         // key lenght;
-        //        offset += MolapCommonConstants.INT_SIZE_IN_BYTE * 2;
+        //        offset += CarbonCommonConstants.INT_SIZE_IN_BYTE * 2;
 
         // add key offset
         info.setKeyOffSets(keyOffSets);
@@ -370,7 +370,7 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
         for (int i = 0; i < this.measureCount; i++) {
             // increment the current offset by 4 bytes because 4 bytes will be
             // used for measure byte length
-            //            offset += MolapCommonConstants.INT_SIZE_IN_BYTE;
+            //            offset += CarbonCommonConstants.INT_SIZE_IN_BYTE;
             msrOffset[i] = offset;
             // now increment the offset by adding measure length to get the next
             // measure offset;

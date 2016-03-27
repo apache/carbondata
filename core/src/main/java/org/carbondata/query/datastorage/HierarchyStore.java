@@ -125,7 +125,7 @@ public class HierarchyStore {
 
     //    public String getLevelName()
     //    {
-    //        for(MolapDef.Level level : rolapHierarchy.levels)
+    //        for(CarbonDef.Level level : rolapHierarchy.levels)
     //        {
     //            if(!level.isAll())
     //            {

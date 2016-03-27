@@ -25,9 +25,5 @@
    tooltip="MD Key Gen"
    category="Carbon"
    classname="org.carbondata.processing.mdkeygen.MDKeyGenStepMeta">
-		<libraries>
-		<library name="molap-core-3.70.0.jar"/>
-    	<library name="molap-dataprocessor-3.70.0.jar"/>
-		</libraries>
-		
+
 </plugin>

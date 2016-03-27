@@ -40,7 +40,7 @@ public final class StandardLogService implements LogService {
     private static final String QUERY_ID = "queryID:";
     private static final String PARTITION_ID = "[partitionID:";
     private static final String CARBON_AUDIT_LOG_PATH = "carbon.auditlog.file.path";
-    private static final String AUDIT_LOG_DEFAULT_PATH = "logs/MolapAudit.log";
+    private static final String AUDIT_LOG_DEFAULT_PATH = "logs/CarbonAudit.log";
     private static final String CARBON_AUDIT_LOG_ROLLING_UP_SIZE = "carbon.auditlog.max.file.size";
     private static final String AUDIT_LOG_DEFAULT_ROLLING_UP_SIZE = "10MB";
     private static final String CARBON_AUDIT_LOG_MAX_BACKUP = "carbon.auditlog.max.backup.files";
@@ -62,23 +62,23 @@ public final class StandardLogService implements LogService {
         String logLevel = AUDIT_LOG_DEFAULT_LEVEL;
 
         Properties props = new Properties();
-        Properties molapProps = FileUtil.getMolapProperties();
+        Properties carbonProps = FileUtil.getCarbonProperties();
 
-        if (null != molapProps) {
-            if (null != molapProps.getProperty(CARBON_AUDIT_LOG_PATH)) {
-                auditLogPath = molapProps.getProperty(CARBON_AUDIT_LOG_PATH);
+        if (null != carbonProps) {
+            if (null != carbonProps.getProperty(CARBON_AUDIT_LOG_PATH)) {
+                auditLogPath = carbonProps.getProperty(CARBON_AUDIT_LOG_PATH);
             }
 
-            if (null != molapProps.getProperty(CARBON_AUDIT_LOG_ROLLING_UP_SIZE)) {
-                rollupSize = molapProps.getProperty(CARBON_AUDIT_LOG_ROLLING_UP_SIZE);
+            if (null != carbonProps.getProperty(CARBON_AUDIT_LOG_ROLLING_UP_SIZE)) {
+                rollupSize = carbonProps.getProperty(CARBON_AUDIT_LOG_ROLLING_UP_SIZE);
             }
 
-            if (null != molapProps.getProperty(CARBON_AUDIT_LOG_MAX_BACKUP)) {
-                maxBackup = molapProps.getProperty(CARBON_AUDIT_LOG_MAX_BACKUP);
+            if (null != carbonProps.getProperty(CARBON_AUDIT_LOG_MAX_BACKUP)) {
+                maxBackup = carbonProps.getProperty(CARBON_AUDIT_LOG_MAX_BACKUP);
             }
 
-            if (null != molapProps.getProperty(CARBON_AUDIT_LOG_LEVEL)) {
-                logLevel = molapProps.getProperty(CARBON_AUDIT_LOG_LEVEL);
+            if (null != carbonProps.getProperty(CARBON_AUDIT_LOG_LEVEL)) {
+                logLevel = carbonProps.getProperty(CARBON_AUDIT_LOG_LEVEL);
             }
         }
 

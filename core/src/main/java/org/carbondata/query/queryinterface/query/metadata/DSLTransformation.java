@@ -20,7 +20,7 @@
 package org.carbondata.query.queryinterface.query.metadata;
 
 /**
- * Represents DSL transformation which can be added to <code>MolapQuery<code>
+ * Represents DSL transformation which can be added to <code>CarbonQuery<code>
  */
 public class DSLTransformation {
     /**

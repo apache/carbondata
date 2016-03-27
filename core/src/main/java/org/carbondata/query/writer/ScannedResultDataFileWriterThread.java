@@ -88,7 +88,7 @@ public class ScannedResultDataFileWriterThread extends ResultWriter {
             String path = this.outLocation + '/' + System.nanoTime() + ".tmp";
             dataOutput =
                     FileFactory.getDataOutputStream(path, FileFactory.getFileType(path), (short) 1);
-            carbonFile = FileFactory.getMolapFile(path, FileFactory.getFileType(path));
+            carbonFile = FileFactory.getCarbonFile(path, FileFactory.getFileType(path));
             dataOutput.writeInt(scannedResult.size());
             /*int writenDataSize = */
             writeScannedResult(dataOutput);
@@ -100,11 +100,11 @@ public class ScannedResultDataFileWriterThread extends ResultWriter {
             CarbonUtil.closeStreams(dataOutput);
             try {
                 if (null != carbonFile && !carbonFile.renameTo(destPath)) {
-                    LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                    LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                             "Problem while renaming the file");
                 }
             } catch (Exception e) {
-                LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
+                LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e,
                         "Problem while renaming the file");
             }
         }

@@ -38,7 +38,7 @@ import org.carbondata.query.util.CarbonEngineLogEvent;
 
 public final class DimensionCacheLoader {
     /**
-     * Attribute for Molap LOGGER
+     * Attribute for Carbon LOGGER
      */
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(DimensionCacheLoader.class.getName());
@@ -66,8 +66,8 @@ public final class DimensionCacheLoader {
     {
         long t1 = System.currentTimeMillis();
 
-        String storeLocation = ((MolapDataSourceImpl)datasource).getFileStore();
-        String inMemoryURL = ((MolapDataSourceImpl)datasource).getURL();
+        String storeLocation = ((CarbonDataSourceImpl)datasource).getFileStore();
+        String inMemoryURL = ((CarbonDataSourceImpl)datasource).getURL();
 
         if(storeLocation != null && inMemoryURL == null)
         {
@@ -82,7 +82,7 @@ public final class DimensionCacheLoader {
 
         long t2 = System.currentTimeMillis();
 
-        LOGGER.debug(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, 
+        LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                 "Hier build time is : " + 
                 (t2 - t1) + " (MS) for : " + hierC.getHierName());
     }*/
@@ -121,17 +121,17 @@ public final class DimensionCacheLoader {
     //            RelationOrJoin relation = targetStore.getRolapHierarchy().getRelation();
     //            String tableName = relation==null?targetStore.getDimensionName():((Table)relation).name;
     //            String fileName = tableName.replaceAll(" ", "_") + '_' + targetStore.getTableName();
-    //            MolapFile file = FileFactory.getMolapFile(fileStore, FileFactory.getFileType());
+    //            CarbonFile file = FileFactory.getCarbonFile(fileStore, FileFactory.getFileType());
     //            if(file.isDirectory())
     //            {
     //                // Read from the base location.
     //                String baseLocation = fileStore + File.separator + fileName;
-    //                MolapFile baseFile = FileFactory.getMolapFile(baseLocation, FileFactory.getFileType());
+    //                CarbonFile baseFile = FileFactory.getCarbonFile(baseLocation, FileFactory.getFileType());
     //                try
     //                {
     //                    if(FileFactory.isFileExist(baseLocation, FileFactory.getFileType(baseLocation)))
     //                    {
-    //                        factStream = MolapDataInputStreamFactory.getDataInputStream(baseLocation, keyGenerator.getKeySizeInBytes(), 0, false, fileStore, fileName,FileFactory.getFileType());
+    //                        factStream = CarbonDataInputStreamFactory.getDataInputStream(baseLocation, keyGenerator.getKeySizeInBytes(), 0, false, fileStore, fileName,FileFactory.getFileType());
     //                        factStream.initInput();
     //
     //                        scanners.add(new DataInputStreamWrappedScanner(factStream));
@@ -254,11 +254,11 @@ public final class DimensionCacheLoader {
         String fileName =
                 hierC.getDimensionName().replaceAll(" ", "_") + '_' + hierC.getTableName();
         //
-        CarbonFile file = FileFactory.getMolapFile(fileStore, FileFactory.getFileType(fileStore));
+        CarbonFile file = FileFactory.getCarbonFile(fileStore, FileFactory.getFileType(fileStore));
         if (file.isDirectory()) {
             // Read from the base location.
             String baseLocation = fileStore + File.separator + fileName;
-            //            MolapFile baseFile = FileFactory.getMolapFile(baseLocation, FileFactory.getFileType());
+            //            CarbonFile baseFile = FileFactory.getCarbonFile(baseLocation, FileFactory.getFileType());
             if (FileFactory.isFileExist(baseLocation, FileFactory.getFileType(baseLocation))) {
                 //
                 DataInputStream factStream = CarbonDataInputStreamFactory
@@ -357,7 +357,7 @@ public final class DimensionCacheLoader {
 
         String fileName = tableName + '_' + levelCache.getColumnName();
         //
-        CarbonFile file = FileFactory.getMolapFile(fileStore, FileFactory.getFileType(fileStore));
+        CarbonFile file = FileFactory.getCarbonFile(fileStore, FileFactory.getFileType(fileStore));
         if (file.isDirectory()) {
             // Read from the base location.
             String baseLocation = fileStore + File.separator + fileName
@@ -365,7 +365,7 @@ public final class DimensionCacheLoader {
             String baseLocationForGlobalKeys =
                     fileStore + File.separator + fileName + ".globallevel";
             String baseLocationForsortIndex = fileStore + File.separator + fileName;
-            //            MolapFile baseFile = FileFactory.getMolapFile(baseLocation, FileFactory.getFileType());
+            //            CarbonFile baseFile = FileFactory.getCarbonFile(baseLocation, FileFactory.getFileType());
             try {
                 if (FileFactory.isFileExist(baseLocation, FileFactory.getFileType(baseLocation))) {
                     members = CacheUtil.getMembersList(baseLocation, (byte) -1, dataType);
@@ -381,7 +381,7 @@ public final class DimensionCacheLoader {
                     }
                 }
             } catch (IOException e) {
-                LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
+                LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
             }
         }
 
@@ -466,7 +466,7 @@ public final class DimensionCacheLoader {
     //        }
     //        catch(SQLException e)
     //        {
-    //            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
+    //            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
     //        }
     //        finally
     //        {
@@ -479,7 +479,7 @@ public final class DimensionCacheLoader {
     //                }
     //                catch(SQLException e)
     //                {
-    //                    LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
+    //                    LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
     //                }
     //            }
     //
@@ -491,7 +491,7 @@ public final class DimensionCacheLoader {
     //                }
     //                catch(SQLException e)
     //                {
-    //                    LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
+    //                    LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
     //                }
     //            }
     //
@@ -503,7 +503,7 @@ public final class DimensionCacheLoader {
     //                }
     //                catch(SQLException e)
     //                {
-    //                    LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
+    //                    LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
     //                }
     //            }
     //        }
@@ -517,7 +517,7 @@ public final class DimensionCacheLoader {
     //    /**
     //     * Check whether to consider Ordinal column separately if it is configured.
     //     */
-    //    private static boolean hasOrdinalColumn(MolapDef.Level level)
+    //    private static boolean hasOrdinalColumn(CarbonDef.Level level)
     //    {
     //        return (!level.getOrdinalExp().equals(level.getKeyExp()));
     //    }

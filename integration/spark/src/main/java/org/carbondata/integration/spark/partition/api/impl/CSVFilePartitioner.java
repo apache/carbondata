@@ -96,7 +96,7 @@ public class CSVFilePartitioner {
             String targetFolder, List<String> nodes, int partitionCount, String[] partitionColumn,
             String[] requiredColumns, String delimiter, String quoteChar, String fileHeader,
             String escapeChar, boolean multiLine) throws Exception {
-        LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+        LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                 "Processing file split: " + sourceFilePath);
 
         // Create the target folder
@@ -120,7 +120,7 @@ public class CSVFilePartitioner {
 
         for (int i = 0; i < sourceFilePath.size(); i++) {
             try {
-                CarbonFile file = FileFactory.getMolapFile(sourceFilePath.get(i),
+                CarbonFile file = FileFactory.getCarbonFile(sourceFilePath.get(i),
                         FileFactory.getFileType(sourceFilePath.get(i)));
                 // File file = new File(sourceFilePath);
                 String fileAbsolutePath = file.getAbsolutePath();
@@ -159,7 +159,7 @@ public class CSVFilePartitioner {
                             CSVReader.DEFAULT_SKIP_LINES, customParser);
                     fileName = fileName.substring(0, fileName.indexOf(".csv"));
                 } else {
-                    LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, "Processing file split: "
+                    LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "Processing file split: "
                             + "Unsupported File Extension: Skipping File : " + file
                             .getAbsolutePath());
                     partialSuccess = true;
@@ -172,7 +172,7 @@ public class CSVFilePartitioner {
                     headerColumns = fileHeader.split(",");
                 }
                 if (null == headerColumns) {
-                    LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                    LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                             "Csv file does not contain the header column neither the headers are "
                                     + "passed in DDL or API. Skipping file :: "
                                     + sourceFilePath);
@@ -185,7 +185,7 @@ public class CSVFilePartitioner {
                 // header columns length will not be equal
                 if ((null == fileHeader || 0 == fileHeader.length()) && (0 == indexes.length) && (
                         fileHeader.length() != indexes.length)) {
-                    LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                    LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                             "Column headers are invalid. They do not match with the schema headers."
                                     + "Skipping file :: "
                                     + sourceFilePath);
@@ -197,7 +197,7 @@ public class CSVFilePartitioner {
                         outputStreamsMap, dataInputStream, recordCounter, fileName, indexes,
                         fileAbsolutePath);
             } catch (IOException e) {
-                LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, e, e.getMessage());
+                LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e, e.getMessage());
             } finally {
                 CarbonUtil.closeStreams(dataInputStream);
 
@@ -232,7 +232,7 @@ public class CSVFilePartitioner {
         recordCounter = writeTargetStream(outputStreamsMap, dataInputStream, recordCounter, indexes,
                 dataPartitioner, headerColumns, fileAbsolutePath);
 
-        LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+        LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                 "Processed Record count: " + recordCounter);
     }
 
@@ -302,7 +302,7 @@ public class CSVFilePartitioner {
                 skippedLines++;
                 badRecordslogger.addBadRecordsToBilder(record, record.length,
                         "No. of columns not matched with cube columns", null);
-                LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                         "BAD Record Found: No. of columns not matched with cube columns, "
                                 + "Skipping line: ("
                                 + (recordCounter + 1) + ") in File :" + fileAbsolutePath);
@@ -310,7 +310,7 @@ public class CSVFilePartitioner {
                 partialSuccess = true;
                 skippedLines++;
                 badRecordslogger.addBadRecordsToBilder(record, record.length, e.getMessage(), null);
-                LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                         "Exception while processing the record at line " + (recordCounter + 1)
                                 + " in partiton " + tartgetPartition.getUniqueID());
             } finally {
@@ -319,7 +319,7 @@ public class CSVFilePartitioner {
             }
         }
         if (skippedLines != 0) {
-            LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "No. of bad records skipped : (" + skippedLines + ") in File :"
                             + fileAbsolutePath);
         }
@@ -381,7 +381,7 @@ public class CSVFilePartitioner {
 
     private String getBadLogStoreLocation(String storeLocation) {
         String badLogStoreLocation = CarbonProperties.getInstance()
-                .getProperty(CarbonCommonConstants.MOLAP_BADRECORDS_LOC);
+                .getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC);
         badLogStoreLocation = badLogStoreLocation + File.separator + storeLocation;
 
         return badLogStoreLocation;

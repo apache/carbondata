@@ -39,7 +39,7 @@ import scala.collection.JavaConversions._
 class CarbonMergerRDD[K, V](
                             sc: SparkContext,
                             result: MergeResult[K, V],
-                            molapLoadModel: CarbonLoadModel,
+                            carbonLoadModel: CarbonLoadModel,
                             storeLocation: String,
                             hdfsStoreLocation: String,
                             partitioner: Partitioner,
@@ -61,10 +61,10 @@ class CarbonMergerRDD[K, V](
   override def compute(theSplit: Partition, context: TaskContext) = {
     val iter = new Iterator[(K, V)] {
       var dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
-      val split = theSplit.asInstanceOf[MolapLoadPartition]
+      val split = theSplit.asInstanceOf[CarbonLoadPartition]
       logInfo("Input split: " + split.serializableHadoopSplit.value)
       val partitionId = split.serializableHadoopSplit.value.getPartition().getUniqueID()
-      val model = molapLoadModel.getCopyWithPartition(split.serializableHadoopSplit.value.getPartition().getUniqueID())
+      val model = carbonLoadModel.getCopyWithPartition(split.serializableHadoopSplit.value.getPartition().getUniqueID())
 
       val mergedLoadMetadataDetails = CarbonDataMergerUtil.executeMerging(model, storeLocation, hdfsStoreLocation, currentRestructNumber, metadataFilePath, loadsToMerge, mergedLoadName)
 
@@ -95,8 +95,8 @@ class CarbonMergerRDD[K, V](
           throw new java.util.NoSuchElementException("End of stream")
         }
         havePair = false
-        /*  val row = new MolapKey(null)
-          val value = new MolapValue(null)*/
+        /*  val row = new CarbonKey(null)
+          val value = new CarbonValue(null)*/
         result.getKey(0, mergedLoadMetadataDetails)
       }
 
@@ -140,7 +140,7 @@ class CarbonMergerRDD[K, V](
 
 
       def loadCubeSlices(listOfLoadFolders: java.util.List[String], listOfUpdatedLoadFolders: java.util.List[String]) = {
-        CarbonProperties.getInstance().addProperty("molap.cache.used", "false");
+        CarbonProperties.getInstance().addProperty("carbon.cache.used", "false");
         CarbonQueryUtil.createDataSource(currentRestructNumber, model.getSchema, null, partitionId, listOfLoadFolders, listOfUpdatedLoadFolders, model.getTableName, hdfsStoreLocation, cubeCreationTime)
       }
 
@@ -190,17 +190,17 @@ class CarbonMergerRDD[K, V](
   }
 
   override def getPreferredLocations(split: Partition): Seq[String] = {
-    val theSplit = split.asInstanceOf[MolapLoadPartition]
+    val theSplit = split.asInstanceOf[CarbonLoadPartition]
     val s = theSplit.serializableHadoopSplit.value.getLocations //.filter(_ != "localhost")
     logInfo("Host Name : " + s(0) + s.length)
     s
   }
 
   override def getPartitions: Array[Partition] = {
-    val splits = CarbonQueryUtil.getTableSplits(molapLoadModel.getSchemaName(), molapLoadModel.getCubeName(), null, partitioner)
+    val splits = CarbonQueryUtil.getTableSplits(carbonLoadModel.getSchemaName(), carbonLoadModel.getCubeName(), null, partitioner)
     val result = new Array[Partition](splits.length)
     for (i <- 0 until result.length) {
-      result(i) = new MolapLoadPartition(id, i, splits(i))
+      result(i) = new CarbonLoadPartition(id, i, splits(i))
     }
     result
   }
@@ -209,7 +209,7 @@ class CarbonMergerRDD[K, V](
     // Do nothing. Hadoop RDD should not be checkpointed.
   }
 
-  class MolapLoadPartition(rddId: Int, val idx: Int, @transient val tableSplit: TableSplit)
+  class CarbonLoadPartition(rddId: Int, val idx: Int, @transient val tableSplit: TableSplit)
     extends Partition {
 
     override val index: Int = idx

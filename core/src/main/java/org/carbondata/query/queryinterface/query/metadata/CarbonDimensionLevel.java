@@ -20,7 +20,7 @@
 package org.carbondata.query.queryinterface.query.metadata;
 
 /**
- * Molap dimension level;
+ * Carbon dimension level;
  */
 public class CarbonDimensionLevel extends AbstractCarbonLevel {
     private static final long serialVersionUID = 4012085091766940643L;
@@ -75,8 +75,8 @@ public class CarbonDimensionLevel extends AbstractCarbonLevel {
     }
 
     @Override
-    public MolapLevelType getType() {
+    public CarbonLevelType getType() {
 
-        return MolapLevelType.DIMENSION;
+        return CarbonLevelType.DIMENSION;
     }
 }

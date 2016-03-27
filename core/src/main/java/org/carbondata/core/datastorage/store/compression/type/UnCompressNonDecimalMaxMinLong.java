@@ -33,7 +33,7 @@ import org.carbondata.core.util.ValueCompressionUtil;
 public class UnCompressNonDecimalMaxMinLong
         implements ValueCompressonHolder.UnCompressValue<long[]> {
     /**
-     * Attribute for Molap LOGGER
+     * Attribute for Carbon LOGGER
      */
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(UnCompressNonDecimalMaxMinLong.class.getName());
@@ -59,7 +59,7 @@ public class UnCompressNonDecimalMaxMinLong
         try {
             return (ValueCompressonHolder.UnCompressValue) clone();
         } catch (CloneNotSupportedException exc) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, exc, exc.getMessage());
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, exc, exc.getMessage());
         }
         return null;
     }
@@ -101,7 +101,7 @@ public class UnCompressNonDecimalMaxMinLong
     public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {
         double maxValue = (double) maxValueObject;
         double[] vals = new double[value.length];
-        CarbonReadDataHolder molapDataHolder = new CarbonReadDataHolder();
+        CarbonReadDataHolder carbonDataHolder = new CarbonReadDataHolder();
         for (int i = 0; i < vals.length; i++) {
             vals[i] = value[i] / Math.pow(10, decimal);
 
@@ -112,8 +112,8 @@ public class UnCompressNonDecimalMaxMinLong
             }
 
         }
-        molapDataHolder.setReadableDoubleValues(vals);
-        return molapDataHolder;
+        carbonDataHolder.setReadableDoubleValues(vals);
+        return carbonDataHolder;
     }
 
 }

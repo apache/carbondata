@@ -287,7 +287,7 @@ public class FileStoreSurrogateKeyGen extends CarbonDimSurrogateKeyGen {
                     File destFile = new File(storePath + File.separator + changedFileName);
 
                     if (!currentFile.renameTo(destFile)) {
-                        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                                 "Not Able to rename " + currentFile.getName() + " to " + destFile
                                         .getName());
                     }

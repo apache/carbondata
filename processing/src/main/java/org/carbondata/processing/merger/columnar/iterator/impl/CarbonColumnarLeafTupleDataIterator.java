@@ -74,7 +74,7 @@ public class CarbonColumnarLeafTupleDataIterator
     private boolean isMeasureUpdateResuired;
 
     /**
-     * MolapSliceTupleIterator constructor to initialise
+     * CarbonSliceTupleIterator constructor to initialise
      *
      * @param mdkeyLength mdkey length
      */

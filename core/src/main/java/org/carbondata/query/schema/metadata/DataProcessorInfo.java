@@ -33,7 +33,7 @@ import org.carbondata.query.reader.ResultTempFileReader;
 
 /**
  * Project Name  : Carbon
- * Module Name   : MOLAP Data Processor
+ * Module Name   : CARBON Data Processor
  * Author    : R00903928,k00900841
  * Created Date  : 27-Aug-2015
  * FileName   : DataProcessorInfo.java

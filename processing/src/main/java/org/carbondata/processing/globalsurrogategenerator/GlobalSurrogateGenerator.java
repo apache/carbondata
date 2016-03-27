@@ -39,12 +39,12 @@ public class GlobalSurrogateGenerator {
             LogServiceFactory.getLogService(GlobalSurrogateGenerator.class.getName());
     private GlobalSurrogateGeneratorInfo generatorInfo;
     /**
-     * molap schema object
+     * carbon schema object
      */
     private Schema schema;
 
     /**
-     * molap cube object
+     * carbon cube object
      */
     private Cube cube;
 
@@ -56,7 +56,7 @@ public class GlobalSurrogateGenerator {
 
     public void generateGlobalSurrogates(int currentRestructNumber) {
         String hdfsLocation = generatorInfo.getStoreLocation();
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                 "HDFS Location: " + hdfsLocation);
         int numberOfPartition = generatorInfo.getNumberOfPartition();
         String[][] partitionLocation = new String[numberOfPartition][];
@@ -99,7 +99,7 @@ public class GlobalSurrogateGenerator {
         try {
             writerExecutorService.awaitTermination(2, TimeUnit.DAYS);
         } catch (InterruptedException e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
                     e.getMessage());
         }
     }

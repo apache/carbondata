@@ -32,7 +32,7 @@ import org.carbondata.core.constants.CarbonCommonConstants;
 
 public final class CarbonProperties {
     /**
-     * Attribute for Molap LOGGER.
+     * Attribute for Carbon LOGGER.
      */
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(CarbonProperties.class.getName());
@@ -40,19 +40,19 @@ public final class CarbonProperties {
     /**
      * class instance.
      */
-    private static final CarbonProperties MOLAPPROPERTIESINSTANCE = new CarbonProperties();
+    private static final CarbonProperties CARBONPROPERTIESINSTANCE = new CarbonProperties();
 
     /**
      * porpeties .
      */
-    private Properties molapProperties;
+    private Properties carbonProperties;
 
     /**
      * Private constructor this will call load properties method to load all the
-     * molap properties in memory.
+     * carbon properties in memory.
      */
     private CarbonProperties() {
-        molapProperties = new Properties();
+        carbonProperties = new Properties();
         loadProperties();
         validateAndLoadDefaultProperties();
     }
@@ -60,10 +60,10 @@ public final class CarbonProperties {
     /**
      * This method will be responsible for get this class instance
      *
-     * @return molap properties instance
+     * @return carbon properties instance
      */
     public static CarbonProperties getInstance() {
-        return MOLAPPROPERTIESINSTANCE;
+        return CARBONPROPERTIESINSTANCE;
     }
 
     /**
@@ -71,18 +71,18 @@ public final class CarbonProperties {
      * values in case of wrong values.
      */
     private void validateAndLoadDefaultProperties() {
-        if (null == molapProperties.getProperty(CarbonCommonConstants.STORE_LOCATION)) {
-            molapProperties.setProperty(CarbonCommonConstants.STORE_LOCATION,
+        if (null == carbonProperties.getProperty(CarbonCommonConstants.STORE_LOCATION)) {
+            carbonProperties.setProperty(CarbonCommonConstants.STORE_LOCATION,
                     CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
         }
 
-        if (null == molapProperties.getProperty(CarbonCommonConstants.VALUESTORE_TYPE)) {
-            molapProperties.setProperty(CarbonCommonConstants.VALUESTORE_TYPE,
+        if (null == carbonProperties.getProperty(CarbonCommonConstants.VALUESTORE_TYPE)) {
+            carbonProperties.setProperty(CarbonCommonConstants.VALUESTORE_TYPE,
                     CarbonCommonConstants.VALUESTORE_TYPE_DEFAULT_VAL);
         }
 
-        if (null == molapProperties.getProperty(CarbonCommonConstants.KEYSTORE_TYPE)) {
-            molapProperties.setProperty(CarbonCommonConstants.KEYSTORE_TYPE,
+        if (null == carbonProperties.getProperty(CarbonCommonConstants.KEYSTORE_TYPE)) {
+            carbonProperties.setProperty(CarbonCommonConstants.KEYSTORE_TYPE,
                     CarbonCommonConstants.KEYSTORE_TYPE_DEFAULT_VAL);
         }
 
@@ -107,71 +107,71 @@ public final class CarbonProperties {
 
     private void validateBadRecordsLocation() {
         String badRecordsLocation =
-                molapProperties.getProperty(CarbonCommonConstants.MOLAP_BADRECORDS_LOC);
+                carbonProperties.getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC);
         if (null == badRecordsLocation || badRecordsLocation.length() == 0) {
-            molapProperties.setProperty(CarbonCommonConstants.MOLAP_BADRECORDS_LOC,
-                    CarbonCommonConstants.MOLAP_BADRECORDS_LOC_DEFAULT_VAL);
+            carbonProperties.setProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
+                    CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL);
         }
     }
 
     private void validateBadRecordsEncryption() {
         String badRecordsEncryption =
-                molapProperties.getProperty(CarbonCommonConstants.MOLAP_BADRECORDS_ENCRYPTION);
+                carbonProperties.getProperty(CarbonCommonConstants.CARBON_BADRECORDS_ENCRYPTION);
         if (null == badRecordsEncryption || badRecordsEncryption.length() == 0) {
-            molapProperties.setProperty(CarbonCommonConstants.MOLAP_BADRECORDS_ENCRYPTION,
-                    CarbonCommonConstants.MOLAP_BADRECORDS_ENCRYPTION_DEFAULT_VAL);
+            carbonProperties.setProperty(CarbonCommonConstants.CARBON_BADRECORDS_ENCRYPTION,
+                    CarbonCommonConstants.CARBON_BADRECORDS_ENCRYPTION_DEFAULT_VAL);
         }
     }
 
     private void validateCsvFileSize() {
         try {
-            int csvFileSizeProperty = Integer.parseInt(molapProperties
-                    .getProperty(CarbonCommonConstants.MOLAP_DATALOAD_VALID_CSVFILE_SIZE,
-                            CarbonCommonConstants.MOLAP_DATALOAD_VALID_CSVFILE_SIZE_DEFAULTVALUE));
+            int csvFileSizeProperty = Integer.parseInt(carbonProperties
+                    .getProperty(CarbonCommonConstants.CARBON_DATALOAD_VALID_CSVFILE_SIZE,
+                            CarbonCommonConstants.CARBON_DATALOAD_VALID_CSVFILE_SIZE_DEFAULTVALUE));
             if (csvFileSizeProperty < 1) {
-                LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, "Invalid value for "
-                        + CarbonCommonConstants.MOLAP_DATALOAD_VALID_CSVFILE_SIZE
+                LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "Invalid value for "
+                        + CarbonCommonConstants.CARBON_DATALOAD_VALID_CSVFILE_SIZE
                         + "\" Only Positive Integer(greater than zero) is allowed. Using the default value \""
-                        + CarbonCommonConstants.MOLAP_DATALOAD_VALID_CSVFILE_SIZE_DEFAULTVALUE);
+                        + CarbonCommonConstants.CARBON_DATALOAD_VALID_CSVFILE_SIZE_DEFAULTVALUE);
 
-                molapProperties.setProperty(CarbonCommonConstants.MOLAP_DATALOAD_VALID_CSVFILE_SIZE,
-                        CarbonCommonConstants.MOLAP_DATALOAD_VALID_CSVFILE_SIZE_DEFAULTVALUE);
+                carbonProperties.setProperty(CarbonCommonConstants.CARBON_DATALOAD_VALID_CSVFILE_SIZE,
+                        CarbonCommonConstants.CARBON_DATALOAD_VALID_CSVFILE_SIZE_DEFAULTVALUE);
             }
         } catch (NumberFormatException e) {
-            LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
-                    "Invalid value for " + CarbonCommonConstants.MOLAP_DATALOAD_VALID_CSVFILE_SIZE
+            LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
+                    "Invalid value for " + CarbonCommonConstants.CARBON_DATALOAD_VALID_CSVFILE_SIZE
                             + "\" Only Positive Integer(greater than zero) is allowed. Using the default value \""
-                            + CarbonCommonConstants.MOLAP_DATALOAD_VALID_CSVFILE_SIZE_DEFAULTVALUE);
+                            + CarbonCommonConstants.CARBON_DATALOAD_VALID_CSVFILE_SIZE_DEFAULTVALUE);
 
-            molapProperties.setProperty(CarbonCommonConstants.MOLAP_DATALOAD_VALID_CSVFILE_SIZE,
-                    CarbonCommonConstants.MOLAP_DATALOAD_VALID_CSVFILE_SIZE_DEFAULTVALUE);
+            carbonProperties.setProperty(CarbonCommonConstants.CARBON_DATALOAD_VALID_CSVFILE_SIZE,
+                    CarbonCommonConstants.CARBON_DATALOAD_VALID_CSVFILE_SIZE_DEFAULTVALUE);
         }
     }
 
     private void validateNumberOfCsvFile() {
         try {
-            int csvFileSizeProperty = Integer.parseInt(molapProperties
-                    .getProperty(CarbonCommonConstants.MOLAP_DATALOAD_VALID_NUMBAER_OF_CSVFILE,
-                            CarbonCommonConstants.MOLAP_DATALOAD_VALID_NUMBAER_OF_CSVFILE_DEFAULTVALUE));
+            int csvFileSizeProperty = Integer.parseInt(carbonProperties
+                    .getProperty(CarbonCommonConstants.CARBON_DATALOAD_VALID_NUMBAER_OF_CSVFILE,
+                            CarbonCommonConstants.CARBON_DATALOAD_VALID_NUMBAER_OF_CSVFILE_DEFAULTVALUE));
             if (csvFileSizeProperty < 1) {
-                LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, "Invalid value for "
-                        + CarbonCommonConstants.MOLAP_DATALOAD_VALID_NUMBAER_OF_CSVFILE
+                LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "Invalid value for "
+                        + CarbonCommonConstants.CARBON_DATALOAD_VALID_NUMBAER_OF_CSVFILE
                         + "\" Only Positive Integer(greater than zero) is allowed. Using the default value \""
-                        + CarbonCommonConstants.MOLAP_DATALOAD_VALID_NUMBAER_OF_CSVFILE_DEFAULTVALUE);
+                        + CarbonCommonConstants.CARBON_DATALOAD_VALID_NUMBAER_OF_CSVFILE_DEFAULTVALUE);
 
-                molapProperties
-                        .setProperty(CarbonCommonConstants.MOLAP_DATALOAD_VALID_NUMBAER_OF_CSVFILE,
-                                CarbonCommonConstants.MOLAP_DATALOAD_VALID_NUMBAER_OF_CSVFILE_DEFAULTVALUE);
+                carbonProperties
+                        .setProperty(CarbonCommonConstants.CARBON_DATALOAD_VALID_NUMBAER_OF_CSVFILE,
+                                CarbonCommonConstants.CARBON_DATALOAD_VALID_NUMBAER_OF_CSVFILE_DEFAULTVALUE);
             }
         } catch (NumberFormatException e) {
-            LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, "Invalid value for "
-                    + CarbonCommonConstants.MOLAP_DATALOAD_VALID_NUMBAER_OF_CSVFILE
+            LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "Invalid value for "
+                    + CarbonCommonConstants.CARBON_DATALOAD_VALID_NUMBAER_OF_CSVFILE
                     + "\" Only Positive Integer(greater than zero) is allowed. Using the default value \""
-                    + CarbonCommonConstants.MOLAP_DATALOAD_VALID_NUMBAER_OF_CSVFILE_DEFAULTVALUE);
+                    + CarbonCommonConstants.CARBON_DATALOAD_VALID_NUMBAER_OF_CSVFILE_DEFAULTVALUE);
 
-            molapProperties
-                    .setProperty(CarbonCommonConstants.MOLAP_DATALOAD_VALID_NUMBAER_OF_CSVFILE,
-                            CarbonCommonConstants.MOLAP_DATALOAD_VALID_NUMBAER_OF_CSVFILE_DEFAULTVALUE);
+            carbonProperties
+                    .setProperty(CarbonCommonConstants.CARBON_DATALOAD_VALID_NUMBAER_OF_CSVFILE,
+                            CarbonCommonConstants.CARBON_DATALOAD_VALID_NUMBAER_OF_CSVFILE_DEFAULTVALUE);
         }
     }
 
@@ -179,7 +179,7 @@ public final class CarbonProperties {
      * This method validates the batch size
      */
     private void validateOnlineMergerSize() {
-        String onlineMergeSize = molapProperties
+        String onlineMergeSize = carbonProperties
                 .getProperty(CarbonCommonConstants.ONLINE_MERGE_FILE_SIZE,
                         CarbonCommonConstants.ONLINE_MERGE_FILE_SIZE_DEFAULT_VALUE);
         try {
@@ -187,19 +187,19 @@ public final class CarbonProperties {
 
             if (offlineMergerSize < CarbonCommonConstants.ONLINE_MERGE_MIN_VALUE
                     || offlineMergerSize > CarbonCommonConstants.ONLINE_MERGE_MAX_VALUE) {
-                LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                         "The online Merge Size value \"" + onlineMergeSize
                                 + "\" is invalid. Using the default value \""
                                 + CarbonCommonConstants.ONLINE_MERGE_FILE_SIZE_DEFAULT_VALUE);
-                molapProperties.setProperty(CarbonCommonConstants.ONLINE_MERGE_FILE_SIZE,
+                carbonProperties.setProperty(CarbonCommonConstants.ONLINE_MERGE_FILE_SIZE,
                         CarbonCommonConstants.ONLINE_MERGE_FILE_SIZE_DEFAULT_VALUE);
             }
         } catch (NumberFormatException e) {
-            LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "The online Merge Size value \"" + onlineMergeSize
                             + "\" is invalid. Using the default value \""
                             + CarbonCommonConstants.ONLINE_MERGE_FILE_SIZE_DEFAULT_VALUE);
-            molapProperties.setProperty(CarbonCommonConstants.ONLINE_MERGE_FILE_SIZE,
+            carbonProperties.setProperty(CarbonCommonConstants.ONLINE_MERGE_FILE_SIZE,
                     CarbonCommonConstants.ONLINE_MERGE_FILE_SIZE_DEFAULT_VALUE);
         }
     }
@@ -208,7 +208,7 @@ public final class CarbonProperties {
      * This method validates the batch size
      */
     private void validateOfflineMergerSize() {
-        String offLineMergerSize = molapProperties
+        String offLineMergerSize = carbonProperties
                 .getProperty(CarbonCommonConstants.OFFLINE_MERGE_FILE_SIZE,
                         CarbonCommonConstants.OFFLINE_MERGE_FILE_SIZE_DEFAULT_VALUE);
         try {
@@ -216,19 +216,19 @@ public final class CarbonProperties {
 
             if (offLineMergeSize < CarbonCommonConstants.OFFLINE_MERGE_MIN_VALUE
                     || offLineMergeSize > CarbonCommonConstants.OFFLINE_MERGE_MAX_VALUE) {
-                LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                         "The offline Merge Size value \"" + offLineMergerSize
                                 + "\" is invalid. Using the default value \""
                                 + CarbonCommonConstants.OFFLINE_MERGE_FILE_SIZE_DEFAULT_VALUE);
-                molapProperties.setProperty(CarbonCommonConstants.OFFLINE_MERGE_FILE_SIZE,
+                carbonProperties.setProperty(CarbonCommonConstants.OFFLINE_MERGE_FILE_SIZE,
                         CarbonCommonConstants.OFFLINE_MERGE_FILE_SIZE_DEFAULT_VALUE);
             }
         } catch (NumberFormatException e) {
-            LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "The offline Merge Size value \"" + offLineMergerSize
                             + "\" is invalid. Using the default value \""
                             + CarbonCommonConstants.OFFLINE_MERGE_FILE_SIZE_DEFAULT_VALUE);
-            molapProperties.setProperty(CarbonCommonConstants.OFFLINE_MERGE_FILE_SIZE,
+            carbonProperties.setProperty(CarbonCommonConstants.OFFLINE_MERGE_FILE_SIZE,
                     CarbonCommonConstants.OFFLINE_MERGE_FILE_SIZE_DEFAULT_VALUE);
         }
     }
@@ -237,26 +237,26 @@ public final class CarbonProperties {
      * This method validates the batch size
      */
     private void validateBatchSize() {
-        String batchSizeStr = molapProperties.getProperty(CarbonCommonConstants.BATCH_SIZE,
+        String batchSizeStr = carbonProperties.getProperty(CarbonCommonConstants.BATCH_SIZE,
                 CarbonCommonConstants.BATCH_SIZE_DEFAULT_VAL);
         try {
             int batchSize = Integer.parseInt(batchSizeStr);
 
             if (batchSize < CarbonCommonConstants.BATCH_SIZE_MIN_VAL
                     || batchSize > CarbonCommonConstants.BATCH_SIZE_MAX_VAL) {
-                LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                         "The batch size value \"" + batchSizeStr
                                 + "\" is invalid. Using the default value \""
                                 + CarbonCommonConstants.BATCH_SIZE_DEFAULT_VAL);
-                molapProperties.setProperty(CarbonCommonConstants.BATCH_SIZE,
+                carbonProperties.setProperty(CarbonCommonConstants.BATCH_SIZE,
                         CarbonCommonConstants.BATCH_SIZE_DEFAULT_VAL);
             }
         } catch (NumberFormatException e) {
-            LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "The batch size value \"" + batchSizeStr
                             + "\" is invalid. Using the default value \""
                             + CarbonCommonConstants.BATCH_SIZE_DEFAULT_VAL);
-            molapProperties.setProperty(CarbonCommonConstants.BATCH_SIZE,
+            carbonProperties.setProperty(CarbonCommonConstants.BATCH_SIZE,
                     CarbonCommonConstants.BATCH_SIZE_DEFAULT_VAL);
         }
     }
@@ -265,7 +265,7 @@ public final class CarbonProperties {
      * This method validates the batch size
      */
     private void validateCardinalityIncrementValue() {
-        String cardinalityIncr = molapProperties
+        String cardinalityIncr = carbonProperties
                 .getProperty(CarbonCommonConstants.CARDINALITY_INCREMENT_VALUE,
                         CarbonCommonConstants.CARDINALITY_INCREMENT_VALUE_DEFAULT_VAL);
         try {
@@ -273,19 +273,19 @@ public final class CarbonProperties {
 
             if (batchSize < CarbonCommonConstants.CARDINALITY_INCREMENT_MIN_VAL
                     || batchSize > CarbonCommonConstants.CARDINALITY_INCREMENT_MAX_VAL) {
-                LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                         "The batch size value \"" + cardinalityIncr
                                 + "\" is invalid. Using the default value \""
                                 + CarbonCommonConstants.CARDINALITY_INCREMENT_VALUE_DEFAULT_VAL);
-                molapProperties.setProperty(CarbonCommonConstants.CARDINALITY_INCREMENT_VALUE,
+                carbonProperties.setProperty(CarbonCommonConstants.CARDINALITY_INCREMENT_VALUE,
                         CarbonCommonConstants.CARDINALITY_INCREMENT_VALUE_DEFAULT_VAL);
             }
         } catch (NumberFormatException e) {
-            LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "The cardinality size value \"" + cardinalityIncr
                             + "\" is invalid. Using the default value \""
                             + CarbonCommonConstants.BATCH_SIZE_DEFAULT_VAL);
-            molapProperties.setProperty(CarbonCommonConstants.CARDINALITY_INCREMENT_VALUE,
+            carbonProperties.setProperty(CarbonCommonConstants.CARDINALITY_INCREMENT_VALUE,
                     CarbonCommonConstants.CARDINALITY_INCREMENT_VALUE_DEFAULT_VAL);
         }
     }
@@ -294,26 +294,26 @@ public final class CarbonProperties {
      * This method validates the Leaf node size
      */
     private void validateLeafNodeSize() {
-        String leafNodeSizeStr = molapProperties.getProperty(CarbonCommonConstants.LEAFNODE_SIZE,
+        String leafNodeSizeStr = carbonProperties.getProperty(CarbonCommonConstants.LEAFNODE_SIZE,
                 CarbonCommonConstants.LEAFNODE_SIZE_DEFAULT_VAL);
         try {
             int leafNodeSize = Integer.parseInt(leafNodeSizeStr);
 
             if (leafNodeSize < CarbonCommonConstants.LEAFNODE_SIZE_MIN_VAL
                     || leafNodeSize > CarbonCommonConstants.LEAFNODE_SIZE_MAX_VAL) {
-                LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                         "The lefa node size value \"" + leafNodeSizeStr
                                 + "\" is invalid. Using the default value \""
                                 + CarbonCommonConstants.LEAFNODE_SIZE_DEFAULT_VAL);
-                molapProperties.setProperty(CarbonCommonConstants.LEAFNODE_SIZE,
+                carbonProperties.setProperty(CarbonCommonConstants.LEAFNODE_SIZE,
                         CarbonCommonConstants.LEAFNODE_SIZE_DEFAULT_VAL);
             }
         } catch (NumberFormatException e) {
-            LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "The lefa node size value \"" + leafNodeSizeStr
                             + "\" is invalid. Using the default value \""
                             + CarbonCommonConstants.LEAFNODE_SIZE_DEFAULT_VAL);
-            molapProperties.setProperty(CarbonCommonConstants.LEAFNODE_SIZE,
+            carbonProperties.setProperty(CarbonCommonConstants.LEAFNODE_SIZE,
                     CarbonCommonConstants.LEAFNODE_SIZE_DEFAULT_VAL);
         }
     }
@@ -322,26 +322,26 @@ public final class CarbonProperties {
      * This method validates data load queue size
      */
     private void validateDataLoadQSize() {
-        String dataLoadQSize = molapProperties.getProperty(CarbonCommonConstants.DATA_LOAD_Q_SIZE,
+        String dataLoadQSize = carbonProperties.getProperty(CarbonCommonConstants.DATA_LOAD_Q_SIZE,
                 CarbonCommonConstants.DATA_LOAD_Q_SIZE_DEFAULT);
         try {
             int dataLoadQSizeInt = Integer.parseInt(dataLoadQSize);
 
             if (dataLoadQSizeInt < CarbonCommonConstants.DATA_LOAD_Q_SIZE_MIN
                     || dataLoadQSizeInt > CarbonCommonConstants.DATA_LOAD_Q_SIZE_MAX) {
-                LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                         "The data load queue size value \"" + dataLoadQSize
                                 + "\" is invalid. Using the default value \""
                                 + CarbonCommonConstants.DATA_LOAD_Q_SIZE_DEFAULT);
-                molapProperties.setProperty(CarbonCommonConstants.DATA_LOAD_Q_SIZE,
+                carbonProperties.setProperty(CarbonCommonConstants.DATA_LOAD_Q_SIZE,
                         CarbonCommonConstants.DATA_LOAD_Q_SIZE_DEFAULT);
             }
         } catch (NumberFormatException e) {
-            LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "The data load queue size value \"" + dataLoadQSize
                             + "\" is invalid. Using the default value \""
                             + CarbonCommonConstants.DATA_LOAD_Q_SIZE_DEFAULT);
-            molapProperties.setProperty(CarbonCommonConstants.DATA_LOAD_Q_SIZE,
+            carbonProperties.setProperty(CarbonCommonConstants.DATA_LOAD_Q_SIZE,
                     CarbonCommonConstants.DATA_LOAD_Q_SIZE_DEFAULT);
         }
     }
@@ -350,7 +350,7 @@ public final class CarbonProperties {
      * This method validates the data load concurrent exec size
      */
     private void validateDataLoadConcExecSize() {
-        String dataLoadConcExecSize = molapProperties
+        String dataLoadConcExecSize = carbonProperties
                 .getProperty(CarbonCommonConstants.DATA_LOAD_CONC_EXE_SIZE,
                         CarbonCommonConstants.DATA_LOAD_CONC_EXE_SIZE_DEFAULT);
         try {
@@ -358,19 +358,19 @@ public final class CarbonProperties {
 
             if (dataLoadConcExecSizeInt < CarbonCommonConstants.DATA_LOAD_CONC_EXE_SIZE_MIN
                     || dataLoadConcExecSizeInt > CarbonCommonConstants.DATA_LOAD_CONC_EXE_SIZE_MAX) {
-                LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                         "The data load concurrent exec size value \"" + dataLoadConcExecSize
                                 + "\" is invalid. Using the default value \""
                                 + CarbonCommonConstants.DATA_LOAD_CONC_EXE_SIZE_DEFAULT);
-                molapProperties.setProperty(CarbonCommonConstants.DATA_LOAD_CONC_EXE_SIZE,
+                carbonProperties.setProperty(CarbonCommonConstants.DATA_LOAD_CONC_EXE_SIZE,
                         CarbonCommonConstants.DATA_LOAD_CONC_EXE_SIZE_DEFAULT);
             }
         } catch (NumberFormatException e) {
-            LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "The data load concurrent exec size value \"" + dataLoadConcExecSize
                             + "\" is invalid. Using the default value \""
                             + CarbonCommonConstants.DATA_LOAD_CONC_EXE_SIZE_DEFAULT);
-            molapProperties.setProperty(CarbonCommonConstants.DATA_LOAD_CONC_EXE_SIZE,
+            carbonProperties.setProperty(CarbonCommonConstants.DATA_LOAD_CONC_EXE_SIZE,
                     CarbonCommonConstants.DATA_LOAD_CONC_EXE_SIZE_DEFAULT);
         }
     }
@@ -379,27 +379,27 @@ public final class CarbonProperties {
      * This method validates the decimal pointers size
      */
     private void validateDecimalPointers() {
-        String decimalPointers = molapProperties
-                .getProperty(CarbonCommonConstants.MOLAP_DECIMAL_POINTERS,
-                        CarbonCommonConstants.MOLAP_DECIMAL_POINTERS_DEFAULT);
+        String decimalPointers = carbonProperties
+                .getProperty(CarbonCommonConstants.CARBON_DECIMAL_POINTERS,
+                        CarbonCommonConstants.CARBON_DECIMAL_POINTERS_DEFAULT);
         try {
             int decimalPointersInt = Integer.parseInt(decimalPointers);
 
             if (decimalPointersInt < 0 || decimalPointersInt > 15) {
-                LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                         "The decimal pointers agg \"" + decimalPointers
                                 + "\" is invalid. Using the default value \""
                                 + CarbonCommonConstants.DATA_LOAD_CONC_EXE_SIZE_DEFAULT);
-                molapProperties.setProperty(CarbonCommonConstants.MOLAP_DECIMAL_POINTERS,
-                        CarbonCommonConstants.MOLAP_DECIMAL_POINTERS_DEFAULT);
+                carbonProperties.setProperty(CarbonCommonConstants.CARBON_DECIMAL_POINTERS,
+                        CarbonCommonConstants.CARBON_DECIMAL_POINTERS_DEFAULT);
             }
         } catch (NumberFormatException e) {
-            LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "The decimal pointers agg \"" + decimalPointers
                             + "\" is invalid. Using the default value \""
                             + CarbonCommonConstants.DATA_LOAD_CONC_EXE_SIZE_DEFAULT);
-            molapProperties.setProperty(CarbonCommonConstants.MOLAP_DECIMAL_POINTERS,
-                    CarbonCommonConstants.MOLAP_DECIMAL_POINTERS_DEFAULT);
+            carbonProperties.setProperty(CarbonCommonConstants.CARBON_DECIMAL_POINTERS,
+                    CarbonCommonConstants.CARBON_DECIMAL_POINTERS_DEFAULT);
         }
     }
 
@@ -407,27 +407,27 @@ public final class CarbonProperties {
      * This method validates the data load concurrent exec size
      */
     private void validateDecimalPointersAgg() {
-        String decimalPointers = molapProperties
-                .getProperty(CarbonCommonConstants.MOLAP_DECIMAL_POINTERS_AGG,
-                        CarbonCommonConstants.MOLAP_DECIMAL_POINTERS_AGG_DEFAULT);
+        String decimalPointers = carbonProperties
+                .getProperty(CarbonCommonConstants.CARBON_DECIMAL_POINTERS_AGG,
+                        CarbonCommonConstants.CARBON_DECIMAL_POINTERS_AGG_DEFAULT);
         try {
             int decimalPointersInt = Integer.parseInt(decimalPointers);
 
             if (decimalPointersInt < 0 || decimalPointersInt > 15) {
-                LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                         "The decimal pointers agg \"" + decimalPointers
                                 + "\" is invalid. Using the default value \""
-                                + CarbonCommonConstants.MOLAP_DECIMAL_POINTERS_AGG_DEFAULT);
-                molapProperties.setProperty(CarbonCommonConstants.MOLAP_DECIMAL_POINTERS_AGG,
-                        CarbonCommonConstants.MOLAP_DECIMAL_POINTERS_AGG_DEFAULT);
+                                + CarbonCommonConstants.CARBON_DECIMAL_POINTERS_AGG_DEFAULT);
+                carbonProperties.setProperty(CarbonCommonConstants.CARBON_DECIMAL_POINTERS_AGG,
+                        CarbonCommonConstants.CARBON_DECIMAL_POINTERS_AGG_DEFAULT);
             }
         } catch (NumberFormatException e) {
-            LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "The decimal pointers agg \"" + decimalPointers
                             + "\" is invalid. Using the default value \""
-                            + CarbonCommonConstants.MOLAP_DECIMAL_POINTERS_AGG_DEFAULT);
-            molapProperties.setProperty(CarbonCommonConstants.MOLAP_DECIMAL_POINTERS_AGG,
-                    CarbonCommonConstants.MOLAP_DECIMAL_POINTERS_AGG_DEFAULT);
+                            + CarbonCommonConstants.CARBON_DECIMAL_POINTERS_AGG_DEFAULT);
+            carbonProperties.setProperty(CarbonCommonConstants.CARBON_DECIMAL_POINTERS_AGG,
+                    CarbonCommonConstants.CARBON_DECIMAL_POINTERS_AGG_DEFAULT);
         }
     }
 
@@ -436,27 +436,27 @@ public final class CarbonProperties {
      * LeafNodes per file.
      */
     private void validateMaxFileSize() {
-        String maxFileSizeStr = molapProperties.getProperty(CarbonCommonConstants.MAX_FILE_SIZE,
+        String maxFileSizeStr = carbonProperties.getProperty(CarbonCommonConstants.MAX_FILE_SIZE,
                 CarbonCommonConstants.MAX_FILE_SIZE_DEFAULT_VAL);
         try {
             int maxFileSize = Integer.parseInt(maxFileSizeStr);
 
             if (maxFileSize < CarbonCommonConstants.MAX_FILE_SIZE_DEFAULT_VAL_MIN_VAL
                     || maxFileSize > CarbonCommonConstants.MAX_FILE_SIZE_DEFAULT_VAL_MAX_VAL) {
-                LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                         "The max file size value \"" + maxFileSizeStr
                                 + "\" is invalid. Using the default value \""
                                 + CarbonCommonConstants.MAX_FILE_SIZE_DEFAULT_VAL);
-                molapProperties.setProperty(CarbonCommonConstants.MAX_FILE_SIZE,
+                carbonProperties.setProperty(CarbonCommonConstants.MAX_FILE_SIZE,
                         CarbonCommonConstants.MAX_FILE_SIZE_DEFAULT_VAL);
             }
         } catch (NumberFormatException e) {
-            LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "The max file size value \"" + maxFileSizeStr
                             + "\" is invalid. Using the default value \""
                             + CarbonCommonConstants.MAX_FILE_SIZE_DEFAULT_VAL);
 
-            molapProperties.setProperty(CarbonCommonConstants.MAX_FILE_SIZE,
+            carbonProperties.setProperty(CarbonCommonConstants.MAX_FILE_SIZE,
                     CarbonCommonConstants.MAX_FILE_SIZE_DEFAULT_VAL);
         }
     }
@@ -465,26 +465,26 @@ public final class CarbonProperties {
      * This method validates the number cores specified
      */
     private void validateNumCores() {
-        String numCoresStr = molapProperties.getProperty(CarbonCommonConstants.NUM_CORES,
+        String numCoresStr = carbonProperties.getProperty(CarbonCommonConstants.NUM_CORES,
                 CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
         try {
             int numCores = Integer.parseInt(numCoresStr);
 
             if (numCores < CarbonCommonConstants.NUM_CORES_MIN_VAL
                     || numCores > CarbonCommonConstants.NUM_CORES_MAX_VAL) {
-                LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                         "The num Cores  value \"" + numCoresStr
                                 + "\" is invalid. Using the default value \""
                                 + CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
-                molapProperties.setProperty(CarbonCommonConstants.NUM_CORES,
+                carbonProperties.setProperty(CarbonCommonConstants.NUM_CORES,
                         CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
             }
         } catch (NumberFormatException e) {
-            LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "The num Cores  value \"" + numCoresStr
                             + "\" is invalid. Using the default value \""
                             + CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
-            molapProperties.setProperty(CarbonCommonConstants.NUM_CORES,
+            carbonProperties.setProperty(CarbonCommonConstants.NUM_CORES,
                     CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
         }
     }
@@ -493,25 +493,25 @@ public final class CarbonProperties {
      * This method validates the sort size
      */
     private void validateSortSize() {
-        String sortSizeStr = molapProperties.getProperty(CarbonCommonConstants.SORT_SIZE,
+        String sortSizeStr = carbonProperties.getProperty(CarbonCommonConstants.SORT_SIZE,
                 CarbonCommonConstants.SORT_SIZE_DEFAULT_VAL);
         try {
             int sortSize = Integer.parseInt(sortSizeStr);
 
             if (sortSize < CarbonCommonConstants.SORT_SIZE_MIN_VAL) {
-                LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                         "The batch size value \"" + sortSizeStr
                                 + "\" is invalid. Using the default value \""
                                 + CarbonCommonConstants.SORT_SIZE_DEFAULT_VAL);
-                molapProperties.setProperty(CarbonCommonConstants.SORT_SIZE,
+                carbonProperties.setProperty(CarbonCommonConstants.SORT_SIZE,
                         CarbonCommonConstants.SORT_SIZE_DEFAULT_VAL);
             }
         } catch (NumberFormatException e) {
-            LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "The batch size value \"" + sortSizeStr
                             + "\" is invalid. Using the default value \""
                             + CarbonCommonConstants.SORT_SIZE_DEFAULT_VAL);
-            molapProperties.setProperty(CarbonCommonConstants.SORT_SIZE,
+            carbonProperties.setProperty(CarbonCommonConstants.SORT_SIZE,
                     CarbonCommonConstants.SORT_SIZE_DEFAULT_VAL);
         }
     }
@@ -520,25 +520,25 @@ public final class CarbonProperties {
      * This method validates the sort size
      */
     private void validateSortBufferSize() {
-        String sortSizeStr = molapProperties.getProperty(CarbonCommonConstants.SORT_BUFFER_SIZE,
+        String sortSizeStr = carbonProperties.getProperty(CarbonCommonConstants.SORT_BUFFER_SIZE,
                 CarbonCommonConstants.SORT_BUFFER_SIZE_DEFAULT_VALUE);
         try {
             int sortSize = Integer.parseInt(sortSizeStr);
 
             if (sortSize < CarbonCommonConstants.SORT_BUFFER_SIZE_MIN_VALUE) {
-                LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                         "The batch size value \"" + sortSizeStr
                                 + "\" is invalid. Using the default value \""
                                 + CarbonCommonConstants.SORT_BUFFER_SIZE_DEFAULT_VALUE);
-                molapProperties.setProperty(CarbonCommonConstants.SORT_BUFFER_SIZE,
+                carbonProperties.setProperty(CarbonCommonConstants.SORT_BUFFER_SIZE,
                         CarbonCommonConstants.SORT_BUFFER_SIZE_DEFAULT_VALUE);
             }
         } catch (NumberFormatException e) {
-            LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "The batch size value \"" + sortSizeStr
                             + "\" is invalid. Using the default value \""
                             + CarbonCommonConstants.SORT_BUFFER_SIZE_DEFAULT_VALUE);
-            molapProperties.setProperty(CarbonCommonConstants.SORT_BUFFER_SIZE,
+            carbonProperties.setProperty(CarbonCommonConstants.SORT_BUFFER_SIZE,
                     CarbonCommonConstants.SORT_BUFFER_SIZE_DEFAULT_VALUE);
         }
     }
@@ -548,12 +548,12 @@ public final class CarbonProperties {
      * memory
      */
     private void loadProperties() {
-        String property = System.getProperty("molap.properties.filepath");
+        String property = System.getProperty("carbon.properties.filepath");
         if (null == property) {
-            property = CarbonCommonConstants.MOLAP_PROPERTIES_FILE_PATH;
+            property = CarbonCommonConstants.CARBON_PROPERTIES_FILE_PATH;
         }
         File file = new File(property);
-        LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+        LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                 "Property file path: " + file.getAbsolutePath());
 
         FileInputStream fis = null;
@@ -561,23 +561,23 @@ public final class CarbonProperties {
             if (file.exists()) {
                 fis = new FileInputStream(file);
 
-                molapProperties.load(fis);
+                carbonProperties.load(fis);
             }
         } catch (FileNotFoundException e) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
-                    "The file: " + CarbonCommonConstants.MOLAP_PROPERTIES_FILE_PATH
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
+                    "The file: " + CarbonCommonConstants.CARBON_PROPERTIES_FILE_PATH
                             + " does not exist");
         } catch (IOException e) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, "Error while reading the file: "
-                    + CarbonCommonConstants.MOLAP_PROPERTIES_FILE_PATH);
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "Error while reading the file: "
+                    + CarbonCommonConstants.CARBON_PROPERTIES_FILE_PATH);
         } finally {
             if (null != fis) {
                 try {
                     fis.close();
                 } catch (IOException e) {
-                    LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                    LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                             "Error while closing the file stream for file: "
-                                    + CarbonCommonConstants.MOLAP_PROPERTIES_FILE_PATH);
+                                    + CarbonCommonConstants.CARBON_PROPERTIES_FILE_PATH);
                 }
             }
         }
@@ -593,10 +593,10 @@ public final class CarbonProperties {
      */
     public String getProperty(String key) {
         //TODO temporary fix
-        if ("molap.leaf.node.size".equals(key)) {
+        if ("carbon.leaf.node.size".equals(key)) {
             return "120000";
         }
-        return molapProperties.getProperty(key);
+        return carbonProperties.getProperty(key);
     }
 
     /**
@@ -615,7 +615,7 @@ public final class CarbonProperties {
     }
 
     public String[] getAllProperties() {
-        Set<Object> set = molapProperties.keySet();
+        Set<Object> set = carbonProperties.keySet();
         String[] allProps = new String[set.size()];
         int i = 0;
         for (Object obj : set) {
@@ -631,7 +631,7 @@ public final class CarbonProperties {
      * @return properties value
      */
     public void addProperty(String key, String value) {
-        molapProperties.setProperty(key, value);
+        carbonProperties.setProperty(key, value);
 
     }
 
@@ -652,8 +652,8 @@ public final class CarbonProperties {
     }
 
     public void print() {
-        LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, "------Using Molap.properties --------");
-        LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, molapProperties);
+        LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "------Using Carbon.properties --------");
+        LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, carbonProperties);
     }
 
 }

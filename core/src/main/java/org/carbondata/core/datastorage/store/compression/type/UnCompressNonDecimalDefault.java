@@ -34,7 +34,7 @@ import org.carbondata.core.util.ValueCompressionUtil.DataType;
 public class UnCompressNonDecimalDefault
         implements ValueCompressonHolder.UnCompressValue<double[]> {
     /**
-     * Attribute for Molap LOGGER
+     * Attribute for Carbon LOGGER
      */
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(UnCompressNonDecimalDefault.class.getName());
@@ -53,7 +53,7 @@ public class UnCompressNonDecimalDefault
         try {
             return (ValueCompressonHolder.UnCompressValue) clone();
         } catch (CloneNotSupportedException cnse1) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, cnse1, cnse1.getMessage());
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, cnse1, cnse1.getMessage());
         }
         return null;
     }

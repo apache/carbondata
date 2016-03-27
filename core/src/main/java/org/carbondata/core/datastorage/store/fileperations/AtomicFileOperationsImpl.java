@@ -57,7 +57,7 @@ public class AtomicFileOperationsImpl implements AtomicFileOperations {
         tempWriteFilePath = filePath + CarbonCommonConstants.TEMPWRITEFILEEXTENSION;
 
         if (FileFactory.isFileExist(tempWriteFilePath, fileType)) {
-            FileFactory.getMolapFile(tempWriteFilePath, fileType).delete();
+            FileFactory.getCarbonFile(tempWriteFilePath, fileType).delete();
         }
 
         FileFactory.createNewFile(tempWriteFilePath, fileType);
@@ -69,7 +69,7 @@ public class AtomicFileOperationsImpl implements AtomicFileOperations {
     }
 
     /* (non-Javadoc)
-     * @see com.huawei.unibi.molap.datastorage.store.fileperations.AtomicFileOperations#close()
+     * @see com.huawei.unibi.carbon.datastorage.store.fileperations.AtomicFileOperations#close()
      */
     @Override
     public void close() throws IOException {
@@ -77,7 +77,7 @@ public class AtomicFileOperationsImpl implements AtomicFileOperations {
         if (null != dataOutStream) {
             dataOutStream.close();
 
-            CarbonFile tempFile = FileFactory.getMolapFile(tempWriteFilePath, fileType);
+            CarbonFile tempFile = FileFactory.getCarbonFile(tempWriteFilePath, fileType);
 
             if (!tempFile.renameForce(filePath)) {
                 throw new IOException("temporary file renaming failed");

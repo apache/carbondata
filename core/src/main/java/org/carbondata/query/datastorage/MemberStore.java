@@ -51,7 +51,7 @@ public class MemberStore {
      */
     private int[] globalCache;
 
-    //    private Map<Integer,Integer> globalCacheMap = new HashMap<Integer,Integer>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+    //    private Map<Integer,Integer> globalCacheMap = new HashMap<Integer,Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
     /**
      * Sort index after members are started

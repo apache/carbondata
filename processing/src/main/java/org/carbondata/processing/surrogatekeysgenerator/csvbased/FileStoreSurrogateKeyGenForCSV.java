@@ -149,13 +149,13 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
             fileManager.add(fileData);
         }
         boolean isCacheEnabled = Boolean.parseBoolean(CarbonProperties.getInstance()
-                .getProperty(CarbonCommonConstants.MOLAP_SEQ_GEN_INMEMORY_LRU_CACHE_ENABLED,
-                        CarbonCommonConstants.MOLAP_SEQ_GEN_INMEMORY_LRU_CACHE_ENABLED_DEFAULT_VALUE));
+                .getProperty(CarbonCommonConstants.CARBON_SEQ_GEN_INMEMORY_LRU_CACHE_ENABLED,
+                        CarbonCommonConstants.CARBON_SEQ_GEN_INMEMORY_LRU_CACHE_ENABLED_DEFAULT_VALUE));
         if (isCacheEnabled) {
             String cacheKey = carbonInfo.getSchemaName() + '_' + carbonInfo.getCubeName();
             CarbonSeqGenCacheHolder carbonSeqGenCacheHolder = LRUCache.getIntance().get(cacheKey);
             if (null != carbonSeqGenCacheHolder) {
-                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "********************************************** Loading from LRU cache");
                 setMax(carbonSeqGenCacheHolder.getMax());
                 setHierCache(carbonSeqGenCacheHolder.getHierCache());
@@ -272,7 +272,7 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
 
     private CarbonFile[] getFilesArray(String baseStorePath, final String fileNameSearchPattern) {
         FileType fileType = FileFactory.getFileType(baseStorePath);
-        CarbonFile storeFolder = FileFactory.getMolapFile(baseStorePath, fileType);
+        CarbonFile storeFolder = FileFactory.getCarbonFile(baseStorePath, fileType);
 
         CarbonFile[] listFiles = storeFolder.listFiles(new CarbonFileFilter() {
 
@@ -301,7 +301,7 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
                         .isFileExist(baselocation, FileFactory.getFileType(baselocation));
             }
         } catch (Exception e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
                     e.getMessage());
         }
 
@@ -372,7 +372,7 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
 
                     if (FileFactory.isFileExist(path, fileType, true)) {
                         CarbonFile file =
-                                FileFactory.getMolapFile(path, FileFactory.getFileType(path));
+                                FileFactory.getCarbonFile(path, FileFactory.getFileType(path));
                         readLevelFileAndUpdateCache(file,
                                 carbonInfo.getTableName() + '_' + carbonInfo.getMeasureColumns()[i],
                                 false, true);
@@ -403,10 +403,10 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
                 return new CarbonFile[0];
             }
         } catch (IOException e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
                     e.getMessage());
         }
-        CarbonFile folders = FileFactory.getMolapFile(baseStorePath, fileType);
+        CarbonFile folders = FileFactory.getCarbonFile(baseStorePath, fileType);
         CarbonFile[] rsFolders = folders.listFiles(new CarbonFileFilter() {
             @Override
             public boolean accept(CarbonFile pathname) {
@@ -483,7 +483,7 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
         count = cache.get(tuple);
         if (count == null) {
             if (getTimDimMax()[index] >= carbonInfo.getMaxKeys()[index]) {
-                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "Invalid cardinality. Key size exceeded cardinality for: " + carbonInfo
                                 .getDimColNames()[index] + ": MemberValue: " + tuple);
                 return -1;
@@ -512,7 +512,7 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
             try {
                 dimensionWriter[i].writeMaxValue();
             } catch (IOException e) {
-                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "********************************************** Problem writing max value :: "
                                 + e.getMessage());
                 throw new KettleException(
@@ -543,12 +543,12 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
                     }
                     if (currentFile.length() == 0) {
                         if (!currentFile.delete()) {
-                            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                                     "Not Able to delete current file : " + currentFile.getName());
                         }
                     } else {
                         if (!currentFile.renameTo(destFile)) {
-                            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                                     "Not Able to rename " + currentFile.getName() + " to "
                                             + destFile.getName());
                         }
@@ -658,11 +658,11 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
             }
 
         } catch (Exception e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
                     "Not able to read level file for Populating Cache : " + fileName);
             CarbonUtil.closeStreams(inputStream);
             if (!memberFile.delete()) {
-                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "Not able to delete level File after exception.");
             }
             return;

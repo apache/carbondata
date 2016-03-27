@@ -47,7 +47,7 @@ public final class CarbonLRULevelCache {
      */
     private static final int BYTE_CONVERSION_CONSTANT = 1024 * 1024;
     /**
-     * Attribute for Molap LOGGER
+     * Attribute for Carbon LOGGER
      */
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(InMemoryTableStore.class.getName());
@@ -79,13 +79,13 @@ public final class CarbonLRULevelCache {
                     Integer.parseInt(CarbonCommonConstants.CARBON_MAX_LEVEL_CACHE_SIZE_DEFAULT);
         }
         if (levelCacheMemorySize >= 0) {
-            LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                     "Configured level cahce size is " + levelCacheMemorySize + " MB");
             // convert in bytes
             levelCacheMemorySize = levelCacheMemorySize * BYTE_CONVERSION_CONSTANT;
             initCache();
         } else {
-            LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                     "Level cache size not configured. Therefore default behvior will be considered and all levels files will be laoded in memory");
         }
     }
@@ -178,7 +178,7 @@ public final class CarbonLRULevelCache {
                     if (entry.getValue().isLoaded()) {
                         currentSize = currentSize - entry.getValue().getFileSize();
                     }
-                    LOGGER.debug(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                    LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                             "Removed level entry from InMemory level lru cache :: " + entry
                                     .getKey());
                     levelCacheItr.remove();
@@ -193,7 +193,7 @@ public final class CarbonLRULevelCache {
     public void remove(String key) {
         synchronized (levelCache) {
             levelCache.remove(key);
-            LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                     "Removed level entry from InMemory level lru cache :: " + key);
         }
     }
@@ -209,7 +209,7 @@ public final class CarbonLRULevelCache {
             }
             levelCache.put(cubeUniqueName, levelInfo);
         }
-        LOGGER.debug(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                 "Added level entry to InMemory level lru cache :: " + cubeUniqueName
                         + " with loaded status :: " + levelInfo.isLoaded());
     }

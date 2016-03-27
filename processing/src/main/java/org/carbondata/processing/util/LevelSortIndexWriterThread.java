@@ -129,7 +129,7 @@ public class LevelSortIndexWriterThread implements Callable<Void> {
             fileChannel = FileFactory
                     .getDataInputStream(levelFilePath, FileFactory.getFileType(levelFilePath));
             CarbonFile memberFile =
-                    FileFactory.getMolapFile(levelFilePath, FileFactory.getFileType(levelFilePath));
+                    FileFactory.getCarbonFile(levelFilePath, FileFactory.getFileType(levelFilePath));
             size = memberFile.getSize() - 4;
             long skipSize = size;
             long actualSkipSize = 0;
@@ -139,7 +139,7 @@ public class LevelSortIndexWriterThread implements Callable<Void> {
             }
             maxSurrogate = fileChannel.readInt();
         } catch (IOException e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
                     "problem while reading the level file");
             throw e;
         } finally {
@@ -155,7 +155,7 @@ public class LevelSortIndexWriterThread implements Callable<Void> {
             fileChannel.readFully(buffer.array());
             buffer.rewind();
         } catch (IOException e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
                     "problem while reading the level file");
             throw e;
         } finally {
@@ -217,7 +217,7 @@ public class LevelSortIndexWriterThread implements Callable<Void> {
                 dataOutputStream.writeInt(sortReverseOrderIndex[i]);
             }
         } catch (IOException e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
                     "problem while writing the level sort index file");
             throw e;
         } finally {

@@ -60,7 +60,7 @@ public final class CarbonUtil {
     private static final String FS_DEFAULT_FS = "fs.defaultFS";
 
     /**
-     * Attribute for Molap LOGGER
+     * Attribute for Carbon LOGGER
      */
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(CarbonUtil.class.getName());
@@ -99,7 +99,7 @@ public final class CarbonUtil {
                     try {
                         stream.close();
                     } catch (IOException e) {
-                        LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                        LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                                 "Error while closing stream" + stream);
                     }
                 }
@@ -114,7 +114,7 @@ public final class CarbonUtil {
                     return o1.getName().compareTo(o2.getName());
                 } catch (Exception e) {
 
-                    LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, e,
+                    LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e,
                             "Error while getSortedFile");
                     return 0;
                 }
@@ -182,7 +182,7 @@ public final class CarbonUtil {
         }
 
         CarbonFile carbonFile =
-                FileFactory.getMolapFile(baseStorePath, FileFactory.getFileType(baseStorePath));
+                FileFactory.getCarbonFile(baseStorePath, FileFactory.getFileType(baseStorePath));
 
         // List of directories
         CarbonFile[] listFiles = carbonFile.listFiles(new CarbonFileFilter() {
@@ -290,12 +290,12 @@ public final class CarbonUtil {
             }
 
         } catch (FileNotFoundException e) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, e);
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e);
             throw new CarbonUtilException(
                     "Proble while copying the file from: " + sourceFile + ": To" + fileDestination,
                     e);
         } catch (IOException e) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, e);
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e);
             throw new CarbonUtilException(
                     "Proble while copying the file from: " + sourceFile + ": To" + fileDestination,
                     e);
@@ -739,20 +739,20 @@ public final class CarbonUtil {
             fileType = FileFactory.getFileType(fullPath);
             try {
                 if (FileFactory.isFileExist(fullPath, fileType)) {
-                    CarbonFile file = FileFactory.getMolapFile(fullPath, fileType);
+                    CarbonFile file = FileFactory.getCarbonFile(fullPath, fileType);
                     boolean isRenameSuccessfull = file.renameTo(newFilePath);
                     if (!isRenameSuccessfull) {
-                        LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                        LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                                 "Problem renaming the cube :: " + fullPath);
                         c = new DeleteCube(file);
                         executorService.submit(c);
                     } else {
-                        c = new DeleteCube(FileFactory.getMolapFile(newFilePath, fileType));
+                        c = new DeleteCube(FileFactory.getCarbonFile(newFilePath, fileType));
                         executorService.submit(c);
                     }
                 }
             } catch (IOException e) {
-                LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                         "Problem renaming the cube :: " + fullPath);
             }
         }
@@ -1043,7 +1043,7 @@ public final class CarbonUtil {
         OutputStream stream = null;
         ObjectOutputStream objectOutputStream = null;
         try {
-            LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "Slice Metadata file Path: " + path + '/' + CarbonUtil
                             .getSliceMetaDataFileName(nextRestructFolder));
             stream = FileFactory.getDataOutputStream(
@@ -1052,7 +1052,7 @@ public final class CarbonUtil {
             objectOutputStream = new ObjectOutputStream(stream);
             objectOutputStream.writeObject(sliceMetaData);
         } catch (IOException e) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, e.getMessage());
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e.getMessage());
         } finally {
             CarbonUtil.closeStreams(objectOutputStream, stream);
         }
@@ -1108,7 +1108,7 @@ public final class CarbonUtil {
         try {
             // inform engine to load new slice
             Class<?> c =
-                    Class.forName("com.huawei.unibi.molap.surrogatekeysgenerator.lru.LRUCache");
+                    Class.forName("com.huawei.unibi.carbon.surrogatekeysgenerator.lru.LRUCache");
             Class[] argTypes = new Class[] {};
             // get the instance of CubeSliceLoader
             Method main = c.getDeclaredMethod("getIntance", argTypes);
@@ -1119,16 +1119,16 @@ public final class CarbonUtil {
             // pass cube name and store location
             declaredMethod.invoke(invoke);
         } catch (ClassNotFoundException classNotFoundException) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "Error while clearing the cache " + classNotFoundException);
         } catch (NoSuchMethodException noSuchMethodException) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "Error while clearing the cache " + noSuchMethodException);
         } catch (IllegalAccessException illegalAccessException) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "Error while clearing the cache " + illegalAccessException);
         } catch (InvocationTargetException invocationTargetException) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "Error while clearing the cache " + invocationTargetException);
         }
     }
@@ -1140,7 +1140,7 @@ public final class CarbonUtil {
         try {
             // inform engine to load new slice
             Class<?> c =
-                    Class.forName("com.huawei.unibi.molap.surrogatekeysgenerator.lru.LRUCache");
+                    Class.forName("com.huawei.unibi.carbon.surrogatekeysgenerator.lru.LRUCache");
             Class[] argTypes = new Class[] {};
             // get the instance of CubeSliceLoader
             Method main = c.getDeclaredMethod("getInstance", argTypes);
@@ -1403,7 +1403,7 @@ public final class CarbonUtil {
             buffer.get(indexData);
             buffer.get(indexMap);
         } catch (Exception e) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, "Error while compressColumn Index ",
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "Error while compressColumn Index ",
                     e, e.getMessage());
         }
         return UnBlockIndexer.uncompressIndex(numberCompressor.unCompress(indexData),
@@ -1433,10 +1433,10 @@ public final class CarbonUtil {
                 return new String[0];
             }
         } catch (IOException e) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "Error occurred :: " + e.getMessage());
         }
-        CarbonFile file = FileFactory.getMolapFile(storeLocation, fileType);
+        CarbonFile file = FileFactory.getCarbonFile(storeLocation, fileType);
         CarbonFile[] listFiles = listFiles(file);
         if (null == listFiles || listFiles.length < 0) {
             return new String[0];
@@ -1481,7 +1481,7 @@ public final class CarbonUtil {
             sortedPathForFiles = getAllFactFiles(sliceAndFiles.getPath(), tableName, fileType);
             if (null != sortedPathForFiles && sortedPathForFiles.length > 0) {
                 Arrays.sort(sortedPathForFiles,
-                        new MolapFileComparator("\\" + CarbonCommonConstants.FACT_FILE_EXT));
+                        new CarbonFileComparator("\\" + CarbonCommonConstants.FACT_FILE_EXT));
                 sliceAndFiles.setSliceFactFilesList(sortedPathForFiles);
                 sliceFactFilesList.add(sliceAndFiles);
             }
@@ -1497,7 +1497,7 @@ public final class CarbonUtil {
      */
     public static CarbonFile[] getAllFactFiles(String sliceLocation, final String tableName,
             FileFactory.FileType fileType) {
-        CarbonFile file = FileFactory.getMolapFile(sliceLocation, fileType);
+        CarbonFile file = FileFactory.getCarbonFile(sliceLocation, fileType);
         CarbonFile[] files = null;
         CarbonFile[] updatedFactFiles = null;
         if (file.isDirectory()) {
@@ -1589,7 +1589,7 @@ public final class CarbonUtil {
         hdfsStoreLocation =
                 hdfsStoreLocation + File.separator + schemaName + File.separator + cubeName;
 
-        int rsCounter = currentRestructNumber/*MolapUtil.checkAndReturnNextRestructFolderNumber(
+        int rsCounter = currentRestructNumber/*CarbonUtil.checkAndReturnNextRestructFolderNumber(
                 hdfsStoreLocation, "RS_")*/;
         if (rsCounter == -1) {
             rsCounter = 0;
@@ -1613,7 +1613,7 @@ public final class CarbonUtil {
         InputStreamReader inStream = null;
         String metadataFileName = cubeFolderPath + CarbonCommonConstants.FILE_SEPARATOR
                 + CarbonCommonConstants.LOADMETADATA_FILENAME
-                + CarbonCommonConstants.MOLAP_METADATA_EXTENSION;
+                + CarbonCommonConstants.CARBON_METADATA_EXTENSION;
         LoadMetadataDetails[] listOfLoadFolderDetailsArray;
 
         AtomicFileOperations fileOperation = new AtomicFileOperationsImpl(metadataFileName,
@@ -1626,7 +1626,7 @@ public final class CarbonUtil {
             }
             dataInputStream = fileOperation.openForRead();
             inStream = new InputStreamReader(dataInputStream,
-                    CarbonCommonConstants.MOLAP_DEFAULT_STREAM_ENCODEFORMAT);
+                    CarbonCommonConstants.CARBON_DEFAULT_STREAM_ENCODEFORMAT);
             buffReader = new BufferedReader(inStream);
             listOfLoadFolderDetailsArray =
                     gsonObjectToRead.fromJson(buffReader, LoadMetadataDetails[].class);
@@ -1646,7 +1646,7 @@ public final class CarbonUtil {
         try {
             return FileFactory.createNewFile(fullFileName, fileType);
         } catch (IOException e) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "Error while writing RS meta file : " + fullFileName + e.getMessage());
             return false;
         }
@@ -1682,10 +1682,10 @@ public final class CarbonUtil {
             channel.write(buffer);
             buffer.clear();
 
-            LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "Level cardinality file written to : " + levelCardinalityFilePath);
         } catch (IOException e) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "Error while writing level cardinality file : " + levelCardinalityFilePath + e
                             .getMessage());
             throw new KettleException("Not able to write level cardinality file", e);
@@ -1704,12 +1704,12 @@ public final class CarbonUtil {
             objectInputStream = new ObjectInputStream(stream);
             readObject = (SliceMetaData) objectInputStream.readObject();
         } catch (ClassNotFoundException e) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, e);
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e);
         } catch (FileNotFoundException e) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "@@@@@ SliceMetaData File is missing @@@@@ :" + path);
         } catch (IOException e) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "@@@@@ Error while reading SliceMetaData File @@@@@ :" + path);
         } finally {
             CarbonUtil.closeStreams(objectInputStream, stream);
@@ -1842,8 +1842,8 @@ public final class CarbonUtil {
 
     /**
      * Below method will be used to get the aggregator type
-     * MolapCommonConstants.SUM_COUNT_VALUE_MEASURE will return when value is double measure
-     * MolapCommonConstants.BYTE_VALUE_MEASURE will be returned when value is byte array
+     * CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE will return when value is double measure
+     * CarbonCommonConstants.BYTE_VALUE_MEASURE will be returned when value is byte array
      *
      * @param agg
      * @return aggregator type
@@ -1893,13 +1893,13 @@ public final class CarbonUtil {
 
     }
 
-    private static class MolapFileComparator implements Comparator<CarbonFile> {
+    private static class CarbonFileComparator implements Comparator<CarbonFile> {
         /**
          * File extension
          */
         private String fileExt;
 
-        public MolapFileComparator(String fileExt) {
+        public CarbonFileComparator(String fileExt) {
             this.fileExt = fileExt;
         }
 

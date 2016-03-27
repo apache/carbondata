@@ -66,7 +66,7 @@ public class MapBasedResultAggregatorImpl implements ColumnarScannedResultAggreg
 
         //CHECKSTYLE:OFF Approval No:Approval-V1R2C10_005
         boolean useXXHASH = Boolean.valueOf(
-                CarbonProperties.getInstance().getProperty("molap.enableXXHash", "false"));
+                CarbonProperties.getInstance().getProperty("carbon.enableXXHash", "false"));
         //CHECKSTYLE:ON
 
         if (useXXHASH) {
@@ -158,7 +158,7 @@ public class MapBasedResultAggregatorImpl implements ColumnarScannedResultAggreg
                 finalData.put(key, e.getValue());
             }
         } catch (KeyGenException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
         }
 
         return finalData;

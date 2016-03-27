@@ -63,7 +63,7 @@ public final class DataStatsUtil {
 
     }
 
-    public static CarbonFile[] getMolapFactFile(CarbonFile file, final String table) {
+    public static CarbonFile[] getCarbonFactFile(CarbonFile file, final String table) {
         CarbonFile[] files = file.listFiles(new CarbonFileFilter() {
             public boolean accept(CarbonFile pathname) {
                 return (!pathname.isDirectory()) && pathname.getName().startsWith(table) && pathname
@@ -131,7 +131,7 @@ public final class DataStatsUtil {
                 os = new ObjectOutputStream(out);
                 os.writeObject(object);
             } catch (Exception e) {
-                LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                         "Error in serializing file:" + path + '/' + fileName);
             } finally {
                 CarbonUtil.closeStreams(out, os);
@@ -153,7 +153,7 @@ public final class DataStatsUtil {
                 object = is.readObject();
 
             } catch (Exception e) {
-                LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                         "Error in deserializing file:" + path);
             } finally {
                 CarbonUtil.closeStreams(in, is);
@@ -220,7 +220,7 @@ public final class DataStatsUtil {
         basePath = basePath + File.separator + loadModel.getSchemaName() + '_' + loadModel
                 .getPartitionId() + File.separator + loadModel.getCubeName() + '_' + loadModel
                 .getPartitionId();
-        CarbonFile file = FileFactory.getMolapFile(basePath, FileFactory.getFileType(basePath));
+        CarbonFile file = FileFactory.getCarbonFile(basePath, FileFactory.getFileType(basePath));
         CarbonFile[] files = null;
         if (file.isDirectory()) {
             files = file.listFiles(new CarbonFileFilter() {

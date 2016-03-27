@@ -51,7 +51,7 @@ public class CommonUtilTest {
 
     @Before
     public void setUpBeforeClass() throws Exception {
-        File file = new File("../../libraries/testData/Molap-Aggregation/store/");
+        File file = new File("../../libraries/testData/Carbon-Aggregation/store/");
         String basePath = file.getCanonicalPath() + "/";
         metaPath = basePath + "schemas/default/carbon/metadata";
 

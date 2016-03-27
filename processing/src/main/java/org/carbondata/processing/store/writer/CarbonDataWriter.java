@@ -206,23 +206,23 @@ public class CarbonDataWriter {
             try {
                 this.executorService.awaitTermination(2, TimeUnit.HOURS);
             } catch (InterruptedException ie) {
-                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, ie);
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, ie);
             }
             CarbonUtil.closeStreams(this.fileChannel);
             this.nodeHolderList = null;
         }
 
-        File originalMolapFile =
+        File originalCarbonFile =
                 new File(this.fileName.substring(0, this.fileName.lastIndexOf('.')));
         File currFile = new File(this.fileName);
-        if (!currFile.renameTo(originalMolapFile)) {
-            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        if (!currFile.renameTo(originalCarbonFile)) {
+            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "Problem while renaming the file");
         }
 
-        if (originalMolapFile.length() < 1) {
-            if (!originalMolapFile.delete()) {
-                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        if (originalCarbonFile.length() < 1) {
+            if (!originalCarbonFile.delete()) {
+                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "Problem while deleting the empty fact file");
             }
         }

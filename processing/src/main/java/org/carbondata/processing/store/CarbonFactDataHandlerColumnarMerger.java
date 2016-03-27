@@ -114,7 +114,7 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
     private CarbonAutoAggGroupBy groupBy;
 
     /**
-     * MolapWriteDataHolder
+     * CarbonWriteDataHolder
      */
     private CarbonWriteDataHolder[] dataHolder;
 
@@ -156,14 +156,14 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
 
     private CarbonWriteDataHolder keyDataHolder;
 
-    private CarbonColumnarFactMergerInfo molapFactDataMergerInfo;
+    private CarbonColumnarFactMergerInfo carbonFactDataMergerInfo;
 
     private int currentRestructNumber;
 
-    public CarbonFactDataHandlerColumnarMerger(CarbonColumnarFactMergerInfo molapFactDataMergerInfo,
+    public CarbonFactDataHandlerColumnarMerger(CarbonColumnarFactMergerInfo carbonFactDataMergerInfo,
             int currentRestructNum) {
-        this.molapFactDataMergerInfo = molapFactDataMergerInfo;
-        this.aggKeyBlock = new boolean[molapFactDataMergerInfo.getDimLens().length];
+        this.carbonFactDataMergerInfo = carbonFactDataMergerInfo;
+        this.aggKeyBlock = new boolean[carbonFactDataMergerInfo.getDimLens().length];
         this.currentRestructNumber = currentRestructNum;
         isIntBasedIndexer =
                 Boolean.parseBoolean(CarbonCommonConstants.IS_INT_BASED_INDEXER_DEFAULTVALUE);
@@ -174,8 +174,8 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
             int highCardinalityVal = Integer.parseInt(CarbonProperties.getInstance()
                     .getProperty(CarbonCommonConstants.HIGH_CARDINALITY_VALUE,
                             CarbonCommonConstants.HIGH_CARDINALITY_VALUE_DEFAULTVALUE));
-            for (int i = 0; i < molapFactDataMergerInfo.getDimLens().length; i++) {
-                if (molapFactDataMergerInfo.getDimLens()[i] < highCardinalityVal) {
+            for (int i = 0; i < carbonFactDataMergerInfo.getDimLens().length; i++) {
+                if (carbonFactDataMergerInfo.getDimLens()[i] < highCardinalityVal) {
                     this.aggKeyBlock[i] = true;
                 }
             }
@@ -184,7 +184,7 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
         isCompressedKeyBlock =
                 Boolean.parseBoolean(CarbonCommonConstants.IS_COMPRESSED_KEYBLOCK_DEFAULTVALUE);
 
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                 "Initializing writer executers");
         writerExecutorService = Executors.newFixedThreadPool(3);
 
@@ -198,30 +198,30 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
      */
     public void initialise() throws CarbonDataWriterException {
         fileManager = new LoadFolderData();
-        fileManager.setName(new File(molapFactDataMergerInfo.getDestinationLocation()).getName());
-        if (!molapFactDataMergerInfo.isGroupByEnabled()) {
+        fileManager.setName(new File(carbonFactDataMergerInfo.getDestinationLocation()).getName());
+        if (!carbonFactDataMergerInfo.isGroupByEnabled()) {
             try {
-                setWritingConfiguration(molapFactDataMergerInfo.getMdkeyLength());
+                setWritingConfiguration(carbonFactDataMergerInfo.getMdkeyLength());
             } catch (CarbonDataWriterException e) {
                 throw e;
             }
         } else {
-            if (!molapFactDataMergerInfo.isMergingRequestForCustomAgg()) {
-                this.groupBy = new CarbonAutoAggGroupBy(molapFactDataMergerInfo.getAggregators(),
-                        molapFactDataMergerInfo.getAggregatorClass(),
-                        molapFactDataMergerInfo.getSchemaName(),
-                        molapFactDataMergerInfo.getCubeName(),
-                        molapFactDataMergerInfo.getTableName(), null,
+            if (!carbonFactDataMergerInfo.isMergingRequestForCustomAgg()) {
+                this.groupBy = new CarbonAutoAggGroupBy(carbonFactDataMergerInfo.getAggregators(),
+                        carbonFactDataMergerInfo.getAggregatorClass(),
+                        carbonFactDataMergerInfo.getSchemaName(),
+                        carbonFactDataMergerInfo.getCubeName(),
+                        carbonFactDataMergerInfo.getTableName(), null,
                         CarbonCommonConstants.MERGER_FOLDER_EXT
                                 + CarbonCommonConstants.FILE_INPROGRESS_STATUS,
                         currentRestructNumber);
             } else {
                 this.groupBy =
-                        new CarbonAutoAggGroupByExtended(molapFactDataMergerInfo.getAggregators(),
-                                molapFactDataMergerInfo.getAggregatorClass(),
-                                molapFactDataMergerInfo.getSchemaName(),
-                                molapFactDataMergerInfo.getCubeName(),
-                                molapFactDataMergerInfo.getTableName(), null,
+                        new CarbonAutoAggGroupByExtended(carbonFactDataMergerInfo.getAggregators(),
+                                carbonFactDataMergerInfo.getAggregatorClass(),
+                                carbonFactDataMergerInfo.getSchemaName(),
+                                carbonFactDataMergerInfo.getCubeName(),
+                                carbonFactDataMergerInfo.getTableName(), null,
                                 CarbonCommonConstants.MERGER_FOLDER_EXT
                                         + CarbonCommonConstants.FILE_INPROGRESS_STATUS,
                                 currentRestructNumber);
@@ -237,7 +237,7 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
      * @throws CarbonDataWriterException
      */
     public void addDataToStore(Object[] row) throws CarbonDataWriterException {
-        if (molapFactDataMergerInfo.isGroupByEnabled()) {
+        if (carbonFactDataMergerInfo.isGroupByEnabled()) {
             try {
                 groupBy.add(row);
             } catch (CarbonGroupByException e) {
@@ -255,7 +255,7 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
      * @throws CarbonDataWriterException
      */
     private void addToStore(Object[] row) throws CarbonDataWriterException {
-        byte[] mdkey = (byte[]) row[molapFactDataMergerInfo.getMeasureCount()];
+        byte[] mdkey = (byte[]) row[carbonFactDataMergerInfo.getMeasureCount()];
         byte[] b = null;
         if (this.entryCount == 0) {
             this.startKey = mdkey;
@@ -288,14 +288,14 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
             int entryCountLocal = entryCount;
             byte[] startKeyLocal = startKey;
             byte[] endKeyLocal = endKey;
-            startKey = new byte[molapFactDataMergerInfo.getMdkeyLength()];
-            endKey = new byte[molapFactDataMergerInfo.getMdkeyLength()];
+            startKey = new byte[carbonFactDataMergerInfo.getMdkeyLength()];
+            endKey = new byte[carbonFactDataMergerInfo.getMdkeyLength()];
             writerExecutorService
                     .submit(new DataWriterThread(byteArrayValues, writableMeasureDataArray,
                             entryCountLocal, startKeyLocal, endKeyLocal));
             // set the entry count to zero
             processedDataCount += entryCount;
-            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "*******************************************Number Of records processed: "
                             + processedDataCount);
             this.entryCount = 0;
@@ -323,7 +323,7 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
         try {
             executorService.awaitTermination(1, TimeUnit.DAYS);
         } catch (InterruptedException e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "error in executorService/awaitTermination ", e, e.getMessage());
 
         }
@@ -333,7 +333,7 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
                 blockStorage[i] = submit.get(i).get();
             }
         } catch (Exception e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "error in  populating  blockstorage array ", e, e.getMessage());
 
         }
@@ -350,11 +350,11 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
      * @throws CarbonDataWriterException
      */
     public void finish() throws CarbonDataWriterException {
-        if (molapFactDataMergerInfo.isGroupByEnabled()) {
+        if (carbonFactDataMergerInfo.isGroupByEnabled()) {
             try {
-                this.groupBy.initiateReading(molapFactDataMergerInfo.getDestinationLocation(),
-                        molapFactDataMergerInfo.getTableName());
-                setWritingConfiguration(molapFactDataMergerInfo.getMdkeyLength());
+                this.groupBy.initiateReading(carbonFactDataMergerInfo.getDestinationLocation(),
+                        carbonFactDataMergerInfo.getTableName());
+                setWritingConfiguration(carbonFactDataMergerInfo.getMdkeyLength());
                 Object[] row = null;
                 while (this.groupBy.hasNext()) {
                     row = this.groupBy.next();
@@ -366,7 +366,7 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
                 try {
                     this.groupBy.finish();
                 } catch (CarbonGroupByException e) {
-                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                             "Problem in group by finish");
                 }
             }
@@ -392,7 +392,7 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
             try {
                 executorService.awaitTermination(1, TimeUnit.DAYS);
             } catch (InterruptedException e) {
-                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "error in  executorService.awaitTermination ", e, e.getMessage());
 
             }
@@ -402,7 +402,7 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
                     blockStorage[i] = submit.get(i).get();
                 }
             } catch (Exception e) {
-                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "error while populating blockStorage array ", e, e.getMessage());
 
             }
@@ -411,7 +411,7 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
             try {
                 writerExecutorService.awaitTermination(1, TimeUnit.DAYS);
             } catch (InterruptedException e) {
-                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "error in  writerexecutorService/awaitTermination ", e, e.getMessage());
             }
             this.dataWriter.writeDataToFile(blockStorage,
@@ -419,7 +419,7 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
                     this.startKey, this.endKey);
 
             processedDataCount += entryCount;
-            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "*******************************************Number Of records processed: "
                             + processedDataCount);
             this.dataWriter.writeleafMetaDataToFile();
@@ -460,7 +460,7 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
                 }
 
                 if (!currentFile.renameTo(destFile)) {
-                    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                             "Problem while renaming the file");
                 }
 
@@ -471,7 +471,7 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
             try {
                 this.groupBy.finish();
             } catch (CarbonGroupByException exception) {
-                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "Problem while closing the groupby file");
             }
         }
@@ -487,28 +487,28 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
      * @throws CarbonDataWriterException
      */
     private void setWritingConfiguration(int mdkeySize) throws CarbonDataWriterException {
-        String measureMetaDataFileLocation = molapFactDataMergerInfo.getDestinationLocation()
-                + CarbonCommonConstants.MEASURE_METADATA_FILE_NAME + molapFactDataMergerInfo
+        String measureMetaDataFileLocation = carbonFactDataMergerInfo.getDestinationLocation()
+                + CarbonCommonConstants.MEASURE_METADATA_FILE_NAME + carbonFactDataMergerInfo
                 .getTableName() + CarbonCommonConstants.MEASUREMETADATA_FILE_EXT;
         // get the compression model
         // this will used max, min and decimal point value present in the
         // and the measure count to get the compression for each measure
         this.compressionModel = ValueCompressionUtil
                 .getValueCompressionModel(measureMetaDataFileLocation,
-                        molapFactDataMergerInfo.getMeasureCount());
+                        carbonFactDataMergerInfo.getMeasureCount());
         this.uniqueValue = compressionModel.getUniqueValue();
         // get leaf node size
         this.leafNodeSize = Integer.parseInt(CarbonProperties.getInstance()
                 .getProperty(CarbonCommonConstants.LEAFNODE_SIZE,
                         CarbonCommonConstants.LEAFNODE_SIZE_DEFAULT_VAL));
 
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                 "************* Leaf Node Size: " + leafNodeSize);
 
         int dimSet = Integer.parseInt(
                 CarbonCommonConstants.DIMENSION_SPLIT_VALUE_IN_COLUMNAR_DEFAULTVALUE);
         this.columnarSplitter = new MultiDimKeyVarLengthEquiSplitGenerator(CarbonUtil
-                .getIncrementedCardinalityFullyFilled(molapFactDataMergerInfo.getDimLens().clone()),
+                .getIncrementedCardinalityFullyFilled(carbonFactDataMergerInfo.getDimLens().clone()),
                 (byte) dimSet);
 
         this.keyBlockHolder =
@@ -545,7 +545,7 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
             customMeasureIndex[i] = customMeasureIndexList.get(i);
         }
 
-        this.dataHolder = new CarbonWriteDataHolder[molapFactDataMergerInfo.getMeasureCount()];
+        this.dataHolder = new CarbonWriteDataHolder[carbonFactDataMergerInfo.getMeasureCount()];
         for (int i = 0; i < otherMeasureIndex.length; i++) {
             this.dataHolder[otherMeasureIndex[i]] = new CarbonWriteDataHolder();
             this.dataHolder[otherMeasureIndex[i]].initialiseDoubleValues(this.leafNodeSize);
@@ -559,10 +559,10 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
         keyDataHolder.initialiseByteArrayValues(leafNodeSize);
         initialisedataHolder();
 
-        this.dataWriter = getFactDataWriter(molapFactDataMergerInfo.getDestinationLocation(),
-                molapFactDataMergerInfo.getMeasureCount(), molapFactDataMergerInfo.getMdkeyLength(),
-                molapFactDataMergerInfo.getTableName(), true, fileManager,
-                this.columnarSplitter.getBlockKeySize(), molapFactDataMergerInfo.isUpdateFact());
+        this.dataWriter = getFactDataWriter(carbonFactDataMergerInfo.getDestinationLocation(),
+                carbonFactDataMergerInfo.getMeasureCount(), carbonFactDataMergerInfo.getMdkeyLength(),
+                carbonFactDataMergerInfo.getTableName(), true, fileManager,
+                this.columnarSplitter.getBlockKeySize(), carbonFactDataMergerInfo.isUpdateFact());
         // initialize the channel;
         this.dataWriter.initializeWriter();
 
@@ -585,24 +585,24 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
             IFileManagerComposite fileManager, int[] keyBlockSize, boolean isUpdateFact) {
 
         if (isCompressedKeyBlock && isIntBasedIndexer && isAggKeyBlock) {
-            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "**************************Compressed key block and aggregated and int");
             return new CarbonFactDataWriterImplForIntIndexAndAggBlockCompressed(storeLocation,
                     measureCount, mdKeyLength, tableName, isNodeHolder, fileManager, keyBlockSize,
-                    aggKeyBlock, molapFactDataMergerInfo.getDimLens(), isUpdateFact);
+                    aggKeyBlock, carbonFactDataMergerInfo.getDimLens(), isUpdateFact);
         } else if (isIntBasedIndexer && isAggKeyBlock) {
-            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "*************************************aggregated and int");
             return new CarbonFactDataWriterImplForIntIndexAndAggBlock(storeLocation, measureCount,
                     mdKeyLength, tableName, isNodeHolder, fileManager, keyBlockSize, aggKeyBlock,
                     isUpdateFact);
         } else if (isIntBasedIndexer) {
-            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "************************************************int");
             return new CarbonFactDataWriterImplForIntIndex(storeLocation, measureCount, mdKeyLength,
                     tableName, isNodeHolder, fileManager, keyBlockSize, isUpdateFact);
         } else {
-            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "************************************************short");
             return new CarbonFactDataWriterImpl(storeLocation, measureCount, mdKeyLength, tableName,
                     isNodeHolder, fileManager, keyBlockSize, isUpdateFact);

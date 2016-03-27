@@ -36,7 +36,7 @@ public class CarbonFilterInfo implements Serializable {
     protected List<String> includedOrMembers;
 
     /**
-     * MolapFilterInfo.
+     * CarbonFilterInfo.
      */
     public CarbonFilterInfo() {
         super();
@@ -46,7 +46,7 @@ public class CarbonFilterInfo implements Serializable {
     }
 
     /**
-     * MolapFilterInfo.
+     * CarbonFilterInfo.
      *
      * @param exludedMembers
      * @param includedMembers

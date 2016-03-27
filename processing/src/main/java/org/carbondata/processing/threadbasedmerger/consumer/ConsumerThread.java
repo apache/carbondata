@@ -36,7 +36,7 @@ public class ConsumerThread implements Callable<Void> {
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(ConsumerThread.class.getName());
     /**
-     * molapSortHolderContainer
+     * carbonSortHolderContainer
      */
     private final Container container;
     /**
@@ -109,14 +109,14 @@ public class ConsumerThread implements Callable<Void> {
         try {
             initialiseHeap(iterators);
         } catch (CarbonSortKeyException e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
                     "Problem while initialising the heap");
         }
         try {
             fillBuffer(false);
             isCurrentFilled = true;
         } catch (CarbonSortKeyException e1) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e1,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e1,
                     "Problem while Filling the buffer");
         }
         try {
@@ -136,11 +136,11 @@ public class ConsumerThread implements Callable<Void> {
                 }
             }
         } catch (InterruptedException e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
         } catch (Exception e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
         }
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                 "Consumer Thread: " + this.counter + ": Done");
         this.container.setDone(true);
         return null;

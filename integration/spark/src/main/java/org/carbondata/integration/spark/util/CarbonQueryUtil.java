@@ -79,7 +79,7 @@ import org.apache.spark.sql.SparkUnknownExpression;
 import org.apache.spark.sql.cubemodel.Partitioner;
 
 /**
- * This utilty parses the Molap query plan to actual query model object.
+ * This utilty parses the Carbon query plan to actual query model object.
  */
 public final class CarbonQueryUtil {
 
@@ -121,13 +121,13 @@ public final class CarbonQueryUtil {
      * This API will update the query executer model with valid sclice folder numbers based on its
      * load status present in the load metadata.
      */
-    public static CarbonQueryExecutorModel updateMolapExecuterModelWithLoadMetadata(
+    public static CarbonQueryExecutorModel updateCarbonExecuterModelWithLoadMetadata(
             CarbonQueryExecutorModel executerModel) {
 
         List<String> listOfValidSlices = new ArrayList<String>(10);
         String dataPath = executerModel.getCube().getMetaDataFilepath() + File.separator
                 + CarbonCommonConstants.LOADMETADATA_FILENAME
-                + CarbonCommonConstants.MOLAP_METADATA_EXTENSION;
+                + CarbonCommonConstants.CARBON_METADATA_EXTENSION;
         DataInputStream dataInputStream = null;
         Gson gsonObjectToRead = new Gson();
         AtomicFileOperations fileOperation =
@@ -184,7 +184,7 @@ public final class CarbonQueryUtil {
             }
 
         } catch (IOException e) {
-            LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, "IO Exception @: " + e.getMessage());
+            LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "IO Exception @: " + e.getMessage());
         } finally {
             try {
 
@@ -192,7 +192,7 @@ public final class CarbonQueryUtil {
                     dataInputStream.close();
                 }
             } catch (Exception e) {
-                LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                         "IO Exception @: " + e.getMessage());
             }
 
@@ -221,7 +221,7 @@ public final class CarbonQueryUtil {
         String suitableTableName = factTableName;
         if (!logicalPlan.isDetailQuery() && logicalPlan.getExpressions().isEmpty() && Boolean
                 .parseBoolean(
-                        CarbonProperties.getInstance().getProperty("spark.molap.use.agg", "true"))) {
+                        CarbonProperties.getInstance().getProperty("spark.carbon.use.agg", "true"))) {
             if (null == schema) {
                 suitableTableName =
                         CarbonQueryParseUtil.getSuitableTable(cube, dims, executorModel.getMsrs());
@@ -274,11 +274,11 @@ public final class CarbonQueryUtil {
         List<CarbonQueryExpression> expressions = logicalPlan.getExpressions();
         for (CarbonQueryExpression anExpression : expressions) {
             if (anExpression.getUsageType() == CarbonQueryExpression.UsageType.EXPRESSION) {
-                CustomCarbonAggregateExpression molapExpr = new CustomCarbonAggregateExpression();
-                molapExpr.setAggregator((CustomMeasureAggregator) anExpression.getAggregator());
-                molapExpr.setExpression(anExpression.getExpression());
-                molapExpr.setName(anExpression.getExpression());
-                molapExpr.setQueryOrder(anExpression.getQueryOrder());
+                CustomCarbonAggregateExpression carbonExpr = new CustomCarbonAggregateExpression();
+                carbonExpr.setAggregator((CustomMeasureAggregator) anExpression.getAggregator());
+                carbonExpr.setExpression(anExpression.getExpression());
+                carbonExpr.setName(anExpression.getExpression());
+                carbonExpr.setQueryOrder(anExpression.getQueryOrder());
                 List<Dimension> columns =
                         new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
                 for (CarbonColumn column : anExpression.getColumns()) {
@@ -290,8 +290,8 @@ public final class CarbonQueryUtil {
                                 ((CarbonMeasure) column)));
                     }
                 }
-                molapExpr.setReferredColumns(columns);
-                executorModel.addExpression(molapExpr);
+                carbonExpr.setReferredColumns(columns);
+                executorModel.addExpression(carbonExpr);
             }
         }
         executorModel.setCountStarQuery(logicalPlan.isCountStartQuery());
@@ -423,7 +423,7 @@ public final class CarbonQueryUtil {
         col.setDim(dim);
         col.setDimension(true);
         if (null == dim) {
-            msr = getMolapMetadataMeasure(columnName, measures);
+            msr = getCarbonMetadataMeasure(columnName, measures);
             col.setDim(msr);
             col.setDimension(false);
         }
@@ -481,17 +481,17 @@ public final class CarbonQueryUtil {
     /**
      * Get the best suited dimensions from metadata.
      */
-    private static Dimension[] getDimensions(List<CarbonDimension> molapDims,
+    private static Dimension[] getDimensions(List<CarbonDimension> carbonDims,
             List<Dimension> dimensions) {
-        Dimension[] dims = new Dimension[molapDims.size()];
+        Dimension[] dims = new Dimension[carbonDims.size()];
 
         int i = 0;
-        for (CarbonDimension molapDim : molapDims) {
+        for (CarbonDimension carbonDim : carbonDims) {
             Dimension findDim = CarbonQueryParseUtil
-                    .findDimension(dimensions, molapDim.getDimensionUniqueName());
+                    .findDimension(dimensions, carbonDim.getDimensionUniqueName());
             if (findDim != null) {
-                findDim.setQueryForDistinctCount(molapDim.isDistinctCountQuery());
-                findDim.setQueryOrder(molapDim.getQueryOrder());
+                findDim.setQueryForDistinctCount(carbonDim.isDistinctCountQuery());
+                findDim.setQueryOrder(carbonDim.getQueryOrder());
                 dims[i++] = findDim;
             }
         }
@@ -504,13 +504,13 @@ public final class CarbonQueryUtil {
      * unique name.But user needs to give one unique name for each level,that level he needs to
      * mention in query.
      */
-    public static CarbonDimension getMolapDimension(List<Dimension> dimensions, String molapDim) {
+    public static CarbonDimension getCarbonDimension(List<Dimension> dimensions, String carbonDim) {
         for (Dimension dimension : dimensions) {
             //Its just a temp work around to use level name as unique name. we need to provide a way
             // to configure unique name
             //to user in schema.
-            if (dimension.getName().equalsIgnoreCase(molapDim)) {
-                return new CarbonDimension(molapDim);
+            if (dimension.getName().equalsIgnoreCase(carbonDim)) {
+                return new CarbonDimension(carbonDim);
             }
         }
         return null;
@@ -536,22 +536,22 @@ public final class CarbonQueryUtil {
     }
 
     /**
-     * Create the molap measures from the requested query model.
+     * Create the carbon measures from the requested query model.
      */
-    private static List<Measure> getMeasures(List<CarbonMeasure> molapMsrs, List<Measure> measures,
+    private static List<Measure> getMeasures(List<CarbonMeasure> carbonMsrs, List<Measure> measures,
             boolean isDetailQuery, CarbonQueryExecutorModel executorModel) {
         List<Measure> reqMsrs = new ArrayList<Measure>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
 
-        for (CarbonMeasure molapMsr : molapMsrs) {
-            Measure findMeasure = findMeasure(measures, isDetailQuery, molapMsr);
+        for (CarbonMeasure carbonMsr : carbonMsrs) {
+            Measure findMeasure = findMeasure(measures, isDetailQuery, carbonMsr);
             if (null != findMeasure) {
-                findMeasure.setDistinctQuery(molapMsr.isQueryDistinctCount());
-                findMeasure.setQueryOrder(molapMsr.getQueryOrder());
+                findMeasure.setDistinctQuery(carbonMsr.isQueryDistinctCount());
+                findMeasure.setQueryOrder(carbonMsr.getQueryOrder());
             }
             reqMsrs.add(findMeasure);
-            if (molapMsr.getSortOrderType() != SortOrderType.NONE) {
+            if (carbonMsr.getSortOrderType() != SortOrderType.NONE) {
                 MeasureSortModel sortModel = new MeasureSortModel(findMeasure,
-                        molapMsr.getSortOrderType() == SortOrderType.DSC ? 1 : 0);
+                        carbonMsr.getSortOrderType() == SortOrderType.DSC ? 1 : 0);
                 executorModel.setSortModel(sortModel);
             }
 
@@ -561,9 +561,9 @@ public final class CarbonQueryUtil {
     }
 
     private static Measure findMeasure(List<Measure> measures, boolean isDetailQuery,
-            CarbonMeasure molapMsr) {
+            CarbonMeasure carbonMsr) {
         String aggName = null;
-        String name = molapMsr.getMeasure();
+        String name = carbonMsr.getMeasure();
         if (!isDetailQuery) {
             //we assume the format is like sum(colName). need to handle in proper way.
             int indexOf = name.indexOf("(");
@@ -575,16 +575,16 @@ public final class CarbonQueryUtil {
         if (name.equals("*")) {
             Measure measure = measures.get(0);
             measure = measure.getCopy();
-            measure.setAggName(molapMsr.getAggregatorType() != null ?
-                    molapMsr.getAggregatorType().getValue().toLowerCase(Locale.getDefault()) :
+            measure.setAggName(carbonMsr.getAggregatorType() != null ?
+                    carbonMsr.getAggregatorType().getValue().toLowerCase(Locale.getDefault()) :
                     aggName);
             return measure;
         }
         for (Measure measure : measures) {
             if (measure.getName().equalsIgnoreCase(name)) {
                 measure = measure.getCopy();
-                measure.setAggName(molapMsr.getAggregatorType() != null ?
-                        molapMsr.getAggregatorType().getValue().toLowerCase() :
+                measure.setAggName(carbonMsr.getAggregatorType() != null ?
+                        carbonMsr.getAggregatorType().getValue().toLowerCase() :
                         measure.getAggName());
                 return measure;
             }
@@ -592,7 +592,7 @@ public final class CarbonQueryUtil {
         return null;
     }
 
-    public static CarbonMeasure getMolapMeasure(String name, List<Measure> measures) {
+    public static CarbonMeasure getCarbonMeasure(String name, List<Measure> measures) {
 
         //dcd fix
         //String aggName = null;
@@ -616,7 +616,7 @@ public final class CarbonQueryUtil {
         return null;
     }
 
-    public static Measure getMolapMetadataMeasure(String name, List<Measure> measures) {
+    public static Measure getCarbonMetadataMeasure(String name, List<Measure> measures) {
         for (Measure measure : measures) {
             if (measure.getName().equalsIgnoreCase(name)) {
                 return measure;
@@ -627,17 +627,17 @@ public final class CarbonQueryUtil {
 
     private static CarbonFilterInfo createLikeFilterInfo(List<CarbonLikeFilter> listOfFilter) {
         CarbonFilterInfo filterInfo = null;
-        filterInfo = getMolapFilterInfoBasedOnLikeExpressionTypeList(listOfFilter);
+        filterInfo = getCarbonFilterInfoBasedOnLikeExpressionTypeList(listOfFilter);
         return filterInfo;
     }
 
-    private static CarbonFilterInfo getMolapFilterInfoBasedOnLikeExpressionTypeList(
+    private static CarbonFilterInfo getCarbonFilterInfoBasedOnLikeExpressionTypeList(
             List<CarbonLikeFilter> listOfFilter) {
         List<FilterLikeExpressionIntf> listOfFilterLikeExpressionIntf =
                 new ArrayList<FilterLikeExpressionIntf>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
         ContentMatchFilterInfo filterInfo = new ContentMatchFilterInfo();
-        for (CarbonLikeFilter molapLikeFilter : listOfFilter) {
-            listOfFilterLikeExpressionIntf.add(molapLikeFilter.getLikeFilterExpression());
+        for (CarbonLikeFilter carbonLikeFilter : listOfFilter) {
+            listOfFilterLikeExpressionIntf.add(carbonLikeFilter.getLikeFilterExpression());
         }
         filterInfo.setLikeFilterExpression(listOfFilterLikeExpressionIntf);
         return filterInfo;
@@ -729,7 +729,7 @@ public final class CarbonQueryUtil {
             throw new Exception("Source file doesn't exist at path: " + sourcePath);
         }
 
-        CarbonFile file = FileFactory.getMolapFile(sourcePath, fileType);
+        CarbonFile file = FileFactory.getCarbonFile(sourcePath, fileType);
         if (file.isDirectory()) {
             CarbonFile[] fileNames = file.listFiles(new CarbonFileFilter() {
                 @Override
@@ -842,13 +842,13 @@ public final class CarbonQueryUtil {
         return schema;
     }
 
-    public static boolean isQuickFilter(CarbonQueryExecutorModel molapQueryModel) {
+    public static boolean isQuickFilter(CarbonQueryExecutorModel carbonQueryModel) {
         return ("true".equals(CarbonProperties.getInstance()
                 .getProperty(CarbonCommonConstants.CARBON_ENABLE_QUICK_FILTER))
-                && null == molapQueryModel.getFilterExpression()
-                && molapQueryModel.getDims().length == 1 && molapQueryModel.getMsrs().size() == 0
-                && molapQueryModel.getDimensionAggInfo().size() == 0
-                && molapQueryModel.getExpressions().size() == 0 && !molapQueryModel
+                && null == carbonQueryModel.getFilterExpression()
+                && carbonQueryModel.getDims().length == 1 && carbonQueryModel.getMsrs().size() == 0
+                && carbonQueryModel.getDimensionAggInfo().size() == 0
+                && carbonQueryModel.getExpressions().size() == 0 && !carbonQueryModel
                 .isDetailQuery());
     }
 
@@ -913,7 +913,7 @@ public final class CarbonQueryUtil {
         Expression filterExpression = queryModel.getFilterExpression();
         Cube cube = queryModel.getCube();
         List<Dimension> dimensions = cube.getDimensions(cube.getFactTableName());
-        LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+        LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                 "@@@@Dimension size :: " + dimensions.size());
         if (dimensions.isEmpty()) {
             cube = CarbonMetadata.getInstance().getCube(cubeUniqueName);

@@ -292,7 +292,7 @@ public class CarbonSortKeys {
         String schemaCubeName = schemaName + File.separator + cubeName;
         baseLocation = baseLocation + File.separator + schemaCubeName;
 
-        int restructFolderNumber = currentRestructNumber/*MolapUtil.checkAndReturnNextRestructFolderNumber(baseLocation,"RS_")*/;
+        int restructFolderNumber = currentRestructNumber/*CarbonUtil.checkAndReturnNextRestructFolderNumber(baseLocation,"RS_")*/;
 
         baseLocation = baseLocation + File.separator + CarbonCommonConstants.RESTRUCTRE_FOLDER
                 + restructFolderNumber + File.separator + tableName;
@@ -331,7 +331,7 @@ public class CarbonSortKeys {
         try {
             CarbonUtil.deleteFiles(factFiles);
         } catch (CarbonUtilException e) {
-            SORTKEYLOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            SORTKEYLOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "Not Able to delete fact files while resuming the data loading");
         }
 
@@ -359,7 +359,7 @@ public class CarbonSortKeys {
             deleteSortLocationIfExists();
             // create new sort temp directory
             if (!new File(this.tempFileLocation).mkdirs()) {
-                SORTKEYLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                SORTKEYLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "Sort Temp Location Already Exists");
             }
         }
@@ -370,15 +370,15 @@ public class CarbonSortKeys {
                         CarbonCommonConstants.IS_SORT_TEMP_FILE_COMPRESSION_ENABLED_DEFAULTVALUE));
 
         this.fileWriteBufferSize = Integer.parseInt(carbonProperties
-                .getProperty(CarbonCommonConstants.MOLAP_SORT_FILE_WRITE_BUFFER_SIZE,
-                        CarbonCommonConstants.MOLAP_SORT_FILE_WRITE_BUFFER_SIZE_DEFAULT_VALUE));
+                .getProperty(CarbonCommonConstants.CARBON_SORT_FILE_WRITE_BUFFER_SIZE,
+                        CarbonCommonConstants.CARBON_SORT_FILE_WRITE_BUFFER_SIZE_DEFAULT_VALUE));
 
         try {
             this.sortTempFileNoOFRecordsInCompression = Integer.parseInt(carbonProperties
                     .getProperty(CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION,
                             CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE));
             if (this.sortTempFileNoOFRecordsInCompression < 1) {
-                SORTKEYLOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                SORTKEYLOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "Invalid value for: "
                                 + CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION
                                 + ": Only Positive Integer value(greater than zero) is allowed.Default value will be used");
@@ -387,7 +387,7 @@ public class CarbonSortKeys {
                         CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE);
             }
         } catch (NumberFormatException e) {
-            SORTKEYLOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            SORTKEYLOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "Invalid value for: "
                             + CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION
                             + ": Only Positive Integer value(greater than zero) is allowed.Default value will be used");
@@ -395,17 +395,17 @@ public class CarbonSortKeys {
                     CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE);
         }
         if (isSortTempFileCompressionEnabled) {
-            SORTKEYLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            SORTKEYLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "Compression will be used for writing the sort temp File");
         }
 
-        prefetch = CarbonCommonConstants.MOLAP_PREFETCH_IN_MERGE_VALUE;
-        bufferSize = CarbonCommonConstants.MOLAP_PREFETCH_BUFFERSIZE;
+        prefetch = CarbonCommonConstants.CARBON_PREFETCH_IN_MERGE_VALUE;
+        bufferSize = CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE;
         isGroupByInSort = false;
 
         boolean useHashBasedAggWhileSorting = Boolean.parseBoolean(carbonProperties
-                .getProperty(CarbonCommonConstants.MOLAP_USE_HASHBASED_AGG_INSORT,
-                        CarbonCommonConstants.MOLAP_USE_HASHBASED_AGG_INSORT_DEFAULTVALUE));
+                .getProperty(CarbonCommonConstants.CARBON_USE_HASHBASED_AGG_INSORT,
+                        CarbonCommonConstants.CARBON_USE_HASHBASED_AGG_INSORT_DEFAULTVALUE));
         checkGroupByInSortIfValid();
         updateAggTypeForDistinctCount(isGroupByInSort);
         updateAggTypeForDistinctCount(useHashBasedAggWhileSorting);
@@ -417,16 +417,16 @@ public class CarbonSortKeys {
                             CarbonCommonConstants.FILE_INPROGRESS_STATUS, currentRestructNumber);
         }
         if (isAutoAggRequest && useHashBasedAggWhileSorting && !isUpdateMemberRequest) {
-            SORTKEYLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            SORTKEYLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "************************ Hased based aggaregator is being used");
             hashedBasedAgg = new CarbonSortKeyHashbasedAggregator(aggregators, aggregatorClass,
                     factKetGenerator, type, this.sortBufferSize, mergedMinValue);
         }
 
         boolean useXXHASH = Boolean.valueOf(
-                CarbonProperties.getInstance().getProperty("molap.enableXXHash", "false"));
+                CarbonProperties.getInstance().getProperty("carbon.enableXXHash", "false"));
         if (useXXHASH) {
-            SORTKEYLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            SORTKEYLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "************************ XXHASH is being used");
         }
     }
@@ -455,7 +455,7 @@ public class CarbonSortKeys {
         if (isAutoAggRequest && (isGroupByInSort || isUpdateMemberRequest)) {
             for (int i = 0; i < aggregators.length; i++) {
                 if (aggregators[i].equals(CarbonCommonConstants.CUSTOM)) {
-                    SORTKEYLOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                    SORTKEYLOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                             "Group By In Sort cannot be used as custom measures are present");
                     isGroupByInSort = false;
                     break;
@@ -474,7 +474,7 @@ public class CarbonSortKeys {
         if (!file.exists()) {
             // create new sort temp directory
             if (!file.mkdirs()) {
-                SORTKEYLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                SORTKEYLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "Sort Temp Location Already Exists");
             }
             return;
@@ -513,7 +513,7 @@ public class CarbonSortKeys {
             try {
                 CarbonUtil.deleteFiles(checkPointFiles);
             } catch (CarbonUtilException e) {
-                SORTKEYLOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                SORTKEYLOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "Problem while deleting the check point files");
             }
         }
@@ -528,20 +528,20 @@ public class CarbonSortKeys {
         // get sort buffer size 
         this.sortBufferSize = Integer.parseInt(instance.getProperty(CarbonCommonConstants.SORT_SIZE,
                 CarbonCommonConstants.SORT_SIZE_DEFAULT_VAL));
-        SORTKEYLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        SORTKEYLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                 "Sort buffer size for cube: " + this.sortBufferSize);
         // set number of intermedaite file to merge
         this.numberOfIntermediateFileToBeMerged = Integer.parseInt(
                 instance.getProperty(CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT,
                         CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT_DEFAULT_VALUE));
-        SORTKEYLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        SORTKEYLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                 "Number of intermediate files to be merged: "
                         + this.numberOfIntermediateFileToBeMerged);
         // get file buffer size 
         this.fileBufferSize = CarbonDataProcessorUtil
                 .getFileBufferSize(this.numberOfIntermediateFileToBeMerged,
                         CarbonProperties.getInstance(), CONSTANT_SIZE_TEN);
-        SORTKEYLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        SORTKEYLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                 "File Buffer Size: " + this.fileBufferSize);
     }
 
@@ -561,7 +561,7 @@ public class CarbonSortKeys {
                 baseLocation + File.separator + schemaName + File.separator + cubeName
                         + File.separator + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION
                         + File.separator + this.tableName;
-        SORTKEYLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        SORTKEYLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                 "temp file location" + this.tempFileLocation);
     }
 
@@ -583,7 +583,7 @@ public class CarbonSortKeys {
      * @throws CarbonSortKeyAndGroupByException
      */
     public void startSorting() throws CarbonSortKeyAndGroupByException {
-        SORTKEYLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        SORTKEYLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                 "File based sorting will be used");
         if (this.entryCount > 0) {
             Object[][] toSort = null;
@@ -608,14 +608,14 @@ public class CarbonSortKeys {
                 String destFileName = file.getAbsolutePath();
                 String[] split = destFileName.split(CarbonCommonConstants.BAK_EXT);
                 if (!file.renameTo(new File(split[0]))) {
-                    SORTKEYLOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                    SORTKEYLOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                             "Problem while renaming the checkpoint file");
                 }
 
                 try {
                     checkpoint.saveCheckPointCache(checkPointMap);
                 } catch (CheckPointException e) {
-                    SORTKEYLOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
+                    SORTKEYLOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
                 }
 
             }
@@ -656,7 +656,7 @@ public class CarbonSortKeys {
         }
         if (sortBufferSize == currentSize) {
             if (SORTKEYLOGGER.isDebugEnabled()) {
-                SORTKEYLOGGER.debug(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                SORTKEYLOGGER.debug(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "************ Writing to temp file ********** ");
             }
             File[] fileList;
@@ -665,7 +665,7 @@ public class CarbonSortKeys {
                     fileList = procFiles.toArray(new File[procFiles.size()]);
                     this.procFiles = new ArrayList<File>(1);
                 }
-                SORTKEYLOGGER.debug(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                SORTKEYLOGGER.debug(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "Sumitting request for intermediate merging no of files: "
                                 + fileList.length);
                 startIntermediateMerging(fileList);
@@ -718,7 +718,7 @@ public class CarbonSortKeys {
         if (null == value || value < newValue) {
             checkPointMap.put(filename, newValue);
         } else {
-            SORTKEYLOGGER.debug(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            SORTKEYLOGGER.debug(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "False means data in wrong order also coming:" + newValue);
         }
     }
@@ -751,7 +751,7 @@ public class CarbonSortKeys {
                         checkpoint.saveCheckPointCache(checkPointMapLocal);
                         if (!destFile.renameTo(new File(newFileName))) {
                             SORTKEYLOGGER
-                                    .error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                                    .error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                                             "Problem while renaming the checkpoint file");
                         }
                     }
@@ -831,7 +831,7 @@ public class CarbonSortKeys {
             try {
                 recordHolderList = sortAggrgateKey.getAggregatedData(recordHolderList);
             } catch (CarbonGroupByException ex) {
-                SORTKEYLOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, ex,
+                SORTKEYLOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, ex,
                         "Problem while writing the sort temp file");
                 throw new CarbonSortKeyAndGroupByException(ex);
             }
@@ -898,7 +898,7 @@ public class CarbonSortKeys {
             writer.initiaize(file, entryCountLocal);
             writer.writeSortTempFile(recordHolderList);
         } catch (CarbonSortKeyAndGroupByException e) {
-            SORTKEYLOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+            SORTKEYLOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
                     "Problem while writing the sort temp file");
             throw e;
         } finally {
@@ -931,7 +931,7 @@ public class CarbonSortKeys {
         try {
             deleteSortLocationIfExists();
         } catch (CarbonSortKeyAndGroupByException e) {
-            SORTKEYLOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            SORTKEYLOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "Problem while deleting the temp folder and files");
         }
     }
@@ -951,7 +951,7 @@ public class CarbonSortKeys {
             writerExecutorService.shutdownNow();
             executorService.shutdownNow();
             observer.setFailed(true);
-            SORTKEYLOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, exception);
+            SORTKEYLOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, exception);
             throw new CarbonSortKeyAndGroupByException(exception);
         }
     }

@@ -91,7 +91,7 @@ public class TableSplit implements Serializable, Writable {
         try {
             partition = (Partition) ois.readObject();
         } catch (ClassNotFoundException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e, e.getMessage());
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e, e.getMessage());
         }
         ois.close();
     }

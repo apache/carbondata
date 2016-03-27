@@ -49,7 +49,7 @@ public class CarbonFactDataWriterImplForIntIndex extends AbstractFactDataWriter<
                 .getProperty(CarbonCommonConstants.LEAFNODE_SIZE,
                         CarbonCommonConstants.LEAFNODE_SIZE_DEFAULT_VAL)));
 
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                 "********************************Integer based will be used");
     }
 

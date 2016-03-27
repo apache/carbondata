@@ -80,10 +80,10 @@ public class QueryExecutorImpl extends AbstractQueryExecutor {
         StandardLogService.setThreadName(
                 StandardLogService.getPartitionID(queryModel.getCube().getOnlyCubeName()),
                 queryModel.getQueryId());
-        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                 "Query will be executed on table: " + queryModel.getFactTable());
 
-        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                 "Is detail Query: " + queryModel.isDetailQuery());
         // if empty slice then we can return empty result
         if (null == executerProperties.slices || executerProperties.slices.size() == 0
@@ -102,13 +102,13 @@ public class QueryExecutorImpl extends AbstractQueryExecutor {
                 && queryModel.getDims().length < 1 && queryModel.getMsrs().size() < 2
                 && queryModel.getDimensionAggInfo().size() < 1
                 && queryModel.getExpressions().size() == 0) {
-            LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                     "Count(*) query: " + queryModel.isCountStarQuery());
             return executeQueryForCountStar(queryModel);
         } else if (null == queryModel.getFilterExpression() && queryModel.getDims().length < 1
                 && queryModel.getMsrs().size() == 0 && queryModel.getDimensionAggInfo().size() < 1
                 && queryModel.getExpressions().size() == 0) {
-            LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                     "Count(*) query: " + queryModel.isCountStarQuery());
             executerProperties.isFunctionQuery = true;
             return executeQueryForCountStar(queryModel);
@@ -134,7 +134,7 @@ public class QueryExecutorImpl extends AbstractQueryExecutor {
                 if (null == sliceMetadataPath) {
                     continue;
                 }
-                carbonFile = FileFactory.getMolapFile(sliceMetadataPath,
+                carbonFile = FileFactory.getCarbonFile(sliceMetadataPath,
                         FileFactory.getFileType(sliceMetadataPath));
                 sliceMataData = CarbonUtil.readSliceMetaDataFile(carbonFile);
                 if (null == sliceMataData) {
@@ -156,7 +156,7 @@ public class QueryExecutorImpl extends AbstractQueryExecutor {
                     .getSortOrder() && queryModel.getSortOrder().length > 0)) {
                 queryResultIterator = submitExecutorDetailQuery(infos);
             } else {
-                LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                         "Memory based detail query: ");
                 infos.get(infos.size() - 1).setFileBasedQuery(false);
                 return new ChunkRowIterator(
@@ -175,7 +175,7 @@ public class QueryExecutorImpl extends AbstractQueryExecutor {
      * Below method will be used for quick filter query execution
      *
      * @param queryModel
-     * @return MolapIterator<RowResult>
+     * @return CarbonIterator<RowResult>
      */
     @Override
     public CarbonIterator<RowResult> executeDimension(CarbonQueryExecutorModel queryModel)
@@ -183,7 +183,7 @@ public class QueryExecutorImpl extends AbstractQueryExecutor {
         StandardLogService.setThreadName(
                 StandardLogService.getPartitionID(queryModel.getCube().getOnlyCubeName()),
                 queryModel.getQueryId());
-        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                 "Query will be executed on level file : " + queryModel.getDims()[0].getDimName());
 
         if (null == executerProperties.slices || executerProperties.slices.size() == 0
@@ -276,7 +276,7 @@ public class QueryExecutorImpl extends AbstractQueryExecutor {
                     new ChunkBasedResultIterator(sliceExec.executeSlices(null, null),
                             executerProperties, queryModel));
         } catch (QueryExecutionException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e,
                     "Error happend on executing slices parallely");
             throw e;
         }
@@ -450,18 +450,18 @@ public class QueryExecutorImpl extends AbstractQueryExecutor {
             try {
                 recordSize = Integer.parseInt(defaultInMemoryRecordsSize);
             } catch (NumberFormatException ne) {
-                LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                         "Invalid inmemory records size. Using default value");
             }
         }
 
-        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                 "inmemory records size : " + recordSize);
         info.setNumberOfRecordsInMemory(recordSize);
         info.setOutLocation(queryModel.getOutLocation() == null ?
                 CarbonUtil.getCarbonStorePath(executerProperties.schemaName,
-                        executerProperties.cubeName)/*MolapProperties.getInstance().getProperty(
-                MolapCommonConstants.STORE_LOCATION, MolapCommonConstants.STORE_LOCATION_DEFAULT_VAL)*/ :
+                        executerProperties.cubeName)/*CarbonProperties.getInstance().getProperty(
+                CarbonCommonConstants.STORE_LOCATION, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL)*/ :
                 queryModel.getOutLocation());
         info.setDimAggInfo(queryModel.getDimensionAggInfo());
         if (null != queryModel.getDimensionAggInfo()) {
@@ -649,7 +649,7 @@ public class QueryExecutorImpl extends AbstractQueryExecutor {
         try {
             return sliceExec.executeSlices(infos, null);
         } catch (QueryExecutionException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e,
                     "Error happend on executing slices parallely");
             throw e;
         } finally {

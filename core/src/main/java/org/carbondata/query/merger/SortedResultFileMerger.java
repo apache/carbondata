@@ -38,7 +38,7 @@ import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
  * Project Name  : Carbon
- * Module Name   : MOLAP Data Processor
+ * Module Name   : CARBON Data Processor
  * Author    : R00903928,k00900841
  * Created Date  : 27-Aug-2015
  * FileName   : SortedResultFileMerger.java
@@ -98,7 +98,7 @@ public class SortedResultFileMerger implements Callable<Void> {
             // For each intermediate result file.
             for (CarbonFile file : this.files) {
                 // reads the temp files and creates ResultTempFileReader object.
-                ResultTempFileReader molapSortTempFileChunkHolder =
+                ResultTempFileReader carbonSortTempFileChunkHolder =
                         new ResultTempFileReader(file.getAbsolutePath(),
                                 dataProcessorInfo.getKeySize(),
                                 AggUtil.getAggregators(dataProcessorInfo.getAggType(), false,
@@ -108,16 +108,16 @@ public class SortedResultFileMerger implements Callable<Void> {
                                         dataProcessorInfo.getDataTypes()),
                                 dataProcessorInfo.getFileBufferSize());
                 // initialize
-                molapSortTempFileChunkHolder.initialize();
-                molapSortTempFileChunkHolder.readRow();
+                carbonSortTempFileChunkHolder.initialize();
+                carbonSortTempFileChunkHolder.readRow();
                 // add ResultTempFileReader object to heap
-                this.recordHolderHeap.add(molapSortTempFileChunkHolder);
+                this.recordHolderHeap.add(carbonSortTempFileChunkHolder);
             }
             while (hasNext()) {
                 writeSortedRecordToFile();
             }
         } catch (ResultReaderException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
             throw e;
         } finally {
             dataProcessor.finish();
@@ -141,7 +141,7 @@ public class SortedResultFileMerger implements Callable<Void> {
      * This method will be used to write the sorted record from file
      *
      * @return sorted record sorted record
-     * @throws MolapSortKeyAndGroupByException
+     * @throws CarbonSortKeyAndGroupByException
      */
     private void writeSortedRecordToFile() throws ResultMergerException {
         // poll the top object from heap

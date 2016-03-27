@@ -53,7 +53,7 @@ class CarbonCleanFilesRDD[K, V](
     val iter = new Iterator[(K, V)] {
       val split = theSplit.asInstanceOf[CarbonLoadPartition]
       logInfo("Input split: " + split.serializableHadoopSplit.value)
-      //TODO call MOLAP delete API
+      //TODO call CARBON delete API
 
 
       // Register an on-task-completion callback to close the input stream.

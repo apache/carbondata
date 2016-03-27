@@ -38,7 +38,7 @@ import org.pentaho.di.core.exception.KettleException;
 public class CarbonMergerUtil {
 
     /**
-     * Attribute for Molap LOGGER
+     * Attribute for Carbon LOGGER
      */
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(CarbonMergerUtil.class.getName());
@@ -50,10 +50,10 @@ public class CarbonMergerUtil {
                 return new ArrayList<CarbonSliceAndFiles>(0);
             }
         } catch (IOException e) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "Error occurred :: " + e.getMessage());
         }
-        CarbonFile file = FileFactory.getMolapFile(storeLocation, fileType);
+        CarbonFile file = FileFactory.getCarbonFile(storeLocation, fileType);
 
         CarbonFile[] listFiles = CarbonUtil.listFiles(file);
         if (null == listFiles || listFiles.length < 0) {
@@ -90,7 +90,7 @@ public class CarbonMergerUtil {
                         loadFolderLoacation + '/' + CarbonCommonConstants.LEVEL_METADATA_FILE
                                 + tableName + ".metadata");
             } catch (CarbonUtilException e) {
-                LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                         "Error occurred :: " + e.getMessage());
             }
         }
@@ -103,7 +103,7 @@ public class CarbonMergerUtil {
         try {
             CarbonUtil.writeLevelCardinalityFile(destinationLocation, tableName, MaxCardinality);
         } catch (KettleException e) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "Error occurred :: " + e.getMessage());
         }
 
@@ -117,7 +117,7 @@ public class CarbonMergerUtil {
                     path + '/' + CarbonCommonConstants.LEVEL_METADATA_FILE + tableName
                             + ".metadata");
         } catch (CarbonUtilException e) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "Error occurred :: " + e.getMessage());
         }
 

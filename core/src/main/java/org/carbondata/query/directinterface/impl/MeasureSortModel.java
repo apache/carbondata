@@ -24,7 +24,7 @@ import java.io.Serializable;
 import org.carbondata.core.metadata.CarbonMetadata.Measure;
 
 /**
- * This model object for Molap measure sort.
+ * This model object for Carbon measure sort.
  */
 public class MeasureSortModel implements Serializable {
 

@@ -69,12 +69,12 @@ class CarbonDeleteLoadByDateRDD[K, V](
       logInfo("Input split: " + split.serializableHadoopSplit.value)
       val partitionID = split.serializableHadoopSplit.value.getPartition().getUniqueID()
 
-      //TODO call MOLAP delete API
+      //TODO call CARBON delete API
       println("Applying data retention as per date value " + dateValue)
       var dateFormat = ""
       try {
         val dateValueAsDate = DateTimeUtils.stringToTime(dateValue)
-        dateFormat = CarbonCommonConstants.MOLAP_TIMESTAMP_DEFAULT_FORMAT
+        dateFormat = CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT
       } catch {
         case e: Exception => logInfo("Unable to parse with default time format " + dateValue)
       }

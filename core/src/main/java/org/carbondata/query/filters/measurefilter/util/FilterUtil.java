@@ -55,7 +55,7 @@ import org.carbondata.query.util.DataTypeConverter;
 import org.carbondata.query.util.CarbonEngineLogEvent;
 import org.carbondata.query.util.QueryExecutorUtility;
 
-//import org.carbondata.core.engine.util.MolapEngineLogEvent;
+//import org.carbondata.core.engine.util.CarbonEngineLogEvent;
 
 public final class FilterUtil {
     private static final LogService LOGGER =
@@ -376,7 +376,7 @@ public final class FilterUtil {
                 filterValuesList.add(getMaskedKey(rangesForMaskedByte,
                         info.getKeyGenerator().generateKey(keys)));
             } catch (KeyGenException e) {
-                LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e.getMessage());
+                LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e.getMessage());
             }
         }
         //CHECKSTYLE:ON

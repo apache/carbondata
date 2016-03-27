@@ -76,15 +76,15 @@ public class Main {
 		 * metaPath=basePath+"schemas/default/Carbon_DR_FT/metadata";
 		 */
 
-        CarbonProperties.getInstance().addProperty("molap.storelocation", basePath + "store");
-        // MolapProperties.getInstance().addProperty("molap.schemaslocation",
+        CarbonProperties.getInstance().addProperty("carbon.storelocation", basePath + "store");
+        // CarbonProperties.getInstance().addProperty("carbon.schemaslocation",
         // basePath+"schemas");
-        CarbonProperties.getInstance().addProperty("molap.number.of.cores", "4");
-        CarbonProperties.getInstance().addProperty("molap.smartJump.avoid.percent", "70");
+        CarbonProperties.getInstance().addProperty("carbon.number.of.cores", "4");
+        CarbonProperties.getInstance().addProperty("carbon.smartJump.avoid.percent", "70");
         CarbonProperties.getInstance().addProperty(Preference.AGG_LOAD_COUNT, "4");
         CarbonProperties.getInstance().addProperty(Preference.AGG_FACT_COUNT, "2");
         CarbonProperties.getInstance().addProperty(Preference.AGG_REC_COUNT, "5");
-        //MolapProperties.getInstance().addProperty("aggregate.columnar.keyblock","false");
+        //CarbonProperties.getInstance().addProperty("aggregate.columnar.keyblock","false");
 
         AutoAggSuggestionService aggServer =
                 AutoAggSuggestionFactory.getAggregateService(Request.DATA_STATS);
@@ -175,7 +175,7 @@ public class Main {
             String path =
                     "hdfs://10.19.92.135:54310//VmallData/VmallStore/store/default_0/Vmall_user_prof1_0/RS_0/Vmall_FACT/Load_"
                             + i;
-            CarbonFile file = FileFactory.getMolapFile(path, FileFactory.getFileType(path));
+            CarbonFile file = FileFactory.getCarbonFile(path, FileFactory.getFileType(path));
             LevelMetaInfo level = new LevelMetaInfo(file, "Vmall_FACT");
             int[] data = level.getDimCardinality();
             System.out.println("Load_" + i + ":" + Arrays.toString(data));

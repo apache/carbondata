@@ -25,7 +25,7 @@ import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.executer.groupby.GroupByHolder;
 import org.carbondata.query.executer.impl.measure.filter.MeasureFilterProcessor;
-import org.carbondata.query.executer.impl.topn.TopNModel.MolapTopNType;
+import org.carbondata.query.executer.impl.topn.TopNModel.CarbonTopNType;
 import org.carbondata.query.executer.pagination.DataProcessor;
 import org.carbondata.query.executer.pagination.PaginationModel;
 import org.carbondata.query.executer.pagination.exception.CarbonPaginationException;
@@ -48,7 +48,7 @@ public class TopNProcessorBytes
     /**
      * topNType
      */
-    private MolapTopNType topNType;
+    private CarbonTopNType topNType;
 
     /**
      * groupMaskedBytes
@@ -94,7 +94,7 @@ public class TopNProcessorBytes
     /**
      * Calc function
      */
-    //    private MolapCalcFunction calcFunction;
+    //    private CarbonCalcFunction calcFunction;
 
     /**
      * maskedBytesPos
@@ -147,7 +147,7 @@ public class TopNProcessorBytes
         //        if(isCalculatedMsr)
         //        {
         //            int calcMsrIndex = topMeasureIndex-queryMsrs.length;
-        //            calcFunction = MolapCalcExpressionResolverUtil.createCalcExpressions(model.getCalculatedMeasures()[calcMsrIndex].getExp(), Arrays.asList(queryMsrs));
+        //            calcFunction = CarbonCalcExpressionResolverUtil.createCalcExpressions(model.getCalculatedMeasures()[calcMsrIndex].getExp(), Arrays.asList(queryMsrs));
         //        }
         if (countMsrIndex < 0) {
             countMsrIndex = 0;
@@ -269,7 +269,7 @@ public class TopNProcessorBytes
         /**
          * topNType
          */
-        private MolapTopNType topNType;
+        private CarbonTopNType topNType;
 
         /**
          * maskedBytesPosForGroup
@@ -288,14 +288,14 @@ public class TopNProcessorBytes
          * @param topN      , count of rows
          * @param topNType, whether top or bottom.
          */
-        private TopNHolderGroup(byte[] groupMaskedBytes, int topN, MolapTopNType topNType,
+        private TopNHolderGroup(byte[] groupMaskedBytes, int topN, CarbonTopNType topNType,
                 int[] maskedBytesPosForGroup, boolean topnOnColumns) {
             this.topN = topN;
             this.groupMaskedBytes = groupMaskedBytes;
             this.topNType = topNType;
             this.maskedBytesPosForGroup = maskedBytesPosForGroup;
             this.topnOnColumnsGroup = topnOnColumns;
-            if (topNType.equals(MolapTopNType.TOP)) {
+            if (topNType.equals(CarbonTopNType.TOP)) {
                 createTopRecordHolderQueue();
             } else {
                 createBottomRecordHolderQueue();
@@ -330,7 +330,7 @@ public class TopNProcessorBytes
         }
 
         private void handleTopNType(GroupByHolder holder, GroupByHolder peek) {
-            if (topNType.equals(MolapTopNType.TOP)) {
+            if (topNType.equals(CarbonTopNType.TOP)) {
                 if (null != peek && compareTop(holder, peek) > 0) {
                     holders.poll();
                     holders.add(holder);
@@ -463,7 +463,7 @@ public class TopNProcessorBytes
     //        return getData();
     //    }
     //
-    //    public Map<ByteArrayWrapper, MeasureAggregator[]> getData() throws MolapPaginationException
+    //    public Map<ByteArrayWrapper, MeasureAggregator[]> getData() throws CarbonPaginationException
     //    {
     //        if(holder.getRows().size() > 0)
     //        {

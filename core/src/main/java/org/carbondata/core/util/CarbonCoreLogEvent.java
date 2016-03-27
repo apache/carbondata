@@ -22,13 +22,13 @@ package org.carbondata.core.util;
 import org.carbondata.common.logging.LogEvent;
 
 /**
- * MolapLogEvent
+ * CarbonLogEvent
  */
 public enum CarbonCoreLogEvent implements LogEvent {
     /**
-     * MOLAPCORE_MSG
+     * CARBONCORE_MSG
      */
-    UNIBI_MOLAPCORE_MSG("carbon.core");
+    UNIBI_CARBONCORE_MSG("carbon.core");
 
     /**
      * eventCode.

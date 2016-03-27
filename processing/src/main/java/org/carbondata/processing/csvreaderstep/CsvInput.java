@@ -74,7 +74,7 @@ public class CsvInput extends BaseStep implements StepInterface {
     public CsvInput(StepMeta stepMeta, StepDataInterface stepDataInterface, int copyNr,
             TransMeta transMeta, Trans trans) {
         super(stepMeta, stepDataInterface, copyNr, transMeta, trans);
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                 "** Using csv file **");
         //System.out.println("****************** Using my csv file");
     }

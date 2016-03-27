@@ -83,7 +83,7 @@ public class HeapBasedDataFileWriterThread extends ResultWriter {
         DataOutputStream dataOutput = null;
         try {
             if (!new File(this.outLocation).mkdirs()) {
-                LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                         "Problem while creating the pagination directory");
             }
 
@@ -104,7 +104,7 @@ public class HeapBasedDataFileWriterThread extends ResultWriter {
             File dest = new File(this.outLocation + File.separator + System.nanoTime()
                     + CarbonCommonConstants.QUERY_OUT_FILE_EXT);
             if (!tempFile.renameTo(dest)) {
-                LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                         "Problem while renaming the file");
             }
         } finally {

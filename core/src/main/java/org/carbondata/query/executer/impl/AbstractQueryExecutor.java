@@ -211,7 +211,7 @@ public abstract class AbstractQueryExecutor implements QueryExecutor {
                     .getMaxKeyBasedOnDimensions(queryModel.getDims(),
                             executerProperties.globalKeyGenerator, executerProperties.dimTables);
         } catch (KeyGenException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e,
                     "Problem while generating the max key for query: " + queryModel.getQueryId());
             throw new QueryExecutionException(e);
         }
@@ -235,28 +235,28 @@ public abstract class AbstractQueryExecutor implements QueryExecutor {
     //     *
     //     * @param queryModel
     //     */
-    //    private void updateMsrProperties(MolapQueryExecutorModel queryModel)
+    //    private void updateMsrProperties(CarbonQueryExecutorModel queryModel)
     //    {
     //        /*
     //         * To make the avg work, we have to do this dirty work.
     //         */
-    //        executerProperties.avgIndexes = new ArrayList<Integer>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+    //        executerProperties.avgIndexes = new ArrayList<Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     //        if(queryModel.isAggTable())
     //        {
-    //            QueryExecutorUtility.getMeasureIndexes(queryModel.getMsrs(), MolapCommonConstants.AVERAGE, executerProperties.avgIndexes);
+    //            QueryExecutorUtility.getMeasureIndexes(queryModel.getMsrs(), CarbonCommonConstants.AVERAGE, executerProperties.avgIndexes);
     //            if(executerProperties.avgIndexes.size() > 0)
     //            {
     //                List<Measure> orgMsrs = QueryExecutorUtility.getOriginalMeasures(queryModel.getMsrs(),
     //                        queryModel.getCube().getMeasures(queryModel.getFactTable()));
     //                List<Integer> countIndexes = new ArrayList<Integer>(20);
-    //                QueryExecutorUtility.getMeasureIndexes(orgMsrs, MolapCommonConstants.COUNT, countIndexes);
+    //                QueryExecutorUtility.getMeasureIndexes(orgMsrs, CarbonCommonConstants.COUNT, countIndexes);
     //                executerProperties.countMsrIndex = countIndexes.size() > 0 ? countIndexes.get(0) : -1;
     //                if(executerProperties.countMsrIndex == -1)
     //                {
     //                    Measure measure = queryModel.getCube().getMeasures(queryModel.getFactTable())
     //                            .get(queryModel.getCube().getMeasures(queryModel.getFactTable()).size() - 1).getCopy();
-    //                    measure.setAggName(MolapCommonConstants.SUM);
-    //                    measure.setName(MolapCommonConstants.GEN_COUNT_MEASURE);
+    //                    measure.setAggName(CarbonCommonConstants.SUM);
+    //                    measure.setName(CarbonCommonConstants.GEN_COUNT_MEASURE);
     //                    measure.setOrdinal(measure.getOrdinal() + 1);
     //                    queryModel.getMsrs().add(measure);
     //                    executerProperties.countMsrIndex = queryModel.getMsrs().size() - 1;
@@ -305,7 +305,7 @@ public abstract class AbstractQueryExecutor implements QueryExecutor {
                 dimensionAggregatorInfo
                         .setNullValueMdkey(dimKeyGenerator.generateKey(new int[] { 1 }));
             } catch (KeyGenException e) {
-                LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
+                LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e,
                         "Problem while generating the key");
             }
         }

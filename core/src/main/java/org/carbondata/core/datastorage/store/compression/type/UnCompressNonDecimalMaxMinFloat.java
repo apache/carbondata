@@ -33,7 +33,7 @@ import org.carbondata.core.util.ValueCompressionUtil;
 public class UnCompressNonDecimalMaxMinFloat
         implements ValueCompressonHolder.UnCompressValue<float[]> {
     /**
-     * Attribute for Molap LOGGER
+     * Attribute for Carbon LOGGER
      */
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(UnCompressNonDecimalMaxMinFloat.class.getName());
@@ -58,7 +58,7 @@ public class UnCompressNonDecimalMaxMinFloat
         try {
             return (ValueCompressonHolder.UnCompressValue) clone();
         } catch (CloneNotSupportedException exc1) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, exc1, exc1.getMessage());
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, exc1, exc1.getMessage());
         }
         return null;
     }

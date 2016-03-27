@@ -39,12 +39,12 @@ public class CarbonGroupByStep extends BaseStep implements StepInterface {
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(CarbonGroupByStep.class.getName());
     /**
-     * molap data writer step data class
+     * carbon data writer step data class
      */
     private CarbonGroupByStepData data;
 
     /**
-     * molap data writer step meta
+     * carbon data writer step meta
      */
     private CarbonGroupByStepMeta meta;
 
@@ -80,10 +80,10 @@ public class CarbonGroupByStep extends BaseStep implements StepInterface {
      */
     public boolean processRow(StepMetaInterface smi, StepDataInterface sdi) throws KettleException {
 
-        // molap data writer step meta
+        // carbon data writer step meta
         meta = (CarbonGroupByStepMeta) smi;
 
-        // molap data writer step data
+        // carbon data writer step data
         data = (CarbonGroupByStepData) sdi;
         // get row from previous step, blocks when needed!
         Object[] row = getRow();
@@ -112,7 +112,7 @@ public class CarbonGroupByStep extends BaseStep implements StepInterface {
             return false;
         }
         if (first) {
-            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, "Start group by");
+            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, "Start group by");
             first = false;
             this.data.setOutputRowMeta((RowMetaInterface) getInputRowMeta().clone());
             this.meta.getFields(data.getOutputRowMeta(), getStepname(), null, null, this);

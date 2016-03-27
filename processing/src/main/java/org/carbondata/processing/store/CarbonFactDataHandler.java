@@ -164,7 +164,7 @@ public class CarbonFactDataHandler implements CarbonFactHandler {
     private String[] aggregatorClass;
 
     /**
-     * MolapWriteDataHolder
+     * CarbonWriteDataHolder
      */
     private CarbonWriteDataHolder[] dataHolder;
 
@@ -399,7 +399,7 @@ public class CarbonFactDataHandler implements CarbonFactHandler {
                 try {
                     this.groupBy.finish();
                 } catch (CarbonGroupByException e) {
-                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                             "Problem in group by finish");
                 }
             }
@@ -457,7 +457,7 @@ public class CarbonFactDataHandler implements CarbonFactHandler {
                 currentFile = new File(storePath + File.separator + inProgFileName);
                 destFile = new File(storePath + File.separator + changedFileName);
                 if (!currentFile.renameTo(destFile)) {
-                    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                             "Problem while renaming the file");
                 }
                 fileData.setName(changedFileName);
@@ -467,7 +467,7 @@ public class CarbonFactDataHandler implements CarbonFactHandler {
             try {
                 this.groupBy.finish();
             } catch (CarbonGroupByException e) {
-                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "Problem while closing the groupby file");
             }
         }

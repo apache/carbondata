@@ -35,7 +35,7 @@ import org.carbondata.core.util.CarbonCoreLogEvent;
 
 public class FileHolderImpl implements FileHolder {
     /**
-     * Attribute for Molap LOGGER
+     * Attribute for Carbon LOGGER
      */
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(FileHolderImpl.class.getName());
@@ -100,7 +100,7 @@ public class FileHolderImpl implements FileHolder {
                     channel.close();
                 }
             } catch (IOException exception) {
-                LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, exception,
+                LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, exception,
                         exception.getMessage());
             }
         }
@@ -168,7 +168,7 @@ public class FileHolderImpl implements FileHolder {
                 fileNameAndStreamCache.put(filePath, fileChannel);
             }
         } catch (IOException e) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, e, e.getMessage());
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e, e.getMessage());
         }
         return fileChannel;
     }
@@ -187,7 +187,7 @@ public class FileHolderImpl implements FileHolder {
             channel.position(offset);
             channel.read(byteBffer);
         } catch (Exception e) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, e, e.getMessage());
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e, e.getMessage());
         }
         byteBffer.rewind();
         return byteBffer;
@@ -205,7 +205,7 @@ public class FileHolderImpl implements FileHolder {
         try {
             channel.read(byteBffer);
         } catch (Exception e) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, e, e.getMessage());
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e, e.getMessage());
         }
         byteBffer.rewind();
         return byteBffer;
@@ -222,7 +222,7 @@ public class FileHolderImpl implements FileHolder {
             FileChannel fileChannel = updateCache(filePath);
             size = fileChannel.size();
         } catch (IOException e) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, e, e.getMessage());
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e, e.getMessage());
         }
         return size;
     }

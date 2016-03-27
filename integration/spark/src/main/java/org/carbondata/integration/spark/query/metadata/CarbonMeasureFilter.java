@@ -25,7 +25,7 @@ package org.carbondata.integration.spark.query.metadata;
 import java.io.Serializable;
 
 /**
- * This class represents Molap measure filter.
+ * This class represents Carbon measure filter.
  */
 public class CarbonMeasureFilter implements Serializable {
     /**
@@ -36,7 +36,7 @@ public class CarbonMeasureFilter implements Serializable {
     /**
      * Filter type.
      */
-    private MolapMeasureFilterType filterType = MolapMeasureFilterType.EQUAL_TO;
+    private CarbonMeasureFilterType filterType = CarbonMeasureFilterType.EQUAL_TO;
 
     /**
      * This constructor would be used only when user uses NOT_EMPTY filter type.
@@ -46,7 +46,7 @@ public class CarbonMeasureFilter implements Serializable {
      *
      * @param filterType
      */
-    public CarbonMeasureFilter(MolapMeasureFilterType filterType) {
+    public CarbonMeasureFilter(CarbonMeasureFilterType filterType) {
         this.filterType = filterType;
     }
 
@@ -60,7 +60,7 @@ public class CarbonMeasureFilter implements Serializable {
      * @param operandOne
      * @param filterType
      */
-    public CarbonMeasureFilter(double operandOne, MolapMeasureFilterType filterType) {
+    public CarbonMeasureFilter(double operandOne, CarbonMeasureFilterType filterType) {
         this.filterType = filterType;
     }
 
@@ -74,14 +74,14 @@ public class CarbonMeasureFilter implements Serializable {
      * @param filterType
      */
     public CarbonMeasureFilter(double operandOne, double operandTwo,
-            MolapMeasureFilterType filterType) {
+            CarbonMeasureFilterType filterType) {
         this.filterType = filterType;
     }
 
     /**
      * @return the filterType
      */
-    public MolapMeasureFilterType getFilterType() {
+    public CarbonMeasureFilterType getFilterType() {
         return filterType;
     }
 
@@ -89,7 +89,7 @@ public class CarbonMeasureFilter implements Serializable {
      * Measure filter types.
      *
      */
-    public enum MolapMeasureFilterType {
+    public enum CarbonMeasureFilterType {
         /**
          * filterType
          */

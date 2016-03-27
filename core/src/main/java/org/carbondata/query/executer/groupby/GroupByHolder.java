@@ -28,7 +28,7 @@ import org.carbondata.core.metadata.CarbonMetadata.Measure;
 import org.carbondata.query.aggregator.CalculatedMeasureAggregator;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.aggregator.impl.CalculatedMeasureAggregatorImpl;
-import org.carbondata.query.executer.calcexp.MolapCalcFunction;
+import org.carbondata.query.executer.calcexp.CarbonCalcFunction;
 
 /**
  * This class aggregates and holds the rows as per the topN applied on dimension
@@ -83,7 +83,7 @@ public class GroupByHolder {
     /**
      * Calc function
      */
-    private MolapCalcFunction calcFunction;
+    private CarbonCalcFunction calcFunction;
 
     /**
      * maskedBytePos
@@ -102,7 +102,7 @@ public class GroupByHolder {
      * @param keyGenerator
      */
     public GroupByHolder(byte[] maskedBytes, int msrIndex, String aggName, int countMsrIndex,
-            int avgMsrIndex, boolean isCalcMsr, Measure[] queryMsrs, MolapCalcFunction calcFunction,
+            int avgMsrIndex, boolean isCalcMsr, Measure[] queryMsrs, CarbonCalcFunction calcFunction,
             int[] maskedBytePos, KeyGenerator keyGenerator, String cubeUniqueName) {
         this.maskedBytes = maskedBytes;
         //        this.msrIndex = msrIndex;
@@ -124,7 +124,7 @@ public class GroupByHolder {
         // {
         // if(avgMsrIndex >= 0)
         // {
-        // agg = AggUtil.getAggregator(MolapCommonConstants.AVERAGE, false,
+        // agg = AggUtil.getAggregator(CarbonCommonConstants.AVERAGE, false,
         // null, null);
         // }
         // else
@@ -133,7 +133,7 @@ public class GroupByHolder {
         // }
         // if(agg == null && aggName == null)
         // {
-        // agg = AggUtil.getAggregator(MolapCommonConstants.SUM, false, null,
+        // agg = AggUtil.getAggregator(CarbonCommonConstants.SUM, false, null,
         // null);
         // }
         // }

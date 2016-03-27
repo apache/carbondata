@@ -104,7 +104,7 @@ public class DetailQueryResultIterator implements CarbonIterator<ChunkResult> {
                 info.setStartNode(startNode);
                 info.setNumberOfNodeToScan(1);
             } catch (KeyGenException e) {
-                LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e, e.getMessage());
+                LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e, e.getMessage());
             }
         }
 
@@ -122,7 +122,7 @@ public class DetailQueryResultIterator implements CarbonIterator<ChunkResult> {
         try {
             executeSlices = executor.executeSlices(infos, sliceIndexToBeExecuted);
         } catch (QueryExecutionException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e, e.getMessage());
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e, e.getMessage());
         }
         for (int i = 0; i < sliceIndexToBeExecuted.length; i++) {
             if (sliceIndexToBeExecuted[i] != -1) {

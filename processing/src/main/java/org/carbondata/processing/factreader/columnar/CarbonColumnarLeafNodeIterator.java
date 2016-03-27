@@ -119,7 +119,7 @@ public class CarbonColumnarLeafNodeIterator implements CarbonIterator<AbstractCo
     private boolean[] needCompressedData;
 
     /**
-     * MolapLeafNodeIterator constructor to initialise iterator
+     * CarbonLeafNodeIterator constructor to initialise iterator
      *
      * @param factFiles        fact files
      * @param mdkeyLength

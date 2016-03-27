@@ -77,7 +77,7 @@ public final class QueryStatsCollector {
                 queryStore.logQuery(queryDetail);
             }
         } catch (Exception e) {
-            LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "Error in logging query:" + e);
+            LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "Error in logging query:" + e);
         }
 
     }

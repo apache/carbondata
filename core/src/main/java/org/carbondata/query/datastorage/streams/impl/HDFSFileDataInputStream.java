@@ -48,7 +48,7 @@ import org.carbondata.query.util.CarbonEngineLogEvent;
  */
 public class HDFSFileDataInputStream extends AbstractFileDataInputStream {
     /**
-     * Attribute for Molap LOGGER
+     * Attribute for Carbon LOGGER
      */
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(FileDataInputStream.class.getName());
@@ -144,14 +144,14 @@ public class HDFSFileDataInputStream extends AbstractFileDataInputStream {
      * (non-Javadoc)
      * 
      * @see
-     * com.huawei.unibi.molap.engine.datastorage.streams.DataInputStream#initInput
+     * com.huawei.unibi.carbon.engine.datastorage.streams.DataInputStream#initInput
      * ()
      */
     @Override
     public void initInput() {
         //
         try {
-            LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                     "Reading from file: " + filesLocation);
             Path pt = new Path(filesLocation);
             FileSystem fs = pt.getFileSystem(new Configuration());
@@ -170,10 +170,10 @@ public class HDFSFileDataInputStream extends AbstractFileDataInputStream {
                 this.totalMetaDataLength = (int) (fileSize - offSet);
             }
         } catch (FileNotFoundException fe) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                     "@@@@ Hirarchy file is missing @@@@ : " + filesLocation);
         } catch (IOException ex) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                     "@@@@ Error while reading hirarchy @@@@ : " + filesLocation);
         }
     }
@@ -182,7 +182,7 @@ public class HDFSFileDataInputStream extends AbstractFileDataInputStream {
      * (non-Javadoc)
      * 
      * @see
-     * com.huawei.unibi.molap.engine.datastorage.streams.DataInputStream#closeInput
+     * com.huawei.unibi.carbon.engine.datastorage.streams.DataInputStream#closeInput
      * ()
      */
     @Override
@@ -192,7 +192,7 @@ public class HDFSFileDataInputStream extends AbstractFileDataInputStream {
             try {
                 fsChannel.close();
             } catch (IOException ex) {
-                LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, ex,
+                LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, ex,
                         "Could not close input stream for location : " + filesLocation);
             }
         }
@@ -271,7 +271,7 @@ public class HDFSFileDataInputStream extends AbstractFileDataInputStream {
     /*
      * (non-Javadoc)
      * 
-     * @see com.huawei.unibi.molap.engine.datastorage.streams.DataInputStream#
+     * @see com.huawei.unibi.carbon.engine.datastorage.streams.DataInputStream#
      * getNextHierTuple()
      */
     @Override
@@ -290,7 +290,7 @@ public class HDFSFileDataInputStream extends AbstractFileDataInputStream {
             }
 
         } catch (IOException exception) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, exception,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, exception,
                     "Problem While Reading the Hier File : ");
         }
         return null;

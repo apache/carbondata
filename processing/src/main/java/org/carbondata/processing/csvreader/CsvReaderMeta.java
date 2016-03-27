@@ -104,7 +104,7 @@ public class CsvReaderMeta extends CsvInputMeta {
         try {
             this.fileNameOffSetCache = checkpoint.getCheckPointCache();
         } catch (CheckPointException e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "Problem while getting the check point");
         }
     }

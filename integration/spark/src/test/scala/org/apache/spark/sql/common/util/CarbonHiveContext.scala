@@ -30,19 +30,7 @@ import org.carbondata.integration.spark.load.CarbonLoaderUtil
 class LocalSQLContext(hdfsCarbonBasePath: String)
   extends CarbonContext(new SparkContext(new SparkConf()
     .setAppName("CarbonSpark")
-    .setMaster("local[2]")
-    .set("carbon.storelocation", hdfsCarbonBasePath)
-    .set("molap.kettle.home", "../../Molap/Molap-Data-Processor/molapplugins/molapplugins")
-    .set("molap.is.columnar.storage", "true")
-    .set("spark.sql.bigdata.register.dialect", "org.apache.spark.sql.CarbonSqlDDLParser")
-    .set("spark.sql.bigdata.register.strategyRule", "org.apache.spark.sql.hive.CarbonStrategy")
-    .set("spark.sql.bigdata.initFunction", "org.apache.spark.sql.CarbonEnv")
-    .set("spark.sql.bigdata.acl.enable", "false")
-    .set("molap.tempstore.location", System.getProperty("java.io.tmpdir"))
-    .set("spark.sql.bigdata.register.strategy.useFunction", "true")
-    .set("hive.security.authorization.enabled", "false")
-    .set("spark.sql.bigdata.register.analyseRule", "org.apache.spark.sql.QueryStatsRule")
-    .set("spark.sql.dialect", "hiveql")), hdfsCarbonBasePath) {
+    .setMaster("local[2]")), hdfsCarbonBasePath) {
 
 }
 
@@ -56,8 +44,8 @@ object CarbonHiveContext extends LocalSQLContext(
 }) {
 
   {
-    CarbonProperties.getInstance().addProperty("molap.kettle.home", "../../Molap/Molap-Data-Processor/molapplugins/molapplugins")
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.MOLAP_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+    CarbonProperties.getInstance().addProperty("carbon.kettle.home", "../../processing/carbonplugins/carbonplugins")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.STORE_LOCATION_TEMP_PATH, System.getProperty("java.io.tmpdir"))
 
     val hadoopConf = new Configuration();

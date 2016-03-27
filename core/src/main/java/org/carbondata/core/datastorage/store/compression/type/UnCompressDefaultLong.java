@@ -15,7 +15,7 @@ public class UnCompressDefaultLong extends UnCompressNoneLong {
         try {
             return (ValueCompressonHolder.UnCompressValue) clone();
         } catch (CloneNotSupportedException clnNotSupportedExc) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, clnNotSupportedExc,
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, clnNotSupportedExc,
                     clnNotSupportedExc.getMessage());
         }
         return null;

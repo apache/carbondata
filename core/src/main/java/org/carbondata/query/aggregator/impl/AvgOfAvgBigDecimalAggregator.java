@@ -24,7 +24,7 @@ import org.carbondata.core.util.DataTypeUtil;
 
 /**
  * Project Name NSE V3R7C00
- * Module Name : Molap Engine
+ * Module Name : Carbon Engine
  * Author K00900841
  * Created Date :13-May-2013 3:35:33 PM
  * FileName : AvgOfAvgAggregator.java

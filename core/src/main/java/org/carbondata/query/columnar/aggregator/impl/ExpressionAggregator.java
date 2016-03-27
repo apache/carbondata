@@ -112,7 +112,7 @@ public class ExpressionAggregator {
                                     this.columnaraggreagtorInfo.getDimensions());
                             byteStream.close();
                         } catch (IOException e) {
-                            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
+                            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
                         }
                     }
                 }

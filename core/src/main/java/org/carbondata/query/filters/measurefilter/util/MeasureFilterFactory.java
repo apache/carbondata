@@ -24,8 +24,8 @@ import java.util.List;
 
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.metadata.CarbonMetadata.Measure;
-import org.carbondata.query.executer.calcexp.MolapCalcExpressionResolverUtil;
-import org.carbondata.query.executer.calcexp.MolapCalcFunction;
+import org.carbondata.query.executer.calcexp.CarbonCalcExpressionResolverUtil;
+import org.carbondata.query.executer.calcexp.CarbonCalcFunction;
 import org.carbondata.query.filters.measurefilter.*;
 
 public final class MeasureFilterFactory {
@@ -41,7 +41,7 @@ public final class MeasureFilterFactory {
      * @return
      */
     public static MeasureFilter getMeasureFilter(MeasureFilterModel.MeasureFilterType filterType,
-            double filterValue, int index, MolapCalcFunction calcFunction) {
+            double filterValue, int index, CarbonCalcFunction calcFunction) {
         switch (filterType) {
         case EQUAL_TO:
             return new EqualsMeasureFilterImpl(filterValue, index, calcFunction);
@@ -76,9 +76,9 @@ public final class MeasureFilterFactory {
         int i = 0;
         for (MeasureFilterModel measureFilter : filters) {
             if (measureFilter != null) {
-                MolapCalcFunction calcFunction = null;
+                CarbonCalcFunction calcFunction = null;
                 if (measureFilter.getExp() != null) {
-                    calcFunction = MolapCalcExpressionResolverUtil
+                    calcFunction = CarbonCalcExpressionResolverUtil
                             .createCalcExpressions(measureFilter.getExp(), queryMsrs);
                 }
                 msrfilters[i] = getMeasureFilter(measureFilter.getFilterType(),

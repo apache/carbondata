@@ -26,29 +26,29 @@ import org.apache.spark.sql.{CarbonEnv, CarbonContext, CarbonRelation, SchemaRDD
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.metadata.CarbonMetadata
 import org.carbondata.core.metadata.CarbonMetadata.Cube
-import org.carbondata.query.expression.{DataType => MolapDataType}
+import org.carbondata.query.expression.{DataType => CarbonDataType}
 
 import scala.collection.JavaConversions._
 
 object CarbonScalaUtil {
-  def convertSparkToMolapDataType(dataType: org.apache.spark.sql.types.DataType): MolapDataType =
+  def convertSparkToCarbonDataType(dataType: org.apache.spark.sql.types.DataType): CarbonDataType =
     dataType match {
 
-      case StringType => MolapDataType.StringType
-      case IntegerType => MolapDataType.IntegerType
-      case LongType => MolapDataType.LongType
-      case DoubleType => MolapDataType.DoubleType
-      case FloatType => MolapDataType.FloatType
-      case DateType => MolapDataType.DateType
-      case BooleanType => MolapDataType.BooleanType
-      case TimestampType => MolapDataType.TimestampType
-      case ArrayType(_, _) => MolapDataType.ArrayType
-      case StructType(_) => MolapDataType.StructType
-      case NullType => MolapDataType.NullType
-      case _ => MolapDataType.DecimalType
+      case StringType => CarbonDataType.StringType
+      case IntegerType => CarbonDataType.IntegerType
+      case LongType => CarbonDataType.LongType
+      case DoubleType => CarbonDataType.DoubleType
+      case FloatType => CarbonDataType.FloatType
+      case DateType => CarbonDataType.DateType
+      case BooleanType => CarbonDataType.BooleanType
+      case TimestampType => CarbonDataType.TimestampType
+      case ArrayType(_, _) => CarbonDataType.ArrayType
+      case StructType(_) => CarbonDataType.StructType
+      case NullType => CarbonDataType.NullType
+      case _ => CarbonDataType.DecimalType
     }
 
-  def convertSparkToMolapSchemaDataType(dataType: String): String =
+  def convertSparkToCarbonSchemaDataType(dataType: String): String =
 
     dataType match {
       case CarbonCommonConstants.STRING_TYPE => CarbonCommonConstants.STRING
@@ -65,7 +65,7 @@ object CarbonScalaUtil {
       case anyType => anyType
     }
 
-  def convertSparkColumnToMolapLevel(field: (String, String)): Seq[Level] =
+  def convertSparkColumnToCarbonLevel(field: (String, String)): Seq[Level] =
     field._2 match {
       case CarbonCommonConstants.STRING_TYPE => Seq(Level(field._1, field._1, Int.MaxValue, CarbonCommonConstants.STRING))
       case CarbonCommonConstants.INTEGER_TYPE => Seq(Level(field._1, field._1, Int.MaxValue, CarbonCommonConstants.INTEGER))

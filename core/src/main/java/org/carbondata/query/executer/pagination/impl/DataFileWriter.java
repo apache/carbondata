@@ -201,7 +201,7 @@ public class DataFileWriter implements Callable<Void> {
         DataOutputStream dataOutput = null;
         try {
             if (!new File(this.outLocation).mkdirs()) {
-                LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                         "Problem while creating the pagination directory");
             }
             File file = new File(this.outLocation + File.separator + System.nanoTime() + ".tmp");
@@ -220,7 +220,7 @@ public class DataFileWriter implements Callable<Void> {
                 dataOutput.writeInt(size);
                 break;
             default:
-                LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                         "recordHolderType is other than map/heap" + recordHolderType);
                 break;
 
@@ -230,7 +230,7 @@ public class DataFileWriter implements Callable<Void> {
             File dest = new File(this.outLocation + File.separator + System.nanoTime()
                     + CarbonCommonConstants.QUERY_OUT_FILE_EXT);
             if (!file.renameTo(dest)) {
-                LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                         "Problem while renaming the file");
             }
             holder.setIncrementalSize(dest.length());

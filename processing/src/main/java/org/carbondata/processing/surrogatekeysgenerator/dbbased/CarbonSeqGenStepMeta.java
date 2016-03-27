@@ -137,41 +137,41 @@ public class CarbonSeqGenStepMeta extends BaseStepMeta implements StepMetaInterf
      */
     protected Map<String, String> foreignKeyHierarchyMap;
     /**
-     * molapdim
+     * carbondim
      */
-    private String molapdim;
+    private String carbondim;
     /**
-     * molapProps
+     * carbonProps
      */
-    private String molapProps;
+    private String carbonProps;
     /**
-     * molapmsr
+     * carbonmsr
      */
-    private String molapmsr;
+    private String carbonmsr;
     /**
-     * molaphier
+     * carbonhier
      */
-    private String molaphier;
+    private String carbonhier;
     /**
-     * molapMeasureNames
+     * carbonMeasureNames
      */
-    private String molapMeasureNames;
+    private String carbonMeasureNames;
     /**
-     * molapTime
+     * carbonTime
      */
-    private String molapTime;
+    private String carbonTime;
     /**
      * storeLocation
      */
     private String storeLocation;
     /**
-     * molapJNDI
+     * carbonJNDI
      */
-    private String molapJNDI;
+    private String carbonJNDI;
     /**
-     * molapSchema
+     * carbonSchema
      */
-    private String molapSchema;
+    private String carbonSchema;
     /**
      * batchSize
      */
@@ -193,9 +193,9 @@ public class CarbonSeqGenStepMeta extends BaseStepMeta implements StepMetaInterf
      */
     private String metaHeirSQLQuery;
     /**
-     * molapMetaHier
+     * carbonMetaHier
      */
-    private String molapMetaHier;
+    private String carbonMetaHier;
     /**
      * propColumns
      */
@@ -267,28 +267,28 @@ public class CarbonSeqGenStepMeta extends BaseStepMeta implements StepMetaInterf
     }
 
     /**
-     * @return the molapSchema
+     * @return the carbonSchema
      */
-    public String getMolapSchema() {
-        return molapSchema;
+    public String getCarbonSchema() {
+        return carbonSchema;
     }
 
     /**
-     * @param molapSchema the molapSchema to set
+     * @param carbonSchema the carbonSchema to set
      */
-    public void setMolapSchema(String molapSchema) {
-        this.molapSchema = molapSchema;
+    public void setCarbonSchema(String carbonSchema) {
+        this.carbonSchema = carbonSchema;
     }
 
     /**
-     * @return the molapCon
+     * @return the carbonCon
      */
-    public String getMolapJNDIName() {
-        return molapJNDI;
+    public String getCarbonJNDIName() {
+        return carbonJNDI;
     }
 
-    public void setMolapJNDIName(String jndiName) {
-        this.molapJNDI = jndiName;
+    public void setCarbonJNDIName(String jndiName) {
+        this.carbonJNDI = jndiName;
     }
 
     public List<HierarchiesInfo> getMetahierVoList() {
@@ -300,22 +300,22 @@ public class CarbonSeqGenStepMeta extends BaseStepMeta implements StepMetaInterf
     }
 
     /**
-     * @return the molapLocation
+     * @return the carbonLocation
      */
     public String getStoreLocation() {
         return storeLocation;
     }
 
-    public void setStoreLocation(String molapLocation) {
-        this.storeLocation = molapLocation;
+    public void setStoreLocation(String carbonLocation) {
+        this.storeLocation = carbonLocation;
     }
 
-    public String getMolapMetaHier() {
-        return molapMetaHier;
+    public String getCarbonMetaHier() {
+        return carbonMetaHier;
     }
 
-    public void setMolapMetaHier(String molapMetaHier) {
-        this.molapMetaHier = molapMetaHier;
+    public void setCarbonMetaHier(String carbonMetaHier) {
+        this.carbonMetaHier = carbonMetaHier;
     }
 
     public String getMetaHeirSQLQueries() {
@@ -345,47 +345,47 @@ public class CarbonSeqGenStepMeta extends BaseStepMeta implements StepMetaInterf
         this.batchSize = batchSize;
     }
 
-    public String getMolapTime() {
-        return molapTime;
+    public String getCarbonTime() {
+        return carbonTime;
     }
 
-    public void setMolapTime(String molapTime) {
-        this.molapTime = molapTime;
+    public void setCarbonTime(String carbonTime) {
+        this.carbonTime = carbonTime;
     }
 
     // getters and setters for the step settings
 
-    public String getMolapProps() {
-        return molapProps;
+    public String getCarbonProps() {
+        return carbonProps;
     }
 
-    public void setMolapProps(String molapProps) {
-        this.molapProps = molapProps;
+    public void setCarbonProps(String carbonProps) {
+        this.carbonProps = carbonProps;
     }
 
-    public String getMolapdim() {
-        return molapdim;
+    public String getCarbondim() {
+        return carbondim;
     }
 
-    public void setMolapdim(String molapdim) {
-        this.molapdim = molapdim;
+    public void setCarbondim(String carbondim) {
+        this.carbondim = carbondim;
     }
 
-    public String getMolapmsr() {
-        return molapmsr;
+    public String getCarbonmsr() {
+        return carbonmsr;
     }
 
-    public void setMolapmsr(String molapmsr) {
+    public void setCarbonmsr(String carbonmsr) {
 
-        this.molapmsr = molapmsr;
+        this.carbonmsr = carbonmsr;
     }
 
-    public String getMolapHier() {
-        return molaphier;
+    public String getCarbonHier() {
+        return carbonhier;
     }
 
-    public void setMolaphier(String molaphier) {
-        this.molaphier = molaphier;
+    public void setCarbonhier(String carbonhier) {
+        this.carbonhier = carbonhier;
     }
 
     /**
@@ -406,22 +406,22 @@ public class CarbonSeqGenStepMeta extends BaseStepMeta implements StepMetaInterf
      * set sensible defaults for a new step
      */
     public void setDefault() {
-        molapProps = "";
-        molapdim = "";
-        molapmsr = "";
-        molaphier = "";
-        molapTime = "";
+        carbonProps = "";
+        carbondim = "";
+        carbonmsr = "";
+        carbonhier = "";
+        carbonTime = "";
         storeLocation = "";
         //
-        molapJNDI = "";
-        molapSchema = "";
+        carbonJNDI = "";
+        carbonSchema = "";
         storeType = "";
         isAggregate = false;
         metaHeirSQLQuery = "";
-        molapMetaHier = "";
+        carbonMetaHier = "";
         dimesionTableNames = "";
         tableName = "";
-        molapMeasureNames = "";
+        carbonMeasureNames = "";
         msrAggregatorString = "";
         heirKeySize = "";
         primaryKeyColumnNamesString = "";
@@ -450,22 +450,22 @@ public class CarbonSeqGenStepMeta extends BaseStepMeta implements StepMetaInterf
         //
         StringBuffer retval = new StringBuffer(150);
         //
-        retval.append("    ").append(XMLHandler.addTagValue("molapProps", molapProps));
-        retval.append("    ").append(XMLHandler.addTagValue("dim", molapdim));
-        retval.append("    ").append(XMLHandler.addTagValue("msr", molapmsr));
-        retval.append("    ").append(XMLHandler.addTagValue("hier", molaphier));
-        retval.append("    ").append(XMLHandler.addTagValue("time", molapTime));
+        retval.append("    ").append(XMLHandler.addTagValue("carbonProps", carbonProps));
+        retval.append("    ").append(XMLHandler.addTagValue("dim", carbondim));
+        retval.append("    ").append(XMLHandler.addTagValue("msr", carbonmsr));
+        retval.append("    ").append(XMLHandler.addTagValue("hier", carbonhier));
+        retval.append("    ").append(XMLHandler.addTagValue("time", carbonTime));
         retval.append("    ").append(XMLHandler.addTagValue("loc", storeLocation));
-        retval.append("    ").append(XMLHandler.addTagValue("con", molapJNDI));
+        retval.append("    ").append(XMLHandler.addTagValue("con", carbonJNDI));
         //
         retval.append("    ").append(XMLHandler.addTagValue("batchSize", batchSize));
         retval.append("    ").append(XMLHandler.addTagValue("genDimFiles", generateDimFiles));
         retval.append("    ").append(XMLHandler.addTagValue("isAggregate", isAggregate));
         retval.append("    ").append(XMLHandler.addTagValue("storeType", storeType));
         retval.append("    ").append(XMLHandler.addTagValue("metadataFilePath", metaHeirSQLQuery));
-        retval.append("    ").append(XMLHandler.addTagValue("molapMetaHier", molapMetaHier));
+        retval.append("    ").append(XMLHandler.addTagValue("carbonMetaHier", carbonMetaHier));
         retval.append("    ")
-                .append(XMLHandler.addTagValue("molapMeasureNames", molapMeasureNames));
+                .append(XMLHandler.addTagValue("carbonMeasureNames", carbonMeasureNames));
         retval.append("    ")
                 .append(XMLHandler.addTagValue("dimHierReleation", dimesionTableNames));
         retval.append("    ").append(XMLHandler.addTagValue("factOrAggTable", tableName));
@@ -487,15 +487,15 @@ public class CarbonSeqGenStepMeta extends BaseStepMeta implements StepMetaInterf
 
         try {
 
-            molapProps = XMLHandler.getTagValue(stepnode, "molapProps");
-            molapdim = XMLHandler.getTagValue(stepnode, "dim");
-            molapmsr = XMLHandler.getTagValue(stepnode, "msr");
-            molaphier = XMLHandler.getTagValue(stepnode, "hier");
-            molapTime = XMLHandler.getTagValue(stepnode, "time");
+            carbonProps = XMLHandler.getTagValue(stepnode, "carbonProps");
+            carbondim = XMLHandler.getTagValue(stepnode, "dim");
+            carbonmsr = XMLHandler.getTagValue(stepnode, "msr");
+            carbonhier = XMLHandler.getTagValue(stepnode, "hier");
+            carbonTime = XMLHandler.getTagValue(stepnode, "time");
             storeLocation = XMLHandler.getTagValue(stepnode, "loc");
-            molapJNDI = XMLHandler.getTagValue(stepnode, "con");
-            molapMetaHier = XMLHandler.getTagValue(stepnode, "molapMetaHier");
-            molapMeasureNames = XMLHandler.getTagValue(stepnode, "molapMeasureNames");
+            carbonJNDI = XMLHandler.getTagValue(stepnode, "con");
+            carbonMetaHier = XMLHandler.getTagValue(stepnode, "carbonMetaHier");
+            carbonMeasureNames = XMLHandler.getTagValue(stepnode, "carbonMeasureNames");
             dimesionTableNames = XMLHandler.getTagValue(stepnode, "dimHierReleation");
             tableName = XMLHandler.getTagValue(stepnode, "factOrAggTable");
             msrAggregatorString = XMLHandler.getTagValue(stepnode, "msrAggregatorString");
@@ -534,11 +534,11 @@ public class CarbonSeqGenStepMeta extends BaseStepMeta implements StepMetaInterf
 
     public void initialize() throws KettleException {
         try {
-            updateDimensions(molapdim, molapmsr);
+            updateDimensions(carbondim, carbonmsr);
 
-            hirches = getHierarichies(molaphier);
+            hirches = getHierarichies(carbonhier);
 
-            measureNames = getMeasureNamesArray(molapMeasureNames);
+            measureNames = getMeasureNamesArray(carbonMeasureNames);
 
             updateMeasureAggregator(msrAggregatorString);
 
@@ -546,7 +546,7 @@ public class CarbonSeqGenStepMeta extends BaseStepMeta implements StepMetaInterf
 
             foreignKeyHierarchyMap = getForeignKeyHierMap(foreignKeyHierarchyString);
 
-            getTimeHierarichies(molapTime);
+            getTimeHierarichies(carbonTime);
 
             if (timeIndex >= 0) {
                 for (int j = 0; j < msrs.length; j++) {
@@ -566,7 +566,7 @@ public class CarbonSeqGenStepMeta extends BaseStepMeta implements StepMetaInterf
                 updateTimeDimProps();
             }
             //update the meta Hierarichies list
-            getMetaHierarichies(molapMetaHier);
+            getMetaHierarichies(carbonMetaHier);
 
             //intitalize rowCountMap
             rowCountMap =
@@ -646,12 +646,12 @@ public class CarbonSeqGenStepMeta extends BaseStepMeta implements StepMetaInterf
         System.arraycopy(split, 0, msrAggregators, 0, split.length);
     }
 
-    private String[] getMeasureNamesArray(String molapMeasureNames) {
-        if (molapMeasureNames == null || "".equals(molapMeasureNames)) {
+    private String[] getMeasureNamesArray(String carbonMeasureNames) {
+        if (carbonMeasureNames == null || "".equals(carbonMeasureNames)) {
             return new String[0];
         }
 
-        String[] foreignKeys = molapMeasureNames.split("&");
+        String[] foreignKeys = carbonMeasureNames.split("&");
 
         String[] measureName = new String[foreignKeys.length];
 
@@ -710,12 +710,12 @@ public class CarbonSeqGenStepMeta extends BaseStepMeta implements StepMetaInterf
 
     }
 
-    private void getMetaHierarichies(String molapMetaHier) {
+    private void getMetaHierarichies(String carbonMetaHier) {
         //
-        if (null == molapMetaHier || null == metaHeirSQLQuery) {
+        if (null == carbonMetaHier || null == metaHeirSQLQuery) {
             return;
         }
-        String[] metaHier = molapMetaHier.split("&");
+        String[] metaHier = carbonMetaHier.split("&");
         metahierVoList = new ArrayList<HierarchiesInfo>(metaHier.length);
         Map<String, String[]> columnPropsMap =
                 new HashMap<String, String[]>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -748,11 +748,11 @@ public class CarbonSeqGenStepMeta extends BaseStepMeta implements StepMetaInterf
         }
     }
 
-    private void updateMetaHierarichiesWithQueries(String molapLocation) {
-        if (null == molapLocation) {
+    private void updateMetaHierarichiesWithQueries(String carbonLocation) {
+        if (null == carbonLocation) {
             return;
         }
-        String[] hierWithQueries = molapLocation.split("#");
+        String[] hierWithQueries = carbonLocation.split("#");
         //
         for (String hierarchyWithQuery : hierWithQueries) {
             String[] hierQueryStrings = hierarchyWithQuery.split(":");
@@ -816,8 +816,8 @@ public class CarbonSeqGenStepMeta extends BaseStepMeta implements StepMetaInterf
         Map<String, String[]> dbTypes =
                 new HashMap<String, String[]>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-        if (molapProps != null && !"".equals(molapProps)) {
-            String[] entries = molapProps.split("&");
+        if (carbonProps != null && !"".equals(carbonProps)) {
+            String[] entries = carbonProps.split("&");
             for (int i = 0; i < entries.length; i++) {
                 String[] levelEntry = entries[i].split(":");
                 String dimColName = levelEntry[0];
@@ -1005,18 +1005,18 @@ public class CarbonSeqGenStepMeta extends BaseStepMeta implements StepMetaInterf
     public void readRep(Repository rep, ObjectId idStep, List<DatabaseMeta> databases,
             Map<String, Counter> counters) throws KettleException {
         try {
-            molapProps = rep.getStepAttributeString(idStep, "molapProps");
-            molapdim = rep.getStepAttributeString(idStep, "dim");
-            molapmsr = rep.getStepAttributeString(idStep, "msr");
-            molaphier = rep.getStepAttributeString(idStep, "hier");
-            molapTime = rep.getStepAttributeString(idStep, "time");
+            carbonProps = rep.getStepAttributeString(idStep, "carbonProps");
+            carbondim = rep.getStepAttributeString(idStep, "dim");
+            carbonmsr = rep.getStepAttributeString(idStep, "msr");
+            carbonhier = rep.getStepAttributeString(idStep, "hier");
+            carbonTime = rep.getStepAttributeString(idStep, "time");
             storeLocation = rep.getStepAttributeString(idStep, "loc");
             //
-            molapJNDI = rep.getStepAttributeString(idStep, "con");
+            carbonJNDI = rep.getStepAttributeString(idStep, "con");
             isAggregate = rep.getStepAttributeBoolean(idStep, "isAggregate");
             metaHeirSQLQuery = rep.getStepAttributeString(idStep, "metadataFilePath");
-            molapMetaHier = rep.getStepAttributeString(idStep, "molapMetaHier");
-            molapMeasureNames = rep.getStepAttributeString(idStep, "molapMeasureNames");
+            carbonMetaHier = rep.getStepAttributeString(idStep, "carbonMetaHier");
+            carbonMeasureNames = rep.getStepAttributeString(idStep, "carbonMeasureNames");
             dimesionTableNames = rep.getStepAttributeString(idStep, "dimHierReleation");
             tableName = rep.getStepAttributeString(idStep, "factOrAggTable");
             msrAggregatorString = rep.getStepAttributeString(idStep, "msrAggregatorString");
@@ -1034,27 +1034,27 @@ public class CarbonSeqGenStepMeta extends BaseStepMeta implements StepMetaInterf
             //
         } catch (Exception e) {
             throw new KettleException(BaseMessages
-                    .getString(PKG, "MolapStep.Exception.UnexpectedErrorInReadingStepInfo"), e);
+                    .getString(PKG, "CarbonStep.Exception.UnexpectedErrorInReadingStepInfo"), e);
         }
     }
 
     public void saveRep(Repository rep, ObjectId idTransformation, ObjectId idStep)
             throws KettleException {
         try {
-            rep.saveStepAttribute(idTransformation, idStep, "molapProps", molapProps);
-            rep.saveStepAttribute(idTransformation, idStep, "dim", molapdim);
-            rep.saveStepAttribute(idTransformation, idStep, "msr", molapmsr);
-            rep.saveStepAttribute(idTransformation, idStep, "hier", molaphier);
-            rep.saveStepAttribute(idTransformation, idStep, "time", molapTime);
+            rep.saveStepAttribute(idTransformation, idStep, "carbonProps", carbonProps);
+            rep.saveStepAttribute(idTransformation, idStep, "dim", carbondim);
+            rep.saveStepAttribute(idTransformation, idStep, "msr", carbonmsr);
+            rep.saveStepAttribute(idTransformation, idStep, "hier", carbonhier);
+            rep.saveStepAttribute(idTransformation, idStep, "time", carbonTime);
             //
             rep.saveStepAttribute(idTransformation, idStep, "loc", storeLocation);
-            rep.saveStepAttribute(idTransformation, idStep, "con", molapJNDI);
+            rep.saveStepAttribute(idTransformation, idStep, "con", carbonJNDI);
             rep.saveStepAttribute(idTransformation, idStep, "isInitialLoad", isAggregate);
             rep.saveStepAttribute(idTransformation, idStep, "metadataFilePath", metaHeirSQLQuery);
-            rep.saveStepAttribute(idTransformation, idStep, "molapMetaHier", molapMetaHier);
+            rep.saveStepAttribute(idTransformation, idStep, "carbonMetaHier", carbonMetaHier);
             rep.saveStepAttribute(idTransformation, idStep, "batchSize", batchSize);
             rep.saveStepAttribute(idTransformation, idStep, "dimHierReleation", dimesionTableNames);
-            rep.saveStepAttribute(idTransformation, idStep, "molapMeasureNames", molapMeasureNames);
+            rep.saveStepAttribute(idTransformation, idStep, "carbonMeasureNames", carbonMeasureNames);
             rep.saveStepAttribute(idTransformation, idStep, "msrAggregatorString",
                     msrAggregatorString);
             rep.saveStepAttribute(idTransformation, idStep, "heirKeySize", heirKeySize);
@@ -1069,7 +1069,7 @@ public class CarbonSeqGenStepMeta extends BaseStepMeta implements StepMetaInterf
 
         } catch (Exception ex) {
             throw new KettleException(BaseMessages
-                    .getString(PKG, "MolapStep.Exception.UnableToSaveStepInfoToRepository")
+                    .getString(PKG, "CarbonStep.Exception.UnableToSaveStepInfoToRepository")
                     + idStep, ex);
         }
     }
@@ -1147,17 +1147,17 @@ public class CarbonSeqGenStepMeta extends BaseStepMeta implements StepMetaInterf
     }
 
     /**
-     * @return the molapMeasureNames
+     * @return the carbonMeasureNames
      */
-    public String getMolapMeasureNames() {
-        return molapMeasureNames;
+    public String getCarbonMeasureNames() {
+        return carbonMeasureNames;
     }
 
     /**
-     * @param molapMeasureNames the molapMeasureNames to set
+     * @param carbonMeasureNames the carbonMeasureNames to set
      */
-    public void setMolapMeasureNames(String molapMeasureNames) {
-        this.molapMeasureNames = molapMeasureNames;
+    public void setCarbonMeasureNames(String carbonMeasureNames) {
+        this.carbonMeasureNames = carbonMeasureNames;
     }
 
     /**

@@ -107,8 +107,8 @@ public class ExpressionResult {
         switch (this.getDataType()) {
         case TimestampType:
             SimpleDateFormat parser = new SimpleDateFormat(CarbonProperties.getInstance().
-                    getProperty(CarbonCommonConstants.MOLAP_TIMESTAMP_FORMAT,
-                            CarbonCommonConstants.MOLAP_TIMESTAMP_DEFAULT_FORMAT));
+                    getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+                            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
             if (value instanceof Timestamp) {
                 return parser.format((Timestamp) value);
             } else {
@@ -239,8 +239,8 @@ public class ExpressionResult {
             switch (this.getDataType()) {
             case StringType:
                 SimpleDateFormat parser = new SimpleDateFormat(CarbonProperties.getInstance()
-                        .getProperty(CarbonCommonConstants.MOLAP_TIMESTAMP_FORMAT,
-                                CarbonCommonConstants.MOLAP_TIMESTAMP_DEFAULT_FORMAT));
+                        .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+                                CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
                 Date dateToStr;
                 try {
                     dateToStr = parser.parse(value.toString());

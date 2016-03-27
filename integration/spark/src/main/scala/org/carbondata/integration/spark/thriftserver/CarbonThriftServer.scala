@@ -36,7 +36,7 @@ object CarbonThriftServer {
       .set("spark.executor.memory", args(1))
       .set("spark.cores.max", args(2))
       .set("spark.eventLog.enabled", "false")
-      .setAppName("Molap Thrift Server")
+      .setAppName("Carbon Thrift Server")
       .set("spark.hadoop.dfs.client.domain.socket.data.traffic", "false")
       .set("spark.hadoop.dfs.client.read.shortcircuit", "true")
       .set("spark.hadoop.dfs.domain.socket.path", "/var/lib/hadoop-hdfs/dn_socket")
@@ -48,18 +48,18 @@ object CarbonThriftServer {
     val sparkHome = System.getenv.get("SPARK_HOME")
     print("sparkHome: " + sparkHome)
     if (null != sparkHome) {
-      conf.set("molap.properties.filepath", sparkHome + '/' + "conf" + '/' + "molap.properties")
-      System.setProperty("molap.properties.filepath", sparkHome + '/' + "conf" + '/' + "molap.properties")
+      conf.set("carbon.properties.filepath", sparkHome + '/' + "conf" + '/' + "carbon.properties")
+      System.setProperty("carbon.properties.filepath", sparkHome + '/' + "conf" + '/' + "carbon.properties")
     }
-    print("Molap Property file path: " + conf.get("molap.properties.filepath"))
+    print("Carbon Property file path: " + conf.get("carbon.properties.filepath"))
     val sc = new SparkContext(conf);
-    val warmUpTime = CarbonProperties.getInstance().getProperty("molap.spark.warmUpTime", "5000");
+    val warmUpTime = CarbonProperties.getInstance().getProperty("carbon.spark.warmUpTime", "5000");
     println("Sleeping for millisecs:" + warmUpTime);
     try {
       Thread.sleep(Integer.parseInt(warmUpTime));
     } catch {
       case _ => {
-        println("Wrong value for molap.spark.warmUpTime " + warmUpTime + "Using default Value and proceeding");
+        println("Wrong value for carbon.spark.warmUpTime " + warmUpTime + "Using default Value and proceeding");
         Thread.sleep(30000);
       }
     }

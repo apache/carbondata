@@ -376,7 +376,7 @@ object PartialAggregation {
   def unapply(combinedPlan: (LogicalPlan, Boolean)): Option[ReturnType] = combinedPlan._1 match {
     case Aggregate(groupingExpressions, aggregateExpressionsOrig, child) =>
 
-      //if detailed query dont convert aggregate expressions to MOlap Aggregate expressions
+      //if detailed query dont convert aggregate expressions to Carbon Aggregate expressions
       val aggregateExpressions =
         if (combinedPlan._2) aggregateExpressionsOrig
         else convertAggregatesForPushdown(false, aggregateExpressionsOrig)
@@ -420,7 +420,7 @@ object PartialAggregation {
           (namedGroupingExpressions.values ++
             partialEvaluations.values.flatMap(_.partialEvaluations)).toSeq
 
-        // Convert the other aggregations for push down to Molap layer. Here don't touch earlier converted native molap aggregators.
+        // Convert the other aggregations for push down to Carbon layer. Here don't touch earlier converted native carbon aggregators.
         val convertedPartialComputation =
           if (combinedPlan._2) partialComputation
           else convertAggregatesForPushdown(true, partialComputation).asInstanceOf[Seq[NamedExpression]]

@@ -25,7 +25,7 @@ import org.carbondata.query.aggregator.MeasureAggregator;
 
 /**
  * AbstractMeasureAggregatorSum
- * Used for custom Molap Aggregator sum
+ * Used for custom Carbon Aggregator sum
  */
 public abstract class AbstractMeasureAggregatorBasic implements MeasureAggregator {
     /**

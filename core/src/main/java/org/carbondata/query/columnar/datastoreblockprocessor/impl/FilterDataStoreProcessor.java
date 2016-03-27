@@ -58,7 +58,7 @@ public class FilterDataStoreProcessor extends AbstractColumnarDataStoreProcessor
     protected void fillKeyValue(BlockDataHolder blockDataHolder) {
         keyValue.reset();
         boolean isMinMaxEnabled = true;
-        String minMaxEnableValue = CarbonProperties.getInstance().getProperty("molap.enableMinMax");
+        String minMaxEnableValue = CarbonProperties.getInstance().getProperty("carbon.enableMinMax");
         if (null != minMaxEnableValue) {
             isMinMaxEnabled = Boolean.parseBoolean(minMaxEnableValue);
         }
@@ -73,7 +73,7 @@ public class FilterDataStoreProcessor extends AbstractColumnarDataStoreProcessor
                 DataStoreBlock dataStoreBlock = blockDataHolder.getLeafDataBlock();
                 if (dataStoreBlock instanceof CSBTreeColumnarLeafNode) {
                     String factFile = ((CSBTreeColumnarLeafNode) dataStoreBlock).getFactFile();
-                    LOGGER.debug(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                    LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                             "Skipping fact file because it is not required to scan based on filter condtion:"
                                     + factFile);
                 }

@@ -86,15 +86,15 @@ public class ColumnarDetailQueryParallelSliceExecutor implements SliceExecuter {
             }
             execService.shutdown();
             execService.awaitTermination(2, TimeUnit.DAYS);
-            LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                     "Total time taken for scan " + (System.currentTimeMillis() - startTime));
             return scannedResultProcessor.getQueryResultIterator();
         } catch (QueryExecutionException exception) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, exception,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, exception,
                     exception.getMessage());
             throw new QueryExecutionException(exception);
         } catch (InterruptedException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e, e.getMessage());
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e, e.getMessage());
             throw new QueryExecutionException(e);
         } finally {
             execService = null;

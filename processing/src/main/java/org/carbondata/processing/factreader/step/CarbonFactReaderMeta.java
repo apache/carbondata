@@ -322,7 +322,7 @@ public class CarbonFactReaderMeta extends BaseStepMeta implements StepMetaInterf
             globalDimLensString = rep.getStepAttributeString(idStep, "globalDimLensString");
         } catch (Exception e) {
             throw new KettleException(BaseMessages.getString(pkg,
-                    "MolapMDKeyStepMeta.Exception.UnexpectedErrorInReadingStepInfo"), e);
+                    "CarbonMDKeyStepMeta.Exception.UnexpectedErrorInReadingStepInfo"), e);
         }
     }
 

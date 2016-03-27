@@ -94,7 +94,7 @@ public class CarbonDimensionLevelFilter implements Serializable {
     }
 
     /**
-     * This filter does not work along with MolapQuery.setExactHirarchyLevelsMatch set as true.
+     * This filter does not work along with CarbonQuery.setExactHirarchyLevelsMatch set as true.
      *
      * @param containsFilter the containsFilter to set
      */
