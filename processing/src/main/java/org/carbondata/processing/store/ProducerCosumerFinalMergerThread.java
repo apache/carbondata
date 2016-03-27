@@ -28,11 +28,11 @@ import java.util.concurrent.Callable;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.util.ByteUtil;
-import org.carbondata.processing.sortandgroupby.sortKey.MolapSortKeyException;
-import org.carbondata.processing.store.writer.exception.MolapDataWriterException;
+import org.carbondata.processing.sortandgroupby.sortKey.CarbonSortKeyException;
+import org.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 import org.carbondata.processing.threadbasedmerger.container.Container;
 import org.carbondata.processing.threadbasedmerger.iterator.RecordIterator;
-import org.carbondata.processing.util.MolapDataProcessorLogEvent;
+import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 
 public class ProducerCosumerFinalMergerThread implements Callable<Void> {
     /**
@@ -44,7 +44,7 @@ public class ProducerCosumerFinalMergerThread implements Callable<Void> {
     /**
      * dataHandler
      */
-    private MolapFactHandler dataHandler;
+    private CarbonFactHandler dataHandler;
 
     /**
      * measureCount
@@ -78,7 +78,7 @@ public class ProducerCosumerFinalMergerThread implements Callable<Void> {
      * @param measureCount
      * @param mdKeyIndex
      */
-    public ProducerCosumerFinalMergerThread(MolapFactHandler dataHanlder, int measureCount,
+    public ProducerCosumerFinalMergerThread(CarbonFactHandler dataHanlder, int measureCount,
             int mdKeyIndex, List<Container> producerContainer) {
         this.dataHandler = dataHanlder;
         this.measureCount = measureCount;
@@ -125,7 +125,7 @@ public class ProducerCosumerFinalMergerThread implements Callable<Void> {
                     iterators[1].next();
                     counter++;
                 }
-                LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                         "************************************************ Total number of records processed"
                                 + counter);
             } else if (producerCounter == 1) {
@@ -134,7 +134,7 @@ public class ProducerCosumerFinalMergerThread implements Callable<Void> {
                     iterators[0].next();
                     counter++;
                 }
-                LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                         "************************************************ Total number of records processed"
                                 + counter);
             } else {
@@ -143,8 +143,8 @@ public class ProducerCosumerFinalMergerThread implements Callable<Void> {
                 fillBuffer();
             }
         } catch (Exception e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
-            throw new MolapDataWriterException(e.getMessage(), e);
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
+            throw new CarbonDataWriterException(e.getMessage(), e);
         }
 
         return null;
@@ -154,9 +154,9 @@ public class ProducerCosumerFinalMergerThread implements Callable<Void> {
      * below method will be used to initialise the heap
      *
      * @param iterators
-     * @throws MolapSortKeyException
+     * @throws CarbonSortKeyException
      */
-    private void initialiseHeap(RecordIterator[] iterators) throws MolapSortKeyException {
+    private void initialiseHeap(RecordIterator[] iterators) throws CarbonSortKeyException {
         for (RecordIterator iterator : iterators) {
             if (iterator.hasNext()) {
                 this.recordHolderHeap.add(iterator);
@@ -168,9 +168,9 @@ public class ProducerCosumerFinalMergerThread implements Callable<Void> {
      * This method will be used to get the sorted record from file
      *
      * @return sorted record sorted record
-     * @throws MolapDataWriterException
+     * @throws CarbonDataWriterException
      */
-    private void fillBuffer() throws MolapDataWriterException {
+    private void fillBuffer() throws CarbonDataWriterException {
         int counter = 0;
         while (producerCounter > 0) {
             Object[] row = null;
@@ -199,7 +199,7 @@ public class ProducerCosumerFinalMergerThread implements Callable<Void> {
             this.recordHolderHeap.add(poll);
         }
 
-        LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                 "************************************************ Total number of records processed"
                         + counter);
     }

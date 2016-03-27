@@ -25,12 +25,12 @@ import java.nio.channels.FileChannel;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.metadata.MolapMetadata;
-import org.carbondata.core.olap.SqlStatement;
-import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.metadata.CarbonMetadata;
+import org.carbondata.core.carbon.SqlStatement;
+import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.aggregator.MeasureAggregator;
-import org.carbondata.query.executer.pagination.exception.MolapPaginationException;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.query.executer.pagination.exception.CarbonPaginationException;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 import org.carbondata.query.wrappers.ByteArrayWrapper;
 
 public class DataFileChunkHolder {
@@ -81,7 +81,7 @@ public class DataFileChunkHolder {
      * @param recordSize measure count
      * @param keySize    mdkey length
      */
-    public DataFileChunkHolder(File inFile, int keySize, MolapMetadata.Measure[] measures,
+    public DataFileChunkHolder(File inFile, int keySize, CarbonMetadata.Measure[] measures,
             MeasureAggregator[] measureAggregator, int fileBufferSize) {
         // set temp file 
         this.inFile = inFile;
@@ -104,7 +104,7 @@ public class DataFileChunkHolder {
      *
      * @throws MolapSortKeyAndGroupByException problem while initializing
      */
-    public void initialize() throws MolapPaginationException {
+    public void initialize() throws CarbonPaginationException {
         // file holder 
         long length = 0;
         FileInputStream in = null;
@@ -127,9 +127,9 @@ public class DataFileChunkHolder {
             this.stream = new DataInputStream(new BufferedInputStream(in, this.fileBufferSize));
             readRow();
         } catch (Exception e) {
-            MolapUtil.closeStreams(in);
-            MolapUtil.closeStreams(stream);
-            throw new MolapPaginationException(" Problem while reading" + this.inFile + length, e);
+            CarbonUtil.closeStreams(in);
+            CarbonUtil.closeStreams(stream);
+            throw new CarbonPaginationException(" Problem while reading" + this.inFile + length, e);
         }
     }
 
@@ -138,11 +138,11 @@ public class DataFileChunkHolder {
      *
      * @throws MolapSortKeyAndGroupByException problem while reading
      */
-    public void readRow() throws MolapPaginationException {
+    public void readRow() throws CarbonPaginationException {
         try {
             byte[] mdKey = new byte[this.keySize];
             if (this.stream.read(mdKey) < 0) {
-                LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                         "Problem while reading mdkey from pagination temp file");
             }
             this.byteArrayWrapper.setMaskedKey(mdKey);
@@ -151,9 +151,9 @@ public class DataFileChunkHolder {
             }
             numberOfRecordRead++;
         } catch (FileNotFoundException e) {
-            throw new MolapPaginationException(this.inFile + " No Found ", e);
+            throw new CarbonPaginationException(this.inFile + " No Found ", e);
         } catch (IOException e) {
-            throw new MolapPaginationException(" Problem while reading" + this.inFile, e);
+            throw new CarbonPaginationException(" Problem while reading" + this.inFile, e);
         }
     }
 
@@ -188,7 +188,7 @@ public class DataFileChunkHolder {
      * Below method will be used to close stream
      */
     public void closeStream() {
-        MolapUtil.closeStreams(this.stream);
+        CarbonUtil.closeStreams(this.stream);
     }
 
     public void setMeasureAggs(MeasureAggregator[] aggs) {

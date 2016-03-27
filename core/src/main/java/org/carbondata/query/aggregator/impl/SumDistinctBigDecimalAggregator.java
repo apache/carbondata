@@ -9,8 +9,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.datastorage.store.dataholder.MolapReadDataHolder;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.carbondata.core.util.DataTypeUtil;
 import org.carbondata.query.aggregator.MeasureAggregator;
 
@@ -43,7 +43,7 @@ public class SumDistinctBigDecimalAggregator extends AbstractMeasureAggregatorBa
     private Set<BigDecimal> valueSet;
 
     public SumDistinctBigDecimalAggregator() {
-        valueSet = new HashSet<BigDecimal>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+        valueSet = new HashSet<BigDecimal>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     }
 
     /**
@@ -59,7 +59,7 @@ public class SumDistinctBigDecimalAggregator extends AbstractMeasureAggregatorBa
     }
 
     @Override
-    public void agg(MolapReadDataHolder newVal, int index) {
+    public void agg(CarbonReadDataHolder newVal, int index) {
         BigDecimal valueBigDecimal = newVal.getReadableBigDecimalValueByIndex(index);
         valueSet.add(valueBigDecimal);
     }
@@ -71,7 +71,7 @@ public class SumDistinctBigDecimalAggregator extends AbstractMeasureAggregatorBa
     public byte[] getByteArray() {
         Iterator<BigDecimal> iterator = valueSet.iterator();
         ByteBuffer buffer =
-                ByteBuffer.allocate(valueSet.size() * MolapCommonConstants.DOUBLE_SIZE_IN_BYTE);
+                ByteBuffer.allocate(valueSet.size() * CarbonCommonConstants.DOUBLE_SIZE_IN_BYTE);
         // CHECKSTYLE:OFF Approval No:Approval-V3R8C00_018
         while (iterator.hasNext()) { // CHECKSTYLE:ON
             //            byte[] bytes = iterator.next().toString().getBytes();

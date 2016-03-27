@@ -24,12 +24,12 @@ import java.util.List;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.iterator.MolapIterator;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.core.keygenerator.KeyGenException;
-import org.carbondata.core.util.MolapProperties;
+import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.query.datastorage.storeInterfaces.DataStoreBlock;
-import org.carbondata.query.executer.MolapQueryExecutorModel;
+import org.carbondata.query.executer.CarbonQueryExecutorModel;
 import org.carbondata.query.executer.SliceExecuter;
 import org.carbondata.query.executer.exception.QueryExecutionException;
 import org.carbondata.query.executer.impl.ColumnarDetailQueryParallelSliceExecutor;
@@ -38,9 +38,9 @@ import org.carbondata.query.executer.impl.QueryResultPreparator;
 import org.carbondata.query.executer.pagination.impl.QueryResult;
 import org.carbondata.query.result.ChunkResult;
 import org.carbondata.query.schema.metadata.SliceExecutionInfo;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 
-public class DetailQueryResultIterator implements MolapIterator<ChunkResult> {
+public class DetailQueryResultIterator implements CarbonIterator<ChunkResult> {
 
     /**
      * LOGGER.
@@ -67,11 +67,11 @@ public class DetailQueryResultIterator implements MolapIterator<ChunkResult> {
     private int[] sliceIndexToBeExecuted;
 
     public DetailQueryResultIterator(List<SliceExecutionInfo> infos,
-            QueryExecuterProperties executerProperties, MolapQueryExecutorModel queryModel) {
+            QueryExecuterProperties executerProperties, CarbonQueryExecutorModel queryModel) {
         this.queryResultPreparator = new QueryResultPreparator(executerProperties, queryModel);
         this.numberOfCores = infos.get(0).getNumberOfRecordsInMemory() / Integer.parseInt(
-                MolapProperties.getInstance().getProperty(MolapCommonConstants.LEAFNODE_SIZE,
-                        MolapCommonConstants.LEAFNODE_SIZE_DEFAULT_VAL));
+                CarbonProperties.getInstance().getProperty(CarbonCommonConstants.LEAFNODE_SIZE,
+                        CarbonCommonConstants.LEAFNODE_SIZE_DEFAULT_VAL));
         if (numberOfCores == 0) {
             numberOfCores++;
         }
@@ -104,7 +104,7 @@ public class DetailQueryResultIterator implements MolapIterator<ChunkResult> {
                 info.setStartNode(startNode);
                 info.setNumberOfNodeToScan(1);
             } catch (KeyGenException e) {
-                LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e, e.getMessage());
+                LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e, e.getMessage());
             }
         }
 
@@ -118,11 +118,11 @@ public class DetailQueryResultIterator implements MolapIterator<ChunkResult> {
     @Override
     public ChunkResult next() {
         updateSliceIndexToBeExecuted();
-        MolapIterator<QueryResult> executeSlices = null;
+        CarbonIterator<QueryResult> executeSlices = null;
         try {
             executeSlices = executor.executeSlices(infos, sliceIndexToBeExecuted);
         } catch (QueryExecutionException e) {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e, e.getMessage());
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e, e.getMessage());
         }
         for (int i = 0; i < sliceIndexToBeExecuted.length; i++) {
             if (sliceIndexToBeExecuted[i] != -1) {

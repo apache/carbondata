@@ -19,11 +19,11 @@
 
 package org.carbondata.core.metadata;
 
-import org.carbondata.core.metadata.MolapMetadata.Cube;
-import org.carbondata.core.metadata.MolapMetadata.Dimension;
-import org.carbondata.core.metadata.MolapMetadata.Measure;
-import org.carbondata.core.olap.Exp;
-import org.carbondata.core.olap.SqlStatement;
+import org.carbondata.core.metadata.CarbonMetadata.Cube;
+import org.carbondata.core.metadata.CarbonMetadata.Dimension;
+import org.carbondata.core.metadata.CarbonMetadata.Measure;
+import org.carbondata.core.carbon.Exp;
+import org.carbondata.core.carbon.SqlStatement;
 
 /**
  * Calculated measure instance

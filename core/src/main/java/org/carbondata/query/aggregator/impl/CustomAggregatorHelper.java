@@ -43,10 +43,10 @@ import java.util.Map;
 import org.apache.commons.codec.binary.Base64;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.util.MolapProperties;
-import org.carbondata.core.util.MolapUtil;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.util.CarbonProperties;
+import org.carbondata.core.util.CarbonUtil;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
  * Project Name NSE V3R8C10
@@ -76,8 +76,8 @@ public class CustomAggregatorHelper {
 
     public CustomAggregatorHelper() {
         surrogateKeyMap = new HashMap<String, Map<Integer, String>>(
-                MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
-        loadFolderList = new ArrayList<File>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+        loadFolderList = new ArrayList<File>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     }
 
     /**
@@ -130,7 +130,7 @@ public class CustomAggregatorHelper {
      */
     private void loadLevelFile(String tableName, String columnName, String cubeName,
             String schemaName) {
-        String baseLocation = MolapUtil.getCarbonStorePath(schemaName, cubeName)/*MolapProperties.getInstance().getProperty(MolapCommonConstants.STORE_LOCATION,
+        String baseLocation = CarbonUtil.getCarbonStorePath(schemaName, cubeName)/*MolapProperties.getInstance().getProperty(MolapCommonConstants.STORE_LOCATION,
                 MolapCommonConstants.STORE_LOCATION_DEFAULT_VAL)*/;
         baseLocation = baseLocation + File.separator + schemaName + File.separator + cubeName;
         if (loadFolderList.size() == 0) {
@@ -147,7 +147,7 @@ public class CustomAggregatorHelper {
                 }
             }
         } catch (IOException e) {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                     "Problem while populating the cache");
         }
     }
@@ -172,7 +172,7 @@ public class CustomAggregatorHelper {
 
             if (null == memberMap) {
                 memberMap =
-                        new HashMap<Integer, String>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                        new HashMap<Integer, String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
                 surrogateKeyMap.put(fileName, memberMap);
             }
 
@@ -186,9 +186,9 @@ public class CustomAggregatorHelper {
             String value = null;// CHECKSTYLE:OFF Approval No:Approval-361
             int surrogateValue = 0;
 
-            boolean enableEncoding = Boolean.valueOf(MolapProperties.getInstance()
-                    .getProperty(MolapCommonConstants.ENABLE_BASE64_ENCODING,
-                            MolapCommonConstants.ENABLE_BASE64_ENCODING_DEFAULT));
+            boolean enableEncoding = Boolean.valueOf(CarbonProperties.getInstance()
+                    .getProperty(CarbonCommonConstants.ENABLE_BASE64_ENCODING,
+                            CarbonCommonConstants.ENABLE_BASE64_ENCODING_DEFAULT));
 
             while (fileChannel.position() < size) {
                 rowlengthToRead = ByteBuffer.allocate(4);
@@ -224,7 +224,7 @@ public class CustomAggregatorHelper {
             }
 
         } finally {
-            MolapUtil.closeStreams(fileChannel, fos);
+            CarbonUtil.closeStreams(fileChannel, fos);
         }
     }
 
@@ -243,7 +243,7 @@ public class CustomAggregatorHelper {
             public boolean accept(File pathname) {
                 boolean check = false;
                 check = pathname.isDirectory()
-                        && pathname.getAbsolutePath().indexOf(MolapCommonConstants.LOAD_FOLDER)
+                        && pathname.getAbsolutePath().indexOf(CarbonCommonConstants.LOAD_FOLDER)
                         > -1;
                 if (check) {
                     return true;

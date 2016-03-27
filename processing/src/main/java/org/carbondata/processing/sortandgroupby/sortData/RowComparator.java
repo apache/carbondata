@@ -30,7 +30,7 @@ public class RowComparator implements Comparator<Object[]> {
     private int dimensionCount;
 
     /**
-     * MolapRowComparator Constructor
+     * CarbonRowComparator Constructor
      *
      * @param dimensionCount
      */

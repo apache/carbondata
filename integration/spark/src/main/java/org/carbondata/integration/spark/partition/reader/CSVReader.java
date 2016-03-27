@@ -42,8 +42,8 @@ import java.util.List;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.integration.spark.util.MolapSparkInterFaceLogEvent;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.integration.spark.util.CarbonSparkInterFaceLogEvent;
 import org.carbondata.processing.surrogatekeysgenerator.csvbased.BadRecordslogger;
 
 /**
@@ -289,7 +289,7 @@ public class CSVReader implements Closeable, Iterable<String[]> {
     public List<String[]> readAll() throws IOException {
 
         //CHECKSTYLE:OFF Approval No:Approval-V1R2C10_005
-        List<String[]> allElements = new ArrayList<>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+        List<String[]> allElements = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
         while (hasNext) {
             String[] nextLineAsTokens = readNext();
@@ -327,7 +327,7 @@ public class CSVReader implements Closeable, Iterable<String[]> {
             if ("Un-terminated quoted field at end of CSV line".equals(e.getMessage())) {
                 badRecordslogger.addBadRecordsToBilder(new String[] { nextLine }, 1,
                         "Un-terminated quoted field at end of CSV line", null);
-                LOGGER.info(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+                LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
                         "Found Un-terminated quote @ line [" + this.lineNum + "] : Skipping Line : "
                                 + nextLine);
                 this.skippedLines += 1L;
@@ -337,9 +337,9 @@ public class CSVReader implements Closeable, Iterable<String[]> {
             }
         }
         if (null == nextLine) {
-            LOGGER.info(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+            LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
                     "Total Number of Lines : " + --this.lineNum);
-            LOGGER.info(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+            LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
                     "Number of Lines Skipped: " + this.skippedLines);
             //            System.out.println("Total Number of Lines : "+ --this.lineNum);
             //            System.out.println("Number of Lines Skipped: "+ this.skippedLines);
@@ -359,9 +359,9 @@ public class CSVReader implements Closeable, Iterable<String[]> {
             }
             String nextLine = getNextLine();
             if (!hasNext) {
-                LOGGER.info(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+                LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
                         "Total Number of Lines : " + --this.lineNum);
-                LOGGER.info(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+                LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
                         "Number of Lines Skipped: " + this.skippedLines);
                 //             System.out.println("Total Number of Lines : "+ --this.lineNum);
                 //             System.out.println("Number of Lines Skipped: "+ this.skippedLines);
@@ -378,12 +378,12 @@ public class CSVReader implements Closeable, Iterable<String[]> {
                 }
             } catch (IOException e) {
                 if ("Un-terminated quoted field after 10000 characters".equals(e.getMessage())) {
-                    LOGGER.info(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+                    LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
                             "Un-terminated quoted field found after 10000 characters in MultiLine "
                                     + "(No. Of Line searched : "
                                     + linesread + " ) starting from Line :" + (
                                     this.lineNum - linesread + 1));
-                    LOGGER.info(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+                    LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
                             "Skipped Line Info : " + firstLine);
                     parser.setPending(null);
                     this.skippedLines += 1;

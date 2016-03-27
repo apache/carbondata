@@ -25,12 +25,12 @@ import java.util.List;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.util.MolapProperties;
+import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.processing.suggest.autoagg.model.AggSuggestion;
 import org.carbondata.processing.suggest.datastats.model.Level;
 import org.carbondata.processing.suggest.datastats.util.AggCombinationGeneratorUtil;
 import org.carbondata.query.querystats.Preference;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
  * This class generates aggregate combination based on distinct data calculated
@@ -54,7 +54,7 @@ public class AggCombinationGenerator {
 
         this.maxPossibleRows = AggCombinationGeneratorUtil.getMaxPossibleRows(levelDetails);
         String confBenefitRatio =
-                MolapProperties.getInstance().getProperty("molap.agg.benefit.ratio");
+                CarbonProperties.getInstance().getProperty("molap.agg.benefit.ratio");
 
         if (null != confBenefitRatio) {
             benefitRatio = Integer.parseInt(confBenefitRatio);
@@ -75,7 +75,7 @@ public class AggCombinationGenerator {
                 .generateCombination(Arrays.asList(levelDetails), maxPossibleRows, benefitRatio);
 
         for (AggSuggestion comb : allCombinations) {
-            LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "Processing:" + comb);
+            LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "Processing:" + comb);
 
         }
         return allCombinations;

@@ -22,7 +22,7 @@ package org.carbondata.query.executer.pagination.impl;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.executer.pagination.impl.DataFileWriter.KeyValueHolder;
 import org.carbondata.query.wrappers.ByteArrayWrapper;
@@ -35,8 +35,8 @@ public class QueryResult {
     private int rsize;
 
     public QueryResult() {
-        keys = new ArrayList<ByteArrayWrapper>(MolapCommonConstants.CONSTANT_SIZE_TEN);
-        values = new ArrayList<MeasureAggregator[]>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+        keys = new ArrayList<ByteArrayWrapper>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+        values = new ArrayList<MeasureAggregator[]>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
     }
 
     public void add(ByteArrayWrapper key, MeasureAggregator[] value) {

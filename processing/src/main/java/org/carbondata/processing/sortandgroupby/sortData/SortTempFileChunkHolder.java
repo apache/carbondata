@@ -28,11 +28,11 @@ import java.util.concurrent.Future;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.util.MolapProperties;
-import org.carbondata.core.util.MolapUtil;
-import org.carbondata.processing.sortandgroupby.exception.MolapSortKeyAndGroupByException;
-import org.carbondata.processing.util.MolapDataProcessorLogEvent;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.util.CarbonProperties;
+import org.carbondata.core.util.CarbonUtil;
+import org.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
+import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.carbondata.processing.util.RemoveDictionaryUtil;
 
 public class SortTempFileChunkHolder {
@@ -136,7 +136,7 @@ public class SortTempFileChunkHolder {
     private char[] aggType;
 
     /**
-     * MolapSortTempFileChunkHolder Constructor
+     * CarbonSortTempFileChunkHolder Constructor
      *
      * @param tempFile     temp file
      * @param measureCount measure count
@@ -163,46 +163,46 @@ public class SortTempFileChunkHolder {
     /**
      * This method will be used to initialize
      *
-     * @throws MolapSortKeyAndGroupByException problem while initializing
+     * @throws CarbonSortKeyAndGroupByException problem while initializing
      */
-    public void initialize() throws MolapSortKeyAndGroupByException {
-        prefetch = MolapCommonConstants.MOLAP_PREFETCH_IN_MERGE_VALUE;
-        bufferSize = MolapCommonConstants.MOLAP_PREFETCH_BUFFERSIZE;
-        this.isSortTempFileCompressionEnabled = Boolean.parseBoolean(MolapProperties.getInstance()
-                .getProperty(MolapCommonConstants.IS_SORT_TEMP_FILE_COMPRESSION_ENABLED,
-                        MolapCommonConstants.IS_SORT_TEMP_FILE_COMPRESSION_ENABLED_DEFAULTVALUE));
+    public void initialize() throws CarbonSortKeyAndGroupByException {
+        prefetch = CarbonCommonConstants.MOLAP_PREFETCH_IN_MERGE_VALUE;
+        bufferSize = CarbonCommonConstants.MOLAP_PREFETCH_BUFFERSIZE;
+        this.isSortTempFileCompressionEnabled = Boolean.parseBoolean(CarbonProperties.getInstance()
+                .getProperty(CarbonCommonConstants.IS_SORT_TEMP_FILE_COMPRESSION_ENABLED,
+                        CarbonCommonConstants.IS_SORT_TEMP_FILE_COMPRESSION_ENABLED_DEFAULTVALUE));
         if (this.isSortTempFileCompressionEnabled) {
-            LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "Compression was used while writing the sortTempFile");
         }
 
         try {
             this.sortTempFileNoOFRecordsInCompression = Integer.parseInt(
-                    MolapProperties.getInstance().getProperty(
-                            MolapCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION,
-                            MolapCommonConstants.SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE));
+                    CarbonProperties.getInstance().getProperty(
+                            CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION,
+                            CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE));
             if (this.sortTempFileNoOFRecordsInCompression < 1) {
-                LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                         "Invalid value for: "
-                                + MolapCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION
+                                + CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION
                                 + ": Only Positive Integer value(greater than zero) is allowed.Default value will be used");
 
                 this.sortTempFileNoOFRecordsInCompression = Integer.parseInt(
-                        MolapCommonConstants.SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE);
+                        CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE);
             }
         } catch (NumberFormatException e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "Invalid value for: "
-                            + MolapCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION
+                            + CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION
                             + ": Only Positive Integer value(greater than zero) is allowed.Default value will be used");
             this.sortTempFileNoOFRecordsInCompression = Integer.parseInt(
-                    MolapCommonConstants.SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE);
+                    CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE);
         }
 
         initialise();
     }
 
-    private void initialise() throws MolapSortKeyAndGroupByException {
+    private void initialise() throws CarbonSortKeyAndGroupByException {
         try {
             reader = TempSortFileReaderFactory.getInstance()
                     .getTempSortFileReader(isSortTempFileCompressionEnabled, dimensionCount,
@@ -232,23 +232,23 @@ public class SortTempFileChunkHolder {
             }
 
         } catch (FileNotFoundException e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
-            throw new MolapSortKeyAndGroupByException(tempFile + " No Found", e);
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
+            throw new CarbonSortKeyAndGroupByException(tempFile + " No Found", e);
         } catch (IOException e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
-            throw new MolapSortKeyAndGroupByException(tempFile + " No Found", e);
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
+            throw new CarbonSortKeyAndGroupByException(tempFile + " No Found", e);
         } catch (Exception e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
-            throw new MolapSortKeyAndGroupByException(tempFile + " Problem while reading", e);
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
+            throw new CarbonSortKeyAndGroupByException(tempFile + " Problem while reading", e);
         }
     }
 
     /**
      * This method will be used to read new row from file
      *
-     * @throws MolapSortKeyAndGroupByException problem while reading
+     * @throws CarbonSortKeyAndGroupByException problem while reading
      */
-    public void readRow() throws MolapSortKeyAndGroupByException {
+    public void readRow() throws CarbonSortKeyAndGroupByException {
         if (prefetch) {
             fillDataForPrefetch();
         } else if (isSortTempFileCompressionEnabled) {
@@ -257,8 +257,8 @@ public class SortTempFileChunkHolder {
                     new DataFetcher(false).call();
                     bufferRowCounter = 0;
                 } catch (Exception e) {
-                    LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
-                    throw new MolapSortKeyAndGroupByException(tempFile + " Problem while reading",
+                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
+                    throw new CarbonSortKeyAndGroupByException(tempFile + " Problem while reading",
                             e);
                 }
 
@@ -285,7 +285,7 @@ public class SortTempFileChunkHolder {
                 try {
                     submit.get();
                 } catch (Exception e) {
-                    LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
+                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
                 }
                 bufferRowCounter = 0;
                 currentBuffer = backupBuffer;
@@ -302,9 +302,9 @@ public class SortTempFileChunkHolder {
 
     /**
      * @return
-     * @throws MolapSortKeyAndGroupByException
+     * @throws CarbonSortKeyAndGroupByException
      */
-    private Object[] getRowFromStream() throws MolapSortKeyAndGroupByException {
+    private Object[] getRowFromStream() throws CarbonSortKeyAndGroupByException {
         // create new row of size 3 (1 for dims , 1 for high card , 1 for measures)
 
         Object[] holder = new Object[3];
@@ -342,9 +342,9 @@ public class SortTempFileChunkHolder {
             // read measure values
             for (int i = 0; i < this.measureCount; i++) {
                 if (stream.readByte() == 1) {
-                    if (aggType[i] == MolapCommonConstants.SUM_COUNT_VALUE_MEASURE) {
+                    if (aggType[i] == CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE) {
                         measures[index++] = stream.readDouble();
-                    } else if (aggType[i] == MolapCommonConstants.BIG_INT_MEASURE) {
+                    } else if (aggType[i] == CarbonCommonConstants.BIG_INT_MEASURE) {
                         measures[index++] = stream.readLong();
                     } else {
                         int len = stream.readInt();
@@ -362,9 +362,9 @@ public class SortTempFileChunkHolder {
             // increment number if record read
             this.numberOfObjectRead++;
         } catch (IOException e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "Problme while reading the madkey fom sort temp file", e);
-            throw new MolapSortKeyAndGroupByException("Problem while reading the sort temp file ",
+            throw new CarbonSortKeyAndGroupByException("Problem while reading the sort temp file ",
                     e);
         }
 
@@ -398,7 +398,7 @@ public class SortTempFileChunkHolder {
      * Below method will be used to close streams
      */
     public void closeStream() {
-        MolapUtil.closeStreams(stream);
+        CarbonUtil.closeStreams(stream);
         if (null != reader) {
             reader.finish();
         }
@@ -445,7 +445,7 @@ public class SortTempFileChunkHolder {
                     currentBuffer = reader.getRow();
                 }
             } catch (Exception e) {
-                LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
             }
             return null;
         }

@@ -27,22 +27,22 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.ArrayUtils;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.datastorage.store.filesystem.MolapFile;
-import org.carbondata.core.datastorage.store.filesystem.MolapFileFilter;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
+import org.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
 import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.carbondata.core.metadata.SliceMetaData;
-import org.carbondata.core.olap.MolapDef;
-import org.carbondata.core.olap.MolapDef.*;
-import org.carbondata.core.util.MolapCoreLogEvent;
-import org.carbondata.core.util.MolapProperties;
-import org.carbondata.core.util.MolapUtil;
-import org.carbondata.core.util.MolapUtilException;
+import org.carbondata.core.carbon.CarbonDef;
+import org.carbondata.core.carbon.CarbonDef.*;
+import org.carbondata.core.util.CarbonCoreLogEvent;
+import org.carbondata.core.util.CarbonProperties;
+import org.carbondata.core.util.CarbonUtil;
+import org.carbondata.core.util.CarbonUtilException;
+import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.carbondata.processing.util.LevelSortIndexWriterThread;
-import org.carbondata.processing.util.MolapDataProcessorLogEvent;
-import org.carbondata.processing.util.MolapSchemaParser;
+import org.carbondata.processing.util.CarbonSchemaParser;
 import org.pentaho.di.core.exception.KettleException;
 
 public class SchemaRestructurer {
@@ -76,7 +76,7 @@ public class SchemaRestructurer {
         }
         nextRestructFolder = currentRestructFolderNumber + 1;
 
-        newRSFolderName = MolapCommonConstants.RESTRUCTRE_FOLDER + nextRestructFolder;
+        newRSFolderName = CarbonCommonConstants.RESTRUCTRE_FOLDER + nextRestructFolder;
 
         newSliceMetaDataPath =
                 pathTillRSFolderParent + File.separator + newRSFolderName + File.separator
@@ -90,23 +90,23 @@ public class SchemaRestructurer {
     private static ByteBuffer getMemberByteBufferWithoutDefaultValue(String defaultValue) {
         int minValue = 1;
         int rowLength = 8;
-        boolean enableEncoding = Boolean.valueOf(MolapProperties.getInstance()
-                .getProperty(MolapCommonConstants.ENABLE_BASE64_ENCODING,
-                        MolapCommonConstants.ENABLE_BASE64_ENCODING_DEFAULT));
+        boolean enableEncoding = Boolean.valueOf(CarbonProperties.getInstance()
+                .getProperty(CarbonCommonConstants.ENABLE_BASE64_ENCODING,
+                        CarbonCommonConstants.ENABLE_BASE64_ENCODING_DEFAULT));
         ByteBuffer buffer = null;
         byte[] data = null;
         if (enableEncoding) {
             try {
                 data = Base64.encodeBase64(
-                        MolapCommonConstants.MEMBER_DEFAULT_VAL.getBytes("UTF-8"));
+                        CarbonCommonConstants.MEMBER_DEFAULT_VAL.getBytes("UTF-8"));
             } catch (UnsupportedEncodingException e) {
-                data = Base64.encodeBase64(MolapCommonConstants.MEMBER_DEFAULT_VAL.getBytes());
+                data = Base64.encodeBase64(CarbonCommonConstants.MEMBER_DEFAULT_VAL.getBytes());
             }
         } else {
             try {
-                data = MolapCommonConstants.MEMBER_DEFAULT_VAL.getBytes("UTF-8");
+                data = CarbonCommonConstants.MEMBER_DEFAULT_VAL.getBytes("UTF-8");
             } catch (UnsupportedEncodingException e) {
-                data = MolapCommonConstants.MEMBER_DEFAULT_VAL.getBytes();
+                data = CarbonCommonConstants.MEMBER_DEFAULT_VAL.getBytes();
             }
 
         }
@@ -149,30 +149,30 @@ public class SchemaRestructurer {
     }
 
     public boolean restructureSchema(List<CubeDimension> newDimensions, List<Measure> newMeasures,
-            Map<String, String> defaultValues, MolapDef.Schema origUnModifiedSchema,
-            MolapDef.Schema schema, List<String> validDropDimList, List<String> validDropMsrList) {
+            Map<String, String> defaultValues, CarbonDef.Schema origUnModifiedSchema,
+            CarbonDef.Schema schema, List<String> validDropDimList, List<String> validDropMsrList) {
         String prevRSFolderPathPrefix =
-                pathTillRSFolderParent + File.separator + MolapCommonConstants.RESTRUCTRE_FOLDER;
+                pathTillRSFolderParent + File.separator + CarbonCommonConstants.RESTRUCTRE_FOLDER;
         String sliceMetaDatapath =
                 prevRSFolderPathPrefix + currentRestructFolderNumber + File.separator
                         + factTableName;
 
         SliceMetaData currentSliceMetaData =
-                MolapUtil.readSliceMetaDataFile(sliceMetaDatapath, currentRestructFolderNumber);
+                CarbonUtil.readSliceMetaDataFile(sliceMetaDatapath, currentRestructFolderNumber);
         if (null == currentSliceMetaData) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "Failed to read current sliceMetaData from:" + sliceMetaDatapath);
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "May be dataloading is not done even once:" + sliceMetaDatapath);
             return true;
         }
 
-        MolapDef.Cube origUnModifiedCube =
-                MolapSchemaParser.getMondrianCube(origUnModifiedSchema, cubeName);
+        CarbonDef.Cube origUnModifiedCube =
+                CarbonSchemaParser.getMondrianCube(origUnModifiedSchema, cubeName);
 
         if (!processDroppedDimsMsrs(prevRSFolderPathPrefix, currentRestructFolderNumber,
                 validDropDimList, validDropMsrList, origUnModifiedCube)) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "Failed to drop the dimension/measure");
             return false;
         }
@@ -198,21 +198,21 @@ public class SchemaRestructurer {
         String tmpsliceMetaDataPath =
                 prevRSFolderPathPrefix + currentRestructFolderNumber + File.separator
                         + factTableName;
-        int curLoadCounter = MolapUtil.checkAndReturnCurrentLoadFolderNumber(tmpsliceMetaDataPath);
+        int curLoadCounter = CarbonUtil.checkAndReturnCurrentLoadFolderNumber(tmpsliceMetaDataPath);
 
         int newLoadCounter = curLoadCounter + 1;
 
         String newLevelFolderPath =
-                newSliceMetaDataPath + File.separator + MolapCommonConstants.LOAD_FOLDER
+                newSliceMetaDataPath + File.separator + CarbonCommonConstants.LOAD_FOLDER
                         + newLoadCounter + File.separator;
 
         if (!createLoadFolder(newLevelFolderPath)) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "Failed to create load folder:" + newLevelFolderPath);
             return false;
         }
 
-        MolapDef.Cube cube = MolapSchemaParser.getMondrianCube(schema, cubeName);
+        CarbonDef.Cube cube = CarbonSchemaParser.getMondrianCube(schema, cubeName);
         if (!createAggregateTableAfterRestructure(newLoadCounter, cube)) {
             return false;
         }
@@ -221,14 +221,14 @@ public class SchemaRestructurer {
 
         try {
             currDimCardinality = readcurrentLevelCardinalityFile(
-                    tmpsliceMetaDataPath + File.separator + MolapCommonConstants.LOAD_FOLDER
+                    tmpsliceMetaDataPath + File.separator + CarbonCommonConstants.LOAD_FOLDER
                             + curLoadCounter, factTableName);
             if (null == currDimCardinality) {
-                LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                         "Level cardinality file is missing.Was empty load folder created to maintain load folder count in sync?");
             }
-        } catch (MolapUtilException e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e.getMessage());
+        } catch (CarbonUtilException e) {
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e.getMessage());
             return false;
         }
 
@@ -240,13 +240,13 @@ public class SchemaRestructurer {
         String levelColName;
         for (CubeDimension aDimension : newDimensions) {
             try {
-                levelColName = ((MolapDef.Dimension) aDimension).hierarchies[0].levels[0].column;
+                levelColName = ((CarbonDef.Dimension) aDimension).hierarchies[0].levels[0].column;
 
-                RelationOrJoin relation = ((MolapDef.Dimension) aDimension).hierarchies[0].relation;
+                RelationOrJoin relation = ((CarbonDef.Dimension) aDimension).hierarchies[0].relation;
 
                 String tableName = relation == null ?
                         factTableName :
-                        ((Table) ((MolapDef.Dimension) aDimension).hierarchies[0].relation).name;
+                        ((Table) ((CarbonDef.Dimension) aDimension).hierarchies[0].relation).name;
 
                 dimensions.add(tableName + '_' + levelColName);
                 dimsToAddToOldSliceMetaData.add(tableName + '_' + levelColName);
@@ -261,13 +261,13 @@ public class SchemaRestructurer {
                 }
                 levelFilePrefix = tableName + '_';
                 createLevelFiles(newLevelFolderPath, levelFilePrefix
-                        + ((MolapDef.Dimension) aDimension).hierarchies[0].levels[0].column
-                        + MolapCommonConstants.LEVEL_FILE_EXTENSION, defaultVal);
+                        + ((CarbonDef.Dimension) aDimension).hierarchies[0].levels[0].column
+                        + CarbonCommonConstants.LEVEL_FILE_EXTENSION, defaultVal);
                 LevelSortIndexWriterThread levelFileUpdater = new LevelSortIndexWriterThread(
                         newLevelFolderPath + levelFilePrefix
-                                + ((MolapDef.Dimension) aDimension).hierarchies[0].levels[0].column
-                                + MolapCommonConstants.LEVEL_FILE_EXTENSION,
-                        ((MolapDef.Dimension) aDimension).hierarchies[0].levels[0].type);
+                                + ((CarbonDef.Dimension) aDimension).hierarchies[0].levels[0].column
+                                + CarbonCommonConstants.LEVEL_FILE_EXTENSION,
+                        ((CarbonDef.Dimension) aDimension).hierarchies[0].levels[0].type);
                 levelFileUpdater.call();
             } catch (IOException e) {
                 return false;
@@ -286,14 +286,14 @@ public class SchemaRestructurer {
                 measureAggregators.toArray(new String[measureAggregators.size()]));
 
         newSliceMetaData.setHeirAnKeySize(
-                MolapSchemaParser.getHeirAndKeySizeMapForFact(cube.dimensions, schema));
+                CarbonSchemaParser.getHeirAndKeySizeMapForFact(cube.dimensions, schema));
 
         int[] updatedCardinality =
                 ArrayUtils.toPrimitive(dimLens.toArray(new Integer[dimLens.size()]));
         try {
             writeLevelCardinalityFile(newLevelFolderPath, factTableName, updatedCardinality);
         } catch (KettleException e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e.getMessage());
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e.getMessage());
             return false;
         }
 
@@ -302,7 +302,7 @@ public class SchemaRestructurer {
         newSliceMetaData.setKeyGenerator(
                 KeyGeneratorFactory.getKeyGenerator(newSliceMetaData.getDimLens()));
 
-        MolapUtil
+        CarbonUtil
                 .writeSliceMetaDataFile(newSliceMetaDataPath, newSliceMetaData, nextRestructFolder);
 
         SliceMetaData readSliceMetaDataFile = null;
@@ -311,7 +311,7 @@ public class SchemaRestructurer {
             sliceMetaDatapath =
                     prevRSFolderPathPrefix + folderNumber + File.separator + factTableName;
             readSliceMetaDataFile =
-                    MolapUtil.readSliceMetaDataFile(sliceMetaDatapath, currentRestructFolderNumber);
+                    CarbonUtil.readSliceMetaDataFile(sliceMetaDatapath, currentRestructFolderNumber);
             if (null == readSliceMetaDataFile) {
                 continue;
             }
@@ -337,7 +337,7 @@ public class SchemaRestructurer {
      */
     private boolean processDroppedDimsMsrs(String prevRSFolderPathPrefix,
             int currentRestructFolderNumber, List<String> validDropDimList,
-            List<String> validDropMsrList, MolapDef.Cube cube) {
+            List<String> validDropMsrList, CarbonDef.Cube cube) {
         if (0 == validDropDimList.size() && 0 == validDropMsrList.size()) {
             return true;
         }
@@ -348,7 +348,7 @@ public class SchemaRestructurer {
             sliceMetaDatapath =
                     prevRSFolderPathPrefix + folderNumber + File.separator + factTableName;
             currentSliceMetaData =
-                    MolapUtil.readSliceMetaDataFile(sliceMetaDatapath, currentRestructFolderNumber);
+                    CarbonUtil.readSliceMetaDataFile(sliceMetaDatapath, currentRestructFolderNumber);
             if (null == currentSliceMetaData) {
                 continue;
             }
@@ -390,16 +390,16 @@ public class SchemaRestructurer {
                 String newDimInSliceMeta = null;
                 Dimension schemaDim = null;
                 for (String aDim : validDropDimList) {
-                    schemaDim = MolapSchemaParser.findDimension(cube.dimensions, aDim);
+                    schemaDim = CarbonSchemaParser.findDimension(cube.dimensions, aDim);
                     if (null == schemaDim) {
                         continue;
                     }
                     RelationOrJoin relation =
-                            ((MolapDef.Dimension) schemaDim).hierarchies[0].relation;
+                            ((CarbonDef.Dimension) schemaDim).hierarchies[0].relation;
 
                     String tableName = relation == null ?
                             factTableName :
-                            ((Table) ((MolapDef.Dimension) schemaDim).hierarchies[0].relation).name;
+                            ((Table) ((CarbonDef.Dimension) schemaDim).hierarchies[0].relation).name;
                     //is the dimension being dropped a base dimension
                     if (null != currentSliceMetaData.getDimensions()) {
                         for (int dimIdx = 0;
@@ -433,7 +433,7 @@ public class SchemaRestructurer {
             //for drop case no need to creare a new RS folder, overwrite the existing slicemetadata
             if (!overWriteSliceMetaDataFile(sliceMetaDatapath, currentSliceMetaData,
                     currentRestructFolderNumber)) {
-                LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                         "Failed to overwrite the slicemetadata in path:" + sliceMetaDatapath
                                 + " current RS is:" + currentRestructFolderNumber);
                 return false;
@@ -450,32 +450,32 @@ public class SchemaRestructurer {
 
     private void deleteDroppedDimsLevelFiles(List<String> levelFilesToDelete) {
         String prevRSFolderPathPrefix =
-                pathTillRSFolderParent + File.separator + MolapCommonConstants.RESTRUCTRE_FOLDER;
+                pathTillRSFolderParent + File.separator + CarbonCommonConstants.RESTRUCTRE_FOLDER;
         String sliceMetaDatapath;
         String levelFilePath;
-        MolapFile molapLevelFile = null;
+        CarbonFile molapLevelFile = null;
         FileType molapFileType = FileFactory.getFileType(prevRSFolderPathPrefix);
         for (int folderNumber = currentRestructFolderNumber; folderNumber >= 0; folderNumber--) {
             sliceMetaDatapath =
                     prevRSFolderPathPrefix + folderNumber + File.separator + factTableName;
-            MolapFile sliceMetaDataPathFolder =
+            CarbonFile sliceMetaDataPathFolder =
                     FileFactory.getMolapFile(sliceMetaDatapath, molapFileType);
-            MolapFile[] loadFoldersArray = MolapUtil.listFiles(sliceMetaDataPathFolder);
-            for (MolapFile aFile : loadFoldersArray) {
+            CarbonFile[] loadFoldersArray = CarbonUtil.listFiles(sliceMetaDataPathFolder);
+            for (CarbonFile aFile : loadFoldersArray) {
                 for (String levelFileName : levelFilesToDelete) {
                     levelFilePath = aFile.getCanonicalPath() + File.separator + levelFileName;
                     try {
                         if (FileFactory.isFileExist(levelFilePath, molapFileType)) {
-                            MolapFile molapFile =
+                            CarbonFile carbonFile =
                                     FileFactory.getMolapFile(levelFilePath, molapFileType);
-                            MolapUtil.deleteFoldersAndFiles(molapFile);
+                            CarbonUtil.deleteFoldersAndFiles(carbonFile);
                         }
                     } catch (IOException e) {
-                        LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                        LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                                 "Failed to delete level file:" + levelFileName + " in:" + aFile
                                         .getName());
-                    } catch (MolapUtilException e) {
-                        LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                    } catch (CarbonUtilException e) {
+                        LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                                 "Failed to delete level file:" + levelFileName + " in:" + aFile
                                         .getName());
                     }
@@ -488,19 +488,19 @@ public class SchemaRestructurer {
      * @param newLoadCounter
      * @param cube
      */
-    private boolean createAggregateTableAfterRestructure(int newLoadCounter, MolapDef.Cube cube) {
-        MolapDef.Table table = (MolapDef.Table) cube.fact;
-        MolapDef.AggTable[] aggTables = table.aggTables;
+    private boolean createAggregateTableAfterRestructure(int newLoadCounter, CarbonDef.Cube cube) {
+        CarbonDef.Table table = (CarbonDef.Table) cube.fact;
+        CarbonDef.AggTable[] aggTables = table.aggTables;
         String aggTableName = null;
         String pathTillRSFolder =
                 pathTillRSFolderParent + File.separator + newRSFolderName + File.separator;
         String aggTablePath = null;
         for (int i = 0; i < aggTables.length; i++) {
-            aggTableName = ((MolapDef.AggName) aggTables[i]).getNameAttribute();
+            aggTableName = ((CarbonDef.AggName) aggTables[i]).getNameAttribute();
             aggTablePath = pathTillRSFolder + aggTableName + File.separator
-                    + MolapCommonConstants.LOAD_FOLDER + newLoadCounter + File.separator;
+                    + CarbonCommonConstants.LOAD_FOLDER + newLoadCounter + File.separator;
             if (!createLoadFolder(aggTablePath)) {
-                LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                         "Failed to create load folder for aggregate table in restructure :: "
                                 + aggTablePath);
                 return false;
@@ -516,7 +516,7 @@ public class SchemaRestructurer {
                 return FileFactory.mkdirs(newLevelFolderPath, fileType);
             }
         } catch (IOException e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e.getMessage());
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e.getMessage());
             return false;
         }
         return true;
@@ -524,14 +524,14 @@ public class SchemaRestructurer {
 
     private void addNewSliceMetaDataForAggTables(int rsFolderNumber) {
         String prevRSFolderPathPrefix =
-                pathTillRSFolderParent + File.separator + MolapCommonConstants.RESTRUCTRE_FOLDER;
+                pathTillRSFolderParent + File.separator + CarbonCommonConstants.RESTRUCTRE_FOLDER;
         String currentRSFolderPath = prevRSFolderPathPrefix + rsFolderNumber + File.separator;
-        MolapFile[] aggFolderList = null;
+        CarbonFile[] aggFolderList = null;
         String aggFolderSliceMetaDataPath = null;
         aggFolderList = getListOfAggTableFolders(currentRSFolderPath);
 
         if (null != aggFolderList && aggFolderList.length > 0) {
-            for (MolapFile anAggFolder : aggFolderList) {
+            for (CarbonFile anAggFolder : aggFolderList) {
                 aggFolderSliceMetaDataPath = currentRSFolderPath + anAggFolder.getName();
                 makeCopyOfSliceMetaData(aggFolderSliceMetaDataPath, rsFolderNumber,
                         nextRestructFolder);
@@ -543,24 +543,24 @@ public class SchemaRestructurer {
             int currRestructFolderNum, int nextRestructFolderNum) {
         SliceMetaData readSliceMetaDataFile = null;
         for (int i = currRestructFolderNum; i < nextRestructFolderNum; i++) {
-            readSliceMetaDataFile = MolapUtil.readSliceMetaDataFile(aggFolderSliceMetaDataPath, i);
+            readSliceMetaDataFile = CarbonUtil.readSliceMetaDataFile(aggFolderSliceMetaDataPath, i);
             if (null == readSliceMetaDataFile) {
                 continue;
             }
-            MolapUtil.writeSliceMetaDataFile(aggFolderSliceMetaDataPath, readSliceMetaDataFile,
+            CarbonUtil.writeSliceMetaDataFile(aggFolderSliceMetaDataPath, readSliceMetaDataFile,
                     nextRestructFolderNum);
             break;
         }
     }
 
-    private MolapFile[] getListOfAggTableFolders(String currentRSFolderPath) {
-        MolapFile molapFile = FileFactory
+    private CarbonFile[] getListOfAggTableFolders(String currentRSFolderPath) {
+        CarbonFile carbonFile = FileFactory
                 .getMolapFile(currentRSFolderPath, FileFactory.getFileType(currentRSFolderPath));
 
         // List of directories
-        MolapFile[] listFolders = molapFile.listFiles(new MolapFileFilter() {
+        CarbonFile[] listFolders = carbonFile.listFiles(new CarbonFileFilter() {
             @Override
-            public boolean accept(MolapFile pathname) {
+            public boolean accept(CarbonFile pathname) {
                 if (pathname.isDirectory()) {
                     if (pathname.getName().startsWith("agg_")) {
                         return true;
@@ -574,9 +574,9 @@ public class SchemaRestructurer {
     }
 
     private int[] readcurrentLevelCardinalityFile(String currentLoadFolderPath,
-            String factTableName) throws MolapUtilException {
-        int[] currDimCardinality = MolapUtil.getCardinalityFromLevelMetadataFile(
-                currentLoadFolderPath + File.separator + MolapCommonConstants.LEVEL_METADATA_FILE
+            String factTableName) throws CarbonUtilException {
+        int[] currDimCardinality = CarbonUtil.getCardinalityFromLevelMetadataFile(
+                currentLoadFolderPath + File.separator + CarbonCommonConstants.LEVEL_METADATA_FILE
                         + factTableName + ".metadata");
         return currDimCardinality;
 
@@ -626,7 +626,7 @@ public class SchemaRestructurer {
         for (int i = 0; i < newDimensions.size(); i++) {
             dimDefVal = dimDefaultValues.get(newDimensions.get(i));
             if (null == dimDefVal) {
-                existingNewDimsDefVals.add(MolapCommonConstants.MEMBER_DEFAULT_VAL);
+                existingNewDimsDefVals.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL);
                 existingNewDimsSurrogateKeys.add(DEF_SURROGATE_KEY);
                 existingNewDimLens.add(1);
             } else {
@@ -679,7 +679,7 @@ public class SchemaRestructurer {
         oldSliceMetaData.setNewMeasuresAggregator(existingNewMeasureAggregators
                 .toArray(new String[existingNewMeasureAggregators.size()]));
 
-        MolapUtil
+        CarbonUtil
                 .writeSliceMetaDataFile(oldSliceMetaDatapath, oldSliceMetaData, nextRestructFolder);
     }
 
@@ -693,17 +693,17 @@ public class SchemaRestructurer {
             stream = FileFactory.getDataOutputStream(levelFilePath + levelFileName, fileType);
             stream.write(buffer.array());
         } catch (IOException e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e.getMessage());
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e.getMessage());
             throw e;
         } finally {
-            MolapUtil.closeStreams(stream);
+            CarbonUtil.closeStreams(stream);
         }
     }
 
     private void writeLevelCardinalityFile(String loadFolderLoc, String tableName,
             int[] dimCardinality) throws KettleException {
         String levelCardinalityFilePath =
-                loadFolderLoc + File.separator + MolapCommonConstants.LEVEL_METADATA_FILE
+                loadFolderLoc + File.separator + CarbonCommonConstants.LEVEL_METADATA_FILE
                         + tableName + ".metadata";
 
         DataOutputStream outstream = null;
@@ -718,15 +718,15 @@ public class SchemaRestructurer {
                 outstream.writeInt(dimCardinality[i]);
             }
 
-            LOGGER.info(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
                     "Level cardinality file written to : " + levelCardinalityFilePath);
         } catch (IOException e) {
-            LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
                     "Error while writing level cardinality file : " + levelCardinalityFilePath + e
                             .getMessage());
             throw new KettleException("Not able to write level cardinality file", e);
         } finally {
-            MolapUtil.closeStreams(outstream);
+            CarbonUtil.closeStreams(outstream);
         }
     }
 
@@ -742,9 +742,9 @@ public class SchemaRestructurer {
             int restructFolder) {
         //file name to write the slicemetadata before moving
         String tmpSliceMetaDataFileName =
-                path + File.separator + MolapUtil.getSliceMetaDataFileName(restructFolder) + ".tmp";
+                path + File.separator + CarbonUtil.getSliceMetaDataFileName(restructFolder) + ".tmp";
         String presentSliceMetaDataFileName =
-                path + File.separator + MolapUtil.getSliceMetaDataFileName(restructFolder);
+                path + File.separator + CarbonUtil.getSliceMetaDataFileName(restructFolder);
 
         FileType fileType = FileFactory.getFileType(tmpSliceMetaDataFileName);
 
@@ -757,22 +757,22 @@ public class SchemaRestructurer {
                 FileFactory.getMolapFile(tmpSliceMetaDataFileName, fileType).delete();
             }
             //write the updated slicemetadata to tmp file first
-            LOGGER.info(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG,
-                    "Slice Metadata file Path: " + path + '/' + MolapUtil
+            LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                    "Slice Metadata file Path: " + path + '/' + CarbonUtil
                             .getSliceMetaDataFileName(restructFolder));
             stream = FileFactory
                     .getDataOutputStream(tmpSliceMetaDataFileName, FileFactory.getFileType(path));
             objectOutputStream = new ObjectOutputStream(stream);
             objectOutputStream.writeObject(sliceMetaData);
         } catch (IOException e) {
-            LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, e.getMessage());
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, e.getMessage());
             createSuccess = false;
 
         } finally {
-            MolapUtil.closeStreams(objectOutputStream, stream);
+            CarbonUtil.closeStreams(objectOutputStream, stream);
             if (createSuccess) {
                 //if tmp slicemetadata creation is success, rename it to actual slicemetadata name
-                MolapFile file = FileFactory.getMolapFile(tmpSliceMetaDataFileName, fileType);
+                CarbonFile file = FileFactory.getMolapFile(tmpSliceMetaDataFileName, fileType);
                 return file.renameForce(presentSliceMetaDataFileName);
             }
         }

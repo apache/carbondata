@@ -22,13 +22,13 @@ package org.carbondata.query.datastorage;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.core.datastorage.store.MeasureDataWrapper;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.keygenerator.KeyGenerator;
-import org.carbondata.core.metadata.MolapMetadata.Cube;
-import org.carbondata.core.util.MolapProperties;
+import org.carbondata.core.metadata.CarbonMetadata.Cube;
+import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.query.datastorage.storeInterfaces.DataStore;
 import org.carbondata.query.datastorage.storeInterfaces.DataStoreBlock;
 import org.carbondata.query.datastorage.storeInterfaces.KeyValue;
@@ -87,14 +87,14 @@ public class HierarchyBtreeStore implements DataStore {
 
     public HierarchyBtreeStore(KeyGenerator keyGenerator) {
         this.keyGenerator = keyGenerator;
-        upperMaxEntry = Integer.parseInt(MolapProperties.getInstance()
+        upperMaxEntry = Integer.parseInt(CarbonProperties.getInstance()
                 .getProperty("com.huawei.datastore.internalnodesize", DEFAULT_PAGESIZE + ""));
         upperMaxChildren = upperMaxEntry + 1;
 
         // TODO Need to account for page headers and other fields
-        leafMaxEntry = Integer.parseInt(MolapProperties.getInstance()
-                .getProperty(MolapCommonConstants.HIERARCHY_LEAFNODE_SIZE,
-                        MolapCommonConstants.HIERARCHY_LEAFNODE_SIZE_DEFAULT_VAL));
+        leafMaxEntry = Integer.parseInt(CarbonProperties.getInstance()
+                .getProperty(CarbonCommonConstants.HIERARCHY_LEAFNODE_SIZE,
+                        CarbonCommonConstants.HIERARCHY_LEAFNODE_SIZE_DEFAULT_VAL));
     }
 
     public void build(DataInputStream factStream) {
@@ -112,7 +112,7 @@ public class HierarchyBtreeStore implements DataStore {
         CSBNode prevNode = null;
 
         ArrayList<CSBNode[]> nodeGroups =
-                new ArrayList<CSBNode[]>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+                new ArrayList<CSBNode[]>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
         CSBNode[] currentGroup = null;
         //      List<Long[]> rangeVals=new ArrayList<Long[]>();
 
@@ -173,7 +173,7 @@ public class HierarchyBtreeStore implements DataStore {
         while (nHigh > 1 || !bRootBuilt) {
 
             ArrayList<CSBNode[]> internalNodeGroups =
-                    new ArrayList<CSBNode[]>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+                    new ArrayList<CSBNode[]>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
 
             nInternal = 0;
 

@@ -21,11 +21,11 @@ package org.carbondata.query.evaluators;
 
 import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreDataHolder;
-import org.carbondata.core.datastorage.store.dataholder.MolapReadDataHolder;
+import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.carbondata.query.datastorage.storeInterfaces.DataStoreBlock;
 
 public class BlockDataHolder {
-    private MolapReadDataHolder[] measureBlocks;
+    private CarbonReadDataHolder[] measureBlocks;
 
     private ColumnarKeyStoreDataHolder[] columnarKeyStore;
 
@@ -34,15 +34,15 @@ public class BlockDataHolder {
     private FileHolder fileHolder;
 
     public BlockDataHolder(int dimColumnCount, int msrColumnCount) {
-        this.measureBlocks = new MolapReadDataHolder[msrColumnCount];
+        this.measureBlocks = new CarbonReadDataHolder[msrColumnCount];
         this.columnarKeyStore = new ColumnarKeyStoreDataHolder[dimColumnCount];
     }
 
-    public MolapReadDataHolder[] getMeasureBlocks() {
+    public CarbonReadDataHolder[] getMeasureBlocks() {
         return measureBlocks;
     }
 
-    public void setMeasureBlocks(final MolapReadDataHolder[] measureBlocks) {
+    public void setMeasureBlocks(final CarbonReadDataHolder[] measureBlocks) {
         this.measureBlocks = measureBlocks;
     }
 

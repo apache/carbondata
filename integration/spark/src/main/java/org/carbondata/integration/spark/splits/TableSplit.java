@@ -30,9 +30,9 @@ import java.util.List;
 import org.apache.hadoop.io.Writable;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.integration.spark.partition.api.Partition;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
  * It represents one region server as one split.
@@ -42,7 +42,7 @@ public class TableSplit implements Serializable, Writable {
 
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(TableSplit.class.getName());
-    private List<String> locations = new ArrayList<String>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+    private List<String> locations = new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
 
     private Partition partition;
 
@@ -91,7 +91,7 @@ public class TableSplit implements Serializable, Writable {
         try {
             partition = (Partition) ois.readObject();
         } catch (ClassNotFoundException e) {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e, e.getMessage());
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e, e.getMessage());
         }
         ois.close();
     }

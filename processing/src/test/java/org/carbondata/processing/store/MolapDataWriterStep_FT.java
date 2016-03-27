@@ -68,10 +68,10 @@ public class MolapDataWriterStep_FT extends TestCase {
     //        {
     //            assertTrue(false);
     //        }
-    //        Schema schema = MolapSchemaParser.loadXML(file.getAbsolutePath() + File.separator + "test" + File.separator
+    //        Schema schema = CarbonSchemaParser.loadXML(file.getAbsolutePath() + File.separator + "test" + File.separator
     //                + "resources" + File.separator + "Vishal5SecondsTest1.xml");
-    //        Cube mondrianCubes = MolapSchemaParser.getMondrianCubes(schema);
-    //        tableName = MolapSchemaParser.getFactTableName(mondrianCubes);
+    //        Cube mondrianCubes = CarbonSchemaParser.getMondrianCubes(schema);
+    //        tableName = CarbonSchemaParser.getFactTableName(mondrianCubes);
     //        storeLocation = schema.name + "/" + mondrianCubes.name;
     //        String baseStorelocation = MolapCommonConstants.STORE_LOCATION_DEFAULT_VAL + File.separator + storeLocation;
     //        int counter = MolapUtil.checkAndReturnNextFolderNumber(baseStorelocation);
@@ -488,15 +488,15 @@ public class MolapDataWriterStep_FT extends TestCase {
     //    }
     //    private StepMeta getMolapDataWriterStep()
     //    {
-    //        MolapDataWriterStepMeta molapDataWriter = new MolapDataWriterStepMeta();
+    //        CarbonDataWriterStepMeta molapDataWriter = new CarbonDataWriterStepMeta();
     //        molapDataWriter.setMaxLeafNode("100");
     //        molapDataWriter.setLeafNodeSize("8192");
     //        molapDataWriter.setTabelName(tableName);
     //        molapDataWriter.setStoreLocation(storeLocation);
     //        StepMeta stepMeta = new StepMeta(GraphGeneratorConstants.MOLAP_DATA_WRITER,
     //                (StepMetaInterface)molapDataWriter);
-    //        stepMeta.setName("MolapDataWriter");
-    //        stepMeta.setStepID("MolapDataWriter");
+    //        stepMeta.setName("CarbonDataWriter");
+    //        stepMeta.setStepID("CarbonDataWriter");
     //        stepMeta.setDescription("Molap Data to file: " + GraphGeneratorConstants.MOLAP_DATA_WRITER);
     //
     //        return stepMeta;

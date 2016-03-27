@@ -19,7 +19,7 @@
 
 package org.carbondata.core.datastorage.store.compression;
 
-import org.carbondata.core.datastorage.store.dataholder.MolapReadDataHolder;
+import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.carbondata.core.util.ValueCompressionUtil.DataType;
 
 /**
@@ -128,7 +128,7 @@ public final class ValueCompressonHolder {
 
         UnCompressValue getCompressorObject();
 
-        MolapReadDataHolder getValues(int decimal, Object maxValue);
+        CarbonReadDataHolder getValues(int decimal, Object maxValue);
 
     }
 

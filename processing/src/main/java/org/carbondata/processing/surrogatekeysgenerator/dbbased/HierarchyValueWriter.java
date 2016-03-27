@@ -25,11 +25,8 @@ import java.util.List;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.processing.util.MolapDataProcessorLogEvent;
+import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.pentaho.di.core.exception.KettleException;
-
-//import org.apache.commons.logging.Log;
-//import org.apache.commons.logging.LogFactory;
 
 public class HierarchyValueWriter {
 
@@ -127,7 +124,7 @@ public class HierarchyValueWriter {
                 try {
                     stream.close();
                 } catch (IOException e) {
-                    LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
                             "unable to close the stream ");
                 }
 
@@ -137,7 +134,7 @@ public class HierarchyValueWriter {
         // delete the file
         isDeleted = f.delete();
         if (!isDeleted) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "Unable to delete the file " + f.getAbsolutePath());
         }
 

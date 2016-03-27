@@ -22,17 +22,17 @@ package org.carbondata.core.csvreader.checkpoint;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.util.MolapProperties;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.util.CarbonProperties;
 
 public final class CheckPointHanlder {
     /**
      * IS_CHECK_POINT_NEEDED
      */
     public static final boolean IS_CHECK_POINT_NEEDED = Boolean.valueOf(
-            MolapProperties.getInstance()
-                    .getProperty(MolapCommonConstants.MOLAP_DATALOAD_CHECKPOINT,
-                            MolapCommonConstants.MOLAP_DATALOAD_CHECKPOINT_DEFAULTVALUE));
+            CarbonProperties.getInstance()
+                    .getProperty(CarbonCommonConstants.MOLAP_DATALOAD_CHECKPOINT,
+                            CarbonCommonConstants.MOLAP_DATALOAD_CHECKPOINT_DEFAULTVALUE));
     /**
      * dummyCheckPoint
      */
@@ -41,7 +41,7 @@ public final class CheckPointHanlder {
      * check point cache
      */
     private static Map<String, CheckPointInterface> checkpoints =
-            new HashMap<String, CheckPointInterface>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+            new HashMap<String, CheckPointInterface>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
     private CheckPointHanlder() {
 

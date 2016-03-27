@@ -32,18 +32,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.integration.spark.partition.api.Partition;
-import org.carbondata.query.queryinterface.query.metadata.MolapDimensionLevelFilter;
+import org.carbondata.query.queryinterface.query.metadata.CarbonDimensionLevelFilter;
 
 public class PartitionImpl implements Partition {
     private static final long serialVersionUID = 3020172346383028547L;
     private String uniqueID;
     private String folderPath;
 
-    private Map<String, MolapDimensionLevelFilter> filterMap =
-            new HashMap<String, MolapDimensionLevelFilter>(
-                    MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+    private Map<String, CarbonDimensionLevelFilter> filterMap =
+            new HashMap<String, CarbonDimensionLevelFilter>(
+                    CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
     public PartitionImpl(String uniqueID, String folderPath) {
         this.uniqueID = uniqueID;
@@ -70,11 +70,11 @@ public class PartitionImpl implements Partition {
      * @see com.huawei.datasight.molap.partiion.api.Partition#getPartitionDetails()
      */
     @Override
-    public Map<String, MolapDimensionLevelFilter> getPartitionDetails() {
+    public Map<String, CarbonDimensionLevelFilter> getPartitionDetails() {
         return filterMap;
     }
 
-    public void setPartitionDetails(String columnName, MolapDimensionLevelFilter filter) {
+    public void setPartitionDetails(String columnName, CarbonDimensionLevelFilter filter) {
         filterMap.put(columnName, filter);
     }
 

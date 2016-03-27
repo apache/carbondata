@@ -31,13 +31,13 @@ import java.util.concurrent.TimeUnit;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.util.MolapProperties;
-import org.carbondata.processing.sortandgroupby.exception.MolapSortKeyAndGroupByException;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.util.CarbonProperties;
+import org.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 import org.carbondata.processing.sortandgroupby.sortData.SortTempFileChunkHolder;
-import org.carbondata.processing.store.writer.exception.MolapDataWriterException;
-import org.carbondata.processing.util.MolapDataProcessorLogEvent;
-import org.carbondata.processing.util.MolapDataProcessorUtil;
+import org.carbondata.processing.store.writer.exception.CarbonDataWriterException;
+import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
+import org.carbondata.processing.util.CarbonDataProcessorUtil;
 import org.carbondata.processing.util.RemoveDictionaryUtil;
 
 public class SingleThreadFinalSortFilesMerger {
@@ -114,9 +114,9 @@ public class SingleThreadFinalSortFilesMerger {
     /**
      * This method will be used to merger the merged files
      *
-     * @throws MolapSortKeyAndGroupByException
+     * @throws CarbonSortKeyAndGroupByException
      */
-    public void startFinalMerge() throws MolapDataWriterException {
+    public void startFinalMerge() throws CarbonDataWriterException {
         // get all the merged files 
         File file = new File(tempFileLocation);
 
@@ -138,34 +138,34 @@ public class SingleThreadFinalSortFilesMerger {
      * record holder heap and then it will read first record from each file and
      * initialize the heap
      *
-     * @throws MolapSortKeyAndGroupByException
+     * @throws CarbonSortKeyAndGroupByException
      */
-    private void startSorting(File[] files) throws MolapDataWriterException {
+    private void startSorting(File[] files) throws CarbonDataWriterException {
         this.fileCounter = files.length;
-        this.fileBufferSize = MolapDataProcessorUtil
-                .getFileBufferSize(this.fileCounter, MolapProperties.getInstance(),
-                        MolapCommonConstants.CONSTANT_SIZE_TEN);
+        this.fileBufferSize = CarbonDataProcessorUtil
+                .getFileBufferSize(this.fileCounter, CarbonProperties.getInstance(),
+                        CarbonCommonConstants.CONSTANT_SIZE_TEN);
 
-        LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                 "Number of temp file: " + this.fileCounter);
 
-        LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                 "File Buffer Size: " + this.fileBufferSize);
 
         // create record holder heap
         createRecordHolderQueue(files);
 
         // iterate over file list and create chunk holder and add to heap
-        LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                 "Started adding first record from each file");
         int maxThreadForSorting = 0;
         try {
-            maxThreadForSorting = Integer.parseInt(MolapProperties.getInstance()
-                    .getProperty(MolapCommonConstants.MOLAP_MAX_THREAD_FOR_SORTING,
-                            MolapCommonConstants.MOLAP_MAX_THREAD_FOR_SORTING_DEFAULTVALUE));
+            maxThreadForSorting = Integer.parseInt(CarbonProperties.getInstance()
+                    .getProperty(CarbonCommonConstants.MOLAP_MAX_THREAD_FOR_SORTING,
+                            CarbonCommonConstants.MOLAP_MAX_THREAD_FOR_SORTING_DEFAULTVALUE));
         } catch (NumberFormatException e) {
             maxThreadForSorting = Integer.parseInt(
-                    MolapCommonConstants.MOLAP_MAX_THREAD_FOR_SORTING_DEFAULTVALUE);
+                    CarbonCommonConstants.MOLAP_MAX_THREAD_FOR_SORTING_DEFAULTVALUE);
         }
         ExecutorService service = Executors.newFixedThreadPool(maxThreadForSorting);
 
@@ -173,7 +173,7 @@ public class SingleThreadFinalSortFilesMerger {
 
             Callable<Void> runnable = new Callable<Void>() {
                 @Override
-                public Void call() throws MolapSortKeyAndGroupByException {
+                public Void call() throws CarbonSortKeyAndGroupByException {
                     // create chunk holder
                     SortTempFileChunkHolder sortTempFileChunkHolder =
                             new SortTempFileChunkHolder(tempFile, dimensionCount,
@@ -199,10 +199,10 @@ public class SingleThreadFinalSortFilesMerger {
         try {
             service.awaitTermination(2, TimeUnit.HOURS);
         } catch (Exception e) {
-            throw new MolapDataWriterException(e.getMessage(), e);
+            throw new CarbonDataWriterException(e.getMessage(), e);
         }
 
-        LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                 "Heap Size" + this.recordHolderHeapLocal.size());
     }
 
@@ -240,9 +240,9 @@ public class SingleThreadFinalSortFilesMerger {
      * This method will be used to get the sorted row
      *
      * @return sorted row
-     * @throws MolapSortKeyAndGroupByException
+     * @throws CarbonSortKeyAndGroupByException
      */
-    public Object[] next() throws MolapDataWriterException {
+    public Object[] next() throws CarbonDataWriterException {
         return getSortedRecordFromFile();
     }
 
@@ -250,9 +250,9 @@ public class SingleThreadFinalSortFilesMerger {
      * This method will be used to get the sorted record from file
      *
      * @return sorted record sorted record
-     * @throws MolapSortKeyAndGroupByException
+     * @throws CarbonSortKeyAndGroupByException
      */
-    private Object[] getSortedRecordFromFile() throws MolapDataWriterException {
+    private Object[] getSortedRecordFromFile() throws CarbonDataWriterException {
         Object[] row = null;
 
         // poll the top object from heap
@@ -280,8 +280,8 @@ public class SingleThreadFinalSortFilesMerger {
         // read new row
         try {
             poll.readRow();
-        } catch (MolapSortKeyAndGroupByException e) {
-            throw new MolapDataWriterException(e.getMessage(), e);
+        } catch (CarbonSortKeyAndGroupByException e) {
+            throw new CarbonDataWriterException(e.getMessage(), e);
         }
 
         // add to heap

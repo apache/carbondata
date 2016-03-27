@@ -25,13 +25,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 
 public class DeletedLoadMetadata implements Serializable {
 
     private static final long serialVersionUID = 7083059404172117208L;
     private Map<String, String> deletedLoadMetadataMap =
-            new HashMap<String, String>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+            new HashMap<String, String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
     public void addDeletedLoadMetadata(String loadId, String status) {
         deletedLoadMetadataMap.put(loadId, status);

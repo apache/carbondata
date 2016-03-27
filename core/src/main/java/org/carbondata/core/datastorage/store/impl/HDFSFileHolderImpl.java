@@ -31,9 +31,9 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.FileHolder;
-import org.carbondata.core.util.MolapCoreLogEvent;
+import org.carbondata.core.util.CarbonCoreLogEvent;
 
 public class HDFSFileHolderImpl implements FileHolder {
 
@@ -46,7 +46,7 @@ public class HDFSFileHolderImpl implements FileHolder {
 
     public HDFSFileHolderImpl() {
         this.fileNameAndStreamCache = new HashMap<String, FSDataInputStream>(
-                MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     }
 
     @Override
@@ -75,7 +75,7 @@ public class HDFSFileHolderImpl implements FileHolder {
                 fileNameAndStreamCache.put(filePath, fileChannel);
             }
         } catch (IOException e) {
-            LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, e, e.getMessage());
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, e, e.getMessage());
         }
         return fileChannel;
     }
@@ -94,7 +94,7 @@ public class HDFSFileHolderImpl implements FileHolder {
             channel.seek(offset);
             channel.readFully(byteBffer);
         } catch (Exception e) {
-            LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, e, e.getMessage());
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, e, e.getMessage());
         }
         return byteBffer;
     }
@@ -111,7 +111,7 @@ public class HDFSFileHolderImpl implements FileHolder {
         try {
             channel.readFully(byteBffer);
         } catch (Exception e) {
-            LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, e, e.getMessage());
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, e, e.getMessage());
         }
         return byteBffer;
     }
@@ -124,7 +124,7 @@ public class HDFSFileHolderImpl implements FileHolder {
             fileChannel.seek(offset);
             i = fileChannel.readInt();
         } catch (IOException e) {
-            LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, e, e.getMessage());
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, e, e.getMessage());
         }
 
         return i;
@@ -138,7 +138,7 @@ public class HDFSFileHolderImpl implements FileHolder {
             fileChannel.seek(offset);
             i = fileChannel.readLong();
         } catch (IOException e) {
-            LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, e, e.getMessage());
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, e, e.getMessage());
         }
 
         return i;
@@ -153,7 +153,7 @@ public class HDFSFileHolderImpl implements FileHolder {
                     channel.close();
                 }
             } catch (IOException exception) {
-                LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, exception,
+                LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, exception,
                         exception.getMessage());
             }
         }
@@ -168,7 +168,7 @@ public class HDFSFileHolderImpl implements FileHolder {
             FSDataInputStream fileChannel = updateCache(filePath);
             size = fileChannel.available();
         } catch (IOException e) {
-            LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, e, e.getMessage());
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, e, e.getMessage());
         }
         return size;
     }
@@ -195,7 +195,7 @@ public class HDFSFileHolderImpl implements FileHolder {
         try {
             i = fileChannel.readLong();
         } catch (IOException e) {
-            LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, e, e.getMessage());
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, e, e.getMessage());
         }
         return i;
     }
@@ -207,7 +207,7 @@ public class HDFSFileHolderImpl implements FileHolder {
         try {
             i = fileChannel.readInt();
         } catch (IOException e) {
-            LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, e, e.getMessage());
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, e, e.getMessage());
         }
         return i;
     }

@@ -25,13 +25,13 @@ import java.util.Map;
 
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.keygenerator.columnar.ColumnarSplitter;
-import org.carbondata.core.metadata.MolapMetadata.Dimension;
-import org.carbondata.core.olap.SqlStatement;
+import org.carbondata.core.metadata.CarbonMetadata.Dimension;
+import org.carbondata.core.carbon.SqlStatement;
 import org.carbondata.core.vo.HybridStoreModel;
-import org.carbondata.query.aggregator.CustomMolapAggregateExpression;
+import org.carbondata.query.aggregator.CustomCarbonAggregateExpression;
 import org.carbondata.query.aggregator.dimension.DimensionAggregatorInfo;
 import org.carbondata.query.complex.querytypes.GenericQueryType;
-import org.carbondata.query.datastorage.InMemoryCube;
+import org.carbondata.query.datastorage.InMemoryTable;
 import org.carbondata.query.datastorage.storeInterfaces.DataStoreBlock;
 import org.carbondata.query.directinterface.impl.MeasureSortModel;
 import org.carbondata.query.evaluators.FilterEvaluator;
@@ -61,7 +61,7 @@ public class SliceExecutionInfo {
     /**
      * Slice
      */
-    private InMemoryCube slice;
+    private InMemoryTable slice;
 
     /**
      * Dimensions
@@ -166,7 +166,7 @@ public class SliceExecutionInfo {
     /**
      * slices
      */
-    private List<InMemoryCube> slices;
+    private List<InMemoryTable> slices;
 
     /**
      * maskedByteRangeForsorting
@@ -262,7 +262,7 @@ public class SliceExecutionInfo {
     /**
      *
      */
-    private List<CustomMolapAggregateExpression> expressions;
+    private List<CustomCarbonAggregateExpression> expressions;
 
     /**
      * minValue
@@ -369,11 +369,11 @@ public class SliceExecutionInfo {
         this.endKey = endKey;
     }
 
-    public InMemoryCube getSlice() {
+    public InMemoryTable getSlice() {
         return slice;
     }
 
-    public void setSlice(final InMemoryCube slice) {
+    public void setSlice(final InMemoryTable slice) {
         this.slice = slice;
     }
 
@@ -597,14 +597,14 @@ public class SliceExecutionInfo {
     /**
      * @return the slices
      */
-    public List<InMemoryCube> getSlices() {
+    public List<InMemoryTable> getSlices() {
         return slices;
     }
 
     /**
      * @param slices the slices to set
      */
-    public void setSlices(final List<InMemoryCube> slices) {
+    public void setSlices(final List<InMemoryTable> slices) {
         this.slices = slices;
     }
 
@@ -884,11 +884,11 @@ public class SliceExecutionInfo {
         this.aggType = aggType;
     }
 
-    public List<CustomMolapAggregateExpression> getCustomExpressions() {
+    public List<CustomCarbonAggregateExpression> getCustomExpressions() {
         return expressions;
     }
 
-    public void setCustomExpressions(List<CustomMolapAggregateExpression> expressions) {
+    public void setCustomExpressions(List<CustomCarbonAggregateExpression> expressions) {
         this.expressions = expressions;
     }
 

@@ -25,8 +25,8 @@ import java.util.concurrent.Callable;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.datastorage.store.filesystem.MolapFile;
-import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
+import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.aggregator.util.AggUtil;
 import org.carbondata.query.merger.exception.ResultMergerException;
 import org.carbondata.query.processor.DataProcessor;
@@ -34,7 +34,7 @@ import org.carbondata.query.processor.exception.DataProcessorException;
 import org.carbondata.query.reader.ResultTempFileReader;
 import org.carbondata.query.reader.exception.ResultReaderException;
 import org.carbondata.query.schema.metadata.DataProcessorInfo;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 
 //import org.carbondata.core.engine.executer.calcexp.MolapCalcFunction;
 
@@ -75,7 +75,7 @@ public class UnSortedResultMerger implements Callable<Void> {
     /**
      * files Temp files.
      */
-    private MolapFile[] files;
+    private CarbonFile[] files;
 
     /**
      * @param dataProcessor
@@ -83,7 +83,7 @@ public class UnSortedResultMerger implements Callable<Void> {
      * @param files
      */
     public UnSortedResultMerger(DataProcessor dataProcessor, DataProcessorInfo dataProcessorInfo,
-            MolapFile[] files) {
+            CarbonFile[] files) {
         this.dataProcessorInfo = dataProcessorInfo;
         this.recordHolderList = new ArrayList<ResultTempFileReader>(files.length);
         this.dataProcessor = dataProcessor;
@@ -99,7 +99,7 @@ public class UnSortedResultMerger implements Callable<Void> {
             this.dataProcessor.initialise(dataProcessorInfo);
 
             // For each intermediate result file.
-            for (MolapFile file : files) {
+            for (CarbonFile file : files) {
                 // reads the temp files and creates ResultTempFileReader object.
                 ResultTempFileReader molapSortTempFileChunkHolder =
                         new ResultTempFileReader(file.getAbsolutePath(),
@@ -119,12 +119,12 @@ public class UnSortedResultMerger implements Callable<Void> {
             // iterate through list and for each file process the each row of data.
             writeRecordToFile();
         } catch (ResultReaderException e) {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
             throw new ResultMergerException(e);
         } finally {
             dataProcessor.finish();
             //delete the temp files.
-            MolapUtil.deleteFoldersAndFiles(files);
+            CarbonUtil.deleteFoldersAndFiles(files);
         }
         return null;
     }

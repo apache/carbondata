@@ -24,16 +24,16 @@ import java.util.List;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.datastorage.store.filesystem.MolapFile;
+import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
-import org.carbondata.core.iterator.MolapIterator;
+import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.core.metadata.LeafNodeInfo;
-import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.executer.pagination.impl.QueryResult;
 import org.carbondata.query.reader.QueryDataFileReader;
 import org.carbondata.query.reader.exception.ResultReaderException;
 import org.carbondata.query.schema.metadata.DataProcessorInfo;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
  * Project Name  : Carbon
@@ -44,7 +44,7 @@ import org.carbondata.query.util.MolapEngineLogEvent;
  * Description   : provides the iterator over the leaf node and return the query result.
  * Class Version  : 1.0
  */
-public class FileBasedResultIteartor implements MolapIterator<QueryResult> {
+public class FileBasedResultIteartor implements CarbonIterator<QueryResult> {
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(FileBasedResultIteartor.class.getName());
     /**
@@ -61,20 +61,20 @@ public class FileBasedResultIteartor implements MolapIterator<QueryResult> {
     }
 
     private void readLeafNodeInfo(String path, DataProcessorInfo info) {
-        MolapFile molapFile = FileFactory.getMolapFile(path, FileFactory.getFileType(path));
+        CarbonFile carbonFile = FileFactory.getMolapFile(path, FileFactory.getFileType(path));
         try {
             if (FileFactory.isFileExist(path, FileFactory.getFileType(path))) {
-                leafNodeInfos = MolapUtil
-                        .getLeafNodeInfo(molapFile, info.getAggType().length, info.getKeySize());
+                leafNodeInfos = CarbonUtil
+                        .getLeafNodeInfo(carbonFile, info.getAggType().length, info.getKeySize());
             } else {
-                LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                         "file doesnot exist " + path);
             }
             if (leafNodeInfos.size() > 0) {
                 hasNext = true;
             }
         } catch (IOException e) {
-            LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e.getMessage());
+            LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e.getMessage());
         }
     }
 

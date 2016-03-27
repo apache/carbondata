@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.carbondata.core.constants.IgnoreDictionary;
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 
 /**
  * This is the utility class for No Dictionary changes.
@@ -297,10 +297,10 @@ public class RemoveDictionaryUtil {
             return new String[0];
         }
 
-        String[] highCard = highCardinalityDim.split(MolapCommonConstants.COMA_SPC_CHARACTER);
-        List<String> list1 = new ArrayList<String>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+        String[] highCard = highCardinalityDim.split(CarbonCommonConstants.COMA_SPC_CHARACTER);
+        List<String> list1 = new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
         for (int i = 0; i < highCard.length; i++) {
-            String[] dim = highCard[i].split(MolapCommonConstants.COLON_SPC_CHARACTER);
+            String[] dim = highCard[i].split(CarbonCommonConstants.COLON_SPC_CHARACTER);
             list1.add(dim[0]);
         }
 

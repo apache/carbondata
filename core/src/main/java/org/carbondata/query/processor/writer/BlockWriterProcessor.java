@@ -28,18 +28,18 @@ import java.io.IOException;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.compression.SnappyCompression.SnappyByteCompression;
-import org.carbondata.core.iterator.MolapIterator;
-import org.carbondata.core.writer.MolapDataWriter;
-import org.carbondata.core.writer.exception.MolapDataWriterException;
+import org.carbondata.core.iterator.CarbonIterator;
+import org.carbondata.core.writer.CarbonDataWriter;
+import org.carbondata.core.writer.exception.CarbonDataWriterException;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.executer.pagination.impl.QueryResult;
 import org.carbondata.query.processor.DataProcessorExt;
 import org.carbondata.query.processor.exception.DataProcessorException;
 import org.carbondata.query.result.iterator.FileBasedResultIteartor;
 import org.carbondata.query.schema.metadata.DataProcessorInfo;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 import org.carbondata.query.wrappers.ByteArrayWrapper;
 
 /**
@@ -61,7 +61,7 @@ public class BlockWriterProcessor implements DataProcessorExt {
     /**
      * dataWriter
      */
-    private MolapDataWriter dataWriter;
+    private CarbonDataWriter dataWriter;
 
     /**
      * blockDataArray
@@ -117,11 +117,11 @@ public class BlockWriterProcessor implements DataProcessorExt {
         this.model = model;
         this.queryId = model.getQueryId();
         this.dataWriter =
-                new MolapDataWriter(outputLocation, model.getAggType().length, model.getKeySize(),
-                        queryId, MolapCommonConstants.QUERY_MERGED_FILE_EXT, false, false);
+                new CarbonDataWriter(outputLocation, model.getAggType().length, model.getKeySize(),
+                        queryId, CarbonCommonConstants.QUERY_MERGED_FILE_EXT, false, false);
         try {
             this.dataWriter.initChannel();
-        } catch (MolapDataWriterException e) {
+        } catch (CarbonDataWriterException e) {
             throw new DataProcessorException(e);
         }
         this.blockKeyArray = new byte[model.getBlockSize() * model.getKeySize()];
@@ -136,7 +136,7 @@ public class BlockWriterProcessor implements DataProcessorExt {
         msrDataOutStreams = new DataOutputStream[length];
         for (int i = 0; i < length; i++) {
             this.blockDataArray[i] = new ByteArrayOutputStream(
-                    model.getBlockSize() * MolapCommonConstants.INT_SIZE_IN_BYTE);
+                    model.getBlockSize() * CarbonCommonConstants.INT_SIZE_IN_BYTE);
             msrDataOutStreams[i] = new DataOutputStream(this.blockDataArray[i]);
         }
     }
@@ -153,7 +153,7 @@ public class BlockWriterProcessor implements DataProcessorExt {
                                     this.endKey);
                     close();
                     createMsrDataOutStrms(model.getAggType().length);
-                } catch (MolapDataWriterException e) {
+                } catch (CarbonDataWriterException e) {
                     throw new DataProcessorException("Problem while writing the data to file: ", e);
                 }
                 this.entryCount = 0;
@@ -186,7 +186,7 @@ public class BlockWriterProcessor implements DataProcessorExt {
                 msrDataOutStreams[i].close();
             }
         } catch (IOException e) {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
         }
     }
 
@@ -220,13 +220,13 @@ public class BlockWriterProcessor implements DataProcessorExt {
         } finally {
             close();
             this.dataWriter.closeChannle();
-            LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                     "Total row count for query " + queryId + " : " + rowCount);
         }
     }
 
     @Override
-    public MolapIterator<QueryResult> getQueryResultIterator() {
+    public CarbonIterator<QueryResult> getQueryResultIterator() {
         return new FileBasedResultIteartor(outputLocation + '/' + queryId + "_0", model);
     }
 

@@ -20,14 +20,14 @@
 package org.carbondata.core.datastorage.store.impl;
 
 import org.carbondata.core.datastorage.store.MeasureDataWrapper;
-import org.carbondata.core.datastorage.store.dataholder.MolapReadDataHolder;
+import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 
 /**
  */
 public class SingleMeasureDataWrapper implements MeasureDataWrapper {
 
     @Override
-    public MolapReadDataHolder[] getValues() {
+    public CarbonReadDataHolder[] getValues() {
         // TODO Auto-generated method stub
         return null;
     }

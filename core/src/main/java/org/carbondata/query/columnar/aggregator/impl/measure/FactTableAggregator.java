@@ -19,7 +19,7 @@
 
 package org.carbondata.query.columnar.aggregator.impl.measure;
 
-import org.carbondata.core.olap.SqlStatement;
+import org.carbondata.core.carbon.SqlStatement;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.columnar.aggregator.ColumnarAggregatorInfo;
 import org.carbondata.query.columnar.keyvalue.AbstractColumnarScanResult;

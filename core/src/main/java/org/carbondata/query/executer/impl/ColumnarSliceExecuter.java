@@ -38,7 +38,7 @@ import org.carbondata.query.datastorage.storeInterfaces.DataStoreBlock;
 import org.carbondata.query.executer.processor.ScannedResultProcessor;
 import org.carbondata.query.schema.metadata.ColumnarStorageScannerInfo;
 import org.carbondata.query.schema.metadata.SliceExecutionInfo;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 
 public class ColumnarSliceExecuter implements Callable<Void> {
     /**
@@ -103,7 +103,7 @@ public class ColumnarSliceExecuter implements Callable<Void> {
         try {
             this.columnarstorageScanner.scanStore();
         } catch (Exception e) {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
         } finally {
             this.fileHolder.finish();
         }

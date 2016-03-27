@@ -21,7 +21,7 @@ package org.carbondata.query.executer;
 
 import java.util.List;
 
-import org.carbondata.core.iterator.MolapIterator;
+import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.query.executer.exception.QueryExecutionException;
 import org.carbondata.query.executer.pagination.impl.QueryResult;
 import org.carbondata.query.schema.metadata.SliceExecutionInfo;
@@ -33,6 +33,6 @@ public interface SliceExecuter {
      *
      * @return query result
      */
-    MolapIterator<QueryResult> executeSlices(List<SliceExecutionInfo> infos, int[] sliceIndex)
+    CarbonIterator<QueryResult> executeSlices(List<SliceExecutionInfo> infos, int[] sliceIndex)
             throws QueryExecutionException;
 }

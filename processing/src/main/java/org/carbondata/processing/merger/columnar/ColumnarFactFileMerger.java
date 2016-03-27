@@ -23,25 +23,25 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.util.MolapSliceAndFiles;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.util.CarbonSliceAndFiles;
 import org.carbondata.processing.factreader.FactReaderInfo;
-import org.carbondata.processing.factreader.MolapSurrogateTupleHolder;
-import org.carbondata.processing.merger.columnar.iterator.MolapDataIterator;
-import org.carbondata.processing.merger.columnar.iterator.impl.MolapColumnarLeafTupleDataIterator;
-import org.carbondata.processing.merger.columnar.iterator.impl.MolapLeafTupleWrapperIterator;
+import org.carbondata.processing.factreader.CarbonSurrogateTupleHolder;
+import org.carbondata.processing.merger.columnar.iterator.CarbonDataIterator;
+import org.carbondata.processing.merger.columnar.iterator.impl.CarbonColumnarLeafTupleDataIterator;
+import org.carbondata.processing.merger.columnar.iterator.impl.CarbonLeafTupleWrapperIterator;
 import org.carbondata.processing.merger.exeception.SliceMergerException;
-import org.carbondata.processing.schema.metadata.MolapColumnarFactMergerInfo;
-import org.carbondata.processing.store.MolapFactDataHandlerColumnarMerger;
-import org.carbondata.processing.store.MolapFactHandler;
-import org.carbondata.processing.store.writer.exception.MolapDataWriterException;
+import org.carbondata.processing.schema.metadata.CarbonColumnarFactMergerInfo;
+import org.carbondata.processing.store.CarbonFactDataHandlerColumnarMerger;
+import org.carbondata.processing.store.CarbonFactHandler;
+import org.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 
 public abstract class ColumnarFactFileMerger {
 
     /**
      * dataHandler
      */
-    public MolapFactHandler dataHandler;
+    public CarbonFactHandler dataHandler;
     /**
      * otherMeasureIndex
      */
@@ -55,17 +55,17 @@ public abstract class ColumnarFactFileMerger {
      */
     protected int mdkeyLength;
 
-    protected List<MolapDataIterator<MolapSurrogateTupleHolder>> leafTupleIteratorList;
+    protected List<CarbonDataIterator<CarbonSurrogateTupleHolder>> leafTupleIteratorList;
 
-    public ColumnarFactFileMerger(MolapColumnarFactMergerInfo molapColumnarFactMergerInfo,
+    public ColumnarFactFileMerger(CarbonColumnarFactMergerInfo carbonColumnarFactMergerInfo,
             int currentRestructNumber) {
-        this.mdkeyLength = molapColumnarFactMergerInfo.getMdkeyLength();
+        this.mdkeyLength = carbonColumnarFactMergerInfo.getMdkeyLength();
         List<Integer> otherMeasureIndexList =
-                new ArrayList<Integer>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                new ArrayList<Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         List<Integer> customMeasureIndexList =
-                new ArrayList<Integer>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
-        for (int i = 0; i < molapColumnarFactMergerInfo.getType().length; i++) {
-            if (molapColumnarFactMergerInfo.getType()[i] != 'c') {
+                new ArrayList<Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+        for (int i = 0; i < carbonColumnarFactMergerInfo.getType().length; i++) {
+            if (carbonColumnarFactMergerInfo.getType()[i] != 'c') {
                 otherMeasureIndexList.add(i);
             } else {
                 customMeasureIndexList.add(i);
@@ -80,50 +80,50 @@ public abstract class ColumnarFactFileMerger {
             customMeasureIndex[i] = customMeasureIndexList.get(i);
         }
 
-        this.leafTupleIteratorList = new ArrayList<MolapDataIterator<MolapSurrogateTupleHolder>>(
-                molapColumnarFactMergerInfo.getSlicesFromHDFS().size());
-        MolapDataIterator<MolapSurrogateTupleHolder> leaftTupleIterator = null;
-        for (MolapSliceAndFiles sliceInfo : molapColumnarFactMergerInfo.getSlicesFromHDFS()) {
+        this.leafTupleIteratorList = new ArrayList<CarbonDataIterator<CarbonSurrogateTupleHolder>>(
+                carbonColumnarFactMergerInfo.getSlicesFromHDFS().size());
+        CarbonDataIterator<CarbonSurrogateTupleHolder> leaftTupleIterator = null;
+        for (CarbonSliceAndFiles sliceInfo : carbonColumnarFactMergerInfo.getSlicesFromHDFS()) {
 
-            leaftTupleIterator = new MolapLeafTupleWrapperIterator(sliceInfo.getKeyGen(),
-                    molapColumnarFactMergerInfo.getGlobalKeyGen(),
-                    new MolapColumnarLeafTupleDataIterator(sliceInfo.getPath(),
+            leaftTupleIterator = new CarbonLeafTupleWrapperIterator(sliceInfo.getKeyGen(),
+                    carbonColumnarFactMergerInfo.getGlobalKeyGen(),
+                    new CarbonColumnarLeafTupleDataIterator(sliceInfo.getPath(),
                             sliceInfo.getSliceFactFilesList(),
-                            getFactReaderInfo(molapColumnarFactMergerInfo), mdkeyLength));
+                            getFactReaderInfo(carbonColumnarFactMergerInfo), mdkeyLength));
             if (leaftTupleIterator.hasNext()) {
                 leaftTupleIterator.fetchNextData();
                 leafTupleIteratorList.add(leaftTupleIterator);
             }
         }
-        dataHandler = new MolapFactDataHandlerColumnarMerger(molapColumnarFactMergerInfo,
+        dataHandler = new CarbonFactDataHandlerColumnarMerger(carbonColumnarFactMergerInfo,
                 currentRestructNumber);
     }
 
     public abstract void mergerSlice() throws SliceMergerException;
 
     private FactReaderInfo getFactReaderInfo(
-            MolapColumnarFactMergerInfo molapColumnarFactMergerInfo) {
+            CarbonColumnarFactMergerInfo carbonColumnarFactMergerInfo) {
         FactReaderInfo factReaderInfo = new FactReaderInfo();
-        String[] aggType = new String[molapColumnarFactMergerInfo.getMeasureCount()];
+        String[] aggType = new String[carbonColumnarFactMergerInfo.getMeasureCount()];
 
         Arrays.fill(aggType, "n");
-        if (null != molapColumnarFactMergerInfo.getAggregators()) {
+        if (null != carbonColumnarFactMergerInfo.getAggregators()) {
             for (int i = 0; i < aggType.length; i++) {
-                if (molapColumnarFactMergerInfo.getAggregators()[i]
-                        .equals(MolapCommonConstants.CUSTOM) || molapColumnarFactMergerInfo
-                        .getAggregators()[i].equals(MolapCommonConstants.DISTINCT_COUNT)) {
+                if (carbonColumnarFactMergerInfo.getAggregators()[i]
+                        .equals(CarbonCommonConstants.CUSTOM) || carbonColumnarFactMergerInfo
+                        .getAggregators()[i].equals(CarbonCommonConstants.DISTINCT_COUNT)) {
                     aggType[i] = "c";
                 } else {
                     aggType[i] = "n";
                 }
             }
         }
-        factReaderInfo.setCubeName(molapColumnarFactMergerInfo.getCubeName());
-        factReaderInfo.setSchemaName(molapColumnarFactMergerInfo.getSchemaName());
-        factReaderInfo.setMeasureCount(molapColumnarFactMergerInfo.getMeasureCount());
-        factReaderInfo.setTableName(molapColumnarFactMergerInfo.getTableName());
-        factReaderInfo.setDimLens(molapColumnarFactMergerInfo.getDimLens());
-        int[] blockIndex = new int[molapColumnarFactMergerInfo.getDimLens().length];
+        factReaderInfo.setCubeName(carbonColumnarFactMergerInfo.getCubeName());
+        factReaderInfo.setSchemaName(carbonColumnarFactMergerInfo.getSchemaName());
+        factReaderInfo.setMeasureCount(carbonColumnarFactMergerInfo.getMeasureCount());
+        factReaderInfo.setTableName(carbonColumnarFactMergerInfo.getTableName());
+        factReaderInfo.setDimLens(carbonColumnarFactMergerInfo.getDimLens());
+        int[] blockIndex = new int[carbonColumnarFactMergerInfo.getDimLens().length];
         for (int i = 0; i < blockIndex.length; i++) {
             blockIndex[i] = i;
         }
@@ -138,13 +138,13 @@ public abstract class ColumnarFactFileMerger {
      *
      * @throws SliceMergerException
      */
-    protected void addRow(MolapSurrogateTupleHolder molapTuple) throws SliceMergerException {
+    protected void addRow(CarbonSurrogateTupleHolder molapTuple) throws SliceMergerException {
         Object[] row = new Object[molapTuple.getMeasures().length + 1];
         System.arraycopy(molapTuple.getMeasures(), 0, row, 0, molapTuple.getMeasures().length);
         row[row.length - 1] = molapTuple.getMdKey();
         try {
             this.dataHandler.addDataToStore(row);
-        } catch (MolapDataWriterException e) {
+        } catch (CarbonDataWriterException e) {
             throw new SliceMergerException("Problem in merging the slice", e);
         }
     }

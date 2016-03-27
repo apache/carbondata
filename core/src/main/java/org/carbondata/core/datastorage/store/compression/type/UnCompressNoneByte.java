@@ -25,8 +25,8 @@ import org.carbondata.core.datastorage.store.compression.Compressor;
 import org.carbondata.core.datastorage.store.compression.SnappyCompression;
 import org.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
 import org.carbondata.core.datastorage.store.compression.ValueCompressonHolder.UnCompressValue;
-import org.carbondata.core.datastorage.store.dataholder.MolapReadDataHolder;
-import org.carbondata.core.util.MolapCoreLogEvent;
+import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
+import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.ValueCompressionUtil;
 import org.carbondata.core.util.ValueCompressionUtil.DataType;
 
@@ -53,7 +53,7 @@ public class UnCompressNoneByte implements UnCompressValue<byte[]> {
         try {
             return (UnCompressValue) clone();
         } catch (CloneNotSupportedException e) {
-            LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, e, e.getMessage());
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, e, e.getMessage());
         }
         return null;
     }
@@ -96,8 +96,8 @@ public class UnCompressNoneByte implements UnCompressValue<byte[]> {
     }
 
     @Override
-    public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
-        MolapReadDataHolder dataHldr = new MolapReadDataHolder();
+    public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {
+        CarbonReadDataHolder dataHldr = new CarbonReadDataHolder();
         double[] vals = new double[value.length];
         for (int i = 0; i < vals.length; i++) {
             vals[i] = value[i];

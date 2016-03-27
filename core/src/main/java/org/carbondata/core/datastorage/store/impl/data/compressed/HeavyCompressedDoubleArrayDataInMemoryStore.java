@@ -22,7 +22,7 @@ package org.carbondata.core.datastorage.store.impl.data.compressed;
 import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.core.datastorage.store.MeasureDataWrapper;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
-import org.carbondata.core.datastorage.store.dataholder.MolapReadDataHolder;
+import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.carbondata.core.datastorage.store.impl.CompressedDataMeasureDataWrapper;
 
 public class HeavyCompressedDoubleArrayDataInMemoryStore
@@ -48,7 +48,7 @@ public class HeavyCompressedDoubleArrayDataInMemoryStore
         if (null == compressionModel) {
             return null;
         }
-        MolapReadDataHolder[] vals = new MolapReadDataHolder[values.length];
+        CarbonReadDataHolder[] vals = new CarbonReadDataHolder[values.length];
         if (cols != null) {
             for (int i = 0; i < cols.length; i++) {
                 vals[cols[i]] =
@@ -72,7 +72,7 @@ public class HeavyCompressedDoubleArrayDataInMemoryStore
         if (null == compressionModel) {
             return null;
         }
-        MolapReadDataHolder[] vals = new MolapReadDataHolder[values.length];
+        CarbonReadDataHolder[] vals = new CarbonReadDataHolder[values.length];
         vals[cols] = values[cols].uncompress(compressionModel.getChangedDataType()[cols])
                 .getValues(compressionModel.getDecimal()[cols],
                         compressionModel.getMaxValue()[cols]);

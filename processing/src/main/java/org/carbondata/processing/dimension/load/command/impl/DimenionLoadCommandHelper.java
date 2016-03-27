@@ -26,20 +26,20 @@ import java.util.Map.Entry;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.file.manager.composite.FileData;
 import org.carbondata.core.file.manager.composite.IFileManagerComposite;
 import org.carbondata.core.file.manager.composite.LoadFolderData;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.metadata.SliceMetaData;
-import org.carbondata.core.util.MolapProperties;
-import org.carbondata.core.util.MolapUtil;
-import org.carbondata.core.util.MolapUtilException;
+import org.carbondata.core.util.CarbonProperties;
+import org.carbondata.core.util.CarbonUtil;
+import org.carbondata.core.util.CarbonUtilException;
 import org.carbondata.processing.dimension.load.info.DimensionLoadInfo;
-import org.carbondata.processing.merger.Util.MolapSliceMergerUtil;
-import org.carbondata.processing.surrogatekeysgenerator.csvbased.MolapCSVBasedDimSurrogateKeyGen;
+import org.carbondata.processing.merger.Util.CarbonSliceMergerUtil;
+import org.carbondata.processing.surrogatekeysgenerator.csvbased.CarbonCSVBasedDimSurrogateKeyGen;
 import org.carbondata.processing.surrogatekeysgenerator.csvbased.RealTimeDataPropertyReader;
-import org.carbondata.processing.util.MolapDataProcessorLogEvent;
+import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.pentaho.di.core.exception.KettleException;
 
 public final class DimenionLoadCommandHelper {
@@ -154,7 +154,7 @@ public final class DimenionLoadCommandHelper {
 
             @Override
             public boolean accept(File pathname) {
-                if (pathname.getName().indexOf(MolapCommonConstants.HIERARCHY_FILE_EXTENSION)
+                if (pathname.getName().indexOf(CarbonCommonConstants.HIERARCHY_FILE_EXTENSION)
                         > -1) {
                     return true;
                 }
@@ -166,7 +166,7 @@ public final class DimenionLoadCommandHelper {
 
             @Override
             public boolean accept(File file) {
-                if (file.getName().indexOf(MolapCommonConstants.HIERARCHY_FILE_EXTENSION + '0')
+                if (file.getName().indexOf(CarbonCommonConstants.HIERARCHY_FILE_EXTENSION + '0')
                         > -1) {
                     return true;
                 }
@@ -175,14 +175,14 @@ public final class DimenionLoadCommandHelper {
         });
 
         Map<String, List<File>> filesMap =
-                new HashMap<String, List<File>>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                new HashMap<String, List<File>>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
         if (null == uniqueHierarchyFiles) {
             return;
         }
 
         for (File uniqueFile : uniqueHierarchyFiles) {
-            List<File> files = new ArrayList<File>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+            List<File> files = new ArrayList<File>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
             String uniqueFilename = uniqueFile.getName();
 
             String uniqueSubstring = uniqueFilename.substring(0, uniqueFilename.length() - 1);
@@ -204,12 +204,12 @@ public final class DimenionLoadCommandHelper {
         for (Entry<String, List<File>> entry : entrySet) {
             List<File> fileToMerge = entry.getValue();
 
-            String sourceFileName = entry.getKey() + MolapCommonConstants.FILE_INPROGRESS_STATUS;
+            String sourceFileName = entry.getKey() + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
             String destFile = baseStorelocation + File.separator + sourceFileName;
             FileData fileData = new FileData(sourceFileName, baseStorelocation);
             fileManager.add(fileData);
 
-            MolapSliceMergerUtil.mergeHierarchyFiles(fileToMerge, new File(destFile),
+            CarbonSliceMergerUtil.mergeHierarchyFiles(fileToMerge, new File(destFile),
                     hierKeyMap.get(entry.getKey()));
 
             deleteFiles(fileToMerge);
@@ -229,7 +229,7 @@ public final class DimenionLoadCommandHelper {
 
             @Override
             public boolean accept(File pathname) {
-                if (pathname.getName().indexOf(MolapCommonConstants.LEVEL_FILE_EXTENSION) > -1) {
+                if (pathname.getName().indexOf(CarbonCommonConstants.LEVEL_FILE_EXTENSION) > -1) {
                     return true;
                 }
                 return false;
@@ -240,7 +240,7 @@ public final class DimenionLoadCommandHelper {
 
             @Override
             public boolean accept(File file) {
-                if (file.getName().endsWith(MolapCommonConstants.LEVEL_FILE_EXTENSION + '0')) {
+                if (file.getName().endsWith(CarbonCommonConstants.LEVEL_FILE_EXTENSION + '0')) {
                     return true;
                 }
                 return false;
@@ -248,14 +248,14 @@ public final class DimenionLoadCommandHelper {
         });
 
         Map<String, List<File>> filesMap =
-                new HashMap<String, List<File>>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                new HashMap<String, List<File>>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
         if (null == uniqueLevelFiles) {
             return;
         }
 
         for (File uniqueFile : uniqueLevelFiles) {
-            List<File> files = new ArrayList<File>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+            List<File> files = new ArrayList<File>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
             String uniqueFilename = uniqueFile.getName();
 
             String uniqueSubString = uniqueFilename.substring(0, uniqueFilename.length() - 1);
@@ -277,12 +277,12 @@ public final class DimenionLoadCommandHelper {
         for (Entry<String, List<File>> entry : entrySet) {
             List<File> fileToMerge = entry.getValue();
 
-            String sourceFileName = entry.getKey() + MolapCommonConstants.FILE_INPROGRESS_STATUS;
+            String sourceFileName = entry.getKey() + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
             String destFile = baseStorelocation + File.separator + sourceFileName;
             FileData fileData = new FileData(sourceFileName, baseStorelocation);
             fileMgrObj.add(fileData);
 
-            MolapSliceMergerUtil.copyMultipleFileToSingleFile(fileToMerge, new File(destFile));
+            CarbonSliceMergerUtil.copyMultipleFileToSingleFile(fileToMerge, new File(destFile));
 
             deleteFiles(fileToMerge);
 
@@ -300,9 +300,9 @@ public final class DimenionLoadCommandHelper {
     private static void deleteFiles(List<File> fileToMerge) throws IOException {
         // after copying delete the source files.
         try {
-            MolapUtil.deleteFiles(fileToMerge.toArray(new File[fileToMerge.size()]));
-        } catch (MolapUtilException e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            CarbonUtil.deleteFiles(fileToMerge.toArray(new File[fileToMerge.size()]));
+        } catch (CarbonUtilException e) {
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "Not able to delete the files" + fileToMerge.toString());
             throw new IOException(e);
         }
@@ -330,7 +330,7 @@ public final class DimenionLoadCommandHelper {
             File destFile = new File(storePath + File.separator + changedFileName);
 
             if (!currentFile.renameTo(destFile)) {
-                LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                         "Not able to rename the level Files to normal format");
                 throw new IOException("Not able to rename the level Files to normal format");
             }
@@ -340,13 +340,13 @@ public final class DimenionLoadCommandHelper {
 
     public static Map<String, Integer> getHierKeyMap(Map<String, KeyGenerator> keyGenerator) {
         Map<String, Integer> hierKeyMap =
-                new HashMap<String, Integer>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                new HashMap<String, Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
         Set<Entry<String, KeyGenerator>> entrySet = keyGenerator.entrySet();
 
         for (Entry<String, KeyGenerator> entry : entrySet) {
             KeyGenerator keyGen = entry.getValue();
-            hierKeyMap.put(entry.getKey() + MolapCommonConstants.HIERARCHY_FILE_EXTENSION,
+            hierKeyMap.put(entry.getKey() + CarbonCommonConstants.HIERARCHY_FILE_EXTENSION,
                     keyGen.getKeySizeInBytes());
         }
 
@@ -363,7 +363,7 @@ public final class DimenionLoadCommandHelper {
      */
     public boolean isDimCacheExist(String[] actualColumns, String tableName,
             Map<String, String[]> columnPropMap, DimensionLoadInfo dimensionLoadInfo) {
-        MolapCSVBasedDimSurrogateKeyGen surrogateKeyGen = dimensionLoadInfo.getSurrogateKeyGen();
+        CarbonCSVBasedDimSurrogateKeyGen surrogateKeyGen = dimensionLoadInfo.getSurrogateKeyGen();
         Map<String, Map<String, Integer>> memberCache = surrogateKeyGen.getMemberCache();
 
         if (null == actualColumns || !(actualColumns.length > 0)) {
@@ -374,7 +374,7 @@ public final class DimenionLoadCommandHelper {
         int actualColCount = 0;
 
         Map<String, Boolean> dimColumnProcessed =
-                new HashMap<String, Boolean>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                new HashMap<String, Boolean>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
         for (String columnName : actualColumns) {
             // For property column need to add check , as for property column files will not be created
@@ -411,7 +411,7 @@ public final class DimenionLoadCommandHelper {
      * @return
      */
     public boolean isHierCacheExist(String hierarichiesName, DimensionLoadInfo dimensionLoadInfo) {
-        MolapCSVBasedDimSurrogateKeyGen surrogateKeyGen = dimensionLoadInfo.getSurrogateKeyGen();
+        CarbonCSVBasedDimSurrogateKeyGen surrogateKeyGen = dimensionLoadInfo.getSurrogateKeyGen();
         Map<String, Int2ObjectMap<int[]>> hierCache = surrogateKeyGen.getHierCache();
 
         Int2ObjectMap<int[]> int2ObjectMap = hierCache.get(hierarichiesName);
@@ -437,9 +437,9 @@ public final class DimenionLoadCommandHelper {
         int restructFolderNumber = currentRestructNumber;
 
         String sliceMetaDataFilePath =
-                storeLocation + File.separator + MolapCommonConstants.RESTRUCTRE_FOLDER
+                storeLocation + File.separator + CarbonCommonConstants.RESTRUCTRE_FOLDER
                         + restructFolderNumber + File.separator + dimensionLoadInfo.getMeta()
-                        .getTableName() + File.separator + MolapUtil
+                        .getTableName() + File.separator + CarbonUtil
                         .getSliceMetaDataFileName(currentRestructNumber);
 
         if (!(new File(sliceMetaDataFilePath).exists())) {
@@ -461,7 +461,7 @@ public final class DimenionLoadCommandHelper {
             } catch (ClassNotFoundException e) {
                 throw new KettleException("SliceMetaData class not found.", e);
             } finally {
-                MolapUtil.closeStreams(fileInputStream, objectInputStream);
+                CarbonUtil.closeStreams(fileInputStream, objectInputStream);
             }
 
             if (null == sliceMetaData.getTableNamesToLoadMandatory()) {
@@ -481,8 +481,8 @@ public final class DimenionLoadCommandHelper {
     private String updateStoreLocationAndPopulateMolapInfo(String schemaName, String cubeName) {
         String tempLocationKey = schemaName + '_' + cubeName;
         String schemaCubeName = schemaName + '/' + cubeName;
-        String storeLocation = MolapProperties.getInstance()
-                .getProperty(tempLocationKey, MolapCommonConstants.STORE_LOCATION_DEFAULT_VAL);
+        String storeLocation = CarbonProperties.getInstance()
+                .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
         File f = new File(storeLocation);
         String absoluteStrPath = f.getAbsolutePath();
         //
@@ -526,11 +526,11 @@ public final class DimenionLoadCommandHelper {
             Map<String, String> levelTypeColumnMap, String tableName, String[] columnNames,
             int[] columnIndex, Map<String, Set<String>> columnAndMemberListMap,
             Map<String, Integer> levelAndCardinalityMap) {
-        MolapCSVBasedDimSurrogateKeyGen surrogateKeyGen = dimensionLoadInfo.getSurrogateKeyGen();
+        CarbonCSVBasedDimSurrogateKeyGen surrogateKeyGen = dimensionLoadInfo.getSurrogateKeyGen();
 
         surrogateKeyGen.setTimDimMax(new int[surrogateKeyGen.getDimsFiles().length]);
         surrogateKeyGen.setTimeDimCache(new HashMap<String, Map<String, Integer>>(
-                MolapCommonConstants.DEFAULT_COLLECTION_SIZE));
+                CarbonCommonConstants.DEFAULT_COLLECTION_SIZE));
 
         if (null == levelTypeColumnMap || levelTypeColumnMap.isEmpty()) {
             return;
@@ -665,7 +665,7 @@ public final class DimenionLoadCommandHelper {
             }
         }
 
-        List<String> records = new ArrayList<String>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+        List<String> records = new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
 
         addRecordsWithQuotesRecursively(data, records);
 
@@ -673,7 +673,7 @@ public final class DimenionLoadCommandHelper {
     }
 
     private String[] getData(String data) {
-        List<String> records = new ArrayList<String>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+        List<String> records = new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
 
         addRecordsWithoutQuotesRecursively(data, records);
 

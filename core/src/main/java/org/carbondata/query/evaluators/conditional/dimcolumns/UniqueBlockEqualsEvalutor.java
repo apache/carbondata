@@ -22,7 +22,7 @@ package org.carbondata.query.evaluators.conditional.dimcolumns;
 import java.util.BitSet;
 
 import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreDataHolder;
-import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.evaluators.BlockDataHolder;
 import org.carbondata.query.evaluators.FilterProcessorPlaceHolder;
 import org.carbondata.query.expression.Expression;
@@ -61,7 +61,7 @@ public class UniqueBlockEqualsEvalutor extends NonUniqueBlockEqualsEvalutor {
         int lastIndex = dataIndex.length == 0 ? numerOfRows - 1 : dataIndex.length / 2 - 1;
         BitSet bitSet = new BitSet(numerOfRows);
         for (int i = 0; i < dimColEvaluatorInfoList.get(0).getFilterValues().length; i++) {
-            int index = MolapUtil.getIndexUsingBinarySearch(keyBlockArray, startIndex, lastIndex,
+            int index = CarbonUtil.getIndexUsingBinarySearch(keyBlockArray, startIndex, lastIndex,
                     dimColEvaluatorInfoList.get(0).getFilterValues()[i]);
             if (index == -1) {
                 continue;

@@ -23,12 +23,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.processing.datatypes.ArrayDataType;
 import org.carbondata.processing.datatypes.GenericDataType;
 import org.carbondata.processing.datatypes.PrimitiveDataType;
 import org.carbondata.processing.datatypes.StructDataType;
-import org.carbondata.processing.util.MolapDataProcessorUtil;
+import org.carbondata.processing.util.CarbonDataProcessorUtil;
 import org.pentaho.di.core.CheckResultInterface;
 import org.pentaho.di.core.Counter;
 import org.pentaho.di.core.database.DatabaseMeta;
@@ -234,7 +234,7 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
     @Override
     public void check(List<CheckResultInterface> remarks, TransMeta transMeta, StepMeta stepMeta,
             RowMetaInterface prev, String[] input, String[] output, RowMetaInterface info) {
-        MolapDataProcessorUtil.checkResult(remarks, stepMeta, input);
+        CarbonDataProcessorUtil.checkResult(remarks, stepMeta, input);
     }
 
     @Override
@@ -419,16 +419,16 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
         }
         Map<String, GenericDataType> complexTypesMap = new LinkedHashMap<String, GenericDataType>();
         String[] hierarchies =
-                complexTypeString.split(MolapCommonConstants.SEMICOLON_SPC_CHARACTER);
+                complexTypeString.split(CarbonCommonConstants.SEMICOLON_SPC_CHARACTER);
         for (int i = 0; i < hierarchies.length; i++) {
-            String[] levels = hierarchies[i].split(MolapCommonConstants.HASH_SPC_CHARACTER);
-            String[] levelInfo = levels[0].split(MolapCommonConstants.COLON_SPC_CHARACTER);
+            String[] levels = hierarchies[i].split(CarbonCommonConstants.HASH_SPC_CHARACTER);
+            String[] levelInfo = levels[0].split(CarbonCommonConstants.COLON_SPC_CHARACTER);
             GenericDataType g = levelInfo[1].equals("Array") ?
                     new ArrayDataType(levelInfo[0], "") :
                     new StructDataType(levelInfo[0], "");
             complexTypesMap.put(levelInfo[0], g);
             for (int j = 1; j < levels.length; j++) {
-                levelInfo = levels[j].split(MolapCommonConstants.COLON_SPC_CHARACTER);
+                levelInfo = levels[j].split(CarbonCommonConstants.COLON_SPC_CHARACTER);
                 switch (levelInfo[1]) {
                 case "Array":
                     g.addChildren(new ArrayDataType(levelInfo[0], levelInfo[2]));

@@ -24,10 +24,10 @@ import java.util.concurrent.Callable;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.processing.sortandgroupby.sortKey.MolapSortKeyException;
+import org.carbondata.processing.sortandgroupby.sortKey.CarbonSortKeyException;
 import org.carbondata.processing.threadbasedmerger.container.Container;
 import org.carbondata.processing.threadbasedmerger.iterator.RecordIterator;
-import org.carbondata.processing.util.MolapDataProcessorLogEvent;
+import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 
 public class ConsumerThread implements Callable<Void> {
     /**
@@ -108,15 +108,15 @@ public class ConsumerThread implements Callable<Void> {
         createRecordHolderQueue(iterators);
         try {
             initialiseHeap(iterators);
-        } catch (MolapSortKeyException e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+        } catch (CarbonSortKeyException e) {
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
                     "Problem while initialising the heap");
         }
         try {
             fillBuffer(false);
             isCurrentFilled = true;
-        } catch (MolapSortKeyException e1) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e1,
+        } catch (CarbonSortKeyException e1) {
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e1,
                     "Problem while Filling the buffer");
         }
         try {
@@ -136,17 +136,17 @@ public class ConsumerThread implements Callable<Void> {
                 }
             }
         } catch (InterruptedException e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
         } catch (Exception e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
         }
-        LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                 "Consumer Thread: " + this.counter + ": Done");
         this.container.setDone(true);
         return null;
     }
 
-    private void initialiseHeap(RecordIterator[] iterators) throws MolapSortKeyException {
+    private void initialiseHeap(RecordIterator[] iterators) throws CarbonSortKeyException {
         //CHECKSTYLE:OFF
         for (RecordIterator iterator : iterators) {
             if (iterator.hasNext()) {
@@ -161,9 +161,9 @@ public class ConsumerThread implements Callable<Void> {
      * This method will be used to get the sorted record from file
      *
      * @return sorted record sorted record
-     * @throws MolapSortKeyException
+     * @throws CarbonSortKeyException
      */
-    private void fillBuffer(boolean isBackupFilling) throws MolapSortKeyException {
+    private void fillBuffer(boolean isBackupFilling) throws CarbonSortKeyException {
         if (producerCounter < 1) {
             if (isBackupFilling) {
                 backupBuffer = null;

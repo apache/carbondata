@@ -29,7 +29,7 @@ import java.util.Properties;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.integration.spark.util.MolapSparkInterFaceLogEvent;
+import org.carbondata.integration.spark.util.CarbonSparkInterFaceLogEvent;
 
 public final class DataPartitionerProperties {
     private static final LogService LOGGER =
@@ -73,14 +73,14 @@ public final class DataPartitionerProperties {
                 props.load(fis);
             }
         } catch (Exception e) {
-            LOGGER.error(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, e,
+            LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, e,
                     e.getMessage());
         } finally {
             if (null != fis) {
                 try {
                     fis.close();
                 } catch (IOException e) {
-                    LOGGER.error(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, e,
+                    LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, e,
                             e.getMessage());
                 }
             }

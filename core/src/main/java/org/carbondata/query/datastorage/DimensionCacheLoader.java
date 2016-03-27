@@ -25,20 +25,16 @@ import java.util.List;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.datastorage.store.filesystem.MolapFile;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
-import org.carbondata.core.olap.MolapDef;
+import org.carbondata.core.carbon.CarbonDef;
 import org.carbondata.query.datastorage.streams.DataInputStream;
 import org.carbondata.query.util.CacheUtil;
-import org.carbondata.query.util.MolapDataInputStreamFactory;
-import org.carbondata.query.util.MolapEngineLogEvent;
-
-//import org.carbondata.core.datastorage.store.FileHolder;
-//import org.carbondata.core.engine.scanner.Scanner;
-//import org.carbondata.core.engine.scanner.impl.KeyValue;
+import org.carbondata.query.util.CarbonDataInputStreamFactory;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 
 public final class DimensionCacheLoader {
     /**
@@ -258,14 +254,14 @@ public final class DimensionCacheLoader {
         String fileName =
                 hierC.getDimensionName().replaceAll(" ", "_") + '_' + hierC.getTableName();
         //
-        MolapFile file = FileFactory.getMolapFile(fileStore, FileFactory.getFileType(fileStore));
+        CarbonFile file = FileFactory.getMolapFile(fileStore, FileFactory.getFileType(fileStore));
         if (file.isDirectory()) {
             // Read from the base location.
             String baseLocation = fileStore + File.separator + fileName;
             //            MolapFile baseFile = FileFactory.getMolapFile(baseLocation, FileFactory.getFileType());
             if (FileFactory.isFileExist(baseLocation, FileFactory.getFileType(baseLocation))) {
                 //
-                DataInputStream factStream = MolapDataInputStreamFactory
+                DataInputStream factStream = CarbonDataInputStreamFactory
                         .getDataInputStream(baseLocation, keyGen.getKeySizeInBytes(), 0, false,
                                 fileStore, fileName, FileFactory.getFileType(fileStore));
                 factStream.initInput();
@@ -276,12 +272,12 @@ public final class DimensionCacheLoader {
         }
     }
 
-    private static KeyGenerator getKeyGenerator(MolapDef.Hierarchy rolapHierarchy) {
-        MolapDef.Level[] levels = rolapHierarchy.levels;
+    private static KeyGenerator getKeyGenerator(CarbonDef.Hierarchy rolapHierarchy) {
+        CarbonDef.Level[] levels = rolapHierarchy.levels;
         int levelSize = levels.length;
         int[] lens = new int[levelSize];
         int i = 0;
-        for (MolapDef.Level level : levels) {
+        for (CarbonDef.Level level : levels) {
             //            if(!level.isAll())
             //            {
             lens[i++] = level.levelCardinality;
@@ -361,11 +357,11 @@ public final class DimensionCacheLoader {
 
         String fileName = tableName + '_' + levelCache.getColumnName();
         //
-        MolapFile file = FileFactory.getMolapFile(fileStore, FileFactory.getFileType(fileStore));
+        CarbonFile file = FileFactory.getMolapFile(fileStore, FileFactory.getFileType(fileStore));
         if (file.isDirectory()) {
             // Read from the base location.
             String baseLocation = fileStore + File.separator + fileName
-                    + MolapCommonConstants.LEVEL_FILE_EXTENSION;
+                    + CarbonCommonConstants.LEVEL_FILE_EXTENSION;
             String baseLocationForGlobalKeys =
                     fileStore + File.separator + fileName + ".globallevel";
             String baseLocationForsortIndex = fileStore + File.separator + fileName;
@@ -385,7 +381,7 @@ public final class DimensionCacheLoader {
                     }
                 }
             } catch (IOException e) {
-                LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
+                LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
             }
         }
 

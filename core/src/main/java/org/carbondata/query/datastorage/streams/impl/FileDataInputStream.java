@@ -30,13 +30,13 @@ import java.util.List;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.metadata.LeafNodeInfoColumnar;
 import org.carbondata.core.util.ValueCompressionUtil;
 import org.carbondata.query.schema.metadata.Pair;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 
 public class FileDataInputStream extends AbstractFileDataInputStream {
 
@@ -145,7 +145,7 @@ public class FileDataInputStream extends AbstractFileDataInputStream {
     public void initInput() {
         //
         try {
-            LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                     "Reading from file: " + filesLocation);
             FileInputStream fileInputStream = new FileInputStream(filesLocation);
             channel = fileInputStream.getChannel();
@@ -153,20 +153,20 @@ public class FileDataInputStream extends AbstractFileDataInputStream {
             // Don't need the following calculation for hierarchy file
             // Hence ignore for hierarchy files
             if (!filesLocation.endsWith(HIERARCHY_FILE_EXTENSION)) {
-                fileSize = channel.size() - MolapCommonConstants.LONG_SIZE_IN_BYTE;
+                fileSize = channel.size() - CarbonCommonConstants.LONG_SIZE_IN_BYTE;
                 offSet = fileHolder.readDouble(filesLocation, fileSize);
                 //
                 valueCompressionModel = ValueCompressionUtil.getValueCompressionModel(
                         this.persistenceFileLocation
-                                + MolapCommonConstants.MEASURE_METADATA_FILE_NAME + tableName
-                                + MolapCommonConstants.MEASUREMETADATA_FILE_EXT, msrCount);
+                                + CarbonCommonConstants.MEASURE_METADATA_FILE_NAME + tableName
+                                + CarbonCommonConstants.MEASUREMETADATA_FILE_EXT, msrCount);
                 this.totalMetaDataLength = (int) (fileSize - offSet);
             }
         } catch (FileNotFoundException f) {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                     "@@@@ Hirarchy file is missing @@@@ : " + filesLocation);
         } catch (IOException e) {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                     "@@@@ Error while reading hirarchy @@@@ : " + filesLocation);
         }
     }
@@ -181,7 +181,7 @@ public class FileDataInputStream extends AbstractFileDataInputStream {
     public List<LeafNodeInfoColumnar> getLeafNodeInfoColumnar() {
         //
         List<LeafNodeInfoColumnar> listOfNodeInfo =
-                new ArrayList<LeafNodeInfoColumnar>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+                new ArrayList<LeafNodeInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
         ByteBuffer buffer = ByteBuffer
                 .wrap(this.fileHolder.readByteArray(filesLocation, offSet, totalMetaDataLength));
         buffer.rewind();
@@ -309,7 +309,7 @@ public class FileDataInputStream extends AbstractFileDataInputStream {
             try {
                 channel.close();
             } catch (IOException e) {
-                LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
+                LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
                         "Could not close input stream for location : " + filesLocation);
             }
         }
@@ -321,7 +321,7 @@ public class FileDataInputStream extends AbstractFileDataInputStream {
             try {
                 in.close();
             } catch (IOException e) {
-                LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
+                LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
                         "Could not close input stream for location : " + filesLocation);
             }
         }
@@ -354,7 +354,7 @@ public class FileDataInputStream extends AbstractFileDataInputStream {
             }
 
         } catch (IOException e) {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
                     "Problem While Reading the Hier File : ");
         }
         return null;

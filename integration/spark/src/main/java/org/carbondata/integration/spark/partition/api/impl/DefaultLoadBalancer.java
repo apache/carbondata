@@ -33,7 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.integration.spark.partition.api.Partition;
 
 /**
@@ -41,10 +41,10 @@ import org.carbondata.integration.spark.partition.api.Partition;
  */
 public class DefaultLoadBalancer {
     private Map<String, List<Partition>> nodeToPartitonMap =
-            new HashMap<String, List<Partition>>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+            new HashMap<String, List<Partition>>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
     private Map<Partition, String> partitonToNodeMap =
-            new HashMap<Partition, String>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+            new HashMap<Partition, String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
     public DefaultLoadBalancer(List<String> nodes, List<Partition> partitions) {
         //Per form a round robin allocation
@@ -57,7 +57,7 @@ public class DefaultLoadBalancer {
 
             List<Partition> oldList = nodeToPartitonMap.get(node);
             if (oldList == null) {
-                oldList = new ArrayList<Partition>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+                oldList = new ArrayList<Partition>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
                 nodeToPartitonMap.put(node, oldList);
             }
             oldList.add(partition);

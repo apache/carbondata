@@ -35,13 +35,13 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.metadata.LeafNodeInfoColumnar;
-import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.ValueCompressionUtil;
 import org.carbondata.query.schema.metadata.Pair;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
  * @author R00900208
@@ -151,7 +151,7 @@ public class HDFSFileDataInputStream extends AbstractFileDataInputStream {
     public void initInput() {
         //
         try {
-            LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                     "Reading from file: " + filesLocation);
             Path pt = new Path(filesLocation);
             FileSystem fs = pt.getFileSystem(new Configuration());
@@ -160,20 +160,20 @@ public class HDFSFileDataInputStream extends AbstractFileDataInputStream {
             // Hence ignore for hierarchy files
             if (!filesLocation.endsWith(HIERARCHY_FILE_EXTENSION)) {
                 FileStatus fileStatus = fs.getFileStatus(pt);
-                fileSize = fileStatus.getLen() - MolapCommonConstants.LONG_SIZE_IN_BYTE;
+                fileSize = fileStatus.getLen() - CarbonCommonConstants.LONG_SIZE_IN_BYTE;
                 offSet = fileHolder.readDouble(filesLocation, fileSize);
                 //
                 valueCompressionModel = ValueCompressionUtil.getValueCompressionModel(
                         this.persistenceFileLocation
-                                + MolapCommonConstants.MEASURE_METADATA_FILE_NAME + tableName
-                                + MolapCommonConstants.MEASUREMETADATA_FILE_EXT, msrCount);
+                                + CarbonCommonConstants.MEASURE_METADATA_FILE_NAME + tableName
+                                + CarbonCommonConstants.MEASUREMETADATA_FILE_EXT, msrCount);
                 this.totalMetaDataLength = (int) (fileSize - offSet);
             }
         } catch (FileNotFoundException fe) {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                     "@@@@ Hirarchy file is missing @@@@ : " + filesLocation);
         } catch (IOException ex) {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                     "@@@@ Error while reading hirarchy @@@@ : " + filesLocation);
         }
     }
@@ -192,7 +192,7 @@ public class HDFSFileDataInputStream extends AbstractFileDataInputStream {
             try {
                 fsChannel.close();
             } catch (IOException ex) {
-                LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, ex,
+                LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, ex,
                         "Could not close input stream for location : " + filesLocation);
             }
         }
@@ -212,7 +212,7 @@ public class HDFSFileDataInputStream extends AbstractFileDataInputStream {
     public List<LeafNodeInfoColumnar> getLeafNodeInfoColumnar() {
         //
         List<LeafNodeInfoColumnar> listOfNodeInfo =
-                new ArrayList<LeafNodeInfoColumnar>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+                new ArrayList<LeafNodeInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
         ByteBuffer buffer = ByteBuffer
                 .wrap(this.fileHolder.readByteArray(filesLocation, offSet, totalMetaDataLength));
         buffer.rewind();
@@ -226,7 +226,7 @@ public class HDFSFileDataInputStream extends AbstractFileDataInputStream {
             nodeInfo.setFileName(this.filesLocation);
             nodeInfo.setNumberOfKeys(buffer.getInt());
             int keySplitValue = buffer.getInt();
-            MolapUtil.setInfo(buffer, nodeInfo, startKey, endKey, keySplitValue);
+            CarbonUtil.setInfo(buffer, nodeInfo, startKey, endKey, keySplitValue);
             for (int j = 0; j < this.msrCount; j++) {
                 msrLength[j] = buffer.getInt();
                 msrOffset[j] = buffer.getLong();
@@ -290,7 +290,7 @@ public class HDFSFileDataInputStream extends AbstractFileDataInputStream {
             }
 
         } catch (IOException exception) {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, exception,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, exception,
                     "Problem While Reading the Hier File : ");
         }
         return null;

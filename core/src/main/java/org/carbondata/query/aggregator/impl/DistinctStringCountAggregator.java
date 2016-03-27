@@ -28,8 +28,8 @@ import java.nio.charset.Charset;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.datastorage.store.dataholder.MolapReadDataHolder;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.carbondata.query.aggregator.MeasureAggregator;
 
 public class DistinctStringCountAggregator implements MeasureAggregator {
@@ -38,7 +38,7 @@ public class DistinctStringCountAggregator implements MeasureAggregator {
     private Set<String> valueSetForStr;
 
     public DistinctStringCountAggregator() {
-        this.valueSetForStr = new HashSet<String>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+        this.valueSetForStr = new HashSet<String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     }
 
     public void agg(double newVal) {
@@ -138,7 +138,7 @@ public class DistinctStringCountAggregator implements MeasureAggregator {
     }
 
     @Override
-    public void agg(MolapReadDataHolder newVal, int index) {
+    public void agg(CarbonReadDataHolder newVal, int index) {
         //        valueSetForStr.add(newVal.getReadableDoubleValueByIndex(index));
     }
 

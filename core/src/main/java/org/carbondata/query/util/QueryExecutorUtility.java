@@ -23,17 +23,17 @@ import java.math.BigDecimal;
 import java.util.*;
 import java.util.Map.Entry;
 
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.keygenerator.columnar.impl.MultiDimKeyVarLengthEquiSplitGenerator;
-import org.carbondata.core.metadata.MolapMetadata;
-import org.carbondata.core.metadata.MolapMetadata.Dimension;
-import org.carbondata.core.metadata.MolapMetadata.Measure;
+import org.carbondata.core.metadata.CarbonMetadata;
+import org.carbondata.core.metadata.CarbonMetadata.Dimension;
+import org.carbondata.core.metadata.CarbonMetadata.Measure;
 import org.carbondata.core.metadata.SliceMetaData;
-import org.carbondata.core.olap.SqlStatement;
-import org.carbondata.core.olap.SqlStatement.Type;
-import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.carbon.SqlStatement;
+import org.carbondata.core.carbon.SqlStatement.Type;
+import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.vo.HybridStoreModel;
 import org.carbondata.query.aggregator.dimension.DimensionAggregatorInfo;
 import org.carbondata.query.cache.QueryExecutorUtil;
@@ -41,8 +41,8 @@ import org.carbondata.query.complex.querytypes.ArrayQueryType;
 import org.carbondata.query.complex.querytypes.GenericQueryType;
 import org.carbondata.query.complex.querytypes.PrimitiveQueryType;
 import org.carbondata.query.complex.querytypes.StructQueryType;
-import org.carbondata.query.datastorage.CubeDataStore;
-import org.carbondata.query.datastorage.InMemoryCube;
+import org.carbondata.query.datastorage.TableDataStore;
+import org.carbondata.query.datastorage.InMemoryTable;
 import org.carbondata.query.datastorage.Member;
 import org.carbondata.query.datastorage.MemberStore;
 import org.carbondata.query.executer.exception.QueryExecutionException;
@@ -55,7 +55,7 @@ public final class QueryExecutorUtility {
     }
 
     public static Object[] updateUniqueForSlices(String factTable, boolean isAgg,
-            List<InMemoryCube> slices, SqlStatement.Type[] dataTypes) {
+            List<InMemoryTable> slices, SqlStatement.Type[] dataTypes) {
         List<SliceUniqueValueInfo> sliceUniqueValueInfos =
                 new ArrayList<SliceUniqueValueInfo>(null != slices ? slices.size() : 0);
 
@@ -68,7 +68,7 @@ public final class QueryExecutorUtility {
     }
 
     public static Object[] getMinValueOfSlices(String factTable, boolean isAgg,
-            List<InMemoryCube> slices, SqlStatement.Type[] dataTypes) {
+            List<InMemoryTable> slices, SqlStatement.Type[] dataTypes) {
         List<SliceUniqueValueInfo> sliceMinValueInfos =
                 new ArrayList<SliceUniqueValueInfo>(null != slices ? slices.size() : 0);
         processUniqueAndMinValueInfo(factTable, sliceMinValueInfos, false, isAgg, slices);
@@ -81,12 +81,12 @@ public final class QueryExecutorUtility {
 
     private static void processUniqueAndMinValueInfo(String factTable,
             List<SliceUniqueValueInfo> sliceUniqueValueInfos, boolean uniqueValue, boolean isAgg,
-            List<InMemoryCube> slices) {
+            List<InMemoryTable> slices) {
         SliceUniqueValueInfo sliceUniqueValueInfo = null;
         SliceMetaData sliceMataData = null;
         if (slices != null) {
             for (int i = 0; i < slices.size(); i++) {
-                CubeDataStore dataCache = slices.get(i).getDataCache(factTable);
+                TableDataStore dataCache = slices.get(i).getDataCache(factTable);
                 if (null != dataCache) {
                     sliceMataData = slices.get(i).getRsStore().getSliceMetaCache(factTable);
                     Object[] currentUniqueValue = null;
@@ -185,7 +185,7 @@ public final class QueryExecutorUtility {
      */
     public static List<Measure> getOriginalMeasures(List<Measure> msrs, List<Measure> allMsrs) {
         List<Measure> updated =
-                new ArrayList<MolapMetadata.Measure>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                new ArrayList<CarbonMetadata.Measure>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         for (Measure currMsr : msrs) {
             for (Measure orgMsr : allMsrs) {
                 if (currMsr.getOrdinal() == orgMsr.getOrdinal()) {
@@ -198,14 +198,14 @@ public final class QueryExecutorUtility {
     }
 
     public static boolean updateFilterForOlderSlice(Map<Dimension, List<Integer>> dimensionFilter,
-            Dimension[] currentDimeTables, List<InMemoryCube> slices) {
+            Dimension[] currentDimeTables, List<InMemoryTable> slices) {
         if (dimensionFilter.size() < 1) {
             return true;
         }
         boolean isExecutionRequired = false;
         List<Entry<Dimension, List<Integer>>> entryList =
                 new ArrayList<Entry<Dimension, List<Integer>>>(
-                        MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                        CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         for (Entry<Dimension, List<Integer>> entry : dimensionFilter.entrySet()) {
             boolean isFound = false;
             Dimension dim = entry.getKey();
@@ -398,7 +398,7 @@ public final class QueryExecutorUtility {
         //        return selectedDimsIndex;
         // updated for block index size with complex types
         Set<Integer> allQueryDimension =
-                new LinkedHashSet<Integer>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                new LinkedHashSet<Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         //                new TreeSet<Integer>(new Comparator<Integer>(){
         //            public int compare(Integer a, Integer b){
         //                return a.compareTo(b);
@@ -562,7 +562,7 @@ public final class QueryExecutorUtility {
     public static void getComplexDimensionsKeySize(
             Map<String, GenericQueryType> complexDimensionsMap, int[] dimensionCardinality) {
         int keyBlockSize[] = new MultiDimKeyVarLengthEquiSplitGenerator(
-                MolapUtil.getIncrementedCardinalityFullyFilled(dimensionCardinality), (byte) 1)
+                CarbonUtil.getIncrementedCardinalityFullyFilled(dimensionCardinality), (byte) 1)
                 .getBlockKeySize();
         for (Entry<String, GenericQueryType> entry : complexDimensionsMap.entrySet()) {
             entry.getValue().setKeySize(keyBlockSize);
@@ -599,7 +599,7 @@ public final class QueryExecutorUtility {
             List<DimensionAggregatorInfo> dimAggInfo, List<Dimension> fromCustomExps) {
         //Updated to get multiple column blocks for complex types
         Set<Integer> allQueryDimension =
-                new LinkedHashSet<Integer>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                new LinkedHashSet<Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         for (int i = 0; i < queryDims.length; i++) {
             if (queryDims[i].getAllApplicableDataBlockIndexs().length > 1) {
                 for (int eachBlockIndex : queryDims[i].getAllApplicableDataBlockIndexs()) {
@@ -639,7 +639,7 @@ public final class QueryExecutorUtility {
             List<DimensionAggregatorInfo> dimAggInfo, List<Dimension> fromCustomExps,
             HybridStoreModel hybridStoreModel) {
         Set<Integer> allQueryDimension =
-                new HashSet<Integer>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                new HashSet<Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         for (int i = 0; i < queryDims.length; i++) {
             allQueryDimension.add(hybridStoreModel.getStoreIndex(queryDims[i].getOrdinal()));
         }
@@ -661,7 +661,7 @@ public final class QueryExecutorUtility {
     public static int[] getAllSelectedMeasureOrdinals(Measure[] queryMeasure,
             List<Measure> filterExpMeasures, String[] strings) {
         Set<Integer> allQueryMeasures =
-                new HashSet<Integer>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                new HashSet<Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         for (int i = 0; i < queryMeasure.length; i++) {
             if (isNewMeasure(strings, queryMeasure[i]) > -1) {
                 allQueryMeasures.add(queryMeasure[i].getOrdinal());
@@ -703,9 +703,9 @@ public final class QueryExecutorUtility {
     }
 
     public static Member getMemberBySurrogateKey(Dimension columnName, int surrogate,
-            List<InMemoryCube> slices) {
+            List<InMemoryTable> slices) {
         MemberStore store = null;
-        for (InMemoryCube slice : slices) {
+        for (InMemoryTable slice : slices) {
             store = slice.getMemberCache(
                     columnName.getTableName() + '_' + columnName.getColName() + '_' + columnName
                             .getDimName() + '_' + columnName.getHierName());
@@ -720,9 +720,9 @@ public final class QueryExecutorUtility {
     }
 
     public static Member getActualMemberBySortedKey(Dimension columnName, int surrogate,
-            List<InMemoryCube> slices) {
+            List<InMemoryTable> slices) {
         MemberStore store = null;
-        for (InMemoryCube slice : slices) {
+        for (InMemoryTable slice : slices) {
             store = slice.getMemberCache(
                     columnName.getTableName() + '_' + columnName.getColName() + '_' + columnName
                             .getDimName() + '_' + columnName.getHierName());
@@ -752,7 +752,7 @@ public final class QueryExecutorUtility {
     //    }
 
     public static Member getMemberBySurrogateKey(Dimension columnName, int surrogate,
-            List<InMemoryCube> slices, int currentSliceIndex) {
+            List<InMemoryTable> slices, int currentSliceIndex) {
         MemberStore store = null;
         for (int i = 0; i <= currentSliceIndex; i++) {
             store = slices.get(i).getMemberCache(

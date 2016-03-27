@@ -24,7 +24,7 @@ import java.util.Map;
 
 import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreDataHolder;
 import org.carbondata.core.util.ByteUtil;
-import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.evaluators.AbstractConditionalEvalutor;
 import org.carbondata.query.evaluators.BlockDataHolder;
 import org.carbondata.query.evaluators.FilterProcessorPlaceHolder;
@@ -115,7 +115,7 @@ public class NonUniqueBlockNotEqualsEvaluator extends AbstractConditionalEvaluto
         bitSet.flip(0, numerOfRows);
         byte[][] filterValues = dimColEvaluatorInfoList.get(0).getFilterValues();
         for (int i = 0; i < filterValues.length; i++) {
-            startKey = MolapUtil
+            startKey = CarbonUtil
                     .getFirstIndexUsingBinarySearch(keyBlockArray, startIndex, numerOfRows - 1,
                             filterValues[i]);
             if (startKey == -1) {
@@ -151,7 +151,7 @@ public class NonUniqueBlockNotEqualsEvaluator extends AbstractConditionalEvaluto
         int startIndex = 0;
         byte[][] filterValues = dimColEvaluatorInfoList.get(0).getFilterValues();
         for (int k = 0; k < filterValues.length; k++) {
-            startKey = MolapUtil
+            startKey = CarbonUtil
                     .getFirstIndexUsingBinarySearch(keyBlockArray, startIndex, numerOfRows - 1,
                             filterValues[k]);
             if (startKey == -1) {

@@ -35,11 +35,11 @@ import java.util.*;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.integration.spark.partition.api.DataPartitioner;
 import org.carbondata.integration.spark.partition.api.Partition;
-import org.carbondata.integration.spark.query.MolapQueryPlan;
-import org.carbondata.integration.spark.util.MolapSparkInterFaceLogEvent;
+import org.carbondata.integration.spark.query.CarbonQueryPlan;
+import org.carbondata.integration.spark.util.CarbonSparkInterFaceLogEvent;
 
 import org.apache.spark.sql.cubemodel.Partitioner;
 
@@ -50,9 +50,9 @@ public final class QueryPartitionHelper {
     private Properties properties;
     private String defaultPartitionerClass;
     private Map<String, DataPartitioner> partitionerMap =
-            new HashMap<String, DataPartitioner>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+            new HashMap<String, DataPartitioner>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     private Map<String, DefaultLoadBalancer> loadBalancerMap =
-            new HashMap<String, DefaultLoadBalancer>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+            new HashMap<String, DefaultLoadBalancer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
     private QueryPartitionHelper() {
 
@@ -77,14 +77,14 @@ public final class QueryPartitionHelper {
                 properties.load(fis);
             }
         } catch (Exception e) {
-            LOGGER.error(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, e,
+            LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, e,
                     e.getMessage());
         } finally {
             if (null != fis) {
                 try {
                     fis.close();
                 } catch (IOException e) {
-                    LOGGER.error(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, e,
+                    LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, e,
                             e.getMessage());
                 }
             }
@@ -106,11 +106,11 @@ public final class QueryPartitionHelper {
             defaultPartitionerClass = properties.getProperty("partitionerClass",
                    "org.carbondata.integration.spark.partition.api.impl.SampleDataPartitionerImpl");
 
-            LOGGER.info(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+            LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
                     this.getClass().getSimpleName() + " is using following configurations.");
-            LOGGER.info(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+            LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
                     "partitionerClass : " + defaultPartitionerClass);
-            LOGGER.info(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+            LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
                     "nodeList : " + Arrays.toString(partitioner.nodeList()));
         }
 
@@ -127,13 +127,13 @@ public final class QueryPartitionHelper {
                 partitionerMap.put(cubeUniqueName, dataPartitioner);
                 loadBalancerMap.put(cubeUniqueName, loadBalancer);
             } catch (ClassNotFoundException e) {
-                LOGGER.error(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, e,
+                LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, e,
                         e.getMessage());
             } catch (InstantiationException e) {
-                LOGGER.error(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, e,
+                LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, e,
                         e.getMessage());
             } catch (IllegalAccessException e) {
-                LOGGER.error(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, e,
+                LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG, e,
                         e.getMessage());
             }
         }
@@ -142,7 +142,7 @@ public final class QueryPartitionHelper {
     /**
      * Get partitions applicable for query based on filters applied in query
      */
-    public List<Partition> getPartitionsForQuery(MolapQueryPlan queryPlan,
+    public List<Partition> getPartitionsForQuery(CarbonQueryPlan queryPlan,
             Partitioner partitioner) {
         String cubeUniqueName = queryPlan.getSchemaName() + '_' + queryPlan.getCubeName();
         checkInitialization(cubeUniqueName, partitioner);

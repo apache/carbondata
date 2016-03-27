@@ -27,8 +27,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.util.MolapProperties;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.core.util.CarbonProperties;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
  * This class analyze history query and checks if it meets the criteria. If it meets than it will add to normalized query list
@@ -56,17 +56,17 @@ public class QueryNormalizer {
 
     public QueryNormalizer() {
         String confPerformanceGoal =
-                MolapProperties.getInstance().getProperty(Preference.PERFORMANCE_GOAL_KEY);
+                CarbonProperties.getInstance().getProperty(Preference.PERFORMANCE_GOAL_KEY);
         if (null != confPerformanceGoal) {
             performanceGoal = Integer.parseInt(confPerformanceGoal);
         }
         String confQueryExpiryDay =
-                MolapProperties.getInstance().getProperty(Preference.QUERY_STATS_EXPIRY_DAYS_KEY);
+                CarbonProperties.getInstance().getProperty(Preference.QUERY_STATS_EXPIRY_DAYS_KEY);
         if (null != confQueryExpiryDay) {
             queryExpiryDays = Integer.parseInt(confQueryExpiryDay);
         }
         String confBenefitRatio =
-                MolapProperties.getInstance().getProperty(Preference.BENEFIT_RATIO_KEY);
+                CarbonProperties.getInstance().getProperty(Preference.BENEFIT_RATIO_KEY);
 
         if (null != confBenefitRatio) {
             benefitRatio = Integer.parseInt(confBenefitRatio);
@@ -76,14 +76,14 @@ public class QueryNormalizer {
 
     public boolean addQueryDetail(QueryDetail queryDetail) {
         if (queryDetail.getRecordSize() == 0) {
-            LOGGER.debug(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.debug(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                     "Filtering query as its result size is 0");
             return false;
         }
         int actualBenefitRatio =
                 (int) (queryDetail.getNoOfRowsScanned() / queryDetail.getRecordSize());
         if (actualBenefitRatio < benefitRatio) {
-            LOGGER.debug(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.debug(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                     "Filtering query as it doesn't meet benefit ration criteria");
             return false;
         }
@@ -149,7 +149,7 @@ public class QueryNormalizer {
                     TimeUnit.MILLISECONDS.toSeconds(queryDetail.getTotalExecutionTime())
                             - performanceGoal;
             if (performanceGap < 0) {
-                LOGGER.debug(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                LOGGER.debug(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                         "Filtering query as it doesn't meet performance goal criteria");
                 itr.remove();
                 continue;

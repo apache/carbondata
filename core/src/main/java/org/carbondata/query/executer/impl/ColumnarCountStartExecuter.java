@@ -21,11 +21,11 @@ package org.carbondata.query.executer.impl;
 
 import java.util.List;
 
-import org.carbondata.core.iterator.MolapIterator;
+import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.aggregator.impl.CountAggregator;
-import org.carbondata.query.datastorage.CubeDataStore;
-import org.carbondata.query.datastorage.InMemoryCube;
+import org.carbondata.query.datastorage.TableDataStore;
+import org.carbondata.query.datastorage.InMemoryTable;
 import org.carbondata.query.executer.SliceExecuter;
 import org.carbondata.query.executer.exception.QueryExecutionException;
 import org.carbondata.query.executer.pagination.impl.QueryResult;
@@ -34,21 +34,21 @@ import org.carbondata.query.schema.metadata.SliceExecutionInfo;
 import org.carbondata.query.wrappers.ByteArrayWrapper;
 
 public class ColumnarCountStartExecuter implements SliceExecuter {
-    private List<InMemoryCube> slices;
+    private List<InMemoryTable> slices;
 
     private String tableName;
 
-    public ColumnarCountStartExecuter(List<InMemoryCube> slices, String tableName) {
+    public ColumnarCountStartExecuter(List<InMemoryTable> slices, String tableName) {
         this.slices = slices;
         this.tableName = tableName;
     }
 
     @Override
-    public MolapIterator<QueryResult> executeSlices(List<SliceExecutionInfo> infos,
+    public CarbonIterator<QueryResult> executeSlices(List<SliceExecutionInfo> infos,
             int[] sliceIndex) throws QueryExecutionException {
         long count = 0;
-        for (InMemoryCube slice : slices) {
-            CubeDataStore dataCache = slice.getDataCache(this.tableName);
+        for (InMemoryTable slice : slices) {
+            TableDataStore dataCache = slice.getDataCache(this.tableName);
             if (null != dataCache) {
                 count += dataCache.getData().size();
             }

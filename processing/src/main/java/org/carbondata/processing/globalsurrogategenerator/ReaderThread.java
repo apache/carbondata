@@ -22,12 +22,12 @@ package org.carbondata.processing.globalsurrogategenerator;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-import org.carbondata.core.datastorage.store.filesystem.MolapFile;
+import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 
 public class ReaderThread implements Callable<Map<String, Integer>> {
-    MolapFile file;
+    CarbonFile file;
 
-    public ReaderThread(MolapFile file) {
+    public ReaderThread(CarbonFile file) {
         this.file = file;
     }
 

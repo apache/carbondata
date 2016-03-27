@@ -24,22 +24,22 @@ import java.util.List;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.metadata.LeafNodeInfo;
 import org.carbondata.core.metadata.LeafNodeInfoColumnar;
-import org.carbondata.core.metadata.MolapMetadata.Cube;
-import org.carbondata.core.util.MolapProperties;
+import org.carbondata.core.metadata.CarbonMetadata.Cube;
+import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.vo.HybridStoreModel;
 import org.carbondata.query.datastorage.storeInterfaces.DataStore;
 import org.carbondata.query.datastorage.storeInterfaces.DataStoreBlock;
 import org.carbondata.query.datastorage.storeInterfaces.KeyValue;
 import org.carbondata.query.datastorage.streams.DataInputStream;
 import org.carbondata.query.scanner.Scanner;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 
 //import org.carbondata.core.engine.datastorage.Pair;
 
@@ -159,14 +159,14 @@ public class CSBTree implements DataStore {
         this.hybridStoreModel = hybridStoreModel;
 
         // TODO Need to account for page headers and other fields
-        upperMaxEntry = Integer.parseInt(MolapProperties.getInstance()
+        upperMaxEntry = Integer.parseInt(CarbonProperties.getInstance()
                 .getProperty("com.huawei.datastore.internalnodesize", DEFAULT_PAGESIZE + ""));
         upperMaxChildren = upperMaxEntry;
 
         // TODO Need to account for page headers and other fields
-        leafMaxEntry = Integer.parseInt(MolapProperties.getInstance()
-                .getProperty(MolapCommonConstants.LEAFNODE_SIZE,
-                        MolapCommonConstants.LEAFNODE_SIZE_DEFAULT_VAL));
+        leafMaxEntry = Integer.parseInt(CarbonProperties.getInstance()
+                .getProperty(CarbonCommonConstants.LEAFNODE_SIZE,
+                        CarbonCommonConstants.LEAFNODE_SIZE_DEFAULT_VAL));
 
         //        dataFolderLoc = MondrianProperties.instance().getProperty("com.huawei.datastore.datalocation", "D:/data");
        /* isFileStore = Boolean.parseBoolean(MondrianProperties.instance().getProperty(
@@ -188,14 +188,14 @@ public class CSBTree implements DataStore {
         this.tableName = tableName;
 
         // TODO Need to account for page headers and other fields
-        upperMaxEntry = Integer.parseInt(MolapProperties.getInstance()
+        upperMaxEntry = Integer.parseInt(CarbonProperties.getInstance()
                 .getProperty("com.huawei.datastore.internalnodesize", DEFAULT_PAGESIZE + ""));
         upperMaxChildren = upperMaxEntry;
 
         // TODO Need to account for page headers and other fields
-        leafMaxEntry = Integer.parseInt(MolapProperties.getInstance()
-                .getProperty(MolapCommonConstants.LEAFNODE_SIZE,
-                        MolapCommonConstants.LEAFNODE_SIZE_DEFAULT_VAL));
+        leafMaxEntry = Integer.parseInt(CarbonProperties.getInstance()
+                .getProperty(CarbonCommonConstants.LEAFNODE_SIZE,
+                        CarbonCommonConstants.LEAFNODE_SIZE_DEFAULT_VAL));
 
         //        dataFolderLoc = MondrianProperties.instance().getProperty("com.huawei.datastore.datalocation", "D:/data");
        /* isFileStore = Boolean.parseBoolean(MondrianProperties.instance().getProperty(
@@ -218,7 +218,7 @@ public class CSBTree implements DataStore {
         upperMaxChildren = upperMaxEntry;
 
         // TODO Need to account for page headers and other fields
-        leafMaxEntry = Integer.parseInt(MolapProperties.getInstance()
+        leafMaxEntry = Integer.parseInt(CarbonProperties.getInstance()
                 .getProperty("com.huawei.datastore.leafnodesize", DEFAULT_PAGESIZE + ""));
 
         // Number of keys that will fit in a cacheline
@@ -254,23 +254,23 @@ public class CSBTree implements DataStore {
     private void setRangeSplitvalue() {
         try {
             rangeSplitValue = Long.parseLong(
-                    MolapProperties.getInstance().getProperty("molap.rangeSplitValue", "3500000"));
+                    CarbonProperties.getInstance().getProperty("molap.rangeSplitValue", "3500000"));
         } catch (NumberFormatException e) {
             rangeSplitValue = 6000000L;
         }
 
-        LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                 "Range Split value for parallel execution of a tree : " + rangeSplitValue);
         //System.out.println("Range Split value for parallel execution of a tree : " + rangeSplitValue);
 
         try {
-            cpuUsagePercentage = Integer.parseInt(MolapProperties.getInstance()
-                    .getProperty(MolapCommonConstants.NUM_CORES,
-                            MolapCommonConstants.NUM_CORES_DEFAULT_VAL));
+            cpuUsagePercentage = Integer.parseInt(CarbonProperties.getInstance()
+                    .getProperty(CarbonCommonConstants.NUM_CORES,
+                            CarbonCommonConstants.NUM_CORES_DEFAULT_VAL));
         } catch (NumberFormatException e) {
             cpuUsagePercentage = 2;
         }
-        LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                 "Range Split value for parallel execution of a tree : " + rangeSplitValue);
     }
 
@@ -286,12 +286,12 @@ public class CSBTree implements DataStore {
         CSBNode curNode = null;
         CSBNode prevNode = null;
         ArrayList<CSBNode[]> nodeGroups =
-                new ArrayList<CSBNode[]>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+                new ArrayList<CSBNode[]>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
         CSBNode[] currentGroup = null;
-        List<long[]> rangeVals = new ArrayList<long[]>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+        List<long[]> rangeVals = new ArrayList<long[]>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
         FileHolder fileHolder = null;
         List<List<byte[]>> interNSKeyList =
-                new ArrayList<List<byte[]>>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+                new ArrayList<List<byte[]>>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
         List<byte[]> leafNSKeyList = null;
         compressionModel = sources.get(0).getValueCompressionMode();
         long st = System.currentTimeMillis();
@@ -302,7 +302,7 @@ public class CSBTree implements DataStore {
             if (null != leafNodeInfoList) {
                 if (leafNodeInfoList.size() > 0) {
                     leafNodeInfoList.get(0).getFileName();
-                    LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                    LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                             "Processing : " + (leafNodeInfoList.get(0).getFileName()) + " : " + (
                                     System.currentTimeMillis() - st));
                     st = System.currentTimeMillis();
@@ -329,7 +329,7 @@ public class CSBTree implements DataStore {
                     if (groupCounter == 0) {
                         // Create new node group if current group is full
                         leafNSKeyList =
-                                new ArrayList<byte[]>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+                                new ArrayList<byte[]>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
                         currentGroup = new CSBNode[upperMaxChildren];
                         nodeGroups.add(currentGroup);
                         nInternal++;
@@ -355,7 +355,7 @@ public class CSBTree implements DataStore {
         }
         findCurrentNode(nInternal, curNode, nodeGroups, currentGroup, interNSKeyList);
         nTotalKeys = num;
-        LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                 "*********************************************************Total Number Rows In BTREE: "
                         + nTotalKeys);
         this.rangeValues =
@@ -365,7 +365,7 @@ public class CSBTree implements DataStore {
         if (null != fileHolder) {
             fileHolder.finish();
         }
-        LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                 "Compress Time:" + (compressionEnd - compressionStart) + "ms");
     }
 
@@ -376,12 +376,12 @@ public class CSBTree implements DataStore {
         CSBNode curNode = null;
         CSBNode prevNode = null;
         ArrayList<CSBNode[]> nodeGroups =
-                new ArrayList<CSBNode[]>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+                new ArrayList<CSBNode[]>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
         CSBNode[] currGroup = null;
-        List<long[]> rangeVals = new ArrayList<long[]>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+        List<long[]> rangeVals = new ArrayList<long[]>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
         FileHolder fileHolder = FileFactory.getFileHolder(FileFactory.getFileType());
         List<List<byte[]>> interNSKeyList =
-                new ArrayList<List<byte[]>>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+                new ArrayList<List<byte[]>>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
         List<byte[]> leafNSKeyList = null;
         compressionModel = sources.get(0).getValueCompressionMode();
         long st = System.currentTimeMillis();
@@ -391,7 +391,7 @@ public class CSBTree implements DataStore {
             if (null != leafNodeInfoList) {
                 if (leafNodeInfoList.size() > 0) {
                     leafNodeInfoList.get(0).getFileName();
-                    LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                    LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                             "Processing : " + (leafNodeInfoList.get(0).getFileName()) + " : " + (
                                     System.currentTimeMillis() - st));
                     st = System.currentTimeMillis();
@@ -413,7 +413,7 @@ public class CSBTree implements DataStore {
                     if (groupCounter == 0) {
                         // Create new node group if current group is full
                         leafNSKeyList =
-                                new ArrayList<byte[]>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+                                new ArrayList<byte[]>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
                         currGroup = new CSBNode[upperMaxChildren];
                         nodeGroups.add(currGroup);
                         nInternal++;
@@ -437,7 +437,7 @@ public class CSBTree implements DataStore {
         }
         findCurrentNode(nInternal, curNode, nodeGroups, currGroup, interNSKeyList);
         nTotalKeys = num;
-        LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                 "*********************************************************Total Number Rows In "
                         + tableName + " : " + nTotalKeys);
         this.rangeValues =
@@ -445,7 +445,7 @@ public class CSBTree implements DataStore {
         long compressionStart = System.currentTimeMillis();
         long compressionEnd = System.currentTimeMillis();
         fileHolder.finish();
-        LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                 "Compress Time:" + (compressionEnd - compressionStart) + "ms");
     }
 
@@ -472,9 +472,9 @@ public class CSBTree implements DataStore {
         List<byte[]> interNSKeys = null;
         while (nHigh > 1 || !bRootBuilt) {
             ArrayList<CSBNode[]> internalNodeGroups =
-                    new ArrayList<CSBNode[]>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+                    new ArrayList<CSBNode[]>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
             List<List<byte[]>> interNSKeyTmpList =
-                    new ArrayList<List<byte[]>>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+                    new ArrayList<List<byte[]>>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
             nInternal = 0;
             for (int i = 0; i < nHigh; i++) {
                 // Create a new internal node
@@ -489,7 +489,7 @@ public class CSBTree implements DataStore {
                     currentGroup = new CSBInternalNode[upperMaxChildren];
                     internalNodeGroups.add(currentGroup);
                     nInternal++;
-                    interNSKeys = new ArrayList<byte[]>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+                    interNSKeys = new ArrayList<byte[]>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
                     interNSKeyTmpList.add(interNSKeys);
                 }
 
@@ -537,7 +537,7 @@ public class CSBTree implements DataStore {
             List<long[]> rangeVals, FileHolder fileHolder) {
         //
         rangeSplitValue = num / cpuUsagePercentage;
-        LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                 "New Range Split Value: " + rangeSplitValue);
         //System.out.println("New Range Split Value: " + rangeSplitValue);
 
@@ -951,12 +951,12 @@ public class CSBTree implements DataStore {
         CSBNode curNode = null;
         CSBNode prevNode = null;
         ArrayList<CSBNode[]> nodeGroups =
-                new ArrayList<CSBNode[]>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+                new ArrayList<CSBNode[]>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
         CSBNode[] currentGroup = null;
-        List<long[]> rangeVals = new ArrayList<long[]>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+        List<long[]> rangeVals = new ArrayList<long[]>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
         FileHolder fileHolder = FileFactory.getFileHolder(FileFactory.getFileType());
         List<List<byte[]>> interNSKeyList =
-                new ArrayList<List<byte[]>>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+                new ArrayList<List<byte[]>>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
         List<byte[]> leafNSKeyList = null;
         compressionModel = source.getValueCompressionMode();
         List<LeafNodeInfo> leafNodeInfoList = source.getLeafNodeInfo();
@@ -976,7 +976,7 @@ public class CSBTree implements DataStore {
                 grpCounter = (nLeaf - 1) % (upperMaxChildren);
                 if (grpCounter == 0) {
                     // Create new node group if current group is full
-                    leafNSKeyList = new ArrayList<byte[]>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+                    leafNSKeyList = new ArrayList<byte[]>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
                     currentGroup = new CSBNode[upperMaxChildren];
                     nInternal++;
                     nodeGroups.add(currentGroup);
@@ -1008,9 +1008,9 @@ public class CSBTree implements DataStore {
         List<byte[]> interNSKeys = null;
         while (nHigh > 1 || !bRootBuilt) {
             ArrayList<CSBNode[]> internalNodeGroups =
-                    new ArrayList<CSBNode[]>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+                    new ArrayList<CSBNode[]>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
             List<List<byte[]>> interNSKeyTmpList =
-                    new ArrayList<List<byte[]>>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+                    new ArrayList<List<byte[]>>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
             nInternal = 0;
             for (int k = 0; k < nHigh; k++) {
                 // Create a new internal node
@@ -1024,7 +1024,7 @@ public class CSBTree implements DataStore {
                     currentGroup = new CSBInternalNode[upperMaxChildren];
                     nInternal++;
                     internalNodeGroups.add(currentGroup);
-                    interNSKeys = new ArrayList<byte[]>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+                    interNSKeys = new ArrayList<byte[]>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
                     interNSKeyTmpList.add(interNSKeys);
                 }
 
@@ -1077,7 +1077,7 @@ public class CSBTree implements DataStore {
         long compressionStart = System.currentTimeMillis();
         long compressionEnd = System.currentTimeMillis();
         fileHolder.finish();
-        LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                 "Compress Time:" + (compressionEnd - compressionStart) + "ms");
     }
 
@@ -1110,7 +1110,7 @@ public class CSBTree implements DataStore {
          *
          */
         private List<long[]> rangeVals =
-                new ArrayList<long[]>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+                new ArrayList<long[]>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
 
         /**
          *
@@ -1126,7 +1126,7 @@ public class CSBTree implements DataStore {
          *
          */
         private ArrayList<CSBNode[]> internalNodeGroups =
-                new ArrayList<CSBNode[]>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+                new ArrayList<CSBNode[]>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
 
         /**
          *

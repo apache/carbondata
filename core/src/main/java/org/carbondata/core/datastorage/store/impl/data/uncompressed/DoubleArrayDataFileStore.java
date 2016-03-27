@@ -23,7 +23,7 @@ import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.core.datastorage.store.MeasureDataWrapper;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.datastorage.store.compression.ValueCompressonHolder.UnCompressValue;
-import org.carbondata.core.datastorage.store.dataholder.MolapReadDataHolder;
+import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.carbondata.core.datastorage.store.impl.CompressedDataMeasureDataWrapper;
 
 public class DoubleArrayDataFileStore extends AbstractDoubleArrayDataStore {
@@ -52,7 +52,7 @@ public class DoubleArrayDataFileStore extends AbstractDoubleArrayDataStore {
             return null;
         }
         UnCompressValue[] unComp = new UnCompressValue[measuresLengthArray.length];
-        MolapReadDataHolder[] vals = new MolapReadDataHolder[measuresLengthArray.length];
+        CarbonReadDataHolder[] vals = new CarbonReadDataHolder[measuresLengthArray.length];
         if (cols != null) {
             for (int i = 0; i < cols.length; i++) {
                 unComp[cols[i]] = compressionModel.getUnCompressValues()[cols[i]].getNew();
@@ -81,7 +81,7 @@ public class DoubleArrayDataFileStore extends AbstractDoubleArrayDataStore {
             return null;
         }
         UnCompressValue[] unComp = new UnCompressValue[measuresLengthArray.length];
-        MolapReadDataHolder[] vals = new MolapReadDataHolder[measuresLengthArray.length];
+        CarbonReadDataHolder[] vals = new CarbonReadDataHolder[measuresLengthArray.length];
 
         unComp[cols] = compressionModel.getUnCompressValues()[cols].getNew();
         unComp[cols].setValueInBytes(fileHolder

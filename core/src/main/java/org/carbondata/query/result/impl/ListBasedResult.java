@@ -22,7 +22,7 @@ package org.carbondata.query.result.impl;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.result.Result;
 import org.carbondata.query.wrappers.ByteArrayWrapper;
@@ -45,12 +45,12 @@ public class ListBasedResult implements Result<List<ByteArrayWrapper>, List<Meas
     private int currentListCounter;
 
     public ListBasedResult() {
-        keys = new ArrayList<ByteArrayWrapper>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
-        values = new ArrayList<MeasureAggregator[]>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+        keys = new ArrayList<ByteArrayWrapper>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+        values = new ArrayList<MeasureAggregator[]>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         allKeys =
-                new ArrayList<List<ByteArrayWrapper>>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                new ArrayList<List<ByteArrayWrapper>>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         allValues = new ArrayList<List<MeasureAggregator[]>>(
-                MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     }
 
     @Override

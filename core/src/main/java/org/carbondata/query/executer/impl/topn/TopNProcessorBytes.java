@@ -21,14 +21,14 @@ package org.carbondata.query.executer.impl.topn;
 
 import java.util.*;
 
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.executer.groupby.GroupByHolder;
 import org.carbondata.query.executer.impl.measure.filter.MeasureFilterProcessor;
 import org.carbondata.query.executer.impl.topn.TopNModel.MolapTopNType;
 import org.carbondata.query.executer.pagination.DataProcessor;
 import org.carbondata.query.executer.pagination.PaginationModel;
-import org.carbondata.query.executer.pagination.exception.MolapPaginationException;
+import org.carbondata.query.executer.pagination.exception.CarbonPaginationException;
 
 /**
  * This class calculates the topN rows as per the defined parameters.
@@ -59,7 +59,7 @@ public class TopNProcessorBytes
      * groups
      */
     private List<TopNHolderGroup> groups =
-            new ArrayList<TopNHolderGroup>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+            new ArrayList<TopNHolderGroup>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
 
     /**
      *
@@ -132,7 +132,7 @@ public class TopNProcessorBytes
     }
 
     @Override
-    public void initModel(PaginationModel model) throws MolapPaginationException {
+    public void initModel(PaginationModel model) throws CarbonPaginationException {
         this.groupMaskedBytes = model.getGroupMaskedBytes();
         this.topMeasureIndex = model.getTopMeasureIndex();
         this.topNCount = model.getTopNCount();
@@ -200,7 +200,7 @@ public class TopNProcessorBytes
     }
 
     @Override
-    public void finish() throws MolapPaginationException {
+    public void finish() throws CarbonPaginationException {
 
         if (processor instanceof MeasureFilterProcessor) {
             for (TopNHolderGroup holderGroup : groups) {
@@ -208,7 +208,7 @@ public class TopNProcessorBytes
 
                 int size = holders.size();
                 List<GroupByHolder> list =
-                        new ArrayList<GroupByHolder>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+                        new ArrayList<GroupByHolder>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
                 for (int i = 0; i < size; i++) {
                     list.add(holders.poll());
                 }
@@ -222,7 +222,7 @@ public class TopNProcessorBytes
 
                 int size = holders.size();
                 List<GroupByHolder> list =
-                        new ArrayList<GroupByHolder>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+                        new ArrayList<GroupByHolder>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
                 for (int i = 0; i < size; i++) {
                     list.add(holders.poll());
                 }

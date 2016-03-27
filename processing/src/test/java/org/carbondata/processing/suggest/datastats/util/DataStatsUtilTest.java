@@ -25,7 +25,7 @@ import junit.framework.Assert;
 import mockit.Mock;
 import mockit.MockUp;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
-import org.carbondata.core.olap.SqlStatement;
+import org.carbondata.core.carbon.SqlStatement;
 import org.carbondata.processing.suggest.datastats.model.Level;
 import org.carbondata.query.expression.DataType;
 import org.junit.Test;

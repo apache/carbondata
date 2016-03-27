@@ -22,8 +22,8 @@ package org.carbondata.query.filters.measurefilter.util;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.metadata.MolapMetadata.Measure;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.metadata.CarbonMetadata.Measure;
 import org.carbondata.query.executer.calcexp.MolapCalcExpressionResolverUtil;
 import org.carbondata.query.executer.calcexp.MolapCalcFunction;
 import org.carbondata.query.filters.measurefilter.*;
@@ -122,7 +122,7 @@ public final class MeasureFilterFactory {
             return null;
         }
         List<MeasureFilter> measureFilters =
-                new ArrayList<MeasureFilter>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+                new ArrayList<MeasureFilter>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
         for (int i = 0; i < msrConstraints.length; i++) {
             if (msrConstraints[i] != null) {
                 if (msrConstraints[i].getFilterGroupType()

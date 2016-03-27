@@ -19,7 +19,7 @@ package org.carbondata.query.aggregator.impl;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 
-import org.carbondata.core.datastorage.store.dataholder.MolapReadDataHolder;
+import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.carbondata.core.util.DataTypeUtil;
 
 /**
@@ -49,7 +49,7 @@ public class AvgOfAvgBigDecimalAggregator extends AvgBigDecimalAggregator {
      * @param index  index
      */
     @Override
-    public void agg(MolapReadDataHolder newVal, int index) {
+    public void agg(CarbonReadDataHolder newVal, int index) {
         byte[] value = newVal.getReadableByteArrayValueByIndex(index);
         ByteBuffer buffer = ByteBuffer.wrap(value);
         byte[] valueByte = new byte[buffer.getInt()];

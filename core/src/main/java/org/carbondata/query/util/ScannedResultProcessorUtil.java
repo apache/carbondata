@@ -25,15 +25,15 @@ import java.util.Comparator;
 import java.util.List;
 
 import org.apache.commons.collections.comparators.ComparatorChain;
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.datastorage.store.filesystem.MolapFile;
-import org.carbondata.core.datastorage.store.filesystem.MolapFileFilter;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
+import org.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.KeyGenerator;
-import org.carbondata.core.metadata.MolapMetadata.Dimension;
-import org.carbondata.core.util.MolapProperties;
-import org.carbondata.query.datastorage.InMemoryCube;
+import org.carbondata.core.metadata.CarbonMetadata.Dimension;
+import org.carbondata.core.util.CarbonProperties;
+import org.carbondata.query.datastorage.InMemoryTable;
 import org.carbondata.query.datastorage.MemberStore;
 import org.carbondata.query.executer.exception.QueryExecutionException;
 import org.carbondata.query.executer.impl.comparator.MaksedByteComparatorBAW;
@@ -70,7 +70,7 @@ public final class ScannedResultProcessorUtil {
         }
         List<Comparator<DataFileWriter.KeyValueHolder>> compratorList =
                 new ArrayList<Comparator<DataFileWriter.KeyValueHolder>>(
-                        MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                        CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         MaksedByteComparatorBAW keyComparator = null;
         int length = maskedByteRangeForSorting.length;
         for (int i = 0; i < length; i++) {
@@ -199,20 +199,20 @@ public final class ScannedResultProcessorUtil {
      * @param id
      * @return sort index
      */
-    private static int getSortIndexById(String columnName, int id, List<InMemoryCube> slices) {
+    private static int getSortIndexById(String columnName, int id, List<InMemoryTable> slices) {
         MemberStore memberCache = null;
-        for (InMemoryCube slice : slices) {
+        for (InMemoryTable slice : slices) {
             memberCache = slice.getMemberCache(columnName);
             if (null != memberCache) {
                 if (null != memberCache.getAllMembers() && memberCache.getAllMembers().length > 0) {
                     int index = memberCache.getSortedIndex(id);
-                    if (index != -MolapCommonConstants.DIMENSION_DEFAULT) {
+                    if (index != -CarbonCommonConstants.DIMENSION_DEFAULT) {
                         return index;
                     }
                 }
             }
         }
-        return -MolapCommonConstants.DIMENSION_DEFAULT;
+        return -CarbonCommonConstants.DIMENSION_DEFAULT;
     }
 
     /**
@@ -241,9 +241,9 @@ public final class ScannedResultProcessorUtil {
         dataProcessorInfo.setBlockSize(120000);
         dataProcessorInfo.setLimit(info.getLimit());
         dataProcessorInfo.setMaskedByteRangeForSorting(info.getMaskedByteRangeForSorting());
-        dataProcessorInfo.setHolderSize(Integer.parseInt(MolapProperties.getInstance()
-                .getProperty(MolapCommonConstants.PAGINATED_INTERNAL_FILE_ROW_LIMIT,
-                        MolapCommonConstants.PAGINATED_INTERNAL_FILE_ROW_LIMIT_DEFAULT)));
+        dataProcessorInfo.setHolderSize(Integer.parseInt(CarbonProperties.getInstance()
+                .getProperty(CarbonCommonConstants.PAGINATED_INTERNAL_FILE_ROW_LIMIT,
+                        CarbonCommonConstants.PAGINATED_INTERNAL_FILE_ROW_LIMIT_DEFAULT)));
 
         dataProcessorInfo.setDimensionSortOrder(info.getDimensionSortOrder());
         dataProcessorInfo.setDimensionMasks(info.getDimensionMaskKeys());
@@ -267,7 +267,7 @@ public final class ScannedResultProcessorUtil {
         }
         List<Comparator<ResultTempFileReader>> compratorList =
                 new ArrayList<Comparator<ResultTempFileReader>>(
-                        MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                        CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         MaksedByteComparatorForReader keyComparator = null;
         for (int i = 0; i < maskedByteRangeForSorting.length; i++) {
             if (null == maskedByteRangeForSorting[i]) {
@@ -288,11 +288,11 @@ public final class ScannedResultProcessorUtil {
      * @param extension
      * @return
      */
-    public static MolapFile[] getFiles(final String location, final String[] extension) {
-        MolapFile molapFile = FileFactory.getMolapFile(location, FileFactory.getFileType(location));
-        MolapFile[] list = molapFile.listFiles(new MolapFileFilter() {
+    public static CarbonFile[] getFiles(final String location, final String[] extension) {
+        CarbonFile carbonFile = FileFactory.getMolapFile(location, FileFactory.getFileType(location));
+        CarbonFile[] list = carbonFile.listFiles(new CarbonFileFilter() {
             @Override
-            public boolean accept(MolapFile file) {
+            public boolean accept(CarbonFile file) {
                 for (int i = 0; i < extension.length; i++) {
                     if (file.getName().endsWith(extension[i])) {
                         return true;

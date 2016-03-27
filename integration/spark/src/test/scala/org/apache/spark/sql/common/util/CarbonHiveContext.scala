@@ -21,20 +21,20 @@ package org.apache.spark.sql.common.util
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
-import org.apache.spark.sql.OlapContext
+import org.apache.spark.sql.CarbonContext
 import org.apache.spark.{SparkConf, SparkContext}
-import org.carbondata.core.constants.MolapCommonConstants
-import org.carbondata.core.util.MolapProperties
-import org.carbondata.integration.spark.load.MolapLoaderUtil
+import org.carbondata.core.constants.CarbonCommonConstants
+import org.carbondata.core.util.CarbonProperties
+import org.carbondata.integration.spark.load.CarbonLoaderUtil
 
 class LocalSQLContext(hdfsCarbonBasePath: String)
-  extends OlapContext(new SparkContext(new SparkConf()
+  extends CarbonContext(new SparkContext(new SparkConf()
     .setAppName("CarbonSpark")
     .setMaster("local[2]")
     .set("carbon.storelocation", hdfsCarbonBasePath)
     .set("molap.kettle.home", "../../Molap/Molap-Data-Processor/molapplugins/molapplugins")
     .set("molap.is.columnar.storage", "true")
-    .set("spark.sql.bigdata.register.dialect", "org.apache.spark.sql.MolapSqlDDLParser")
+    .set("spark.sql.bigdata.register.dialect", "org.apache.spark.sql.CarbonSqlDDLParser")
     .set("spark.sql.bigdata.register.strategyRule", "org.apache.spark.sql.hive.CarbonStrategy")
     .set("spark.sql.bigdata.initFunction", "org.apache.spark.sql.CarbonEnv")
     .set("spark.sql.bigdata.acl.enable", "false")
@@ -56,16 +56,16 @@ object CarbonHiveContext extends LocalSQLContext(
 }) {
 
   {
-    MolapProperties.getInstance().addProperty("molap.kettle.home", "../../Molap/Molap-Data-Processor/molapplugins/molapplugins")
-    MolapProperties.getInstance().addProperty(MolapCommonConstants.MOLAP_TIMESTAMP_FORMAT, "dd-MM-yyyy")
-    MolapProperties.getInstance().addProperty(MolapCommonConstants.STORE_LOCATION_TEMP_PATH, System.getProperty("java.io.tmpdir"))
+    CarbonProperties.getInstance().addProperty("molap.kettle.home", "../../Molap/Molap-Data-Processor/molapplugins/molapplugins")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.MOLAP_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.STORE_LOCATION_TEMP_PATH, System.getProperty("java.io.tmpdir"))
 
     val hadoopConf = new Configuration();
     hadoopConf.addResource(new Path("../core-default.xml"));
     hadoopConf.addResource(new Path("core-site.xml"));
     val hdfsCarbonPath = hadoopConf.get("fs.defaultFS", "./") + "/opt/carbon/test/";
 
-    MolapLoaderUtil.deleteStorePath(hdfsCarbonPath)
+    CarbonLoaderUtil.deleteStorePath(hdfsCarbonPath)
     //	    //		sql("drop cube timestamptypecube");
   }
 }

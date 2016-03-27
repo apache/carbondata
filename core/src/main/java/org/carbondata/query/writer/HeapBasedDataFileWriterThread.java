@@ -26,14 +26,14 @@ import java.util.AbstractQueue;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.keygenerator.KeyGenException;
-import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.executer.Tuple;
 import org.carbondata.query.schema.metadata.DataProcessorInfo;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 
 public class HeapBasedDataFileWriterThread extends ResultWriter {
 
@@ -83,7 +83,7 @@ public class HeapBasedDataFileWriterThread extends ResultWriter {
         DataOutputStream dataOutput = null;
         try {
             if (!new File(this.outLocation).mkdirs()) {
-                LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                         "Problem while creating the pagination directory");
             }
 
@@ -92,8 +92,8 @@ public class HeapBasedDataFileWriterThread extends ResultWriter {
 
             dataOutput = FileFactory.getDataOutputStream(tempFile.getAbsolutePath(),
                     FileFactory.getFileType(tempFile.getAbsolutePath()),
-                    MolapCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
-                            * MolapCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR);
+                    CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
+                            * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR);
 
             int size = this.dataHeap.size();
 
@@ -102,13 +102,13 @@ public class HeapBasedDataFileWriterThread extends ResultWriter {
             writeDataFromHeap(dataOutput);
 
             File dest = new File(this.outLocation + File.separator + System.nanoTime()
-                    + MolapCommonConstants.QUERY_OUT_FILE_EXT);
+                    + CarbonCommonConstants.QUERY_OUT_FILE_EXT);
             if (!tempFile.renameTo(dest)) {
-                LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                         "Problem while renaming the file");
             }
         } finally {
-            MolapUtil.closeStreams(dataOutput);
+            CarbonUtil.closeStreams(dataOutput);
         }
         this.dataHeap = null;
         return null;

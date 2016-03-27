@@ -22,9 +22,9 @@ package org.carbondata.query.evaluators;
 import java.util.List;
 import java.util.Map;
 
-import org.carbondata.core.metadata.MolapMetadata.Dimension;
+import org.carbondata.core.metadata.CarbonMetadata.Dimension;
 import org.carbondata.query.complex.querytypes.GenericQueryType;
-import org.carbondata.query.datastorage.InMemoryCube;
+import org.carbondata.query.datastorage.InMemoryTable;
 
 public class DimColumnEvaluatorInfo {
     /**
@@ -45,7 +45,7 @@ public class DimColumnEvaluatorInfo {
     /**
      * slice
      */
-    private List<InMemoryCube> slices;
+    private List<InMemoryTable> slices;
 
     /**
      * currentSliceIndex
@@ -129,11 +129,11 @@ public class DimColumnEvaluatorInfo {
         this.dims = dims;
     }
 
-    public List<InMemoryCube> getSlices() {
+    public List<InMemoryTable> getSlices() {
         return slices;
     }
 
-    public void setSlices(List<InMemoryCube> slices) {
+    public void setSlices(List<InMemoryTable> slices) {
         this.slices = slices;
     }
 

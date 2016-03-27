@@ -25,16 +25,16 @@ import java.util.Comparator;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.datastorage.store.filesystem.MolapFile;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
-import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.executer.exception.QueryExecutionException;
 import org.carbondata.query.executer.pagination.impl.DataFileWriter;
 import org.carbondata.query.result.Result;
 import org.carbondata.query.schema.metadata.DataProcessorInfo;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 import org.carbondata.query.util.ScannedResultProcessorUtil;
 
 /**
@@ -82,29 +82,29 @@ public class ScannedResultDataFileWriterThread extends ResultWriter {
     @Override
     public Void call() throws Exception {
         DataOutputStream dataOutput = null;
-        MolapFile molapFile = null;
+        CarbonFile carbonFile = null;
         String destPath = null;
         try {
             String path = this.outLocation + '/' + System.nanoTime() + ".tmp";
             dataOutput =
                     FileFactory.getDataOutputStream(path, FileFactory.getFileType(path), (short) 1);
-            molapFile = FileFactory.getMolapFile(path, FileFactory.getFileType(path));
+            carbonFile = FileFactory.getMolapFile(path, FileFactory.getFileType(path));
             dataOutput.writeInt(scannedResult.size());
             /*int writenDataSize = */
             writeScannedResult(dataOutput);
             destPath = this.outLocation + '/' + System.nanoTime()
-                    + MolapCommonConstants.QUERY_OUT_FILE_EXT;
+                    + CarbonCommonConstants.QUERY_OUT_FILE_EXT;
         } catch (IOException e) {
             throw new QueryExecutionException(e);
         } finally {
-            MolapUtil.closeStreams(dataOutput);
+            CarbonUtil.closeStreams(dataOutput);
             try {
-                if (null != molapFile && !molapFile.renameTo(destPath)) {
-                    LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                if (null != carbonFile && !carbonFile.renameTo(destPath)) {
+                    LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                             "Problem while renaming the file");
                 }
             } catch (Exception e) {
-                LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
+                LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
                         "Problem while renaming the file");
             }
         }

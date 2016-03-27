@@ -20,18 +20,18 @@
 package org.carbondata.core.datastorage.store.impl;
 
 import org.carbondata.core.datastorage.store.MeasureDataWrapper;
-import org.carbondata.core.datastorage.store.dataholder.MolapReadDataHolder;
+import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 
 public class CompressedDataMeasureDataWrapper implements MeasureDataWrapper {
 
-    private final MolapReadDataHolder[] values;
+    private final CarbonReadDataHolder[] values;
 
-    public CompressedDataMeasureDataWrapper(final MolapReadDataHolder[] values) {
+    public CompressedDataMeasureDataWrapper(final CarbonReadDataHolder[] values) {
         this.values = values;
     }
 
     @Override
-    public MolapReadDataHolder[] getValues() {
+    public CarbonReadDataHolder[] getValues() {
         return values;
     }
 

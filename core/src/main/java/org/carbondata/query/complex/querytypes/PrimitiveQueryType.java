@@ -27,11 +27,11 @@ import java.util.List;
 
 import org.apache.spark.sql.types.*;
 import org.apache.spark.unsafe.types.UTF8String;
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreDataHolder;
-import org.carbondata.core.metadata.MolapMetadata.Dimension;
-import org.carbondata.core.olap.SqlStatement;
-import org.carbondata.query.datastorage.InMemoryCube;
+import org.carbondata.core.metadata.CarbonMetadata.Dimension;
+import org.carbondata.core.carbon.SqlStatement;
+import org.carbondata.query.datastorage.InMemoryTable;
 import org.carbondata.query.evaluators.BlockDataHolder;
 import org.carbondata.query.util.DataTypeConverter;
 import org.carbondata.query.util.QueryExecutorUtility;
@@ -143,7 +143,7 @@ public class PrimitiveQueryType implements GenericQueryType {
     }
 
     @Override
-    public Object getDataBasedOnDataTypeFromSurrogates(List<InMemoryCube> slices,
+    public Object getDataBasedOnDataTypeFromSurrogates(List<InMemoryTable> slices,
             ByteBuffer surrogateData, Dimension[] dimensions) {
         byte[] data = new byte[keySize];
         surrogateData.get(data);
@@ -151,7 +151,7 @@ public class PrimitiveQueryType implements GenericQueryType {
                 .getMemberBySurrogateKey(dimensions[blockIndex], unsignedIntFromByteArray(data),
                         slices).toString();
         Object actualData = DataTypeConverter.getDataBasedOnDataType(
-                memberData.equals(MolapCommonConstants.MEMBER_DEFAULT_VAL) ? null : memberData,
+                memberData.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL) ? null : memberData,
                 dimensions[blockIndex].getDataType());
         if (null != actualData
                 && dimensions[blockIndex].getDataType() == SqlStatement.Type.STRING) {

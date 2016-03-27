@@ -27,9 +27,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
-import org.carbondata.core.olap.MolapDef;
-import org.carbondata.core.olap.MolapDef.Cube;
-import org.carbondata.core.olap.MolapDef.Measure;
+import org.carbondata.core.carbon.CarbonDef;
+import org.carbondata.core.carbon.CarbonDef.Cube;
+import org.carbondata.core.carbon.CarbonDef.Measure;
 import org.carbondata.processing.suggest.autoagg.model.AggSuggestion;
 import org.carbondata.processing.suggest.autoagg.model.Request;
 import org.carbondata.processing.suggest.datastats.model.Level;
@@ -278,11 +278,11 @@ public final class AggCombinationGeneratorUtil {
     }
 
     public static boolean isVisible(Level level, Cube cube) {
-        MolapDef.CubeDimension[] dimensions = cube.dimensions;
-        MolapDef.Hierarchy[] hiers =
-                ((MolapDef.Dimension) dimensions[level.getOrdinal()]).hierarchies;
+        CarbonDef.CubeDimension[] dimensions = cube.dimensions;
+        CarbonDef.Hierarchy[] hiers =
+                ((CarbonDef.Dimension) dimensions[level.getOrdinal()]).hierarchies;
         for (int j = 0; j < hiers.length; j++) {
-            MolapDef.Level[] levels = hiers[j].levels;
+            CarbonDef.Level[] levels = hiers[j].levels;
             for (int k = 0; k < levels.length; k++) {
                 if (level.getName().equals(levels[j].column) && levels[j].visible) {
                     return true;

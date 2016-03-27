@@ -23,8 +23,8 @@ import org.carbondata.query.expression.DataType;
 import org.carbondata.query.expression.Expression;
 import org.carbondata.query.expression.ExpressionResult;
 import org.carbondata.query.expression.exception.FilterUnsupportedException;
-import org.carbondata.query.molapfilterinterface.ExpressionType;
-import org.carbondata.query.molapfilterinterface.RowIntf;
+import org.carbondata.query.carbonfilterinterface.ExpressionType;
+import org.carbondata.query.carbonfilterinterface.RowIntf;
 
 public class AddExpression extends BinaryArithmeticExpression {
     private static final long serialVersionUID = 7999436055420911612L;

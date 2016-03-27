@@ -21,12 +21,12 @@ package org.carbondata.core.locks;
 
 import java.io.File;
 
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 
 /**
  * This class is responsible for locking of the load metadata.
  */
-public class MetadataLock extends MolapLock {
+public class MetadataLock extends CarbonLock {
 
     /**
      * This is used for locking of the load metadata.
@@ -34,7 +34,7 @@ public class MetadataLock extends MolapLock {
      * @param location
      */
     public MetadataLock(String location) {
-        String loadLock = location + File.separator + MolapCommonConstants.METADATA_LOCK;
+        String loadLock = location + File.separator + CarbonCommonConstants.METADATA_LOCK;
         this.location = loadLock;
         initRetry();
     }

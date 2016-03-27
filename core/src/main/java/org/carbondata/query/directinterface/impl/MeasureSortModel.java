@@ -21,7 +21,7 @@ package org.carbondata.query.directinterface.impl;
 
 import java.io.Serializable;
 
-import org.carbondata.core.metadata.MolapMetadata.Measure;
+import org.carbondata.core.metadata.CarbonMetadata.Measure;
 
 /**
  * This model object for Molap measure sort.

@@ -26,7 +26,7 @@ import java.util.Map.Entry;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.common.logging.impl.StandardLogService;
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.file.manager.composite.FileData;
 import org.carbondata.core.file.manager.composite.IFileManagerComposite;
@@ -34,17 +34,17 @@ import org.carbondata.core.file.manager.composite.LoadFolderData;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
-import org.carbondata.core.util.MolapProperties;
-import org.carbondata.core.util.MolapUtil;
-import org.carbondata.core.util.MolapUtilException;
+import org.carbondata.core.util.CarbonProperties;
+import org.carbondata.core.util.CarbonUtil;
+import org.carbondata.core.util.CarbonUtilException;
 import org.carbondata.core.util.ValueCompressionUtil;
 import org.carbondata.core.vo.HybridStoreModel;
 import org.carbondata.processing.datatypes.GenericDataType;
-import org.carbondata.processing.store.MolapFactDataHandlerColumnar;
-import org.carbondata.processing.store.MolapFactHandler;
+import org.carbondata.processing.store.CarbonFactDataHandlerColumnar;
+import org.carbondata.processing.store.CarbonFactHandler;
 import org.carbondata.processing.store.SingleThreadFinalSortFilesMerger;
-import org.carbondata.processing.store.writer.exception.MolapDataWriterException;
-import org.carbondata.processing.util.MolapDataProcessorLogEvent;
+import org.carbondata.processing.store.writer.exception.CarbonDataWriterException;
+import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.carbondata.processing.util.RemoveDictionaryUtil;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowMeta;
@@ -107,7 +107,7 @@ public class MDKeyGenStep extends BaseStep {
     /**
      * dataHandler
      */
-    private MolapFactHandler dataHandler;
+    private CarbonFactHandler dataHandler;
 
     private char[] aggType;
 
@@ -180,24 +180,24 @@ public class MDKeyGenStep extends BaseStep {
                 dataHandler.addDataToStore(outputRow);
                 writeCounter++;
             }
-        } catch (MolapDataWriterException e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+        } catch (CarbonDataWriterException e) {
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
                     "Failed for: " + this.tableName);
             throw new KettleException("Error while initializing data handler : " + e.getMessage());
         } finally {
             try {
                 dataHandler.finish();
-            } catch (MolapDataWriterException e) {
-                LOGGER.debug(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            } catch (CarbonDataWriterException e) {
+                LOGGER.debug(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                         "Error in  closing data handler ");
             }
         }
-        LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                 "Record Procerssed For table: " + this.tableName);
         String logMessage =
                 "Finished Molap Mdkey Generation Step: Read: " + readCounter + ": Write: "
                         + writeCounter;
-        LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, logMessage);
+        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, logMessage);
         processingComplete();
         return false;
     }
@@ -213,38 +213,38 @@ public class MDKeyGenStep extends BaseStep {
      * This method will be used to get and update the step properties which will
      * required to run this step
      *
-     * @throws MolapUtilException
+     * @throws CarbonUtilException
      */
     private boolean setStepConfiguration() {
         this.tableName = meta.getTableName();
-        MolapProperties instance = MolapProperties.getInstance();
+        CarbonProperties instance = CarbonProperties.getInstance();
         String tempLocationKey = meta.getSchemaName() + '_' + meta.getCubeName();
         String baseStorelocation = instance.getProperty(tempLocationKey,
-                MolapCommonConstants.STORE_LOCATION_DEFAULT_VAL) + File.separator + meta
+                CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL) + File.separator + meta
                 .getSchemaName() + File.separator + meta.getCubeName();
 
         int restructFolderNumber = meta.getCurrentRestructNumber()/*MolapUtil.checkAndReturnNextRestructFolderNumber(baseStorelocation,"RS_")*/;
 
         String restructFolderlocation =
-                baseStorelocation + File.separator + MolapCommonConstants.RESTRUCTRE_FOLDER
+                baseStorelocation + File.separator + CarbonCommonConstants.RESTRUCTRE_FOLDER
                         + restructFolderNumber + File.separator + this.tableName;
 
-        int counter = MolapUtil.checkAndReturnCurrentLoadFolderNumber(restructFolderlocation);
+        int counter = CarbonUtil.checkAndReturnCurrentLoadFolderNumber(restructFolderlocation);
 
         // This check is just to get the absolute path because from the property file Relative path 
         // will come and sometimes FileOutPutstream was not able to Create the file.
         File file = new File(restructFolderlocation);
-        storeLocation = file.getAbsolutePath() + File.separator + MolapCommonConstants.LOAD_FOLDER
+        storeLocation = file.getAbsolutePath() + File.separator + CarbonCommonConstants.LOAD_FOLDER
                 + counter;
 
         fileManager = new LoadFolderData();
-        fileManager.setName(MolapCommonConstants.LOAD_FOLDER + counter
-                + MolapCommonConstants.FILE_INPROGRESS_STATUS);
+        fileManager.setName(CarbonCommonConstants.LOAD_FOLDER + counter
+                + CarbonCommonConstants.FILE_INPROGRESS_STATUS);
 
-        storeLocation = storeLocation + MolapCommonConstants.FILE_INPROGRESS_STATUS;
+        storeLocation = storeLocation + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
 
         if (!(new File(storeLocation).exists())) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "Load Folder Not Present for writing measure metadata  : " + storeLocation);
             return false;
         }
@@ -253,11 +253,11 @@ public class MDKeyGenStep extends BaseStep {
                 RemoveDictionaryUtil.extractHighCardCount(this.meta.getHighCardinalityDims()));
 
         String levelCardinalityFilePath = storeLocation + File.separator +
-                MolapCommonConstants.LEVEL_METADATA_FILE + meta.getTableName() + ".metadata";
+                CarbonCommonConstants.LEVEL_METADATA_FILE + meta.getTableName() + ".metadata";
 
         try {
             int[] dimLensWithComplex =
-                    MolapUtil.getCardinalityFromLevelMetadataFile(levelCardinalityFilePath);
+                    CarbonUtil.getCardinalityFromLevelMetadataFile(levelCardinalityFilePath);
             List<Integer> dimsLenList = new ArrayList<Integer>();
             for (int eachDimLen : dimLensWithComplex) {
                 if (eachDimLen != 0) dimsLenList.add(eachDimLen);
@@ -266,8 +266,8 @@ public class MDKeyGenStep extends BaseStep {
             for (int i = 0; i < dimsLenList.size(); i++) {
                 dimLens[i] = dimsLenList.get(i);
             }
-        } catch (MolapUtilException e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        } catch (CarbonUtilException e) {
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "Level cardinality file :: " + e.getMessage());
             return false;
         }
@@ -276,7 +276,7 @@ public class MDKeyGenStep extends BaseStep {
         for (int i = 0; i < dimensionStoreType.length; i++) {
             dimensionStoreType[i] = Boolean.parseBoolean(dimStoreType[i]);
         }
-        this.hybridStoreModel = MolapUtil.getHybridStoreMeta(dimLens, dimensionStoreType, null);
+        this.hybridStoreModel = CarbonUtil.getHybridStoreMeta(dimLens, dimensionStoreType, null);
         dimLens = hybridStoreModel.getHybridCardinality();
         data.generator = new KeyGenerator[dimLens.length + 1];
         for (int i = 0; i < dimLens.length; i++) {
@@ -319,16 +319,16 @@ public class MDKeyGenStep extends BaseStep {
 
         this.measureCount = meta.getMeasureCount();
 
-        String metaDataFileName = MolapCommonConstants.MEASURE_METADATA_FILE_NAME + this.tableName
-                + MolapCommonConstants.MEASUREMETADATA_FILE_EXT
-                + MolapCommonConstants.FILE_INPROGRESS_STATUS;
+        String metaDataFileName = CarbonCommonConstants.MEASURE_METADATA_FILE_NAME + this.tableName
+                + CarbonCommonConstants.MEASUREMETADATA_FILE_EXT
+                + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
 
         FileData fileData = new FileData(metaDataFileName, storeLocation);
         fileManager.add(fileData);
 
         // Set the data file location
         this.dataFolderLocation = baseStorelocation + File.separator +
-                MolapCommonConstants.SORT_TEMP_FILE_LOCATION + File.separator + this.tableName;
+                CarbonCommonConstants.SORT_TEMP_FILE_LOCATION + File.separator + this.tableName;
         return true;
     }
 
@@ -345,14 +345,14 @@ public class MDKeyGenStep extends BaseStep {
                 dimensionCount - meta.getComplexDimsCount(), meta.getComplexDimsCount(),
                 measureCount, meta.getHighCardinalityCount(), aggType);
         if (meta.getHighCardinalityCount() > 0) {
-            dataHandler = new MolapFactDataHandlerColumnar(meta.getSchemaName(), meta.getCubeName(),
+            dataHandler = new CarbonFactDataHandlerColumnar(meta.getSchemaName(), meta.getCubeName(),
                     this.tableName, false, measureCount,
                     data.generator[dimLens.length].getKeySizeInBytes(), measureCount + 1, null,
                     null, storeLocation, dimLens, false, false, dimLens, null, null, true,
                     meta.getCurrentRestructNumber(), meta.getHighCardinalityCount(), dimensionCount,
                     complexIndexMap, simpleDimsLen, this.hybridStoreModel, valueCompressionModel);
         } else {
-            dataHandler = new MolapFactDataHandlerColumnar(meta.getSchemaName(), meta.getCubeName(),
+            dataHandler = new CarbonFactDataHandlerColumnar(meta.getSchemaName(), meta.getCubeName(),
                     this.tableName, false, measureCount,
                     data.generator[dimLens.length].getKeySizeInBytes(), measureCount, null, null,
                     storeLocation, dimLens, false, false, dimLens, null, null, true,
@@ -363,8 +363,8 @@ public class MDKeyGenStep extends BaseStep {
 
     private ValueCompressionModel getValueCompressionModel(String storeLocation) {
         String measureMetaDataFileLoc =
-                storeLocation + MolapCommonConstants.MEASURE_METADATA_FILE_NAME + this.tableName
-                        + MolapCommonConstants.MEASUREMETADATA_FILE_EXT;
+                storeLocation + CarbonCommonConstants.MEASURE_METADATA_FILE_NAME + this.tableName
+                        + CarbonCommonConstants.MEASUREMETADATA_FILE_EXT;
         return ValueCompressionUtil
                 .getValueCompressionModel(measureMetaDataFileLoc, this.measureCount);
     }
@@ -388,9 +388,9 @@ public class MDKeyGenStep extends BaseStep {
         out[out.length - 1].setStorageMetadata(new ValueMeta("id", ValueMetaInterface.TYPE_STRING,
                 ValueMetaInterface.STORAGE_TYPE_NORMAL));
         out[out.length - 1].setLength(256);
-        out[out.length - 1].setStringEncoding(MolapCommonConstants.BYTE_ENCODING);
+        out[out.length - 1].setStringEncoding(CarbonCommonConstants.BYTE_ENCODING);
         out[out.length - 1].getStorageMetadata()
-                .setStringEncoding(MolapCommonConstants.BYTE_ENCODING);
+                .setStringEncoding(CarbonCommonConstants.BYTE_ENCODING);
 
         data.outputRowMeta.setValueMetaList(Arrays.asList(out));
     }
@@ -415,9 +415,9 @@ public class MDKeyGenStep extends BaseStep {
         int l = 0;
         int index = 0;
         for (int i = 0; i < measureCount; i++) {
-            if (aggType[i] == MolapCommonConstants.BIG_DECIMAL_MEASURE) {
+            if (aggType[i] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
                 outputRow[l++] = RemoveDictionaryUtil.getMeasure(index++, row);
-            } else if (aggType[i] == MolapCommonConstants.BIG_INT_MEASURE) {
+            } else if (aggType[i] == CarbonCommonConstants.BIG_INT_MEASURE) {
                 outputRow[l++] = (Long) RemoveDictionaryUtil.getMeasure(index++, row);
             } else {
                 outputRow[l++] = (Double) RemoveDictionaryUtil.getMeasure(index++, row);

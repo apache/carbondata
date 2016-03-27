@@ -26,8 +26,8 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.datastorage.store.compression.Compressor;
 import org.carbondata.core.datastorage.store.compression.SnappyCompression;
 import org.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
-import org.carbondata.core.datastorage.store.dataholder.MolapReadDataHolder;
-import org.carbondata.core.util.MolapCoreLogEvent;
+import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
+import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.ValueCompressionUtil;
 import org.carbondata.core.util.ValueCompressionUtil.DataType;
 
@@ -53,7 +53,7 @@ public class UnCompressNonDecimalDefault
         try {
             return (ValueCompressonHolder.UnCompressValue) clone();
         } catch (CloneNotSupportedException cnse1) {
-            LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, cnse1, cnse1.getMessage());
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, cnse1, cnse1.getMessage());
         }
         return null;
     }
@@ -93,12 +93,12 @@ public class UnCompressNonDecimalDefault
     }
 
     @Override
-    public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
+    public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {
         double[] dblVals = new double[value.length];
         for (int i = 0; i < dblVals.length; i++) {
             dblVals[i] = value[i] / Math.pow(10, decimal);
         }
-        MolapReadDataHolder dataHolder = new MolapReadDataHolder();
+        CarbonReadDataHolder dataHolder = new CarbonReadDataHolder();
         dataHolder.setReadableDoubleValues(dblVals);
         return dataHolder;
     }

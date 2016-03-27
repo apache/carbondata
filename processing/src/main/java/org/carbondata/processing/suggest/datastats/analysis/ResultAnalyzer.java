@@ -24,11 +24,11 @@ import java.util.Map.Entry;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.iterator.MolapIterator;
-import org.carbondata.core.metadata.MolapMetadata.Dimension;
+import org.carbondata.core.iterator.CarbonIterator;
+import org.carbondata.core.metadata.CarbonMetadata.Dimension;
 import org.carbondata.processing.suggest.datastats.model.Level;
 import org.carbondata.query.result.RowResult;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
  * this class will read iterator and find out distinct dimension data
@@ -53,9 +53,9 @@ public class ResultAnalyzer {
      * @param cardinalities
      * @return result: It will have each dimension and its distinct value
      */
-    public void analyze(MolapIterator<RowResult> rowIterator, ArrayList<Level> dimensions,
+    public void analyze(CarbonIterator<RowResult> rowIterator, ArrayList<Level> dimensions,
             Map<Integer, Integer> distinctOfMasterDim) {
-        LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                 "Scanning query Result:" + System.currentTimeMillis());
 
         //Object:master data
@@ -152,7 +152,7 @@ public class ResultAnalyzer {
             distinctOfMasterDim.put(level.getOrdinal(), avg.intValue() == 0 ? 1 : avg.intValue());
 
         }
-        LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                 "Finished Scanning query Result:" + System.currentTimeMillis());
 
     }

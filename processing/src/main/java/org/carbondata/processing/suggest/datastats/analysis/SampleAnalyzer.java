@@ -23,31 +23,31 @@ import java.util.*;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.iterator.MolapIterator;
-import org.carbondata.core.metadata.MolapMetadata;
-import org.carbondata.core.metadata.MolapMetadata.Cube;
-import org.carbondata.core.metadata.MolapMetadata.Dimension;
-import org.carbondata.core.metadata.MolapMetadata.Measure;
-import org.carbondata.core.olap.SqlStatement.Type;
-import org.carbondata.core.util.MolapProperties;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.iterator.CarbonIterator;
+import org.carbondata.core.metadata.CarbonMetadata;
+import org.carbondata.core.metadata.CarbonMetadata.Cube;
+import org.carbondata.core.metadata.CarbonMetadata.Dimension;
+import org.carbondata.core.metadata.CarbonMetadata.Measure;
+import org.carbondata.core.carbon.SqlStatement.Type;
+import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.processing.suggest.autoagg.exception.AggSuggestException;
 import org.carbondata.processing.suggest.datastats.LoadSampler;
 import org.carbondata.processing.suggest.datastats.model.Level;
 import org.carbondata.processing.suggest.datastats.util.DataStatsUtil;
 import org.carbondata.query.aggregator.dimension.DimensionAggregatorInfo;
-import org.carbondata.query.datastorage.InMemoryCubeStore;
-import org.carbondata.query.executer.MolapQueryExecutorModel;
+import org.carbondata.query.datastorage.InMemoryTableStore;
+import org.carbondata.query.executer.CarbonQueryExecutorModel;
 import org.carbondata.query.executer.QueryExecutor;
 import org.carbondata.query.expression.ColumnExpression;
 import org.carbondata.query.expression.Expression;
 import org.carbondata.query.expression.LiteralExpression;
 import org.carbondata.query.expression.conditional.InExpression;
 import org.carbondata.query.expression.conditional.ListExpression;
-import org.carbondata.query.holders.MolapResultHolder;
-import org.carbondata.query.queryinterface.filter.MolapFilterInfo;
+import org.carbondata.query.holders.CarbonResultHolder;
+import org.carbondata.query.queryinterface.filter.CarbonFilterInfo;
 import org.carbondata.query.result.RowResult;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
  * this class will read some sample data from store and analyze how its spread
@@ -78,7 +78,7 @@ public class SampleAnalyzer {
     public void execute(List<Level> dimOrdCard, String partitionId) throws AggSuggestException {
         int totalDimensions = loadSampler.getDimensions().size();
 
-        LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                 "Processing cardinality:" + dimOrdCard);
         for (int i = 0; i < dimOrdCard.size(); i++) {
 
@@ -123,7 +123,7 @@ public class SampleAnalyzer {
                 distinctOfMasterDim.put(dim.getOrdinal(), res);
 
             }
-            LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                     "From 0 to " + i + " is calculated data");
             // find out distinct data for remaining dimensions
             ArrayList<Level> leftOut = new ArrayList<Level>(dimOrdCard.size());
@@ -162,17 +162,17 @@ public class SampleAnalyzer {
         // Sample data
         List<String> realDatas = loadSampler.getSampleData(dimension, cubeUniqueName);
 
-        LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                 "Load size for dimension[" + dimension.getColName() + "]:" + realDatas.size());
         long queryExecutionStart = System.currentTimeMillis();
-        LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                 "Started with sample data:" + realDatas);
         //query on bplus tree
         querySampleDataOnBTree(dimension, realDatas, slaves, distinctOfMasterDim);
 
         long queryExecutionEnd = System.currentTimeMillis();
         long queryExecutionTimeTaken = queryExecutionEnd - queryExecutionStart;
-        LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                 "Finished with sample data,time taken[ms]:" + queryExecutionTimeTaken);
 
     }
@@ -194,29 +194,29 @@ public class SampleAnalyzer {
         try {
             Set<String> columnsForQuery = new HashSet<String>(10);
             // Create QueryExecution model
-            MolapQueryExecutorModel queryExecutionModel =
+            CarbonQueryExecutorModel queryExecutionModel =
                     createQueryExecutorModel(master, data, slaves, columnsForQuery);
             List<String> levelCacheKeys = null;
-            if (InMemoryCubeStore.getInstance().isLevelCacheEnabled()) {
+            if (InMemoryTableStore.getInstance().isLevelCacheEnabled()) {
                 levelCacheKeys = DataStatsUtil
                         .validateAndLoadRequiredSlicesInMemory(loadSampler.getAllLoads(),
                                 cubeUniqueName, columnsForQuery);
             }
-            cube = MolapMetadata.getInstance().getCube(cubeUniqueName);
+            cube = CarbonMetadata.getInstance().getCube(cubeUniqueName);
             queryExecutionModel.setCube(cube);
             QueryExecutor queryExecutor = DataStatsUtil
                     .getQueryExecuter(queryExecutionModel.getCube(),
                             queryExecutionModel.getFactTable());
 
             // Execute the query
-            MolapIterator<RowResult> rowIterator = queryExecutor.execute(queryExecutionModel);
+            CarbonIterator<RowResult> rowIterator = queryExecutor.execute(queryExecutionModel);
 
             //delegate result analysiss
             //analyzed result will be set in distinctOfMasterDim
             resultAnalyzer.analyze(rowIterator, slaves, distinctOfMasterDim);
             if (null != levelCacheKeys) {
                 for (String levelCacheKey : levelCacheKeys) {
-                    InMemoryCubeStore.getInstance().updateLevelAccessCountInLRUCache(levelCacheKey);
+                    InMemoryTableStore.getInstance().updateLevelAccessCountInLRUCache(levelCacheKey);
                 }
             }
 
@@ -235,13 +235,13 @@ public class SampleAnalyzer {
      * @param columnsForQuery
      * @return
      */
-    public MolapQueryExecutorModel createQueryExecutorModel(Dimension master, List<String> datas,
+    public CarbonQueryExecutorModel createQueryExecutorModel(Dimension master, List<String> datas,
             ArrayList<Level> slaves, Set<String> columnsForQuery) {
-        MolapQueryExecutorModel executorModel = new MolapQueryExecutorModel();
+        CarbonQueryExecutorModel executorModel = new CarbonQueryExecutorModel();
         executorModel.setSparkExecution(true);
         String factTableName = cube.getFactTableName();
         executorModel.setCube(cube);
-        executorModel.sethIterator(new MolapResultHolder(new ArrayList<Type>(1)));
+        executorModel.sethIterator(new CarbonResultHolder(new ArrayList<Type>(1)));
         executorModel.setFactTable(factTableName);
 
         List<Dimension> allDimensions = loadSampler.getDimensions();
@@ -292,21 +292,21 @@ public class SampleAnalyzer {
 
         List<DimensionAggregatorInfo> dimensionAggregatorInfos =
                 new ArrayList<DimensionAggregatorInfo>(
-                        MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                        CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-        executorModel.setConstraints(new HashMap<MolapMetadata.Dimension, MolapFilterInfo>(1));
+        executorModel.setConstraints(new HashMap<CarbonMetadata.Dimension, CarbonFilterInfo>(1));
         executorModel.setDimensionAggInfo(dimensionAggregatorInfos);
         executorModel.setActualDimsRows(executorModel.getDims());
         executorModel.setActualDimsCols(new Dimension[0]);
         executorModel.setCalcMeasures(new ArrayList<Measure>(1));
         executorModel.setAnalyzerDims(executorModel.getDims());
         executorModel
-                .setConstraintsAfterTopN(new HashMap<MolapMetadata.Dimension, MolapFilterInfo>(1));
+                .setConstraintsAfterTopN(new HashMap<CarbonMetadata.Dimension, CarbonFilterInfo>(1));
         executorModel.setLimit(-1);
         executorModel.setDetailQuery(false);
         executorModel.setQueryId(System.nanoTime() + "");
-        executorModel.setOutLocation(MolapProperties.getInstance()
-                .getProperty(MolapCommonConstants.STORE_LOCATION_HDFS));
+        executorModel.setOutLocation(CarbonProperties.getInstance()
+                .getProperty(CarbonCommonConstants.STORE_LOCATION_HDFS));
         return executorModel;
     }
 

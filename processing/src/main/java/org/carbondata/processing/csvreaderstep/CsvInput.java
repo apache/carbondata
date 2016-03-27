@@ -39,9 +39,9 @@ import java.util.List;
 import org.apache.commons.vfs.FileObject;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
-import org.carbondata.processing.util.MolapDataProcessorLogEvent;
+import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.ResultFile;
 import org.pentaho.di.core.exception.KettleConversionException;
@@ -74,7 +74,7 @@ public class CsvInput extends BaseStep implements StepInterface {
     public CsvInput(StepMeta stepMeta, StepDataInterface stepDataInterface, int copyNr,
             TransMeta transMeta, Trans trans) {
         super(stepMeta, stepDataInterface, copyNr, transMeta, trans);
-        LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                 "** Using csv file **");
         //System.out.println("****************** Using my csv file");
     }
@@ -92,7 +92,7 @@ public class CsvInput extends BaseStep implements StepInterface {
      */
     public static final String[] guessStringsFromLine(LogChannelInterface log, String line,
             String delimiter, String enclosure, String escapeCharacter) throws KettleException {
-        List<String> strings = new ArrayList<String>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+        List<String> strings = new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
         //        int fieldnr;
 
         String pol; // piece of line
@@ -407,7 +407,7 @@ public class CsvInput extends BaseStep implements StepInterface {
     }
 
     private void getFilenamesFromPreviousSteps() throws KettleException {
-        List<String> filenames = new ArrayList<String>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+        List<String> filenames = new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
         boolean firstRow = true;
         int index = -1;
         Object[] row = getRow();
@@ -809,9 +809,9 @@ public class CsvInput extends BaseStep implements StepInterface {
 
                             if (conversionExceptions == null) {
                                 conversionExceptions = new ArrayList<Exception>(
-                                        MolapCommonConstants.CONSTANT_SIZE_TEN);
+                                        CarbonCommonConstants.CONSTANT_SIZE_TEN);
                                 exceptionFields = new ArrayList<ValueMetaInterface>(
-                                        MolapCommonConstants.CONSTANT_SIZE_TEN);
+                                        CarbonCommonConstants.CONSTANT_SIZE_TEN);
                             }
 
                             conversionExceptions.add(e);

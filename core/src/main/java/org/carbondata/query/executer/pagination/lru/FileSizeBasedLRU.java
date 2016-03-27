@@ -24,9 +24,9 @@ import java.util.*;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.util.MolapProperties;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.util.CarbonProperties;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 
 public class FileSizeBasedLRU {
 
@@ -68,15 +68,15 @@ public class FileSizeBasedLRU {
                                 size -= eldest.getKey().getSize();
                                 boolean delete = new File(eldest.getKey().getPath()).delete();
                                 if (!delete) {
-                                    LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                                    LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                                             "Lru cache removal is failed for the query entry "
                                                     + eldest.getKey().getPath());
                                     return false;
                                 } else {
-                                    LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                                    LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                                             "Lru cache removes the query entry " + eldest.getKey()
                                                     .getPath());
-                                    LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                                    LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                                             "Lru cache current size " + getCurrentSize() + "MB");
                                     return true;
                                 }
@@ -122,19 +122,19 @@ public class FileSizeBasedLRU {
         if (lru == null) {
             long mem = 0;
             try {
-                mem = Long.parseLong(MolapProperties.getInstance()
-                        .getProperty(MolapCommonConstants.PAGINATED_CACHE_DISK_SIZE,
-                                MolapCommonConstants.PAGINATED_CACHE_DISK_SIZE_DEFAULT.toString()));
+                mem = Long.parseLong(CarbonProperties.getInstance()
+                        .getProperty(CarbonCommonConstants.PAGINATED_CACHE_DISK_SIZE,
+                                CarbonCommonConstants.PAGINATED_CACHE_DISK_SIZE_DEFAULT.toString()));
             } catch (NumberFormatException e) {
-                mem = MolapCommonConstants.PAGINATED_CACHE_DISK_SIZE_DEFAULT;
-                LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                mem = CarbonCommonConstants.PAGINATED_CACHE_DISK_SIZE_DEFAULT;
+                LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                         "Exception while parsing property", e);
             }
-            mem = MolapProperties.getInstance()
-                    .validate(mem, MolapCommonConstants.PAGINATED_CACHE_DISK_SIZE_MAX,
-                            MolapCommonConstants.PAGINATED_CACHE_DISK_SIZE_MIN,
-                            MolapCommonConstants.PAGINATED_CACHE_DISK_SIZE_DEFAULT);
-            LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            mem = CarbonProperties.getInstance()
+                    .validate(mem, CarbonCommonConstants.PAGINATED_CACHE_DISK_SIZE_MAX,
+                            CarbonCommonConstants.PAGINATED_CACHE_DISK_SIZE_MIN,
+                            CarbonCommonConstants.PAGINATED_CACHE_DISK_SIZE_DEFAULT);
+            LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                     "Query Lru Cache has been intilaized with limit " + mem + " MB");
             lru = new FileSizeBasedLRU(3000, mem * 1024 * 1024);
         }

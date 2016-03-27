@@ -25,17 +25,17 @@ import java.util.Set;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.datastorage.store.filesystem.MolapFile;
-import org.carbondata.core.datastorage.store.filesystem.MolapFileFilter;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
+import org.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
-import org.carbondata.core.metadata.MolapMetadata.Cube;
-import org.carbondata.core.metadata.MolapMetadata.Dimension;
-import org.carbondata.core.olap.MolapDef;
-import org.carbondata.core.olap.SqlStatement.Type;
-import org.carbondata.core.util.MolapProperties;
-import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.metadata.CarbonMetadata.Cube;
+import org.carbondata.core.metadata.CarbonMetadata.Dimension;
+import org.carbondata.core.carbon.CarbonDef;
+import org.carbondata.core.carbon.SqlStatement.Type;
+import org.carbondata.core.util.CarbonProperties;
+import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.processing.suggest.autoagg.AutoAggSuggestionFactory;
 import org.carbondata.processing.suggest.autoagg.AutoAggSuggestionService;
 import org.carbondata.processing.suggest.autoagg.exception.AggSuggestException;
@@ -43,12 +43,12 @@ import org.carbondata.processing.suggest.autoagg.model.Request;
 import org.carbondata.processing.suggest.datastats.model.DriverDistinctData;
 import org.carbondata.processing.suggest.datastats.model.Level;
 import org.carbondata.processing.suggest.datastats.model.LoadModel;
-import org.carbondata.query.datastorage.InMemoryCubeStore;
+import org.carbondata.query.datastorage.InMemoryTableStore;
 import org.carbondata.query.executer.QueryExecutor;
 import org.carbondata.query.executer.impl.QueryExecutorImpl;
 import org.carbondata.query.expression.DataType;
 import org.carbondata.query.querystats.Preference;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
  * Utility
@@ -63,11 +63,11 @@ public final class DataStatsUtil {
 
     }
 
-    public static MolapFile[] getMolapFactFile(MolapFile file, final String table) {
-        MolapFile[] files = file.listFiles(new MolapFileFilter() {
-            public boolean accept(MolapFile pathname) {
+    public static CarbonFile[] getMolapFactFile(CarbonFile file, final String table) {
+        CarbonFile[] files = file.listFiles(new CarbonFileFilter() {
+            public boolean accept(CarbonFile pathname) {
                 return (!pathname.isDirectory()) && pathname.getName().startsWith(table) && pathname
-                        .getName().endsWith(MolapCommonConstants.FACT_FILE_EXT);
+                        .getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT);
             }
 
         });
@@ -100,7 +100,7 @@ public final class DataStatsUtil {
      */
     public static int getNumberOfRows(Dimension dimension) {
         int recCount = 10;
-        String conRecCount = MolapProperties.getInstance().getProperty(Preference.AGG_REC_COUNT);
+        String conRecCount = CarbonProperties.getInstance().getProperty(Preference.AGG_REC_COUNT);
         if (null != conRecCount && Integer.parseInt(conRecCount) < recCount) {
             recCount = Integer.parseInt(conRecCount);
         }
@@ -131,10 +131,10 @@ public final class DataStatsUtil {
                 os = new ObjectOutputStream(out);
                 os.writeObject(object);
             } catch (Exception e) {
-                LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                         "Error in serializing file:" + path + '/' + fileName);
             } finally {
-                MolapUtil.closeStreams(out, os);
+                CarbonUtil.closeStreams(out, os);
             }
         }
     }
@@ -153,10 +153,10 @@ public final class DataStatsUtil {
                 object = is.readObject();
 
             } catch (Exception e) {
-                LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                         "Error in deserializing file:" + path);
             } finally {
-                MolapUtil.closeStreams(in, is);
+                CarbonUtil.closeStreams(in, is);
             }
         }
         return object;
@@ -181,10 +181,10 @@ public final class DataStatsUtil {
 
     }
 
-    public static void createDataSource(MolapDef.Schema schema, Cube cube, String partitionID,
+    public static void createDataSource(CarbonDef.Schema schema, Cube cube, String partitionID,
             List<String> sliceLoadPaths, String factTableName, List<String> validUpdateSlices,
             String dataPath, int restructureNo, long cubeCreationTime) {
-        InMemoryCubeStore.getInstance()
+        InMemoryTableStore.getInstance()
                 .loadCube(schema, cube, partitionID, sliceLoadPaths, validUpdateSlices,
                         factTableName, dataPath, restructureNo, cubeCreationTime);
 
@@ -215,18 +215,18 @@ public final class DataStatsUtil {
      * @param folderStsWith
      * @return
      */
-    public static MolapFile[] getRSFolderListList(LoadModel loadModel) {
+    public static CarbonFile[] getRSFolderListList(LoadModel loadModel) {
         String basePath = loadModel.getDataPath();
         basePath = basePath + File.separator + loadModel.getSchemaName() + '_' + loadModel
                 .getPartitionId() + File.separator + loadModel.getCubeName() + '_' + loadModel
                 .getPartitionId();
-        MolapFile file = FileFactory.getMolapFile(basePath, FileFactory.getFileType(basePath));
-        MolapFile[] files = null;
+        CarbonFile file = FileFactory.getMolapFile(basePath, FileFactory.getFileType(basePath));
+        CarbonFile[] files = null;
         if (file.isDirectory()) {
-            files = file.listFiles(new MolapFileFilter() {
+            files = file.listFiles(new CarbonFileFilter() {
 
                 @Override
-                public boolean accept(MolapFile pathname) {
+                public boolean accept(CarbonFile pathname) {
                     String name = pathname.getName();
                     return (pathname.isDirectory()) && name.startsWith("RS_");
                 }
@@ -246,7 +246,7 @@ public final class DataStatsUtil {
     public static List<String> validateAndLoadRequiredSlicesInMemory(List<String> listLoadFolders,
             String cubeUniqueName, Set<String> columns) throws AggSuggestException {
         try {
-            List<String> levelCacheKeys = InMemoryCubeStore.getInstance()
+            List<String> levelCacheKeys = InMemoryTableStore.getInstance()
                     .loadRequiredLevels(cubeUniqueName, columns, listLoadFolders);
             return levelCacheKeys;
         } catch (RuntimeException e) {

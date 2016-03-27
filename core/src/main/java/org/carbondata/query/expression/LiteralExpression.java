@@ -19,8 +19,8 @@
 
 package org.carbondata.query.expression;
 
-import org.carbondata.query.molapfilterinterface.ExpressionType;
-import org.carbondata.query.molapfilterinterface.RowIntf;
+import org.carbondata.query.carbonfilterinterface.ExpressionType;
+import org.carbondata.query.carbonfilterinterface.RowIntf;
 
 public class LiteralExpression extends LeafExpression {
 

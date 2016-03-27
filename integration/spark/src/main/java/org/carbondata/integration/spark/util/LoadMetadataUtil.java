@@ -30,28 +30,28 @@ package org.carbondata.integration.spark.util;
 
 import java.io.File;
 
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.datastorage.store.filesystem.MolapFile;
-import org.carbondata.core.datastorage.store.filesystem.MolapFileFilter;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
+import org.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.load.LoadMetadataDetails;
-import org.carbondata.core.util.MolapUtil;
-import org.carbondata.integration.spark.load.MolapLoadModel;
-import org.carbondata.integration.spark.load.MolapLoaderUtil;
+import org.carbondata.core.util.CarbonUtil;
+import org.carbondata.integration.spark.load.CarbonLoaderUtil;
+import org.carbondata.integration.spark.load.CarbonLoadModel;
 
 public final class LoadMetadataUtil {
     private LoadMetadataUtil() {
 
     }
 
-    public static boolean isLoadDeletionRequired(MolapLoadModel loadModel) {
-        String metaDataLocation = MolapLoaderUtil
+    public static boolean isLoadDeletionRequired(CarbonLoadModel loadModel) {
+        String metaDataLocation = CarbonLoaderUtil
                 .extractLoadMetadataFileLocation(loadModel.getSchema(), loadModel.getSchemaName(),
                         loadModel.getCubeName());
-        LoadMetadataDetails[] details = MolapUtil.readLoadMetadata(metaDataLocation);
+        LoadMetadataDetails[] details = CarbonUtil.readLoadMetadata(metaDataLocation);
         if (details != null && details.length != 0) {
             for (LoadMetadataDetails oneRow : details) {
-                if (MolapCommonConstants.MARKED_FOR_DELETE.equalsIgnoreCase(oneRow.getLoadStatus())
+                if (CarbonCommonConstants.MARKED_FOR_DELETE.equalsIgnoreCase(oneRow.getLoadStatus())
                         && oneRow.getVisibility().equalsIgnoreCase("true")) {
                     return true;
                 }
@@ -62,7 +62,7 @@ public final class LoadMetadataUtil {
 
     }
 
-    public static String createLoadFolderPath(MolapLoadModel model, String hdfsStoreLocation,
+    public static String createLoadFolderPath(CarbonLoadModel model, String hdfsStoreLocation,
             int partitionId, int currentRestructNumber) {
         hdfsStoreLocation =
                 hdfsStoreLocation + File.separator + model.getSchemaName() + '_' + partitionId
@@ -72,13 +72,13 @@ public final class LoadMetadataUtil {
             rsCounter = 0;
         }
         String hdfsLoadedTable =
-                hdfsStoreLocation + File.separator + MolapCommonConstants.RESTRUCTRE_FOLDER
+                hdfsStoreLocation + File.separator + CarbonCommonConstants.RESTRUCTRE_FOLDER
                         + rsCounter + File.separator + model.getTableName();
         hdfsLoadedTable = hdfsLoadedTable.replace("\\", "/");
         return hdfsLoadedTable;
     }
 
-    public static MolapFile[] getAggregateTableList(final MolapLoadModel model,
+    public static CarbonFile[] getAggregateTableList(final CarbonLoadModel model,
             String hdfsStoreLocation, int partitionId, int currentRestructNumber) {
         hdfsStoreLocation =
                 hdfsStoreLocation + File.separator + model.getSchemaName() + '_' + partitionId
@@ -90,18 +90,18 @@ public final class LoadMetadataUtil {
         }
 
         String hdfsLoadedTable =
-                hdfsStoreLocation + File.separator + MolapCommonConstants.RESTRUCTRE_FOLDER
+                hdfsStoreLocation + File.separator + CarbonCommonConstants.RESTRUCTRE_FOLDER
                         + rsCounter;
 
-        MolapFile rsFile =
+        CarbonFile rsFile =
                 FileFactory.getMolapFile(hdfsLoadedTable, FileFactory.getFileType(hdfsLoadedTable));
 
-        MolapFile[] aggFiles = rsFile.listFiles(new MolapFileFilter() {
+        CarbonFile[] aggFiles = rsFile.listFiles(new CarbonFileFilter() {
 
             @Override
-            public boolean accept(MolapFile file) {
-                return file.getName().startsWith(MolapCommonConstants.AGGREGATE_TABLE_START_TAG
-                        + MolapCommonConstants.UNDERSCORE + model.getTableName());
+            public boolean accept(CarbonFile file) {
+                return file.getName().startsWith(CarbonCommonConstants.AGGREGATE_TABLE_START_TAG
+                        + CarbonCommonConstants.UNDERSCORE + model.getTableName());
             }
         });
 

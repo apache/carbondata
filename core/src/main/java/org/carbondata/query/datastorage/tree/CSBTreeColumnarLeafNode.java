@@ -29,9 +29,10 @@ import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreDataHolder
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.datastorage.util.StoreFactory;
 import org.carbondata.core.metadata.LeafNodeInfoColumnar;
-import org.carbondata.core.metadata.MolapMetadata.Cube;
-import org.carbondata.core.olap.MolapDef.CubeDimension;
-import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.metadata.CarbonMetadata.Cube;
+import org.carbondata.core.carbon.CarbonDef;
+import org.carbondata.core.carbon.CarbonDef.CubeDimension;
+import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.vo.HybridStoreModel;
 import org.carbondata.query.datastorage.storeInterfaces.KeyValue;
 import org.carbondata.query.schema.metadata.Pair;
@@ -78,7 +79,7 @@ public class CSBTreeColumnarLeafNode extends CSBNode {
             HybridStoreModel hybridStoreModel) {
         nKeys = leafNodeInfo.getNumberOfKeys();
         keyStore = StoreFactory.createColumnarKeyStore(
-                MolapUtil.getColumnarKeyStoreInfo(leafNodeInfo, eachBlockSize, hybridStoreModel),
+                CarbonUtil.getColumnarKeyStoreInfo(leafNodeInfo, eachBlockSize, hybridStoreModel),
                 fileHolder, isFileStore);
         dataStore = StoreFactory
                 .createDataStore(isFileStore, compressionModel, leafNodeInfo.getMeasureOffset(),
@@ -87,7 +88,7 @@ public class CSBTreeColumnarLeafNode extends CSBNode {
         byte[][] columnMinMaxData = leafNodeInfo.getColumnMinMaxData();
         this.columnMinData = new byte[columnMinMaxData.length][];
         this.columnMaxData = new byte[columnMinMaxData.length][];
-        org.carbondata.core.olap.MolapDef.Cube cubeXml = metaCube.getCube();
+        CarbonDef.Cube cubeXml = metaCube.getCube();
         CubeDimension[] cubeDimensions = cubeXml.dimensions;
         int highCardColsCount = 0;
         for (int i = 0; i < columnMinMaxData.length; i++) {

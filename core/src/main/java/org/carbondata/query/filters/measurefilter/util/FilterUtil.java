@@ -23,15 +23,15 @@ import java.util.*;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
-import org.carbondata.core.metadata.MolapMetadata.Dimension;
-import org.carbondata.core.olap.SqlStatement.Type;
+import org.carbondata.core.metadata.CarbonMetadata.Dimension;
+import org.carbondata.core.carbon.SqlStatement.Type;
 import org.carbondata.core.vo.HybridStoreModel;
-import org.carbondata.query.datastorage.CubeDataStore;
-import org.carbondata.query.datastorage.InMemoryCube;
+import org.carbondata.query.datastorage.TableDataStore;
+import org.carbondata.query.datastorage.InMemoryTable;
 import org.carbondata.query.datastorage.Member;
 import org.carbondata.query.datastorage.MemberStore;
 import org.carbondata.query.evaluators.FilterEvaluator;
@@ -46,13 +46,13 @@ import org.carbondata.query.expression.ExpressionResult;
 import org.carbondata.query.expression.conditional.BinaryConditionalExpression;
 import org.carbondata.query.expression.conditional.ConditionalExpression;
 import org.carbondata.query.expression.exception.FilterUnsupportedException;
-import org.carbondata.query.molapfilterinterface.ExpressionType;
-import org.carbondata.query.molapfilterinterface.RowImpl;
-import org.carbondata.query.molapfilterinterface.RowIntf;
+import org.carbondata.query.carbonfilterinterface.ExpressionType;
+import org.carbondata.query.carbonfilterinterface.RowImpl;
+import org.carbondata.query.carbonfilterinterface.RowIntf;
 import org.carbondata.query.schema.metadata.DimColumnFilterInfo;
 import org.carbondata.query.schema.metadata.FilterEvaluatorInfo;
 import org.carbondata.query.util.DataTypeConverter;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 import org.carbondata.query.util.QueryExecutorUtility;
 
 //import org.carbondata.core.engine.util.MolapEngineLogEvent;
@@ -139,7 +139,7 @@ public final class FilterUtil {
                 int newDimensionIndex = QueryExecutorUtility.isNewDimension(info.getNewDimension(),
                         currentCondExpression.getColumnList().get(0).getDim());
                 if (newDimensionIndex == -1) {
-                    CubeDataStore dataCache = info.getSlices().get(info.getCurrentSliceIndex())
+                    TableDataStore dataCache = info.getSlices().get(info.getCurrentSliceIndex())
                             .getDataCache(info.getFactTableName());
                     if (currentCondExpression.getColumnList().get(0).getDim()
                             .isHighCardinalityDim()) {
@@ -188,7 +188,7 @@ public final class FilterUtil {
                 int newDimensionIndex = QueryExecutorUtility.isNewDimension(info.getNewDimension(),
                         currentCondExpression.getColumnList().get(0).getDim());
                 if (newDimensionIndex == -1) {
-                    CubeDataStore dataCache = info.getSlices().get(info.getCurrentSliceIndex())
+                    TableDataStore dataCache = info.getSlices().get(info.getCurrentSliceIndex())
                             .getDataCache(info.getFactTableName());
                     if (currentCondExpression.getColumnList().get(0).getDim()
                             .isHighCardinalityDim()) {
@@ -237,7 +237,7 @@ public final class FilterUtil {
                             .isNewDimension(info.getNewDimension(),
                                     condExpression.getColumnList().get(0).getDim());
                     if (newDimensionIndex == -1) {
-                        CubeDataStore dataCache = info.getSlices().get(info.getCurrentSliceIndex())
+                        TableDataStore dataCache = info.getSlices().get(info.getCurrentSliceIndex())
                                 .getDataCache(info.getFactTableName());
                         if (condExpression.getColumnList().get(0).getDim().isHighCardinalityDim()) {
                             if (checkIfExpressionContainsColumn(currentCondExpression.getLeft())
@@ -376,7 +376,7 @@ public final class FilterUtil {
                 filterValuesList.add(getMaskedKey(rangesForMaskedByte,
                         info.getKeyGenerator().generateKey(keys)));
             } catch (KeyGenException e) {
-                LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e.getMessage());
+                LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e.getMessage());
             }
         }
         //CHECKSTYLE:ON
@@ -391,7 +391,7 @@ public final class FilterUtil {
         return filterValuesList;
     }
 
-    private static Integer getSurrogate(String value, List<InMemoryCube> slices,
+    private static Integer getSurrogate(String value, List<InMemoryTable> slices,
             int currentSliceIndex, Dimension dim) {
         int surrLoc = 0;
         MemberStore memberStore = null;
@@ -431,7 +431,7 @@ public final class FilterUtil {
                     try {
                         RowIntf row = new RowImpl();
                         String string = allMembers[j][k].toString();
-                        if (string.equals(MolapCommonConstants.MEMBER_DEFAULT_VAL)) {
+                        if (string.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
                             string = null;
                         }
                         row.setValues(new Object[] { DataTypeConverter
@@ -441,7 +441,7 @@ public final class FilterUtil {
                         if (null != rslt && !(rslt ^ isIncludeFilter)) {
                             if (null == string) {
                                 evaluateResultListFinal
-                                        .add(MolapCommonConstants.MEMBER_DEFAULT_VAL);
+                                        .add(CarbonCommonConstants.MEMBER_DEFAULT_VAL);
                             } else {
                                 evaluateResultListFinal.add(string);
                             }
@@ -466,7 +466,7 @@ public final class FilterUtil {
             List<ExpressionResult> evaluateResultList = expression.evaluate(null).getList();
             for (ExpressionResult result : evaluateResultList) {
                 if (result.getString() == null) {
-                    evaluateResultListFinal.add(MolapCommonConstants.MEMBER_DEFAULT_VAL);
+                    evaluateResultListFinal.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL);
                     continue;
                 }
                 evaluateResultListFinal.add(result.getString());
@@ -495,7 +495,7 @@ public final class FilterUtil {
             List<ExpressionResult> evaluateResultList = expression.evaluate(null).getList();
             for (ExpressionResult result : evaluateResultList) {
                 if (result.getString() == null) {
-                    evaluateResultListFinal.add(MolapCommonConstants.MEMBER_DEFAULT_VAL);
+                    evaluateResultListFinal.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL);
                     continue;
                 }
                 evaluateResultListFinal.add(result.getString());
@@ -524,7 +524,7 @@ public final class FilterUtil {
                 KeyGeneratorFactory.getKeyGenerator(new int[] { defaultSurrogate });
         try {
             RowIntf row = new RowImpl();
-            if (defaultValues.equals(MolapCommonConstants.MEMBER_DEFAULT_VAL)) {
+            if (defaultValues.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
                 defaultValues = null;
             }
             row.setValues(new Object[] { DataTypeConverter.getDataBasedOnDataType(defaultValues,
@@ -532,7 +532,7 @@ public final class FilterUtil {
             Boolean rslt = expression.evaluate(row).getBoolean();
             if (null != rslt && !(rslt ^ isIncludeFilter)) {
                 if (null == defaultValues) {
-                    evaluateResultListFinal.add(MolapCommonConstants.MEMBER_DEFAULT_VAL);
+                    evaluateResultListFinal.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL);
                 } else {
                     evaluateResultListFinal.add(defaultValues);
                 }
@@ -542,7 +542,7 @@ public final class FilterUtil {
         }
 
         if (null == defaultValues) {
-            defaultValues = MolapCommonConstants.MEMBER_DEFAULT_VAL;
+            defaultValues = CarbonCommonConstants.MEMBER_DEFAULT_VAL;
         }
         try {
             for (int i = 0; i < evaluateResultListFinal.size(); i++) {

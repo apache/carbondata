@@ -19,7 +19,7 @@
 
 package org.carbondata.query.executer.processor;
 
-import org.carbondata.core.iterator.MolapIterator;
+import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.query.executer.exception.QueryExecutionException;
 import org.carbondata.query.executer.pagination.impl.QueryResult;
 import org.carbondata.query.result.Result;
@@ -43,5 +43,5 @@ public interface ScannedResultProcessor {
      *
      * @throws QueryExecutionException
      */
-    MolapIterator<QueryResult> getQueryResultIterator() throws QueryExecutionException;
+    CarbonIterator<QueryResult> getQueryResultIterator() throws QueryExecutionException;
 }

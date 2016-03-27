@@ -25,9 +25,9 @@ import java.util.*;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.metadata.MolapMetadata.Dimension;
-import org.carbondata.core.metadata.MolapMetadata.Measure;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.metadata.CarbonMetadata.Dimension;
+import org.carbondata.core.metadata.CarbonMetadata.Measure;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.aggregator.dimension.DimensionAggregatorInfo;
 import org.carbondata.query.aggregator.impl.CountAggregator;
@@ -35,13 +35,13 @@ import org.carbondata.query.aggregator.impl.DistinctCountAggregator;
 import org.carbondata.query.aggregator.impl.DistinctStringCountAggregator;
 import org.carbondata.query.complex.querytypes.GenericQueryType;
 import org.carbondata.query.datastorage.Member;
-import org.carbondata.query.executer.MolapQueryExecutorModel;
+import org.carbondata.query.executer.CarbonQueryExecutorModel;
 import org.carbondata.query.executer.pagination.impl.QueryResult;
 import org.carbondata.query.result.ChunkResult;
-import org.carbondata.query.scanner.impl.MolapKey;
-import org.carbondata.query.scanner.impl.MolapValue;
+import org.carbondata.query.scanner.impl.CarbonKey;
+import org.carbondata.query.scanner.impl.CarbonValue;
 import org.carbondata.query.util.DataTypeConverter;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 import org.carbondata.query.util.QueryExecutorUtility;
 import org.carbondata.query.wrappers.ByteArrayWrapper;
 
@@ -52,12 +52,12 @@ public class QueryResultPreparator {
 
     private QueryExecuterProperties executerProperties;
 
-    private MolapQueryExecutorModel queryModel;
+    private CarbonQueryExecutorModel queryModel;
 
     private int currentSliceIndex;
 
     public QueryResultPreparator(QueryExecuterProperties executerProperties,
-            MolapQueryExecutorModel queryModel) {
+            CarbonQueryExecutorModel queryModel) {
         this.executerProperties = executerProperties;
         this.queryModel = queryModel;
     }
@@ -79,7 +79,7 @@ public class QueryResultPreparator {
     }
 
     public ChunkResult prepareQueryOutputResult(QueryResult result) {
-        LOGGER.debug(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.debug(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                 "###########################################------ Started preparing the result");
         if ((null == result || result.size() < 1)) {
             return new ChunkResult();
@@ -180,14 +180,14 @@ public class QueryResultPreparator {
     }
 
     private ChunkResult getEmptyChunkResult(int size) {
-        List<MolapKey> keys = new ArrayList<MolapKey>(size);
-        List<MolapValue> values = new ArrayList<MolapValue>(size);
+        List<CarbonKey> keys = new ArrayList<CarbonKey>(size);
+        List<CarbonValue> values = new ArrayList<CarbonValue>(size);
         Object[] row = new Object[1];
         for (int i = 0; i < size; i++)
 
         {
-            values.add(new MolapValue(new MeasureAggregator[0]));
-            keys.add(new MolapKey(row));
+            values.add(new CarbonValue(new MeasureAggregator[0]));
+            keys.add(new CarbonKey(row));
         }
         ChunkResult chunkResult = new ChunkResult();
         chunkResult.setKeys(keys);
@@ -195,12 +195,12 @@ public class QueryResultPreparator {
         return chunkResult;
     }
 
-    private ChunkResult getResult(MolapQueryExecutorModel queryModel, Object[][] surrogateResult) {
+    private ChunkResult getResult(CarbonQueryExecutorModel queryModel, Object[][] surrogateResult) {
         Member member = null;
         int dimensionCount = queryModel.getDims().length;
         int msrCount = executerProperties.aggTypes.length;
-        List<MolapKey> keys = new ArrayList<MolapKey>(20);
-        List<MolapValue> values = new ArrayList<MolapValue>(20);
+        List<CarbonKey> keys = new ArrayList<CarbonKey>(20);
+        List<CarbonValue> values = new ArrayList<CarbonValue>(20);
         if (!executerProperties.isCountMsrExistInCurrTable
                 && executerProperties.countMsrIndex > -1) {
             msrCount--;
@@ -256,7 +256,7 @@ public class QueryResultPreparator {
                     memString = member.toString();
                     row[queryModel.getDims()[i].getQueryOrder()] = DataTypeConverter
                             .getDataBasedOnDataType(
-                                    memString.equals(MolapCommonConstants.MEMBER_DEFAULT_VAL) ?
+                                    memString.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL) ?
                                             null :
                                             memString, queryModel.getDims()[i].getDataType());
                 } else {
@@ -296,10 +296,10 @@ public class QueryResultPreparator {
                 for (int i = 0; i < queryModel.getMsrs().size(); i++) {
                     if (msrAgg[executerProperties.measureStartIndex + i].isFirstTime() && (
                             executerProperties.aggTypes[executerProperties.measureStartIndex + i]
-                                    .equals(MolapCommonConstants.DISTINCT_COUNT)
+                                    .equals(CarbonCommonConstants.DISTINCT_COUNT)
                                     || executerProperties.aggTypes[
                                     executerProperties.measureStartIndex + i]
-                                    .equals(MolapCommonConstants.COUNT))) {
+                                    .equals(CarbonCommonConstants.COUNT))) {
                         row[queryModel.getMsrs().get(i).getQueryOrder()] = 0.0;
                     } else if (msrAgg[executerProperties.measureStartIndex + i].isFirstTime()) {
                         row[queryModel.getMsrs().get(i).getQueryOrder()] = null;
@@ -345,10 +345,10 @@ public class QueryResultPreparator {
                     }
                 }
             }
-            values.add(new MolapValue(new MeasureAggregator[0]));
-            keys.add(new MolapKey(row));
+            values.add(new CarbonValue(new MeasureAggregator[0]));
+            keys.add(new CarbonKey(row));
         }
-        LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                 "###########################################------ Total Number of records"
                         + resultDataA[0].length);
         ChunkResult chunkResult = new ChunkResult();
@@ -371,7 +371,7 @@ public class QueryResultPreparator {
         return rData;
     }
 
-    private void fillDimensionAggValue(MolapQueryExecutorModel queryModel,
+    private void fillDimensionAggValue(CarbonQueryExecutorModel queryModel,
             Object[][] surrogateResult, int dimensionCount, int columnIndex,
             MeasureAggregator[] v) {
         Iterator<DimensionAggregatorInfo> dimAggInfoIterator =
@@ -393,13 +393,13 @@ public class QueryResultPreparator {
             for (int j = 0; j < dimensionAggregatorInfo.getAggList().size(); j++) {
                 ++rowIndex;
                 if (!dimensionAggregatorInfo.getAggList().get(j)
-                        .equals(MolapCommonConstants.DISTINCT_COUNT)) {
+                        .equals(CarbonCommonConstants.DISTINCT_COUNT)) {
                     v[index++] = ((MeasureAggregator) surrogateResult[dimensionCount
                             + rowIndex][columnIndex]);
                 } else if (partitionColumns.size() == 1 && partitionColumns
                         .contains(dimensionAggregatorInfo.getColumnName())
                         && dimensionAggregatorInfo.getAggList().get(j)
-                        .equals(MolapCommonConstants.DISTINCT_COUNT)) {
+                        .equals(CarbonCommonConstants.DISTINCT_COUNT)) {
                     double value = ((MeasureAggregator) surrogateResult[dimensionCount
                             + rowIndex][columnIndex]).getDoubleValue();
 
@@ -430,7 +430,7 @@ public class QueryResultPreparator {
                                         .getMemberBySurrogateKey(dimensionAggregatorInfo.getDim(),
                                                 (Integer) iterator.next(),
                                                 executerProperties.slices).toString();
-                                if (!member.equals(MolapCommonConstants.MEMBER_DEFAULT_VAL)) {
+                                if (!member.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
                                     distinctCountAggregatorObjct.agg(member);
                                 }
                             }
@@ -445,7 +445,7 @@ public class QueryResultPreparator {
         }
     }
 
-    private void fillMeasureValueForAggGroupByQuery(MolapQueryExecutorModel queryModel,
+    private void fillMeasureValueForAggGroupByQuery(CarbonQueryExecutorModel queryModel,
             Object[][] surrogateResult, int dimensionCount, int columnIndex,
             MeasureAggregator[] v) {
         int msrCount = queryModel.getMsrs().size();
@@ -489,7 +489,7 @@ public class QueryResultPreparator {
                                         .getMemberBySurrogateKey(mappedDim,
                                                 (Integer) iterator.next(),
                                                 executerProperties.slices).toString();
-                                if (!member.equals(MolapCommonConstants.MEMBER_DEFAULT_VAL)) {
+                                if (!member.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
                                     distinctCountAggregatorObjct.agg(member);
                                 }
                             }

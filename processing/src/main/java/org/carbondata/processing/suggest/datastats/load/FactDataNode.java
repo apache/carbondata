@@ -26,7 +26,7 @@ import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreInfo;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.datastorage.util.StoreFactory;
 import org.carbondata.core.metadata.LeafNodeInfoColumnar;
-import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.util.CarbonUtil;
 
 /**
  * This class contains compressed Columnkey block of store and Measure value
@@ -49,7 +49,7 @@ public class FactDataNode {
         this.maxKeys = maxKeys;
 
         ColumnarKeyStoreInfo columnarStoreInfo =
-                MolapUtil.getColumnarKeyStoreInfo(leafNodeInfo, eachBlockSize, null);
+                CarbonUtil.getColumnarKeyStoreInfo(leafNodeInfo, eachBlockSize, null);
         keyStore = StoreFactory.createColumnarKeyStore(columnarStoreInfo, fileHolder, isFileStore);
 
     }

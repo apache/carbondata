@@ -27,18 +27,18 @@ import java.util.Map;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.csvreader.checkpoint.CheckPointHanlder;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
 import org.carbondata.core.keygenerator.KeyGenException;
-import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.writer.LevelValueWriter;
 import org.carbondata.processing.dimension.load.command.DimensionLoadCommand;
 import org.carbondata.processing.dimension.load.info.DimensionLoadInfo;
 import org.carbondata.processing.schema.metadata.HierarchiesInfo;
-import org.carbondata.processing.surrogatekeysgenerator.csvbased.MolapCSVBasedDimSurrogateKeyGen;
-import org.carbondata.processing.util.MolapDataProcessorLogEvent;
+import org.carbondata.processing.surrogatekeysgenerator.csvbased.CarbonCSVBasedDimSurrogateKeyGen;
+import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.pentaho.di.core.exception.KettleException;
 
 public class CSVDimensionLoadCommand implements DimensionLoadCommand {
@@ -126,7 +126,7 @@ public class CSVDimensionLoadCommand implements DimensionLoadCommand {
                 dimensionLoadInfo.getSurrogateKeyGen().writeHeirDataToFileAndCloseStreams();
 
             } catch (KeyGenException e) {
-                LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                         "Not able to close the stream for level value and hierarchy files.");
             }
         }
@@ -203,7 +203,7 @@ public class CSVDimensionLoadCommand implements DimensionLoadCommand {
             }
         }
 
-        MolapCSVBasedDimSurrogateKeyGen surrogateKeyGen = dimensionLoadInfo.getSurrogateKeyGen();
+        CarbonCSVBasedDimSurrogateKeyGen surrogateKeyGen = dimensionLoadInfo.getSurrogateKeyGen();
 
         // If Dimension table has to load then first check whether it is time Dimension,
         //if yes then check the mappings specified in the realtimedata.properties.
@@ -222,7 +222,7 @@ public class CSVDimensionLoadCommand implements DimensionLoadCommand {
             String dimCsvFile = fileMaps.get(tblName);
 
             if (null == dimCsvFile) {
-                LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                         "For Dimension table : \"" + tblName + " \" CSV file path is NULL.");
                 throw new RuntimeException(
                         "For Dimension table : \"" + dimCsvFile + " \" , CSV file path is NULL.");
@@ -231,7 +231,7 @@ public class CSVDimensionLoadCommand implements DimensionLoadCommand {
             FileType fileType = FileFactory.getFileType(dimCsvFile);
 
             if (!FileFactory.isFileExist(dimCsvFile, fileType)) {
-                LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                         "For Dimension table : \"" + tblName + " \" CSV file not presnt.");
                 throw new RuntimeException(
                         "For Dimension table : \"" + dimCsvFile + " \" ,CSV file not presnt.");
@@ -266,7 +266,7 @@ public class CSVDimensionLoadCommand implements DimensionLoadCommand {
                     primaryKeyColumnName = primaryKeyColumnName.replaceAll("\"", "");
                 }
                 String dimFileName =
-                        primaryKeyColumnName + MolapCommonConstants.LEVEL_FILE_EXTENSION;
+                        primaryKeyColumnName + CarbonCommonConstants.LEVEL_FILE_EXTENSION;
                 for (int i = 0; i < dimensionWriter.length; i++) {
                     if (dimFileName.equals(dimensionWriter[i].getMemberFileName())) {
                         primaryKeyValueWriter = dimensionWriter[i];
@@ -342,7 +342,7 @@ public class CSVDimensionLoadCommand implements DimensionLoadCommand {
                 } catch (IOException e) {
                     throw new KettleException(e.getMessage(), e);
                 }
-                MolapUtil.closeStreams(primaryKeyValueWriter.getBufferedOutputStream());
+                CarbonUtil.closeStreams(primaryKeyValueWriter.getBufferedOutputStream());
 
                 String storePath = surrogateKeyGen.getStoreFolderWithLoadNumber();
                 String levelFileName = primaryKeyValueWriter.getMemberFileName();
@@ -350,18 +350,18 @@ public class CSVDimensionLoadCommand implements DimensionLoadCommand {
 
                 String changedFileName = levelFileName + (counter - 1);
                 String inProgFileName =
-                        changedFileName + MolapCommonConstants.FILE_INPROGRESS_STATUS;
+                        changedFileName + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
                 File inProgress = new File(storePath + File.separator + inProgFileName);
                 File destFile = new File(storePath + File.separator + changedFileName);
 
                 if (!inProgress.renameTo(destFile)) {
-                    LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                             "Renaming of file is not successfull : " + inProgress
                                     .getAbsolutePath());
                 }
             }
             if (null != bufferedReader) {
-                MolapUtil.closeStreams(bufferedReader);
+                CarbonUtil.closeStreams(bufferedReader);
             }
         }
     }
@@ -381,7 +381,7 @@ public class CSVDimensionLoadCommand implements DimensionLoadCommand {
      * @throws KettleException
      */
     private boolean processCSVRows(String[] columnNames, int[] columnIndex, boolean isTimeDim,
-            MolapCSVBasedDimSurrogateKeyGen surrogateKeyGen, int[] dimColmapping, int[] output,
+            CarbonCSVBasedDimSurrogateKeyGen surrogateKeyGen, int[] dimColmapping, int[] output,
             int[][] propertyIndex, String[] data) throws KettleException {
         boolean isKeyExceeded = false;
         for (int i = 0; i < columnNames.length; i++) {
@@ -395,12 +395,12 @@ public class CSVDimensionLoadCommand implements DimensionLoadCommand {
                 String value = data[propertyIndex[i][k]];
 
                 if (null == value) {
-                    value = MolapCommonConstants.MEMBER_DEFAULT_VAL;
+                    value = CarbonCommonConstants.MEMBER_DEFAULT_VAL;
                 }
                 propertyvalue[k] = value;
             }
             if (null == tuple) {
-                tuple = MolapCommonConstants.MEMBER_DEFAULT_VAL;
+                tuple = CarbonCommonConstants.MEMBER_DEFAULT_VAL;
             }
             if (isTimeDim) {
                 output[i] = surrogateKeyGen

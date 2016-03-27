@@ -21,7 +21,7 @@ package org.carbondata.query.executer.pagination;
 
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.executer.groupby.GroupByHolder;
-import org.carbondata.query.executer.pagination.exception.MolapPaginationException;
+import org.carbondata.query.executer.pagination.exception.CarbonPaginationException;
 
 public interface DataProcessor {
 
@@ -30,7 +30,7 @@ public interface DataProcessor {
      *
      * @param model
      */
-    void initModel(PaginationModel model) throws MolapPaginationException;
+    void initModel(PaginationModel model) throws CarbonPaginationException;
 
     /**
      * Process the data
@@ -38,18 +38,18 @@ public interface DataProcessor {
      * @param key
      * @param measures
      */
-    void processRow(byte[] key, MeasureAggregator[] measures) throws MolapPaginationException;
+    void processRow(byte[] key, MeasureAggregator[] measures) throws CarbonPaginationException;
 
     /**
      * It process the aggregated data which is done in previous step,which is used in measure filters and topN.
      *
      * @param groupByHolder
      */
-    void processGroup(GroupByHolder groupByHolder) throws MolapPaginationException;
+    void processGroup(GroupByHolder groupByHolder) throws CarbonPaginationException;
 
     /**
      * finish processing
      */
-    void finish() throws MolapPaginationException;
+    void finish() throws CarbonPaginationException;
 
 }

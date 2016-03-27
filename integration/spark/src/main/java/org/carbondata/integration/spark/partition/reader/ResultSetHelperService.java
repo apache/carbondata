@@ -39,7 +39,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 
 /**
  * helper class for processing JDBC ResultSet objects.
@@ -87,7 +87,7 @@ public class ResultSetHelperService implements ResultSetHelper {
      * @throws SQLException - thrown by the result set.
      */
     public String[] getColumnNames(ResultSet rs) throws SQLException {
-        List<String> names = new ArrayList<>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+        List<String> names = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         //CHECKSTYLE:OFF    Approval No:Approval-V1R2C10_010
         ResultSetMetaData metadata = rs.getMetaData();
         //CHECKSTYLE:ON

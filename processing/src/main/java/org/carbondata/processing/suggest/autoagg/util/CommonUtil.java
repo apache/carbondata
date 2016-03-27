@@ -27,19 +27,19 @@ import java.util.List;
 import com.google.gson.Gson;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.fileperations.AtomicFileOperations;
 import org.carbondata.core.datastorage.store.fileperations.AtomicFileOperationsImpl;
-import org.carbondata.core.datastorage.store.filesystem.MolapFile;
+import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
 import org.carbondata.core.load.LoadMetadataDetails;
-import org.carbondata.core.olap.MolapDef;
-import org.carbondata.core.olap.MolapDef.Schema;
-import org.carbondata.core.util.MolapCoreLogEvent;
-import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.carbon.CarbonDef;
+import org.carbondata.core.carbon.CarbonDef.Schema;
+import org.carbondata.core.util.CarbonCoreLogEvent;
+import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.processing.suggest.datastats.model.LoadModel;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 import org.eigenbase.xom.DOMWrapper;
 import org.eigenbase.xom.Parser;
 import org.eigenbase.xom.XOMException;
@@ -60,8 +60,8 @@ public final class CommonUtil {
     }
 
     public static void setListOfValidSlices(String metaPath, LoadModel loadModel) {
-        String loadMetaPath = metaPath + File.separator + MolapCommonConstants.LOADMETADATA_FILENAME
-                + MolapCommonConstants.MOLAP_METADATA_EXTENSION;
+        String loadMetaPath = metaPath + File.separator + CarbonCommonConstants.LOADMETADATA_FILENAME
+                + CarbonCommonConstants.MOLAP_METADATA_EXTENSION;
         List<String> listOfValidSlices = new ArrayList<String>(10);
         DataInputStream dataInputStream = null;
         Gson gsonObjectToRead = new Gson();
@@ -91,13 +91,13 @@ public final class CommonUtil {
                 List<String> allLoads = new ArrayList<String>(10);
 
                 for (LoadMetadataDetails loadMetadataDetails : loadFolderDetails) {
-                    if (MolapCommonConstants.STORE_LOADSTATUS_SUCCESS
+                    if (CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
                             .equalsIgnoreCase(loadMetadataDetails.getLoadStatus())
-                            || MolapCommonConstants.MARKED_FOR_UPDATE
+                            || CarbonCommonConstants.MARKED_FOR_UPDATE
                             .equalsIgnoreCase(loadMetadataDetails.getLoadStatus())
-                            || MolapCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS
+                            || CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS
                             .equalsIgnoreCase(loadMetadataDetails.getLoadStatus())) {
-                        if (MolapCommonConstants.MARKED_FOR_UPDATE
+                        if (CarbonCommonConstants.MARKED_FOR_UPDATE
                                 .equalsIgnoreCase(loadMetadataDetails.getLoadStatus())) {
 
                             listOfValidUpdatedSlices.add(loadMetadataDetails.getLoadName());
@@ -106,7 +106,7 @@ public final class CommonUtil {
 
                     }
 
-                    if (!MolapCommonConstants.STORE_LOADSTATUS_FAILURE
+                    if (!CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
                             .equals(loadMetadataDetails.getLoadStatus())) {
                         allLoads.add(LOAD_NAME + loadMetadataDetails.getLoadName());
                     }
@@ -116,9 +116,9 @@ public final class CommonUtil {
             }
 
         } catch (IOException e) {
-            LOGGER.info(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, "IO Exception @: " + e.getMessage());
+            LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, "IO Exception @: " + e.getMessage());
         } finally {
-            MolapUtil.closeStreams(dataInputStream);
+            CarbonUtil.closeStreams(dataInputStream);
         }
         loadModel.setValidSlices(listOfValidSlices);
 
@@ -135,7 +135,7 @@ public final class CommonUtil {
             return null;
         }
         FileType fileType = FileFactory.getFileType(metaDataPath);
-        MolapFile metaDataFile = FileFactory.getMolapFile(metaDataPath, fileType);
+        CarbonFile metaDataFile = FileFactory.getMolapFile(metaDataPath, fileType);
         if (!metaDataFile.exists()) {
             return null;
         }
@@ -188,11 +188,11 @@ public final class CommonUtil {
 
             return list;
         } catch (IOException e) {
-            LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e.getMessage());
+            LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e.getMessage());
         } catch (XOMException e) {
-            LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e.getMessage());
+            LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e.getMessage());
         } finally {
-            MolapUtil.closeStreams(in);
+            CarbonUtil.closeStreams(in);
         }
 
         return null;
@@ -203,7 +203,7 @@ public final class CommonUtil {
         Parser xmlParser = XOMUtil.createDefaultParser();
         ByteArrayInputStream baoi = new ByteArrayInputStream(schema.getBytes());
         DOMWrapper defin = xmlParser.parse(baoi);
-        return new MolapDef.Schema(defin);
+        return new CarbonDef.Schema(defin);
     }
 
     public static void fillSchemaAndCubeDetail(LoadModel loadModel) {
@@ -212,8 +212,8 @@ public final class CommonUtil {
         if (null != schemas) {
             Schema schema = schemas.get(0);
             loadModel.setSchema(schema);
-            MolapDef.Cube[] cubes = schema.cubes;
-            for (MolapDef.Cube cube : cubes) {
+            CarbonDef.Cube[] cubes = schema.cubes;
+            for (CarbonDef.Cube cube : cubes) {
                 if (loadModel.getCubeName().equalsIgnoreCase(cube.name)) {
                     loadModel.setCube(cube);
                 }

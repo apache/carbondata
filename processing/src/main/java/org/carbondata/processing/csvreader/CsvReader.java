@@ -27,7 +27,7 @@ import java.util.Map;
 import org.apache.commons.vfs.FileObject;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.processing.util.MolapDataProcessorLogEvent;
+import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.vfs.KettleVFS;
 import org.pentaho.di.trans.Trans;
@@ -115,7 +115,7 @@ public class CsvReader extends CsvInput {
             outputRowData[data.rownumFieldIndex] = data.totalBytesFilesFinished + data.startBuffer;
         }
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.debug(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "### " + data.totalBytesRead);
         }
     }
@@ -140,12 +140,12 @@ public class CsvReader extends CsvInput {
         try {
             long skip = data.bufferedInputStream.skip(bytesAlreadyRead);
             if (skip > 0) {
-                LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                         "Skipped bytes :" + skip);
             }
             data.totalBytesFilesFinished = bytesAlreadyRead;
         } catch (IOException e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
         }
     }
 

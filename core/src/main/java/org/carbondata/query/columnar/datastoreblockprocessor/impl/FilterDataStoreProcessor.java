@@ -24,8 +24,8 @@ import java.util.BitSet;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreDataHolder;
-import org.carbondata.core.datastorage.store.dataholder.MolapReadDataHolder;
-import org.carbondata.core.util.MolapProperties;
+import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
+import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.query.columnar.datastoreblockprocessor.ColumnarDataStoreBlockProcessorInfo;
 import org.carbondata.query.columnar.keyvalue.AbstractColumnarScanResult;
 import org.carbondata.query.columnar.keyvalue.FilterScanResult;
@@ -33,7 +33,7 @@ import org.carbondata.query.datastorage.storeInterfaces.DataStoreBlock;
 import org.carbondata.query.datastorage.tree.CSBTreeColumnarLeafNode;
 import org.carbondata.query.evaluators.BlockDataHolder;
 import org.carbondata.query.evaluators.FilterEvaluator;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 
 public class FilterDataStoreProcessor extends AbstractColumnarDataStoreProcessor {
 
@@ -58,7 +58,7 @@ public class FilterDataStoreProcessor extends AbstractColumnarDataStoreProcessor
     protected void fillKeyValue(BlockDataHolder blockDataHolder) {
         keyValue.reset();
         boolean isMinMaxEnabled = true;
-        String minMaxEnableValue = MolapProperties.getInstance().getProperty("molap.enableMinMax");
+        String minMaxEnableValue = CarbonProperties.getInstance().getProperty("molap.enableMinMax");
         if (null != minMaxEnableValue) {
             isMinMaxEnabled = Boolean.parseBoolean(minMaxEnableValue);
         }
@@ -73,7 +73,7 @@ public class FilterDataStoreProcessor extends AbstractColumnarDataStoreProcessor
                 DataStoreBlock dataStoreBlock = blockDataHolder.getLeafDataBlock();
                 if (dataStoreBlock instanceof CSBTreeColumnarLeafNode) {
                     String factFile = ((CSBTreeColumnarLeafNode) dataStoreBlock).getFactFile();
-                    LOGGER.debug(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                    LOGGER.debug(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                             "Skipping fact file because it is not required to scan based on filter condtion:"
                                     + factFile);
                 }
@@ -124,8 +124,8 @@ public class FilterDataStoreProcessor extends AbstractColumnarDataStoreProcessor
             temp[columnarDataStoreBlockInfo.getAllSelectedDimensions()[i]] = keyBlocks[i];
         }
 
-        MolapReadDataHolder[] msrBlocks =
-                new MolapReadDataHolder[columnarDataStoreBlockInfo.getTotalNumberOfMeasures()];
+        CarbonReadDataHolder[] msrBlocks =
+                new CarbonReadDataHolder[columnarDataStoreBlockInfo.getTotalNumberOfMeasures()];
         for (int i = 0; i < columnarDataStoreBlockInfo.getAllSelectedMeasures().length; i++) {
             if (null == blockDataHolder.getMeasureBlocks()[columnarDataStoreBlockInfo
                     .getAllSelectedMeasures()[i]]) {      //CHECKSTYLE:OFF    Approval No:Approval-V1R2C10_001

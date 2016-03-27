@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.iterator.MolapIterator;
+import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.query.executer.SliceExecuter;
 import org.carbondata.query.executer.exception.QueryExecutionException;
 import org.carbondata.query.executer.pagination.impl.QueryResult;
@@ -35,7 +35,7 @@ import org.carbondata.query.executer.processor.ScannedResultProcessorImpl;
 import org.carbondata.query.querystats.PartitionDetail;
 import org.carbondata.query.querystats.PartitionStatsCollector;
 import org.carbondata.query.schema.metadata.SliceExecutionInfo;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 
 public class ColumnarDetailQueryParallelSliceExecutor implements SliceExecuter {
 
@@ -56,7 +56,7 @@ public class ColumnarDetailQueryParallelSliceExecutor implements SliceExecuter {
     }
 
     @Override
-    public MolapIterator<QueryResult> executeSlices(List<SliceExecutionInfo> infos,
+    public CarbonIterator<QueryResult> executeSlices(List<SliceExecutionInfo> infos,
             int[] sliceIndex) throws QueryExecutionException {
         long startTime = System.currentTimeMillis();
         ColumnarSliceExecuter task = null;
@@ -86,15 +86,15 @@ public class ColumnarDetailQueryParallelSliceExecutor implements SliceExecuter {
             }
             execService.shutdown();
             execService.awaitTermination(2, TimeUnit.DAYS);
-            LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                     "Total time taken for scan " + (System.currentTimeMillis() - startTime));
             return scannedResultProcessor.getQueryResultIterator();
         } catch (QueryExecutionException exception) {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, exception,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, exception,
                     exception.getMessage());
             throw new QueryExecutionException(exception);
         } catch (InterruptedException e) {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e, e.getMessage());
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e, e.getMessage());
             throw new QueryExecutionException(e);
         } finally {
             execService = null;

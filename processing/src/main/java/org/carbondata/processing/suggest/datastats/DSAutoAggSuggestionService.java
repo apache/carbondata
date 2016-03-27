@@ -26,7 +26,7 @@ import java.util.List;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.processing.suggest.autoagg.AutoAggSuggestionService;
 import org.carbondata.processing.suggest.autoagg.exception.AggSuggestException;
 import org.carbondata.processing.suggest.autoagg.model.AggSuggestion;
@@ -38,7 +38,7 @@ import org.carbondata.processing.suggest.datastats.model.LoadModel;
 import org.carbondata.processing.suggest.datastats.util.AggCombinationGeneratorUtil;
 import org.carbondata.processing.suggest.datastats.util.DataStatsUtil;
 import org.carbondata.query.querystats.Preference;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
  * This class does below task 1.It delegates loading of Load data to LoadSampler
@@ -118,7 +118,7 @@ public class DSAutoAggSuggestionService implements AutoAggSuggestionService {
         //calculating the aggregate combination
         List<AggSuggestion> aggSuggest = autoAggregation.generateAggregate();
         long timeTaken = System.currentTimeMillis() - startTime;
-        LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                 "Time taken to generate DataStats Aggreation combination for cube," + loadModel
                         .getSchemaName() + '.' + loadModel.getCubeName() + ':' + timeTaken);
 
@@ -170,7 +170,7 @@ public class DSAutoAggSuggestionService implements AutoAggSuggestionService {
 
         }
 
-        int currentRestructNumber = MolapUtil
+        int currentRestructNumber = CarbonUtil
                 .checkAndReturnCurrentRestructFolderNumber(loadModel.getMetaDataPath(), "RS_",
                         false);
         if (-1 == currentRestructNumber) {
@@ -194,7 +194,7 @@ public class DSAutoAggSuggestionService implements AutoAggSuggestionService {
             return driverDistinctData;
 
         } catch (Exception e) {
-            LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                     "Error getting distinct relationship", e);
             throw new AggSuggestException(e.getMessage(), e);
         }

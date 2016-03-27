@@ -19,12 +19,12 @@
 
 package org.carbondata.core.datastorage.store;
 
-import org.carbondata.core.datastorage.store.dataholder.MolapReadDataHolder;
+import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 
 /**
  * MeasureDataWrapper, interface.
  */
 public interface MeasureDataWrapper {
-    MolapReadDataHolder[] getValues();
+    CarbonReadDataHolder[] getValues();
 
 }

@@ -19,7 +19,7 @@
 
 package org.carbondata.query.processor;
 
-import org.carbondata.core.iterator.MolapIterator;
+import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.executer.pagination.impl.QueryResult;
 import org.carbondata.query.processor.exception.DataProcessorException;
@@ -37,6 +37,6 @@ public interface DataProcessor {
 
     void finish() throws DataProcessorException;
 
-    MolapIterator<QueryResult> getQueryResultIterator();
+    CarbonIterator<QueryResult> getQueryResultIterator();
 
 }

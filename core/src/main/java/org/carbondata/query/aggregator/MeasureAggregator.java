@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
 
-import org.carbondata.core.datastorage.store.dataholder.MolapReadDataHolder;
+import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 
 /**
  * Class Description : MeasureAggregator interface. It will be implemented by
@@ -56,7 +56,7 @@ public interface MeasureAggregator extends Serializable, Comparable<MeasureAggre
      * @param newVal
      * @param index
      */
-    void agg(MolapReadDataHolder newVal, int index);
+    void agg(CarbonReadDataHolder newVal, int index);
 
     /**
      * Get the Serialize byte array

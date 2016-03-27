@@ -27,18 +27,18 @@ import java.util.List;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.metadata.MolapMetadata.Dimension;
-import org.carbondata.core.metadata.MolapMetadata.Measure;
-import org.carbondata.core.olap.SqlStatement.Type;
+import org.carbondata.core.metadata.CarbonMetadata.Dimension;
+import org.carbondata.core.metadata.CarbonMetadata.Measure;
+import org.carbondata.core.carbon.SqlStatement.Type;
 import org.carbondata.query.aggregator.CustomMeasureAggregator;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.columnar.aggregator.ColumnarAggregatorInfo;
 import org.carbondata.query.columnar.aggregator.impl.dimension.DimensionDataAggreagtor;
 import org.carbondata.query.columnar.keyvalue.AbstractColumnarScanResult;
 import org.carbondata.query.complex.querytypes.GenericQueryType;
-import org.carbondata.query.molapfilterinterface.RowImpl;
+import org.carbondata.query.carbonfilterinterface.RowImpl;
 import org.carbondata.query.util.DataTypeConverter;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 import org.carbondata.query.util.QueryExecutorUtility;
 
 /**
@@ -112,7 +112,7 @@ public class ExpressionAggregator {
                                     this.columnaraggreagtorInfo.getDimensions());
                             byteStream.close();
                         } catch (IOException e) {
-                            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
+                            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
                         }
                     }
                 }

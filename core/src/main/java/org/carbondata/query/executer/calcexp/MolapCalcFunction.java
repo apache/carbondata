@@ -21,7 +21,7 @@ package org.carbondata.query.executer.calcexp;
 
 import java.io.Serializable;
 
-import org.carbondata.core.olap.Exp;
+import org.carbondata.core.carbon.Exp;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.executer.calcexp.impl.CalcExpressionModel;
 

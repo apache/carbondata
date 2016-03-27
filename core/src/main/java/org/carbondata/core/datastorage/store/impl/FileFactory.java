@@ -26,12 +26,12 @@ import java.util.List;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.*;
 import org.apache.hadoop.fs.FileSystem;
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.FileHolder;
-import org.carbondata.core.datastorage.store.filesystem.HDFSMolapFile;
-import org.carbondata.core.datastorage.store.filesystem.LocalMolapFile;
-import org.carbondata.core.datastorage.store.filesystem.MolapFile;
-import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.datastorage.store.filesystem.HDFSCarbonFile;
+import org.carbondata.core.datastorage.store.filesystem.LocalCarbonFile;
+import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
+import org.carbondata.core.util.CarbonUtil;
 
 public final class FileFactory {
     private static Configuration configuration = null;
@@ -39,7 +39,7 @@ public final class FileFactory {
     private static FileType storeDefaultFileType = FileType.LOCAL;
 
     static {
-        String property = MolapUtil.getCarbonStorePath(null, null);
+        String property = CarbonUtil.getCarbonStorePath(null, null);
         if (property != null) {
             if (property.startsWith("hdfs://")) {
                 storeDefaultFileType = FileType.HDFS;
@@ -70,7 +70,7 @@ public final class FileFactory {
     }
 
     public static FileType getFileType() {
-        String property = MolapUtil.getCarbonStorePath(null, null);
+        String property = CarbonUtil.getCarbonStorePath(null, null);
         if (property != null) {
             if (property.startsWith("hdfs://")) {
                 storeDefaultFileType = FileType.HDFS;
@@ -86,14 +86,14 @@ public final class FileFactory {
         return FileType.LOCAL;
     }
 
-    public static MolapFile getMolapFile(String path, FileType fileType) {
+    public static CarbonFile getMolapFile(String path, FileType fileType) {
         switch (fileType) {
         case LOCAL:
-            return new LocalMolapFile(path);
+            return new LocalCarbonFile(path);
         case HDFS:
-            return new HDFSMolapFile(path);
+            return new HDFSCarbonFile(path);
         default:
-            return new LocalMolapFile(path);
+            return new LocalCarbonFile(path);
         }
     }
 
@@ -200,7 +200,7 @@ public final class FileFactory {
     public static List<String> getFileNames(final String extn, String folderPath, FileType fileType)
             throws IOException {
         folderPath = folderPath.replace("\\", "/");
-        List<String> fileNames = new ArrayList<String>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+        List<String> fileNames = new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
         switch (fileType) {
         case HDFS:
             Path pt = new Path(folderPath);

@@ -26,9 +26,9 @@ import java.util.Comparator;
 import java.util.List;
 
 import org.carbondata.core.keygenerator.KeyGenerator;
-import org.carbondata.core.metadata.MolapMetadata.Dimension;
-import org.carbondata.core.olap.SqlStatement;
-import org.carbondata.query.datastorage.InMemoryCube;
+import org.carbondata.core.metadata.CarbonMetadata.Dimension;
+import org.carbondata.core.carbon.SqlStatement;
+import org.carbondata.query.datastorage.InMemoryTable;
 import org.carbondata.query.reader.ResultTempFileReader;
 
 /**
@@ -98,7 +98,7 @@ public class DataProcessorInfo {
     /**
      * slices
      */
-    private List<InMemoryCube> slices;
+    private List<InMemoryTable> slices;
     private int blockSize;
     private byte[] sortedDimIndex;
     private boolean[] highCardinalityTypes;
@@ -330,14 +330,14 @@ public class DataProcessorInfo {
     /**
      * @return the slices
      */
-    public List<InMemoryCube> getSlices() {
+    public List<InMemoryTable> getSlices() {
         return slices;
     }
 
     /**
      * @param slices the slices to set
      */
-    public void setSlices(final List<InMemoryCube> slices) {
+    public void setSlices(final List<InMemoryTable> slices) {
         this.slices = slices;
     }
 

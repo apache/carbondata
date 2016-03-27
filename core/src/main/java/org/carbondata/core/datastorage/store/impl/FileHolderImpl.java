@@ -29,9 +29,9 @@ import java.util.Map.Entry;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.FileHolder;
-import org.carbondata.core.util.MolapCoreLogEvent;
+import org.carbondata.core.util.CarbonCoreLogEvent;
 
 public class FileHolderImpl implements FileHolder {
     /**
@@ -50,7 +50,7 @@ public class FileHolderImpl implements FileHolder {
      */
     public FileHolderImpl() {
         this.fileNameAndStreamCache =
-                new HashMap<String, FileChannel>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                new HashMap<String, FileChannel>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     }
 
     public FileHolderImpl(int capacity) {
@@ -100,7 +100,7 @@ public class FileHolderImpl implements FileHolder {
                     channel.close();
                 }
             } catch (IOException exception) {
-                LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, exception,
+                LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, exception,
                         exception.getMessage());
             }
         }
@@ -118,7 +118,7 @@ public class FileHolderImpl implements FileHolder {
     @Override
     public int readInt(String filePath, long offset) {
         FileChannel fileChannel = updateCache(filePath);
-        ByteBuffer byteBffer = read(fileChannel, MolapCommonConstants.INT_SIZE_IN_BYTE, offset);
+        ByteBuffer byteBffer = read(fileChannel, CarbonCommonConstants.INT_SIZE_IN_BYTE, offset);
         return byteBffer.getInt();
     }
 
@@ -132,7 +132,7 @@ public class FileHolderImpl implements FileHolder {
     @Override
     public int readInt(String filePath) {
         FileChannel fileChannel = updateCache(filePath);
-        ByteBuffer byteBffer = read(fileChannel, MolapCommonConstants.INT_SIZE_IN_BYTE);
+        ByteBuffer byteBffer = read(fileChannel, CarbonCommonConstants.INT_SIZE_IN_BYTE);
         return byteBffer.getInt();
     }
 
@@ -147,7 +147,7 @@ public class FileHolderImpl implements FileHolder {
     @Override
     public long readDouble(String filePath, long offset) {
         FileChannel fileChannel = updateCache(filePath);
-        ByteBuffer byteBffer = read(fileChannel, MolapCommonConstants.LONG_SIZE_IN_BYTE, offset);
+        ByteBuffer byteBffer = read(fileChannel, CarbonCommonConstants.LONG_SIZE_IN_BYTE, offset);
         return byteBffer.getLong();
     }
 
@@ -168,7 +168,7 @@ public class FileHolderImpl implements FileHolder {
                 fileNameAndStreamCache.put(filePath, fileChannel);
             }
         } catch (IOException e) {
-            LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, e, e.getMessage());
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, e, e.getMessage());
         }
         return fileChannel;
     }
@@ -187,7 +187,7 @@ public class FileHolderImpl implements FileHolder {
             channel.position(offset);
             channel.read(byteBffer);
         } catch (Exception e) {
-            LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, e, e.getMessage());
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, e, e.getMessage());
         }
         byteBffer.rewind();
         return byteBffer;
@@ -205,7 +205,7 @@ public class FileHolderImpl implements FileHolder {
         try {
             channel.read(byteBffer);
         } catch (Exception e) {
-            LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, e, e.getMessage());
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, e, e.getMessage());
         }
         byteBffer.rewind();
         return byteBffer;
@@ -222,7 +222,7 @@ public class FileHolderImpl implements FileHolder {
             FileChannel fileChannel = updateCache(filePath);
             size = fileChannel.size();
         } catch (IOException e) {
-            LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, e, e.getMessage());
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, e, e.getMessage());
         }
         return size;
     }
@@ -252,7 +252,7 @@ public class FileHolderImpl implements FileHolder {
     @Override
     public long readLong(String filePath, long offset) {
         FileChannel fileChannel = updateCache(filePath);
-        ByteBuffer byteBffer = read(fileChannel, MolapCommonConstants.LONG_SIZE_IN_BYTE, offset);
+        ByteBuffer byteBffer = read(fileChannel, CarbonCommonConstants.LONG_SIZE_IN_BYTE, offset);
         return byteBffer.getLong();
     }
 

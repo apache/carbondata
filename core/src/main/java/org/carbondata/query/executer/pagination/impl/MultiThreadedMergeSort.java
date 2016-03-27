@@ -28,7 +28,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.query.executer.pagination.impl.DataFileWriter.KeyValueHolder;
 
 public final class MultiThreadedMergeSort {
@@ -52,7 +52,7 @@ public final class MultiThreadedMergeSort {
         int equalParts = src.length / numberOfThreads;
 
         List<Future<SortThread>> sortThreads =
-                new ArrayList<Future<SortThread>>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+                new ArrayList<Future<SortThread>>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
 
         for (int i = 0; i < numberOfThreads; i++) {
             int srcPos = equalParts * i;
@@ -72,7 +72,7 @@ public final class MultiThreadedMergeSort {
             }
         }
         List<KeyValueHolder[]> parts =
-                new ArrayList<KeyValueHolder[]>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+                new ArrayList<KeyValueHolder[]>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
         int tasksCompleted = 0;
         try {
             //CHECKSTYLE:OFF    Approval No:Approval-249
@@ -108,14 +108,14 @@ public final class MultiThreadedMergeSort {
         }
 
         List<Future<KeyValueHolder[]>> mergeFutures =
-                new ArrayList<Future<KeyValueHolder[]>>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+                new ArrayList<Future<KeyValueHolder[]>>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
         mergeFutures.add(executorService
                 .submit(new MergeThread(parts.get(0), parts.get(1), comparator)));
         mergeFutures.add(executorService
                 .submit(new MergeThread(parts.get(2), parts.get(3), comparator)));
         parts.clear();
         List<KeyValueHolder[]> mergeParts =
-                new ArrayList<KeyValueHolder[]>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+                new ArrayList<KeyValueHolder[]>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
         try {
             tasksCompleted = 0;
             //CHECKSTYLE:OFF    Approval No:Approval-249

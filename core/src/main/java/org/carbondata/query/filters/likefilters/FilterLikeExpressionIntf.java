@@ -23,10 +23,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map.Entry;
 
-import org.carbondata.core.metadata.MolapMetadata.Dimension;
-import org.carbondata.query.datastorage.InMemoryCube;
+import org.carbondata.core.metadata.CarbonMetadata.Dimension;
+import org.carbondata.query.datastorage.InMemoryTable;
 import org.carbondata.query.filters.metadata.ContentMatchFilterInfo;
-import org.carbondata.query.queryinterface.filter.MolapFilterInfo;
+import org.carbondata.query.queryinterface.filter.CarbonFilterInfo;
 
 public interface FilterLikeExpressionIntf {
 
@@ -34,8 +34,8 @@ public interface FilterLikeExpressionIntf {
 
     void setLikeExpression(LikeExpression expression);
 
-    void processLikeExpressionFilters(List<String> listFilterExpression, List<InMemoryCube> slices,
-            Entry<Dimension, MolapFilterInfo> entry, ContentMatchFilterInfo matchFilterInfo,
+    void processLikeExpressionFilters(List<String> listFilterExpression, List<InMemoryTable> slices,
+            Entry<Dimension, CarbonFilterInfo> entry, ContentMatchFilterInfo matchFilterInfo,
             boolean hasNameColumn, Locale locale);
 
 }

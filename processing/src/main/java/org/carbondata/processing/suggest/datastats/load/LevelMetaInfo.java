@@ -21,12 +21,12 @@ package org.carbondata.processing.suggest.datastats.load;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.datastorage.store.filesystem.MolapFile;
-import org.carbondata.core.datastorage.store.filesystem.MolapFileFilter;
-import org.carbondata.core.util.MolapUtil;
-import org.carbondata.core.util.MolapUtilException;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
+import org.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
+import org.carbondata.core.util.CarbonUtil;
+import org.carbondata.core.util.CarbonUtilException;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
  * This class will have information about level metadata
@@ -40,26 +40,26 @@ public class LevelMetaInfo {
 
     private int[] dimCardinality;
 
-    public LevelMetaInfo(MolapFile file, String tableName) {
+    public LevelMetaInfo(CarbonFile file, String tableName) {
         initialise(file, tableName);
     }
 
-    private void initialise(MolapFile file, final String tableName) {
+    private void initialise(CarbonFile file, final String tableName) {
 
         if (file.isDirectory()) {
-            MolapFile[] files = file.listFiles(new MolapFileFilter() {
-                public boolean accept(MolapFile pathname) {
+            CarbonFile[] files = file.listFiles(new CarbonFileFilter() {
+                public boolean accept(CarbonFile pathname) {
                     return (!pathname.isDirectory()) && pathname.getName()
-                            .startsWith(MolapCommonConstants.LEVEL_METADATA_FILE) && pathname
+                            .startsWith(CarbonCommonConstants.LEVEL_METADATA_FILE) && pathname
                             .getName().endsWith(tableName + ".metadata");
                 }
 
             });
             try {
                 dimCardinality =
-                        MolapUtil.getCardinalityFromLevelMetadataFile(files[0].getAbsolutePath());
-            } catch (MolapUtilException e) {
-                LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
+                        CarbonUtil.getCardinalityFromLevelMetadataFile(files[0].getAbsolutePath());
+            } catch (CarbonUtilException e) {
+                LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
             }
         }
 

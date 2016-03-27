@@ -20,8 +20,8 @@
 package org.carbondata.query.executer.pagination.lru;
 
 import org.carbondata.core.keygenerator.KeyGenerator;
-import org.carbondata.core.metadata.MolapMetadata.Measure;
-import org.carbondata.query.cache.MolapSegmentHeader;
+import org.carbondata.core.metadata.CarbonMetadata.Measure;
+import org.carbondata.query.cache.CarbonSegmentHeader;
 
 public class LRUCacheKey {
 
@@ -36,7 +36,7 @@ public class LRUCacheKey {
     /**
      * segmentHeader
      */
-    private MolapSegmentHeader segmentHeader;
+    private CarbonSegmentHeader segmentHeader;
 
     private String path;
 
@@ -186,14 +186,14 @@ public class LRUCacheKey {
     /**
      * @return the segmentHeader
      */
-    public MolapSegmentHeader getSegmentHeader() {
+    public CarbonSegmentHeader getSegmentHeader() {
         return segmentHeader;
     }
 
     /**
      * @param segmentHeader the segmentHeader to set
      */
-    public void setSegmentHeader(MolapSegmentHeader segmentHeader) {
+    public void setSegmentHeader(CarbonSegmentHeader segmentHeader) {
         this.segmentHeader = segmentHeader;
     }
 

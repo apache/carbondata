@@ -30,7 +30,7 @@ package org.carbondata.integration.spark.partition.api;
 
 import java.util.List;
 
-import org.carbondata.integration.spark.query.MolapQueryPlan;
+import org.carbondata.integration.spark.query.CarbonQueryPlan;
 
 import org.apache.spark.sql.cubemodel.Partitioner;
 
@@ -54,7 +54,7 @@ public interface DataPartitioner {
     /**
      * Identifies the partitions applicable for the given filter (API used for For query)
      */
-    List<Partition> getPartitions(MolapQueryPlan queryPlan);
+    List<Partition> getPartitions(CarbonQueryPlan queryPlan);
 
     String[] getPartitionedColumns();
 

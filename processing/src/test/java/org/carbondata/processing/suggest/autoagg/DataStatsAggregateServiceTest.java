@@ -26,8 +26,8 @@ import java.util.List;
 import junit.framework.Assert;
 import mockit.Mock;
 import mockit.MockUp;
-import org.carbondata.core.olap.MolapDef;
-import org.carbondata.core.util.MolapProperties;
+import org.carbondata.core.carbon.CarbonDef;
+import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.processing.suggest.autoagg.exception.AggSuggestException;
 import org.carbondata.processing.suggest.autoagg.model.Request;
 import org.carbondata.processing.suggest.autoagg.util.CommonUtil;
@@ -42,8 +42,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class DataStatsAggregateServiceTest {
-    static MolapDef.Schema schema;
-    static MolapDef.Cube cube;
+    static CarbonDef.Schema schema;
+    static CarbonDef.Cube cube;
 
     static String schemaName;
     static String cubeName;
@@ -61,12 +61,12 @@ public class DataStatsAggregateServiceTest {
             String basePath = file.getCanonicalPath() + "/";
             String metaPath = basePath + "schemas/default/carbon/metadata";
 
-            MolapProperties.getInstance().addProperty("molap.storelocation", basePath + "store");
-            MolapProperties.getInstance().addProperty("molap.number.of.cores", "4");
-            MolapProperties.getInstance().addProperty("molap.agg.benefitRatio", "10");
-            MolapProperties.getInstance().addProperty(Preference.AGG_LOAD_COUNT, "2");
-            MolapProperties.getInstance().addProperty(Preference.AGG_FACT_COUNT, "2");
-            MolapProperties.getInstance().addProperty(Preference.AGG_REC_COUNT, "5");
+            CarbonProperties.getInstance().addProperty("molap.storelocation", basePath + "store");
+            CarbonProperties.getInstance().addProperty("molap.number.of.cores", "4");
+            CarbonProperties.getInstance().addProperty("molap.agg.benefitRatio", "10");
+            CarbonProperties.getInstance().addProperty(Preference.AGG_LOAD_COUNT, "2");
+            CarbonProperties.getInstance().addProperty(Preference.AGG_FACT_COUNT, "2");
+            CarbonProperties.getInstance().addProperty(Preference.AGG_REC_COUNT, "5");
             schema = CommonUtil.readMetaData(metaPath).get(0);
             cube = schema.cubes[0];
             schemaName = schema.name;
@@ -266,7 +266,7 @@ public class DataStatsAggregateServiceTest {
         new MockUp<AggCombinationGeneratorUtil>() {
 
             @Mock
-            public Level[] getVisibleLevels(Level[] aggLevels, MolapDef.Cube cube) {
+            public Level[] getVisibleLevels(Level[] aggLevels, CarbonDef.Cube cube) {
                 return new Level[0];
             }
 

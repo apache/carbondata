@@ -19,8 +19,8 @@
 
 package org.carbondata.query.schema.metadata;
 
-import org.carbondata.core.metadata.MolapMetadata.Dimension;
-import org.carbondata.query.queryinterface.query.MolapQuery.AxisType;
+import org.carbondata.core.metadata.CarbonMetadata.Dimension;
+import org.carbondata.query.queryinterface.query.CarbonQuery.AxisType;
 
 public class MeasureFilterProcessorModel {
 

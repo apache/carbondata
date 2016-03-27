@@ -28,8 +28,8 @@ import org.apache.spark.sql.types.ArrayType;
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.GenericArrayData;
 import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreDataHolder;
-import org.carbondata.core.metadata.MolapMetadata.Dimension;
-import org.carbondata.query.datastorage.InMemoryCube;
+import org.carbondata.core.metadata.CarbonMetadata.Dimension;
+import org.carbondata.query.datastorage.InMemoryTable;
 import org.carbondata.query.evaluators.BlockDataHolder;
 
 public class ArrayQueryType implements GenericQueryType {
@@ -166,7 +166,7 @@ public class ArrayQueryType implements GenericQueryType {
     }
 
     @Override
-    public Object getDataBasedOnDataTypeFromSurrogates(List<InMemoryCube> slices,
+    public Object getDataBasedOnDataTypeFromSurrogates(List<InMemoryTable> slices,
             ByteBuffer surrogateData, Dimension[] dimensions) {
         int dataLength = surrogateData.getInt();
         if (dataLength == -1) {

@@ -24,12 +24,12 @@ import java.util.List;
 import java.util.Map;
 
 import org.carbondata.query.filters.likefilters.FilterLikeExpressionIntf;
-import org.carbondata.query.queryinterface.filter.MolapFilterInfo;
+import org.carbondata.query.queryinterface.filter.CarbonFilterInfo;
 
 /**
  * This class is used for content match of level string.
  */
-public class ContentMatchFilterInfo extends MolapFilterInfo {
+public class ContentMatchFilterInfo extends CarbonFilterInfo {
     /**
      * excludedContentMatchMembers.
      */

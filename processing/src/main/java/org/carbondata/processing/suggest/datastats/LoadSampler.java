@@ -24,28 +24,28 @@ import java.util.*;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.datastorage.store.filesystem.MolapFile;
-import org.carbondata.core.datastorage.store.filesystem.MolapFileFilter;
+import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
+import org.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
-import org.carbondata.core.metadata.MolapMetadata.Cube;
-import org.carbondata.core.metadata.MolapMetadata.Dimension;
+import org.carbondata.core.metadata.CarbonMetadata.Cube;
+import org.carbondata.core.metadata.CarbonMetadata.Dimension;
 import org.carbondata.core.metadata.SliceMetaData;
-import org.carbondata.core.olap.MolapDef;
-import org.carbondata.core.olap.MolapDef.Schema;
-import org.carbondata.core.util.MolapProperties;
-import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.carbon.CarbonDef;
+import org.carbondata.core.carbon.CarbonDef.Schema;
+import org.carbondata.core.util.CarbonProperties;
+import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.processing.suggest.autoagg.exception.AggSuggestException;
 import org.carbondata.processing.suggest.datastats.load.FactDataHandler;
 import org.carbondata.processing.suggest.datastats.load.FactDataReader;
 import org.carbondata.processing.suggest.datastats.load.LoadHandler;
 import org.carbondata.processing.suggest.datastats.model.LoadModel;
 import org.carbondata.processing.suggest.datastats.util.DataStatsUtil;
-import org.carbondata.query.datastorage.InMemoryCube;
-import org.carbondata.query.datastorage.InMemoryCubeStore;
+import org.carbondata.query.datastorage.InMemoryTable;
+import org.carbondata.query.datastorage.InMemoryTableStore;
 import org.carbondata.query.datastorage.Member;
 import org.carbondata.query.datastorage.MemberStore;
 import org.carbondata.query.querystats.Preference;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
  * This class have all loads for which data sampling needs to be done
@@ -97,7 +97,7 @@ public class LoadSampler {
     public void loadCube(LoadModel loadModel) {
         this.schema = loadModel.getSchema();
         this.allLoads = loadModel.getAllLoads();
-        MolapDef.Cube cube = loadModel.getCube();
+        CarbonDef.Cube cube = loadModel.getCube();
 
         String partitionId = loadModel.getPartitionId();
         if (null != partitionId) {
@@ -110,9 +110,9 @@ public class LoadSampler {
 
         loadHandlers = new ArrayList<LoadHandler>();
         // Load data in memory
-        LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                 "Loading data to BPlus tree started");
-        metaCube = InMemoryCubeStore.getInstance()
+        metaCube = InMemoryTableStore.getInstance()
                 .loadCubeMetadataIfRequired(schema, cube, partitionId,
                         loadModel.getSchemaLastUpdatedTime());
         DataStatsUtil.createDataSource(schema, metaCube, partitionId, loadModel.getValidSlices(),
@@ -120,18 +120,18 @@ public class LoadSampler {
                 loadModel.getRestructureNo(), loadModel.getCubeCreationtime());
         //set visible dimensions
         this.visibleDimensions = getVisibleDimensions(cube);
-        LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                 "Loading data to BPlus tree completed");
 
         //int restructureNo=Integer.parseInt(rsFolder.getName().substring(rsFolder.getName().indexOf('_')+1));
-        MolapFile[] rsFolders = DataStatsUtil.getRSFolderListList(loadModel);
+        CarbonFile[] rsFolders = DataStatsUtil.getRSFolderListList(loadModel);
 
-        for (MolapFile rsFolder : rsFolders) {
-            MolapFile tableFile = getTableFile(rsFolder, tableName);
+        for (CarbonFile rsFolder : rsFolders) {
+            CarbonFile tableFile = getTableFile(rsFolder, tableName);
             SliceMetaData sliceMetaData = (SliceMetaData) DataStatsUtil.readSerializedFile(
-                    tableFile.getAbsolutePath() + File.separator + MolapUtil
+                    tableFile.getAbsolutePath() + File.separator + CarbonUtil
                             .getSliceMetaDataFileName(loadModel.getRestructureNo()));
-            MolapFile[] loads =
+            CarbonFile[] loads =
                     getLoadFolderList(tableFile.getAbsolutePath(), loadModel.getValidSlices());
 
             if (null == loads) {
@@ -144,13 +144,13 @@ public class LoadSampler {
 			}*/
 
             String confloadSize =
-                    MolapProperties.getInstance().getProperty(Preference.AGG_LOAD_COUNT);
+                    CarbonProperties.getInstance().getProperty(Preference.AGG_LOAD_COUNT);
             int loadSize = loads.length;
             if (null != confloadSize && Integer.parseInt(confloadSize) < loadSize) {
                 loadSize = Integer.parseInt(confloadSize);
             }
             int consideredLoadCounter = 0;
-            for (MolapFile load : loads) {
+            for (CarbonFile load : loads) {
                 LoadHandler loadHandler = new LoadHandler(sliceMetaData, metaCube, load);
                 if (loadHandler.isDataAvailable(load, tableName)) {
                     loadHandlers.add(loadHandler);
@@ -198,10 +198,10 @@ public class LoadSampler {
      * @param cube
      * @return
      */
-    private List<Dimension> getVisibleDimensions(MolapDef.Cube cube) {
+    private List<Dimension> getVisibleDimensions(CarbonDef.Cube cube) {
         List<Dimension> visibleDimensions = new ArrayList<Dimension>();
-        MolapDef.CubeDimension[] cubeDimensions = cube.dimensions;
-        for (MolapDef.CubeDimension cubeDimension : cubeDimensions) {
+        CarbonDef.CubeDimension[] cubeDimensions = cube.dimensions;
+        for (CarbonDef.CubeDimension cubeDimension : cubeDimensions) {
             if (cubeDimension.visible) {
                 Dimension dim = metaCube.getDimension(cubeDimension.name, getTableName());
                 visibleDimensions.add(dim);
@@ -210,23 +210,23 @@ public class LoadSampler {
         return visibleDimensions;
     }
 
-    private MolapFile getTableFile(MolapFile rsFolder, final String tableName) {
-        MolapFile[] tableFiles = rsFolder.listFiles(new MolapFileFilter() {
-            public boolean accept(MolapFile pathname) {
+    private CarbonFile getTableFile(CarbonFile rsFolder, final String tableName) {
+        CarbonFile[] tableFiles = rsFolder.listFiles(new CarbonFileFilter() {
+            public boolean accept(CarbonFile pathname) {
                 return (pathname.isDirectory()) && tableName.equals(pathname.getName());
             }
         });
         return tableFiles[0];
     }
 
-    private MolapFile[] getLoadFolderList(String path, final List<String> validLoads) {
-        MolapFile file = FileFactory.getMolapFile(path, FileFactory.getFileType(path));
-        MolapFile[] files = null;
+    private CarbonFile[] getLoadFolderList(String path, final List<String> validLoads) {
+        CarbonFile file = FileFactory.getMolapFile(path, FileFactory.getFileType(path));
+        CarbonFile[] files = null;
         if (file.isDirectory()) {
-            files = file.listFiles(new MolapFileFilter() {
+            files = file.listFiles(new CarbonFileFilter() {
 
                 @Override
-                public boolean accept(MolapFile pathname) {
+                public boolean accept(CarbonFile pathname) {
                     String name = pathname.getName();
                     return validLoads.contains(name);
                 }
@@ -263,7 +263,7 @@ public class LoadSampler {
                             DataStatsUtil.getNumberOfRows(dimension)));
                 }
             } catch (AggSuggestException e) {
-                LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e.getMessage());
+                LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e.getMessage());
             }
 
         }
@@ -282,7 +282,7 @@ public class LoadSampler {
 
             String data = getDimensionValueFromSurrogate(cubeUniqueName, levelName, surrogate);
             if (null == data) {
-                LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                         "Member value of dimension," + dimension.getName() + ",for surrogate,"
                                 + surrogate + ",is not found in level file");
                 continue;
@@ -291,7 +291,7 @@ public class LoadSampler {
             realDatas.add(data);
 
         }
-        LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                 dimension.getName() + " Load size:" + loadHandlers.size() + ":Sample size:"
                         + realDatas.size());
         return realDatas;
@@ -306,10 +306,10 @@ public class LoadSampler {
      * @return
      */
     public String getDimensionValueFromSurrogate(String cubeName, String levelName, int surrogate) {
-        List<InMemoryCube> inMemoryCubes =
-                InMemoryCubeStore.getInstance().getActiveSlices(cubeName);
-        for (InMemoryCube inMemoryCube : inMemoryCubes) {
-            MemberStore memberStore = inMemoryCube.getMemberCache(levelName);
+        List<InMemoryTable> inMemoryTables =
+                InMemoryTableStore.getInstance().getActiveSlices(cubeName);
+        for (InMemoryTable inMemoryTable : inMemoryTables) {
+            MemberStore memberStore = inMemoryTable.getMemberCache(levelName);
             Member member = memberStore.getMemberByID(surrogate);
             if (null != member) {
                 return member.toString();

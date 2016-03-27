@@ -23,8 +23,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.olap.MolapDef;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.carbon.CarbonDef;
 import org.carbondata.core.util.ByteUtil;
 import org.carbondata.query.util.MemberSortModel;
 
@@ -38,7 +38,7 @@ public class MemberStore {
     /**
      * Mondrian rolap level
      */
-    private MolapDef.Level rolapLevel;
+    private CarbonDef.Level rolapLevel;
 
     /**
      * member Cache
@@ -98,7 +98,7 @@ public class MemberStore {
 
     private DataType memberDataType;
 
-    public MemberStore(MolapDef.Level rolapLevel, String tableName) {
+    public MemberStore(CarbonDef.Level rolapLevel, String tableName) {
         this.rolapLevel = rolapLevel;
 
         if (rolapLevel != null) {
@@ -147,7 +147,7 @@ public class MemberStore {
     /**
      * Getter for level
      */
-    public MolapDef.Level getRolapLevel() {
+    public CarbonDef.Level getRolapLevel() {
         return rolapLevel;
     }
 
@@ -231,8 +231,8 @@ public class MemberStore {
         if (key >= sortReverseOrderIndexSize || key < minMember) {
             return -1;
         }
-        int rowIndex = key / MolapCommonConstants.LEVEL_ARRAY_SIZE;
-        int columnIndex = (key % MolapCommonConstants.LEVEL_ARRAY_SIZE);
+        int rowIndex = key / CarbonCommonConstants.LEVEL_ARRAY_SIZE;
+        int columnIndex = (key % CarbonCommonConstants.LEVEL_ARRAY_SIZE);
         return sortReverseOrderIndex[rowIndex][columnIndex];
     }
 
@@ -245,8 +245,8 @@ public class MemberStore {
         // when number of slices are more than one then localSurrogate - min may
         // give value -1 so we have to skip that member store
         if (null != cache && cache.length > 0 && localSurrogate <= maxMember && key > -1) {
-            int rowIndex = key / MolapCommonConstants.LEVEL_ARRAY_SIZE;
-            int columnIndex = (key % MolapCommonConstants.LEVEL_ARRAY_SIZE);
+            int rowIndex = key / CarbonCommonConstants.LEVEL_ARRAY_SIZE;
+            int columnIndex = (key % CarbonCommonConstants.LEVEL_ARRAY_SIZE);
             return this.cache[rowIndex][columnIndex];
         }
         return null;
@@ -313,21 +313,21 @@ public class MemberStore {
     }
 
     private int[][] convertTo2DArray(int[] singleArray) {
-        int div = singleArray.length / MolapCommonConstants.LEVEL_ARRAY_SIZE;
-        int rem = singleArray.length % MolapCommonConstants.LEVEL_ARRAY_SIZE;
+        int div = singleArray.length / CarbonCommonConstants.LEVEL_ARRAY_SIZE;
+        int rem = singleArray.length % CarbonCommonConstants.LEVEL_ARRAY_SIZE;
         if (rem > 0) {
             div++;
         }
         int[][] doubleArray = new int[div][];
 
         for (int i = 0; i < div - 1; i++) {
-            doubleArray[i] = new int[MolapCommonConstants.LEVEL_ARRAY_SIZE];
+            doubleArray[i] = new int[CarbonCommonConstants.LEVEL_ARRAY_SIZE];
         }
 
         if (rem > 0) {
             doubleArray[doubleArray.length - 1] = new int[rem];
         } else {
-            doubleArray[doubleArray.length - 1] = new int[MolapCommonConstants.LEVEL_ARRAY_SIZE];
+            doubleArray[doubleArray.length - 1] = new int[CarbonCommonConstants.LEVEL_ARRAY_SIZE];
         }
         int counter = 0;
         for (int i = 0; i < doubleArray.length; i++) {
@@ -365,11 +365,11 @@ public class MemberStore {
         if (index >= sortReverseOrderIndexSize || index < minMember) {
             return null;
         }
-        int rowIndex = index / MolapCommonConstants.LEVEL_ARRAY_SIZE;
-        int columnIndex = index % MolapCommonConstants.LEVEL_ARRAY_SIZE;
+        int rowIndex = index / CarbonCommonConstants.LEVEL_ARRAY_SIZE;
+        int columnIndex = index % CarbonCommonConstants.LEVEL_ARRAY_SIZE;
         int key = sortOrderIndex[rowIndex][columnIndex] - min;
-        rowIndex = key / MolapCommonConstants.LEVEL_ARRAY_SIZE;
-        columnIndex = key % MolapCommonConstants.LEVEL_ARRAY_SIZE;
+        rowIndex = key / CarbonCommonConstants.LEVEL_ARRAY_SIZE;
+        columnIndex = key % CarbonCommonConstants.LEVEL_ARRAY_SIZE;
         return cache[rowIndex][columnIndex];
     }
 

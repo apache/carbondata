@@ -24,36 +24,36 @@ import java.util.*;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.csvreader.checkpoint.CheckPointHanlder;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.carbondata.core.metadata.SliceMetaData;
-import org.carbondata.core.olap.MolapDef.Cube;
-import org.carbondata.core.olap.MolapDef.CubeDimension;
-import org.carbondata.core.olap.MolapDef.Measure;
-import org.carbondata.core.olap.MolapDef.Schema;
-import org.carbondata.core.util.MolapProperties;
-import org.carbondata.core.util.MolapUtil;
-import org.carbondata.core.util.MolapUtilException;
-import org.carbondata.processing.aggregatesurrogategenerator.step.MolapAggregateSurrogateGeneratorMeta;
+import org.carbondata.core.carbon.CarbonDef.Cube;
+import org.carbondata.core.carbon.CarbonDef.CubeDimension;
+import org.carbondata.core.carbon.CarbonDef.Measure;
+import org.carbondata.core.carbon.CarbonDef.Schema;
+import org.carbondata.core.util.CarbonProperties;
+import org.carbondata.core.util.CarbonUtil;
+import org.carbondata.core.util.CarbonUtilException;
+import org.carbondata.processing.aggregatesurrogategenerator.step.CarbonAggregateSurrogateGeneratorMeta;
 import org.carbondata.processing.api.dataloader.DataLoadModel;
 import org.carbondata.processing.api.dataloader.SchemaInfo;
-import org.carbondata.processing.autoaggregategraphgenerator.step.MolapAutoAGGGraphGeneratorMeta;
+import org.carbondata.processing.autoaggregategraphgenerator.step.CarbonAutoAGGGraphGeneratorMeta;
 import org.carbondata.processing.csvreader.CsvReaderMeta;
 import org.carbondata.processing.csvreaderstep.CsvInputMeta;
-import org.carbondata.processing.factreader.step.MolapFactReaderMeta;
+import org.carbondata.processing.factreader.step.CarbonFactReaderMeta;
 import org.carbondata.processing.graphgenerator.configuration.GraphConfigurationInfo;
 import org.carbondata.processing.mdkeygen.MDKeyGenStepMeta;
-import org.carbondata.processing.merger.step.MolapSliceMergerStepMeta;
+import org.carbondata.processing.merger.step.CarbonSliceMergerStepMeta;
 import org.carbondata.processing.schema.metadata.AggregateTable;
 import org.carbondata.processing.sortandgroupby.sortDataStep.SortKeyStepMeta;
-import org.carbondata.processing.sortandgroupby.step.MolapSortKeyAndGroupByStepMeta;
-import org.carbondata.processing.store.MolapDataWriterStepMeta;
-import org.carbondata.processing.surrogatekeysgenerator.csvbased.MolapCSVBasedSeqGenMeta;
-import org.carbondata.processing.util.MolapDataProcessorLogEvent;
-import org.carbondata.processing.util.MolapDataProcessorUtil;
-import org.carbondata.processing.util.MolapSchemaParser;
+import org.carbondata.processing.sortandgroupby.step.CarbonSortKeyAndGroupByStepMeta;
+import org.carbondata.processing.store.CarbonDataWriterStepMeta;
+import org.carbondata.processing.surrogatekeysgenerator.csvbased.CarbonCSVBasedSeqGenMeta;
+import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
+import org.carbondata.processing.util.CarbonDataProcessorUtil;
+import org.carbondata.processing.util.CarbonSchemaParser;
 import org.carbondata.processing.util.RemoveDictionaryUtil;
 import org.pentaho.di.core.KettleEnvironment;
 import org.pentaho.di.core.database.DatabaseMeta;
@@ -109,18 +109,18 @@ public class GraphGenerator {
 
         DRIVERS = new HashMap<String, String>(1);
 
-        DRIVERS.put("oracle.jdbc.OracleDriver", MolapCommonConstants.TYPE_ORACLE);
-        DRIVERS.put("com.mysql.jdbc.Driver", MolapCommonConstants.TYPE_MYSQL);
-        DRIVERS.put("org.gjt.mm.mysql.Driver", MolapCommonConstants.TYPE_MYSQL);
+        DRIVERS.put("oracle.jdbc.OracleDriver", CarbonCommonConstants.TYPE_ORACLE);
+        DRIVERS.put("com.mysql.jdbc.Driver", CarbonCommonConstants.TYPE_MYSQL);
+        DRIVERS.put("org.gjt.mm.mysql.Driver", CarbonCommonConstants.TYPE_MYSQL);
         DRIVERS.put("com.microsoft.sqlserver.jdbc.SQLServerDriver",
-                MolapCommonConstants.TYPE_MSSQL);
-        DRIVERS.put("com.sybase.jdbc3.jdbc.SybDriver", MolapCommonConstants.TYPE_SYBASE);
+                CarbonCommonConstants.TYPE_MSSQL);
+        DRIVERS.put("com.sybase.jdbc3.jdbc.SybDriver", CarbonCommonConstants.TYPE_SYBASE);
     }
 
     /**
      * OUTPUT_LOCATION
      */
-    private final String outputLocation = MolapProperties.getInstance()
+    private final String outputLocation = CarbonProperties.getInstance()
             .getProperty("store_output_location", "../unibi-solutions/system/molap/etl");
     /**
      * xAxixLocation
@@ -141,7 +141,7 @@ public class GraphGenerator {
     /**
      * instance
      */
-    private MolapProperties instance;
+    private CarbonProperties instance;
     /**
      * cube
      */
@@ -204,11 +204,11 @@ public class GraphGenerator {
         this.partitionID = partitionID;
         this.factStoreLocation = factStoreLocation;
         this.isColumnar =
-                Boolean.parseBoolean(MolapCommonConstants.IS_COLUMNAR_STORAGE_DEFAULTVALUE);
+                Boolean.parseBoolean(CarbonCommonConstants.IS_COLUMNAR_STORAGE_DEFAULTVALUE);
         this.currentRestructNumber = currentRestructNum;
         this.allocate = allocate > 1 ? allocate : 1;
         initialise();
-        LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                 "************* Is Columnar Storage" + isColumnar);
     }
 
@@ -256,24 +256,24 @@ public class GraphGenerator {
 
     private void initialise() {
         if (null == schema) {
-            schema = MolapSchemaParser.loadXML(schemaInfo.getSchemaPath());
+            schema = CarbonSchemaParser.loadXML(schemaInfo.getSchemaPath());
             String originalSchemaName = schema.name;
             if (partitionID != null) {
                 schema.name = originalSchemaName + "_" + partitionID;
-                cube = MolapSchemaParser.getMondrianCube(schema, schemaInfo.getCubeName());
+                cube = CarbonSchemaParser.getMondrianCube(schema, schemaInfo.getCubeName());
                 cube.name = cube.name + "_" + partitionID;
             }
         }
-        this.cube = MolapSchemaParser.getMondrianCube(schema, schemaInfo.getCubeName());
+        this.cube = CarbonSchemaParser.getMondrianCube(schema, schemaInfo.getCubeName());
         this.cubeName = cube.name;
-        this.instance = MolapProperties.getInstance();
-        aggregateTable = MolapSchemaParser.getAggregateTable(cube, schema);
-        this.factTableName = MolapSchemaParser.getFactTableName(cube);
+        this.instance = CarbonProperties.getInstance();
+        aggregateTable = CarbonSchemaParser.getAggregateTable(cube, schema);
+        this.factTableName = CarbonSchemaParser.getFactTableName(cube);
     }
 
     public void generateGraph() throws GraphGeneratorException {
         validateAndInitialiseKettelEngine();
-        String factTableName = MolapSchemaParser.getFactTableName(cube);
+        String factTableName = CarbonSchemaParser.getFactTableName(cube);
         GraphConfigurationInfo graphConfigInfoForFact = getGraphConfigInfoForFact(schema);
         if (factTableName.equals(tableName)) {
             generateGraph(graphConfigInfoForFact, graphConfigInfoForFact.getTableName() + ": Graph",
@@ -323,7 +323,7 @@ public class GraphGenerator {
             isDirCreated = file.mkdirs();
 
             if (!isDirCreated) {
-                LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                         "Unable to create directory or Directory already exist" + file
                                 .getAbsolutePath());
                 throw new GraphGeneratorException("INTERNAL_SYSTEM_ERROR");
@@ -337,9 +337,9 @@ public class GraphGenerator {
                     KettleEnvironment.init();
                     kettleIntialized = false;
                 } catch (KettleException kettlExp) {
-                    LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                             "Invalid kettle path :: " + kettlExp.getMessage());
-                    LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, kettlExp);
+                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, kettlExp);
                     throw new GraphGeneratorException("Error While Initializing the Kettel Engine ",
                             kettlExp);
                 }
@@ -383,12 +383,12 @@ public class GraphGenerator {
         AggregateTable[] aggregateTableArray = new AggregateTable[aggTableListSize];
 
         String factLevelCardinalityFile = factStorePath + File.separator +
-                MolapCommonConstants.LEVEL_METADATA_FILE + factTableName + ".metadata";
+                CarbonCommonConstants.LEVEL_METADATA_FILE + factTableName + ".metadata";
 
         try {
             factCardinality =
-                    MolapUtil.getCardinalityFromLevelMetadataFile(factLevelCardinalityFile);
-        } catch (MolapUtilException e) {
+                    CarbonUtil.getCardinalityFromLevelMetadataFile(factLevelCardinalityFile);
+        } catch (CarbonUtilException e) {
             throw new GraphGeneratorException("Error while reading fact cardinality", e);
         }
 
@@ -406,7 +406,7 @@ public class GraphGenerator {
                     graphConfigInfoForAGG = getGraphConfigInfoForCSVBasedAGG(aggTables[j], schema);
                     aggType = graphConfigInfoForAGG.getAggType();
                     for (int k = 0; k < aggType.length; k++) {
-                        if (aggType[k].equals(MolapCommonConstants.CUSTOM)) {
+                        if (aggType[k].equals(CarbonCommonConstants.CUSTOM)) {
                             isFactMdKeyInOutRow = true;
                         }
                     }
@@ -512,7 +512,7 @@ public class GraphGenerator {
         String graphFilePath = null;
         if (!isManualCall) {
             graphFilePath = outputLocation + File.separator + schemaName + File.separator + cubeName
-                    + File.separator + factTableName + MolapCommonConstants.MOLAP_AUTO_AGG_CONST
+                    + File.separator + factTableName + CarbonCommonConstants.MOLAP_AUTO_AGG_CONST
                     + aggTables + ".ktr";
         } else {
             graphFilePath = outputLocation + File.separator + schemaName + File.separator + cubeName
@@ -556,8 +556,8 @@ public class GraphGenerator {
         }
 
         trans.setSizeRowset(Integer.parseInt(
-                instance.getProperty(MolapCommonConstants.GRAPH_ROWSET_SIZE,
-                        MolapCommonConstants.GRAPH_ROWSET_SIZE_DEFAULT)));
+                instance.getProperty(CarbonCommonConstants.GRAPH_ROWSET_SIZE,
+                        CarbonCommonConstants.GRAPH_ROWSET_SIZE_DEFAULT)));
 
         StepMeta inputStep = null;
         StepMeta molapSurrogateKeyStep = null;
@@ -656,8 +656,8 @@ public class GraphGenerator {
         StepMeta csvDataStep =
                 new StepMeta("HadoopFileInputPlugin", (StepMetaInterface) fileInputMeta);
         csvDataStep.setLocation(100, 100);
-        int copies = Integer.parseInt(instance.getProperty(MolapCommonConstants.NUM_CORES_LOADING,
-                MolapCommonConstants.DEFAULT_NUMBER_CORES));
+        int copies = Integer.parseInt(instance.getProperty(CarbonCommonConstants.NUM_CORES_LOADING,
+                CarbonCommonConstants.DEFAULT_NUMBER_CORES));
         if (copies > 1) {
             csvDataStep.setCopies(4);
         }
@@ -682,14 +682,14 @@ public class GraphGenerator {
         csvDataStep.setLocation(100, 100);
         csvInputMeta.setFilenameField("filename");
         csvInputMeta.setLazyConversionActive(false);
-        csvInputMeta.setBufferSize(instance.getProperty(MolapCommonConstants.CSV_READ_BUFFER_SIZE,
-                MolapCommonConstants.CSV_READ_BUFFER_SIZE_DEFAULT));
+        csvInputMeta.setBufferSize(instance.getProperty(CarbonCommonConstants.CSV_READ_BUFFER_SIZE,
+                CarbonCommonConstants.CSV_READ_BUFFER_SIZE_DEFAULT));
         int copies = 1;
         try {
-            copies = Integer.parseInt(instance.getProperty(MolapCommonConstants.NUM_CORES_LOADING,
-                    MolapCommonConstants.DEFAULT_NUMBER_CORES));
+            copies = Integer.parseInt(instance.getProperty(CarbonCommonConstants.NUM_CORES_LOADING,
+                    CarbonCommonConstants.DEFAULT_NUMBER_CORES));
         } catch (NumberFormatException e) {
-            copies = Integer.parseInt(MolapCommonConstants.DEFAULT_NUMBER_CORES);
+            copies = Integer.parseInt(CarbonCommonConstants.DEFAULT_NUMBER_CORES);
         }
         if (copies > 1) {
             csvDataStep.setCopies(copies);
@@ -715,10 +715,10 @@ public class GraphGenerator {
         csvDataStep.setLocation(100, 100);
         csvReaderMeta.setFilenameField("filename");
         csvReaderMeta.setLazyConversionActive(false);
-        csvReaderMeta.setBufferSize(instance.getProperty(MolapCommonConstants.CSV_READ_BUFFER_SIZE,
-                MolapCommonConstants.CSV_READ_BUFFER_SIZE_DEFAULT));
-        int copies = Integer.parseInt(instance.getProperty(MolapCommonConstants.NUM_CORES_LOADING,
-                MolapCommonConstants.DEFAULT_NUMBER_CORES));
+        csvReaderMeta.setBufferSize(instance.getProperty(CarbonCommonConstants.CSV_READ_BUFFER_SIZE,
+                CarbonCommonConstants.CSV_READ_BUFFER_SIZE_DEFAULT));
+        int copies = Integer.parseInt(instance.getProperty(CarbonCommonConstants.NUM_CORES_LOADING,
+                CarbonCommonConstants.DEFAULT_NUMBER_CORES));
         if (copies > 1) {
             csvDataStep.setCopies(copies);
         }
@@ -754,7 +754,7 @@ public class GraphGenerator {
 
     private StepMeta getSliceMeregerStep(GraphConfigurationInfo configurationInfo,
             GraphConfigurationInfo graphjConfigurationForFact) {
-        MolapSliceMergerStepMeta sliceMerger = new MolapSliceMergerStepMeta();
+        CarbonSliceMergerStepMeta sliceMerger = new CarbonSliceMergerStepMeta();
         sliceMerger.setDefault();
         sliceMerger.setHeirAndKeySize(configurationInfo.getHeirAndKeySizeString());
         sliceMerger.setMdkeySize(configurationInfo.getMdkeySize());
@@ -764,7 +764,7 @@ public class GraphGenerator {
         sliceMerger.setSchemaName(schemaName);
         if (null != this.factStoreLocation) {
             sliceMerger.setCurrentRestructNumber(
-                    MolapUtil.getRestructureNumber(this.factStoreLocation, this.factTableName));
+                    CarbonUtil.getRestructureNumber(this.factStoreLocation, this.factTableName));
         } else {
             sliceMerger.setCurrentRestructNumber(configurationInfo.getCurrentRestructNumber());
         }
@@ -773,12 +773,12 @@ public class GraphGenerator {
             String[] aggType = configurationInfo.getAggType();
             StringBuilder builder = new StringBuilder();
             for (int i = 0; i < aggType.length - 1; i++) {
-                if (aggType[i].equals(MolapCommonConstants.COUNT)) {
-                    builder.append(MolapCommonConstants.SUM);
+                if (aggType[i].equals(CarbonCommonConstants.COUNT)) {
+                    builder.append(CarbonCommonConstants.SUM);
                 } else {
                     builder.append(aggType[i]);
                 }
-                builder.append(MolapCommonConstants.HASH_SPC_CHARACTER);
+                builder.append(CarbonCommonConstants.HASH_SPC_CHARACTER);
             }
             builder.append(aggType[aggType.length - 1]);
             sliceMerger.setAggregatorString(builder.toString());
@@ -786,13 +786,13 @@ public class GraphGenerator {
             builder = new StringBuilder();
             for (int i = 0; i < aggClass.length - 1; i++) {
                 builder.append(aggClass[i]);
-                builder.append(MolapCommonConstants.HASH_SPC_CHARACTER);
+                builder.append(CarbonCommonConstants.HASH_SPC_CHARACTER);
             }
             builder.append(aggClass[aggClass.length - 1]);
             sliceMerger.setAggregatorClassString(builder.toString());
         } else {
-            sliceMerger.setAggregatorClassString(MolapCommonConstants.HASH_SPC_CHARACTER);
-            sliceMerger.setAggregatorString(MolapCommonConstants.HASH_SPC_CHARACTER);
+            sliceMerger.setAggregatorClassString(CarbonCommonConstants.HASH_SPC_CHARACTER);
+            sliceMerger.setAggregatorString(CarbonCommonConstants.HASH_SPC_CHARACTER);
         }
         sliceMerger.setFactDimLensString("");
         sliceMerger.setLevelAnddataTypeString(configurationInfo.getLevelAnddataType());
@@ -811,7 +811,7 @@ public class GraphGenerator {
 
     private StepMeta getAutoAggGraphGeneratorStep(String tableName,
             AggregateTable[] aggregateTable) {
-        MolapAutoAGGGraphGeneratorMeta meta = new MolapAutoAGGGraphGeneratorMeta();
+        CarbonAutoAGGGraphGeneratorMeta meta = new CarbonAutoAGGGraphGeneratorMeta();
         meta.setCubeName(cubeName);
         meta.setSchemaName(schemaName);
         meta.setSchema(schema.toXML());
@@ -838,7 +838,7 @@ public class GraphGenerator {
             boolean isReadOnlyInProgress, boolean isFactMdkeyInOutputRow,
             AggregateTable[] aggTables, int[] dimLens, String storeLocation,
             String[] aggregateLevels) {
-        MolapFactReaderMeta factReader = new MolapFactReaderMeta();
+        CarbonFactReaderMeta factReader = new CarbonFactReaderMeta();
         factReader.setDefault();
         factReader.setTableName(configurationInfo.getTableName());
         factReader.setAggregateTableName(tableName);
@@ -847,14 +847,14 @@ public class GraphGenerator {
         factReader.setSchema(schema.toXML());
         factReader.setPartitionID(partitionID);
         String[] factDimensions = configurationInfo.getDimensions();
-        factReader.setDimLensString(MolapDataProcessorUtil.getLevelCardinalitiesString(dimLens));
+        factReader.setDimLensString(CarbonDataProcessorUtil.getLevelCardinalitiesString(dimLens));
         SliceMetaData sliceMetaData =
-                MolapDataProcessorUtil.readSliceMetadata(factStoreLocation, currentRestructNumber);
-        int[] globalDimensioncardinality = MolapDataProcessorUtil
+                CarbonDataProcessorUtil.readSliceMetadata(factStoreLocation, currentRestructNumber);
+        int[] globalDimensioncardinality = CarbonDataProcessorUtil
                 .getKeyGenerator(factDimensions, aggregateLevels, dimLens,
                         sliceMetaData.getNewDimensions(), sliceMetaData.getNewDimLens());
         factReader.setGlobalDimLensString(
-                MolapDataProcessorUtil.getLevelCardinalitiesString(globalDimensioncardinality));
+                CarbonDataProcessorUtil.getLevelCardinalitiesString(globalDimensioncardinality));
 
         factReader.setFactStoreLocation(storeLocation);
 
@@ -865,7 +865,7 @@ public class GraphGenerator {
 
         for (int i = 0; i < type.length - 1; i++) {
             builder.append(type[i]);
-            builder.append(MolapCommonConstants.HASH_SPC_CHARACTER);
+            builder.append(CarbonCommonConstants.HASH_SPC_CHARACTER);
         }
 
         builder.append(type[type.length - 1]);
@@ -890,12 +890,12 @@ public class GraphGenerator {
             builder = new StringBuilder();
             for (int i = 0; i < blockIndex.length - 1; i++) {
                 builder.append(blockIndex[i]);
-                builder.append(MolapCommonConstants.HASH_SPC_CHARACTER);
+                builder.append(CarbonCommonConstants.HASH_SPC_CHARACTER);
             }
             builder.append(blockIndex[blockIndex.length - 1]);
             factReader.setBlockIndexString(builder.toString());
         } else {
-            factReader.setBlockIndexString(MolapCommonConstants.HASH_SPC_CHARACTER);
+            factReader.setBlockIndexString(CarbonCommonConstants.HASH_SPC_CHARACTER);
         }
 
         StepMeta factReaderMeta = new StepMeta(GraphGeneratorConstants.MOLAP_FACT_READER,
@@ -914,10 +914,10 @@ public class GraphGenerator {
             GraphConfigurationInfo configurationInfoAgg, AggregateTable aggregateTable,
             boolean isManualAggregationRequest, AggregateTable[] aggTableArray,
             int[] factCardinality, String factStorePath) {
-        MolapAggregateSurrogateGeneratorMeta meta = new MolapAggregateSurrogateGeneratorMeta();
+        CarbonAggregateSurrogateGeneratorMeta meta = new CarbonAggregateSurrogateGeneratorMeta();
         meta.setHeirAndDimLens(configurationInfoFact.getHeirAndDimLens());
         meta.setHeirAndKeySize(configurationInfoFact.getHeirAndKeySizeString());
-        meta.setAggDimeLensString(MolapDataProcessorUtil
+        meta.setAggDimeLensString(CarbonDataProcessorUtil
                 .getLevelCardinalitiesString(configurationInfoAgg.getDimCardinalities(),
                         configurationInfoAgg.getDimensions()));
         meta.setFactStorePath(factStorePath);
@@ -931,11 +931,11 @@ public class GraphGenerator {
         boolean isMdkeyInOutRowRequired = false;
 
         for (int i = 0; i < aggType.length; i++) {
-            if (aggType[i].equals(MolapCommonConstants.CUSTOM)) {
+            if (aggType[i].equals(CarbonCommonConstants.CUSTOM)) {
                 isMdkeyInOutRowRequired = true;
             }
             builder.append(aggType[i]);
-            builder.append(MolapCommonConstants.HASH_SPC_CHARACTER);
+            builder.append(CarbonCommonConstants.HASH_SPC_CHARACTER);
         }
 
         builder.append(aggType[aggType.length - 1]);
@@ -945,7 +945,7 @@ public class GraphGenerator {
 
         for (int i = 0; i < factDimensions.length - 1; i++) {
             builder.append(factDimensions[i]);
-            builder.append(MolapCommonConstants.HASH_SPC_CHARACTER);
+            builder.append(CarbonCommonConstants.HASH_SPC_CHARACTER);
         }
 
         builder.append(factDimensions[factDimensions.length - 1]);
@@ -965,7 +965,7 @@ public class GraphGenerator {
 
         for (int i = 0; i < actualAggLevelsActualName.length - 1; i++) {
             builder.append(actualAggLevelsActualName[i]);
-            builder.append(MolapCommonConstants.HASH_SPC_CHARACTER);
+            builder.append(CarbonCommonConstants.HASH_SPC_CHARACTER);
         }
 
         builder.append(actualAggLevelsActualName[actualAggLevelsActualName.length - 1]);
@@ -974,7 +974,7 @@ public class GraphGenerator {
         String[] aggName = aggregateTable.getAggColuName();
         for (int i = 0; i < aggName.length - 1; i++) {
             builder.append(aggName[i]);
-            builder.append(MolapCommonConstants.HASH_SPC_CHARACTER);
+            builder.append(CarbonCommonConstants.HASH_SPC_CHARACTER);
         }
         builder.append(aggName[aggName.length - 1]);
         meta.setAggregateMeasuresString(builder.toString());
@@ -984,7 +984,7 @@ public class GraphGenerator {
 
         for (int i = 0; i < aggMeasure.length - 1; i++) {
             builder.append(aggMeasure[i]);
-            builder.append(MolapCommonConstants.HASH_SPC_CHARACTER);
+            builder.append(CarbonCommonConstants.HASH_SPC_CHARACTER);
         }
 
         builder.append(aggMeasure[aggMeasure.length - 1]);
@@ -995,7 +995,7 @@ public class GraphGenerator {
         meta.setMeasureCountString(configurationInfoFact.getMeasureCount());
         meta.setFactTableName(configurationInfoFact.getTableName());
         meta.setFactDimLensString(
-                MolapDataProcessorUtil.getLevelCardinalitiesString(factCardinality));
+                CarbonDataProcessorUtil.getLevelCardinalitiesString(factCardinality));
         StepMeta mdkeyStepMeta = new StepMeta(
                 GraphGeneratorConstants.MOLAP_AGGREGATE_SURROGATE_GENERATOR + configurationInfoAgg
                         .getTableName(), (StepMetaInterface) meta);
@@ -1056,7 +1056,7 @@ public class GraphGenerator {
 
     private StepMeta getMolapCSVBasedSurrogateKeyStep(GraphConfigurationInfo graphConfiguration) {
         //
-        MolapCSVBasedSeqGenMeta seqMeta = new MolapCSVBasedSeqGenMeta();
+        CarbonCSVBasedSeqGenMeta seqMeta = new CarbonCSVBasedSeqGenMeta();
         seqMeta.setMolapdim(graphConfiguration.getDimensionString());
         seqMeta.setComplexTypeString(graphConfiguration.getComplexTypeString());
         seqMeta.setBatchSize(Integer.parseInt(graphConfiguration.getBatchSize()));
@@ -1089,7 +1089,7 @@ public class GraphGenerator {
         StringBuilder builder = new StringBuilder();
         for (int i = 0; i < aggType.length; i++) {
             builder.append(aggType[i]);
-            builder.append(MolapCommonConstants.SEMICOLON_SPC_CHARACTER);
+            builder.append(CarbonCommonConstants.SEMICOLON_SPC_CHARACTER);
         }
         seqMeta.setMsrAggregatorString(builder.toString());
 
@@ -1104,8 +1104,8 @@ public class GraphGenerator {
         seqMeta.setCheckPointFileExits("false");
         String checkPointFile =
                 outputLocation + File.separator + graphConfiguration.getStoreLocation()
-                        + File.separator + MolapCommonConstants.CHECKPOINT_FILE_NAME
-                        + MolapCommonConstants.CHECKPOINT_EXT;
+                        + File.separator + CarbonCommonConstants.CHECKPOINT_FILE_NAME
+                        + CarbonCommonConstants.CHECKPOINT_EXT;
         File file = new File(checkPointFile);
         if (CheckPointHanlder.IS_CHECK_POINT_NEEDED) {
             if (file.exists()) {
@@ -1132,7 +1132,7 @@ public class GraphGenerator {
         molapMdKey.setCubeName(cubeName);
         molapMdKey.setComplexTypeString(graphConfiguration.getComplexTypeString());
         molapMdKey.setCurrentRestructNumber(graphConfiguration.getCurrentRestructNumber());
-        molapMdKey.setAggregateLevels(MolapDataProcessorUtil
+        molapMdKey.setAggregateLevels(CarbonDataProcessorUtil
                 .getLevelCardinalitiesString(graphConfiguration.getDimCardinalities(),
                         graphConfiguration.getDimensions()));
 
@@ -1142,7 +1142,7 @@ public class GraphGenerator {
         molapMdKey.setComplexDimsCount(graphConfiguration.getComplexTypeString().isEmpty() ?
                 "0" :
                 graphConfiguration.getComplexTypeString().
-                        split(MolapCommonConstants.SEMICOLON_SPC_CHARACTER).length + "");
+                        split(CarbonCommonConstants.SEMICOLON_SPC_CHARACTER).length + "");
         StepMeta mdkeyStepMeta = new StepMeta(
                 GraphGeneratorConstants.MDKEY_GENERATOR + graphConfiguration.getTableName(),
                 (StepMetaInterface) molapMdKey);
@@ -1165,10 +1165,10 @@ public class GraphGenerator {
             GraphConfigurationInfo graphjConfigurationForFact, AggregateTable[] aggTableArray,
             int[] factDimCardinality) {
         //
-        MolapDataWriterStepMeta molapDataWriter = getMolapDataWriter(graphConfiguration);
+        CarbonDataWriterStepMeta molapDataWriter = getMolapDataWriter(graphConfiguration);
         String[] factDimensions = graphjConfigurationForFact.getDimensions();
         molapDataWriter.setCurrentRestructNumber(
-                MolapUtil.getRestructureNumber(this.factStoreLocation, this.factTableName));
+                CarbonUtil.getRestructureNumber(this.factStoreLocation, this.factTableName));
 
         // getting the high cardinality string from graphjConfigurationForFact.
         String[] highCardDims = RemoveDictionaryUtil
@@ -1180,14 +1180,14 @@ public class GraphGenerator {
         processAutoAggRequest(graphConfiguration, graphjConfigurationForFact, molapDataWriter);
 
         if (null != factDimCardinality) {
-            SliceMetaData sliceMetaData = MolapDataProcessorUtil
+            SliceMetaData sliceMetaData = CarbonDataProcessorUtil
                     .readSliceMetadata(factStoreLocation, currentRestructNumber);
-            int[] globalDimensioncardinality = MolapDataProcessorUtil
+            int[] globalDimensioncardinality = CarbonDataProcessorUtil
                     .getKeyGenerator(factDimensions, graphConfiguration.getDimensions(),
                             factDimCardinality, sliceMetaData.getNewDimensions(),
                             sliceMetaData.getNewDimLens());
             molapDataWriter.setFactDimLensString(
-                    MolapDataProcessorUtil.getLevelCardinalitiesString(globalDimensioncardinality));
+                    CarbonDataProcessorUtil.getLevelCardinalitiesString(globalDimensioncardinality));
         }
 
         molapDataWriter.setIsUpdateMemberRequest(isUpdateMemberRequest + "");
@@ -1196,7 +1196,7 @@ public class GraphGenerator {
         String[] dimensions = graphConfiguration.getDimensions();
         for (int i = 0; i < dimensions.length - 1; i++) {
             builder.append(dimensions[i]);
-            builder.append(MolapCommonConstants.HASH_SPC_CHARACTER);
+            builder.append(CarbonCommonConstants.HASH_SPC_CHARACTER);
         }
         builder.append(dimensions[dimensions.length - 1]);
         String mdkeySize = graphConfiguration.getMdkeySize();
@@ -1209,7 +1209,7 @@ public class GraphGenerator {
         builder = new StringBuilder();
         for (int i = 0; i < factDimensions.length - 1; i++) {
             builder.append(factDimensions[i]);
-            builder.append(MolapCommonConstants.HASH_SPC_CHARACTER);
+            builder.append(CarbonCommonConstants.HASH_SPC_CHARACTER);
         }
         builder.append(factDimensions[factDimensions.length - 1]);
         molapDataWriter.setFactLevelsString(builder.toString());
@@ -1232,14 +1232,14 @@ public class GraphGenerator {
 
     private void processAutoAggRequest(GraphConfigurationInfo graphConfiguration,
             GraphConfigurationInfo graphjConfigurationForFact,
-            MolapDataWriterStepMeta molapDataWriter) {
+            CarbonDataWriterStepMeta molapDataWriter) {
         boolean isFactMdkeyInInputRow = false;
         if (isAutoAggRequest) {
             String[] aggType = graphConfiguration.getAggType();
             StringBuilder builder = new StringBuilder();
             for (int i = 0; i < aggType.length - 1; i++) {
                 builder.append(aggType[i]);
-                builder.append(MolapCommonConstants.HASH_SPC_CHARACTER);
+                builder.append(CarbonCommonConstants.HASH_SPC_CHARACTER);
             }
             builder.append(aggType[aggType.length - 1]);
             molapDataWriter.setAggregatorString(builder.toString());
@@ -1247,13 +1247,13 @@ public class GraphGenerator {
             builder = new StringBuilder();
             for (int i = 0; i < aggClass.length - 1; i++) {
                 builder.append(aggClass[i]);
-                builder.append(MolapCommonConstants.HASH_SPC_CHARACTER);
+                builder.append(CarbonCommonConstants.HASH_SPC_CHARACTER);
             }
             builder.append(aggClass[aggClass.length - 1]);
             molapDataWriter.setAggregatorClassString(builder.toString());
 
             for (int i = 0; i < aggType.length; i++) {
-                if (aggType[i].equals(MolapCommonConstants.CUSTOM)) {
+                if (aggType[i].equals(CarbonCommonConstants.CUSTOM)) {
                     isFactMdkeyInInputRow = true;
                     break;
                 }
@@ -1268,16 +1268,16 @@ public class GraphGenerator {
                 molapDataWriter.setFactMdkeyLength(0 + "");
             }
         } else {
-            molapDataWriter.setAggregatorClassString(MolapCommonConstants.HASH_SPC_CHARACTER);
-            molapDataWriter.setAggregatorString(MolapCommonConstants.HASH_SPC_CHARACTER);
+            molapDataWriter.setAggregatorClassString(CarbonCommonConstants.HASH_SPC_CHARACTER);
+            molapDataWriter.setAggregatorString(CarbonCommonConstants.HASH_SPC_CHARACTER);
             molapDataWriter.setIsFactMDkeyInInputRow(isFactMdkeyInInputRow + "");
             molapDataWriter.setFactMdkeyLength(0 + "");
 
         }
     }
 
-    private MolapDataWriterStepMeta getMolapDataWriter(GraphConfigurationInfo graphConfiguration) {
-        MolapDataWriterStepMeta molapDataWriter = new MolapDataWriterStepMeta();
+    private CarbonDataWriterStepMeta getMolapDataWriter(GraphConfigurationInfo graphConfiguration) {
+        CarbonDataWriterStepMeta molapDataWriter = new CarbonDataWriterStepMeta();
         molapDataWriter.setCubeName(cubeName);
         molapDataWriter.setSchemaName(schemaName);
         molapDataWriter.setLeafNodeSize(graphConfiguration.getLeafNodeSize());
@@ -1301,13 +1301,13 @@ public class GraphGenerator {
             }
         }
         SliceMetaData sliceMetaData =
-                MolapDataProcessorUtil.readSliceMetadata(factStoreLocation, currentRestructNumber);
-        int[] factTableDimensioncardinality = MolapDataProcessorUtil
+                CarbonDataProcessorUtil.readSliceMetadata(factStoreLocation, currentRestructNumber);
+        int[] factTableDimensioncardinality = CarbonDataProcessorUtil
                 .getKeyGenerator(factLevels, aggreateLevels, factDimCardinality,
                         sliceMetaData.getNewDimensions(), sliceMetaData.getNewDimLens());
         KeyGenerator keyGenerator =
                 KeyGeneratorFactory.getKeyGenerator(factTableDimensioncardinality);
-        int[] maskedByteRanges = MolapDataProcessorUtil.getMaskedByte(surrogateIndex, keyGenerator);
+        int[] maskedByteRanges = CarbonDataProcessorUtil.getMaskedByte(surrogateIndex, keyGenerator);
         return maskedByteRanges.length + "";
     }
 
@@ -1334,7 +1334,7 @@ public class GraphGenerator {
                 getMeasureDatatypeMap(graphConfiguration.getMeasureDataTypeInfo());
         String[] measures = graphConfiguration.getMeasures();
         String dimensionString = graphConfiguration.getActualDimensionColumns();
-        String[] dimension = dimensionString.split(MolapCommonConstants.AMPERSAND_SPC_CHARACTER);
+        String[] dimension = dimensionString.split(CarbonCommonConstants.AMPERSAND_SPC_CHARACTER);
 
         for (int i = 0; i < columns.length; i++) {
             changeMeta[i] = new SelectMetadataChange(selectValues);
@@ -1380,10 +1380,10 @@ public class GraphGenerator {
         }
         Map<String, Boolean> resultMap = new HashMap<String, Boolean>(1);
 
-        String[] measures = measureDataType.split(MolapCommonConstants.AMPERSAND_SPC_CHARACTER);
+        String[] measures = measureDataType.split(CarbonCommonConstants.AMPERSAND_SPC_CHARACTER);
         String[] measureValue = null;
         for (int i = 0; i < measures.length; i++) {
-            measureValue = measures[i].split(MolapCommonConstants.COLON_SPC_CHARACTER);
+            measureValue = measures[i].split(CarbonCommonConstants.COLON_SPC_CHARACTER);
             resultMap.put(measureValue[0], Boolean.valueOf(measureValue[1]));
         }
         return resultMap;
@@ -1419,12 +1419,12 @@ public class GraphGenerator {
             GraphConfigurationInfo configurationInfoFact, AggregateTable[] aggTableArray,
             int[] factCardinality, boolean isManualAggregationRequest)
             throws GraphGeneratorException {
-        MolapSortKeyAndGroupByStepMeta sortRowsMeta = new MolapSortKeyAndGroupByStepMeta();
+        CarbonSortKeyAndGroupByStepMeta sortRowsMeta = new CarbonSortKeyAndGroupByStepMeta();
         sortRowsMeta.setTabelName(graphConfiguration.getTableName());
         sortRowsMeta.setCubeName(cubeName);
         sortRowsMeta.setSchemaName(schemaName);
         sortRowsMeta.setCurrentRestructNumber(
-                MolapUtil.getRestructureNumber(this.factStoreLocation, this.factTableName));
+                CarbonUtil.getRestructureNumber(this.factStoreLocation, this.factTableName));
 
         String[] highCardDims = RemoveDictionaryUtil
                 .extractHighCardDimsArr(configurationInfoFact.getHighCardinalityDims());
@@ -1438,8 +1438,8 @@ public class GraphGenerator {
             builder = new StringBuilder();
             for (int i = 0; i < aggType.length - 1; i++) {
                 builder.append(aggType[i]);
-                builder.append(MolapCommonConstants.HASH_SPC_CHARACTER);
-                if (aggType[i].equals(MolapCommonConstants.CUSTOM)) {
+                builder.append(CarbonCommonConstants.HASH_SPC_CHARACTER);
+                if (aggType[i].equals(CarbonCommonConstants.CUSTOM)) {
                     isFactMdKeyInInputRow = true;
                     break;
                 }
@@ -1453,14 +1453,14 @@ public class GraphGenerator {
             builder = new StringBuilder();
             for (int i = 0; i < aggClass.length - 1; i++) {
                 builder.append(aggClass[i]);
-                builder.append(MolapCommonConstants.HASH_SPC_CHARACTER);
+                builder.append(CarbonCommonConstants.HASH_SPC_CHARACTER);
             }
             builder.append(aggClass[aggClass.length - 1]);
             sortRowsMeta.setAggregatorClassString(builder.toString());
         } else {
-            sortRowsMeta.setAggregatorClassString(MolapCommonConstants.HASH_SPC_CHARACTER);
-            sortRowsMeta.setAggregatorString(MolapCommonConstants.HASH_SPC_CHARACTER);
-            sortRowsMeta.setFactDimLensString(MolapCommonConstants.COMA_SPC_CHARACTER);
+            sortRowsMeta.setAggregatorClassString(CarbonCommonConstants.HASH_SPC_CHARACTER);
+            sortRowsMeta.setAggregatorString(CarbonCommonConstants.HASH_SPC_CHARACTER);
+            sortRowsMeta.setFactDimLensString(CarbonCommonConstants.COMA_SPC_CHARACTER);
 
         }
         String[] factDimensions = configurationInfoFact.getDimensions();
@@ -1477,17 +1477,17 @@ public class GraphGenerator {
                 factDimensions, factCardinality);
         sortRowsMeta.setMdkeyLength(mdkeySize);
         SliceMetaData sliceMetaData =
-                MolapDataProcessorUtil.readSliceMetadata(factStoreLocation, currentRestructNumber);
-        int[] globalDimensioncardinality = MolapDataProcessorUtil
+                CarbonDataProcessorUtil.readSliceMetadata(factStoreLocation, currentRestructNumber);
+        int[] globalDimensioncardinality = CarbonDataProcessorUtil
                 .getKeyGenerator(factDimensions, graphConfiguration.getDimensions(),
                         factCardinality, sliceMetaData.getNewDimensions(),
                         sliceMetaData.getNewDimLens());
         sortRowsMeta.setFactDimLensString(
-                MolapDataProcessorUtil.getLevelCardinalitiesString(globalDimensioncardinality));
+                CarbonDataProcessorUtil.getLevelCardinalitiesString(globalDimensioncardinality));
         builder = new StringBuilder();
         for (int i = 0; i < factDimensions.length - 1; i++) {
             builder.append(factDimensions[i]);
-            builder.append(MolapCommonConstants.HASH_SPC_CHARACTER);
+            builder.append(CarbonCommonConstants.HASH_SPC_CHARACTER);
         }
 
         builder.append(factDimensions[factDimensions.length - 1]);
@@ -1498,7 +1498,7 @@ public class GraphGenerator {
 
         for (int i = 0; i < aggMeasure.length - 1; i++) {
             builder.append(aggMeasure[i]);
-            builder.append(MolapCommonConstants.HASH_SPC_CHARACTER);
+            builder.append(CarbonCommonConstants.HASH_SPC_CHARACTER);
         }
 
         builder.append(aggMeasure[aggMeasure.length - 1]);
@@ -1508,7 +1508,7 @@ public class GraphGenerator {
         String[] aggName = aggregateTable.getAggColuName();
         for (int i = 0; i < aggName.length - 1; i++) {
             builder.append(aggName[i]);
-            builder.append(MolapCommonConstants.HASH_SPC_CHARACTER);
+            builder.append(CarbonCommonConstants.HASH_SPC_CHARACTER);
         }
         builder.append(aggName[aggName.length - 1]);
         sortRowsMeta.setAggregateMeasuresString(builder.toString());
@@ -1525,7 +1525,7 @@ public class GraphGenerator {
 
         for (int i = 0; i < actualAggLevelsActualName.length - 1; i++) {
             builder.append(actualAggLevelsActualName[i]);
-            builder.append(MolapCommonConstants.HASH_SPC_CHARACTER);
+            builder.append(CarbonCommonConstants.HASH_SPC_CHARACTER);
         }
 
         builder.append(actualAggLevelsActualName[actualAggLevelsActualName.length - 1]);
@@ -1568,7 +1568,7 @@ public class GraphGenerator {
         sortRowsMeta.setComplexDimensionCount(graphConfiguration.getComplexTypeString().isEmpty() ?
                 "0" :
                 graphConfiguration.getComplexTypeString().
-                        split(MolapCommonConstants.SEMICOLON_SPC_CHARACTER).length + "");
+                        split(CarbonCommonConstants.SEMICOLON_SPC_CHARACTER).length + "");
         sortRowsMeta.setIsUpdateMemberRequest(isUpdateMemberRequest + "");
         sortRowsMeta.setMeasureCount(graphConfiguration.getMeasureCount() + "");
         sortRowsMeta.setHighCardinalityDims(graphConfiguration.getHighCardinalityDims());
@@ -1595,61 +1595,61 @@ public class GraphGenerator {
         GraphConfigurationInfo graphConfiguration = new GraphConfigurationInfo();
         graphConfiguration.setCurrentRestructNumber(currentRestructNumber);
         CubeDimension[] dimensions = cube.dimensions;
-        graphConfiguration.setDimensions(MolapSchemaParser.getCubeDimensions(cube, schema));
-        graphConfiguration.setActualDims(MolapSchemaParser.getDimensions(cube, schema));
+        graphConfiguration.setDimensions(CarbonSchemaParser.getCubeDimensions(cube, schema));
+        graphConfiguration.setActualDims(CarbonSchemaParser.getDimensions(cube, schema));
         graphConfiguration.setComplexTypeString(
-                MolapSchemaParser.getLevelDataTypeAndParentMapString(cube, schema));
-        String factTableName = MolapSchemaParser.getFactTableName(cube);
+                CarbonSchemaParser.getLevelDataTypeAndParentMapString(cube, schema));
+        String factTableName = CarbonSchemaParser.getFactTableName(cube);
         graphConfiguration.setTableName(factTableName);
         StringBuilder dimString = new StringBuilder();
         //
         int currentCount =
-                MolapSchemaParser.getDimensionString(cube, dimensions, dimString, 0, schema);
+                CarbonSchemaParser.getDimensionString(cube, dimensions, dimString, 0, schema);
         StringBuilder highCardinalitydimString = new StringBuilder();
-        MolapSchemaParser
+        CarbonSchemaParser
                 .getHighCardinalityDimensionString(cube, dimensions, highCardinalitydimString, 0,
                         schema);
         graphConfiguration.setHighCardinalityDims(highCardinalitydimString.toString());
 
         String tableString =
-                MolapSchemaParser.getTableNameString(factTableName, dimensions, schema);
+                CarbonSchemaParser.getTableNameString(factTableName, dimensions, schema);
         graphConfiguration.setDimensionTableNames(tableString);
         graphConfiguration.setDimensionString(dimString.toString());
 
         StringBuilder propString = new StringBuilder();
         currentCount =
-                MolapSchemaParser.getPropertyString(dimensions, propString, currentCount, schema);
+                CarbonSchemaParser.getPropertyString(dimensions, propString, currentCount, schema);
         //
         graphConfiguration
-                .setForignKey(MolapSchemaParser.getForeignKeyForTables(dimensions, schema));
+                .setForignKey(CarbonSchemaParser.getForeignKeyForTables(dimensions, schema));
         graphConfiguration.setPropertiesString(propString.toString());
         graphConfiguration
-                .setMeasuresString(MolapSchemaParser.getMeasureString(cube.measures, currentCount));
-        graphConfiguration.setHiersString(MolapSchemaParser.getHierarchyString(dimensions, schema));
+                .setMeasuresString(CarbonSchemaParser.getMeasureString(cube.measures, currentCount));
+        graphConfiguration.setHiersString(CarbonSchemaParser.getHierarchyString(dimensions, schema));
         graphConfiguration.setHierColumnString(
-                MolapSchemaParser.getHierarchyStringWithColumnNames(dimensions, schema));
+                CarbonSchemaParser.getHierarchyStringWithColumnNames(dimensions, schema));
         graphConfiguration.setMeasureUniqueColumnNamesString(
-                MolapSchemaParser.getMeasuresUniqueColumnNamesString(cube));
+                CarbonSchemaParser.getMeasuresUniqueColumnNamesString(cube));
         graphConfiguration.setForeignKeyHierarchyString(
-                MolapSchemaParser.getForeignKeyHierarchyString(dimensions, schema, factTableName));
+                CarbonSchemaParser.getForeignKeyHierarchyString(dimensions, schema, factTableName));
         graphConfiguration.setConnectionName("target");
         graphConfiguration.setHeirAndDimLens(
-                MolapSchemaParser.getHeirAndCardinalityString(dimensions, schema));
+                CarbonSchemaParser.getHeirAndCardinalityString(dimensions, schema));
         //setting dimension store types
         graphConfiguration.setDimensionStoreTypeString(
-                MolapSchemaParser.getDimensionsStoreType(cube, schema));
+                CarbonSchemaParser.getDimensionsStoreType(cube, schema));
         graphConfiguration
-                .setPrimaryKeyString(MolapSchemaParser.getPrimaryKeyString(dimensions, schema));
+                .setPrimaryKeyString(CarbonSchemaParser.getPrimaryKeyString(dimensions, schema));
         graphConfiguration
-                .setDenormColumns(MolapSchemaParser.getDenormColNames(dimensions, schema));
+                .setDenormColumns(CarbonSchemaParser.getDenormColNames(dimensions, schema));
 
         graphConfiguration.setLevelAnddataType(
-                MolapSchemaParser.getLevelAndDataTypeMapString(dimensions, schema, cube));
+                CarbonSchemaParser.getLevelAndDataTypeMapString(dimensions, schema, cube));
 
-        graphConfiguration.setForgienKeyAndPrimaryKeyMapString(MolapSchemaParser
+        graphConfiguration.setForgienKeyAndPrimaryKeyMapString(CarbonSchemaParser
                 .getForeignKeyAndPrimaryKeyMapString(dimensions, schema, factTableName));
 
-        graphConfiguration.setMdkeySize(MolapSchemaParser.getMdkeySizeForFact(dimensions, schema));
+        graphConfiguration.setMdkeySize(CarbonSchemaParser.getMdkeySizeForFact(dimensions, schema));
         Set<String> measureColumn = new HashSet<String>(cube.measures.length);
         Measure[] m = cube.measures;
         for (int i = 0; i < m.length; i++) {
@@ -1660,13 +1660,13 @@ public class GraphGenerator {
         graphConfiguration.setType(type);
         graphConfiguration.setMeasureCount(measureColumn.size() + "");
         graphConfiguration.setHeirAndKeySizeString(
-                MolapSchemaParser.getHeirAndKeySizeMapForFact(dimensions, schema));
-        graphConfiguration.setAggType(MolapSchemaParser.getMeasuresAggragatorArray(cube));
-        graphConfiguration.setMeasureNamesString(MolapSchemaParser.getMeasuresNamesString(cube));
+                CarbonSchemaParser.getHeirAndKeySizeMapForFact(dimensions, schema));
+        graphConfiguration.setAggType(CarbonSchemaParser.getMeasuresAggragatorArray(cube));
+        graphConfiguration.setMeasureNamesString(CarbonSchemaParser.getMeasuresNamesString(cube));
         graphConfiguration.setActualDimensionColumns(
-                MolapSchemaParser.getActualDimensions(schemaInfo, cube, schema));
-        graphConfiguration.setNormHiers(MolapSchemaParser.getNormHiers(cube, schema));
-        graphConfiguration.setMeasureDataTypeInfo(MolapSchemaParser.getMeasuresDataType(cube));
+                CarbonSchemaParser.getActualDimensions(schemaInfo, cube, schema));
+        graphConfiguration.setNormHiers(CarbonSchemaParser.getNormHiers(cube, schema));
+        graphConfiguration.setMeasureDataTypeInfo(CarbonSchemaParser.getMeasuresDataType(cube));
 
         graphConfiguration.setStoreLocation(this.schemaName + '/' + cube.name);
         graphConfiguration.setLeafNodeSize((instance
@@ -1674,29 +1674,29 @@ public class GraphGenerator {
         graphConfiguration.setMaxLeafInFile((instance
                 .getProperty("molap.max.leafnode.in.file", DEFAULE_MAX_LEAF_NODE_IN_FILE)));
         graphConfiguration.setNumberOfCores((instance
-                .getProperty(MolapCommonConstants.NUM_CORES_LOADING, DEFAULT_NUMBER_CORES)));
+                .getProperty(CarbonCommonConstants.NUM_CORES_LOADING, DEFAULT_NUMBER_CORES)));
 
         // check quotes required in query or Not
         boolean isQuotesRequired = true;
-        String quote = MolapSchemaParser.QUOTES;
+        String quote = CarbonSchemaParser.QUOTES;
         if (null != schemaInfo.getSrcDriverName()) {
             quote = getQuoteType(schemaInfo);
         }
-        graphConfiguration.setTableInputSqlQuery(MolapSchemaParser
+        graphConfiguration.setTableInputSqlQuery(CarbonSchemaParser
                 .getTableInputSQLQuery(dimensions, cube.measures,
-                        MolapSchemaParser.getFactTableName(cube), isQuotesRequired, schema));
+                        CarbonSchemaParser.getFactTableName(cube), isQuotesRequired, schema));
         graphConfiguration
                 .setBatchSize((instance.getProperty("molap.batch.size", DEFAULT_BATCH_SIZE)));
         graphConfiguration
                 .setSortSize((instance.getProperty("molap.sort.size", DEFAULT_SORT_SIZE)));
-        graphConfiguration.setDimensionSqlQuery(MolapSchemaParser
+        graphConfiguration.setDimensionSqlQuery(CarbonSchemaParser
                 .getDimensionSQLQueries(cube, dimensions, schema, isQuotesRequired, quote));
         graphConfiguration.setMetaHeirString(
-                MolapSchemaParser.getMetaHeirString(dimensions, schema, factTableName));
+                CarbonSchemaParser.getMetaHeirString(dimensions, schema, factTableName));
         graphConfiguration.setDimCardinalities(
-                MolapSchemaParser.getCardinalities(factTableName, dimensions, schema));
+                CarbonSchemaParser.getCardinalities(factTableName, dimensions, schema));
 
-        graphConfiguration.setMeasures(MolapSchemaParser.getMeasures(cube.measures));
+        graphConfiguration.setMeasures(CarbonSchemaParser.getMeasures(cube.measures));
         graphConfiguration.setAGG(false);
         graphConfiguration.setUsername(schemaInfo.getSrcUserName());
         graphConfiguration.setPassword(schemaInfo.getSrcPwd());
@@ -1714,60 +1714,60 @@ public class GraphGenerator {
         graphConfiguration.setActualDims(aggtable.getAggLevels());
         graphConfiguration.setMeasures(aggtable.getAggMeasure());
         graphConfiguration.setAggClass(aggtable.getAggregateClass());
-        String factTableName = MolapSchemaParser.getFactTableName(cube);
+        String factTableName = CarbonSchemaParser.getFactTableName(cube);
         Map<String, String> cardinalities =
-                MolapSchemaParser.getCardinalities(factTableName, dimensions, schema);
+                CarbonSchemaParser.getCardinalities(factTableName, dimensions, schema);
         graphConfiguration.setDimCardinalities(cardinalities);
         graphConfiguration.setDimensionTableNames(
-                MolapSchemaParser.getTableNameString(factTableName, dimensions, schema));
+                CarbonSchemaParser.getTableNameString(factTableName, dimensions, schema));
         graphConfiguration.setTableName(aggtable.getAggregateTableName());
         StringBuilder dimString = new StringBuilder();
-        graphConfiguration.setLevelAnddataType(MolapCommonConstants.HASH_SPC_CHARACTER);
+        graphConfiguration.setLevelAnddataType(CarbonCommonConstants.HASH_SPC_CHARACTER);
 
         String[] levelWithTableName = aggtable.getActualAggLevels();
         String[] actualLevalName = aggtable.getAggLevels();
         StringBuilder builder = new StringBuilder();
         for (int i = 0; i < levelWithTableName.length - 1; i++) {
             builder.append(actualLevalName[i]);
-            builder.append(MolapCommonConstants.HYPHEN_SPC_CHARACTER);
+            builder.append(CarbonCommonConstants.HYPHEN_SPC_CHARACTER);
             builder.append(levelWithTableName[i]);
-            builder.append(MolapCommonConstants.HASH_SPC_CHARACTER);
+            builder.append(CarbonCommonConstants.HASH_SPC_CHARACTER);
         }
 
         builder.append(actualLevalName[actualLevalName.length - 1]);
-        builder.append(MolapCommonConstants.HYPHEN_SPC_CHARACTER);
+        builder.append(CarbonCommonConstants.HYPHEN_SPC_CHARACTER);
         builder.append(levelWithTableName[actualLevalName.length - 1]);
         graphConfiguration.setColumnAndTableNameColumnMapForAgg(builder.toString());
 
-        int currentCount = MolapSchemaParser
+        int currentCount = CarbonSchemaParser
                 .getDimensionStringForAgg(aggtable.getActualAggLevels(), dimString, 0,
                         cardinalities, aggtable.getAggLevelsActualName());
         graphConfiguration.setDimensionString(dimString.toString());
         graphConfiguration.setMeasuresString(
-                MolapSchemaParser.getMeasureStringForAgg(aggtable.getAggMeasure(), currentCount));
+                CarbonSchemaParser.getMeasureStringForAgg(aggtable.getAggMeasure(), currentCount));
 
         graphConfiguration.setMeasureCount(aggtable.getAggMeasure().length + "");
-        graphConfiguration.setMdkeySize(MolapSchemaParser
+        graphConfiguration.setMdkeySize(CarbonSchemaParser
                 .getMdkeySizeForAgg(aggtable.getAggLevelsActualName(), cardinalities));
         graphConfiguration.setHeirAndKeySizeString(
-                MolapSchemaParser.getHeirAndKeySizeMapForFact(dimensions, schema));
+                CarbonSchemaParser.getHeirAndKeySizeMapForFact(dimensions, schema));
         //
         graphConfiguration.setConnectionName("target");
         graphConfiguration.setHeirAndDimLens(
-                MolapSchemaParser.getHeirAndCardinalityString(dimensions, schema));
+                CarbonSchemaParser.getHeirAndCardinalityString(dimensions, schema));
         graphConfiguration.setMeasureNamesString(
-                MolapSchemaParser.getMeasuresNamesStringForAgg(aggtable.getAggColuName()));
+                CarbonSchemaParser.getMeasuresNamesStringForAgg(aggtable.getAggColuName()));
         graphConfiguration.setHierColumnString(
-                MolapSchemaParser.getHierarchyStringWithColumnNames(dimensions, schema));
+                CarbonSchemaParser.getHierarchyStringWithColumnNames(dimensions, schema));
         graphConfiguration.setForeignKeyHierarchyString(
-                MolapSchemaParser.getForeignKeyHierarchyString(dimensions, schema, factTableName));
+                CarbonSchemaParser.getForeignKeyHierarchyString(dimensions, schema, factTableName));
         graphConfiguration.setActualDimensionColumns(
-                MolapSchemaParser.getActualDimensionsForAggregate(aggtable.getAggLevels()));
+                CarbonSchemaParser.getActualDimensionsForAggregate(aggtable.getAggLevels()));
         char[] type = new char[aggtable.getAggregator().length];
         Arrays.fill(type, 'n');
         for (int i = 0; i < type.length; i++) {
-            if (aggtable.getAggregator()[i].equals(MolapCommonConstants.DISTINCT_COUNT) || aggtable
-                    .getAggregator()[i].equals(MolapCommonConstants.CUSTOM)) {
+            if (aggtable.getAggregator()[i].equals(CarbonCommonConstants.DISTINCT_COUNT) || aggtable
+                    .getAggregator()[i].equals(CarbonCommonConstants.CUSTOM)) {
                 type[i] = 'c';
             }
         }
@@ -1779,7 +1779,7 @@ public class GraphGenerator {
         graphConfiguration.setMaxLeafInFile((instance
                 .getProperty("molap.max.leafnode.in.file", DEFAULE_MAX_LEAF_NODE_IN_FILE)));
         graphConfiguration.setNumberOfCores((instance
-                .getProperty(MolapCommonConstants.NUM_CORES_LOADING, DEFAULT_NUMBER_CORES)));
+                .getProperty(CarbonCommonConstants.NUM_CORES_LOADING, DEFAULT_NUMBER_CORES)));
 
         // check quotes required in query or Not
         boolean isQuotesRequired = false;
@@ -1788,7 +1788,7 @@ public class GraphGenerator {
         }
 
         //
-        graphConfiguration.setTableInputSqlQuery(MolapSchemaParser
+        graphConfiguration.setTableInputSqlQuery(CarbonSchemaParser
                 .getTableInputSQLQueryForAGG(aggtable.getAggLevels(), aggtable.getAggMeasure(),
                         aggtable.getAggregateTableName(), isQuotesRequired));
         graphConfiguration
@@ -1809,15 +1809,15 @@ public class GraphGenerator {
         String type = DRIVERS.get(driverCls);
 
         if (null == type) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "Driver : \"" + driverCls + " \"Not Supported.");
             throw new GraphGeneratorException("Driver : \"" + driverCls + " \"Not Supported.");
         }
 
-        if (type.equals(MolapCommonConstants.TYPE_ORACLE) || type
-                .equals(MolapCommonConstants.TYPE_MSSQL)) {
+        if (type.equals(CarbonCommonConstants.TYPE_ORACLE) || type
+                .equals(CarbonCommonConstants.TYPE_MSSQL)) {
             return true;
-        } else if (type.equals(MolapCommonConstants.TYPE_MYSQL)) {
+        } else if (type.equals(CarbonCommonConstants.TYPE_MYSQL)) {
             return true;
         }
 
@@ -1829,19 +1829,19 @@ public class GraphGenerator {
         String type = DRIVERS.get(driverClass);
 
         if (null == type) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "Driver : \"" + driverClass + " \"Not Supported.");
             throw new GraphGeneratorException("Driver : \"" + driverClass + " \"Not Supported.");
         }
 
-        if (type.equals(MolapCommonConstants.TYPE_ORACLE) || type
-                .equals(MolapCommonConstants.TYPE_MSSQL)) {
-            return MolapSchemaParser.QUOTES;
-        } else if (type.equals(MolapCommonConstants.TYPE_MYSQL)) {
-            return MolapSchemaParser.QUOTES;
+        if (type.equals(CarbonCommonConstants.TYPE_ORACLE) || type
+                .equals(CarbonCommonConstants.TYPE_MSSQL)) {
+            return CarbonSchemaParser.QUOTES;
+        } else if (type.equals(CarbonCommonConstants.TYPE_MYSQL)) {
+            return CarbonSchemaParser.QUOTES;
         }
 
-        return MolapSchemaParser.QUOTES;
+        return CarbonSchemaParser.QUOTES;
     }
 
     public AggregateTable[] getAllAggTables() {

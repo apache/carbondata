@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.jpountz.xxhash.XXHash32;
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.ByteUtil.UnsafeComparer;
 
 /**
@@ -245,7 +245,7 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializa
     public void addToDirectSurrogateKeyList(byte[] directSurrKeyData) {
         if (null == listOfDirectSurrogateVal) {
             listOfDirectSurrogateVal =
-                    new ArrayList<byte[]>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                    new ArrayList<byte[]>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
             listOfDirectSurrogateVal.add(directSurrKeyData);
         } else {
             listOfDirectSurrogateVal.add(directSurrKeyData);
@@ -263,7 +263,7 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializa
         if (null != directSurrKeyData && !directSurrKeyData.isEmpty()) {
             if (null == listOfDirectSurrogateVal) {
                 listOfDirectSurrogateVal =
-                        new ArrayList<byte[]>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                        new ArrayList<byte[]>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
                 listOfDirectSurrogateVal.addAll(directSurrKeyData);
             } else {
                 listOfDirectSurrogateVal.addAll(directSurrKeyData);

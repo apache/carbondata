@@ -23,7 +23,7 @@ import java.util.List;
 
 import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
-import org.carbondata.core.metadata.MolapMetadata.Cube;
+import org.carbondata.core.metadata.CarbonMetadata.Cube;
 import org.carbondata.query.datastorage.streams.DataInputStream;
 import org.carbondata.query.scanner.Scanner;
 

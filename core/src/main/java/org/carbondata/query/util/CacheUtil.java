@@ -30,18 +30,18 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import org.apache.commons.codec.binary.Base64;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.datastorage.store.filesystem.MolapFile;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
 import org.carbondata.core.keygenerator.KeyGenerator;
-import org.carbondata.core.metadata.MolapMetadata.Dimension;
-import org.carbondata.core.metadata.MolapSchemaReader;
-import org.carbondata.core.olap.MolapDef;
-import org.carbondata.core.util.MolapProperties;
-import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.metadata.CarbonMetadata.Dimension;
+import org.carbondata.core.metadata.CarbonSchemaReader;
+import org.carbondata.core.carbon.CarbonDef;
+import org.carbondata.core.util.CarbonProperties;
+import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.datastorage.Member;
-import org.carbondata.query.queryinterface.filter.MolapFilterInfo;
+import org.carbondata.query.queryinterface.filter.CarbonFilterInfo;
 import org.carbondata.query.wrappers.ArrayWrapper;
 
 //import org.pentaho.platform.util.logging.Logger;
@@ -87,7 +87,7 @@ public final class CacheUtil {
      */
     public static Member[][] getMembersList(String filesLocaton, byte nameColumnIndex,
             String dataType) {
-        LOGGER.debug(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.debug(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                 "Reading members data from location: " + filesLocaton);
         //        File decryptedFile = decryptEncyptedFile(filesLocaton);
         Member[][] members = processMemberFile(filesLocaton, dataType);
@@ -110,9 +110,9 @@ public final class CacheUtil {
             return fileChannel.readInt();
         } catch (IOException e) {
             //            e.printStackTrace();
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e, e.getMessage());
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e, e.getMessage());
         } finally {
-            MolapUtil.closeStreams(fileChannel);
+            CarbonUtil.closeStreams(fileChannel);
         }
         return 0;
     }
@@ -133,9 +133,9 @@ public final class CacheUtil {
 
         } catch (IOException e) {
             //            e.printStackTrace();
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e, e.getMessage());
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e, e.getMessage());
         } finally {
-            MolapUtil.closeStreams(fileChannel);
+            CarbonUtil.closeStreams(fileChannel);
         }
         return 0;
     }
@@ -152,7 +152,7 @@ public final class CacheUtil {
             fileChannel = new DataInputStream(FileFactory
                     .getDataInputStream(filesLocaton, FileFactory.getFileType(filesLocaton),
                             10240));
-            MolapFile memberFile =
+            CarbonFile memberFile =
                     FileFactory.getMolapFile(filesLocaton, FileFactory.getFileType(filesLocaton));
             long size = memberFile.getSize() - 4;
             long skipSize = size;
@@ -161,15 +161,15 @@ public final class CacheUtil {
                 actualSkipSize += fileChannel.skip(skipSize);
                 skipSize = skipSize - actualSkipSize;
             }
-            LOGGER.debug(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "Bytes skipped " + skipSize);
+            LOGGER.debug(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "Bytes skipped " + skipSize);
             int maxVal = fileChannel.readInt();
             return maxVal;
 
         } catch (IOException e) {
             //            e.printStackTrace();
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e, e.getMessage());
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e, e.getMessage());
         } finally {
-            MolapUtil.closeStreams(fileChannel);
+            CarbonUtil.closeStreams(fileChannel);
         }
         return 0;
     }
@@ -199,9 +199,9 @@ public final class CacheUtil {
             }
         } catch (IOException e) {
             //            e.printStackTrace();
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e, e.getMessage());
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e, e.getMessage());
         } finally {
-            MolapUtil.closeStreams(fileChannel);
+            CarbonUtil.closeStreams(fileChannel);
         }
         return globalMapping;
     }
@@ -212,7 +212,7 @@ public final class CacheUtil {
         }
         DataInputStream fileChannel = null;
         Map<Integer, Integer> map =
-                new HashMap<Integer, Integer>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                new HashMap<Integer, Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         try {
             if (!FileFactory.isFileExist(filesLocaton, FileFactory.getFileType(filesLocaton))) {
                 return null;
@@ -228,9 +228,9 @@ public final class CacheUtil {
             }
         } catch (IOException e) {
             //            e.printStackTrace();
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e, e.getMessage());
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e, e.getMessage());
         } finally {
-            MolapUtil.closeStreams(fileChannel);
+            CarbonUtil.closeStreams(fileChannel);
         }
         return map;
     }
@@ -307,19 +307,19 @@ public final class CacheUtil {
             fileChannel =
                     FileFactory.getDataInputStream(filename, FileFactory.getFileType(filename));
             FileType fileType = FileFactory.getFileType(filename);
-            MolapFile memberFile = FileFactory.getMolapFile(filename, fileType);
+            CarbonFile memberFile = FileFactory.getMolapFile(filename, fileType);
             members = populateMemberCache(fileChannel, memberFile, filename, dataType);
         } catch (FileNotFoundException f) {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                     "@@@@@@  Member file is missing @@@@@@ : " + filename);
         } catch (IOException e) {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                     "@@@@@@  Error while reading Member the file @@@@@@ : " + filename);
         } finally {
-            MolapUtil.closeStreams(fileChannel);
+            CarbonUtil.closeStreams(fileChannel);
         }
 
-        LOGGER.debug(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.debug(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                 "Time taken to process file " + filename + " is : " + (System.currentTimeMillis()
                         - startTime));
         return members;
@@ -346,28 +346,28 @@ public final class CacheUtil {
                 return;
             }
             FileType fileType = FileFactory.getFileType(filename);
-            MolapFile memberFile = FileFactory.getMolapFile(filename, fileType);
+            CarbonFile memberFile = FileFactory.getMolapFile(filename, fileType);
 
             fileChannel =
                     FileFactory.getDataInputStream(filename, FileFactory.getFileType(filename));
             populateMemberCache(fileChannel, memberFile, filename, dataType);
         } catch (FileNotFoundException f) {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                     "@@@@@@  Member file is missing @@@@@@ : " + filename);
         } catch (IOException e) {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                     "@@@@@@  Error while reading Member the file @@@@@@ : " + filename);
         } finally {
-            MolapUtil.closeStreams(fileChannel);
+            CarbonUtil.closeStreams(fileChannel);
         }
 
-        LOGGER.debug(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.debug(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                 "Time taken to process file " + filename + " is : " + (System.currentTimeMillis()
                         - startTime));
 
     }
 
-    private static Member[][] populateMemberCache(DataInputStream fileChannel, MolapFile memberFile,
+    private static Member[][] populateMemberCache(DataInputStream fileChannel, CarbonFile memberFile,
             String fileName, String dataType) throws IOException {
         // ByteBuffer toltalLength, memberLength, surrogateKey, bf3;
         // subtracted 4 as last 4 bytes will have the max value for no of
@@ -382,7 +382,7 @@ public final class CacheUtil {
         }
         //        LOGGER.debug(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "Bytes skipped " + skipSize);
         int maxVal = fileChannel.readInt();
-        MolapUtil.closeStreams(fileChannel);
+        CarbonUtil.closeStreams(fileChannel);
         fileChannel = FileFactory.getDataInputStream(fileName, FileFactory.getFileType(fileName));
         // CHECKSTYLE:OFF Approval No:Approval-V1R2C10_005
         ByteBuffer buffer = ByteBuffer.allocate((int) size);
@@ -391,23 +391,23 @@ public final class CacheUtil {
         int minVal = buffer.getInt();
         int totalArraySize = maxVal - minVal + 1;
         Member[][] surogateKeyArrays = null;
-        if (totalArraySize > MolapCommonConstants.LEVEL_ARRAY_SIZE) {
-            int div = totalArraySize / MolapCommonConstants.LEVEL_ARRAY_SIZE;
-            int rem = totalArraySize % MolapCommonConstants.LEVEL_ARRAY_SIZE;
+        if (totalArraySize > CarbonCommonConstants.LEVEL_ARRAY_SIZE) {
+            int div = totalArraySize / CarbonCommonConstants.LEVEL_ARRAY_SIZE;
+            int rem = totalArraySize % CarbonCommonConstants.LEVEL_ARRAY_SIZE;
             if (rem > 0) {
                 div++;
             }
             surogateKeyArrays = new Member[div][];
 
             for (int i = 0; i < div - 1; i++) {
-                surogateKeyArrays[i] = new Member[MolapCommonConstants.LEVEL_ARRAY_SIZE];
+                surogateKeyArrays[i] = new Member[CarbonCommonConstants.LEVEL_ARRAY_SIZE];
             }
 
             if (rem > 0) {
                 surogateKeyArrays[surogateKeyArrays.length - 1] = new Member[rem];
             } else {
                 surogateKeyArrays[surogateKeyArrays.length - 1] =
-                        new Member[MolapCommonConstants.LEVEL_ARRAY_SIZE];
+                        new Member[CarbonCommonConstants.LEVEL_ARRAY_SIZE];
             }
         } else {
             surogateKeyArrays = new Member[1][totalArraySize];
@@ -418,9 +418,9 @@ public final class CacheUtil {
         //
         int current = 0;
         // CHECKSTYLE:OFF Approval No:Approval-V1R2C10_005
-        boolean enableEncoding = Boolean.valueOf(MolapProperties.getInstance()
-                .getProperty(MolapCommonConstants.ENABLE_BASE64_ENCODING,
-                        MolapCommonConstants.ENABLE_BASE64_ENCODING_DEFAULT));
+        boolean enableEncoding = Boolean.valueOf(CarbonProperties.getInstance()
+                .getProperty(CarbonCommonConstants.ENABLE_BASE64_ENCODING,
+                        CarbonCommonConstants.ENABLE_BASE64_ENCODING_DEFAULT));
         // CHECKSTYLE:ON
         int index = 0;
         int prvArrayIndex = 0;
@@ -436,10 +436,10 @@ public final class CacheUtil {
             if (enableEncoding) {
                 rowBytes = Base64.decodeBase64(rowBytes);
             }
-            surogateKeyArrays[current / MolapCommonConstants.LEVEL_ARRAY_SIZE][index] =
+            surogateKeyArrays[current / CarbonCommonConstants.LEVEL_ARRAY_SIZE][index] =
                     new Member(rowBytes);
             current++;
-            if (current / MolapCommonConstants.LEVEL_ARRAY_SIZE > prvArrayIndex) {
+            if (current / CarbonCommonConstants.LEVEL_ARRAY_SIZE > prvArrayIndex) {
                 prvArrayIndex++;
                 index = 0;
             } else {
@@ -458,22 +458,22 @@ public final class CacheUtil {
      */
     public static List<int[][]> getLevelSortOrderAndReverseIndex(String levelFileName)
             throws IOException {
-        if (!FileFactory.isFileExist(levelFileName + MolapCommonConstants.LEVEL_SORT_INDEX_FILE_EXT,
+        if (!FileFactory.isFileExist(levelFileName + CarbonCommonConstants.LEVEL_SORT_INDEX_FILE_EXT,
                 FileFactory.getFileType(
-                        levelFileName + MolapCommonConstants.LEVEL_SORT_INDEX_FILE_EXT))) {
+                        levelFileName + CarbonCommonConstants.LEVEL_SORT_INDEX_FILE_EXT))) {
             return null;
         }
         DataInputStream dataInputStream = null;
         List<int[][]> sortIndexAndReverseIndexArray =
-                new ArrayList<int[][]>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                new ArrayList<int[][]>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         long size = 0;
         ByteBuffer buffer = null;
         try {
             dataInputStream = FileFactory.getDataInputStream(
-                    levelFileName + MolapCommonConstants.LEVEL_SORT_INDEX_FILE_EXT,
+                    levelFileName + CarbonCommonConstants.LEVEL_SORT_INDEX_FILE_EXT,
                     FileFactory.getFileType(levelFileName));
             size = FileFactory
-                    .getMolapFile(levelFileName + MolapCommonConstants.LEVEL_SORT_INDEX_FILE_EXT,
+                    .getMolapFile(levelFileName + CarbonCommonConstants.LEVEL_SORT_INDEX_FILE_EXT,
                             FileFactory.getFileType(levelFileName)).getSize();
             // CHECKSTYLE:OFF Approval No:Approval-V1R2C10_005
             buffer = ByteBuffer.allocate((int) size);
@@ -482,10 +482,10 @@ public final class CacheUtil {
             sortIndexAndReverseIndexArray.add(getIndexArray(buffer));
             sortIndexAndReverseIndexArray.add(getIndexArray(buffer));
         } catch (IOException e) {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
             throw e;
         } finally {
-            MolapUtil.closeStreams(dataInputStream);
+            CarbonUtil.closeStreams(dataInputStream);
         }
         return sortIndexAndReverseIndexArray;
     }
@@ -493,32 +493,32 @@ public final class CacheUtil {
     private static int[][] getIndexArray(ByteBuffer buffer) {
         int arraySize = buffer.getInt();
         int[][] sortorderIndexArray = new int[1][arraySize];
-        if (arraySize > MolapCommonConstants.LEVEL_ARRAY_SIZE) {
-            int div = arraySize / MolapCommonConstants.LEVEL_ARRAY_SIZE;
-            int rem = arraySize % MolapCommonConstants.LEVEL_ARRAY_SIZE;
+        if (arraySize > CarbonCommonConstants.LEVEL_ARRAY_SIZE) {
+            int div = arraySize / CarbonCommonConstants.LEVEL_ARRAY_SIZE;
+            int rem = arraySize % CarbonCommonConstants.LEVEL_ARRAY_SIZE;
             if (rem > 0) {
                 div++;
             }
             sortorderIndexArray = new int[div][];
             for (int i = 0; i < div - 1; i++) {
-                sortorderIndexArray[i] = new int[MolapCommonConstants.LEVEL_ARRAY_SIZE];
+                sortorderIndexArray[i] = new int[CarbonCommonConstants.LEVEL_ARRAY_SIZE];
             }
 
             if (rem > 0) {
                 sortorderIndexArray[sortorderIndexArray.length - 1] = new int[rem];
             } else {
                 sortorderIndexArray[sortorderIndexArray.length - 1] =
-                        new int[MolapCommonConstants.LEVEL_ARRAY_SIZE];
+                        new int[CarbonCommonConstants.LEVEL_ARRAY_SIZE];
             }
         }
         int index = 0;
         int prvArrayIndex = 0;
         int current = 0;
         for (int i = 0; i < arraySize; i++) {
-            sortorderIndexArray[current / MolapCommonConstants.LEVEL_ARRAY_SIZE][index] =
+            sortorderIndexArray[current / CarbonCommonConstants.LEVEL_ARRAY_SIZE][index] =
                     buffer.getInt();
             current++;
-            if (current / MolapCommonConstants.LEVEL_ARRAY_SIZE > prvArrayIndex) {
+            if (current / CarbonCommonConstants.LEVEL_ARRAY_SIZE > prvArrayIndex) {
                 prvArrayIndex++;
                 index = 0;
             } else {
@@ -540,7 +540,7 @@ public final class CacheUtil {
      */
     public static List<long[]> getHierarchiesList(String filesLocaton, int keyLength,
             KeyGenerator keyGen) {
-        LOGGER.debug(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.debug(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                 "Reading hierarchies from location: " + filesLocaton);
 
         // hierarchies list , this will hold hierarchy surrogate key
@@ -559,7 +559,7 @@ public final class CacheUtil {
                 wrapHiers.add(new ArrayWrapper(keyGen.getKeyArray(line)));
             }
         } catch (IOException e) {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                     "Error while reading the file: " + filesLocaton);
         } finally {
             try {
@@ -567,7 +567,7 @@ public final class CacheUtil {
                     reader.close();
                 }
             } catch (IOException e) {
-                LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                         "Error while closing the file stream for file " + filesLocaton);
             }
         }
@@ -586,8 +586,8 @@ public final class CacheUtil {
      * @param constraints Dimension and its filter info
      * @return true if exclude filter is present
      */
-    public static boolean checkAnyExcludeExists(Map<Dimension, MolapFilterInfo> constraints) {
-        for (Map.Entry<Dimension, MolapFilterInfo> entry : constraints.entrySet()) {
+    public static boolean checkAnyExcludeExists(Map<Dimension, CarbonFilterInfo> constraints) {
+        for (Map.Entry<Dimension, CarbonFilterInfo> entry : constraints.entrySet()) {
             // check if filter size is greater than zero, if it is more than
             // zero than include filter is present
             if (entry.getValue().getExcludedMembers().size() > 0) {
@@ -604,8 +604,8 @@ public final class CacheUtil {
      * @param constraints Dimension and its filter info
      * @return true if include filter is present
      */
-    public static boolean checkAnyIncludeExists(Map<Dimension, MolapFilterInfo> constraints) {
-        for (Map.Entry<Dimension, MolapFilterInfo> entry : constraints.entrySet()) {
+    public static boolean checkAnyIncludeExists(Map<Dimension, CarbonFilterInfo> constraints) {
+        for (Map.Entry<Dimension, CarbonFilterInfo> entry : constraints.entrySet()) {
             // check if filter size is greater than zero, if it is more than
             // zero than include filter is present
             if (entry.getValue().getIncludedMembers().size() > 0) {
@@ -622,8 +622,8 @@ public final class CacheUtil {
      * @param constraints Dimension and its filter info
      * @return true if include filter is present
      */
-    public static boolean checkAnyIncludeOrExists(Map<Dimension, MolapFilterInfo> constraints) {
-        for (Map.Entry<Dimension, MolapFilterInfo> entry : constraints.entrySet()) {
+    public static boolean checkAnyIncludeOrExists(Map<Dimension, CarbonFilterInfo> constraints) {
+        for (Map.Entry<Dimension, CarbonFilterInfo> entry : constraints.entrySet()) {
             // check if filter size is greater than zero, if it is more than
             // zero than include filter is present
             if (entry.getValue().getIncludedOrMembers() != null
@@ -643,7 +643,7 @@ public final class CacheUtil {
     public static long getMemberFileSize(String fileName) {
         if (isFileExists(fileName)) {
             FileType fileType = FileFactory.getFileType(fileName);
-            MolapFile memberFile = FileFactory.getMolapFile(fileName, fileType);
+            CarbonFile memberFile = FileFactory.getMolapFile(fileName, fileType);
             return memberFile.getSize();
         }
         return 0;
@@ -660,7 +660,7 @@ public final class CacheUtil {
                 return true;
             }
         } catch (IOException e) {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                     "@@@@@@  Member file not found for size to be calculated @@@@@@ : " + fileName);
         }
         return false;
@@ -673,14 +673,14 @@ public final class CacheUtil {
      * @param dimension
      * @return
      */
-    public static String getLevelActualName(MolapDef.Schema schema,
-            MolapDef.CubeDimension dimension) {
+    public static String getLevelActualName(CarbonDef.Schema schema,
+            CarbonDef.CubeDimension dimension) {
         String levelActualName = null;
-        org.carbondata.core.olap.MolapDef.Hierarchy[] extractHierarchies =
-                MolapSchemaReader.extractHierarchies(schema, dimension);
+        CarbonDef.Hierarchy[] extractHierarchies =
+                CarbonSchemaReader.extractHierarchies(schema, dimension);
         if (null != extractHierarchies) {
-            for (org.carbondata.core.olap.MolapDef.Hierarchy hierarchy : extractHierarchies) {
-                for (MolapDef.Level level : hierarchy.levels) {
+            for (CarbonDef.Hierarchy hierarchy : extractHierarchies) {
+                for (CarbonDef.Level level : hierarchy.levels) {
                     levelActualName = level.column;
                     break;
                 }

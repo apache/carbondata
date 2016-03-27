@@ -26,8 +26,8 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.datastorage.store.compression.Compressor;
 import org.carbondata.core.datastorage.store.compression.SnappyCompression;
 import org.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
-import org.carbondata.core.datastorage.store.dataholder.MolapReadDataHolder;
-import org.carbondata.core.util.MolapCoreLogEvent;
+import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
+import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.ValueCompressionUtil;
 import org.carbondata.core.util.ValueCompressionUtil.DataType;
 
@@ -63,7 +63,7 @@ public class UnCompressNoneInt implements ValueCompressonHolder.UnCompressValue<
         try {
             return (ValueCompressonHolder.UnCompressValue) clone();
         } catch (CloneNotSupportedException exc) {
-            LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, exc, exc.getMessage());
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, exc, exc.getMessage());
         }
         return null;
     }
@@ -97,8 +97,8 @@ public class UnCompressNoneInt implements ValueCompressonHolder.UnCompressValue<
     }
 
     @Override
-    public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
-        MolapReadDataHolder dataHolderInfoObj = new MolapReadDataHolder();
+    public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {
+        CarbonReadDataHolder dataHolderInfoObj = new CarbonReadDataHolder();
         double[] vals = new double[value.length];
         for (int i = 0; i < vals.length; i++) {
             vals[i] = value[i];

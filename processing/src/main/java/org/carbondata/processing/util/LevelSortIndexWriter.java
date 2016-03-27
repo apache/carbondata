@@ -28,8 +28,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.util.MolapProperties;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.util.CarbonProperties;
 
 public class LevelSortIndexWriter {
     /**
@@ -47,8 +47,8 @@ public class LevelSortIndexWriter {
      * @param levelFileMap
      */
     public LevelSortIndexWriter(Map<String, String> levelFileMap) {
-        int parseInt = Integer.parseInt(MolapProperties.getInstance()
-                .getProperty(MolapCommonConstants.NUM_CORES_LOADING, "2"));
+        int parseInt = Integer.parseInt(CarbonProperties.getInstance()
+                .getProperty(CarbonCommonConstants.NUM_CORES_LOADING, "2"));
         executor = Executors.newFixedThreadPool(parseInt);
         this.levelFileMap = levelFileMap;
     }
@@ -63,7 +63,7 @@ public class LevelSortIndexWriter {
         File[] levelFilesPresent = file.listFiles(new FileFilter() {
             @Override
             public boolean accept(File pathname) {
-                return pathname.getName().endsWith(MolapCommonConstants.LEVEL_FILE_EXTENSION);
+                return pathname.getName().endsWith(CarbonCommonConstants.LEVEL_FILE_EXTENSION);
             }
         });
         if (null != levelFilesPresent && levelFilesPresent.length > 0) {
@@ -77,7 +77,7 @@ public class LevelSortIndexWriter {
         try {
             executor.awaitTermination(1, TimeUnit.DAYS);
         } catch (InterruptedException e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
                     e.getMessage());
         }
 

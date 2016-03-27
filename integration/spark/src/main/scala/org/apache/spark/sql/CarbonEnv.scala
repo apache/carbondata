@@ -20,17 +20,17 @@
 package org.apache.spark.sql
 
 import org.apache.spark.Logging
-import org.apache.spark.sql.hive.{HiveContext, OlapMetastoreCatalog}
-import org.carbondata.core.metadata.MolapMetadata
-import org.carbondata.core.util.MolapUtil
-import org.carbondata.integration.spark.load.MolapLoaderUtil
+import org.apache.spark.sql.hive.{HiveContext, CarbonMetastoreCatalog}
+import org.carbondata.core.metadata.CarbonMetadata
+import org.carbondata.core.util.CarbonUtil
+import org.carbondata.integration.spark.load.CarbonLoaderUtil
 
 /**
   * Carbon Environment for unified context
   */
 class CarbonEnv extends Logging {
   var carbonContext: HiveContext = _
-  var carbonCatalog: OlapMetastoreCatalog = _
+  var carbonCatalog: CarbonMetastoreCatalog = _
   val FS_DEFAULT_FS = "fs.defaultFS"
   val HDFSURL_PREFIX = "hdfs://"
 }
@@ -43,28 +43,28 @@ object CarbonEnv {
     if(carbonEnv == null)
     {
       carbonEnv = new CarbonEnv
-      carbonEnv.carbonContext = sqlContext.asInstanceOf[OlapContext]
-      carbonEnv.carbonCatalog = sqlContext.asInstanceOf[OlapContext].catalog
+      carbonEnv.carbonContext = sqlContext.asInstanceOf[CarbonContext]
+      carbonEnv.carbonCatalog = sqlContext.asInstanceOf[CarbonContext].catalog
     }
     carbonEnv
   }
 
   var isloaded = false
 
-  def loadCarbonCubes(sqlContext: SQLContext, carbonCatalog: OlapMetastoreCatalog): Unit = {
+  def loadCarbonCubes(sqlContext: SQLContext, carbonCatalog: CarbonMetastoreCatalog): Unit = {
     val cubes = carbonCatalog.getAllCubes()(sqlContext)
     if (null != cubes && isloaded == false) {
       isloaded = true
       cubes.foreach { cube =>
         val schemaName = cube._1
         val cubeName = cube._2
-        val cubeInstance = MolapMetadata.getInstance().getCube(
+        val cubeInstance = CarbonMetadata.getInstance().getCube(
           schemaName + '_' + cubeName)
         val filePath = cubeInstance.getMetaDataFilepath();
-        val details = MolapUtil
+        val details = CarbonUtil
           .readLoadMetadata(filePath)
         if (null != details) {
-          var listOfLoadFolders = MolapLoaderUtil.getListOfValidSlices(details)
+          var listOfLoadFolders = CarbonLoaderUtil.getListOfValidSlices(details)
           if (null != listOfLoadFolders && listOfLoadFolders.size() > 0 ) {
             var hc: HiveContext = sqlContext.asInstanceOf[HiveContext]
             hc.sql(" select count(*) from " + schemaName + "." + cubeName).collect()

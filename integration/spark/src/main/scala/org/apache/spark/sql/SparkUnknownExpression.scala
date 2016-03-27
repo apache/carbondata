@@ -20,11 +20,11 @@
 package org.apache.spark.sql
 
 import org.apache.spark.sql.catalyst.expressions.{Expression => SparkExpression, GenericMutableRow}
-import org.carbondata.integration.spark.util.MolapScalaUtil
+import org.carbondata.integration.spark.util.CarbonScalaUtil
 import org.carbondata.query.expression.exception.FilterUnsupportedException
 import org.carbondata.query.expression.{ColumnExpression, ExpressionResult, Expression}
 import org.carbondata.query.expression.conditional.ConditionalExpression
-import org.carbondata.query.molapfilterinterface.{ExpressionType, RowIntf}
+import org.carbondata.query.carbonfilterinterface.{ExpressionType, RowIntf}
 
 import scala.collection.JavaConverters._
 
@@ -51,7 +51,7 @@ class SparkUnknownExpression(sparkExp: SparkExpression) extends Expression with 
         new GenericMutableRow(values.map(a => a.asInstanceOf[Any]).toArray)
       )
 
-      new ExpressionResult(MolapScalaUtil.convertSparkToMolapDataType(sparkExp.dataType), sparkRes);
+      new ExpressionResult(CarbonScalaUtil.convertSparkToMolapDataType(sparkExp.dataType), sparkRes);
     }
     catch {
       case e: Exception => throw new FilterUnsupportedException(e.getMessage());
@@ -94,7 +94,7 @@ class SparkUnknownExpression(sparkExp: SparkExpression) extends Expression with 
   def getColumnListFromExpressionTree(sparkCurrentExp: SparkExpression,
                                       list: java.util.List[ColumnExpression]): Unit = {
     sparkCurrentExp match {
-      case molapBoundRef: MolapBoundReference => {
+      case molapBoundRef: CarbonBoundReference => {
         val foundExp = list.asScala.find(p => p.getColumnName() == molapBoundRef.colExp.getColumnName())
         if (foundExp.isEmpty) {
           molapBoundRef.colExp.setColIndex(list.size)
@@ -111,7 +111,7 @@ class SparkUnknownExpression(sparkExp: SparkExpression) extends Expression with 
   def getAllColumnListFromExpressionTree(sparkCurrentExp: SparkExpression,
                                          list: java.util.List[ColumnExpression]): java.util.List[ColumnExpression] = {
     sparkCurrentExp match {
-      case molapBoundRef: MolapBoundReference => list.add(molapBoundRef.colExp)
+      case molapBoundRef: CarbonBoundReference => list.add(molapBoundRef.colExp)
       case _ => sparkCurrentExp.children.foreach(getColumnListFromExpressionTree(_, list))
     }
     list

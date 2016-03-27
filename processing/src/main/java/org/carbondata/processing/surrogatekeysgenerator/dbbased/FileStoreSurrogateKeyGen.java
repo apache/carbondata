@@ -29,20 +29,20 @@ import java.util.Map.Entry;
 import org.apache.commons.codec.binary.Base64;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.file.manager.composite.FileData;
 import org.carbondata.core.file.manager.composite.IFileManagerComposite;
 import org.carbondata.core.file.manager.composite.LoadFolderData;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.KeyGenerator;
-import org.carbondata.core.util.MolapProperties;
-import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.util.CarbonProperties;
+import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.writer.LevelValueWriter;
-import org.carbondata.processing.schema.metadata.MolapInfo;
-import org.carbondata.processing.util.MolapDataProcessorLogEvent;
+import org.carbondata.processing.schema.metadata.CarbonInfo;
+import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.pentaho.di.core.exception.KettleException;
 
-public class FileStoreSurrogateKeyGen extends MolapDimSurrogateKeyGen {
+public class FileStoreSurrogateKeyGen extends CarbonDimSurrogateKeyGen {
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(FileStoreSurrogateKeyGen.class.getName());
 
@@ -84,42 +84,42 @@ public class FileStoreSurrogateKeyGen extends MolapDimSurrogateKeyGen {
     private int currentRestructNumber;
 
     /**
-     * @param molapInfo
+     * @param carbonInfo
      * @throws KettleException
      */
-    public FileStoreSurrogateKeyGen(MolapInfo molapInfo, int currentRestructNum)
+    public FileStoreSurrogateKeyGen(CarbonInfo carbonInfo, int currentRestructNum)
             throws KettleException {
-        super(molapInfo);
+        super(carbonInfo);
 
         keyGeneratorMap =
-                new HashMap<String, KeyGenerator>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                new HashMap<String, KeyGenerator>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-        baseStorePath = molapInfo.getBaseStoreLocation();
+        baseStorePath = carbonInfo.getBaseStoreLocation();
 
         String storeFolderWithLoadNumber =
-                checkAndCreateLoadFolderNumber(baseStorePath, molapInfo.getTableName());
+                checkAndCreateLoadFolderNumber(baseStorePath, carbonInfo.getTableName());
 
         fileManager = new LoadFolderData();
-        fileManager.setName(loadFolderName + MolapCommonConstants.FILE_INPROGRESS_STATUS);
+        fileManager.setName(loadFolderName + CarbonCommonConstants.FILE_INPROGRESS_STATUS);
 
         dimensionWriter = new LevelValueWriter[dimInsertFileNames.length];
         for (int i = 0; i < dimensionWriter.length; i++) {
             String dimFileName =
-                    dimInsertFileNames[i] + MolapCommonConstants.FILE_INPROGRESS_STATUS;
+                    dimInsertFileNames[i] + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
             dimensionWriter[i] = new LevelValueWriter(dimFileName, storeFolderWithLoadNumber);
             FileData fileData = new FileData(dimFileName, storeFolderWithLoadNumber);
             fileManager.add(fileData);
         }
 
         hierValueWriter = new HashMap<String, HierarchyValueWriter>(
-                MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
         for (Entry<String, String> entry : hierInsertFileNames.entrySet()) {
             String hierFileName =
-                    entry.getValue().trim() + MolapCommonConstants.FILE_INPROGRESS_STATUS;
+                    entry.getValue().trim() + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
             hierValueWriter.put(entry.getKey(),
                     new HierarchyValueWriter(hierFileName, storeFolderWithLoadNumber));
-            Map<String, KeyGenerator> keyGenerators = molapInfo.getKeyGenerators();
+            Map<String, KeyGenerator> keyGenerators = carbonInfo.getKeyGenerators();
             keyGeneratorMap.put(entry.getKey(), keyGenerators.get(entry.getKey()));
 
             FileData fileData = new FileData(hierFileName, storeFolderWithLoadNumber);
@@ -140,16 +140,16 @@ public class FileStoreSurrogateKeyGen extends MolapDimSurrogateKeyGen {
         }
         //
         String baseStorePathWithTableName =
-                baseStorePath + File.separator + MolapCommonConstants.RESTRUCTRE_FOLDER
+                baseStorePath + File.separator + CarbonCommonConstants.RESTRUCTRE_FOLDER
                         + restrctFolderCount + File.separator + tableName;
-        int counter = MolapUtil.checkAndReturnCurrentLoadFolderNumber(baseStorePathWithTableName);
+        int counter = CarbonUtil.checkAndReturnCurrentLoadFolderNumber(baseStorePathWithTableName);
         counter++;
         String basePath =
-                baseStorePathWithTableName + File.separator + MolapCommonConstants.LOAD_FOLDER
+                baseStorePathWithTableName + File.separator + CarbonCommonConstants.LOAD_FOLDER
                         + counter;
 
-        basePath = basePath + MolapCommonConstants.FILE_INPROGRESS_STATUS;
-        loadFolderName = MolapCommonConstants.LOAD_FOLDER + counter;
+        basePath = basePath + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
+        loadFolderName = CarbonCommonConstants.LOAD_FOLDER + counter;
         //
         boolean isDirCreated = new File(basePath).mkdirs();
         if (!isDirCreated) {
@@ -215,7 +215,7 @@ public class FileStoreSurrogateKeyGen extends MolapDimSurrogateKeyGen {
             @Override
             public boolean accept(File pathname) {
                 if (pathname.isDirectory()
-                        && pathname.getAbsolutePath().indexOf(MolapCommonConstants.LOAD_FOLDER)
+                        && pathname.getAbsolutePath().indexOf(CarbonCommonConstants.LOAD_FOLDER)
                         > -1) {
                     return true;
                 } else {
@@ -245,7 +245,7 @@ public class FileStoreSurrogateKeyGen extends MolapDimSurrogateKeyGen {
 
         byte[] bytes;
         try {
-            bytes = molapInfo.getKeyGenerators().get(hier).generateKey(value);
+            bytes = carbonInfo.getKeyGenerators().get(hier).generateKey(value);
             hierValueWriter.get(hier).getByteArrayList().add(bytes);
         } catch (KeyGenException ex) {
             throw new KettleException(ex);
@@ -273,7 +273,7 @@ public class FileStoreSurrogateKeyGen extends MolapDimSurrogateKeyGen {
             if (null == bufferedOutputStream) {
                 continue;
             }
-            MolapUtil.closeStreams(bufferedOutputStream);
+            CarbonUtil.closeStreams(bufferedOutputStream);
             int size = fileManager.size();
             for (int j = 0; j < size; j++) {
                 FileData fileData = (FileData) fileManager.get(j);
@@ -287,7 +287,7 @@ public class FileStoreSurrogateKeyGen extends MolapDimSurrogateKeyGen {
                     File destFile = new File(storePath + File.separator + changedFileName);
 
                     if (!currentFile.renameTo(destFile)) {
-                        LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                                 "Not Able to rename " + currentFile.getName() + " to " + destFile
                                         .getName());
                     }
@@ -305,7 +305,7 @@ public class FileStoreSurrogateKeyGen extends MolapDimSurrogateKeyGen {
             // First we need to sort the byte array
             List<byte[]> byteArrayList = hierValueWriter.get(entry.getKey()).getByteArrayList();
             String hierFileName = hierValueWriter.get(entry.getKey()).getHierarchyName();
-            Collections.sort(byteArrayList, molapInfo.getKeyGenerators().get(entry.getKey()));
+            Collections.sort(byteArrayList, carbonInfo.getKeyGenerators().get(entry.getKey()));
             byte[] bytesTowrite = null;
             for (byte[] bytes : byteArrayList) {
                 bytesTowrite = new byte[bytes.length + 4];
@@ -319,7 +319,7 @@ public class FileStoreSurrogateKeyGen extends MolapDimSurrogateKeyGen {
             if (null == bufferedOutStream) {
                 continue;
             }
-            MolapUtil.closeStreams(hierValueWriter.get(entry.getKey()).getBufferedOutStream());
+            CarbonUtil.closeStreams(hierValueWriter.get(entry.getKey()).getBufferedOutStream());
 
             int size = fileManager.size();
 
@@ -375,7 +375,7 @@ public class FileStoreSurrogateKeyGen extends MolapDimSurrogateKeyGen {
                 byteBuffer.clear();
             }
         } finally {
-            MolapUtil.closeStreams(fileChannel, inputStream);
+            CarbonUtil.closeStreams(fileChannel, inputStream);
         }
 
     }
@@ -410,9 +410,9 @@ public class FileStoreSurrogateKeyGen extends MolapDimSurrogateKeyGen {
             // ByteBuffer toltalLength, memberLength, surrogateKey, bf3;
             long size = fileChannel.size();
             int maxKey = 0;      //CHECKSTYLE:OFF    Approval No:Approval-V1R2C10_005
-            boolean enableEncoding = Boolean.valueOf(MolapProperties.getInstance()
-                    .getProperty(MolapCommonConstants.ENABLE_BASE64_ENCODING,
-                            MolapCommonConstants.ENABLE_BASE64_ENCODING_DEFAULT));
+            boolean enableEncoding = Boolean.valueOf(CarbonProperties.getInstance()
+                    .getProperty(CarbonCommonConstants.ENABLE_BASE64_ENCODING,
+                            CarbonCommonConstants.ENABLE_BASE64_ENCODING_DEFAULT));
             //CHECKSTYLE:ON
             while (fileChannel.position() < size) {
                 ByteBuffer rowlengthToRead = ByteBuffer.allocate(4);
@@ -445,7 +445,7 @@ public class FileStoreSurrogateKeyGen extends MolapDimSurrogateKeyGen {
             //Check the previous value assigned for surrogate key and initialize the value.
             checkAndUpdateMap(maxKey, dimInsertFileNames);
         } finally {
-            MolapUtil.closeStreams(fileChannel, fos);
+            CarbonUtil.closeStreams(fileChannel, fos);
         }
 
     }
@@ -465,7 +465,7 @@ public class FileStoreSurrogateKeyGen extends MolapDimSurrogateKeyGen {
             HierarchyValueWriter hierWriter) throws KettleException {
         byte[] bytes;
         try {
-            bytes = molapInfo.getKeyGenerators().get(hier).generateKey(val);
+            bytes = carbonInfo.getKeyGenerators().get(hier).generateKey(val);
             hierWriter.getByteArrayList().add(bytes);
         } catch (KeyGenException e) {
             throw new KettleException(e);

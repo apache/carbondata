@@ -24,11 +24,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.processing.schema.metadata.HierarchiesInfo;
-import org.carbondata.processing.surrogatekeysgenerator.csvbased.MolapCSVBasedDimSurrogateKeyGen;
-import org.carbondata.processing.surrogatekeysgenerator.csvbased.MolapCSVBasedSeqGenMeta;
+import org.carbondata.processing.surrogatekeysgenerator.csvbased.CarbonCSVBasedDimSurrogateKeyGen;
+import org.carbondata.processing.surrogatekeysgenerator.csvbased.CarbonCSVBasedSeqGenMeta;
 
 public class DimensionLoadInfo {
     /**
@@ -39,7 +39,7 @@ public class DimensionLoadInfo {
     /**
      * Surrogate keyGen
      */
-    private MolapCSVBasedDimSurrogateKeyGen surrogateKeyGen;
+    private CarbonCSVBasedDimSurrogateKeyGen surrogateKeyGen;
 
     /**
      * modifiedDimesions
@@ -50,7 +50,7 @@ public class DimensionLoadInfo {
      * Map of Connection
      */
     private Map<String, Connection> cons =
-            new HashMap<String, Connection>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+            new HashMap<String, Connection>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
     /**
      * dimFileLocDir
@@ -58,9 +58,9 @@ public class DimensionLoadInfo {
     private String dimFileLocDir;
 
     /**
-     * MolapCSVBasedSeqGenMeta
+     * CarbonCSVBasedSeqGenMeta
      */
-    private MolapCSVBasedSeqGenMeta meta;
+    private CarbonCSVBasedSeqGenMeta meta;
 
     /**
      * dimTableNames
@@ -99,14 +99,14 @@ public class DimensionLoadInfo {
     /**
      * @return Returns the surrogateKeyGen.
      */
-    public MolapCSVBasedDimSurrogateKeyGen getSurrogateKeyGen() {
+    public CarbonCSVBasedDimSurrogateKeyGen getSurrogateKeyGen() {
         return surrogateKeyGen;
     }
 
     /**
      * @param surrogateKeyGen The surrogateKeyGen to set.
      */
-    public void setSurrogateKeyGen(MolapCSVBasedDimSurrogateKeyGen surrogateKeyGen) {
+    public void setSurrogateKeyGen(CarbonCSVBasedDimSurrogateKeyGen surrogateKeyGen) {
         this.surrogateKeyGen = surrogateKeyGen;
     }
 
@@ -141,14 +141,14 @@ public class DimensionLoadInfo {
     /**
      * @return Returns the meta.
      */
-    public MolapCSVBasedSeqGenMeta getMeta() {
+    public CarbonCSVBasedSeqGenMeta getMeta() {
         return meta;
     }
 
     /**
      * @param meta The meta to set.
      */
-    public void setMeta(MolapCSVBasedSeqGenMeta meta) {
+    public void setMeta(CarbonCSVBasedSeqGenMeta meta) {
         this.meta = meta;
     }
 

@@ -23,9 +23,9 @@ import java.util.Arrays;
 
 import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.core.datastorage.store.MeasureDataWrapper;
-import org.carbondata.core.datastorage.store.dataholder.MolapReadDataHolder;
+import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.carbondata.core.keygenerator.KeyGenerator;
-import org.carbondata.core.olap.SqlStatement;
+import org.carbondata.core.carbon.SqlStatement;
 
 /**
  * This Class will hold key and value where key will be mdkey and value will be
@@ -72,7 +72,7 @@ public class KeyValue {
      *
      */
     //    private MeasureDataWrapper msrData;
-    private MolapReadDataHolder[] msrData;
+    private CarbonReadDataHolder[] msrData;
     /**
      *
      */
@@ -195,7 +195,7 @@ public class KeyValue {
      *
      * @return
      */
-    public MolapReadDataHolder getMsrData(int col) {
+    public CarbonReadDataHolder getMsrData(int col) {
         return msrData[col];
     }
 

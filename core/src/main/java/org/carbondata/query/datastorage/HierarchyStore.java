@@ -20,6 +20,7 @@
 package org.carbondata.query.datastorage;
 
 import org.carbondata.core.keygenerator.KeyGenerator;
+import org.carbondata.core.carbon.CarbonDef;
 import org.carbondata.query.datastorage.streams.DataInputStream;
 
 public class HierarchyStore {
@@ -49,14 +50,14 @@ public class HierarchyStore {
     /**
      *
      */
-    private org.carbondata.core.olap.MolapDef.Hierarchy rolapHierarchy;
+    private CarbonDef.Hierarchy rolapHierarchy;
 
     /**
      *
      */
     private String dimeName;
 
-    public HierarchyStore(org.carbondata.core.olap.MolapDef.Hierarchy rolapHierarchy,
+    public HierarchyStore(CarbonDef.Hierarchy rolapHierarchy,
             String factTableName, String dimensionName) {
         this.dimeName = dimensionName;
         this.hierName = rolapHierarchy.name == null ? dimensionName : rolapHierarchy.name;
@@ -69,7 +70,7 @@ public class HierarchyStore {
     /**
      * Getter for hierarchy
      */
-    public org.carbondata.core.olap.MolapDef.Hierarchy getRolapHierarchy() {
+    public CarbonDef.Hierarchy getRolapHierarchy() {
         return rolapHierarchy;
     }
 

@@ -33,12 +33,12 @@ public class TopCount implements Serializable {
     /**
      * MolapDimensionLevel
      */
-    private MolapDimensionLevel level;
+    private CarbonDimensionLevel level;
 
     /**
      * Measure
      */
-    private MolapMeasure msr;
+    private CarbonMeasure msr;
 
     /**
      * TopN count
@@ -50,7 +50,7 @@ public class TopCount implements Serializable {
      */
     private TopNType type;
 
-    public TopCount(MolapDimensionLevel level, MolapMeasure msr, int count, TopNType type) {
+    public TopCount(CarbonDimensionLevel level, CarbonMeasure msr, int count, TopNType type) {
         this.level = level;
         this.msr = msr;
         this.count = count;
@@ -62,7 +62,7 @@ public class TopCount implements Serializable {
      *
      * @return the level
      */
-    public MolapDimensionLevel getLevel() {
+    public CarbonDimensionLevel getLevel() {
         return level;
     }
 
@@ -71,7 +71,7 @@ public class TopCount implements Serializable {
      *
      * @return the msr
      */
-    public MolapMeasure getMsr() {
+    public CarbonMeasure getMsr() {
         return msr;
     }
 

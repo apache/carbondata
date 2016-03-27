@@ -22,8 +22,8 @@ package org.carbondata.query.filters.measurefilter;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.metadata.MolapMetadata.Measure;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.metadata.CarbonMetadata.Measure;
 import org.carbondata.query.filters.measurefilter.util.MeasureFilterFactory;
 
 public final class MeasureFilterUtil {
@@ -121,7 +121,7 @@ public final class MeasureFilterUtil {
      */
     public static int[] getMsrFilterIndexes(MeasureFilter[][] measureFilters) {
 
-        List<Integer> msrInexes = new ArrayList<Integer>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+        List<Integer> msrInexes = new ArrayList<Integer>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
 
         for (int i = 0; i < measureFilters.length; i++) {
             if (measureFilters[i] != null) {

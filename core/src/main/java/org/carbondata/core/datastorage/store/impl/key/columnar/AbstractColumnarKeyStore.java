@@ -22,7 +22,7 @@ package org.carbondata.core.datastorage.store.impl.key.columnar;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStore;
 import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreInfo;
@@ -53,9 +53,9 @@ public abstract class AbstractColumnarKeyStore implements ColumnarKeyStore {
             FileHolder fileHolder) {
         this.columnarStoreInfo = columnarStoreInfo;
         this.mapOfColumnIndexAndColumnBlockIndex =
-                new HashMap<Integer, Integer>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                new HashMap<Integer, Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         this.mapOfAggDataIndex =
-                new HashMap<Integer, Integer>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                new HashMap<Integer, Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         int index = 0;
         for (int i = 0; i < this.columnarStoreInfo.getIsSorted().length; i++) {
             if (!this.columnarStoreInfo.getIsSorted()[i]) {

@@ -21,8 +21,8 @@ package org.carbondata.query.executer.calcexp;
 
 import java.util.List;
 
-import org.carbondata.core.metadata.MolapMetadata.Measure;
-import org.carbondata.core.olap.Exp;
+import org.carbondata.core.metadata.CarbonMetadata.Measure;
+import org.carbondata.core.carbon.Exp;
 import org.carbondata.query.executer.calcexp.impl.CalcExpressionModel;
 import org.carbondata.query.schema.metadata.Pair;
 

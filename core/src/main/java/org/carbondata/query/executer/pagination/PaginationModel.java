@@ -24,16 +24,16 @@ import java.util.Map;
 
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.metadata.CalculatedMeasure;
-import org.carbondata.core.metadata.MolapMetadata.Dimension;
-import org.carbondata.core.metadata.MolapMetadata.Measure;
+import org.carbondata.core.metadata.CarbonMetadata.Dimension;
+import org.carbondata.core.metadata.CarbonMetadata.Measure;
 import org.carbondata.query.aggregator.MeasureAggregator;
-import org.carbondata.query.datastorage.InMemoryCube;
+import org.carbondata.query.datastorage.InMemoryTable;
 import org.carbondata.query.directinterface.impl.MeasureSortModel;
 import org.carbondata.query.executer.impl.topn.TopNModel.MolapTopNType;
 import org.carbondata.query.executer.pagination.lru.LRUCacheKey;
 import org.carbondata.query.filters.measurefilter.GroupMeasureFilterModel;
 import org.carbondata.query.filters.metadata.InMemFilterModel;
-import org.carbondata.query.queryinterface.filter.MolapFilterInfo;
+import org.carbondata.query.queryinterface.filter.CarbonFilterInfo;
 
 public class PaginationModel {
 
@@ -170,7 +170,7 @@ public class PaginationModel {
     /**
      * slices
      */
-    private List<InMemoryCube> slices;
+    private List<InMemoryTable> slices;
 
     /**
      * queryDims
@@ -239,7 +239,7 @@ public class PaginationModel {
     /**
      * Filter Constraints
      */
-    private Map<Dimension, MolapFilterInfo> constraintsAfterTopN;
+    private Map<Dimension, CarbonFilterInfo> constraintsAfterTopN;
 
     private byte[] msrFilterMaskedBytes;
 
@@ -614,14 +614,14 @@ public class PaginationModel {
     /**
      * @return the slices
      */
-    public List<InMemoryCube> getSlices() {
+    public List<InMemoryTable> getSlices() {
         return slices;
     }
 
     /**
      * @param slices the slices to set
      */
-    public void setSlices(List<InMemoryCube> slices) {
+    public void setSlices(List<InMemoryTable> slices) {
         this.slices = slices;
     }
 
@@ -849,14 +849,14 @@ public class PaginationModel {
     /**
      * @return the constraintsAfterTopN
      */
-    public Map<Dimension, MolapFilterInfo> getConstraintsAfterTopN() {
+    public Map<Dimension, CarbonFilterInfo> getConstraintsAfterTopN() {
         return constraintsAfterTopN;
     }
 
     /**
      * @param constraintsAfterTopN the constraintsAfterTopN to set
      */
-    public void setConstraintsAfterTopN(Map<Dimension, MolapFilterInfo> constraintsAfterTopN) {
+    public void setConstraintsAfterTopN(Map<Dimension, CarbonFilterInfo> constraintsAfterTopN) {
         this.constraintsAfterTopN = constraintsAfterTopN;
     }
 

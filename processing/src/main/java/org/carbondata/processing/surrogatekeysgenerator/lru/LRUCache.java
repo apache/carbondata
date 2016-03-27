@@ -23,8 +23,8 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.util.MolapProperties;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.util.CarbonProperties;
 
 public final class LRUCache {
     /**
@@ -40,19 +40,19 @@ public final class LRUCache {
     /**
      * cache
      */
-    private Map<String, MolapSeqGenCacheHolder> cache;
+    private Map<String, CarbonSeqGenCacheHolder> cache;
 
     /**
      * LRUCache constructor
      */
     private LRUCache() {
         try {
-            lruCacheSize = Integer.parseInt(MolapProperties.getInstance()
-                    .getProperty(MolapCommonConstants.MOLAP_SEQ_GEN_INMEMORY_LRU_CACHE_SIZE,
-                            MolapCommonConstants.MOLAP_SEQ_GEN_INMEMORY_LRU_CACHE_SIZE_DEFAULT_VALUE));
+            lruCacheSize = Integer.parseInt(CarbonProperties.getInstance()
+                    .getProperty(CarbonCommonConstants.MOLAP_SEQ_GEN_INMEMORY_LRU_CACHE_SIZE,
+                            CarbonCommonConstants.MOLAP_SEQ_GEN_INMEMORY_LRU_CACHE_SIZE_DEFAULT_VALUE));
         } catch (NumberFormatException e) {
             lruCacheSize = Integer.parseInt(
-                    MolapCommonConstants.MOLAP_SEQ_GEN_INMEMORY_LRU_CACHE_SIZE_DEFAULT_VALUE);
+                    CarbonCommonConstants.MOLAP_SEQ_GEN_INMEMORY_LRU_CACHE_SIZE_DEFAULT_VALUE);
         }
         createCache();
     }
@@ -67,7 +67,7 @@ public final class LRUCache {
     private void createCache() {
         cache = Collections.synchronizedMap(
                 // true = use access order instead of insertion order
-                new LinkedHashMap<String, MolapSeqGenCacheHolder>(lruCacheSize + 1, 1.0f, true) {
+                new LinkedHashMap<String, CarbonSeqGenCacheHolder>(lruCacheSize + 1, 1.0f, true) {
                     //CHECKSTYLE:OFF
                     /**
                      * serialVersionUID
@@ -77,7 +77,7 @@ public final class LRUCache {
 
                     @Override
                     public boolean removeEldestEntry(
-                            Map.Entry<String, MolapSeqGenCacheHolder> eldest) {
+                            Map.Entry<String, CarbonSeqGenCacheHolder> eldest) {
                         if (size() > lruCacheSize) {
                             cache.remove(eldest.getKey());
                             return true;
@@ -87,8 +87,8 @@ public final class LRUCache {
                     }
 
                     @Override
-                    public MolapSeqGenCacheHolder get(Object key) {
-                        MolapSeqGenCacheHolder m = super.get(key);
+                    public CarbonSeqGenCacheHolder get(Object key) {
+                        CarbonSeqGenCacheHolder m = super.get(key);
                         if (null != m) {
                             m.setLastAccessTime(System.currentTimeMillis());
                         }
@@ -103,7 +103,7 @@ public final class LRUCache {
      * @param key
      * @param value
      */
-    public void put(String key, MolapSeqGenCacheHolder value) {
+    public void put(String key, CarbonSeqGenCacheHolder value) {
         value.setLastAccessTime(System.currentTimeMillis());
         cache.put(key, value);
     }
@@ -114,7 +114,7 @@ public final class LRUCache {
      * @param key
      * @return
      */
-    public MolapSeqGenCacheHolder get(String key) {
+    public CarbonSeqGenCacheHolder get(String key) {
         return cache.get(key);
     }
 

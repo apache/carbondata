@@ -28,12 +28,12 @@ import java.util.concurrent.Callable;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.DataTypeUtil;
-import org.carbondata.core.util.MolapUtil;
-import org.carbondata.core.util.MolapUtilException;
-import org.carbondata.processing.sortandgroupby.exception.MolapSortKeyAndGroupByException;
-import org.carbondata.processing.util.MolapDataProcessorLogEvent;
+import org.carbondata.core.util.CarbonUtil;
+import org.carbondata.core.util.CarbonUtilException;
+import org.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
+import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.carbondata.processing.util.RemoveDictionaryUtil;
 
 public class IntermediateFileMerger implements Callable<Void> {
@@ -116,25 +116,25 @@ public class IntermediateFileMerger implements Callable<Void> {
                 }
             }
         } catch (Exception e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
                     "Problem while intermediate merging");
             isFailed = true;
         } finally {
             records = null;
-            MolapUtil.closeStreams(this.stream);
+            CarbonUtil.closeStreams(this.stream);
             if (null != writer) {
                 writer.finish();
             }
             if (!isFailed) {
                 try {
                     finish();
-                } catch (MolapSortKeyAndGroupByException e) {
-                    LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+                } catch (CarbonSortKeyAndGroupByException e) {
+                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
                             "Problem while deleting the merge file");
                 }
             } else {
                 if (mergerParameters.getOutFile().delete()) {
-                    LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                             "Problem while deleting the merge file");
                 }
             }
@@ -146,9 +146,9 @@ public class IntermediateFileMerger implements Callable<Void> {
     /**
      * This method is responsible for initializing the out stream
      *
-     * @throws MolapSortKeyAndGroupByException
+     * @throws CarbonSortKeyAndGroupByException
      */
-    private void initialize() throws MolapSortKeyAndGroupByException {
+    private void initialize() throws CarbonSortKeyAndGroupByException {
         if (!mergerParameters.isCompressionEnabled() && !mergerParameters.isPrefetch()) {
             try {
                 this.stream = new DataOutputStream(new BufferedOutputStream(
@@ -156,9 +156,9 @@ public class IntermediateFileMerger implements Callable<Void> {
                         mergerParameters.getFileWriteBufferSize()));
                 this.stream.writeInt(this.totalNumberOfRecords);
             } catch (FileNotFoundException e) {
-                throw new MolapSortKeyAndGroupByException("Problem while getting the file", e);
+                throw new CarbonSortKeyAndGroupByException("Problem while getting the file", e);
             } catch (IOException e) {
-                throw new MolapSortKeyAndGroupByException("Problem while writing the data to file",
+                throw new CarbonSortKeyAndGroupByException("Problem while writing the data to file",
                         e);
             }
         } else {
@@ -183,9 +183,9 @@ public class IntermediateFileMerger implements Callable<Void> {
      * This method will be used to get the sorted record from file
      *
      * @return sorted record sorted record
-     * @throws MolapSortKeyAndGroupByException
+     * @throws CarbonSortKeyAndGroupByException
      */
-    private Object[] getSortedRecordFromFile() throws MolapSortKeyAndGroupByException {
+    private Object[] getSortedRecordFromFile() throws CarbonSortKeyAndGroupByException {
         Object[] row = null;
 
         // poll the top object from heap
@@ -226,17 +226,17 @@ public class IntermediateFileMerger implements Callable<Void> {
      * record holder heap and then it will read first record from each file and
      * initialize the heap
      *
-     * @throws MolapSortKeyAndGroupByException
+     * @throws CarbonSortKeyAndGroupByException
      */
-    private void startSorting() throws MolapSortKeyAndGroupByException {
-        LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+    private void startSorting() throws CarbonSortKeyAndGroupByException {
+        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                 "Number of temp file: " + this.fileCounter);
 
         // create record holder heap
         createRecordHolderQueue(mergerParameters.getIntermediateFiles());
 
         // iterate over file list and create chunk holder and add to heap
-        LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                 "Started adding first record from each file");
 
         SortTempFileChunkHolder sortTempFileChunkHolder = null;
@@ -260,7 +260,7 @@ public class IntermediateFileMerger implements Callable<Void> {
             this.recordHolderHeap.add(sortTempFileChunkHolder);
         }
 
-        LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                 "Heap Size" + this.recordHolderHeap.size());
     }
 
@@ -298,9 +298,9 @@ public class IntermediateFileMerger implements Callable<Void> {
      * This method will be used to get the sorted row
      *
      * @return sorted row
-     * @throws MolapSortKeyAndGroupByException
+     * @throws CarbonSortKeyAndGroupByException
      */
-    private Object[] next() throws MolapSortKeyAndGroupByException {
+    private Object[] next() throws CarbonSortKeyAndGroupByException {
         return getSortedRecordFromFile();
     }
 
@@ -317,9 +317,9 @@ public class IntermediateFileMerger implements Callable<Void> {
     /**
      * Below method will be used to write data to file
      *
-     * @throws MolapSortKeyAndGroupByException problem while writing
+     * @throws CarbonSortKeyAndGroupByException problem while writing
      */
-    private void writeDataTofile(Object[] row) throws MolapSortKeyAndGroupByException {
+    private void writeDataTofile(Object[] row) throws CarbonSortKeyAndGroupByException {
         if (mergerParameters.isCompressionEnabled() || mergerParameters.isPrefetch()) {
             if (entryCount == 0) {
                 records = new Object[totalSize][];
@@ -352,13 +352,13 @@ public class IntermediateFileMerger implements Callable<Void> {
             for (int counter = 0; counter < mergerParameters.getMeasureColCount(); counter++) {
                 if (null != RemoveDictionaryUtil.getMeasure(fieldIndex, row)) {
                     stream.write((byte) 1);
-                    if (aggType[counter] == MolapCommonConstants.BYTE_VALUE_MEASURE) {
+                    if (aggType[counter] == CarbonCommonConstants.BYTE_VALUE_MEASURE) {
                         Double val = (Double) RemoveDictionaryUtil.getMeasure(fieldIndex, row);
                         stream.writeDouble(val);
-                    } else if (aggType[counter] == MolapCommonConstants.BIG_INT_MEASURE) {
+                    } else if (aggType[counter] == CarbonCommonConstants.BIG_INT_MEASURE) {
                         Long val = (Long) RemoveDictionaryUtil.getMeasure(fieldIndex, row);
                         stream.writeLong(val);
-                    } else if (aggType[counter] == MolapCommonConstants.BIG_DECIMAL_MEASURE) {
+                    } else if (aggType[counter] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
                         BigDecimal val =
                                 (BigDecimal) RemoveDictionaryUtil.getMeasure(fieldIndex, row);
                         byte[] bigDecimalInBytes = DataTypeUtil.bigDecimalToByte(val);
@@ -373,11 +373,11 @@ public class IntermediateFileMerger implements Callable<Void> {
             }
 
         } catch (IOException e) {
-            throw new MolapSortKeyAndGroupByException("Problem while writing the file", e);
+            throw new CarbonSortKeyAndGroupByException("Problem while writing the file", e);
         }
     }
 
-    private void finish() throws MolapSortKeyAndGroupByException {
+    private void finish() throws CarbonSortKeyAndGroupByException {
         if (recordHolderHeap != null) {
             int size = recordHolderHeap.size();
             for (int i = 0; i < size; i++) {
@@ -385,9 +385,9 @@ public class IntermediateFileMerger implements Callable<Void> {
             }
         }
         try {
-            MolapUtil.deleteFiles(mergerParameters.getIntermediateFiles());
-        } catch (MolapUtilException e) {
-            throw new MolapSortKeyAndGroupByException(
+            CarbonUtil.deleteFiles(mergerParameters.getIntermediateFiles());
+        } catch (CarbonUtilException e) {
+            throw new CarbonSortKeyAndGroupByException(
                     "Problem while deleting the intermediate files");
         }
     }

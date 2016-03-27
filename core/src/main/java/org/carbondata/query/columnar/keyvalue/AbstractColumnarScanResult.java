@@ -30,11 +30,11 @@ import java.util.Map;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreDataHolder;
-import org.carbondata.core.datastorage.store.dataholder.MolapReadDataHolder;
-import org.carbondata.core.metadata.MolapMetadata.Dimension;
+import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
+import org.carbondata.core.metadata.CarbonMetadata.Dimension;
 import org.carbondata.core.util.ByteUtil;
 import org.carbondata.query.complex.querytypes.GenericQueryType;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 import org.carbondata.query.wrappers.ByteArrayWrapper;
 
 public abstract class AbstractColumnarScanResult {
@@ -44,7 +44,7 @@ public abstract class AbstractColumnarScanResult {
     protected int keySize;
     protected int sourcePosition = -1;
     protected int[] rowMapping;
-    protected MolapReadDataHolder[] measureBlocks;
+    protected CarbonReadDataHolder[] measureBlocks;
     protected ColumnarKeyStoreDataHolder[] columnarKeyStoreDataHolder;
     private int totalNumberOfRows;
     private int rowCounter;
@@ -63,7 +63,7 @@ public abstract class AbstractColumnarScanResult {
         return columnarKeyStoreDataHolder.length;
     }
 
-    public void setMeasureBlock(MolapReadDataHolder[] measureBlocks) {
+    public void setMeasureBlock(CarbonReadDataHolder[] measureBlocks) {
         this.measureBlocks = measureBlocks;
     }
 
@@ -238,7 +238,7 @@ public abstract class AbstractColumnarScanResult {
                     //                    keyArrayLength += byteStream.toByteArray().length;
                     byteStream.close();
                 } catch (IOException e) {
-                    LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
+                    LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
                 }
                 i += (complexType.getColsCount() - 1);
             }

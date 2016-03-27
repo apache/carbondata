@@ -25,7 +25,7 @@ import java.util.List;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.aggregator.util.AggUtil;
@@ -35,7 +35,7 @@ import org.carbondata.query.columnar.keyvalue.AbstractColumnarScanResult;
 import org.carbondata.query.executer.impl.RestructureHolder;
 import org.carbondata.query.result.Result;
 import org.carbondata.query.result.impl.ListBasedResult;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 import org.carbondata.query.util.QueryExecutorUtility;
 import org.carbondata.query.wrappers.ByteArrayWrapper;
 
@@ -70,9 +70,9 @@ public class ListBasedResultAggregatorImpl implements ColumnarScannedResultAggre
 
     @Override
     public int aggregateData(AbstractColumnarScanResult keyValue) {
-        this.keys = new ArrayList<ByteArrayWrapper>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+        this.keys = new ArrayList<ByteArrayWrapper>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         this.values =
-                new ArrayList<MeasureAggregator[]>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                new ArrayList<MeasureAggregator[]>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         ByteArrayWrapper key = null;
         MeasureAggregator[] value = null;
         while (keyValue.hasNext() && (limit == -1 || rowCounter < limit)) {
@@ -105,9 +105,9 @@ public class ListBasedResultAggregatorImpl implements ColumnarScannedResultAggre
     @Override
     public Result getResult(RestructureHolder restructureHolder) {
         List<ByteArrayWrapper> finalKeys =
-                new ArrayList<ByteArrayWrapper>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                new ArrayList<ByteArrayWrapper>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         List<MeasureAggregator[]> finalValues =
-                new ArrayList<MeasureAggregator[]>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                new ArrayList<MeasureAggregator[]>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         Result<List<ByteArrayWrapper>, List<MeasureAggregator[]>> result = new ListBasedResult();
 
         if (!restructureHolder.updateRequired) {
@@ -161,7 +161,7 @@ public class ListBasedResultAggregatorImpl implements ColumnarScannedResultAggre
                 finalValues.add(values.get(i));
             }
         } catch (KeyGenException e) {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
         }
     }
 }

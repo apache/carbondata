@@ -18,7 +18,7 @@ package org.carbondata.query.aggregator.impl;
 
 import java.nio.ByteBuffer;
 
-import org.carbondata.core.datastorage.store.dataholder.MolapReadDataHolder;
+import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 
 /**
  * Project Name NSE V3R7C00
@@ -47,7 +47,7 @@ public class AvgOfAvgLongAggregator extends AvgLongAggregator {
      * @param index  index
      */
     @Override
-    public void agg(MolapReadDataHolder newVal, int index) {
+    public void agg(CarbonReadDataHolder newVal, int index) {
         byte[] value = newVal.getReadableByteArrayValueByIndex(index);
         ByteBuffer buffer = ByteBuffer.wrap(value);
         double newValue = buffer.getLong();

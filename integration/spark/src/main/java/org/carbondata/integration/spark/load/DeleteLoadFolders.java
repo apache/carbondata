@@ -37,15 +37,15 @@ import java.util.List;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.datastorage.store.filesystem.MolapFile;
-import org.carbondata.core.datastorage.store.filesystem.MolapFileFilter;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
+import org.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.load.LoadMetadataDetails;
-import org.carbondata.core.util.MolapCoreLogEvent;
-import org.carbondata.core.util.MolapProperties;
+import org.carbondata.core.util.CarbonCoreLogEvent;
+import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.integration.spark.util.LoadMetadataUtil;
-import org.carbondata.integration.spark.util.MolapSparkInterFaceLogEvent;
+import org.carbondata.integration.spark.util.CarbonSparkInterFaceLogEvent;
 
 public final class DeleteLoadFolders {
 
@@ -56,12 +56,12 @@ public final class DeleteLoadFolders {
 
     }
 
-    public static boolean deleteLoadFoldersFromFileSystem(MolapLoadModel loadModel,
+    public static boolean deleteLoadFoldersFromFileSystem(CarbonLoadModel loadModel,
             int partitionCount, String storeLocation, boolean isForceDelete,
             int currentRestructNumber, LoadMetadataDetails[] details) {
         String path = null;
         List<LoadMetadataDetails> deletedLoads =
-                new ArrayList<LoadMetadataDetails>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                new ArrayList<LoadMetadataDetails>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
         boolean isDeleted = false;
 
@@ -74,25 +74,25 @@ public final class DeleteLoadFolders {
                         // check load folder in each restructure folder
                         for (int restructureFolderNum = 0; restructureFolderNum
                                 <= currentRestructNumber; restructureFolderNum++) {
-                            MolapFile[] aggFiles = LoadMetadataUtil
+                            CarbonFile[] aggFiles = LoadMetadataUtil
                                     .getAggregateTableList(loadModel, storeLocation, partitionId,
                                             restructureFolderNum);
                             deleteAggLoadFolders(aggFiles,
-                                    MolapCommonConstants.LOAD_FOLDER + oneLoad.getLoadName());
+                                    CarbonCommonConstants.LOAD_FOLDER + oneLoad.getLoadName());
                             path = LoadMetadataUtil
                                     .createLoadFolderPath(loadModel, storeLocation, partitionId,
                                             restructureFolderNum);
                             String loadFolderPath = "";
                             // deleting merged load folder
                             if (oneLoad.getMergedLoadName() != null) {
-                                loadFolderPath = path + MolapCommonConstants.FILE_SEPARATOR
-                                        + MolapCommonConstants.LOAD_FOLDER + oneLoad
+                                loadFolderPath = path + CarbonCommonConstants.FILE_SEPARATOR
+                                        + CarbonCommonConstants.LOAD_FOLDER + oneLoad
                                         .getMergedLoadName();
                                 deletionStatus =
                                         physicalFactAndMeasureMetadataDeletion(loadFolderPath);
                             } else {
-                                loadFolderPath = path + MolapCommonConstants.FILE_SEPARATOR
-                                        + MolapCommonConstants.LOAD_FOLDER + oneLoad.getLoadName();
+                                loadFolderPath = path + CarbonCommonConstants.FILE_SEPARATOR
+                                        + CarbonCommonConstants.LOAD_FOLDER + oneLoad.getLoadName();
                                 deletionStatus =
                                         physicalFactAndMeasureMetadataDeletion(loadFolderPath);
                             }
@@ -110,7 +110,7 @@ public final class DeleteLoadFolders {
                         isDeleted = true;
                         oneLoad.setVisibility("false");
                         deletedLoads.add(oneLoad);
-                        LOGGER.info(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+                        LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
                                 " Deleted the load " + oneLoad.getLoadName());
                     }
                 }
@@ -120,18 +120,18 @@ public final class DeleteLoadFolders {
         return isDeleted;
     }
 
-    public static void deleteAggLoadFolders(MolapFile[] aggFiles, String loadName) {
-        for (MolapFile file : aggFiles) {
+    public static void deleteAggLoadFolders(CarbonFile[] aggFiles, String loadName) {
+        for (CarbonFile file : aggFiles) {
             deleteLoadFolderFromEachAgg(file, loadName);
         }
 
     }
 
-    private static void deleteLoadFolderFromEachAgg(MolapFile file, final String loadName) {
-        MolapFile[] loadFolders = file.listFiles(new MolapFileFilter() {
+    private static void deleteLoadFolderFromEachAgg(CarbonFile file, final String loadName) {
+        CarbonFile[] loadFolders = file.listFiles(new CarbonFileFilter() {
 
             @Override
-            public boolean accept(MolapFile file) {
+            public boolean accept(CarbonFile file) {
                 if (file.getName().equalsIgnoreCase(loadName)) {
                     return true;
                 }
@@ -139,13 +139,13 @@ public final class DeleteLoadFolders {
             }
         });
 
-        for (MolapFile loadFolder : loadFolders) {
-            MolapFile[] files = loadFolder.listFiles();
+        for (CarbonFile loadFolder : loadFolders) {
+            CarbonFile[] files = loadFolder.listFiles();
             // deleting individual files
             if (files != null) {
-                for (MolapFile eachFile : files) {
+                for (CarbonFile eachFile : files) {
                     if (!eachFile.delete()) {
-                        LOGGER.warn(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                        LOGGER.warn(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
                                 "Unable to delete the file as per delete command " + loadFolder
                                         .getAbsolutePath());
                     }
@@ -161,13 +161,13 @@ public final class DeleteLoadFolders {
         boolean status = false;
         try {
             if (FileFactory.isFileExist(path, FileFactory.getFileType(path))) {
-                MolapFile file = FileFactory.getMolapFile(path, FileFactory.getFileType(path));
-                MolapFile[] filesToBeDeleted = file.listFiles(new MolapFileFilter() {
+                CarbonFile file = FileFactory.getMolapFile(path, FileFactory.getFileType(path));
+                CarbonFile[] filesToBeDeleted = file.listFiles(new CarbonFileFilter() {
 
                     @Override
-                    public boolean accept(MolapFile file) {
-                        return (file.getName().endsWith(MolapCommonConstants.FACT_FILE_EXT) || file
-                                .getName().endsWith(MolapCommonConstants.MEASUREMETADATA_FILE_EXT));
+                    public boolean accept(CarbonFile file) {
+                        return (file.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT) || file
+                                .getName().endsWith(CarbonCommonConstants.MEASUREMETADATA_FILE_EXT));
                     }
                 });
 
@@ -177,9 +177,9 @@ public final class DeleteLoadFolders {
                     status = true;
                 } else {
 
-                    for (MolapFile eachFile : filesToBeDeleted) {
+                    for (CarbonFile eachFile : filesToBeDeleted) {
                         if (!eachFile.delete()) {
-                            LOGGER.warn(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                            LOGGER.warn(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
                                     "Unable to delete the file as per delete command " + eachFile
                                             .getAbsolutePath());
                             status = false;
@@ -192,7 +192,7 @@ public final class DeleteLoadFolders {
                 status = false;
             }
         } catch (IOException e) {
-            LOGGER.warn(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.warn(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
                     "Unable to delete the file as per delete command " + path);
         }
 
@@ -202,19 +202,19 @@ public final class DeleteLoadFolders {
 
     private static boolean checkIfLoadCanBeDeleted(LoadMetadataDetails oneLoad,
             boolean isForceDelete) {
-        if (MolapCommonConstants.MARKED_FOR_DELETE.equalsIgnoreCase(oneLoad.getLoadStatus())
+        if (CarbonCommonConstants.MARKED_FOR_DELETE.equalsIgnoreCase(oneLoad.getLoadStatus())
                 && oneLoad.getVisibility().equalsIgnoreCase("true")) {
             if (isForceDelete) {
                 return true;
             }
             String deletionTime = oneLoad.getDeletionTimestamp();
-            SimpleDateFormat parser = new SimpleDateFormat(MolapCommonConstants.MOLAP_TIMESTAMP);
+            SimpleDateFormat parser = new SimpleDateFormat(CarbonCommonConstants.MOLAP_TIMESTAMP);
             Date deletionDate = null;
             String date = null;
             Date currentTimeStamp = null;
             try {
                 deletionDate = parser.parse(deletionTime);
-                date = MolapLoaderUtil.readCurrentTime();
+                date = CarbonLoaderUtil.readCurrentTime();
                 currentTimeStamp = parser.parse(date);
             } catch (ParseException e) {
                 return false;
@@ -226,10 +226,10 @@ public final class DeleteLoadFolders {
 
             int maxTime;
             try {
-                maxTime = Integer.parseInt(MolapProperties.getInstance()
-                        .getProperty(MolapCommonConstants.MAX_QUERY_EXECUTION_TIME));
+                maxTime = Integer.parseInt(CarbonProperties.getInstance()
+                        .getProperty(CarbonCommonConstants.MAX_QUERY_EXECUTION_TIME));
             } catch (NumberFormatException e) {
-                maxTime = MolapCommonConstants.DEFAULT_MAX_QUERY_EXECUTION_TIME;
+                maxTime = CarbonCommonConstants.DEFAULT_MAX_QUERY_EXECUTION_TIME;
             }
             if (minutesElapsed > maxTime) {
                 return true;
@@ -245,29 +245,29 @@ public final class DeleteLoadFolders {
         FileFactory.FileType fileType = FileFactory.getFileType(loadFolderPath);
         try {
             if (FileFactory.isFileExist(loadFolderPath, fileType)) {
-                MolapFile loadFolder = FileFactory.getMolapFile(loadFolderPath, fileType);
+                CarbonFile loadFolder = FileFactory.getMolapFile(loadFolderPath, fileType);
 
-                MolapFile[] listFiles = loadFolder.listFiles(new MolapFileFilter() {
+                CarbonFile[] listFiles = loadFolder.listFiles(new CarbonFileFilter() {
 
                     @Override
-                    public boolean accept(MolapFile file) {
+                    public boolean accept(CarbonFile file) {
                         return (file.getName()
-                                .endsWith('_' + MolapCommonConstants.FACT_FILE_UPDATED));
+                                .endsWith('_' + CarbonCommonConstants.FACT_FILE_UPDATED));
                     }
                 });
 
-                for (MolapFile file : listFiles) {
+                for (CarbonFile file : listFiles) {
                     if (!file.renameTo(file.getName().substring(0,
-                            file.getName().length() - MolapCommonConstants.FACT_FILE_UPDATED
+                            file.getName().length() - CarbonCommonConstants.FACT_FILE_UPDATED
                                     .length()))) {
-                        LOGGER.warn(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                        LOGGER.warn(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
                                 "could not rename the updated fact file.");
                     }
                 }
 
             }
         } catch (IOException e) {
-            LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, "exception" + e.getMessage());
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, "exception" + e.getMessage());
         }
 
     }
@@ -276,27 +276,27 @@ public final class DeleteLoadFolders {
         FileFactory.FileType fileType = FileFactory.getFileType(loadFolderPath);
         try {
             if (FileFactory.isFileExist(loadFolderPath, fileType)) {
-                MolapFile loadFolder = FileFactory.getMolapFile(loadFolderPath, fileType);
+                CarbonFile loadFolder = FileFactory.getMolapFile(loadFolderPath, fileType);
 
-                MolapFile[] listFiles = loadFolder.listFiles(new MolapFileFilter() {
+                CarbonFile[] listFiles = loadFolder.listFiles(new CarbonFileFilter() {
 
                     @Override
-                    public boolean accept(MolapFile file) {
+                    public boolean accept(CarbonFile file) {
                         return (file.getName()
-                                .endsWith(MolapCommonConstants.FACT_DELETE_EXTENSION));
+                                .endsWith(CarbonCommonConstants.FACT_DELETE_EXTENSION));
                     }
                 });
 
-                for (MolapFile file : listFiles) {
+                for (CarbonFile file : listFiles) {
                     if (!file.delete()) {
-                        LOGGER.warn(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                        LOGGER.warn(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
                                 "could not delete the marked fact file.");
                     }
                 }
 
             }
         } catch (IOException e) {
-            LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, "exception" + e.getMessage());
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, "exception" + e.getMessage());
         }
     }
 

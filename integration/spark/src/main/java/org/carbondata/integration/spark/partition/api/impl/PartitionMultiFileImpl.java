@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.carbondata.integration.spark.partition.api.Partition;
-import org.carbondata.query.queryinterface.query.metadata.MolapDimensionLevelFilter;
+import org.carbondata.query.queryinterface.query.metadata.CarbonDimensionLevelFilter;
 
 public class PartitionMultiFileImpl implements Partition {
     private static final long serialVersionUID = -4363447826181193976L;
@@ -48,7 +48,7 @@ public class PartitionMultiFileImpl implements Partition {
     }
 
     @Override
-    public Map<String, MolapDimensionLevelFilter> getPartitionDetails() {
+    public Map<String, CarbonDimensionLevelFilter> getPartitionDetails() {
         // TODO Auto-generated method stub
         return null;
     }

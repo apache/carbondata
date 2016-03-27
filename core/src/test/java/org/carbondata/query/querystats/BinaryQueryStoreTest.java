@@ -26,9 +26,9 @@ import java.util.List;
 
 import mockit.Mock;
 import mockit.MockUp;
-import org.carbondata.core.datastorage.store.filesystem.LocalMolapFile;
+import org.carbondata.core.datastorage.store.filesystem.LocalCarbonFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
-import org.carbondata.core.util.MolapProperties;
+import org.carbondata.core.util.CarbonProperties;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -54,10 +54,10 @@ public class BinaryQueryStoreTest {
         try {
             File file = new File("src/test/resources/schemas/");
             basePath = file.getCanonicalPath() + "/";
-            MolapProperties.getInstance().addProperty("molap.storelocation", basePath + "store");
-            MolapProperties.getInstance().addProperty(Preference.PERFORMANCE_GOAL_KEY, "3");
-            MolapProperties.getInstance().addProperty(Preference.QUERY_STATS_EXPIRY_DAYS_KEY, "30");
-            MolapProperties.getInstance().addProperty(Preference.BENEFIT_RATIO_KEY, "10");
+            CarbonProperties.getInstance().addProperty("molap.storelocation", basePath + "store");
+            CarbonProperties.getInstance().addProperty(Preference.PERFORMANCE_GOAL_KEY, "3");
+            CarbonProperties.getInstance().addProperty(Preference.QUERY_STATS_EXPIRY_DAYS_KEY, "30");
+            CarbonProperties.getInstance().addProperty(Preference.BENEFIT_RATIO_KEY, "10");
         } catch (Exception e) {
             e.printStackTrace();
         } catch (Throwable e) {
@@ -261,7 +261,7 @@ public class BinaryQueryStoreTest {
     @Test
     public void testWriteQueryToFile_failedToRename() {
         try {
-            new MockUp<LocalMolapFile>() {
+            new MockUp<LocalCarbonFile>() {
 
                 @Mock
                 boolean renameTo(String changetoName) {

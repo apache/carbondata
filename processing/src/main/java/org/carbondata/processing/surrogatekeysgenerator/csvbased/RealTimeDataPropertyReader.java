@@ -26,9 +26,9 @@ import java.util.Map.Entry;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.util.MolapUtil;
-import org.carbondata.processing.util.MolapDataProcessorLogEvent;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.util.CarbonUtil;
+import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 
 public class RealTimeDataPropertyReader {
     /**
@@ -59,9 +59,9 @@ public class RealTimeDataPropertyReader {
     public RealTimeDataPropertyReader(String schemandCubeName,
             Map<String, Set<String>> columnAndMemberListaMap,
             Map<String, String> levelTypeColumnMap, Map<String, Integer> levelAndCardinalityMap) {
-        monthMap = new HashMap<String, Integer>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
-        dayMap = new HashMap<String, Integer>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
-        yearMap = new HashMap<String, Integer>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+        monthMap = new HashMap<String, Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+        dayMap = new HashMap<String, Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+        yearMap = new HashMap<String, Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
         updateMap(schemandCubeName, columnAndMemberListaMap, levelTypeColumnMap,
                 levelAndCardinalityMap);
@@ -90,7 +90,7 @@ public class RealTimeDataPropertyReader {
     private void updateMap(String schemandCubeName,
             Map<String, Set<String>> columnAndMemberListaMap,
             Map<String, String> levelTypeColumnMap, Map<String, Integer> levelAndCardinalityMap) {
-        File realTimeDataFile = new File(MolapCommonConstants.MOLAP_REALTIMEDATA_FILE);
+        File realTimeDataFile = new File(CarbonCommonConstants.MOLAP_REALTIMEDATA_FILE);
 
         FileInputStream fileInputStream = null;
 
@@ -102,16 +102,16 @@ public class RealTimeDataPropertyReader {
             propFile.load(fileInputStream);
         } catch (FileNotFoundException e) {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                         "RealtimeData file not found.");
             }
         } catch (IOException e) {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                         "Unable to read RealtimeData file.");
             }
         } finally {
-            MolapUtil.closeStreams(fileInputStream);
+            CarbonUtil.closeStreams(fileInputStream);
         }
 
         String[] splittedName = schemandCubeName.split("/");
@@ -184,7 +184,7 @@ public class RealTimeDataPropertyReader {
         String line = null;
         BufferedReader bufferedReader = null;
         InputStreamReader inputStreamReader = null;
-        List<String> yearsData = new ArrayList<String>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+        List<String> yearsData = new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
 
         try {
 
@@ -200,16 +200,16 @@ public class RealTimeDataPropertyReader {
 
         } catch (FileNotFoundException e) {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                         "RealtimeData file not found.");
             }
         } catch (IOException e) {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                         "Unable to read  RealtimeData file.");
             }
         } finally {
-            MolapUtil.closeStreams(bufferedReader, inputStreamReader);
+            CarbonUtil.closeStreams(bufferedReader, inputStreamReader);
 
         }
 

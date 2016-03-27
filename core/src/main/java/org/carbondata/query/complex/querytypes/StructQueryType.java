@@ -31,8 +31,8 @@ import org.apache.spark.sql.types.Metadata;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreDataHolder;
-import org.carbondata.core.metadata.MolapMetadata.Dimension;
-import org.carbondata.query.datastorage.InMemoryCube;
+import org.carbondata.core.metadata.CarbonMetadata.Dimension;
+import org.carbondata.query.datastorage.InMemoryTable;
 import org.carbondata.query.evaluators.BlockDataHolder;
 
 public class StructQueryType implements GenericQueryType {
@@ -177,7 +177,7 @@ public class StructQueryType implements GenericQueryType {
     }
 
     @Override
-    public Object getDataBasedOnDataTypeFromSurrogates(List<InMemoryCube> slices,
+    public Object getDataBasedOnDataTypeFromSurrogates(List<InMemoryTable> slices,
             ByteBuffer surrogateData, Dimension[] dimensions) {
         int childLength = surrogateData.getInt();
         Object[] fields = new Object[childLength];

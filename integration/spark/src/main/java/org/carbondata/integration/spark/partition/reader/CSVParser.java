@@ -37,7 +37,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 
 /**
  * A very simple CSV parser released under a commercial-friendly license.
@@ -351,7 +351,7 @@ public class CSVParser {
         }
 
         List<String> tokensOnThisLine =
-                new ArrayList<>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         //CHECKSTYLE:OFF    Approval No:Approval-V1R2C10_010
         StringBuilder sb = new StringBuilder(INITIAL_READ_SIZE);
 

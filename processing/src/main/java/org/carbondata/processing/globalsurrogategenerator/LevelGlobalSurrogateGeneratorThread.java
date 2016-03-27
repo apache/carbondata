@@ -34,15 +34,15 @@ import java.util.concurrent.*;
 import org.apache.commons.codec.binary.Base64;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.datastorage.store.filesystem.MolapFile;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
-import org.carbondata.core.olap.MolapDef.*;
-import org.carbondata.core.util.MolapProperties;
-import org.carbondata.core.util.MolapUtil;
-import org.carbondata.processing.util.MolapDataProcessorLogEvent;
-import org.carbondata.processing.util.MolapSchemaParser;
+import org.carbondata.core.carbon.CarbonDef.*;
+import org.carbondata.core.util.CarbonProperties;
+import org.carbondata.core.util.CarbonUtil;
+import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
+import org.carbondata.processing.util.CarbonSchemaParser;
 
 public class LevelGlobalSurrogateGeneratorThread implements Callable<Void> {
     /**
@@ -66,11 +66,11 @@ public class LevelGlobalSurrogateGeneratorThread implements Callable<Void> {
         this.partitionColumn = partitionColumn;
     }
 
-    public static Map<String, Integer> readLevelFileAndUpdateCache(MolapFile memberFile)
+    public static Map<String, Integer> readLevelFileAndUpdateCache(CarbonFile memberFile)
             throws IOException {
         DataInputStream inputStream = null;
         Map<String, Integer> localMemberMap =
-                new HashMap<String, Integer>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                new HashMap<String, Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
         try {
             inputStream = FileFactory.getDataInputStream(memberFile.getPath(),
@@ -79,9 +79,9 @@ public class LevelGlobalSurrogateGeneratorThread implements Callable<Void> {
             long currentPosition = 4;
             long size = memberFile.getSize() - 4;
 
-            boolean enableEncoding = Boolean.valueOf(MolapProperties.getInstance()
-                    .getProperty(MolapCommonConstants.ENABLE_BASE64_ENCODING,
-                            MolapCommonConstants.ENABLE_BASE64_ENCODING_DEFAULT));
+            boolean enableEncoding = Boolean.valueOf(CarbonProperties.getInstance()
+                    .getProperty(CarbonCommonConstants.ENABLE_BASE64_ENCODING,
+                            CarbonCommonConstants.ENABLE_BASE64_ENCODING_DEFAULT));
             int surrogateValue = inputStream.readInt();
             while (currentPosition < size) {
                 int len = inputStream.readInt();
@@ -103,11 +103,11 @@ public class LevelGlobalSurrogateGeneratorThread implements Callable<Void> {
             }
 
         } catch (Exception e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
                     e.getMessage());
-            MolapUtil.closeStreams(inputStream);
+            CarbonUtil.closeStreams(inputStream);
         } finally {
-            MolapUtil.closeStreams(inputStream);
+            CarbonUtil.closeStreams(inputStream);
         }
         return localMemberMap;
     }
@@ -118,7 +118,7 @@ public class LevelGlobalSurrogateGeneratorThread implements Callable<Void> {
         long currentTimeMillis = System.currentTimeMillis();
         long currentTimeMillis1 = System.currentTimeMillis();
 
-        Hierarchy[] extractHierarchies = MolapSchemaParser.extractHierarchies(schema, dimension);
+        Hierarchy[] extractHierarchies = CarbonSchemaParser.extractHierarchies(schema, dimension);
         Level cubeLevel = extractHierarchies[0].levels[0];
         boolean isPartitionColumn = partitionColumn.equals(cubeLevel.name);
         if (partitionColumn.equals(cubeLevel.name)) {
@@ -131,20 +131,20 @@ public class LevelGlobalSurrogateGeneratorThread implements Callable<Void> {
         String levelFileName = hierarchyTable + '_' + cubeLevel.name;
 
         List<PartitionMemberVo> partitionMemberVoList =
-                new ArrayList<PartitionMemberVo>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+                new ArrayList<PartitionMemberVo>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
 
         ExecutorService ex = Executors.newFixedThreadPool(10);
 
         PartitionMemberVo memberVo = null;
 
         List<Future<Map<String, Integer>>> submitList =
-                new ArrayList<Future<Map<String, Integer>>>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+                new ArrayList<Future<Map<String, Integer>>>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
 
         for (int i = 0; i < partitionLocation.length; i++) {
 
             int partitionLength = partitionLocation[i].length;
             if (partitionLength == 0) {
-                LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                         "partition length is 0");
                 continue;
             }
@@ -153,16 +153,16 @@ public class LevelGlobalSurrogateGeneratorThread implements Callable<Void> {
 
             FileType fileType = FileFactory.getFileType(path);
             if (!FileFactory.isFileExist(path, fileType)) {
-                LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                         "File does not exist at path :: " + path);
                 continue;
             }
-            MolapFile molapFile = FileFactory.getMolapFile(path, fileType);
+            CarbonFile carbonFile = FileFactory.getMolapFile(path, fileType);
 
             memberVo = new PartitionMemberVo();
             memberVo.setPath(partitionLocation[i][partitionLength - 1]);
             partitionMemberVoList.add(memberVo);
-            Future<Map<String, Integer>> submit = ex.submit(new ReaderThread(molapFile));
+            Future<Map<String, Integer>> submit = ex.submit(new ReaderThread(carbonFile));
             submitList.add(submit);
         }
 
@@ -178,7 +178,7 @@ public class LevelGlobalSurrogateGeneratorThread implements Callable<Void> {
             index++;
         }
 
-        LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                 "Time Taken to read surrogate for Level: " + levelFileName + " : " + (
                         System.currentTimeMillis() - currentTimeMillis));
 
@@ -216,7 +216,7 @@ public class LevelGlobalSurrogateGeneratorThread implements Callable<Void> {
 
             localKey = key;
             localValue = value;
-            LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "Time Taken to generate global surrogate for Level: " + levelFileName + " : "
                             + (System.currentTimeMillis() - currentTimeMillis));
 
@@ -245,7 +245,7 @@ public class LevelGlobalSurrogateGeneratorThread implements Callable<Void> {
 
                 localKey = key;
                 localValue = value;
-                LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                         "Time Taken to generate global surrogate for Level: " + levelFileName
                                 + " : " + (System.currentTimeMillis() - currentTimeMillis));
                 currentTimeMillis = System.currentTimeMillis();
@@ -255,7 +255,7 @@ public class LevelGlobalSurrogateGeneratorThread implements Callable<Void> {
             }
         }
 
-        LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                 "Time Taken to write global surrogate for Level: " + levelFileName + " : " + (
                         System.currentTimeMillis() - currentTimeMillis1));
 
@@ -311,7 +311,7 @@ public class LevelGlobalSurrogateGeneratorThread implements Callable<Void> {
             localValue = value;
             ex.submit(new WriterThread(localKey, localValue, partitionMemberVoList.get(i).getPath(),
                     levelFileName + ".globallevel", maxSeqenceKey, minSeqenceKey));
-            LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "Time Taken to generate global surrogate for Level: " + levelFileName + " : "
                             + (System.currentTimeMillis() - currentTimeMillis));
 
@@ -327,11 +327,11 @@ public class LevelGlobalSurrogateGeneratorThread implements Callable<Void> {
         int maxKeyAssigned = 0;
         for (int i = 0; i < partitionLocation.length; i++) {
             for (int j = 0; j < partitionLocation[i].length - 1; j++) {
-                MolapFile molapFile = FileFactory
+                CarbonFile carbonFile = FileFactory
                         .getMolapFile(partitionLocation[i][j] + '/' + levelFileName, FileFactory
                                 .getFileType(partitionLocation[i][j] + '/' + levelFileName));
-                if (molapFile.exists()) {
-                    maxKeyAssigned = getMaxKeyAssigned(molapFile);
+                if (carbonFile.exists()) {
+                    maxKeyAssigned = getMaxKeyAssigned(carbonFile);
                     if (maxKey < maxKeyAssigned) {
                         maxKey = maxKeyAssigned;
                     }
@@ -341,7 +341,7 @@ public class LevelGlobalSurrogateGeneratorThread implements Callable<Void> {
         return maxKey;
     }
 
-    private int getMaxKeyAssigned(MolapFile memberFile) {
+    private int getMaxKeyAssigned(CarbonFile memberFile) {
         DataInputStream inputStream = null;
         try {
             inputStream = FileFactory.getDataInputStream(memberFile.getPath(),
@@ -349,13 +349,13 @@ public class LevelGlobalSurrogateGeneratorThread implements Callable<Void> {
             return inputStream.readInt();
 
         } catch (FileNotFoundException e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
                     e.getMessage());
         } catch (IOException e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
                     e.getMessage());
         } finally {
-            MolapUtil.closeStreams(inputStream);
+            CarbonUtil.closeStreams(inputStream);
         }
         return -1;
 
@@ -376,13 +376,13 @@ public class LevelGlobalSurrogateGeneratorThread implements Callable<Void> {
                 stream.writeInt(value[i]);
             }
         } catch (FileNotFoundException e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
                     e.getMessage());
         } catch (IOException e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
                     e.getMessage());
         } finally {
-            MolapUtil.closeStreams(stream);
+            CarbonUtil.closeStreams(stream);
         }
     }
 

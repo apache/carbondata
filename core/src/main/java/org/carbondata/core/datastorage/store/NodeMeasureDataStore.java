@@ -19,7 +19,7 @@
 
 package org.carbondata.core.datastorage.store;
 
-import org.carbondata.core.datastorage.store.dataholder.MolapWriteDataHolder;
+import org.carbondata.core.datastorage.store.dataholder.CarbonWriteDataHolder;
 
 public interface NodeMeasureDataStore {
     /**
@@ -30,7 +30,7 @@ public interface NodeMeasureDataStore {
      *
      * @return writable array (compressed or normal)
      */
-    byte[][] getWritableMeasureDataArray(MolapWriteDataHolder[] dataHolderArray);
+    byte[][] getWritableMeasureDataArray(CarbonWriteDataHolder[] dataHolderArray);
 
     MeasureDataWrapper getBackData(int[] cols, FileHolder fileHolder);
 

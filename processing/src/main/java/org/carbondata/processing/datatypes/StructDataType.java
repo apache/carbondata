@@ -25,10 +25,10 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.KeyGenerator;
-import org.carbondata.processing.surrogatekeysgenerator.csvbased.MolapCSVBasedDimSurrogateKeyGen;
+import org.carbondata.processing.surrogatekeysgenerator.csvbased.CarbonCSVBasedDimSurrogateKeyGen;
 import org.pentaho.di.core.exception.KettleException;
 
 public class StructDataType implements GenericDataType {
@@ -96,14 +96,14 @@ public class StructDataType implements GenericDataType {
     @Override
     public void parseStringAndWriteByteArray(String tableName, String inputString,
             String[] delimiter, int delimiterIndex, DataOutputStream dataOutputStream,
-            MolapCSVBasedDimSurrogateKeyGen surrogateKeyGen) throws KettleException, IOException {
+            CarbonCSVBasedDimSurrogateKeyGen surrogateKeyGen) throws KettleException, IOException {
         if (inputString == null || "null".equals(inputString)) {
             //Indicates null array
             dataOutputStream.writeInt(children.size());
             //For other children elements which dont have data, write empty
             for (int i = 0; i < children.size(); i++) {
                 children.get(i).parseStringAndWriteByteArray(tableName,
-                        MolapCommonConstants.MEMBER_DEFAULT_VAL, delimiter, delimiterIndex,
+                        CarbonCommonConstants.MEMBER_DEFAULT_VAL, delimiter, delimiterIndex,
                         dataOutputStream, surrogateKeyGen);
             }
         } else {
@@ -119,7 +119,7 @@ public class StructDataType implements GenericDataType {
             //For other children elements which dont have data, write empty
             for (int i = splitInput.length; i < children.size(); i++) {
                 children.get(i).parseStringAndWriteByteArray(tableName,
-                        MolapCommonConstants.MEMBER_DEFAULT_VAL, delimiter, delimiterIndex,
+                        CarbonCommonConstants.MEMBER_DEFAULT_VAL, delimiter, delimiterIndex,
                         dataOutputStream, surrogateKeyGen);
             }
         }

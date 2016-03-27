@@ -8,8 +8,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.datastorage.store.dataholder.MolapReadDataHolder;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.carbondata.query.aggregator.MeasureAggregator;
 
 /**
@@ -42,7 +42,7 @@ public class SumDistinctLongAggregator extends AbstractMeasureAggregatorBasic {
     private Set<Long> valueSet;
 
     public SumDistinctLongAggregator() {
-        valueSet = new HashSet<Long>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+        valueSet = new HashSet<Long>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     }
 
     /**
@@ -56,7 +56,7 @@ public class SumDistinctLongAggregator extends AbstractMeasureAggregatorBasic {
     }
 
     @Override
-    public void agg(MolapReadDataHolder newVal, int index) {
+    public void agg(CarbonReadDataHolder newVal, int index) {
         valueSet.add(newVal.getReadableLongValueByIndex(index));
     }
 
@@ -67,7 +67,7 @@ public class SumDistinctLongAggregator extends AbstractMeasureAggregatorBasic {
     public byte[] getByteArray() {
         Iterator<Long> iterator = valueSet.iterator();
         ByteBuffer buffer =
-                ByteBuffer.allocate(valueSet.size() * MolapCommonConstants.DOUBLE_SIZE_IN_BYTE);
+                ByteBuffer.allocate(valueSet.size() * CarbonCommonConstants.DOUBLE_SIZE_IN_BYTE);
         // CHECKSTYLE:OFF Approval No:Approval-V3R8C00_018
         while (iterator.hasNext()) { // CHECKSTYLE:ON
             buffer.putLong(iterator.next());

@@ -29,10 +29,10 @@ import java.util.List;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.metadata.MolapMetadata.Dimension;
-import org.carbondata.core.olap.SqlStatement;
-import org.carbondata.core.olap.SqlStatement.Type;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.metadata.CarbonMetadata.Dimension;
+import org.carbondata.core.carbon.SqlStatement;
+import org.carbondata.core.carbon.SqlStatement.Type;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.aggregator.dimension.DimensionAggregatorInfo;
 import org.carbondata.query.columnar.aggregator.ColumnarAggregatorInfo;
@@ -40,7 +40,7 @@ import org.carbondata.query.columnar.keyvalue.AbstractColumnarScanResult;
 import org.carbondata.query.complex.querytypes.GenericQueryType;
 import org.carbondata.query.datastorage.Member;
 import org.carbondata.query.util.DataTypeConverter;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 import org.carbondata.query.util.QueryExecutorUtility;
 import org.carbondata.query.wrappers.ByteArrayWrapper;
 
@@ -77,12 +77,12 @@ public class DimensionDataAggreagtor {
             maxMinIndexList = new ArrayList<Integer>(10);
             aggList = iterator.next().getAggList();
             for (int j = 0; j < aggList.size(); j++) {
-                if (aggList.get(j).equals(MolapCommonConstants.COUNT) || aggList.get(j)
-                        .equals(MolapCommonConstants.DISTINCT_COUNT)) {
+                if (aggList.get(j).equals(CarbonCommonConstants.COUNT) || aggList.get(j)
+                        .equals(CarbonCommonConstants.DISTINCT_COUNT)) {
                     countIndexList.add(index);
-                } else if (aggList.get(j).equals(MolapCommonConstants.SUM) || aggList.get(j)
-                        .equals(MolapCommonConstants.AVERAGE) || aggList.get(j)
-                        .equals(MolapCommonConstants.SUM_DISTINCT)) {
+                } else if (aggList.get(j).equals(CarbonCommonConstants.SUM) || aggList.get(j)
+                        .equals(CarbonCommonConstants.AVERAGE) || aggList.get(j)
+                        .equals(CarbonCommonConstants.SUM_DISTINCT)) {
                     normalIndexList.add(index);
                 } else {
                     maxMinIndexList.add(index);
@@ -149,7 +149,7 @@ public class DimensionDataAggreagtor {
                         complexSurrogates = byteStream.toByteArray();
                         byteStream.close();
                     } catch (IOException e) {
-                        LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
+                        LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
                     }
                 }
                 for (int j = 0; j < dimCountAndDistinctCountAGGIndex[i].length; j++) {
@@ -200,7 +200,7 @@ public class DimensionDataAggreagtor {
                         currentMsrRowData[dimAggNormalIndex[i][j]]
                                 .agg(((Number) dataBasedOnDataType).doubleValue());
                     } else if (!((String) dataBasedOnDataType)
-                            .equals(MolapCommonConstants.MEMBER_DEFAULT_VAL)) {
+                            .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
                         dataBasedOnDataType = DataTypeConverter
                                 .getDataBasedOnDataType((String) dataBasedOnDataType,
                                         SqlStatement.Type.DOUBLE);
@@ -221,7 +221,7 @@ public class DimensionDataAggreagtor {
                         currentMsrRowData[dimAggMaxMinIndex[i][j]]
                                 .agg(((Number) dataBasedOnDataType).doubleValue());
                     } else if (!((String) dataBasedOnDataType)
-                            .equals(MolapCommonConstants.MEMBER_DEFAULT_VAL)) {
+                            .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
                         dataBasedOnDataType = DataTypeConverter
                                 .getDataBasedOnDataType((String) dataBasedOnDataType,
                                         dimensionAggregatorInfo.getDim().getDataType());
@@ -261,7 +261,7 @@ public class DimensionDataAggreagtor {
                     keyValue.getHighCardinalityDimDataForAgg(dim.getOrdinal()));
         }
         String data = new String(keyValue.getHighCardinalityDimDataForAgg(dim.getOrdinal()));
-        if (MolapCommonConstants.MEMBER_DEFAULT_VAL.equals(data)) {
+        if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(data)) {
             return;
         }
 
@@ -289,7 +289,7 @@ public class DimensionDataAggreagtor {
             if (dataBasedOnDataType instanceof Double) {
                 currentMsrRowData[dimAggNormalIndex[index][j]].agg(dataBasedOnDataType);
             } else if (!(dataBasedOnDataType.toString())
-                    .equals(MolapCommonConstants.MEMBER_DEFAULT_VAL)) {
+                    .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
                 dataBasedOnDataType = DataTypeConverter
                         .getDataBasedOnDataType(dataBasedOnDataType.toString(),
                                 SqlStatement.Type.DOUBLE);

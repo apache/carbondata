@@ -19,9 +19,9 @@
 
 package org.carbondata.query.executer.impl.topn;
 
-import org.carbondata.core.metadata.MolapMetadata.Dimension;
-import org.carbondata.core.metadata.MolapMetadata.Measure;
-import org.carbondata.query.queryinterface.query.MolapQuery.AxisType;
+import org.carbondata.core.metadata.CarbonMetadata.Dimension;
+import org.carbondata.core.metadata.CarbonMetadata.Measure;
+import org.carbondata.query.queryinterface.query.CarbonQuery.AxisType;
 
 /**
  * It is the model class for topN in MOLAP

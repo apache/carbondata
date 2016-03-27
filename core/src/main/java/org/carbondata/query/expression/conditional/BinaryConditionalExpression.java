@@ -22,7 +22,7 @@ package org.carbondata.query.expression.conditional;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.query.expression.ColumnExpression;
 import org.carbondata.query.expression.Expression;
 import org.carbondata.query.expression.logical.BinaryLogicalExpression;
@@ -45,7 +45,7 @@ public abstract class BinaryConditionalExpression extends BinaryLogicalExpressio
     public List<ColumnExpression> getColumnList() {
         // TODO
         List<ColumnExpression> listOfExp =
-                new ArrayList<ColumnExpression>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                new ArrayList<ColumnExpression>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         getColumnList(this, listOfExp);
         return listOfExp;
     }
@@ -74,7 +74,7 @@ public abstract class BinaryConditionalExpression extends BinaryLogicalExpressio
 
     public boolean isSingleDimension() {
         List<ColumnExpression> listOfExp =
-                new ArrayList<ColumnExpression>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                new ArrayList<ColumnExpression>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         getColumnList(this, listOfExp);
         if (listOfExp.size() == 1 && listOfExp.get(0).isDimension()) {
             return true;

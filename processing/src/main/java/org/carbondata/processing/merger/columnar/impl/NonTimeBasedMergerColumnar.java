@@ -24,25 +24,25 @@ import java.util.Comparator;
 import java.util.PriorityQueue;
 
 import org.carbondata.core.util.ByteUtil;
-import org.carbondata.processing.factreader.MolapSurrogateTupleHolder;
+import org.carbondata.processing.factreader.CarbonSurrogateTupleHolder;
 import org.carbondata.processing.merger.columnar.ColumnarFactFileMerger;
-import org.carbondata.processing.merger.columnar.iterator.MolapDataIterator;
+import org.carbondata.processing.merger.columnar.iterator.CarbonDataIterator;
 import org.carbondata.processing.merger.exeception.SliceMergerException;
-import org.carbondata.processing.schema.metadata.MolapColumnarFactMergerInfo;
-import org.carbondata.processing.store.writer.exception.MolapDataWriterException;
+import org.carbondata.processing.schema.metadata.CarbonColumnarFactMergerInfo;
+import org.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 
 public class NonTimeBasedMergerColumnar extends ColumnarFactFileMerger {
 
     /**
      * record holder heap
      */
-    private AbstractQueue<MolapDataIterator<MolapSurrogateTupleHolder>> recordHolderHeap;
+    private AbstractQueue<CarbonDataIterator<CarbonSurrogateTupleHolder>> recordHolderHeap;
 
-    public NonTimeBasedMergerColumnar(MolapColumnarFactMergerInfo molapColumnarFactMergerInfo,
+    public NonTimeBasedMergerColumnar(CarbonColumnarFactMergerInfo carbonColumnarFactMergerInfo,
             int currentRestructNumber) {
-        super(molapColumnarFactMergerInfo, currentRestructNumber);
+        super(carbonColumnarFactMergerInfo, currentRestructNumber);
         if (leafTupleIteratorList.size() > 0) {
-            recordHolderHeap = new PriorityQueue<MolapDataIterator<MolapSurrogateTupleHolder>>(
+            recordHolderHeap = new PriorityQueue<CarbonDataIterator<CarbonSurrogateTupleHolder>>(
                     leafTupleIteratorList.size(), new MolapMdkeyComparator());
         }
     }
@@ -54,11 +54,11 @@ public class NonTimeBasedMergerColumnar extends ColumnarFactFileMerger {
         try {
             dataHandler.initialise();
             // add first record from each file
-            for (MolapDataIterator<MolapSurrogateTupleHolder> leaftTupleIterator : this.leafTupleIteratorList) {
+            for (CarbonDataIterator<CarbonSurrogateTupleHolder> leaftTupleIterator : this.leafTupleIteratorList) {
                 this.recordHolderHeap.add(leaftTupleIterator);
                 index++;
             }
-            MolapDataIterator<MolapSurrogateTupleHolder> poll = null;
+            CarbonDataIterator<CarbonSurrogateTupleHolder> poll = null;
             while (index > 1) {
                 // poll the top record
                 poll = this.recordHolderHeap.poll();
@@ -87,7 +87,7 @@ public class NonTimeBasedMergerColumnar extends ColumnarFactFileMerger {
             }
             this.dataHandler.finish();
 
-        } catch (MolapDataWriterException e) {
+        } catch (CarbonDataWriterException e) {
             throw new SliceMergerException(
                     "Problem while getting the file channel for Destination file: ", e);
         } finally {
@@ -96,11 +96,11 @@ public class NonTimeBasedMergerColumnar extends ColumnarFactFileMerger {
     }
 
     private class MolapMdkeyComparator
-            implements Comparator<MolapDataIterator<MolapSurrogateTupleHolder>> {
+            implements Comparator<CarbonDataIterator<CarbonSurrogateTupleHolder>> {
 
         @Override
-        public int compare(MolapDataIterator<MolapSurrogateTupleHolder> o1,
-                MolapDataIterator<MolapSurrogateTupleHolder> o2) {
+        public int compare(CarbonDataIterator<CarbonSurrogateTupleHolder> o1,
+                CarbonDataIterator<CarbonSurrogateTupleHolder> o2) {
             return ByteUtil.UnsafeComparer.INSTANCE
                     .compareTo(o1.getNextData().getMdKey(), o2.getNextData().getMdKey());
         }

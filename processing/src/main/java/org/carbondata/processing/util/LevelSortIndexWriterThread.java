@@ -30,11 +30,11 @@ import java.util.concurrent.Callable;
 import org.apache.commons.codec.binary.Base64;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.datastorage.store.filesystem.MolapFile;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
-import org.carbondata.core.util.MolapProperties;
-import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.util.CarbonProperties;
+import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.datastorage.DataType;
 import org.carbondata.query.util.MemberSortModel;
 
@@ -121,14 +121,14 @@ public class LevelSortIndexWriterThread implements Callable<Void> {
         ByteBuffer buffer = null;
 
         // CHECKSTYLE:OFF
-        boolean enableEncoding = Boolean.valueOf(MolapProperties.getInstance()
-                .getProperty(MolapCommonConstants.ENABLE_BASE64_ENCODING,
-                        MolapCommonConstants.ENABLE_BASE64_ENCODING_DEFAULT));
+        boolean enableEncoding = Boolean.valueOf(CarbonProperties.getInstance()
+                .getProperty(CarbonCommonConstants.ENABLE_BASE64_ENCODING,
+                        CarbonCommonConstants.ENABLE_BASE64_ENCODING_DEFAULT));
         // CHECKSTYLE:ON
         try {
             fileChannel = FileFactory
                     .getDataInputStream(levelFilePath, FileFactory.getFileType(levelFilePath));
-            MolapFile memberFile =
+            CarbonFile memberFile =
                     FileFactory.getMolapFile(levelFilePath, FileFactory.getFileType(levelFilePath));
             size = memberFile.getSize() - 4;
             long skipSize = size;
@@ -139,11 +139,11 @@ public class LevelSortIndexWriterThread implements Callable<Void> {
             }
             maxSurrogate = fileChannel.readInt();
         } catch (IOException e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
                     "problem while reading the level file");
             throw e;
         } finally {
-            MolapUtil.closeStreams(fileChannel);
+            CarbonUtil.closeStreams(fileChannel);
         }
 
         try {
@@ -155,11 +155,11 @@ public class LevelSortIndexWriterThread implements Callable<Void> {
             fileChannel.readFully(buffer.array());
             buffer.rewind();
         } catch (IOException e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
                     "problem while reading the level file");
             throw e;
         } finally {
-            MolapUtil.closeStreams(fileChannel);
+            CarbonUtil.closeStreams(fileChannel);
         }
         minSurrogate = buffer.getInt();
         MemberSortModel[] surogateKeyArrays = new MemberSortModel[maxSurrogate - minSurrogate + 1];
@@ -205,7 +205,7 @@ public class LevelSortIndexWriterThread implements Callable<Void> {
             String path = levelFilePath.substring(0, lastIndexOf);
 
             dataOutputStream = FileFactory
-                    .getDataOutputStream(path + MolapCommonConstants.LEVEL_SORT_INDEX_FILE_EXT,
+                    .getDataOutputStream(path + CarbonCommonConstants.LEVEL_SORT_INDEX_FILE_EXT,
                             FileFactory.getFileType(path));
 
             dataOutputStream.writeInt(sortOrderIndex.length);
@@ -217,11 +217,11 @@ public class LevelSortIndexWriterThread implements Callable<Void> {
                 dataOutputStream.writeInt(sortReverseOrderIndex[i]);
             }
         } catch (IOException e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
                     "problem while writing the level sort index file");
             throw e;
         } finally {
-            MolapUtil.closeStreams(dataOutputStream);
+            CarbonUtil.closeStreams(dataOutputStream);
         }
     }
 

@@ -21,7 +21,7 @@ package org.carbondata.query.columnar.scanner;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.iterator.MolapIterator;
+import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.query.columnar.aggregator.ColumnarScannedResultAggregator;
 import org.carbondata.query.columnar.datastoreblockprocessor.DataStoreBlockProcessor;
 import org.carbondata.query.columnar.scanner.impl.BtreeLeafNodeIterator;
@@ -33,7 +33,7 @@ import org.carbondata.query.executer.processor.ScannedResultProcessor;
 import org.carbondata.query.querystats.PartitionDetail;
 import org.carbondata.query.querystats.PartitionStatsCollector;
 import org.carbondata.query.schema.metadata.ColumnarStorageScannerInfo;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 
 public abstract class AbstractColumnarStorageScanner implements ColumnarStorageScanner {
 
@@ -43,7 +43,7 @@ public abstract class AbstractColumnarStorageScanner implements ColumnarStorageS
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(AbstractColumnarStorageScanner.class.getName());
 
-    protected MolapIterator<DataStoreBlock> leafIterator;
+    protected CarbonIterator<DataStoreBlock> leafIterator;
 
     protected DataStoreBlockProcessor blockProcessor;
 
@@ -75,7 +75,7 @@ public abstract class AbstractColumnarStorageScanner implements ColumnarStorageS
             this.scannedResultProcessor
                     .addScannedResult(columnarAggaregator.getResult(restructurHolder));
         } catch (Exception e) {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
         }
     }
 

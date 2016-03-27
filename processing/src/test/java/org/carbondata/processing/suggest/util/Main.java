@@ -24,14 +24,14 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.datastorage.store.filesystem.MolapFile;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
-import org.carbondata.core.iterator.MolapIterator;
-import org.carbondata.core.metadata.MolapMetadata;
-import org.carbondata.core.olap.MolapDef;
-import org.carbondata.core.olap.SqlStatement;
-import org.carbondata.core.util.MolapProperties;
+import org.carbondata.core.iterator.CarbonIterator;
+import org.carbondata.core.metadata.CarbonMetadata;
+import org.carbondata.core.carbon.CarbonDef;
+import org.carbondata.core.carbon.SqlStatement;
+import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.processing.suggest.autoagg.AutoAggSuggestionFactory;
 import org.carbondata.processing.suggest.autoagg.AutoAggSuggestionService;
 import org.carbondata.processing.suggest.autoagg.exception.AggSuggestException;
@@ -41,11 +41,11 @@ import org.carbondata.processing.suggest.datastats.load.LevelMetaInfo;
 import org.carbondata.processing.suggest.datastats.model.LoadModel;
 import org.carbondata.processing.suggest.datastats.util.DataStatsUtil;
 import org.carbondata.query.aggregator.dimension.DimensionAggregatorInfo;
-import org.carbondata.query.executer.MolapQueryExecutorModel;
+import org.carbondata.query.executer.CarbonQueryExecutorModel;
 import org.carbondata.query.executer.QueryExecutor;
 import org.carbondata.query.executer.exception.QueryExecutionException;
-import org.carbondata.query.holders.MolapResultHolder;
-import org.carbondata.query.queryinterface.filter.MolapFilterInfo;
+import org.carbondata.query.holders.CarbonResultHolder;
+import org.carbondata.query.queryinterface.filter.CarbonFilterInfo;
 import org.carbondata.query.querystats.Preference;
 import org.carbondata.query.result.RowResult;
 
@@ -76,20 +76,20 @@ public class Main {
 		 * metaPath=basePath+"schemas/default/Carbon_DR_FT/metadata";
 		 */
 
-        MolapProperties.getInstance().addProperty("molap.storelocation", basePath + "store");
+        CarbonProperties.getInstance().addProperty("molap.storelocation", basePath + "store");
         // MolapProperties.getInstance().addProperty("molap.schemaslocation",
         // basePath+"schemas");
-        MolapProperties.getInstance().addProperty("molap.number.of.cores", "4");
-        MolapProperties.getInstance().addProperty("molap.smartJump.avoid.percent", "70");
-        MolapProperties.getInstance().addProperty(Preference.AGG_LOAD_COUNT, "4");
-        MolapProperties.getInstance().addProperty(Preference.AGG_FACT_COUNT, "2");
-        MolapProperties.getInstance().addProperty(Preference.AGG_REC_COUNT, "5");
+        CarbonProperties.getInstance().addProperty("molap.number.of.cores", "4");
+        CarbonProperties.getInstance().addProperty("molap.smartJump.avoid.percent", "70");
+        CarbonProperties.getInstance().addProperty(Preference.AGG_LOAD_COUNT, "4");
+        CarbonProperties.getInstance().addProperty(Preference.AGG_FACT_COUNT, "2");
+        CarbonProperties.getInstance().addProperty(Preference.AGG_REC_COUNT, "5");
         //MolapProperties.getInstance().addProperty("aggregate.columnar.keyblock","false");
 
         AutoAggSuggestionService aggServer =
                 AutoAggSuggestionFactory.getAggregateService(Request.DATA_STATS);
-        MolapDef.Schema schema = TestUtil.readMetaData(metaPath).get(0);
-        MolapDef.Cube cube = schema.cubes[0];
+        CarbonDef.Schema schema = TestUtil.readMetaData(metaPath).get(0);
+        CarbonDef.Cube cube = schema.cubes[0];
 
         LoadModel loadModel =
                 TestUtil.createLoadModel(schema.name, cube.name, schema, cube, basePath + "store",
@@ -112,7 +112,7 @@ public class Main {
 
     }
 
-    public static void executeQuery(MolapDef.Schema schema, MolapDef.Cube cube)
+    public static void executeQuery(CarbonDef.Schema schema, CarbonDef.Cube cube)
             throws QueryExecutionException {
         LoadSampler loadSampler = new LoadSampler();
         LoadModel loadModel = new LoadModel();
@@ -126,47 +126,47 @@ public class Main {
 
         //	loadSampler.loadCube(loadModel);
 
-        MolapQueryExecutorModel model = createQueryExecutorModel(loadSampler);
+        CarbonQueryExecutorModel model = createQueryExecutorModel(loadSampler);
         QueryExecutor queryExecutor =
                 DataStatsUtil.getQueryExecuter(loadSampler.getMetaCube(), cube.fact.getAlias());
-        MolapIterator<RowResult> rowIterator = queryExecutor.execute(model);
+        CarbonIterator<RowResult> rowIterator = queryExecutor.execute(model);
         System.out.println("hello");
     }
 
-    public static MolapQueryExecutorModel createQueryExecutorModel(LoadSampler loadSampler) {
-        MolapMetadata.Cube cube = loadSampler.getMetaCube();
-        MolapQueryExecutorModel executorModel = new MolapQueryExecutorModel();
+    public static CarbonQueryExecutorModel createQueryExecutorModel(LoadSampler loadSampler) {
+        CarbonMetadata.Cube cube = loadSampler.getMetaCube();
+        CarbonQueryExecutorModel executorModel = new CarbonQueryExecutorModel();
         executorModel.setSparkExecution(true);
         String factTableName = cube.getFactTableName();
         executorModel.setCube(cube);
-        executorModel.sethIterator(new MolapResultHolder(new ArrayList<SqlStatement.Type>()));
+        executorModel.sethIterator(new CarbonResultHolder(new ArrayList<SqlStatement.Type>()));
         executorModel.setFactTable(factTableName);
 
-        List<MolapMetadata.Dimension> allDimensions =
+        List<CarbonMetadata.Dimension> allDimensions =
                 cube.getDimensions(loadSampler.getTableName());
-        MolapMetadata.Dimension[] dimensions = new MolapMetadata.Dimension[1];
+        CarbonMetadata.Dimension[] dimensions = new CarbonMetadata.Dimension[1];
         dimensions[0] = allDimensions.get(49);
         dimensions[0].setQueryOrder(0);
         executorModel.setDims(dimensions);
-        executorModel.setMsrs(new ArrayList<MolapMetadata.Measure>());
+        executorModel.setMsrs(new ArrayList<CarbonMetadata.Measure>());
 
         List<DimensionAggregatorInfo> dimensionAggregatorInfos =
                 new ArrayList<DimensionAggregatorInfo>(
-                        MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                        CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-        executorModel.setConstraints(new HashMap<MolapMetadata.Dimension, MolapFilterInfo>());
+        executorModel.setConstraints(new HashMap<CarbonMetadata.Dimension, CarbonFilterInfo>());
         executorModel.setDimensionAggInfo(dimensionAggregatorInfos);
         executorModel.setActualDimsRows(executorModel.getDims());
-        executorModel.setActualDimsCols(new MolapMetadata.Dimension[0]);
-        executorModel.setCalcMeasures(new ArrayList<MolapMetadata.Measure>());
+        executorModel.setActualDimsCols(new CarbonMetadata.Dimension[0]);
+        executorModel.setCalcMeasures(new ArrayList<CarbonMetadata.Measure>());
         executorModel.setAnalyzerDims(executorModel.getDims());
         executorModel
-                .setConstraintsAfterTopN(new HashMap<MolapMetadata.Dimension, MolapFilterInfo>());
+                .setConstraintsAfterTopN(new HashMap<CarbonMetadata.Dimension, CarbonFilterInfo>());
         executorModel.setLimit(-1);
         executorModel.setDetailQuery(false);
         executorModel.setQueryId(System.nanoTime() + "");
-        executorModel.setOutLocation(MolapProperties.getInstance()
-                .getProperty(MolapCommonConstants.STORE_LOCATION_HDFS));
+        executorModel.setOutLocation(CarbonProperties.getInstance()
+                .getProperty(CarbonCommonConstants.STORE_LOCATION_HDFS));
         return executorModel;
     }
 
@@ -175,7 +175,7 @@ public class Main {
             String path =
                     "hdfs://10.19.92.135:54310//VmallData/VmallStore/store/default_0/Vmall_user_prof1_0/RS_0/Vmall_FACT/Load_"
                             + i;
-            MolapFile file = FileFactory.getMolapFile(path, FileFactory.getFileType(path));
+            CarbonFile file = FileFactory.getMolapFile(path, FileFactory.getFileType(path));
             LevelMetaInfo level = new LevelMetaInfo(file, "Vmall_FACT");
             int[] data = level.getDimCardinality();
             System.out.println("Load_" + i + ":" + Arrays.toString(data));

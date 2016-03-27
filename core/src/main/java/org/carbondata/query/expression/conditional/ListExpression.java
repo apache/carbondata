@@ -25,8 +25,8 @@ import java.util.List;
 import org.carbondata.query.expression.Expression;
 import org.carbondata.query.expression.ExpressionResult;
 import org.carbondata.query.expression.exception.FilterUnsupportedException;
-import org.carbondata.query.molapfilterinterface.ExpressionType;
-import org.carbondata.query.molapfilterinterface.RowIntf;
+import org.carbondata.query.carbonfilterinterface.ExpressionType;
+import org.carbondata.query.carbonfilterinterface.RowIntf;
 
 public class ListExpression extends Expression {
     private static final long serialVersionUID = 1L;

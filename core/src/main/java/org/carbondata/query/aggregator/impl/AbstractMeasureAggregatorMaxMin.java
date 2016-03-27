@@ -21,7 +21,7 @@ package org.carbondata.query.aggregator.impl;
 
 import java.math.BigDecimal;
 
-import org.carbondata.core.datastorage.store.dataholder.MolapReadDataHolder;
+import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.carbondata.query.aggregator.MeasureAggregator;
 
 /**
@@ -50,7 +50,7 @@ public abstract class AbstractMeasureAggregatorMaxMin implements MeasureAggregat
     }
 
     @Override
-    public void agg(MolapReadDataHolder newVal, int index) {
+    public void agg(CarbonReadDataHolder newVal, int index) {
         internalAgg(newVal.getReadableDoubleValueByIndex(index));
         firstTime = false;
     }

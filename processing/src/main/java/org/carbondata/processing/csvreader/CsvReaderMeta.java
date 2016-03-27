@@ -26,7 +26,7 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.csvreader.checkpoint.CheckPointHanlder;
 import org.carbondata.core.csvreader.checkpoint.CheckPointInterface;
 import org.carbondata.core.csvreader.checkpoint.exception.CheckPointException;
-import org.carbondata.processing.util.MolapDataProcessorLogEvent;
+import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.StepDataInterface;
@@ -104,7 +104,7 @@ public class CsvReaderMeta extends CsvInputMeta {
         try {
             this.fileNameOffSetCache = checkpoint.getCheckPointCache();
         } catch (CheckPointException e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "Problem while getting the check point");
         }
     }

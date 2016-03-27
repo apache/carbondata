@@ -24,7 +24,7 @@ package org.carbondata.processing;
 
 import java.io.Serializable;
 
-import org.carbondata.core.olap.MolapDef.Schema;
+import org.carbondata.core.carbon.CarbonDef.Schema;
 
 /**
  * @author R00900208

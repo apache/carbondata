@@ -30,8 +30,8 @@ import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
-import org.carbondata.core.util.MolapUtil;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.core.util.CarbonUtil;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
  * This class will write query statistics to store location
@@ -99,11 +99,11 @@ public class BinaryQueryStore implements QueryStore {
             }
             writeQueryToFile(queryDetail, dos);
         } catch (Exception e) {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                     "Error logging query for cube:" + queryDetail.getCubeName(), e);
 
         } finally {
-            MolapUtil.closeStreams(dos);
+            CarbonUtil.closeStreams(dos);
         }
     }
 
@@ -216,10 +216,10 @@ public class BinaryQueryStore implements QueryStore {
             }
 
         } catch (Exception e) {
-            LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                     "Error reading querystats:" + queryStatsPath, e);
         } finally {
-            MolapUtil.closeStreams(dis);
+            CarbonUtil.closeStreams(dis);
         }
 
         return queryDetails.toArray(new QueryDetail[queryDetails.size()]);
@@ -246,15 +246,15 @@ public class BinaryQueryStore implements QueryStore {
             if (FileFactory.getMolapFile(queryStatsPath, fileType).delete()) {
                 if (!FileFactory.getMolapFile(tempQueryStatsPath, fileType)
                         .renameTo(queryStatsPath)) {
-                    LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                    LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                             "Error renaming querystats_temp to querystats:" + queryStatsPath);
                 }
             }
         } catch (Exception e) {
-            LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                     "Error rewriting querystats:" + queryStatsPath, e);
         } finally {
-            MolapUtil.closeStreams(dos);
+            CarbonUtil.closeStreams(dos);
         }
 
     }

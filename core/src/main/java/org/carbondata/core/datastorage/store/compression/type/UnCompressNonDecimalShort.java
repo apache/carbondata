@@ -26,8 +26,8 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.datastorage.store.compression.Compressor;
 import org.carbondata.core.datastorage.store.compression.SnappyCompression;
 import org.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
-import org.carbondata.core.datastorage.store.dataholder.MolapReadDataHolder;
-import org.carbondata.core.util.MolapCoreLogEvent;
+import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
+import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.ValueCompressionUtil;
 
 public class UnCompressNonDecimalShort implements ValueCompressonHolder.UnCompressValue<short[]> {
@@ -62,7 +62,7 @@ public class UnCompressNonDecimalShort implements ValueCompressonHolder.UnCompre
         try {
             return (ValueCompressonHolder.UnCompressValue) clone();
         } catch (CloneNotSupportedException exception1) {
-            LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, exception1,
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, exception1,
                     exception1.getMessage());
         }
         return null;
@@ -96,8 +96,8 @@ public class UnCompressNonDecimalShort implements ValueCompressonHolder.UnCompre
     }
 
     @Override
-    public MolapReadDataHolder getValues(int decimal, Object maxValueObject) {
-        MolapReadDataHolder dataHolder = new MolapReadDataHolder();
+    public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {
+        CarbonReadDataHolder dataHolder = new CarbonReadDataHolder();
         double[] vals = new double[value.length];
         for (int i = 0; i < vals.length; i++) {
             vals[i] = value[i] / Math.pow(10, decimal);

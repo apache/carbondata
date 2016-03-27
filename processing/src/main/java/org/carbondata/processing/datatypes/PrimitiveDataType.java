@@ -27,7 +27,7 @@ import java.util.List;
 
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.KeyGenerator;
-import org.carbondata.processing.surrogatekeysgenerator.csvbased.MolapCSVBasedDimSurrogateKeyGen;
+import org.carbondata.processing.surrogatekeysgenerator.csvbased.CarbonCSVBasedDimSurrogateKeyGen;
 import org.pentaho.di.core.exception.KettleException;
 
 public class PrimitiveDataType implements GenericDataType {
@@ -86,7 +86,7 @@ public class PrimitiveDataType implements GenericDataType {
     @Override
     public void parseStringAndWriteByteArray(String tableName, String inputString,
             String[] delimiter, int delimiterIndex, DataOutputStream dataOutputStream,
-            MolapCSVBasedDimSurrogateKeyGen surrogateKeyGen) throws KettleException, IOException {
+            CarbonCSVBasedDimSurrogateKeyGen surrogateKeyGen) throws KettleException, IOException {
         dataOutputStream.writeInt(surrogateKeyGen
                 .generateSurrogateKeys(inputString, tableName + "_" + name, index, new Object[0]));
     }

@@ -24,7 +24,7 @@ import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreDataHolder
 import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreInfo;
 import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreMetadata;
 import org.carbondata.core.datastorage.store.impl.key.columnar.AbstractColumnarKeyStore;
-import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.util.CarbonUtil;
 
 public class UnCompressedColumnarInMemoryStore extends AbstractColumnarKeyStore {
 
@@ -45,7 +45,7 @@ public class UnCompressedColumnarInMemoryStore extends AbstractColumnarKeyStore 
             columnarKeyStoreMetadataTemp = new ColumnarKeyStoreMetadata(0);
             if (!columnarStoreInfo.getIsSorted()[blockIndex[i]]) {
                 columnarKeyBlockIndex = mapOfColumnIndexAndColumnBlockIndex.get(blockIndex[i]);
-                columnIndex = MolapUtil.getUnCompressColumnIndex(
+                columnIndex = CarbonUtil.getUnCompressColumnIndex(
                         columnarStoreInfo.getKeyBlockIndexLength()[columnarKeyBlockIndex],
                         fileHolder.readByteArray(columnarStoreInfo.getFilePath(),
                                 columnarStoreInfo.getKeyBlockIndexOffsets()[columnarKeyBlockIndex],

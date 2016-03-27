@@ -21,19 +21,19 @@ package org.carbondata.processing.suggest.datastats.load;
 
 import mockit.Mock;
 import mockit.MockUp;
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.metadata.MolapMetadata;
-import org.carbondata.core.util.MolapProperties;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.metadata.CarbonMetadata;
+import org.carbondata.core.util.CarbonProperties;
 import org.junit.Test;
 
 public class FactDataHandlerTest {
 
     @Test
     public void testInitialise_falseAggKeyBlock() {
-        MolapProperties.getInstance()
-                .addProperty(MolapCommonConstants.AGGREAGATE_COLUMNAR_KEY_BLOCK, "false");
-        MolapProperties.getInstance()
-                .addProperty(MolapCommonConstants.MOLAP_IS_LOAD_FACT_TABLE_IN_MEMORY, "false");
+        CarbonProperties.getInstance()
+                .addProperty(CarbonCommonConstants.AGGREAGATE_COLUMNAR_KEY_BLOCK, "false");
+        CarbonProperties.getInstance()
+                .addProperty(CarbonCommonConstants.MOLAP_IS_LOAD_FACT_TABLE_IN_MEMORY, "false");
         LevelMetaInfo levelInfo = new MockUp<LevelMetaInfo>() {
             @Mock
             public int[] getDimCardinality() {
@@ -42,7 +42,7 @@ public class FactDataHandlerTest {
 
         }.getMockInstance();
 
-        MolapMetadata.Cube cube = new MockUp<MolapMetadata.Cube>() {
+        CarbonMetadata.Cube cube = new MockUp<CarbonMetadata.Cube>() {
             @Mock
             public String getCubeName() {
                 return "default_test";
@@ -71,8 +71,8 @@ public class FactDataHandlerTest {
 
     @Test
     public void testInitialise_trueAggKeyBlock_TestHighCardinality() {
-        MolapProperties.getInstance()
-                .addProperty(MolapCommonConstants.AGGREAGATE_COLUMNAR_KEY_BLOCK, "true");
+        CarbonProperties.getInstance()
+                .addProperty(CarbonCommonConstants.AGGREAGATE_COLUMNAR_KEY_BLOCK, "true");
         LevelMetaInfo levelInfo = new MockUp<LevelMetaInfo>() {
             @Mock
             public int[] getDimCardinality() {
@@ -81,7 +81,7 @@ public class FactDataHandlerTest {
 
         }.getMockInstance();
 
-        MolapMetadata.Cube cube = new MockUp<MolapMetadata.Cube>() {
+        CarbonMetadata.Cube cube = new MockUp<CarbonMetadata.Cube>() {
             @Mock
             public String getCubeName() {
                 return "default_test";

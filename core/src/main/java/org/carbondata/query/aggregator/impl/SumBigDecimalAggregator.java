@@ -22,7 +22,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 
-import org.carbondata.core.datastorage.store.dataholder.MolapReadDataHolder;
+import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.carbondata.core.util.DataTypeUtil;
 import org.carbondata.query.aggregator.MeasureAggregator;
 
@@ -56,7 +56,7 @@ public class SumBigDecimalAggregator extends AbstractMeasureAggregatorBasic {
         }
     }
 
-    public void agg(MolapReadDataHolder newVal, int index) {
+    public void agg(CarbonReadDataHolder newVal, int index) {
         BigDecimal valueBigDecimal = newVal.getReadableBigDecimalValueByIndex(index);
         aggVal = aggVal.add(valueBigDecimal);
         firstTime = false;

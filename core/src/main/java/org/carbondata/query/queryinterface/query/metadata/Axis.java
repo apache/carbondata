@@ -23,7 +23,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.carbondata.query.queryinterface.query.MolapQuery;
+import org.carbondata.query.queryinterface.query.CarbonQuery;
 
 /**
  * It is Axis class, it can be row,column or slice axis.It contains all information of query depends on levels and measures added in query.
@@ -31,7 +31,7 @@ import org.carbondata.query.queryinterface.query.MolapQuery;
 public class Axis implements Serializable {
     private static final long serialVersionUID = -574689684553603640L;
 
-    private List<MolapLevelHolder> dims = new ArrayList<MolapLevelHolder>(10);
+    private List<CarbonLevelHolder> dims = new ArrayList<CarbonLevelHolder>(10);
 
     /**
      * Add query details to this axis.
@@ -41,9 +41,9 @@ public class Axis implements Serializable {
      * @param msrFilters
      * @param dimLevelFilter
      */
-    public void add(MolapLevel level, MolapQuery.SortType sortType,
-            List<MolapMeasureFilter> msrFilters, MolapDimensionLevelFilter dimLevelFilter) {
-        MolapLevelHolder holder = new MolapLevelHolder(level, sortType);
+    public void add(CarbonLevel level, CarbonQuery.SortType sortType,
+            List<CarbonMeasureFilter> msrFilters, CarbonDimensionLevelFilter dimLevelFilter) {
+        CarbonLevelHolder holder = new CarbonLevelHolder(level, sortType);
         holder.setMsrFilters(msrFilters);
         holder.setDimLevelFilter(dimLevelFilter);
         dims.add(holder);
@@ -54,7 +54,7 @@ public class Axis implements Serializable {
      *
      * @return the dims
      */
-    public List<MolapLevelHolder> getDims() {
+    public List<CarbonLevelHolder> getDims() {
         return dims;
     }
 }

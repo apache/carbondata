@@ -26,8 +26,8 @@ import java.util.Map;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
  * 1) Maintains the information about which MDX query is being executed by which
@@ -49,19 +49,19 @@ public final class QueryMapper {
      * Map<CubeName, Map<ThreadID, QueryID>>
      */
     private static Map<String, Map<Long, Long>> executionMap =
-            new HashMap<String, Map<Long, Long>>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+            new HashMap<String, Map<Long, Long>>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
     /**
      * Map<ThreadID, List<SliceIDs>>
      */
     private static Map<Long, List<Long>> executionToSlicesMap =
-            new HashMap<Long, List<Long>>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+            new HashMap<Long, List<Long>>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
     /**
      * QueryId --> List<SliceListeners>
      */
     private static Map<Long, List<SliceListener>> listeners =
-            new HashMap<Long, List<SliceListener>>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+            new HashMap<Long, List<SliceListener>>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
     private QueryMapper() {
 
@@ -73,8 +73,8 @@ public final class QueryMapper {
      * @param slice
      * @return
      */
-    public static synchronized List<Long> getQueriesPerSlice(InMemoryCube slice) {
-        List<Long> queries = new ArrayList<Long>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+    public static synchronized List<Long> getQueriesPerSlice(InMemoryTable slice) {
+        List<Long> queries = new ArrayList<Long>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
         Map<Long, Long> threadQueryMap = executionMap.get(slice.getCubeUniqueName());
         if (threadQueryMap == null) {
             return queries;
@@ -136,25 +136,25 @@ public final class QueryMapper {
 
             Map<Long, Long> cubeMap = executionMap.get(cubeUniqueName);
             if (cubeMap == null) {
-                cubeMap = new HashMap<Long, Long>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                cubeMap = new HashMap<Long, Long>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
                 executionMap.put(cubeUniqueName, cubeMap);
             }
 
             // Register the thread for query
             cubeMap.put(threadId, queryID);
 
-            LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                     "QueryMapper :: Thread " + threadId + " is executing query " + queryID
                             + " on cube " + cubeUniqueName);
             //System.out.println("QueryMapper :: Thread " + threadId + " is executing query " + queryID + " on cube "
             //   + cubeName);
 
             // Register available cube slices for query (Thread)
-            if (InMemoryCubeStore.getInstance().findCache(cubeUniqueName)) {
+            if (InMemoryTableStore.getInstance().findCache(cubeUniqueName)) {
                 List<Long> slices =
-                        InMemoryCubeStore.getInstance().getActiveSliceIds(cubeUniqueName);
+                        InMemoryTableStore.getInstance().getActiveSliceIds(cubeUniqueName);
                 executionToSlicesMap.put(threadId, slices);
-                LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                         "QueryMapper :: Available slices : " + slices);
                 //System.out.println("QueryMapper :: Available slices : " + slices);
             }
@@ -236,7 +236,7 @@ public final class QueryMapper {
         }
 
         List<SliceListener> toRemove =
-                new ArrayList<SliceListener>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+                new ArrayList<SliceListener>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
 
         for (SliceListener listener : listOnQuery) {
             // Check and intimate listeners
@@ -289,7 +289,7 @@ public final class QueryMapper {
 
         List<SliceListener> list = listeners.get(queryId);
         if (list == null) {
-            list = new ArrayList<SliceListener>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+            list = new ArrayList<SliceListener>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
             listeners.put(queryId, list);
         }
 

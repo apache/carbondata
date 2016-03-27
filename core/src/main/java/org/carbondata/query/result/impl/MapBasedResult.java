@@ -24,7 +24,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.result.Result;
 import org.carbondata.query.wrappers.ByteArrayWrapper;
@@ -40,7 +40,7 @@ public class MapBasedResult implements Result<Map<ByteArrayWrapper, MeasureAggre
 
     public MapBasedResult() {
         scannerResult = new HashMap<ByteArrayWrapper, MeasureAggregator[]>(
-                MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         this.resultIterator = scannerResult.entrySet().iterator();
     }
 

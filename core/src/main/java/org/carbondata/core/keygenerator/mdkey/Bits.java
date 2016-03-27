@@ -26,8 +26,8 @@ import java.util.List;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.util.MolapCoreLogEvent;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.util.CarbonCoreLogEvent;
 
 public class Bits implements Serializable {
 
@@ -298,18 +298,18 @@ public class Bits implements Serializable {
     }
 
     public List<List<Long>> getMasks() {
-        List<List<Long>> masks = new ArrayList<List<Long>>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+        List<List<Long>> masks = new ArrayList<List<Long>>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
 
         int ll = 0;
         for (int i = 0; i < lens.length; i++) {
-            List<Long> list = new ArrayList<Long>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+            List<Long> list = new ArrayList<Long>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
             masks.add(list);
             int index = ll >> 6;
             int pos = ll & 0x3f;
             long mask = LONG_MAX >> (MAX_LENGTH - lens[i]);
             mask <<= pos;
             list.add(mask);
-            LOGGER.info(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
                     "mask1 : " + Long.toBinaryString(mask));
             ll += lens[i];
 

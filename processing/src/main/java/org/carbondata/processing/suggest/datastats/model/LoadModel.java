@@ -21,13 +21,13 @@ package org.carbondata.processing.suggest.datastats.model;
 
 import java.util.List;
 
-import org.carbondata.core.metadata.MolapMetadata.Cube;
-import org.carbondata.core.olap.MolapDef;
+import org.carbondata.core.metadata.CarbonMetadata.Cube;
+import org.carbondata.core.carbon.CarbonDef;
 
 public class LoadModel {
-    private MolapDef.Schema schema;
+    private CarbonDef.Schema schema;
 
-    private MolapDef.Cube cube;
+    private CarbonDef.Cube cube;
 
     private String partitionId = "0";
 
@@ -69,11 +69,11 @@ public class LoadModel {
 
     }
 
-    public MolapDef.Schema getSchema() {
+    public CarbonDef.Schema getSchema() {
         return schema;
     }
 
-    public void setSchema(MolapDef.Schema schema) {
+    public void setSchema(CarbonDef.Schema schema) {
         this.schema = schema;
 
     }
@@ -87,11 +87,11 @@ public class LoadModel {
 
     }
 
-    public MolapDef.Cube getCube() {
+    public CarbonDef.Cube getCube() {
         return cube;
     }
 
-    public void setCube(MolapDef.Cube cube) {
+    public void setCube(CarbonDef.Cube cube) {
         this.cube = cube;
     }
 

@@ -22,7 +22,7 @@ package org.carbondata.processing.sortandgroupby.sortDataStep;
 import java.util.List;
 import java.util.Map;
 
-import org.carbondata.processing.util.MolapDataProcessorUtil;
+import org.carbondata.processing.util.CarbonDataProcessorUtil;
 import org.pentaho.di.core.CheckResultInterface;
 import org.pentaho.di.core.Counter;
 import org.pentaho.di.core.database.DatabaseMeta;
@@ -235,7 +235,7 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
                     (int) rep.getStepAttributeInteger(idStep, "currentRestructNumber");
         } catch (Exception ex) {
             throw new KettleException(BaseMessages.getString(PKG,
-                    "MolapDataWriterStepMeta.Exception.UnexpectedErrorInReadingStepInfo",
+                    "CarbonDataWriterStepMeta.Exception.UnexpectedErrorInReadingStepInfo",
                     new String[0]), ex);
         }
     }
@@ -253,7 +253,7 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
      */
     public void check(List<CheckResultInterface> remarks, TransMeta transMeta, StepMeta stepMeta,
             RowMetaInterface prev, String[] input, String[] output, RowMetaInterface info) {
-        MolapDataProcessorUtil.checkResult(remarks, stepMeta, input);
+        CarbonDataProcessorUtil.checkResult(remarks, stepMeta, input);
     }
 
     /**

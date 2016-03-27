@@ -32,8 +32,8 @@ import java.io.File;
 import java.util.List;
 
 import junit.framework.TestCase;
-import org.carbondata.core.util.MolapUtil;
-import org.carbondata.core.util.MolapUtilException;
+import org.carbondata.core.util.CarbonUtil;
+import org.carbondata.core.util.CarbonUtilException;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -79,8 +79,8 @@ public class MolapDataProcessor_FT extends TestCase {
         File file = new File("");
         s[0] = file.getAbsolutePath() + File.separator + "../unibi-solutions";
         try {
-            MolapUtil.deleteFoldersAndFiles(s);
-        } catch (MolapUtilException e) {
+            CarbonUtil.deleteFoldersAndFiles(s);
+        } catch (CarbonUtilException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }

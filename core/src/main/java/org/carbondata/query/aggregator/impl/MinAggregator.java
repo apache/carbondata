@@ -23,9 +23,9 @@ import java.io.*;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.aggregator.MeasureAggregator;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
  * Class Description : It will return min of values
@@ -66,10 +66,10 @@ public class MinAggregator extends AbstractMeasureAggregatorMaxMin {
             out.writeObject(aggVal);
             objectBytes = bos.toByteArray();
         } catch (IOException e) {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
                     "Problem while getting byte array in minaggregator: " + e.getMessage());
         } finally {
-            MolapUtil.closeStreams(bos);
+            CarbonUtil.closeStreams(bos);
         }
         return objectBytes;
     }
@@ -103,10 +103,10 @@ public class MinAggregator extends AbstractMeasureAggregatorMaxMin {
             dataOutputVal1.write(objectBytes, 0, objectBytes.length);
         } catch (Exception e) {
 
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
                     "Problem while getting byte array in minaggregator: " + e.getMessage());
         } finally {
-            MolapUtil.closeStreams(bos);
+            CarbonUtil.closeStreams(bos);
         }
     }
 
@@ -123,10 +123,10 @@ public class MinAggregator extends AbstractMeasureAggregatorMaxMin {
             in = new ObjectInputStream(bis);
             aggVal = (Comparable<Object>) in.readObject();
         } catch (Exception e) {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
                     "Problem while getting byte array in minaggregator: " + e.getMessage());
         } finally {
-            MolapUtil.closeStreams(bis);
+            CarbonUtil.closeStreams(bis);
         }
     }
 
@@ -152,10 +152,10 @@ public class MinAggregator extends AbstractMeasureAggregatorMaxMin {
             internalAgg(newVal);
             firstTime = false;
         } catch (Exception e) {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
                     "Problem while merging byte array in minaggregator: " + e.getMessage());
         } finally {
-            MolapUtil.closeStreams(bis);
+            CarbonUtil.closeStreams(bis);
         }
 
     }

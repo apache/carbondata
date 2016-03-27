@@ -29,10 +29,10 @@ import java.util.concurrent.ExecutorService;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.metadata.MolapSchemaReader;
-import org.carbondata.core.olap.MolapDef;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.metadata.CarbonSchemaReader;
+import org.carbondata.core.carbon.CarbonDef;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 
 public class DimensionHierarichyStore {
     /**
@@ -45,7 +45,7 @@ public class DimensionHierarichyStore {
      * Maintains all the hierarchies
      */
     private Map<String, HierarchyStore> hiers =
-            new HashMap<String, HierarchyStore>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+            new HashMap<String, HierarchyStore>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     /**
      * Can hold members, each level
      * column name and the cache
@@ -56,24 +56,24 @@ public class DimensionHierarichyStore {
      */
     private String cubeName;
 
-    public DimensionHierarichyStore(MolapDef.CubeDimension dimension,
+    public DimensionHierarichyStore(CarbonDef.CubeDimension dimension,
             Map<String, MemberStore> membersCache, String cubeName, String factTableName,
-            MolapDef.Schema schema) {
+            CarbonDef.Schema schema) {
         this.membersCache = membersCache;
         this.cubeName = cubeName;
 
-        org.carbondata.core.olap.MolapDef.Hierarchy[] extractHierarchies =
-                MolapSchemaReader.extractHierarchies(schema, dimension);
+        CarbonDef.Hierarchy[] extractHierarchies =
+                CarbonSchemaReader.extractHierarchies(schema, dimension);
         if (null != extractHierarchies) {
-            for (org.carbondata.core.olap.MolapDef.Hierarchy hierarchy : extractHierarchies) {
+            for (CarbonDef.Hierarchy hierarchy : extractHierarchies) {
                 String hName = hierarchy.name == null ? dimension.name : hierarchy.name;
 
                 hiers.put(hName, new HierarchyStore(hierarchy, factTableName, dimension.name));
 
-                for (MolapDef.Level level : hierarchy.levels) {
+                for (CarbonDef.Level level : hierarchy.levels) {
                     String tableName = hierarchy.relation == null ?
                             factTableName :
-                            ((MolapDef.Table) hierarchy.relation).name;
+                            ((CarbonDef.Table) hierarchy.relation).name;
                     // Store empty members
                     // if(!level.isAll())
                     // {
@@ -193,15 +193,15 @@ public class DimensionHierarichyStore {
         try {
             // Process hierarchies cache
             for (final HierarchyStore hCache : hiers.values()) {
-                MolapDef.Level[] levels = hCache.getRolapHierarchy().levels;
+                CarbonDef.Level[] levels = hCache.getRolapHierarchy().levels;
                 final List<String> dimNames =
-                        new ArrayList<String>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+                        new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
                 int depth = 0;
                 final String tableName = hCache.getRolapHierarchy().relation == null ?
                         hCache.getFactTableName() :
-                        ((MolapDef.Table) hCache.getRolapHierarchy().relation).name;
+                        ((CarbonDef.Table) hCache.getRolapHierarchy().relation).name;
                 for (int i = 0; i < levels.length; i++) {
-                    final MolapDef.Level tempLevel = levels[i];
+                    final CarbonDef.Level tempLevel = levels[i];
                     //                    if(!level3.isAll())
                     //                    {
                     depth++;
@@ -230,7 +230,7 @@ public class DimensionHierarichyStore {
                 // }
             }
         } catch (IOException e) {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
             return false;
         }
 
@@ -244,7 +244,7 @@ public class DimensionHierarichyStore {
      * @param level3
      */
     private void loadDimensionLevels(String fileStore, HierarchyStore hCache, List<String> dimNames,
-            MolapDef.Level level3, String hierarchyName, String tableName, String dimensionName) {
+            CarbonDef.Level level3, String hierarchyName, String tableName, String dimensionName) {
 
         // Process level cache
         if (hierarchyName.contains(".")) {

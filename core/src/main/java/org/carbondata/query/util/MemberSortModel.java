@@ -23,9 +23,9 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.ByteUtil;
-import org.carbondata.core.util.MolapProperties;
+import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.query.datastorage.DataType;
 
 /**
@@ -82,9 +82,9 @@ public class MemberSortModel implements Comparable<MemberSortModel> {
 
             return d1.compareTo(d2);
         case TIMESTAMP:
-            SimpleDateFormat timeParser = new SimpleDateFormat(MolapProperties.getInstance()
-                    .getProperty(MolapCommonConstants.MOLAP_TIMESTAMP_FORMAT,
-                            MolapCommonConstants.MOLAP_TIMESTAMP_DEFAULT_FORMAT));
+            SimpleDateFormat timeParser = new SimpleDateFormat(CarbonProperties.getInstance()
+                    .getProperty(CarbonCommonConstants.MOLAP_TIMESTAMP_FORMAT,
+                            CarbonCommonConstants.MOLAP_TIMESTAMP_DEFAULT_FORMAT));
             Date date1 = null;
             Date date2 = null;
             try {

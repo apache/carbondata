@@ -22,9 +22,9 @@ package org.carbondata.query.executer.groupby;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.keygenerator.KeyGenerator;
-import org.carbondata.core.metadata.MolapMetadata.Measure;
+import org.carbondata.core.metadata.CarbonMetadata.Measure;
 import org.carbondata.query.aggregator.CalculatedMeasureAggregator;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.aggregator.impl.CalculatedMeasureAggregatorImpl;
@@ -49,12 +49,12 @@ public class GroupByHolder {
     /**
      * rows list
      */
-    private List<byte[]> rows = new ArrayList<byte[]>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+    private List<byte[]> rows = new ArrayList<byte[]>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
     /**
      * rows list
      */
     private List<MeasureAggregator[]> msrs =
-            new ArrayList<MeasureAggregator[]>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+            new ArrayList<MeasureAggregator[]>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
 
     //    /**
     //     * MeasureAggregator

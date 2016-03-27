@@ -27,9 +27,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.csvreader.checkpoint.exception.CheckPointException;
-import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.util.CarbonUtil;
 
 public class CSVCheckPointHandler implements CheckPointInterface {
 
@@ -68,11 +68,11 @@ public class CSVCheckPointHandler implements CheckPointInterface {
     public Map<String, Long> getCheckPointCache() throws CheckPointException {
         // create cache
         Map<String, Long> checkPointCache =
-                new HashMap<String, Long>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                new HashMap<String, Long>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
         File checkPointFile = new File(
-                this.fileLocation + File.separator + MolapCommonConstants.CHECKPOINT_FILE_NAME
-                        + fileName + MolapCommonConstants.CHECKPOINT_EXT);
+                this.fileLocation + File.separator + CarbonCommonConstants.CHECKPOINT_FILE_NAME
+                        + fileName + CarbonCommonConstants.CHECKPOINT_EXT);
         // if file not present then last execution was successful return empty map
         if (!checkPointFile.exists()) {
             return checkPointCache;
@@ -92,11 +92,11 @@ public class CSVCheckPointHandler implements CheckPointInterface {
             //            Record format: <TotalLenght><FileLength><FileName><Offset>
             //                            <Int><Int><Int><Long>
             while (currentOffSet < fileSize) {
-                ByteBuffer buffer = ByteBuffer.allocate(MolapCommonConstants.INT_SIZE_IN_BYTE);
+                ByteBuffer buffer = ByteBuffer.allocate(CarbonCommonConstants.INT_SIZE_IN_BYTE);
                 fileChannel.read(buffer);
                 buffer.rewind();
                 int totalSize = buffer.getInt();
-                currentOffSet += MolapCommonConstants.INT_SIZE_IN_BYTE;
+                currentOffSet += CarbonCommonConstants.INT_SIZE_IN_BYTE;
                 buffer = ByteBuffer.allocate(totalSize);
                 fileChannel.read(buffer);
                 buffer.rewind();
@@ -111,7 +111,7 @@ public class CSVCheckPointHandler implements CheckPointInterface {
         } catch (IOException e) {
             throw new CheckPointException(e);
         } finally {
-            MolapUtil.closeStreams(fileChannel, stream);
+            CarbonUtil.closeStreams(fileChannel, stream);
         }
         return checkPointCache;
     }
@@ -127,17 +127,17 @@ public class CSVCheckPointHandler implements CheckPointInterface {
         byte[] nameBytes = null;
         DataOutputStream stream = null;
         String actualFileName =
-                this.fileLocation + File.separator + MolapCommonConstants.CHECKPOINT_FILE_NAME
-                        + fileName + MolapCommonConstants.CHECKPOINT_EXT;
-        File newFile = new File(actualFileName + MolapCommonConstants.FILE_INPROGRESS_STATUS);
+                this.fileLocation + File.separator + CarbonCommonConstants.CHECKPOINT_FILE_NAME
+                        + fileName + CarbonCommonConstants.CHECKPOINT_EXT;
+        File newFile = new File(actualFileName + CarbonCommonConstants.FILE_INPROGRESS_STATUS);
         try {
             stream = new DataOutputStream(
                     new BufferedOutputStream(new FileOutputStream(newFile), 1024));
 
             for (Entry<String, Long> entrySet : checkPointCache.entrySet()) {
                 nameBytes = entrySet.getKey().getBytes(Charset.defaultCharset());
-                stream.writeInt(MolapCommonConstants.INT_SIZE_IN_BYTE + nameBytes.length
-                        + MolapCommonConstants.LONG_SIZE_IN_BYTE);
+                stream.writeInt(CarbonCommonConstants.INT_SIZE_IN_BYTE + nameBytes.length
+                        + CarbonCommonConstants.LONG_SIZE_IN_BYTE);
                 stream.writeInt(nameBytes.length);
                 stream.write(nameBytes);
                 long offset = entrySet.getValue();
@@ -148,17 +148,17 @@ public class CSVCheckPointHandler implements CheckPointInterface {
         } catch (IOException e) {
             throw new CheckPointException("Problem while writing the check point file", e);
         } finally {
-            MolapUtil.closeStreams(stream);
+            CarbonUtil.closeStreams(stream);
             File olderFile = new File(actualFileName);
             if (olderFile.exists()) {
-                File oldFile = new File(actualFileName + MolapCommonConstants.BAK_EXT);
+                File oldFile = new File(actualFileName + CarbonCommonConstants.BAK_EXT);
                 if (oldFile.exists()) {
                     if (olderFile.delete()) {
                         throw new CheckPointException(
                                 "Problem while deleting the older .bak extension check point file.");
                     }
                 }
-                if (!olderFile.renameTo(new File(actualFileName + MolapCommonConstants.BAK_EXT))) {
+                if (!olderFile.renameTo(new File(actualFileName + CarbonCommonConstants.BAK_EXT))) {
                     throw new CheckPointException(
                             "Problem while renaming the older check point file extension to .bak");
                 }

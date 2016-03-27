@@ -19,27 +19,27 @@
 
 package org.carbondata.query.result;
 
-import org.carbondata.query.scanner.impl.MolapKey;
-import org.carbondata.query.scanner.impl.MolapValue;
+import org.carbondata.query.scanner.impl.CarbonKey;
+import org.carbondata.query.scanner.impl.CarbonValue;
 
 public class RowResult {
-    private MolapKey key;
+    private CarbonKey key;
 
-    private MolapValue value;
+    private CarbonValue value;
 
-    public MolapKey getKey() {
+    public CarbonKey getKey() {
         return key;
     }
 
-    public void setKey(MolapKey key) {
+    public void setKey(CarbonKey key) {
         this.key = key;
     }
 
-    public MolapValue getValue() {
+    public CarbonValue getValue() {
         return value;
     }
 
-    public void setValue(MolapValue value) {
+    public void setValue(CarbonValue value) {
         this.value = value;
     }
 }

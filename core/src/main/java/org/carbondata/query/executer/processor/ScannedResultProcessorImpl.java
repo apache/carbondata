@@ -31,10 +31,10 @@ import java.util.concurrent.TimeUnit;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
-import org.carbondata.core.iterator.MolapIterator;
-import org.carbondata.core.util.MolapProperties;
+import org.carbondata.core.iterator.CarbonIterator;
+import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.query.executer.exception.QueryExecutionException;
 import org.carbondata.query.executer.pagination.impl.DataFileWriter;
 import org.carbondata.query.executer.pagination.impl.QueryResult;
@@ -51,7 +51,7 @@ import org.carbondata.query.result.impl.ListBasedResult;
 import org.carbondata.query.result.impl.MapBasedResult;
 import org.carbondata.query.schema.metadata.DataProcessorInfo;
 import org.carbondata.query.schema.metadata.SliceExecutionInfo;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 import org.carbondata.query.util.ScannedResultProcessorUtil;
 import org.carbondata.query.writer.WriterExecutor;
 import org.carbondata.query.writer.exception.ResultWriterException;
@@ -73,11 +73,11 @@ public class ScannedResultProcessorImpl implements ScannedResultProcessor {
      */
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(ScannedResultProcessorImpl.class.getName());
-    private static long internalMergeLimit = Long.parseLong(MolapProperties.getInstance()
-            .getProperty(MolapCommonConstants.PAGINATED_INTERNAL_MERGE_SIZE_LIMIT,
-                    MolapCommonConstants.PAGINATED_INTERNAL_MERGE_SIZE_LIMIT_DEFAULT))
-            * MolapCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
-            * MolapCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR;
+    private static long internalMergeLimit = Long.parseLong(CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.PAGINATED_INTERNAL_MERGE_SIZE_LIMIT,
+                    CarbonCommonConstants.PAGINATED_INTERNAL_MERGE_SIZE_LIMIT_DEFAULT))
+            * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
+            * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR;
     private final Map<String, String> processedFileMap;
     private Result mergedScannedResult;
     private SliceExecutionInfo info;
@@ -96,13 +96,13 @@ public class ScannedResultProcessorImpl implements ScannedResultProcessor {
         writerExecutor = new WriterExecutor();
 
         this.outLocation =
-                info.getOutLocation() + '/' + MolapCommonConstants.SPILL_OVER_DISK_PATH + info
+                info.getOutLocation() + '/' + CarbonCommonConstants.SPILL_OVER_DISK_PATH + info
                         .getSchemaName() + '/' + info.getCubeName() + '/' + System.nanoTime();
         this.interMediateLocation = outLocation + '/' + info.getQueryId();
 
         this.mergerExecutor = new MergerExecutor();
         this.processedFileMap =
-                new HashMap<String, String>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                new HashMap<String, String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
         dataProcessorInfo = ScannedResultProcessorUtil.getDataProcessorInfo(info,
                 ScannedResultProcessorUtil
@@ -114,7 +114,7 @@ public class ScannedResultProcessorImpl implements ScannedResultProcessor {
 
         initialiseResult();
         execService = Executors.newFixedThreadPool(1);
-        scannedResultList = new ArrayList<Result>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+        scannedResultList = new ArrayList<Result>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     }
 
     /**
@@ -139,7 +139,7 @@ public class ScannedResultProcessorImpl implements ScannedResultProcessor {
                     && recordCounter >= this.info.getNumberOfRecordsInMemory())) {
                 List<Result> localResult = scannedResultList;
                 scannedResultList =
-                        new ArrayList<Result>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                        new ArrayList<Result>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
                 execService.submit(new MergerThread(localResult));
             }
         }
@@ -148,7 +148,7 @@ public class ScannedResultProcessorImpl implements ScannedResultProcessor {
     private void mergeScannedResultsAndWriteToFile(List<Result> scannedResult)
             throws QueryExecutionException {
         long start = System.currentTimeMillis();
-        LOGGER.debug(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "Started a slice result merging");
+        LOGGER.debug(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "Started a slice result merging");
 
         for (int i = 0; i < scannedResult.size(); i++) {
             mergedScannedResult.merge(scannedResult.get(i));
@@ -167,7 +167,7 @@ public class ScannedResultProcessorImpl implements ScannedResultProcessor {
             isFileBased = true;
         }
 
-        LOGGER.debug(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.debug(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                 "Finished current slice result merging in time (MS) " + (System.currentTimeMillis()
                         - start));
     }
@@ -182,7 +182,7 @@ public class ScannedResultProcessorImpl implements ScannedResultProcessor {
                             "Problem while creating Spill Over Directory");
                 }
             }
-            LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                     "********************************File based query execution");
         } catch (IOException e) {
             throw new QueryExecutionException(e);
@@ -190,12 +190,12 @@ public class ScannedResultProcessorImpl implements ScannedResultProcessor {
     }
 
     @Override
-    public MolapIterator<QueryResult> getQueryResultIterator() throws QueryExecutionException {
+    public CarbonIterator<QueryResult> getQueryResultIterator() throws QueryExecutionException {
         execService.shutdown();
         try {
             execService.awaitTermination(1, TimeUnit.DAYS);
         } catch (InterruptedException e1) {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                     "Problem in thread termination" + e1.getMessage());
         }
 
@@ -204,7 +204,7 @@ public class ScannedResultProcessorImpl implements ScannedResultProcessor {
             scannedResultList = null;
         }
 
-        LOGGER.debug(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.debug(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                 "Finished result merging from all slices");
 
         DataProcessorExt processor = getProcessor();
@@ -240,8 +240,8 @@ public class ScannedResultProcessorImpl implements ScannedResultProcessor {
             try {
                 mergerExecutor.mergeFinalResult(processor, dataProcessorInfo,
                         ScannedResultProcessorUtil.getFiles(interMediateLocation,
-                                new String[] { MolapCommonConstants.QUERY_OUT_FILE_EXT,
-                                        MolapCommonConstants.QUERY_MERGED_FILE_EXT }));
+                                new String[] { CarbonCommonConstants.QUERY_OUT_FILE_EXT,
+                                        CarbonCommonConstants.QUERY_MERGED_FILE_EXT }));
             } catch (Exception e) {
                 throw new QueryExecutionException(e);
             }
@@ -283,13 +283,13 @@ public class ScannedResultProcessorImpl implements ScannedResultProcessor {
         try {
             writerExecutor.closeWriter();
         } catch (ResultWriterException e) {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                     "Problem while closing stream" + e.getMessage());
         }
         try {
             mergerExecutor.closeMerger();
         } catch (ResultWriterException e) {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                     "Problem while closing stream" + e.getMessage());
         }
     }

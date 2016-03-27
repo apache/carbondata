@@ -23,10 +23,10 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.query.expression.exception.FilterUnsupportedException;
-import org.carbondata.query.molapfilterinterface.ExpressionType;
-import org.carbondata.query.molapfilterinterface.RowIntf;
+import org.carbondata.query.carbonfilterinterface.ExpressionType;
+import org.carbondata.query.carbonfilterinterface.RowIntf;
 
 public abstract class Expression implements Serializable {
 
@@ -35,7 +35,7 @@ public abstract class Expression implements Serializable {
      */
     private static final long serialVersionUID = -7568676723039530713L;
     protected List<Expression> children =
-            new ArrayList<Expression>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+            new ArrayList<Expression>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
     public abstract ExpressionResult evaluate(RowIntf value) throws FilterUnsupportedException;
 

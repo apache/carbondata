@@ -28,11 +28,11 @@ import java.util.List;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreDataHolder;
-import org.carbondata.core.metadata.MolapMetadata.Measure;
-import org.carbondata.core.olap.SqlStatement;
-import org.carbondata.core.olap.SqlStatement.Type;
+import org.carbondata.core.metadata.CarbonMetadata.Measure;
+import org.carbondata.core.carbon.SqlStatement;
+import org.carbondata.core.carbon.SqlStatement.Type;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.aggregator.util.AggUtil;
 import org.carbondata.query.complex.querytypes.GenericQueryType;
@@ -42,11 +42,11 @@ import org.carbondata.query.expression.ColumnExpression;
 import org.carbondata.query.expression.Expression;
 import org.carbondata.query.expression.conditional.ConditionalExpression;
 import org.carbondata.query.expression.exception.FilterUnsupportedException;
-import org.carbondata.query.molapfilterinterface.RowImpl;
-import org.carbondata.query.molapfilterinterface.RowIntf;
+import org.carbondata.query.carbonfilterinterface.RowImpl;
+import org.carbondata.query.carbonfilterinterface.RowIntf;
 import org.carbondata.query.schema.metadata.FilterEvaluatorInfo;
 import org.carbondata.query.util.DataTypeConverter;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 import org.carbondata.query.util.QueryExecutorUtility;
 
 public class RowLevelFilterEvalutor extends AbstractConditionalEvalutor {
@@ -88,7 +88,7 @@ public class RowLevelFilterEvalutor extends AbstractConditionalEvalutor {
                                 info.getNewDimensionSurrogates()[newDimensionIndex]);
                         dimColumnEvaluatorInfo.setDefaultValue(
                                 info.getNewDimensionDefaultValue()[newDimensionIndex]
-                                        .equals(MolapCommonConstants.MEMBER_DEFAULT_VAL) ?
+                                        .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL) ?
                                         null :
                                         info.getNewDimensionDefaultValue()[newDimensionIndex]);
                     }
@@ -186,7 +186,7 @@ public class RowLevelFilterEvalutor extends AbstractConditionalEvalutor {
                     set.set(index);
                 }
             } catch (FilterUnsupportedException e) {
-                LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e, e.getMessage());
+                LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e, e.getMessage());
             }
         }
         //CHECKSTYLE:ON
@@ -215,7 +215,7 @@ public class RowLevelFilterEvalutor extends AbstractConditionalEvalutor {
                                 columnarKeyStoreDataHolder, index);
                         if (null != member) {
                             memberString = member.toString();
-                            if (memberString.equals(MolapCommonConstants.MEMBER_DEFAULT_VAL)) {
+                            if (memberString.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
                                 memberString = null;
                             }
                         }
@@ -235,7 +235,7 @@ public class RowLevelFilterEvalutor extends AbstractConditionalEvalutor {
 
                     if (null != member) {
                         memberString = member.toString();
-                        if (memberString.equals(MolapCommonConstants.MEMBER_DEFAULT_VAL)) {
+                        if (memberString.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
                             memberString = null;
                         }
                     }
@@ -259,7 +259,7 @@ public class RowLevelFilterEvalutor extends AbstractConditionalEvalutor {
                                     dimColumnEvaluatorInfo.getDimensions());
                     byteStream.close();
                 } catch (IOException e) {
-                    LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e, e.getMessage());
+                    LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e, e.getMessage());
                 }
 
             }

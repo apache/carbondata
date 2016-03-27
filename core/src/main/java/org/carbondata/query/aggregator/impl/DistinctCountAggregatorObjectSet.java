@@ -27,8 +27,8 @@ import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.datastorage.store.dataholder.MolapReadDataHolder;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.carbondata.query.aggregator.MeasureAggregator;
 
 public class DistinctCountAggregatorObjectSet implements MeasureAggregator {
@@ -44,7 +44,7 @@ public class DistinctCountAggregatorObjectSet implements MeasureAggregator {
     private Set<Object> valueSetForObj;
 
     public DistinctCountAggregatorObjectSet() {
-        valueSetForObj = new HashSet<Object>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+        valueSetForObj = new HashSet<Object>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     }
 
     /**
@@ -77,7 +77,7 @@ public class DistinctCountAggregatorObjectSet implements MeasureAggregator {
     }
 
     @Override
-    public void agg(MolapReadDataHolder newVal, int index) {
+    public void agg(CarbonReadDataHolder newVal, int index) {
         valueSetForObj.add(newVal.getReadableDoubleValueByIndex(index));
     }
 

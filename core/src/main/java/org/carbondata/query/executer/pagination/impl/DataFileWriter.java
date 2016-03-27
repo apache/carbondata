@@ -26,18 +26,18 @@ import java.util.concurrent.Callable;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.KeyGenerator;
-import org.carbondata.core.metadata.MolapMetadata.Dimension;
-import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.metadata.CarbonMetadata.Dimension;
+import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.aggregator.MeasureAggregator;
-import org.carbondata.query.datastorage.InMemoryCube;
+import org.carbondata.query.datastorage.InMemoryTable;
 import org.carbondata.query.executer.Tuple;
 import org.carbondata.query.executer.pagination.PaginationModel;
 import org.carbondata.query.executer.pagination.lru.LRUCacheKey;
 import org.carbondata.query.result.Result;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 import org.carbondata.query.wrappers.ByteArrayWrapper;
 
 //import java.lang.reflect.Constructor;
@@ -76,7 +76,7 @@ public class DataFileWriter implements Callable<Void> {
     /**
      * slices
      */
-    private List<InMemoryCube> slices;
+    private List<InMemoryTable> slices;
     /**
      * queryDimension
      */
@@ -122,7 +122,7 @@ public class DataFileWriter implements Callable<Void> {
      * @param holderType
      */
     private DataFileWriter(String outLocation, String queryId, String holderType,
-            LRUCacheKey holder, List<InMemoryCube> slices, Dimension[] queryDimension,
+            LRUCacheKey holder, List<InMemoryTable> slices, Dimension[] queryDimension,
             KeyGenerator keyGenerator, int[] maskedKeyRanges, byte[] maxKey) {
         this.outLocation = outLocation;
         this.holder = holder;
@@ -131,9 +131,9 @@ public class DataFileWriter implements Callable<Void> {
         this.keyGenerator = keyGenerator;
         this.maskedKeyRanges = maskedKeyRanges;
         this.maxKey = maxKey;
-        if (MolapCommonConstants.MAP.equals(holderType)) {
+        if (CarbonCommonConstants.MAP.equals(holderType)) {
             recordHolderType = RecordHolderType.MAP;
-        } else if (MolapCommonConstants.HEAP.equals(holderType)) {
+        } else if (CarbonCommonConstants.HEAP.equals(holderType)) {
             recordHolderType = RecordHolderType.HEAP;
         }
         updateDuplicateDimensions();
@@ -201,13 +201,13 @@ public class DataFileWriter implements Callable<Void> {
         DataOutputStream dataOutput = null;
         try {
             if (!new File(this.outLocation).mkdirs()) {
-                LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                         "Problem while creating the pagination directory");
             }
             File file = new File(this.outLocation + File.separator + System.nanoTime() + ".tmp");
             bout = new BufferedOutputStream(new FileOutputStream(file),
-                    MolapCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
-                            * MolapCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR);
+                    CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
+                            * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR);
             dataOutput = new DataOutputStream(bout);
             switch (recordHolderType) {
             case MAP:
@@ -220,7 +220,7 @@ public class DataFileWriter implements Callable<Void> {
                 dataOutput.writeInt(size);
                 break;
             default:
-                LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                         "recordHolderType is other than map/heap" + recordHolderType);
                 break;
 
@@ -228,16 +228,16 @@ public class DataFileWriter implements Callable<Void> {
             bout.close();
             dataOutput.close();
             File dest = new File(this.outLocation + File.separator + System.nanoTime()
-                    + MolapCommonConstants.QUERY_OUT_FILE_EXT);
+                    + CarbonCommonConstants.QUERY_OUT_FILE_EXT);
             if (!file.renameTo(dest)) {
-                LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                         "Problem while renaming the file");
             }
             holder.setIncrementalSize(dest.length());
         } catch (Exception e) {
             throw e;
         } finally {
-            MolapUtil.closeStreams(dataOutput, bout);
+            CarbonUtil.closeStreams(dataOutput, bout);
         }
         this.dataMap = null;
         this.dataHeap = null;
@@ -290,7 +290,7 @@ public class DataFileWriter implements Callable<Void> {
         Map<ByteArrayWrapper, MeasureAggregator[]> map = dataMap;
         if (!isNormalized) {
             map = new HashMap<ByteArrayWrapper, MeasureAggregator[]>(
-                    MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                    CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
             for (Entry<ByteArrayWrapper, MeasureAggregator[]> entrySet : this.dataMap.entrySet()) {
                 ByteArrayWrapper key = entrySet.getKey();
                 byte[] maskedKey = key.getMaskedKey();
@@ -431,7 +431,7 @@ public class DataFileWriter implements Callable<Void> {
      */
     private void updateDuplicateDimensions() {
         List<Dimension> dimensions =
-                new ArrayList<Dimension>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+                new ArrayList<Dimension>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
 
         for (int i = 0; i < queryDimension.length; i++) {
             boolean found = false;
@@ -455,13 +455,13 @@ public class DataFileWriter implements Callable<Void> {
      * @return sort index
      */
     private int getSortIndexById(String columnName, int id) {
-        for (InMemoryCube slice : slices) {
+        for (InMemoryTable slice : slices) {
             int index = slice.getMemberCache(columnName).getSortedIndex(id);
-            if (index != -MolapCommonConstants.DIMENSION_DEFAULT) {
+            if (index != -CarbonCommonConstants.DIMENSION_DEFAULT) {
                 return index;
             }
         }
-        return -MolapCommonConstants.DIMENSION_DEFAULT;
+        return -CarbonCommonConstants.DIMENSION_DEFAULT;
     }
 
     /**

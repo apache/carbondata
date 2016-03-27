@@ -23,10 +23,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.compression.SnappyCompression.SnappyByteCompression;
-import org.carbondata.core.util.MolapUtil;
-import org.carbondata.processing.sortandgroupby.exception.MolapSortKeyAndGroupByException;
+import org.carbondata.core.util.CarbonUtil;
+import org.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 
 public class CompressedTempSortFileWriter extends AbstractTempSortFileWriter {
 
@@ -48,14 +48,14 @@ public class CompressedTempSortFileWriter extends AbstractTempSortFileWriter {
      *
      * @param records
      */
-    public void writeSortTempFile(Object[][] records) throws MolapSortKeyAndGroupByException {
+    public void writeSortTempFile(Object[][] records) throws CarbonSortKeyAndGroupByException {
         DataOutputStream dataOutputStream = null;
         ByteArrayOutputStream blockDataArray = null;
         int totalSize = 0;
         int recordSize = 0;
         try {
-            recordSize = (measureCount * MolapCommonConstants.DOUBLE_SIZE_IN_BYTE) + (dimensionCount
-                    * MolapCommonConstants.INT_SIZE_IN_BYTE);
+            recordSize = (measureCount * CarbonCommonConstants.DOUBLE_SIZE_IN_BYTE) + (dimensionCount
+                    * CarbonCommonConstants.INT_SIZE_IN_BYTE);
             totalSize = records.length * recordSize;
 
             blockDataArray = new ByteArrayOutputStream(totalSize);
@@ -72,10 +72,10 @@ public class CompressedTempSortFileWriter extends AbstractTempSortFileWriter {
             stream.write(byteArray);
 
         } catch (IOException e) {
-            throw new MolapSortKeyAndGroupByException(e);
+            throw new CarbonSortKeyAndGroupByException(e);
         } finally {
-            MolapUtil.closeStreams(blockDataArray);
-            MolapUtil.closeStreams(dataOutputStream);
+            CarbonUtil.closeStreams(blockDataArray);
+            CarbonUtil.closeStreams(dataOutputStream);
         }
     }
 }

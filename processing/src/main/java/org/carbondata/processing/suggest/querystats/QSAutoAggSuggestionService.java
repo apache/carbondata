@@ -24,8 +24,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.carbondata.core.olap.MolapDef;
-import org.carbondata.core.olap.MolapDef.Cube;
+import org.carbondata.core.carbon.CarbonDef;
+import org.carbondata.core.carbon.CarbonDef.Cube;
 import org.carbondata.processing.suggest.autoagg.AutoAggSuggestionService;
 import org.carbondata.processing.suggest.autoagg.exception.AggSuggestException;
 import org.carbondata.processing.suggest.autoagg.model.AggSuggestion;
@@ -156,7 +156,7 @@ public class QSAutoAggSuggestionService implements AutoAggSuggestionService {
     }
 
     private Level[] getLevel(int[] dimOrdinal, Cube cube) {
-        MolapDef.CubeDimension[] dimensions = cube.dimensions;
+        CarbonDef.CubeDimension[] dimensions = cube.dimensions;
         Level[] levels = new Level[dimOrdinal.length];
         int index = 0;
         int prevOrdinal = -1;

@@ -21,7 +21,7 @@ package org.carbondata.query.executer.calcexp.impl;
 
 import java.util.List;
 
-import org.carbondata.core.metadata.MolapMetadata.Measure;
+import org.carbondata.core.metadata.CarbonMetadata.Measure;
 
 public class CalcExpressionModel {
     /**

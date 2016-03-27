@@ -68,13 +68,13 @@ public class MolapMDKeyGenStep_FT extends TestCase {
     //        {
     //            assertTrue(false);
     //        }
-    //        Schema schema = MolapSchemaParser.loadXML(file.getAbsolutePath() + File.separator + "test" + File.separator
+    //        Schema schema = CarbonSchemaParser.loadXML(file.getAbsolutePath() + File.separator + "test" + File.separator
     //                + "resources" + File.separator + "Vishal5SecondsTest1.xml");
-    //        Cube mondrianCubes = MolapSchemaParser.getMondrianCubes(schema);
-    //        Map<String, String> cardinalities = MolapSchemaParser.getCardinalities(mondrianCubes.dimensions);
-    //        String[] cubeDimensions = MolapSchemaParser.getCubeDimensions(mondrianCubes);
+    //        Cube mondrianCubes = CarbonSchemaParser.getMondrianCubes(schema);
+    //        Map<String, String> cardinalities = CarbonSchemaParser.getCardinalities(mondrianCubes.dimensions);
+    //        String[] cubeDimensions = CarbonSchemaParser.getCubeDimensions(mondrianCubes);
     //        aggLevels = getAggregateLevelCardinalities(cardinalities, cubeDimensions);
-    //        tableName = MolapSchemaParser.getFactTableName(mondrianCubes);
+    //        tableName = CarbonSchemaParser.getFactTableName(mondrianCubes);
     //        storeLocation = schema.name + File.separator + mondrianCubes.name;
     //        String baseStorelocation = MolapCommonConstants.STORE_LOCATION_DEFAULT_VAL + File.separator + storeLocation;
     //        int counter = MolapUtil.checkAndReturnNextFolderNumber(baseStorelocation);

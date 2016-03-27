@@ -23,7 +23,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.carbondata.core.metadata.MolapMetadata.Dimension;
+import org.carbondata.core.metadata.CarbonMetadata.Dimension;
 
 public class DimensionAggregatorInfo implements Serializable {
     /**

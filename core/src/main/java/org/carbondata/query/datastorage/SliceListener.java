@@ -24,8 +24,8 @@ import java.util.Set;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
  * Maintains a list of queries on which are working on the given slice. Once all
@@ -41,16 +41,16 @@ public class SliceListener {
     /**
      * On which slice this is working on
      */
-    private InMemoryCube slice;
+    private InMemoryTable slice;
     /**
      * Queries executing currently on this slice
      */
-    private Set<Long> queries = new HashSet<Long>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+    private Set<Long> queries = new HashSet<Long>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
     /**
      * @param slice
      */
-    public SliceListener(InMemoryCube slice) {
+    public SliceListener(InMemoryTable slice) {
         this.slice = slice;
     }
 
@@ -71,7 +71,7 @@ public class SliceListener {
     }
 
     public void fireQueryFinish(Long queryId) {
-        LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                 "SliceListener: query finished " + queryId);
         //System.out.println("SliceListener: query finished " + queryId);
         //Don't remove till some one makes it as in active
@@ -100,17 +100,17 @@ public class SliceListener {
             // LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
             // "InterruptedException");
             // }
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                     "SliceListener: Unregistering slice " + slice.getID());
             //System.out.println("SliceListener: Unregistering slice " + slice.getID());
 
             //Yes this slice is ready to clear
-            InMemoryCubeStore.getInstance().unRegisterSlice(slice.getCubeUniqueName(), slice);
+            InMemoryTableStore.getInstance().unRegisterSlice(slice.getCubeUniqueName(), slice);
             slice.clean();
 
             // By Sojer z00218041 if the query is in waiting and old execution
             // finished, change QUERY_EXECUTE_STATUS and deal with cache
-            InMemoryCubeStore.getInstance().afterClearQueriesAndCubes(slice.getCubeUniqueName());
+            InMemoryTableStore.getInstance().afterClearQueriesAndCubes(slice.getCubeUniqueName());
         }
     }
 

@@ -28,17 +28,17 @@ import java.util.Set;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.datastorage.store.filesystem.MolapFile;
-import org.carbondata.core.datastorage.store.filesystem.MolapFileFilter;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
+import org.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
-import org.carbondata.core.olap.MolapDef.*;
-import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.carbon.CarbonDef.*;
+import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.processing.etl.DataLoadingException;
 import org.carbondata.processing.schema.metadata.AggregateTable;
-import org.carbondata.processing.util.MolapDataProcessorLogEvent;
-import org.carbondata.processing.util.MolapSchemaParser;
+import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
+import org.carbondata.processing.util.CarbonSchemaParser;
 import org.pentaho.di.trans.steps.textfileinput.TextFileInputField;
 
 public final class GraphExecutionUtil {
@@ -58,20 +58,20 @@ public final class GraphExecutionUtil {
      * @param csvFilePath
      * @return File
      */
-    public static MolapFile getCsvFileToRead(String csvFilePath) {
-        MolapFile csvFile =
+    public static CarbonFile getCsvFileToRead(String csvFilePath) {
+        CarbonFile csvFile =
                 FileFactory.getMolapFile(csvFilePath, FileFactory.getFileType(csvFilePath));
 
-        MolapFile[] listFiles = null;
+        CarbonFile[] listFiles = null;
         if (csvFile.isDirectory()) {
-            listFiles = csvFile.listFiles(new MolapFileFilter() {
+            listFiles = csvFile.listFiles(new CarbonFileFilter() {
                 @Override
-                public boolean accept(MolapFile pathname) {
+                public boolean accept(CarbonFile pathname) {
                     if (!pathname.isDirectory()) {
-                        if (pathname.getName().endsWith(MolapCommonConstants.CSV_FILE_EXTENSION)
+                        if (pathname.getName().endsWith(CarbonCommonConstants.CSV_FILE_EXTENSION)
                                 || pathname.getName().endsWith(
-                                MolapCommonConstants.CSV_FILE_EXTENSION
-                                        + MolapCommonConstants.FILE_INPROGRESS_STATUS)) {
+                                CarbonCommonConstants.CSV_FILE_EXTENSION
+                                        + CarbonCommonConstants.FILE_INPROGRESS_STATUS)) {
                             return true;
                         }
                     }
@@ -80,7 +80,7 @@ public final class GraphExecutionUtil {
                 }
             });
         } else {
-            listFiles = new MolapFile[1];
+            listFiles = new CarbonFile[1];
             listFiles[0] = csvFile;
 
         }
@@ -92,7 +92,7 @@ public final class GraphExecutionUtil {
      * @param measuresInCSVFile
      * @throws DataLoadingException
      */
-    public static TextFileInputField[] getTextInputFiles(MolapFile csvFile,
+    public static TextFileInputField[] getTextInputFiles(CarbonFile csvFile,
             List<String> measureColumns, StringBuilder builder, StringBuilder measuresInCSVFile,
             String delimiter) throws DataLoadingException {
         DataInputStream fileReader = null;
@@ -103,7 +103,7 @@ public final class GraphExecutionUtil {
 
         if (!csvFile.exists()) {
             csvFile = FileFactory.getMolapFile(
-                    csvFile.getAbsolutePath() + MolapCommonConstants.FILE_INPROGRESS_STATUS,
+                    csvFile.getAbsolutePath() + CarbonCommonConstants.FILE_INPROGRESS_STATUS,
                     fileType);
         }
 
@@ -113,15 +113,15 @@ public final class GraphExecutionUtil {
                     new BufferedReader(new InputStreamReader(fileReader, Charset.defaultCharset()));
             readLine = bufferedReader.readLine();
         } catch (FileNotFoundException e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
                     "CSV Input File not found  " + e.getMessage());
             throw new DataLoadingException("CSV Input File not found ", e);
         } catch (IOException e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
                     "Not able to read CSV input File  " + e.getMessage());
             throw new DataLoadingException("Not able to read CSV input File ", e);
         } finally {
-            MolapUtil.closeStreams(fileReader, bufferedReader);
+            CarbonUtil.closeStreams(fileReader, bufferedReader);
         }
 
         if (null != readLine) {
@@ -179,12 +179,12 @@ public final class GraphExecutionUtil {
     public static boolean checkIsFolder(String csvFilePath) {
         try {
             if (FileFactory.isFileExist(csvFilePath, FileFactory.getFileType(csvFilePath), false)) {
-                MolapFile molapFile =
+                CarbonFile carbonFile =
                         FileFactory.getMolapFile(csvFilePath, FileFactory.getFileType(csvFilePath));
-                return molapFile.isDirectory();
+                return carbonFile.isDirectory();
             }
         } catch (IOException e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
                     "Not able check path exists or not  " + e.getMessage() + "path: "
                             + csvFilePath);
         }
@@ -200,9 +200,9 @@ public final class GraphExecutionUtil {
      * @param schema
      */
     public static Set<String> getSchemaColumnNames(Cube cube, String tableName, Schema schema) {
-        Set<String> columnNames = new HashSet<String>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+        Set<String> columnNames = new HashSet<String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-        String factTableName = MolapSchemaParser.getFactTableName(cube);
+        String factTableName = CarbonSchemaParser.getFactTableName(cube);
         if (tableName.equals(factTableName)) {
             CubeDimension[] dimensions = cube.dimensions;
 
@@ -210,7 +210,7 @@ public final class GraphExecutionUtil {
                 String foreignKey = dimension.foreignKey;
                 if (null == foreignKey) {
                     Hierarchy[] extractHierarchies =
-                            MolapSchemaParser.extractHierarchies(schema, dimension);
+                            CarbonSchemaParser.extractHierarchies(schema, dimension);
 
                     for (Hierarchy hier : extractHierarchies) {
                         Level[] levels = hier.levels;
@@ -241,7 +241,7 @@ public final class GraphExecutionUtil {
                 columnNames.add(msr.column);
             }
         } else {
-            AggregateTable[] aggregateTable = MolapSchemaParser.getAggregateTable(cube, schema);
+            AggregateTable[] aggregateTable = CarbonSchemaParser.getAggregateTable(cube, schema);
 
             for (AggregateTable aggTable : aggregateTable) {
                 if (tableName.equals(aggTable.getAggregateTableName())) {
@@ -276,7 +276,7 @@ public final class GraphExecutionUtil {
             String[] columnFromCSV = readLine.split(delimiter);
 
             List<String> csvColumnsList =
-                    new ArrayList<String>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+                    new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
 
             for (String column : columnFromCSV) {
                 csvColumnsList.add(column.replaceAll("\"", ""));
@@ -310,13 +310,13 @@ public final class GraphExecutionUtil {
             readLine = bufferedReader.readLine();
 
         } catch (FileNotFoundException e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
                     "CSV Input File not found  " + e.getMessage());
         } catch (IOException e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
                     "Not able to read CSV input File  " + e.getMessage());
         } finally {
-            MolapUtil.closeStreams(fileReader, bufferedReader);
+            CarbonUtil.closeStreams(fileReader, bufferedReader);
         }
         return readLine;
     }
@@ -335,7 +335,7 @@ public final class GraphExecutionUtil {
             String[] columnFromCSV = readLine.split(delimiter);
 
             List<String> csvColumnsList =
-                    new ArrayList<String>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+                    new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
 
             for (String column : columnFromCSV) {
                 csvColumnsList.add(column.replaceAll("\"", "").trim());
@@ -365,7 +365,7 @@ public final class GraphExecutionUtil {
 
         for (CubeDimension dimension : dimensions) {
             Hierarchy[] extractHierarchies =
-                    MolapSchemaParser.extractHierarchies(schema, dimension);
+                    CarbonSchemaParser.extractHierarchies(schema, dimension);
 
             for (Hierarchy hier : extractHierarchies) {
                 Level[] levels = hier.levels;
@@ -383,15 +383,15 @@ public final class GraphExecutionUtil {
 
     public static Set<String> getDimensionColumnNames(Cube cube, String factTableName,
             String dimTableName, Schema schema) {
-        Set<String> columnNames = new HashSet<String>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+        Set<String> columnNames = new HashSet<String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-        String factTableNameLocal = MolapSchemaParser.getFactTableName(cube);
+        String factTableNameLocal = CarbonSchemaParser.getFactTableName(cube);
         if (factTableName.equals(factTableNameLocal)) {
             CubeDimension[] dimensions = cube.dimensions;
 
             for (CubeDimension dimension : dimensions) {
                 Hierarchy[] extractHierarchies =
-                        MolapSchemaParser.extractHierarchies(schema, dimension);
+                        CarbonSchemaParser.extractHierarchies(schema, dimension);
 
                 for (Hierarchy hier : extractHierarchies) {
                     RelationOrJoin relation = hier.relation;

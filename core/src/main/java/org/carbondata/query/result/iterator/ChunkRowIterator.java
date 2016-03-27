@@ -19,16 +19,16 @@
 
 package org.carbondata.query.result.iterator;
 
-import org.carbondata.core.iterator.MolapIterator;
+import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.query.result.ChunkResult;
 import org.carbondata.query.result.RowResult;
 
-public class ChunkRowIterator implements MolapIterator<RowResult> {
-    private MolapIterator<ChunkResult> iterator;
+public class ChunkRowIterator implements CarbonIterator<RowResult> {
+    private CarbonIterator<ChunkResult> iterator;
 
     private ChunkResult currentchunk;
 
-    public ChunkRowIterator(MolapIterator<ChunkResult> iterator) {
+    public ChunkRowIterator(CarbonIterator<ChunkResult> iterator) {
         this.iterator = iterator;
         if (iterator.hasNext()) {
             currentchunk = iterator.next();

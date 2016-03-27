@@ -23,8 +23,8 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.datastorage.store.filesystem.MolapFile;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
 
@@ -54,7 +54,7 @@ public class AtomicFileOperationsImpl implements AtomicFileOperations {
 
         filePath = filePath.replace("\\", "/");
 
-        tempWriteFilePath = filePath + MolapCommonConstants.TEMPWRITEFILEEXTENSION;
+        tempWriteFilePath = filePath + CarbonCommonConstants.TEMPWRITEFILEEXTENSION;
 
         if (FileFactory.isFileExist(tempWriteFilePath, fileType)) {
             FileFactory.getMolapFile(tempWriteFilePath, fileType).delete();
@@ -77,7 +77,7 @@ public class AtomicFileOperationsImpl implements AtomicFileOperations {
         if (null != dataOutStream) {
             dataOutStream.close();
 
-            MolapFile tempFile = FileFactory.getMolapFile(tempWriteFilePath, fileType);
+            CarbonFile tempFile = FileFactory.getMolapFile(tempWriteFilePath, fileType);
 
             if (!tempFile.renameForce(filePath)) {
                 throw new IOException("temporary file renaming failed");

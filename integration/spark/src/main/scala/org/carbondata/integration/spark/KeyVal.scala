@@ -27,15 +27,15 @@
 package org.carbondata.integration.spark
 
 import org.carbondata.core.load.LoadMetadataDetails
-import org.carbondata.query.scanner.impl.{MolapKey, MolapValue}
+import org.carbondata.query.scanner.impl.{CarbonKey, CarbonValue}
 
 trait KeyVal[K, V] extends Serializable {
-  def getKey(key: MolapKey, value: MolapValue): (K, V)
+  def getKey(key: CarbonKey, value: CarbonValue): (K, V)
 
 }
 
-class KeyValImpl extends KeyVal[MolapKey, MolapValue] {
-  override def getKey(key: MolapKey, value: MolapValue) = (key, value)
+class KeyValImpl extends KeyVal[CarbonKey, CarbonValue] {
+  override def getKey(key: CarbonKey, value: CarbonValue) = (key, value)
 }
 
 trait Result[K, V] extends Serializable {

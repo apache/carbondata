@@ -26,7 +26,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import org.carbondata.core.datastorage.store.filesystem.MolapFile;
+import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.query.processor.DataProcessor;
 import org.carbondata.query.schema.metadata.DataProcessorInfo;
 import org.carbondata.query.writer.exception.ResultWriterException;
@@ -51,7 +51,7 @@ public class MergerExecutor {
         execService = Executors.newFixedThreadPool(2);
     }
 
-    public void mergeResult(DataProcessor processor, DataProcessorInfo info, MolapFile[] files) {
+    public void mergeResult(DataProcessor processor, DataProcessorInfo info, CarbonFile[] files) {
         if (!info.isSortedData()) {
             execService.submit(new UnSortedResultMerger(processor, info, files));
         } else {
@@ -59,7 +59,7 @@ public class MergerExecutor {
         }
     }
 
-    public void mergeFinalResult(DataProcessor processor, DataProcessorInfo info, MolapFile[] files)
+    public void mergeFinalResult(DataProcessor processor, DataProcessorInfo info, CarbonFile[] files)
             throws Exception {
         if (!info.isSortedData()) {
             new UnSortedResultMerger(processor, info, files).call();

@@ -26,7 +26,7 @@ import java.io.IOException;
 import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
-import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.reader.exception.ResultReaderException;
 import org.carbondata.query.wrappers.ByteArrayWrapper;
@@ -161,7 +161,7 @@ public class ResultTempFileReader {
      * Below method will be used to close stream
      */
     public void closeStream() {
-        MolapUtil.closeStreams(this.stream);
+        CarbonUtil.closeStreams(this.stream);
     }
 
     /**

@@ -27,7 +27,7 @@ import org.carbondata.query.executer.groupby.GroupByHolder;
 import org.carbondata.query.executer.impl.topn.TopNProcessorBytes;
 import org.carbondata.query.executer.pagination.DataProcessor;
 import org.carbondata.query.executer.pagination.PaginationModel;
-import org.carbondata.query.executer.pagination.exception.MolapPaginationException;
+import org.carbondata.query.executer.pagination.exception.CarbonPaginationException;
 import org.carbondata.query.filters.measurefilter.MeasureFilter;
 import org.carbondata.query.filters.measurefilter.util.MeasureFilterFactory;
 
@@ -62,7 +62,7 @@ public class MeasureFilterProcessor implements DataProcessor {
     }
 
     @Override
-    public void initModel(PaginationModel model) throws MolapPaginationException {
+    public void initModel(PaginationModel model) throws CarbonPaginationException {
 
         this.dataProcessor.initModel(model);
         measureFilters = MeasureFilterFactory.getFilterMeasures(
@@ -75,7 +75,7 @@ public class MeasureFilterProcessor implements DataProcessor {
 
     @Override
     public void processRow(byte[] key, MeasureAggregator[] measures)
-            throws MolapPaginationException {
+            throws CarbonPaginationException {
         if (filterMeasure(measures)) {
             this.dataProcessor.processRow(key, measures);
         }
@@ -91,12 +91,12 @@ public class MeasureFilterProcessor implements DataProcessor {
     }
 
     @Override
-    public void finish() throws MolapPaginationException {
+    public void finish() throws CarbonPaginationException {
         this.dataProcessor.finish();
     }
 
     @Override
-    public void processGroup(GroupByHolder groupByHolder) throws MolapPaginationException {
+    public void processGroup(GroupByHolder groupByHolder) throws CarbonPaginationException {
         if (filterMeasure(groupByHolder.getMeasureAggregators())) {
             if (passGroupBy) {
                 dataProcessor.processGroup(groupByHolder);

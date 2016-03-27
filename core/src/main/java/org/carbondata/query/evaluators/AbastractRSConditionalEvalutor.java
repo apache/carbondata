@@ -22,7 +22,7 @@ package org.carbondata.query.evaluators;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.query.expression.ColumnExpression;
 import org.carbondata.query.expression.DataType;
 import org.carbondata.query.expression.Expression;
@@ -47,7 +47,7 @@ public abstract class AbastractRSConditionalEvalutor implements FilterEvaluator 
     public AbastractRSConditionalEvalutor(Expression exp, String defaultValue, int surrogate,
             boolean isExpressionResolve, boolean isIncludeFilter) {
         this.dimColEvaluatorInfoList =
-                new ArrayList<DimColumnEvaluatorInfo>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                new ArrayList<DimColumnEvaluatorInfo>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         this.exp = exp;
         this.defaultValue = defaultValue;
         this.surrogate = surrogate;

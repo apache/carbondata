@@ -27,10 +27,10 @@ import java.util.concurrent.Callable;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.processing.sortandgroupby.exception.MolapSortKeyAndGroupByException;
-import org.carbondata.processing.sortandgroupby.sortKey.MolapSortTempFileChunkHolder;
+import org.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
+import org.carbondata.processing.sortandgroupby.sortKey.CarbonSortTempFileChunkHolder;
 import org.carbondata.processing.threadbasedmerger.container.Container;
-import org.carbondata.processing.util.MolapDataProcessorLogEvent;
+import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 
 public class ProducerThread implements Callable<Void> {
     /**
@@ -69,7 +69,7 @@ public class ProducerThread implements Callable<Void> {
     /**
      * recordHolderHeap
      */
-    private AbstractQueue<MolapSortTempFileChunkHolder> recordHolderHeap;
+    private AbstractQueue<CarbonSortTempFileChunkHolder> recordHolderHeap;
 
     /**
      * currentBuffer
@@ -140,8 +140,8 @@ public class ProducerThread implements Callable<Void> {
             fillBuffer(false);
             isCurrentFilled = true;
 
-        } catch (MolapSortKeyAndGroupByException e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+        } catch (CarbonSortKeyAndGroupByException e) {
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
                     "Proble while creating the heap");
         }
     }
@@ -169,12 +169,12 @@ public class ProducerThread implements Callable<Void> {
             }
 
         } catch (InterruptedException ex) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, ex);
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, ex);
         } catch (Exception e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
             throw e;
         }
-        LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                 "Producer Thread: " + this.counter + ": Done");
         this.container.setDone(true);
         return null;
@@ -189,8 +189,8 @@ public class ProducerThread implements Callable<Void> {
         Object[][] buffer = null;
         try {
             buffer = getBuffer();
-        } catch (MolapSortKeyAndGroupByException e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
+        } catch (CarbonSortKeyAndGroupByException e) {
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
         }
         if (isForBackupFilling) {
             backUpBuffer = buffer;
@@ -203,16 +203,16 @@ public class ProducerThread implements Callable<Void> {
      * This method will be used to get the sorted record from file
      *
      * @return sorted record sorted record
-     * @throws MolapSortKeyAndGroupByException
+     * @throws CarbonSortKeyAndGroupByException
      */
-    private Object[][] getBuffer() throws MolapSortKeyAndGroupByException {
+    private Object[][] getBuffer() throws CarbonSortKeyAndGroupByException {
         if (fileCounter < 1) {
             return null;
         }
         Object[][] sortRecordHolders = new Object[readBufferSize][];
         int counter = 0;
         Object[] row = null;
-        MolapSortTempFileChunkHolder poll = null;
+        CarbonSortTempFileChunkHolder poll = null;
         while (counter < readBufferSize && fileCounter > 0) {
 
             // poll the top object from heap
@@ -253,23 +253,23 @@ public class ProducerThread implements Callable<Void> {
     /**
      * Below method will be used to initialise the priority heap
      *
-     * @throws MolapSortKeyAndGroupByException
+     * @throws CarbonSortKeyAndGroupByException
      */
-    private void initialiseHeap() throws MolapSortKeyAndGroupByException {
+    private void initialiseHeap() throws CarbonSortKeyAndGroupByException {
         this.fileCounter = this.sortTempFiles.length;
-        MolapSortTempFileChunkHolder molapSortTempFileChunkHolder = null;
+        CarbonSortTempFileChunkHolder carbonSortTempFileChunkHolder = null;
         //CHECKSTYLE:OFF
         for (File tempFile : this.sortTempFiles) {
             // create chunk holder
-            molapSortTempFileChunkHolder =
-                    new MolapSortTempFileChunkHolder(tempFile, this.measureCount, this.mdKeyLength,
+            carbonSortTempFileChunkHolder =
+                    new CarbonSortTempFileChunkHolder(tempFile, this.measureCount, this.mdKeyLength,
                             this.fileBufferSize, isFactMdkeyInInputRow, factMdkeyLength,
                             new String[0], 0, new char[0]);
             // initialize
-            molapSortTempFileChunkHolder.initialize();
-            molapSortTempFileChunkHolder.readRow();
+            carbonSortTempFileChunkHolder.initialize();
+            carbonSortTempFileChunkHolder.readRow();
             // add to heap
-            this.recordHolderHeap.add(molapSortTempFileChunkHolder);
+            this.recordHolderHeap.add(carbonSortTempFileChunkHolder);
         }
         //CHECKSTYLE:ON
     }
@@ -282,10 +282,10 @@ public class ProducerThread implements Callable<Void> {
      */
     private void createRecordHolderQueue(File[] listFiles) {
         // creating record holder heap
-        this.recordHolderHeap = new PriorityQueue<MolapSortTempFileChunkHolder>(listFiles.length,
-                new Comparator<MolapSortTempFileChunkHolder>() {
-                    public int compare(MolapSortTempFileChunkHolder r1,
-                            MolapSortTempFileChunkHolder r2) {
+        this.recordHolderHeap = new PriorityQueue<CarbonSortTempFileChunkHolder>(listFiles.length,
+                new Comparator<CarbonSortTempFileChunkHolder>() {
+                    public int compare(CarbonSortTempFileChunkHolder r1,
+                            CarbonSortTempFileChunkHolder r2) {
                         byte[] b1 = (byte[]) r1.getRow()[measureCount];
                         byte[] b2 = (byte[]) r2.getRow()[measureCount];
                         int cmp = 0;

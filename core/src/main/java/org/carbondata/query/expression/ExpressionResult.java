@@ -27,8 +27,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.util.MolapProperties;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.query.expression.exception.FilterUnsupportedException;
 
 public class ExpressionResult {
@@ -106,9 +106,9 @@ public class ExpressionResult {
         }
         switch (this.getDataType()) {
         case TimestampType:
-            SimpleDateFormat parser = new SimpleDateFormat(MolapProperties.getInstance().
-                    getProperty(MolapCommonConstants.MOLAP_TIMESTAMP_FORMAT,
-                            MolapCommonConstants.MOLAP_TIMESTAMP_DEFAULT_FORMAT));
+            SimpleDateFormat parser = new SimpleDateFormat(CarbonProperties.getInstance().
+                    getProperty(CarbonCommonConstants.MOLAP_TIMESTAMP_FORMAT,
+                            CarbonCommonConstants.MOLAP_TIMESTAMP_DEFAULT_FORMAT));
             if (value instanceof Timestamp) {
                 return parser.format((Timestamp) value);
             } else {
@@ -238,9 +238,9 @@ public class ExpressionResult {
         try {
             switch (this.getDataType()) {
             case StringType:
-                SimpleDateFormat parser = new SimpleDateFormat(MolapProperties.getInstance()
-                        .getProperty(MolapCommonConstants.MOLAP_TIMESTAMP_FORMAT,
-                                MolapCommonConstants.MOLAP_TIMESTAMP_DEFAULT_FORMAT));
+                SimpleDateFormat parser = new SimpleDateFormat(CarbonProperties.getInstance()
+                        .getProperty(CarbonCommonConstants.MOLAP_TIMESTAMP_FORMAT,
+                                CarbonCommonConstants.MOLAP_TIMESTAMP_DEFAULT_FORMAT));
                 Date dateToStr;
                 try {
                     dateToStr = parser.parse(value.toString());

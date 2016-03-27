@@ -19,10 +19,10 @@
 
 package org.carbondata.query.result.iterator;
 
-import org.carbondata.core.iterator.MolapIterator;
+import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.query.executer.pagination.impl.QueryResult;
 
-public class MemoryBasedResultIterator implements MolapIterator<QueryResult> {
+public class MemoryBasedResultIterator implements CarbonIterator<QueryResult> {
     private QueryResult result;
 
     private boolean hasNext = true;

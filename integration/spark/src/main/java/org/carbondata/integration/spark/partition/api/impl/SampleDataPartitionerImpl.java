@@ -35,14 +35,14 @@ import java.util.Map;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.integration.spark.partition.api.DataPartitioner;
 import org.carbondata.integration.spark.partition.api.Partition;
-import org.carbondata.integration.spark.query.MolapQueryPlan;
-import org.carbondata.integration.spark.query.metadata.MolapDimension;
-import org.carbondata.integration.spark.query.metadata.MolapDimensionFilter;
-import org.carbondata.integration.spark.util.MolapSparkInterFaceLogEvent;
-import org.carbondata.query.queryinterface.query.metadata.MolapDimensionLevelFilter;
+import org.carbondata.integration.spark.query.CarbonQueryPlan;
+import org.carbondata.integration.spark.query.metadata.CarbonDimension;
+import org.carbondata.integration.spark.query.metadata.CarbonDimensionFilter;
+import org.carbondata.integration.spark.util.CarbonSparkInterFaceLogEvent;
+import org.carbondata.query.queryinterface.query.metadata.CarbonDimensionLevelFilter;
 
 import org.apache.spark.sql.cubemodel.Partitioner;
 
@@ -70,19 +70,19 @@ public class SampleDataPartitionerImpl implements DataPartitioner {
         numberOfPartitions = partitioner.partitionCount();
 
         partitionColumn = partitioner.partitionColumn()[0];
-        LOGGER.info(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+        LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
                 "SampleDataPartitionerImpl initializing with following properties.");
-        LOGGER.info(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+        LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
                 "partitionCount: " + numberOfPartitions);
-        LOGGER.info(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+        LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
                 "partitionColumn: " + partitionColumn);
-        LOGGER.info(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+        LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
                 "basePath: " + basePath);
-        LOGGER.info(MolapSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
+        LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_MOLAP_SPARK_INTERFACE_MSG,
                 "columns: " + Arrays.toString(columns));
 
         this.baseLocation = basePath;
-        allPartitions = new ArrayList<Partition>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+        allPartitions = new ArrayList<Partition>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
 
         for (int i = 0; i < columns.length; i++) {
             if (columns[i].equalsIgnoreCase(partitionColumn)) {
@@ -95,9 +95,9 @@ public class SampleDataPartitionerImpl implements DataPartitioner {
             PartitionImpl partitionImpl =
                     new PartitionImpl("" + partionCounter, baseLocation + '/' + partionCounter);
 
-            MolapDimensionLevelFilter filter = new MolapDimensionLevelFilter();
+            CarbonDimensionLevelFilter filter = new CarbonDimensionLevelFilter();
             List<Object> includedHashes =
-                    new ArrayList<Object>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+                    new ArrayList<Object>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
             includedHashes.add(partionCounter);
 
             filter.setIncludeFilter(includedHashes);
@@ -130,14 +130,14 @@ public class SampleDataPartitionerImpl implements DataPartitioner {
     }
 
     /**
-     * @see DataPartitioner#getPartitions(MolapQueryPlan)
+     * @see DataPartitioner#getPartitions(CarbonQueryPlan)
      */
-    public List<Partition> getPartitions(MolapQueryPlan queryPlan) {
-        MolapDimensionFilter msisdnFilter = null;
+    public List<Partition> getPartitions(CarbonQueryPlan queryPlan) {
+        CarbonDimensionFilter msisdnFilter = null;
 
-        Map<MolapDimension, MolapDimensionFilter> filterMap = queryPlan.getDimensionFilters();
-        for (Map.Entry<MolapDimension, MolapDimensionFilter> entry : filterMap.entrySet()) {
-            MolapDimension molapDimension = entry.getKey();
+        Map<CarbonDimension, CarbonDimensionFilter> filterMap = queryPlan.getDimensionFilters();
+        for (Map.Entry<CarbonDimension, CarbonDimensionFilter> entry : filterMap.entrySet()) {
+            CarbonDimension molapDimension = entry.getKey();
             if (partitionColumn.equalsIgnoreCase(molapDimension.getDimensionUniqueName())) {
                 msisdnFilter = entry.getValue();
                 break;
@@ -149,9 +149,9 @@ public class SampleDataPartitionerImpl implements DataPartitioner {
         }
 
         List<Partition> allowedPartitions =
-                new ArrayList<Partition>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+                new ArrayList<Partition>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
         for (Partition aPartition : allPartitions) {
-            MolapDimensionLevelFilter partitionFilterDetails =
+            CarbonDimensionLevelFilter partitionFilterDetails =
                     aPartition.getPartitionDetails().get(partitionColumn);
 
             //Check if the partition is serving any of the hash code generated for include
@@ -171,14 +171,14 @@ public class SampleDataPartitionerImpl implements DataPartitioner {
     /**
      * Identify the partitions applicable for the given filter
      */
-    public List<Partition> getPartitions(Map<String, MolapDimensionLevelFilter> filters) {
+    public List<Partition> getPartitions(Map<String, CarbonDimensionLevelFilter> filters) {
         if (filters == null || filters.size() == 0 || filters.get(partitionColumn) == null) {
             return allPartitions;
         }
 
-        MolapDimensionLevelFilter msisdnFilter = filters.get(partitionColumn);
+        CarbonDimensionLevelFilter msisdnFilter = filters.get(partitionColumn);
         List<Partition> allowedPartitions =
-                new ArrayList<Partition>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+                new ArrayList<Partition>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
 
         if (msisdnFilter.getIncludeFilter().isEmpty()) {
             // Partition check can be done only for include filter list.
@@ -187,7 +187,7 @@ public class SampleDataPartitionerImpl implements DataPartitioner {
         }
 
         for (Partition aPartition : allPartitions) {
-            MolapDimensionLevelFilter partitionFilterDetails =
+            CarbonDimensionLevelFilter partitionFilterDetails =
                     aPartition.getPartitionDetails().get(partitionColumn);
 
             //Check if the partition is serving any of the

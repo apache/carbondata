@@ -26,18 +26,17 @@ import java.util.List;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.metadata.CalculatedMeasure;
-import org.carbondata.core.metadata.MolapMetadata.Measure;
-import org.carbondata.core.olap.SqlStatement;
+import org.carbondata.core.metadata.CarbonMetadata.Measure;
+import org.carbondata.core.carbon.SqlStatement;
 import org.carbondata.query.aggregator.CustomMeasureAggregator;
-import org.carbondata.query.aggregator.CustomMolapAggregateExpression;
+import org.carbondata.query.aggregator.CustomCarbonAggregateExpression;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.aggregator.impl.*;
-import org.carbondata.query.executer.MolapQueryExecutorModel;
-import org.carbondata.query.executer.calcexp.MolapCalcFunction;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.query.executer.CarbonQueryExecutorModel;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
  * Class Description : AggUtil class for aggregate classes It will return
@@ -71,7 +70,7 @@ public final class AggUtil {
     /**
      * initialize measureType
      */
-    public static void initMeasureType(MolapQueryExecutorModel queryModel) {
+    public static void initMeasureType(CarbonQueryExecutorModel queryModel) {
         int ordinal;
         //This part is used to initialize measure types for normal query
         measureOrdinal = new int[queryModel.getMsrs().size()];
@@ -129,7 +128,7 @@ public final class AggUtil {
             SqlStatement.Type dataType) {
         // this will be used for aggregate table because aggregate tables will
         // have one of the measure as fact count
-        if (hasFactCount && MolapCommonConstants.AVERAGE.equalsIgnoreCase(aggregatorType)) {
+        if (hasFactCount && CarbonCommonConstants.AVERAGE.equalsIgnoreCase(aggregatorType)) {
             switch (dataType) {
             case LONG:
 
@@ -164,17 +163,17 @@ public final class AggUtil {
             KeyGenerator generator, boolean isSurrogateGeneratedDistinctCount, Object minValue,
             SqlStatement.Type dataType) {
         // get the MeasureAggregator based on aggregate type
-        if (MolapCommonConstants.MIN.equalsIgnoreCase(aggregatorType)) {
+        if (CarbonCommonConstants.MIN.equalsIgnoreCase(aggregatorType)) {
             return new MinAggregator();
-        } else if (MolapCommonConstants.COUNT.equalsIgnoreCase(aggregatorType)) {
+        } else if (CarbonCommonConstants.COUNT.equalsIgnoreCase(aggregatorType)) {
             return new CountAggregator();
         }
         //
-        else if (MolapCommonConstants.MAX.equalsIgnoreCase(aggregatorType)) {
+        else if (CarbonCommonConstants.MAX.equalsIgnoreCase(aggregatorType)) {
             return new MaxAggregator();
         }
         //
-        else if (MolapCommonConstants.AVERAGE.equalsIgnoreCase(aggregatorType)) {
+        else if (CarbonCommonConstants.AVERAGE.equalsIgnoreCase(aggregatorType)) {
             switch (dataType) {
             case LONG:
 
@@ -188,12 +187,12 @@ public final class AggUtil {
             }
         }
         //
-        else if (MolapCommonConstants.DISTINCT_COUNT.equalsIgnoreCase(aggregatorType)) {
+        else if (CarbonCommonConstants.DISTINCT_COUNT.equalsIgnoreCase(aggregatorType)) {
             if (isHighCardinality) {
                 return new DistinctStringCountAggregator();
             }
             return new DistinctCountAggregator(minValue);
-        } else if (MolapCommonConstants.SUM.equalsIgnoreCase(aggregatorType)) {
+        } else if (CarbonCommonConstants.SUM.equalsIgnoreCase(aggregatorType)) {
             //            return new SumAggregator();
             switch (dataType) {
             case LONG:
@@ -206,7 +205,7 @@ public final class AggUtil {
 
                 return new SumDoubleAggregator();
             }
-        } else if (MolapCommonConstants.SUM_DISTINCT.equalsIgnoreCase(aggregatorType)) {
+        } else if (CarbonCommonConstants.SUM_DISTINCT.equalsIgnoreCase(aggregatorType)) {
             switch (dataType) {
             case LONG:
 
@@ -218,7 +217,7 @@ public final class AggUtil {
 
                 return new SumDistinctDoubleAggregator();
             }
-        } else if (MolapCommonConstants.DUMMY.equalsIgnoreCase(aggregatorType)) {
+        } else if (CarbonCommonConstants.DUMMY.equalsIgnoreCase(aggregatorType)) {
             switch (dataType) {
             case LONG:
 
@@ -244,37 +243,37 @@ public final class AggUtil {
                     customAggregatorClass.getDeclaredConstructor(KeyGenerator.class, String.class);
             return (MeasureAggregator) declaredConstructor.newInstance(generator, cubeUniqueName);
         } catch (ClassNotFoundException e) {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
                     "No custom class named " + aggregatorClassName + " was found");
         }
         //
         catch (SecurityException e) {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
                     "Security Exception while loading custom class " + aggregatorClassName);
         }
         //
         catch (NoSuchMethodException e) {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
                     "Required constructor for custom class " + aggregatorClassName + " not found");
         } catch (IllegalArgumentException e) {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
                     "IllegalArgumentException while loading custom class " + aggregatorClassName);
         }
         //
         catch (InstantiationException e) {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
                     "InstantiationException while loading custom class " + aggregatorClassName);
         }
         //
         catch (IllegalAccessException e) {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
                     "IllegalAccessException while loading custom class " + aggregatorClassName);
         } catch (InvocationTargetException e) {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
                     "InvocationTargetException while loading custom class " + aggregatorClassName);
         }
         // return default sum aggregator in case something wrong happen and log it
-        LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                 "Custom aggregator could not be loaded, " + "returning the default Sum Aggregator");
         return null;
     }
@@ -293,7 +292,7 @@ public final class AggUtil {
 
         int count = 0;
         for (int i = 0; i < measures.length; i++) {
-            if (measures[i].getAggName().equals(MolapCommonConstants.DISTINCT_COUNT) && measures[i]
+            if (measures[i].getAggName().equals(CarbonCommonConstants.DISTINCT_COUNT) && measures[i]
                     .isSurrogateGenerated()) {
                 count++;
             }
@@ -308,7 +307,7 @@ public final class AggUtil {
             // based on MeasureAggregator name create the MeasureAggregator
             // object
             String aggName = measures[i].getAggName();
-            if (aggName.equals(MolapCommonConstants.CUSTOM)) {
+            if (aggName.equals(CarbonCommonConstants.CUSTOM)) {
                 aggregator = getCustomAggregator(aggName, measures[i].getAggClassName(), generator,
                         cubeUniqueName);
             } else {
@@ -335,59 +334,6 @@ public final class AggUtil {
      * @return
      */
     public static MeasureAggregator[] getAggregators(Measure[] measures,
-            MolapCalcFunction[] calculatedMeasures, boolean hasFactCount, KeyGenerator generator,
-            String slice) {
-        int length = measures.length + calculatedMeasures.length;
-        MeasureAggregator[] aggregators = new MeasureAggregator[length];
-        MeasureAggregator aggregator = null;
-        int count = 0;
-        for (int i = 0; i < measures.length; i++) {
-            if (measures[i].getAggName().equals(MolapCommonConstants.DISTINCT_COUNT) && measures[i]
-                    .isSurrogateGenerated()) {
-                count++;
-            }
-        }
-        boolean isSurrogateBasedDistinctCountRequired = true;
-        if (count > 1) {
-            isSurrogateBasedDistinctCountRequired = false;
-        }
-        for (int i = 0; i < measures.length; i++) {
-            // based on MeasureAggregator name create the MeasureAggregator
-            // object
-            String aggName = measures[i].getAggName();
-            if (aggName.equals(MolapCommonConstants.CUSTOM)) {
-                aggregator = getCustomAggregator(aggName, measures[i].getAggClassName(), generator,
-                        slice);
-            } else {
-
-                aggregator = getAggregator(aggName, hasFactCount, generator,
-                        measures[i].isSurrogateGenerated() && isSurrogateBasedDistinctCountRequired,
-                        measures[i].getMinValue(), measures[i].getDataType());
-            }
-            //            if (aggregator == null) {
-            //                 throw MondrianResource.instance().UnknownAggregator.ex(
-            //                         aggName," Aggregator not found");
-            //            }
-            aggregators[i] = aggregator;
-        }
-
-        for (int i = 0; i < calculatedMeasures.length; i++) {
-            CalculatedMeasureAggregatorImpl aggregatorImpl =
-                    new CalculatedMeasureAggregatorImpl(calculatedMeasures[i]);
-            aggregators[i + measures.length] = aggregatorImpl;
-        }
-        return aggregators;
-    }
-
-    /**
-     * This method determines what agg needs to be given for each individual
-     * measures and based on hasFactCount, suitable avg ... aggs will be choosen
-     *
-     * @param measures
-     * @param hasFactCount
-     * @return
-     */
-    public static MeasureAggregator[] getAggregators(Measure[] measures,
             CalculatedMeasure[] calculatedMeasures, boolean hasFactCount, KeyGenerator generator,
             String slice) {
         int length = measures.length + calculatedMeasures.length;
@@ -395,7 +341,7 @@ public final class AggUtil {
         MeasureAggregator aggregatorInfo = null;
         int cnt = 0;
         for (int i = 0; i < measures.length; i++) {
-            if (measures[i].getAggName().equals(MolapCommonConstants.DISTINCT_COUNT) && measures[i]
+            if (measures[i].getAggName().equals(CarbonCommonConstants.DISTINCT_COUNT) && measures[i]
                     .isSurrogateGenerated()) {
                 cnt++;
             }
@@ -408,7 +354,7 @@ public final class AggUtil {
             // based on MeasureAggregator name create the MeasureAggregator
             // object
             String aggName = measures[i].getAggName();
-            if (aggName.equals(MolapCommonConstants.CUSTOM)) {
+            if (aggName.equals(CarbonCommonConstants.CUSTOM)) {
                 aggregatorInfo =
                         getCustomAggregator(aggName, measures[i].getAggClassName(), generator,
                                 slice);
@@ -469,7 +415,7 @@ public final class AggUtil {
         int valueSize = aggregateNames.size();
         MeasureAggregator[] aggregators = new MeasureAggregator[valueSize];
         for (int i = 0; i < valueSize; i++) {
-            if (aggregateNames.get(i).equals(MolapCommonConstants.CUSTOM)) {
+            if (aggregateNames.get(i).equals(CarbonCommonConstants.CUSTOM)) {
                 aggregators[i] =
                         getCustomAggregator(aggregateNames.get(i), aggregatorClassName.get(i),
                                 generator, cubeUniqueName);
@@ -535,19 +481,19 @@ public final class AggUtil {
      * @return
      */
     public static MeasureAggregator[] getAggregators(String[] aggType,
-            List<CustomMolapAggregateExpression> aggregateExpressions, boolean hasFactCount,
+            List<CustomCarbonAggregateExpression> aggregateExpressions, boolean hasFactCount,
             KeyGenerator generator, String cubeUniqueName, Object[] minValue,
             boolean[] highCardinalityTypes, SqlStatement.Type[] dataTypes) {
         MeasureAggregator[] aggregators = new MeasureAggregator[aggType.length];
         int customIndex = 0;
         for (int i = 0; i < aggType.length; i++) {
 
-            if (aggType[i].equalsIgnoreCase(MolapCommonConstants.CUSTOM)) {
-                CustomMolapAggregateExpression current = aggregateExpressions.get(customIndex++);
+            if (aggType[i].equalsIgnoreCase(CarbonCommonConstants.CUSTOM)) {
+                CustomCarbonAggregateExpression current = aggregateExpressions.get(customIndex++);
                 if (current != null && current.getAggregator() != null) {
                     aggregators[i] = (CustomMeasureAggregator) current.getAggregator().getCopy();
                 } else {
-                    LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                    LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                             "Unable to load custom aggregator");
                 }
             } else {

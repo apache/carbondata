@@ -3,8 +3,8 @@ package org.carbondata.core.util;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.olap.SqlStatement;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.carbon.SqlStatement;
 
 public final class DataTypeUtil {
     private DataTypeUtil() {
@@ -26,27 +26,27 @@ public final class DataTypeUtil {
     public static char getAggType(String dataType) {
         switch (dataType) {
         case "Decimal":
-            return MolapCommonConstants.BIG_DECIMAL_MEASURE;
+            return CarbonCommonConstants.BIG_DECIMAL_MEASURE;
         case "BigInt":
         case "Long":
-            return MolapCommonConstants.BIG_INT_MEASURE;
+            return CarbonCommonConstants.BIG_INT_MEASURE;
         default:
             return 'n';
         }
     }
 
     public static char getAggType(SqlStatement.Type dataType, String agg) {
-        if (MolapCommonConstants.SUM.equals(agg) || MolapCommonConstants.COUNT.equals(agg)) {
+        if (CarbonCommonConstants.SUM.equals(agg) || CarbonCommonConstants.COUNT.equals(agg)) {
             switch (dataType) {
             case DECIMAL:
-                return MolapCommonConstants.BIG_DECIMAL_MEASURE;
+                return CarbonCommonConstants.BIG_DECIMAL_MEASURE;
             case LONG:
-                return MolapCommonConstants.BIG_INT_MEASURE;
+                return CarbonCommonConstants.BIG_INT_MEASURE;
             default:
-                return MolapCommonConstants.SUM_COUNT_VALUE_MEASURE;
+                return CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE;
             }
         } else {
-            return MolapCommonConstants.BYTE_VALUE_MEASURE;
+            return CarbonCommonConstants.BYTE_VALUE_MEASURE;
         }
     }
 

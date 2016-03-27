@@ -19,7 +19,7 @@
 
 package org.carbondata.query.processor.row;
 
-import org.carbondata.core.iterator.MolapIterator;
+import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.executer.pagination.impl.QueryResult;
 import org.carbondata.query.processor.DataProcessorExt;
@@ -51,7 +51,7 @@ public class RowProcessor implements DataProcessorExt {
     }
 
     @Override
-    public MolapIterator<QueryResult> getQueryResultIterator() {
+    public CarbonIterator<QueryResult> getQueryResultIterator() {
         return dataProcessor.getQueryResultIterator();
     }
 

@@ -24,12 +24,12 @@ import java.util.List;
 import java.util.Map;
 
 import org.carbondata.core.keygenerator.KeyGenerator;
-import org.carbondata.core.metadata.MolapMetadata.Dimension;
-import org.carbondata.core.metadata.MolapMetadata.Measure;
-import org.carbondata.core.olap.SqlStatement;
+import org.carbondata.core.metadata.CarbonMetadata.Dimension;
+import org.carbondata.core.metadata.CarbonMetadata.Measure;
+import org.carbondata.core.carbon.SqlStatement;
 import org.carbondata.core.vo.HybridStoreModel;
 import org.carbondata.query.complex.querytypes.GenericQueryType;
-import org.carbondata.query.datastorage.InMemoryCube;
+import org.carbondata.query.datastorage.InMemoryTable;
 
 public class QueryExecuterProperties {
     /**
@@ -60,7 +60,7 @@ public class QueryExecuterProperties {
     /**
      * list of active slices present for execution
      */
-    protected List<InMemoryCube> slices;
+    protected List<InMemoryTable> slices;
 
     /**
      * global key generator basically it is the last slice updated keygenerator

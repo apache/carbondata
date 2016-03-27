@@ -22,7 +22,7 @@ package org.carbondata.processing.graphgenerator;
 import java.util.Arrays;
 import java.util.List;
 
-import org.carbondata.core.olap.MolapDef.Cube;
+import org.carbondata.core.carbon.CarbonDef.Cube;
 import org.carbondata.processing.schema.metadata.AggregateTable;
 
 //import mondrian.olap.MondrianDef.Cube;

@@ -21,8 +21,8 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.datastorage.store.dataholder.MolapReadDataHolder;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.carbondata.query.aggregator.MeasureAggregator;
 
 /**
@@ -52,7 +52,7 @@ public class SumLongAggregator extends AbstractMeasureAggregatorBasic {
         firstTime = false;
     }
 
-    public void agg(MolapReadDataHolder newVal, int index) {
+    public void agg(CarbonReadDataHolder newVal, int index) {
         aggVal += newVal.getReadableLongValueByIndex(index);
         firstTime = false;
     }
@@ -65,7 +65,7 @@ public class SumLongAggregator extends AbstractMeasureAggregatorBasic {
         if (firstTime) {
             return new byte[0];
         }
-        ByteBuffer buffer = ByteBuffer.allocate(MolapCommonConstants.LONG_SIZE_IN_BYTE);
+        ByteBuffer buffer = ByteBuffer.allocate(CarbonCommonConstants.LONG_SIZE_IN_BYTE);
         buffer.putLong(aggVal);
         return buffer.array();
     }

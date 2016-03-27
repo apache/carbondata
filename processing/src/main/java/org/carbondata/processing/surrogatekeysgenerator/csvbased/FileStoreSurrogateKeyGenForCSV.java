@@ -32,10 +32,10 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import org.apache.commons.codec.binary.Base64;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.csvreader.checkpoint.CheckPointHanlder;
-import org.carbondata.core.datastorage.store.filesystem.MolapFile;
-import org.carbondata.core.datastorage.store.filesystem.MolapFileFilter;
+import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
+import org.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
 import org.carbondata.core.file.manager.composite.FileData;
@@ -44,20 +44,20 @@ import org.carbondata.core.file.manager.composite.LoadFolderData;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.util.ByteUtil;
-import org.carbondata.core.util.MolapProperties;
-import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.util.CarbonProperties;
+import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.writer.ByteArrayHolder;
 import org.carbondata.core.writer.HierarchyValueWriterForCSV;
 import org.carbondata.core.writer.LevelValueWriter;
 import org.carbondata.processing.schema.metadata.ArrayWrapper;
-import org.carbondata.processing.schema.metadata.MolapInfo;
+import org.carbondata.processing.schema.metadata.CarbonInfo;
 import org.carbondata.processing.surrogatekeysgenerator.dbbased.FileStoreSurrogateKeyGen;
 import org.carbondata.processing.surrogatekeysgenerator.lru.LRUCache;
-import org.carbondata.processing.surrogatekeysgenerator.lru.MolapSeqGenCacheHolder;
-import org.carbondata.processing.util.MolapDataProcessorLogEvent;
+import org.carbondata.processing.surrogatekeysgenerator.lru.CarbonSeqGenCacheHolder;
+import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.pentaho.di.core.exception.KettleException;
 
-public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKeyGen {
+public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKeyGen {
 
     /**
      * Comment for <code>LOGGER</code>
@@ -93,7 +93,7 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
     /**
      * folderList
      */
-    private List<MolapFile> folderList = new ArrayList<MolapFile>(5);
+    private List<CarbonFile> folderList = new ArrayList<CarbonFile>(5);
 
     /**
      * primaryKeyStringArray
@@ -108,27 +108,27 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
     private int currentRestructNumber;
 
     /**
-     * @param molapInfo
+     * @param carbonInfo
      * @throws KettleException
      */
-    public FileStoreSurrogateKeyGenForCSV(MolapInfo molapInfo, int currentRestructNum)
+    public FileStoreSurrogateKeyGenForCSV(CarbonInfo carbonInfo, int currentRestructNum)
             throws KettleException {
-        super(molapInfo);
+        super(carbonInfo);
         currentRestructNumber = currentRestructNum;
-        populatePrimaryKeyarray(dimInsertFileNames, molapInfo.getPrimaryKeyMap());
+        populatePrimaryKeyarray(dimInsertFileNames, carbonInfo.getPrimaryKeyMap());
 
         keyGenerator =
-                new HashMap<String, KeyGenerator>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                new HashMap<String, KeyGenerator>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-        baseStorePath = molapInfo.getBaseStoreLocation();
+        baseStorePath = carbonInfo.getBaseStoreLocation();
         setStoreFolderWithLoadNumber(
-                checkAndCreateLoadFolderNumber(baseStorePath, molapInfo.getTableName()));
+                checkAndCreateLoadFolderNumber(baseStorePath, carbonInfo.getTableName()));
         fileManager = new LoadFolderData();
-        fileManager.setName(loadFolderName + MolapCommonConstants.FILE_INPROGRESS_STATUS);
+        fileManager.setName(loadFolderName + CarbonCommonConstants.FILE_INPROGRESS_STATUS);
 
         dimensionWriter = new LevelValueWriter[dimInsertFileNames.length];
         for (int i = 0; i < dimensionWriter.length; i++) {
-            String dimFileName = dimInsertFileNames[i] + MolapCommonConstants.LEVEL_FILE_EXTENSION;
+            String dimFileName = dimInsertFileNames[i] + CarbonCommonConstants.LEVEL_FILE_EXTENSION;
             dimensionWriter[i] = new LevelValueWriter(dimFileName, getStoreFolderWithLoadNumber());
             FileData fileData = new FileData(dimFileName, getStoreFolderWithLoadNumber());
             fileData.setLevelValueWriter(dimensionWriter[i]);
@@ -136,34 +136,34 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
         }
 
         hierValueWriter = new HashMap<String, HierarchyValueWriterForCSV>(
-                MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
         for (Entry<String, String> entry : hierInsertFileNames.entrySet()) {
             String hierFileName = entry.getValue().trim();
             hierValueWriter.put(entry.getKey(),
                     new HierarchyValueWriterForCSV(hierFileName, getStoreFolderWithLoadNumber()));
-            Map<String, KeyGenerator> keyGenerators = molapInfo.getKeyGenerators();
+            Map<String, KeyGenerator> keyGenerators = carbonInfo.getKeyGenerators();
             keyGenerator.put(entry.getKey(), keyGenerators.get(entry.getKey()));
             FileData fileData = new FileData(hierFileName, getStoreFolderWithLoadNumber());
             fileData.setHierarchyValueWriter(hierValueWriter.get(entry.getKey()));
             fileManager.add(fileData);
         }
-        boolean isCacheEnabled = Boolean.parseBoolean(MolapProperties.getInstance()
-                .getProperty(MolapCommonConstants.MOLAP_SEQ_GEN_INMEMORY_LRU_CACHE_ENABLED,
-                        MolapCommonConstants.MOLAP_SEQ_GEN_INMEMORY_LRU_CACHE_ENABLED_DEFAULT_VALUE));
+        boolean isCacheEnabled = Boolean.parseBoolean(CarbonProperties.getInstance()
+                .getProperty(CarbonCommonConstants.MOLAP_SEQ_GEN_INMEMORY_LRU_CACHE_ENABLED,
+                        CarbonCommonConstants.MOLAP_SEQ_GEN_INMEMORY_LRU_CACHE_ENABLED_DEFAULT_VALUE));
         if (isCacheEnabled) {
-            String cacheKey = molapInfo.getSchemaName() + '_' + molapInfo.getCubeName();
-            MolapSeqGenCacheHolder molapSeqGenCacheHolder = LRUCache.getIntance().get(cacheKey);
-            if (null != molapSeqGenCacheHolder) {
-                LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            String cacheKey = carbonInfo.getSchemaName() + '_' + carbonInfo.getCubeName();
+            CarbonSeqGenCacheHolder carbonSeqGenCacheHolder = LRUCache.getIntance().get(cacheKey);
+            if (null != carbonSeqGenCacheHolder) {
+                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                         "********************************************** Loading from LRU cache");
-                setMax(molapSeqGenCacheHolder.getMax());
-                setHierCache(molapSeqGenCacheHolder.getHierCache());
-                setHierCacheReverse(molapSeqGenCacheHolder.getHierCacheReverse());
-                setMemberCache(molapSeqGenCacheHolder.getMemberCache());
-                setTimDimMax(molapSeqGenCacheHolder.getTimDimMax());
-                setTimeDimCache(molapSeqGenCacheHolder.getTimeDimCache());
-                setMeasureMaxSurroagetMap(molapSeqGenCacheHolder.getMeasureMaxSurroagetMap());
+                setMax(carbonSeqGenCacheHolder.getMax());
+                setHierCache(carbonSeqGenCacheHolder.getHierCache());
+                setHierCacheReverse(carbonSeqGenCacheHolder.getHierCacheReverse());
+                setMemberCache(carbonSeqGenCacheHolder.getMemberCache());
+                setTimDimMax(carbonSeqGenCacheHolder.getTimDimMax());
+                setTimeDimCache(carbonSeqGenCacheHolder.getTimeDimCache());
+                setMeasureMaxSurroagetMap(carbonSeqGenCacheHolder.getMeasureMaxSurroagetMap());
             } else {
                 populateCache();
             }
@@ -178,7 +178,7 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
     }
 
     private void populatePrimaryKeyarray(String[] dimInsertFileNames, Map<String, Boolean> map) {
-        List<String> primaryKeyList = new ArrayList<String>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+        List<String> primaryKeyList = new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
 
         for (String columnName : dimInsertFileNames) {
             if (null != map.get(columnName)) {
@@ -201,7 +201,7 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
      * update the
      */
     private void updatePrimaryKeyMaxSurrogateMap() {
-        Map<String, Boolean> primaryKeyMap = molapInfo.getPrimaryKeyMap();
+        Map<String, Boolean> primaryKeyMap = carbonInfo.getPrimaryKeyMap();
 
         for (Entry<String, Boolean> entry : primaryKeyMap.entrySet()) {
             if (!primaryKeyMap.get(entry.getKey())) {
@@ -210,7 +210,7 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
 
                 if (null == primaryKeysMaxSurroagetMap) {
                     primaryKeysMaxSurroagetMap = new HashMap<String, Integer>(
-                            MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                            CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
                 }
                 primaryKeysMaxSurroagetMap.put(entry.getKey(), max[repeatedPrimaryFromLevels]);
             }
@@ -236,16 +236,16 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
         }
         //
         String baseStorePathWithTableName =
-                baseStorePath + File.separator + MolapCommonConstants.RESTRUCTRE_FOLDER
+                baseStorePath + File.separator + CarbonCommonConstants.RESTRUCTRE_FOLDER
                         + restrctFolderCount + File.separator + tableName;
-        int counter = MolapUtil.checkAndReturnCurrentLoadFolderNumber(baseStorePathWithTableName);
+        int counter = CarbonUtil.checkAndReturnCurrentLoadFolderNumber(baseStorePathWithTableName);
         if (!CheckPointHanlder.IS_CHECK_POINT_NEEDED) {
             counter++;
         } else if (counter == -1) {
             counter++;
         }
         String basePath =
-                baseStorePathWithTableName + File.separator + MolapCommonConstants.LOAD_FOLDER
+                baseStorePathWithTableName + File.separator + CarbonCommonConstants.LOAD_FOLDER
                         + counter;
         // Incase of normalized data we will load dinemnsion data first and will rename the files, level files
         // extension from inprogress to normal , so in that case we need to start create new folder with 
@@ -254,10 +254,10 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
             counter++;
         }
 
-        basePath = baseStorePathWithTableName + File.separator + MolapCommonConstants.LOAD_FOLDER
-                + counter + MolapCommonConstants.FILE_INPROGRESS_STATUS;
+        basePath = baseStorePathWithTableName + File.separator + CarbonCommonConstants.LOAD_FOLDER
+                + counter + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
 
-        loadFolderName = MolapCommonConstants.LOAD_FOLDER + counter;
+        loadFolderName = CarbonCommonConstants.LOAD_FOLDER + counter;
 
         if (new File(basePath).exists()) {
             return basePath;
@@ -270,16 +270,16 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
         return basePath;
     }
 
-    private MolapFile[] getFilesArray(String baseStorePath, final String fileNameSearchPattern) {
+    private CarbonFile[] getFilesArray(String baseStorePath, final String fileNameSearchPattern) {
         FileType fileType = FileFactory.getFileType(baseStorePath);
-        MolapFile storeFolder = FileFactory.getMolapFile(baseStorePath, fileType);
+        CarbonFile storeFolder = FileFactory.getMolapFile(baseStorePath, fileType);
 
-        MolapFile[] listFiles = storeFolder.listFiles(new MolapFileFilter() {
+        CarbonFile[] listFiles = storeFolder.listFiles(new CarbonFileFilter() {
 
             @Override
-            public boolean accept(MolapFile pathname) {
+            public boolean accept(CarbonFile pathname) {
                 if (pathname.getName().indexOf(fileNameSearchPattern) > -1 && !pathname.getName()
-                        .endsWith(MolapCommonConstants.FILE_INPROGRESS_STATUS)) {
+                        .endsWith(CarbonCommonConstants.FILE_INPROGRESS_STATUS)) {
                     return true;
                 }
                 return false;
@@ -294,32 +294,32 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
         boolean exists = false;
         String baselocation = null;
         try {
-            baselocation = MolapProperties.getInstance()
-                    .getProperty(MolapCommonConstants.STORE_LOCATION_HDFS);
+            baselocation = CarbonProperties.getInstance()
+                    .getProperty(CarbonCommonConstants.STORE_LOCATION_HDFS);
             if (baselocation != null) {
                 exists = FileFactory
                         .isFileExist(baselocation, FileFactory.getFileType(baselocation));
             }
         } catch (Exception e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
                     e.getMessage());
         }
 
         baselocation =
-                baselocation + '/' + molapInfo.getSchemaName() + '/' + molapInfo.getCubeName();
+                baselocation + '/' + carbonInfo.getSchemaName() + '/' + carbonInfo.getCubeName();
         checkAndUpdateFolderList(exists ? baselocation : baseStorePath);
 
         // Fixing Check style
         String exceptionMsg = "";
         try {
-            for (MolapFile folder : folderList) {
+            for (CarbonFile folder : folderList) {
                 exceptionMsg = "Not able to read level mapping File.";
                 // update the member cache
                 for (int i = 0; i < dimInsertFileNames.length; i++) {
-                    MolapFile[] levelFilesArray = getFilesArray(folder.getAbsolutePath(),
-                            dimInsertFileNames[i] + MolapCommonConstants.LEVEL_FILE_EXTENSION);
+                    CarbonFile[] levelFilesArray = getFilesArray(folder.getAbsolutePath(),
+                            dimInsertFileNames[i] + CarbonCommonConstants.LEVEL_FILE_EXTENSION);
 
-                    for (MolapFile file : levelFilesArray) {
+                    for (CarbonFile file : levelFilesArray) {
                         if (file.exists()) {
                             //
                             readLevelFileAndUpdateCache(file, dimInsertFileNames[i], false, false);
@@ -332,10 +332,10 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
                 exceptionMsg = "Not able to read hierarchy mapping File.";
                 for (Entry<String, String> entry : hierInsertFileNames.entrySet()) {
 
-                    MolapFile[] hierarchyFilesArray = getFilesArray(folder.getAbsolutePath(),
-                            entry.getKey() + MolapCommonConstants.HIERARCHY_FILE_EXTENSION);
+                    CarbonFile[] hierarchyFilesArray = getFilesArray(folder.getAbsolutePath(),
+                            entry.getKey() + CarbonCommonConstants.HIERARCHY_FILE_EXTENSION);
 
-                    for (MolapFile hierarchyFile : hierarchyFilesArray) {
+                    for (CarbonFile hierarchyFile : hierarchyFilesArray) {
                         if (hierarchyFile.exists()) {
 
                             readHierarchyAndUpdateCache(hierarchyFile, entry.getKey());
@@ -348,10 +348,10 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
                 exceptionMsg = "Not able to read primary value mapping File.";
                 // update the member cache
                 for (int i = 0; i < primaryKeyStringArray.length; i++) {
-                    MolapFile[] primaryKeyFilesArray = getFilesArray(folder.getAbsolutePath(),
-                            primaryKeyStringArray[i] + MolapCommonConstants.LEVEL_FILE_EXTENSION);
+                    CarbonFile[] primaryKeyFilesArray = getFilesArray(folder.getAbsolutePath(),
+                            primaryKeyStringArray[i] + CarbonCommonConstants.LEVEL_FILE_EXTENSION);
 
-                    for (MolapFile primaryKey : primaryKeyFilesArray) {
+                    for (CarbonFile primaryKey : primaryKeyFilesArray) {
 
                         if (primaryKey.exists()) {
                             //
@@ -363,18 +363,18 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
                 }
 
                 // update the member cache for measure 
-                for (int i = 0; i < molapInfo.getMeasureColumns().length; i++) {
+                for (int i = 0; i < carbonInfo.getMeasureColumns().length; i++) {
                     String path =
-                            folder.getAbsolutePath() + File.separator + molapInfo.getTableName()
-                                    + '_' + molapInfo.getMeasureColumns()[i]
-                                    + MolapCommonConstants.LEVEL_FILE_EXTENSION;
+                            folder.getAbsolutePath() + File.separator + carbonInfo.getTableName()
+                                    + '_' + carbonInfo.getMeasureColumns()[i]
+                                    + CarbonCommonConstants.LEVEL_FILE_EXTENSION;
                     FileType fileType = FileFactory.getFileType(path);
 
                     if (FileFactory.isFileExist(path, fileType, true)) {
-                        MolapFile file =
+                        CarbonFile file =
                                 FileFactory.getMolapFile(path, FileFactory.getFileType(path));
                         readLevelFileAndUpdateCache(file,
-                                molapInfo.getTableName() + '_' + molapInfo.getMeasureColumns()[i],
+                                carbonInfo.getTableName() + '_' + carbonInfo.getMeasureColumns()[i],
                                 false, true);
                     }
 
@@ -396,30 +396,30 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
      * @return
      * @throws KettleException
      */
-    private MolapFile[] checkAndUpdateFolderList(String baseStorePath) {
+    private CarbonFile[] checkAndUpdateFolderList(String baseStorePath) {
         FileType fileType = FileFactory.getFileType(baseStorePath);
         try {
             if (!FileFactory.isFileExist(baseStorePath, fileType)) {
-                return new MolapFile[0];
+                return new CarbonFile[0];
             }
         } catch (IOException e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
                     e.getMessage());
         }
-        MolapFile folders = FileFactory.getMolapFile(baseStorePath, fileType);
-        MolapFile[] rsFolders = folders.listFiles(new MolapFileFilter() {
+        CarbonFile folders = FileFactory.getMolapFile(baseStorePath, fileType);
+        CarbonFile[] rsFolders = folders.listFiles(new CarbonFileFilter() {
             @Override
-            public boolean accept(MolapFile pathname) {
+            public boolean accept(CarbonFile pathname) {
                 boolean check = false;
                 if (CheckPointHanlder.IS_CHECK_POINT_NEEDED) {
                     check = pathname.isDirectory()
-                            && pathname.getAbsolutePath().indexOf(MolapCommonConstants.LOAD_FOLDER)
+                            && pathname.getAbsolutePath().indexOf(CarbonCommonConstants.LOAD_FOLDER)
                             > -1;
                 } else {
                     check = pathname.isDirectory()
-                            && pathname.getAbsolutePath().indexOf(MolapCommonConstants.LOAD_FOLDER)
+                            && pathname.getAbsolutePath().indexOf(CarbonCommonConstants.LOAD_FOLDER)
                             > -1 &&
-                            pathname.getName().indexOf(MolapCommonConstants.FILE_INPROGRESS_STATUS)
+                            pathname.getName().indexOf(CarbonCommonConstants.FILE_INPROGRESS_STATUS)
                                     == -1;
 
                 }
@@ -427,9 +427,9 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
                     return true;
                 } else {
                     //
-                    MolapFile[] checkFolder = checkAndUpdateFolderList(pathname.getAbsolutePath());
+                    CarbonFile[] checkFolder = checkAndUpdateFolderList(pathname.getAbsolutePath());
                     if (null != checkFolder) {
-                        for (MolapFile f : checkFolder) {
+                        for (CarbonFile f : checkFolder) {
                             folderList.add(f);
                         }
                     }
@@ -449,7 +449,7 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
 
         byte[] bytes;
         try {
-            bytes = molapInfo.getKeyGenerators().get(hier).generateKey(val);
+            bytes = carbonInfo.getKeyGenerators().get(hier).generateKey(val);
             hierValueWriter.get(hier).getByteArrayList()
                     .add(new ByteArrayHolder(bytes, primaryKey));
         } catch (KeyGenException e) {
@@ -482,9 +482,9 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
 
         count = cache.get(tuple);
         if (count == null) {
-            if (getTimDimMax()[index] >= molapInfo.getMaxKeys()[index]) {
-                LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
-                        "Invalid cardinality. Key size exceeded cardinality for: " + molapInfo
+            if (getTimDimMax()[index] >= carbonInfo.getMaxKeys()[index]) {
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                        "Invalid cardinality. Key size exceeded cardinality for: " + carbonInfo
                                 .getDimColNames()[index] + ": MemberValue: " + tuple);
                 return -1;
             }
@@ -512,13 +512,13 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
             try {
                 dimensionWriter[i].writeMaxValue();
             } catch (IOException e) {
-                LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                         "********************************************** Problem writing max value :: "
                                 + e.getMessage());
                 throw new KettleException(
                         "Unable to write max value for level file :: " + memberFileName);
             }
-            MolapUtil.closeStreams(bufferedOutputStream);
+            CarbonUtil.closeStreams(bufferedOutputStream);
             dimensionWriter[i].clearOutputStream();
             int size = fileManager.size();
             for (int j = 0; j < size; j++) {
@@ -533,7 +533,7 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
                     String changedFileName = levelFileName + (counter - 1);
 
                     String inProgFileName =
-                            changedFileName + MolapCommonConstants.FILE_INPROGRESS_STATUS;
+                            changedFileName + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
 
                     File currentFile = new File(storePath + File.separator + inProgFileName);
                     File destFile = new File(storePath + File.separator + changedFileName);
@@ -543,12 +543,12 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
                     }
                     if (currentFile.length() == 0) {
                         if (!currentFile.delete()) {
-                            LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                                     "Not Able to delete current file : " + currentFile.getName());
                         }
                     } else {
                         if (!currentFile.renameTo(destFile)) {
-                            LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                                     "Not Able to rename " + currentFile.getName() + " to "
                                             + destFile.getName());
                         }
@@ -563,7 +563,7 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
 
     }
 
-    private void readHierarchyAndUpdateCache(MolapFile hierarchyFile, String hierarchy)
+    private void readHierarchyAndUpdateCache(CarbonFile hierarchyFile, String hierarchy)
             throws IOException {
         KeyGenerator generator = keyGenerator.get(hierarchy);
         int keySizeInBytes = generator.getKeySizeInBytes();
@@ -597,18 +597,18 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
                 rowlengthToRead.clear();
             }
         } finally {
-            MolapUtil.closeStreams(inputStream);
+            CarbonUtil.closeStreams(inputStream);
         }
 
     }
 
-    private void readLevelFileAndUpdateCache(MolapFile memberFile, String fileName,
+    private void readLevelFileAndUpdateCache(CarbonFile memberFile, String fileName,
             boolean isPrimary, boolean isMeasure) throws IOException, KettleException {
         DataInputStream inputStream = null;
         Map<String, Integer> memberMap = getMemberCache().get(fileName);
 
         if (null == memberMap) {
-            memberMap = new HashMap<String, Integer>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+            memberMap = new HashMap<String, Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
             getMemberCache().put(fileName, memberMap);
         }
 
@@ -619,7 +619,7 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
         int maxKey = maxValFromMap == null ? 0 : maxValFromMap.intValue();
 
         Map<String, Integer> localMemberMap =
-                new HashMap<String, Integer>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                new HashMap<String, Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
         try {
             inputStream = FileFactory.getDataInputStream(memberFile.getPath(),
@@ -633,9 +633,9 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
             // subtracted 4 as last 4 bytes will have the max value for no of records
             long size = memberFile.getSize() - 4;
 
-            boolean enableEncoding = Boolean.valueOf(MolapProperties.getInstance()
-                    .getProperty(MolapCommonConstants.ENABLE_BASE64_ENCODING,
-                            MolapCommonConstants.ENABLE_BASE64_ENCODING_DEFAULT));
+            boolean enableEncoding = Boolean.valueOf(CarbonProperties.getInstance()
+                    .getProperty(CarbonCommonConstants.ENABLE_BASE64_ENCODING,
+                            CarbonCommonConstants.ENABLE_BASE64_ENCODING_DEFAULT));
             // incremented by 4 as integer value as read for minimum no of surrogates
             currPositionIndx += 4;
             while (currPositionIndx < size) {
@@ -658,16 +658,16 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
             }
 
         } catch (Exception e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
                     "Not able to read level file for Populating Cache : " + fileName);
-            MolapUtil.closeStreams(inputStream);
+            CarbonUtil.closeStreams(inputStream);
             if (!memberFile.delete()) {
-                LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                         "Not able to delete level File after exception.");
             }
             return;
         } finally {
-            MolapUtil.closeStreams(inputStream);
+            CarbonUtil.closeStreams(inputStream);
         }
 
         if (isPrimary) {
@@ -758,7 +758,7 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
             HierarchyValueWriterForCSV hierWriter) throws KettleException {
         byte[] bytes;
         try {
-            bytes = molapInfo.getKeyGenerators().get(hier).generateKey(val);
+            bytes = carbonInfo.getKeyGenerators().get(hier).generateKey(val);
             hierWriter.getByteArrayList().add(new ByteArrayHolder(bytes, primaryKey));
         } catch (KeyGenException e) {
             throw new KettleException(e);
@@ -793,7 +793,7 @@ public class FileStoreSurrogateKeyGenForCSV extends MolapCSVBasedDimSurrogateKey
 
             measureSurrogate = cache.get(tuple);
             if (null == measureSurrogate) {
-                String dimFileName = columnName + MolapCommonConstants.LEVEL_FILE_EXTENSION;
+                String dimFileName = columnName + CarbonCommonConstants.LEVEL_FILE_EXTENSION;
                 LevelValueWriter levelValueWriter = measureValWriterMap.get(dimFileName);
                 if (null == levelValueWriter) {
                     synchronized (lock) {

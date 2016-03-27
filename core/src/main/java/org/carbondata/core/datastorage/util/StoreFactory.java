@@ -19,7 +19,7 @@
 
 package org.carbondata.core.datastorage.util;
 
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.core.datastorage.store.NodeKeyStore;
 import org.carbondata.core.datastorage.store.NodeMeasureDataStore;
@@ -38,7 +38,7 @@ import org.carbondata.core.datastorage.store.impl.key.compressed.CompressedSingl
 import org.carbondata.core.datastorage.store.impl.key.compressed.CompressedSingleArrayKeyInMemoryStore;
 import org.carbondata.core.datastorage.store.impl.key.uncompressed.SingleArrayKeyFileStore;
 import org.carbondata.core.datastorage.store.impl.key.uncompressed.SingleArrayKeyInMemoryStore;
-import org.carbondata.core.util.MolapProperties;
+import org.carbondata.core.util.CarbonProperties;
 
 public final class StoreFactory {
     /**
@@ -67,12 +67,12 @@ public final class StoreFactory {
     private static StoreType valueType;
 
     static {
-        String keytype = MolapProperties.getInstance()
-                .getProperty(MolapCommonConstants.KEYSTORE_TYPE,
-                        MolapCommonConstants.KEYSTORE_TYPE_DEFAULT_VAL);
-        String valuetype = MolapProperties.getInstance()
-                .getProperty(MolapCommonConstants.VALUESTORE_TYPE,
-                        MolapCommonConstants.VALUESTORE_TYPE_DEFAULT_VAL);
+        String keytype = CarbonProperties.getInstance()
+                .getProperty(CarbonCommonConstants.KEYSTORE_TYPE,
+                        CarbonCommonConstants.KEYSTORE_TYPE_DEFAULT_VAL);
+        String valuetype = CarbonProperties.getInstance()
+                .getProperty(CarbonCommonConstants.VALUESTORE_TYPE,
+                        CarbonCommonConstants.VALUESTORE_TYPE_DEFAULT_VAL);
 
         // set key type
         if (COMPRESSED_SINGLE_ARRAY.equals(keytype)) {

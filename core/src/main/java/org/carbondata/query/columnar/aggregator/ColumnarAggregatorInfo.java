@@ -24,12 +24,12 @@ import java.util.List;
 import java.util.Map;
 
 import org.carbondata.core.keygenerator.KeyGenerator;
-import org.carbondata.core.metadata.MolapMetadata.Dimension;
-import org.carbondata.core.olap.SqlStatement;
-import org.carbondata.query.aggregator.CustomMolapAggregateExpression;
+import org.carbondata.core.metadata.CarbonMetadata.Dimension;
+import org.carbondata.core.carbon.SqlStatement;
+import org.carbondata.query.aggregator.CustomCarbonAggregateExpression;
 import org.carbondata.query.aggregator.dimension.DimensionAggregatorInfo;
 import org.carbondata.query.complex.querytypes.GenericQueryType;
-import org.carbondata.query.datastorage.InMemoryCube;
+import org.carbondata.query.datastorage.InMemoryTable;
 
 public class ColumnarAggregatorInfo {
     /**
@@ -98,7 +98,7 @@ public class ColumnarAggregatorInfo {
     /**
      * slices
      */
-    private List<InMemoryCube> slices;
+    private List<InMemoryTable> slices;
     /**
      * currentSliceIndex
      */
@@ -110,7 +110,7 @@ public class ColumnarAggregatorInfo {
     /**
      *
      */
-    private List<CustomMolapAggregateExpression> expressions;
+    private List<CustomCarbonAggregateExpression> expressions;
     /**
      * expressionStartIndex
      */
@@ -280,11 +280,11 @@ public class ColumnarAggregatorInfo {
         this.msrMinValue = msrMinValue;
     }
 
-    public List<InMemoryCube> getSlices() {
+    public List<InMemoryTable> getSlices() {
         return slices;
     }
 
-    public void setSlices(List<InMemoryCube> slices) {
+    public void setSlices(List<InMemoryTable> slices) {
         this.slices = slices;
     }
 
@@ -320,11 +320,11 @@ public class ColumnarAggregatorInfo {
         this.actalMaskedByteRanges = actalMaskedByteRanges;
     }
 
-    public List<CustomMolapAggregateExpression> getCustomExpressions() {
+    public List<CustomCarbonAggregateExpression> getCustomExpressions() {
         return expressions;
     }
 
-    public void setCustomExpressions(List<CustomMolapAggregateExpression> expressions) {
+    public void setCustomExpressions(List<CustomCarbonAggregateExpression> expressions) {
         this.expressions = expressions;
     }
 

@@ -29,24 +29,24 @@ import org.apache.commons.vfs.FileSystemManager;
 import org.apache.commons.vfs.impl.DefaultFileSystemManager;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.csvreader.checkpoint.CheckPointHanlder;
 import org.carbondata.core.csvreader.checkpoint.CheckPointType;
-import org.carbondata.core.datastorage.store.filesystem.MolapFile;
-import org.carbondata.core.datastorage.store.filesystem.MolapFileFilter;
+import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
+import org.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
-import org.carbondata.core.olap.MolapDef.Cube;
-import org.carbondata.core.olap.MolapDef.Schema;
-import org.carbondata.core.util.MolapProperties;
+import org.carbondata.core.carbon.CarbonDef.Cube;
+import org.carbondata.core.carbon.CarbonDef.Schema;
+import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.processing.api.dataloader.SchemaInfo;
 import org.carbondata.processing.constants.DataProcessorConstants;
 import org.carbondata.processing.csvreaderstep.CsvInputMeta;
 import org.carbondata.processing.dataprocessor.IDataProcessStatus;
 import org.carbondata.processing.etl.DataLoadingException;
 import org.carbondata.processing.surrogatekeysgenerator.csvbased.BadRecordslogger;
-import org.carbondata.processing.util.MolapDataProcessorLogEvent;
-import org.carbondata.processing.util.MolapSchemaParser;
+import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
+import org.carbondata.processing.util.CarbonSchemaParser;
 import org.pentaho.di.core.KettleEnvironment;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleXMLException;
@@ -117,10 +117,10 @@ public class DataGraphExecuter {
     private String[] getColumnNames(SchemaInfo schemaInfo, String tableName, String partitionId,
             Schema schema) {
         if (schema == null) {
-            schema = MolapSchemaParser.loadXML(schemaInfo.getSchemaPath());
+            schema = CarbonSchemaParser.loadXML(schemaInfo.getSchemaPath());
         }
 
-        Cube cube = MolapSchemaParser.getMondrianCube(schema, schemaInfo.getCubeName());
+        Cube cube = CarbonSchemaParser.getMondrianCube(schema, schemaInfo.getCubeName());
 
         Set<String> columnNames = GraphExecutionUtil.getSchemaColumnNames(cube, tableName, schema);
 
@@ -138,8 +138,8 @@ public class DataGraphExecuter {
             String dimTableName, String partitionId, Schema schema) {
         Cube cube = null;
         if (schema == null) {
-            schema = MolapSchemaParser.loadXML(schemaInfo.getSchemaPath());
-            cube = MolapSchemaParser.getMondrianCube(schema, schemaInfo.getCubeName());
+            schema = CarbonSchemaParser.loadXML(schemaInfo.getSchemaPath());
+            cube = CarbonSchemaParser.getMondrianCube(schema, schemaInfo.getCubeName());
 
             if (partitionId != null) {
                 String originalSchemaName = schema.name;
@@ -148,20 +148,20 @@ public class DataGraphExecuter {
                 cube.name = originalCubeName + '_' + partitionId;
             }
         } else {
-            cube = MolapSchemaParser.getMondrianCube(schema, schemaInfo.getCubeName());
+            cube = CarbonSchemaParser.getMondrianCube(schema, schemaInfo.getCubeName());
         }
         Set<String> columnNames = GraphExecutionUtil
                 .getDimensionColumnNames(cube, factTableName, dimTableName, schema);
         return columnNames.toArray(new String[columnNames.size()]);
     }
 
-    private void validateCSV(SchemaInfo schemaInfo, String tableName, MolapFile f,
+    private void validateCSV(SchemaInfo schemaInfo, String tableName, CarbonFile f,
             String partitionId, Schema schema, String delimiter) throws DataLoadingException {
 
         String[] columnNames = getColumnNames(schemaInfo, tableName, partitionId, schema);
 
         if (!checkCSVAndRequestedTableColumns(columnNames, f.getAbsolutePath(), delimiter)) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "CSV File provided is not proper. Column names in schema and csv header are not same. CSVFile Name : "
                             + f.getName());
             throw new DataLoadingException(DataProcessorConstants.CSV_VALIDATION_ERRROR_CODE,
@@ -170,7 +170,7 @@ public class DataGraphExecuter {
         }
 
         if (!checkHeaderExist(columnNames, f.getAbsolutePath(), delimiter)) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "Header Columns are not present in the provided CSV File :" + f.getName());
             throw new DataLoadingException(DataProcessorConstants.CSV_VALIDATION_ERRROR_CODE,
                     "Header Columns are not present in the provided CSV File:" + f.getName());
@@ -224,7 +224,7 @@ public class DataGraphExecuter {
                         if (!e.getMessage()
                                 .contains("Multiple providers registered for URL scheme")) {
                             //                    		e.printStackTrace();
-                            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+                            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
                                     e.getMessage());
                         }
                     }
@@ -252,22 +252,22 @@ public class DataGraphExecuter {
             }
             setGraphLogLevel();
             trans.execute(null);
-            LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "Graph execution is started " + graphFilePath);
             trans.waitUntilFinished();
-            LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "Graph execution is finished.");
         } catch (KettleXMLException e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
                     "Unable to start execution of graph " + e.getMessage());
             throw new DataLoadingException("Unable to start execution of graph ", e);
 
         } catch (KettleException e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
                     "Unable to start execution of graph " + e.getMessage());
             throw new DataLoadingException("Unable to start execution of graph ", e);
         } catch (Throwable e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
                     "Unable to start execution of graph " + e.getMessage());
             throw new DataLoadingException("Unable to start execution of graph ", e);
         }
@@ -276,16 +276,16 @@ public class DataGraphExecuter {
         String key = model.getSchemaName() + '/' + model.getCubeName() + '_' + model.getTableName();
 
         if (trans.getErrors() > 0) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "Graph Execution had errors");
             throw new DataLoadingException("Internal Errors");
         } else if (null != BadRecordslogger.hasBadRecord(key)) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "Graph Execution is partcially success");
             throw new DataLoadingException(DataProcessorConstants.BAD_REC_FOUND,
                     "Graph Execution is partcially success");
         } else {
-            LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "Graph execution task is over with No error.");
         }
         LoggingRegistry instance = LoggingRegistry.getInstance();
@@ -331,7 +331,7 @@ public class DataGraphExecuter {
                     stepMetaInterface.setFileFormat("mixed");
                     stepMetaInterface.setAcceptingField("filename");
 
-                    MolapFile csvFileToRead =
+                    CarbonFile csvFileToRead =
                             GraphExecutionUtil.getCsvFileToRead(model.getCsvFilePath());
                     TextFileInputField[] inputFields = GraphExecutionUtil
                             .getTextInputFiles(csvFileToRead, measureColumns, builder,
@@ -365,7 +365,7 @@ public class DataGraphExecuter {
                         ((CsvInputMeta) step.getStepMetaInterface()).setHeaderPresent(false);
 
                     } else if (model.getFilesToProcess().size() > 0) {
-                        MolapFile csvFile = GraphExecutionUtil
+                        CarbonFile csvFile = GraphExecutionUtil
                                 .getCsvFileToRead(model.getFilesToProcess().get(0));
                         TextFileInputField[] inputFields = GraphExecutionUtil
                                 .getTextInputFiles(csvFile, measureColumns, builder,
@@ -411,7 +411,7 @@ public class DataGraphExecuter {
                             stepMetaInterface.setExcludeFileMask(new String[] { null });
                         } else {
                             stepMetaInterface.setFileName(new String[] { model.getCsvFilePath()
-                                    + MolapCommonConstants.FILE_INPROGRESS_STATUS });
+                                    + CarbonCommonConstants.FILE_INPROGRESS_STATUS });
                             stepMetaInterface.setExcludeFileMask(new String[] { null });
                         }
                     }
@@ -440,7 +440,7 @@ public class DataGraphExecuter {
         for (StepMeta step : stepsMeta) {
             if (step.getStepMetaInterface() instanceof CsvInputMeta) {
                 if (null != model.getCsvFilePath()) {
-                    MolapFile csvFileToRead =
+                    CarbonFile csvFileToRead =
                             GraphExecutionUtil.getCsvFileToRead(model.getCsvFilePath());
                     TextFileInputField[] inputFields = GraphExecutionUtil
                             .getTextInputFiles(csvFileToRead, measureColumns, builder,
@@ -457,7 +457,7 @@ public class DataGraphExecuter {
                         ((CsvInputMeta) step.getStepMetaInterface()).setHeaderPresent(false);
 
                     } else if (model.getFilesToProcess().size() > 0) {
-                        MolapFile csvFileToRead = GraphExecutionUtil
+                        CarbonFile csvFileToRead = GraphExecutionUtil
                                 .getCsvFileToRead(model.getFilesToProcess().get(0));
                         TextFileInputField[] inputFields = GraphExecutionUtil
                                 .getTextInputFiles(csvFileToRead, measureColumns, builder,
@@ -479,10 +479,10 @@ public class DataGraphExecuter {
     private void initKettleEnv() {
         try {
             KettleEnvironment.init(false);
-            LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "Kettle environment initialized");
         } catch (KettleException ke) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "Unable to initialize Kettle Environment " + ke.getMessage());
         }
     }
@@ -512,11 +512,11 @@ public class DataGraphExecuter {
     private String getCheckPointFileLocation(String schemaName, String cubeName) {
         // get the base location
         String tempLocationKey = schemaName + '_' + cubeName;
-        String baseLocation = MolapProperties.getInstance()
-                .getProperty(tempLocationKey, MolapCommonConstants.STORE_LOCATION_DEFAULT_VAL);
+        String baseLocation = CarbonProperties.getInstance()
+                .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
         // get the temp file location
         return baseLocation + File.separator + schemaName + File.separator + cubeName
-                + File.separator + MolapCommonConstants.SORT_TEMP_FILE_LOCATION + File.separator
+                + File.separator + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION + File.separator
                 + model.getTableName();
     }
 
@@ -526,7 +526,7 @@ public class DataGraphExecuter {
                 getColumnNames(schemaInfo, model.getTableName(), partitionId, schema);
         String[] csvHeader = model.getCsvHeader().split(",");
 
-        List<String> csvColumnsList = new ArrayList<String>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+        List<String> csvColumnsList = new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
 
         for (String column : csvHeader) {
             csvColumnsList.add(column.replaceAll("\"", "").trim());
@@ -541,7 +541,7 @@ public class DataGraphExecuter {
         }
 
         if (count != columnNames.length) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "CSV File provided is not proper. Column names in schema and CSV header are not same.");
             throw new DataLoadingException(DataProcessorConstants.CSV_VALIDATION_ERRROR_CODE,
                     "CSV File provided is not proper. Column names in schema and csv header are not same.");
@@ -563,30 +563,30 @@ public class DataGraphExecuter {
             try {
                 boolean exists = FileFactory.isFileExist(csvFilePath, fileType);
                 if (exists && FileFactory.getMolapFile(csvFilePath, fileType).isDirectory()) {
-                    MolapFile fileDir = FileFactory.getMolapFile(csvFilePath, fileType);
-                    MolapFile[] listFiles = fileDir.listFiles(new MolapFileFilter() {
+                    CarbonFile fileDir = FileFactory.getMolapFile(csvFilePath, fileType);
+                    CarbonFile[] listFiles = fileDir.listFiles(new CarbonFileFilter() {
 
                         @Override
-                        public boolean accept(MolapFile pathname) {
-                            if (pathname.getName().endsWith(MolapCommonConstants.CSV_FILE_EXTENSION)
+                        public boolean accept(CarbonFile pathname) {
+                            if (pathname.getName().endsWith(CarbonCommonConstants.CSV_FILE_EXTENSION)
                                     || pathname.getName().endsWith(
-                                    MolapCommonConstants.CSV_FILE_EXTENSION
-                                            + MolapCommonConstants.FILE_INPROGRESS_STATUS)) {
+                                    CarbonCommonConstants.CSV_FILE_EXTENSION
+                                            + CarbonCommonConstants.FILE_INPROGRESS_STATUS)) {
                                 return true;
                             }
                             return false;
                         }
                     });
 
-                    for (MolapFile f : listFiles) {
+                    for (CarbonFile f : listFiles) {
                         validateCSV(schemaInfo, model.getTableName(), f, partitionId, schema, ",");
                     }
                 } else {
 
-                    if (!(csvFilePath.endsWith(MolapCommonConstants.CSV_FILE_EXTENSION)
-                            || csvFilePath.endsWith(MolapCommonConstants.CSV_FILE_EXTENSION
-                            + MolapCommonConstants.FILE_INPROGRESS_STATUS))) {
-                        LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                    if (!(csvFilePath.endsWith(CarbonCommonConstants.CSV_FILE_EXTENSION)
+                            || csvFilePath.endsWith(CarbonCommonConstants.CSV_FILE_EXTENSION
+                            + CarbonCommonConstants.FILE_INPROGRESS_STATUS))) {
+                        LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                                 "File provided is not proper, Only csv files are allowed."
                                         + csvFilePath);
                         throw new DataLoadingException(
@@ -600,14 +600,14 @@ public class DataGraphExecuter {
                                 schema, ",");
                     } else {
                         validateCSV(schemaInfo, model.getTableName(), FileFactory.getMolapFile(
-                                csvFilePath + MolapCommonConstants.FILE_INPROGRESS_STATUS,
+                                csvFilePath + CarbonCommonConstants.FILE_INPROGRESS_STATUS,
                                 fileType), partitionId, schema, ",");
                     }
 
                 }
 
             } catch (IOException e) {
-                LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
                         "Error while checking file exists" + csvFilePath);
             }
         } else if (model.isDirectLoad()) {
@@ -623,7 +623,7 @@ public class DataGraphExecuter {
                                     model.getCsvDelimiter());
                         }
                     } catch (IOException e) {
-                        LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+                        LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
                                 "Error while checking file exists" + file);
                     }
                 }
@@ -646,19 +646,19 @@ public class DataGraphExecuter {
                         boolean exists = FileFactory.isFileExist(dimCSVFileLoc, fileType);
 
                         if (exists) {
-                            MolapFile dimCsvFile =
+                            CarbonFile dimCsvFile =
                                     FileFactory.getMolapFile(dimCSVFileLoc, fileType);
 
                             String dimFileName = dimCsvFile.getName();
 
-                            if (dimFileName.endsWith(MolapCommonConstants.CSV_FILE_EXTENSION)) {
+                            if (dimFileName.endsWith(CarbonCommonConstants.CSV_FILE_EXTENSION)) {
                                 String dimTableName = dimFileMap.split(":")[0];
 
                                 validateDimensionCSV(schemaInfo, model.getTableName(), dimTableName,
                                         dimCsvFile, partitionId, schema, ",");
                             } else {
                                 LOGGER.error(
-                                        MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                                        CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                                         "Dimension table file provided to load Dimension tables is not a CSV file : "
                                                 + dimCSVFileLoc);
                                 throw new DataLoadingException(
@@ -667,7 +667,7 @@ public class DataGraphExecuter {
                                                 + dimCSVFileLoc);
                             }
                         } else {
-                            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                                     "Dimension table csv file not present in the path provided to load Dimension tables : "
                                             + dimCSVFileLoc);
                             throw new DataLoadingException(
@@ -677,7 +677,7 @@ public class DataGraphExecuter {
                         }
                     }
                 } catch (IOException e) {
-                    LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                             "Dimension table csv file not present in the path provided to load Dimension tables : "
                                     + dimCSVFileLoc);
 
@@ -699,7 +699,7 @@ public class DataGraphExecuter {
      * @throws DataLoadingException
      */
     private void validateDimensionCSV(SchemaInfo schemaInfo, String factTableName,
-            String dimTableName, MolapFile dimFile, String partitionId, Schema schema,
+            String dimTableName, CarbonFile dimFile, String partitionId, Schema schema,
             String delimiter) throws DataLoadingException {
         String[] columnNames =
                 getDimColumnNames(schemaInfo, factTableName, dimTableName, partitionId, schema);
@@ -708,7 +708,7 @@ public class DataGraphExecuter {
             return;
         }
         if (!checkAllColumnsPresent(columnNames, dimFile.getAbsolutePath(), delimiter)) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "CSV File provided is not proper. Column names in schema and csv header are not same. CSVFile Name : "
                             + dimFile.getName());
             throw new DataLoadingException(DataProcessorConstants.CSV_VALIDATION_ERRROR_CODE,
@@ -717,7 +717,7 @@ public class DataGraphExecuter {
         }
 
         if (!checkDimHeaderExist(columnNames, dimFile.getAbsolutePath(), delimiter)) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "Header Columns are not present in the provided CSV File For Dimension Table Load :"
                             + dimFile.getName());
             throw new DataLoadingException(DataProcessorConstants.CSV_VALIDATION_ERRROR_CODE,
@@ -752,11 +752,11 @@ public class DataGraphExecuter {
      * Interrupts all child threads run by kettle to execute the graph
      */
     public void interruptGraphExecution() {
-        LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                 "Graph Execution is interrupted");
         if (null != trans) {
             trans.killAll();
-            LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "Graph execution steps are killed.");
         }
     }

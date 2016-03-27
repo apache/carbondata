@@ -22,35 +22,35 @@ package org.carbondata.query.result;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.iterator.MolapIterator;
-import org.carbondata.query.scanner.impl.MolapKey;
-import org.carbondata.query.scanner.impl.MolapValue;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.iterator.CarbonIterator;
+import org.carbondata.query.scanner.impl.CarbonKey;
+import org.carbondata.query.scanner.impl.CarbonValue;
 
-public class ChunkResult implements MolapIterator<RowResult> {
-    private List<MolapKey> keys;
-    private List<MolapValue> values;
+public class ChunkResult implements CarbonIterator<RowResult> {
+    private List<CarbonKey> keys;
+    private List<CarbonValue> values;
 
     private int counter;
 
     public ChunkResult() {
-        keys = new ArrayList<MolapKey>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
-        values = new ArrayList<MolapValue>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+        keys = new ArrayList<CarbonKey>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+        values = new ArrayList<CarbonValue>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     }
 
-    public List<MolapKey> getKeys() {
+    public List<CarbonKey> getKeys() {
         return keys;
     }
 
-    public void setKeys(List<MolapKey> keys) {
+    public void setKeys(List<CarbonKey> keys) {
         this.keys = keys;
     }
 
-    public List<MolapValue> getValues() {
+    public List<CarbonValue> getValues() {
         return values;
     }
 
-    public void setValues(List<MolapValue> values) {
+    public void setValues(List<CarbonValue> values) {
         this.values = values;
     }
 

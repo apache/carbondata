@@ -31,7 +31,7 @@ package org.carbondata.query.aggregator;
 import java.util.List;
 
 import org.carbondata.query.expression.ColumnExpression;
-import org.carbondata.query.molapfilterinterface.RowIntf;
+import org.carbondata.query.carbonfilterinterface.RowIntf;
 
 /**
  * @author K00900207

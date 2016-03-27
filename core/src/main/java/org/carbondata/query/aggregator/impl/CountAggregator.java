@@ -25,8 +25,8 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.datastorage.store.dataholder.MolapReadDataHolder;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.carbondata.query.aggregator.MeasureAggregator;
 
 /**
@@ -66,7 +66,7 @@ public class CountAggregator implements MeasureAggregator {
     }
 
     @Override
-    public void agg(MolapReadDataHolder newVal, int index) {
+    public void agg(CarbonReadDataHolder newVal, int index) {
         aggVal++;
     }
 
@@ -75,7 +75,7 @@ public class CountAggregator implements MeasureAggregator {
      */
     @Override
     public byte[] getByteArray() {
-        ByteBuffer buffer = ByteBuffer.allocate(MolapCommonConstants.DOUBLE_SIZE_IN_BYTE);
+        ByteBuffer buffer = ByteBuffer.allocate(CarbonCommonConstants.DOUBLE_SIZE_IN_BYTE);
         buffer.putDouble(aggVal);
         return buffer.array();
     }

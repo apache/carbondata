@@ -19,8 +19,8 @@
 
 package org.carbondata.processing.globalsurrogategenerator;
 
-import org.carbondata.core.olap.MolapDef.CubeDimension;
-import org.carbondata.core.olap.MolapDef.Schema;
+import org.carbondata.core.carbon.CarbonDef.CubeDimension;
+import org.carbondata.core.carbon.CarbonDef.Schema;
 
 public class GlobalSurrogateGeneratorInfo {
 

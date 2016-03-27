@@ -19,10 +19,10 @@
 
 package org.carbondata.core.keygenerator.factory;
 
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.keygenerator.mdkey.MultiDimKeyVarLengthGenerator;
-import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.util.CarbonUtil;
 
 public final class KeyGeneratorFactory {
     private KeyGeneratorFactory() {
@@ -32,17 +32,17 @@ public final class KeyGeneratorFactory {
     public static KeyGenerator getKeyGenerator(int[] dimesion) {
         int[] incrementedCardinality = null;
         boolean isFullyFilled =
-                Boolean.parseBoolean(MolapCommonConstants.IS_FULLY_FILLED_BITS_DEFAULT_VALUE);
+                Boolean.parseBoolean(CarbonCommonConstants.IS_FULLY_FILLED_BITS_DEFAULT_VALUE);
         if (!isFullyFilled) {
-            incrementedCardinality = MolapUtil.getIncrementedCardinality(dimesion);
+            incrementedCardinality = CarbonUtil.getIncrementedCardinality(dimesion);
         } else {
-            incrementedCardinality = MolapUtil.getIncrementedCardinalityFullyFilled(dimesion);
+            incrementedCardinality = CarbonUtil.getIncrementedCardinalityFullyFilled(dimesion);
         }
         return new MultiDimKeyVarLengthGenerator(incrementedCardinality);
     }
 
     public static KeyGenerator getKeyGenerator(int[] dimCardinality, int[][] splits) {
-        int[] dimsBitLens = MolapUtil.getDimensionBitLength(dimCardinality, splits);
+        int[] dimsBitLens = CarbonUtil.getDimensionBitLength(dimCardinality, splits);
 
         return new MultiDimKeyVarLengthGenerator(dimsBitLens);
     }

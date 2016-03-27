@@ -25,14 +25,14 @@ import java.util.concurrent.TimeUnit;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
-import org.carbondata.core.olap.MolapDef.Cube;
-import org.carbondata.core.olap.MolapDef.CubeDimension;
-import org.carbondata.core.olap.MolapDef.Schema;
-import org.carbondata.core.util.MolapUtil;
-import org.carbondata.processing.util.MolapDataProcessorLogEvent;
-import org.carbondata.processing.util.MolapSchemaParser;
+import org.carbondata.core.carbon.CarbonDef.Cube;
+import org.carbondata.core.carbon.CarbonDef.CubeDimension;
+import org.carbondata.core.carbon.CarbonDef.Schema;
+import org.carbondata.core.util.CarbonUtil;
+import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
+import org.carbondata.processing.util.CarbonSchemaParser;
 
 public class GlobalSurrogateGenerator {
     private static final LogService LOGGER =
@@ -51,12 +51,12 @@ public class GlobalSurrogateGenerator {
     public GlobalSurrogateGenerator(GlobalSurrogateGeneratorInfo generatorInfo) {
         this.generatorInfo = generatorInfo;
         schema = generatorInfo.getSchema();
-        cube = MolapSchemaParser.getMondrianCube(schema, generatorInfo.getCubeName());
+        cube = CarbonSchemaParser.getMondrianCube(schema, generatorInfo.getCubeName());
     }
 
     public void generateGlobalSurrogates(int currentRestructNumber) {
         String hdfsLocation = generatorInfo.getStoreLocation();
-        LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                 "HDFS Location: " + hdfsLocation);
         int numberOfPartition = generatorInfo.getNumberOfPartition();
         String[][] partitionLocation = new String[numberOfPartition][];
@@ -77,12 +77,12 @@ public class GlobalSurrogateGenerator {
                 restrctFolderCount = 0;
             }
             storeLocation.append('/');
-            storeLocation.append(MolapCommonConstants.RESTRUCTRE_FOLDER);
+            storeLocation.append(CarbonCommonConstants.RESTRUCTRE_FOLDER);
             storeLocation.append(restrctFolderCount);
             storeLocation.append('/');
             storeLocation.append(generatorInfo.getTableName());
 
-            partitionLocation[i] = MolapUtil
+            partitionLocation[i] = CarbonUtil
                     .getSlices(storeLocation.toString(), generatorInfo.getTableName(),
                             FileFactory.getFileType(storeLocation.toString()));
         }
@@ -99,7 +99,7 @@ public class GlobalSurrogateGenerator {
         try {
             writerExecutorService.awaitTermination(2, TimeUnit.DAYS);
         } catch (InterruptedException e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e,
                     e.getMessage());
         }
     }

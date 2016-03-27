@@ -26,26 +26,26 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.metadata.SliceMetaData;
 
 public class RestructureStore implements Comparable<RestructureStore> {
     /**
      *
      */
-    private Map<String, List<InMemoryCube>> slices =
-            new ConcurrentHashMap<String, List<InMemoryCube>>(
-                    MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+    private Map<String, List<InMemoryTable>> slices =
+            new ConcurrentHashMap<String, List<InMemoryTable>>(
+                    CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
     /**
      * Map of table name and SliceMetaData (Fact table, all aggregate tables)
      */
     private Map<String, SliceMetaData> sliceMetaCacheMap =
             new ConcurrentHashMap<String, SliceMetaData>(
-                    MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                    CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
     private Map<String, String> sliceMetaPathMap =
-            new ConcurrentHashMap<String, String>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+            new ConcurrentHashMap<String, String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
     /**
      *
@@ -62,9 +62,9 @@ public class RestructureStore implements Comparable<RestructureStore> {
     /**
      * @param activeSlices
      */
-    public void getActiveSlices(List<InMemoryCube> activeSlices) {
-        for (Entry<String, List<InMemoryCube>> entry : slices.entrySet()) {
-            for (InMemoryCube slice : entry.getValue()) {
+    public void getActiveSlices(List<InMemoryTable> activeSlices) {
+        for (Entry<String, List<InMemoryTable>> entry : slices.entrySet()) {
+            for (InMemoryTable slice : entry.getValue()) {
                 if (slice.isActive()) {
                     activeSlices.add(slice);
                 }
@@ -76,9 +76,9 @@ public class RestructureStore implements Comparable<RestructureStore> {
      * @param ids
      * @param slicesByIds
      */
-    public void getSlicesByIds(List<Long> ids, List<InMemoryCube> slicesByIds) {
-        for (Entry<String, List<InMemoryCube>> entry : slices.entrySet()) {
-            for (InMemoryCube slice : entry.getValue()) {
+    public void getSlicesByIds(List<Long> ids, List<InMemoryTable> slicesByIds) {
+        for (Entry<String, List<InMemoryTable>> entry : slices.entrySet()) {
+            for (InMemoryTable slice : entry.getValue()) {
                 if (ids.indexOf(slice.getID()) != -1) {
                     if (slice.isActive()) {
                         slicesByIds.add(slice);
@@ -92,8 +92,8 @@ public class RestructureStore implements Comparable<RestructureStore> {
      * @param sliceIds
      */
     public void getActiveSliceIds(List<Long> sliceIds) {
-        for (Entry<String, List<InMemoryCube>> entry : slices.entrySet()) {
-            for (InMemoryCube slice : entry.getValue()) {
+        for (Entry<String, List<InMemoryTable>> entry : slices.entrySet()) {
+            for (InMemoryTable slice : entry.getValue()) {
                 if (slice.isActive()) {
                     sliceIds.add(slice.getID());
                 }
@@ -111,24 +111,24 @@ public class RestructureStore implements Comparable<RestructureStore> {
     /**
      * @return the slices
      */
-    public List<InMemoryCube> getSlices(String tableName) {
+    public List<InMemoryTable> getSlices(String tableName) {
         return slices.get(tableName);
     }
 
     /**
      * @param slices the slices to set
      */
-    public synchronized void setSlice(InMemoryCube slice, String tableName) {
-        List<InMemoryCube> sliceList = slices.get(tableName);
+    public synchronized void setSlice(InMemoryTable slice, String tableName) {
+        List<InMemoryTable> sliceList = slices.get(tableName);
         if (sliceList == null) {
-            sliceList = new ArrayList<InMemoryCube>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+            sliceList = new ArrayList<InMemoryTable>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
             this.slices.put(tableName, sliceList);
         }
 
-        for (Iterator<InMemoryCube> iterator = sliceList.iterator(); iterator.hasNext(); ) {
-            InMemoryCube loadedSlice = iterator.next();
-            if (loadedSlice.getCubeSlicePathInfo().getLoadPath()
-                    .equals(slice.getCubeSlicePathInfo().getLoadPath())) {
+        for (Iterator<InMemoryTable> iterator = sliceList.iterator(); iterator.hasNext(); ) {
+            InMemoryTable loadedSlice = iterator.next();
+            if (loadedSlice.getTableSlicePathInfo().getLoadPath()
+                    .equals(slice.getTableSlicePathInfo().getLoadPath())) {
                 iterator.remove();
                 break;
             }
@@ -140,8 +140,8 @@ public class RestructureStore implements Comparable<RestructureStore> {
     /**
      * @param slices the slices to remove
      */
-    public void removeSlice(InMemoryCube slice, String tableName) {
-        List<InMemoryCube> sliceList = slices.get(tableName);
+    public void removeSlice(InMemoryTable slice, String tableName) {
+        List<InMemoryTable> sliceList = slices.get(tableName);
         if (sliceList != null) {
             sliceList.remove(slice);
         }
@@ -222,7 +222,7 @@ public class RestructureStore implements Comparable<RestructureStore> {
 
     }
 
-    public void setSlices(Map<String, List<InMemoryCube>> slices) {
+    public void setSlices(Map<String, List<InMemoryTable>> slices) {
         this.slices = slices;
     }
 

@@ -26,12 +26,12 @@ import java.util.Map;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.keygenerator.KeyGenException;
-import org.carbondata.core.metadata.MolapMetadata.Dimension;
-import org.carbondata.query.executer.AbstractMolapExecutor;
-import org.carbondata.query.executer.MolapQueryExecutorModel;
-import org.carbondata.query.holders.MolapResultHolder;
-import org.carbondata.query.queryinterface.filter.MolapFilterInfo;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.core.metadata.CarbonMetadata.Dimension;
+import org.carbondata.query.executer.AbstractCarbonExecutor;
+import org.carbondata.query.executer.CarbonQueryExecutorModel;
+import org.carbondata.query.holders.CarbonResultHolder;
+import org.carbondata.query.queryinterface.filter.CarbonFilterInfo;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 
 //import mondrian.rolap.SqlStatement;
 //import mondrian.rolap.SqlStatement.Type;
@@ -43,7 +43,7 @@ import org.carbondata.query.util.MolapEngineLogEvent;
  *
  * @author K00900841
  */
-public class InMemoryQueryExecutor extends AbstractMolapExecutor implements RowCounterListner {
+public class InMemoryQueryExecutor extends AbstractCarbonExecutor implements RowCounterListner {
 
     //    /**
     //     * 
@@ -149,66 +149,66 @@ public class InMemoryQueryExecutor extends AbstractMolapExecutor implements RowC
             LogServiceFactory.getLogService(InMemoryQueryExecutor.class.getName());
 
     @Override
-    public void execute(MolapQueryExecutorModel queryModel) throws IOException, KeyGenException {
-        LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "UNSUPPORT Operation");
+    public void execute(CarbonQueryExecutorModel queryModel) throws IOException, KeyGenException {
+        LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "UNSUPPORT Operation");
     }
 
     @Override
     public void executeHierarichies(String hName, final int[] dims, List<Dimension> dimNames,
-            Map<Dimension, MolapFilterInfo> constraints, MolapResultHolder hIterator)
+            Map<Dimension, CarbonFilterInfo> constraints, CarbonResultHolder hIterator)
             throws IOException, KeyGenException {
-        LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "UNSUPPORT Operation");
+        LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "UNSUPPORT Operation");
 
     }
 
     @Override
-    public void executeDimensionCount(Dimension dimension, MolapResultHolder hIterator)
+    public void executeDimensionCount(Dimension dimension, CarbonResultHolder hIterator)
             throws IOException {
-        LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "UNSUPPORT Operation");
+        LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "UNSUPPORT Operation");
 
     }
 
     @Override
-    public void executeAggTableCount(String table, MolapResultHolder hIterator) throws IOException {
-        LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "UNSUPPORT Operation");
+    public void executeAggTableCount(String table, CarbonResultHolder hIterator) throws IOException {
+        LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "UNSUPPORT Operation");
 
     }
 
     @Override
     public long executeTableCount(String table) throws IOException {
-        LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "UNSUPPORT Operation");
+        LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "UNSUPPORT Operation");
         return 0;
     }
 
     @Override
     public void executeDimension(String hName, Dimension dim, final int[] dims,
-            Map<Dimension, MolapFilterInfo> constraints, MolapResultHolder hIterator)
+            Map<Dimension, CarbonFilterInfo> constraints, CarbonResultHolder hIterator)
             throws IOException {
-        LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "UNSUPPORT Operation");
+        LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "UNSUPPORT Operation");
 
     }
 
     @Override
     public void interruptExecutor() {
-        LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "UNSUPPORT Operation");
+        LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "UNSUPPORT Operation");
 
     }
 
     @Override
     public void rowLimitExceeded() throws Exception {
-        LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "UNSUPPORT Operation");
+        LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "UNSUPPORT Operation");
 
     }
 
     @Override
     protected Long getMaxValue(Dimension dim) throws IOException {
-        LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "UNSUPPORT Operation");
+        LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "UNSUPPORT Operation");
         return 0L;
     }
 
     @Override
     public long[] getSurrogates(List<String> dimMem, Dimension dimName) throws IOException {
-        LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "UNSUPPORT Operation");
+        LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "UNSUPPORT Operation");
         return new long[0];
     }
 

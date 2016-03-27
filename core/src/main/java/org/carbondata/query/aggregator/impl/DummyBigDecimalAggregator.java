@@ -5,7 +5,7 @@ package org.carbondata.query.aggregator.impl;
 
 import java.math.BigDecimal;
 
-import org.carbondata.core.datastorage.store.dataholder.MolapReadDataHolder;
+import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 
 /**
  * @author z00305190
@@ -24,7 +24,7 @@ public class DummyBigDecimalAggregator extends AbstractMeasureAggregatorDummy {
     }
 
     @Override
-    public void agg(MolapReadDataHolder newVal, int index) {
+    public void agg(CarbonReadDataHolder newVal, int index) {
         aggVal = newVal.getReadableBigDecimalValueByIndex(index);
     }
 

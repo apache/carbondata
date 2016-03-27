@@ -24,7 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
  * This class will collect query stats and other details like cube,schema, and
@@ -77,7 +77,7 @@ public final class QueryStatsCollector {
                 queryStore.logQuery(queryDetail);
             }
         } catch (Exception e) {
-            LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "Error in logging query:" + e);
+            LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, "Error in logging query:" + e);
         }
 
     }

@@ -23,8 +23,8 @@ import java.util.List;
 
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.query.aggregator.MeasureAggregator;
-import org.carbondata.query.datastorage.InMemoryCube;
-import org.carbondata.query.datastorage.InMemoryCubeStore;
+import org.carbondata.query.datastorage.InMemoryTable;
+import org.carbondata.query.datastorage.InMemoryTableStore;
 import org.carbondata.query.datastorage.Member;
 
 /**
@@ -67,9 +67,9 @@ public abstract class AbstractMeasureAggregator
         long[] ls = generator.getKeyArray(val);
         if (!isDataLoadRequest) {
             Member memberByID = null;
-            List<InMemoryCube> slices =
-                    InMemoryCubeStore.getInstance().getActiveSlices(cubeUniqueName);
-            for (InMemoryCube slic : slices) {
+            List<InMemoryTable> slices =
+                    InMemoryTableStore.getInstance().getActiveSlices(cubeUniqueName);
+            for (InMemoryTable slic : slices) {
                 Member member = slic.getMemberCache(
                         tableName + '_' + columnName + "_" + dimensionName + "_" + hierarchyName)
                         .getMemberByID((int) ls[keyOrdinal]);

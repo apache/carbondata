@@ -25,12 +25,12 @@ import java.util.Map;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.datastorage.store.filesystem.MolapFile;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
-import org.carbondata.core.util.MolapUtil;
-import org.carbondata.processing.util.MolapDataProcessorLogEvent;
+import org.carbondata.core.util.CarbonUtil;
+import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 
 public class BadRecordslogger {
 
@@ -44,7 +44,7 @@ public class BadRecordslogger {
      * the status
      */
     private static Map<String, String> badRecordEntry =
-            new HashMap<String, String>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+            new HashMap<String, String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     /**
      * File Name
      */
@@ -61,7 +61,7 @@ public class BadRecordslogger {
     /**
      *
      */
-    private MolapFile logFile;
+    private CarbonFile logFile;
     /**
      * task key which is Schemaname/CubeName/tablename
      */
@@ -90,7 +90,7 @@ public class BadRecordslogger {
         for (int i = 0; i < size; i++) {
             if (null == row[i]) {
                 logStrings.append(row[i]);
-            } else if (MolapCommonConstants.MEMBER_DEFAULT_VAL.equals(row[i].toString())) {
+            } else if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(row[i].toString())) {
                 logStrings.append(valueComparer);
             } else {
                 logStrings.append(row[i]);
@@ -103,9 +103,9 @@ public class BadRecordslogger {
 
         logStrings.append("----->");
         if (null != reason) {
-            if (reason.indexOf(MolapCommonConstants.MEMBER_DEFAULT_VAL) > -1) {
+            if (reason.indexOf(CarbonCommonConstants.MEMBER_DEFAULT_VAL) > -1) {
                 logStrings.append(reason
-                        .replace(MolapCommonConstants.MEMBER_DEFAULT_VAL, valueComparer));
+                        .replace(CarbonCommonConstants.MEMBER_DEFAULT_VAL, valueComparer));
             } else {
                 logStrings.append(reason);
             }
@@ -119,7 +119,7 @@ public class BadRecordslogger {
      */
     private synchronized void writeBadRecordsToFile(StringBuilder logStrings) {
         String filePath = this.storePath + File.separator + this.fileName
-                + MolapCommonConstants.FILE_INPROGRESS_STATUS;
+                + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
         if (null == logFile) {
             logFile = FileFactory.getMolapFile(filePath, FileFactory.getFileType(filePath));
         }
@@ -138,16 +138,16 @@ public class BadRecordslogger {
                 outStream = FileFactory.getDataOutputStream(filePath, fileType);
 
                 bufferedWriter = new BufferedWriter(new OutputStreamWriter(outStream,
-                        MolapCommonConstants.MOLAP_DEFAULT_STREAM_ENCODEFORMAT));
+                        CarbonCommonConstants.MOLAP_DEFAULT_STREAM_ENCODEFORMAT));
 
             }
             bufferedWriter.write(logStrings.toString());
             bufferedWriter.newLine();
         } catch (FileNotFoundException e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "Bad Log Files not found");
         } catch (IOException e) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "Error While writing bad log File");
         } finally {
             // if the Bad record file is created means it partially success
@@ -161,7 +161,7 @@ public class BadRecordslogger {
      * closeStreams void
      */
     public synchronized void closeStreams() {
-        MolapUtil.closeStreams(bufferedWriter, outStream);
+        CarbonUtil.closeStreams(bufferedWriter, outStream);
     }
 
 }

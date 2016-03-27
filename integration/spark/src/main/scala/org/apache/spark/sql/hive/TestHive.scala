@@ -36,7 +36,7 @@ object TestHive {
     sparkConf.set("carbon.storelocation", "E:/Spark_Olap/data_load/load_test/olap_store")
     sparkConf.set("molap.kettle.home", "E:/Spark_Olap/data_load/load_test/molapplugins")
     sparkConf.set("molap.is.columnar.storage", "true")
-    sparkConf.set("spark.sql.huawei.register.dialect", "org.apache.spark.sql.MolapSqlDDLParser")
+    sparkConf.set("spark.sql.huawei.register.dialect", "org.apache.spark.sql.CarbonSqlDDLParser")
     sparkConf.set("spark.sql.huawei.register.strategyRule", "org.apache.spark.sql.hive.CarbonStrategy")
     sparkConf.set("spark.sql.huawei.initFunction", "org.apache.spark.sql.CarbonEnv")
     sparkConf.set("spark.sql.huawei.acl.enable", "false")
@@ -102,7 +102,7 @@ object TestHive {
 
     //lap.sql("select series,sum(gamepointid) from Carbon_automation1 group by series").show
 
-    //    val olap = new OlapContext(sc, "D:/TestData/Vmall/store/")
+    //    val olap = new CarbonContext(sc, "D:/TestData/Vmall/store/")
     //    olap.setConf("molap.kettle.home", "D:/TestData/molapplugins")
     //    olap.setConf("molap.is.columnar.storage", "true")
     //    olap.loadSchema("D:/TestData/Vmall/schemal.xml",false,false, Partitioner("com.huawei.datasight.molap.partition.api.impl.SampleDataPartitionerImpl", Seq("imei").toArray, 1, null))
@@ -126,9 +126,9 @@ object TestHive {
     //    olap.sql("describe upgrade_behavior_cube").show(100)
     //
     //    System.setProperty("HADOOP_USER_NAME", "root")
-    //    val olap = new OlapContext(sc, "D:/TestData/context/")
-    //    val olap = new OlapContext(sc, "hdfs://10.67.180.124:54310/opt/datasight/vmalldemo2/store")
-    //    val olap = new OlapContext(sc, "hdfs://master:54310/opt/naresh/itr2/test1")
+    //    val olap = new CarbonContext(sc, "D:/TestData/context/")
+    //    val olap = new CarbonContext(sc, "hdfs://10.67.180.124:54310/opt/datasight/vmalldemo2/store")
+    //    val olap = new CarbonContext(sc, "hdfs://master:54310/opt/naresh/itr2/test1")
     //    olap.setConf("molap.kettle.home", "D:/TestData/molapplugins")
     //    olap.setConf("molap.is.columnar.storage", "true")
 
@@ -174,10 +174,10 @@ object TestHive {
     //    new SparkSQLParser(fallback(_))
     //    }
 
-    //    val olap = new OlapContext(sc, "hdfs://master:54310/1daymeta")
-    //    val olap = new OlapContext(sc, "hdfs://10.67.174.246:9000/sampledata")
-    //    val olap = new OlapContext(sc, "D:/ravif")
-    //    val olap = new OlapContext(sc, "hdfs://master:54310/partmeta8")
+    //    val olap = new CarbonContext(sc, "hdfs://master:54310/1daymeta")
+    //    val olap = new CarbonContext(sc, "hdfs://10.67.174.246:9000/sampledata")
+    //    val olap = new CarbonContext(sc, "D:/ravif")
+    //    val olap = new CarbonContext(sc, "hdfs://master:54310/partmeta8")
     //    olap.setConf("molap.kettle.home", "G:/mavenlib/molapplugins")
     //    olap.setConf("molap.is.columnar.storage", "true")
     //    olap.setConf("molap.kettle.home", "F:/TRPSVN/Molap/Molap-Data-Processor_vishal/molapplugins/molapplugins")
@@ -205,7 +205,7 @@ object TestHive {
     //    olap.sql("select MSISDN,LAC,Count(MEAN_THROUGHPUT_DL_min) from PCC_Vivo_bill2 group by MSISDN,LAC").collect foreach(println)
     //       Partitioner("com.huawei.datasight.molap.partition.api.impl.SampleDataPartitionerImpl", Seq("d1").toArray, 10, null)
     //    olap.loadData("PCC", "ODM", "hdfs://master:54310/ravi/part4", "hdfs://master:54310/ravi/dimensions")
-    //    println(new MolapSqlDDLParser().apply("create cube rav dimensions(d1 string, d2 Integer) measures(m1 int) mapped by (csv1 cols[d2=c2,m1=c1] ,csv3 relation[csv1.c1=csv3.c3] cols[d1=c1]) options(cardinality[d1=100] aggregation[m1=COUNT])"))
+    //    println(new CarbonSqlDDLParser().apply("create cube rav dimensions(d1 string, d2 Integer) measures(m1 int) mapped by (csv1 cols[d2=c2,m1=c1] ,csv3 relation[csv1.c1=csv3.c3] cols[d1=c1]) options(cardinality[d1=100] aggregation[m1=COUNT])"))
     //                 MolapProperties.getInstance().addProperty("molap.is.columnar.storage", "true");
     //             MolapProperties.getInstance().addProperty("molap.dimension.split.value.in.columnar", "1");
     //             MolapProperties.getInstance().addProperty("molap.is.fullyfilled.bits", "true");

@@ -21,7 +21,7 @@ package org.carbondata.processing.sortandgroupby.sortData;
 
 import java.io.File;
 
-import org.carbondata.processing.sortandgroupby.exception.MolapSortKeyAndGroupByException;
+import org.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 
 public class SortTempFileChunkWriter implements TempSortFileWriter {
     /**
@@ -47,7 +47,7 @@ public class SortTempFileChunkWriter implements TempSortFileWriter {
     /**
      * initialize
      */
-    public void initiaize(File file, int entryCount) throws MolapSortKeyAndGroupByException {
+    public void initiaize(File file, int entryCount) throws CarbonSortKeyAndGroupByException {
         this.writer.initiaize(file, entryCount);
     }
 
@@ -61,7 +61,7 @@ public class SortTempFileChunkWriter implements TempSortFileWriter {
     /**
      * Below method will be used to write the sort temp file chunk by chunk
      */
-    public void writeSortTempFile(Object[][] records) throws MolapSortKeyAndGroupByException {
+    public void writeSortTempFile(Object[][] records) throws CarbonSortKeyAndGroupByException {
         int recordCount = 0;
         Object[][] tempRecords;
         while (recordCount < records.length) {

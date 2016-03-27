@@ -19,20 +19,20 @@
 
 package org.carbondata.query.result.iterator;
 
-import org.carbondata.core.iterator.MolapIterator;
-import org.carbondata.query.executer.MolapQueryExecutorModel;
+import org.carbondata.core.iterator.CarbonIterator;
+import org.carbondata.query.executer.CarbonQueryExecutorModel;
 import org.carbondata.query.executer.impl.QueryExecuterProperties;
 import org.carbondata.query.executer.impl.QueryResultPreparator;
 import org.carbondata.query.executer.pagination.impl.QueryResult;
 import org.carbondata.query.result.ChunkResult;
 
-public class ChunkBasedResultIterator implements MolapIterator<ChunkResult> {
-    private MolapIterator<QueryResult> queryResultIterator;
+public class ChunkBasedResultIterator implements CarbonIterator<ChunkResult> {
+    private CarbonIterator<QueryResult> queryResultIterator;
 
     private QueryResultPreparator queryResultPreparator;
 
-    public ChunkBasedResultIterator(MolapIterator<QueryResult> queryResultIterator,
-            QueryExecuterProperties executerProperties, MolapQueryExecutorModel queryModel) {
+    public ChunkBasedResultIterator(CarbonIterator<QueryResult> queryResultIterator,
+            QueryExecuterProperties executerProperties, CarbonQueryExecutorModel queryModel) {
         this.queryResultIterator = queryResultIterator;
         this.queryResultPreparator = new QueryResultPreparator(executerProperties, queryModel);
 

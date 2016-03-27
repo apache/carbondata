@@ -25,10 +25,10 @@ import java.nio.charset.Charset;
 import org.apache.commons.codec.binary.Base64;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.util.MolapCoreLogEvent;
-import org.carbondata.core.util.MolapProperties;
-import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.util.CarbonCoreLogEvent;
+import org.carbondata.core.util.CarbonProperties;
+import org.carbondata.core.util.CarbonUtil;
 import org.pentaho.di.core.exception.KettleException;
 
 public class LevelValueWriter {
@@ -77,17 +77,17 @@ public class LevelValueWriter {
     private int maxSurrogate;
 
     public LevelValueWriter(String meString, String storeFolderLocation) throws KettleException {
-        MolapProperties instance = MolapProperties.getInstance();
+        CarbonProperties instance = CarbonProperties.getInstance();
 
         this.memberFileName = meString;
         this.storeFolderLocation = storeFolderLocation;
 
-        this.toflush = Integer.parseInt(instance.getProperty(MolapCommonConstants.SORT_SIZE,
-                MolapCommonConstants.SORT_SIZE_DEFAULT_VAL));
+        this.toflush = Integer.parseInt(instance.getProperty(CarbonCommonConstants.SORT_SIZE,
+                CarbonCommonConstants.SORT_SIZE_DEFAULT_VAL));
 
         int rowSetSize = Integer.parseInt(
-                instance.getProperty(MolapCommonConstants.GRAPH_ROWSET_SIZE,
-                        MolapCommonConstants.GRAPH_ROWSET_SIZE_DEFAULT));
+                instance.getProperty(CarbonCommonConstants.GRAPH_ROWSET_SIZE,
+                        CarbonCommonConstants.GRAPH_ROWSET_SIZE_DEFAULT));
 
         if (this.toflush > rowSetSize) {
             this.toflush = rowSetSize;
@@ -123,7 +123,7 @@ public class LevelValueWriter {
         for (File levelFile : filesList) {
             String levelFileName = levelFile.getName();
 
-            if (levelFileName.endsWith(MolapCommonConstants.FILE_INPROGRESS_STATUS)) {
+            if (levelFileName.endsWith(CarbonCommonConstants.FILE_INPROGRESS_STATUS)) {
                 levelFileName = levelFileName.substring(0, levelFileName.lastIndexOf('.'));
                 try {
                     counter = Integer.parseInt(levelFileName.substring(meString.length()));
@@ -136,20 +136,20 @@ public class LevelValueWriter {
                         File changetoName = new File(storeFolder + File.separator + levelFileName);
 
                         if (inprogressFile.renameTo(changetoName)) {
-                            LOGGER.info(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                            LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
                                     "Renaming the level Files while creating the new instance on server startup.");
                         }
                     }
                 } catch (NumberFormatException nfe) {
-                    if (new File(levelFileName + '0' + MolapCommonConstants.LEVEL_FILE_EXTENSION)
+                    if (new File(levelFileName + '0' + CarbonCommonConstants.LEVEL_FILE_EXTENSION)
                             .exists()) {
                         // Need to skip because the case can come in which server went down while files were merging and the other level
                         // files were not deleted, and the current file status is inrogress. so again we will merge the files and
                         // rename to normal file
-                        LOGGER.info(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                        LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
                                 "Need to skip as this can be case in which level file already renamed.");
                         if (levelFile.delete()) {
-                            LOGGER.info(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                            LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
                                     "Deleted the Inprogress level Files.");
                         }
                     } else {
@@ -162,7 +162,7 @@ public class LevelValueWriter {
                         File changetoName = new File(storeFolder + File.separator + levelFileName);
 
                         if (inprogressFile.renameTo(changetoName)) {
-                            LOGGER.info(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                            LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
                                     "Renaming the level Files while creating the new instance on server startup.");
                         }
 
@@ -195,7 +195,7 @@ public class LevelValueWriter {
         try {
             parsedVal = Integer.parseInt(val);
         } catch (NumberFormatException nfe) {
-            LOGGER.info(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
                     "Level File is already renamed so there will not be"
                             + "any need to keep the counter");
         }
@@ -207,7 +207,7 @@ public class LevelValueWriter {
         intialized = true;
 
         File f = new File(storeFolderLocation + File.separator + memberFileName + counter
-                + MolapCommonConstants.FILE_INPROGRESS_STATUS);
+                + CarbonCommonConstants.FILE_INPROGRESS_STATUS);
 
         counter++;
 
@@ -232,8 +232,8 @@ public class LevelValueWriter {
             out = new FileOutputStream(f);
             //            int bufferSize = Integer.parseInt(MolapProperties.getInstance().getProperty("molap.level.write.bufferinkb", "64"));
             dataOutputStream = new DataOutputStream(new BufferedOutputStream(out,
-                    MolapCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
-                            * MolapCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR));
+                    CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
+                            * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR));
         } catch (FileNotFoundException e) {
             closeStreamAndDeleteFile(f, dataOutputStream, out);
             throw new KettleException("member Mapping File not found to write mapping info", e);
@@ -277,11 +277,11 @@ public class LevelValueWriter {
             return;
         }
         //Close the stream
-        MolapUtil.closeStreams(dataOutputStream);
+        CarbonUtil.closeStreams(dataOutputStream);
 
         //rename the inprogress file to normal .level file
         String filePath = this.storeFolderLocation + File.separator + memberFileName + (counter - 1)
-                + MolapCommonConstants.FILE_INPROGRESS_STATUS;
+                + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
         File inProgressFile = new File(filePath);
         String inprogressFileName = inProgressFile.getName();
 
@@ -291,7 +291,7 @@ public class LevelValueWriter {
         File existFinalName = new File(this.storeFolderLocation + File.separator + changedFileName);
 
         if (!inProgressFile.renameTo(existFinalName)) {
-            LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
                     "Not able to rename file : " + inprogressFileName);
         }
 
@@ -299,7 +299,7 @@ public class LevelValueWriter {
         try {
             intialize();
         } catch (KettleException e) {
-            LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
                     "Not able to create the output stream for File :" + memberFileName + (counter
                             - 1));
         }
@@ -325,9 +325,9 @@ public class LevelValueWriter {
 
         // holds the byte array of of the Properties.
         byte[][] propertiesByte = new byte[propertySize][];
-        boolean enableEncoding = Boolean.valueOf(MolapProperties.getInstance()
-                .getProperty(MolapCommonConstants.ENABLE_BASE64_ENCODING,
-                        MolapCommonConstants.ENABLE_BASE64_ENCODING_DEFAULT));
+        boolean enableEncoding = Boolean.valueOf(CarbonProperties.getInstance()
+                .getProperty(CarbonCommonConstants.ENABLE_BASE64_ENCODING,
+                        CarbonCommonConstants.ENABLE_BASE64_ENCODING_DEFAULT));
         int i = 0;
         for (Object obj : properties) {
             String prop = obj.toString();
@@ -382,7 +382,7 @@ public class LevelValueWriter {
                 try {
                     stream.close();
                 } catch (IOException e) {
-                    LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, e,
+                    LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, e,
                             "Unable to close Steam ");
                 }
             }
@@ -391,7 +391,7 @@ public class LevelValueWriter {
 
         isDeleted = f.delete();
         if (!isDeleted) {
-            LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
                     "Unable to delete the file " + f.getAbsolutePath());
         }
     }

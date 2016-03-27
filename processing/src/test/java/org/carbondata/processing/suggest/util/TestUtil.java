@@ -23,12 +23,12 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.carbondata.core.datastorage.store.filesystem.MolapFile;
+import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
-import org.carbondata.core.metadata.MolapMetadata;
-import org.carbondata.core.olap.MolapDef.Cube;
-import org.carbondata.core.olap.MolapDef.Schema;
-import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.metadata.CarbonMetadata;
+import org.carbondata.core.carbon.CarbonDef.Cube;
+import org.carbondata.core.carbon.CarbonDef.Schema;
+import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.processing.suggest.datastats.model.LoadModel;
 import org.carbondata.query.querystats.Preference;
 import org.eigenbase.xom.DOMWrapper;
@@ -43,7 +43,7 @@ public class TestUtil {
             return null;
         }
         FileFactory.FileType fileType = FileFactory.getFileType(metaDataPath);
-        MolapFile metaDataFile = FileFactory.getMolapFile(metaDataPath, fileType);
+        CarbonFile metaDataFile = FileFactory.getMolapFile(metaDataPath, fileType);
         if (!metaDataFile.exists()) {
             return null;
         }
@@ -87,7 +87,7 @@ public class TestUtil {
                 objStream.close();
 
                 Schema mondSchema = parseStringToSchema(schema);
-                MolapMetadata.getInstance().loadSchema(mondSchema);
+                CarbonMetadata.getInstance().loadSchema(mondSchema);
 
                 list.add(mondSchema);
                 try {
@@ -128,7 +128,7 @@ public class TestUtil {
     public static String getDataStatsAggCombination(String schemaName, String cubeName,
             String tableName) {
         StringBuffer dataStatsPath =
-                new StringBuffer(MolapUtil.getCarbonStorePath(schemaName, cubeName)/*MolapProperties
+                new StringBuffer(CarbonUtil.getCarbonStorePath(schemaName, cubeName)/*MolapProperties
                 .getInstance().getProperty(MolapCommonConstants.STORE_LOCATION)*/);
         dataStatsPath.append(File.separator).append(Preference.AGGREGATE_STORE_DIR)
                 .append(File.separator).append(schemaName).append(File.separator).append(cubeName)

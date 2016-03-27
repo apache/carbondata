@@ -22,8 +22,8 @@ package org.carbondata.query.evaluators;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.olap.SqlStatement.Type;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.carbon.SqlStatement.Type;
 import org.carbondata.core.vo.HybridStoreModel;
 import org.carbondata.query.expression.ColumnExpression;
 import org.carbondata.query.expression.DataType;
@@ -49,9 +49,9 @@ public abstract class AbstractConditionalEvalutor implements FilterEvaluator {
     public AbstractConditionalEvalutor(Expression exp, boolean isExpressionResolve,
             boolean isIncludeFilter) {
         this.dimColEvaluatorInfoList =
-                new ArrayList<DimColumnEvaluatorInfo>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                new ArrayList<DimColumnEvaluatorInfo>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         this.msrColEvalutorInfoList =
-                new ArrayList<MsrColumnEvalutorInfo>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                new ArrayList<MsrColumnEvalutorInfo>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         this.exp = exp;
         this.isExpressionResolve = isExpressionResolve;
         this.isIncludeFilter = isIncludeFilter;

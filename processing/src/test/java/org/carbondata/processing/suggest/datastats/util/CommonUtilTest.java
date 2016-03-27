@@ -25,10 +25,10 @@ import java.io.IOException;
 import junit.framework.Assert;
 import mockit.Mock;
 import mockit.MockUp;
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.load.LoadMetadataDetails;
-import org.carbondata.core.olap.MolapDef;
+import org.carbondata.core.carbon.CarbonDef;
 import org.carbondata.processing.suggest.autoagg.util.CommonUtil;
 import org.carbondata.processing.suggest.datastats.model.LoadModel;
 import org.carbondata.processing.suggest.util.TestUtil;
@@ -37,8 +37,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class CommonUtilTest {
-    static MolapDef.Schema schema;
-    static MolapDef.Cube cube;
+    static CarbonDef.Schema schema;
+    static CarbonDef.Cube cube;
 
     static String schemaName;
     static String cubeName;
@@ -78,7 +78,7 @@ public class CommonUtilTest {
 
             @Mock
             public String getLoadStatus() {
-                return MolapCommonConstants.MARKED_FOR_UPDATE;
+                return CarbonCommonConstants.MARKED_FOR_UPDATE;
             }
 
         };
@@ -93,7 +93,7 @@ public class CommonUtilTest {
 
             @Mock
             public String getLoadStatus() {
-                return MolapCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS;
+                return CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS;
             }
 
         };
@@ -163,7 +163,7 @@ public class CommonUtilTest {
         new MockUp<CommonUtil>() {
 
             @Mock
-            public MolapDef.Schema parseStringToSchema(String schema) throws XOMException {
+            public CarbonDef.Schema parseStringToSchema(String schema) throws XOMException {
                 throw new XOMException();
             }
 

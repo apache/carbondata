@@ -22,7 +22,7 @@ package org.carbondata.processing.mdkeygen;
 import java.util.List;
 import java.util.Map;
 
-import org.carbondata.processing.util.MolapDataProcessorUtil;
+import org.carbondata.processing.util.CarbonDataProcessorUtil;
 import org.pentaho.di.core.CheckResultInterface;
 import org.pentaho.di.core.Counter;
 import org.pentaho.di.core.database.DatabaseMeta;
@@ -202,7 +202,7 @@ public class MolapMDKeyGenStepMeta extends BaseStepMeta implements StepMetaInter
     @Override
     public void check(List<CheckResultInterface> remarks, TransMeta transMeta, StepMeta stepMeta,
             RowMetaInterface prev, String[] input, String[] output, RowMetaInterface info) {
-        MolapDataProcessorUtil.checkResult(remarks, stepMeta, input);
+        CarbonDataProcessorUtil.checkResult(remarks, stepMeta, input);
     }
 
     @Override

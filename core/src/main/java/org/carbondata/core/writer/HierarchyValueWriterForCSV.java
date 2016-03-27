@@ -28,10 +28,10 @@ import java.util.List;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.util.MolapCoreLogEvent;
-import org.carbondata.core.util.MolapProperties;
-import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.util.CarbonCoreLogEvent;
+import org.carbondata.core.util.CarbonProperties;
+import org.carbondata.core.util.CarbonUtil;
 import org.pentaho.di.core.exception.KettleException;
 
 public class HierarchyValueWriterForCSV {
@@ -70,7 +70,7 @@ public class HierarchyValueWriterForCSV {
      * byteArrayList
      */
     private List<ByteArrayHolder> byteArrayholder =
-            new ArrayList<ByteArrayHolder>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+            new ArrayList<ByteArrayHolder>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
 
     /**
      * toflush
@@ -81,14 +81,14 @@ public class HierarchyValueWriterForCSV {
         this.hierarchyName = hierarchy;
         this.storeFolderLocation = storeFolderLocation;
 
-        MolapProperties instance = MolapProperties.getInstance();
+        CarbonProperties instance = CarbonProperties.getInstance();
 
-        this.toflush = Integer.parseInt(instance.getProperty(MolapCommonConstants.SORT_SIZE,
-                MolapCommonConstants.SORT_SIZE_DEFAULT_VAL));
+        this.toflush = Integer.parseInt(instance.getProperty(CarbonCommonConstants.SORT_SIZE,
+                CarbonCommonConstants.SORT_SIZE_DEFAULT_VAL));
 
         int rowSetSize = Integer.parseInt(
-                instance.getProperty(MolapCommonConstants.GRAPH_ROWSET_SIZE,
-                        MolapCommonConstants.GRAPH_ROWSET_SIZE_DEFAULT));
+                instance.getProperty(CarbonCommonConstants.GRAPH_ROWSET_SIZE,
+                        CarbonCommonConstants.GRAPH_ROWSET_SIZE_DEFAULT));
 
         if (this.toflush > rowSetSize) {
             this.toflush = rowSetSize;
@@ -132,21 +132,21 @@ public class HierarchyValueWriterForCSV {
         for (File hierFile : listFiles) {
             String hierFileName = hierFile.getName();
 
-            if (hierFileName.endsWith(MolapCommonConstants.FILE_INPROGRESS_STATUS)) {
+            if (hierFileName.endsWith(CarbonCommonConstants.FILE_INPROGRESS_STATUS)) {
                 hierFileName = hierFileName.substring(0, hierFileName.lastIndexOf('.'));
                 try {
                     counter = Integer.parseInt(hierFileName.substring(hierFileName.length() - 1));
                 } catch (NumberFormatException nfe) {
 
-                    if (new File(hierFileName + '0' + MolapCommonConstants.LEVEL_FILE_EXTENSION)
+                    if (new File(hierFileName + '0' + CarbonCommonConstants.LEVEL_FILE_EXTENSION)
                             .exists()) {
                         // Need to skip because the case can come in which server went down while files were merging and the other hieracrhy
                         // files were not deleted, and the current file status is inrogress. so again we will merge the files and
                         // rename to normal file
-                        LOGGER.info(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                        LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
                                 "Need to skip as this can be case in which hierarchy file already renamed.");
                         if (hierFile.delete()) {
-                            LOGGER.info(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                            LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
                                     "Deleted the Inprogress hierarchy Files.");
                         }
                     } else {
@@ -159,7 +159,7 @@ public class HierarchyValueWriterForCSV {
                         File changetoName = new File(storeFolder + File.separator + hierFileName);
 
                         if (inprogressFile.renameTo(changetoName)) {
-                            LOGGER.info(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+                            LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
                                     "Renaming the level Files while creating the new instance on server startup.");
                         }
 
@@ -184,7 +184,7 @@ public class HierarchyValueWriterForCSV {
         try {
             parsedVal = Integer.parseInt(val);
         } catch (NumberFormatException nfe) {
-            LOGGER.info(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.info(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
                     "Hierarchy File is already renamed so there will not be"
                             + "any need to keep the counter");
         }
@@ -195,7 +195,7 @@ public class HierarchyValueWriterForCSV {
         intialized = true;
 
         File f = new File(storeFolderLocation + File.separator + hierarchyName + counter
-                + MolapCommonConstants.FILE_INPROGRESS_STATUS);
+                + CarbonCommonConstants.FILE_INPROGRESS_STATUS);
 
         counter++;
 
@@ -262,11 +262,11 @@ public class HierarchyValueWriterForCSV {
             writeIntoHierarchyFile(byteArray.getMdKey(), byteArray.getPrimaryKey());
         }
 
-        MolapUtil.closeStreams(outPutFileChannel);
+        CarbonUtil.closeStreams(outPutFileChannel);
 
         //rename the inprogress file to normal .level file
         String filePath = this.storeFolderLocation + File.separator + hierarchyName + (counter - 1)
-                + MolapCommonConstants.FILE_INPROGRESS_STATUS;
+                + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
         File inProgressFile = new File(filePath);
         String inprogressFileName = inProgressFile.getName();
 
@@ -276,7 +276,7 @@ public class HierarchyValueWriterForCSV {
         File orgFinalName = new File(this.storeFolderLocation + File.separator + changedFileName);
 
         if (!inProgressFile.renameTo(orgFinalName)) {
-            LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
                     "Not able to rename file : " + inprogressFileName);
         }
 
@@ -284,7 +284,7 @@ public class HierarchyValueWriterForCSV {
         try {
             intialize();
         } catch (KettleException e) {
-            LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
                     "Not able to create the output stream for File :" + hierarchyName + (counter
                             - 1));
         }
@@ -300,7 +300,7 @@ public class HierarchyValueWriterForCSV {
                 try {
                     stream.close();
                 } catch (IOException e) {
-                    LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, e,
+                    LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, e,
                             "unable to close the stream ");
                 }
 
@@ -310,7 +310,7 @@ public class HierarchyValueWriterForCSV {
         // delete the file
         isDeleted = f.delete();
         if (!isDeleted) {
-            LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
                     "Unable to delete the file " + f.getAbsolutePath());
         }
 

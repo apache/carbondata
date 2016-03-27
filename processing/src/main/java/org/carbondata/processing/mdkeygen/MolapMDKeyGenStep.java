@@ -27,7 +27,7 @@ import java.util.concurrent.*;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.csvreader.checkpoint.CheckPointHanlder;
 import org.carbondata.core.csvreader.checkpoint.CheckPointInterface;
 import org.carbondata.core.datastorage.store.compression.MeasureMetaDataModel;
@@ -36,14 +36,14 @@ import org.carbondata.core.file.manager.composite.IFileManagerComposite;
 import org.carbondata.core.file.manager.composite.LoadFolderData;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
-import org.carbondata.core.util.MolapProperties;
-import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.util.CarbonProperties;
+import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.ValueCompressionUtil;
 import org.carbondata.processing.dataprocessor.queue.impl.DataProcessorQueue;
 import org.carbondata.processing.dataprocessor.queue.impl.RecordComparator;
 import org.carbondata.processing.dataprocessor.record.holder.DataProcessorRecordHolder;
-import org.carbondata.processing.util.MolapDataProcessorLogEvent;
-import org.carbondata.processing.util.MolapDataProcessorUtil;
+import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
+import org.carbondata.processing.util.CarbonDataProcessorUtil;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.row.RowMetaInterface;
@@ -53,7 +53,7 @@ import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.*;
 
-//import org.carbondata.core.sortandgroupby.exception.MolapSortKeyAndGroupByException;
+//import org.carbondata.core.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 
 public class MolapMDKeyGenStep extends BaseStep implements StepInterface {
     private static final LogService LOGGER =
@@ -84,9 +84,9 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface {
     /**
      * decimalPointers
      */
-    private final byte decimalPointers = Byte.parseByte(MolapProperties.getInstance()
-            .getProperty(MolapCommonConstants.MOLAP_DECIMAL_POINTERS,
-                    MolapCommonConstants.MOLAP_DECIMAL_POINTERS_DEFAULT));
+    private final byte decimalPointers = Byte.parseByte(CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.MOLAP_DECIMAL_POINTERS,
+                    CarbonCommonConstants.MOLAP_DECIMAL_POINTERS_DEFAULT));
     /**
      * molap mdkey generator step data class
      */
@@ -257,11 +257,11 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface {
             // finish this step
             if (r == null) {
 
-                LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                         "Record Procerssed For table: " + this.tableName);
                 String logMessage =
                         "MolapSortKeyStep: Read: " + readCounter + ": Write: " + writeCounter;
-                LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, logMessage);
+                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, logMessage);
                 setOutputDone();
                 return false;
             }
@@ -276,30 +276,30 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface {
 
                 if (CheckPointHanlder.IS_CHECK_POINT_NEEDED && !meta.isAutoAggRequest()) {
                     updateCounter();
-                    MolapProperties instance = MolapProperties.getInstance();
+                    CarbonProperties instance = CarbonProperties.getInstance();
 
                     checkPointSize = Integer.parseInt(
-                            instance.getProperty(MolapCommonConstants.SORT_SIZE,
-                                    MolapCommonConstants.SORT_SIZE_DEFAULT_VAL)) / Integer
+                            instance.getProperty(CarbonCommonConstants.SORT_SIZE,
+                                    CarbonCommonConstants.SORT_SIZE_DEFAULT_VAL)) / Integer
                             .parseInt(meta.getNumberOfCores());
 
                     this.threshold = Integer.parseInt(instance.getProperty(
-                            MolapCommonConstants.MOLAP_CHECKPOINT_QUEUE_THRESHOLD,
-                            MolapCommonConstants.MOLAP_CHECKPOINT_QUEUE_THRESHOLD_DEFAULT_VAL));
+                            CarbonCommonConstants.MOLAP_CHECKPOINT_QUEUE_THRESHOLD,
+                            CarbonCommonConstants.MOLAP_CHECKPOINT_QUEUE_THRESHOLD_DEFAULT_VAL));
                     this.checkPointSize = Integer.parseInt(
-                            instance.getProperty(MolapCommonConstants.MOLAP_CHECKPOINT_CHUNK_SIZE,
-                                    MolapCommonConstants.MOLAP_CHECKPOINT_CHUNK_SIZE_DEFAULT_VAL));
+                            instance.getProperty(CarbonCommonConstants.MOLAP_CHECKPOINT_CHUNK_SIZE,
+                                    CarbonCommonConstants.MOLAP_CHECKPOINT_CHUNK_SIZE_DEFAULT_VAL));
                     this.initialCapacity = Integer.parseInt(instance.getProperty(
-                            MolapCommonConstants.MOLAP_CHECKPOINT_QUEUE_INITIAL_CAPACITY,
-                            MolapCommonConstants.MOLAP_CHECKPOINT_QUEUE_INITIAL_CAPACITY_DEFAULT_VAL));
+                            CarbonCommonConstants.MOLAP_CHECKPOINT_QUEUE_INITIAL_CAPACITY,
+                            CarbonCommonConstants.MOLAP_CHECKPOINT_QUEUE_INITIAL_CAPACITY_DEFAULT_VAL));
                     this.toCopy = Integer.parseInt(instance.getProperty(
-                            MolapCommonConstants.MOLAP_CHECKPOINT_TOCOPY_FROM_QUEUE,
-                            MolapCommonConstants.MOLAP_CHECKPOINT_TOCOPY_FROM_QUEUE_DEFAULT_VAL));
+                            CarbonCommonConstants.MOLAP_CHECKPOINT_TOCOPY_FROM_QUEUE,
+                            CarbonCommonConstants.MOLAP_CHECKPOINT_TOCOPY_FROM_QUEUE_DEFAULT_VAL));
                 }
 
                 data.outputRowMeta = (RowMetaInterface) getInputRowMeta().clone();
                 meta.getFields(data.outputRowMeta, getStepname(), null, null, this);
-                int[] dimLens = MolapDataProcessorUtil.getDimLens(meta.getAggregateLevels());
+                int[] dimLens = CarbonDataProcessorUtil.getDimLens(meta.getAggregateLevels());
                 setStepConfiguration(dimLens);
                 setStepOutputInterface(dimLens);
             }
@@ -307,13 +307,13 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface {
             if (checkAllRowValuesAreNull(r)) {
                 putRow(data.outputRowMeta, new Object[data.outputRowMeta.size()]);
 
-                LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                         "Record Procerssed For table: " + this.tableName);
-                LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                         "Record Form Previous Step was null");
                 String logMessage =
                         "MolapSortKeyStep: Read: " + readCounter + ": Write: " + writeCounter;
-                LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, logMessage);
+                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, logMessage);
                 return true;
             }
             // create the measure model while will hold max,min and decimal
@@ -341,15 +341,15 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface {
             File destFile = new File(changedFileName);
             currentFile.renameTo(destFile);
             fileData.setName(changedFileName);
-            LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "Record Procerssed For table: " + this.tableName);
             String logMessage =
                     "Finished Molap Mdkey Generation Step: Read: " + readCounter + ": Write: "
                             + writeCounter;
-            LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, logMessage);
+            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, logMessage);
             setOutputDone();
         } catch (Exception ex) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, ex);
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, ex);
             throw new RuntimeException(ex);
         }
         return false;
@@ -402,14 +402,14 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface {
     }
 
     private void updateCounter() {
-        MolapProperties instance = MolapProperties.getInstance();
+        CarbonProperties instance = CarbonProperties.getInstance();
 
-        String rowSetSizeStr = instance.getProperty(MolapCommonConstants.GRAPH_ROWSET_SIZE,
-                MolapCommonConstants.GRAPH_ROWSET_SIZE_DEFAULT);
+        String rowSetSizeStr = instance.getProperty(CarbonCommonConstants.GRAPH_ROWSET_SIZE,
+                CarbonCommonConstants.GRAPH_ROWSET_SIZE_DEFAULT);
         int rowSetSize = Integer.parseInt(rowSetSizeStr);
 
-        String sortSizeStr = instance.getProperty(MolapCommonConstants.SORT_SIZE,
-                MolapCommonConstants.SORT_SIZE_DEFAULT_VAL);
+        String sortSizeStr = instance.getProperty(CarbonCommonConstants.SORT_SIZE,
+                CarbonCommonConstants.SORT_SIZE_DEFAULT_VAL);
         int sortSize = Integer.parseInt(sortSizeStr);
 
         if (sortSize > rowSetSize) {
@@ -423,7 +423,7 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface {
         // create the thread poll
         exec = Executors.newFixedThreadPool(numberOfCores);
         List<Future<Void>> results =
-                new ArrayList<Future<Void>>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+                new ArrayList<Future<Void>>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
 
         // submit process
         for (int i = 0; i < numberOfCores; i++) {
@@ -483,40 +483,40 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface {
             numberOfCores = DEFAULT_NUMBER_CORES;
         }
         this.tableName = meta.getTableName();
-        MolapProperties instance = MolapProperties.getInstance();
+        CarbonProperties instance = CarbonProperties.getInstance();
         String tempLocationKey = meta.getSchemaName() + '_' + meta.getCubeName();
         String baseStorelocation = instance.getProperty(tempLocationKey,
-                MolapCommonConstants.STORE_LOCATION_DEFAULT_VAL) + File.separator + meta
+                CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL) + File.separator + meta
                 .getSchemaName() + File.separator + meta.getCubeName();
 
         int restructFolderNumber = meta.getCurrentRestructNumber()/*MolapUtil.checkAndReturnNextRestructFolderNumber(baseStorelocation,"RS_")*/;
 
         baseStorelocation =
-                baseStorelocation + File.separator + MolapCommonConstants.RESTRUCTRE_FOLDER
+                baseStorelocation + File.separator + CarbonCommonConstants.RESTRUCTRE_FOLDER
                         + restructFolderNumber + File.separator + this.tableName;
 
-        int counter = MolapUtil.checkAndReturnCurrentLoadFolderNumber(baseStorelocation);
+        int counter = CarbonUtil.checkAndReturnCurrentLoadFolderNumber(baseStorelocation);
         // This check is just to get the absolute path because from the property file Relative path
         // will come and sometimes FileOutPutstream was not able to Create the file.
         File file = new File(baseStorelocation);
         String storeLocation =
-                file.getAbsolutePath() + File.separator + MolapCommonConstants.LOAD_FOLDER
+                file.getAbsolutePath() + File.separator + CarbonCommonConstants.LOAD_FOLDER
                         + counter;
 
         fileManager = new LoadFolderData();
-        fileManager.setName(MolapCommonConstants.LOAD_FOLDER + counter
-                + MolapCommonConstants.FILE_INPROGRESS_STATUS);
+        fileManager.setName(CarbonCommonConstants.LOAD_FOLDER + counter
+                + CarbonCommonConstants.FILE_INPROGRESS_STATUS);
 
-        storeLocation = storeLocation + MolapCommonConstants.FILE_INPROGRESS_STATUS;
+        storeLocation = storeLocation + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
 
-        String metaDataFileName = MolapCommonConstants.MEASURE_METADATA_FILE_NAME + this.tableName
-                + MolapCommonConstants.MEASUREMETADATA_FILE_EXT
-                + MolapCommonConstants.FILE_INPROGRESS_STATUS;
+        String metaDataFileName = CarbonCommonConstants.MEASURE_METADATA_FILE_NAME + this.tableName
+                + CarbonCommonConstants.MEASUREMETADATA_FILE_EXT
+                + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
 
         this.measureMetaDataFileLocation = storeLocation + metaDataFileName;
 
         if (!(new File(storeLocation).exists())) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "Load Folder Not Present for writing measure metadata  : " + storeLocation);
             return;
 
@@ -547,11 +547,11 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface {
         // and unique value with the previously saved values.
         if (CheckPointHanlder.IS_CHECK_POINT_NEEDED && !meta.isAutoAggRequest()) {
             String measureMetaDataTempFile = instance.getProperty(tempLocationKey,
-                    MolapCommonConstants.STORE_LOCATION_DEFAULT_VAL) + File.separator + meta
+                    CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL) + File.separator + meta
                     .getSchemaName() + File.separator + meta.getCubeName() + File.separator
-                    + MolapCommonConstants.SORT_TEMP_FILE_LOCATION + File.separator + this.tableName
-                    + File.separator + MolapCommonConstants.MEASURE_METADATA_FILE_NAME
-                    + this.tableName + MolapCommonConstants.MEASUREMETADATA_FILE_EXT;
+                    + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION + File.separator + this.tableName
+                    + File.separator + CarbonCommonConstants.MEASURE_METADATA_FILE_NAME
+                    + this.tableName + CarbonCommonConstants.MEASUREMETADATA_FILE_EXT;
 
             if (new File(measureMetaDataTempFile).exists()) {
                 MeasureMetaDataModel measureMetadataModel = ValueCompressionUtil
@@ -569,7 +569,7 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface {
 
         }
 
-        logCounter = Integer.parseInt(MolapCommonConstants.DATA_LOAD_LOG_COUNTER_DEFAULT_COUNTER);
+        logCounter = Integer.parseInt(CarbonCommonConstants.DATA_LOAD_LOG_COUNTER_DEFAULT_COUNTER);
     }
 
     /**
@@ -596,9 +596,9 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface {
                             ValueMetaInterface.STORAGE_TYPE_NORMAL));
             out[out.length - 2 - checkPoint.getCheckPointInfoFieldCount()].setLength(256);
             out[out.length - 2 - checkPoint.getCheckPointInfoFieldCount()]
-                    .setStringEncoding(MolapCommonConstants.BYTE_ENCODING);
+                    .setStringEncoding(CarbonCommonConstants.BYTE_ENCODING);
             out[out.length - 2 - checkPoint.getCheckPointInfoFieldCount()].getStorageMetadata()
-                    .setStringEncoding(MolapCommonConstants.BYTE_ENCODING);
+                    .setStringEncoding(CarbonCommonConstants.BYTE_ENCODING);
 
             out[out.length - 1] = data.outputRowMeta.getValueMeta(data.outputRowMeta.size() - 1);
         } else {
@@ -610,9 +610,9 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface {
                             ValueMetaInterface.STORAGE_TYPE_NORMAL));
             out[out.length - 1 - checkPoint.getCheckPointInfoFieldCount()].setLength(256);
             out[out.length - 1 - checkPoint.getCheckPointInfoFieldCount()]
-                    .setStringEncoding(MolapCommonConstants.BYTE_ENCODING);
+                    .setStringEncoding(CarbonCommonConstants.BYTE_ENCODING);
             out[out.length - 1 - checkPoint.getCheckPointInfoFieldCount()].getStorageMetadata()
-                    .setStringEncoding(MolapCommonConstants.BYTE_ENCODING);
+                    .setStringEncoding(CarbonCommonConstants.BYTE_ENCODING);
         }
 
         if (CheckPointHanlder.IS_CHECK_POINT_NEEDED && !meta.isAutoAggRequest()) {
@@ -640,7 +640,7 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface {
                     String logMessage =
                             "Molap Mdkey Generation Step: Record Read for table : " + this.tableName
                                     + " is : " + readCounter;
-                    LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                             logMessage);
                 }
                 r = getRow();
@@ -706,7 +706,7 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface {
             }
 
         } catch (Throwable t) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "Error While Processing the rows in the doprocess");
             throw new KettleException(t);
         }
@@ -779,7 +779,7 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface {
 
                     }
                 } catch (Throwable t) {
-                    LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                             "Not Able to process records to Next step.");
                     throw new KettleException(t);
                 }
@@ -789,17 +789,17 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface {
     }
 
     private void writeMeasureMetadataFileToTempLocation() {
-        MolapProperties molapPropInstance = MolapProperties.getInstance();
+        CarbonProperties molapPropInstance = CarbonProperties.getInstance();
         String tempLocationKey = meta.getSchemaName() + '_' + meta.getCubeName();
         String sortTempFileLoc = molapPropInstance
-                .getProperty(tempLocationKey, MolapCommonConstants.STORE_LOCATION_DEFAULT_VAL)
+                .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL)
                 + File.separator + meta.getSchemaName() + File.separator + meta.getCubeName()
-                + File.separator + MolapCommonConstants.SORT_TEMP_FILE_LOCATION + File.separator
+                + File.separator + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION + File.separator
                 + this.tableName;
 
-        String metaDataFileName = MolapCommonConstants.MEASURE_METADATA_FILE_NAME + this.tableName
-                + MolapCommonConstants.MEASUREMETADATA_FILE_EXT
-                + MolapCommonConstants.FILE_INPROGRESS_STATUS;
+        String metaDataFileName = CarbonCommonConstants.MEASURE_METADATA_FILE_NAME + this.tableName
+                + CarbonCommonConstants.MEASUREMETADATA_FILE_EXT
+                + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
 
         String measuremetaDataFilepath = sortTempFileLoc + File.separator + metaDataFileName;
 
@@ -818,20 +818,20 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface {
 
         if (orgFile.exists()) {
             if (!orgFile.renameTo(bakupFile)) {
-                LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                         "not able to rename original measure metadata file to bak fiel");
             }
 
         }
 
         if (!inprogress.renameTo(orgFile)) {
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "Not able to rename inprogress File to original file in the sort temp folder.");
         } else {
             //delete the bak file.
             if (bakupFile.exists()) {
                 if (!bakupFile.delete()) {
-                    LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                             "Not able to delete backup file " + bakupFile.getName());
                 }
             }
@@ -959,7 +959,7 @@ public class MolapMDKeyGenStep extends BaseStep implements StepInterface {
          */
         public void notifyFailed(Throwable exception) throws RuntimeException {
             exec.shutdownNow();
-            LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, exception);
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, exception);
             throw new RuntimeException(exception);
         }
     }

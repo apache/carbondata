@@ -21,7 +21,7 @@ package org.carbondata.processing.threadbasedmerger.container;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.processing.util.MolapDataProcessorLogEvent;
+import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 
 public class Container {
     /**
@@ -70,7 +70,7 @@ public class Container {
             {
                 Thread.sleep(10);
             } catch (InterruptedException e) {
-                LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
             }
         }
 

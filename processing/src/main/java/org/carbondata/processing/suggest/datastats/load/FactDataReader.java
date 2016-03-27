@@ -24,7 +24,7 @@ import java.util.HashSet;
 import java.util.List;
 
 import org.carbondata.core.datastorage.store.FileHolder;
-import org.carbondata.core.util.MolapProperties;
+import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.processing.suggest.datastats.analysis.AggDataSuggestScanner;
 import org.carbondata.query.querystats.Preference;
 
@@ -53,7 +53,7 @@ public class FactDataReader {
         Arrays.fill(needCompression, true);
 
         String configFactSize =
-                MolapProperties.getInstance().getProperty(Preference.AGG_FACT_COUNT);
+                CarbonProperties.getInstance().getProperty(Preference.AGG_FACT_COUNT);
         int noOfFactsToRead = factDataNodes.size();
         if (null != configFactSize && Integer.parseInt(configFactSize) < noOfFactsToRead) {
             noOfFactsToRead = Integer.parseInt(configFactSize);

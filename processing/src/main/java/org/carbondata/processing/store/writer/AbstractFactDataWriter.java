@@ -30,16 +30,16 @@ import java.util.concurrent.*;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.file.manager.composite.FileData;
 import org.carbondata.core.file.manager.composite.IFileManagerComposite;
 import org.carbondata.core.metadata.LeafNodeInfoColumnar;
-import org.carbondata.core.util.MolapProperties;
-import org.carbondata.core.util.MolapUtil;
-import org.carbondata.processing.store.writer.exception.MolapDataWriterException;
-import org.carbondata.processing.util.MolapDataProcessorLogEvent;
+import org.carbondata.core.util.CarbonProperties;
+import org.carbondata.core.util.CarbonUtil;
+import org.carbondata.processing.store.writer.exception.CarbonDataWriterException;
+import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 
-public abstract class AbstractFactDataWriter<T> implements MolapFactDataWriter<T>
+public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<T>
 
 {
 
@@ -125,24 +125,24 @@ public abstract class AbstractFactDataWriter<T> implements MolapFactDataWriter<T
         if (isUpdateFact) {
             this.fileNameFormat =
                     System.getProperty("java.io.tmpdir") + File.separator + this.tableName + '_'
-                            + "{0}" + MolapCommonConstants.FACT_UPDATE_EXTENSION;
+                            + "{0}" + CarbonCommonConstants.FACT_UPDATE_EXTENSION;
         } else {
             this.fileNameFormat = storeLocation + File.separator + this.tableName + '_' + "{0}"
-                    + MolapCommonConstants.FACT_FILE_EXT;
+                    + CarbonCommonConstants.FACT_FILE_EXT;
         }
 
         this.fileName = MessageFormat.format(this.fileNameFormat, this.fileCount);
         this.leafNodeInfoList =
-                new ArrayList<LeafNodeInfoColumnar>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+                new ArrayList<LeafNodeInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
         // get max file size;
-        MolapProperties propInstance = MolapProperties.getInstance();
+        CarbonProperties propInstance = CarbonProperties.getInstance();
         this.fileSizeInBytes = Long.parseLong(propInstance
-                .getProperty(MolapCommonConstants.MAX_FILE_SIZE,
-                        MolapCommonConstants.MAX_FILE_SIZE_DEFAULT_VAL))
-                * MolapCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
-                * MolapCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR * 1L;
+                .getProperty(CarbonCommonConstants.MAX_FILE_SIZE,
+                        CarbonCommonConstants.MAX_FILE_SIZE_DEFAULT_VAL))
+                * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
+                * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR * 1L;
         this.isNodeHolderRequired =
-                Boolean.valueOf(MolapCommonConstants.WRITE_ALL_NODE_IN_SINGLE_TIME_DEFAULT_VALUE);
+                Boolean.valueOf(CarbonCommonConstants.WRITE_ALL_NODE_IN_SINGLE_TIME_DEFAULT_VALUE);
         this.fileManager = fileManager;
 
         /**
@@ -177,9 +177,9 @@ public abstract class AbstractFactDataWriter<T> implements MolapFactDataWriter<T
      * current file size to 0 close the existing file channel get the new file
      * name and get the channel for new file
      *
-     * @throws MolapDataWriterException if any problem
+     * @throws CarbonDataWriterException if any problem
      */
-    protected void updateLeafNodeFileChannel() throws MolapDataWriterException {
+    protected void updateLeafNodeFileChannel() throws CarbonDataWriterException {
         // get the current file size exceeding the file size threshold
         if (currentFileSize >= fileSizeInBytes) {
             // set the current file size to zero
@@ -194,8 +194,8 @@ public abstract class AbstractFactDataWriter<T> implements MolapFactDataWriter<T
                 // write meta data to end of the existing file
                 writeleafMetaDataToFile(leafNodeInfoList, fileChannel);
                 leafNodeInfoList =
-                        new ArrayList<LeafNodeInfoColumnar>(MolapCommonConstants.CONSTANT_SIZE_TEN);
-                MolapUtil.closeStreams(fileChannel);
+                        new ArrayList<LeafNodeInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+                CarbonUtil.closeStreams(fileChannel);
             }
             // initialize the new channel
             initializeWriter();
@@ -205,26 +205,26 @@ public abstract class AbstractFactDataWriter<T> implements MolapFactDataWriter<T
     /**
      * This method will be used to initialize the channel
      *
-     * @throws MolapDataWriterException
+     * @throws CarbonDataWriterException
      */
-    public void initializeWriter() throws MolapDataWriterException {
+    public void initializeWriter() throws CarbonDataWriterException {
         // update the filename with new new sequence
         // increment the file sequence counter
         initFileCount();
         this.fileName = MessageFormat.format(this.fileNameFormat, this.fileCount);
         String actualFileNameVal =
-                this.tableName + '_' + this.fileCount + MolapCommonConstants.FACT_FILE_EXT
-                        + MolapCommonConstants.FILE_INPROGRESS_STATUS;
+                this.tableName + '_' + this.fileCount + CarbonCommonConstants.FACT_FILE_EXT
+                        + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
         FileData fileData = new FileData(actualFileNameVal, this.storeLocation);
         fileManager.add(fileData);
-        this.fileName = this.fileName + MolapCommonConstants.FILE_INPROGRESS_STATUS;
+        this.fileName = this.fileName + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
 
         this.fileCount++;
         try {
             // open channle for new leaf node file
             this.fileChannel = new FileOutputStream(this.fileName, true).getChannel();
         } catch (FileNotFoundException fileNotFoundException) {
-            throw new MolapDataWriterException(
+            throw new CarbonDataWriterException(
                     "Problem while getting the FileChannel for Leaf File", fileNotFoundException);
         }
     }
@@ -236,7 +236,7 @@ public abstract class AbstractFactDataWriter<T> implements MolapFactDataWriter<T
             @Override
             public boolean accept(File pathVal) {
                 if (!pathVal.isDirectory() && pathVal.getName().startsWith(tableName) && pathVal
-                        .getName().contains(MolapCommonConstants.FACT_FILE_EXT)) {
+                        .getName().contains(CarbonCommonConstants.FACT_FILE_EXT)) {
                     return true;
                 }
                 return false;
@@ -261,18 +261,18 @@ public abstract class AbstractFactDataWriter<T> implements MolapFactDataWriter<T
      *
      * @param channel
      * @param nodeHolderList
-     * @throws MolapDataWriterException
+     * @throws CarbonDataWriterException
      */
     private void writeData(FileChannel channel, List<NodeHolder> nodeHolderList)
-            throws MolapDataWriterException {
+            throws CarbonDataWriterException {
         List<LeafNodeInfoColumnar> leafMetaInfos =
-                new ArrayList<LeafNodeInfoColumnar>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+                new ArrayList<LeafNodeInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
         for (NodeHolder nodeHolder : nodeHolderList) {
             long offSet = writeDataToFile(nodeHolder, channel);
             leafMetaInfos.add(getLeafNodeInfo(nodeHolder, offSet));
         }
         writeleafMetaDataToFile(leafMetaInfos, channel);
-        MolapUtil.closeStreams(channel);
+        CarbonUtil.closeStreams(channel);
     }
 
     /**
@@ -284,7 +284,7 @@ public abstract class AbstractFactDataWriter<T> implements MolapFactDataWriter<T
      * ><measure2offset>
      */
     protected void writeleafMetaDataToFile(List<LeafNodeInfoColumnar> infoList, FileChannel channel)
-            throws MolapDataWriterException {
+            throws CarbonDataWriterException {
         ByteBuffer buffer = null;
         long currentPosition = 0;
         int[] msrLength = null;
@@ -359,14 +359,14 @@ public abstract class AbstractFactDataWriter<T> implements MolapFactDataWriter<T
                 channel.write(buffer);
             }
             // create new for adding the offset of meta data
-            buffer = ByteBuffer.allocate(MolapCommonConstants.LONG_SIZE_IN_BYTE);
+            buffer = ByteBuffer.allocate(CarbonCommonConstants.LONG_SIZE_IN_BYTE);
             // add the offset
             buffer.putLong(currentPosition);
             buffer.flip();
             // write offset to file
             channel.write(buffer);
         } catch (IOException exception) {
-            throw new MolapDataWriterException("Problem while writing the Leaf Node File: ",
+            throw new CarbonDataWriterException("Problem while writing the Leaf Node File: ",
                     exception);
         }
     }
@@ -374,33 +374,33 @@ public abstract class AbstractFactDataWriter<T> implements MolapFactDataWriter<T
     protected int calculateAndSetLeafNodeMetaSize(NodeHolder nodeHolder) {
         int metaSize = 0;
         //measure offset and measure length
-        metaSize += (measureCount * MolapCommonConstants.INT_SIZE_IN_BYTE) + (measureCount
-                * MolapCommonConstants.LONG_SIZE_IN_BYTE);
+        metaSize += (measureCount * CarbonCommonConstants.INT_SIZE_IN_BYTE) + (measureCount
+                * CarbonCommonConstants.LONG_SIZE_IN_BYTE);
         //start and end key
         metaSize += mdkeySize * 2;
 
         // keyblock length + key offsets + number of tuples+ number of columnar block
-        metaSize += (nodeHolder.getKeyLengths().length * MolapCommonConstants.INT_SIZE_IN_BYTE) + (
-                nodeHolder.getKeyLengths().length * MolapCommonConstants.LONG_SIZE_IN_BYTE)
-                + MolapCommonConstants.INT_SIZE_IN_BYTE + MolapCommonConstants.INT_SIZE_IN_BYTE;
+        metaSize += (nodeHolder.getKeyLengths().length * CarbonCommonConstants.INT_SIZE_IN_BYTE) + (
+                nodeHolder.getKeyLengths().length * CarbonCommonConstants.LONG_SIZE_IN_BYTE)
+                + CarbonCommonConstants.INT_SIZE_IN_BYTE + CarbonCommonConstants.INT_SIZE_IN_BYTE;
         //if sorted or not
         metaSize += nodeHolder.getIsSortedKeyBlock().length;
 
         //column min max size
         //for length of columnMinMax byte array
-        metaSize += MolapCommonConstants.INT_SIZE_IN_BYTE;
+        metaSize += CarbonCommonConstants.INT_SIZE_IN_BYTE;
         for (int i = 0; i < nodeHolder.getColumnMinMaxData().length; i++) {
             //length of sub byte array
-            metaSize += MolapCommonConstants.INT_SIZE_IN_BYTE;
+            metaSize += CarbonCommonConstants.INT_SIZE_IN_BYTE;
             metaSize += nodeHolder.getColumnMinMaxData()[i].length;
         }
 
         // key block index length + key block index offset + number of key block
         metaSize +=
-                (nodeHolder.getKeyBlockIndexLength().length * MolapCommonConstants.INT_SIZE_IN_BYTE)
+                (nodeHolder.getKeyBlockIndexLength().length * CarbonCommonConstants.INT_SIZE_IN_BYTE)
                         + (nodeHolder.getKeyBlockIndexLength().length
-                        * MolapCommonConstants.LONG_SIZE_IN_BYTE)
-                        + MolapCommonConstants.INT_SIZE_IN_BYTE;
+                        * CarbonCommonConstants.LONG_SIZE_IN_BYTE)
+                        + CarbonCommonConstants.INT_SIZE_IN_BYTE;
         return metaSize;
     }
 
@@ -462,32 +462,32 @@ public abstract class AbstractFactDataWriter<T> implements MolapFactDataWriter<T
     /**
      * Method will be used to close the open file channel
      *
-     * @throws MolapDataWriterException
+     * @throws CarbonDataWriterException
      */
     public void closeWriter() {
         if (!this.isNodeHolderRequired) {
-            MolapUtil.closeStreams(this.fileChannel);
+            CarbonUtil.closeStreams(this.fileChannel);
             // close channel
         } else {
             this.executorService.shutdown();
             try {
                 this.executorService.awaitTermination(2, TimeUnit.HOURS);
             } catch (InterruptedException ex) {
-                LOGGER.error(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, ex);
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, ex);
             }
-            MolapUtil.closeStreams(this.fileChannel);
+            CarbonUtil.closeStreams(this.fileChannel);
             this.nodeHolderList = null;
         }
 
         File origFile = new File(this.fileName.substring(0, this.fileName.lastIndexOf('.')));
         File curFile = new File(this.fileName);
         if (!curFile.renameTo(origFile)) {
-            LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "Problem while renaming the file");
         }
         if (origFile.length() < 1) {
             if (!origFile.delete()) {
-                LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                         "Problem while deleting the empty fact file");
             }
         }
@@ -496,13 +496,13 @@ public abstract class AbstractFactDataWriter<T> implements MolapFactDataWriter<T
     /**
      * Write leaf meta data to File.
      *
-     * @throws MolapDataWriterException
+     * @throws CarbonDataWriterException
      */
-    public void writeleafMetaDataToFile() throws MolapDataWriterException {
+    public void writeleafMetaDataToFile() throws CarbonDataWriterException {
         if (!isNodeHolderRequired) {
             writeleafMetaDataToFile(this.leafNodeInfoList, fileChannel);
             this.leafNodeInfoList =
-                    new ArrayList<LeafNodeInfoColumnar>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+                    new ArrayList<LeafNodeInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
         } else {
             if (this.nodeHolderList.size() > 0) {
                 List<NodeHolder> localNodeHodlerList = nodeHolderList;
@@ -517,10 +517,10 @@ public abstract class AbstractFactDataWriter<T> implements MolapFactDataWriter<T
      * file format
      * <key><measure1><measure2>....
      *
-     * @throws MolapDataWriterException
-     * @throws MolapDataWriterException throws new MolapDataWriterException if any problem
+     * @throws CarbonDataWriterException
+     * @throws CarbonDataWriterException throws new CarbonDataWriterException if any problem
      */
-    protected void writeDataToFile(NodeHolder nodeHolder) throws MolapDataWriterException {
+    protected void writeDataToFile(NodeHolder nodeHolder) throws CarbonDataWriterException {
         // write data to leaf file and get its offset
         long offset = writeDataToFile(nodeHolder, fileChannel);
 
@@ -532,7 +532,7 @@ public abstract class AbstractFactDataWriter<T> implements MolapFactDataWriter<T
     }
 
     protected abstract long writeDataToFile(NodeHolder nodeHolder, FileChannel channel)
-            throws MolapDataWriterException;
+            throws CarbonDataWriterException;
 
     @Override
     public int getLeafMetadataSize() {

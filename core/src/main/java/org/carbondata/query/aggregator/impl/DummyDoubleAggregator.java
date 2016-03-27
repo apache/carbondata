@@ -3,7 +3,7 @@
  */
 package org.carbondata.query.aggregator.impl;
 
-import org.carbondata.core.datastorage.store.dataholder.MolapReadDataHolder;
+import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 
 /**
  * @author z00305190
@@ -27,7 +27,7 @@ public class DummyDoubleAggregator extends AbstractMeasureAggregatorDummy {
     }
 
     @Override
-    public void agg(MolapReadDataHolder newVal, int index) {
+    public void agg(CarbonReadDataHolder newVal, int index) {
         aggVal = newVal.getReadableDoubleValueByIndex(index);
     }
 

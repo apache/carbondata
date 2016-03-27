@@ -52,7 +52,7 @@ public class TopOrBottomFilter implements Serializable {
      * @param count
      * @param dimension
      */
-    public TopOrBottomFilter(TopOrBottomType topOrBottomType, int count, MolapDimension dimension) {
+    public TopOrBottomFilter(TopOrBottomType topOrBottomType, int count, CarbonDimension dimension) {
         this.topOrBottomType = topOrBottomType;
     }
 

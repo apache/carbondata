@@ -32,7 +32,7 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
-import org.carbondata.query.queryinterface.query.metadata.MolapDimensionLevelFilter;
+import org.carbondata.query.queryinterface.query.metadata.CarbonDimensionLevelFilter;
 
 public interface Partition extends Serializable {
     /**
@@ -55,5 +55,5 @@ public interface Partition extends Serializable {
     /**
      * Column name and constraints used to distribute the data
      */
-    Map<String, MolapDimensionLevelFilter> getPartitionDetails();
+    Map<String, CarbonDimensionLevelFilter> getPartitionDetails();
 }

@@ -25,10 +25,10 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.KeyGenerator;
-import org.carbondata.processing.surrogatekeysgenerator.csvbased.MolapCSVBasedDimSurrogateKeyGen;
+import org.carbondata.processing.surrogatekeysgenerator.csvbased.CarbonCSVBasedDimSurrogateKeyGen;
 import org.pentaho.di.core.exception.KettleException;
 
 public class ArrayDataType implements GenericDataType {
@@ -94,12 +94,12 @@ public class ArrayDataType implements GenericDataType {
     @Override
     public void parseStringAndWriteByteArray(String tableName, String inputString,
             String[] delimiter, int delimiterIndex, DataOutputStream dataOutputStream,
-            MolapCSVBasedDimSurrogateKeyGen surrogateKeyGen) throws KettleException, IOException {
+            CarbonCSVBasedDimSurrogateKeyGen surrogateKeyGen) throws KettleException, IOException {
 
         if (inputString == null || "null".equals(inputString) || "".equals(inputString)) {
             //Indicates null array
             dataOutputStream.writeInt(0);
-        } else if (MolapCommonConstants.MEMBER_DEFAULT_VAL.equals(inputString)) {
+        } else if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(inputString)) {
             dataOutputStream.writeInt(-1);
         } else {
             String[] splitInput = inputString.split(delimiter[delimiterIndex], -1);

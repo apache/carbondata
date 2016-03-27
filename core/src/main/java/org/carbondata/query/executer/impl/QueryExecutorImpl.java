@@ -25,25 +25,25 @@ import java.util.Map.Entry;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.common.logging.impl.StandardLogService;
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.datastorage.store.filesystem.MolapFile;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
-import org.carbondata.core.iterator.MolapIterator;
+import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.keygenerator.columnar.impl.MultiDimKeyVarLengthVariableSplitGenerator;
-import org.carbondata.core.metadata.MolapMetadata;
-import org.carbondata.core.metadata.MolapMetadata.Dimension;
-import org.carbondata.core.metadata.MolapMetadata.Measure;
+import org.carbondata.core.metadata.CarbonMetadata;
+import org.carbondata.core.metadata.CarbonMetadata.Dimension;
+import org.carbondata.core.metadata.CarbonMetadata.Measure;
 import org.carbondata.core.metadata.SliceMetaData;
-import org.carbondata.core.util.MolapProperties;
-import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.util.CarbonProperties;
+import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.aggregator.dimension.DimensionAggregatorInfo;
 import org.carbondata.query.cache.QueryExecutorUtil;
-import org.carbondata.query.datastorage.InMemoryCube;
+import org.carbondata.query.datastorage.InMemoryTable;
 import org.carbondata.query.datastorage.Member;
 import org.carbondata.query.datastorage.MemberStore;
-import org.carbondata.query.executer.MolapQueryExecutorModel;
+import org.carbondata.query.executer.CarbonQueryExecutorModel;
 import org.carbondata.query.executer.SliceExecuter;
 import org.carbondata.query.executer.exception.QueryExecutionException;
 import org.carbondata.query.executer.pagination.impl.QueryResult;
@@ -54,13 +54,13 @@ import org.carbondata.query.result.iterator.ChunkBasedResultIterator;
 import org.carbondata.query.result.iterator.ChunkRowIterator;
 import org.carbondata.query.result.iterator.DetailQueryResultIterator;
 import org.carbondata.query.result.iterator.MemoryBasedResultIterator;
-import org.carbondata.query.scanner.impl.MolapKey;
-import org.carbondata.query.scanner.impl.MolapValue;
+import org.carbondata.query.scanner.impl.CarbonKey;
+import org.carbondata.query.scanner.impl.CarbonValue;
 import org.carbondata.query.schema.metadata.DimColumnFilterInfo;
 import org.carbondata.query.schema.metadata.FilterEvaluatorInfo;
 import org.carbondata.query.schema.metadata.SliceExecutionInfo;
 import org.carbondata.query.util.DataTypeConverter;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 import org.carbondata.query.util.QueryExecutorUtility;
 
 public class QueryExecutorImpl extends AbstractQueryExecutor {
@@ -72,7 +72,7 @@ public class QueryExecutorImpl extends AbstractQueryExecutor {
     }
 
     @Override
-    public MolapIterator<RowResult> execute(MolapQueryExecutorModel queryModel)
+    public CarbonIterator<RowResult> execute(CarbonQueryExecutorModel queryModel)
             throws QueryExecutionException {
         // setting the query current thread name
         //        Thread.currentThread().setName("Query Thread" + queryModel.getQueryId());
@@ -80,10 +80,10 @@ public class QueryExecutorImpl extends AbstractQueryExecutor {
         StandardLogService.setThreadName(
                 StandardLogService.getPartitionID(queryModel.getCube().getOnlyCubeName()),
                 queryModel.getQueryId());
-        LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                 "Query will be executed on table: " + queryModel.getFactTable());
 
-        LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                 "Is detail Query: " + queryModel.isDetailQuery());
         // if empty slice then we can return empty result
         if (null == executerProperties.slices || executerProperties.slices.size() == 0
@@ -102,20 +102,20 @@ public class QueryExecutorImpl extends AbstractQueryExecutor {
                 && queryModel.getDims().length < 1 && queryModel.getMsrs().size() < 2
                 && queryModel.getDimensionAggInfo().size() < 1
                 && queryModel.getExpressions().size() == 0) {
-            LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                     "Count(*) query: " + queryModel.isCountStarQuery());
             return executeQueryForCountStar(queryModel);
         } else if (null == queryModel.getFilterExpression() && queryModel.getDims().length < 1
                 && queryModel.getMsrs().size() == 0 && queryModel.getDimensionAggInfo().size() < 1
                 && queryModel.getExpressions().size() == 0) {
-            LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                     "Count(*) query: " + queryModel.isCountStarQuery());
             executerProperties.isFunctionQuery = true;
             return executeQueryForCountStar(queryModel);
         }
         // create a execution info list
         List<SliceExecutionInfo> infos =
-                new ArrayList<SliceExecutionInfo>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                new ArrayList<SliceExecutionInfo>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         SliceMetaData sliceMataData = null;
         SliceExecutionInfo info = null;
         // for each slice we need create a slice info which will be used to
@@ -123,8 +123,8 @@ public class QueryExecutorImpl extends AbstractQueryExecutor {
 
         int currentSliceIndex = -1;
         String sliceMetadataPath = null;
-        MolapFile molapFile = null;
-        for (InMemoryCube slice : executerProperties.slices) {
+        CarbonFile carbonFile = null;
+        for (InMemoryTable slice : executerProperties.slices) {
             // get the slice metadata for each slice
             currentSliceIndex++;
 
@@ -134,9 +134,9 @@ public class QueryExecutorImpl extends AbstractQueryExecutor {
                 if (null == sliceMetadataPath) {
                     continue;
                 }
-                molapFile = FileFactory.getMolapFile(sliceMetadataPath,
+                carbonFile = FileFactory.getMolapFile(sliceMetadataPath,
                         FileFactory.getFileType(sliceMetadataPath));
-                sliceMataData = MolapUtil.readSliceMetaDataFile(molapFile);
+                sliceMataData = CarbonUtil.readSliceMetaDataFile(carbonFile);
                 if (null == sliceMataData) {
                     continue;
                 }
@@ -150,13 +150,13 @@ public class QueryExecutorImpl extends AbstractQueryExecutor {
             info = getSliceExecutionInfo(queryModel, slice, sliceMataData, currentSliceIndex);
             infos.add(info);
         }
-        MolapIterator<QueryResult> queryResultIterator = null;
+        CarbonIterator<QueryResult> queryResultIterator = null;
         if (infos.size() > 0) {
             if (!queryModel.isDetailQuery() || (queryModel.isDetailQuery() && null != queryModel
                     .getSortOrder() && queryModel.getSortOrder().length > 0)) {
                 queryResultIterator = submitExecutorDetailQuery(infos);
             } else {
-                LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                         "Memory based detail query: ");
                 infos.get(infos.size() - 1).setFileBasedQuery(false);
                 return new ChunkRowIterator(
@@ -178,12 +178,12 @@ public class QueryExecutorImpl extends AbstractQueryExecutor {
      * @return MolapIterator<RowResult>
      */
     @Override
-    public MolapIterator<RowResult> executeDimension(MolapQueryExecutorModel queryModel)
+    public CarbonIterator<RowResult> executeDimension(CarbonQueryExecutorModel queryModel)
             throws QueryExecutionException {
         StandardLogService.setThreadName(
                 StandardLogService.getPartitionID(queryModel.getCube().getOnlyCubeName()),
                 queryModel.getQueryId());
-        LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                 "Query will be executed on level file : " + queryModel.getDims()[0].getDimName());
 
         if (null == executerProperties.slices || executerProperties.slices.size() == 0
@@ -195,16 +195,16 @@ public class QueryExecutorImpl extends AbstractQueryExecutor {
         }
 
         String memString = null;
-        List<MolapKey> molapKeys =
-                new ArrayList<MolapKey>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
-        List<MolapValue> molapValues =
-                new ArrayList<MolapValue>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+        List<CarbonKey> carbonKeys =
+                new ArrayList<CarbonKey>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+        List<CarbonValue> carbonValues =
+                new ArrayList<CarbonValue>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         Dimension dim = queryModel.getDims()[0];
         Object[] row = null;
         boolean dummyRow = false;
         int limit = queryModel.getLimit() == -1 ? Integer.MAX_VALUE : queryModel.getLimit();
 
-        for (InMemoryCube slice : executerProperties.slices) {
+        for (InMemoryTable slice : executerProperties.slices) {
             // Fetching member values from level file
             MemberStore ms = slice.getMemberCache(
                     dim.getTableName() + "_" + dim.getColName() + "_" + dim.getDimName() + "_" + dim
@@ -216,26 +216,26 @@ public class QueryExecutorImpl extends AbstractQueryExecutor {
                 if (members != null) {
                     if (queryModel.getLimit() != -1 && null != queryModel.getSortOrder()
                             && queryModel.getSortOrder().length > 0) {
-                        return getSortedMemberData(members, molapKeys, molapValues, dim, limit,
+                        return getSortedMemberData(members, carbonKeys, carbonValues, dim, limit,
                                 queryModel.getSortOrder());
                     }
 
-                    for (int j = 0; j < members.length && molapValues.size() < limit; j++) {
-                        for (int k = 0; k < members[j].length && molapValues.size() < limit; k++) {
+                    for (int j = 0; j < members.length && carbonValues.size() < limit; j++) {
+                        for (int k = 0; k < members[j].length && carbonValues.size() < limit; k++) {
                             row = new Object[1];
                             memString = members[j][k].toString();
-                            if (!memString.equals(MolapCommonConstants.MEMBER_DEFAULT_VAL)) {
+                            if (!memString.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
                                 row[0] = DataTypeConverter
                                         .getDataBasedOnDataType(memString, dim.getDataType());
-                                molapKeys.add(new MolapKey(row));
-                                molapValues.add(new MolapValue(new MeasureAggregator[0]));
+                                carbonKeys.add(new CarbonKey(row));
+                                carbonValues.add(new CarbonValue(new MeasureAggregator[0]));
                                 dummyRow = false;
                             } else {
                                 dummyRow = true;
                                 if (k > 0) {
                                     row[0] = null;
-                                    molapKeys.add(new MolapKey(row));
-                                    molapValues.add(new MolapValue(new MeasureAggregator[0]));
+                                    carbonKeys.add(new CarbonKey(row));
+                                    carbonValues.add(new CarbonValue(new MeasureAggregator[0]));
                                     dummyRow = false;
 
                                 }
@@ -248,18 +248,18 @@ public class QueryExecutorImpl extends AbstractQueryExecutor {
         }
         if (dummyRow) {
             row[0] = null;
-            molapKeys.add(new MolapKey(row));
-            molapValues.add(new MolapValue(new MeasureAggregator[0]));
+            carbonKeys.add(new CarbonKey(row));
+            carbonValues.add(new CarbonValue(new MeasureAggregator[0]));
         }
 
         ChunkResult chunkResult = new ChunkResult();
-        chunkResult.setKeys(molapKeys);
-        chunkResult.setValues(molapValues);
+        chunkResult.setKeys(carbonKeys);
+        chunkResult.setValues(carbonValues);
         return chunkResult;
     }
 
     private boolean checkIfAllEmptySlices(String factTable) {
-        for (InMemoryCube slice : executerProperties.slices) {
+        for (InMemoryTable slice : executerProperties.slices) {
             if (null != slice.getDataCache(factTable)) {
                 return false;
             }
@@ -267,7 +267,7 @@ public class QueryExecutorImpl extends AbstractQueryExecutor {
         return true;
     }
 
-    private MolapIterator<RowResult> executeQueryForCountStar(MolapQueryExecutorModel queryModel)
+    private CarbonIterator<RowResult> executeQueryForCountStar(CarbonQueryExecutorModel queryModel)
             throws QueryExecutionException {
         SliceExecuter sliceExec = new ColumnarCountStartExecuter(executerProperties.slices,
                 queryModel.getCube().getFactTableName());
@@ -276,7 +276,7 @@ public class QueryExecutorImpl extends AbstractQueryExecutor {
                     new ChunkBasedResultIterator(sliceExec.executeSlices(null, null),
                             executerProperties, queryModel));
         } catch (QueryExecutionException e) {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
                     "Error happend on executing slices parallely");
             throw e;
         }
@@ -290,13 +290,13 @@ public class QueryExecutorImpl extends AbstractQueryExecutor {
      * @param metaData   slice meta data
      * @return execution info for slice
      */
-    private SliceExecutionInfo getSliceExecutionInfo(MolapQueryExecutorModel queryModel,
-            InMemoryCube slice, SliceMetaData sliceMataData, int currentSliceIndex)
+    private SliceExecutionInfo getSliceExecutionInfo(CarbonQueryExecutorModel queryModel,
+            InMemoryTable slice, SliceMetaData sliceMataData, int currentSliceIndex)
             throws QueryExecutionException {
         // below part of the code is to handle restructure scenario
         // Rest
-        List<Dimension> currentDimList = new ArrayList<MolapMetadata.Dimension>(
-                MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+        List<Dimension> currentDimList = new ArrayList<CarbonMetadata.Dimension>(
+                CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
         RestructureHolder holder = new RestructureHolder();
 
@@ -416,7 +416,7 @@ public class QueryExecutorImpl extends AbstractQueryExecutor {
                 .getMaksedKeyForSorting(sortDims, executerProperties.globalKeyGenerator,
                         maskedByteRangeForSorting, executerProperties.maskByteRanges));
         if (slice.getDimensionCardinality().length > 0) {
-            info.setColumnarSplitter(new MultiDimKeyVarLengthVariableSplitGenerator(MolapUtil
+            info.setColumnarSplitter(new MultiDimKeyVarLengthVariableSplitGenerator(CarbonUtil
                     .getDimensionBitLength(slice.getHybridStoreModel().getHybridCardinality(),
                             slice.getHybridStoreModel().getDimensionPartitioner()),
                     slice.getHybridStoreModel().getColumnSplit()));
@@ -443,23 +443,23 @@ public class QueryExecutorImpl extends AbstractQueryExecutor {
         }
         info.setStartKey(startKey);
         info.setEndKey(endKey);
-        int recordSize = MolapCommonConstants.INMEMORY_REOCRD_SIZE_DEFAULT;
-        String defaultInMemoryRecordsSize = MolapProperties.getInstance()
-                .getProperty(MolapCommonConstants.INMEMORY_REOCRD_SIZE);
+        int recordSize = CarbonCommonConstants.INMEMORY_REOCRD_SIZE_DEFAULT;
+        String defaultInMemoryRecordsSize = CarbonProperties.getInstance()
+                .getProperty(CarbonCommonConstants.INMEMORY_REOCRD_SIZE);
         if (null != defaultInMemoryRecordsSize) {
             try {
                 recordSize = Integer.parseInt(defaultInMemoryRecordsSize);
             } catch (NumberFormatException ne) {
-                LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                         "Invalid inmemory records size. Using default value");
             }
         }
 
-        LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                 "inmemory records size : " + recordSize);
         info.setNumberOfRecordsInMemory(recordSize);
         info.setOutLocation(queryModel.getOutLocation() == null ?
-                MolapUtil.getCarbonStorePath(executerProperties.schemaName,
+                CarbonUtil.getCarbonStorePath(executerProperties.schemaName,
                         executerProperties.cubeName)/*MolapProperties.getInstance().getProperty(
                 MolapCommonConstants.STORE_LOCATION, MolapCommonConstants.STORE_LOCATION_DEFAULT_VAL)*/ :
                 queryModel.getOutLocation());
@@ -493,7 +493,7 @@ public class QueryExecutorImpl extends AbstractQueryExecutor {
     private void getApplicableDataBlocksForAggDims(List<DimensionAggregatorInfo> dimensionAggInfo,
             Dimension[] currentDimTables) {
         List<Dimension> selectedQueryDimensions =
-                new ArrayList<Dimension>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                new ArrayList<Dimension>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         for (int i = 0; i < dimensionAggInfo.size(); i++) {
             Dimension dim = dimensionAggInfo.get(i).getDim();
             for (int j = 0; j < currentDimTables.length; j++) {
@@ -511,7 +511,7 @@ public class QueryExecutorImpl extends AbstractQueryExecutor {
     private Dimension[] getSelectedQueryDimensions(Dimension[] dims, Dimension[] currentDimTables) {
         //            Map<String, ArrayList<Dimension>> complexTypesMap = prepareComplexDimensions(currentDimTables);
         List<Dimension> selectedQueryDimensions =
-                new ArrayList<Dimension>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                new ArrayList<Dimension>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         Set<String> dimensionGroup = new LinkedHashSet<String>();
         for (int i = 0; i < dims.length; i++) {
             dimensionGroup.add(dims[i].getHierName());
@@ -537,8 +537,8 @@ public class QueryExecutorImpl extends AbstractQueryExecutor {
         return selectedQueryDimensions.toArray(new Dimension[selectedQueryDimensions.size()]);
     }
 
-    private MolapIterator<RowResult> getSortedMemberData(final Member[][] members,
-            List<MolapKey> molapKeys, List<MolapValue> molapValues, Dimension dim, int limit,
+    private CarbonIterator<RowResult> getSortedMemberData(final Member[][] members,
+            List<CarbonKey> carbonKeys, List<CarbonValue> carbonValues, Dimension dim, int limit,
             byte[] sortOrder) {
         String memString = "";
         Object[] row = null;
@@ -546,7 +546,7 @@ public class QueryExecutorImpl extends AbstractQueryExecutor {
         for (int j = 0; j < members.length; j++) {
             for (int k = 0; k < members[j].length; k++) {
                 memString = members[j][k].toString();
-                if (!memString.equals(MolapCommonConstants.MEMBER_DEFAULT_VAL)) {
+                if (!memString.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
                     vals.add(memString);
                 }
 
@@ -560,16 +560,16 @@ public class QueryExecutorImpl extends AbstractQueryExecutor {
             Collections.sort(vals);
         }
 
-        for (int i = 0; i < vals.size() && molapValues.size() < limit; i++) {
+        for (int i = 0; i < vals.size() && carbonValues.size() < limit; i++) {
             row = new Object[1];
             row[0] = DataTypeConverter.getDataBasedOnDataType(vals.get(i), dim.getDataType());
-            molapKeys.add(new MolapKey(row));
-            molapValues.add(new MolapValue(new MeasureAggregator[0]));
+            carbonKeys.add(new CarbonKey(row));
+            carbonValues.add(new CarbonValue(new MeasureAggregator[0]));
 
         }
         ChunkResult chunkResult = new ChunkResult();
-        chunkResult.setKeys(molapKeys);
-        chunkResult.setValues(molapValues);
+        chunkResult.setKeys(carbonKeys);
+        chunkResult.setValues(carbonValues);
         return chunkResult;
     }
 
@@ -624,7 +624,7 @@ public class QueryExecutorImpl extends AbstractQueryExecutor {
         }
     }
 
-    private FilterEvaluatorInfo getFilterInfo(MolapQueryExecutorModel queryModel,
+    private FilterEvaluatorInfo getFilterInfo(CarbonQueryExecutorModel queryModel,
             int currentSliceIndex, SliceMetaData sliceMetaData) {
         FilterEvaluatorInfo info = new FilterEvaluatorInfo();
         info.setCurrentSliceIndex(currentSliceIndex);
@@ -642,14 +642,14 @@ public class QueryExecutorImpl extends AbstractQueryExecutor {
         return info;
     }
 
-    private MolapIterator<QueryResult> submitExecutorDetailQuery(List<SliceExecutionInfo> infos)
+    private CarbonIterator<QueryResult> submitExecutorDetailQuery(List<SliceExecutionInfo> infos)
             throws QueryExecutionException {
         SliceExecuter sliceExec;
         sliceExec = new ColumnarParallelSliceExecutor();
         try {
             return sliceExec.executeSlices(infos, null);
         } catch (QueryExecutionException e) {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
                     "Error happend on executing slices parallely");
             throw e;
         } finally {

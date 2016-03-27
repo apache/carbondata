@@ -25,8 +25,8 @@ import java.util.concurrent.Callable;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.datastorage.store.filesystem.MolapFile;
-import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
+import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.aggregator.util.AggUtil;
 import org.carbondata.query.merger.exception.ResultMergerException;
 import org.carbondata.query.processor.DataProcessor;
@@ -34,7 +34,7 @@ import org.carbondata.query.processor.exception.DataProcessorException;
 import org.carbondata.query.reader.ResultTempFileReader;
 import org.carbondata.query.reader.exception.ResultReaderException;
 import org.carbondata.query.schema.metadata.DataProcessorInfo;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
  * Project Name  : Carbon
@@ -76,10 +76,10 @@ public class SortedResultFileMerger implements Callable<Void> {
     /**
      * files all the intermediate files.
      */
-    private MolapFile[] files;
+    private CarbonFile[] files;
 
     public SortedResultFileMerger(final DataProcessor dataProcessor,
-            final DataProcessorInfo dataProcessorInfo, final MolapFile[] files) {
+            final DataProcessorInfo dataProcessorInfo, final CarbonFile[] files) {
         this.dataProcessorInfo = dataProcessorInfo;
         this.files = files;
         fileCounter = files.length;
@@ -96,7 +96,7 @@ public class SortedResultFileMerger implements Callable<Void> {
         try {
             dataProcessor.initialise(dataProcessorInfo);
             // For each intermediate result file.
-            for (MolapFile file : this.files) {
+            for (CarbonFile file : this.files) {
                 // reads the temp files and creates ResultTempFileReader object.
                 ResultTempFileReader molapSortTempFileChunkHolder =
                         new ResultTempFileReader(file.getAbsolutePath(),
@@ -117,12 +117,12 @@ public class SortedResultFileMerger implements Callable<Void> {
                 writeSortedRecordToFile();
             }
         } catch (ResultReaderException e) {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
             throw e;
         } finally {
             dataProcessor.finish();
             //delete the temp files.
-            MolapUtil.deleteFoldersAndFiles(this.files);
+            CarbonUtil.deleteFoldersAndFiles(this.files);
         }
         return null;
     }

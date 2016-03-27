@@ -21,12 +21,12 @@ package org.carbondata.core.load;
 
 import java.io.Serializable;
 
-import org.carbondata.core.util.MolapVersion;
+import org.carbondata.core.util.CarbonVersion;
 
 public class LoadMetadataDetails implements Serializable {
 
     private static final long serialVersionUID = 1106104914918491724L;
-    public final String versionNumber = MolapVersion.getDataVersion();
+    public final String versionNumber = CarbonVersion.getDataVersion();
     private String timestamp;
     private String loadStatus;
     private String loadName;

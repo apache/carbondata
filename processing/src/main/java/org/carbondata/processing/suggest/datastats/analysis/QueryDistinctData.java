@@ -26,12 +26,12 @@ import java.util.Map;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.metadata.MolapMetadata.Dimension;
+import org.carbondata.core.metadata.CarbonMetadata.Dimension;
 import org.carbondata.processing.suggest.autoagg.exception.AggSuggestException;
 import org.carbondata.processing.suggest.datastats.LoadSampler;
 import org.carbondata.processing.suggest.datastats.model.Level;
 import org.carbondata.query.querystats.Preference;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
  * This class takes sample data from each load and run it over complete store
@@ -62,7 +62,7 @@ public class QueryDistinctData {
 
         endTime = System.currentTimeMillis();
         long timeTaken = endTime - startTime;
-        LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                 "Time taken to compute distinct value[millsec]:" + timeTaken);
         return dimensionDistinctData;
 
@@ -75,7 +75,7 @@ public class QueryDistinctData {
         startTime = System.currentTimeMillis();
         List<Dimension> allDimensions = loadSampler.getDimensions();
 
-        LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                 "Reading Sample data for dimension:" + allDimensions.size());
 
         /**

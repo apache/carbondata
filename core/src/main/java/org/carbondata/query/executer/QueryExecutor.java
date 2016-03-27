@@ -19,7 +19,7 @@
 
 package org.carbondata.query.executer;
 
-import org.carbondata.core.iterator.MolapIterator;
+import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.query.executer.exception.QueryExecutionException;
 import org.carbondata.query.result.RowResult;
 
@@ -31,7 +31,7 @@ public interface QueryExecutor {
      * @param queryModel query model, properties which will be required to execute the query
      * @throws QueryExecutionException will throw query execution exception in case of any abnormal scenario
      */
-    MolapIterator<RowResult> execute(MolapQueryExecutorModel queryModel)
+    CarbonIterator<RowResult> execute(CarbonQueryExecutorModel queryModel)
             throws QueryExecutionException;
 
     /**
@@ -40,7 +40,7 @@ public interface QueryExecutor {
      * @param queryModel , properties which will be required to execute the query
      * @throws QueryExecutionException will throw query execution exception in case of any abnormal scenario
      */
-    MolapIterator<RowResult> executeDimension(MolapQueryExecutorModel queryModel)
+    CarbonIterator<RowResult> executeDimension(CarbonQueryExecutorModel queryModel)
             throws QueryExecutionException;
 
 }

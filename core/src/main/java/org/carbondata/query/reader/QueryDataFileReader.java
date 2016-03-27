@@ -29,13 +29,13 @@ import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.core.datastorage.store.compression.SnappyCompression.SnappyByteCompression;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.metadata.LeafNodeInfo;
-import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.aggregator.util.AggUtil;
 import org.carbondata.query.executer.pagination.impl.QueryResult;
 import org.carbondata.query.reader.exception.ResultReaderException;
 import org.carbondata.query.schema.metadata.DataProcessorInfo;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 import org.carbondata.query.wrappers.ByteArrayWrapper;
 
 //import org.carbondata.core.engine.executer.calcexp.MolapCalcFunction;
@@ -124,12 +124,12 @@ public class QueryDataFileReader {
                                 info.getHighCardinalityTypes(), info.getDataTypes());
             }
         } catch (IOException e) {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e,
                     "Problem while reading the query out file");
             throw new ResultReaderException(e);
         } finally {
-            MolapUtil.closeStreams(keyStream);
-            MolapUtil.closeStreams(msrStreams);
+            CarbonUtil.closeStreams(keyStream);
+            CarbonUtil.closeStreams(msrStreams);
         }
         return queryResult;
     }
@@ -141,7 +141,7 @@ public class QueryDataFileReader {
         if (null != fileHolder) {
             fileHolder.finish();
             if (!(FileFactory.getMolapFile(filePath, FileFactory.getFileType(filePath)).delete())) {
-                LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                         "Problem while deleting the pagination temp file" + filePath);
             }
         }

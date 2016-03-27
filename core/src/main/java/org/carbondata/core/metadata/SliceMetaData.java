@@ -23,7 +23,7 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashSet;
 
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.keygenerator.KeyGenerator;
 
 public class SliceMetaData implements Serializable {
@@ -309,7 +309,7 @@ public class SliceMetaData implements Serializable {
     public void addTableNamesToLoadMandatory(String tableNamesToLoadMandatory) {
         if (null == this.tableNamesToLoadMandatory) {
             this.tableNamesToLoadMandatory =
-                    new HashSet<String>(MolapCommonConstants.DEFAULT_COLLECTION_SIZE);
+                    new HashSet<String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         }
         this.tableNamesToLoadMandatory.add(tableNamesToLoadMandatory);
     }

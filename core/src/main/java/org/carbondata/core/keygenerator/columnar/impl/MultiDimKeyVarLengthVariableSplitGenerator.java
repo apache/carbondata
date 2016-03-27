@@ -2,7 +2,7 @@ package org.carbondata.core.keygenerator.columnar.impl;
 
 import java.util.*;
 
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.columnar.ColumnarSplitter;
 import org.carbondata.core.keygenerator.mdkey.MultiDimKeyVarLengthGenerator;
@@ -29,7 +29,7 @@ public class MultiDimKeyVarLengthVariableSplitGenerator extends MultiDimKeyVarLe
     private void initialise() {
         int s = 0;
         List<Set<Integer>> splitList =
-                new ArrayList<Set<Integer>>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+                new ArrayList<Set<Integer>>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
         Set<Integer> split = new TreeSet<Integer>();
         splitList.add(split);
         int dimSplitIndx = 0;
@@ -52,7 +52,7 @@ public class MultiDimKeyVarLengthVariableSplitGenerator extends MultiDimKeyVarLe
         List<Integer>[] splits = new List[splitList.size()];
         int i = 0;
         for (Set<Integer> splitLocal : splitList) {
-            List<Integer> range = new ArrayList<Integer>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+            List<Integer> range = new ArrayList<Integer>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
             for (Integer index : splitLocal) {
                 range.add(index);
             }

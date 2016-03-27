@@ -22,11 +22,11 @@ package org.carbondata.processing.sortandgroupby.sortDataStep;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.common.logging.impl.StandardLogService;
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.processing.schema.metadata.SortObserver;
-import org.carbondata.processing.sortandgroupby.exception.MolapSortKeyAndGroupByException;
+import org.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 import org.carbondata.processing.sortandgroupby.sortData.SortDataRows;
-import org.carbondata.processing.util.MolapDataProcessorLogEvent;
+import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.carbondata.processing.util.RemoveDictionaryUtil;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowMetaInterface;
@@ -46,12 +46,12 @@ public class SortKeyStep extends BaseStep {
             LogServiceFactory.getLogService(SortKeyStep.class.getName());
 
     /**
-     * MolapSortKeyAndGroupByStepData
+     * CarbonSortKeyAndGroupByStepData
      */
     private SortKeyStepData data;
 
     /**
-     * MolapSortKeyAndGroupByStepMeta
+     * CarbonSortKeyAndGroupByStepMeta
      */
     private SortKeyStepMeta meta;
 
@@ -81,7 +81,7 @@ public class SortKeyStep extends BaseStep {
     private SortObserver observer;
 
     /**
-     * MolapSortKeyAndGroupByStep Constructor
+     * CarbonSortKeyAndGroupByStep Constructor
      *
      * @param stepMeta
      * @param stepDataInterface
@@ -137,12 +137,12 @@ public class SortKeyStep extends BaseStep {
             // get all fields 
             this.meta.getFields(data.getOutputRowMeta(), getStepname(), null, null, this);
 
-            LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "Record Procerssed For table: " + meta.getTabelName());
-            LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "Record Form Previous Step was null");
             String logMessage = "Summary: Molap Sort Key Step: Read: " + 1 + ": Write: " + 1;
-            LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, logMessage);
+            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, logMessage);
 
             putRow(data.getOutputRowMeta(), outRow);
             setOutputDone();
@@ -162,7 +162,7 @@ public class SortKeyStep extends BaseStep {
             String measureDataType = meta.getMeasureDataType();
             String[] msrdataTypes = null;
             if (measureDataType.length() > 0) {
-                msrdataTypes = measureDataType.split(MolapCommonConstants.AMPERSAND_SPC_CHARACTER);
+                msrdataTypes = measureDataType.split(CarbonCommonConstants.AMPERSAND_SPC_CHARACTER);
             } else {
                 msrdataTypes = new String[0];
             }
@@ -177,27 +177,27 @@ public class SortKeyStep extends BaseStep {
             try {
                 // initialize sort
                 this.sortDataRows.initialize(meta.getSchemaName(), meta.getCubeName());
-            } catch (MolapSortKeyAndGroupByException e) {
+            } catch (CarbonSortKeyAndGroupByException e) {
                 throw new KettleException(e);
             }
 
             this.logCounter =
-                    Integer.parseInt(MolapCommonConstants.DATA_LOAD_LOG_COUNTER_DEFAULT_COUNTER);
+                    Integer.parseInt(CarbonCommonConstants.DATA_LOAD_LOG_COUNTER_DEFAULT_COUNTER);
         }
 
         readCounter++;
         if (readCounter % logCounter == 0) {
-            LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "Record Procerssed For table: " + meta.getTabelName());
             String logMessage = "Molap Sort Key Step: Record Read: " + readCounter;
-            LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, logMessage);
+            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, logMessage);
         }
 
         try {
             // add row 
             this.sortDataRows.addRow(row);
         } catch (Throwable e) {
-            LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
+            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, e);
             throw new KettleException(e);
         }
 
@@ -212,12 +212,12 @@ public class SortKeyStep extends BaseStep {
      */
     private boolean processRowToNextStep() throws KettleException {
         if (null == this.sortDataRows) {
-            LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "Record Procerssed For table: " + meta.getTabelName());
-            LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "Number of Records was Zero");
             String logMessage = "Summary: Molap Sort Key Step: Read: " + 0 + ": Write: " + 0;
-            LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, logMessage);
+            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, logMessage);
             putRow(data.getOutputRowMeta(), new Object[0]);
             setOutputDone();
             return false;
@@ -228,16 +228,16 @@ public class SortKeyStep extends BaseStep {
             this.sortDataRows.startSorting();
 
             // check any more rows are present 
-            LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
+            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG,
                     "Record Procerssed For table: " + meta.getTabelName());
             String logMessage = "Summary: Molap Sort Key Step: Read: " + readCounter + ": Write: "
                     + writeCounter;
-            LOGGER.info(MolapDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, logMessage);
+            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_MOLAPDATAPROCESSOR_MSG, logMessage);
             this.sortDataRows.writeMeasureMetadataFile();
             putRow(data.getOutputRowMeta(), new Object[0]);
             setOutputDone();
             return false;
-        } catch (MolapSortKeyAndGroupByException e) {
+        } catch (CarbonSortKeyAndGroupByException e) {
             throw new KettleException(e);
         }
 

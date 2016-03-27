@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.ByteUtil;
 
 public class BlockIndexerStorageForInt implements IndexStorage<int[]> {
@@ -126,8 +126,8 @@ public class BlockIndexerStorageForInt implements IndexStorage<int[]> {
      * @param indexes
      */
     public void compressMyOwnWay(int[] indexes) {
-        List<Integer> list = new ArrayList<Integer>(MolapCommonConstants.CONSTANT_SIZE_TEN);
-        List<Integer> map = new ArrayList<Integer>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+        List<Integer> list = new ArrayList<Integer>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+        List<Integer> map = new ArrayList<Integer>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
         int k = 0;
         int i = 1;
         for (; i < indexes.length; i++) {
@@ -201,11 +201,11 @@ public class BlockIndexerStorageForInt implements IndexStorage<int[]> {
     private void compressDataMyOwnWay(ColumnWithIntIndex[] indexes) {
         byte[] prvKey = indexes[0].getColumn();
         List<ColumnWithIntIndex> list =
-                new ArrayList<ColumnWithIntIndex>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+                new ArrayList<ColumnWithIntIndex>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
         list.add(indexes[0]);
         int counter = 1;
         int start = 0;
-        List<Integer> map = new ArrayList<Integer>(MolapCommonConstants.CONSTANT_SIZE_TEN);
+        List<Integer> map = new ArrayList<Integer>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
         for (int i = 1; i < indexes.length; i++) {
             if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(prvKey, indexes[i].getColumn()) != 0) {
                 prvKey = indexes[i].getColumn();

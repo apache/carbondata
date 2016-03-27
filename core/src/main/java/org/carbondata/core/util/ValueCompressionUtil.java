@@ -28,7 +28,7 @@ import java.util.Arrays;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.compression.MeasureMetaDataModel;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
@@ -713,16 +713,16 @@ public final class ValueCompressionUtil {
                 allocate = ByteBuffer.wrap(metaBytes);
             }
         } catch (FileNotFoundException f) {
-            LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
                     "@@@ msrMetadata File is missing @@@ ", f.getMessage());
-            LOGGER.debug(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, f, f.getMessage());
+            LOGGER.debug(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, f, f.getMessage());
         } catch (IOException exception) {
-            LOGGER.error(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG,
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG,
                     "@@@ Error while reading msrMetadata File is missing @@@ ",
                     exception.getMessage());
-            LOGGER.debug(MolapCoreLogEvent.UNIBI_MOLAPCORE_MSG, exception, exception.getMessage());
+            LOGGER.debug(CarbonCoreLogEvent.UNIBI_MOLAPCORE_MSG, exception, exception.getMessage());
         } finally {
-            MolapUtil.closeStreams(stream);
+            CarbonUtil.closeStreams(stream);
         }
         allocate.rewind();
 
@@ -767,9 +767,9 @@ public final class ValueCompressionUtil {
     }
 
     private static Object getValueBasedOnAggType(ByteBuffer allocate, char type) {
-        if (type == MolapCommonConstants.BIG_INT_MEASURE) {
+        if (type == CarbonCommonConstants.BIG_INT_MEASURE) {
             return allocate.getLong();
-        } else if (type == MolapCommonConstants.BIG_DECIMAL_MEASURE) {
+        } else if (type == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
             int len = allocate.getInt();
             byte[] buff = new byte[len];
             allocate.get(buff);

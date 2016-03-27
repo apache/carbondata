@@ -26,8 +26,8 @@ import java.util.List;
 
 import org.apache.spark.sql.types.DataType;
 import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreDataHolder;
-import org.carbondata.core.metadata.MolapMetadata.Dimension;
-import org.carbondata.query.datastorage.InMemoryCube;
+import org.carbondata.core.metadata.CarbonMetadata.Dimension;
+import org.carbondata.query.datastorage.InMemoryTable;
 import org.carbondata.query.evaluators.BlockDataHolder;
 
 public interface GenericQueryType {
@@ -66,7 +66,7 @@ public interface GenericQueryType {
 
     DataType getSchemaType();
 
-    Object getDataBasedOnDataTypeFromSurrogates(List<InMemoryCube> slices, ByteBuffer surrogateData,
+    Object getDataBasedOnDataTypeFromSurrogates(List<InMemoryTable> slices, ByteBuffer surrogateData,
             Dimension[] dimensions);
 
     void parseAndGetResultBytes(ByteBuffer complexData, DataOutputStream dataOutput)

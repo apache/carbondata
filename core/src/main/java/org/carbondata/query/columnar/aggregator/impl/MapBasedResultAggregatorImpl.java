@@ -30,7 +30,7 @@ import net.jpountz.xxhash.XXHashFactory;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.keygenerator.KeyGenException;
-import org.carbondata.core.util.MolapProperties;
+import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.aggregator.util.AggUtil;
 import org.carbondata.query.columnar.aggregator.ColumnarAggregatorInfo;
@@ -39,7 +39,7 @@ import org.carbondata.query.columnar.keyvalue.AbstractColumnarScanResult;
 import org.carbondata.query.executer.impl.RestructureHolder;
 import org.carbondata.query.result.Result;
 import org.carbondata.query.result.impl.MapBasedResult;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 import org.carbondata.query.util.QueryExecutorUtility;
 import org.carbondata.query.wrappers.ByteArrayWrapper;
 
@@ -66,7 +66,7 @@ public class MapBasedResultAggregatorImpl implements ColumnarScannedResultAggreg
 
         //CHECKSTYLE:OFF Approval No:Approval-V1R2C10_005
         boolean useXXHASH = Boolean.valueOf(
-                MolapProperties.getInstance().getProperty("molap.enableXXHash", "false"));
+                CarbonProperties.getInstance().getProperty("molap.enableXXHash", "false"));
         //CHECKSTYLE:ON
 
         if (useXXHASH) {
@@ -158,7 +158,7 @@ public class MapBasedResultAggregatorImpl implements ColumnarScannedResultAggreg
                 finalData.put(key, e.getValue());
             }
         } catch (KeyGenException e) {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e);
         }
 
         return finalData;

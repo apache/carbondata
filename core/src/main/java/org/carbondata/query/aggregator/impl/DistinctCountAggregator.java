@@ -25,9 +25,9 @@ import java.nio.ByteBuffer;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.datastorage.store.dataholder.MolapReadDataHolder;
+import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.carbondata.query.aggregator.MeasureAggregator;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 import org.roaringbitmap.IntIterator;
 import org.roaringbitmap.RoaringBitmap;
 
@@ -115,7 +115,7 @@ public class DistinctCountAggregator implements MeasureAggregator {
     }
 
     @Override
-    public void agg(MolapReadDataHolder newVal, int index) {
+    public void agg(CarbonReadDataHolder newVal, int index) {
 
     }
 
@@ -301,7 +301,7 @@ public class DistinctCountAggregator implements MeasureAggregator {
             } catch (IOException e) {
                 // TODO Auto-generated catch block
                 //                e.printStackTrace();
-                LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e, e.getMessage());
+                LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, e, e.getMessage());
             }
         }
     }
@@ -334,7 +334,7 @@ public class DistinctCountAggregator implements MeasureAggregator {
             writeData(outputStream);
         } catch (IOException ex) {
             //            ex.printStackTrace();
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG, ex, ex.getMessage());
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG, ex, ex.getMessage());
         }
         data = byteStream.toByteArray();
         valueSet = null;

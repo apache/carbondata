@@ -24,7 +24,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.math.BigDecimal;
 
-import org.carbondata.core.datastorage.store.dataholder.MolapReadDataHolder;
+import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.carbondata.query.aggregator.CalculatedMeasureAggregator;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.executer.calcexp.MolapCalcFunction;
@@ -56,7 +56,7 @@ public class CalculatedMeasureAggregatorImpl implements CalculatedMeasureAggrega
     }
 
     @Override
-    public void agg(MolapReadDataHolder newVal, int index) {
+    public void agg(CarbonReadDataHolder newVal, int index) {
 
     }
 

@@ -19,9 +19,9 @@
 
 package org.carbondata.query.columnar.aggregator.impl.measure;
 
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.olap.SqlStatement;
-import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.carbon.SqlStatement;
+import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.columnar.aggregator.ColumnarAggregatorInfo;
 import org.carbondata.query.columnar.keyvalue.AbstractColumnarScanResult;
@@ -33,7 +33,7 @@ public class AggregateTableAggregator extends FactTableAggregator {
         super(columnaraggreagtorInfo);
         type = new char[columnaraggreagtorInfo.getAggType().length];
         for (int i = 0; i < type.length; i++) {
-            type[i] = MolapUtil.getType(columnaraggreagtorInfo.getAggType()[i]);
+            type[i] = CarbonUtil.getType(columnaraggreagtorInfo.getAggType()[i]);
         }
     }
 
@@ -48,7 +48,7 @@ public class AggregateTableAggregator extends FactTableAggregator {
         byte[] byteValue = null;
         Object measureValue = 0;
         for (int i = 0; i < noOfMeasuresInQuery; i++) {
-            if (type[i] == MolapCommonConstants.SUM_COUNT_VALUE_MEASURE) {
+            if (type[i] == CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE) {
                 int index = columnaraggreagtorInfo.getMeasureOrdinalMap().get(measureOrdinal[i]);
                 SqlStatement.Type dataType = this.columnaraggreagtorInfo.getDataTypes()[index];
                 //                measureValue = keyValue.getNormalMeasureValue(measureOrdinal[i], dataType);

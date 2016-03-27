@@ -23,14 +23,14 @@ import java.util.List;
 import java.util.Map;
 
 import org.carbondata.core.keygenerator.KeyGenerator;
-import org.carbondata.core.metadata.MolapMetadata.Dimension;
+import org.carbondata.core.metadata.CarbonMetadata.Dimension;
 import org.carbondata.core.vo.HybridStoreModel;
 import org.carbondata.query.complex.querytypes.GenericQueryType;
-import org.carbondata.query.datastorage.InMemoryCube;
+import org.carbondata.query.datastorage.InMemoryTable;
 import org.carbondata.query.executer.impl.QueryFilterInfo;
 
 public class FilterEvaluatorInfo {
-    private List<InMemoryCube> slices;
+    private List<InMemoryTable> slices;
 
     private KeyGenerator keyGenerator;
 
@@ -73,11 +73,11 @@ public class FilterEvaluatorInfo {
         this.complexTypesWithBlockStartIndex = complexTypesWithBlockStartIndex;
     }
 
-    public List<InMemoryCube> getSlices() {
+    public List<InMemoryTable> getSlices() {
         return slices;
     }
 
-    public void setSlices(List<InMemoryCube> slices) {
+    public void setSlices(List<InMemoryTable> slices) {
         this.slices = slices;
     }
 

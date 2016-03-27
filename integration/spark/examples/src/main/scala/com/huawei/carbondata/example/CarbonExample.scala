@@ -1,6 +1,6 @@
 package com.huawei.carbondata.example
 
-import org.apache.spark.sql.OlapContext
+import org.apache.spark.sql.CarbonContext
 import org.apache.spark.{SparkConf, SparkContext}
 
 object CarbonExample {
@@ -12,8 +12,8 @@ object CarbonExample {
       .setAppName("CarbonSpark")
       .setMaster("local[2]"))
 
-    val oc = new OlapContext(sc, hdfsCarbonBasePath)
-    oc.setConf("molap.kettle.home", "/home/root1/carbon/carbondata/processing/molapplugins/molapplugins")
+    val oc = new CarbonContext(sc, hdfsCarbonBasePath)
+    oc.setConf("molap.kettle.home", "/home/root1/carbon/carbondata/processing/carbonplugins/")
 
 //    oc.sql("drop cube alldatatypescube")
 

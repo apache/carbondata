@@ -19,10 +19,10 @@
 
 package org.carbondata.query.columnar.scanner.impl;
 
-import org.carbondata.core.iterator.MolapIterator;
+import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.query.datastorage.storeInterfaces.DataStoreBlock;
 
-public class BtreeLeafNodeIterator implements MolapIterator<DataStoreBlock> {
+public class BtreeLeafNodeIterator implements CarbonIterator<DataStoreBlock> {
     /**
      * data store block
      */

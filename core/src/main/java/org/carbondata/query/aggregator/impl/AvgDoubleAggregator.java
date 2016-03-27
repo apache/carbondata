@@ -24,8 +24,8 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.datastorage.store.dataholder.MolapReadDataHolder;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.carbondata.query.aggregator.MeasureAggregator;
 
 public class AvgDoubleAggregator extends AbstractMeasureAggregatorBasic {
@@ -82,7 +82,7 @@ public class AvgDoubleAggregator extends AbstractMeasureAggregatorBasic {
     }
 
     @Override
-    public void agg(MolapReadDataHolder newVal, int index) {
+    public void agg(CarbonReadDataHolder newVal, int index) {
         byte[] value = newVal.getReadableByteArrayValueByIndex(index);
         ByteBuffer buffer = ByteBuffer.wrap(value);
         aggVal += buffer.getDouble();
@@ -98,7 +98,7 @@ public class AvgDoubleAggregator extends AbstractMeasureAggregatorBasic {
         if (firstTime) {
             return new byte[0];
         }
-        ByteBuffer buffer = ByteBuffer.allocate(2 * MolapCommonConstants.DOUBLE_SIZE_IN_BYTE);
+        ByteBuffer buffer = ByteBuffer.allocate(2 * CarbonCommonConstants.DOUBLE_SIZE_IN_BYTE);
         buffer.putDouble(aggVal);
         buffer.putDouble(count);
         return buffer.array();

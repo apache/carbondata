@@ -24,17 +24,17 @@ import java.util.List;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.keygenerator.columnar.impl.MultiDimKeyVarLengthEquiSplitGenerator;
 import org.carbondata.core.metadata.LeafNodeInfoColumnar;
-import org.carbondata.core.metadata.MolapMetadata.Cube;
-import org.carbondata.core.util.MolapProperties;
-import org.carbondata.core.util.MolapUtil;
+import org.carbondata.core.metadata.CarbonMetadata.Cube;
+import org.carbondata.core.util.CarbonProperties;
+import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.datastorage.streams.DataInputStream;
-import org.carbondata.query.util.MolapEngineLogEvent;
+import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
  * This class will read given fact file
@@ -90,11 +90,11 @@ public class FactDataHandler {
         aggKeyBlock = new boolean[dimensionCardinality.length];
 
         boolean isAggKeyBlock = Boolean.parseBoolean(
-                MolapCommonConstants.AGGREAGATE_COLUMNAR_KEY_BLOCK_DEFAULTVALUE);
+                CarbonCommonConstants.AGGREAGATE_COLUMNAR_KEY_BLOCK_DEFAULTVALUE);
         if (isAggKeyBlock) {
-            int highCardinalityValue = Integer.parseInt(MolapProperties.getInstance()
-                    .getProperty(MolapCommonConstants.HIGH_CARDINALITY_VALUE,
-                            MolapCommonConstants.HIGH_CARDINALITY_VALUE_DEFAULTVALUE));
+            int highCardinalityValue = Integer.parseInt(CarbonProperties.getInstance()
+                    .getProperty(CarbonCommonConstants.HIGH_CARDINALITY_VALUE,
+                            CarbonCommonConstants.HIGH_CARDINALITY_VALUE_DEFAULTVALUE));
             for (int i = 0; i < dimensionCardinality.length; i++) {
                 if (dimensionCardinality[i] < highCardinalityValue) {
                     aggKeyBlock[i] = true;
@@ -104,9 +104,9 @@ public class FactDataHandler {
 
         // Initializing keyBlockSize
         int dimSet = Integer.parseInt(
-                MolapCommonConstants.DIMENSION_SPLIT_VALUE_IN_COLUMNAR_DEFAULTVALUE);
+                CarbonCommonConstants.DIMENSION_SPLIT_VALUE_IN_COLUMNAR_DEFAULTVALUE);
         keyBlockSize = new MultiDimKeyVarLengthEquiSplitGenerator(
-                MolapUtil.getIncrementedCardinalityFullyFilled(dimensionCardinality.clone()),
+                CarbonUtil.getIncrementedCardinalityFullyFilled(dimensionCardinality.clone()),
                 (byte) dimSet).getBlockKeySize();
 
         // Initializing isFileStore
@@ -123,19 +123,19 @@ public class FactDataHandler {
                 .substring(schemaAndcubeName.indexOf(schemaName + '_') + schemaName.length() + 1,
                         schemaAndcubeName.length());
         String modeValue = metaCube.getMode();
-        if (modeValue.equalsIgnoreCase(MolapCommonConstants.MOLAP_MODE_DEFAULT_VAL)) {
+        if (modeValue.equalsIgnoreCase(CarbonCommonConstants.MOLAP_MODE_DEFAULT_VAL)) {
             isFileStore = true;
         }
 
         if (!isFileStore) {
-            boolean parseBoolean = Boolean.parseBoolean(MolapProperties.getInstance()
-                    .getProperty(MolapCommonConstants.MOLAP_IS_LOAD_FACT_TABLE_IN_MEMORY,
-                            MolapCommonConstants.MOLAP_IS_LOAD_FACT_TABLE_IN_MEMORY_DEFAULTVALUE));
+            boolean parseBoolean = Boolean.parseBoolean(CarbonProperties.getInstance()
+                    .getProperty(CarbonCommonConstants.MOLAP_IS_LOAD_FACT_TABLE_IN_MEMORY,
+                            CarbonCommonConstants.MOLAP_IS_LOAD_FACT_TABLE_IN_MEMORY_DEFAULTVALUE));
             if (!parseBoolean && tableName.equals(metaCube.getFactTableName())) {
-                LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                         "Mode set for cube " + schemaName + ':' + cubeName + "as mode=" + modeValue
                                 + ": but as "
-                                + MolapCommonConstants.MOLAP_IS_LOAD_FACT_TABLE_IN_MEMORY
+                                + CarbonCommonConstants.MOLAP_IS_LOAD_FACT_TABLE_IN_MEMORY
                                 + " is false it will be file mode");
                 isFileStore = true;
             }
@@ -156,7 +156,7 @@ public class FactDataHandler {
             if (null != leafNodeInfoList) {
                 if (leafNodeInfoList.size() > 0) {
                     leafNodeInfoList.get(0).getFileName();
-                    LOGGER.info(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                    LOGGER.info(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                             "Processing : " + (leafNodeInfoList.get(0).getFileName()) + " : " + (
                                     System.currentTimeMillis() - st));
                     st = System.currentTimeMillis();

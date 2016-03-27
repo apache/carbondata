@@ -28,9 +28,9 @@ import java.util.Date;
 import org.apache.spark.sql.columnar.TIMESTAMP;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.MolapCommonConstants;
-import org.carbondata.core.olap.SqlStatement;
-import org.carbondata.core.util.MolapProperties;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.carbon.SqlStatement;
+import org.carbondata.core.util.CarbonProperties;
 
 public final class DataTypeConverter {
 
@@ -75,15 +75,15 @@ public final class DataTypeConverter {
                 if (data.isEmpty()) {
                     return null;
                 }
-                SimpleDateFormat parser = new SimpleDateFormat(MolapProperties.getInstance().
-                        getProperty(MolapCommonConstants.MOLAP_TIMESTAMP_FORMAT,
-                                MolapCommonConstants.MOLAP_TIMESTAMP_DEFAULT_FORMAT));
+                SimpleDateFormat parser = new SimpleDateFormat(CarbonProperties.getInstance().
+                        getProperty(CarbonCommonConstants.MOLAP_TIMESTAMP_FORMAT,
+                                CarbonCommonConstants.MOLAP_TIMESTAMP_DEFAULT_FORMAT));
                 Date dateToStr;
                 try {
                     dateToStr = parser.parse(data);
                     return dateToStr.getTime() * 1000;
                 } catch (ParseException e) {
-                    LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+                    LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                             "Cannot convert" + TIMESTAMP.toString() + " to Time/Long type value" + e
                                     .getMessage());
                     return null;
@@ -107,7 +107,7 @@ public final class DataTypeConverter {
             //            }
             //            else
             //            {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                     "Problem while converting data type" + data);
             return null;
             //            }
@@ -141,7 +141,7 @@ public final class DataTypeConverter {
                 return data;
             }
         } catch (NumberFormatException ex) {
-            LOGGER.error(MolapEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_MOLAPENGINE_MSG,
                     "Problem while converting data type" + data);
             return null;
         }

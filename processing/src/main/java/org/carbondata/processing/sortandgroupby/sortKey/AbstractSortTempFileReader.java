@@ -71,7 +71,7 @@ public abstract class AbstractSortTempFileReader {
     protected char[] type;
 
     /**
-     * MolapCompressedSortTempFileReader
+     * CarbonCompressedSortTempFileReader
      *
      * @param measureCount
      * @param mdKeyLenght

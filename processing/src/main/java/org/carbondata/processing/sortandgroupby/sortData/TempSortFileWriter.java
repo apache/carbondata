@@ -21,7 +21,7 @@ package org.carbondata.processing.sortandgroupby.sortData;
 
 import java.io.File;
 
-import org.carbondata.processing.sortandgroupby.exception.MolapSortKeyAndGroupByException;
+import org.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 
 public interface TempSortFileWriter {
     /**
@@ -29,9 +29,9 @@ public interface TempSortFileWriter {
      *
      * @param file
      * @param entryCount
-     * @throws MolapSortKeyAndGroupByException
+     * @throws CarbonSortKeyAndGroupByException
      */
-    void initiaize(File file, int entryCount) throws MolapSortKeyAndGroupByException;
+    void initiaize(File file, int entryCount) throws CarbonSortKeyAndGroupByException;
 
     /**
      * Method will be used to finish
@@ -42,7 +42,7 @@ public interface TempSortFileWriter {
      * Below method will be used to write the sort temp file
      *
      * @param records
-     * @throws MolapSortKeyAndGroupByException
+     * @throws CarbonSortKeyAndGroupByException
      */
-    void writeSortTempFile(Object[][] records) throws MolapSortKeyAndGroupByException;
+    void writeSortTempFile(Object[][] records) throws CarbonSortKeyAndGroupByException;
 }
