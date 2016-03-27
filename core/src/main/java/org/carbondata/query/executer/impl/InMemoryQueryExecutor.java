@@ -33,9 +33,9 @@ import org.carbondata.query.holders.CarbonResultHolder;
 import org.carbondata.query.queryinterface.filter.CarbonFilterInfo;
 import org.carbondata.query.util.CarbonEngineLogEvent;
 
-//import mondrian.rolap.SqlStatement;
-//import mondrian.rolap.SqlStatement.Type;
-//import mondrian.olap.ResourceLimitExceededException;
+//import mondrian.carbon.SqlStatement;
+//import mondrian.carbon.SqlStatement.Type;
+//import mondrian.carbon.ResourceLimitExceededException;
 
 /**
  * This class is the concrete implementation for CARBON Query Execution.
@@ -214,11 +214,11 @@ public class InMemoryQueryExecutor extends AbstractCarbonExecutor implements Row
 
     ////    public InMemoryQueryExecutor(List<Dimension> dimList, String cubeName, String schemaName)
     ////    {
-    //////        cubeName = (String)RolapConnection.THREAD_LOCAL.get().get(RolapConnection.CUBE_NAME);
-    //////        schemaName = (String)RolapConnection.THREAD_LOCAL.get().get(RolapConnection.SCHEMA_NAME);
+    //////        cubeName = (String)CarbonConnection.THREAD_LOCAL.get().get(CarbonConnection.CUBE_NAME);
+    //////        schemaName = (String)CarbonConnection.THREAD_LOCAL.get().get(CarbonConnection.SCHEMA_NAME);
     ////        
-    ////        this.cubeName = cubeName;//(String)RolapConnection.THREAD_LOCAL.get().get(RolapConnection.CUBE_NAME);
-    ////        this.schemaName = schemaName;//(String)RolapConnection.THREAD_LOCAL.get().get(RolapConnection.SCHEMA_NAME);
+    ////        this.cubeName = cubeName;//(String)CarbonConnection.THREAD_LOCAL.get().get(CarbonConnection.CUBE_NAME);
+    ////        this.schemaName = schemaName;//(String)CarbonConnection.THREAD_LOCAL.get().get(CarbonConnection.SCHEMA_NAME);
     ////        
     ////        
     ////        if(null==cubeName)
@@ -228,7 +228,7 @@ public class InMemoryQueryExecutor extends AbstractCarbonExecutor implements Row
     ////            }
     ////        }
     ////        cubeUniqueName=schemaName+'_'+cubeName;
-    //////        queryId = (String)RolapConnection.THREAD_LOCAL.get().get(RolapConnection.QUERY_ID);
+    //////        queryId = (String)CarbonConnection.THREAD_LOCAL.get().get(CarbonConnection.QUERY_ID);
     ////        if(dimList != null)
     ////        {
     ////            dimTables = dimList.toArray(new Dimension[dimList.size()]);
@@ -275,7 +275,7 @@ public class InMemoryQueryExecutor extends AbstractCarbonExecutor implements Row
     //            }
     //        }
     //        cubeUniqueName=schemaName+'_'+cubeName;
-    ////        queryId = (String)RolapConnection.THREAD_LOCAL.get().get(RolapConnection.QUERY_ID);
+    ////        queryId = (String)CarbonConnection.THREAD_LOCAL.get().get(CarbonConnection.QUERY_ID);
     //        if(dimList != null)
     //        {
     //            dimTables = dimList.toArray(new Dimension[dimList.size()]);
@@ -328,7 +328,7 @@ public class InMemoryQueryExecutor extends AbstractCarbonExecutor implements Row
     //            }
     //        }
     //        cubeUniqueName=schemaName+'_'+cubeName;
-    ////        queryId = (String)RolapConnection.THREAD_LOCAL.get().get(RolapConnection.QUERY_ID);
+    ////        queryId = (String)CarbonConnection.THREAD_LOCAL.get().get(CarbonConnection.QUERY_ID);
     //        if(dimList != null)
     //        {
     //            dimTables = dimList.toArray(new Dimension[dimList.size()]);
@@ -422,7 +422,7 @@ public class InMemoryQueryExecutor extends AbstractCarbonExecutor implements Row
     //            replacedDims = updateDimensionsNormalized(replacedDims,isNormalizedCase);
     //        }
     //       
-    ////        Query query= (Query)RolapConnection.THREAD_LOCAL.get().get("QUERY_OBJ");
+    ////        Query query= (Query)CarbonConnection.THREAD_LOCAL.get().get("QUERY_OBJ");
     //        this.queryDimAndSortOrder = queryModel.getSortOrder();
     //        if(queryDimAndSortOrder == null)
     //        {
@@ -2213,7 +2213,7 @@ public class InMemoryQueryExecutor extends AbstractCarbonExecutor implements Row
     ////                 for(String columnName : colsList)
     ////                 {
     ////                     columnNameAndSortOrderMap.put(columnName,
-    ////                             (String)((mondrian.olap.Literal)args[i + 1]).getValue());
+    ////                             (String)((mondrian.carbon.Literal)args[i + 1]).getValue());
     ////                 }
     ////                 i = i + 2;
     ////             }
@@ -4713,7 +4713,7 @@ public class InMemoryQueryExecutor extends AbstractCarbonExecutor implements Row
     //
     //    private DimensionHierarichyStore getDimensionCache(InMemoryCube inMemoryCube, String hierName)
     //    {
-    //        CarbonDef.CubeDimension[] cubeDimensions = inMemoryCube.getRolapCube().dimensions;
+    //        CarbonDef.CubeDimension[] cubeDimensions = inMemoryCube.getCarbonCube().dimensions;
     //        Schema schema = inMemoryCube.getSchema();
     //        for(int i = 0;i < cubeDimensions.length;i++)
     //        {

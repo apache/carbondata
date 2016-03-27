@@ -40,7 +40,7 @@ import org.carbondata.core.metadata.CarbonMetadata.{Dimension, Cube}
 import org.carbondata.core.carbon.CarbonDef
 import org.carbondata.core.util.{CarbonUtil, CarbonVersion, CarbonProperties}
 import org.carbondata.integration.spark.load.CarbonLoaderUtil
-import org.carbondata.integration.spark.util.CarbonScalaUtil.OlapUtil
+import org.carbondata.integration.spark.util.CarbonScalaUtil.CarbonSparkUtil
 import org.carbondata.processing.util.CarbonDataProcessorUtil
 import org.carbondata.query.util.CarbonEngineLogEvent
 import org.eigenbase.xom.XOMUtil
@@ -88,9 +88,6 @@ object CarbonMetastoreCatalog {
       baos.flush();
       bais = new ByteArrayInputStream(baos.toByteArray())
       decryptedStream = bais
-      //      if(encrypted) {
-      //        decryptedStream = SimpleFileEncryptor.decryptContent(bais);
-      //      }
       val xmlParser = XOMUtil.createDefaultParser()
       val defin = xmlParser.parse(decryptedStream)
       out.close
@@ -160,7 +157,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val metadataPath: String,client:
       case Seq(schemaName, cubeName) =>
         val cubes = metadata.cubesMeta.filter(c => (c.schemaName.equalsIgnoreCase(schemaName) && (c.cubeName.equalsIgnoreCase(cubeName))))
         if (cubes.length > 0)
-          CarbonRelation(schemaName, cubeName, OlapUtil.createSparkMeta(cubes.head.cube), cubes.head, alias)(sqlContext)
+          CarbonRelation(schemaName, cubeName, CarbonSparkUtil.createSparkMeta(cubes.head.cube), cubes.head, alias)(sqlContext)
         else {
           LOGGER.audit(s"Table Not Found: $schemaName $cubeName")
           sys.error(s"Table Not Found: $schemaName $cubeName")
@@ -169,7 +166,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val metadataPath: String,client:
         val currentDatabase = getDB.getDatabaseName(None, sqlContext)
         val cubes = metadata.cubesMeta.filter(c => (c.schemaName.equalsIgnoreCase(currentDatabase) && (c.cubeName.equalsIgnoreCase(cubeName))))
         if (cubes.length > 0)
-          CarbonRelation(currentDatabase, cubeName, OlapUtil.createSparkMeta(cubes.head.cube), cubes.head, alias)(sqlContext)
+          CarbonRelation(currentDatabase, cubeName, CarbonSparkUtil.createSparkMeta(cubes.head.cube), cubes.head, alias)(sqlContext)
         else {
           LOGGER.audit(s"Table Not Found: $cubeName")
           sys.error(s"Table Not Found: $cubeName")
@@ -204,32 +201,8 @@ class CarbonMetastoreCatalog(hive: HiveContext, val metadataPath: String,client:
     }
   }
 
-  //    def registerTable(
-  //      databaseName: Option[String],
-  //      tableName: String,
-  //      plan: LogicalPlan): Unit = {
-  //  }
-  //  /**
-  //   * UNIMPLEMENTED: It needs to be decided how we will persist in-memory tables to the metastore.
-  //   * For now, if this functionality is desired mix in the in-memory [[OverrideCatalog]].
-  //   */
-  // override def registerTable(tableIdentifier: Seq[String], plan: LogicalPlan): Unit = {
-  //
-  // }
-  //
-  //     def unregisterTable(
-  //      databaseName: Option[String],
-  //      tableName: String) = {}
-  //
-  //  override def unregisterTable(tableIdentifier: Seq[String]): Unit = {
-  //
-  //  }
-  //
-  //  override def unregisterAllTables(): Unit = {}
-
   def loadMetadata(metadataPath: String): MetaData = {
     if (metadataPath == null) return null
-    //    System.setProperty("com.huawei.iweb.LogService", "com.huawei.unibi.carbon.log.CarbonLogService");
     val fileType = FileFactory.getFileType(metadataPath)
 
     
@@ -362,16 +335,14 @@ class CarbonMetastoreCatalog(hive: HiveContext, val metadataPath: String,client:
       else {
 	      //Create folders and files.
 	      FileFactory.mkdirs(schemasPath, fileType)
-	      //FileFactory.createNewFile(metadataPath+"/"+"metadata", fileType)
-        
+
 	    }
     }
     catch {
       case s: java.io.FileNotFoundException =>
         //Create folders and files.
         FileFactory.mkdirs(schemasPath, fileType)
-        //FileFactory.createNewFile(metadataPath+"/"+"metadata", fileType)
-      
+
     }
   }
 
@@ -384,7 +355,6 @@ class CarbonMetastoreCatalog(hive: HiveContext, val metadataPath: String,client:
       sys.error(s"Cube [$cubeName] already exists under schema [$schemaName]")
     var cube = CarbonMetadata.getInstance().getCube(schemaName + "_" + cubeName)
     var schema = CarbonMetastoreCatalog.parseStringToSchema(schemaXML)
-    //if(aggTablesGen) schema = GenerateAggTables(schema).apply
     //Remove the cube and load again for aggregates.
     CarbonMetadata.getInstance().loadSchema(schema)
     cube = CarbonMetadata.getInstance().getCube(schemaName + "_" + cubeName)
@@ -412,12 +382,6 @@ class CarbonMetastoreCatalog(hive: HiveContext, val metadataPath: String,client:
         cubeCreationTime)
 
     val fileType = FileFactory.getFileType(metadataPath)
-    //Debug code to print complexTypes
-//    val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog.
-//    	lookupRelation2(Seq(cubeMeta.schemaName, cubeMeta.cubeName))(sqlContext).asInstanceOf[CarbonRelation]
-//    val complexTypes = cubeMeta.schema.cubes(0).dimensions.filter(aDim => aDim.asInstanceOf[CarbonDef.Dimension].hierarchies(0).levels.length > 1).map(dim => dim.name)
-//    val complexTypeStrings = relation.output.filter(attr => complexTypes.contains(attr.name)).map(attr => (attr.name, attr.dataType.simpleString))
-//    complexTypeStrings.map(a => println(a._1 +" "+a._2))
     if (!FileFactory.isFileExist(cubeMetaDataPath, fileType)) {
       FileFactory.mkdirs(cubeMetaDataPath, fileType)
     }
@@ -436,7 +400,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val metadataPath: String,client:
       objStream.close
       val partitionArray = outStream.toByteArray()
       val partitionClass = cubeMeta.partitioner.partitionClass.getBytes()
-    val versionNoBytes = CarbonVersion.getCubeVersion().getBytes()
+      val versionNoBytes = CarbonVersion.getCubeVersion().getBytes()
       out.writeInt(schemaNameBytes.length)
       out.write(schemaNameBytes)
       out.writeInt(cubeNameBytes.length)
@@ -457,7 +421,6 @@ class CarbonMetastoreCatalog(hive: HiveContext, val metadataPath: String,client:
     LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "Cube " + cubeName + " for schema " + schemaName + " created successfully.")
     updateSchemasUpdatedTime(schemaName, cubeName)
     metadataPath + "/" + schemaName + "/" + cubeName
-    //  updateCubeCreationTimeMap(schemaName, cubeName)
   }
 
   def updatePartitioner(partitioner: Partitioner, cube: Cube): Partitioner = {
@@ -465,7 +428,6 @@ class CarbonMetastoreCatalog(hive: HiveContext, val metadataPath: String,client:
       var level: Dimension = null;
       cube.getDimensions(cube.getFactTableName()).foreach { dim =>
         if (level == null) level = dim
-        //        if(level.getNoOfbits() < dim.getNoOfbits()) level = dim
       }
 
       Partitioner(partitioner.partitionClass, if (null == level) null else Seq(level.getColName()).toArray, partitioner.partitionCount, getNodeList())
@@ -475,22 +437,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val metadataPath: String,client:
   }
 
 
-  //  def getNodeList(): Array[String] = {
-  //	val arr =
-  //		olap.sparkContext.getExecutorMemoryStatus.map{
-  //			kv=>
-  //			val addr = InetAddress.getByName( (kv._1.split(":")(0)) )
-  //			addr.getHostName()
-  //	}.toSeq
-  //	val localhost = InetAddress.getLocalHost().getHostName()
-  //	val nodelist : List[String] = withoutFirst(arr.toList)(_ == localhost)
-  //	nodelist.toSeq.toArray
-  //
-  //}
-  //  def withoutFirst[A](xs: List[A])(p: A => Boolean): List[A] = xs.toList match {
-  //	case x :: rest => if (p(x)) rest else x :: withoutFirst(rest)(p)
-  //	case _ => Nil
-  //}
+
   /*
    * This method will return the list of executers in the cluster.
  * For this we take the  memory status of all node with getExecutorMemoryStatus
@@ -505,16 +452,12 @@ class CarbonMetastoreCatalog(hive: HiveContext, val metadataPath: String,client:
       hive.sparkContext.getExecutorMemoryStatus.map {
         kv =>
 	    	  kv._1.split(":")(0)
-	    	//val addr = InetAddress.getByName( (kv._1.split(":")(0)) )
-	    	//addr.getHostName()
 		}.toSeq
     val localhostIPs = getLocalhostIPs
- //   val ipcheck: List[(String,Boolean)] = localhostIPs.map( x=> (x,arr.contains(x))).filter()
-
     val selectedLocalIPList = localhostIPs.filter(arr.contains(_))
 
     val nodelist: List[String] = withoutDriverIP(arr.toList)(selectedLocalIPList.contains(_))
-	val masterMode = hive.sparkContext.getConf.get("spark.master")
+	  val masterMode = hive.sparkContext.getConf.get("spark.master")
     if (nodelist.length > 0) {
       //Specific for Yarn Mode
       if ("yarn-cluster".equals(masterMode) || "yarn-client".equals(masterMode)) {
@@ -554,33 +497,6 @@ class CarbonMetastoreCatalog(hive: HiveContext, val metadataPath: String,client:
   	case x :: rest =>  if (p(x)) rest else x :: withoutDriverIP(rest)(p)
   	case _ => Nil
   }
-
- /* def getLocalhosts() = {
-    val iface = NetworkInterface.getNetworkInterfaces()
-    val ifaces_list = new scala.collection.JavaConversions.JEnumerationWrapper(iface)
-    val ips = ifaces_list.toSeq.map(x=>new JEnumerationWrapper(x.getInetAddresses).map(_.getAddress()))
-
-  }
-   *
-  */
-	/*
-	val set = new TreeSet[String]
-    olap.sparkContext.getExecutorMemoryStatus.foreach{kv=>
-      set.add(kv._1.split(":")(0))
-    }
-	if(set.size>0)
-	{
-	    if(!olap.sparkContext.getConf.get("spark.executor.at.driver","true").toBoolean) {
-	      val curHostName = InetAddress.getLocalHost().getHostName()
-	      set.filterNot(_.equalsIgnoreCase(curHostName)).toArray
-	    } else {
-        set.toArray
-	    }
-	} else {
-	  Seq("localhost").toArray
-	}
-	* */
-
 
   def loadCube(schemaPath: String, encrypted: Boolean, aggTablesGen: Boolean, partitioner: Partitioner)(sqlContext: SQLContext) {
     val schema = CarbonMetastoreCatalog.readSchema(schemaPath, encrypted)
@@ -725,7 +641,6 @@ class CarbonMetastoreCatalog(hive: HiveContext, val metadataPath: String,client:
        sys.error(s"Cube does not exist with $schemaName and $cubeName to update")
      }
     val schemaNew = CarbonMetastoreCatalog.parseStringToSchema(schemaXML)
-    //if(aggTablesGen) schemaNew = GenerateAggTables(schemaNew).apply
     //Remove the cube and load again for aggregates.
     CarbonMetadata.getInstance().loadSchema(schemaNew)
     val cube = CarbonMetadata.getInstance().getCube(schemaName + "_" + cubeName)
@@ -738,10 +653,6 @@ class CarbonMetastoreCatalog(hive: HiveContext, val metadataPath: String,client:
     }
     val oldMetadataFile = FileFactory.getCarbonFile(metadataFilePath, fileType)
 
-    /*if(oldMetadataFile.exists())
-    {
-      oldMetadataFile.delete()
-    }*/
     val fileOperation = new AtomicFileOperationsImpl(metadataFilePath, FileFactory.getFileType(metadataFilePath))
     val tempMetadataFilePath = metadataFilePath + CarbonCommonConstants.UPDATING_METADATA
 

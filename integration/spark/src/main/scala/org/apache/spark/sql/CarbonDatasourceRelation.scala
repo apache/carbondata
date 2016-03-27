@@ -75,10 +75,10 @@ private[sql] case class CarbonDatasourceRelation(
                                         alias: Option[String])(@transient context: SQLContext)
   extends BaseRelation with Serializable with Logging {
 
-  def olapRelation =
+  def carbonRelation =
     CarbonEnv.getInstance(context).carbonCatalog.lookupRelation2(tableIdentifier, None)(sqlContext).asInstanceOf[CarbonRelation]
 
-  def schema: StructType = olapRelation.schema
+  def schema: StructType = carbonRelation.schema
 
   def sqlContext: SQLContext = context
 }

@@ -481,7 +481,7 @@ public final class CarbonDataProcessorUtil {
      */
     public static boolean clearCubeCache(String schemaName, String cubeName) {
         try {
-            Class<?> c = Class.forName("mondrian.rolap.CacheControlImpl");
+            Class<?> c = Class.forName("mondrian.carbon.CacheControlImpl");
             // get the instance of CubeSliceLoader
             Object newInstance = c.newInstance();
             Class<?> argTypes1 = String.class;

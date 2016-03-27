@@ -59,7 +59,7 @@ import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.*;
 
-//import mondrian.olap.LevelType;
+//import mondrian.carbon.LevelType;
 
 public class CarbonSeqGenStep extends BaseStep implements StepInterface {
     /**

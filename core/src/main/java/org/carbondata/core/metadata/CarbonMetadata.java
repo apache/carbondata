@@ -261,7 +261,7 @@ public final class CarbonMetadata {
         locCube.setAutoAggregateType(xmlCube.autoAggregationType);
 
         // Process aggregate tables from XML schema.
-        // Because, Aggregate tables are not loaded yet to RolapSchema
+        // Because, Aggregate tables are not loaded yet to CarbonSchema
         // TODO I am assuming here that I have only 1 cube in the schema
         CarbonDef.AggTable[] aggtables = ((CarbonDef.Table) xmlCube.fact).aggTables;
 
@@ -507,7 +507,7 @@ public final class CarbonMetadata {
         List<Dimension> normalizedDimList =
                 new ArrayList<Dimension>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
         for (MondrianLevelHolder levHolder : levelList) {
-            CarbonDef.Level lev = levHolder.rolapLevel;
+            CarbonDef.Level lev = levHolder.carbonLevel;
             LevelType type = LevelType.valueOf(
                     ("TimeHalfYear".equals(lev.levelType)) ? "TimeHalfYears" : lev.levelType);
 
@@ -524,7 +524,7 @@ public final class CarbonMetadata {
             dimension.setHierName(levHolder.carbonHierName);
             dimension.setActualTableName(levHolder.actualTableName);
             dimension.setDimName(levHolder.carbonDimName);
-            dimension.setColumnar(levHolder.rolapLevel.columnar);
+            dimension.setColumnar(levHolder.carbonLevel.columnar);
             dimension.setDataBlockIndex(blockIndex++);
             boolean hasNameColumn = hasNameColumn(lev);
 
@@ -652,10 +652,10 @@ public final class CarbonMetadata {
             ArrayList<MondrianLevelHolder> levelList) {
         int counter = -1;
 
-        CarbonDef.Level lev = levHolder.rolapLevel;
+        CarbonDef.Level lev = levHolder.carbonLevel;
 
         for (MondrianLevelHolder level : levelList) {
-            CarbonDef.Level localLevel = level.rolapLevel;
+            CarbonDef.Level localLevel = level.carbonLevel;
 
             if (levHolder.carbonTableName.equals(level.carbonTableName) && lev.column
                     .equals(localLevel.column)) {
@@ -684,10 +684,10 @@ public final class CarbonMetadata {
         int[] propIndexes = null;
         int counter = -1;
 
-        CarbonDef.Level lev = levHolder.rolapLevel;
+        CarbonDef.Level lev = levHolder.carbonLevel;
 
         for (MondrianLevelHolder level : levelList) {
-            CarbonDef.Level localLevel = level.rolapLevel;
+            CarbonDef.Level localLevel = level.carbonLevel;
 
             if (levHolder.carbonTableName.equals(level.carbonTableName) && lev.column
                     .equals(localLevel.column)) {
@@ -843,7 +843,7 @@ public final class CarbonMetadata {
                         holder.carbonDimName = dimName;
                         holder.carbonHierName = hName;
                         holder.carbonLevelName = lev.name;
-                        holder.rolapLevel = lev;
+                        holder.carbonLevel = lev;
                         String actualTableName =
                                 hier.relation == null ? factTableName : hier.relation.toString();
                         String tableName = hier.relation == null ?
@@ -941,7 +941,7 @@ public final class CarbonMetadata {
      * Holder object for Mondrian level
      */
     private static class MondrianLevelHolder {
-        private CarbonDef.Level rolapLevel;
+        private CarbonDef.Level carbonLevel;
 
         private String carbonDimName;
 
@@ -959,7 +959,7 @@ public final class CarbonMetadata {
             int result = 1;
             result = prime * result + ((carbonDimName == null) ? 0 : carbonDimName.hashCode());
             result = prime * result + ((carbonHierName == null) ? 0 : carbonHierName.hashCode());
-            result = prime * result + ((rolapLevel == null) ? 0 : rolapLevel.hashCode());
+            result = prime * result + ((carbonLevel == null) ? 0 : carbonLevel.hashCode());
             result = prime * result + ((carbonLevelName == null) ? 0 : carbonLevelName.hashCode());
             return result;
         }
@@ -990,11 +990,11 @@ public final class CarbonMetadata {
             } else if (!carbonHierName.equals(other.carbonHierName)) {
                 return false;
             }
-            if (rolapLevel == null) {
-                if (other.rolapLevel != null) {
+            if (carbonLevel == null) {
+                if (other.carbonLevel != null) {
                     return false;
                 }
-            } else if (!rolapLevel.equals(other.rolapLevel)) {
+            } else if (!carbonLevel.equals(other.carbonLevel)) {
                 return false;
             }
             if (carbonLevelName == null) {

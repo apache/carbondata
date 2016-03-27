@@ -25,7 +25,7 @@ import java.util.List;
 import org.carbondata.core.carbon.CarbonDef.Cube;
 import org.carbondata.processing.schema.metadata.AggregateTable;
 
-//import mondrian.olap.MondrianDef.Cube;
+//import mondrian.carbon.MondrianDef.Cube;
 
 public class AutoAggregateTableSelecter extends AggregateTableSelecter {
     private boolean isMatching;

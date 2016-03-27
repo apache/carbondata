@@ -28,7 +28,7 @@ package org.carbondata.core.carbon;
 
 /**
  * This is the XML model for Mondrian schemas.
- * Revision is $Id: //open/mondrian/src/main/mondrian/olap/Mondrian.xml#95 $
+ * Revision is $Id: //open/mondrian/src/main/mondrian/carbon/Mondrian.xml#95 $
  * <p>This class was generated from XOM model 'carbon' on Sun Jul 05 15:54:12 IST 2015
  */
 public class CarbonDef {
@@ -256,7 +256,7 @@ public class CarbonDef {
 
     /**
      * A CubeDimension is either a usage of a Dimension ('shared
-     * dimension', in MSOLAP parlance), or a 'private dimension'.
+     * dimension'), or a 'private dimension'.
      */
     public static abstract class CubeDimension extends org.eigenbase.xom.ElementDef {
         /**
@@ -4847,7 +4847,7 @@ public class CarbonDef {
      * If access is "all_dimensions", an implicut access is
      * given to all dimensions of the schema's cubes, provided the cube's
      * access attribute is either "custom" or "all".
-     * See mondrian.olap.Role#grant(mondrian.olap.Schema,int).
+     * See mondrian.carbon.Role#grant(mondrian.carbon.Schema,int).
      */
     public static class SchemaGrant extends org.eigenbase.xom.ElementDef implements Grant {
         /**
@@ -4915,7 +4915,7 @@ public class CarbonDef {
      * If access is "custom", no access will be inherited
      * by the dimensions of this cube, unless the parent SchemaGrant is
      * set to "ALL_DIMENSIONS".
-     * See mondrian.olap.Role#grant(mondrian.olap.Cube,int).
+     * See mondrian.carbon.Role#grant(mondrian.carbon.Cube,int).
      */
     public static class CubeGrant extends org.eigenbase.xom.ElementDef implements Grant {
         /**
@@ -4998,7 +4998,7 @@ public class CarbonDef {
      * If the parent schema access is "ALL_DIMENSIONS",
      * this timension will inherit access "ALL".
      * See also the "all_dimensions" option of the "SchemaGrant" element.
-     * See mondrian.olap.Role#grant(mondrian.olap.Dimension,int).
+     * See mondrian.carbon.Role#grant(mondrian.carbon.Dimension,int).
      */
     public static class DimensionGrant extends org.eigenbase.xom.ElementDef implements Grant {
         /**
@@ -5064,7 +5064,7 @@ public class CarbonDef {
      * If access is "custom", the child levels of this
      * hierarchy will not inherit access rights from this hierarchy,
      * should there be no explicit rules defined for the said child level.
-     * See mondrian.olap.Role#grant(mondrian.olap.Hierarchy, int, mondrian.olap.Level).
+     * See mondrian.carbon.Role#grant(mondrian.carbon.Hierarchy, int, mondrian.carbon.Level).
      */
     public static class HierarchyGrant extends org.eigenbase.xom.ElementDef implements Grant {
         /**
@@ -5153,7 +5153,7 @@ public class CarbonDef {
      * Grants (or denies) this role access to a member.
      * The children of this member inherit that access.
      * You can implicitly see a member if you can see any of its children.
-     * See mondrian.olap.Role#grant(mondrian.olap.Member,int).
+     * See mondrian.carbon.Role#grant(mondrian.carbon.Member,int).
      */
     public static class MemberGrant extends org.eigenbase.xom.ElementDef {
         /**

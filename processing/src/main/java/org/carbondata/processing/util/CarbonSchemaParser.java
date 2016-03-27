@@ -846,7 +846,7 @@ public final class CarbonSchemaParser {
             //
             Hierarchy[] hierarchies = null;
             hierarchies = extractHierarchies(schema, cDim);
-            for (Hierarchy hierarchy : hierarchies) { //Added for Normalized Hiercarhy AR-UniBI-OLAP-003
+            for (Hierarchy hierarchy : hierarchies) {
 
                 if (hierarchy.normalized) {
                     query.append(System.getProperty("line.separator"));
@@ -919,16 +919,13 @@ public final class CarbonSchemaParser {
             hierarchies = extractHierarchies(schema, cDimension);
             for (Hierarchy hierarchy : hierarchies) {
                 RelationOrJoin relation = hierarchy.relation;
-                // String dimName = cDimension.name;
-                // dimName = dimName.replaceAll(" ", "_");
 
                 String tableName = relation == null ?
                         getFactTableName(cube) :
                         ((Table) hierarchy.relation).name;
-                // String tableName = hierarchy.relation.toString();
                 int i = hierarchy.levels.length;
                 boolean appendComma = true;
-                for (Level level : hierarchy.levels) { //Added for Normalized hierarchy AR-UniBI-OLAP-003
+                for (Level level : hierarchy.levels) {
                     if (level.parentname != null) {
                         appendComma = false;
                         continue;
@@ -3267,9 +3264,8 @@ public final class CarbonSchemaParser {
                 String tableName = relation == null ?
                         getFactTableName(cube) :
                         ((Table) hierarchy.relation).name;
-                // String tableName = hierarchy.relation.toString();
 
-                for (Level level : hierarchy.levels) { // Added for Normalized hierarchy AR-UniBI-OLAP-003
+                for (Level level : hierarchy.levels) {
                     String levelName = tableName + '_' + level.column;
                     dimString.append(levelName + CarbonCommonConstants.LEVEL_FILE_EXTENSION
                             + CarbonCommonConstants.COLON_SPC_CHARACTER + level.type
@@ -3362,7 +3358,7 @@ public final class CarbonSchemaParser {
                 // String tableName = hierarchy.relation.toString();
                 int i = hierarchy.levels.length;
 
-                for (Level level : hierarchy.levels) { //Added for Normalized hierarchy AR-UniBI-OLAP-003
+                for (Level level : hierarchy.levels) {
 
                     if (hierarchy.normalized) {
                         if (i == 1) {

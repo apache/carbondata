@@ -96,9 +96,9 @@ public class InMemoryTable implements Comparable<InMemoryTable> {
     private Map<String, MemberStore> membersCache =
             new HashMap<String, MemberStore>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     /**
-     * rolap cube
+     * carbon cube
      */
-    private CarbonDef.Cube rolapCube;
+    private CarbonDef.Cube carbonCube;
     private CarbonDef.Schema schema;
     /**
      *
@@ -135,7 +135,7 @@ public class InMemoryTable implements Comparable<InMemoryTable> {
 
     public InMemoryTable(CarbonDef.Schema schema, CarbonDef.Cube cube, Cube metaCube) {
         this.cubeName = cube.name;
-        this.rolapCube = cube;
+        this.carbonCube = cube;
         this.schema = schema;
         this.metaCube = metaCube;
         this.schemaName = schema.name;
@@ -146,17 +146,10 @@ public class InMemoryTable implements Comparable<InMemoryTable> {
     }
 
     /**
-     * RolapCube
+     * CarbonCube
      */
-    public CarbonDef.Cube getRolapCube() {
-        return rolapCube;
-    }
-
-    /**
-     * RolapCube
-     */
-    public void setRolapCube(CarbonDef.Cube rolapCube) {
-        this.rolapCube = rolapCube;
+    public CarbonDef.Cube getCarbonCube() {
+        return carbonCube;
     }
 
     /**
@@ -219,7 +212,6 @@ public class InMemoryTable implements Comparable<InMemoryTable> {
     /**
      * Load the cube cache from a file storage.
      *
-     * @param filesLocaton
      */
     public void loadCacheFromFile(String fileStore, String tableName, boolean loadOnlyLevelFiles) {
         ExecutorService executorService = Executors.newFixedThreadPool(1);
@@ -272,8 +264,8 @@ public class InMemoryTable implements Comparable<InMemoryTable> {
                 fileStore.substring(fileStore.lastIndexOf(CarbonCommonConstants.LOAD_FOLDER));
         CarbonDef.CubeDimension dimension = null;
         // Process dimension and hierarchies cache
-        for (int i = 0; i < rolapCube.dimensions.length; i++) {
-            dimension = rolapCube.dimensions[i];
+        for (int i = 0; i < carbonCube.dimensions.length; i++) {
+            dimension = carbonCube.dimensions[i];
             if (dimension.visible && !dimension.highCardinality) {
                 DimensionHierarichyStore cache =
                         new DimensionHierarichyStore(dimension, membersCache, cubeUniqueName,

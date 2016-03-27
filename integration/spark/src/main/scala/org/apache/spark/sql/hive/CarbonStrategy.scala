@@ -30,7 +30,7 @@ import org.apache.spark.sql.{CarbonSqlDDLParser, SQLContext, Strategy}
   */
 private[sql] object CarbonStrategy {
   def getStrategy(context: SQLContext): Strategy = {
-    new CarbonStrategies(context).OlapCubeScans
+    new CarbonStrategies(context).CarbonCubeScans
   }
 }
 

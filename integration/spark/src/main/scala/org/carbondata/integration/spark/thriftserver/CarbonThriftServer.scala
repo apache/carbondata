@@ -64,11 +64,11 @@ object CarbonThriftServer {
       }
     }
 
-    val olapContext = new CarbonContext(sc, args(3))
-    olapContext.setConf("spark.sql.shuffle.partitions", "40")
+    val carbonContext = new CarbonContext(sc, args(3))
+    carbonContext.setConf("spark.sql.shuffle.partitions", "40")
 
     //Note.Uncomment the below line and change CarbonContext such that it extends Hive Context
-    HiveThriftServer2.startWithContext(olapContext)
+    HiveThriftServer2.startWithContext(carbonContext)
   }
 
 }

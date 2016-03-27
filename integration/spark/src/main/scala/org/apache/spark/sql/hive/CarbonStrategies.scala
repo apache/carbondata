@@ -85,18 +85,18 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
   val LOGGER = LogServiceFactory.getLogService("CarbonStrategies")
 
   def getStrategies: Seq[Strategy] = {
-    /*OlapCubeScans :: Nil*/
-    val total = sqlContext.planner.strategies :+ OlapCubeScans
+    /*CarbonCubeScans :: Nil*/
+    val total = sqlContext.planner.strategies :+ CarbonCubeScans
     total
   }
 
-  /** Olap strategies for Carbon cube scanning
+  /** Carbon strategies for Carbon cube scanning
     */
-  private[sql] object OlapCubeScans extends Strategy {
+  private[sql] object CarbonCubeScans extends Strategy {
 
     def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
       case PhysicalOperation(projectList, predicates, l@LogicalRelation(carbonRelation: CarbonDatasourceRelation, _)) =>
-        olapScan(projectList, predicates, carbonRelation.olapRelation, None, None, None, false, true) :: Nil
+        carbonScan(projectList, predicates, carbonRelation.carbonRelation, None, None, None, false, true) :: Nil
 
       case Limit(IntegerLiteral(limit),
       Sort(order, _, p@ PartialAggregation(
@@ -134,7 +134,7 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
       case Limit(IntegerLiteral(limit),
       PhysicalOperation(projectList, predicates, l@LogicalRelation(carbonRelation: CarbonDatasourceRelation, _))) =>
         val (_, _, _, aliases, groupExprs, substitutesortExprs, limitExpr) = extractPlan(plan)
-        val s = olapScan(projectList, predicates, carbonRelation.olapRelation, groupExprs, substitutesortExprs, limitExpr, false, true)
+        val s = carbonScan(projectList, predicates, carbonRelation.carbonRelation, groupExprs, substitutesortExprs, limitExpr, false, true)
         org.apache.spark.sql.execution.Limit(limit, s) :: Nil
 
 
@@ -142,7 +142,7 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
       Sort(order, _,
       PhysicalOperation(projectList, predicates, l@LogicalRelation(carbonRelation: CarbonDatasourceRelation, _)))) =>
         val (_, _, _, aliases, groupExprs, substitutesortExprs, limitExpr) = extractPlan(plan)
-        val s = olapScan(projectList, predicates, carbonRelation.olapRelation, groupExprs, substitutesortExprs, limitExpr, false, true)
+        val s = carbonScan(projectList, predicates, carbonRelation.carbonRelation, groupExprs, substitutesortExprs, limitExpr, false, true)
         org.apache.spark.sql.execution.TakeOrderedAndProject(limit,
           order,
           None,
@@ -151,12 +151,12 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
       case ExtractEquiJoinKeys(Inner, leftKeys, rightKeys, condition, PhysicalOperation(projectList, predicates, l@LogicalRelation(carbonRelation: CarbonDatasourceRelation, _)), right)
         if (canPushDownJoin(right, condition)) =>
         LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, s"pushing down for ExtractEquiJoinKeys:right")
-        val olap = olapScan(projectList, predicates, carbonRelation.olapRelation, None, None, None, false, true)
+        val carbon = carbonScan(projectList, predicates, carbonRelation.carbonRelation, None, None, None, false, true)
         val pushedDownJoin = FilterPushJoin(
           leftKeys: Seq[Expression],
           rightKeys: Seq[Expression],
           BuildRight,
-          olap,
+          carbon,
           planLater(right),
           condition)
 
@@ -165,14 +165,14 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
       case ExtractEquiJoinKeys(Inner, leftKeys, rightKeys, condition, left, PhysicalOperation(projectList, predicates, l@LogicalRelation(carbonRelation: CarbonDatasourceRelation, _)))
         if (canPushDownJoin(left, condition)) =>
         LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, s"pushing down for ExtractEquiJoinKeys:left")
-        val olap = olapScan(projectList, predicates, carbonRelation.olapRelation, None, None, None, false, true)
+        val carbon = carbonScan(projectList, predicates, carbonRelation.carbonRelation, None, None, None, false, true)
 
         val pushedDownJoin = FilterPushJoin(
           leftKeys: Seq[Expression],
           rightKeys: Seq[Expression],
           BuildLeft,
           planLater(left),
-          olap,
+          carbon,
           condition)
         condition.map(Filter(_, pushedDownJoin)).getOrElse(pushedDownJoin) :: Nil
 
@@ -230,7 +230,7 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
 
       val s =
         try {
-          olapScan(projectList, predicates, carbonRelation.olapRelation, Some(partialComputation), substitutesortExprs, limitExpr, !groupingExpressions.isEmpty)
+          carbonScan(projectList, predicates, carbonRelation.carbonRelation, Some(partialComputation), substitutesortExprs, limitExpr, !groupingExpressions.isEmpty)
         } catch {
           case _ => null
         }
@@ -257,7 +257,7 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
             val (_, _, _, aliases, groupExprs, substitutesortExprs, limitExpr) = extractPlan(plan)
 
 
-            val s = olapScan(projectList, predicates, carbonRelation.olapRelation, Some(partialComputation), substitutesortExprs, limitExpr, !groupingExpressions.isEmpty, true)
+            val s = carbonScan(projectList, predicates, carbonRelation.carbonRelation, Some(partialComputation), substitutesortExprs, limitExpr, !groupingExpressions.isEmpty, true)
 
             CarbonAggregate(
               partial = false,
@@ -311,9 +311,9 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
     }
 
     /**
-      * Create olap scan
+      * Create carbon scan
       */
-    def olapScan(projectList: Seq[NamedExpression],
+    def carbonScan(projectList: Seq[NamedExpression],
                  predicates: Seq[Expression],
                  relation: CarbonRelation,
                  groupExprs: Option[Seq[Expression]],

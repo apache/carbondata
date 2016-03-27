@@ -91,7 +91,7 @@ public final class InMemoryTableStore {
             new ConcurrentHashMap<String, CarbonDef.Cube>(
                     CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     /**
-     * Unique key for cube from rolap schema maps to its data cache
+     * Unique key for cube from carbon schema maps to its data cache
      */
     private Map<String, List<RestructureStore>> cubeSliceMap =
             new ConcurrentHashMap<String, List<RestructureStore>>(
@@ -133,7 +133,7 @@ public final class InMemoryTableStore {
      * @param name
      * @return
      */
-    public CarbonDef.Cube getRolapCube(String name) {
+    public CarbonDef.Cube getCarbonCube(String name) {
         return cubeNameAndCubeMap.get(name);
     }
 
@@ -195,7 +195,7 @@ public final class InMemoryTableStore {
 
     /**
      * @param sliceUpdatedLoadPaths
-     * @param rolapCube             cube to be loaded
+     * @param carbonCube             cube to be loaded
      *                              Example basepath Content structure
      *                              RS_0
      */
@@ -684,12 +684,12 @@ public final class InMemoryTableStore {
     }
 
     /**
-     * @param rolapCube
+     * @param carbonCube
      * @param basePath
      */
-    //    public void updateCube(CarbonDef.Cube rolapCube,String basePath, CarbonDef.Schema schema)
+    //    public void updateCube(CarbonDef.Cube carbonCube,String basePath, CarbonDef.Schema schema)
     //    {
-    //        String cubeUniqueName = schema.name+'_'+rolapCube.name;
+    //        String cubeUniqueName = schema.name+'_'+carbonCube.name;
     //        List<RestructureStore> inmemoryCubeList = cubeSliceMap.get(cubeUniqueName);
     //        //
     //        CarbonFile[] sortedFolderListList = getSortedFolderListList(basePath,RS_FOLDER_NAME);
@@ -721,7 +721,7 @@ public final class InMemoryTableStore {
     //                    List<InMemoryCube> slices = rsStore.getSlices(tableFolder.getName());
     //                    for(InMemoryCube slice : slices)
     //                    {
-    //                        slice.setRolapCube(rolapCube);
+    //                        slice.setCarbonCube(carbonCube);
     //                    }
     //
     //                }
@@ -765,11 +765,11 @@ public final class InMemoryTableStore {
     }
 
     /**
-     * @param rolapCube
+     * @param carbonCube
      * @param basePath
      * @return
      */
-    //    private List<RestructureStore> loadSliceFromFile(CarbonDef.Cube rolapCube,String basePath, CarbonDef.Schema schema)
+    //    private List<RestructureStore> loadSliceFromFile(CarbonDef.Cube carbonCube,String basePath, CarbonDef.Schema schema)
     //    {
     //        List<RestructureStore> slices = null;
     //        //
@@ -806,7 +806,7 @@ public final class InMemoryTableStore {
     //                CarbonFile[] loadFiles = getSortedFolderListList(tableFolder.getAbsolutePath(),FOLDER_NAME);
     //                for(CarbonFile loadFolder : loadFiles)
     //                {
-    //                    InMemoryCube cubeCache = new InMemoryCube(schema,rolapCube);
+    //                    InMemoryCube cubeCache = new InMemoryCube(schema,carbonCube);
     //                    cubeCache.setRsStore(rsStore);
     //                    cubeCache.loadCacheFromFile(loadFolder.getAbsolutePath(),tableName);
     //                    rsStore.setSlice(cubeCache, tableName);
@@ -820,12 +820,12 @@ public final class InMemoryTableStore {
     //    }
 
     /**
-     * @param rolapCube
+     * @param carbonCube
      * @param basePath
      * @param sliceUpdatedLoadPaths
      * @return
      */
-    public List<RestructureStore> loadSliceFromFile(final CarbonDef.Cube rolapCube, String basePath,
+    public List<RestructureStore> loadSliceFromFile(final CarbonDef.Cube carbonCube, String basePath,
             final CarbonDef.Schema schema, final List<String> loadFolderNames,
             final List<String> sliceUpdatedLoadPaths, final List<RestructureStore> slices,
             int currentRestructNumber, String factTableName, final Cube metadataCube) {
@@ -871,7 +871,7 @@ public final class InMemoryTableStore {
                 }
                 rsStore.setSliceMetaCache(smd, tableName);
                 rsStore.setSliceMetaPathCache(tableFolder.getAbsolutePath(), tableName);
-                addTableRestructuringNumber(schema.name + '_' + rolapCube.name + '_' + tableName,
+                addTableRestructuringNumber(schema.name + '_' + carbonCube.name + '_' + tableName,
                         currentRestructNumber);
                 CarbonFile[] loadFiles =
                         getSortedFolderListList(tableFolder.getAbsolutePath(), FOLDER_NAME, -1,
@@ -888,11 +888,11 @@ public final class InMemoryTableStore {
                                         rsFolder, tableName, loadFolder.getName())) {
                                     if (null != loadFolderNames) {
                                         if (!loadFolderNames.contains(loadFolder.getName())) {
-                                            loadMemberCacheForEachLoad(rolapCube, schema, rsStore,
+                                            loadMemberCacheForEachLoad(carbonCube, schema, rsStore,
                                                     tableName, loadFolder, metadataCube);
                                         } else {
                                             InMemoryTable cubeCache =
-                                                    new InMemoryTable(schema, rolapCube,
+                                                    new InMemoryTable(schema, carbonCube,
                                                             metadataCube);
                                             cubeCache.setLoadName(loadFolder.getName());
                                             cubeCache.setRsStore(rsStore);
@@ -903,7 +903,7 @@ public final class InMemoryTableStore {
                                         }
                                     } else {
                                         InMemoryTable cubeCache =
-                                                new InMemoryTable(schema, rolapCube, metadataCube);
+                                                new InMemoryTable(schema, carbonCube, metadataCube);
                                         cubeCache.setLoadName(loadFolder.getName());
                                         cubeCache.setRsStore(rsStore);
                                         cubeCache.loadCacheFromFile(loadFolder.getAbsolutePath(),
@@ -949,10 +949,10 @@ public final class InMemoryTableStore {
 
     }
 
-    private boolean loadMemberCacheForEachLoad(CarbonDef.Cube rolapCube, CarbonDef.Schema schema,
+    private boolean loadMemberCacheForEachLoad(CarbonDef.Cube carbonCube, CarbonDef.Schema schema,
             RestructureStore rsStore, String tableName, CarbonFile loadFolder, Cube metadataCube) {
         boolean updateReq;
-        InMemoryTable cubeCache = new InMemoryTable(schema, rolapCube, metadataCube);
+        InMemoryTable cubeCache = new InMemoryTable(schema, carbonCube, metadataCube);
         cubeCache.setLoadName(loadFolder.getName());
         cubeCache.setRsStore(rsStore);
         cubeCache.loadCacheFromFile(loadFolder.getAbsolutePath(), tableName, true);
@@ -1248,13 +1248,13 @@ public final class InMemoryTableStore {
         if (getQueryExecuteStatus(cubeUniqueName) == QUERY_WAITING) {
             if (isAllSlicesCleared(cubeUniqueName)) {
                 clearCache(cubeUniqueName);
-                // flush schema model in RolapSchema.Pool
-                CarbonDef.Schema rolapSchema = mapCubeToSchema.get(cubeUniqueName);
-                if (rolapSchema != null) {
-                    //                    new CacheControlImpl().flushSchema(rolapSchema);
+                // flush schema model in CarbonSchema.Pool
+                CarbonDef.Schema carbonSchema = mapCubeToSchema.get(cubeUniqueName);
+                if (carbonSchema != null) {
+                    //                    new CacheControlImpl().flushSchema(carbonSchema);
                     mapCubeToSchema.remove(cubeUniqueName);
                     // re create connection (load in-memory)
-                    //                    recreateConnAfterFlushSchema(rolapSchema);
+                    //                    recreateConnAfterFlushSchema(carbonSchema);
                 }
 
                 // receive new query
@@ -1336,7 +1336,7 @@ public final class InMemoryTableStore {
 
     /**
      * ETL inform mondrian the schema XML file has published then flush Schema
-     * in RolapSchema.Pool And Reload it, in order to reload the in-memory cache
+     * in CarbonSchema.Pool And Reload it, in order to reload the in-memory cache
      * that has been clear
      *
      * @author Sojer z00218041 2012-7-26
@@ -1349,7 +1349,7 @@ public final class InMemoryTableStore {
             Entry<String, CarbonDef.Schema> entry = iter.next();
 
             if (entry.getValue().getName().equals(schemaName)) {
-                // flush schema model in RolapSchema.Pool
+                // flush schema model in CarbonSchema.Pool
                 //                new CacheControlImpl().flushSchema(entry.getValue());
                 // remove entry
                 iter.remove();
@@ -1371,11 +1371,11 @@ public final class InMemoryTableStore {
     //     *
     //     * @author Sojer z00218041 2012-9-14
     //     */
-    //    private void recreateConnAfterFlushSchema(RolapSchema rolapSchema)
+    //    private void recreateConnAfterFlushSchema(CarbonSchema carbonSchema)
     //    {
-    //        rolapSchema.getInternalConnection().getCacheControl(null).flushSchema(rolapSchema);
-    //        CarbonMetadata.getInstance().removeCube(rolapSchema.getName());
-    //        RolapConnection rc = rolapSchema.getInternalConnection();
+    //        carbonSchema.getInternalConnection().getCacheControl(null).flushSchema(carbonSchema);
+    //        CarbonMetadata.getInstance().removeCube(carbonSchema.getName());
+    //        CarbonConnection rc = carbonSchema.getInternalConnection();
     //        DriverManager.getConnection(rc.getConnectInfo(), null, rc.getDataSource());
     //    }
 
@@ -1415,7 +1415,7 @@ public final class InMemoryTableStore {
 
     /**
      * switch After Restructure of Schema, make the query block and then clean
-     * queries and InMemory cache,then flush the RolapSchema corresponding the
+     * queries and InMemory cache,then flush the CarbonSchema corresponding the
      * cube
      *
      * @author Sojer z00218041 2012-7-27

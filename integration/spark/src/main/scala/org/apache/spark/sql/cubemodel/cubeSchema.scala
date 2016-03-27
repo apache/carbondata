@@ -2156,7 +2156,7 @@ private[sql] case class DescribeCommandFormatted(
     results ++= Seq(("", "", ""), ("##Detailed Table Information", "", ""))
     results ++= Seq(("Schema Name : ", relation.cubeMeta.schemaName, ""))
     results ++= Seq(("Cube Name : ", relation.cubeMeta.cubeName, ""))
-    results ++= Seq(("OLAP Store Path : ", relation.cubeMeta.dataPath, ""))
+    results ++= Seq(("CARBON Store Path : ", relation.cubeMeta.dataPath, ""))
     val partitioner = relation.cubeMeta.partitioner
     results ++= Seq(("#Partition Details : ", "", ""))
     results ++= Seq(("", "Partitioner Class :", relation.cubeMeta.partitioner.partitionClass))

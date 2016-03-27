@@ -74,24 +74,24 @@ public final class TableSliceLoader {
     //
     //        InMemoryCubeStore inMemoryStore = InMemoryCubeStore.getInstance();
     //
-    //        RolapCube rolapCube = inMemoryStore.getRolapCube(cubeUniqueName);
+    //        CarbonCube carbonCube = inMemoryStore.getCarbonCube(cubeUniqueName);
     //
-    //        if(null == rolapCube)
+    //        if(null == carbonCube)
     //        {
-    //            rolapCube = RolapUtil.getCube(cubeSlicePathInfo.getSchemaName(), cubeSlicePathInfo.getCubeName());
+    //            carbonCube = CarbonUtil.getCube(cubeSlicePathInfo.getSchemaName(), cubeSlicePathInfo.getCubeName());
     //        }
-    //        // It is possible that request has come very before rolapCube is formed.
-    //        // This will result in rolapCube being null.
+    //        // It is possible that request has come very before carbonCube is formed.
+    //        // This will result in carbonCube being null.
     //        // In this case, continuously try to get it after sleeping (blocking) for 0.5 sec.
-    //        // Max 0.5 x 200 = 100 secs wait, come out of loop even if rolapCube null
+    //        // Max 0.5 x 200 = 100 secs wait, come out of loop even if carbonCube null
     //        int maxTimeOut = 200;
     //        int count = 0;
     //        try
     //        {
-    //            while(null == rolapCube && count < maxTimeOut)
+    //            while(null == carbonCube && count < maxTimeOut)
     //            {
     //                Thread.sleep(500);
-    //                rolapCube = inMemoryStore.getRolapCube(cubeUniqueName);
+    //                carbonCube = inMemoryStore.getCarbonCube(cubeUniqueName);
     //                count++;
     //            }
     //        }
@@ -100,14 +100,14 @@ public final class TableSliceLoader {
     //            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
     //                    e, "Thread Interrupted.");
     //        }
-    //        // Tried but rolapCube not found
-    //        if(null == rolapCube)
+    //        // Tried but carbonCube not found
+    //        if(null == carbonCube)
     //        {
     //            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,"Error while slice loading : Unable to load cube : "+cubeUniqueName);
     //            return;
     //        }
     //
-    //        InMemoryCube newSlice = new InMemoryCube(rolapCube);
+    //        InMemoryCube newSlice = new InMemoryCube(carbonCube);
     //        //
     //
     //
@@ -125,7 +125,7 @@ public final class TableSliceLoader {
     //        rsStore.setSlice(newSlice, tableName);
     //        if(null != newSlice.getDataCache(cubeSlicePathInfo.getTableName()))
     //        {
-    //            ((CarbonSchema)rolapCube.getSchema()).setCacheChanged(true);
+    //            ((CarbonSchema)carbonCube.getSchema()).setCacheChanged(true);
     //        CarbonCacheManager.getInstance().flushCubeStartingWithKey(cubeSlicePathInfo.getCubeUniqueName(),
     //                newSlice.getStartKey(cubeSlicePathInfo.getTableName()),
     //                newSlice.getKeyGenerator(cubeSlicePathInfo.getTableName()),cubeSlicePathInfo.getTableName());
@@ -203,7 +203,7 @@ public final class TableSliceLoader {
     //    // */
     //    // private void outPlaceMerge(InMemoryCube slice1, InMemoryCube slice2)
     //    // {
-    //    // InMemoryCube newCopy = new InMemoryCube(slice1.getRolapCube());
+    //    // InMemoryCube newCopy = new InMemoryCube(slice1.getCarbonCube());
     //    //
     //    // newCopy.loadCache(slice1, false);
     //    // newCopy.loadCache(slice2, true);
@@ -292,7 +292,7 @@ public final class TableSliceLoader {
     ////        {
     ////            InMemoryCube slice1 = allSlices.get(0);
     ////
-    ////            InMemoryCube newCopy = new InMemoryCube(slice1.getRolapCube());
+    ////            InMemoryCube newCopy = new InMemoryCube(slice1.getCarbonCube());
     ////
     ////            newCopy.loadCache(allSlices, null);
     ////
@@ -365,19 +365,19 @@ public final class TableSliceLoader {
     //            // Don't add it though, we need to block queries for that
     //            // Otherwise we will get inconsistent results.
     //            cubeSlicePathInfo =   new CubeSlicePathInfo(newSlicePath);
-    //            RolapCube rolapCube = RolapUtil.getCube(cubeSlicePathInfo.getSchemaName(), cubeSlicePathInfo.getCubeName());
-    //         // It is possible that request has come very before rolapCube is formed.
-    //            // This will result in rolapCube being null.
+    //            CarbonCube carbonCube = CarbonUtil.getCube(cubeSlicePathInfo.getSchemaName(), cubeSlicePathInfo.getCubeName());
+    //         // It is possible that request has come very before carbonCube is formed.
+    //            // This will result in carbonCube being null.
     //            // In this case, continuously try to get it after sleeping (blocking) for 0.5 sec.
-    //            // Max 0.5 x 200 = 100 secs wait, come out of loop even if rolapCube null
+    //            // Max 0.5 x 200 = 100 secs wait, come out of loop even if carbonCube null
     //            int maxTimeOut = 200;
     //            int count = 0;
     //            try
     //            {
-    //                while(null == rolapCube && count < maxTimeOut)
+    //                while(null == carbonCube && count < maxTimeOut)
     //                {
     //                    Thread.sleep(500);
-    //                    rolapCube = RolapUtil.getCube(cubeSlicePathInfo.getSchemaName(),cubeSlicePathInfo.getCubeName());
+    //                    carbonCube = CarbonUtil.getCube(cubeSlicePathInfo.getSchemaName(),cubeSlicePathInfo.getCubeName());
     //                    count++;
     //                }
     //            }
@@ -386,14 +386,14 @@ public final class TableSliceLoader {
     //                LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
     //                        e, "Thread Interrupted.");
     //            }
-    //            // Tried but rolapCube not found
-    //            if(null == rolapCube)
+    //            // Tried but carbonCube not found
+    //            if(null == carbonCube)
     //            {
     //                LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,"Error while slice loading : Unable to load cube : "+cubeSlicePathInfo.getCubeUniqueName());
     //                return;
     //            }
     //            deleteSliceFromCube(cubeSlicePathInfo.getLoadPath());
-    //            createdSlice = new InMemoryCube(rolapCube);
+    //            createdSlice = new InMemoryCube(carbonCube);
     //            restructureStore = InMemoryCubeStore.getInstance().findRestructureStore(cubeSlicePathInfo.getCubeUniqueName(), cubeSlicePathInfo.getRsFolder());
     //            createdSlice.setRsStore(restructureStore);
     //            createdSlice.loadCacheFromFile(cubeSlicePathInfo.getLoadPath(),cubeSlicePathInfo.getTableName());
@@ -599,7 +599,7 @@ public final class TableSliceLoader {
     //    public void updateSchemaHierarchy(String sliceLoadPath)
     //    {
     //        CubeSlicePathInfo cubeSlicePathInfo = new CubeSlicePathInfo(sliceLoadPath);
-    //        RolapCube cube = RolapUtil.getCube(cubeSlicePathInfo.getSchemaName(), cubeSlicePathInfo.getCubeName());
+    //        CarbonCube cube = CarbonUtil.getCube(cubeSlicePathInfo.getSchemaName(), cubeSlicePathInfo.getCubeName());
     //        /**
     //         * Fortify Fix: NULL_RETURNS
     //         */

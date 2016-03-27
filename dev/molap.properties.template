@@ -1,20 +1,20 @@
 #################### Performance Configuration ##################
 #File read buffer size used during sorting:MIN=:MAX=
-molap.sort.file.buffer.size=20
+carbon.sort.file.buffer.size=20
 #Rowset size exchanged between data load graph steps.:MIN=:MAX=
-molap.graph.rowset.size=100000
+carbon.graph.rowset.size=100000
 #Number of cores to be used.:MIN=:MAX=
-molap.number.of.cores=4
+carbon.number.of.cores=4
 #Number of cores to be used while data loading:MIN=:MAX=
-molap.number.of.cores.while.loading=6
+carbon.number.of.cores.while.loading=6
 #Carbon Inmemory record size:MIN=:MAX=
 carbon.inmemory.record.size=100000
-#MOLAP sort size.:MIN=:MAX=
-molap.sort.size=500000
+#CARBON sort size.:MIN=:MAX=
+carbon.sort.size=500000
 #Improves the performance of filter query
 carbon.enable.quick.filter=false
 #Algorithm for hashmap for hashkey calculation
-molap.enableXXHash=true
+carbon.enableXXHash=true
 
 #################### System Configuration ##################
 #Mandatory. Carbon Store path
@@ -22,73 +22,73 @@ carbon.storelocation=hdfs://hacluster/Opt/CarbonStore
 #Base directory for Data files
 carbon.ddl.base.hdfs.url=hdfs://hacluster/opt/data
 #Path where the bad records are stored
-molap.badRecords.location=/opt/Carbon/Spark/badrecords
+carbon.badRecords.location=/opt/Carbon/Spark/badrecords
 #To unify the carbon Cube and store path.
 carbon.unified.store.path=true
 #Mandatory. path to kettle home
-molap.kettle.home=<SPARK_HOME>/lib/molapplugins
+carbon.kettle.home=<SPARK_HOME>/lib/carbonplugins
 
 #################### Extra Configuration ##################
-######Molap level write buffers in KB:MIN=:MAX=
-#molap.level.write.bufferinkb=12238
+######Carbon level write buffers in KB:MIN=:MAX=
+#carbon.level.write.bufferinkb=12238
 ######File write buffer size used during sorting.
-#molap.sort.file.write.buffer.size=10485760
+#carbon.sort.file.write.buffer.size=10485760
 ######Minimum no of intermediate files after which sort merged to be started.
-#molap.sort.intermediate.files.limit=20
+#carbon.sort.intermediate.files.limit=20
 ######Number of threads for intermediate merging.
-#molap.sort.intermedaite.number.of.threads=5
+#carbon.sort.intermedaite.number.of.threads=5
 ######csv reading buffer size.
-#molap.csv.read.buffersize.byte=1048576
+#carbon.csv.read.buffersize.byte=1048576
 ######High Cardinality value
 #high.cardinality.value =50000
-######Molap Leaf Node size.Note:  this configuration cannot be change once store is generated
-#molap.leaf.node.size=120000
-######MOLAP maximum no of threads used for sorting.
-#molap.max.thread.for.sorting=3
+######Carbon Leaf Node size.Note:  this configuration cannot be change once store is generated
+#carbon.leaf.node.size=120000
+######CARBON maximum no of threads used for sorting.
+#carbon.max.thread.for.sorting=3
 ######Maximum time allowed for one query to be executed.
 #max.query.execution.time=60
 ######Aggregate table suggestion takes by number load for data sampling.
-#molap.agg.loadCount=2
+#carbon.agg.loadCount=2
 ######Number of partition to read
-#molap.agg.partitionCount=1
+#carbon.agg.partitionCount=1
 ######Aggregate table suggestion takes number of fact file per load for data sampling.
-#molap.agg.factCount=2
+#carbon.agg.factCount=2
 ######Aggregate table suggestion takes number of records per fact for data sampling.
-#molap.agg.recordCount=5
+#carbon.agg.recordCount=5
 ######benefitRatio =total records/no of records in aggregate table.if benefit ratio for aggregate combination is greater than configured value than it is selected for suggestion
-#molap.agg.benefitRatio=10
+#carbon.agg.benefitRatio=10
 ######Whether to cahe Datastats suggestion
-#molap.agg.datastats.cache=false
+#carbon.agg.datastats.cache=false
 ######Any query which takes more than configured value in seconds are considered for Aggregate suggestion.
-#molap.agg.query.performance.goal=3
+#carbon.agg.query.performance.goal=3
 ######If this parameter is set to true, Carbon will cache the metadata on Server start up and reduce the first query execution time.NOTE: Curent descriptions not applicable when level cache is enabled.
-#molap.agg.querystats.expiryday=30
+#carbon.agg.querystats.expiryday=30
 ######If this parameter is set to true, Carbon will cache the metadata on Server start up and reduce the first query execution time.NOTE: Curent descriptions not applicable when level cache is enabled.
-#molap.is.loadcube.startup=false
+#carbon.is.loadcube.startup=false
 ######If this parameter is set to true, Carbon will cache the metadata after the successful data loading and reduce the first query execution time.NOTE: Curent descriptions not applicable when level cache is enabled.
-#molap.is.loadcube.dataload=false
+#carbon.is.loadcube.dataload=false
 ######How to times retry to get the lock
-#molap.load.metadata.lock.retries=3
+#carbon.load.metadata.lock.retries=3
 ######Interval between the retries to get the lock
-#molap.load.metadata.lock.retry.timeout.sec=5
+#carbon.load.metadata.lock.retry.timeout.sec=5
 ######Maximum number of leaf nodes written in a single file.:Min=1:Max=1000
-#molap.max.file.size=100
+#carbon.max.file.size=100
 ######Sort buffer size:MI=5:MAX=
-#molap.sort.buffer.size=5000
+#carbon.sort.buffer.size=5000
 ######Timestamp format of input data used for timestamp data type.
-#molap.timestamp.format=yyyy-MM-dd HH:mm:ss
+#carbon.timestamp.format=yyyy-MM-dd HH:mm:ss
 ######Cube is completely kept in memory.
-#molap.forced.in.memory.cube=false
+#carbon.forced.in.memory.cube=false
 ######Maintains the complete cube cache in memory while data loading. Useful for increasing data load performance in case of history data loading. Set it to true for data load performance tuning.
-#molap.seqgen.inmemory.lru.cache.enabled=false
+#carbon.seqgen.inmemory.lru.cache.enabled=false
 ######Min max is feature added to enhance query performance. To disable this feature, make it false.
-#molap.enableMinMax=true
+#carbon.enableMinMax=true
 ######Temporary store location, By default it will take System.getProperty("java.io.tmpdir")
-#molap.tempstore.location=/opt/Carbon/TempStoreLoc
+#carbon.tempstore.location=/opt/Carbon/TempStoreLoc
 
 
 #################### AUDIT LOGGING(Used when it is used without FI) ##################
-#carbon.auditlog.file.path=logs/MolapAudit.log
+#carbon.auditlog.file.path=logs/CarbonAudit.log
 #carbon.auditlog.max.file.size=10MB
 #carbon.auditlog.max.backup.files=10
 #carbon.logging.level=INFO

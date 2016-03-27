@@ -36,9 +36,9 @@ public class MemberStore {
     private String levelName;
 
     /**
-     * Mondrian rolap level
+     * Mondrian carbon level
      */
-    private CarbonDef.Level rolapLevel;
+    private CarbonDef.Level carbonLevel;
 
     /**
      * member Cache
@@ -98,17 +98,17 @@ public class MemberStore {
 
     private DataType memberDataType;
 
-    public MemberStore(CarbonDef.Level rolapLevel, String tableName) {
-        this.rolapLevel = rolapLevel;
+    public MemberStore(CarbonDef.Level carbonLevel, String tableName) {
+        this.carbonLevel = carbonLevel;
 
-        if (rolapLevel != null) {
-            this.columnName = rolapLevel.column;
+        if (carbonLevel != null) {
+            this.columnName = carbonLevel.column;
 
             this.tableName = tableName;
 
-            this.levelName = rolapLevel.getName();
+            this.levelName = carbonLevel.getName();
 
-            String datatype = rolapLevel.type;
+            String datatype = carbonLevel.type;
             if (datatype.equals("Numeric") || datatype.equals("Integer") || datatype
                     .equals("BigInt")) {//CHECKSTYLE:ON
                 memberDataType = DataType.NUMBER;
@@ -147,8 +147,8 @@ public class MemberStore {
     /**
      * Getter for level
      */
-    public CarbonDef.Level getRolapLevel() {
-        return rolapLevel;
+    public CarbonDef.Level getCarbonLevel() {
+        return carbonLevel;
     }
 
     /**

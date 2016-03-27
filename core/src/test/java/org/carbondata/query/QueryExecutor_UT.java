@@ -30,6 +30,6 @@ package org.carbondata.query;
 
 import junit.framework.TestCase;
 
-public class QueryExecutor_UT extends TestCase {/*
+public class QueryExecutor_UT extends TestCase {
 
 }

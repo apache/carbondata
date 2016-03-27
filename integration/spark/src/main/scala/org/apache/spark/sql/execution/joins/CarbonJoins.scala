@@ -78,12 +78,12 @@ case class FilterPushJoin(
             else Literal(curr).asInstanceOf[Expression]
           })
     }
-    val olapScan = buildSide match {
+    val carbonScan = buildSide match {
       case BuildLeft => right
       case BuildRight => left
     }
 
-    val cubeScan = olapScan.collectFirst { case a: CarbonCubeScan => a }
+    val cubeScan = carbonScan.collectFirst { case a: CarbonCubeScan => a }
     if (cubeScan.isDefined)
       cubeScan.get.addPushdownFilters(streamedKeys, filters, condition)
 

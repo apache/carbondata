@@ -59,197 +59,12 @@ public final class DimensionCacheLoader {
 
     /**
      * @param hierC
-     * @param datasource
-     * @throws IOException
-     */
-    /*public static void loadHierarichyFromDataSource(HierarchyStore hierC, DataSource datasource) throws IOException
-    {
-        long t1 = System.currentTimeMillis();
-
-        String storeLocation = ((CarbonDataSourceImpl)datasource).getFileStore();
-        String inMemoryURL = ((CarbonDataSourceImpl)datasource).getURL();
-
-        if(storeLocation != null && inMemoryURL == null)
-        {
-            // loadHierarchyFileStore(hierC, tableNames, schemaName, cubeName);
-            loadBTreeHierarchyFileStore(hierC, storeLocation);
-        }
-        else
-        {
-            // Load from MySQlDB
-            loadHierarchyMySql(hierC, datasource);
-        }
-
-        long t2 = System.currentTimeMillis();
-
-        LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-                "Hier build time is : " + 
-                (t2 - t1) + " (MS) for : " + hierC.getHierName());
-    }*/
-
-    //    /**
-    //     * @param targetStore
-    //     * @param slices
-    //     * @param fileStore
-    //     */
-    //    public static void loadHierarchyFromSlice(HierarchyStore targetStore, List<HierarchyStore> slices, String fileStore)
-    //    {
-    //        KeyGenerator keyGenerator = getKeyGenerator(targetStore.getRolapHierarchy());
-    //        //
-    //        List<Scanner> scanners = new ArrayList<Scanner>();
-    //
-    //        // Make scanners from old slices
-    //        for(HierarchyStore store : slices)
-    //        {
-    //            //
-    //            KeyValue keyValue = new KeyValue();
-    //            Scanner scanner = new NonFilterTreeScanner(new byte[0], null, keyGenerator, keyValue, null, null);
-    //            if(store.getHierBTreeStore().size() > 0)
-    //            {
-    //                //
-    //                store.getHierBTreeStore().getNext(new byte[0], scanner);
-    //                scanners.add(scanner);
-    //            }
-    //        }
-    //
-    //        // Make scanner from file store
-    //        DataInputStream factStream = null;
-    //
-    //        if(fileStore != null)
-    //        {
-    //
-    //            RelationOrJoin relation = targetStore.getRolapHierarchy().getRelation();
-    //            String tableName = relation==null?targetStore.getDimensionName():((Table)relation).name;
-    //            String fileName = tableName.replaceAll(" ", "_") + '_' + targetStore.getTableName();
-    //            CarbonFile file = FileFactory.getCarbonFile(fileStore, FileFactory.getFileType());
-    //            if(file.isDirectory())
-    //            {
-    //                // Read from the base location.
-    //                String baseLocation = fileStore + File.separator + fileName;
-    //                CarbonFile baseFile = FileFactory.getCarbonFile(baseLocation, FileFactory.getFileType());
-    //                try
-    //                {
-    //                    if(FileFactory.isFileExist(baseLocation, FileFactory.getFileType(baseLocation)))
-    //                    {
-    //                        factStream = CarbonDataInputStreamFactory.getDataInputStream(baseLocation, keyGenerator.getKeySizeInBytes(), 0, false, fileStore, fileName,FileFactory.getFileType());
-    //                        factStream.initInput();
-    //
-    //                        scanners.add(new DataInputStreamWrappedScanner(factStream));
-    //                    }
-    //                }
-    //                catch(IOException e)
-    //                {
-    //                    // TODO Auto-generated catch block
-    //                    e.printStackTrace();
-    //                }
-    //            }
-    //        }
-    //
-    //        ScannersInputCombiner inputStream = new ScannersInputCombiner(scanners, keyGenerator, new ArrayList<String>(),
-    //                false);
-    //        inputStream.initInput();
-    //
-    //        targetStore.build(keyGenerator, inputStream);
-    //
-    //        if(factStream != null)
-    //        {
-    //            factStream.closeInput();
-    //        }
-    //
-    //    }
-
-    /**
-     * DataInputStream is wrapped as a Scanner.
-     *
-     * @author K00900207
-     *
-     */
-    //    private static class DataInputStreamWrappedScanner implements Scanner
-    //    {
-    //        /**
-    //         *
-    //         */
-    //        private DataInputStream dataInputStream;
-    //
-    //        //
-    //        DataInputStreamWrappedScanner(DataInputStream inputStream)
-    //        {
-    //            this.dataInputStream = inputStream;
-    //        }
-    //
-    //        /**
-    //         *
-    //         */
-    //        private KeyValue data;
-    //
-    //        @Override
-    //        public KeyValue getNext()
-    //        {
-    //            return data;
-    //        }
-    //
-    //        @Override
-    //        public boolean isDone()
-    //        {
-    //            Pair<byte[], double[]> pair = dataInputStream.getNextHierTuple();
-    //            data = new KeyValue();
-    //            // Check style approved
-    //            if(pair == null)
-    //            {
-    //                return true;
-    //            }
-    //            data.setOrigainalValue(pair.getValue());
-    //            data.setOriginalKey(pair.getKey());
-    //
-    //            return false;
-    //        }
-    //
-    //        @Override
-    //        public void setDataStore(DataStore dataStore, DataStoreBlock block, int currIndex)
-    //        {
-    //        }
-    //
-    //        public void closeInput()
-    //        {
-    //            dataInputStream.closeInput();
-    //        }
-    //
-    //        @Override
-    //        public FileHolder getFileHolder()
-    //        {
-    //            return null;
-    //        }
-    //    }
-
-    /**
-     * @param hierC
      * @param fileStore
      * @throws IOException
      */
     private static void loadBTreeHierarchyFileStore(HierarchyStore hierC, String fileStore)
             throws IOException {
-        KeyGenerator keyGen = getKeyGenerator(hierC.getRolapHierarchy());
-        //
-
-        //        String tableName = relation==null?hierC.getDimensionName():((Table)relation).name;
-        //        String tableName = "";
-        //        if(relation == null)
-        //        {
-        //            tableName = hierC.getDimensionName();
-        //        }
-        //        else
-        //        {
-        //            tableName = relation.toString();
-        //        }
-        //
-        //        if(tableName.contains("."))
-        //        {
-        //            tableName = tableName.split("\\.")[1];
-        //        }
-        //        if(hierC.getFactTableName().equals(tableName))
-        //        {
-        //            tableName = hierC.getDimensionName();
-        //        }
+        KeyGenerator keyGen = getKeyGenerator(hierC.getCarbonHierarchy());
 
         String fileName =
                 hierC.getDimensionName().replaceAll(" ", "_") + '_' + hierC.getTableName();
@@ -272,50 +87,17 @@ public final class DimensionCacheLoader {
         }
     }
 
-    private static KeyGenerator getKeyGenerator(CarbonDef.Hierarchy rolapHierarchy) {
-        CarbonDef.Level[] levels = rolapHierarchy.levels;
+    private static KeyGenerator getKeyGenerator(CarbonDef.Hierarchy carbonHierarchy) {
+        CarbonDef.Level[] levels = carbonHierarchy.levels;
         int levelSize = levels.length;
         int[] lens = new int[levelSize];
         int i = 0;
         for (CarbonDef.Level level : levels) {
-            //            if(!level.isAll())
-            //            {
             lens[i++] = level.levelCardinality;
-            // lens[i++] = Long.toBinaryString((((RolapLevel)level).levelCardinality)).length();
-            //            }
         }
 
         return KeyGeneratorFactory.getKeyGenerator(lens);
-        // return new MultiDimKeyVarLengthGenerator(lens);
     }
-
-   /* private static void loadHierarchyMySql(HierarchyStore hierC, DataSource datasource) throws IOException
-    {
-        KeyGenerator keyGen = getKeyGenerator(hierC.getRolapHierarchy());
-
-        String query = "SELECT DISTINCT ID FROM " + hierC.getTableName() + " ORDER BY ID";
-
-        Cube inputMetaCube = new Cube(hierC.getTableName());
-
-        DBDataInputStream dataInputStream = new DBDataInputStream(datasource, inputMetaCube, query,
-                hierC.getTableName(), new ArrayList<String>(), false, "");
-        dataInputStream.initInput();
-        hierC.build(keyGen, dataInputStream);
-    }*/
-
-    //    public static void loadMemberFromSlices(MemberStore levelCache, List<MemberStore> slices, String fileStore, String dataType, String factTableName)
-    //    {
-    //        if(fileStore != null)
-    //        {
-    //            loadMemberFromFileStore(levelCache, fileStore,dataType,factTableName);
-    //        }
-    //
-    //        for(MemberStore slice : slices)
-    //        {
-    //            levelCache.mergeStore(slice);
-    //        }
-    //        levelCache.createSortIndex();
-    //    }
 
     /**
      * Loads members from file store.
@@ -330,23 +112,10 @@ public final class DimensionCacheLoader {
         Member[][] members = null;
 
         int[] globalSurrogateMapping = null;
-        //        Map<Integer,Integer> globalSurrogate = new HashMap<Integer,Integer>();
         int minValue = 0;
         int minValueForLevelFile = 0;
         int maxValueFOrLevelFile = 0;
         List<int[][]> sortOrderAndReverseOrderIndex = null;
-        //        RelationOrJoin relation = levelCache.getRolapLevel().getHierarchy().getRelation();
-        //        String tableName = relation==null? levelCache.getRolapLevel().getDimension().getName():((Table)relation).name;
-        //
-        //        String tableName = "";
-        //        if(relation == null)
-        //        {
-        //            tableName = levelCache.getRolapLevel().getDimension().getName();
-        //        }
-        //        else
-        //        {
-        //            tableName = relation.toString();
-        //        }
 
         if (tableName.contains(".")) {
             tableName = tableName.split("\\.")[1];
@@ -356,7 +125,6 @@ public final class DimensionCacheLoader {
         }
 
         String fileName = tableName + '_' + levelCache.getColumnName();
-        //
         CarbonFile file = FileFactory.getCarbonFile(fileStore, FileFactory.getFileType(fileStore));
         if (file.isDirectory()) {
             // Read from the base location.
@@ -365,7 +133,6 @@ public final class DimensionCacheLoader {
             String baseLocationForGlobalKeys =
                     fileStore + File.separator + fileName + ".globallevel";
             String baseLocationForsortIndex = fileStore + File.separator + fileName;
-            //            CarbonFile baseFile = FileFactory.getCarbonFile(baseLocation, FileFactory.getFileType());
             try {
                 if (FileFactory.isFileExist(baseLocation, FileFactory.getFileType(baseLocation))) {
                     members = CacheUtil.getMembersList(baseLocation, (byte) -1, dataType);
@@ -390,135 +157,4 @@ public final class DimensionCacheLoader {
         levelCache.addGlobalKey(globalSurrogateMapping, minValue);
     }
 
-    //    public static void loadMembersFromDataSource(MemberStore levelCache, DataSource datasource) throws IOException
-    //    {
-    //        RolapProperty[] properties = levelCache.getRolapLevel().getProperties();
-    //        StringBuffer buffer = new StringBuffer();
-    //        buffer.append("SELECT DISTINCT NAME, ID ");
-    //        //
-    //        boolean hasOrdinalCol = hasOrdinalColumn(levelCache.getRolapLevel());
-    //
-    //        if(hasOrdinalCol)
-    //        {
-    //            buffer.append(", ")
-    //                    .append(((MondrianDef.Column)levelCache.getRolapLevel().getOrdinalExp()).getColumnName());
-    //            buffer.append(" ");
-    //        }
-    //        //
-    //        for(RolapProperty property : properties)
-    //        {
-    //            buffer.append(" , ").append(((MondrianDef.Column)property.getExp()).getColumnName());
-    //            buffer.append(" ");
-    //        }
-    //
-    //        buffer.append(" FROM ");
-    //        // buffer.append(" \"");
-    //        buffer.append(levelCache.getTableForMember());
-    //        // buffer.append("\" ");
-    //       //final String query = buffer.toString();
-    //        //
-    //        ResultSet resultSet = null;
-    //        Statement stmt = null;
-    //        Connection conn= null;
-    //        try
-    //        {
-    //            conn = datasource.getConnection();
-    //            /**
-    //             * Fortify fix: NULL_DEREFRENCE
-    //             */
-    //            if(null != conn)
-    //            {
-    //                stmt = conn.createStatement();
-    //                resultSet = stmt.executeQuery(buffer.toString());
-    //                //
-    //                while(resultSet.next())
-    //                {
-    //                    String name = resultSet.getString(1);
-    //                    int id = resultSet.getInt(2);
-    //                    // byte[] id = resultSet.getBytes(2);
-    //
-    //                    Member dim = null;
-    //                    if(levelCache.getNameColIndex() == -1)
-    //                    {
-    //                        dim = new Member((name == null) ? new char[0] : name.toCharArray());
-    //                    }
-    //                    else
-    //                    {
-    //                        dim = new NameColumnMember((name == null) ? new char[0] : name.toCharArray(),
-    //                                levelCache.getNameColIndex());
-    //                    }
-    //                    //
-    //                    int size = properties.length + (hasOrdinalCol ? 1 : 0);
-    //                    if(size > 0)
-    //                    {
-    //                        Object[] props = new Object[size];
-    //                        for(int i = 0;i < size;i++)
-    //                        {
-    //                            props[i] = resultSet.getObject(3 + i);
-    //                        }
-    //                        //
-    //                        dim.setAttributes(props);
-    //                    }
-    //                    levelCache.addMember(id, dim);
-    //                }
-    //            }
-    //            levelCache.createSortIndex();
-    //        }
-    //        catch(SQLException e)
-    //        {
-    //            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
-    //        }
-    //        finally
-    //        {
-    //            //
-    //            if(resultSet != null)
-    //            {
-    //                try
-    //                {
-    //                    resultSet.close();
-    //                }
-    //                catch(SQLException e)
-    //                {
-    //                    LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
-    //                }
-    //            }
-    //
-    //            if(stmt != null)
-    //            {
-    //                try
-    //                {
-    //                    stmt.close();
-    //                }
-    //                catch(SQLException e)
-    //                {
-    //                    LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
-    //                }
-    //            }
-    //
-    //            if(conn != null)
-    //            {
-    //                try
-    //                {
-    //                    conn.close();
-    //                }
-    //                catch(SQLException e)
-    //                {
-    //                    LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
-    //                }
-    //            }
-    //        }
-    //    }
-
-    /**
-     *
-     */
-    //    private static boolean assignOrderKeys = MondrianProperties.instance().CompareSiblingsByOrderKey.get();
-
-    //    /**
-    //     * Check whether to consider Ordinal column separately if it is configured.
-    //     */
-    //    private static boolean hasOrdinalColumn(CarbonDef.Level level)
-    //    {
-    //        return (!level.getOrdinalExp().equals(level.getKeyExp()));
-    //    }
 }

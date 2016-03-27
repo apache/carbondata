@@ -158,7 +158,6 @@ public abstract class CarbonDimSurrogateKeyGen {
 
     public Object[] generateSurrogateKeys(Object[] tuple, Object[] out,
             List<Integer> timeOrdinalColValues) throws KettleException {
-        //Modified for Normalized hierarchy AR-UniBI-OLAP-003
         boolean[] dimsPresent = carbonInfo.getDimsPresent();
         int[] dims = carbonInfo.getDims();
 

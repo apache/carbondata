@@ -147,9 +147,9 @@ public class CarbonQueryModel {
     private boolean relativefilter;
 
     /**
-     * pushTopNInOlap
+     * pushTopNInCarbon
      */
-    private boolean pushTopNInOlap;
+    private boolean pushTopNInCarbon;
 
     /**
      * isAnalyzer
@@ -447,13 +447,13 @@ public class CarbonQueryModel {
         this.relativefilter = relativefilter;
     }
 
-    public void pushTopNToOlapEngine(boolean pushTopNInOlap) {
-        this.pushTopNInOlap = pushTopNInOlap;
+    public void pushTopNToCarbonEngine(boolean pushTopNInCarbon) {
+        this.pushTopNInCarbon = pushTopNInCarbon;
 
     }
 
     public boolean pushTopN() {
-        return pushTopNInOlap;
+        return pushTopNInCarbon;
 
     }
 

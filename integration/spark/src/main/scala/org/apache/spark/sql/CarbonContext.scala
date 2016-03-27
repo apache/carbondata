@@ -184,7 +184,7 @@ class CarbonContext(val sc: SparkContext, metadataPath: String) extends HiveCont
       new Column(FlattenExpr(UnresolvedAttribute(f.name)))
     }
     println(fields)
-    rdd.as(Symbol("olap_flatten")).select(fields: _*)
+    rdd.as(Symbol("carbon_flatten")).select(fields: _*)
   }
 
   implicit def dataset(name: String): SchemaRDDExt = {

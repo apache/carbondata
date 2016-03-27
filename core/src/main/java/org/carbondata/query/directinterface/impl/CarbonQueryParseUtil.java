@@ -821,7 +821,7 @@ public final class CarbonQueryParseUtil {
                         .equals(queryImpl.getExtraProperties().get("ANALYZER_QUERY")) && !"true"
                         .equals(queryImpl.getExtraProperties().get("PAGINATION_REQUIRED")) && ("avg"
                         .equals(msr.getAggName())))) {
-                    model.pushTopNToOlapEngine(true);
+                    model.pushTopNToCarbonEngine(true);
                 }
                 hasNext = itr.hasNext();
             }

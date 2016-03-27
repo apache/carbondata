@@ -39,30 +39,24 @@ public class HierarchyStore {
      */
     private String factTableName;
 
-    /**
-     * A null represents the hierarchy has only one level and the hierarchy can
-     * be directly loaded from member cache.
-     */
-    // private Map dimension = new HashMap();
-
     private HierarchyBtreeStore btreeStore;
 
     /**
      *
      */
-    private CarbonDef.Hierarchy rolapHierarchy;
+    private CarbonDef.Hierarchy carbonHierarchy;
 
     /**
      *
      */
     private String dimeName;
 
-    public HierarchyStore(CarbonDef.Hierarchy rolapHierarchy,
+    public HierarchyStore(CarbonDef.Hierarchy carbonHierarchy,
             String factTableName, String dimensionName) {
         this.dimeName = dimensionName;
-        this.hierName = rolapHierarchy.name == null ? dimensionName : rolapHierarchy.name;
+        this.hierName = carbonHierarchy.name == null ? dimensionName : carbonHierarchy.name;
 
-        this.rolapHierarchy = rolapHierarchy;
+        this.carbonHierarchy = carbonHierarchy;
         tableName = hierName.replaceAll(" ", "_") + ".hierarchy";
         this.factTableName = factTableName;
     }
@@ -70,8 +64,8 @@ public class HierarchyStore {
     /**
      * Getter for hierarchy
      */
-    public CarbonDef.Hierarchy getRolapHierarchy() {
-        return rolapHierarchy;
+    public CarbonDef.Hierarchy getCarbonHierarchy() {
+        return carbonHierarchy;
     }
 
     /**
@@ -125,7 +119,7 @@ public class HierarchyStore {
 
     //    public String getLevelName()
     //    {
-    //        for(CarbonDef.Level level : rolapHierarchy.levels)
+    //        for(CarbonDef.Level level : carbonHierarchy.levels)
     //        {
     //            if(!level.isAll())
     //            {

@@ -118,12 +118,12 @@ public final class QueryMapper {
         // .getInstance()
         // .getActiveSlices(cubeName)
         // .get(0)
-        // .getRolapCube()
+        // .getCarbonCube()
         // .getSchema()
         // .getInternalConnection()
         // .getCacheControl(null)
         // .flushSchema(
-        // InMemoryCubeStore.getInstance().getActiveSlices(cubeName).get(0).getRolapCube().getSchema());
+        // InMemoryCubeStore.getInstance().getActiveSlices(cubeName).get(0).getCarbonCube().getSchema());
 
         Long threadId = Thread.currentThread().getId();
 

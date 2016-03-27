@@ -83,12 +83,12 @@ object CarbonScalaUtil {
 
   case class TransformHolder(rdd: Any, mataData: CarbonMetaData)
 
-  object OlapUtil {
-    def createBaseRDD(olapContext: CarbonContext, cube: Cube): TransformHolder = {
-      val olapCube = CarbonMetadata.getInstance().getCube(cube.getCubeName())
-      val relation = CarbonEnv.getInstance(olapContext).carbonCatalog.lookupRelation1(Option(cube.getSchemaName()),
-        cube.getOnlyCubeName(), None)(olapContext).asInstanceOf[CarbonRelation]
-      var rdd = new SchemaRDD(olapContext, relation)
+  object CarbonSparkUtil {
+    def createBaseRDD(carbonContext: CarbonContext, cube: Cube): TransformHolder = {
+      val carbonCube = CarbonMetadata.getInstance().getCube(cube.getCubeName())
+      val relation = CarbonEnv.getInstance(carbonContext).carbonCatalog.lookupRelation1(Option(cube.getSchemaName()),
+        cube.getOnlyCubeName(), None)(carbonContext).asInstanceOf[CarbonRelation]
+      var rdd = new SchemaRDD(carbonContext, relation)
       rdd.registerTempTable(cube.getOnlyCubeName())
       TransformHolder(rdd, createSparkMeta(cube))
     }

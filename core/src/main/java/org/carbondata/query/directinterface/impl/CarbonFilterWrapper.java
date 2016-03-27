@@ -19,7 +19,7 @@
 
 /**
  * Project Name: NSE V300R008C10 UniBI
- * FileName : UpdateOlapSchemaCommadHandler.java
+ * FileName : UpdateCarbonSchemaCommadHandler.java
  * =============================Copyright Notice ==============================
  * This file contains proprietary information of Huawei Technologies Co. Ltd.
  * Copying or reproduction without prior written approval is prohibited.
