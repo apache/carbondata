@@ -14,7 +14,7 @@ object CarbonExample {
 
     val oc = new CarbonContext(sc, hdfsCarbonBasePath)
     oc.setConf("carbon.kettle.home", "/home/root1/carbon/carbondata/processing/carbonplugins/")
-
+     oc.setConf("hive.metastore.warehouse.dir", "/home/root1/carbon/hivemetadata")
 //    oc.sql("drop cube alldatatypescube")
 
     oc.sql("CREATE CUBE alldatatypescube DIMENSIONS (empno Integer, empname String, " +
