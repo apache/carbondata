@@ -88,11 +88,11 @@ public final class StandardLogService implements LogService {
         props.setProperty("log4j.appender.stdout.layout.ConversionPattern", "%d %-5p [%c] %m%n");
         props.setProperty("log4j.appender.stdout.layout", "org.apache.log4j.PatternLayout");
         props.setProperty("log4j.appender.AUDL",
-                "com.huawei.iweb.platform.logging.AuditExtendedRollingFileAppender");
+                "org.carbondata.common.logging.AuditExtendedRollingFileAppender");
 
         props.setProperty("log4j.appender.AUDL.File", auditLogPath);
         props.setProperty("log4j.appender.AUDL.threshold",
-                "AUDIT#com.huawei.iweb.platform.logging.AuditLevel");
+                "AUDIT#org.carbondata.common.logging.AuditLevel");
         props.setProperty("log4j.appender.AUDL.layout.ConversionPattern",
                 "%d{yy/MM/dd HH:mm:ss} %p %c{1}: %m%n");
         props.setProperty("log4j.appender.AUDL.layout", "org.apache.log4j.PatternLayout");
