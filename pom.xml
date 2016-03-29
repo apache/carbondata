@@ -53,6 +53,7 @@
         <module>integration/spark</module>
         <module>format</module>
         <module>assembly</module>
+        <module>examples</module>
     </modules>
     <build>
         <plugins>
