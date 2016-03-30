@@ -29,7 +29,7 @@ object CarbonExample {
       "OPTIONS (PARTITIONER [PARTITION_COUNT=1])")
 
     //please replace with your local machine path
-    oc.sql("LOAD DATA fact from '/home/root1/carbon/carbondata/examples/resources/data.csv' INTO CUBE alldatatypescube PARTITIONDATA(DELIMITER ',', QUOTECHAR '\"')");
+    oc.sql("LOAD DATA fact from '/home/root1/carbon/carbondata/integration/spark/src/test/resources/data.csv' INTO CUBE alldatatypescube PARTITIONDATA(DELIMITER ',', QUOTECHAR '\"')");
 
     oc.sql("select empno,empname,utilization,count(salary),sum(empno) from alldatatypescube where empname in ('arvind','ayushi') group by empno,empname,utilization").show()
 
