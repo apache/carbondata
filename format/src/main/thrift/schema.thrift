@@ -27,13 +27,14 @@ namespace java org.carbondata.format
 */
 enum DataType {
 	STRING = 0,
-	NUMERIC = 1,
-	DECIMAL = 2,
-	BIG_DECIMAL = 3,
-	TIME_STAMP = 4,
-	ARRAY = 5,
-	STRUCT = 6,
-	MAP = 7
+	INTEGER = 1,
+	LONG = 2,
+	DECIMAL = 3,
+	BIG_DECIMAL = 4,
+	TIME_STAMP = 5,
+	ARRAY = 6,
+	STRUCT = 7,
+	MAP = 8
 }
 
 /**
@@ -208,17 +209,17 @@ struct Encoder{
 */
 //TODO:where to put the CSV column name and carbon table column name mapping? should not keep in schema
 struct ColumnSchema{ 
-	1: required DataType data_type
+	1: required DataType data_type;
 	/**
 	* Name of the column. If it is a complex data type, we follow a naming rule grand_parent_column.parent_column.child_column
 	* For Array types, two columns will be stored one for the array type and one for the primitive type with the name parent_column.value
 	*/
-	2: required string column_name  // 
-	3: required i32 column_id  // Unique ID for a column. if this is dimension, it is an unique ID that used in dictionary
-	4: required bool is_columnar // wether it is stored as columnar format or row format
-	5: required list<Encoder> encoders // List of encoders that are chained to encode the data for this column
-	6: required bool is_dimension  // Whether the column is a dimension or measure
-	7: optional i32 column_group_id // The group ID for column used for row format columns, where in columns in each group are chunked together.
+	2: required string column_name;  //
+	3: required i32 column_id;  // Unique ID for a column. if this is dimension, it is an unique ID that used in dictionary
+	4: required bool is_columnar; // wether it is stored as columnar format or row format
+	5: required list<Encoder> encoders; // List of encoders that are chained to encode the data for this column
+	6: required bool is_dimension;  // Whether the column is a dimension or measure
+	7: optional i32 column_group_id; // The group ID for column used for row format columns, where in columns in each group are chunked together.
 	
 	/** When the schema is the result of a conversion from another model
    * Used to record the original type to help with cross conversion.
@@ -227,49 +228,51 @@ struct ColumnSchema{
 	/** 
 	* Used when this column contains decimal data.
 	*/
-	9: optional i32 scale
-	10: optional i32 presition
+	9: optional i32 scale;
+	10: optional i32 precision;
 	
 	/** Nested fields.  Since thrift does not support nested fields,
 	* the nesting is flattened to a single list by a depth-first traversal.
 	* The children count is used to construct the nested relationship.
 	* This field is not set when the element is a primitive type
 	*/
-	11: optional i32 num_child
+	11: optional i32 num_child;
 	
 	/** 
 	* Used when this column is part of an aggregate table.
 	*/
-	12: optional Aggregator aggregator
+	12: optional Aggregator aggregator;
+
+	13: optional binary default_value;
 }
 
 /**
 * Description of One Schema Change, contains list of added columns and deleted columns
 */
 struct SchemaEvolutionEntry{
-	1: required i64 time_stamp
-	2: optional list<ColumnSchema> added
-	3: optional list<ColumnSchema> removed
+	1: required i64 time_stamp;
+	2: optional list<ColumnSchema> added;
+	3: optional list<ColumnSchema> removed;
 }
 
 /**
 * History of schema evolution
 */
 struct SchemaEvolution{
-1: required list<SchemaEvolutionEntry> history
+1: required list<SchemaEvolutionEntry> schema_evolution_history;
 }
 
 /**
 * The description of table schema
 */
 struct TableSchema{
-	1: required i32 table_id  // ID used to 
-	2: required list<ColumnSchema> table_columns // Columns in the table
-	3: required SchemaEvolution schema_evolution // History of schema evolution of this table
+	1: required i32 table_id;  // ID used to
+	2: required list<ColumnSchema> table_columns; // Columns in the table
+	3: required SchemaEvolution schema_evolution; // History of schema evolution of this table
 }
 
 struct TableInfo{
-	1: required TableSchema fact_table
-	2: required list<TableSchema> aggregate_table_list
+	1: required TableSchema fact_table;
+	2: required list<TableSchema> aggregate_table_list;
 
 }

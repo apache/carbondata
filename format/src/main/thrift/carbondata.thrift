@@ -29,13 +29,13 @@ include "schema.thrift"
 */
 struct SegmentInfo{
 	1: required i32 num_cols; // Number of columns in this load, because schema can evolve . TODO: Check whether this is really required
-	2: required list<i32> column_cardanilities; // Cardinality of columns
+	2: required list<i32> column_cardinalities; // Cardinality of columns
 }
 
 /**
 *	Btree index of one node.
 */
-struct LeafNodeBtreeIndex{
+struct LeafNodeBTreeIndex{
 	1: required binary start_key; // Bit-packed start key of one leaf node
 	2: required binary end_key;	// Bit-packed start key of one leaf node
 }
@@ -44,8 +44,8 @@ struct LeafNodeBtreeIndex{
 *	Min-max index of one complete file
 */
 struct LeafNodeMinMaxIndex{
-	1: required list<binary> min; //Min value of all columns of one leaf node Bit-Packed
-	2: required list<binary> max; //Max value of all columns of one leaf node Bit-Packed
+	1: required list<binary> min_values; //Min value of all columns of one leaf node Bit-Packed
+	2: required list<binary> max_values; //Max value of all columns of one leaf node Bit-Packed
 }
 
 /**
@@ -53,7 +53,7 @@ struct LeafNodeMinMaxIndex{
 */
 struct LeafNodeIndex{
 	1: optional list<LeafNodeMinMaxIndex> min_max_index;
-	2: optional list<LeafNodeBtreeIndex> b_tree_index;
+	2: optional list<LeafNodeBTreeIndex> b_tree_index;
 }
 
 
@@ -66,21 +66,11 @@ enum SortState{
 	SORT_EXPLICIT = 2;	// Sorted (ascending) when loading
 }
 
-/**
- * Wrapper struct to specify sort order
- */
-struct SortingColumn {
-  /** The column index (in this leaf node) **/
-  1: required i32 column_idx;
-
-  /** If true, indicates this column is sorted in descending order. **/
-  2: required SortState sort_state;
-}
 
 /**
 *	Compressions supported by Carbon Data.
 */
-enum Compression{
+enum CompressionCodec{
 	SNAPPY = 0;
 	LZO = 1;
 	GZIP = 2;
@@ -90,8 +80,8 @@ enum Compression{
 /**
 *	Wrapper for the encoder and the cutstom class name for custom encoder.
 */
-struct Compressor{
-	1: required Compression compression;
+struct CompressionInfo{
+	1: required CompressionCodec compression;
 	2: optional string custom_class_name; // Custom class name if Compression is custom.
 
 }
@@ -101,7 +91,7 @@ struct Compressor{
 */
 // add a innger level placeholder for further I/O granulatity
 struct ChunkCompressionMeta{
-	1: required Compressor compressor; // the compressor used
+	1: required CompressionInfo compression_info; // the compressor used
 	/** total byte size of all uncompressed pages in this column chunk (including the headers) **/
 	2: required i64 total_uncompressed_size;
 	/** total byte size of all compressed pages in this column chunk (including the headers) **/
@@ -116,10 +106,10 @@ struct PresenceMeta{
 }
 
 
-struct DimensionDataChunk{
+struct DataChunk{
 	1: required ChunkCompressionMeta chunk_meta; // the metadata of a chunk
-	2: required bool isRowChunk; // whether this chunk is a row chunk or column chunk ? Decide whethe rthis can be replace with counting od columnIDs
-	3: required list<i32> columnIDs; // the column IDs in this chunk, will have atleast one column ID for columnar format, many column ID for row major format
+	2: required bool is_row_chunk; // whether this chunk is a row chunk or column chunk ? Decide whethe rthis can be replace with counting od columnIDs
+	3: required list<i32> column_ids; // the column IDs in this chunk, will have atleast one column ID for columnar format, many column ID for row major format
 	4: required i64 data_page_offset; // Offset of data page
 	5: required i32 data_page_length; // length of data page
 	6: optional i64 rowid_page_offset; //offset of row id page, only if encoded using inverted index
@@ -127,43 +117,29 @@ struct DimensionDataChunk{
 	8: optional i64 rle_page_offset;	// offset of rle page, only if RLE coded.
 	9: optional i32 rle_page_length;	// length of rle page, only if RLE coded.
 	10: optional PresenceMeta presence; // information about presence of values in each row of this column chunk
+	11: optional SortState sort_state;
+    12: optional list<schema.Encoder> encoders; // The List of encoders overriden at node level
+    13: optional list<binary> encoder_meta; // extra information required by encoders
 }
 
-/**
-*	Represents data of a measure in one leaf node
-*/
-struct MeasureDataChunk{
-	1: required ChunkCompressionMeta chunk_meta; // the metadata of a chunk
-	2: required bool isRowChunk; // whether this chunk is a row chunk or column chunk
-	3: required list<i32> columnIDs; // the column IDs in this chunk, will have atleast one column ID for columnar format, many column ID for row major format
-	4: required i64 data_page_offset;	// The offset of data page
-	5: required i32 data_page_length;	// The length of data page
-	/**The data type that is used to store the data physically,
-	*Higher types can be stored using lower types to save space
-	*if the data can fit the precision of nower type
-	*/
-	6: required list<schema.DataType> encoded_type;
-	7: optional PresenceMeta presence; // information about presence of values in each row of this column chunk
-}
 
 /**
 *	Information about a leaf node
 */
 struct LeafNodeInfo{
-1: required i64 num_rows;	// Number of rows in this leaf node
-2: optional list<SortingColumn> sorting_columns;	// The sort information of all columns in this leaf node
-3: required list<DimensionDataChunk> dimensions;	// Information about dimension chunk of all dimensions in this leaf node
-4: required list<MeasureDataChunk> measures;	// Information about measure chunk of all measures in this leaf node
+1: required i32 num_rows;	// Number of rows in this leaf node
+3: required list<DataChunk> dimension_chunks;	// Information about dimension chunk of all dimensions in this leaf node
+4: required list<DataChunk> measure_chunks;	// Information about measure chunk of all measures in this leaf node
 }
 
 /**
 * Description of one data file
 */
 struct FileMeta{
-	1: required i32 version // version used for data compatibility
-	2: required i64 num_rows // Total number of rows in this file
-	3: required SegmentInfo segment_info	// Segment info (will be same/repeated for all files in this segment)
-	4: required LeafNodeIndex index	// Leaf node index of all leaf nodes in this file
-	5: required list<schema.ColumnSchema> table_columns	// Description of columns in this file
-	6: required list<LeafNodeInfo> leaf_node_info	// Information about leaf nodes of all columns in this file
+	1: required i32 version; // version used for data compatibility
+	2: required i64 num_rows; // Total number of rows in this file
+	3: required SegmentInfo segment_info;	// Segment info (will be same/repeated for all files in this segment)
+	4: required LeafNodeIndex index;	// Leaf node index of all leaf nodes in this file
+	5: required list<schema.ColumnSchema> table_columns;	// Description of columns in this file
+	6: required list<LeafNodeInfo> leaf_node_info;	// Information about leaf nodes of all columns in this file
 }
