@@ -1,9 +1,35 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.carbondata.core.writer;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
+
 import mockit.Mock;
 import mockit.MockUp;
 import org.apache.thrift.TBase;
@@ -15,6 +41,7 @@ import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.reader.CarbonDictionaryMetadataReader;
 import org.carbondata.core.reader.ThriftReader;
 import org.carbondata.core.util.CarbonDictionaryUtil;
+import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.format.ColumnDictionaryChunk;
 import org.junit.After;
 import org.junit.Before;
@@ -23,6 +50,10 @@ import org.junit.Test;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+/**
+ * This class will test the functionality writing and
+ * reading a dictionary and its corresponding metadata file
+ */
 public class CarbonDictionaryWriterTest {
 
     /**
@@ -30,6 +61,8 @@ public class CarbonDictionaryWriterTest {
      * 4 byte each for segmentId, min, max value and 8 byte for endOffset which is of long type
      */
     private static final int ONE_SEGMENT_DETAIL_LENGTH = 20;
+
+    private static final String PROPERTY_FILE_NAME = "carbonTest.properties";
 
     private CarbonTypeIdentifier identifier;
 
@@ -41,11 +74,14 @@ public class CarbonDictionaryWriterTest {
 
     private String columnName;
 
+    private Properties props;
+
     @Before public void setUp() throws Exception {
-        this.databaseName = "testSchema";
-        this.tableName = "carbon";
+        init();
+        this.databaseName = props.getProperty("database", "testSchema");
+        this.tableName = props.getProperty("tableName", "carbon");
+        this.storePath = props.getProperty("storePath", "carbonStore");
         this.columnName = "Name";
-        this.storePath = "./carbonStore";
         identifier = new CarbonTypeIdentifier(databaseName, tableName);
     }
 
@@ -317,6 +353,23 @@ public class CarbonDictionaryWriterTest {
         }
         if (f.exists() && !f.delete()) {
             return;
+        }
+    }
+
+    private void init() {
+        InputStream in = null;
+        props = new Properties();
+        try {
+            URI uri = getClass().getClassLoader().getResource(PROPERTY_FILE_NAME).toURI();
+            File file = new File(uri);
+            in = new FileInputStream(file);
+            props.load(in);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        } finally {
+            CarbonUtil.closeStreams(in);
         }
     }
 }

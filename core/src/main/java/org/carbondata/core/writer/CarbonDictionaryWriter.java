@@ -1,3 +1,22 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.carbondata.core.writer;
 
 import java.io.DataOutputStream;
@@ -6,6 +25,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.CarbonDictionaryMetadata;
@@ -18,6 +38,9 @@ import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.format.ColumnDictionaryChunk;
 import org.carbondata.query.util.CarbonEngineLogEvent;
 
+/**
+ * This class is responsible for writing the dictionary file and its metadata
+ */
 public class CarbonDictionaryWriter {
 
     /**
@@ -78,12 +101,7 @@ public class CarbonDictionaryWriter {
     private static final int ONE_SEGMENT_DETAIL_LENGTH = 20;
 
     /**
-     * @param carbonTypeIdentifier
-     * @param columnUniqueValueListIterator
-     * @param columnName
-     * @param segmentName
-     * @param hdfsStorePath
-     * @param isSharedDimension
+     * constructor
      */
     public CarbonDictionaryWriter(CarbonTypeIdentifier carbonTypeIdentifier,
             Iterator<String> columnUniqueValueListIterator, String columnName, String segmentName,
@@ -146,9 +164,6 @@ public class CarbonDictionaryWriter {
 
     /**
      * This method will put column value to byte buffer
-     *
-     * @param columnValueInBytes
-     * @return
      */
     private ByteBuffer getByteBuffer(byte[] columnValueInBytes) {
         ByteBuffer buffer = ByteBuffer
@@ -161,9 +176,6 @@ public class CarbonDictionaryWriter {
 
     /**
      * This method will serialize the object of dictionary file
-     *
-     * @param dictionaryFilePath
-     * @param columnUniqueValueList
      */
     private void writeDictionaryFile(String dictionaryFilePath,
             List<ByteBuffer> columnUniqueValueList) {
@@ -187,9 +199,6 @@ public class CarbonDictionaryWriter {
 
     /**
      * This method will populate and return the thrift object
-     *
-     * @param columnUniqueValueList
-     * @return
      */
     private ColumnDictionaryChunk getThriftObject(List<ByteBuffer> columnUniqueValueList) {
         ColumnDictionaryChunk columnDictionaryChunk = new ColumnDictionaryChunk();
@@ -199,8 +208,6 @@ public class CarbonDictionaryWriter {
 
     /**
      * This method will check and created the directory path where dictionary file has to be created
-     *
-     * @return
      */
     private boolean checkAndCreateDirectoryPath() {
         this.directoryPath = CarbonDictionaryUtil
@@ -213,12 +220,11 @@ public class CarbonDictionaryWriter {
 
     /**
      * This method will write the dictionary metadata file for a given column
-     *
-     * @param totalRecordCount
      */
     private void writeDictionaryMetadataFile(int totalRecordCount) {
         // Format of dictionary metadata file
-        // total length of 1 segment detail entry which includes in order : segment id, min, max, currentSegmentEndOffset
+        // total length of 1 segment detail entry which
+        // includes in order : segment id, min, max, currentSegmentEndOffset
         DataOutputStream dataOutputStream = null;
         CarbonDictionaryMetadata dictionaryMetadata = null;
         int min = 0;
@@ -230,7 +236,8 @@ public class CarbonDictionaryWriter {
             FileFactory.FileType fileType = FileFactory.getFileType(metadataFilePath);
             int segmentId = Integer.parseInt(
                     segmentName.substring(CarbonCommonConstants.SEGMENT_CONSTANT.length()));
-            // if file already exists then read metadata file and get previousMax and previousSegmentEndOffset
+            // if file already exists then read metadata file and
+            // get previousMax and previousSegmentEndOffset
             // value for the last loaded segment
             if (CarbonDictionaryUtil.isFileExists(metadataFilePath)) {
                 dictionaryMetadata = CarbonDictionaryMetadataReader
@@ -282,8 +289,6 @@ public class CarbonDictionaryWriter {
 
     /**
      * increment the offset by given length
-     *
-     * @param length
      */
     private void incrementOffset(int length) {
         this.currentSegmentEndOffset = this.currentSegmentEndOffset + length;
