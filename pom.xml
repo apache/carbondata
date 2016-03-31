@@ -47,6 +47,7 @@
     </repositories>
 
     <modules>
+		<module>format</module>
         <module>common</module>
         <module>format</module>
         <module>core</module>

@@ -146,6 +146,33 @@ public final class FileFactory {
     }
 
     public static DataOutputStream getDataOutputStream(String path, FileType fileType,
+            boolean append, int bufferSize) throws IOException {
+        path = path.replace("\\", "/");
+        switch (fileType) {
+        case LOCAL:
+            FileOutputStream out = null;
+            if (append) {
+                out = new FileOutputStream(path, true);
+            } else {
+                out = new FileOutputStream(path);
+            }
+            return new DataOutputStream(new BufferedOutputStream(out, bufferSize));
+        case HDFS:
+            Path pt = new Path(path);
+            FileSystem fs = pt.getFileSystem(configuration);
+            FSDataOutputStream stream = null;
+            if (append) {
+                stream = fs.append(pt, bufferSize);
+            } else {
+                stream = fs.create(pt, true, bufferSize);
+            }
+            return stream;
+        default:
+            return new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path)));
+        }
+    }
+
+    public static DataOutputStream getDataOutputStream(String path, FileType fileType,
             short replicationFactor) throws IOException {
         path = path.replace("\\", "/");
         switch (fileType) {

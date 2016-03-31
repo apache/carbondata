@@ -1382,6 +1382,31 @@ public final class CarbonCommonConstants {
      */
     public static final String DEFAULT_ENABLE_LOAD_MERGE = "false";
 
+    /**
+     * shared directory folder name
+     */
+    public static final String SHARED_DIRECTORY = "shared_dictionary";
+
+    /**
+     * metadata constant
+     */
+    public static final String METADATA_CONSTANT = "_metadata";
+
+    /**
+     * dictionary folder name
+     */
+    public static final String DICTIONARY_CONSTANT = "dictionary";
+
+    /**
+     * folder extension
+     */
+    public static final String FILE_EXTENSION = ".file";
+
+    /**
+     * Segment folder prefix
+     */
+    public static final String SEGMENT_CONSTANT = "segment_";
+
     private CarbonCommonConstants() {
 
     }
