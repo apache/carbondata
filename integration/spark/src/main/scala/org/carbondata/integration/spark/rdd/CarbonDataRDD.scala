@@ -111,13 +111,12 @@ class CarbonDataRDD[K, V](
           if (null == carbonPropertiesFilePath) {
             System.setProperty("carbon.properties.filepath", System.getProperty("user.dir") + '/' + "conf" + '/' + "carbon.properties");
           }
-          val listOfLoadFolders = CarbonQueryUtil.getSliceLoads(carbonQueryModel, dataPath, part)
-          val listOfUpdatedLoadFolders = carbonQueryModel.getListOfValidUpdatedSlices
-          val listOfAllLoadFolders = CarbonQueryUtil.getListOfSlices(carbonQueryModel.getLoadMetadataDetails)
+          val listOfAllLoadFolders = carbonQueryModel.getListOfAllLoadFolder
           CarbonProperties.getInstance().addProperty("carbon.storelocation", baseStoreLocation);
           CarbonProperties.getInstance().addProperty("carbon.cache.used", "false");
           val cube = InMemoryTableStore.getInstance.loadCubeMetadataIfRequired(schema, schema.cubes(0), part, schemaLastUpdatedTime)
-          CarbonQueryUtil.createDataSource(currentRestructNumber, schema, cube, part, listOfLoadFolders, listOfUpdatedLoadFolders, carbonQueryModel.getFactTable(), dataPath, cubeCreationTime)
+          val queryScopeObject = CarbonQueryUtil.createDataSource(currentRestructNumber, schema, cube, part, listOfAllLoadFolders, carbonQueryModel.getFactTable(), dataPath, cubeCreationTime, carbonQueryModel.getLoadMetadataDetails)
+          carbonQueryModel.setQueryScopeObject(queryScopeObject)
           if (InMemoryTableStore.getInstance.isLevelCacheEnabled()) {
             levelCacheKeys = CarbonQueryUtil.validateAndLoadRequiredSlicesInMemory(carbonQueryModel, listOfAllLoadFolders, cubeUniqueName).toList
           }
@@ -138,9 +137,9 @@ class CarbonDataRDD[K, V](
         CarbonQueryUtil.updateDimensionWithHighCardinalityVal(schema, carbonQueryModel)
 
         if (CarbonQueryUtil.isQuickFilter(carbonQueryModel)) {
-          rowIterator = CarbonQueryUtil.getQueryExecuter(carbonQueryModel.getCube(), carbonQueryModel.getFactTable()).executeDimension(carbonQueryModel);
+          rowIterator = CarbonQueryUtil.getQueryExecuter(carbonQueryModel.getCube(), carbonQueryModel.getFactTable(), carbonQueryModel.getQueryScopeObject).executeDimension(carbonQueryModel);
         } else {
-          rowIterator = CarbonQueryUtil.getQueryExecuter(carbonQueryModel.getCube(), carbonQueryModel.getFactTable()).execute(carbonQueryModel);
+          rowIterator = CarbonQueryUtil.getQueryExecuter(carbonQueryModel.getCube(), carbonQueryModel.getFactTable(), carbonQueryModel.getQueryScopeObject).execute(carbonQueryModel);
         }
       } catch {
         case e: Exception =>

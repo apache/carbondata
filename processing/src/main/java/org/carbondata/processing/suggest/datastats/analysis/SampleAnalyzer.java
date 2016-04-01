@@ -206,7 +206,7 @@ public class SampleAnalyzer {
             queryExecutionModel.setCube(cube);
             QueryExecutor queryExecutor = DataStatsUtil
                     .getQueryExecuter(queryExecutionModel.getCube(),
-                            queryExecutionModel.getFactTable());
+                            queryExecutionModel.getFactTable(), loadSampler.getQueryScopeObject());
 
             // Execute the query
             CarbonIterator<RowResult> rowIterator = queryExecutor.execute(queryExecutionModel);

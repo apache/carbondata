@@ -32,6 +32,11 @@ import java.util.concurrent.TimeUnit;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.carbon.CarbonDef;
+import org.carbondata.core.carbon.CarbonDef.AggLevel;
+import org.carbondata.core.carbon.CarbonDef.AggMeasure;
+import org.carbondata.core.carbon.CarbonDef.Schema;
+import org.carbondata.core.carbon.SqlStatement;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.core.keygenerator.KeyGenException;
@@ -43,11 +48,6 @@ import org.carbondata.core.metadata.CarbonMetadata.Cube;
 import org.carbondata.core.metadata.CarbonMetadata.Dimension;
 import org.carbondata.core.metadata.CarbonMetadata.Measure;
 import org.carbondata.core.metadata.SliceMetaData;
-import org.carbondata.core.carbon.CarbonDef;
-import org.carbondata.core.carbon.CarbonDef.AggLevel;
-import org.carbondata.core.carbon.CarbonDef.AggMeasure;
-import org.carbondata.core.carbon.CarbonDef.Schema;
-import org.carbondata.core.carbon.SqlStatement;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
@@ -57,6 +57,7 @@ import org.carbondata.query.aggregator.CustomCarbonAggregateExpression;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.aggregator.dimension.DimensionAggregatorInfo;
 import org.carbondata.query.cache.QueryExecutorUtil;
+import org.carbondata.query.datastorage.InMemoryLoadTableUtil;
 import org.carbondata.query.datastorage.InMemoryTable;
 import org.carbondata.query.datastorage.InMemoryTableStore;
 import org.carbondata.query.executer.SliceExecuter;
@@ -549,6 +550,8 @@ public class CarbonFactReaderStep extends BaseStep implements StepInterface {
                     }
                     List<InMemoryTable> activeSlices =
                             inMemoryCubeInstance.getActiveSlices(cubeUniqueName);
+                    List<InMemoryTable> querySlices = InMemoryLoadTableUtil
+                            .getQuerySlices(activeSlices, meta.getLoadNameAndModificationTimeMap());
                     List<SliceExecutionInfo> infos = new ArrayList<SliceExecutionInfo>(
                             CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
                     String loadName = getLoadName();
@@ -564,7 +567,7 @@ public class CarbonFactReaderStep extends BaseStep implements StepInterface {
                     // used to
                     // execute the query
                     int currentSliceIndex = -1;
-                    for (InMemoryTable slice : activeSlices) {
+                    for (InMemoryTable slice : querySlices) {
                         // get the slice metadata for each slice
                         currentSliceIndex++;
                         if (null != slice.getDataCache(cube.getFactTableName())) {

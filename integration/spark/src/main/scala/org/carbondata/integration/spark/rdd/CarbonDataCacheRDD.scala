@@ -97,7 +97,7 @@ class CarbonDataCacheRDD[K, V](
         CarbonProperties.getInstance().addProperty("carbon.leaf.node.size", "120000");
       }
       CarbonProperties.getInstance().addProperty("carbon.storelocation", baseStoreLocation);
-      CarbonQueryUtil.createDataSource(currentRestructNumber, schema, null, split.serializableHadoopSplit.value.getPartition().getUniqueID(), null, null, null, cubeCreationTime);
+      CarbonQueryUtil.createDataSource(currentRestructNumber, schema, null, split.serializableHadoopSplit.value.getPartition().getUniqueID(), null, null, null, cubeCreationTime, null);
 
       // Register an on-task-completion callback to close the input stream.
       context.addOnCompleteCallback(() => close())

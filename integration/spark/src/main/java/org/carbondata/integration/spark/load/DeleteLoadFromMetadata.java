@@ -44,8 +44,8 @@ import org.carbondata.core.datastorage.store.fileperations.AtomicFileOperationsI
 import org.carbondata.core.datastorage.store.fileperations.FileWriteOperation;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.load.LoadMetadataDetails;
-import org.carbondata.core.locks.MetadataLock;
 import org.carbondata.core.locks.CarbonLock;
+import org.carbondata.core.locks.MetadataLock;
 import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.integration.spark.util.CarbonSparkInterFaceLogEvent;
@@ -160,7 +160,8 @@ public final class DeleteLoadFromMetadata {
                     if (!CarbonCommonConstants.MARKED_FOR_DELETE
                             .equals(loadMetadata.getLoadStatus())) {
                         loadMetadata.setLoadStatus(CarbonCommonConstants.MARKED_FOR_DELETE);
-                        loadMetadata.setDeletionTimestamp(CarbonLoaderUtil.readCurrentTime());
+                        loadMetadata.setModificationOrdeletionTimesStamp(
+                                CarbonLoaderUtil.readCurrentTime());
                         LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
                                 "LoadId " + loadId + " Marked for Delete");
                     } else {

@@ -38,6 +38,7 @@ import org.carbondata.query.filters.measurefilter.GroupMeasureFilterModel;
 import org.carbondata.query.holders.CarbonResultHolder;
 import org.carbondata.query.queryinterface.filter.CarbonFilterInfo;
 import org.carbondata.query.querystats.PartitionDetail;
+import org.carbondata.query.scope.QueryScopeObject;
 
 /**
  * Its a model object for CarbonExecutor interface
@@ -245,6 +246,9 @@ public class CarbonQueryExecutorModel implements Serializable {
 
     private Accumulator<PartitionDetail> partitionDetails;
     private Dimension[] sortedDimensions;
+
+    private List<String> listOfAllLoadFolder;
+    private QueryScopeObject queryScopeObject;
 
     public Accumulator<PartitionDetail> getPartitionAccumulator() {
         return partitionDetails;
@@ -878,5 +882,33 @@ public class CarbonQueryExecutorModel implements Serializable {
      */
     public void setLoadMetadataDetails(LoadMetadataDetails[] loadMetadataDetails) {
         this.loadMetadataDetails = loadMetadataDetails;
+    }
+
+    /**
+     * return's the queryScopeObject
+     */
+    public QueryScopeObject getQueryScopeObject() {
+        return queryScopeObject;
+    }
+
+    /**
+     * Set the queryScopeObject
+     */
+    public void setQueryScopeObject(QueryScopeObject queryScopeObject) {
+        this.queryScopeObject = queryScopeObject;
+    }
+
+    /**
+     * Returns list of all load folders
+     */
+    public List<String> getListOfAllLoadFolder() {
+        return listOfAllLoadFolder;
+    }
+
+    /**
+     * Setter to set the List Of All load Folders
+     */
+    public void setListOfAllLoadFolder(List<String> listOfAllLoadFolder) {
+        this.listOfAllLoadFolder = listOfAllLoadFolder;
     }
 }

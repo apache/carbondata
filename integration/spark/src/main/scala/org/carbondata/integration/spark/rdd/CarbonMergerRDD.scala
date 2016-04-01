@@ -27,12 +27,14 @@ import org.apache.spark.sql.cubemodel.Partitioner
 import org.apache.spark.{Logging, Partition, SerializableWritable, SparkContext, TaskContext}
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.carbon.CarbonDef
+import org.carbondata.core.load.LoadMetadataDetails
 import org.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.carbondata.integration.spark.MergeResult
 import org.carbondata.integration.spark.load.{CarbonLoadModel, CarbonLoaderUtil}
 import org.carbondata.integration.spark.merger.CarbonDataMergerUtil
 import org.carbondata.integration.spark.splits.TableSplit
 import org.carbondata.integration.spark.util.CarbonQueryUtil
+import org.carbondata.query.datastorage.InMemoryTableStore
 
 import scala.collection.JavaConversions._
 
@@ -117,10 +119,12 @@ class CarbonMergerRDD[K, V](
           val newSlice = CarbonCommonConstants.LOAD_FOLDER + mergedLoadName
           var listOfLoadFolders = CarbonLoaderUtil.getListOfValidSlices(details)
           listOfLoadFolders = CarbonLoaderUtil.addNewSliceNameToList(newSlice, listOfLoadFolders);
+          var listOfAllLoadFolders = CarbonQueryUtil.getListOfSlices(details)
+          listOfAllLoadFolders = CarbonLoaderUtil.addNewSliceNameToList(newSlice, listOfAllLoadFolders);
           val listOfUpdatedLoadFolders = CarbonLoaderUtil.getListOfUpdatedSlices(details)
           val copyListOfLoadFolders = listOfLoadFolders.toList
           val copyListOfUpdatedLoadFolders = listOfUpdatedLoadFolders.toList
-          loadCubeSlices(listOfLoadFolders, listOfUpdatedLoadFolders)
+          loadCubeSlices(listOfAllLoadFolders, details)
           var loadFolders = Array[String]()
           val loadFolder = CarbonLoaderUtil.getAggLoadFolderLocation(newSlice, model.getSchemaName, model.getCubeName, model.getTableName, hdfsStoreLocation, currentRestructNumber)
           if (null != loadFolder) {
@@ -139,9 +143,9 @@ class CarbonMergerRDD[K, V](
       }
 
 
-      def loadCubeSlices(listOfLoadFolders: java.util.List[String], listOfUpdatedLoadFolders: java.util.List[String]) = {
+      def loadCubeSlices(listOfLoadFolders: java.util.List[String], deatails: Array[LoadMetadataDetails]) = {
         CarbonProperties.getInstance().addProperty("carbon.cache.used", "false");
-        CarbonQueryUtil.createDataSource(currentRestructNumber, model.getSchema, null, partitionId, listOfLoadFolders, listOfUpdatedLoadFolders, model.getTableName, hdfsStoreLocation, cubeCreationTime)
+        CarbonQueryUtil.createDataSource(currentRestructNumber, model.getSchema, null, partitionId, listOfLoadFolders, model.getTableName, hdfsStoreLocation, cubeCreationTime, deatails)
       }
 
       def iterateOverAggTables(aggTables: Array[CarbonDef.AggTable], listOfLoadFolders: java.util.List[String], listOfUpdatedLoadFolders: java.util.List[String], loadFolders: Array[String]): String = {

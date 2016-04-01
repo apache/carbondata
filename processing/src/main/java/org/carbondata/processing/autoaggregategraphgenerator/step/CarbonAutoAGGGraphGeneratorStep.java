@@ -231,6 +231,8 @@ public class CarbonAutoAGGGraphGeneratorStep extends BaseStep implements StepInt
         info.setAutoAggregateRequest(true);
         model.setSchemaInfo(info);
         model.setTableName(meta.getAggTables());
+        model.setLoadNames(meta.getLoadNames());
+        model.setModificationOrDeletionTime(meta.getModificationOrDeletionTime());
         generator = new GraphGenerator(model, meta.isHDFSMode(), meta.getPartitionId(),
                 parseStringToSchema(meta.getSchema()), meta.getFactStoreLocation(),
                 meta.getCurrentRestructNumber(), 1);
