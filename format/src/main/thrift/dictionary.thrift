@@ -23,5 +23,5 @@
 namespace java org.carbondata.format
 
 struct ColumnDictionaryChunk {
-	1: list<string> values; // the values in dictionary order, each value is represented by a list of bytes, The values can be of any supported data type
+	1: required list<string> values; // the values in dictionary order, each value is represented by a string.
 }
