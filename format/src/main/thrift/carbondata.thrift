@@ -56,7 +56,6 @@ struct LeafNodeIndex{
 	2: optional list<LeafNodeBTreeIndex> b_tree_index;
 }
 
-
 /**
 * Sort state of one column
 */
@@ -66,24 +65,11 @@ enum SortState{
 	SORT_EXPLICIT = 2;	// Sorted (ascending) when loading
 }
 
-
 /**
 *	Compressions supported by Carbon Data.
 */
 enum CompressionCodec{
 	SNAPPY = 0;
-	LZO = 1;
-	GZIP = 2;
-	CUSTOM = 3;
-}
-
-/**
-*	Wrapper for the encoder and the cutstom class name for custom encoder.
-*/
-struct CompressionInfo{
-	1: required CompressionCodec compression;
-	2: optional string custom_class_name; // Custom class name if Compression is custom.
-
 }
 
 /**
@@ -91,12 +77,13 @@ struct CompressionInfo{
 */
 // add a innger level placeholder for further I/O granulatity
 struct ChunkCompressionMeta{
-	1: required CompressionInfo compression_info; // the compressor used
+	1: required CompressionCodec compression_codec; // the compressor used
 	/** total byte size of all uncompressed pages in this column chunk (including the headers) **/
 	2: required i64 total_uncompressed_size;
 	/** total byte size of all compressed pages in this column chunk (including the headers) **/
 	3: required i64 total_compressed_size;
 }
+
 /**
 * To handle space data with nulls
 */
@@ -105,11 +92,14 @@ struct PresenceMeta{
 	2: required binary present_bit_stream; // Compressed bit stream representing the presence of null values
 }
 
-
+/**
+* Represents a chunk of data. The chunk can be a single column stored in Column Major format or a group of columns stored in Row Major Format.
+**/
 struct DataChunk{
 	1: required ChunkCompressionMeta chunk_meta; // the metadata of a chunk
-	2: required bool is_row_chunk; // whether this chunk is a row chunk or column chunk ? Decide whethe rthis can be replace with counting od columnIDs
-	3: required list<i32> column_ids; // the column IDs in this chunk, will have atleast one column ID for columnar format, many column ID for row major format
+	2: required bool is_row_chunk; // whether this chunk is a row chunk or column chunk ? Decide whether this can be replace with counting od columnIDs
+	/** The column IDs in this chunk, in the order in which the data is physically stored, will have atleast one column ID for columnar format, many column ID for row major format**/
+	3: required list<i32> column_ids;
 	4: required i64 data_page_offset; // Offset of data page
 	5: required i32 data_page_length; // length of data page
 	6: optional i64 rowid_page_offset; //offset of row id page, only if encoded using inverted index
@@ -118,7 +108,7 @@ struct DataChunk{
 	9: optional i32 rle_page_length;	// length of rle page, only if RLE coded.
 	10: optional PresenceMeta presence; // information about presence of values in each row of this column chunk
 	11: optional SortState sort_state;
-    12: optional list<schema.Encoder> encoders; // The List of encoders overriden at node level
+    12: optional list<schema.Encoding> encoders; // The List of encoders overriden at node level
     13: optional list<binary> encoder_meta; // extra information required by encoders
 }
 
@@ -127,9 +117,9 @@ struct DataChunk{
 *	Information about a leaf node
 */
 struct LeafNodeInfo{
-1: required i32 num_rows;	// Number of rows in this leaf node
-3: required list<DataChunk> dimension_chunks;	// Information about dimension chunk of all dimensions in this leaf node
-4: required list<DataChunk> measure_chunks;	// Information about measure chunk of all measures in this leaf node
+    1: required i32 num_rows;	// Number of rows in this leaf node
+    2: required list<DataChunk> dimension_chunks;	// Information about dimension chunk of all dimensions in this leaf node
+    3: required list<DataChunk> measure_chunks;	// Information about measure chunk of all measures in this leaf node
 }
 
 /**

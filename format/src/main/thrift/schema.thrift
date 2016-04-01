@@ -34,7 +34,6 @@ enum DataType {
 	TIME_STAMP = 5,
 	ARRAY = 6,
 	STRUCT = 7,
-	MAP = 8
 }
 
 /**
@@ -159,29 +158,6 @@ enum ConvertedType {
   
 }
 
-
-/**
-*	The types supported by Carbon Data.
-*/
-enum AggregateFunction{
-	SUM = 0;
-	MIN = 1;
-	MAX = 2;
-	AVERAGE = 3
-	DISTINCT_COUNT = 4;
-	COUNT = 5;
-	CUSTOM = 6;
-}
-
-/**
-*	Wrapper for the encoder and the cutstom class name for custom encoder.
-*/
-struct Aggregator{
-	1: required AggregateFunction aggregate_function;
-	2: optional string custom_class_name; // Custom class name if AggregateFunction is custom.
-}
-
-
 /**
 *	Encodings supported by Carbon Data.  Not all encodings are valid for all types.
 *	Certain Encodings can be chained.
@@ -192,17 +168,8 @@ enum Encoding{
 	RLE = 2;		// Indetifies that a column is run length encoded
 	INVERTED_INDEX = 3; // identifies that a column is encoded using inverted index, can be used only along with dictionary encoding
 	BIT_PACKED = 4;	// identifies that a column is encoded using bit packing, can be used only along with dictionary encoding
-	CUSTOM = 5;	// User defined encoder class is used @see Encoder.custom_class_name
 }
 
-/**
-*	Wrapper for the encoder and the cutstom class name for custom encoder.
-*/
-struct Encoder{
-	1: required Encoding encoding;
-	2: optional string custom_class_name; // Custom class name if Encoding is custom.
-
-}
 
 /**
 * Description of a Column for both dimension and measure
@@ -217,7 +184,7 @@ struct ColumnSchema{
 	2: required string column_name;  //
 	3: required i32 column_id;  // Unique ID for a column. if this is dimension, it is an unique ID that used in dictionary
 	4: required bool is_columnar; // wether it is stored as columnar format or row format
-	5: required list<Encoder> encoders; // List of encoders that are chained to encode the data for this column
+	5: required list<Encoding> encoders; // List of encoders that are chained to encode the data for this column
 	6: required bool is_dimension;  // Whether the column is a dimension or measure
 	7: optional i32 column_group_id; // The group ID for column used for row format columns, where in columns in each group are chunked together.
 	
@@ -241,7 +208,7 @@ struct ColumnSchema{
 	/** 
 	* Used when this column is part of an aggregate table.
 	*/
-	12: optional Aggregator aggregator;
+	12: optional string aggregate_function;
 
 	13: optional binary default_value;
 }
