@@ -18,7 +18,7 @@
     <artifactId>carbon-spark</artifactId>
     <version>0.1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
-    <name>"carbon-spark"</name>
+    <name>carbon-spark</name>
     <parent>
         <groupId>org.carbondata</groupId>
         <version>0.1.0-SNAPSHOT</version>
