@@ -129,7 +129,13 @@ public class InMemoryTable implements Comparable<InMemoryTable> {
     private CarbonLRULevelCache levelCache;
     private Cube metaCube;
     private HybridStoreModel hybridStoreModel;
+    /**
+     *  segment modification time
+     */
     private long modificationTime;
+    /**
+     * File store path
+     */
     private String fileStore;
 
     public InMemoryTable(CarbonDef.Schema schema, CarbonDef.Cube cube, Cube metaCube,
@@ -279,15 +285,13 @@ public class InMemoryTable implements Comparable<InMemoryTable> {
                         .equals(factTableName) && CacheUtil.isFileExists(fileName)) {
                     String levelCacheKey =
                             cubeUniqueName + '_' + loadFolderName + '_' + levelActualName;
-                    if (null != levelCacheKey) {
+                    if (null == levelCache.get(levelCacheKey)) {
                         long memberFileSize = CacheUtil.getMemberFileSize(fileName);
                         LevelInfo levelInfo =
                                 new LevelInfo(memberFileSize, dimension.name, levelActualName,
                                         factTableName, fileStore, loadFolderName);
                         levelInfo.setLoaded(false);
-                        levelCache
-                                .put(cubeUniqueName + '_' + loadFolderName + '_' + levelActualName,
-                                        levelInfo);
+                        levelCache.put(levelCacheKey, levelInfo);
                     }
                 } else {
                     cache.processCacheFromFileStore(fileStore, executorService);
@@ -562,6 +566,10 @@ public class InMemoryTable implements Comparable<InMemoryTable> {
         return this.hybridStoreModel;
     }
 
+    /**
+     * return the segment modification time
+     * @return
+     */
     public long getModificationTime() {
         return modificationTime;
     }

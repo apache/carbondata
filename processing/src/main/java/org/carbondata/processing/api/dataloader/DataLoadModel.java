@@ -39,9 +39,13 @@ public class DataLoadModel {
      * Modified Dimension
      */
     private String[] modifiedDimesion;
-
+    /**
+     * loadNames separated by HASH_SPC_CHARACTER
+     */
     private String loadNames;
-
+    /**
+     * modificationOrDeletionTime separated by HASH_SPC_CHARACTER
+     */
     private String modificationOrDeletionTime;
 
     /**

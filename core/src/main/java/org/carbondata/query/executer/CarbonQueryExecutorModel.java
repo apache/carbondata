@@ -246,8 +246,14 @@ public class CarbonQueryExecutorModel implements Serializable {
 
     private Accumulator<PartitionDetail> partitionDetails;
     private Dimension[] sortedDimensions;
-
+    /**
+     * List of all the segments
+     */
     private List<String> listOfAllLoadFolder;
+    /**
+     * Instance of query scope object holding the segment cache and map of segment name as key and
+     * modification time as value.
+     */
     private QueryScopeObject queryScopeObject;
 
     public Accumulator<PartitionDetail> getPartitionAccumulator() {

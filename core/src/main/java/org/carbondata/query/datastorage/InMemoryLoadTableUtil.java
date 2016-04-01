@@ -36,7 +36,7 @@ public final class InMemoryLoadTableUtil {
     }
 
     /**
-     * The method return the map of LoadFolder and its load status as key value pair.
+     * The method return the map of segment name and its load status as key value pair.
      */
     public static Map<String, String> createLoadNameAndStatusMapping(
             LoadMetadataDetails[] loadMetadataDetailses) {
@@ -51,7 +51,7 @@ public final class InMemoryLoadTableUtil {
     }
 
     /**
-     * The Method returns the map of loadFolder Name and its modification Time as key value pair
+     * The Method returns the map of segment Name and its modification Time as key value pair
      */
     public static Map<String, Long> createLoadAndModificationTimeMappping(
             LoadMetadataDetails[] loadMetadataDetails) {
@@ -72,7 +72,7 @@ public final class InMemoryLoadTableUtil {
     }
 
     /**
-     * The method poarses the date String to Date and returns the date in milliseconds.
+     * The method parses the date String to Date and returns the date in milliseconds.
      */
     public static Long parseDeletionTime(String deletionTimestamp) {
         SimpleDateFormat format =
@@ -90,7 +90,7 @@ public final class InMemoryLoadTableUtil {
     }
 
     /**
-     * The method return's the list of Load/Segments to be loaded
+     * The method return's the list of Segments to be loaded
      */
     public static List<String> getListOfFoldersToBeLoaded(List<String> listLoadFolders,
             Map<String, String> loadNameAndStatusMapping, List<RestructureStore> rsStoreList,
@@ -103,7 +103,7 @@ public final class InMemoryLoadTableUtil {
         List<InMemoryTable> activeSlices = getActiveSlices(rsStoreList, factTableName);
         for (InMemoryTable memoryTable : activeSlices) {
             if (listLoadFolders.contains(memoryTable.getLoadName())) {
-                //if the Segment/load folder is already loaded and not modified then remove from the
+                //if the Segment folder is already loaded and not modified then remove from the
                 //listOfFolderToBeUpdated
                 String status = loadNameAndStatusMapping.get(memoryTable.getLoadName());
                 if (CarbonCommonConstants.MARKED_FOR_UPDATE.equals(status)) {
@@ -120,7 +120,7 @@ public final class InMemoryLoadTableUtil {
     }
 
     /**
-     * return true if the segment/slice is being modified.
+     * return true if the segment is being modified.
      */
     private static boolean isSliceRequiredToBeLoaded(LoadMetadataDetails[] loadMetadataDetails,
             InMemoryTable memoryTable) {
@@ -140,7 +140,7 @@ public final class InMemoryLoadTableUtil {
     }
 
     /**
-     * The method returns the List of slices/segments identified by the tableName
+     * The method returns the List of segments identified by the tableName
      */
     private static List<InMemoryTable> getActiveSlices(List<RestructureStore> rsStoreList,
             String factTableName) {
@@ -153,7 +153,8 @@ public final class InMemoryLoadTableUtil {
     }
 
     /**
-     * This method will delete the slices if the slice modification time exceeds the query time out
+     * This method will delete the segments if the segments modification time exceeds
+     * the query time out
      */
     public static void checkAndDeleteStaleSlices(List<RestructureStore> slices, String tableName) {
 
@@ -161,7 +162,8 @@ public final class InMemoryLoadTableUtil {
             long currentTimeMillis = System.currentTimeMillis();
             long queryMaxTimeOut = getQueryMaxTimeOut();
             List<InMemoryTable> activeSlices = getActiveSlices(slices, tableName);
-            List<InMemoryTable> listOfSliceToBeRemoved = new ArrayList<InMemoryTable>(activeSlices);
+            List<InMemoryTable> listOfSliceToBeRemoved =
+                    new ArrayList<InMemoryTable>(activeSlices.size());
             for (InMemoryTable inMemTable : activeSlices) {
                 long modificationTime = inMemTable.getModificationTime();
                 if (modificationTime > 0L) {
@@ -197,7 +199,7 @@ public final class InMemoryLoadTableUtil {
     }
 
     /**
-     * The method return list of valid slices/segments.
+     * The method return list of valid segments.
      */
     public static List<InMemoryTable> getQuerySlices(List<InMemoryTable> activeSlices,
             Map<String, Long> loadNameAndModicationTimeMap) {

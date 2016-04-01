@@ -87,9 +87,13 @@ public class CarbonAutoAGGGraphGeneratorMeta extends BaseStepMeta implements Ste
     private String factStoreLocation;
 
     private int currentRestructNumber;
-
+    /**
+     * load names separated by HASH_SPC_CHARACTER
+     */
     private String loadNames;
-
+    /**
+     * Segment modification Or DeletionTime separated by HASH_SPC_CHARACTER
+     */
     private String modificationOrDeletionTime;
 
     /**

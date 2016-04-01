@@ -145,6 +145,9 @@ public class CarbonFactReaderMeta extends BaseStepMeta implements StepMetaInterf
      */
     private String modificationOrDeletionTime;
 
+    /**
+     *  map having segment name  as key and segment Modification time stamp as value
+     */
     private Map<String, Long> loadNameAndModificationTimeMap;
 
     /**
@@ -602,10 +605,18 @@ public class CarbonFactReaderMeta extends BaseStepMeta implements StepMetaInterf
         this.modificationOrDeletionTime = modificationOrDeletionTime;
     }
 
+    /**
+     * set the load name
+     * @param loadNames
+     */
     public void setLoadNames(String loadNames) {
         this.loadNames = loadNames;
     }
 
+    /**
+     * Returns the map having segment name as key & modification time as value.
+     * @return
+     */
     public Map<String, Long> getLoadNameAndModificationTimeMap() {
         return loadNameAndModificationTimeMap;
     }

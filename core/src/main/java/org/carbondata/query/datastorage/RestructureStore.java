@@ -53,9 +53,17 @@ public class RestructureStore implements Comparable<RestructureStore> {
     private String folderName;
 
     private int restructureId;
-
+    /**
+     * Read/Write lock instance to allow concurrent read/write of segment cache.
+     */
     private final ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
+    /**
+     * Read lock to allow concurrent read of segment cache.
+     */
     private final Lock readLock = readWriteLock.readLock();
+    /**
+     * Write lock instance to allow concurrent write of segment cache.
+     */
     private final Lock writeLock = readWriteLock.writeLock();
 
     public RestructureStore(final String name, final int restructureId) {
@@ -217,7 +225,7 @@ public class RestructureStore implements Comparable<RestructureStore> {
     }
 
     /**
-     * Populates the list of the active tables in activeInMemTableList.
+     * Populates the list of the active segments in activeInMemTableList.
      */
     public void getActiveSlicesByTableName(List<InMemoryTable> activeInMemTableList,
             String factTableName) {
@@ -238,7 +246,7 @@ public class RestructureStore implements Comparable<RestructureStore> {
     }
 
     /**
-     * Removes slices for the given table from the slices
+     * Removes segments for the given table from the store
      */
     public void removeSlice(List<InMemoryTable> listOfSliceToBeRemoved, String tableName) {
         try {
@@ -254,7 +262,7 @@ public class RestructureStore implements Comparable<RestructureStore> {
     }
 
     /**
-     * Sort the slices based on the loadName
+     * Sort the segments based on the segment name
      */
     public void sortSliceBasedOnLoadName(String tableName) {
 

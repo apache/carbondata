@@ -30,19 +30,36 @@ import org.carbondata.query.datastorage.InMemoryTable;
 public class QueryScopeObject implements Serializable {
 
     private static final long serialVersionUID = -12345678911121334L;
+    /**
+     * instance of map having segment name as key and modification time as value
+     */
     private Map<String, Long> loadNameAndModificationTimeMap;
+    /**
+     *  Instance of segment cache
+     */
     private List<InMemoryTable> querySlices;
 
+    /**
+     * Constructor of QueryScopeObject
+     * @param loadNameAndModicationTimeMap
+     * @param querySlices
+     */
     public QueryScopeObject(Map<String, Long> loadNameAndModicationTimeMap,
             List<InMemoryTable> querySlices) {
         this.querySlices = querySlices;
         this.loadNameAndModificationTimeMap = loadNameAndModicationTimeMap;
     }
 
+    /**
+     * Returns the segment cache
+     */
     public List<InMemoryTable> getQuerySlices() {
         return querySlices;
     }
 
+    /**
+     * returns map having segment name as key and modification time as value
+     */
     public Map<String, Long> getLoadNameAndModificationTimeMap() {
         return loadNameAndModificationTimeMap;
     }

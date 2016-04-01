@@ -31,6 +31,9 @@ public class LoadMetadataDetails implements Serializable {
     private String loadStatus;
     private String loadName;
     private String partitionCount;
+    /**
+     * Segment modification or deletion time stamp
+     */
     private String modificationOrdeletionTimesStamp;
     private String loadStartTime;
 

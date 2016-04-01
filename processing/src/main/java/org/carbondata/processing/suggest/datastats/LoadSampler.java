@@ -78,7 +78,10 @@ public class LoadSampler {
     private String cubeUniqueName;
 
     private List<String> allLoads;
-
+    /**
+     * Instance of query scope object holding the segment cache and map of segment name as key and
+     * modification time as value.
+     */
     private QueryScopeObject queryScopeObject;
 
     /**
@@ -354,6 +357,10 @@ public class LoadSampler {
         return this.allLoads;
     }
 
+    /**
+     * returns the instance of query scope object holding the segment cache and map of segment name as key and
+     * modification time as value.
+     */
     public QueryScopeObject getQueryScopeObject() {
         return queryScopeObject;
     }

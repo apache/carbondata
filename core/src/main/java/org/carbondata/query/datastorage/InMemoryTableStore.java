@@ -378,7 +378,7 @@ public final class InMemoryTableStore {
             final List<RestructureStore> slices, int currentRestructNumber,
             final String factTableName, final Cube metadataCube,
             final Map<String, String> loadNameAndStatusMapping,
-            final Map<String, Long> loadNameAndModicationTimeMap) {
+            final Map<String, Long> loadNameAndModificationTimeMap) {
         {
 
             CarbonFile[] files =
@@ -447,7 +447,7 @@ public final class InMemoryTableStore {
                                         InMemoryTable cubeCache =
                                                 new InMemoryTable(schema, cube, metadataCube,
                                                         tableName, loadFolder.getAbsolutePath(),
-                                                        loadNameAndModicationTimeMap
+                                                        loadNameAndModificationTimeMap
                                                                 .get(loadFolder.getName()));
                                         cubeCache.setLoadName(loadFolder.getName());
                                         cubeCache.setRsStore(rsStore);
@@ -483,7 +483,7 @@ public final class InMemoryTableStore {
     }
 
     /**
-     * return true if the table is not modified/updated
+     * return true if the cube is not modified/updated
      *
      * @param cubeCreationTime
      * @param cubeUniqueName
@@ -495,7 +495,7 @@ public final class InMemoryTableStore {
     }
 
     /**
-     * returns true if the table is not loaded
+     * returns true if the cube is not loaded
      */
     private boolean isCubeNotLoad(String cubeUniqueName) {
         return null == cubeNameAndCreationTime.get(cubeUniqueName);

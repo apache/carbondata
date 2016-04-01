@@ -56,7 +56,9 @@ public class LoadModel {
 
     private long schemaLastUpdatedTime;
 
-
+    /**
+     * Array of LoadMetadataDetails
+     */
     private LoadMetadataDetails[] loadMetadataDetails;
 
     /**

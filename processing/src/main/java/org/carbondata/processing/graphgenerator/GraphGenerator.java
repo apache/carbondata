@@ -96,8 +96,14 @@ public class GraphGenerator {
      */
     private static final Map<String, String> DRIVERS;
 
+    /**
+     * Segment names
+     */
     private String loadNames;
 
+    /**
+     *  map having segment name  as key and segment Modification time stamp as value
+     */
     private String modificationOrDeletionTime;
 
     /**
