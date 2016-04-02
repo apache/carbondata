@@ -1409,6 +1409,11 @@ public final class CarbonCommonConstants {
      */
     public static final String SEGMENT_CONSTANT = "segment_";
 
+    /**
+     * File separator charcater
+     */
+    public static final char FILE_SEPARATOR_CHAR = '/';
+
     private CarbonCommonConstants() {
 
     }

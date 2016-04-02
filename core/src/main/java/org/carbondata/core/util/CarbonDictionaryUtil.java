@@ -19,43 +19,14 @@
 
 package org.carbondata.core.util;
 
-import java.io.File;
-import java.io.IOException;
-
-import org.carbondata.common.logging.LogService;
-import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.CarbonTypeIdentifier;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.datastorage.store.impl.FileFactory;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
  * Utility class which will perform operations like forming path,
  * creating folder structure related to dictionary file operation
  */
 public class CarbonDictionaryUtil {
-
-    /**
-     * LOGGER
-     */
-    private static final LogService LOGGER =
-            LogServiceFactory.getLogService(CarbonDictionaryUtil.class.getName());
-
-    /**
-     * This method will check the existence of a file at a given path
-     */
-    public static boolean isFileExists(String fileName) {
-        try {
-            FileFactory.FileType fileType = FileFactory.getFileType(fileName);
-            if (FileFactory.isFileExist(fileName, fileType)) {
-                return true;
-            }
-        } catch (IOException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-                    "@@@@@@  File not found at a given location @@@@@@ : " + fileName);
-        }
-        return false;
-    }
 
     /**
      * This method will form the dictionary metadata file path for a column
@@ -65,21 +36,18 @@ public class CarbonDictionaryUtil {
         // if dimension is shared between tables in a database then dictionary metadata
         // file for that
         // column should be created under shared directory
-        if (isSharedDimension) {
-            metadataFileDirPath = metadataFileDirPath + File.separator + columnName
-                    + CarbonCommonConstants.UNDERSCORE + CarbonCommonConstants.DICTIONARY_CONSTANT
-                    + CarbonCommonConstants.METADATA_CONSTANT
-                    + CarbonCommonConstants.FILE_EXTENSION;
-        } else {
-            metadataFileDirPath =
-                    metadataFileDirPath + File.separator + carbonTypeIdentifier.getTableName()
-                            + CarbonCommonConstants.UNDERSCORE + columnName
-                            + CarbonCommonConstants.UNDERSCORE
-                            + CarbonCommonConstants.DICTIONARY_CONSTANT
-                            + CarbonCommonConstants.METADATA_CONSTANT
-                            + CarbonCommonConstants.FILE_EXTENSION;
+        StringBuilder metadataFilePathBuilder = new StringBuilder();
+        String tableName = "";
+        if (!isSharedDimension) {
+            tableName = carbonTypeIdentifier.getTableName() + CarbonCommonConstants.UNDERSCORE;
         }
-        return metadataFileDirPath;
+        metadataFilePathBuilder.append(metadataFileDirPath)
+                .append(CarbonCommonConstants.FILE_SEPARATOR_CHAR).append(tableName)
+                .append(columnName).append(CarbonCommonConstants.UNDERSCORE)
+                .append(CarbonCommonConstants.DICTIONARY_CONSTANT)
+                .append(CarbonCommonConstants.METADATA_CONSTANT)
+                .append(CarbonCommonConstants.FILE_EXTENSION);
+        return metadataFilePathBuilder.toString();
     }
 
     /**
@@ -89,17 +57,16 @@ public class CarbonDictionaryUtil {
             String filePath, String columnName, boolean isSharedDimension) {
         // if dimension is shared between tables in a database then dictionary file for that
         // column should be created under shared directory
-        if (isSharedDimension) {
-            filePath = filePath + File.separator + columnName + CarbonCommonConstants.UNDERSCORE
-                    + CarbonCommonConstants.DICTIONARY_CONSTANT
-                    + CarbonCommonConstants.FILE_EXTENSION;
-        } else {
-            filePath = filePath + File.separator + carbonTypeIdentifier.getTableName()
-                    + CarbonCommonConstants.UNDERSCORE + columnName
-                    + CarbonCommonConstants.UNDERSCORE + CarbonCommonConstants.DICTIONARY_CONSTANT
-                    + CarbonCommonConstants.FILE_EXTENSION;
+        StringBuilder dictionaryFilePathBuilder = new StringBuilder();
+        String tableName = "";
+        if (!isSharedDimension) {
+            tableName = carbonTypeIdentifier.getTableName() + CarbonCommonConstants.UNDERSCORE;
         }
-        return filePath;
+        dictionaryFilePathBuilder.append(filePath).append(CarbonCommonConstants.FILE_SEPARATOR_CHAR)
+                .append(tableName).append(columnName).append(CarbonCommonConstants.UNDERSCORE)
+                .append(CarbonCommonConstants.DICTIONARY_CONSTANT)
+                .append(CarbonCommonConstants.FILE_EXTENSION);
+        return dictionaryFilePathBuilder.toString();
     }
 
     /**
@@ -108,32 +75,19 @@ public class CarbonDictionaryUtil {
      */
     public static String getDirectoryPath(CarbonTypeIdentifier carbonTypeIdentifier,
             String hdfsStorePath, boolean isSharedDimension) {
-        String filePath = hdfsStorePath + File.separator + carbonTypeIdentifier.getDatabaseName();
+        StringBuilder dirPathBuilder = new StringBuilder();
+        dirPathBuilder.append(hdfsStorePath).append(CarbonCommonConstants.FILE_SEPARATOR_CHAR)
+                .append(carbonTypeIdentifier.getDatabaseName());
         if (isSharedDimension) {
-            filePath = filePath + File.separator + CarbonCommonConstants.SHARED_DIRECTORY;
+            dirPathBuilder.append(CarbonCommonConstants.FILE_SEPARATOR_CHAR)
+                    .append(CarbonCommonConstants.SHARED_DIRECTORY);
         } else {
-            filePath = filePath + File.separator + carbonTypeIdentifier.getTableName()
-                    + CarbonCommonConstants.METADATA_CONSTANT + File.separator
-                    + CarbonCommonConstants.DICTIONARY_CONSTANT;
+            dirPathBuilder.append(CarbonCommonConstants.FILE_SEPARATOR_CHAR)
+                    .append(carbonTypeIdentifier.getTableName())
+                    .append(CarbonCommonConstants.METADATA_CONSTANT)
+                    .append(CarbonCommonConstants.FILE_SEPARATOR_CHAR)
+                    .append(CarbonCommonConstants.DICTIONARY_CONSTANT);
         }
-        return filePath;
-    }
-
-    /**
-     * This method will check and create the given path
-     */
-    public static boolean checkAndCreateFolder(String path) {
-        boolean created = false;
-        try {
-            FileFactory.FileType fileType = FileFactory.getFileType(path);
-            if (FileFactory.isFileExist(path, fileType)) {
-                created = true;
-            } else {
-                created = FileFactory.mkdirs(path, fileType);
-            }
-        } catch (IOException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e.getMessage());
-        }
-        return created;
+        return dirPathBuilder.toString();
     }
 }

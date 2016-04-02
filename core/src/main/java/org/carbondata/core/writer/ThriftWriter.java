@@ -72,7 +72,7 @@ public class ThriftWriter {
      */
     public void open() throws IOException {
         FileFactory.FileType fileType = FileFactory.getFileType(fileName);
-        dataOutputStream = FileFactory.getDataOutputStream(fileName, fileType, append, bufferSize);
+        dataOutputStream = FileFactory.getDataOutputStream(fileName, fileType, bufferSize, append);
         binaryOut = new TBinaryProtocol(new TIOStreamTransport(dataOutputStream));
     }
 

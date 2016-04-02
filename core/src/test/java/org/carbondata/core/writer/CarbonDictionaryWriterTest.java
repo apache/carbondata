@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -33,16 +32,15 @@ import java.util.Properties;
 import mockit.Mock;
 import mockit.MockUp;
 import org.apache.thrift.TBase;
-import org.carbondata.core.carbon.CarbonDictionaryMetadata;
 import org.carbondata.core.carbon.CarbonTypeIdentifier;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
-import org.carbondata.core.reader.CarbonDictionaryMetadataReader;
 import org.carbondata.core.reader.ThriftReader;
 import org.carbondata.core.util.CarbonDictionaryUtil;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.format.ColumnDictionaryChunk;
+import org.carbondata.format.ColumnDictionaryChunkMeta;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -109,22 +107,29 @@ public class CarbonDictionaryWriterTest {
                 new CarbonDictionaryWriter(identifier, vals.iterator(), columnName, segmentName,
                         this.storePath, isSharedDimension);
         writer.processColumnUniqueValueList();
-        List<ColumnDictionaryChunk> columnDictionaryChunks = readDictionary(dictionaryFilePath);
+        List<ColumnDictionaryChunk> columnDictionaryChunks = readDictionary(dictionaryFilePath, 0);
         assertTrue(1 == columnDictionaryChunks.size());
-        List<ByteBuffer> values =
-                new ArrayList<ByteBuffer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+        List<String> values = new ArrayList<String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         for (ColumnDictionaryChunk chunk : columnDictionaryChunks) {
             values = chunk.getValues();
         }
         assertTrue(3 == values.size());
         List<String> columnList = convertChunkToValue(values);
         compareDictionaryData(columnList, vals);
-        CarbonDictionaryMetadata expected = new CarbonDictionaryMetadata(0, 1, 3, 32);
-        validateDictionaryMetadata(expected, metadataFilePath, ONE_SEGMENT_DETAIL_LENGTH);
+        List<ColumnDictionaryChunkMeta> columnDictionaryChunkMeta =
+                readDictionaryChunkMetadata(metadataFilePath, 0);
+        assertTrue(1 == columnDictionaryChunkMeta.size());
+        ColumnDictionaryChunkMeta actual = new ColumnDictionaryChunkMeta(1, 3, 0);
+        actual.setSegment_id(0);
+        for (ColumnDictionaryChunkMeta chunk : columnDictionaryChunkMeta) {
+            validateDictionaryMetadata(chunk, actual);
+        }
     }
 
     @Test public void testMultipleChunksOfData() throws Exception {
-        List<String> list1 = new ArrayList<String>(10);
+        List<String> list1 = new ArrayList<String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+        List<ColumnDictionaryChunkMeta> actual = new ArrayList<ColumnDictionaryChunkMeta>(
+                CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         list1.add("manish");
         list1.add("shahid");
         String segmentName = "segment_0";
@@ -142,10 +147,14 @@ public class CarbonDictionaryWriterTest {
                 new CarbonDictionaryWriter(identifier, list1.iterator(), columnName, segmentName,
                         this.storePath, isSharedDimension);
         writer.processColumnUniqueValueList();
+        ColumnDictionaryChunkMeta chunk = new ColumnDictionaryChunkMeta(1, 3, 0);
+        actual.add(chunk);
+        long fileSize = CarbonUtil.getFileSize(dictionaryFilePath);
         List<String> list2 = new ArrayList<String>(10);
         list2.add("a");
         list2.add("b");
         list2.add("c");
+        segmentName = "segment_1";
         writer = new CarbonDictionaryWriter(identifier, list2.iterator(), columnName, segmentName,
                 this.storePath, isSharedDimension);
         writer.processColumnUniqueValueList();
@@ -153,14 +162,19 @@ public class CarbonDictionaryWriterTest {
                 new ArrayList<List<String>>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         mergedList.add(list1);
         mergedList.add(list2);
-        List<ColumnDictionaryChunk> columnDictionaryChunks = readDictionary(dictionaryFilePath);
+        List<ColumnDictionaryChunk> columnDictionaryChunks = readDictionary(dictionaryFilePath, 0);
         assertTrue(columnDictionaryChunks.size() == 2);
         for (int i = 0; i < columnDictionaryChunks.size(); i++) {
             List<String> expected = convertChunkToValue(columnDictionaryChunks.get(i).getValues());
             compareDictionaryData(expected, mergedList.get(i));
         }
-        CarbonDictionaryMetadata expected = new CarbonDictionaryMetadata(0, 4, 6, 47);
-        validateDictionaryMetadata(expected, metadataFilePath, ONE_SEGMENT_DETAIL_LENGTH);
+        chunk = new ColumnDictionaryChunkMeta(4, 6, fileSize);
+        actual.add(chunk);
+        List<ColumnDictionaryChunkMeta> expected = readDictionaryChunkMetadata(metadataFilePath, 0);
+        assertTrue(2 == expected.size());
+        for (int i = 0; i < expected.size(); i++) {
+            validateDictionaryMetadata(expected.get(i), actual.get(i));
+        }
     }
 
     @Test public void processColumnUniqueValueListAsSharedDimension() throws Exception {
@@ -182,22 +196,29 @@ public class CarbonDictionaryWriterTest {
                 new CarbonDictionaryWriter(identifier, vals.iterator(), columnName, segmentName,
                         this.storePath, isSharedDimension);
         writer.processColumnUniqueValueList();
-        List<ColumnDictionaryChunk> columnDictionaryChunks = readDictionary(dictionaryFilePath);
+        List<ColumnDictionaryChunk> columnDictionaryChunks = readDictionary(dictionaryFilePath, 0);
         assertTrue(1 == columnDictionaryChunks.size());
-        List<ByteBuffer> values =
-                new ArrayList<ByteBuffer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+        List<String> values = new ArrayList<String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         for (ColumnDictionaryChunk chunk : columnDictionaryChunks) {
             values = chunk.getValues();
         }
         assertTrue(3 == values.size());
         List<String> columnList = convertChunkToValue(values);
         compareDictionaryData(columnList, vals);
-        CarbonDictionaryMetadata expected = new CarbonDictionaryMetadata(0, 1, 3, 32);
-        validateDictionaryMetadata(expected, metadataFilePath, ONE_SEGMENT_DETAIL_LENGTH);
+        List<ColumnDictionaryChunkMeta> columnDictionaryChunkMeta =
+                readDictionaryChunkMetadata(metadataFilePath, 0);
+        assertTrue(1 == columnDictionaryChunkMeta.size());
+        ColumnDictionaryChunkMeta actual = new ColumnDictionaryChunkMeta(1, 3, 0);
+        actual.setSegment_id(0);
+        for (ColumnDictionaryChunkMeta chunk : columnDictionaryChunkMeta) {
+            validateDictionaryMetadata(chunk, actual);
+        }
     }
 
     @Test public void testMultipleChunksOfDataAsSharedDimension() throws Exception {
-        List<String> list1 = new ArrayList<String>(10);
+        List<String> list1 = new ArrayList<String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+        List<ColumnDictionaryChunkMeta> actual = new ArrayList<ColumnDictionaryChunkMeta>(
+                CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         list1.add("manish");
         list1.add("shahid");
         String segmentName = "segment_0";
@@ -215,10 +236,14 @@ public class CarbonDictionaryWriterTest {
                 new CarbonDictionaryWriter(identifier, list1.iterator(), columnName, segmentName,
                         this.storePath, isSharedDimension);
         writer.processColumnUniqueValueList();
+        ColumnDictionaryChunkMeta chunk = new ColumnDictionaryChunkMeta(1, 3, 0);
+        actual.add(chunk);
+        long fileSize = CarbonUtil.getFileSize(dictionaryFilePath);
         List<String> list2 = new ArrayList<String>(10);
         list2.add("a");
         list2.add("b");
         list2.add("c");
+        segmentName = "segment_1";
         writer = new CarbonDictionaryWriter(identifier, list2.iterator(), columnName, segmentName,
                 this.storePath, isSharedDimension);
         writer.processColumnUniqueValueList();
@@ -226,20 +251,25 @@ public class CarbonDictionaryWriterTest {
                 new ArrayList<List<String>>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         mergedList.add(list1);
         mergedList.add(list2);
-        List<ColumnDictionaryChunk> columnDictionaryChunks = readDictionary(dictionaryFilePath);
+        List<ColumnDictionaryChunk> columnDictionaryChunks = readDictionary(dictionaryFilePath, 0);
         assertTrue(columnDictionaryChunks.size() == 2);
         for (int i = 0; i < columnDictionaryChunks.size(); i++) {
             List<String> expected = convertChunkToValue(columnDictionaryChunks.get(i).getValues());
             compareDictionaryData(expected, mergedList.get(i));
         }
-        CarbonDictionaryMetadata expected = new CarbonDictionaryMetadata(0, 4, 6, 47);
-        validateDictionaryMetadata(expected, metadataFilePath, ONE_SEGMENT_DETAIL_LENGTH);
+        chunk = new ColumnDictionaryChunkMeta(4, 6, fileSize);
+        actual.add(chunk);
+        List<ColumnDictionaryChunkMeta> expected = readDictionaryChunkMetadata(metadataFilePath, 0);
+        assertTrue(2 == expected.size());
+        for (int i = 0; i < expected.size(); i++) {
+            validateDictionaryMetadata(expected.get(i), actual.get(i));
+        }
     }
 
-    @Test public void testDirectoryCreationFailure() {
+    @Test public void testDirectoryCreationFailure() throws Exception {
         try {
             deleteStorePath();
-            new MockUp<CarbonDictionaryUtil>() {
+            new MockUp<CarbonUtil>() {
                 @Mock public boolean checkAndCreateFolder(String path) {
                     return false;
                 }
@@ -271,14 +301,64 @@ public class CarbonDictionaryWriterTest {
         }
     }
 
-    private void validateDictionaryMetadata(CarbonDictionaryMetadata expected,
-            String metadataFilePath, int skipByte) {
-        CarbonDictionaryMetadata dictionaryMetadata = CarbonDictionaryMetadataReader
-                .readAndGetDictionaryMetadataForLastSegment(metadataFilePath, skipByte);
-        assertTrue(expected.getSegmentId() == dictionaryMetadata.getSegmentId());
-        assertTrue(expected.getMin() == dictionaryMetadata.getMin());
-        assertTrue(expected.getMax() == dictionaryMetadata.getMax());
-        assertTrue(expected.getOffset() == dictionaryMetadata.getOffset());
+    @Test public void testReadingOfChunkMetadtaFromAnOffset() throws Exception {
+        List<String> list1 = new ArrayList<String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+        List<ColumnDictionaryChunkMeta> actual = new ArrayList<ColumnDictionaryChunkMeta>(
+                CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+        list1.add("manish");
+        list1.add("shahid");
+        String segmentName = "segment_0";
+        boolean isSharedDimension = false;
+        String directoryPath =
+                CarbonDictionaryUtil.getDirectoryPath(identifier, storePath, isSharedDimension);
+        String metadataFilePath = CarbonDictionaryUtil
+                .getDictionaryMetadataFilePath(identifier, directoryPath, columnName,
+                        isSharedDimension);
+        String dictionaryFilePath = CarbonDictionaryUtil
+                .getDictionaryFilePath(identifier, directoryPath, columnName, isSharedDimension);
+        deleteFileIfExists(metadataFilePath);
+        deleteFileIfExists(dictionaryFilePath);
+        CarbonDictionaryWriter writer =
+                new CarbonDictionaryWriter(identifier, list1.iterator(), columnName, segmentName,
+                        this.storePath, isSharedDimension);
+        writer.processColumnUniqueValueList();
+        List<String> list2 = new ArrayList<String>(10);
+        list2.add("a");
+        list2.add("b");
+        segmentName = "segment_1";
+        writer = new CarbonDictionaryWriter(identifier, list2.iterator(), columnName, segmentName,
+                this.storePath, isSharedDimension);
+        writer.processColumnUniqueValueList();
+        long fileSize = CarbonUtil.getFileSize(metadataFilePath);
+        List<String> list3 = new ArrayList<String>(10);
+        list3.add("c");
+        segmentName = "segment_2";
+        writer = new CarbonDictionaryWriter(identifier, list3.iterator(), columnName, segmentName,
+                this.storePath, isSharedDimension);
+        writer.processColumnUniqueValueList();
+        int count = 1;
+        List<ColumnDictionaryChunkMeta> columnDictionaryChunkMeta =
+                readDictionaryChunkMetadata(metadataFilePath, fileSize);
+        assertTrue(count == columnDictionaryChunkMeta.size());
+        for (ColumnDictionaryChunkMeta chunk : columnDictionaryChunkMeta) {
+            List<ColumnDictionaryChunk> columnDictionaryChunks =
+                    readDictionary(dictionaryFilePath, chunk.getStart_offset());
+            assertTrue(count == columnDictionaryChunks.size());
+            for (ColumnDictionaryChunk data : columnDictionaryChunks) {
+                List<String> expected = data.getValues();
+                assertTrue(list3.size() == expected.size());
+                for (int i = 0; i < expected.size(); i++) {
+                    assertTrue(expected.get(i).equals(list3.get(i)));
+                }
+            }
+        }
+    }
+
+    private void validateDictionaryMetadata(ColumnDictionaryChunkMeta expected,
+            ColumnDictionaryChunkMeta actual) {
+        assertTrue(expected.getMin_surrogate_key() == actual.getMin_surrogate_key());
+        assertTrue(expected.getMax_surrogate_key() == actual.getMax_surrogate_key());
+        assertTrue(expected.getStart_offset() == actual.getStart_offset());
     }
 
     private void compareDictionaryData(List<String> expected, List<String> actual) {
@@ -288,14 +368,10 @@ public class CarbonDictionaryWriterTest {
         }
     }
 
-    private List<String> convertChunkToValue(List<ByteBuffer> chunks) {
+    private List<String> convertChunkToValue(List<String> chunks) {
         List<String> columnList =
                 new ArrayList<String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-        for (ByteBuffer buffer : chunks) {
-            int length = buffer.getInt();
-            byte[] buff = new byte[length];
-            buffer.get(buff, 0, buff.length);
-            String value = new String(buff);
+        for (String value : chunks) {
             if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(value)) {
                 continue;
             }
@@ -304,7 +380,8 @@ public class CarbonDictionaryWriterTest {
         return columnList;
     }
 
-    private List<ColumnDictionaryChunk> readDictionary(String dictionaryPath) throws IOException {
+    private List<ColumnDictionaryChunk> readDictionary(String dictionaryPath, long offset)
+            throws IOException {
         List<ColumnDictionaryChunk> chunkList = new ArrayList<ColumnDictionaryChunk>();
         ThriftReader thriftIn = new ThriftReader(dictionaryPath, new ThriftReader.TBaseCreator() {
             @Override public TBase create() {
@@ -314,7 +391,7 @@ public class CarbonDictionaryWriterTest {
 
         // Open it
         thriftIn.open();
-
+        thriftIn.setReadOffset(offset);
         // Read objects
         while (thriftIn.hasNext()) {
             chunkList.add((ColumnDictionaryChunk) thriftIn.read());
@@ -323,6 +400,28 @@ public class CarbonDictionaryWriterTest {
         // Close reader
         thriftIn.close();
         return chunkList;
+    }
+
+    private List<ColumnDictionaryChunkMeta> readDictionaryChunkMetadata(String dictionaryPath,
+            long offset) throws IOException {
+        List<ColumnDictionaryChunkMeta> chunkMetaList = new ArrayList<ColumnDictionaryChunkMeta>();
+        ThriftReader thriftIn = new ThriftReader(dictionaryPath, new ThriftReader.TBaseCreator() {
+            @Override public TBase create() {
+                return new ColumnDictionaryChunkMeta();
+            }
+        });
+
+        // Open it
+        thriftIn.open();
+        thriftIn.setReadOffset(offset);
+        // Read objects
+        while (thriftIn.hasNext()) {
+            chunkMetaList.add((ColumnDictionaryChunkMeta) thriftIn.read());
+        }
+
+        // Close reader
+        thriftIn.close();
+        return chunkMetaList;
     }
 
     private void deleteStorePath() {

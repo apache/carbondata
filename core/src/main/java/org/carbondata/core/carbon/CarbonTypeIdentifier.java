@@ -19,6 +19,8 @@
 
 package org.carbondata.core.carbon;
 
+import org.carbondata.core.constants.CarbonCommonConstants;
+
 /**
  * Identifier class which will hold the table qualified name
  */
@@ -35,11 +37,18 @@ public class CarbonTypeIdentifier {
     private String tableName;
 
     /**
+     * table qualified name which will include db name and table name
+     */
+    private String tableQualifiedName;
+
+    /**
      * constructor
      */
     public CarbonTypeIdentifier(String databaseName, String tableName) {
         this.databaseName = databaseName;
         this.tableName = tableName;
+        this.tableQualifiedName =
+                databaseName + databaseName + CarbonCommonConstants.UNDERSCORE + tableName;
     }
 
     /**
@@ -54,5 +63,12 @@ public class CarbonTypeIdentifier {
      */
     public String getTableName() {
         return tableName;
+    }
+
+    /**
+     * This method will return the full qualified table name
+     */
+    public String getTableQualifiedName() {
+        return tableQualifiedName;
     }
 }
