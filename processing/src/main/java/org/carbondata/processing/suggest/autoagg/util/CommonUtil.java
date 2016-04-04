@@ -113,6 +113,7 @@ public final class CommonUtil {
                 }
                 loadModel.setValidUpdateSlices(listOfValidUpdatedSlices);
                 loadModel.setAllLoads(allLoads);
+                loadModel.setLoadMetadataDetails(loadFolderDetailsArray);
             }
 
         } catch (IOException e) {

@@ -43,11 +43,6 @@ public class QueryExecuterProperties {
     protected String cubeName;
 
     /**
-     * cube unique name
-     */
-    protected String cubeUniqueName;
-
-    /**
      * dimension table array
      */
     protected Dimension[] dimTables;

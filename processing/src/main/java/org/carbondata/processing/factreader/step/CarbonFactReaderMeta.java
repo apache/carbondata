@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.processing.util.CarbonDataProcessorUtil;
 import org.pentaho.di.core.CheckResult;
 import org.pentaho.di.core.CheckResultInterface;
 import org.pentaho.di.core.Counter;
@@ -134,6 +135,20 @@ public class CarbonFactReaderMeta extends BaseStepMeta implements StepMetaInterf
      * partitionID
      */
     private String aggregateTableName;
+    /**
+     * load names
+     */
+    private String loadNames;
+
+    /**
+     * Cube modification or Deletion time stamp
+     */
+    private String modificationOrDeletionTime;
+
+    /**
+     *  map having segment name  as key and segment Modification time stamp as value
+     */
+    private Map<String, Long> loadNameAndModificationTimeMap;
 
     /**
      * set the default value for all the properties
@@ -153,6 +168,8 @@ public class CarbonFactReaderMeta extends BaseStepMeta implements StepMetaInterf
         partitionID = "";
         aggregateTableName = "";
         globalDimLensString = "";
+        loadNames = "";
+        modificationOrDeletionTime = "";
     }
 
     /**
@@ -177,6 +194,9 @@ public class CarbonFactReaderMeta extends BaseStepMeta implements StepMetaInterf
         for (int i = 0; i < split.length; i++) {
             this.blockIndex[i] = Integer.parseInt(split[i]);
         }
+        loadNameAndModificationTimeMap = CarbonDataProcessorUtil.getLoadNameAndModificationTimeMap(
+                loadNames.split(CarbonCommonConstants.HASH_SPC_CHARACTER),
+                modificationOrDeletionTime.split(CarbonCommonConstants.HASH_SPC_CHARACTER));
     }
 
     /**
@@ -261,6 +281,9 @@ public class CarbonFactReaderMeta extends BaseStepMeta implements StepMetaInterf
                 .append(XMLHandler.addTagValue("aggregateTableName", aggregateTableName));
         retval.append("    ")
                 .append(XMLHandler.addTagValue("globalDimLensString", globalDimLensString));
+        retval.append("    ").append(XMLHandler.addTagValue("loadNames", loadNames));
+        retval.append("    ").append(XMLHandler
+                .addTagValue("modificationOrDeletionTime", modificationOrDeletionTime));
         return retval.toString();
     }
 
@@ -289,6 +312,10 @@ public class CarbonFactReaderMeta extends BaseStepMeta implements StepMetaInterf
             partitionID = XMLHandler.getTagValue(stepnode, "partitionID");
             aggregateTableName = XMLHandler.getTagValue(stepnode, "aggregateTableName");
             globalDimLensString = XMLHandler.getTagValue(stepnode, "globalDimLensString");
+            loadNames = XMLHandler.getTagValue(stepnode, "loadNames");
+            modificationOrDeletionTime = XMLHandler.getTagValue(stepnode, "loadNames");
+
+
         } catch (Exception e) {
             throw new KettleXMLException("Unable to read step info from XML node", e);
         }
@@ -320,6 +347,9 @@ public class CarbonFactReaderMeta extends BaseStepMeta implements StepMetaInterf
             partitionID = rep.getStepAttributeString(idStep, "partitionID");
             aggregateTableName = rep.getStepAttributeString(idStep, "aggregateTableName");
             globalDimLensString = rep.getStepAttributeString(idStep, "globalDimLensString");
+            loadNames = rep.getStepAttributeString(idStep, "loadNames");
+            modificationOrDeletionTime =
+                    rep.getStepAttributeString(idStep, "modificationOrDeletionTime");
         } catch (Exception e) {
             throw new KettleException(BaseMessages.getString(pkg,
                     "CarbonMDKeyStepMeta.Exception.UnexpectedErrorInReadingStepInfo"), e);
@@ -356,6 +386,10 @@ public class CarbonFactReaderMeta extends BaseStepMeta implements StepMetaInterf
                     aggregateTableName);
             rep.saveStepAttribute(idTransformation, idStep, "globalDimLensString",
                     globalDimLensString);
+            rep.saveStepAttribute(idTransformation, idStep, "loadNames",
+                    loadNames);
+            rep.saveStepAttribute(idTransformation, idStep, "modificationOrDeletionTime",
+                    modificationOrDeletionTime);
         } catch (Exception e) {
             throw new KettleException(BaseMessages
                     .getString(pkg, "TemplateStep.Exception.UnableToSaveStepInfoToRepository")
@@ -567,4 +601,23 @@ public class CarbonFactReaderMeta extends BaseStepMeta implements StepMetaInterf
         this.globalDimLens = globalDimLens;
     }
 
+    public void setModificationOrDeletionTime(String modificationOrDeletionTime) {
+        this.modificationOrDeletionTime = modificationOrDeletionTime;
+    }
+
+    /**
+     * set the load name
+     * @param loadNames
+     */
+    public void setLoadNames(String loadNames) {
+        this.loadNames = loadNames;
+    }
+
+    /**
+     * Returns the map having segment name as key & modification time as value.
+     * @return
+     */
+    public Map<String, Long> getLoadNameAndModificationTimeMap() {
+        return loadNameAndModificationTimeMap;
+    }
 }

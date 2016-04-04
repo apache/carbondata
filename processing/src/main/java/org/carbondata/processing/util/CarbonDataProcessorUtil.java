@@ -29,22 +29,24 @@ import java.util.*;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.carbon.CarbonDef;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.compression.MeasureMetaDataModel;
-import org.carbondata.core.datastorage.store.filesystem.HDFSCarbonFile;
-import org.carbondata.core.datastorage.store.filesystem.LocalCarbonFile;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
+import org.carbondata.core.datastorage.store.filesystem.HDFSCarbonFile;
+import org.carbondata.core.datastorage.store.filesystem.LocalCarbonFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
 import org.carbondata.core.keygenerator.KeyGenerator;
+import org.carbondata.core.load.LoadMetadataDetails;
 import org.carbondata.core.metadata.SliceMetaData;
-import org.carbondata.core.carbon.CarbonDef;
 import org.carbondata.core.util.*;
 import org.carbondata.processing.exception.CarbonDataProcessorException;
 import org.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.aggregator.impl.*;
+import org.carbondata.query.datastorage.InMemoryLoadTableUtil;
 import org.carbondata.query.datastorage.InMemoryTable;
 import org.carbondata.query.datastorage.InMemoryTableStore;
 import org.pentaho.di.core.CheckResult;
@@ -1197,5 +1199,56 @@ public final class CarbonDataProcessorUtil {
 
             }
         }
+    }
+
+    /**
+     * return loadName and modification timestamp map
+     */
+    public static Map<String, Long> getLoadNameAndModificationTimeMap(String[] loadNames,
+            String[] modOrDelTimes) {
+        Map<String, Long> loadNameAndModifiedOrDeletionTimeMap =
+                new HashMap<String, Long>(loadNames.length);
+        for (int i = 0; i < loadNames.length; i++) {
+            String modOrDelTimeStamp = modOrDelTimes[i];
+            Long modOrDelTimeValue = 0L;
+            if (null != modOrDelTimeStamp) {
+                modOrDelTimeValue = InMemoryLoadTableUtil.parseDeletionTime(modOrDelTimeStamp);
+            }
+            loadNameAndModifiedOrDeletionTimeMap.put(loadNames[i], modOrDelTimeValue);
+        }
+        return loadNameAndModifiedOrDeletionTimeMap;
+    }
+
+    /**
+     * return the modification TimeStamp Separated by HASH_SPC_CHARACTER
+     */
+    public static String getLoadNameFromLoadMetaDataDetails(
+            List<LoadMetadataDetails> loadMetadataDetails) {
+        StringBuilder builder = new StringBuilder();
+        for (LoadMetadataDetails loadMetadataDetail : loadMetadataDetails) {
+            builder.append(CarbonCommonConstants.LOAD_FOLDER)
+                    .append(loadMetadataDetail.getLoadName())
+                    .append(CarbonCommonConstants.HASH_SPC_CHARACTER);
+        }
+        String loadNames =
+                builder.substring(0, builder.lastIndexOf(CarbonCommonConstants.HASH_SPC_CHARACTER))
+                        .toString();
+        return loadNames;
+    }
+
+    /**
+     * return the modOrDelTimesStamp TimeStamp Separated by HASH_SPC_CHARACTER
+     */
+    public static String getModificationOrDeletionTimesFromLoadMetadataDetails(
+            List<LoadMetadataDetails> loadMetadataDetails) {
+        StringBuilder builder = new StringBuilder();
+        for (LoadMetadataDetails loadMetadataDetail : loadMetadataDetails) {
+            builder.append(loadMetadataDetail.getModificationOrdeletionTimesStamp())
+                    .append(CarbonCommonConstants.HASH_SPC_CHARACTER);
+        }
+        String modOrDelTimesStamp =
+                builder.substring(0, builder.indexOf(CarbonCommonConstants.HASH_SPC_CHARACTER))
+                        .toString();
+        return modOrDelTimesStamp;
     }
 }

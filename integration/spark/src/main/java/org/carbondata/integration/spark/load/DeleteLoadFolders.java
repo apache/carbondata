@@ -207,7 +207,7 @@ public final class DeleteLoadFolders {
             if (isForceDelete) {
                 return true;
             }
-            String deletionTime = oneLoad.getDeletionTimestamp();
+            String deletionTime = oneLoad.getModificationOrdeletionTimesStamp();
             SimpleDateFormat parser = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP);
             Date deletionDate = null;
             String date = null;

@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.carbon.CarbonDef;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
@@ -40,12 +41,11 @@ import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.carbondata.core.metadata.CarbonMetadata.Cube;
 import org.carbondata.core.metadata.CarbonMetadata.Dimension;
 import org.carbondata.core.metadata.CarbonSchemaReader;
-import org.carbondata.core.carbon.CarbonDef;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.CarbonUtilException;
 import org.carbondata.core.vo.HybridStoreModel;
-import org.carbondata.query.datastorage.cache.LevelInfo;
 import org.carbondata.query.datastorage.cache.CarbonLRULevelCache;
+import org.carbondata.query.datastorage.cache.LevelInfo;
 import org.carbondata.query.util.CacheUtil;
 import org.carbondata.query.util.CarbonEngineLogEvent;
 
@@ -63,10 +63,7 @@ public class InMemoryTable implements Comparable<InMemoryTable> {
      */
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(InMemoryTable.class.getName());
-    /**
-     *
-     *//*
-    private static long counter = 0;*/
+
 
     private static AtomicLong counter = new AtomicLong(0);
     /**
@@ -132,8 +129,17 @@ public class InMemoryTable implements Comparable<InMemoryTable> {
     private CarbonLRULevelCache levelCache;
     private Cube metaCube;
     private HybridStoreModel hybridStoreModel;
+    /**
+     *  segment modification time
+     */
+    private long modificationTime;
+    /**
+     * File store path
+     */
+    private String fileStore;
 
-    public InMemoryTable(CarbonDef.Schema schema, CarbonDef.Cube cube, Cube metaCube) {
+    public InMemoryTable(CarbonDef.Schema schema, CarbonDef.Cube cube, Cube metaCube,
+            String tableName, String fileStore, long modificationTime) {
         this.cubeName = cube.name;
         this.carbonCube = cube;
         this.schema = schema;
@@ -143,7 +149,12 @@ public class InMemoryTable implements Comparable<InMemoryTable> {
         this.id = counter.incrementAndGet();
         this.factTableName = CarbonSchemaReader.getFactTableName(cube);
         this.levelCache = CarbonLRULevelCache.getInstance();
+        this.tableName = tableName;
+        this.fileStore = fileStore;
+        this.modificationTime = modificationTime;
     }
+
+
 
     /**
      * CarbonCube
@@ -213,7 +224,7 @@ public class InMemoryTable implements Comparable<InMemoryTable> {
      * Load the cube cache from a file storage.
      *
      */
-    public void loadCacheFromFile(String fileStore, String tableName, boolean loadOnlyLevelFiles) {
+    public void loadCacheFromFile(boolean loadOnlyLevelFiles) {
         ExecutorService executorService = Executors.newFixedThreadPool(1);
         String cubeUniqueName = schemaName + '_' + cubeName;
         CarbonFile file = FileFactory.getCarbonFile(fileStore, FileFactory.getFileType(fileStore));
@@ -238,8 +249,7 @@ public class InMemoryTable implements Comparable<InMemoryTable> {
             keyGenerator = KeyGeneratorFactory
                     .getKeyGenerator(hybridStoreModel.getHybridCardinality(),
                             hybridStoreModel.getDimensionPartitioner());
-            int startAndEndKeySizeWithPrimitives = keyGenerator
-                    .getKeySizeInBytes();
+            int startAndEndKeySizeWithPrimitives = keyGenerator.getKeySizeInBytes();
             keyGenerator.setStartAndEndKeySizeWithOnlyPrimitives(startAndEndKeySizeWithPrimitives);
         }
         // Process fact and aggregate data cache
@@ -273,13 +283,16 @@ public class InMemoryTable implements Comparable<InMemoryTable> {
                         + CarbonCommonConstants.LEVEL_FILE_EXTENSION;
                 if (InMemoryTableStore.getInstance().isLevelCacheEnabled() && tableName
                         .equals(factTableName) && CacheUtil.isFileExists(fileName)) {
-                    long memberFileSize = CacheUtil.getMemberFileSize(fileName);
-                    LevelInfo levelInfo =
-                            new LevelInfo(memberFileSize, dimension.name, levelActualName,
-                                    factTableName, fileStore, loadFolderName);
-                    levelInfo.setLoaded(false);
-                    levelCache.put(cubeUniqueName + '_' + loadFolderName + '_' + levelActualName,
-                            levelInfo);
+                    String levelCacheKey =
+                            cubeUniqueName + '_' + loadFolderName + '_' + levelActualName;
+                    if (null == levelCache.get(levelCacheKey)) {
+                        long memberFileSize = CacheUtil.getMemberFileSize(fileName);
+                        LevelInfo levelInfo =
+                                new LevelInfo(memberFileSize, dimension.name, levelActualName,
+                                        factTableName, fileStore, loadFolderName);
+                        levelInfo.setLoaded(false);
+                        levelCache.put(levelCacheKey, levelInfo);
+                    }
                 } else {
                     cache.processCacheFromFileStore(fileStore, executorService);
                 }
@@ -294,7 +307,6 @@ public class InMemoryTable implements Comparable<InMemoryTable> {
         } catch (InterruptedException e) {
             LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
         }
-        this.tableName = tableName;
     }
 
     private int[] findRequiredDimensionForStartAndEndKey() {
@@ -552,5 +564,13 @@ public class InMemoryTable implements Comparable<InMemoryTable> {
 
     public HybridStoreModel getHybridStoreModel() {
         return this.hybridStoreModel;
+    }
+
+    /**
+     * return the segment modification time
+     * @return
+     */
+    public long getModificationTime() {
+        return modificationTime;
     }
 }

@@ -36,9 +36,9 @@ import org.carbondata.core.load.LoadMetadataDetails;
 import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
-import org.carbondata.integration.spark.load.DeleteLoadFolders;
 import org.carbondata.integration.spark.load.CarbonLoadModel;
 import org.carbondata.integration.spark.load.CarbonLoaderUtil;
+import org.carbondata.integration.spark.load.DeleteLoadFolders;
 import org.carbondata.integration.spark.util.LoadMetadataUtil;
 import org.carbondata.processing.merger.CarbonColumnarSliceMerger;
 import org.carbondata.processing.merger.CarbonSliceMergerInfo;
@@ -372,7 +372,8 @@ public final class CarbonDataMergerUtil {
                     first = false;
                 } else {
                     loadDetail.setLoadStatus(CarbonCommonConstants.MARKED_FOR_DELETE);
-                    loadDetail.setDeletionTimestamp(CarbonLoaderUtil.readCurrentTime());
+                    loadDetail.setModificationOrdeletionTimesStamp(
+                            CarbonLoaderUtil.readCurrentTime());
                 }
 
             }

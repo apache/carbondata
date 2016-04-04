@@ -19,12 +19,12 @@
 
 package org.carbondata.query.datastorage;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.metadata.SliceMetaData;
@@ -53,6 +53,18 @@ public class RestructureStore implements Comparable<RestructureStore> {
     private String folderName;
 
     private int restructureId;
+    /**
+     * Read/Write lock instance to allow concurrent read/write of segment cache.
+     */
+    private final ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
+    /**
+     * Read lock to allow concurrent read of segment cache.
+     */
+    private final Lock readLock = readWriteLock.readLock();
+    /**
+     * Write lock instance to allow concurrent write of segment cache.
+     */
+    private final Lock writeLock = readWriteLock.writeLock();
 
     public RestructureStore(final String name, final int restructureId) {
         folderName = name;
@@ -152,8 +164,7 @@ public class RestructureStore implements Comparable<RestructureStore> {
         return folderName;
     }
 
-    @Override
-    public int hashCode() {
+    @Override public int hashCode() {
         final int prime = 31;
         int result = 1;
         result = prime * result + ((folderName == null) ? 0 : folderName.hashCode());
@@ -163,8 +174,7 @@ public class RestructureStore implements Comparable<RestructureStore> {
     /* (non-Javadoc)
      * @see java.lang.Object#equals(java.lang.Object)
      */
-    @Override
-    public boolean equals(Object obj) {
+    @Override public boolean equals(Object obj) {
         if (obj instanceof RestructureStore) {
             if (this == obj) {
                 return true;
@@ -210,8 +220,60 @@ public class RestructureStore implements Comparable<RestructureStore> {
         this.sliceMetaPathMap.put(tableName, sliceMetaDataPath);
     }
 
-    @Override
-    public int compareTo(RestructureStore arg0) {
+    @Override public int compareTo(RestructureStore arg0) {
         return restructureId - arg0.restructureId;
+    }
+
+    /**
+     * Populates the list of the active segments in activeInMemTableList.
+     */
+    public void getActiveSlicesByTableName(List<InMemoryTable> activeInMemTableList,
+            String factTableName) {
+        List<InMemoryTable> inMemoryTables = slices.get(factTableName);
+        if (null != inMemoryTables) {
+            try {
+                readLock.lock();
+                for (InMemoryTable inMemoryTable : inMemoryTables) {
+                    if (inMemoryTable.isActive()) {
+                        activeInMemTableList.add(inMemoryTable);
+                    }
+                }
+            } finally {
+                readLock.unlock();
+            }
+
+        }
+    }
+
+    /**
+     * Removes segments for the given table from the store
+     */
+    public void removeSlice(List<InMemoryTable> listOfSliceToBeRemoved, String tableName) {
+        try {
+            writeLock.lock();
+            List<InMemoryTable> inMemoryTables = slices.get(tableName);
+            for (InMemoryTable inMemoryTable : listOfSliceToBeRemoved) {
+                inMemoryTables.remove(inMemoryTable);
+            }
+        } finally {
+            writeLock.unlock();
+        }
+
+    }
+
+    /**
+     * Sort the segments based on the segment name
+     */
+    public void sortSliceBasedOnLoadName(String tableName) {
+
+        try {
+            writeLock.lock();
+            List<InMemoryTable> inMemoryTables = slices.get(tableName);
+            if (null != inMemoryTables) {
+                Collections.sort(inMemoryTables);
+            }
+        } finally {
+            writeLock.unlock();
+        }
     }
 }

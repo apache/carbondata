@@ -25,15 +25,16 @@ import java.util.Set;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.carbon.CarbonDef;
+import org.carbondata.core.carbon.SqlStatement.Type;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
+import org.carbondata.core.load.LoadMetadataDetails;
 import org.carbondata.core.metadata.CarbonMetadata.Cube;
 import org.carbondata.core.metadata.CarbonMetadata.Dimension;
-import org.carbondata.core.carbon.CarbonDef;
-import org.carbondata.core.carbon.SqlStatement.Type;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.processing.suggest.autoagg.AutoAggSuggestionFactory;
@@ -48,6 +49,7 @@ import org.carbondata.query.executer.QueryExecutor;
 import org.carbondata.query.executer.impl.QueryExecutorImpl;
 import org.carbondata.query.expression.DataType;
 import org.carbondata.query.querystats.Preference;
+import org.carbondata.query.scope.QueryScopeObject;
 import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
@@ -173,20 +175,22 @@ public final class DataStatsUtil {
 
     }
 
-    public static QueryExecutor getQueryExecuter(Cube cube, String factTable) {
+    public static QueryExecutor getQueryExecuter(Cube cube, String factTable,
+            QueryScopeObject queryScopeObject) {
         QueryExecutor executer =
                 new QueryExecutorImpl(cube.getDimensions(factTable), cube.getSchemaName(),
-                        cube.getOnlyCubeName());
+                        cube.getOnlyCubeName(), queryScopeObject);
         return executer;
 
     }
 
-    public static void createDataSource(CarbonDef.Schema schema, Cube cube, String partitionID,
-            List<String> sliceLoadPaths, String factTableName, List<String> validUpdateSlices,
-            String dataPath, int restructureNo, long cubeCreationTime) {
-        InMemoryTableStore.getInstance()
-                .loadCube(schema, cube, partitionID, sliceLoadPaths, validUpdateSlices,
-                        factTableName, dataPath, restructureNo, cubeCreationTime);
+    public static QueryScopeObject createDataSource(CarbonDef.Schema schema, Cube cube,
+            String partitionID, List<String> sliceLoadPaths, String factTableName, String dataPath,
+            int restructureNo, long cubeCreationTime, LoadMetadataDetails[] loadMetadataDetails) {
+        QueryScopeObject queryScopeObject = InMemoryTableStore.getInstance()
+                .loadCube(schema, cube, partitionID, sliceLoadPaths, factTableName, dataPath,
+                        restructureNo, cubeCreationTime, loadMetadataDetails);
+        return queryScopeObject;
 
     }
 

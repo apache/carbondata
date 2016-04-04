@@ -24,15 +24,15 @@ import java.util.*;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.carbon.CarbonDef.Cube;
+import org.carbondata.core.carbon.CarbonDef.CubeDimension;
+import org.carbondata.core.carbon.CarbonDef.Measure;
+import org.carbondata.core.carbon.CarbonDef.Schema;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.csvreader.checkpoint.CheckPointHanlder;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.carbondata.core.metadata.SliceMetaData;
-import org.carbondata.core.carbon.CarbonDef.Cube;
-import org.carbondata.core.carbon.CarbonDef.CubeDimension;
-import org.carbondata.core.carbon.CarbonDef.Measure;
-import org.carbondata.core.carbon.CarbonDef.Schema;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.CarbonUtilException;
@@ -95,6 +95,17 @@ public class GraphGenerator {
      * drivers
      */
     private static final Map<String, String> DRIVERS;
+
+    /**
+     * Segment names
+     */
+    private String loadNames;
+
+    /**
+     *  map having segment name  as key and segment Modification time stamp as value
+     */
+    private String modificationOrDeletionTime;
+
     /**
      * Comment for <code>LOGGER</code>
      */
@@ -207,6 +218,8 @@ public class GraphGenerator {
                 Boolean.parseBoolean(CarbonCommonConstants.IS_COLUMNAR_STORAGE_DEFAULTVALUE);
         this.currentRestructNumber = currentRestructNum;
         this.allocate = allocate > 1 ? allocate : 1;
+        this.loadNames = dataLoadModel.getLoadNames();
+        this.modificationOrDeletionTime = dataLoadModel.getModificationOrDeletionTime();
         initialise();
         LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                 "************* Is Columnar Storage" + isColumnar);
@@ -822,6 +835,8 @@ public class GraphGenerator {
         meta.setAggTables(this.tableName);
         meta.setFactTableName(tableName);
         meta.setAutoMode(Boolean.toString(schemaInfo.isAutoAggregateRequest()));
+        meta.setLoadNames(this.loadNames);
+        meta.setModificationOrDeletionTime(this.modificationOrDeletionTime);
 
         StepMeta aggTableMeta = new StepMeta(GraphGeneratorConstants.CARBON_AUTO_AGG_GRAPH_GENERATOR,
                 (StepMetaInterface) meta);
@@ -846,6 +861,8 @@ public class GraphGenerator {
         factReader.setSchemaName(schemaName);
         factReader.setSchema(schema.toXML());
         factReader.setPartitionID(partitionID);
+        factReader.setLoadNames(this.loadNames);
+        factReader.setModificationOrDeletionTime(this.modificationOrDeletionTime);
         String[] factDimensions = configurationInfo.getDimensions();
         factReader.setDimLensString(CarbonDataProcessorUtil.getLevelCardinalitiesString(dimLens));
         SliceMetaData sliceMetaData =

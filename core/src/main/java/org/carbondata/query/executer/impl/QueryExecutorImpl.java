@@ -59,16 +59,18 @@ import org.carbondata.query.scanner.impl.CarbonValue;
 import org.carbondata.query.schema.metadata.DimColumnFilterInfo;
 import org.carbondata.query.schema.metadata.FilterEvaluatorInfo;
 import org.carbondata.query.schema.metadata.SliceExecutionInfo;
-import org.carbondata.query.util.DataTypeConverter;
+import org.carbondata.query.scope.QueryScopeObject;
 import org.carbondata.query.util.CarbonEngineLogEvent;
+import org.carbondata.query.util.DataTypeConverter;
 import org.carbondata.query.util.QueryExecutorUtility;
 
 public class QueryExecutorImpl extends AbstractQueryExecutor {
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(QueryExecutorImpl.class.getName());
 
-    public QueryExecutorImpl(List<Dimension> dimList, String schemaName, String cubeName) {
-        super(dimList, schemaName, cubeName);
+    public QueryExecutorImpl(List<Dimension> dimList, String schemaName, String cubeName,
+            QueryScopeObject queryScopeObject) {
+        super(dimList, schemaName, cubeName, queryScopeObject);
     }
 
     @Override

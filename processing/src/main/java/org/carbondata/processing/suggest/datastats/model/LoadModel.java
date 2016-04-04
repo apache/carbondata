@@ -21,8 +21,9 @@ package org.carbondata.processing.suggest.datastats.model;
 
 import java.util.List;
 
-import org.carbondata.core.metadata.CarbonMetadata.Cube;
 import org.carbondata.core.carbon.CarbonDef;
+import org.carbondata.core.load.LoadMetadataDetails;
+import org.carbondata.core.metadata.CarbonMetadata.Cube;
 
 public class LoadModel {
     private CarbonDef.Schema schema;
@@ -54,6 +55,11 @@ public class LoadModel {
     private long cubeCreationtime;
 
     private long schemaLastUpdatedTime;
+
+    /**
+     * Array of LoadMetadataDetails
+     */
+    private LoadMetadataDetails[] loadMetadataDetails;
 
     /**
      * this will have all load of store
@@ -206,4 +212,17 @@ public class LoadModel {
         this.schemaLastUpdatedTime = schemaLastUpdatedTime;
     }
 
+    /**
+     *  return loadMetadata Details
+     */
+    public LoadMetadataDetails[] getLoadMetadataDetails() {
+        return loadMetadataDetails;
+    }
+
+    /**
+     * Set loadMetadataDetails
+     */
+    public void setLoadMetadataDetails(LoadMetadataDetails[] loadMetadataDetails) {
+        this.loadMetadataDetails = loadMetadataDetails;
+    }
 }

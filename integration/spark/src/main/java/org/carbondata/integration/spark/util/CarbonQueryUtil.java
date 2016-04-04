@@ -27,9 +27,15 @@ import java.util.*;
 import java.util.Map.Entry;
 
 import com.google.gson.Gson;
-
+import org.apache.spark.sql.SparkUnknownExpression;
+import org.apache.spark.sql.cubemodel.Partitioner;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.carbon.CarbonDef;
+import org.carbondata.core.carbon.CarbonDef.CubeDimension;
+import org.carbondata.core.carbon.CarbonDef.Schema;
+import org.carbondata.core.carbon.CarbonDef.Table;
+import org.carbondata.core.carbon.SqlStatement.Type;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.fileperations.AtomicFileOperations;
 import org.carbondata.core.datastorage.store.fileperations.AtomicFileOperationsImpl;
@@ -42,11 +48,6 @@ import org.carbondata.core.metadata.CarbonMetadata;
 import org.carbondata.core.metadata.CarbonMetadata.Cube;
 import org.carbondata.core.metadata.CarbonMetadata.Dimension;
 import org.carbondata.core.metadata.CarbonMetadata.Measure;
-import org.carbondata.core.carbon.CarbonDef;
-import org.carbondata.core.carbon.CarbonDef.CubeDimension;
-import org.carbondata.core.carbon.CarbonDef.Schema;
-import org.carbondata.core.carbon.CarbonDef.Table;
-import org.carbondata.core.carbon.SqlStatement.Type;
 import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
@@ -58,12 +59,12 @@ import org.carbondata.integration.spark.query.CarbonQueryPlan;
 import org.carbondata.integration.spark.query.metadata.*;
 import org.carbondata.integration.spark.splits.TableSplit;
 import org.carbondata.processing.util.CarbonSchemaParser;
-import org.carbondata.query.aggregator.CustomMeasureAggregator;
 import org.carbondata.query.aggregator.CustomCarbonAggregateExpression;
+import org.carbondata.query.aggregator.CustomMeasureAggregator;
 import org.carbondata.query.aggregator.dimension.DimensionAggregatorInfo;
 import org.carbondata.query.datastorage.InMemoryTableStore;
-import org.carbondata.query.directinterface.impl.MeasureSortModel;
 import org.carbondata.query.directinterface.impl.CarbonQueryParseUtil;
+import org.carbondata.query.directinterface.impl.MeasureSortModel;
 import org.carbondata.query.executer.CarbonQueryExecutorModel;
 import org.carbondata.query.executer.QueryExecutor;
 import org.carbondata.query.executer.impl.QueryExecutorImpl;
@@ -74,9 +75,7 @@ import org.carbondata.query.filters.likefilters.FilterLikeExpressionIntf;
 import org.carbondata.query.filters.metadata.ContentMatchFilterInfo;
 import org.carbondata.query.holders.CarbonResultHolder;
 import org.carbondata.query.queryinterface.filter.CarbonFilterInfo;
-
-import org.apache.spark.sql.SparkUnknownExpression;
-import org.apache.spark.sql.cubemodel.Partitioner;
+import org.carbondata.query.scope.QueryScopeObject;
 
 /**
  * This utilty parses the Carbon query plan to actual query model object.
@@ -132,6 +131,7 @@ public final class CarbonQueryUtil {
         Gson gsonObjectToRead = new Gson();
         AtomicFileOperations fileOperation =
                 new AtomicFileOperationsImpl(dataPath, FileFactory.getFileType(dataPath));
+        LoadMetadataDetails[] loadFolderDetailsArray;
         try {
             if (FileFactory.isFileExist(dataPath, FileFactory.getFileType(dataPath))) {
 
@@ -140,9 +140,10 @@ public final class CarbonQueryUtil {
                 BufferedReader buffReader =
                         new BufferedReader(new InputStreamReader(dataInputStream, "UTF-8"));
 
-                LoadMetadataDetails[] loadFolderDetailsArray =
+                 loadFolderDetailsArray =
                         gsonObjectToRead.fromJson(buffReader, LoadMetadataDetails[].class);
                 List<String> listOfValidUpdatedSlices = new ArrayList<String>(10);
+                List<String> listOfAllLoadFolders = new ArrayList<String>(loadFolderDetailsArray.length);
                 //just directly iterate Array
                 List<LoadMetadataDetails> loadFolderDetails = Arrays.asList(loadFolderDetailsArray);
 
@@ -177,12 +178,21 @@ public final class CarbonQueryUtil {
                         listOfValidSlices.add(loadMetadataDetails.getLoadName());
 
                     }
+                    if (!CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
+                            .equalsIgnoreCase(loadMetadataDetails.getLoadStatus())) {
+                        listOfAllLoadFolders
+                                .add(CarbonCommonConstants.LOAD_FOLDER + loadMetadataDetails
+                                        .getLoadName());
+                    }
                 }
                 executerModel.setListValidSliceNumbers(listOfValidSlices);
                 executerModel.setListValidUpdatedSlice(listOfValidUpdatedSlices);
-                executerModel.setLoadMetadataDetails(loadFolderDetailsArray);
+                executerModel.setListOfAllLoadFolder(listOfAllLoadFolders);
             }
-
+            else {
+                loadFolderDetailsArray = new LoadMetadataDetails[0];
+            }
+            executerModel.setLoadMetadataDetails(loadFolderDetailsArray);
         } catch (IOException e) {
             LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "IO Exception @: " + e.getMessage());
         } finally {
@@ -805,22 +815,23 @@ public final class CarbonQueryUtil {
     }
 
     public static void createDataSource(int currentRestructNumber, Schema schema, Cube cube,
-            String partitionID, List<String> sliceLoadPaths, List<String> sliceUpdatedLoadPaths,
-            String factTableName, long cubeCreationTime) {
+            String partitionID, List<String> sliceLoadPaths, String factTableName,
+            long cubeCreationTime, LoadMetadataDetails[] loadMetadataDetails) {
         String basePath = CarbonUtil.getCarbonStorePath(schema.name, schema.cubes[0].name);
         InMemoryTableStore.getInstance().
                 loadCubeMetadataIfRequired(schema, schema.cubes[0], partitionID, cubeCreationTime);
         InMemoryTableStore.getInstance()
-                .loadCube(schema, cube, partitionID, sliceLoadPaths, sliceUpdatedLoadPaths,
-                        factTableName, basePath, currentRestructNumber, cubeCreationTime);
+                .loadCube(schema, cube, partitionID, sliceLoadPaths, factTableName, basePath,
+                        currentRestructNumber, cubeCreationTime, loadMetadataDetails);
     }
 
-    public static void createDataSource(int currentRestructNumber, Schema schema, Cube cube,
-            String partitionID, List<String> sliceLoadPaths, List<String> sliceUpdatedLoadPaths,
-            String factTableName, String basePath, long cubeCreationTime) {
-        InMemoryTableStore.getInstance()
-                .loadCube(schema, cube, partitionID, sliceLoadPaths, sliceUpdatedLoadPaths,
-                        factTableName, basePath, currentRestructNumber, cubeCreationTime);
+    public static QueryScopeObject createDataSource(int currentRestructNumber, Schema schema,
+            Cube cube, String partitionID, List<String> sliceLoadPaths, String factTableName,
+            String basePath, long cubeCreationTime, LoadMetadataDetails[] loadMetadataDetails) {
+        QueryScopeObject queryScopeObject = InMemoryTableStore.getInstance()
+                .loadCube(schema, cube, partitionID, sliceLoadPaths, factTableName, basePath,
+                        currentRestructNumber, cubeCreationTime, loadMetadataDetails);
+        return queryScopeObject;
     }
 
     public static Schema updateSchemaWithPartition(Schema schema, String partitionID) {
@@ -862,10 +873,10 @@ public final class CarbonQueryUtil {
         return metaTableColumns.toArray(new String[metaTableColumns.size()]);
     }
 
-    public static QueryExecutor getQueryExecuter(Cube cube, String factTable) {
+    public static QueryExecutor getQueryExecuter(Cube cube, String factTable, QueryScopeObject queryScopeObject) {
         QueryExecutor executer =
                 new QueryExecutorImpl(cube.getDimensions(factTable), cube.getSchemaName(),
-                        cube.getOnlyCubeName());
+                        cube.getOnlyCubeName(), queryScopeObject);
         return executer;
     }
 

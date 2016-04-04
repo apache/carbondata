@@ -187,9 +187,11 @@ class CarbonDataLoadRDD[K, V](
           var listOfLoadFolders = CarbonLoaderUtil.getListOfValidSlices(details)
           listOfLoadFolders = CarbonLoaderUtil.addNewSliceNameToList(newSlice, listOfLoadFolders);
           val listOfUpdatedLoadFolders = CarbonLoaderUtil.getListOfUpdatedSlices(details)
+          var listOfAllLoadFolders = CarbonQueryUtil.getListOfSlices(details)
+          listOfAllLoadFolders = CarbonLoaderUtil.addNewSliceNameToList(newSlice, listOfAllLoadFolders)
           val copyListOfLoadFolders = listOfLoadFolders.toList
           val copyListOfUpdatedLoadFolders = listOfUpdatedLoadFolders.toList
-          loadCubeSlices(listOfLoadFolders, listOfUpdatedLoadFolders)
+          loadCubeSlices(listOfAllLoadFolders, details)
           var loadFolders = Array[String]()
           val loadFolder = CarbonLoaderUtil.getAggLoadFolderLocation(newSlice, model.getSchemaName, model.getCubeName, model.getTableName, hdfsStoreLocation, currentRestructNumber)
           if (null != loadFolder) {
@@ -208,19 +210,18 @@ class CarbonDataLoadRDD[K, V](
         return dataloadStatus
       }
 
-      def loadCubeSlices(listOfLoadFolders: java.util.List[String], listOfUpdatedLoadFolders: java.util.List[String]) = {
+      def loadCubeSlices(listOfAllLoadFolders: java.util.List[String], loadMetadataDetails: Array[LoadMetadataDetails]) = {
         CarbonProperties.getInstance().addProperty("carbon.cache.used", "false");
         val cube = InMemoryTableStore.getInstance.loadCubeMetadataIfRequired(model.getSchema, model.getSchema.cubes(0), null, schemaLastUpdatedTime)
-        CarbonQueryUtil.createDataSource(currentRestructNumber, model.getSchema, cube, null, listOfLoadFolders, listOfUpdatedLoadFolders, model.getTableName, hdfsStoreLocation, cubeCreationTime)
+        CarbonQueryUtil.createDataSource(currentRestructNumber, model.getSchema, cube, null, listOfAllLoadFolders, model.getTableName, hdfsStoreLocation, cubeCreationTime, loadMetadataDetails)
       }
 
       def createManualAggregateTable(): String = {
         val details = model.getLoadMetadataDetails.toSeq.toArray
+        val listOfAllLoadFolders = CarbonQueryUtil.getListOfSlices(details)
         val listOfLoadFolders = CarbonLoaderUtil.getListOfValidSlices(details)
         val listOfUpdatedLoadFolders = CarbonLoaderUtil.getListOfUpdatedSlices(details)
-        val copyListOfLoadFolders = listOfLoadFolders.toList
-        val copyListOfUpdatedLoadFolders = listOfUpdatedLoadFolders.toList
-        loadCubeSlices(listOfLoadFolders, listOfUpdatedLoadFolders)
+        loadCubeSlices(listOfAllLoadFolders, details)
         var loadFolders = Array[String]()
         var restructFolders = Array[String]()
         for (number <- 0 to currentRestructNumber) {
@@ -228,7 +229,7 @@ class CarbonDataLoadRDD[K, V](
           loadFolders = loadFolders ++ restructFolders
         }
         val aggTable = model.getAggTableName
-        dataloadStatus = loadAggregationTable(copyListOfLoadFolders, copyListOfUpdatedLoadFolders, loadFolders)
+        dataloadStatus = loadAggregationTable(listOfLoadFolders, listOfUpdatedLoadFolders, loadFolders)
         if (CarbonCommonConstants.STORE_LOADSTATUS_FAILURE.equals(dataloadStatus)) {
           logInfo(s"Aggregate table creation failed :: $aggTable")
         } else {
@@ -244,18 +245,17 @@ class CarbonDataLoadRDD[K, V](
           val details = model.getLoadMetadataDetails.toSeq.toArray
           val listOfLoadFolders = CarbonLoaderUtil.getListOfValidSlices(details)
           val listOfUpdatedLoadFolders = CarbonLoaderUtil.getListOfUpdatedSlices(details)
-          val copyListOfLoadFolders = listOfLoadFolders.toList
-          val copyListOfUpdatedLoadFolders = listOfUpdatedLoadFolders.toList
-          loadCubeSlices(listOfLoadFolders, listOfUpdatedLoadFolders)
+          val listOfAllLoadFolder = CarbonQueryUtil.getListOfSlices(details)
+          loadCubeSlices(listOfAllLoadFolder, details)
           var loadFolders = Array[String]()
-          copyListOfUpdatedLoadFolders.foreach { sliceNum =>
+          listOfUpdatedLoadFolders.foreach { sliceNum =>
             val newSlice = CarbonCommonConstants.LOAD_FOLDER + sliceNum
             val loadFolder = CarbonLoaderUtil.getAggLoadFolderLocation(newSlice, model.getSchemaName, model.getCubeName, model.getTableName, hdfsStoreLocation, currentRestructNumber)
             if (null != loadFolder) {
               loadFolders :+= loadFolder
             }
           }
-          iterateOverAggTables(aggTables, copyListOfLoadFolders, copyListOfUpdatedLoadFolders, loadFolders)
+          iterateOverAggTables(aggTables, listOfLoadFolders, listOfUpdatedLoadFolders, loadFolders)
         }
       }
 
