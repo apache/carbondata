@@ -23,8 +23,7 @@ import java.util.Set;
 
 import org.carbondata.core.carbon.metadata.datatype.ConvertedType;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
-import org.carbondata.core.carbon.metadata.encoder.Encoder;
-import org.carbondata.core.carbon.metadata.schema.aggregator.Aggregator;
+import org.carbondata.core.carbon.metadata.encoder.Encoding;
 
 /**
  * Store the information about the column meta data present the table
@@ -61,9 +60,9 @@ public class ColumnSchema implements Serializable {
     private boolean isColumnar = true;
 
     /**
-     * List of encoders that are chained to encode the data for this column
+     * List of encoding that are chained to encode the data for this column
      */
-    private Set<Encoder> encoderList;
+    private Set<Encoding> encodingList;
 
     /**
      * Whether the column is a dimension or measure
@@ -98,9 +97,9 @@ public class ColumnSchema implements Serializable {
     private int numberOfChild;
 
     /**
-     * Used when this column is part of an aggregate table.
+     * Used when this column is part of an aggregate function.
      */
-    private Aggregator aggregator;
+    private String aggregateFunction;
 
     /**
      * used in case of schema restructuring
@@ -147,20 +146,6 @@ public class ColumnSchema implements Serializable {
      */
     public void setColumnar(boolean isColumnar) {
         this.isColumnar = isColumnar;
-    }
-
-    /**
-     * @return the encoderList
-     */
-    public Set<Encoder> getEncoderList() {
-        return encoderList;
-    }
-
-    /**
-     * @param encoderList the encoderList to set
-     */
-    public void setEncoderList(Set<Encoder> encoderList) {
-        this.encoderList = encoderList;
     }
 
     /**
@@ -250,15 +235,15 @@ public class ColumnSchema implements Serializable {
     /**
      * @return the aggregator
      */
-    public Aggregator getAggregator() {
-        return aggregator;
+    public String getAggregateFunction() {
+        return aggregateFunction;
     }
 
     /**
      * @param aggregator the aggregator to set
      */
-    public void setAggregator(Aggregator aggregator) {
-        this.aggregator = aggregator;
+    public void setAggregateFunction(String aggregateFunction) {
+        this.aggregateFunction = aggregateFunction;
     }
 
     /**
@@ -323,4 +308,18 @@ public class ColumnSchema implements Serializable {
     public void setDataType(DataType dataType) {
         this.dataType = dataType;
     }
+
+	/**
+	 * @return the encoderList
+	 */
+	public Set<Encoding> getEncodingList() {
+		return encodingList;
+	}
+
+	/**
+	 * @param encoderList the encoderList to set
+	 */
+	public void setEncodintList(Set<Encoding> encodingList) {
+		this.encodingList = encodingList;
+	}
 }

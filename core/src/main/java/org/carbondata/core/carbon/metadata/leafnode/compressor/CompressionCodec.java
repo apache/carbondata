@@ -28,8 +28,4 @@ public enum CompressionCodec {
      * snappy compression
      */
     SNAPPY,
-    /**
-     * lzo compression
-     */
-    LZO,
 }

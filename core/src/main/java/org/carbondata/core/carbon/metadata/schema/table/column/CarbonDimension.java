@@ -21,8 +21,9 @@ package org.carbondata.core.carbon.metadata.schema.table.column;
 import java.io.Serializable;
 import java.util.Set;
 
+import org.carbondata.core.carbon.metadata.datatype.ConvertedType;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
-import org.carbondata.core.carbon.metadata.encoder.Encoder;
+import org.carbondata.core.carbon.metadata.encoder.Encoding;
 
 /**
  * class to represent column(dimension) in table
@@ -52,12 +53,22 @@ public class CarbonDimension implements Serializable {
      * table ordinal
      */
     protected int ordinal;
+    
+    /**
+     * default value for in case of restructuring will be used 
+     * when older segment does not have particular column
+     */
+    protected byte[] defaultValue;
 
     public CarbonDimension(ColumnSchema columnSchema, int ordinal) {
         this.columnSchema = columnSchema;
         this.ordinal = ordinal;
     }
 
+    public ConvertedType getConvertedType()
+    {
+    	return columnSchema.getConvertedType();
+    }
     /**
      * @return column unique id
      */
@@ -124,8 +135,8 @@ public class CarbonDimension implements Serializable {
     /**
      * @return the list of encoder used in dimension
      */
-    public Set<Encoder> getEncoder() {
-        return columnSchema.getEncoderList();
+    public Set<Encoding> getEncoder() {
+        return columnSchema.getEncodingList();
     }
 
     /**
@@ -143,6 +154,20 @@ public class CarbonDimension implements Serializable {
     }
 
     /**
+	 * @return the defaultValue
+	 */
+	public byte[] getDefaultValue() {
+		return defaultValue;
+	}
+
+	/**
+	 * @param defaultValue the defaultValue to set
+	 */
+	public void setDefaultValue(byte[] defaultValue) {
+		this.defaultValue = defaultValue;
+	}
+
+	/**
      * to generate the hash code for this class
      */
     @Override public int hashCode() {

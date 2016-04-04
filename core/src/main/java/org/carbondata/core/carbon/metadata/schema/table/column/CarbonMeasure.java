@@ -18,7 +18,6 @@
  */
 package org.carbondata.core.carbon.metadata.schema.table.column;
 
-import org.carbondata.core.carbon.metadata.schema.aggregator.Aggregator;
 
 /**
  * class represent column(measure) in table
@@ -31,12 +30,14 @@ public class CarbonMeasure extends CarbonDimension {
     private static final long serialVersionUID = 354341488059013977L;
 
     /**
-     * aggregator choosen for measure
+     * aggregator chosen for measure
      */
-    private Aggregator aggregator;
+    private String aggregateFunction;
 
     /**
-     * minValue
+     * minValue for this measure this is required to support distinct count query when 
+     * data type of is integer, and this is object as we are supporting different type of 
+     * data type like BigDecimal,long,double,etc.
      */
     private Object minValue;
 
@@ -80,8 +81,8 @@ public class CarbonMeasure extends CarbonDimension {
     /**
      * @return the aggregator
      */
-    public Aggregator getAggregator() {
-        return aggregator;
+    public String getAggregateFunction() {
+        return aggregateFunction;
     }
 
     /**

@@ -21,7 +21,7 @@ package org.carbondata.core.carbon.metadata.leafnode.datachunk;
 import java.io.Serializable;
 import java.util.List;
 
-import org.carbondata.core.carbon.metadata.encoder.Encoder;
+import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.carbon.metadata.leafnode.compressor.ChunkCompressorMeta;
 import org.carbondata.core.carbon.metadata.leafnode.sort.SortState;
 
@@ -105,7 +105,7 @@ public class DataChunk implements Serializable {
     /**
      * The List of encoders overriden at node level
      */
-    private List<Encoder> encoderList;
+    private List<Encoding> encodingList;
 
     /**
      * extra information required by encoders
@@ -297,15 +297,15 @@ public class DataChunk implements Serializable {
     /**
      * @return the encoderList
      */
-    public List<Encoder> getEncoderList() {
-        return encoderList;
+    public List<Encoding> getEncodingList() {
+        return encodingList;
     }
 
     /**
      * @param encoderList the encoderList to set
      */
-    public void setEncoderList(List<Encoder> encoderList) {
-        this.encoderList = encoderList;
+    public void setEncoderList(List<Encoding> encodingList) {
+        this.encodingList = encodingList;
     }
 
     /**

@@ -35,7 +35,7 @@ public class ChunkCompressorMeta implements Serializable {
     /**
      * data chunk compressor
      */
-    private CompressorInfo compressor;
+    private CompressionCodec compressor;
 
     /**
      * total byte size of all uncompressed pages in this column chunk (including the headers)
@@ -50,14 +50,14 @@ public class ChunkCompressorMeta implements Serializable {
     /**
      * @return the compressor
      */
-    public CompressorInfo getCompressor() {
+    public CompressionCodec getCompressorCodec() {
         return compressor;
     }
 
     /**
      * @param compressor the compressor to set
      */
-    public void setCompressor(CompressorInfo compressor) {
+    public void setCompressor(CompressionCodec compressor) {
         this.compressor = compressor;
     }
 

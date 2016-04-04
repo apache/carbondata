@@ -24,11 +24,9 @@ import java.util.List;
 import java.util.Set;
 
 import junit.framework.TestCase;
+
 import org.carbondata.core.carbon.metadata.datatype.DataType;
-import org.carbondata.core.carbon.metadata.encoder.Encoder;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
-import org.carbondata.core.carbon.metadata.schema.aggregator.AggregateFunction;
-import org.carbondata.core.carbon.metadata.schema.aggregator.Aggregator;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.carbondata.core.constants.CarbonCommonConstants;
@@ -81,21 +79,17 @@ public class CarbonTableTest extends TestCase {
         dimColumn.setColumnUniqueId(1);
         dimColumn.setDataType(DataType.STRING);
         dimColumn.setDimensionColumn(true);
-        Set<Encoder> encodeList =
-                new HashSet<Encoder>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-        Encoder encoder = new Encoder();
-        encoder.setEncoding(Encoding.DICONARY);
-        encodeList.add(encoder);
-        dimColumn.setEncoderList(encodeList);
+        Set<Encoding> encodeList =
+                new HashSet<Encoding>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+        encodeList.add(Encoding.DICONARY);
+        dimColumn.setEncodintList(encodeList);
         dimColumn.setNumberOfChild(0);
         return dimColumn;
     }
 
     private ColumnSchema getColumnarMeasureColumn() {
         ColumnSchema dimColumn = new ColumnSchema();
-        Aggregator aggregator = new Aggregator();
-        aggregator.setAggregateFunction(AggregateFunction.SUM);
-        dimColumn.setAggregator(aggregator);
+        dimColumn.setAggregateFunction("SUM");
         dimColumn.setColumnName("IMEI_COUNT");
         dimColumn.setColumnUniqueId(1);
         dimColumn.setDataType(DataType.STRING);
