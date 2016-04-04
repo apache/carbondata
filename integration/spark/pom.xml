@@ -34,7 +34,11 @@
     </repositories>
 
     <dependencies>
-
+        <dependency>
+            <groupId>com.databricks</groupId>
+            <artifactId>spark-csv_${scala.binary.version}</artifactId>
+            <version>1.4.0</version>
+        </dependency>
         <dependency>
             <groupId>org.carbondata</groupId>
             <artifactId>carbon-common</artifactId>
@@ -144,6 +148,13 @@
                             <goal>compile</goal>
                         </goals>
                         <phase>compile</phase>
+                    </execution>
+                    <execution>
+                        <id>testCompile</id>
+                        <goals>
+                            <goal>testCompile</goal>
+                        </goals>
+                        <phase>test</phase>
                     </execution>
                     <execution>
                         <phase>process-resources</phase>
