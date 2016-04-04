@@ -29,11 +29,11 @@ enum DataType {
 	STRING = 0,
 	INTEGER = 1,
 	LONG = 2,
-	DECIMAL = 3,
+	DOUBLE = 3,
 	BIG_DECIMAL = 4,
 	TIME_STAMP = 5,
-	ARRAY = 6,
-	STRUCT = 7,
+	ARRAY = 20,
+	STRUCT = 21,
 }
 
 /**
