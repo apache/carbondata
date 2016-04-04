@@ -54,4 +54,6 @@ public interface CarbonFile {
     long getLastModifiedTime();
 
     boolean setLastModifiedTime(long timestamp);
+
+    boolean truncate(String fileName, long validDataEndOffset);
 }

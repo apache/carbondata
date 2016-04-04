@@ -1414,6 +1414,16 @@ public final class CarbonCommonConstants {
      */
     public static final char FILE_SEPARATOR_CHAR = '/';
 
+    /**
+     * maximum dictionary chunk size that can be kept in memory while writing dictionary file
+     */
+    public static final String DICTIONARY_ONE_CHUNK_SIZE = "carbon.dictionary.chunk.size";
+
+    /**
+     * dictionary chunk default size
+     */
+    public static final String DICTIONARY_ONE_CHUNK_SIZE_DEFAULT = "10000";
+
     private CarbonCommonConstants() {
 
     }

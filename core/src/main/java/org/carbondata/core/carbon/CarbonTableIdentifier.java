@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -17,14 +17,42 @@
  * under the License.
  */
 
-/**
- * File format description for carbon dictionary file
- */
-namespace java org.carbondata.format
+package org.carbondata.core.carbon;
 
-struct ColumnDictionaryChunkMeta {
-	1: required i32 min_surrogate_key; //The least surrogate key in this dictionary, in most cases min will be 0, but after history data deletion, min can be non-zero
-	2: required i32 max_surrogate_key; //The Max surrogate key to be stored , so that next load can continue ID generation from this number.
-	3: required i64 start_offset; // The start offset of this dictionary
-	4: optional i64 segment_id; // the mapping of this dictionary chunk to the corresponding segment of the table, not useful in case of shared dimensions
+/**
+ * Identifier class which will hold the table qualified name
+ */
+public class CarbonTableIdentifier {
+
+    /**
+     * database name
+     */
+    private String databaseName;
+
+    /**
+     * table name
+     */
+    private String tableName;
+
+    /**
+     * constructor
+     */
+    public CarbonTableIdentifier(String databaseName, String tableName) {
+        this.databaseName = databaseName;
+        this.tableName = tableName;
+    }
+
+    /**
+     * return database name
+     */
+    public String getDatabaseName() {
+        return databaseName;
+    }
+
+    /**
+     * return table name
+     */
+    public String getTableName() {
+        return tableName;
+    }
 }

@@ -19,7 +19,7 @@
 
 package org.carbondata.core.util;
 
-import org.carbondata.core.carbon.CarbonTypeIdentifier;
+import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.constants.CarbonCommonConstants;
 
 /**
@@ -31,7 +31,7 @@ public class CarbonDictionaryUtil {
     /**
      * This method will form the dictionary metadata file path for a column
      */
-    public static String getDictionaryMetadataFilePath(CarbonTypeIdentifier carbonTypeIdentifier,
+    public static String getDictionaryMetadataFilePath(CarbonTableIdentifier carbonTableIdentifier,
             String metadataFileDirPath, String columnName, boolean isSharedDimension) {
         // if dimension is shared between tables in a database then dictionary metadata
         // file for that
@@ -39,7 +39,7 @@ public class CarbonDictionaryUtil {
         StringBuilder metadataFilePathBuilder = new StringBuilder();
         String tableName = "";
         if (!isSharedDimension) {
-            tableName = carbonTypeIdentifier.getTableName() + CarbonCommonConstants.UNDERSCORE;
+            tableName = carbonTableIdentifier.getTableName() + CarbonCommonConstants.UNDERSCORE;
         }
         metadataFilePathBuilder.append(metadataFileDirPath)
                 .append(CarbonCommonConstants.FILE_SEPARATOR_CHAR).append(tableName)
@@ -53,14 +53,14 @@ public class CarbonDictionaryUtil {
     /**
      * This method will form the dictionary file path for a column
      */
-    public static String getDictionaryFilePath(CarbonTypeIdentifier carbonTypeIdentifier,
+    public static String getDictionaryFilePath(CarbonTableIdentifier carbonTableIdentifier,
             String filePath, String columnName, boolean isSharedDimension) {
         // if dimension is shared between tables in a database then dictionary file for that
         // column should be created under shared directory
         StringBuilder dictionaryFilePathBuilder = new StringBuilder();
         String tableName = "";
         if (!isSharedDimension) {
-            tableName = carbonTypeIdentifier.getTableName() + CarbonCommonConstants.UNDERSCORE;
+            tableName = carbonTableIdentifier.getTableName() + CarbonCommonConstants.UNDERSCORE;
         }
         dictionaryFilePathBuilder.append(filePath).append(CarbonCommonConstants.FILE_SEPARATOR_CHAR)
                 .append(tableName).append(columnName).append(CarbonCommonConstants.UNDERSCORE)
@@ -73,17 +73,17 @@ public class CarbonDictionaryUtil {
      * This method will return the path till shared directory folder or table
      * metadata folder for a column
      */
-    public static String getDirectoryPath(CarbonTypeIdentifier carbonTypeIdentifier,
+    public static String getDirectoryPath(CarbonTableIdentifier carbonTableIdentifier,
             String hdfsStorePath, boolean isSharedDimension) {
         StringBuilder dirPathBuilder = new StringBuilder();
         dirPathBuilder.append(hdfsStorePath).append(CarbonCommonConstants.FILE_SEPARATOR_CHAR)
-                .append(carbonTypeIdentifier.getDatabaseName());
+                .append(carbonTableIdentifier.getDatabaseName());
         if (isSharedDimension) {
             dirPathBuilder.append(CarbonCommonConstants.FILE_SEPARATOR_CHAR)
                     .append(CarbonCommonConstants.SHARED_DIRECTORY);
         } else {
             dirPathBuilder.append(CarbonCommonConstants.FILE_SEPARATOR_CHAR)
-                    .append(carbonTypeIdentifier.getTableName())
+                    .append(carbonTableIdentifier.getTableName())
                     .append(CarbonCommonConstants.METADATA_CONSTANT)
                     .append(CarbonCommonConstants.FILE_SEPARATOR_CHAR)
                     .append(CarbonCommonConstants.DICTIONARY_CONSTANT);
