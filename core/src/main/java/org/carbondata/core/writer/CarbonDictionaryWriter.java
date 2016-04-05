@@ -2,6 +2,7 @@ package org.carbondata.core.writer;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.List;
 
 /**
  * dictionary writer interface
@@ -10,15 +11,10 @@ public interface CarbonDictionaryWriter extends Closeable {
     /**
      * write method that accepts one value at a time
      */
-    void write(String columnValue) throws IOException;
+    void write(String value) throws IOException;
 
     /**
-     * this method will return the dictionary file path
+     * write method that accepts list of byte arrays as value
      */
-    String getDictionaryFilePath();
-
-    /**
-     * this method will return the dictionary offset file path
-     */
-    String getDictionaryMetaFilePath();
+    void write(List<byte[]> valueList) throws IOException;
 }

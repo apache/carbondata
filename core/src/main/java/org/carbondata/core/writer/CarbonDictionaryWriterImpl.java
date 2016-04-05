@@ -20,6 +20,8 @@
 package org.carbondata.core.writer;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -57,7 +59,7 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
     /**
      * list which will hold values upto maximum of one dictionary chunk size
      */
-    private List<String> oneDictionaryChunkList;
+    private List<ByteBuffer> oneDictionaryChunkList;
 
     /**
      * Meta object which will hold last segment entry details
@@ -143,31 +145,34 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
     }
 
     /**
-     * This method will write the data in thrift format to disk
+     * This method will write the data in thrift format to disk. This method will be guided by
+     * parameter dictionary_one_chunk_size and data will be divided into chunks
+     * based on this parameter
      */
-    @Override public void write(String columnValue) throws IOException {
+    @Override public void write(String value) throws IOException {
         if (isFirstTime) {
             init();
             isFirstTime = false;
         }
         // if one chunk size is equal to list size then write the data to file
         checkAndWriteDictionaryChunkToFile();
-        oneDictionaryChunkList.add(columnValue);
+        oneDictionaryChunkList.add(getByteBuffer(value.getBytes(Charset.defaultCharset())));
         totalRecordCount++;
     }
 
     /**
-     * return dictionary file path
+     * This method will write the data in thrift format to disk. This method will not be guided by
+     * parameter dictionary_one_chunk_size and complete data will be written as one chunk
      */
-    @Override public String getDictionaryFilePath() {
-        return this.dictionaryFilePath;
-    }
-
-    /**
-     * return dictionary meta file path
-     */
-    @Override public String getDictionaryMetaFilePath() {
-        return this.dictionaryMetaFilePath;
+    @Override public void write(List<byte[]> valueList) throws IOException {
+        if (isFirstTime) {
+            init();
+            isFirstTime = false;
+        }
+        for (byte[] value : valueList) {
+            oneDictionaryChunkList.add(getByteBuffer(value));
+            totalRecordCount++;
+        }
     }
 
     /**
@@ -181,6 +186,19 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
             this.chunk_end_offset = CarbonUtil.getFileSize(this.dictionaryFilePath);
             writeDictionaryMetadataFile();
         }
+    }
+
+    /**
+     * This method will create a byte buffer object for a given byte array
+     */
+    private ByteBuffer getByteBuffer(byte[] value) {
+        // +4 bytes have been added to write byte length to buffer
+        ByteBuffer buffer =
+                ByteBuffer.allocate(CarbonCommonConstants.INT_SIZE_IN_BYTE + value.length);
+        buffer.putInt(value.length);
+        buffer.put(value, 0, value.length);
+        buffer.rewind();
+        return buffer;
     }
 
     /**
@@ -211,7 +229,7 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
         this.directoryPath = CarbonDictionaryUtil
                 .getDirectoryPath(carbonTableIdentifier, hdfsStorePath, isSharedDimension);
         boolean created = CarbonUtil.checkAndCreateFolder(directoryPath);
-        if(!created) {
+        if (!created) {
             LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "Dictionary Folder creation status :: " + created);
             throw new IOException("Failed to created dictionary folder");
@@ -251,7 +269,7 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
      * initialise one dictionary size chunk list and increment chunk count
      */
     private void createChunkList() {
-        this.oneDictionaryChunkList = new ArrayList<String>(dictionary_one_chunk_size);
+        this.oneDictionaryChunkList = new ArrayList<ByteBuffer>(dictionary_one_chunk_size);
         chunk_count++;
     }
 
@@ -266,7 +284,7 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
             chunkMetaObjectForLastSegmentEntry =
                     getChunkMetaObjectForLastSegmentEntry(this.dictionaryMetaFilePath);
             int bytesToTruncate =
-                    (int) (chunk_start_offset = chunkMetaObjectForLastSegmentEntry.getEnd_offset());
+                    (int) (chunk_start_offset - chunkMetaObjectForLastSegmentEntry.getEnd_offset());
             if (bytesToTruncate > 0) {
                 LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                         "some inconsistency in dictionary file for column " + this.columnName);

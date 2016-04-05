@@ -163,7 +163,7 @@
             <scope>${spark.deps.scope}</scope>
         </dependency>
 		<dependency>
-            <groupId>unibi</groupId>
+            <groupId>org.carbondata</groupId>
             <artifactId>carbon-format</artifactId>
             <version>${project.version}</version>
         </dependency>
