@@ -36,7 +36,9 @@ public class MetadataLock extends CarbonLock {
     public MetadataLock(String location) {
         String loadLock = location + File.separator + CarbonCommonConstants.METADATA_LOCK;
         this.location = loadLock;
+        this.lockName =  CarbonCommonConstants.METADATA_LOCK;
         initRetry();
+        updateZooKeeperLockingStatus();
     }
 
 }

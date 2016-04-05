@@ -35,7 +35,9 @@ public class LoadFileBasedLock extends CarbonLock {
     public LoadFileBasedLock(String location) {
         String loadLock = location + File.separator + CarbonCommonConstants.LOAD_LOCK;
         this.location = loadLock;
+        this.lockName =  CarbonCommonConstants.LOAD_LOCK;
         initRetry();
+        updateZooKeeperLockingStatus();
     }
 
 }

@@ -24,7 +24,16 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import java.util.Collections;
+import java.util.List;
 
+import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.Watcher;
+import org.apache.zookeeper.Watcher.Event.KeeperState;
+import org.apache.zookeeper.ZooDefs.Ids;
+import org.apache.zookeeper.ZooKeeper;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
@@ -54,6 +63,64 @@ public abstract class CarbonLock {
     private int retryCount;
 
     private int retryTimeout;
+    
+    /**
+     * isZookeeperEnabled to check if zookeeper feature is enabled or not for carbon.
+     */
+    private boolean isZookeeperEnabled;
+    
+    /**
+     * zk is the zookeeper client instance
+     */
+    private static ZooKeeper zk;
+    
+    /**
+     * zooKeeperLocation is the location in the zoo keeper file system where the locks will be maintained.
+     */
+    private static final String zooKeeperLocation = CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.ZOOKEEPER_LOCATION) ;
+    
+    /**
+     * lockName is the name of the lock to use. This name should be same for every process that want
+     * to share the same lock
+     */
+    protected String lockName;
+    
+    /**
+     * lockPath is the unique path created for the each instance of the carbon lock.
+     */
+    private String lockPath;
+    
+    // static block to create the zookeeper client.
+    // here the zookeeper client will be created and also the znode will be created.
+    
+    static
+    {
+      // TO-DO Need to take this from the spark configuration.
+      String zookeeperUrl = "127.0.0.1:2181" ;
+      int sessionTimeOut = 100;
+      try {
+        zk = new ZooKeeper( zookeeperUrl , sessionTimeOut, new Watcher() {
+          
+          @Override
+          public void process(WatchedEvent event) {
+            if(event.getState().equals(KeeperState.SyncConnected))
+            {
+              LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "zoo keeper client connected.");
+            }
+            
+          }
+        });
+        
+        // creating a znode in which all the znodes (lock files )are maintained.
+        zk.create(zooKeeperLocation,new byte[1], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+      } 
+      catch (IOException | KeeperException | InterruptedException e) 
+      {
+        LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e.getMessage());
+      }
+    }
+    
 
     protected void initRetry() {
         String retries = CarbonProperties.getInstance()
@@ -73,6 +140,26 @@ public abstract class CarbonLock {
         }
 
     }
+    
+    /**
+     * This method will set the zookeeper status whether zookeeper to be used for locking or not.
+     */
+    protected void updateZooKeeperLockingStatus()
+    {
+      isZookeeperEnabled = CarbonCommonConstants.ZOOKEEPER_ENABLE_DEFAULT;
+      if( CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.ZOOKEEPER_ENABLE_LOCK).equalsIgnoreCase("false"))
+      {
+        isZookeeperEnabled = false;
+      }
+      else if( CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.ZOOKEEPER_ENABLE_LOCK).equalsIgnoreCase("true"))
+      {
+        isZookeeperEnabled = true;
+      }
+    
+    }
+    
 
     /**
      * This API will provide file based locking mechanism
@@ -84,18 +171,30 @@ public abstract class CarbonLock {
         if (FileFactory.getFileType(location) == FileType.LOCAL) {
             isLocal = true;
         }
-        try {
-            if (!FileFactory.isFileExist(location, FileFactory.getFileType(location))) {
+        if(!isZookeeperEnabled)
+        {
+          try 
+          {
+            if (!FileFactory.isFileExist(location, FileFactory.getFileType(location))) 
+            {
                 FileFactory.createNewLockFile(location, FileFactory.getFileType(location));
             }
-        } catch (IOException e) {
+          }
+          catch (IOException e) 
+          {
             isLocked = false;
             return isLocked;
+          }
         }
-
         if (isLocal) {
             localFileLocking();
-        } else {
+        }
+        else if(isZookeeperEnabled)
+        {
+           zookeeperLocking();
+        }
+        else
+        {
             hdfsFileLocking();
         }
         return isLocked;
@@ -115,6 +214,52 @@ public abstract class CarbonLock {
         } catch (IOException e) {
             isLocked = false;
         }
+    }
+    
+    /**
+     * Handling of the locking mechanism using zoo keeper.
+     */
+    private void zookeeperLocking()
+    {
+       try
+       {
+         // create the lock file with lockName.
+           lockPath = zk.create(zooKeeperLocation + "/" + lockName, null, Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL_SEQUENTIAL);
+         
+         // get the children present in zooKeeperLocation.
+         List<String> nodes = zk.getChildren(zooKeeperLocation, null);
+         
+         // sort the children
+         Collections.sort(nodes);
+         
+      // here the logic is , for each lock request zookeeper will create a file ending with
+      // incremental digits.
+      // so first request will be 00001 next is 00002 and so on.
+      // if the current request is 00002 and already one previous request(00001) is present then get
+      // children will give both nodes.
+      // after the sort we are checking if the lock path is first or not .if it is first then lock has been acquired.
+         
+         if(lockPath.endsWith(nodes.get(0)))
+         {
+           isLocked = true;
+           return;
+         }
+         else
+         {
+           // if locking failed then deleting the created lock as next time again new lock file will be
+           // created.
+           zk.delete(lockPath, -1);
+           isLocked = false;
+         }
+       }
+       catch(KeeperException e)
+       {
+         isLocked = false;
+       }
+       catch(InterruptedException e)
+       {
+         isLocked = false;
+       }
     }
 
     /**
@@ -146,16 +291,45 @@ public abstract class CarbonLock {
     public boolean unlock() {
         boolean status = false;
 
+        // if is locked then only we will unlock.
         if (isLock()) {
 
             if (isLocal) {
                 status = localLockFileUnlock();
-            } else {
-                status = hdfslockFileUnlock(status);
+            } else if(isZookeeperEnabled)
+            {
+              status = zookeeperLockFileUnlock();
+            }
+            else
+            {
+                status = hdfslockFileUnlock();
 
             }
         }
         return status;
+    }
+
+    /**
+     * 
+     * @return status where lock file is unlocked or not.
+     */
+    private boolean zookeeperLockFileUnlock() 
+    {
+      try
+      {
+        // exists will return null if the path doesnt exists.
+        if(null !=  zk.exists(lockPath, true))
+          {
+              zk.delete(lockPath, -1);
+              lockPath = null;
+          }
+      }
+      catch (KeeperException | InterruptedException e) 
+      {
+        LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e.getMessage());
+        return false;
+      }
+      return true;
     }
 
     /**
@@ -164,16 +338,15 @@ public abstract class CarbonLock {
      * @param status
      * @return
      */
-    private boolean hdfslockFileUnlock(boolean status) {
+    private boolean hdfslockFileUnlock() {
         if (null != dataOutputStream) {
             try {
                 dataOutputStream.close();
-                status = true;
             } catch (IOException e) {
-                status = false;
+                return false;
             }
         }
-        return status;
+        return true;
     }
 
     /**
