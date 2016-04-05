@@ -113,7 +113,7 @@ public class CarbonMetadataTest extends TestCase {
         dimColumn.setDimensionColumn(true);
         Set<Encoding> encodeList =
                 new HashSet<Encoding>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-        encodeList.add(Encoding.DICONARY);
+        encodeList.add(Encoding.DICTIONARY);
         dimColumn.setEncodintList(encodeList);
         dimColumn.setNumberOfChild(0);
         return dimColumn;

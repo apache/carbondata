@@ -31,10 +31,6 @@ public class SegmentInfo implements Serializable {
     private static final long serialVersionUID = -1749874611112709431L;
 
     /**
-     * id to validate this particular segment is loaded or not;
-     */
-    private int segmentId;
-    /**
      * number of column in the segment
      */
     private int numberOfColumns;
@@ -72,19 +68,5 @@ public class SegmentInfo implements Serializable {
     public void setColumnCardinality(int[] columnCardinality) {
         this.columnCardinality = columnCardinality;
     }
-
-	/**
-	 * @return the segmentId
-	 */
-	public int getSegmentId() {
-		return segmentId;
-	}
-
-	/**
-	 * @param segmentId the segmentId to set
-	 */
-	public void setSegmentId(int segmentId) {
-		this.segmentId = segmentId;
-	}
 
 }
