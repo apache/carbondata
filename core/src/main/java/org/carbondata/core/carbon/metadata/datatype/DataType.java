@@ -23,7 +23,7 @@ public enum DataType {
     STRING,
     INTEGER,
     LONG,
-    DECIMAL,
+    DOUBLE,
     BIG_DECIMAL,
     TIME_STAMP,
     ARRAY,
