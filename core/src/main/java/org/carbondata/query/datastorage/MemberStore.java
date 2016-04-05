@@ -23,8 +23,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.carbon.CarbonDef;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.ByteUtil;
 import org.carbondata.query.util.MemberSortModel;
 
@@ -194,20 +194,42 @@ public class MemberStore {
         if (null == cache) {
             return 0;
         }
+        if (name == null) {
+            return 0;
+        }
+        if (null == cache) {
+            return 0;
+        }
         byte[] nameChar = name.getBytes();
-        int surrogate = 0;
-        for (int index = 0; index < cache.length; index++) {
-            for (int i = 0; i < cache[index].length; i++) {
-                if (ByteUtil.UnsafeComparer.INSTANCE
-                        .equals(nameChar, cache[index][i].getCharArray())) {
-                    return surrogate + min;
-                }
-                surrogate++;
-            }
+        for (int index = 0; index < sortOrderIndex.length; index++) {
+            return getMemberId(sortOrderIndex[index], 0, sortOrderIndex[index].length, nameChar,
+                    cache[index]);
         }
         return 0;
     }
 
+    /**
+     * returns the surrogate of the requested member.
+     */
+    private int getMemberId(int[] membersSortedByIndex, int fromIndex, int toIndex,
+            byte[] key, Member[] actualMembers) {
+        int low = fromIndex;
+        int high = toIndex - 1;
+
+        while (low <= high) {
+            int mid = (low + high) >>> 1;
+            int surrogate = membersSortedByIndex[mid];
+            Member member = actualMembers[surrogate-min];
+            int cmp = ByteUtil.UnsafeComparer.INSTANCE.compareTo(member.getCharArray(), key);
+            if (cmp < 0)
+                low = mid + 1;
+            else if (cmp > 0)
+                high = mid - 1;
+            else
+                return surrogate; // key found
+        }
+        return 0;  // key not found.
+    }
     /**
      * Get the sorted index of a surrogate
      *
