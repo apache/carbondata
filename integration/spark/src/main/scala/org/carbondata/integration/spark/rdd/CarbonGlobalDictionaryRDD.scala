@@ -34,30 +34,31 @@ import scala.collection.mutable.ArrayBuffer
 import org.carbondata.common.logging.LogServiceFactory
 import org.carbondata.integration.spark.util.CarbonSparkInterFaceLogEvent
 
-/** A partitioner partition by column.
-  *
-  * @constructor create a partitioner
-  * @param numParts  the number of partitions
-  */
+/**
+ * A partitioner partition by column.
+ *
+ * @constructor create a partitioner
+ * @param numParts  the number of partitions
+ */
 class ColumnPartitioner(numParts: Int) extends Partitioner {
   override def numPartitions: Int = numParts
   override def getPartition(key: Any): Int = key.asInstanceOf[Int]
 }
 
-/** A RDD to combine distinct values in block.
-  *
-  * @constructor create a RDD with RDD[Row]
-  * @param prev the input RDD[Row]
-  * @param dictfolderPath the dictionary folder
-  * @param tableName table name
-  * @param indexes location index of require columns 
-  * @param columns require columns
-  */
+/**
+ * A RDD to combine distinct values in block.
+ *
+ * @constructor create a RDD with RDD[Row]
+ * @param prev the input RDD[Row]
+ * @param dictfolderPath the dictionary folder
+ * @param tableName table name
+ * @param indexes location index of require columns
+ * @param columns require columns
+ */
 class CarbonBlockDistinctValuesCombineRDD(
   prev: RDD[Row],
   dictfolderPath: String,
   tableName: String,
-  indexes: Array[Int],
   columns: Array[String])
     extends RDD[(Int, HashSet[String])](prev) with Logging {
 
@@ -69,10 +70,11 @@ class CarbonBlockDistinctValuesCombineRDD(
     val distinctValuesList = new ArrayBuffer[(Int, HashSet[String])]
     try {
       //load exists dictionary file to list of HashMap
-      val dicts = GlobalDictionaryUtil.readGlobalDictionaryFromFile(dictfolderPath, tableName, columns)
+      val (dicts, hasDicts) = GlobalDictionaryUtil.readGlobalDictionaryFromFile(dictfolderPath, tableName, columns)
       //local combine set
-      val sets = new Array[HashSet[String]](columns.length)
-      for (i <- 0 until columns.length) {
+      val numColumns = columns.length
+      val sets = new Array[HashSet[String]](numColumns)
+      for (i <- 0 until numColumns) {
         sets(i) = new HashSet[String]
         distinctValuesList += ((i, sets(i)))
       }
@@ -80,15 +82,19 @@ class CarbonBlockDistinctValuesCombineRDD(
       var value: String = null
       val rddIter = firstParent[Row].iterator(split, context)
       //generate block distinct value set
-      while(rddIter.hasNext) {
+      while (rddIter.hasNext) {
         row = rddIter.next()
         if (row != null) {
-          for (i <- 0 until columns.length) {
-            if (indexes(i) < row.length) {
-              value = row.get(indexes(i)).toString
-              dicts(i).get(value) match {
-                case None => sets(i).add(value)
-                case Some(_) =>
+          for (i <- 0 until numColumns) {
+            value = row.getString(i)
+            if (value != null) {
+              if (hasDicts(i)) {
+                dicts(i).get(value) match {
+                  case None => sets(i).add(value)
+                  case Some(_) =>
+                }
+              } else {
+                sets(i).add(value)
               }
             }
           }
@@ -101,14 +107,15 @@ class CarbonBlockDistinctValuesCombineRDD(
   }
 }
 
-/** A RDD to generate dictionary file for each column
-  *
-  * @constructor create a RDD with RDD[Row]
-  * @param prev the input RDD[Row]
-  * @param carbonLoadModel a model package load info
-  * @param columns require columns
-  * @param hdfsLocation store location
-  */
+/**
+ * A RDD to generate dictionary file for each column
+ *
+ * @constructor create a RDD with RDD[Row]
+ * @param prev the input RDD[Row]
+ * @param carbonLoadModel a model package load info
+ * @param columns require columns
+ * @param hdfsLocation store location
+ */
 class CarbonGlobalDictionaryGenerateRDD(
   prev: RDD[(Int, HashSet[String])],
   carbonLoadModel: CarbonLoadModel,
@@ -124,18 +131,17 @@ class CarbonGlobalDictionaryGenerateRDD(
     val iter = new Iterator[(String, String)] {
       //generate distinct value list
       val column = columns(split.index)
-      try{
+      try {
         val filePath = GlobalDictionaryUtil.getGlobalDictionaryFileName(hdfsLocation, carbonLoadModel.getSchemaName, carbonLoadModel.getTableName, column)
         val set = new HashSet[String]
-        set += CarbonCommonConstants.MEMBER_DEFAULT_VAL
         val rddIter = firstParent[(Int, HashSet[String])].iterator(split, context)
         while (rddIter.hasNext) {
           set ++= rddIter.next()._2
         }
         //write to file
         GlobalDictionaryUtil.writeGlobalDictionaryToFile(filePath, set)
-      }catch{
-        case ex: Exception => 
+      } catch {
+        case ex: Exception =>
           status = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
           LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, ex)
       }

@@ -11,52 +11,46 @@ import org.apache.spark.sql.SQLContext
 import org.carbondata.integration.spark.load.CarbonLoadModel
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.util.CarbonProperties
-import org.carbondata.core.carbon.CarbonDef.Schema;
+import org.carbondata.core.carbon.CarbonDef.Schema
 import org.carbondata.core.carbon.CarbonDef.Dimension
+import org.carbondata.core.metadata.CarbonMetadata
+import org.carbondata.core.carbon.CarbonDef.Cube
+import org.apache.spark.sql.CarbonEnv
+import org.apache.spark.sql.CarbonRelation
+import org.carbondata.core.carbon.CarbonDef.CubeDimension
+import java.io.File
+import org.apache.spark.Logging
 
-class GlobalDictionaryTestCase extends FunSuite with BeforeAndAfter {
+class GlobalDictionaryTestCase extends FunSuite with BeforeAndAfter with Logging {
   
-  var oc: SparkContext = _
-  var sc: SQLContext = _
+  var sc: SparkContext = _
+  var sqlContext: SQLContext = _
   var storeLocation: String = _ 
-  var schema: Schema = _ 
-  var table: String = _
+  var relation: CarbonRelation = _
   var filePath: String = _
+  var pwd: String = _
   
   def buildTestData() = {
-    storeLocation = "target"
-    filePath = "src/test/resources/sample.csv"
-    table = "sample"
-    
-    schema = new Schema 
-    schema.name = "default"
-    schema.dimensions = new Array[Dimension](4)
-    schema.dimensions(0) = new Dimension()
-    schema.dimensions(0).name = "id"
-    schema.dimensions(1) = new Dimension()
-    schema.dimensions(1).name = "name"
-    schema.dimensions(2) = new Dimension()
-    schema.dimensions(2).name = "city"
-    schema.dimensions(3) = new Dimension()
-    schema.dimensions(3).name = "age"
+    pwd = new File(this.getClass.getResource("/").getPath+"/../../").getCanonicalPath
+    storeLocation = pwd + "/target/store"
+    filePath = pwd + "/src/test/resources/sample.csv"
   }
   
   def buildTestContext() = {
-     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.STORE_LOCATION_HDFS, storeLocation)
-    oc = new SparkContext(
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.STORE_LOCATION_HDFS, storeLocation)
+    sc = new SparkContext(
         new SparkConf()
         .setAppName("GloablDictionaryTestCase")
         .setMaster("local[2]"))
-    sc = new SQLContext(oc)
-  }
-   
-  def generateGlobalDictionary(): Int = {
-    val carbonLoadModel = new CarbonLoadModel
-    carbonLoadModel.setTableName(table)
-    carbonLoadModel.setSchemaName(schema.name)
-    carbonLoadModel.setSchema(schema)
-    carbonLoadModel.setFactFilePath(filePath)
-    GlobalDictionaryUtil.generateGlobalDictionary(sc, carbonLoadModel)
+    sqlContext = new CarbonContext(sc, storeLocation)
+    sqlContext.setConf("carbon.kettle.home", new File(pwd + "/../../processing/carbonplugins").getCanonicalPath)
+    sqlContext.setConf("hive.metastore.warehouse.dir", pwd +"/target/hivemetadata")
+    try{
+      sqlContext.sql("CREATE CUBE sample DIMENSIONS (id STRING, name_1 STRING, city STRING) MEASURES (age INTEGER) OPTIONS(PARTITIONER[CLASS='org.carbondata.integration.spark.partition.api.impl.SampleDataPartitionerImpl',COLUMNS=(id),PARTITION_COUNT=1])")
+    }catch{
+      case ex: Throwable => logError(ex.getMessage +"\r\n" + ex.getStackTraceString)    
+    }
+    relation = CarbonEnv.getInstance(sqlContext).carbonCatalog.lookupRelation1(Option("default"), "sample", None)(sqlContext).asInstanceOf[CarbonRelation]
   }
   
   before {
@@ -65,16 +59,15 @@ class GlobalDictionaryTestCase extends FunSuite with BeforeAndAfter {
   }
   
   test("[issue-80]Global Dictionary Generation"){
-    assert(generateGlobalDictionary() === 1 )
-  }
-}
-
-object GlobalDictionaryTestCase{
-  def main(args: Array[String]): Unit = {
-    val testCase = new GlobalDictionaryTestCase
-    testCase.buildTestData
-    testCase.buildTestContext
-    testCase.generateGlobalDictionary
+    val carbonLoadModel = new CarbonLoadModel
+    carbonLoadModel.setTableName(relation.cubeMeta.cubeName)
+    carbonLoadModel.setSchemaName(relation.cubeMeta.schemaName)
+    carbonLoadModel.setSchema(relation.cubeMeta.schema)
+    carbonLoadModel.setFactFilePath(filePath)
+    
+    val sql = new SQLContext(sc)
+    val rtn = GlobalDictionaryUtil.generateGlobalDictionary(sql, carbonLoadModel)
+    assert(rtn === 1 )
   }
 }
 
