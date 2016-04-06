@@ -181,7 +181,7 @@ public class LoadSampler {
      */
     private void updateDimensionCardinality(SliceMetaData sliceMetaData, String tableName) {
         String[] sliceDimensions = sliceMetaData.getDimensions();
-        int[] sliceCardinalities = sliceMetaData.getDimLens();
+        int[] sliceCardinalities = sliceMetaData.getActualDimLens();
         for (Dimension dimension : visibleDimensions) {
             String dimName = dimension.getColName();
             Integer dimensionCardinality = 1;

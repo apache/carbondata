@@ -25,10 +25,12 @@ import java.io.IOException;
 import junit.framework.Assert;
 import mockit.Mock;
 import mockit.MockUp;
+
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.load.LoadMetadataDetails;
 import org.carbondata.core.carbon.CarbonDef;
+import org.carbondata.processing.store.StoreCreator;
 import org.carbondata.processing.suggest.autoagg.util.CommonUtil;
 import org.carbondata.processing.suggest.datastats.model.LoadModel;
 import org.carbondata.processing.suggest.util.TestUtil;
@@ -51,7 +53,9 @@ public class CommonUtilTest {
 
     @Before
     public void setUpBeforeClass() throws Exception {
-        File file = new File("../../libraries/testData/Carbon-Aggregation/store/");
+        StoreCreator.createCarbonStore();
+        File file = new File("src/test/resources");
+      
         String basePath = file.getCanonicalPath() + "/";
         metaPath = basePath + "schemas/default/carbon/metadata";
 

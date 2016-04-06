@@ -24,12 +24,14 @@ import java.io.File;
 import junit.framework.Assert;
 import mockit.Mock;
 import mockit.MockUp;
+
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.metadata.CarbonMetadata;
 import org.carbondata.core.carbon.CarbonDef;
 import org.carbondata.core.util.CarbonProperties;
+import org.carbondata.processing.store.StoreCreator;
 import org.carbondata.processing.suggest.autoagg.util.CommonUtil;
 import org.carbondata.processing.suggest.datastats.load.FactDataHandler;
 import org.carbondata.processing.suggest.datastats.load.LevelMetaInfo;
@@ -56,7 +58,9 @@ public class FactDataHandlerTest {
     public void setUpBeforeClass() throws Exception {
         try {
 
-            File file = new File("../../libraries/testData/Carbon-Aggregation/store/");
+            StoreCreator.createCarbonStore();
+            File file = new File("src/test/resources");
+          
             String basePath = file.getCanonicalPath() + "/";
             String metaPath = basePath + "schemas/default/carbon/metadata";
 
