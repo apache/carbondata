@@ -202,9 +202,6 @@ public class LocalCarbonFile implements CarbonFile {
                 remaining = remaining - totalBytesRead;
             }
             CarbonUtil.closeStreams(source, destination);
-            CarbonFile originalFile = FileFactory.getCarbonFile(fileName, fileType);
-            // delete the original file
-            originalFile.delete();
             // rename the temp file to original file
             tempFile.renameForce(fileName);
             fileTruncatedSuccessfully = true;

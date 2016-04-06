@@ -378,14 +378,8 @@ public class CarbonDictionaryWriterImplTest {
     private List<ByteBuffer> convertStringListToByteArrayList(List<String> valueList) {
         List<ByteBuffer> byteArrayValueList = new ArrayList<>(valueList.size());
         for (String columnValue : valueList) {
-            // +4 bytes have been added to write byte length to buffer
             byte[] value = columnValue.getBytes(Charset.defaultCharset());
-            ByteBuffer buffer =
-                    ByteBuffer.allocate(CarbonCommonConstants.INT_SIZE_IN_BYTE + value.length);
-            buffer.putInt(value.length);
-            buffer.put(value, 0, value.length);
-            buffer.rewind();
-            byteArrayValueList.add(buffer);
+            byteArrayValueList.add(ByteBuffer.wrap(value));
         }
         return byteArrayValueList;
     }
@@ -396,7 +390,7 @@ public class CarbonDictionaryWriterImplTest {
     private List<String> convertByteArrayListToStringValueList(List<ByteBuffer> valueBufferList) {
         List<String> valueList = new ArrayList<>(valueBufferList.size());
         for (ByteBuffer buffer : valueBufferList) {
-            int length = buffer.getInt();
+            int length = buffer.limit();
             byte[] value = new byte[length];
             buffer.get(value, 0, value.length);
             valueList.add(new String(value, Charset.defaultCharset()));

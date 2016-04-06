@@ -54,7 +54,7 @@ public class CarbonDictionaryUtil {
      * This method will form the dictionary file path for a column
      */
     public static String getDictionaryFilePath(CarbonTableIdentifier carbonTableIdentifier,
-            String filePath, String columnName, boolean isSharedDimension) {
+            String dictionaryLocation, String columnName, boolean isSharedDimension) {
         // if dimension is shared between tables in a database then dictionary file for that
         // column should be created under shared directory
         StringBuilder dictionaryFilePathBuilder = new StringBuilder();
@@ -62,8 +62,9 @@ public class CarbonDictionaryUtil {
         if (!isSharedDimension) {
             tableName = carbonTableIdentifier.getTableName() + CarbonCommonConstants.UNDERSCORE;
         }
-        dictionaryFilePathBuilder.append(filePath).append(CarbonCommonConstants.FILE_SEPARATOR_CHAR)
-                .append(tableName).append(columnName).append(CarbonCommonConstants.UNDERSCORE)
+        dictionaryFilePathBuilder.append(dictionaryLocation)
+                .append(CarbonCommonConstants.FILE_SEPARATOR_CHAR).append(tableName)
+                .append(columnName).append(CarbonCommonConstants.UNDERSCORE)
                 .append(CarbonCommonConstants.DICTIONARY_CONSTANT)
                 .append(CarbonCommonConstants.FILE_EXTENSION);
         return dictionaryFilePathBuilder.toString();

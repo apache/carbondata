@@ -286,9 +286,6 @@ public class HDFSCarbonFile implements CarbonFile {
                 remaining = remaining - read;
             }
             CarbonUtil.closeStreams(dataInputStream, dataOutputStream);
-            CarbonFile originalFile = FileFactory.getCarbonFile(fileName, fileType);
-            // delete the original file
-            originalFile.delete();
             // rename the temp file to original file
             tempFile.renameForce(fileName);
             fileTruncatedSuccessfully = true;

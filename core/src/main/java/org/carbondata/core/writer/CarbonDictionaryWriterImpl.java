@@ -156,7 +156,7 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
         }
         // if one chunk size is equal to list size then write the data to file
         checkAndWriteDictionaryChunkToFile();
-        oneDictionaryChunkList.add(getByteBuffer(value.getBytes(Charset.defaultCharset())));
+        oneDictionaryChunkList.add(ByteBuffer.wrap(value.getBytes(Charset.defaultCharset())));
         totalRecordCount++;
     }
 
@@ -170,7 +170,7 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
             isFirstTime = false;
         }
         for (byte[] value : valueList) {
-            oneDictionaryChunkList.add(getByteBuffer(value));
+            oneDictionaryChunkList.add(ByteBuffer.wrap(value));
             totalRecordCount++;
         }
     }
@@ -186,19 +186,6 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
             this.chunk_end_offset = CarbonUtil.getFileSize(this.dictionaryFilePath);
             writeDictionaryMetadataFile();
         }
-    }
-
-    /**
-     * This method will create a byte buffer object for a given byte array
-     */
-    private ByteBuffer getByteBuffer(byte[] value) {
-        // +4 bytes have been added to write byte length to buffer
-        ByteBuffer buffer =
-                ByteBuffer.allocate(CarbonCommonConstants.INT_SIZE_IN_BYTE + value.length);
-        buffer.putInt(value.length);
-        buffer.put(value, 0, value.length);
-        buffer.rewind();
-        return buffer;
     }
 
     /**
