@@ -19,10 +19,12 @@
 
 package org.carbondata.core.carbon;
 
+import java.io.Serializable;
+
 /**
  * Identifier class which will hold the table qualified name
  */
-public class CarbonTableIdentifier {
+public class CarbonTableIdentifier implements Serializable{
 
     /**
      * database name

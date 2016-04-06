@@ -33,6 +33,7 @@ import org.apache.spark.sql.Row
 import scala.collection.mutable.ArrayBuffer
 import org.carbondata.common.logging.LogServiceFactory
 import org.carbondata.integration.spark.util.CarbonSparkInterFaceLogEvent
+import org.carbondata.core.carbon.CarbonTableIdentifier
 
 /**
  * A partitioner partition by column.
@@ -58,7 +59,7 @@ class ColumnPartitioner(numParts: Int) extends Partitioner {
 class CarbonBlockDistinctValuesCombineRDD(
   prev: RDD[Row],
   dictfolderPath: String,
-  tableName: String,
+  table: CarbonTableIdentifier,
   columns: Array[String])
     extends RDD[(Int, HashSet[String])](prev) with Logging {
 
@@ -70,7 +71,7 @@ class CarbonBlockDistinctValuesCombineRDD(
     val distinctValuesList = new ArrayBuffer[(Int, HashSet[String])]
     try {
       //load exists dictionary file to list of HashMap
-      val (dicts, hasDicts) = GlobalDictionaryUtil.readGlobalDictionaryFromFile(dictfolderPath, tableName, columns)
+      val (dicts, hasDicts) = GlobalDictionaryUtil.readGlobalDictionaryFromFile(dictfolderPath, table.getTableName, columns)
       //local combine set
       val numColumns = columns.length
       val sets = new Array[HashSet[String]](numColumns)
@@ -118,7 +119,7 @@ class CarbonBlockDistinctValuesCombineRDD(
  */
 class CarbonGlobalDictionaryGenerateRDD(
   prev: RDD[(Int, HashSet[String])],
-  carbonLoadModel: CarbonLoadModel,
+  table: CarbonTableIdentifier,
   columns: Array[String],
   hdfsLocation: String)
     extends RDD[(String, String)](prev) with Logging {
@@ -132,14 +133,15 @@ class CarbonGlobalDictionaryGenerateRDD(
       //generate distinct value list
       val column = columns(split.index)
       try {
-        val filePath = GlobalDictionaryUtil.getGlobalDictionaryFileName(hdfsLocation, carbonLoadModel.getSchemaName, carbonLoadModel.getTableName, column)
-        val set = new HashSet[String]
+        val distinctValues = new HashSet[String]
         val rddIter = firstParent[(Int, HashSet[String])].iterator(split, context)
         while (rddIter.hasNext) {
-          set ++= rddIter.next()._2
+          distinctValues ++= rddIter.next()._2
         }
         //write to file
-        GlobalDictionaryUtil.writeGlobalDictionaryToFile(filePath, set)
+        if(distinctValues.size > 0){
+          GlobalDictionaryUtil.writeGlobalDictionaryToFile(hdfsLocation, table, column, distinctValues.toIterator)
+        }
       } catch {
         case ex: Exception =>
           status = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
