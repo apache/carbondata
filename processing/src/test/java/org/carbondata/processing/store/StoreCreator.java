@@ -1,3 +1,21 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package org.carbondata.processing.store;
 
 import java.io.File;
@@ -22,7 +40,6 @@ import org.carbondata.processing.util.CarbonDataProcessorUtil;
 /**
  * This class will create store file based on provided schema
  * @author Administrator
- *
  */
 public class StoreCreator {
 
@@ -42,7 +59,7 @@ public class StoreCreator {
       String kettleHomePath = "carbonplugins";
       int currentRestructureNumber = 0;
       List<Schema> schemas = CommonUtil.readMetaData(metadataPath);
-      CarbonLoadModel loadModel = new CarbonLoadModel();
+      LoadModel loadModel = new LoadModel();
       Schema schema = schemas.get(0);
       String partitionId = "0";
       schema.name = schema.name + "_" + partitionId;
@@ -57,7 +74,6 @@ public class StoreCreator {
 
       executeGraph(loadModel, storeLocation, kettleHomePath, currentRestructureNumber);
     } catch (Exception e) {
-      // TODO Auto-generated catch block
       e.printStackTrace();
     }
 
@@ -67,10 +83,9 @@ public class StoreCreator {
    * Create store with resturcture
    */
   public static void createRestructureStore() {
-    //TO-DO
-    //add for restructure scenario, its not clear yet.
+    // TO-DO
+    // add for restructure scenario, its not clear yet.
   }
-
 
   /**
    * Execute graph which will further load data
@@ -80,8 +95,8 @@ public class StoreCreator {
    * @param currentRestructNumber
    * @throws Exception
    */
-  public static void executeGraph(CarbonLoadModel loadModel, String storeLocation,
-      String kettleHomePath, int currentRestructNumber) throws Exception {
+  public static void executeGraph(LoadModel loadModel, String storeLocation, String kettleHomePath,
+      int currentRestructNumber) throws Exception {
     System.setProperty("KETTLE_HOME", kettleHomePath);
     new File(storeLocation).mkdirs();
     String outPutLoc = storeLocation + "/etl";
@@ -94,10 +109,6 @@ public class StoreCreator {
 
     String tableName = loadModel.getTableName();
     String fileNamePrefix = "";
-    if (loadModel.isAggLoadRequest()) {
-      tableName = loadModel.getAggTableName();
-      fileNamePrefix = "graphgenerator";
-    }
     String graphPath =
         outPutLoc + '/' + loadModel.getSchemaName() + '/' + loadModel.getCubeName() + '/'
             + tableName.replaceAll(",", "") + fileNamePrefix + ".ktr";
@@ -108,34 +119,17 @@ public class StoreCreator {
 
     DataProcessTaskStatus schmaModel = new DataProcessTaskStatus(schemaName, cubeName, tableName);
     schmaModel.setCsvFilePath(loadModel.getFactFilePath());
-    schmaModel.setDimCSVDirLoc(loadModel.getDimFolderPath());
-    if (loadModel.isDirectLoad()) {
-      schmaModel.setFilesToProcess(loadModel.getFactFilesToProcess());
-      schmaModel.setDirectLoad(true);
-      schmaModel.setCsvDelimiter(loadModel.getCsvDelimiter());
-      schmaModel.setCsvHeader(loadModel.getCsvHeader());
-    }
     SchemaInfo info = new SchemaInfo();
 
     info.setSchemaName(schemaName);
-    info.setSrcDriverName(loadModel.getDriverClass());
-    info.setSrcConUrl(loadModel.getJdbcUrl());
-    info.setSrcUserName(loadModel.getDbUserName());
-    info.setSrcPwd(loadModel.getDbPwd());
     info.setCubeName(cubeName);
-    info.setSchemaPath(loadModel.getSchemaPath());
-    info.setAutoAggregateRequest(loadModel.isAggLoadRequest());
-    info.setComplexDelimiterLevel1(loadModel.getComplexDelimiterLevel1());
-    info.setComplexDelimiterLevel2(loadModel.getComplexDelimiterLevel2());
-
-    generateGraph(schmaModel, info, loadModel.getTableName(), loadModel.getPartitionId(),
-      loadModel.getSchema(), loadModel.getFactStoreLocation(), currentRestructNumber,
-      loadModel.getLoadMetadataDetails());
+   
+    generateGraph(schmaModel, info, loadModel.getTableName(), "0", loadModel.getSchema(), null,
+      currentRestructNumber, loadModel.getLoadMetadataDetails());
 
     DataGraphExecuter graphExecuter = new DataGraphExecuter(schmaModel);
     graphExecuter.executeGraph(graphPath, new ArrayList<String>(
-        CarbonCommonConstants.CONSTANT_SIZE_TEN), info, loadModel.getPartitionId(), loadModel
-        .getSchema());
+        CarbonCommonConstants.CONSTANT_SIZE_TEN), info, "0", loadModel.getSchema());
   }
 
   /**
@@ -171,6 +165,70 @@ public class StoreCreator {
         new GraphGenerator(model, hdfsReadMode, partitionID, schema, factStoreLocation,
             currentRestructNumber, allocate);
     generator.generateGraph();
+  }
+
+  /**
+   * This is local model object used inside this class to store information related to data loading
+   * @author Administrator
+   *
+   */
+  static class LoadModel {
+    
+    private Schema schema;
+    private String tableName;
+    private String cubeName;
+    private String schemaName;
+    private List<LoadMetadataDetails> loadMetaDetail;
+    private String factFilePath;
+
+    public void setSchema(Schema schema) {
+      this.schema = schema;
+    }
+
+    public List<LoadMetadataDetails> getLoadMetadataDetails() {
+      return loadMetaDetail;
+    }
+
+    public Schema getSchema() {
+      return schema;
+    }
+
+    public String getFactFilePath() {
+      return factFilePath;
+    }
+
+    public String getTableName() {
+      return tableName;
+    }
+
+    public String getCubeName() {
+      return cubeName;
+    }
+
+    public String getSchemaName() {
+      return schemaName;
+    }
+
+    public void setLoadMetadataDetails(List<LoadMetadataDetails> loadMetaDetail) {
+      this.loadMetaDetail = loadMetaDetail;
+    }
+
+    public void setFactFilePath(String factFilePath) {
+      this.factFilePath = factFilePath;
+    }
+
+    public void setTableName(String tableName) {
+      this.tableName = tableName;
+    }
+
+    public void setCubeName(String cubeName) {
+      this.cubeName = cubeName;
+    }
+
+    public void setSchemaName(String schemaName) {
+      this.schemaName = schemaName;
+    }
+
   }
 
 }
