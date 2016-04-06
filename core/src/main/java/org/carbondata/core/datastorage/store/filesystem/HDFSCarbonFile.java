@@ -19,6 +19,8 @@
 
 package org.carbondata.core.datastorage.store.filesystem;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 
 import org.apache.hadoop.fs.FileStatus;
@@ -28,8 +30,10 @@ import org.apache.hadoop.fs.PathFilter;
 import org.apache.hadoop.hdfs.DistributedFileSystem;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.util.CarbonCoreLogEvent;
+import org.carbondata.core.util.CarbonUtil;
 
 public class HDFSCarbonFile implements CarbonFile {
     /**
@@ -239,14 +243,69 @@ public class HDFSCarbonFile implements CarbonFile {
         return true;
     }
 
+    /**
+     * This method will delete the data in file data from a given offset
+     */
+    @Override public boolean truncate(String fileName, long validDataEndOffset) {
+        DataOutputStream dataOutputStream = null;
+        DataInputStream dataInputStream = null;
+        boolean fileTruncatedSuccessfully = false;
+        // if bytes to read less than 1024 then buffer size should be equal to the given offset
+        int bufferSize = validDataEndOffset > CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR ?
+                CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR :
+                (int) validDataEndOffset;
+        // temporary file name
+        String tempWriteFilePath = fileName + CarbonCommonConstants.TEMPWRITEFILEEXTENSION;
+        FileFactory.FileType fileType = FileFactory.getFileType(fileName);
+        try {
+            CarbonFile tempFile = null;
+            // delete temporary file if it already exists at a given path
+            if (FileFactory.isFileExist(tempWriteFilePath, fileType)) {
+                tempFile = FileFactory.getCarbonFile(tempWriteFilePath, fileType);
+                tempFile.delete();
+            }
+            // create new temporary file
+            FileFactory.createNewFile(tempWriteFilePath, fileType);
+            tempFile = FileFactory.getCarbonFile(tempWriteFilePath, fileType);
+            byte[] buff = new byte[bufferSize];
+            dataInputStream = FileFactory.getDataInputStream(fileName, fileType);
+            // read the data
+            int read = dataInputStream.read(buff, 0, buff.length);
+            dataOutputStream = FileFactory.getDataOutputStream(tempWriteFilePath, fileType);
+            dataOutputStream.write(buff, 0, read);
+            long remaining = validDataEndOffset - read;
+            // anytime we should not cross the offset to be read
+            while (remaining > 0) {
+                if (remaining > bufferSize) {
+                    buff = new byte[bufferSize];
+                } else {
+                    buff = new byte[(int) remaining];
+                }
+                read = dataInputStream.read(buff, 0, buff.length);
+                dataOutputStream.write(buff, 0, read);
+                remaining = remaining - read;
+            }
+            CarbonUtil.closeStreams(dataInputStream, dataOutputStream);
+            // rename the temp file to original file
+            tempFile.renameForce(fileName);
+            fileTruncatedSuccessfully = true;
+        } catch (IOException e) {
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
+                    "Exception occured while truncating the file " + e.getMessage());
+        } finally {
+            CarbonUtil.closeStreams(dataOutputStream, dataInputStream);
+        }
+        return fileTruncatedSuccessfully;
+    }
+
     @Override
     public boolean renameForce(String changetoName) {
         FileSystem fs;
         try {
             fs = fileStatus.getPath().getFileSystem(FileFactory.getConfiguration());
             if (fs instanceof DistributedFileSystem) {
-                ((DistributedFileSystem) fs).
-                        rename(fileStatus.getPath(), new Path(changetoName),
+                ((DistributedFileSystem) fs)
+                        .rename(fileStatus.getPath(), new Path(changetoName),
                                 org.apache.hadoop.fs.Options.Rename.OVERWRITE);
                 return true;
             } else {

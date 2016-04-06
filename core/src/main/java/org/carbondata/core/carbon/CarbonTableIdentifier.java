@@ -17,43 +17,42 @@
  * under the License.
  */
 
-package org.carbondata.core.datastorage.store.filesystem;
+package org.carbondata.core.carbon;
 
-public interface CarbonFile {
+/**
+ * Identifier class which will hold the table qualified name
+ */
+public class CarbonTableIdentifier {
 
-    String getAbsolutePath();
+    /**
+     * database name
+     */
+    private String databaseName;
 
-    CarbonFile[] listFiles(CarbonFileFilter fileFilter);
+    /**
+     * table name
+     */
+    private String tableName;
 
-    CarbonFile[] listFiles();
+    /**
+     * constructor
+     */
+    public CarbonTableIdentifier(String databaseName, String tableName) {
+        this.databaseName = databaseName;
+        this.tableName = tableName;
+    }
 
-    String getName();
+    /**
+     * return database name
+     */
+    public String getDatabaseName() {
+        return databaseName;
+    }
 
-    boolean isDirectory();
-
-    boolean exists();
-
-    String getCanonicalPath();
-
-    CarbonFile getParentFile();
-
-    String getPath();
-
-    long getSize();
-
-    boolean renameTo(String changetoName);
-
-    boolean renameForce(String changetoName);
-
-    boolean delete();
-
-    boolean createNewFile();
-
-    boolean mkdirs();
-
-    long getLastModifiedTime();
-
-    boolean setLastModifiedTime(long timestamp);
-
-    boolean truncate(String fileName, long validDataEndOffset);
+    /**
+     * return table name
+     */
+    public String getTableName() {
+        return tableName;
+    }
 }

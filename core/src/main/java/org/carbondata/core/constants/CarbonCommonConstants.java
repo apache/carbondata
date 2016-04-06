@@ -151,7 +151,8 @@ public final class CarbonCommonConstants {
     /**
      * default location of the carbon member, hierarchy and fact files
      */
-    public static final String STORE_LOCATION_DEFAULT_VAL = "../unibi-solutions/system/carbon/store";
+    public static final String
+            STORE_LOCATION_DEFAULT_VAL = "../unibi-solutions/system/carbon/store";
     /**
      * default keystore type
      */
@@ -239,7 +240,6 @@ public final class CarbonCommonConstants {
     /**
      * carbon properties file path
      */
-    //    public static final String CARBON_PROPERTIES_FILE_PATH = "../unibi-solutions/system/carbon/carbon.properties";
     public static final String CARBON_PROPERTIES_FILE_PATH = "../../../conf/carbon.properties";
     /**
      * CARBON_BADRECORDS_ENCRYPTION
@@ -467,7 +467,8 @@ public final class CarbonCommonConstants {
     /**
      * DATA_LOAD_CONC_EXE_SIZE
      */
-    public static final String DATA_LOAD_CONC_EXE_SIZE = "carbon.dataload.concurrent.execution.size";
+    public static final String
+            DATA_LOAD_CONC_EXE_SIZE = "carbon.dataload.concurrent.execution.size";
     /**
      * DATA_LOAD_CONC_EXE_SIZE_DEFAULT
      */
@@ -849,7 +850,8 @@ public final class CarbonCommonConstants {
     /**
      * CARBON_SEQ_GEN_INMEMORY_LRU_CACHE_FLUSH_INTERVAL_INHOUR_DEFAULTVALUE
      */
-    public static final String CARBON_SEQ_GEN_INMEMORY_LRU_CACHE_FLUSH_INTERVAL_INHOUR_DEFAULTVALUE =
+    public static final String
+            CARBON_SEQ_GEN_INMEMORY_LRU_CACHE_FLUSH_INTERVAL_INHOUR_DEFAULTVALUE =
             "300";
     /**
      * CARBON_MAX_THREAD_FOR_SORTING
@@ -1381,6 +1383,46 @@ public final class CarbonCommonConstants {
      * DEFAULT_ENABLE_LOAD_MERGE
      */
     public static final String DEFAULT_ENABLE_LOAD_MERGE = "false";
+
+    /**
+     * shared directory folder name
+     */
+    public static final String SHARED_DIRECTORY = "shared_dictionary";
+
+    /**
+     * metadata constant
+     */
+    public static final String METADATA_CONSTANT = "_metadata";
+
+    /**
+     * dictionary folder name
+     */
+    public static final String DICTIONARY_CONSTANT = "dictionary";
+
+    /**
+     * folder extension
+     */
+    public static final String FILE_EXTENSION = ".file";
+
+    /**
+     * Segment folder prefix
+     */
+    public static final String SEGMENT_CONSTANT = "segment_";
+
+    /**
+     * File separator charcater
+     */
+    public static final char FILE_SEPARATOR_CHAR = '/';
+
+    /**
+     * maximum dictionary chunk size that can be kept in memory while writing dictionary file
+     */
+    public static final String DICTIONARY_ONE_CHUNK_SIZE = "carbon.dictionary.chunk.size";
+
+    /**
+     * dictionary chunk default size
+     */
+    public static final String DICTIONARY_ONE_CHUNK_SIZE_DEFAULT = "10000";
 
     private CarbonCommonConstants() {
 

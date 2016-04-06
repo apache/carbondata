@@ -28,9 +28,9 @@ import org.apache.hadoop.fs.*;
 import org.apache.hadoop.fs.FileSystem;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.FileHolder;
+import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.filesystem.HDFSCarbonFile;
 import org.carbondata.core.datastorage.store.filesystem.LocalCarbonFile;
-import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.util.CarbonUtil;
 
 public final class FileFactory {
@@ -60,12 +60,12 @@ public final class FileFactory {
 
     public static FileHolder getFileHolder(FileType fileType) {
         switch (fileType) {
-        case LOCAL:
-            return new FileHolderImpl();
-        case HDFS:
-            return new HDFSFileHolderImpl();
-        default:
-            return new FileHolderImpl();
+            case LOCAL:
+                return new FileHolderImpl();
+            case HDFS:
+                return new HDFSFileHolderImpl();
+            default:
+                return new FileHolderImpl();
         }
     }
 
@@ -88,12 +88,12 @@ public final class FileFactory {
 
     public static CarbonFile getCarbonFile(String path, FileType fileType) {
         switch (fileType) {
-        case LOCAL:
-            return new LocalCarbonFile(path);
-        case HDFS:
-            return new HDFSCarbonFile(path);
-        default:
-            return new LocalCarbonFile(path);
+            case LOCAL:
+                return new LocalCarbonFile(path);
+            case HDFS:
+                return new HDFSCarbonFile(path);
+            default:
+                return new LocalCarbonFile(path);
         }
     }
 
@@ -101,15 +101,15 @@ public final class FileFactory {
             throws IOException {
         path = path.replace("\\", "/");
         switch (fileType) {
-        case LOCAL:
-            return new DataInputStream(new BufferedInputStream(new FileInputStream(path)));
-        case HDFS:
-            Path pt = new Path(path);
-            FileSystem fs = pt.getFileSystem(configuration);
-            FSDataInputStream stream = fs.open(pt);
-            return stream;
-        default:
-            return new DataInputStream(new BufferedInputStream(new FileInputStream(path)));
+            case LOCAL:
+                return new DataInputStream(new BufferedInputStream(new FileInputStream(path)));
+            case HDFS:
+                Path pt = new Path(path);
+                FileSystem fs = pt.getFileSystem(configuration);
+                FSDataInputStream stream = fs.open(pt);
+                return stream;
+            default:
+                return new DataInputStream(new BufferedInputStream(new FileInputStream(path)));
         }
     }
 
@@ -117,15 +117,15 @@ public final class FileFactory {
             throws IOException {
         path = path.replace("\\", "/");
         switch (fileType) {
-        case LOCAL:
-            return new DataInputStream(new BufferedInputStream(new FileInputStream(path)));
-        case HDFS:
-            Path pt = new Path(path);
-            FileSystem fs = pt.getFileSystem(configuration);
-            FSDataInputStream stream = fs.open(pt, bufferSize);
-            return stream;
-        default:
-            return new DataInputStream(new BufferedInputStream(new FileInputStream(path)));
+            case LOCAL:
+                return new DataInputStream(new BufferedInputStream(new FileInputStream(path)));
+            case HDFS:
+                Path pt = new Path(path);
+                FileSystem fs = pt.getFileSystem(configuration);
+                FSDataInputStream stream = fs.open(pt, bufferSize);
+                return stream;
+            default:
+                return new DataInputStream(new BufferedInputStream(new FileInputStream(path)));
         }
     }
 
@@ -133,15 +133,15 @@ public final class FileFactory {
             throws IOException {
         path = path.replace("\\", "/");
         switch (fileType) {
-        case LOCAL:
-            return new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path)));
-        case HDFS:
-            Path pt = new Path(path);
-            FileSystem fs = pt.getFileSystem(configuration);
-            FSDataOutputStream stream = fs.create(pt, true);
-            return stream;
-        default:
-            return new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path)));
+            case LOCAL:
+                return new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path)));
+            case HDFS:
+                Path pt = new Path(path);
+                FileSystem fs = pt.getFileSystem(configuration);
+                FSDataOutputStream stream = fs.create(pt, true);
+                return stream;
+            default:
+                return new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path)));
         }
     }
 
@@ -149,15 +149,15 @@ public final class FileFactory {
             short replicationFactor) throws IOException {
         path = path.replace("\\", "/");
         switch (fileType) {
-        case LOCAL:
-            return new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path)));
-        case HDFS:
-            Path pt = new Path(path);
-            FileSystem fs = pt.getFileSystem(configuration);
-            FSDataOutputStream stream = fs.create(pt, replicationFactor);
-            return stream;
-        default:
-            return new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path)));
+            case LOCAL:
+                return new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path)));
+            case HDFS:
+                Path pt = new Path(path);
+                FileSystem fs = pt.getFileSystem(configuration);
+                FSDataOutputStream stream = fs.create(pt, replicationFactor);
+                return stream;
+            default:
+                return new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path)));
         }
     }
 
@@ -165,17 +165,17 @@ public final class FileFactory {
             int bufferSize) throws IOException {
         path = path.replace("\\", "/");
         switch (fileType) {
-        case LOCAL:
-            return new DataOutputStream(
-                    new BufferedOutputStream(new FileOutputStream(path), bufferSize));
-        case HDFS:
-            Path pt = new Path(path);
-            FileSystem fs = pt.getFileSystem(configuration);
-            FSDataOutputStream stream = fs.create(pt, true, bufferSize);
-            return stream;
-        default:
-            return new DataOutputStream(
-                    new BufferedOutputStream(new FileOutputStream(path), bufferSize));
+            case LOCAL:
+                return new DataOutputStream(
+                        new BufferedOutputStream(new FileOutputStream(path), bufferSize));
+            case HDFS:
+                Path pt = new Path(path);
+                FileSystem fs = pt.getFileSystem(configuration);
+                FSDataOutputStream stream = fs.create(pt, true, bufferSize);
+                return stream;
+            default:
+                return new DataOutputStream(
+                        new BufferedOutputStream(new FileOutputStream(path), bufferSize));
         }
     }
 
@@ -183,17 +183,17 @@ public final class FileFactory {
             int bufferSize, boolean append) throws IOException {
         path = path.replace("\\", "/");
         switch (fileType) {
-        case LOCAL:
-            return new DataOutputStream(
-                    new BufferedOutputStream(new FileOutputStream(path, append), bufferSize));
-        case HDFS:
-            Path pt = new Path(path);
-            FileSystem fs = pt.getFileSystem(configuration);
-            FSDataOutputStream stream = fs.create(pt, append, bufferSize);
-            return stream;
-        default:
-            return new DataOutputStream(
-                    new BufferedOutputStream(new FileOutputStream(path), bufferSize));
+            case LOCAL:
+                return new DataOutputStream(
+                        new BufferedOutputStream(new FileOutputStream(path, append), bufferSize));
+            case HDFS:
+                Path pt = new Path(path);
+                FileSystem fs = pt.getFileSystem(configuration);
+                FSDataOutputStream stream = fs.create(pt, append, bufferSize);
+                return stream;
+            default:
+                return new DataOutputStream(
+                        new BufferedOutputStream(new FileOutputStream(path), bufferSize));
         }
     }
 
@@ -202,46 +202,45 @@ public final class FileFactory {
         folderPath = folderPath.replace("\\", "/");
         List<String> fileNames = new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
         switch (fileType) {
-        case HDFS:
-            Path pt = new Path(folderPath);
-            FileSystem fs = pt.getFileSystem(configuration);
-            FileStatus[] hdfsFiles = fs.listStatus(pt);
-            for (FileStatus fileStatus : hdfsFiles) {
-                if (extn != null) {
-                    if (!fileStatus.isDir() && fileStatus.getPath().getName().endsWith(extn)) {
-                        fileNames.add(fileStatus.getPath().getName().replace(extn, ""));
-                    }
-                } else {
-                    if (!fileStatus.isDir()) {
-                        fileNames.add(fileStatus.getPath().getName());
-                    }
-                }
-
-            }
-            break;
-        case LOCAL:
-        default:
-            File[] files = new File(folderPath).listFiles(new FileFilter() {
-                @Override
-                public boolean accept(File pathname) {
-                    if (pathname.isDirectory()) {
-                        return false;
-                    }
-
+            case HDFS:
+                Path pt = new Path(folderPath);
+                FileSystem fs = pt.getFileSystem(configuration);
+                FileStatus[] hdfsFiles = fs.listStatus(pt);
+                for (FileStatus fileStatus : hdfsFiles) {
                     if (extn != null) {
-                        return pathname.getName().endsWith(extn);
+                        if (!fileStatus.isDir() && fileStatus.getPath().getName().endsWith(extn)) {
+                            fileNames.add(fileStatus.getPath().getName().replace(extn, ""));
+                        }
+                    } else {
+                        if (!fileStatus.isDir()) {
+                            fileNames.add(fileStatus.getPath().getName());
+                        }
                     }
-                    return true;
-                }
-            });
 
-            for (File oneFile : files) {
-                if (extn != null) {
-                    fileNames.add(oneFile.getName().replace(extn, ""));
-                } else {
-                    fileNames.add(oneFile.getName());
                 }
-            }
+                break;
+            case LOCAL:
+            default:
+                File[] files = new File(folderPath).listFiles(new FileFilter() {
+                    @Override public boolean accept(File pathname) {
+                        if (pathname.isDirectory()) {
+                            return false;
+                        }
+
+                        if (extn != null) {
+                            return pathname.getName().endsWith(extn);
+                        }
+                        return true;
+                    }
+                });
+
+                for (File oneFile : files) {
+                    if (extn != null) {
+                        fileNames.add(oneFile.getName().replace(extn, ""));
+                    } else {
+                        fileNames.add(oneFile.getName());
+                    }
+                }
         }
 
         return fileNames;
@@ -259,24 +258,24 @@ public final class FileFactory {
             throws IOException {
         filePath = filePath.replace("\\", "/");
         switch (fileType) {
-        case HDFS:
-            Path path = new Path(filePath);
-            FileSystem fs = path.getFileSystem(configuration);
-            if (performFileCheck) {
-                return fs.exists(path) && fs.isFile(path);
-            } else {
-                return fs.exists(path);
-            }
+            case HDFS:
+                Path path = new Path(filePath);
+                FileSystem fs = path.getFileSystem(configuration);
+                if (performFileCheck) {
+                    return fs.exists(path) && fs.isFile(path);
+                } else {
+                    return fs.exists(path);
+                }
 
-        case LOCAL:
-        default:
-            File defaultFile = new File(filePath);
+            case LOCAL:
+            default:
+                File defaultFile = new File(filePath);
 
-            if (performFileCheck) {
-                return defaultFile.exists() && defaultFile.isFile();
-            } else {
-                return defaultFile.exists();
-            }
+                if (performFileCheck) {
+                    return defaultFile.exists() && defaultFile.isFile();
+                } else {
+                    return defaultFile.exists();
+                }
         }
     }
 
@@ -290,44 +289,44 @@ public final class FileFactory {
     public static boolean isFileExist(String filePath, FileType fileType) throws IOException {
         filePath = filePath.replace("\\", "/");
         switch (fileType) {
-        case HDFS:
-            Path path = new Path(filePath);
-            FileSystem fs = path.getFileSystem(configuration);
-            return fs.exists(path);
+            case HDFS:
+                Path path = new Path(filePath);
+                FileSystem fs = path.getFileSystem(configuration);
+                return fs.exists(path);
 
-        case LOCAL:
-        default:
-            File defaultFile = new File(filePath);
-            return defaultFile.exists();
+            case LOCAL:
+            default:
+                File defaultFile = new File(filePath);
+                return defaultFile.exists();
         }
     }
 
     public static boolean createNewFile(String filePath, FileType fileType) throws IOException {
         filePath = filePath.replace("\\", "/");
         switch (fileType) {
-        case HDFS:
-            Path path = new Path(filePath);
-            FileSystem fs = path.getFileSystem(configuration);
-            return fs.createNewFile(path);
+            case HDFS:
+                Path path = new Path(filePath);
+                FileSystem fs = path.getFileSystem(configuration);
+                return fs.createNewFile(path);
 
-        case LOCAL:
-        default:
-            File file = new File(filePath);
-            return file.createNewFile();
+            case LOCAL:
+            default:
+                File file = new File(filePath);
+                return file.createNewFile();
         }
     }
 
     public static boolean mkdirs(String filePath, FileType fileType) throws IOException {
         filePath = filePath.replace("\\", "/");
         switch (fileType) {
-        case HDFS:
-            Path path = new Path(filePath);
-            FileSystem fs = path.getFileSystem(configuration);
-            return fs.mkdirs(path);
-        case LOCAL:
-        default:
-            File file = new File(filePath);
-            return file.mkdirs();
+            case HDFS:
+                Path path = new Path(filePath);
+                FileSystem fs = path.getFileSystem(configuration);
+                return fs.mkdirs(path);
+            case LOCAL:
+            default:
+                File file = new File(filePath);
+                return file.mkdirs();
         }
     }
 
@@ -343,15 +342,16 @@ public final class FileFactory {
             throws IOException {
         path = path.replace("\\", "/");
         switch (fileType) {
-        case LOCAL:
-            return new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path, true)));
-        case HDFS:
-            Path pt = new Path(path);
-            FileSystem fs = pt.getFileSystem(configuration);
-            FSDataOutputStream stream = fs.append(pt);
-            return stream;
-        default:
-            return new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path)));
+            case LOCAL:
+                return new DataOutputStream(
+                        new BufferedOutputStream(new FileOutputStream(path, true)));
+            case HDFS:
+                Path pt = new Path(path);
+                FileSystem fs = pt.getFileSystem(configuration);
+                FSDataOutputStream stream = fs.append(pt);
+                return stream;
+            default:
+                return new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path)));
         }
     }
 
@@ -367,18 +367,18 @@ public final class FileFactory {
     public static boolean createNewLockFile(String filePath, FileType fileType) throws IOException {
         filePath = filePath.replace("\\", "/");
         switch (fileType) {
-        case HDFS:
-            Path path = new Path(filePath);
-            FileSystem fs = path.getFileSystem(configuration);
-            if (fs.createNewFile(path)) {
-                fs.deleteOnExit(path);
-                return true;
-            }
-            return false;
-        case LOCAL:
-        default:
-            File file = new File(filePath);
-            return file.createNewFile();
+            case HDFS:
+                Path path = new Path(filePath);
+                FileSystem fs = path.getFileSystem(configuration);
+                if (fs.createNewFile(path)) {
+                    fs.deleteOnExit(path);
+                    return true;
+                }
+                return false;
+            case LOCAL:
+            default:
+                File file = new File(filePath);
+                return file.createNewFile();
         }
     }
 
