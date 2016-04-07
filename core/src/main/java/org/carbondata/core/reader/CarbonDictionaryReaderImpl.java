@@ -49,7 +49,7 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
     /**
      * column name
      */
-    private String columnName;
+    private String columnIdentifier;
 
     /**
      * shared dimension flag
@@ -70,11 +70,11 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
      * Constructor
      */
     public CarbonDictionaryReaderImpl(String hdfsStorePath,
-            CarbonTableIdentifier carbonTableIdentifier, String columnName,
+            CarbonTableIdentifier carbonTableIdentifier, String columnIdentifier,
             boolean isSharedDimension) {
         this.hdfsStorePath = hdfsStorePath;
         this.carbonTableIdentifier = carbonTableIdentifier;
-        this.columnName = columnName;
+        this.columnIdentifier = columnIdentifier;
         this.isSharedDimension = isSharedDimension;
         initFileLocation();
     }
@@ -190,7 +190,7 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
         String dictionaryFolder = CarbonDictionaryUtil
                 .getDirectoryPath(carbonTableIdentifier, hdfsStorePath, isSharedDimension);
         this.columnDictionaryFilePath = CarbonDictionaryUtil
-                .getDictionaryFilePath(carbonTableIdentifier, dictionaryFolder, columnName,
+                .getDictionaryFilePath(carbonTableIdentifier, dictionaryFolder, columnIdentifier,
                         isSharedDimension);
 
     }
@@ -257,7 +257,7 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
     private List<CarbonDictionaryColumnMetaChunk> readDictionaryMetadataFile() throws IOException {
         CarbonDictionaryMetadataReaderImpl columnMetadataReaderImpl =
                 new CarbonDictionaryMetadataReaderImpl(this.hdfsStorePath,
-                        this.carbonTableIdentifier, this.columnName, this.isSharedDimension);
+                        this.carbonTableIdentifier, this.columnIdentifier, this.isSharedDimension);
         List<CarbonDictionaryColumnMetaChunk> dictionaryMetaChunkList = null;
         // read metadata file
         try {

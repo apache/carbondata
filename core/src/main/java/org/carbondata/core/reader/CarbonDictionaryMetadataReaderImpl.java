@@ -47,7 +47,7 @@ public class CarbonDictionaryMetadataReaderImpl implements CarbonDictionaryMetad
     /**
      * column name
      */
-    private String columnName;
+    private String columnIdentifier;
 
     /**
      * shared dimension flag
@@ -68,11 +68,11 @@ public class CarbonDictionaryMetadataReaderImpl implements CarbonDictionaryMetad
      * Constructor
      */
     public CarbonDictionaryMetadataReaderImpl(String hdfsStorePath,
-            CarbonTableIdentifier carbonTableIdentifier, String columnName,
+            CarbonTableIdentifier carbonTableIdentifier, String columnIdentifier,
             boolean isSharedDimension) {
         this.hdfsStorePath = hdfsStorePath;
         this.carbonTableIdentifier = carbonTableIdentifier;
-        this.columnName = columnName;
+        this.columnIdentifier = columnIdentifier;
         this.isSharedDimension = isSharedDimension;
         initFileLocation();
     }
@@ -150,8 +150,8 @@ public class CarbonDictionaryMetadataReaderImpl implements CarbonDictionaryMetad
         String dictionaryFolder = CarbonDictionaryUtil
                 .getDirectoryPath(carbonTableIdentifier, hdfsStorePath, isSharedDimension);
         this.columnDictionaryMetadataFilePath = CarbonDictionaryUtil
-                .getDictionaryMetadataFilePath(carbonTableIdentifier, dictionaryFolder, columnName,
-                        isSharedDimension);
+                .getDictionaryMetadataFilePath(carbonTableIdentifier, dictionaryFolder,
+                        columnIdentifier, isSharedDimension);
     }
 
     /**

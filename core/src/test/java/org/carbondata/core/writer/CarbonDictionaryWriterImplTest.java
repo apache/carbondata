@@ -75,7 +75,7 @@ public class CarbonDictionaryWriterImplTest {
 
     private String hdfsStorePath;
 
-    private String columnName;
+    private String columnIdentifier;
 
     private Properties props;
 
@@ -105,7 +105,7 @@ public class CarbonDictionaryWriterImplTest {
         this.databaseName = props.getProperty("database", "testSchema");
         this.tableName = props.getProperty("tableName", "carbon");
         this.hdfsStorePath = props.getProperty("storePath", "carbonStore");
-        this.columnName = "Name";
+        this.columnIdentifier = "Name";
         carbonTableIdentifier = new CarbonTableIdentifier(databaseName, tableName);
         deleteStorePath();
         prepareDataSet();
@@ -204,8 +204,8 @@ public class CarbonDictionaryWriterImplTest {
      */
     private CarbonDictionaryWriterImpl prepareWriter(boolean isSharedDimension) {
         initDictionaryDirPaths(isSharedDimension);
-        return new CarbonDictionaryWriterImpl(this.hdfsStorePath, carbonTableIdentifier, columnName,
-                isSharedDimension);
+        return new CarbonDictionaryWriterImpl(this.hdfsStorePath, carbonTableIdentifier,
+                columnIdentifier, isSharedDimension);
     }
 
     /**
@@ -278,19 +278,37 @@ public class CarbonDictionaryWriterImplTest {
         // prepare dictionary writer object
         CarbonDictionaryWriterImpl writer = prepareWriter(isSharedDimension);
         writeDictionaryFile(writer, dataSet1);
+        long endOffsetAfterFirstDictionaryChunk = CarbonUtil.getFileSize(dictionaryFilePath);
         // maintain the offset till end offset of first chunk
-        long end_offsetToRead = CarbonUtil.getFileSize(dictionaryFilePath);
         writer = prepareWriter(isSharedDimension);
         writeDictionaryFile(writer, dataSet2);
-        FileFactory.FileType fileType = FileFactory.getFileType(dictionaryFilePath);
-        CarbonFile carbonFile = FileFactory.getCarbonFile(dictionaryFilePath, fileType);
-        // call truncate to get retain only first dictionary chunk in the file
-        carbonFile.truncate(dictionaryFilePath, end_offsetToRead);
+        // prepare first column meta chunk object
+        ColumnDictionaryChunkMeta firstDictionaryChunkMeta =
+                new ColumnDictionaryChunkMeta(1, 2, 0, endOffsetAfterFirstDictionaryChunk, 1);
+        // overwrite the dictionary meta chunk file to test the truncate operation
+        overwriteDictionaryMetaFile(firstDictionaryChunkMeta, dictionaryMetaFilePath);
+        writer = prepareWriter(isSharedDimension);
+        // in the next step truncate operation will be tested while writing dictionary file
+        writeDictionaryFile(writer, dataSet3);
         // read dictionary file
         List<byte[]> dictionaryValues = readDictionaryFile(false, 0L, 0L);
         List<String> expected = convertByteArrayListToStringValueList(dictionaryValues);
+        List<String> actual = new ArrayList<>(4);
+        actual.addAll(dataSet1);
+        actual.addAll(dataSet3);
         // validate the data retrieved and it should match dataset1
-        compareDictionaryData(dataSet1, expected);
+        compareDictionaryData(actual, expected);
+    }
+
+    /**
+     * This method will overwrite a given file with data provided
+     */
+    private void overwriteDictionaryMetaFile(ColumnDictionaryChunkMeta firstDictionaryChunkMeta,
+            String dictionaryFile) throws IOException {
+        ThriftWriter thriftMetaChunkWriter = new ThriftWriter(dictionaryFile, false);
+        thriftMetaChunkWriter.open();
+        thriftMetaChunkWriter.write(firstDictionaryChunkMeta);
+        thriftMetaChunkWriter.close();
     }
 
     /**
@@ -300,7 +318,7 @@ public class CarbonDictionaryWriterImplTest {
         String directoryPath = CarbonDictionaryUtil
                 .getDirectoryPath(carbonTableIdentifier, hdfsStorePath, isSharedDimension);
         String dictionaryFilePath = CarbonDictionaryUtil
-                .getDictionaryFilePath(carbonTableIdentifier, directoryPath, columnName,
+                .getDictionaryFilePath(carbonTableIdentifier, directoryPath, columnIdentifier,
                         isSharedDimension);
         String folderToCreate =
                 dictionaryFilePath.substring(0, dictionaryFilePath.lastIndexOf('/'));
@@ -500,7 +518,7 @@ public class CarbonDictionaryWriterImplTest {
             boolean isSharedDimension) throws IOException {
         CarbonDictionaryMetadataReaderImpl columnMetadataReaderImpl =
                 new CarbonDictionaryMetadataReaderImpl(this.hdfsStorePath,
-                        this.carbonTableIdentifier, this.columnName, isSharedDimension);
+                        this.carbonTableIdentifier, this.columnIdentifier, isSharedDimension);
         List<CarbonDictionaryColumnMetaChunk> dictionaryMetaChunkList = null;
         // read metadata file
         try {
@@ -519,7 +537,7 @@ public class CarbonDictionaryWriterImplTest {
             long dictionaryEndOffset) throws IOException {
         CarbonDictionaryReaderImpl dictionaryReader =
                 new CarbonDictionaryReaderImpl(this.hdfsStorePath, this.carbonTableIdentifier,
-                        this.columnName, isSharedDimension);
+                        this.columnIdentifier, isSharedDimension);
         List<byte[]> dictionaryValues =
                 new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         try {
@@ -588,10 +606,10 @@ public class CarbonDictionaryWriterImplTest {
         this.directoryPath = CarbonDictionaryUtil
                 .getDirectoryPath(carbonTableIdentifier, hdfsStorePath, isSharedDimension);
         this.dictionaryFilePath = CarbonDictionaryUtil
-                .getDictionaryFilePath(carbonTableIdentifier, this.directoryPath, columnName,
+                .getDictionaryFilePath(carbonTableIdentifier, this.directoryPath, columnIdentifier,
                         isSharedDimension);
         this.dictionaryMetaFilePath = CarbonDictionaryUtil
                 .getDictionaryMetadataFilePath(carbonTableIdentifier, this.directoryPath,
-                        columnName, isSharedDimension);
+                        columnIdentifier, isSharedDimension);
     }
 }

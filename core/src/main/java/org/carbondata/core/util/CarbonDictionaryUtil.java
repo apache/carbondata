@@ -32,7 +32,7 @@ public class CarbonDictionaryUtil {
      * This method will form the dictionary metadata file path for a column
      */
     public static String getDictionaryMetadataFilePath(CarbonTableIdentifier carbonTableIdentifier,
-            String metadataFileDirPath, String columnName, boolean isSharedDimension) {
+            String metadataFileDirPath, String columnIdentifier, boolean isSharedDimension) {
         // if dimension is shared between tables in a database then dictionary metadata
         // file for that
         // column should be created under shared directory
@@ -43,7 +43,7 @@ public class CarbonDictionaryUtil {
         }
         metadataFilePathBuilder.append(metadataFileDirPath)
                 .append(CarbonCommonConstants.FILE_SEPARATOR_CHAR).append(tableName)
-                .append(columnName).append(CarbonCommonConstants.UNDERSCORE)
+                .append(columnIdentifier).append(CarbonCommonConstants.UNDERSCORE)
                 .append(CarbonCommonConstants.DICTIONARY_CONSTANT)
                 .append(CarbonCommonConstants.METADATA_CONSTANT)
                 .append(CarbonCommonConstants.FILE_EXTENSION);
@@ -54,7 +54,7 @@ public class CarbonDictionaryUtil {
      * This method will form the dictionary file path for a column
      */
     public static String getDictionaryFilePath(CarbonTableIdentifier carbonTableIdentifier,
-            String dictionaryLocation, String columnName, boolean isSharedDimension) {
+            String dictionaryLocation, String columnIdentifier, boolean isSharedDimension) {
         // if dimension is shared between tables in a database then dictionary file for that
         // column should be created under shared directory
         StringBuilder dictionaryFilePathBuilder = new StringBuilder();
@@ -64,7 +64,7 @@ public class CarbonDictionaryUtil {
         }
         dictionaryFilePathBuilder.append(dictionaryLocation)
                 .append(CarbonCommonConstants.FILE_SEPARATOR_CHAR).append(tableName)
-                .append(columnName).append(CarbonCommonConstants.UNDERSCORE)
+                .append(columnIdentifier).append(CarbonCommonConstants.UNDERSCORE)
                 .append(CarbonCommonConstants.DICTIONARY_CONSTANT)
                 .append(CarbonCommonConstants.FILE_EXTENSION);
         return dictionaryFilePathBuilder.toString();
