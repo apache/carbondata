@@ -26,6 +26,10 @@ import org.carbondata.core.writer.CarbonDictionaryWriterImpl
 import org.carbondata.core.util.CarbonDictionaryUtil
 import org.carbondata.core.util.CarbonUtil
 import java.io.IOException
+import org.carbondata.core.reader.CarbonDictionaryReader
+import org.carbondata.core.reader.CarbonDictionaryReaderImpl
+import scala.collection.JavaConverters._
+
 
 object GlobalDictionaryUtil extends Logging {
 
@@ -44,8 +48,7 @@ object GlobalDictionaryUtil extends Logging {
     columnBuffer.toArray
   }
 
-  def writeGlobalDictionaryToFile(hdfsStorePath: String, table: CarbonTableIdentifier, columnName: String, iter: Iterator[String], isSharedDimension: Boolean, dictfolderPath: String) = {
-    //TODO better to use factory method
+  def writeGlobalDictionaryToFile(hdfsStorePath: String, table: CarbonTableIdentifier, columnName: String, iter: Iterator[Array[Byte]], isSharedDimension: Boolean, dictfolderPath: String) = {
     val writer: CarbonDictionaryWriter = new CarbonDictionaryWriterImpl(hdfsStorePath, table, columnName, isSharedDimension)
     try {
       val dictFilePath =  CarbonDictionaryUtil.getDictionaryFilePath(table, dictfolderPath, columnName, isSharedDimension);
@@ -53,21 +56,19 @@ object GlobalDictionaryUtil extends Logging {
         writer.write(CarbonCommonConstants.MEMBER_DEFAULT_VAL)
       }
       while (iter.hasNext) {
-        writer.write(iter.next)
+        writer.write(new String(iter.next))
       }
     } finally {
       writer.close
     }
   }
 
-  def readGlobalDictionaryFromFile(folder: String, table: String, column: Array[String]) = {
-    //TODO need change to use CarbonDictionaryReader after another PR merged 
-    val dicts = new Array[HashMap[String, Int]](column.length)
-    val existDicts = new Array[Boolean](column.length)
-    for (i <- 0 until column.length) {
-      dicts(i) = new HashMap[String, Int]()
-      // need to add some codes to use CarbonDictionaryReader
-      
+  def readGlobalDictionaryFromFile(hdfsLocation: String, table: CarbonTableIdentifier, columns: Array[String], isSharedDimension: Boolean) = {
+    val dicts = new Array[HashSet[Array[Byte]]](columns.length)
+    val existDicts = new Array[Boolean](columns.length)
+    for (i <- 0 until columns.length) {
+      val reader: CarbonDictionaryReader = new CarbonDictionaryReaderImpl(hdfsLocation, table, columns(i), isSharedDimension)
+      dicts(i) = new HashSet[Array[Byte]] ++ reader.read.asScala
       if (dicts(i).size == 0) {
         existDicts(i) = false
       }
@@ -108,7 +109,7 @@ object GlobalDictionaryUtil extends Logging {
         //select column to push down pruning
         df = df.select(requireColumns.head, requireColumns.tail: _*)
         //combine distinct value in a block and partition by column
-        val inputRDD = new CarbonBlockDistinctValuesCombineRDD(df.rdd, dictfolderPath, table, requireColumns, isSharedDimension).partitionBy(new ColumnPartitioner(requireColumns.length))
+        val inputRDD = new CarbonBlockDistinctValuesCombineRDD(df.rdd, table, requireColumns, hdfsLocation, isSharedDimension).partitionBy(new ColumnPartitioner(requireColumns.length))
         //generate global dictionary files
         val statusList = new CarbonGlobalDictionaryGenerateRDD(inputRDD, table, requireColumns, hdfsLocation, dictfolderPath, isSharedDimension).collect()
         //check result status
