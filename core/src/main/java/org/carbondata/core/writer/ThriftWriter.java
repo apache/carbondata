@@ -89,6 +89,15 @@ public class ThriftWriter {
     }
 
     /**
+     * Write the offset to the file
+     * @param offset
+     * @throws IOException
+     */
+    public void writeOffset(long offset) throws IOException {
+        dataOutputStream.writeLong(offset);
+    }
+
+    /**
      * Close the file stream.
      */
     public void close() {
