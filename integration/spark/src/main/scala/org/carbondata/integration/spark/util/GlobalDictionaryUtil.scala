@@ -59,16 +59,16 @@ object GlobalDictionaryUtil extends Logging {
   def readGlobalDictionaryFromFile(folder: String, table: String, column: Array[String]) = {
     //TODO need change to use CarbonDictionaryReader after another PR merged 
     val dicts = new Array[HashMap[String, Int]](column.length)
-    val hasDicts = new Array[Boolean](column.length)
+    val existDicts = new Array[Boolean](column.length)
     for (i <- 0 until column.length) {
       dicts(i) = new HashMap[String, Int]()
       // need to add some codes to use CarbonDictionaryReader
       
       if (dicts(i).size == 0) {
-        hasDicts(i) = false
+        existDicts(i) = false
       }
     }
-    (dicts, hasDicts)
+    (dicts, existDicts)
   }
 
   /**

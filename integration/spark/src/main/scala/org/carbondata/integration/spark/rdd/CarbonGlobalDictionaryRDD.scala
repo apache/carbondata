@@ -71,14 +71,17 @@ class CarbonBlockDistinctValuesCombineRDD(
     val distinctValuesList = new ArrayBuffer[(Int, HashSet[String])]
     try {
       //load exists dictionary file to list of HashMap
-      val (dicts, hasDicts) = GlobalDictionaryUtil.readGlobalDictionaryFromFile(dictfolderPath, table.getTableName, columns)
+      val (dicts, existDicts) = GlobalDictionaryUtil.readGlobalDictionaryFromFile(dictfolderPath, table.getTableName, columns)
       //local combine set
       val numColumns = columns.length
       val sets = new Array[HashSet[String]](numColumns)
       for (i <- 0 until numColumns) {
         sets(i) = new HashSet[String]
         distinctValuesList += ((i, sets(i)))
-      }
+        if(!existDicts(i)){
+          sets(i).add(CarbonCommonConstants.MEMBER_DEFAULT_VAL)    
+        }
+      }  
       var row: Row = null
       var value: String = null
       val rddIter = firstParent[Row].iterator(split, context)
@@ -89,7 +92,7 @@ class CarbonBlockDistinctValuesCombineRDD(
           for (i <- 0 until numColumns) {
             value = row.getString(i)
             if (value != null) {
-              if (hasDicts(i)) {
+              if (existDicts(i)) {
                 dicts(i).get(value) match {
                   case None => sets(i).add(value)
                   case Some(_) =>
