@@ -20,6 +20,7 @@
 package org.carbondata.core.reader;
 
 import java.io.Closeable;
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -36,7 +37,7 @@ public interface CarbonDictionaryReader extends Closeable {
      * This is a case where carbon column cache feature is enabled in which a
      * column dictionary is read if it is present in the query.
      */
-    List<byte[]> read();
+    List<byte[]> read() throws IOException;
 
     /**
      * This method should be used when data has to be read from a given offset.
@@ -45,7 +46,7 @@ public interface CarbonDictionaryReader extends Closeable {
      * and incremental load is done, then for the new query only new dictionary data
      * has to be read form memory.
      */
-    List<byte[]> read(long startOffset);
+    List<byte[]> read(long startOffset) throws IOException;
 
     /**
      * This method will be used to read data between given start and end offset.
@@ -53,5 +54,5 @@ public interface CarbonDictionaryReader extends Closeable {
      * 1. Truncate operation. If there is any inconsistency while writing the dictionary file
      * then we can give the start and end offset till where the data has to be retained.
      */
-    List<byte[]> read(long startOffset, long endOffset);
+    List<byte[]> read(long startOffset, long endOffset) throws IOException;
 }

@@ -32,7 +32,8 @@ import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
-import org.carbondata.core.reader.ThriftReader;
+import org.carbondata.core.reader.CarbonDictionaryColumnMetaChunk;
+import org.carbondata.core.reader.CarbonDictionaryMetadataReaderImpl;
 import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonDictionaryUtil;
 import org.carbondata.core.util.CarbonProperties;
@@ -64,7 +65,7 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
     /**
      * Meta object which will hold last segment entry details
      */
-    private ColumnDictionaryChunkMeta chunkMetaObjectForLastSegmentEntry;
+    private CarbonDictionaryColumnMetaChunk chunkMetaObjectForLastSegmentEntry;
 
     /**
      * dictionary file and meta thrift writer
@@ -268,8 +269,8 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
      */
     private void validateDictionaryFileOffsetWithLastSegmentEntryOffset() throws IOException {
         if (CarbonUtil.isFileExists(this.dictionaryMetaFilePath)) {
-            chunkMetaObjectForLastSegmentEntry =
-                    getChunkMetaObjectForLastSegmentEntry(this.dictionaryMetaFilePath);
+            // read last dictionary chunk meta entry from dictionary metadata file
+            chunkMetaObjectForLastSegmentEntry = getChunkMetaObjectForLastSegmentEntry();
             int bytesToTruncate =
                     (int) (chunk_start_offset - chunkMetaObjectForLastSegmentEntry.getEnd_offset());
             if (bytesToTruncate > 0) {
@@ -360,25 +361,20 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
     /**
      * This method will read the dictionary chunk metadata thrift object for last entry
      */
-    private ColumnDictionaryChunkMeta getChunkMetaObjectForLastSegmentEntry(String metadataFilePath)
+    private CarbonDictionaryColumnMetaChunk getChunkMetaObjectForLastSegmentEntry()
             throws IOException {
-        ColumnDictionaryChunkMeta dictionaryChunkMeta = null;
-        ThriftReader thriftIn = new ThriftReader(metadataFilePath, new ThriftReader.TBaseCreator() {
-            @Override public TBase create() {
-                return new ColumnDictionaryChunkMeta();
-            }
-        });
+        CarbonDictionaryColumnMetaChunk carbonDictionaryColumnMetaChunk = null;
+        CarbonDictionaryMetadataReaderImpl columnMetadataReaderImpl =
+                new CarbonDictionaryMetadataReaderImpl(this.hdfsStorePath,
+                        this.carbonTableIdentifier, this.columnName, this.isSharedDimension);
         try {
-            // Open it
-            thriftIn.open();
-            // keep iterating so that at end we have only the last segment entry
-            while (thriftIn.hasNext()) {
-                dictionaryChunkMeta = (ColumnDictionaryChunkMeta) thriftIn.read();
-            }
+            // read the last segment entry for dictionary metadata
+            carbonDictionaryColumnMetaChunk =
+                    columnMetadataReaderImpl.readLastEntryOfDictionaryMetaChunk();
         } finally {
-            // Close reader
-            thriftIn.close();
+            // Close metadata reader
+            columnMetadataReaderImpl.close();
         }
-        return dictionaryChunkMeta;
+        return carbonDictionaryColumnMetaChunk;
     }
 }

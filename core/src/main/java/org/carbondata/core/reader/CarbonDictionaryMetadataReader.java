@@ -20,6 +20,7 @@
 package org.carbondata.core.reader;
 
 import java.io.Closeable;
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -35,7 +36,7 @@ public interface CarbonDictionaryMetadataReader extends Closeable {
      * 2. If dictionary file is read using start and end offset then using this meta list
      * we can count the total number of dictionary chunks present between the 2 offsets
      */
-    List<CarbonDictionaryColumnMetaChunk> read();
+    List<CarbonDictionaryColumnMetaChunk> read() throws IOException;
 
     /**
      * This method will be used to read only the last entry of dictionary meta chunk.
@@ -47,5 +48,5 @@ public interface CarbonDictionaryMetadataReader extends Closeable {
      * dictionary file needs to be validated for any inconsistency. Here end offset of last
      * dictionary chunk meta is validated with file size.
      */
-    CarbonDictionaryColumnMetaChunk readLastEntryOfDictionaryMetaChunk();
+    CarbonDictionaryColumnMetaChunk readLastEntryOfDictionaryMetaChunk() throws IOException;
 }
