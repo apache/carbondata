@@ -146,7 +146,7 @@ class CarbonGlobalDictionaryGenerateRDD(
           distinctValues ++= rddIter.next()._2
         }
         //write to file
-        if (distinctValues.size > 0) {
+        if (!model.dictFileExists(split.index) || distinctValues.size > 0) {
           GlobalDictionaryUtil.writeGlobalDictionaryToFile(model, split.index, distinctValues.toIterator)
         }
       } catch {

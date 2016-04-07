@@ -80,9 +80,7 @@ object GlobalDictionaryUtil extends Logging {
             dicts(i).add(new String(values.get(j)))
         }
       }
-      if (dicts(i).size == 0) {
-        existDicts(i) = false
-      }
+      existDicts(i) = !(dicts(i).size == 0)
     }
     (dicts, existDicts)
   }
