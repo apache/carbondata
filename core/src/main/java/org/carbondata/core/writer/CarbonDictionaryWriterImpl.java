@@ -32,7 +32,8 @@ import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
-import org.carbondata.core.reader.ThriftReader;
+import org.carbondata.core.reader.CarbonDictionaryColumnMetaChunk;
+import org.carbondata.core.reader.CarbonDictionaryMetadataReaderImpl;
 import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonDictionaryUtil;
 import org.carbondata.core.util.CarbonProperties;
@@ -64,7 +65,7 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
     /**
      * Meta object which will hold last segment entry details
      */
-    private ColumnDictionaryChunkMeta chunkMetaObjectForLastSegmentEntry;
+    private CarbonDictionaryColumnMetaChunk chunkMetaObjectForLastSegmentEntry;
 
     /**
      * dictionary file and meta thrift writer
@@ -74,7 +75,7 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
     /**
      * column name
      */
-    private String columnName;
+    private String columnIdentifier;
 
     /**
      * HDFS store path
@@ -132,13 +133,18 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
     private boolean isFirstTime;
 
     /**
-     * constructor
+     * Constructor
+     *
+     * @param hdfsStorePath         HDFS store path
+     * @param carbonTableIdentifier table identifier which will give table name and database name
+     * @param columnIdentifier      column unique identifier
+     * @param isSharedDimension     flag for shared dimension
      */
     public CarbonDictionaryWriterImpl(String hdfsStorePath,
-            CarbonTableIdentifier carbonTableIdentifier, String columnName,
+            CarbonTableIdentifier carbonTableIdentifier, String columnIdentifier,
             boolean isSharedDimension) {
         this.carbonTableIdentifier = carbonTableIdentifier;
-        this.columnName = columnName;
+        this.columnIdentifier = columnIdentifier;
         this.hdfsStorePath = hdfsStorePath;
         this.isSharedDimension = isSharedDimension;
         this.isFirstTime = true;
@@ -148,6 +154,9 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
      * This method will write the data in thrift format to disk. This method will be guided by
      * parameter dictionary_one_chunk_size and data will be divided into chunks
      * based on this parameter
+     *
+     * @param value unique dictionary value
+     * @throws IOException if an I/O error occurs
      */
     @Override public void write(String value) throws IOException {
         if (isFirstTime) {
@@ -163,6 +172,9 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
     /**
      * This method will write the data in thrift format to disk. This method will not be guided by
      * parameter dictionary_one_chunk_size and complete data will be written as one chunk
+     *
+     * @param valueList list of byte array. Each byte array is unique dictionary value
+     * @throws IOException if an I/O error occurs
      */
     @Override public void write(List<byte[]> valueList) throws IOException {
         if (isFirstTime) {
@@ -177,6 +189,8 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
 
     /**
      * write dictionary metadata file and close thrift object
+     *
+     * @throws IOException if an I/O error occurs
      */
     @Override public void close() throws IOException {
         if (null != dictionaryThriftWriter) {
@@ -191,6 +205,8 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
     /**
      * check if the threshold has been reached for the number of
      * values that can kept in memory and then flush the data to file
+     *
+     * @throws IOException if an I/O error occurs
      */
     private void checkAndWriteDictionaryChunkToFile() throws IOException {
         if (oneDictionaryChunkList.size() >= dictionary_one_chunk_size) {
@@ -201,6 +217,8 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
 
     /**
      * This method will serialize the object of dictionary file
+     *
+     * @throws IOException if an I/O error occurs
      */
     private void writeDictionaryFile() throws IOException {
         ColumnDictionaryChunk columnDictionaryChunk = new ColumnDictionaryChunk();
@@ -210,6 +228,8 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
 
     /**
      * This method will check and created the directory path where dictionary file has to be created
+     *
+     * @throws IOException if an I/O error occurs
      */
     private void init() throws IOException {
         initDictionaryChunkSize();
@@ -222,15 +242,15 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
             throw new IOException("Failed to created dictionary folder");
         }
         this.dictionaryFilePath = CarbonDictionaryUtil
-                .getDictionaryFilePath(carbonTableIdentifier, this.directoryPath, columnName,
+                .getDictionaryFilePath(carbonTableIdentifier, this.directoryPath, columnIdentifier,
                         isSharedDimension);
         this.dictionaryMetaFilePath = CarbonDictionaryUtil
                 .getDictionaryMetadataFilePath(carbonTableIdentifier, this.directoryPath,
-                        columnName, isSharedDimension);
+                        columnIdentifier, isSharedDimension);
         if (CarbonUtil.isFileExists(this.dictionaryFilePath)) {
             this.chunk_start_offset = CarbonUtil.getFileSize(this.dictionaryFilePath);
+            validateDictionaryFileOffsetWithLastSegmentEntryOffset();
         }
-        validateDictionaryFileOffsetWithLastSegmentEntryOffset();
         openThriftWriter(this.dictionaryFilePath);
         createChunkList();
     }
@@ -265,33 +285,34 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
      * validate the last entry end offset with file size. If
      * they are not equal that means some invalid data is present which needs
      * to be truncated
+     *
+     * @throws IOException if an I/O error occurs
      */
     private void validateDictionaryFileOffsetWithLastSegmentEntryOffset() throws IOException {
-        if (CarbonUtil.isFileExists(this.dictionaryMetaFilePath)) {
-            chunkMetaObjectForLastSegmentEntry =
-                    getChunkMetaObjectForLastSegmentEntry(this.dictionaryMetaFilePath);
-            int bytesToTruncate =
-                    (int) (chunk_start_offset - chunkMetaObjectForLastSegmentEntry.getEnd_offset());
-            if (bytesToTruncate > 0) {
+        // read last dictionary chunk meta entry from dictionary metadata file
+        chunkMetaObjectForLastSegmentEntry = getChunkMetaObjectForLastSegmentEntry();
+        int bytesToTruncate =
+                (int) (chunk_start_offset - chunkMetaObjectForLastSegmentEntry.getEnd_offset());
+        if (bytesToTruncate > 0) {
+            LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
+                    "some inconsistency in dictionary file for column " + this.columnIdentifier);
+            // truncate the dictionary data till chunk meta end offset
+            FileFactory.FileType fileType = FileFactory.getFileType(this.dictionaryFilePath);
+            CarbonFile carbonFile = FileFactory.getCarbonFile(this.dictionaryFilePath, fileType);
+            boolean truncateSuccess = carbonFile.truncate(this.dictionaryFilePath,
+                    chunkMetaObjectForLastSegmentEntry.getEnd_offset());
+            if (!truncateSuccess) {
                 LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-                        "some inconsistency in dictionary file for column " + this.columnName);
-                // truncate the dictionary data till chunk meta end offset
-                FileFactory.FileType fileType = FileFactory.getFileType(this.dictionaryFilePath);
-                CarbonFile carbonFile =
-                        FileFactory.getCarbonFile(this.dictionaryFilePath, fileType);
-                boolean truncateSuccess = carbonFile.truncate(this.dictionaryFilePath,
-                        chunkMetaObjectForLastSegmentEntry.getEnd_offset());
-                if (!truncateSuccess) {
-                    LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-                            "Diction file not truncated successfully for column "
-                                    + this.columnName);
-                }
+                        "Diction file not truncated successfully for column "
+                                + this.columnIdentifier);
             }
         }
     }
 
     /**
      * This method will write the dictionary metadata file for a given column
+     *
+     * @throws IOException if an I/O error occurs
      */
     private void writeDictionaryMetadataFile() throws IOException {
         // Format of dictionary metadata file
@@ -327,22 +348,29 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
         writeThriftObject(dictionaryChunkMeta);
         closeThriftWriter();
         LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-                "Dictionary metadata file written successfully for column " + this.columnName
+                "Dictionary metadata file written successfully for column " + this.columnIdentifier
                         + " at path " + this.dictionaryMetaFilePath);
     }
 
     /**
      * open thrift writer for writing dictionary chunk/meta object
+     *
+     * @param dictionaryFile can be dictionary file name or dictionary metadata file name
+     * @throws IOException if an I/O error occurs
      */
-    private void openThriftWriter(String filePath) throws IOException {
+    private void openThriftWriter(String dictionaryFile) throws IOException {
         // create thrift writer instance
-        dictionaryThriftWriter = new ThriftWriter(filePath, true);
+        dictionaryThriftWriter = new ThriftWriter(dictionaryFile, true);
         // open the file stream
         dictionaryThriftWriter.open();
     }
 
     /**
      * This method will write the thrift object to a file
+     *
+     * @param dictionaryThriftObject can be dictionary thrift object or dictionary metadata
+     *                               thrift object
+     * @throws IOException if an I/O error occurs
      */
     private void writeThriftObject(TBase dictionaryThriftObject) throws IOException {
         dictionaryThriftWriter.write(dictionaryThriftObject);
@@ -359,26 +387,24 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
 
     /**
      * This method will read the dictionary chunk metadata thrift object for last entry
+     *
+     * @return last entry of dictionary meta chunk
+     * @throws IOException if an I/O error occurs
      */
-    private ColumnDictionaryChunkMeta getChunkMetaObjectForLastSegmentEntry(String metadataFilePath)
+    private CarbonDictionaryColumnMetaChunk getChunkMetaObjectForLastSegmentEntry()
             throws IOException {
-        ColumnDictionaryChunkMeta dictionaryChunkMeta = null;
-        ThriftReader thriftIn = new ThriftReader(metadataFilePath, new ThriftReader.TBaseCreator() {
-            @Override public TBase create() {
-                return new ColumnDictionaryChunkMeta();
-            }
-        });
+        CarbonDictionaryColumnMetaChunk carbonDictionaryColumnMetaChunk = null;
+        CarbonDictionaryMetadataReaderImpl columnMetadataReaderImpl =
+                new CarbonDictionaryMetadataReaderImpl(this.hdfsStorePath,
+                        this.carbonTableIdentifier, this.columnIdentifier, this.isSharedDimension);
         try {
-            // Open it
-            thriftIn.open();
-            // keep iterating so that at end we have only the last segment entry
-            while (thriftIn.hasNext()) {
-                dictionaryChunkMeta = (ColumnDictionaryChunkMeta) thriftIn.read();
-            }
+            // read the last segment entry for dictionary metadata
+            carbonDictionaryColumnMetaChunk =
+                    columnMetadataReaderImpl.readLastEntryOfDictionaryMetaChunk();
         } finally {
-            // Close reader
-            thriftIn.close();
+            // Close metadata reader
+            columnMetadataReaderImpl.close();
         }
-        return dictionaryChunkMeta;
+        return carbonDictionaryColumnMetaChunk;
     }
 }
