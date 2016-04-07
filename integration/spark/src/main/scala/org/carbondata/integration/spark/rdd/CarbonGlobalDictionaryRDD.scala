@@ -49,6 +49,17 @@ class ColumnPartitioner(numParts: Int) extends Partitioner {
 }
 
 /**
+ * a case class to package some attributes
+ */
+case class DictionaryLoadModel(table: CarbonTableIdentifier,
+  columns: Array[String],
+  hdfsLocation: String,
+  dictfolderPath: String,
+  isSharedDimension: Boolean,
+  dictFilePaths: Array[String],
+  dictFileExists: Array[Boolean]) extends Serializable
+
+/**
  * A RDD to combine distinct values in block.
  *
  * @constructor create a RDD with RDD[Row]
@@ -60,43 +71,40 @@ class ColumnPartitioner(numParts: Int) extends Partitioner {
  */
 class CarbonBlockDistinctValuesCombineRDD(
   prev: RDD[Row],
-  table: CarbonTableIdentifier,
-  columns: Array[String],
-  hdfsLocation: String,
-  isSharedDimension: Boolean)
-    extends RDD[(Int, HashSet[Array[Byte]])](prev) with Logging {
+  model: DictionaryLoadModel)
+    extends RDD[(Int, HashSet[String])](prev) with Logging {
 
   override def getPartitions: Array[Partition] = firstParent[Row].partitions
 
-  override def compute(split: Partition, context: TaskContext): Iterator[(Int, HashSet[Array[Byte]])] = {
+  override def compute(split: Partition, context: TaskContext): Iterator[(Int, HashSet[String])] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass().getName());
 
-    val distinctValuesList = new ArrayBuffer[(Int, HashSet[Array[Byte]])]
+    val distinctValuesList = new ArrayBuffer[(Int, HashSet[String])]
     try {
       //load exists dictionary file to list of HashMap
-      val (dicts, existDicts) = GlobalDictionaryUtil.readGlobalDictionaryFromFile(hdfsLocation, table, columns, isSharedDimension)
+      val (dicts, existDicts) = GlobalDictionaryUtil.readGlobalDictionaryFromFile(model)
       //local combine set
-      val numColumns = columns.length
-      val sets = new Array[HashSet[Array[Byte]]](numColumns)
+      val numColumns = model.columns.length
+      val sets = new Array[HashSet[String]](numColumns)
       for (i <- 0 until numColumns) {
-        sets(i) = new HashSet[Array[Byte]]
+        sets(i) = new HashSet[String]
         distinctValuesList += ((i, sets(i)))
-      }  
+      }
       var row: Row = null
-      var value: Array[Byte] = null
+      var value: String = null
       val rddIter = firstParent[Row].iterator(split, context)
       //generate block distinct value set
       while (rddIter.hasNext) {
         row = rddIter.next()
         if (row != null) {
           for (i <- 0 until numColumns) {
-            value = row.getAs[Array[Byte]](i)
+            value = row.getString(i)
             if (value != null) {
-              if(existDicts(i)){
-                if(!dicts(i).contains(value)){
+              if (existDicts(i)) {
+                if (!dicts(i).contains(value)) {
                   sets(i).add(value)
                 }
-              }else{
+              } else {
                 sets(i).add(value)
               }
             }
@@ -120,31 +128,26 @@ class CarbonBlockDistinctValuesCombineRDD(
  * @param hdfsLocation store location
  */
 class CarbonGlobalDictionaryGenerateRDD(
-  prev: RDD[(Int, HashSet[Array[Byte]])],
-  table: CarbonTableIdentifier,
-  columns: Array[String],
-  hdfsLocation: String,
-  dictfolderPath: String,
-  isSharedDimension: Boolean)
+  prev: RDD[(Int, HashSet[String])],
+  model: DictionaryLoadModel)
     extends RDD[(String, String)](prev) with Logging {
 
-  override def getPartitions: Array[Partition] = firstParent[(Int, HashSet[Array[Byte]])].partitions
+  override def getPartitions: Array[Partition] = firstParent[(Int, HashSet[String])].partitions
 
   override def compute(split: Partition, context: TaskContext): Iterator[(String, String)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass().getName());
     var status = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
     val iter = new Iterator[(String, String)] {
       //generate distinct value list
-      val column = columns(split.index)
       try {
-        val distinctValues = new HashSet[Array[Byte]]
-        val rddIter = firstParent[(Int, HashSet[Array[Byte]])].iterator(split, context)
+        val distinctValues = new HashSet[String]
+        val rddIter = firstParent[(Int, HashSet[String])].iterator(split, context)
         while (rddIter.hasNext) {
           distinctValues ++= rddIter.next()._2
         }
         //write to file
-        if(distinctValues.size > 0){
-          GlobalDictionaryUtil.writeGlobalDictionaryToFile(hdfsLocation, table, column, distinctValues.toIterator, isSharedDimension, dictfolderPath)
+        if (distinctValues.size > 0) {
+          GlobalDictionaryUtil.writeGlobalDictionaryToFile(model, split.index, distinctValues.toIterator)
         }
       } catch {
         case ex: Exception =>
@@ -164,7 +167,7 @@ class CarbonGlobalDictionaryGenerateRDD(
       }
 
       override def next(): (String, String) = {
-        (column, status)
+        (model.columns(split.index), status)
       }
     }
     iter
