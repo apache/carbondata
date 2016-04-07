@@ -30,6 +30,13 @@ public class CarbonDictionaryUtil {
 
     /**
      * This method will form the dictionary metadata file path for a column
+     *
+     * @param carbonTableIdentifier table identifier which will give table name and
+     *                              database name
+     * @param metadataFileDirPath   dictionary metadata directory path
+     * @param columnIdentifier      column unique identifier
+     * @param isSharedDimension     flag for shared dimension
+     * @return dictionary metadata file path
      */
     public static String getDictionaryMetadataFilePath(CarbonTableIdentifier carbonTableIdentifier,
             String metadataFileDirPath, String columnIdentifier, boolean isSharedDimension) {
@@ -52,6 +59,13 @@ public class CarbonDictionaryUtil {
 
     /**
      * This method will form the dictionary file path for a column
+     *
+     * @param carbonTableIdentifier table identifier which will give table name and
+     *                              database name
+     * @param dictionaryLocation    dictionary file directory path
+     * @param columnIdentifier      column unique identifier
+     * @param isSharedDimension     flag for shared dimension
+     * @return dictionary file path
      */
     public static String getDictionaryFilePath(CarbonTableIdentifier carbonTableIdentifier,
             String dictionaryLocation, String columnIdentifier, boolean isSharedDimension) {
@@ -73,6 +87,12 @@ public class CarbonDictionaryUtil {
     /**
      * This method will return the path till shared directory folder or table
      * metadata folder for a column
+     *
+     * @param carbonTableIdentifier table identifier which will give table name and
+     *                              database name
+     * @param hdfsStorePath         HDFS store path
+     * @param isSharedDimension     flag for shared dimension
+     * @return dictionary location
      */
     public static String getDirectoryPath(CarbonTableIdentifier carbonTableIdentifier,
             String hdfsStorePath, boolean isSharedDimension) {

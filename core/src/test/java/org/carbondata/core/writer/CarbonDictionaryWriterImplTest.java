@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -166,20 +165,20 @@ public class CarbonDictionaryWriterImplTest {
         assertTrue(1 == carbonDictionaryColumnMetaChunks.size());
         // prepare retrieved chunk metadata
         long start_offset = 0L;
-        CarbonDictionaryColumnMetaChunk actual =
+        CarbonDictionaryColumnMetaChunk expected =
                 new CarbonDictionaryColumnMetaChunk(1, dataSet1.size(), start_offset, end_offset,
                         dataSet1.size());
         // validate chunk metadata - actual and expected
         for (CarbonDictionaryColumnMetaChunk chunk : carbonDictionaryColumnMetaChunks) {
-            validateDictionaryMetadata(chunk, actual);
+            validateDictionaryMetadata(chunk, expected);
         }
         //assert for chunk count
         List<byte[]> dictionaryValues = readDictionaryFile(isSharedDimension, 0L, 0L);
         // prepare expected dictionary chunk list
-        List<String> expected = convertByteArrayListToStringValueList(dictionaryValues);
-        assertTrue(dataSet1.size() == expected.size());
+        List<String> actual = convertByteArrayListToStringValueList(dictionaryValues);
+        assertTrue(dataSet1.size() == actual.size());
         // validate the dictionary data
-        compareDictionaryData(expected, dataSet1);
+        compareDictionaryData(actual, dataSet1);
         CarbonProperties.getInstance().addProperty(CarbonCommonConstants.DICTIONARY_ONE_CHUNK_SIZE,
                 CarbonCommonConstants.DICTIONARY_ONE_CHUNK_SIZE_DEFAULT);
     }
@@ -292,10 +291,10 @@ public class CarbonDictionaryWriterImplTest {
         writeDictionaryFile(writer, dataSet3);
         // read dictionary file
         List<byte[]> dictionaryValues = readDictionaryFile(false, 0L, 0L);
-        List<String> expected = convertByteArrayListToStringValueList(dictionaryValues);
-        List<String> actual = new ArrayList<>(4);
-        actual.addAll(dataSet1);
-        actual.addAll(dataSet3);
+        List<String> actual = convertByteArrayListToStringValueList(dictionaryValues);
+        List<String> expected = new ArrayList<>(4);
+        expected.addAll(dataSet1);
+        expected.addAll(dataSet3);
         // validate the data retrieved and it should match dataset1
         compareDictionaryData(actual, expected);
     }
@@ -351,9 +350,9 @@ public class CarbonDictionaryWriterImplTest {
         List<byte[]> dictionaryData =
                 readDictionaryFile(isSharedDimension, dictionaryFileOffsetToRead, 0L);
         // prepare the retrieved data
-        List<String> expected = convertByteArrayListToStringValueList(dictionaryData);
+        List<String> actual = convertByteArrayListToStringValueList(dictionaryData);
         // compare dictionary data set
-        compareDictionaryData(expected, dataSet3);
+        compareDictionaryData(actual, dataSet3);
         // read chunk metadata file
         List<CarbonDictionaryColumnMetaChunk> carbonDictionaryColumnMetaChunks =
                 readDictionaryMetadataFile(isSharedDimension);
@@ -388,18 +387,18 @@ public class CarbonDictionaryWriterImplTest {
         List<byte[]> dictionaryData = readDictionaryFile(isSharedDimension, dictionaryStartOffset,
                 dictionaryFileEndOffset);
         // prepare the retrieved data
-        List<String> expected = convertByteArrayListToStringValueList(dictionaryData);
+        List<String> actual = convertByteArrayListToStringValueList(dictionaryData);
         // compare dictionary data set
-        compareDictionaryData(expected, dataSet2);
+        compareDictionaryData(actual, dataSet2);
         // read chunk metadata file
         List<CarbonDictionaryColumnMetaChunk> carbonDictionaryColumnMetaChunks =
                 readDictionaryMetadataFile(isSharedDimension);
         // assert for metadata chunk size
         assertTrue(3 == carbonDictionaryColumnMetaChunks.size());
-        CarbonDictionaryColumnMetaChunk actual =
+        CarbonDictionaryColumnMetaChunk expected =
                 new CarbonDictionaryColumnMetaChunk(3, 4, dictionaryStartOffset,
                         dictionaryFileEndOffset, 1);
-        validateDictionaryMetadata(carbonDictionaryColumnMetaChunks.get(1), actual);
+        validateDictionaryMetadata(carbonDictionaryColumnMetaChunks.get(1), expected);
     }
 
     /**
@@ -412,17 +411,6 @@ public class CarbonDictionaryWriterImplTest {
             valueList.add(new String(value, Charset.defaultCharset()));
         }
         return valueList;
-    }
-
-    /**
-     * This method will convert list of string to list of byte buffer
-     */
-    private List<ByteBuffer> convertStringListToByteBufferList(List<String> valueList) {
-        List<ByteBuffer> dictionaryValueBuffer = new ArrayList<>(valueList.size());
-        for (String value : valueList) {
-            dictionaryValueBuffer.add(ByteBuffer.wrap(value.getBytes(Charset.defaultCharset())));
-        }
-        return dictionaryValueBuffer;
     }
 
     /**
@@ -458,9 +446,9 @@ public class CarbonDictionaryWriterImplTest {
         // read dictionary chunk from dictionary file
         List<byte[]> dictionaryData = readDictionaryFile(isSharedDimension, 0L, 0L);
         // prepare the retrieved data
-        List<String> expected = convertByteArrayListToStringValueList(dictionaryData);
+        List<String> actual = convertByteArrayListToStringValueList(dictionaryData);
         // compare the expected and actual data
-        compareDictionaryData(expected, dataSet1);
+        compareDictionaryData(actual, dataSet1);
         // read dictionary metadata chunks
         List<CarbonDictionaryColumnMetaChunk> carbonDictionaryColumnMetaChunks =
                 readDictionaryMetadataFile(isSharedDimension);
@@ -468,10 +456,10 @@ public class CarbonDictionaryWriterImplTest {
         assertTrue(1 == carbonDictionaryColumnMetaChunks.size());
         long start_offset = 0L;
         // validate actual chunk metadata with expected
-        CarbonDictionaryColumnMetaChunk actual =
+        CarbonDictionaryColumnMetaChunk expected =
                 new CarbonDictionaryColumnMetaChunk(1, 2, start_offset, end_offset, 1);
         for (CarbonDictionaryColumnMetaChunk chunk : carbonDictionaryColumnMetaChunks) {
-            validateDictionaryMetadata(chunk, actual);
+            validateDictionaryMetadata(chunk, expected);
         }
     }
 
@@ -489,8 +477,8 @@ public class CarbonDictionaryWriterImplTest {
     /**
      * this method will validate the dictionary chunk metadata
      */
-    private void validateDictionaryMetadata(CarbonDictionaryColumnMetaChunk expected,
-            CarbonDictionaryColumnMetaChunk actual) {
+    private void validateDictionaryMetadata(CarbonDictionaryColumnMetaChunk actual,
+            CarbonDictionaryColumnMetaChunk expected) {
         assertTrue(expected.getMin_surrogate_key() == actual.getMin_surrogate_key());
         assertTrue(expected.getMax_surrogate_key() == actual.getMax_surrogate_key());
         assertTrue(expected.getStart_offset() == actual.getStart_offset());
@@ -501,7 +489,7 @@ public class CarbonDictionaryWriterImplTest {
     /**
      * this method will validate the dictionary data
      */
-    private void compareDictionaryData(List<String> expected, List<String> actual) {
+    private void compareDictionaryData(List<String> actual, List<String> expected) {
         assertTrue(expected.size() == actual.size());
         for (int i = 0; i < actual.size(); i++) {
             assertTrue(actual.get(i).equals(expected.get(i)));

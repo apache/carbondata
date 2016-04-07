@@ -133,7 +133,12 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
     private boolean isFirstTime;
 
     /**
-     * constructor
+     * Constructor
+     *
+     * @param hdfsStorePath         HDFS store path
+     * @param carbonTableIdentifier table identifier which will give table name and database name
+     * @param columnIdentifier      column unique identifier
+     * @param isSharedDimension     flag for shared dimension
      */
     public CarbonDictionaryWriterImpl(String hdfsStorePath,
             CarbonTableIdentifier carbonTableIdentifier, String columnIdentifier,
@@ -149,6 +154,9 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
      * This method will write the data in thrift format to disk. This method will be guided by
      * parameter dictionary_one_chunk_size and data will be divided into chunks
      * based on this parameter
+     *
+     * @param value unique dictionary value
+     * @throws IOException if an I/O error occurs
      */
     @Override public void write(String value) throws IOException {
         if (isFirstTime) {
@@ -164,6 +172,9 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
     /**
      * This method will write the data in thrift format to disk. This method will not be guided by
      * parameter dictionary_one_chunk_size and complete data will be written as one chunk
+     *
+     * @param valueList list of byte array. Each byte array is unique dictionary value
+     * @throws IOException if an I/O error occurs
      */
     @Override public void write(List<byte[]> valueList) throws IOException {
         if (isFirstTime) {
@@ -178,6 +189,8 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
 
     /**
      * write dictionary metadata file and close thrift object
+     *
+     * @throws IOException if an I/O error occurs
      */
     @Override public void close() throws IOException {
         if (null != dictionaryThriftWriter) {
@@ -192,6 +205,8 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
     /**
      * check if the threshold has been reached for the number of
      * values that can kept in memory and then flush the data to file
+     *
+     * @throws IOException if an I/O error occurs
      */
     private void checkAndWriteDictionaryChunkToFile() throws IOException {
         if (oneDictionaryChunkList.size() >= dictionary_one_chunk_size) {
@@ -202,6 +217,8 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
 
     /**
      * This method will serialize the object of dictionary file
+     *
+     * @throws IOException if an I/O error occurs
      */
     private void writeDictionaryFile() throws IOException {
         ColumnDictionaryChunk columnDictionaryChunk = new ColumnDictionaryChunk();
@@ -211,6 +228,8 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
 
     /**
      * This method will check and created the directory path where dictionary file has to be created
+     *
+     * @throws IOException if an I/O error occurs
      */
     private void init() throws IOException {
         initDictionaryChunkSize();
@@ -266,6 +285,8 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
      * validate the last entry end offset with file size. If
      * they are not equal that means some invalid data is present which needs
      * to be truncated
+     *
+     * @throws IOException if an I/O error occurs
      */
     private void validateDictionaryFileOffsetWithLastSegmentEntryOffset() throws IOException {
         // read last dictionary chunk meta entry from dictionary metadata file
@@ -290,6 +311,8 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
 
     /**
      * This method will write the dictionary metadata file for a given column
+     *
+     * @throws IOException if an I/O error occurs
      */
     private void writeDictionaryMetadataFile() throws IOException {
         // Format of dictionary metadata file
@@ -331,16 +354,23 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
 
     /**
      * open thrift writer for writing dictionary chunk/meta object
+     *
+     * @param dictionaryFile can be dictionary file name or dictionary metadata file name
+     * @throws IOException if an I/O error occurs
      */
-    private void openThriftWriter(String filePath) throws IOException {
+    private void openThriftWriter(String dictionaryFile) throws IOException {
         // create thrift writer instance
-        dictionaryThriftWriter = new ThriftWriter(filePath, true);
+        dictionaryThriftWriter = new ThriftWriter(dictionaryFile, true);
         // open the file stream
         dictionaryThriftWriter.open();
     }
 
     /**
      * This method will write the thrift object to a file
+     *
+     * @param dictionaryThriftObject can be dictionary thrift object or dictionary metadata
+     *                               thrift object
+     * @throws IOException if an I/O error occurs
      */
     private void writeThriftObject(TBase dictionaryThriftObject) throws IOException {
         dictionaryThriftWriter.write(dictionaryThriftObject);
@@ -357,6 +387,9 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
 
     /**
      * This method will read the dictionary chunk metadata thrift object for last entry
+     *
+     * @return last entry of dictionary meta chunk
+     * @throws IOException if an I/O error occurs
      */
     private CarbonDictionaryColumnMetaChunk getChunkMetaObjectForLastSegmentEntry()
             throws IOException {

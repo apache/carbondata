@@ -36,6 +36,9 @@ public interface CarbonDictionaryReader extends Closeable {
      * 3. Loading a dictionary column in memory based on query requirement.
      * This is a case where carbon column cache feature is enabled in which a
      * column dictionary is read if it is present in the query.
+     *
+     * @return list of byte array. Each byte array is unique dictionary value
+     * @throws IOException if an I/O error occurs
      */
     List<byte[]> read() throws IOException;
 
@@ -45,6 +48,10 @@ public interface CarbonDictionaryReader extends Closeable {
      * 1. Incremental data load. If column dictionary is already loaded in memory
      * and incremental load is done, then for the new query only new dictionary data
      * has to be read form memory.
+     *
+     * @param startOffset start offset of dictionary file
+     * @return list of byte array. Each byte array is unique dictionary value
+     * @throws IOException if an I/O error occurs
      */
     List<byte[]> read(long startOffset) throws IOException;
 
@@ -53,6 +60,11 @@ public interface CarbonDictionaryReader extends Closeable {
      * Applicable scenarios:
      * 1. Truncate operation. If there is any inconsistency while writing the dictionary file
      * then we can give the start and end offset till where the data has to be retained.
+     *
+     * @param startOffset start offset of dictionary file
+     * @param endOffset   end offset of dictionary file
+     * @return list of byte array. Each byte array is unique dictionary value
+     * @throws IOException if an I/O error occurs
      */
     List<byte[]> read(long startOffset, long endOffset) throws IOException;
 }

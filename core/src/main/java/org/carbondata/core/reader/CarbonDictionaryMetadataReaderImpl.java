@@ -66,6 +66,11 @@ public class CarbonDictionaryMetadataReaderImpl implements CarbonDictionaryMetad
 
     /**
      * Constructor
+     *
+     * @param hdfsStorePath         HDFS store path
+     * @param carbonTableIdentifier table identifier which will give table name and database name
+     * @param columnIdentifier      column unique identifier
+     * @param isSharedDimension     flag for shared dimension
      */
     public CarbonDictionaryMetadataReaderImpl(String hdfsStorePath,
             CarbonTableIdentifier carbonTableIdentifier, String columnIdentifier,
@@ -84,6 +89,9 @@ public class CarbonDictionaryMetadataReaderImpl implements CarbonDictionaryMetad
      * and define the query scope first dictionary metadata has to be read first.
      * 2. If dictionary file is read using start and end offset then using this meta list
      * we can count the total number of dictionary chunks present between the 2 offsets
+     *
+     * @return list of all dictionary meta chunks which contains information for each segment
+     * @throws IOException if an I/O error occurs
      */
     @Override public List<CarbonDictionaryColumnMetaChunk> read() throws IOException {
         List<CarbonDictionaryColumnMetaChunk> dictionaryMetaChunks =
@@ -113,6 +121,9 @@ public class CarbonDictionaryMetadataReaderImpl implements CarbonDictionaryMetad
      * 2. Truncate operation. While writing dictionary file in case of incremental load
      * dictionary file needs to be validated for any inconsistency. Here end offset of last
      * dictionary chunk meta is validated with file size.
+     *
+     * @return last segment entry for dictionary chunk
+     * @throws IOException if an I/O error occurs
      */
     @Override public CarbonDictionaryColumnMetaChunk readLastEntryOfDictionaryMetaChunk()
             throws IOException {

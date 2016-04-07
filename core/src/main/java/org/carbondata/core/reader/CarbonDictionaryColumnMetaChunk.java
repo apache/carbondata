@@ -52,6 +52,12 @@ public class CarbonDictionaryColumnMetaChunk {
 
     /**
      * constructor
+     *
+     * @param min_surrogate_key Minimum value surrogate key for a segment
+     * @param max_surrogate_key Maximum value surrogate key for a segment
+     * @param start_offset      start offset of dictionary chunk in dictionary file for a segment
+     * @param end_offset        end offset of dictionary chunk in dictionary file for a segment
+     * @param chunk_count       count of dictionary chunks for a segment
      */
     public CarbonDictionaryColumnMetaChunk(int min_surrogate_key, int max_surrogate_key,
             long start_offset, long end_offset, int chunk_count) {
@@ -63,35 +69,35 @@ public class CarbonDictionaryColumnMetaChunk {
     }
 
     /**
-     * return min surrogate key
+     * @return min surrogate key
      */
     public int getMin_surrogate_key() {
         return min_surrogate_key;
     }
 
     /**
-     * return max surrogate key
+     * @return max surrogate key
      */
     public int getMax_surrogate_key() {
         return max_surrogate_key;
     }
 
     /**
-     * return start offset
+     * @return start offset
      */
     public long getStart_offset() {
         return start_offset;
     }
 
     /**
-     * return end offset
+     * @return end offset
      */
     public long getEnd_offset() {
         return end_offset;
     }
 
     /**
-     * return chunk count
+     * @return chunk count
      */
     public int getChunk_count() {
         return chunk_count;

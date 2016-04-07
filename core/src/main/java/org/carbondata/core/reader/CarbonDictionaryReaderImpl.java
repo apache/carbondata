@@ -68,6 +68,11 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
 
     /**
      * Constructor
+     *
+     * @param hdfsStorePath         HDFS store path
+     * @param carbonTableIdentifier table identifier which will give table name and database name
+     * @param columnIdentifier      column unique identifier
+     * @param isSharedDimension     flag for shared dimension
      */
     public CarbonDictionaryReaderImpl(String hdfsStorePath,
             CarbonTableIdentifier carbonTableIdentifier, String columnIdentifier,
@@ -87,6 +92,9 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
      * 3. Loading a dictionary column in memory based on query requirement.
      * This is a case where carbon column cache feature is enabled in which a
      * column dictionary is read if it is present in the query.
+     *
+     * @return list of byte array. Each byte array is unique dictionary value
+     * @throws IOException if an I/O error occurs
      */
     @Override public List<byte[]> read() throws IOException {
         return read(0L);
@@ -99,7 +107,9 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
      * and incremental load is done, then for the new query only new dictionary data
      * has to be read form memory.
      *
-     * @param startOffset start offset for dictionary file
+     * @param startOffset start offset of dictionary file
+     * @return list of byte array. Each byte array is unique dictionary value
+     * @throws IOException if an I/O error occurs
      */
     @Override public List<byte[]> read(long startOffset) throws IOException {
         List<CarbonDictionaryColumnMetaChunk> carbonDictionaryColumnMetaChunks =
@@ -118,8 +128,10 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
      * 1. Truncate operation. If there is any inconsistency while writing the dictionary file
      * then we can give the start and end offset till where the data has to be retained.
      *
-     * @param startOffset start offset for dictionary file
-     * @param endOffset   end offset till where dictionary file has to be read
+     * @param startOffset start offset of dictionary file
+     * @param endOffset   end offset of dictionary file
+     * @return list of byte array. Each byte array is unique dictionary value
+     * @throws IOException if an I/O error occurs
      */
     @Override public List<byte[]> read(long startOffset, long endOffset) throws IOException {
         List<CarbonDictionaryColumnMetaChunk> carbonDictionaryColumnMetaChunks =
@@ -172,6 +184,12 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
 
     /**
      * This method will convert and fill list of byte buffer to list of byte array
+     *
+     * @param dictionaryValues          list of byte array. Each byte array is
+     *                                  unique dictionary value
+     * @param dictionaryValueBufferList dictionary thrift object which is a list of byte buffer.
+     *                                  Each dictionary value is a wrapped in byte buffer before
+     *                                  writing to file
      */
     private void convertAndFillByteBufferListToByteArrayList(List<byte[]> dictionaryValues,
             List<ByteBuffer> dictionaryValueBufferList) {
@@ -223,6 +241,11 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
      * It will do a strict validation for start and end offset as if the offsets are not
      * exactly matching, because data is written in thrift format, the thrift object
      * will not be retrieved properly
+     *
+     * @param dictionaryChunkMetaList    list of dictionary chunk metadata
+     * @param dictionaryChunkStartOffset start offset for a dictionary chunk
+     * @param dictionaryChunkEndOffset   end offset for a dictionary chunk
+     * @return
      */
     private int calculateTotalDictionaryChunkCountsToBeRead(
             List<CarbonDictionaryColumnMetaChunk> dictionaryChunkMetaList,
