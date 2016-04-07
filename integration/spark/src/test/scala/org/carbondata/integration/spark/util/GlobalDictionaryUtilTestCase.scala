@@ -66,7 +66,7 @@ class GlobalDictionaryTestCase extends FunSuite with BeforeAndAfter with Logging
     carbonLoadModel.setFactFilePath(filePath)
     
     val sql = new SQLContext(sc)
-    val rtn = GlobalDictionaryUtil.generateGlobalDictionary(sql, carbonLoadModel)
+    val rtn = GlobalDictionaryUtil.generateGlobalDictionary(sql, carbonLoadModel, false)
     assert(rtn === 1 )
   }
 }

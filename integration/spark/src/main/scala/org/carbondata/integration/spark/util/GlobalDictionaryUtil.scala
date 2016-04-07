@@ -44,10 +44,14 @@ object GlobalDictionaryUtil extends Logging {
     columnBuffer.toArray
   }
 
-  def writeGlobalDictionaryToFile(hdfsStorePath: String, table: CarbonTableIdentifier, columnName: String, iter: Iterator[String]) = {
+  def writeGlobalDictionaryToFile(hdfsStorePath: String, table: CarbonTableIdentifier, columnName: String, iter: Iterator[String], isSharedDimension: Boolean, dictfolderPath: String) = {
     //TODO better to use factory method
-    val writer: CarbonDictionaryWriter = new CarbonDictionaryWriterImpl(hdfsStorePath, table, columnName, false)
+    val writer: CarbonDictionaryWriter = new CarbonDictionaryWriterImpl(hdfsStorePath, table, columnName, isSharedDimension)
     try {
+      val dictFilePath =  CarbonDictionaryUtil.getDictionaryFilePath(table, dictfolderPath, columnName, isSharedDimension);
+      if(!CarbonUtil.isFileExists(dictFilePath)){
+        writer.write(CarbonCommonConstants.MEMBER_DEFAULT_VAL)
+      }
       while (iter.hasNext) {
         writer.write(iter.next)
       }
@@ -78,13 +82,13 @@ object GlobalDictionaryUtil extends Logging {
    * @param carbonLoadModel
    * @return a integer 1: successfully
    */
-  def generateGlobalDictionary(sqlContext: SQLContext, carbonLoadModel: CarbonLoadModel) = {
+  def generateGlobalDictionary(sqlContext: SQLContext, carbonLoadModel: CarbonLoadModel, isSharedDimension: Boolean) = {
     var rtn = 1
     try {
       val hdfsLocation = CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION_HDFS)
       val table = new CarbonTableIdentifier(carbonLoadModel.getSchemaName, carbonLoadModel.getTableName)
       //create dictionary folder if not exists
-      val dictfolderPath = CarbonDictionaryUtil.getDirectoryPath(table, hdfsLocation, false)
+      val dictfolderPath = CarbonDictionaryUtil.getDirectoryPath(table, hdfsLocation, isSharedDimension)
       val created = CarbonUtil.checkAndCreateFolder(dictfolderPath)
       if (!created) {
         logError("Dictionary Folder creation status :: " + created)
@@ -104,9 +108,9 @@ object GlobalDictionaryUtil extends Logging {
         //select column to push down pruning
         df = df.select(requireColumns.head, requireColumns.tail: _*)
         //combine distinct value in a block and partition by column
-        val inputRDD = new CarbonBlockDistinctValuesCombineRDD(df.rdd, dictfolderPath, table, requireColumns).partitionBy(new ColumnPartitioner(requireColumns.length))
+        val inputRDD = new CarbonBlockDistinctValuesCombineRDD(df.rdd, dictfolderPath, table, requireColumns, isSharedDimension).partitionBy(new ColumnPartitioner(requireColumns.length))
         //generate global dictionary files
-        val statusList = new CarbonGlobalDictionaryGenerateRDD(inputRDD, table, requireColumns, hdfsLocation).collect()
+        val statusList = new CarbonGlobalDictionaryGenerateRDD(inputRDD, table, requireColumns, hdfsLocation, dictfolderPath, isSharedDimension).collect()
         //check result status
         if (statusList.exists(x => CarbonCommonConstants.STORE_LOADSTATUS_FAILURE.equals(x._2))) {
           logError("generate global dictionary files failed")

@@ -34,6 +34,8 @@ import scala.collection.mutable.ArrayBuffer
 import org.carbondata.common.logging.LogServiceFactory
 import org.carbondata.integration.spark.util.CarbonSparkInterFaceLogEvent
 import org.carbondata.core.carbon.CarbonTableIdentifier
+import org.carbondata.core.util.CarbonDictionaryUtil
+import org.carbondata.core.util.CarbonUtil
 
 /**
  * A partitioner partition by column.
@@ -60,7 +62,8 @@ class CarbonBlockDistinctValuesCombineRDD(
   prev: RDD[Row],
   dictfolderPath: String,
   table: CarbonTableIdentifier,
-  columns: Array[String])
+  columns: Array[String],
+  isSharedDimension: Boolean)
     extends RDD[(Int, HashSet[String])](prev) with Logging {
 
   override def getPartitions: Array[Partition] = firstParent[Row].partitions
@@ -78,9 +81,6 @@ class CarbonBlockDistinctValuesCombineRDD(
       for (i <- 0 until numColumns) {
         sets(i) = new HashSet[String]
         distinctValuesList += ((i, sets(i)))
-        if(!existDicts(i)){
-          sets(i).add(CarbonCommonConstants.MEMBER_DEFAULT_VAL)    
-        }
       }  
       var row: Row = null
       var value: String = null
@@ -124,7 +124,9 @@ class CarbonGlobalDictionaryGenerateRDD(
   prev: RDD[(Int, HashSet[String])],
   table: CarbonTableIdentifier,
   columns: Array[String],
-  hdfsLocation: String)
+  hdfsLocation: String,
+  dictfolderPath: String,
+  isSharedDimension: Boolean)
     extends RDD[(String, String)](prev) with Logging {
 
   override def getPartitions: Array[Partition] = firstParent[(Int, HashSet[String])].partitions
@@ -143,7 +145,7 @@ class CarbonGlobalDictionaryGenerateRDD(
         }
         //write to file
         if(distinctValues.size > 0){
-          GlobalDictionaryUtil.writeGlobalDictionaryToFile(hdfsLocation, table, column, distinctValues.toIterator)
+          GlobalDictionaryUtil.writeGlobalDictionaryToFile(hdfsLocation, table, column, distinctValues.toIterator, isSharedDimension, dictfolderPath)
         }
       } catch {
         case ex: Exception =>

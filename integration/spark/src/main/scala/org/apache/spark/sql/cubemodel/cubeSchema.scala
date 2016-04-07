@@ -1624,7 +1624,7 @@ private[sql] case class LoadCube(
             fileHeader,
             escapeChar, booleanValForMultiLine)(sqlContext.asInstanceOf[HiveContext])
         }
-        GlobalDictionaryUtil.generateGlobalDictionary(sqlContext, carbonLoadModel)
+        GlobalDictionaryUtil.generateGlobalDictionary(sqlContext, carbonLoadModel, false)
         CarbonDataRDDFactory.loadCarbonData(sqlContext, carbonLoadModel, storeLocation, relation.cubeMeta.dataPath, kettleHomePath,
           relation.cubeMeta.partitioner, columinar, false, partitionStatus);
         try {
