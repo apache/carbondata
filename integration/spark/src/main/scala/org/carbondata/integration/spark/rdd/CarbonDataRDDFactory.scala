@@ -30,7 +30,6 @@ import org.carbondata.common.logging.LogServiceFactory
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.datastorage.store.impl.FileFactory
 import org.carbondata.core.load.LoadMetadataDetails
-import org.carbondata.core.locks.MetadataLock
 import org.carbondata.core.metadata.CarbonMetadata
 import org.carbondata.core.metadata.CarbonMetadata.Cube
 import org.carbondata.core.carbon.CarbonDef
@@ -42,9 +41,10 @@ import org.carbondata.integration.spark.merger.CarbonDataMergerUtil
 import org.carbondata.integration.spark.util.LoadMetadataUtil
 import org.carbondata.processing.util.CarbonDataProcessorUtil
 import org.carbondata.query.scanner.impl.{CarbonKey, CarbonValue}
-
 import scala.collection.JavaConversions.{asScalaBuffer, seqAsJavaList}
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
+import org.carbondata.core.locks.LockType
+import org.carbondata.core.locks.CarbonLockFactory
 
 /**
  * This is the factory class which can create different RDD depends on user needs.
@@ -178,7 +178,7 @@ object CarbonDataRDDFactory extends Logging {
       }
 
       //Save the load metadata
-      var carbonLock = new MetadataLock(cube.getMetaDataFilepath())
+      var carbonLock =  CarbonLockFactory.getCarbonLockObj(cube.getMetaDataFilepath(),LockType.METADATA_LOCK)
       try {
         if (carbonLock.lockWithRetries()) {
           logInfo("Successfully got the cube metadata file lock")
@@ -536,7 +536,7 @@ object CarbonDataRDDFactory extends Logging {
     if (-1 == currentRestructNumber) {
       currentRestructNumber = 0
     }
-    var carbonLock = new MetadataLock(cube.getMetaDataFilepath())
+    var carbonLock = CarbonLockFactory.getCarbonLockObj(cube.getMetaDataFilepath(),LockType.METADATA_LOCK)
     try {
       //      if (carbonLock.lock(
       //        CarbonCommonConstants.NUMBER_OF_TRIES_FOR_LOAD_METADATA_LOCK,
