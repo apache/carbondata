@@ -16,28 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.carbondata.core.locks;
 
-import java.io.File;
-
-import org.carbondata.core.constants.CarbonCommonConstants;
-
 /**
- * This class is responsible for locking of the load .
+ * @author ravikiran
+ *         This enum is used to define the usecase of the lock.
+ *         Each enum value is one specific lock case.
  */
-public class LoadFileBasedLock extends CarbonLock {
-    /**
-     * This is used for locking of the load.
-     *
-     * @param location
-     */
-    public LoadFileBasedLock(String location) {
-        String loadLock = location + File.separator + CarbonCommonConstants.LOAD_LOCK;
-        this.location = loadLock;
-        this.lockName =  CarbonCommonConstants.LOAD_LOCK;
-        initRetry();
-        updateZooKeeperLockingStatus();
-    }
-
+public enum LockType {
+    METADATA_LOCK;
 }

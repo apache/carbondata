@@ -16,29 +16,26 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.carbondata.core.locks;
 
-import java.io.File;
-
-import org.carbondata.core.constants.CarbonCommonConstants;
-
 /**
- * This class is responsible for locking of the load metadata.
+ * @author Administrator
+ *         Carbon Lock Interface which handles the locking and unlocking.
  */
-public class MetadataLock extends CarbonLock {
+public interface ICarbonLock {
 
     /**
-     * This is used for locking of the load metadata.
+     * Does the unlocking of the acquired lock.
      *
-     * @param location
+     * @return
      */
-    public MetadataLock(String location) {
-        String loadLock = location + File.separator + CarbonCommonConstants.METADATA_LOCK;
-        this.location = loadLock;
-        this.lockName =  CarbonCommonConstants.METADATA_LOCK;
-        initRetry();
-        updateZooKeeperLockingStatus();
-    }
+    boolean unlock();
+
+    /**
+     * This will acquire the lock and if it doesnt get then it will retry after the confiured time.
+     *
+     * @return
+     */
+    boolean lockWithRetries();
 
 }
