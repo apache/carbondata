@@ -20,6 +20,7 @@ class GlobalDictionaryTestCase extends FunSuite with BeforeAndAfter with Logging
   var sc: SparkContext = _
   var sqlContext: SQLContext = _
   var storeLocation: String = _
+  var hiveMetaStoreDB: String = _
   var sampleRelation: CarbonRelation = _
   var dimSampleRelation: CarbonRelation = _
   var filePath: String = _
@@ -29,6 +30,7 @@ class GlobalDictionaryTestCase extends FunSuite with BeforeAndAfter with Logging
   def buildTestData() = {
     pwd = new File(this.getClass.getResource("/").getPath+"/../../").getCanonicalPath
     storeLocation = pwd + "/target/store"
+    hiveMetaStoreDB = pwd + "/target/metastore_db"
     filePath = pwd + "/src/test/resources/sample.csv"
     dimFilePath = "dimTableSample:" + pwd + "/src/test/resources/dimTableSample.csv"
   }
@@ -43,6 +45,7 @@ class GlobalDictionaryTestCase extends FunSuite with BeforeAndAfter with Logging
     sqlContext = new CarbonContext(sc, storeLocation)
     sqlContext.setConf("carbon.kettle.home", new File(pwd + "/../../processing/carbonplugins").getCanonicalPath)
     sqlContext.setConf("hive.metastore.warehouse.dir", pwd +"/target/hivemetadata")
+    sqlContext.setConf("javax.jdo.option.ConnectionURL","jdbc:derby:;databaseName="+hiveMetaStoreDB+";create=true")
     try{
       sqlContext.sql("CREATE CUBE IF NOT EXISTS sample DIMENSIONS (id STRING, name_1 STRING, city STRING) MEASURES (age INTEGER) OPTIONS(PARTITIONER[CLASS='org.carbondata.integration.spark.partition.api.impl.SampleDataPartitionerImpl',COLUMNS=(id),PARTITION_COUNT=1])")
       sqlContext.sql("CREATE CUBE IF NOT EXISTS dimSample DIMENSIONS (id STRING, name STRING, city STRING) MEASURES (age INTEGER) WITH dimTableSample RELATION(Fact.id=id) INCLUDE(id,name) OPTIONS(PARTITIONER[CLASS='org.carbondata.integration.spark.partition.api.impl.SampleDataPartitionerImpl',COLUMNS=(id),PARTITION_COUNT=1])")
