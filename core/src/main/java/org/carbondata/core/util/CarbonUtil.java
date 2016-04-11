@@ -924,7 +924,7 @@ public final class CarbonUtil {
         offset = fileHolder.readDouble(filesLocation, offset);
         CarbonMetaDataReader metaDataReader = new CarbonMetaDataReader(filesLocation, offset);
         try {
-            listOfNodeInfo = metaDataReader.convertLeafNodeInfo(metaDataReader.readMetaData());
+            listOfNodeInfo = CarbonMetadataUtil.convertLeafNodeInfo(metaDataReader.readMetaData());
         } catch (IOException e) {
             LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "Problem while reading metadata :: " + filesLocation, e);

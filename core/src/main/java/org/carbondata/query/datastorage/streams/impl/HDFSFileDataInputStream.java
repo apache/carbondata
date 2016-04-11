@@ -35,6 +35,7 @@ import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.metadata.LeafNodeInfoColumnar;
 import org.carbondata.core.reader.CarbonMetaDataReader;
+import org.carbondata.core.util.CarbonMetadataUtil;
 import org.carbondata.core.util.ValueCompressionUtil;
 import org.carbondata.query.schema.metadata.Pair;
 import org.carbondata.query.util.CarbonEngineLogEvent;
@@ -128,7 +129,7 @@ public class HDFSFileDataInputStream extends AbstractFileDataInputStream {
                 new ArrayList<LeafNodeInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
         CarbonMetaDataReader metaDataReader = new CarbonMetaDataReader(filesLocation, offSet);
         try {
-            listOfNodeInfo = metaDataReader.convertLeafNodeInfo(metaDataReader.readMetaData());
+            listOfNodeInfo = CarbonMetadataUtil.convertLeafNodeInfo(metaDataReader.readMetaData());
         } catch (IOException e) {
             LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                     "Problem while reading metadata :: " + filesLocation, e);

@@ -34,6 +34,7 @@ import org.carbondata.core.file.manager.composite.FileData;
 import org.carbondata.core.file.manager.composite.IFileManagerComposite;
 import org.carbondata.core.metadata.LeafNodeInfoColumnar;
 import org.carbondata.core.util.CarbonMergerUtil;
+import org.carbondata.core.util.CarbonMetadataUtil;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.writer.CarbonMetaDataWriter;
@@ -296,7 +297,8 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
             long currentPosition = channel.size();
             CarbonMetaDataWriter writer = new CarbonMetaDataWriter(this.fileName);
             writer.writeMetaData(
-                    writer.createFileMeta(infoList, localCardinality.length, localCardinality),
+                    CarbonMetadataUtil
+                            .convertFileMeta(infoList, localCardinality.length, localCardinality),
                             currentPosition);
 
         } catch (IOException e) {

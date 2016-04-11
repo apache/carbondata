@@ -32,6 +32,7 @@ import org.carbondata.core.datastorage.store.compression.SnappyCompression.Snapp
 import org.carbondata.core.file.manager.composite.IFileManagerComposite;
 import org.carbondata.core.keygenerator.mdkey.NumberCompressor;
 import org.carbondata.core.metadata.LeafNodeInfoColumnar;
+import org.carbondata.core.util.CarbonMetadataUtil;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.writer.CarbonMetaDataWriter;
 import org.carbondata.processing.store.writer.exception.CarbonDataWriterException;
@@ -452,7 +453,8 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
             long currentPos = channel.size();
             CarbonMetaDataWriter writer = new CarbonMetaDataWriter(this.fileName);
             writer.writeMetaData(
-                    writer.createFileMeta(infoList, localCardinality.length, localCardinality),
+                    CarbonMetadataUtil
+                            .convertFileMeta(infoList, localCardinality.length, localCardinality),
                     currentPos);
         } catch (IOException e) {
             throw new CarbonDataWriterException("Problem while writing the Leaf Node File: ", e);

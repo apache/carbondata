@@ -27,6 +27,7 @@ import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.metadata.LeafNodeInfoColumnar;
 import org.carbondata.core.reader.CarbonMetaDataReader;
+import org.carbondata.core.util.CarbonMetadataUtil;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -64,7 +65,8 @@ public class CarbonMetaDataWriterTest {
 
         List<LeafNodeInfoColumnar> infoColumnars = getLeafNodeInfoColumnars();
 
-        writer.writeMetaData(writer.createFileMeta(infoColumnars, 6, new int[] { 2, 4, 5, 7 }), 0);
+        writer.writeMetaData(
+                CarbonMetadataUtil.convertFileMeta(infoColumnars, 6, new int[] { 2, 4, 5, 7 }), 0);
 
         CarbonMetaDataReader metaDataReader = new CarbonMetaDataReader(filePath, 0);
         assertTrue(metaDataReader.readMetaData() != null);
@@ -81,11 +83,12 @@ public class CarbonMetaDataWriterTest {
 
         List<LeafNodeInfoColumnar> infoColumnars = getLeafNodeInfoColumnars();
 
-        writer.writeMetaData(writer.createFileMeta(infoColumnars, 6, new int[] { 2, 4, 5, 7 }), 0);
+        writer.writeMetaData(CarbonMetadataUtil.convertFileMeta(infoColumnars, 6,
+                new int[] { 2, 4, 5, 7 }), 0);
 
         CarbonMetaDataReader metaDataReader = new CarbonMetaDataReader(filePath, 0);
         List<LeafNodeInfoColumnar> nodeInfoColumnars =
-                metaDataReader.convertLeafNodeInfo(metaDataReader.readMetaData());
+                CarbonMetadataUtil.convertLeafNodeInfo(metaDataReader.readMetaData());
 
         assertTrue(nodeInfoColumnars.size() == infoColumnars.size());
     }
