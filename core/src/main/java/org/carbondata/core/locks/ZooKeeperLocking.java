@@ -51,7 +51,7 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
      */
     private static final String zooKeeperLocation =
             CarbonProperties.getInstance().getProperty(CarbonCommonConstants.ZOOKEEPER_LOCATION);
-    //  private static final String zooKeeperLocation = "/carbon/Locks2";
+
     /**
      * lockName is the name of the lock to use. This name should be same for every process that want
      * to share the same lock
@@ -69,7 +69,8 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
     // here the zookeeper client will be created and also the znode will be created.
 
     static {
-        String zookeeperUrl = CarbonProperties.getInstance().getProperty("spark.deploy.zookeeper.url");
+        String zookeeperUrl =
+                CarbonProperties.getInstance().getProperty("spark.deploy.zookeeper.url");
         int sessionTimeOut = 10000;
         try {
             zk = new ZooKeeper(zookeeperUrl, sessionTimeOut, new Watcher() {

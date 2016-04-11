@@ -65,10 +65,13 @@ public class ZooKeeperLockingTest {
     final CarbonProperties cp = CarbonProperties.getInstance();
     new NonStrictExpectations(cp) {
       {
-        cp.getProperty(anyString);
+        cp.getProperty("/Carbon/locks");
         result = "/carbon/tests";
+        cp.getProperty("spark.deploy.zookeeper.url");
+        result = "127.0.0.1:2181";
       }
     };
+
     ZooKeeperLocking zkl = new ZooKeeperLocking(LockType.METADATA_LOCK);
     Assert.assertTrue(zkl.lock());
 
