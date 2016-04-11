@@ -183,9 +183,9 @@ struct ColumnSchema{
 	*/
 	2: required string column_name;  //
 	3: required i32 column_id;  // Unique ID for a column. if this is dimension, it is an unique ID that used in dictionary
-	4: required bool is_columnar; // wether it is stored as columnar format or row format
+	4: required bool columnar; // wether it is stored as columnar format or row format
 	5: required list<Encoding> encoders; // List of encoders that are chained to encode the data for this column
-	6: required bool is_dimension;  // Whether the column is a dimension or measure
+	6: required bool dimension;  // Whether the column is a dimension or measure
 	7: optional i32 column_group_id; // The group ID for column used for row format columns, where in columns in each group are chunked together.
 	
 	/** When the schema is the result of a conversion from another model
