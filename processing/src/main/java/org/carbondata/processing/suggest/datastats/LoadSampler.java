@@ -24,14 +24,14 @@ import java.util.*;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.carbon.CarbonDef;
+import org.carbondata.core.carbon.CarbonDef.Schema;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.metadata.CarbonMetadata.Cube;
 import org.carbondata.core.metadata.CarbonMetadata.Dimension;
 import org.carbondata.core.metadata.SliceMetaData;
-import org.carbondata.core.carbon.CarbonDef;
-import org.carbondata.core.carbon.CarbonDef.Schema;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.processing.suggest.autoagg.exception.AggSuggestException;
@@ -45,6 +45,7 @@ import org.carbondata.query.datastorage.InMemoryTableStore;
 import org.carbondata.query.datastorage.Member;
 import org.carbondata.query.datastorage.MemberStore;
 import org.carbondata.query.querystats.Preference;
+import org.carbondata.query.scope.QueryScopeObject;
 import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
@@ -77,6 +78,11 @@ public class LoadSampler {
     private String cubeUniqueName;
 
     private List<String> allLoads;
+    /**
+     * Instance of query scope object holding the segment cache and map of segment name as key and
+     * modification time as value.
+     */
+    private QueryScopeObject queryScopeObject;
 
     /**
      * This will have dimension ordinal as key and dimension cardinality as value
@@ -115,9 +121,10 @@ public class LoadSampler {
         metaCube = InMemoryTableStore.getInstance()
                 .loadCubeMetadataIfRequired(schema, cube, partitionId,
                         loadModel.getSchemaLastUpdatedTime());
-        DataStatsUtil.createDataSource(schema, metaCube, partitionId, loadModel.getValidSlices(),
-                tableName, loadModel.getValidUpdateSlices(), loadModel.getDataPath(),
-                loadModel.getRestructureNo(), loadModel.getCubeCreationtime());
+        this.queryScopeObject = DataStatsUtil
+                .createDataSource(schema, metaCube, partitionId, loadModel.getAllLoads(), tableName,
+                        loadModel.getDataPath(), loadModel.getRestructureNo(),
+                        loadModel.getCubeCreationtime(), loadModel.getLoadMetadataDetails());
         //set visible dimensions
         this.visibleDimensions = getVisibleDimensions(cube);
         LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
@@ -174,7 +181,7 @@ public class LoadSampler {
      */
     private void updateDimensionCardinality(SliceMetaData sliceMetaData, String tableName) {
         String[] sliceDimensions = sliceMetaData.getDimensions();
-        int[] sliceCardinalities = sliceMetaData.getDimLens();
+        int[] sliceCardinalities = sliceMetaData.getActualDimLens();
         for (Dimension dimension : visibleDimensions) {
             String dimName = dimension.getColName();
             Integer dimensionCardinality = 1;
@@ -348,6 +355,14 @@ public class LoadSampler {
 
     public List<String> getAllLoads() {
         return this.allLoads;
+    }
+
+    /**
+     * returns the instance of query scope object holding the segment cache and map of segment name as key and
+     * modification time as value.
+     */
+    public QueryScopeObject getQueryScopeObject() {
+        return queryScopeObject;
     }
 
 }

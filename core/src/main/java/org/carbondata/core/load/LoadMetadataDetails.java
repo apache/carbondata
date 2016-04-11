@@ -31,7 +31,10 @@ public class LoadMetadataDetails implements Serializable {
     private String loadStatus;
     private String loadName;
     private String partitionCount;
-    private String deletionTimestamp;
+    /**
+     * Segment modification or deletion time stamp
+     */
+    private String modificationOrdeletionTimesStamp;
     private String loadStartTime;
 
     private String mergedLoadName;
@@ -73,24 +76,23 @@ public class LoadMetadataDetails implements Serializable {
     }
 
     /**
-     * @return the deletionTimestamp
+     * @return the modificationOrdeletionTimesStamp
      */
-    public String getDeletionTimestamp() {
-        return deletionTimestamp;
+    public String getModificationOrdeletionTimesStamp() {
+        return modificationOrdeletionTimesStamp;
     }
 
     /**
-     * @param deletionTimestamp the deletionTimestamp to set
+     * @param modificationOrdeletionTimesStamp the modificationOrdeletionTimesStamp to set
      */
-    public void setDeletionTimestamp(String deletionTimestamp) {
-        this.deletionTimestamp = deletionTimestamp;
+    public void setModificationOrdeletionTimesStamp(String modificationOrdeletionTimesStamp) {
+        this.modificationOrdeletionTimesStamp = modificationOrdeletionTimesStamp;
     }
 
     /* (non-Javadoc)
      * @see java.lang.Object#hashCode()
      */
-    @Override
-    public int hashCode() {
+    @Override public int hashCode() {
         final int prime = 31;
         int result = 1;
         result = prime * result + ((loadName == null) ? 0 : loadName.hashCode());
@@ -100,8 +102,7 @@ public class LoadMetadataDetails implements Serializable {
     /* (non-Javadoc)
      * @see java.lang.Object#equals(java.lang.Object)
      */
-    @Override
-    public boolean equals(Object obj) {
+    @Override public boolean equals(Object obj) {
         if (obj == null) {
             return false;
 

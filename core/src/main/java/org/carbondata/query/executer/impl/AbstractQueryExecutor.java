@@ -23,20 +23,23 @@ import java.util.*;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.carbon.SqlStatement;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.carbondata.core.metadata.CarbonMetadata.Dimension;
 import org.carbondata.core.metadata.CarbonMetadata.Measure;
-import org.carbondata.core.carbon.SqlStatement;
 import org.carbondata.query.aggregator.CustomCarbonAggregateExpression;
 import org.carbondata.query.aggregator.dimension.DimensionAggregatorInfo;
 import org.carbondata.query.cache.QueryExecutorUtil;
-import org.carbondata.query.datastorage.*;
+import org.carbondata.query.datastorage.InMemoryTable;
+import org.carbondata.query.datastorage.MemberStore;
+import org.carbondata.query.datastorage.TableDataStore;
 import org.carbondata.query.executer.CarbonQueryExecutorModel;
 import org.carbondata.query.executer.QueryExecutor;
 import org.carbondata.query.executer.exception.QueryExecutionException;
+import org.carbondata.query.scope.QueryScopeObject;
 import org.carbondata.query.util.CarbonEngineLogEvent;
 import org.carbondata.query.util.QueryExecutorUtility;
 
@@ -51,7 +54,8 @@ public abstract class AbstractQueryExecutor implements QueryExecutor {
 
     protected QueryExecuterProperties executerProperties;
 
-    public AbstractQueryExecutor(List<Dimension> dimList, String schemaName, String cubeName) {
+    public AbstractQueryExecutor(List<Dimension> dimList, String schemaName, String cubeName,
+            QueryScopeObject queryScopeObject) {
         executerProperties = new QueryExecuterProperties();
         executerProperties.schemaName = schemaName;
         executerProperties.cubeName = cubeName;
@@ -60,21 +64,12 @@ public abstract class AbstractQueryExecutor implements QueryExecutor {
                 cubeName = dimList.get(0).getCube().getCubeName();
             }
         }
-        executerProperties.cubeUniqueName = schemaName + '_' + cubeName;
         if (dimList != null) {
             executerProperties.dimTables = dimList.toArray(new Dimension[dimList.size()]);
             executerProperties.complexDimensionsMap =
                     QueryExecutorUtility.getComplexDimensionsMap(executerProperties.dimTables);
         }
-        Long threadID = Thread.currentThread().getId();
-        List<Long> sliceIds = QueryMapper.getSlicesForThread(threadID);
-        if (sliceIds == null || sliceIds.size() == 0) {
-            executerProperties.slices = InMemoryTableStore.getInstance()
-                    .getActiveSlices(executerProperties.cubeUniqueName);
-        } else {
-            executerProperties.slices = InMemoryTableStore.getInstance()
-                    .getSllicesbyIds(executerProperties.cubeUniqueName, sliceIds);
-        }
+        executerProperties.slices = queryScopeObject.getQuerySlices();
 
     }
 
@@ -334,8 +329,7 @@ public abstract class AbstractQueryExecutor implements QueryExecutor {
             this.tableName = tableName;
         }
 
-        @Override
-        public int compare(InMemoryTable o1, InMemoryTable o2) {
+        @Override public int compare(InMemoryTable o1, InMemoryTable o2) {
             int loadId1 = !o1.getTableName().equals(tableName) ? Integer.MIN_VALUE : o1.getLoadId();
             int loadId2 = !o2.getTableName().equals(tableName) ? Integer.MIN_VALUE : o2.getLoadId();
             if (loadId1 < 0) {

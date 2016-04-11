@@ -161,7 +161,7 @@ object CarbonDataRDDFactory extends Logging {
         }
 
         if (statusList != None) {
-          elem.setDeletionTimestamp(CarbonLoaderUtil.readCurrentTime())
+          elem.setModificationOrdeletionTimesStamp(CarbonLoaderUtil.readCurrentTime())
           //if atleast on CarbonCommonConstants.MARKED_FOR_UPDATE status exist, use MARKED_FOR_UPDATE
           if (statusList.get.forall(status => status._2 == CarbonCommonConstants.MARKED_FOR_DELETE)) {
             elem.setLoadStatus(CarbonCommonConstants.MARKED_FOR_DELETE)

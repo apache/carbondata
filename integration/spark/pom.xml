@@ -18,7 +18,7 @@
     <artifactId>carbon-spark</artifactId>
     <version>0.1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
-    <name>"carbon-spark"</name>
+    <name>carbon-spark</name>
     <parent>
         <groupId>org.carbondata</groupId>
         <version>0.1.0-SNAPSHOT</version>
@@ -34,7 +34,11 @@
     </repositories>
 
     <dependencies>
-
+        <dependency>
+            <groupId>com.databricks</groupId>
+            <artifactId>spark-csv_${scala.binary.version}</artifactId>
+            <version>1.4.0</version>
+        </dependency>
         <dependency>
             <groupId>org.carbondata</groupId>
             <artifactId>carbon-common</artifactId>
@@ -144,6 +148,13 @@
                             <goal>compile</goal>
                         </goals>
                         <phase>compile</phase>
+                    </execution>
+                    <execution>
+                        <id>testCompile</id>
+                        <goals>
+                            <goal>testCompile</goal>
+                        </goals>
+                        <phase>test</phase>
                     </execution>
                     <execution>
                         <phase>process-resources</phase>

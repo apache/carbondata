@@ -33,7 +33,7 @@ class NumericDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     sql("CREATE CUBE doubletype DIMENSIONS (utilization Numeric,salary Numeric) OPTIONS (PARTITIONER [PARTITION_COUNT=1])")
-    sql("LOAD DATA fact from './TestData/data.csv' INTO CUBE doubletype PARTITIONDATA(DELIMITER ',', QUOTECHAR '\"')")
+    sql("LOAD DATA fact from './src/test/resources/data.csv' INTO CUBE doubletype PARTITIONDATA(DELIMITER ',', QUOTECHAR '\"')")
   }
 
   test("select utilization from doubletype") {

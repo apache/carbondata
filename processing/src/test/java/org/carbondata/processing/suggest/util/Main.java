@@ -127,8 +127,9 @@ public class Main {
         //	loadSampler.loadCube(loadModel);
 
         CarbonQueryExecutorModel model = createQueryExecutorModel(loadSampler);
-        QueryExecutor queryExecutor =
-                DataStatsUtil.getQueryExecuter(loadSampler.getMetaCube(), cube.fact.getAlias());
+        QueryExecutor queryExecutor = DataStatsUtil
+                .getQueryExecuter(loadSampler.getMetaCube(), cube.fact.getAlias(),
+                        loadSampler.getQueryScopeObject());
         CarbonIterator<RowResult> rowIterator = queryExecutor.execute(model);
         System.out.println("hello");
     }

@@ -18,7 +18,7 @@
     <artifactId>carbon-processing</artifactId>
     <version>0.1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
-    <name>"carbon-processing"</name>
+    <name>carbon-processing</name>
     <parent>
         <groupId>org.carbondata</groupId>
         <version>0.1.0-SNAPSHOT</version>

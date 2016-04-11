@@ -186,8 +186,7 @@ public final class CarbonUtil {
 
         // List of directories
         CarbonFile[] listFiles = carbonFile.listFiles(new CarbonFileFilter() {
-            @Override
-            public boolean accept(CarbonFile pathname) {
+            @Override public boolean accept(CarbonFile pathname) {
                 if (isDirectory && pathname.isDirectory()) {
                     if (pathname.getAbsolutePath().indexOf(filterType) > -1) {
                         return true;
@@ -442,9 +441,11 @@ public final class CarbonUtil {
         }
 
         //This split is used while splitting mdkey's into columns
-        //1,1,1,3 -> it means first 3 dimension will be alone and next 3 dimension will be in single column
+        //1,1,1,3 -> it means first 3 dimension will be alone and next
+        //3 dimension will be in single column
 
-        //here in index +1 means total no of split will be all dimension,part of columnar store, and one column which
+        //here in index +1 means total no of split will be all
+        //dimension,part of columnar store, and one column which
         //will have all dimension in single column as row
         int[] mdKeyPartioner = null;
         int[][] dimensionPartitioner = null;
@@ -544,7 +545,8 @@ public final class CarbonUtil {
      * This method will return bit length required for each dimension based on splits
      *
      * @param dimension
-     * @param dimPartitioner : this will partition few dimension to be stored at row level. If it is row level than data is store in bits
+     * @param dimPartitioner : this will partition few dimension to be stored
+     *                       at row level. If it is row level than data is store in bits
      * @return
      */
     public static int[] getDimensionBitLength(int[] dimCardinality, int[][] dimPartitioner) {
@@ -552,7 +554,7 @@ public final class CarbonUtil {
         int dimCounter = 0;
         for (int i = 0; i < dimPartitioner.length; i++) {
             if (dimCardinality[i] == 0) {
-                //Array or struct type may have higher value 
+                //Array or struct type may have higher value
                 newdims[i] = 64;
             } else if (dimPartitioner[i].length == 1) {
                 //for columnar store
@@ -608,8 +610,7 @@ public final class CarbonUtil {
         try {
             UserGroupInformation.getLoginUser().doAs(new PrivilegedExceptionAction<Void>() {
 
-                @Override
-                public Void run() throws Exception {
+                @Override public Void run() throws Exception {
                     for (int i = 0; i < path.length; i++) {
                         if (null != path[i]) {
                             deleteRecursive(new File(path[i]));
@@ -635,8 +636,7 @@ public final class CarbonUtil {
         try {
             UserGroupInformation.getLoginUser().doAs(new PrivilegedExceptionAction<Void>() {
 
-                @Override
-                public Void run() throws Exception {
+                @Override public Void run() throws Exception {
                     for (int i = 0; i < path.length; i++) {
                         deleteRecursive(path[i]);
                     }
@@ -674,8 +674,7 @@ public final class CarbonUtil {
         try {
             UserGroupInformation.getLoginUser().doAs(new PrivilegedExceptionAction<Void>() {
 
-                @Override
-                public Void run() throws Exception {
+                @Override public Void run() throws Exception {
                     for (int i = 0; i < file.length; i++) {
                         deleteRecursive(file[i]);
                     }
@@ -694,8 +693,7 @@ public final class CarbonUtil {
         try {
             UserGroupInformation.getLoginUser().doAs(new PrivilegedExceptionAction<Void>() {
 
-                @Override
-                public Void run() throws Exception {
+                @Override public Void run() throws Exception {
                     for (int i = 0; i < file.length; i++) {
                         deleteRecursiveSilent(file[i]);
                     }
@@ -1062,8 +1060,7 @@ public final class CarbonUtil {
             final String fileNameExt) {
         File file = new File(location);
         File[] listFiles = file.listFiles(new FileFilter() {
-            @Override
-            public boolean accept(File pathname) {
+            @Override public boolean accept(File pathname) {
                 String name = pathname.getName();
 
                 return name.startsWith(fileNameInitial) && name.endsWith(fileNameExt);
@@ -1398,13 +1395,13 @@ public final class CarbonUtil {
             buffer.rewind();
             int indexDataLength = buffer.getInt();
             indexData = new byte[indexDataLength];
-            indexMap =
-                    new byte[totalLength - indexDataLength - CarbonCommonConstants.INT_SIZE_IN_BYTE];
+            indexMap = new byte[totalLength - indexDataLength
+                    - CarbonCommonConstants.INT_SIZE_IN_BYTE];
             buffer.get(indexData);
             buffer.get(indexMap);
         } catch (Exception e) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "Error while compressColumn Index ",
-                    e, e.getMessage());
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
+                    "Error while compressColumn Index ", e, e.getMessage());
         }
         return UnBlockIndexer.uncompressIndex(numberCompressor.unCompress(indexData),
                 numberCompressor.unCompress(indexMap));
@@ -1455,8 +1452,7 @@ public final class CarbonUtil {
      */
     public static CarbonFile[] listFiles(CarbonFile file) {
         CarbonFile[] listFiles = file.listFiles(new CarbonFileFilter() {
-            @Override
-            public boolean accept(CarbonFile pathname) {
+            @Override public boolean accept(CarbonFile pathname) {
                 return pathname.getName().startsWith(CarbonCommonConstants.LOAD_FOLDER) && !pathname
                         .getName().endsWith(CarbonCommonConstants.FILE_INPROGRESS_STATUS);
             }
@@ -1503,8 +1499,7 @@ public final class CarbonUtil {
         if (file.isDirectory()) {
             updatedFactFiles = file.listFiles(new CarbonFileFilter() {
 
-                @Override
-                public boolean accept(CarbonFile pathname) {
+                @Override public boolean accept(CarbonFile pathname) {
                     return ((!pathname.isDirectory()) && (pathname.getName().startsWith(tableName))
                             && pathname.getName()
                             .endsWith(CarbonCommonConstants.FACT_UPDATE_EXTENSION));
@@ -1726,8 +1721,7 @@ public final class CarbonUtil {
     public static SliceMetaData readSliceMetaDataFile(CarbonFile folderPath) {
         CarbonFile[] sliceMetaDataPath = folderPath.listFiles(new CarbonFileFilter() {
 
-            @Override
-            public boolean accept(CarbonFile file) {
+            @Override public boolean accept(CarbonFile file) {
                 return file.getName().startsWith("sliceMetaData");
             }
         });
@@ -1750,31 +1744,31 @@ public final class CarbonUtil {
      */
     public static String unescapeChar(String parseStr) {
         switch (parseStr) {
-        case "\\001":
-            return "\001";
-        case "\\t":
-            return "\t";
-        case "\\r":
-            return "\r";
-        case "\\b":
-            return "\b";
-        case "\\f":
-            return "\f";
-        case "\\n":
-            return "\n";
-        default:
-            return parseStr;
+            case "\\001":
+                return "\001";
+            case "\\t":
+                return "\t";
+            case "\\r":
+                return "\r";
+            case "\\b":
+                return "\b";
+            case "\\f":
+                return "\f";
+            case "\\n":
+                return "\n";
+            default:
+                return parseStr;
         }
     }
 
     public static String escapeComplexDelimiterChar(String parseStr) {
         switch (parseStr) {
-        case "$":
-            return "\\$";
-        case ":":
-            return "\\:";
-        default:
-            return parseStr;
+            case "$":
+                return "\\$";
+            case ":":
+                return "\\:";
+            default:
+                return parseStr;
         }
     }
 
@@ -1787,8 +1781,8 @@ public final class CarbonUtil {
         String currentPath = filePath;
         if (null != filePath && filePath.length() != 0 &&
                 FileFactory.getFileType(filePath) != FileFactory.FileType.HDFS) {
-            String baseHDFSUrl = CarbonProperties.getInstance().
-                    getProperty(CarbonCommonConstants.CARBON_DDL_BASE_HDFS_URL);
+            String baseHDFSUrl = CarbonProperties.getInstance()
+                    .getProperty(CarbonCommonConstants.CARBON_DDL_BASE_HDFS_URL);
             String hdfsUrl = conf.get(FS_DEFAULT_FS);
             if (hdfsUrl.startsWith(HDFS_PREFIX)) {
                 baseHDFSUrl = hdfsUrl + baseHDFSUrl;
@@ -1885,8 +1879,7 @@ public final class CarbonUtil {
             this.file = file;
         }
 
-        @Override
-        public Void call() throws Exception {
+        @Override public Void call() throws Exception {
             deleteFoldersAndFiles(file);
             return null;
         }
@@ -1903,8 +1896,7 @@ public final class CarbonUtil {
             this.fileExt = fileExt;
         }
 
-        @Override
-        public int compare(CarbonFile file1, CarbonFile file2) {
+        @Override public int compare(CarbonFile file1, CarbonFile file2) {
             String firstFileName = file1.getName().split(fileExt)[0];
             String secondFileName = file2.getName().split(fileExt)[0];
             int lastIndexOfO1 = firstFileName.lastIndexOf('_');
@@ -1943,13 +1935,55 @@ public final class CarbonUtil {
 
     private static class SliceMetaDataFileComparator implements Comparator<CarbonFile> {
 
-        @Override
-        public int compare(CarbonFile o1, CarbonFile o2) {
+        @Override public int compare(CarbonFile o1, CarbonFile o2) {
             int firstSliceNumber = Integer.parseInt(o1.getName().split("\\.")[1]);
             int secondSliceNumber = Integer.parseInt(o2.getName().split("\\.")[1]);
             return firstSliceNumber - secondSliceNumber;
         }
 
+    }
+
+    /**
+     * This method will check the existence of a file at a given path
+     */
+    public static boolean isFileExists(String fileName) {
+        try {
+            FileFactory.FileType fileType = FileFactory.getFileType(fileName);
+            if (FileFactory.isFileExist(fileName, fileType)) {
+                return true;
+            }
+        } catch (IOException e) {
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
+                    "@@@@@@  File not found at a given location @@@@@@ : " + fileName);
+        }
+        return false;
+    }
+
+    /**
+     * This method will check and create the given path
+     */
+    public static boolean checkAndCreateFolder(String path) {
+        boolean created = false;
+        try {
+            FileFactory.FileType fileType = FileFactory.getFileType(path);
+            if (FileFactory.isFileExist(path, fileType)) {
+                created = true;
+            } else {
+                created = FileFactory.mkdirs(path, fileType);
+            }
+        } catch (IOException e) {
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e.getMessage());
+        }
+        return created;
+    }
+
+    /**
+     * This method will return the size of a given file
+     */
+    public static long getFileSize(String filePath) {
+        FileFactory.FileType fileType = FileFactory.getFileType(filePath);
+        CarbonFile carbonFile = FileFactory.getCarbonFile(filePath, fileType);
+        return carbonFile.getSize();
     }
 }
 

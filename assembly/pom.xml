@@ -18,7 +18,7 @@
     <artifactId>carbon-assembly</artifactId>
     <version>0.1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
-    <name>"carbon-assembly"</name>
+    <name>carbon-assembly</name>
     <parent>
         <groupId>org.carbondata</groupId>
         <version>0.1.0-SNAPSHOT</version>

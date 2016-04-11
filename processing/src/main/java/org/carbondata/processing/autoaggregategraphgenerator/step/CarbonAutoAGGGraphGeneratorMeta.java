@@ -87,6 +87,14 @@ public class CarbonAutoAGGGraphGeneratorMeta extends BaseStepMeta implements Ste
     private String factStoreLocation;
 
     private int currentRestructNumber;
+    /**
+     * load names separated by HASH_SPC_CHARACTER
+     */
+    private String loadNames;
+    /**
+     * Segment modification Or DeletionTime separated by HASH_SPC_CHARACTER
+     */
+    private String modificationOrDeletionTime;
 
     /**
      * set the default value for all the properties
@@ -103,6 +111,8 @@ public class CarbonAutoAGGGraphGeneratorMeta extends BaseStepMeta implements Ste
         autoMode = "";
         factStoreLocation = "";
         currentRestructNumber = -1;
+        loadNames = "";
+        modificationOrDeletionTime = "";
     }
 
     /**
@@ -180,6 +190,9 @@ public class CarbonAutoAGGGraphGeneratorMeta extends BaseStepMeta implements Ste
                 .append(XMLHandler.addTagValue("factStoreLocation", factStoreLocation));
         retval.append("    ")
                 .append(XMLHandler.addTagValue("currentRestructNumber", currentRestructNumber));
+        retval.append("    ").append(XMLHandler.addTagValue("loadNames", loadNames));
+        retval.append("    ").append(XMLHandler
+                .addTagValue("modificationOrDeletionTime", modificationOrDeletionTime));
         return retval.toString();
     }
 
@@ -206,6 +219,9 @@ public class CarbonAutoAGGGraphGeneratorMeta extends BaseStepMeta implements Ste
             factStoreLocation = XMLHandler.getTagValue(stepnode, "factStoreLocation");
             currentRestructNumber =
                     Integer.parseInt(XMLHandler.getTagValue(stepnode, "currentRestructNumber"));
+            loadNames = XMLHandler.getTagValue(stepnode, "loadNames");
+            modificationOrDeletionTime =
+                    XMLHandler.getTagValue(stepnode, "modificationOrDeletionTime");
         } catch (Exception e) {
             throw new KettleXMLException("Unable to read step info from XML node", e);
         }
@@ -235,6 +251,9 @@ public class CarbonAutoAGGGraphGeneratorMeta extends BaseStepMeta implements Ste
             factStoreLocation = rep.getStepAttributeString(idStep, "factStoreLocation");
             currentRestructNumber =
                     (int) rep.getStepAttributeInteger(idStep, "currentRestructNumber");
+            loadNames = rep.getStepAttributeString(idStep, "loadNames");
+            modificationOrDeletionTime =
+                    rep.getStepAttributeString(idStep, "modificationOrDeletionTime");
         } catch (Exception e) {
             throw new KettleException(BaseMessages.getString(pkg,
                     "CarbonMDKeyStepMeta.Exception.UnexpectedErrorInReadingStepInfo"), e);
@@ -265,6 +284,9 @@ public class CarbonAutoAGGGraphGeneratorMeta extends BaseStepMeta implements Ste
                     factStoreLocation);
             rep.saveStepAttribute(idtTransformation, idsStep, "currentRestructNumber",
                     currentRestructNumber);
+            rep.saveStepAttribute(idtTransformation, idsStep, "loadNames", loadNames);
+            rep.saveStepAttribute(idtTransformation, idsStep, "modificationOrDeletionTime",
+                    modificationOrDeletionTime);
         } catch (Exception e) {
             throw new KettleException(BaseMessages
                     .getString(pkg, "TemplateStep.Exception.UnableToSaveStepInfoToRepository")
@@ -404,5 +426,33 @@ public class CarbonAutoAGGGraphGeneratorMeta extends BaseStepMeta implements Ste
      */
     public void setCurrentRestructNumber(int currentRestructNum) {
         this.currentRestructNumber = currentRestructNum;
+    }
+
+    /**
+     * return's loadNames separated by HASH_SPC_CHARACTER
+     */
+    public String getLoadNames() {
+        return loadNames;
+    }
+
+    /**
+     * set loadNames separated by HASH_SPC_CHARACTER
+     */
+    public void setLoadNames(String loadNames) {
+        this.loadNames = loadNames;
+    }
+
+    /**
+     * return modificationOrDeletionTime separated by HASH_SPC_CHARACTER
+     */
+    public String getModificationOrDeletionTime() {
+        return modificationOrDeletionTime;
+    }
+
+    /**
+     * set modificationOrDeletionTime separated by HASH_SPC_CHARACTER
+     */
+    public void setModificationOrDeletionTime(String modificationOrDeletionTime) {
+        this.modificationOrDeletionTime = modificationOrDeletionTime;
     }
 }

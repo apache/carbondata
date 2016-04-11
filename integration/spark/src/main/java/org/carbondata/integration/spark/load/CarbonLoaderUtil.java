@@ -31,6 +31,8 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.carbon.CarbonDef;
+import org.carbondata.core.carbon.CarbonDef.*;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.fileperations.AtomicFileOperations;
 import org.carbondata.core.datastorage.store.fileperations.AtomicFileOperationsImpl;
@@ -43,8 +45,6 @@ import org.carbondata.core.load.LoadMetadataDetails;
 import org.carbondata.core.metadata.CarbonMetadata;
 import org.carbondata.core.metadata.CarbonMetadata.Cube;
 import org.carbondata.core.metadata.CarbonMetadata.Dimension;
-import org.carbondata.core.carbon.CarbonDef;
-import org.carbondata.core.carbon.CarbonDef.*;
 import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
@@ -59,6 +59,7 @@ import org.carbondata.processing.globalsurrogategenerator.GlobalSurrogateGenerat
 import org.carbondata.processing.globalsurrogategenerator.GlobalSurrogateGeneratorInfo;
 import org.carbondata.processing.graphgenerator.GraphGenerator;
 import org.carbondata.processing.graphgenerator.GraphGeneratorException;
+import org.carbondata.processing.util.CarbonDataProcessorUtil;
 import org.carbondata.processing.util.CarbonSchemaParser;
 import org.carbondata.query.datastorage.InMemoryTable;
 import org.carbondata.query.datastorage.InMemoryTableStore;
@@ -75,12 +76,19 @@ public final class CarbonLoaderUtil {
 
     private static void generateGraph(IDataProcessStatus schmaModel, SchemaInfo info,
             String tableName, String partitionID, Schema schema, String factStoreLocation,
-            int currentRestructNumber) throws GraphGeneratorException {
+            int currentRestructNumber, List<LoadMetadataDetails> loadMetadataDetails)
+            throws GraphGeneratorException {
         DataLoadModel model = new DataLoadModel();
         model.setCsvLoad(
                 null != schmaModel.getCsvFilePath() || null != schmaModel.getFilesToProcess());
         model.setSchemaInfo(info);
         model.setTableName(schmaModel.getTableName());
+        if (null != loadMetadataDetails && !loadMetadataDetails.isEmpty()) {
+            model.setLoadNames(CarbonDataProcessorUtil
+                    .getLoadNameFromLoadMetaDataDetails(loadMetadataDetails));
+            model.setModificationOrDeletionTime(CarbonDataProcessorUtil
+                    .getModificationOrDeletionTimesFromLoadMetadataDetails(loadMetadataDetails));
+        }
         boolean hdfsReadMode = schmaModel.getCsvFilePath() != null && schmaModel.getCsvFilePath()
                 .startsWith("hdfs:");
         int allocate =
@@ -147,7 +155,8 @@ public final class CarbonLoaderUtil {
         info.setComplexDelimiterLevel2(loadModel.getComplexDelimiterLevel2());
 
         generateGraph(schmaModel, info, loadModel.getTableName(), loadModel.getPartitionId(),
-                loadModel.getSchema(), loadModel.getFactStoreLocation(), currentRestructNumber);
+                loadModel.getSchema(), loadModel.getFactStoreLocation(), currentRestructNumber,
+                loadModel.getLoadMetadataDetails());
 
         DataGraphExecuter graphExecuter = new DataGraphExecuter(schmaModel);
         graphExecuter.executeGraph(graphPath,
@@ -174,8 +183,7 @@ public final class CarbonLoaderUtil {
             return new String[0];
         }
         CarbonFile[] listFiles = file.listFiles(new CarbonFileFilter() {
-            @Override
-            public boolean accept(CarbonFile path) {
+            @Override public boolean accept(CarbonFile path) {
                 return path.getName().startsWith(CarbonCommonConstants.LOAD_FOLDER) && !path
                         .getName().endsWith(CarbonCommonConstants.FILE_INPROGRESS_STATUS);
             }
@@ -288,10 +296,10 @@ public final class CarbonLoaderUtil {
             if (FileFactory.isFileExist(tableLoc, fileType)) {
                 CarbonFile carbonFile = FileFactory.getCarbonFile(tableLoc, fileType);
                 CarbonFile[] listFiles = carbonFile.listFiles(new CarbonFileFilter() {
-                    @Override
-                    public boolean accept(CarbonFile path) {
+                    @Override public boolean accept(CarbonFile path) {
                         return !loadFolders.contains(path.getAbsolutePath().replace("\\", "/"))
-                                && !path.getName().contains(CarbonCommonConstants.MERGERD_EXTENSION);
+                                && !path.getName()
+                                .contains(CarbonCommonConstants.MERGERD_EXTENSION);
                     }
                 });
                 for (int k = 0; k < listFiles.length; k++) {
@@ -640,8 +648,7 @@ public final class CarbonLoaderUtil {
             if (FileFactory.isFileExist(location, fileType)) {
                 carbonFile = FileFactory.getCarbonFile(location, fileType);
                 CarbonFile[] listFiles = carbonFile.listFiles(new CarbonFileFilter() {
-                    @Override
-                    public boolean accept(CarbonFile path) {
+                    @Override public boolean accept(CarbonFile path) {
                         return path.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT) && !path
                                 .getName().endsWith(CarbonCommonConstants.FILE_INPROGRESS_STATUS);
                     }
@@ -1025,13 +1032,14 @@ public final class CarbonLoaderUtil {
                             "Unable to find the local store details (RS_-1) " + currentloadedStore);
                     return;
                 }
-                String localLoadedTable =
-                        currentloadedStore + File.separator + CarbonCommonConstants.RESTRUCTRE_FOLDER
-                                + rsCounter + File.separator + factTable;
+                String localLoadedTable = currentloadedStore + File.separator
+                        + CarbonCommonConstants.RESTRUCTRE_FOLDER + rsCounter + File.separator
+                        + factTable;
 
                 localLoadedTable = localLoadedTable.replace("\\", "/");
 
-                int loadCounter = CarbonUtil.checkAndReturnCurrentLoadFolderNumber(localLoadedTable);
+                int loadCounter =
+                        CarbonUtil.checkAndReturnCurrentLoadFolderNumber(localLoadedTable);
 
                 if (loadCounter == -1) {
                     LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,

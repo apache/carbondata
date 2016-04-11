@@ -48,11 +48,12 @@
 
     <modules>
         <module>common</module>
+        <module>format</module>
         <module>core</module>
         <module>processing</module>
         <module>integration/spark</module>
-        <module>format</module>
         <module>assembly</module>
+        <module>examples</module>
     </modules>
     <build>
         <plugins>

@@ -19,13 +19,15 @@
 
 package org.carbondata.core.datastorage.store.filesystem;
 
-import java.io.File;
-import java.io.FileFilter;
-import java.io.IOException;
+import java.io.*;
+import java.nio.channels.FileChannel;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.util.CarbonCoreLogEvent;
+import org.carbondata.core.util.CarbonUtil;
 
 public class LocalCarbonFile implements CarbonFile {
     private static final LogService LOGGER =
@@ -162,6 +164,54 @@ public class LocalCarbonFile implements CarbonFile {
     @Override
     public boolean setLastModifiedTime(long timestamp) {
         return file.setLastModified(timestamp);
+    }
+
+    /**
+     * This method will delete the data in file data from a given offset
+     */
+    @Override public boolean truncate(String fileName, long validDataEndOffset) {
+        FileChannel source = null;
+        FileChannel destination = null;
+        boolean fileTruncatedSuccessfully = false;
+        // if bytes to read less than 1024 then buffer size should be equal to the given offset
+        int bufferSize = validDataEndOffset > CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR ?
+                CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR :
+                (int) validDataEndOffset;
+        // temporary file name
+        String tempWriteFilePath = fileName + CarbonCommonConstants.TEMPWRITEFILEEXTENSION;
+        FileFactory.FileType fileType = FileFactory.getFileType(fileName);
+        try {
+            CarbonFile tempFile = null;
+            // delete temporary file if it already exists at a given path
+            if (FileFactory.isFileExist(tempWriteFilePath, fileType)) {
+                tempFile = FileFactory.getCarbonFile(tempWriteFilePath, fileType);
+                tempFile.delete();
+            }
+            // create new temporary file
+            FileFactory.createNewFile(tempWriteFilePath, fileType);
+            tempFile = FileFactory.getCarbonFile(tempWriteFilePath, fileType);
+            source = new FileInputStream(fileName).getChannel();
+            destination = new FileOutputStream(tempWriteFilePath).getChannel();
+            long read = destination.transferFrom(source, 0, validDataEndOffset);
+            long totalBytesRead = read;
+            long remaining = validDataEndOffset - totalBytesRead;
+            // read till required data offset is not reached
+            while(remaining > 0) {
+                read = destination.transferFrom(source, totalBytesRead, remaining);
+                totalBytesRead = totalBytesRead + read;
+                remaining = remaining - totalBytesRead;
+            }
+            CarbonUtil.closeStreams(source, destination);
+            // rename the temp file to original file
+            tempFile.renameForce(fileName);
+            fileTruncatedSuccessfully = true;
+        } catch (IOException e) {
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
+                    "Exception occured while truncating the file " + e.getMessage());
+        } finally {
+            CarbonUtil.closeStreams(source, destination);
+        }
+        return fileTruncatedSuccessfully;
     }
 
     @Override

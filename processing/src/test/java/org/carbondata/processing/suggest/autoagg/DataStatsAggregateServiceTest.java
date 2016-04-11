@@ -26,8 +26,10 @@ import java.util.List;
 import junit.framework.Assert;
 import mockit.Mock;
 import mockit.MockUp;
+
 import org.carbondata.core.carbon.CarbonDef;
 import org.carbondata.core.util.CarbonProperties;
+import org.carbondata.processing.store.StoreCreator;
 import org.carbondata.processing.suggest.autoagg.exception.AggSuggestException;
 import org.carbondata.processing.suggest.autoagg.model.Request;
 import org.carbondata.processing.suggest.autoagg.util.CommonUtil;
@@ -57,7 +59,8 @@ public class DataStatsAggregateServiceTest {
     public void setUpBeforeClass() throws Exception {
         try {
 
-            File file = new File("../../libraries/testData/Carbon-Aggregation/store/");
+            StoreCreator.createCarbonStore();
+            File file = new File("src/test/resources");
             String basePath = file.getCanonicalPath() + "/";
             String metaPath = basePath + "schemas/default/carbon/metadata";
 

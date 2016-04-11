@@ -23,8 +23,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.carbon.CarbonDef;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.ByteUtil;
 import org.carbondata.query.util.MemberSortModel;
 
@@ -58,6 +58,10 @@ public class MemberStore {
     private int[][] sortReverseOrderIndex;
 
     private int sortReverseOrderIndexSize;
+    /**
+     *  Total size of the sortOrderIndex[][]
+     */
+    private int sortOrderIndexSize;
 
     /**
      * Column name ffrom schema
@@ -165,6 +169,7 @@ public class MemberStore {
         globalCache = null;
         sortReverseOrderIndex = null;
         sortReverseOrderIndexSize = 0;
+        sortOrderIndexSize = 0;
     }
 
     /**
@@ -194,18 +199,42 @@ public class MemberStore {
         if (null == cache) {
             return 0;
         }
+        if (name == null) {
+            return 0;
+        }
+        if (null == cache) {
+            return 0;
+        }
         byte[] nameChar = name.getBytes();
-        int surrogate = 0;
-        for (int index = 0; index < cache.length; index++) {
-            for (int i = 0; i < cache[index].length; i++) {
-                if (ByteUtil.UnsafeComparer.INSTANCE
-                        .equals(nameChar, cache[index][i].getCharArray())) {
-                    return surrogate + min;
-                }
-                surrogate++;
+        return getMemberId(this.min, this.sortOrderIndexSize, nameChar);
+    }
+
+    /**
+     * returns the surrogate of the requested member.
+     */
+    private int getMemberId(int fromIndex, int toIndex, byte[] key) {
+        int low = fromIndex;
+        int high = toIndex - 1;
+
+        while (low <= high) {
+            int mid = (low + high) >>> 1;
+            int surrogate = sortOrderIndex[mid / CarbonCommonConstants.LEVEL_ARRAY_SIZE][mid
+                    % CarbonCommonConstants.LEVEL_ARRAY_SIZE];
+            int dataIndex = surrogate - min;
+            int div = dataIndex / CarbonCommonConstants.LEVEL_ARRAY_SIZE;
+            int rem = dataIndex % CarbonCommonConstants.LEVEL_ARRAY_SIZE;
+
+            Member member = cache[div][rem];
+            int cmp = ByteUtil.UnsafeComparer.INSTANCE.compareTo(member.getCharArray(), key);
+            if (cmp < 0) {
+                low = mid + 1;
+            } else if (cmp > 0) {
+                high = mid - 1;
+            } else {
+                return surrogate; // key found
             }
         }
-        return 0;
+        return 0;  // key not found.
     }
 
     /**
@@ -357,6 +386,9 @@ public class MemberStore {
 
     public void setSortOrderIndex(int[][] sortOrderIndex) {
         this.sortOrderIndex = sortOrderIndex;
+        for (int i =0; i< this.sortOrderIndex.length; i++){
+            this.sortOrderIndexSize += this.sortOrderIndex[i].length;
+        }
     }
 
     public void setSortReverseOrderIndex(int[][] sortReverseOrderIndex) {

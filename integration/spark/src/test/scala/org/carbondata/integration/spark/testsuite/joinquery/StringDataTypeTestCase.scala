@@ -33,7 +33,7 @@ class StringDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     sql("CREATE CUBE stringtypecube DIMENSIONS (empname String, designation String, workgroupcategoryname String, deptname String) OPTIONS (PARTITIONER [PARTITION_COUNT=1])");
-    sql("LOAD DATA fact from './TestData/data.csv' INTO CUBE stringtypecube PARTITIONDATA(DELIMITER ',', QUOTECHAR '\"')");
+    sql("LOAD DATA fact from './src/test/resources/data.csv' INTO CUBE stringtypecube PARTITIONDATA(DELIMITER ',', QUOTECHAR '\"')");
   }
 
   test("select empname from stringtypecube") {
