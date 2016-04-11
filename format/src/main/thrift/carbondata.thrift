@@ -118,8 +118,7 @@ struct DataChunk{
 */
 struct LeafNodeInfo{
     1: required i32 num_rows;	// Number of rows in this leaf node
-    2: required list<DataChunk> dimension_chunks;	// Information about dimension chunk of all dimensions in this leaf node
-    3: required list<DataChunk> measure_chunks;	// Information about measure chunk of all measures in this leaf node
+    2: required list<DataChunk> column_data_chunks;	// Information about all column chunks in this leaf node
 }
 
 /**
