@@ -46,7 +46,7 @@ import org.carbondata.processing.util.CarbonSchemaParser
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
-
+import org.carbondata.integration.spark.util.GlobalDictionaryUtil
 case class CubeModel(
                       ifNotExistsSet: Boolean,
                       //SchmemaNameOp is used to temporarily to hold schema and then set to var schemaName
@@ -1624,6 +1624,7 @@ private[sql] case class LoadCube(
             fileHeader,
             escapeChar, booleanValForMultiLine)(sqlContext.asInstanceOf[HiveContext])
         }
+        GlobalDictionaryUtil.generateGlobalDictionary(sqlContext, carbonLoadModel, false)
         CarbonDataRDDFactory.loadCarbonData(sqlContext, carbonLoadModel, storeLocation, relation.cubeMeta.dataPath, kettleHomePath,
           relation.cubeMeta.partitioner, columinar, false, partitionStatus);
         try {
