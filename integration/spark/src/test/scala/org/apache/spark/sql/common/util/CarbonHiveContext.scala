@@ -19,6 +19,8 @@
 
 package org.apache.spark.sql.common.util
 
+import java.io.File
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.CarbonContext
@@ -39,19 +41,22 @@ object CarbonHiveContext extends LocalSQLContext(
   val hadoopConf = new Configuration();
   hadoopConf.addResource(new Path("../core-default.xml"));
   hadoopConf.addResource(new Path("core-site.xml"));
-  val hdfsCarbonPath = hadoopConf.get("fs.defaultFS", "./") + "/opt/carbon/test/";
+  val hdfsCarbonPath = new File("./target/test/").getCanonicalPath;
   hdfsCarbonPath
 }) {
 
   {
-    CarbonProperties.getInstance().addProperty("carbon.kettle.home", "../../processing/carbonplugins/carbonplugins")
+    CarbonProperties.getInstance().addProperty("carbon.kettle.home", "../../processing/carbonplugins")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.STORE_LOCATION_TEMP_PATH, System.getProperty("java.io.tmpdir"))
 
     val hadoopConf = new Configuration();
     hadoopConf.addResource(new Path("../core-default.xml"));
     hadoopConf.addResource(new Path("core-site.xml"));
-    val hdfsCarbonPath = hadoopConf.get("fs.defaultFS", "./") + "/opt/carbon/test/";
+    val hdfsCarbonPath = new File("./target/test/").getCanonicalPath;
+    setConf("hive.metastore.warehouse.dir", hdfsCarbonPath +"/hivemetadata")
+    val hiveMetaStoreDB = hdfsCarbonPath+"/metastore_db"
+    setConf("javax.jdo.option.ConnectionURL","jdbc:derby:;databaseName="+hiveMetaStoreDB+";create=true")
 
     CarbonLoaderUtil.deleteStorePath(hdfsCarbonPath)
     //	    //		sql("drop cube timestamptypecube");

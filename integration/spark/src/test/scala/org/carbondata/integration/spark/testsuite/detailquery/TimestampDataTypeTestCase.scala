@@ -35,7 +35,7 @@ class TimestampDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     sql("CREATE CUBE timestamptypecube DIMENSIONS (doj Timestamp, projectjoindate Timestamp, projectenddate Timestamp) OPTIONS (PARTITIONER [PARTITION_COUNT=1])");
-    sql("LOAD DATA fact from './TestData/data.csv' INTO CUBE timestamptypecube PARTITIONDATA(DELIMITER ',', QUOTECHAR '\"')");
+    sql("LOAD DATA fact from './src/test/resources/data.csv' INTO CUBE timestamptypecube PARTITIONDATA(DELIMITER ',', QUOTECHAR '\"')");
   }
 
   test("select doj from timestamptypecube") {

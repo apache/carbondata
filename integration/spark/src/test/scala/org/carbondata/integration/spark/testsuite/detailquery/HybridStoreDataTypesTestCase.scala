@@ -31,12 +31,12 @@ import org.scalatest.BeforeAndAfterAll
  */
 class HighCardinalityDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
 
-  override def beforeAll {
+ /* override def beforeAll {
 
-    sql("create cube hybridstore dimensions(column1 string in row,column2 string in row,column3 string,column4 string in row,column5 string, column6 string,column7 string,column8 string,column9 string,column10 string) measures(measure1 numeric,measure2 numeric,measure3 numeric,measure4 numeric) OPTIONS (HIGH_CARDINALITY_DIMS(column10),PARTITIONER [CLASS = 'com.huawei.datasight.carbon.partition.api.impl.SampleDataPartitionerImpl' columns= (column1) PARTITION_COUNT=1])")
-    sql("LOAD DATA FACT FROM './TestData/10dim_4msr.csv' INTO Cube hybridstore partitionData(DELIMITER ',' ,QUOTECHAR '\"', FILEHEADER 'column1,column2,column3,column4,column5,column6,column7,column8,column9,column10,measure1,measure2,measure3,measure4')");
+    sql("create cube hybridstore dimensions(column1 string in row,column2 string in row,column3 string,column4 string in row,column5 string, column6 string,column7 string,column8 string,column9 string,column10 string) measures(measure1 numeric,measure2 numeric,measure3 numeric,measure4 numeric) OPTIONS (HIGH_CARDINALITY_DIMS(column10),PARTITIONER [CLASS = 'org.carbondata.integration.spark.partition.api.impl.SampleDataPartitionerImpl' columns= (column1) PARTITION_COUNT=1])")
+    sql("LOAD DATA FACT FROM './src/test/resources/10dim_4msr.csv' INTO Cube hybridstore partitionData(DELIMITER ',' ,QUOTECHAR '\"', FILEHEADER 'column1,column2,column3,column4,column5,column6,column7,column8,column9,column10,measure1,measure2,measure3,measure4')");
     sql("create table hybridstore_hive(column1 string,column2 string,column3 string,column4 string,column5 string, column6 string,column7 string,column8 string,column9 string,column10 string,measure1 double,measure2 double,measure3 double,measure4 double) row format delimited fields terminated by ',' collection items terminated by '$' map keys terminated by ':'")
-    sql("load data local inpath './TestData/10dim_4msr.csv' into table hybridstore_hive");
+    sql("load data local inpath './src/test/resources/10dim_4msr.csv' into table hybridstore_hive");
 
   }
 
@@ -51,5 +51,5 @@ class HighCardinalityDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
   override def afterAll {
     sql("drop cube hybridstore")
     sql("drop cube hybridstore_hive")
-  }
+  }*/
 }
