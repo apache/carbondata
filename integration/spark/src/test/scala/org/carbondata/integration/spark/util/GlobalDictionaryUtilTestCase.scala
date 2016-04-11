@@ -1,3 +1,21 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package org.carbondata.integration.spark.util
 
 
@@ -15,7 +33,14 @@ import org.apache.spark.sql.CarbonRelation
 import java.io.File
 import org.apache.spark.Logging
 
-class GlobalDictionaryTestCase extends FunSuite with BeforeAndAfter with Logging {
+/**
+ * Test Case for org.carbondata.integration.spark.util.GlobalDictionaryUtil
+ *
+ * @author: QiangCai
+ * @date: Apr 10, 2016 10:34:58 PM
+ * @See org.carbondata.integration.spark.util.GlobalDictionaryUtil
+ */
+class GlobalDictionaryUtilTestCase extends FunSuite with BeforeAndAfter with Logging {
   
   var sc: SparkContext = _
   var sqlContext: SQLContext = _
