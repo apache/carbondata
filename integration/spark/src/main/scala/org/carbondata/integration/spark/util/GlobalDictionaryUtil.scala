@@ -40,7 +40,8 @@ import java.io.IOException
 import org.carbondata.core.reader.CarbonDictionaryReader
 import org.carbondata.core.reader.CarbonDictionaryReaderImpl
 import org.carbondata.integration.spark.rdd.DictionaryLoadModel
-
+import org.carbondata.core.datastorage.store.impl.FileFactory
+import org.carbondata.core.datastorage.store.filesystem.CarbonFile
 /**
  * A object which provide a method to generate global dictionary from CSV files.
  *
@@ -153,6 +154,31 @@ object GlobalDictionaryUtil extends Logging {
   }
 
   /**
+   * append all file path to a String, file path separated by comma 
+   */
+  def getAllFileNamesString(inputPath: String): String = {
+    if(inputPath != null){
+      val stringbuild = new StringBuilder()
+      val filePaths = inputPath.split(",")
+      for( i <- 0 until filePaths.size ){
+        val fileType = FileFactory.getFileType(filePaths(i))
+        val carbonFile = FileFactory.getCarbonFile(filePaths(i), fileType)
+        if(carbonFile.isDirectory()){
+          val files = carbonFile.listFiles()
+          for( j <- 0 until files.size){
+            stringbuild.append( files(j).getPath).append(",")
+          }
+        }else{
+          stringbuild.append(filePaths(i)).append(",") 
+        } 
+      }
+      stringbuild.substring(0, stringbuild.size -1)
+    }else{
+      null
+    }
+  }
+  
+  /**
    * load CSV files to DataFrame by using datasource "com.databricks.spark.csv"
    *
    * @param sqlContext SQLContext
@@ -164,7 +190,7 @@ object GlobalDictionaryUtil extends Logging {
       .format("com.databricks.spark.csv")
       .option("header", "true")
       .option("comment", null)
-      .load(filePath)
+      .load(getAllFileNamesString(filePath))
     df
   }
 
