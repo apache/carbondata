@@ -69,8 +69,7 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
     // here the zookeeper client will be created and also the znode will be created.
 
     static {
-        // TO-DO Need to take this from the spark configuration.
-        String zookeeperUrl = "127.0.0.1:2181";
+        String zookeeperUrl = CarbonProperties.getInstance().getProperty("spark.deploy.zookeeper.url");
         int sessionTimeOut = 10000;
         try {
             zk = new ZooKeeper(zookeeperUrl, sessionTimeOut, new Watcher() {
