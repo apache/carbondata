@@ -780,6 +780,27 @@ public final class ValueCompressionUtil {
         }
     }
 
+    /**
+     * Create Value compression model
+     *
+     * @param maxValue
+     * @param minValue
+     * @param decimalLength
+     * @param uniqueValue
+     * @param aggType
+     * @param dataTypeSelected
+     * @return
+     */
+    public static ValueCompressionModel getValueCompressionModel(Object[] maxValue,
+            Object[] minValue, int[] decimalLength, Object[] uniqueValue, char[] aggType,
+            byte[] dataTypeSelected) {
+
+        MeasureMetaDataModel metaDataModel =
+                new MeasureMetaDataModel(minValue, maxValue, decimalLength, maxValue.length,
+                        uniqueValue, aggType, dataTypeSelected);
+        return getValueCompressionModel(metaDataModel);
+    }
+
     private static ValueCompressionModel getValueCompressionModel(
             MeasureMetaDataModel measureMDMdl) {
         int measureCount = measureMDMdl.getMeasureCount();

@@ -22,6 +22,7 @@ package org.carbondata.processing.store;
 import java.io.File;
 import java.io.FileFilter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -539,6 +540,14 @@ public class CarbonDataWriterStep extends BaseStep implements StepInterface {
         boolean isColumnar =
                 Boolean.parseBoolean(CarbonCommonConstants.IS_COLUMNAR_STORAGE_DEFAULTVALUE);
 
+        char[] type = new char[aggType.length];
+        Arrays.fill(type, 'n');
+        for (int i = 0; i < aggType.length; i++) {
+            if (aggType[i].equals(CarbonCommonConstants.CUSTOM) || aggType[i]
+                    .equals(CarbonCommonConstants.DISTINCT_COUNT)) {
+                this.type[i] = 'c';
+            }
+        }
         if (isColumnar) {
             dataHandler = new CarbonFactDataHandlerColumnar(meta.getSchemaName(), meta.getCubeName(),
                     this.tableName, meta.isGroupByEnabled(), measureCount, mdkeyLength, mdKeyIndex,
@@ -547,7 +556,7 @@ public class CarbonDataWriterStep extends BaseStep implements StepInterface {
                     isByteArrayInMeasure, meta.isUpdateMemberRequest(), dimLens,
                     meta.getFactLevels(), meta.getAggregateLevels(), true,
                     meta.getCurrentRestructNumber(), this.meta.gethighCardCount(), null,
-                    compressionModel);
+                    type);
         } else {
             dataHandler = new CarbonFactDataHandler(meta.getSchemaName(), meta.getCubeName(),
                     this.tableName, meta.isGroupByEnabled(), measureCount, mdkeyLength, mdKeyIndex,

@@ -50,6 +50,7 @@ import org.carbondata.core.load.LoadMetadataDetails;
 import org.carbondata.core.metadata.LeafNodeInfo;
 import org.carbondata.core.metadata.LeafNodeInfoColumnar;
 import org.carbondata.core.metadata.SliceMetaData;
+import org.carbondata.core.reader.CarbonMetaDataReader;
 import org.carbondata.core.vo.HybridStoreModel;
 import org.pentaho.di.core.exception.KettleException;
 
@@ -921,51 +922,16 @@ public final class CarbonUtil {
         long offset = fileSize - CarbonCommonConstants.LONG_SIZE_IN_BYTE;
         FileHolder fileHolder = FileFactory.getFileHolder(FileFactory.getFileType(filesLocation));
         offset = fileHolder.readDouble(filesLocation, offset);
-        int totalMetaDataLength =
-                (int) (fileSize - CarbonCommonConstants.LONG_SIZE_IN_BYTE - offset);
-        ByteBuffer buffer = ByteBuffer
-                .wrap(fileHolder.readByteArray(filesLocation, offset, totalMetaDataLength));
-        buffer.rewind();
-        while (buffer.hasRemaining()) {
-            //
-            int[] msrLength = new int[measureCount];
-            long[] msrOffset = new long[measureCount];
-            LeafNodeInfoColumnar info = new LeafNodeInfoColumnar();
-            byte[] startKey = new byte[mdKeySize];
-            byte[] endKey = new byte[mdKeySize];
-            info.setFileName(filesLocation);
-            info.setNumberOfKeys(buffer.getInt());
-            int keySplitValue = buffer.getInt();
-            setInfo(buffer, info, startKey, endKey, keySplitValue);
-            info.setEndKey(endKey);
-            for (int i = 0; i < measureCount; i++) {
-                msrLength[i] = buffer.getInt();
-                msrOffset[i] = buffer.getLong();
-            }
-            int numberOfKeyBlockInfo = buffer.getInt();
-            int[] keyIndexBlockLengths = new int[numberOfKeyBlockInfo];
-            long[] keyIndexBlockOffset = new long[numberOfKeyBlockInfo];
-            for (int i = 0; i < numberOfKeyBlockInfo; i++) {
-                keyIndexBlockLengths[i] = buffer.getInt();
-                keyIndexBlockOffset[i] = buffer.getLong();
-            }
-            int numberofAggKeyBlocks = buffer.getInt();
-            int[] dataIndexMapLength = new int[numberofAggKeyBlocks];
-            long[] dataIndexMapOffsets = new long[numberofAggKeyBlocks];
-            for (int i = 0; i < numberofAggKeyBlocks; i++) {
-                dataIndexMapLength[i] = buffer.getInt();
-                dataIndexMapOffsets[i] = buffer.getLong();
-            }
-            info.setKeyBlockIndexLength(keyIndexBlockLengths);
-            info.setKeyBlockIndexOffSets(keyIndexBlockOffset);
-            info.setDataIndexMapLength(dataIndexMapLength);
-            info.setDataIndexMapOffsets(dataIndexMapOffsets);
-            info.setMeasureLength(msrLength);
-            info.setMeasureOffset(msrOffset);
-            //            info.setAggKeyBlock(isUniqueBlock);
-            listOfNodeInfo.add(info);
+        CarbonMetaDataReader metaDataReader = new CarbonMetaDataReader(filesLocation, offset);
+        try {
+            listOfNodeInfo = CarbonMetadataUtil.convertLeafNodeInfo(metaDataReader.readMetaData());
+        } catch (IOException e) {
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
+                    "Problem while reading metadata :: " + filesLocation, e);
         }
-        fileHolder.finish();
+        for (LeafNodeInfoColumnar infoColumnar : listOfNodeInfo) {
+            infoColumnar.setFileName(filesLocation);
+        }
         return listOfNodeInfo;
     }
 
@@ -1421,6 +1387,19 @@ public final class CarbonUtil {
             array[i] = list.get(i);
         }
         return array;
+    }
+
+    /**
+     * Convert int array to Integer list
+     * @param array
+     * @return List<Integer>
+     */
+    public static List<Integer> convertToIntegerList(int[] array) {
+        List<Integer> integers = new ArrayList<Integer>();
+        for (int i = 0; i < array.length; i++) {
+            integers.add(array[i]);
+        }
+        return integers;
     }
 
     public static String[] getSlices(String storeLocation, String tableName,

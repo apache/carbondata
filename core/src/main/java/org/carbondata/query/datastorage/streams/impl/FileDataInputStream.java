@@ -23,7 +23,6 @@ import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +33,8 @@ import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.metadata.LeafNodeInfoColumnar;
+import org.carbondata.core.reader.CarbonMetaDataReader;
+import org.carbondata.core.util.CarbonMetadataUtil;
 import org.carbondata.core.util.ValueCompressionUtil;
 import org.carbondata.query.schema.metadata.Pair;
 import org.carbondata.query.util.CarbonEngineLogEvent;
@@ -124,67 +125,15 @@ public class FileDataInputStream extends AbstractFileDataInputStream {
         //
         List<LeafNodeInfoColumnar> listOfNodeInfo =
                 new ArrayList<LeafNodeInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-        ByteBuffer buffer = ByteBuffer
-                .wrap(this.fileHolder.readByteArray(filesLocation, offSet, totalMetaDataLength));
-        buffer.rewind();
-        while (buffer.hasRemaining()) {
-            //
-            int[] msrLength = new int[msrCount];
-            long[] msrOffset = new long[msrCount];
-            LeafNodeInfoColumnar info = new LeafNodeInfoColumnar();
-            byte[] startKey = new byte[this.mdkeysize];
-            byte[] endKey = new byte[this.mdkeysize];
-            info.setFileName(this.filesLocation);
-            info.setNumberOfKeys(buffer.getInt());
-            int keySplitValue = buffer.getInt();
-            int[] keyLengths = new int[keySplitValue];
-            boolean[] isAlreadySorted = new boolean[keySplitValue];
-            long[] keyOffset = new long[keySplitValue];
-            for (int i = 0; i < keySplitValue; i++) {
-                keyLengths[i] = buffer.getInt();
-                keyOffset[i] = buffer.getLong();
-                isAlreadySorted[i] = buffer.get() == (byte) 0 ? true : false;
-            }
-            info.setKeyOffSets(keyOffset);
-            info.setKeyLengths(keyLengths);
-            info.setIsSortedKeyColumn(isAlreadySorted);
-            //read column min max data
-            byte[][] columnMinMaxData = new byte[buffer.getInt()][];
-            for (int i = 0; i < columnMinMaxData.length; i++) {
-                columnMinMaxData[i] = new byte[buffer.getInt()];
-                buffer.get(columnMinMaxData[i]);
-            }
-            info.setColumnMinMaxData(columnMinMaxData);
-
-            buffer.get(startKey);
-            //
-            buffer.get(endKey);
-            info.setStartKey(startKey);
-            for (int i = 0; i < this.msrCount; i++) {
-                msrLength[i] = buffer.getInt();
-                msrOffset[i] = buffer.getLong();
-            }
-            int numberOfKeyBlockInfo = buffer.getInt();
-            int[] keyIndexBlockLengths = new int[keySplitValue];
-            long[] keyIndexBlockOffset = new long[keySplitValue];
-            for (int i = 0; i < numberOfKeyBlockInfo; i++) {
-                keyIndexBlockLengths[i] = buffer.getInt();
-                keyIndexBlockOffset[i] = buffer.getLong();
-            }
-            int numberofAggKeyBlocks = buffer.getInt();
-            int[] dataIndexMapLength = new int[numberofAggKeyBlocks];
-            long[] dataIndexMapOffsets = new long[numberofAggKeyBlocks];
-            for (int i = 0; i < numberofAggKeyBlocks; i++) {
-                dataIndexMapLength[i] = buffer.getInt();
-                dataIndexMapOffsets[i] = buffer.getLong();
-            }
-            info.setDataIndexMapLength(dataIndexMapLength);
-            info.setDataIndexMapOffsets(dataIndexMapOffsets);
-            info.setKeyBlockIndexLength(keyIndexBlockLengths);
-            info.setKeyBlockIndexOffSets(keyIndexBlockOffset);
-            info.setMeasureLength(msrLength);
-            info.setMeasureOffset(msrOffset);
-            listOfNodeInfo.add(info);
+        CarbonMetaDataReader metaDataReader = new CarbonMetaDataReader(filesLocation, offSet);
+        try {
+            listOfNodeInfo = CarbonMetadataUtil.convertLeafNodeInfo(metaDataReader.readMetaData());
+        } catch (IOException e) {
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
+                    "Problem while reading metadata :: " + filesLocation, e);
+        }
+        for (LeafNodeInfoColumnar infoColumnar : listOfNodeInfo) {
+            infoColumnar.setFileName(filesLocation);
         }
         // if fact file empty then list size will 0 then it will throw index out of bound exception
         // if memory is less and cube loading failed that time list will be empty so it will throw

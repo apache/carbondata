@@ -26,6 +26,7 @@ import java.nio.channels.FileChannel;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.columnar.IndexStorage;
 import org.carbondata.core.datastorage.store.compression.SnappyCompression.SnappyByteCompression;
+import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.file.manager.composite.IFileManagerComposite;
 import org.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 
@@ -40,7 +41,8 @@ public class CarbonFactDataWriterImpl extends AbstractFactDataWriter<short[]> {
 
     @Override
     public void writeDataToFile(IndexStorage<short[]>[] keyStorageArray, byte[][] dataArray,
-            int entryCount, byte[] startKey, byte[] endKey) throws CarbonDataWriterException {
+            int entryCount, byte[] startKey, byte[] endKey, ValueCompressionModel compressionModel)
+            throws CarbonDataWriterException {
         updateLeafNodeFileChannel();
         // total measure length;
         int totalMsrArraySize = 0;
@@ -121,6 +123,7 @@ public class CarbonFactDataWriterImpl extends AbstractFactDataWriter<short[]> {
         nodeHolderObj.setIndexMap(indexMap);
         nodeHolderObj.setKeyBlockIndexLength(keyBlockIndexLengths);
         nodeHolderObj.setIsSortedKeyBlock(isSortedData);
+        nodeHolderObj.setCompressionModel(compressionModel);
         if (!this.isNodeHolderRequired) {
             writeDataToFile(nodeHolderObj);
         } else {

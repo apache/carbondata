@@ -34,10 +34,7 @@ import org.carbondata.core.file.manager.composite.LoadFolderData;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
-import org.carbondata.core.util.CarbonProperties;
-import org.carbondata.core.util.CarbonUtil;
-import org.carbondata.core.util.CarbonUtilException;
-import org.carbondata.core.util.ValueCompressionUtil;
+import org.carbondata.core.util.*;
 import org.carbondata.core.vo.HybridStoreModel;
 import org.carbondata.processing.datatypes.GenericDataType;
 import org.carbondata.processing.store.CarbonFactDataHandlerColumnar;
@@ -340,7 +337,16 @@ public class MDKeyGenStep extends BaseStep {
         for (int i = 0; i < simpleDimsCount; i++) {
             simpleDimsLen[i] = dimLens[i];
         }
-        aggType = valueCompressionModel.getType();
+        String measureDataType = meta.getMeasureDataType();
+        String[] msrdataTypes = null;
+        if (measureDataType.length() > 0) {
+            msrdataTypes = measureDataType.split(CarbonCommonConstants.AMPERSAND_SPC_CHARACTER);
+        } else {
+            msrdataTypes = new String[0];
+        }
+
+        //aggType = valueCompressionModel.getType();
+        initAggType(msrdataTypes);
         finalMerger = new SingleThreadFinalSortFilesMerger(dataFolderLocation, tableName,
                 dimensionCount - meta.getComplexDimsCount(), meta.getComplexDimsCount(),
                 measureCount, meta.getHighCardinalityCount(), aggType);
@@ -350,14 +356,14 @@ public class MDKeyGenStep extends BaseStep {
                     data.generator[dimLens.length].getKeySizeInBytes(), measureCount + 1, null,
                     null, storeLocation, dimLens, false, false, dimLens, null, null, true,
                     meta.getCurrentRestructNumber(), meta.getHighCardinalityCount(), dimensionCount,
-                    complexIndexMap, simpleDimsLen, this.hybridStoreModel, valueCompressionModel);
+                    complexIndexMap, simpleDimsLen, this.hybridStoreModel, aggType);
         } else {
             dataHandler = new CarbonFactDataHandlerColumnar(meta.getSchemaName(), meta.getCubeName(),
                     this.tableName, false, measureCount,
                     data.generator[dimLens.length].getKeySizeInBytes(), measureCount, null, null,
                     storeLocation, dimLens, false, false, dimLens, null, null, true,
                     meta.getCurrentRestructNumber(), meta.getHighCardinalityCount(), dimensionCount,
-                    complexIndexMap, simpleDimsLen, this.hybridStoreModel, valueCompressionModel);
+                    complexIndexMap, simpleDimsLen, this.hybridStoreModel, aggType);
         }
     }
 
@@ -367,6 +373,14 @@ public class MDKeyGenStep extends BaseStep {
                         + CarbonCommonConstants.MEASUREMETADATA_FILE_EXT;
         return ValueCompressionUtil
                 .getValueCompressionModel(measureMetaDataFileLoc, this.measureCount);
+    }
+
+    private void initAggType(String[] msrdataTypes) {
+        aggType = new char[measureCount];
+        Arrays.fill(aggType, 'n');
+        for (int i = 0; i < measureCount; i++) {
+            aggType[i] = DataTypeUtil.getAggType(msrdataTypes[i]);
+        }
     }
 
     /**

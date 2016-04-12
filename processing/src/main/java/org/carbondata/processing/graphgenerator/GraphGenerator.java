@@ -1160,6 +1160,7 @@ public class GraphGenerator {
                 "0" :
                 graphConfiguration.getComplexTypeString().
                         split(CarbonCommonConstants.SEMICOLON_SPC_CHARACTER).length + "");
+        carbonMdKey.setMeasureDataType(graphConfiguration.getMeasureDataTypeInfo());
         StepMeta mdkeyStepMeta = new StepMeta(
                 GraphGeneratorConstants.MDKEY_GENERATOR + graphConfiguration.getTableName(),
                 (StepMetaInterface) carbonMdKey);

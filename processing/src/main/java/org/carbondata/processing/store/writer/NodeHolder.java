@@ -19,6 +19,8 @@
 
 package org.carbondata.processing.store.writer;
 
+import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
+
 public class NodeHolder {
     /**
      * keyArray
@@ -97,6 +99,11 @@ public class NodeHolder {
      * column min max data
      */
     private byte[][] columnMinMaxData;
+
+    /**
+     * compression model for numbers data block.
+     */
+    private ValueCompressionModel compressionModel;
 
     /**
      * @return the keyArray
@@ -325,4 +332,11 @@ public class NodeHolder {
 
     }
 
+    public ValueCompressionModel getCompressionModel() {
+        return compressionModel;
+    }
+
+    public void setCompressionModel(ValueCompressionModel compressionModel) {
+        this.compressionModel = compressionModel;
+    }
 }

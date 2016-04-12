@@ -29,10 +29,13 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.columnar.IndexStorage;
 import org.carbondata.core.datastorage.store.compression.SnappyCompression.SnappyByteCompression;
+import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.file.manager.composite.IFileManagerComposite;
 import org.carbondata.core.keygenerator.mdkey.NumberCompressor;
 import org.carbondata.core.metadata.LeafNodeInfoColumnar;
+import org.carbondata.core.util.CarbonMetadataUtil;
 import org.carbondata.core.util.CarbonProperties;
+import org.carbondata.core.writer.CarbonMetaDataWriter;
 import org.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 
@@ -68,7 +71,8 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
 
     @Override
     public void writeDataToFile(IndexStorage<int[]>[] keyStorageArray, byte[][] dataArray,
-            int entryCount, byte[] startKey, byte[] endKey) throws CarbonDataWriterException {
+            int entryCount, byte[] startKey, byte[] endKey, ValueCompressionModel compressionModel)
+            throws CarbonDataWriterException {
         updateLeafNodeFileChannel();
         // total measure length;
         int totalMsrArrySize = 0;
@@ -81,7 +85,8 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
         int[] keyLengths = new int[keyStorageArray.length];
 
         //below will calculate min and max value for each column
-        //for below 2d array, first index will be for column and second will be min max value for same column
+        //for below 2d array, first index will be for column and second will be min max
+        // value for same column
         byte[][] columnMinMaxData = new byte[keyStorageArray.length][];
 
         byte[][] keyBlockData = fillAndCompressedKeyBlockData(keyStorageArray, entryCount);
@@ -203,6 +208,7 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
         holder.setCompressedIndexMap(indexMap);
         holder.setDataIndexMapLength(dataIndexMapLength);
         holder.setCompressedDataIndex(compressedDataIndex);
+        holder.setCompressionModel(compressionModel);
         //setting column min max value
         holder.setColumnMinMaxData(columnMinMaxData);
         if (!this.isNodeHolderRequired) {
@@ -264,12 +270,9 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
     /**
      * This method is responsible for writing leaf node to the leaf node file
      *
-     * @param keyArray     mdkey array
-     * @param measureArray measure array
-     * @param fileName     leaf node file
      * @return file offset offset is the current position of the file
-     * @throws CarbonDataWriterException if will throw CarbonDataWriterException when any thing goes wrong
-     *                                  while while writing the leaf file
+     * @throws CarbonDataWriterException if will throw CarbonDataWriterException when any thing
+     * goes wrong while while writing the leaf file
      */
     protected long writeDataToFile(NodeHolder nodeHolder, FileChannel channel)
             throws CarbonDataWriterException {
@@ -328,12 +331,6 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
     /**
      * This method will be used to get the leaf node metadata
      *
-     * @param keySize    key size
-     * @param msrLength  measure length array
-     * @param offset     current offset
-     * @param entryCount total number of rows in leaf
-     * @param startKey   start key of leaf
-     * @param endKey     end key of leaf
      * @return LeafNodeInfo - leaf metadata
      */
     protected LeafNodeInfoColumnar getLeafNodeInfo(NodeHolder nodeHolder, long offset) {
@@ -398,6 +395,7 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
         // set end key
         info.setEndKey(nodeHolder.getEndKey());
         info.setLeafNodeMetaSize(calculateAndSetLeafNodeMetaSize(nodeHolder));
+        info.setCompressionModel(nodeHolder.getCompressionModel());
         // return leaf metadata
         return info;
     }
@@ -407,7 +405,7 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
         //measure offset and measure length
         metaSize += (measureCount * CarbonCommonConstants.INT_SIZE_IN_BYTE) + (measureCount
                 * CarbonCommonConstants.LONG_SIZE_IN_BYTE);
-        //start and end key 
+        // start and end key
         metaSize += mdkeySize * 2;
 
         // keyblock length + key offsets + number of tuples+ number of columnar block
@@ -417,7 +415,7 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
                                 * CarbonCommonConstants.LONG_SIZE_IN_BYTE)
                         + CarbonCommonConstants.INT_SIZE_IN_BYTE
                         + CarbonCommonConstants.INT_SIZE_IN_BYTE;
-        //if sorted or not 
+        // if sorted or not
         metaSize += nodeHolderInfo.getIsSortedKeyBlock().length;
 
         //column min max size
@@ -448,110 +446,22 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
     //TODO SIMIAN
 
     /**
-     * This method will write metadata at the end of file file format
-     * <KeyArray><measure1><measure2> <KeyArray><measure1><measure2>
-     * <KeyArray><measure1><measure2> <KeyArray><measure1><measure2>
-     * <entrycount>
-     * <keylength><keyoffset><measure1length><measure1offset><measure2length
-     * ><measure2offset>
+     * This method will write metadata at the end of file file format in thrift format
      *
-     * @throws CarbonDataWriterException throw CarbonDataWriterException when problem in writing the meta data
-     *                                  to file
+     * @throws CarbonDataWriterException throw CarbonDataWriterException when problem in writing
+     * the meta data to file
      */
     protected void writeleafMetaDataToFile(List<LeafNodeInfoColumnar> infoList, FileChannel channel)
             throws CarbonDataWriterException {
-        ByteBuffer buffer = null;
-        long currentPos = 0;
-        int[] msrLength = null;
-        long[] msroffset = null;
-        int[] keyLengths = null;
-        long[] keyOffSets = null;
-        //columns min max data
-        byte[][] columnMinMaxData = null;
-
-        int[] keyBlockIndexLengths = null;
-        long[] keyBlockIndexOffSets = null;
-        boolean[] isSortedKeyColumn = null;
-        int[] dataIndexBlockLength = null;
-        long[] dataIndexBlockOffsets = null;
         try {
-            // get the current position of the file, this will be used for
-            // reading the file meta data, meta data start position in file will
-            // be this position
-            currentPos = channel.size();
-            for (LeafNodeInfoColumnar info : infoList) {
-                // get the measure length array
-                msrLength = info.getMeasureLength();
-                // get the measure offset array
-                msroffset = info.getMeasureOffset();
-                //get the key length
-                keyLengths = info.getKeyLengths();
-                // get the key offsets
-                keyOffSets = info.getKeyOffSets();
-                //keyBlockIndexLengths
-                keyBlockIndexLengths = info.getKeyBlockIndexLength();
-                //keyOffSets
-                keyBlockIndexOffSets = info.getKeyBlockIndexOffSets();
-                //isSortedKeyColumn
-                isSortedKeyColumn = info.getIsSortedKeyColumn();
-                dataIndexBlockLength = info.getDataIndexMapLength();
-                dataIndexBlockOffsets = info.getDataIndexMapOffsets();
-                // allocate total size for buffer
-                buffer = ByteBuffer.allocate(info.getLeafNodeMetaSize());
-                // add entry count
-                buffer.putInt(info.getNumberOfKeys());
-                buffer.putInt(keyOffSets.length);
-                for (int j = 0; j < keyOffSets.length; j++) {
-                    // add key length
-                    buffer.putInt(keyLengths[j]);
-                    // add key offset
-                    buffer.putLong(keyOffSets[j]);
-                    buffer.put(isSortedKeyColumn[j] ? (byte) 0 : (byte) 1);
-
-                }
-                //set column min max data
-                columnMinMaxData = info.getColumnMinMaxData();
-                buffer.putInt(columnMinMaxData.length);
-                for (int j = 0; j < columnMinMaxData.length; j++) {
-                    buffer.putInt(columnMinMaxData[j].length);
-                    buffer.put(columnMinMaxData[j]);
-                }
-
-                // set the start key
-                buffer.put(info.getStartKey());
-                // set the end key
-                buffer.put(info.getEndKey());
-                // add each measure length and its offset
-                for (int m = 0; m < msrLength.length; m++) {
-                    buffer.putInt(msrLength[m]);
-                    buffer.putLong(msroffset[m]);
-                }
-                buffer.putInt(keyBlockIndexLengths.length);
-                for (int i = 0; i < keyBlockIndexLengths.length; i++) {
-                    buffer.putInt(keyBlockIndexLengths[i]);
-                    buffer.putLong(keyBlockIndexOffSets[i]);
-                }
-
-                buffer.putInt(dataIndexBlockLength.length);
-                for (int k = 0; k < dataIndexBlockLength.length; k++) {
-                    buffer.putInt(dataIndexBlockLength[k]);
-                    buffer.putLong(dataIndexBlockOffsets[k]);
-                }
-                // flip the buffer
-                buffer.flip();
-                // write metadat to file
-                channel.write(buffer);
-            }
-            // create new for adding the offset of meta data
-            buffer = ByteBuffer.allocate(CarbonCommonConstants.LONG_SIZE_IN_BYTE);
-            // add the offset
-            buffer.putLong(currentPos);
-            buffer.flip();
-            // write offset to file
-            channel.write(buffer);
-        } catch (IOException exception) {
-            throw new CarbonDataWriterException("Problem while writing the Leaf Node File: ",
-                    exception);
+            long currentPos = channel.size();
+            CarbonMetaDataWriter writer = new CarbonMetaDataWriter(this.fileName);
+            writer.writeMetaData(
+                    CarbonMetadataUtil
+                            .convertFileMeta(infoList, localCardinality.length, localCardinality),
+                    currentPos);
+        } catch (IOException e) {
+            throw new CarbonDataWriterException("Problem while writing the Leaf Node File: ", e);
         }
     }
 }

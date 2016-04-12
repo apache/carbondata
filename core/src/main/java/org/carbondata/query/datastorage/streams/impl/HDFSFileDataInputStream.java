@@ -21,7 +21,6 @@ package org.carbondata.query.datastorage.streams.impl;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,7 +34,8 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.metadata.LeafNodeInfoColumnar;
-import org.carbondata.core.util.CarbonUtil;
+import org.carbondata.core.reader.CarbonMetaDataReader;
+import org.carbondata.core.util.CarbonMetadataUtil;
 import org.carbondata.core.util.ValueCompressionUtil;
 import org.carbondata.query.schema.metadata.Pair;
 import org.carbondata.query.util.CarbonEngineLogEvent;
@@ -127,46 +127,17 @@ public class HDFSFileDataInputStream extends AbstractFileDataInputStream {
         //
         List<LeafNodeInfoColumnar> listOfNodeInfo =
                 new ArrayList<LeafNodeInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-        ByteBuffer buffer = ByteBuffer
-                .wrap(this.fileHolder.readByteArray(filesLocation, offSet, totalMetaDataLength));
-        buffer.rewind();
-        while (buffer.hasRemaining()) {
-            //
-            long[] msrOffset = new long[msrCount];
-            int[] msrLength = new int[msrCount];
-            LeafNodeInfoColumnar nodeInfo = new LeafNodeInfoColumnar();
-            byte[] startKey = new byte[this.mdkeysize];
-            byte[] endKey = new byte[this.mdkeysize];
-            nodeInfo.setFileName(this.filesLocation);
-            nodeInfo.setNumberOfKeys(buffer.getInt());
-            int keySplitValue = buffer.getInt();
-            CarbonUtil.setInfo(buffer, nodeInfo, startKey, endKey, keySplitValue);
-            for (int j = 0; j < this.msrCount; j++) {
-                msrLength[j] = buffer.getInt();
-                msrOffset[j] = buffer.getLong();
-            }
-            int numberOfKeyBlockInfo = buffer.getInt();
-            int[] keyIndexBlockLengths = new int[keySplitValue];
-            long[] keyIndexBlockOffset = new long[keySplitValue];
-            for (int j = 0; j < numberOfKeyBlockInfo; j++) {
-                keyIndexBlockLengths[j] = buffer.getInt();
-                keyIndexBlockOffset[j] = buffer.getLong();
-            }
-            int numberofAggKeyBlocks = buffer.getInt();
-            int[] dataIndexMapLength = new int[numberofAggKeyBlocks];
-            long[] dataIndexMapOffsets = new long[numberofAggKeyBlocks];
-            for (int j = 0; j < numberofAggKeyBlocks; j++) {
-                dataIndexMapLength[j] = buffer.getInt();
-                dataIndexMapOffsets[j] = buffer.getLong();
-            }
-            nodeInfo.setDataIndexMapLength(dataIndexMapLength);
-            nodeInfo.setDataIndexMapOffsets(dataIndexMapOffsets);
-            nodeInfo.setKeyBlockIndexLength(keyIndexBlockLengths);
-            nodeInfo.setKeyBlockIndexOffSets(keyIndexBlockOffset);
-            nodeInfo.setMeasureLength(msrLength);
-            nodeInfo.setMeasureOffset(msrOffset);
-            listOfNodeInfo.add(nodeInfo);
+        CarbonMetaDataReader metaDataReader = new CarbonMetaDataReader(filesLocation, offSet);
+        try {
+            listOfNodeInfo = CarbonMetadataUtil.convertLeafNodeInfo(metaDataReader.readMetaData());
+        } catch (IOException e) {
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
+                    "Problem while reading metadata :: " + filesLocation, e);
         }
+        for (LeafNodeInfoColumnar infoColumnar : listOfNodeInfo) {
+            infoColumnar.setFileName(filesLocation);
+        }
+
         // if fact file empty then list size will 0 then it will throw index out of bound exception
         // if memory is less and cube loading failed that time list will be empty so it will throw
         // out of bound exception

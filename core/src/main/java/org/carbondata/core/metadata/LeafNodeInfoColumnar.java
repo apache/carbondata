@@ -19,6 +19,7 @@
 
 package org.carbondata.core.metadata;
 
+import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.keygenerator.mdkey.NumberCompressor;
 
 public class LeafNodeInfoColumnar {
@@ -94,6 +95,8 @@ public class LeafNodeInfoColumnar {
     private int leafNodeMetaSize;
 
     private NumberCompressor[] keyBlockUnCompressor;
+
+    private ValueCompressionModel compressionModel;
 
     /**
      * column min max array
@@ -345,4 +348,11 @@ public class LeafNodeInfoColumnar {
 
     }
 
+    public ValueCompressionModel getCompressionModel() {
+        return compressionModel;
+    }
+
+    public void setCompressionModel(ValueCompressionModel compressionModel) {
+        this.compressionModel = compressionModel;
+    }
 }

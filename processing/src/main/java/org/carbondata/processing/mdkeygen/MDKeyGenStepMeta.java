@@ -112,6 +112,10 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
      */
     private int highCardinalityCount;
 
+    private String measureDataType;
+
+
+
     /**
      * Constructor
      */
@@ -129,6 +133,7 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
         dimensionsStoreType = "";
         highCardinalityDims = "";
         currentRestructNumber = -1;
+        measureDataType = "";
     }
 
     public String getXML() {
@@ -150,6 +155,7 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
                 .append(XMLHandler.addTagValue("complexTypeString", complexTypeString));
         retval.append("    ")
                 .append(XMLHandler.addTagValue("currentRestructNumber", currentRestructNumber));
+        retval.append("    ").append(XMLHandler.addTagValue("measureDataType", measureDataType));
         return retval.toString();
     }
 
@@ -170,6 +176,7 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
             complexTypeString = XMLHandler.getTagValue(stepnode, "complexTypeString");
             currentRestructNumber =
                     Integer.parseInt(XMLHandler.getTagValue(stepnode, "currentRestructNumber"));
+            measureDataType = XMLHandler.getTagValue(stepnode, "measureDataType");
         } catch (Exception e) {
             throw new KettleXMLException("Unable to read step info from XML node", e);
         }
@@ -194,6 +201,7 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
             rep.saveStepAttribute(idTransformation, idStep, "complexTypeString", complexTypeString);
             rep.saveStepAttribute(idTransformation, idStep, "currentRestructNumber",
                     currentRestructNumber);
+            rep.saveStepAttribute(idTransformation, idStep, "measureDataType", measureDataType);
         } catch (Exception e) {
             throw new KettleException(BaseMessages
                     .getString(pkg, "TemplateStep.Exception.UnableToSaveStepInfoToRepository")
@@ -219,6 +227,7 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
             complexTypeString = rep.getStepAttributeString(idStep, "complexTypeString");
             currentRestructNumber =
                     (int) rep.getStepAttributeInteger(idStep, "currentRestructNumber");
+            measureDataType = rep.getStepAttributeString(idStep, "measureDataType");
         } catch (Exception e) {
             throw new KettleException(BaseMessages.getString(pkg,
                     "CarbonMDKeyStepMeta.Exception.UnexpectedErrorInReadingStepInfo"), e);
@@ -443,4 +452,13 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
         }
         return complexTypesMap;
     }
+
+    public String getMeasureDataType() {
+        return measureDataType;
+    }
+
+    public void setMeasureDataType(String measureDataType) {
+        this.measureDataType = measureDataType;
+    }
+
 }

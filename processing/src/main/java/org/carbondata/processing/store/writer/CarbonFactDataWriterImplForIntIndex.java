@@ -28,6 +28,7 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.columnar.IndexStorage;
 import org.carbondata.core.datastorage.store.compression.SnappyCompression.SnappyByteCompression;
+import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.file.manager.composite.IFileManagerComposite;
 import org.carbondata.core.keygenerator.mdkey.NumberCompressor;
 import org.carbondata.core.util.CarbonProperties;
@@ -55,7 +56,8 @@ public class CarbonFactDataWriterImplForIntIndex extends AbstractFactDataWriter<
 
     @Override
     public void writeDataToFile(IndexStorage<int[]>[] keyStorageArray, byte[][] dataArray,
-            int entryCount, byte[] startKey, byte[] endKey) throws CarbonDataWriterException {
+            int entryCount, byte[] startKey, byte[] endKey, ValueCompressionModel compressionModel)
+            throws CarbonDataWriterException {
         updateLeafNodeFileChannel();
 
         // current measure length;
@@ -140,6 +142,7 @@ public class CarbonFactDataWriterImplForIntIndex extends AbstractFactDataWriter<
         holder.setIsSortedKeyBlock(isSortedData);
         holder.setCompressedIndex(dataAfterCompression);
         holder.setCompressedIndexMap(indexMap);
+        holder.setCompressionModel(compressionModel);
         if (!this.isNodeHolderRequired) {
             writeDataToFile(holder);
         } else {
