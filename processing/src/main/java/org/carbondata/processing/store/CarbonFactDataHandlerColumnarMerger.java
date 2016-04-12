@@ -21,7 +21,9 @@ package org.carbondata.processing.store;
 
 import java.io.File;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.*;
 
@@ -30,7 +32,6 @@ import org.apache.hadoop.fs.Path;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.datastorage.store.NodeMeasureDataStore;
 import org.carbondata.core.datastorage.store.columnar.BlockIndexerStorageForInt;
 import org.carbondata.core.datastorage.store.columnar.IndexStorage;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
@@ -89,21 +90,6 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
     private byte[] endKey;
 
     /**
-     * ValueCompressionModel
-     */
-    private ValueCompressionModel compressionModel;
-
-    /**
-     * data store which will hold the measure data
-     */
-    private NodeMeasureDataStore dataStore;
-
-    /**
-     * uniqueValue
-     */
-    private Object[] uniqueValue;
-
-    /**
      * leaf node size
      */
     private int leafNodeSize;
@@ -160,8 +146,19 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
 
     private int currentRestructNumber;
 
-    public CarbonFactDataHandlerColumnarMerger(CarbonColumnarFactMergerInfo carbonFactDataMergerInfo,
-            int currentRestructNum) {
+    private char[] type;
+
+    private Object[] max;
+
+    private Object[] min;
+
+    private int[] decimal;
+
+    //TODO: To be removed after presence meta is introduced.
+    private Object[] uniqueValue;
+
+    public CarbonFactDataHandlerColumnarMerger(
+            CarbonColumnarFactMergerInfo carbonFactDataMergerInfo, int currentRestructNum) {
         this.carbonFactDataMergerInfo = carbonFactDataMergerInfo;
         this.aggKeyBlock = new boolean[carbonFactDataMergerInfo.getDimLens().length];
         this.currentRestructNumber = currentRestructNum;
@@ -187,7 +184,24 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
         LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                 "Initializing writer executers");
         writerExecutorService = Executors.newFixedThreadPool(3);
+        createAggType(carbonFactDataMergerInfo);
+    }
 
+    private void createAggType(CarbonColumnarFactMergerInfo carbonFactDataMergerInfo) {
+        type = new char[carbonFactDataMergerInfo.getMeasureCount()];
+
+        Arrays.fill(type, 'n');
+        if (null != carbonFactDataMergerInfo.getAggregators()) {
+            for (int i = 0; i < type.length; i++) {
+                if (carbonFactDataMergerInfo.getAggregators()[i]
+                        .equals(CarbonCommonConstants.CUSTOM) || carbonFactDataMergerInfo
+                        .getAggregators()[i].equals(CarbonCommonConstants.DISTINCT_COUNT)) {
+                    type[i] = 'c';
+                } else {
+                    type[i] = 'n';
+                }
+            }
+        }
     }
 
     /**
@@ -200,11 +214,7 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
         fileManager = new LoadFolderData();
         fileManager.setName(new File(carbonFactDataMergerInfo.getDestinationLocation()).getName());
         if (!carbonFactDataMergerInfo.isGroupByEnabled()) {
-            try {
-                setWritingConfiguration(carbonFactDataMergerInfo.getMdkeyLength());
-            } catch (CarbonDataWriterException e) {
-                throw e;
-            }
+            setWritingConfiguration();
         } else {
             if (!carbonFactDataMergerInfo.isMergingRequestForCustomAgg()) {
                 this.groupBy = new CarbonAutoAggGroupBy(carbonFactDataMergerInfo.getAggregators(),
@@ -266,8 +276,8 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
 
         for (int i = 0; i < otherMeasureIndex.length; i++) {
             if (null == row[otherMeasureIndex[i]]) {
-                dataHolder[otherMeasureIndex[i]].setWritableDoubleValueByIndex(entryCount,
-                        uniqueValue[otherMeasureIndex[i]]);
+                dataHolder[otherMeasureIndex[i]]
+                        .setWritableDoubleValueByIndex(entryCount, Double.MIN_VALUE);
             } else {
                 dataHolder[otherMeasureIndex[i]]
                         .setWritableDoubleValueByIndex(entryCount, row[otherMeasureIndex[i]]);
@@ -283,16 +293,20 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
         // this to leaf node file and update the intermediate files
         if (this.entryCount == this.leafNodeSize) {
             byte[][] byteArrayValues = keyDataHolder.getByteArrayValues().clone();
-            byte[][] writableMeasureDataArray =
-                    this.dataStore.getWritableMeasureDataArray(dataHolder).clone();
+            ValueCompressionModel compressionModel = ValueCompressionUtil
+                    .getValueCompressionModel(max, min, decimal, uniqueValue, type,
+                            new byte[max.length]);
+            byte[][] writableMeasureDataArray = StoreFactory.createDataStore(compressionModel)
+                    .getWritableMeasureDataArray(dataHolder).clone();
             int entryCountLocal = entryCount;
             byte[] startKeyLocal = startKey;
             byte[] endKeyLocal = endKey;
             startKey = new byte[carbonFactDataMergerInfo.getMdkeyLength()];
             endKey = new byte[carbonFactDataMergerInfo.getMdkeyLength()];
+
             writerExecutorService
                     .submit(new DataWriterThread(byteArrayValues, writableMeasureDataArray,
-                            entryCountLocal, startKeyLocal, endKeyLocal));
+                            entryCountLocal, startKeyLocal, endKeyLocal, compressionModel));
             // set the entry count to zero
             processedDataCount += entryCount;
             LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
@@ -306,7 +320,8 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
     }
 
     private void writeDataToFile(byte[][] data, byte[][] dataHolderLocal, int entryCountLocal,
-            byte[] startkeyLocal, byte[] endKeyLocal) throws CarbonDataWriterException {
+            byte[] startkeyLocal, byte[] endKeyLocal, ValueCompressionModel compressionModel)
+            throws CarbonDataWriterException {
         ExecutorService executorService = Executors.newFixedThreadPool(5);
         List<Future<IndexStorage>> submit = new ArrayList<Future<IndexStorage>>(numberOfColumns);
         byte[][][] columnsData = new byte[numberOfColumns][data.length][];
@@ -340,7 +355,7 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
         synchronized (lock) {
             this.dataWriter
                     .writeDataToFile(blockStorage, dataHolderLocal, entryCountLocal, startkeyLocal,
-                            endKeyLocal);
+                            endKeyLocal, compressionModel);
         }
     }
 
@@ -354,7 +369,7 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
             try {
                 this.groupBy.initiateReading(carbonFactDataMergerInfo.getDestinationLocation(),
                         carbonFactDataMergerInfo.getTableName());
-                setWritingConfiguration(carbonFactDataMergerInfo.getMdkeyLength());
+                setWritingConfiguration();
                 Object[] row = null;
                 while (this.groupBy.hasNext()) {
                     row = this.groupBy.next();
@@ -414,9 +429,13 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
                 LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "error in  writerexecutorService/awaitTermination ", e, e.getMessage());
             }
+            ValueCompressionModel compressionModel = ValueCompressionUtil
+                    .getValueCompressionModel(max, min, decimal, uniqueValue, type,
+                            new byte[max.length]);
             this.dataWriter.writeDataToFile(blockStorage,
-                    this.dataStore.getWritableMeasureDataArray(dataHolder), this.entryCount,
-                    this.startKey, this.endKey);
+                    StoreFactory.createDataStore(compressionModel)
+                            .getWritableMeasureDataArray(dataHolder), this.entryCount,
+                    this.startKey, this.endKey, compressionModel);
 
             processedDataCount += entryCount;
             LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
@@ -476,7 +495,6 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
             }
         }
         this.keyBlockHolder = null;
-        this.dataStore = null;
         this.dataWriter = null;
         this.groupBy = null;
     }
@@ -486,17 +504,10 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
      *
      * @throws CarbonDataWriterException
      */
-    private void setWritingConfiguration(int mdkeySize) throws CarbonDataWriterException {
+    private void setWritingConfiguration() throws CarbonDataWriterException {
         String measureMetaDataFileLocation = carbonFactDataMergerInfo.getDestinationLocation()
                 + CarbonCommonConstants.MEASURE_METADATA_FILE_NAME + carbonFactDataMergerInfo
                 .getTableName() + CarbonCommonConstants.MEASUREMETADATA_FILE_EXT;
-        // get the compression model
-        // this will used max, min and decimal point value present in the
-        // and the measure count to get the compression for each measure
-        this.compressionModel = ValueCompressionUtil
-                .getValueCompressionModel(measureMetaDataFileLocation,
-                        carbonFactDataMergerInfo.getMeasureCount());
-        this.uniqueValue = compressionModel.getUniqueValue();
         // get leaf node size
         this.leafNodeSize = Integer.parseInt(CarbonProperties.getInstance()
                 .getProperty(CarbonCommonConstants.LEAFNODE_SIZE,
@@ -508,8 +519,8 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
         int dimSet = Integer.parseInt(
                 CarbonCommonConstants.DIMENSION_SPLIT_VALUE_IN_COLUMNAR_DEFAULTVALUE);
         this.columnarSplitter = new MultiDimKeyVarLengthEquiSplitGenerator(CarbonUtil
-                .getIncrementedCardinalityFullyFilled(carbonFactDataMergerInfo.getDimLens().clone()),
-                (byte) dimSet);
+                .getIncrementedCardinalityFullyFilled(
+                        carbonFactDataMergerInfo.getDimLens().clone()), (byte) dimSet);
 
         this.keyBlockHolder =
                 new CarbonKeyBlockHolder[this.columnarSplitter.getBlockKeySize().length];
@@ -522,9 +533,7 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
         numberOfColumns = keyBlockHolder.length;
 
         // create data store
-        this.dataStore = StoreFactory.createDataStore(compressionModel);
         // agg type
-        char[] type = compressionModel.getType();
         List<Integer> otherMeasureIndexList =
                 new ArrayList<Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         List<Integer> customMeasureIndexList =
@@ -560,12 +569,51 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
         initialisedataHolder();
 
         this.dataWriter = getFactDataWriter(carbonFactDataMergerInfo.getDestinationLocation(),
-                carbonFactDataMergerInfo.getMeasureCount(), carbonFactDataMergerInfo.getMdkeyLength(),
-                carbonFactDataMergerInfo.getTableName(), true, fileManager,
-                this.columnarSplitter.getBlockKeySize(), carbonFactDataMergerInfo.isUpdateFact());
+                carbonFactDataMergerInfo.getMeasureCount(),
+                carbonFactDataMergerInfo.getMdkeyLength(), carbonFactDataMergerInfo.getTableName(),
+                true, fileManager, this.columnarSplitter.getBlockKeySize(),
+                carbonFactDataMergerInfo.isUpdateFact());
         // initialize the channel;
         this.dataWriter.initializeWriter();
+        initializeMinMax();
+    }
 
+    //TODO: Need to move Abstract class
+    private void initializeMinMax() {
+        max = new Object[carbonFactDataMergerInfo.getMeasureCount()];
+        min = new Object[carbonFactDataMergerInfo.getMeasureCount()];
+        decimal = new int[carbonFactDataMergerInfo.getMeasureCount()];
+        uniqueValue = new Object[carbonFactDataMergerInfo.getMeasureCount()];
+
+        for (int i = 0; i < max.length; i++) {
+            if (type[i] == CarbonCommonConstants.BIG_INT_MEASURE) {
+                max[i] = Long.MIN_VALUE;
+            } else if (type[i] == CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE) {
+                max[i] = -Double.MAX_VALUE;
+            } else {
+                max[i] = 0.0;
+            }
+        }
+
+        for (int i = 0; i < min.length; i++) {
+            if (type[i] == CarbonCommonConstants.BIG_INT_MEASURE) {
+                min[i] = Long.MAX_VALUE;
+                uniqueValue[i] = Long.MIN_VALUE;
+            } else if (type[i] == CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE) {
+                min[i] = Double.MAX_VALUE;
+                uniqueValue[i] = Double.MIN_VALUE;
+            } else if (type[i] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
+                min[i] = new BigDecimal(Double.MAX_VALUE);
+                uniqueValue[i] = new BigDecimal(Double.MIN_VALUE);
+            } else {
+                min[i] = 0.0;
+                uniqueValue[i] = Long.MIN_VALUE;
+            }
+        }
+
+        for (int i = 0; i < decimal.length; i++) {
+            decimal[i] = 0;
+        }
     }
 
     private void resetKeyBlockHolder() {
@@ -633,19 +681,22 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
 
         private byte[] endKeyLocal;
 
+        private ValueCompressionModel compressionModel;
+
         private DataWriterThread(byte[][] data, byte[][] dataHolderLocal, int entryCountLocal,
-                byte[] startKey, byte[] endKey) {
+                byte[] startKey, byte[] endKey, ValueCompressionModel compressionModel) {
             this.data = data;
             this.entryCountLocal = entryCountLocal;
             this.startkeyLocal = startKey;
             this.endKeyLocal = endKey;
             this.dataHolderLocal = dataHolderLocal;
+            this.compressionModel = compressionModel;
         }
 
         @Override
         public IndexStorage call() throws Exception {
-            writeDataToFile(this.data, dataHolderLocal, entryCountLocal, startkeyLocal,
-                    endKeyLocal);
+            writeDataToFile(this.data, dataHolderLocal, entryCountLocal, startkeyLocal, endKeyLocal,
+                    compressionModel);
             return null;
         }
 

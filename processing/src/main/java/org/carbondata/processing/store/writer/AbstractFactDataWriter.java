@@ -393,6 +393,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
         // set end key
         infoObj.setEndKey(nodeHolder.getEndKey());
         infoObj.setLeafNodeMetaSize(calculateAndSetLeafNodeMetaSize(nodeHolder));
+        infoObj.setCompressionModel(nodeHolder.getCompressionModel());
         // return leaf metadata
         return infoObj;
     }

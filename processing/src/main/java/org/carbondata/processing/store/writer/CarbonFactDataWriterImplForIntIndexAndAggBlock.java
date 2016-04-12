@@ -29,6 +29,7 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.columnar.IndexStorage;
 import org.carbondata.core.datastorage.store.compression.SnappyCompression.SnappyByteCompression;
+import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.file.manager.composite.IFileManagerComposite;
 import org.carbondata.core.keygenerator.mdkey.NumberCompressor;
 import org.carbondata.core.metadata.LeafNodeInfoColumnar;
@@ -70,7 +71,8 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
 
     @Override
     public void writeDataToFile(IndexStorage<int[]>[] keyStorageArray, byte[][] dataArray,
-            int entryCount, byte[] startKey, byte[] endKey) throws CarbonDataWriterException {
+            int entryCount, byte[] startKey, byte[] endKey, ValueCompressionModel compressionModel)
+            throws CarbonDataWriterException {
         updateLeafNodeFileChannel();
         // total measure length;
         int totalMsrArrySize = 0;
@@ -206,6 +208,7 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
         holder.setCompressedIndexMap(indexMap);
         holder.setDataIndexMapLength(dataIndexMapLength);
         holder.setCompressedDataIndex(compressedDataIndex);
+        holder.setCompressionModel(compressionModel);
         //setting column min max value
         holder.setColumnMinMaxData(columnMinMaxData);
         if (!this.isNodeHolderRequired) {
@@ -392,6 +395,7 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
         // set end key
         info.setEndKey(nodeHolder.getEndKey());
         info.setLeafNodeMetaSize(calculateAndSetLeafNodeMetaSize(nodeHolder));
+        info.setCompressionModel(nodeHolder.getCompressionModel());
         // return leaf metadata
         return info;
     }

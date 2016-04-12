@@ -1,17 +1,28 @@
 package org.carbondata.core.util;
 
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.carbondata.common.logging.LogService;
+import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.metadata.LeafNodeInfoColumnar;
+import org.carbondata.core.metadata.ValueEncoderMeta;
 import org.carbondata.format.*;
 
 /**
  * Util class to convert to thrift metdata classes
  */
 public class CarbonMetadataUtil {
+
+    /**
+     * Attribute for Carbon LOGGER
+     */
+    private static final LogService LOGGER =
+            LogServiceFactory.getLogService(CarbonMetadataUtil.class.getName());
 
     /**
      * It converts list of LeafNodeInfoColumnar to FileMeta thrift objects
@@ -22,7 +33,7 @@ public class CarbonMetadataUtil {
      * @return FileMeta
      */
     public static FileMeta convertFileMeta(List<LeafNodeInfoColumnar> infoList, int numCols,
-            int[] cardinalities) {
+            int[] cardinalities) throws IOException {
 
         SegmentInfo segmentInfo = new SegmentInfo();
         segmentInfo.setNum_cols(numCols);
@@ -80,13 +91,13 @@ public class CarbonMetadataUtil {
         return leafNodeIndex;
     }
 
-    private static LeafNodeInfo getLeafNodeInfo(LeafNodeInfoColumnar leafNodeInfoColumnar) {
+    private static LeafNodeInfo getLeafNodeInfo(LeafNodeInfoColumnar leafNodeInfoColumnar)
+            throws IOException {
 
         LeafNodeInfo leafNodeInfo = new LeafNodeInfo();
         leafNodeInfo.setNum_rows(leafNodeInfoColumnar.getNumberOfKeys());
 
-        List<DataChunk> dimDataChunks = new ArrayList<DataChunk>();
-        List<DataChunk> msrDataChunks = new ArrayList<DataChunk>();
+        List<DataChunk> colDataChunks = new ArrayList<DataChunk>();
         leafNodeInfoColumnar.getKeyLengths();
         int j = 0;
         for (int i = 0; i < leafNodeInfoColumnar.getKeyLengths().length; i++) {
@@ -94,7 +105,7 @@ public class CarbonMetadataUtil {
             dataChunk.setChunk_meta(getChunkCompressionMeta());
             boolean[] isSortedKeyColumn = leafNodeInfoColumnar.getIsSortedKeyColumn();
             //TODO : Need to find how to set it.
-            dataChunk.setIs_row_chunk(false);
+            dataChunk.setRow_chunk(false);
             //TODO : Once schema PR is merged and information needs to be passed here.
             dataChunk.setColumn_ids(new ArrayList<Integer>());
             dataChunk.setData_page_length(leafNodeInfoColumnar.getKeyLengths()[i]);
@@ -111,30 +122,58 @@ public class CarbonMetadataUtil {
             }
 
             //TODO : Right now the encodings are happening at runtime. change as per this encoders.
-            //dataChunk.setEncoders(new ArrayList<Encoding>());
+            List<Encoding> encodings = new ArrayList<Encoding>();
+            encodings.add(Encoding.DICTIONARY);
+            dataChunk.setEncoders(encodings);
 
-            dimDataChunks.add(dataChunk);
+            colDataChunks.add(dataChunk);
         }
 
         for (int i = 0; i < leafNodeInfoColumnar.getMeasureLength().length; i++) {
             DataChunk dataChunk = new DataChunk();
             dataChunk.setChunk_meta(getChunkCompressionMeta());
-            dataChunk.setIs_row_chunk(false);
+            dataChunk.setRow_chunk(false);
             //TODO : Once schema PR is merged and information needs to be passed here.
             dataChunk.setColumn_ids(new ArrayList<Integer>());
             dataChunk.setData_page_length(leafNodeInfoColumnar.getMeasureLength()[i]);
             dataChunk.setData_page_offset(leafNodeInfoColumnar.getMeasureOffset()[i]);
-
+            //TODO : Right now the encodings are happening at runtime. change as per this encoders.
+            List<Encoding> encodings = new ArrayList<Encoding>();
+            encodings.add(Encoding.DELTA);
+            dataChunk.setEncoders(encodings);
             //TODO : PresenceMeta needs to be implemented and set here
             // dataChunk.setPresence(new PresenceMeta());
             //TODO : Need to write ValueCompression meta here.
-            //dataChunk.setEncoder_meta()
-            msrDataChunks.add(dataChunk);
+            List<ByteBuffer> encoderMetaList = new ArrayList<ByteBuffer>();
+            encoderMetaList.add(ByteBuffer.wrap(serializeEncoderMeta(
+                    createValueEncoderMeta(leafNodeInfoColumnar.getCompressionModel(), i))));
+            dataChunk.setEncoder_meta(encoderMetaList);
+            colDataChunks.add(dataChunk);
         }
-        leafNodeInfo.setDimension_chunks(dimDataChunks);
-        leafNodeInfo.setMeasure_chunks(msrDataChunks);
+        leafNodeInfo.setColumn_data_chunks(colDataChunks);
 
         return leafNodeInfo;
+    }
+
+    private static byte[] serializeEncoderMeta(ValueEncoderMeta encoderMeta) throws IOException {
+        // TODO : should remove the unnecessary fields.
+        ByteArrayOutputStream aos = new ByteArrayOutputStream();
+        ObjectOutputStream objStream = new ObjectOutputStream(aos);
+        objStream.writeObject(encoderMeta);
+        objStream.close();
+        return aos.toByteArray();
+    }
+
+    private static ValueEncoderMeta createValueEncoderMeta(ValueCompressionModel compressionModel,
+            int index) {
+        ValueEncoderMeta encoderMeta = new ValueEncoderMeta();
+        encoderMeta.setMaxValue(compressionModel.getMaxValue()[index]);
+        encoderMeta.setMinValue(compressionModel.getMinValue()[index]);
+        encoderMeta.setDataTypeSelected(compressionModel.getDataTypeSelected()[index]);
+        encoderMeta.setDecimal(compressionModel.getDecimal()[index]);
+        encoderMeta.setType(compressionModel.getType()[index]);
+        encoderMeta.setUniqueValue(compressionModel.getUniqueValue()[index]);
+        return encoderMeta;
     }
 
     /**
@@ -154,22 +193,32 @@ public class CarbonMetadataUtil {
      * @param fileMeta
      * @return
      */
-    public static List<LeafNodeInfoColumnar> convertLeafNodeInfo(FileMeta fileMeta) {
+    public static List<LeafNodeInfoColumnar> convertLeafNodeInfo(FileMeta fileMeta)
+            throws IOException {
         List<LeafNodeInfoColumnar> listOfNodeInfo =
                 new ArrayList<LeafNodeInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
         for (LeafNodeInfo leafNodeInfo : fileMeta.getLeaf_node_info()) {
             LeafNodeInfoColumnar leafNodeInfoColumnar = new LeafNodeInfoColumnar();
             leafNodeInfoColumnar.setNumberOfKeys(leafNodeInfo.getNum_rows());
-            List<DataChunk> dimChunks = leafNodeInfo.getDimension_chunks();
-            int[] keyLengths = new int[dimChunks.size()];
-            long[] keyOffSets = new long[dimChunks.size()];
-            long[] keyBlockIndexOffsets = new long[dimChunks.size()];
-            int[] keyBlockIndexLens = new int[dimChunks.size()];
-            long[] indexMapOffsets = new long[dimChunks.size()];
-            int[] indexMapLens = new int[dimChunks.size()];
-            boolean[] sortState = new boolean[dimChunks.size()];
+            List<DataChunk> columnChunks = leafNodeInfo.getColumn_data_chunks();
+            List<DataChunk> dictChunks = new ArrayList<DataChunk>();
+            List<DataChunk> nonDictColChunks = new ArrayList<DataChunk>();
+            for (DataChunk dataChunk : columnChunks) {
+                if (dataChunk.getEncoders().get(0).equals(Encoding.DICTIONARY)) {
+                    dictChunks.add(dataChunk);
+                } else {
+                    nonDictColChunks.add(dataChunk);
+                }
+            }
+            int[] keyLengths = new int[dictChunks.size()];
+            long[] keyOffSets = new long[dictChunks.size()];
+            long[] keyBlockIndexOffsets = new long[dictChunks.size()];
+            int[] keyBlockIndexLens = new int[dictChunks.size()];
+            long[] indexMapOffsets = new long[dictChunks.size()];
+            int[] indexMapLens = new int[dictChunks.size()];
+            boolean[] sortState = new boolean[dictChunks.size()];
             int i = 0;
-            for (DataChunk dataChunk : dimChunks) {
+            for (DataChunk dataChunk : dictChunks) {
                 keyLengths[i] = dataChunk.getData_page_length();
                 keyOffSets[i] = dataChunk.getData_page_offset();
                 keyBlockIndexOffsets[i] = dataChunk.getRowid_page_offset();
@@ -188,24 +237,59 @@ public class CarbonMetadataUtil {
             leafNodeInfoColumnar.setDataIndexMapLength(indexMapLens);
             leafNodeInfoColumnar.setIsSortedKeyColumn(sortState);
 
-            List<DataChunk> msrChunks = leafNodeInfo.getMeasure_chunks();
-
-            int[] msrLens = new int[msrChunks.size()];
-            long[] msrOffsets = new long[msrChunks.size()];
+            int[] msrLens = new int[nonDictColChunks.size()];
+            long[] msrOffsets = new long[nonDictColChunks.size()];
+            ValueEncoderMeta[] encoderMetas = new ValueEncoderMeta[nonDictColChunks.size()];
             i = 0;
-            for (DataChunk msrChunk : msrChunks) {
+            for (DataChunk msrChunk : nonDictColChunks) {
                 msrLens[i] = msrChunk.getData_page_length();
                 msrOffsets[i] = msrChunk.getData_page_offset();
+                encoderMetas[i] = deserializeValueEncoderMeta(msrChunk.getEncoder_meta().get(0));
                 i++;
             }
             leafNodeInfoColumnar.setMeasureLength(msrLens);
             leafNodeInfoColumnar.setMeasureOffset(msrOffsets);
-
+            leafNodeInfoColumnar.setCompressionModel(getValueCompressionModel(encoderMetas));
             listOfNodeInfo.add(leafNodeInfoColumnar);
         }
 
         setLeafNodeIndex(fileMeta, listOfNodeInfo);
         return listOfNodeInfo;
+    }
+
+    private static ValueEncoderMeta deserializeValueEncoderMeta(ByteBuffer byteBuffer)
+            throws IOException {
+        ByteArrayInputStream bis = new ByteArrayInputStream(byteBuffer.array());
+        ObjectInputStream objStream = new ObjectInputStream(bis);
+        ValueEncoderMeta encoderMeta = null;
+        try {
+            encoderMeta = (ValueEncoderMeta) objStream.readObject();
+        } catch (ClassNotFoundException e) {
+            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
+                    "Error while reading ValueEncoderMeta", e);
+        }
+        return encoderMeta;
+
+    }
+
+    private static ValueCompressionModel getValueCompressionModel(ValueEncoderMeta[] encoderMetas) {
+        Object[] maxValue = new Object[encoderMetas.length];
+        Object[] minValue = new Object[encoderMetas.length];
+        int[] decimalLength = new int[encoderMetas.length];
+        Object[] uniqueValue = new Object[encoderMetas.length];
+        char[] aggType = new char[encoderMetas.length];
+        byte[] dataTypeSelected = new byte[encoderMetas.length];
+        for (int i = 0; i < encoderMetas.length; i++) {
+            maxValue[i] = encoderMetas[i].getMaxValue();
+            minValue[i] = encoderMetas[i].getMinValue();
+            decimalLength[i] = encoderMetas[i].getDecimal();
+            uniqueValue[i] = encoderMetas[i].getUniqueValue();
+            aggType[i] = encoderMetas[i].getType();
+            dataTypeSelected[i] = encoderMetas[i].getDataTypeSelected();
+        }
+        return ValueCompressionUtil
+                .getValueCompressionModel(maxValue, minValue, decimalLength, uniqueValue, aggType,
+                        dataTypeSelected);
     }
 
     private static void setLeafNodeIndex(FileMeta fileMeta,

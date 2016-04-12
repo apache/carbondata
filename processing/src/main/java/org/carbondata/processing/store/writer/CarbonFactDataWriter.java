@@ -20,6 +20,7 @@
 package org.carbondata.processing.store.writer;
 
 import org.carbondata.core.datastorage.store.columnar.IndexStorage;
+import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 
 public interface CarbonFactDataWriter<T> {
@@ -37,7 +38,8 @@ public interface CarbonFactDataWriter<T> {
      */
 
     void writeDataToFile(IndexStorage<T>[] keyStorageArray, byte[][] dataArray, int entryCount,
-            byte[] startKey, byte[] endKey) throws CarbonDataWriterException;
+            byte[] startKey, byte[] endKey, ValueCompressionModel compressionModel)
+            throws CarbonDataWriterException;
 
     /**
      * Below method will be used to write the leaf meta data to file
