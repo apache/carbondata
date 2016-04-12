@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.metadata.LeafNodeInfoColumnar;
@@ -109,6 +110,14 @@ public class CarbonMetaDataWriterTest {
         infoColumnar.setDataIndexMapOffsets(new long[] { 77, 88, 99, 111 });
         infoColumnar.setMeasureLength(new int[] { 6, 7 });
         infoColumnar.setMeasureOffset(new long[] { 33, 99 });
+        ValueCompressionModel compressionModel = new ValueCompressionModel();
+        compressionModel.setMaxValue(new Object[]{44d,55d});
+        compressionModel.setMinValue(new Object[]{0d,0d});
+        compressionModel.setDecimal(new int[]{0,0});
+        compressionModel.setType(new char[]{'n', 'n'});
+        compressionModel.setUniqueValue(new Object[]{0d,0d});
+        compressionModel.setDataTypeSelected(new byte[2]);
+        infoColumnar.setCompressionModel(compressionModel);
         List<LeafNodeInfoColumnar> infoColumnars = new ArrayList<LeafNodeInfoColumnar>();
         infoColumnars.add(infoColumnar);
         return infoColumnars;
