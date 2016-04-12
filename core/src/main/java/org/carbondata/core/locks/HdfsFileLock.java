@@ -18,20 +18,29 @@
  */
 package org.carbondata.core.locks;
 
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.datastorage.store.impl.FileFactory;
+
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 
-import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.datastorage.store.impl.FileFactory;
-
 /**
+ * This class is used to handle the HDFS File locking.This is acheived using the concept of acquiring the data
+ * out stream using Append option.
+ *
  * @author Administrator
  */
 public class HdfsFileLock extends AbstractCarbonLock {
 
+    /**
+     * location hdfs file location
+     */
     private String location;
 
+    /**
+     * lockType is used to determine the type of the lock. according to this the lock folder will change.
+     */
     private LockType lockType;
 
     private DataOutputStream dataOutputStream;
@@ -52,7 +61,8 @@ public class HdfsFileLock extends AbstractCarbonLock {
     /* (non-Javadoc)
      * @see org.carbondata.core.locks.ICarbonLock#lock()
      */
-    @Override public boolean lock() {
+    @Override
+    public boolean lock() {
         try {
             if (!FileFactory.isFileExist(location, FileFactory.getFileType(location))) {
                 FileFactory.createNewLockFile(location, FileFactory.getFileType(location));
@@ -70,7 +80,8 @@ public class HdfsFileLock extends AbstractCarbonLock {
     /* (non-Javadoc)
      * @see org.carbondata.core.locks.ICarbonLock#unlock()
      */
-    @Override public boolean unlock() {
+    @Override
+    public boolean unlock() {
         if (null != dataOutputStream) {
             try {
                 dataOutputStream.close();

@@ -40,6 +40,8 @@ public class CarbonLockFactory {
     }
 
     /**
+     * This method will determine the lock type.
+     *
      * @param Location
      * @param lockType
      * @return

@@ -18,10 +18,6 @@
  */
 package org.carbondata.core.locks;
 
-import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-
 import org.apache.zookeeper.*;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooDefs.Ids;
@@ -30,6 +26,10 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonProperties;
+
+import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * @author ravikiran
@@ -71,12 +71,24 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
     static {
         String zookeeperUrl =
                 CarbonProperties.getInstance().getProperty("spark.deploy.zookeeper.url");
-        int sessionTimeOut = 10000;
+        int sessionTimeOut = 100000;
         try {
             zk = new ZooKeeper(zookeeperUrl, sessionTimeOut, new Watcher() {
 
-                @Override public void process(WatchedEvent event) {
+                @Override
+                public void process(WatchedEvent event) {
                     if (event.getState().equals(KeeperState.SyncConnected)) {
+                        // if exists returns null then path doesn't exist. so creating.
+                        try {
+                            if (null == zk.exists(zooKeeperLocation, true)) {
+                                // creating a znode in which all the znodes (lock files )are maintained.
+                                zk.create(zooKeeperLocation, new byte[1], Ids.OPEN_ACL_UNSAFE,
+                                        CreateMode.PERSISTENT);
+                            }
+                        } catch (KeeperException | InterruptedException e) {
+                            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
+                                    e.getMessage());
+                        }
                         LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                                 "zoo keeper client connected.");
                     }
@@ -84,13 +96,8 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
                 }
             });
 
-            // if exists returns null then path doesn't exist. so creating.
-            if (null == zk.exists(zooKeeperLocation, true)) {
-                // creating a znode in which all the znodes (lock files )are maintained.
-                zk.create(zooKeeperLocation, new byte[1], Ids.OPEN_ACL_UNSAFE,
-                        CreateMode.PERSISTENT);
-            }
-        } catch (IOException | KeeperException | InterruptedException e) {
+
+        } catch (IOException e) {
             LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e.getMessage());
         }
     }
@@ -121,7 +128,8 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
     /**
      * Handling of the locking mechanism using zoo keeper.
      */
-    @Override public boolean lock() {
+    @Override
+    public boolean lock() {
         try {
             // create the lock file with lockName.
             lockPath =
@@ -159,7 +167,8 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
     /**
      * @return status where lock file is unlocked or not.
      */
-    @Override public boolean unlock() {
+    @Override
+    public boolean unlock() {
         try {
             // exists will return null if the path doesn't exists.
             if (null != zk.exists(lockPath, true)) {

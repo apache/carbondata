@@ -53,7 +53,8 @@ public abstract class AbstractCarbonLock implements ICarbonLock {
     }
 
     /**
-     *
+     * Initializes the retry count and retry timeout.
+     * This will determine how many times to retry to acquire lock and the retry timeout.
      */
     protected void initRetry() {
         String retries = CarbonProperties.getInstance()

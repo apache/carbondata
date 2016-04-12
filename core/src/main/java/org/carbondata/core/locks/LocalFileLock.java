@@ -18,6 +18,12 @@
  */
 package org.carbondata.core.locks;
 
+import org.carbondata.common.logging.LogService;
+import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.datastorage.store.impl.FileFactory;
+import org.carbondata.core.util.CarbonCoreLogEvent;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -25,31 +31,47 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
 
-import org.carbondata.common.logging.LogService;
-import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.datastorage.store.impl.FileFactory;
-import org.carbondata.core.util.CarbonCoreLogEvent;
-
 /**
+ * This class handles the file locking in the local file system.
+ * This will be handled using the file channel lock API.
  * @author Administrator
  */
 public class LocalFileLock extends AbstractCarbonLock {
+    /**
+     * location is the location of the lock file.
+     */
     private String location;
 
+    /**
+     * lockType will determine the lock folder. so that similar locks will try to acquire same lock file.
+     */
     private LockType lockType;
 
+    /**
+     * fileOutputStream of the local lock file
+     */
     private FileOutputStream fileOutputStream;
 
+    /**
+     * channel is the FileChannel of the lock file.
+     */
     private FileChannel channel;
 
+    /**
+     * fileLock NIO FileLock Object
+     */
     private FileLock fileLock;
 
+    /**
+     * LOGGER for  logging the messages.
+     */
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(LocalFileLock.class.getName());
 
     /**
+     *
      * @param location
+     * @param lockType
      */
     public LocalFileLock(String location, LockType lockType) {
         this.lockType = lockType;
@@ -60,10 +82,12 @@ public class LocalFileLock extends AbstractCarbonLock {
         initRetry();
     }
 
-    /* (non-Javadoc)
-     * @see org.carbondata.core.locks.ICarbonLock#lock()
+    /**
+     * Lock API for locking of the file channel of the lock file.
+     * @return
      */
-    @Override public boolean lock() {
+    @Override
+    public boolean lock() {
         try {
             if (!FileFactory.isFileExist(location, FileFactory.getFileType(location))) {
                 FileFactory.createNewLockFile(location, FileFactory.getFileType(location));
@@ -87,13 +111,17 @@ public class LocalFileLock extends AbstractCarbonLock {
 
     }
 
-    /* (non-Javadoc)
-     * @see org.carbondata.core.locks.ICarbonLock#unlock()
+    /**
+     * Unlock API for unlocking of the acquired lock.
+     * @return
      */
-    @Override public boolean unlock() {
+    @Override
+    public boolean unlock() {
         boolean status;
         try {
-            fileLock.release();
+            if (null != fileLock) {
+                fileLock.release();
+            }
             status = true;
         } catch (IOException e) {
             status = false;
