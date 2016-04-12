@@ -49,7 +49,16 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll  {
   
   def buildTestContext() = {
     try{
-      sql("CREATE CUBE IF NOT EXISTS sample DIMENSIONS (id STRING, name_1 STRING, city STRING) MEASURES (age INTEGER) OPTIONS(PARTITIONER[CLASS='org.carbondata.integration.spark.partition.api.impl.SampleDataPartitionerImpl',COLUMNS=(id),PARTITION_COUNT=1])")
+      sql("CREATE CUBE IF NOT EXISTS sample DIMENSIONS (id STRING, name STRING, city STRING) MEASURES (age INTEGER) OPTIONS(PARTITIONER[CLASS='org.carbondata.integration.spark.partition.api.impl.SampleDataPartitionerImpl',COLUMNS=(id),PARTITION_COUNT=1])")
+    }catch{
+      case ex: Throwable => logError(ex.getMessage +"\r\n" + ex.getStackTraceString)    
+    }
+    try{
+      sql("CREATE CUBE IF NOT EXISTS sample1 DIMENSIONS (id STRING, name STRING, city STRING) MEASURES (age INTEGER) OPTIONS(PARTITIONER[CLASS='org.carbondata.integration.spark.partition.api.impl.SampleDataPartitionerImpl',COLUMNS=(id),PARTITION_COUNT=1])")
+    }catch{
+      case ex: Throwable => logError(ex.getMessage +"\r\n" + ex.getStackTraceString)    
+    }
+    try{
       sql("CREATE CUBE IF NOT EXISTS dimSample DIMENSIONS (id STRING, name STRING, city STRING) MEASURES (age INTEGER) WITH dimTableSample RELATION(Fact.id=id) INCLUDE(id,name) OPTIONS(PARTITIONER[CLASS='org.carbondata.integration.spark.partition.api.impl.SampleDataPartitionerImpl',COLUMNS=(id),PARTITION_COUNT=1])")
     }catch{
       case ex: Throwable => logError(ex.getMessage +"\r\n" + ex.getStackTraceString)    
@@ -74,6 +83,9 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll  {
   }
   
   test("[issue-80]Global Dictionary Generation"){
+
+    sql("LOAD DATA fact from '" + filePath + "' INTO CUBE sample1 PARTITIONDATA(DELIMITER ',', QUOTECHAR '')")
+    
     var carbonLoadModel = buildCarbonLoadModel(sampleRelation, null)
     var rtn = GlobalDictionaryUtil.generateGlobalDictionary(CarbonHiveContext, carbonLoadModel, false)
     assert( rtn === 1)
@@ -82,5 +94,4 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll  {
     rtn = GlobalDictionaryUtil.generateGlobalDictionary(CarbonHiveContext, carbonLoadModel, false)
     assert( rtn === 1)
   }
-
 }
