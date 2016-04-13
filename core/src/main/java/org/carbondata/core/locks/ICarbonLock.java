@@ -16,26 +16,25 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.carbondata.core.locks;
 
-import java.io.File;
-
-import org.carbondata.core.constants.CarbonCommonConstants;
-
 /**
- * This class is responsible for locking of the load .
+ * Carbon Lock Interface which handles the locking and unlocking.
  */
-public class LoadFileBasedLock extends CarbonLock {
+public interface ICarbonLock {
+
     /**
-     * This is used for locking of the load.
+     * Does the unlocking of the acquired lock.
      *
-     * @param location
+     * @return
      */
-    public LoadFileBasedLock(String location) {
-        String loadLock = location + File.separator + CarbonCommonConstants.LOAD_LOCK;
-        this.location = loadLock;
-        initRetry();
-    }
+    boolean unlock();
+
+    /**
+     * This will acquire the lock and if it doesnt get then it will retry after the confiured time.
+     *
+     * @return
+     */
+    boolean lockWithRetries();
 
 }

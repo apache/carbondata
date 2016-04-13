@@ -16,27 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.carbondata.core.locks;
 
-import java.io.File;
-
-import org.carbondata.core.constants.CarbonCommonConstants;
-
 /**
- * This class is responsible for locking of the load metadata.
+ * This enum is used to define the usecase of the lock.
+ * Each enum value is one specific lock case.
  */
-public class MetadataLock extends CarbonLock {
-
-    /**
-     * This is used for locking of the load metadata.
-     *
-     * @param location
-     */
-    public MetadataLock(String location) {
-        String loadLock = location + File.separator + CarbonCommonConstants.METADATA_LOCK;
-        this.location = loadLock;
-        initRetry();
-    }
-
+public enum LockUsage {
+    METADATA_LOCK;
 }

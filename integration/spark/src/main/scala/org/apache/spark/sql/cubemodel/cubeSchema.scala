@@ -23,18 +23,17 @@ import java.text.SimpleDateFormat
 
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.execution.{RunnableCommand, SparkPlan}
-import org.apache.spark.sql.hive.{HiveContext, CarbonMetastoreCatalog}
+import org.apache.spark.sql.hive.{CarbonMetastoreCatalog, HiveContext}
 import org.apache.spark.sql.types.TimestampType
-import org.apache.spark.sql.{CarbonEnv, DataFrame, CarbonContext, CarbonRelation, Row, SQLContext, getDB}
+import org.apache.spark.sql.{CarbonContext, CarbonEnv, CarbonRelation, DataFrame, Row, SQLContext, getDB}
 import org.carbondata.common.logging.LogServiceFactory
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.datastorage.store.impl.FileFactory
-import org.carbondata.core.locks.MetadataLock
 import org.carbondata.core.metadata.CarbonMetadata
 import org.carbondata.core.carbon.CarbonDef
 import org.carbondata.core.carbon.CarbonDef.{AggTable, CubeDimension}
 import org.carbondata.core.util.{CarbonProperties, CarbonUtil}
-import org.carbondata.integration.spark.load.{DeleteLoadFromMetadata, CarbonLoadModel, CarbonLoaderUtil}
+import org.carbondata.integration.spark.load.{CarbonLoadModel, CarbonLoaderUtil, DeleteLoadFromMetadata}
 import org.carbondata.integration.spark.partition.api.impl.QueryPartitionHelper
 import org.carbondata.integration.spark.rdd.CarbonDataRDDFactory
 import org.carbondata.integration.spark.util.{CarbonQueryUtil, CarbonScalaUtil, CarbonSparkInterFaceLogEvent}
@@ -47,6 +46,8 @@ import org.carbondata.processing.util.CarbonSchemaParser
 import scala.collection.JavaConversions._
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import org.carbondata.integration.spark.util.GlobalDictionaryUtil
+import org.carbondata.core.locks.{CarbonLockFactory, LockUsage}
+
 case class CubeModel(
                       ifNotExistsSet: Boolean,
                       //SchmemaNameOp is used to temporarily to hold schema and then set to var schemaName
@@ -754,7 +755,7 @@ private[sql] case class AlterCube(
       sys.error(s"Cube $schemaName.$cubeName does not exist")
     }
 
-    val carbonLock = new MetadataLock(tmpCube.getMetaDataFilepath())
+     val carbonLock = CarbonLockFactory.getCarbonLockObj(tmpCube.getMetaDataFilepath(),LockUsage.METADATA_LOCK)
     try {
       if (carbonLock.lockWithRetries()) {
         logInfo("Successfully able to get the cube metadata file lock")
@@ -1491,7 +1492,7 @@ private[sql] case class LoadCubeAPI(schemaName: String, cubeName: String, factPa
     var kettleHomePath = sqlContext.getConf("carbon.kettle.home", null)
     if (kettleHomePath == null) sys.error(s"carbon.kettle.home is not set")
 
-    val carbonLock = new MetadataLock(CarbonMetadata.getInstance().getCube(schemaName + "_" + cubeName).getMetaDataFilepath())
+    val carbonLock = CarbonLockFactory.getCarbonLockObj(CarbonMetadata.getInstance().getCube(schemaName + "_" + cubeName).getMetaDataFilepath(),LockUsage.METADATA_LOCK)
     try {
       CarbonDataRDDFactory.loadCarbonData(sqlContext, carbonLoadModel, storeLocation, relation.cubeMeta.dataPath, kettleHomePath, relation.cubeMeta.partitioner, columinar, false);
 
@@ -1526,7 +1527,7 @@ private[sql] case class LoadCube(
       LOGGER.audit("Data loading failed. cube not found: " + schemaName + "_" + cubeName)
       sys.error("Data loading failed. cube not found: " + schemaName + "_" + cubeName)
     }
-    val carbonLock = new MetadataLock(CarbonMetadata.getInstance().getCube(schemaName + "_" + cubeName).getMetaDataFilepath())
+    val carbonLock = CarbonLockFactory.getCarbonLockObj(CarbonMetadata.getInstance().getCube(schemaName + "_" + cubeName).getMetaDataFilepath(),LockUsage.METADATA_LOCK)
     try {
       if (carbonLock.lockWithRetries()) {
         logInfo("Successfully able to get the cube metadata file lock")
@@ -1698,7 +1699,7 @@ private[sql] case class AddAggregatesToCube(
     val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog.lookupRelation1(Option(schemaName), cubeName, None)(sqlContext).asInstanceOf[CarbonRelation]
     if (relation == null) sys.error(s"Cube $schemaName.$cubeName does not exist")
     if (aggregateAttributes.size == 0) sys.error(s"No columns found in the query. Please provide the valid column names to create an aggregate table successfully")
-    val carbonLock = new MetadataLock(CarbonMetadata.getInstance().getCube(schemaName + "_" + cubeName).getMetaDataFilepath())
+    val carbonLock =  CarbonLockFactory.getCarbonLockObj(CarbonMetadata.getInstance().getCube(schemaName + "_" + cubeName).getMetaDataFilepath(),LockUsage.METADATA_LOCK)
     try {
       if (carbonLock.lockWithRetries()) {
         logInfo("Successfully able to get the cube metadata file lock")
@@ -2001,8 +2002,7 @@ private[sql] case class DropCubeCommand(ifExistsSet: Boolean, schemaNameOp: Opti
       }
     }
     else {
-      val carbonLock = new MetadataLock(tmpCube.getMetaDataFilepath())
-
+      val carbonLock =  CarbonLockFactory.getCarbonLockObj(tmpCube.getMetaDataFilepath(),LockUsage.METADATA_LOCK)
       try {
         if (carbonLock.lockWithRetries()) {
           logInfo("Successfully able to get the cube metadata file lock")

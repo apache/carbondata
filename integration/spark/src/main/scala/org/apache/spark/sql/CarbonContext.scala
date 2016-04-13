@@ -35,6 +35,7 @@ import org.apache.spark.sql.hive._
 import org.apache.spark.sql.jdbc.JdbcResultSetRDD
 import org.apache.spark.sql.types.StructType
 import org.carbondata.common.logging.LogServiceFactory
+import org.carbondata.core.util.CarbonProperties
 import org.carbondata.integration.spark.agg.FlattenExpr
 import org.carbondata.integration.spark.rdd.{CarbonDataFrameRDD, SchemaRDDExt}
 import org.carbondata.integration.spark.util.CarbonSparkInterFaceLogEvent
@@ -300,6 +301,11 @@ object CarbonContext {
     if (null != carbonPropertiesFilePath && null == systemcarbonPropertiesFilePath) {
       System.setProperty("carbon.properties.filepath", carbonPropertiesFilePath + "/" + "carbon.properties")
     }
+    // configuring the zookeeper URl .
+    var zooKeeperUrl = hiveContext.getConf("spark.deploy.zookeeper.url","127.0.0.1:2181")
+
+    CarbonProperties.getInstance().addProperty("spark.deploy.zookeeper.url",zooKeeperUrl)
+
   }
 
 }

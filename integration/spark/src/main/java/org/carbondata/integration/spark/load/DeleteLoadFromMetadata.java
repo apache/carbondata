@@ -35,7 +35,6 @@ import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.google.gson.Gson;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
@@ -44,11 +43,14 @@ import org.carbondata.core.datastorage.store.fileperations.AtomicFileOperationsI
 import org.carbondata.core.datastorage.store.fileperations.FileWriteOperation;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.load.LoadMetadataDetails;
-import org.carbondata.core.locks.CarbonLock;
-import org.carbondata.core.locks.MetadataLock;
+import org.carbondata.core.locks.CarbonLockFactory;
+import org.carbondata.core.locks.ICarbonLock;
+import org.carbondata.core.locks.LockUsage;
 import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.integration.spark.util.CarbonSparkInterFaceLogEvent;
+
+import com.google.gson.Gson;
 
 public final class DeleteLoadFromMetadata {
 
@@ -60,7 +62,7 @@ public final class DeleteLoadFromMetadata {
     }
 
     public static List<String> updateDeletionStatus(List<String> loadIds, String cubeFolderPath) {
-        CarbonLock carbonLock = new MetadataLock(cubeFolderPath);
+        ICarbonLock carbonLock =  CarbonLockFactory.getCarbonLockObj(cubeFolderPath, LockUsage.METADATA_LOCK);
         BufferedWriter brWriter = null;
         List<String> invalidLoadIds = new ArrayList<String>(0);
         try {
@@ -136,7 +138,7 @@ public final class DeleteLoadFromMetadata {
         return invalidLoadIds;
     }
 
-    public static void fileUnlock(CarbonLock carbonLock) {
+    public static void fileUnlock(ICarbonLock carbonLock) {
         if (carbonLock.unlock()) {
             LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "Metadata lock has been successfully released");
