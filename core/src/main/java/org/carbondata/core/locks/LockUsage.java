@@ -19,10 +19,9 @@
 package org.carbondata.core.locks;
 
 /**
- * @author ravikiran
- *         This enum is used to define the usecase of the lock.
- *         Each enum value is one specific lock case.
+ * This enum is used to define the usecase of the lock.
+ * Each enum value is one specific lock case.
  */
-public enum LockType {
+public enum LockUsage {
     METADATA_LOCK;
 }

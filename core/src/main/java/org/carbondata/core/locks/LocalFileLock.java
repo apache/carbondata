@@ -34,7 +34,6 @@ import java.nio.channels.OverlappingFileLockException;
 /**
  * This class handles the file locking in the local file system.
  * This will be handled using the file channel lock API.
- * @author Administrator
  */
 public class LocalFileLock extends AbstractCarbonLock {
     /**
@@ -43,9 +42,9 @@ public class LocalFileLock extends AbstractCarbonLock {
     private String location;
 
     /**
-     * lockType will determine the lock folder. so that similar locks will try to acquire same lock file.
+     * lockUsage will determine the lock folder. so that similar locks will try to acquire same lock file.
      */
-    private LockType lockType;
+    private LockUsage lockUsage;
 
     /**
      * fileOutputStream of the local lock file
@@ -71,12 +70,12 @@ public class LocalFileLock extends AbstractCarbonLock {
     /**
      *
      * @param location
-     * @param lockType
+     * @param lockUsage
      */
-    public LocalFileLock(String location, LockType lockType) {
-        this.lockType = lockType;
+    public LocalFileLock(String location, LockUsage lockUsage) {
+        this.lockUsage = lockUsage;
         this.location = location;
-        if (this.lockType == LockType.METADATA_LOCK) {
+        if (this.lockUsage == LockUsage.METADATA_LOCK) {
             this.location = location + File.separator + CarbonCommonConstants.METADATA_LOCK;
         }
         initRetry();

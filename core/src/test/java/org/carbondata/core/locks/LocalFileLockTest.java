@@ -31,15 +31,15 @@ public class LocalFileLockTest {
     }
 
     @Test
-    public void test() {
+    public void testingLocalFileLockingByAcquiring2Locks() {
 
         LocalFileLock localLock1 =
                 new LocalFileLock((new File(".").getAbsolutePath()) + "/src/test/resources",
-                        LockType.METADATA_LOCK);
+                        LockUsage.METADATA_LOCK);
         Assert.assertTrue(localLock1.lock());
         LocalFileLock localLock2 =
                 new LocalFileLock((new File(".").getAbsolutePath()) + "/src/test/resources",
-                        LockType.METADATA_LOCK);
+                        LockUsage.METADATA_LOCK);
         Assert.assertTrue(!localLock2.lock());
 
         Assert.assertTrue(localLock1.unlock());

@@ -28,8 +28,6 @@ import java.io.IOException;
 /**
  * This class is used to handle the HDFS File locking.This is acheived using the concept of acquiring the data
  * out stream using Append option.
- *
- * @author Administrator
  */
 public class HdfsFileLock extends AbstractCarbonLock {
 
@@ -39,20 +37,20 @@ public class HdfsFileLock extends AbstractCarbonLock {
     private String location;
 
     /**
-     * lockType is used to determine the type of the lock. according to this the lock folder will change.
+     * lockUsage is used to determine the type of the lock. according to this the lock folder will change.
      */
-    private LockType lockType;
+    private LockUsage lockUsage;
 
     private DataOutputStream dataOutputStream;
 
     /**
      * @param location
-     * @param lockType
+     * @param lockUsage
      */
-    public HdfsFileLock(String location, LockType lockType) {
+    public HdfsFileLock(String location, LockUsage lockUsage) {
         this.location = location;
-        this.lockType = lockType;
-        if (this.lockType == LockType.METADATA_LOCK) {
+        this.lockUsage = lockUsage;
+        if (this.lockUsage == LockUsage.METADATA_LOCK) {
             this.location = location + File.separator + CarbonCommonConstants.METADATA_LOCK;
         }
         initRetry();

@@ -32,8 +32,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * @author ravikiran
- *         For Handling the zookeeper locking implementation
+ * For Handling the zookeeper locking implementation
  */
 public class ZooKeeperLocking extends AbstractCarbonLock {
 
@@ -103,15 +102,15 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
     }
 
     /**
-     * @param lockType
+     * @param lockUsage
      */
-    public ZooKeeperLocking(LockType lockType) {
+    public ZooKeeperLocking(LockUsage lockUsage) {
         this.lockName = CarbonCommonConstants.METADATA_LOCK;
         this.lockTypeFolder = zooKeeperLocation;
 
-        if (lockType == LockType.METADATA_LOCK) {
+        if (lockUsage == LockUsage.METADATA_LOCK) {
             this.lockTypeFolder =
-                    zooKeeperLocation + CarbonCommonConstants.FILE_SEPARATOR + lockType.toString();
+                    zooKeeperLocation + CarbonCommonConstants.FILE_SEPARATOR + lockUsage.toString();
             // creating a znode in which all the znodes (lock files )are maintained.
             try {
                 // if exists returns null then path doesnt exist. so creating.

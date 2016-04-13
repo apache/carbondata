@@ -19,8 +19,7 @@
 package org.carbondata.core.locks;
 
 /**
- * @author Administrator
- *         Carbon Lock Interface which handles the locking and unlocking.
+ * Carbon Lock Interface which handles the locking and unlocking.
  */
 public interface ICarbonLock {
 

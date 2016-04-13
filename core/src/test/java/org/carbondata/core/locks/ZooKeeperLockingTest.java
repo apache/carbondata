@@ -61,7 +61,7 @@ public class ZooKeeperLockingTest {
     }
 
     @Test
-    public void test() throws IllegalArgumentException, IllegalAccessException, NoSuchFieldException,
+    public void testZooKeeperLockingByTryingToAcquire2Locks() throws IllegalArgumentException, IllegalAccessException, NoSuchFieldException,
             SecurityException {
 
         final CarbonProperties cp = CarbonProperties.getInstance();
@@ -74,10 +74,10 @@ public class ZooKeeperLockingTest {
             }
         };
 
-        ZooKeeperLocking zkl = new ZooKeeperLocking(LockType.METADATA_LOCK);
+        ZooKeeperLocking zkl = new ZooKeeperLocking(LockUsage.METADATA_LOCK);
         Assert.assertTrue(zkl.lock());
 
-        ZooKeeperLocking zk2 = new ZooKeeperLocking(LockType.METADATA_LOCK);
+        ZooKeeperLocking zk2 = new ZooKeeperLocking(LockUsage.METADATA_LOCK);
         Assert.assertTrue(!zk2.lock());
 
         Assert.assertTrue(zkl.unlock());

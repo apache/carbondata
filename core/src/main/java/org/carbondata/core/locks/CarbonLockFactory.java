@@ -24,9 +24,8 @@ import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
 import org.carbondata.core.util.CarbonProperties;
 
 /**
- * @author Ravikiran
- *         This class is a Lock factory class which is used to provide lock objects.
- *         Using this lock object client can request the lock and unlock.
+ * This class is a Lock factory class which is used to provide lock objects.
+ * Using this lock object client can request the lock and unlock.
  */
 public class CarbonLockFactory {
 
@@ -43,17 +42,17 @@ public class CarbonLockFactory {
      * This method will determine the lock type.
      *
      * @param Location
-     * @param lockType
+     * @param lockUsage
      * @return
      */
-    public static ICarbonLock getCarbonLockObj(String location, LockType lockType) {
+    public static ICarbonLock getCarbonLockObj(String location, LockUsage lockUsage) {
         if (FileFactory.getFileType(location) == FileType.LOCAL) {
-            return new LocalFileLock(location, lockType);
+            return new LocalFileLock(location, lockUsage);
         } else if (isZookeeperEnabled) {
 
-            return new ZooKeeperLocking(lockType);
+            return new ZooKeeperLocking(lockUsage);
         } else {
-            return new HdfsFileLock(location, lockType);
+            return new HdfsFileLock(location, lockUsage);
         }
 
     }

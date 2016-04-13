@@ -45,7 +45,7 @@ import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.load.LoadMetadataDetails;
 import org.carbondata.core.locks.CarbonLockFactory;
 import org.carbondata.core.locks.ICarbonLock;
-import org.carbondata.core.locks.LockType;
+import org.carbondata.core.locks.LockUsage;
 import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.integration.spark.util.CarbonSparkInterFaceLogEvent;
@@ -62,7 +62,7 @@ public final class DeleteLoadFromMetadata {
     }
 
     public static List<String> updateDeletionStatus(List<String> loadIds, String cubeFolderPath) {
-        ICarbonLock carbonLock =  CarbonLockFactory.getCarbonLockObj(cubeFolderPath,LockType.METADATA_LOCK);
+        ICarbonLock carbonLock =  CarbonLockFactory.getCarbonLockObj(cubeFolderPath, LockUsage.METADATA_LOCK);
         BufferedWriter brWriter = null;
         List<String> invalidLoadIds = new ArrayList<String>(0);
         try {

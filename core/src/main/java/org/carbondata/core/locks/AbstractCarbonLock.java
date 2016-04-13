@@ -23,9 +23,8 @@ import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.CarbonProperties;
 
 /**
- * @author ravikiran
- *         This is the abstract class of the lock implementations.This handles the
- *         retrying part of the locking.
+ * This is the abstract class of the lock implementations.This handles the
+ * retrying part of the locking.
  */
 public abstract class AbstractCarbonLock implements ICarbonLock {
     private int retryCount;
