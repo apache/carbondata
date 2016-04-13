@@ -19,8 +19,6 @@
 package org.carbondata.core.locks;
 
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.datastorage.store.impl.FileFactory;
-import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
 import org.carbondata.core.util.CarbonProperties;
 
 /**
@@ -30,9 +28,9 @@ import org.carbondata.core.util.CarbonProperties;
 public class CarbonLockFactory {
 
     /**
-     * isZookeeperEnabled to check if zookeeper feature is enabled or not for carbon.
+     * lockTypeConfigured to check if zookeeper feature is enabled or not for carbon.
      */
-    private static boolean isZookeeperEnabled;
+    private static String lockTypeConfigured;
 
     static {
         CarbonLockFactory.updateZooKeeperLockingStatus();
@@ -46,13 +44,18 @@ public class CarbonLockFactory {
      * @return
      */
     public static ICarbonLock getCarbonLockObj(String location, LockUsage lockUsage) {
-        if (FileFactory.getFileType(location) == FileType.LOCAL) {
-            return new LocalFileLock(location, lockUsage);
-        } else if (isZookeeperEnabled) {
+        switch (lockTypeConfigured.toUpperCase()) {
+            case "LOCALLOCK":
+                return new LocalFileLock(location, lockUsage);
 
-            return new ZooKeeperLocking(lockUsage);
-        } else {
-            return new HdfsFileLock(location, lockUsage);
+            case "ZOOKEEPERLOCK":
+                return new ZooKeeperLocking(lockUsage);
+
+            case "HDFSLOCK":
+                return new HdfsFileLock(location, lockUsage);
+
+            default:
+                throw new UnsupportedOperationException("Not supported the lock type");
         }
 
     }
@@ -61,15 +64,7 @@ public class CarbonLockFactory {
      * This method will set the zookeeper status whether zookeeper to be used for locking or not.
      */
     private static void updateZooKeeperLockingStatus() {
-        isZookeeperEnabled = CarbonCommonConstants.ZOOKEEPER_ENABLE_DEFAULT;
-        if (CarbonProperties.getInstance().getProperty(CarbonCommonConstants.ZOOKEEPER_ENABLE_LOCK)
-                .equalsIgnoreCase("false")) {
-            isZookeeperEnabled = false;
-        } else if (CarbonProperties.getInstance()
-                .getProperty(CarbonCommonConstants.ZOOKEEPER_ENABLE_LOCK)
-                .equalsIgnoreCase("true")) {
-            isZookeeperEnabled = true;
-        }
+        lockTypeConfigured = CarbonProperties.getInstance().getProperty(CarbonCommonConstants.LOCK_TYPE, CarbonCommonConstants.LOCK_TYPE_DEFAULT);
 
     }
 

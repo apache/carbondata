@@ -61,33 +61,58 @@ public class LocalFileLock extends AbstractCarbonLock {
      */
     private FileLock fileLock;
 
+    public static String tmpPath;
+
+    private String cubeName;
+
+    private String schemaName;
+
     /**
      * LOGGER for  logging the messages.
      */
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(LocalFileLock.class.getName());
 
+    static {
+        tmpPath = System.getProperty("java.io.tmpdir");
+    }
+
     /**
-     *
      * @param location
      * @param lockUsage
      */
     public LocalFileLock(String location, LockUsage lockUsage) {
         this.lockUsage = lockUsage;
-        this.location = location;
+        location = location.replace("\\", "/");
+        String tempStr = location.substring(0, location.lastIndexOf('/'));
+        schemaName = tempStr.substring(tempStr.lastIndexOf('/') + 1, tempStr.length());
+
+        cubeName = location.substring(location.lastIndexOf('/') + 1, location.length());
         if (this.lockUsage == LockUsage.METADATA_LOCK) {
-            this.location = location + File.separator + CarbonCommonConstants.METADATA_LOCK;
+            this.location = tmpPath + File.separator + schemaName + File.separator + cubeName + File.separator + CarbonCommonConstants.METADATA_LOCK;
         }
         initRetry();
     }
 
     /**
      * Lock API for locking of the file channel of the lock file.
+     *
      * @return
      */
     @Override
     public boolean lock() {
         try {
+            String schemaFolderPath = tmpPath + File.separator + schemaName;
+            String cubeFolderPath = schemaFolderPath + File.separator + cubeName;
+            // create dir with schema name in tmp location.
+            if (!FileFactory.isFileExist(schemaFolderPath, FileFactory.getFileType(tmpPath))) {
+                FileFactory.mkdirs(schemaFolderPath, FileFactory.getFileType(tmpPath));
+            }
+
+            // create dir with cube name in tmp location.
+            if (!FileFactory.isFileExist(cubeFolderPath, FileFactory.getFileType(tmpPath))) {
+                FileFactory.mkdirs(cubeFolderPath, FileFactory.getFileType(tmpPath));
+            }
             if (!FileFactory.isFileExist(location, FileFactory.getFileType(location))) {
                 FileFactory.createNewLockFile(location, FileFactory.getFileType(location));
             }
@@ -112,6 +137,7 @@ public class LocalFileLock extends AbstractCarbonLock {
 
     /**
      * Unlock API for unlocking of the acquired lock.
+     *
      * @return
      */
     @Override
