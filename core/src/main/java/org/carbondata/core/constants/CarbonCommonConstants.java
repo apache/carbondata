@@ -1441,6 +1441,21 @@ public final class CarbonCommonConstants {
      */
     public static final String DICTIONARY_ONE_CHUNK_SIZE_DEFAULT = "10000";
 
+    /**
+     * xxhash algorithm property for hashmap
+     */
+    public static final String ENABLE_XXHASH = "carbon.enableXXHash";
+
+    /**
+     * xxhash algorithm property for hashmap. Default value false
+     */
+    public static final String ENABLE_XXHASH_DEFAULT = "false";
+
+    /**
+     * default charset to be used for reading and writing
+     */
+    public static final String DEFAULT_CHARSET = "UTF-8";
+
     private CarbonCommonConstants() {
 
     }

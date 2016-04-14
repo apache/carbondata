@@ -26,6 +26,7 @@ import java.util.concurrent.*;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.cache.Cacheable;
 import org.carbondata.core.carbon.CarbonDef;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
@@ -37,7 +38,7 @@ import org.carbondata.core.metadata.CarbonMetadata;
 import org.carbondata.core.metadata.CarbonMetadata.Cube;
 import org.carbondata.core.metadata.SliceMetaData;
 import org.carbondata.core.util.CarbonUtil;
-import org.carbondata.query.datastorage.cache.CarbonLRULevelCache;
+import org.carbondata.core.cache.CarbonLRUCache;
 import org.carbondata.query.datastorage.cache.LevelInfo;
 import org.carbondata.query.scope.QueryScopeObject;
 import org.carbondata.query.util.CarbonEngineLogEvent;
@@ -161,7 +162,6 @@ public final class InMemoryTableStore {
         cubeSliceMap.remove(cubeKey);
         queryExecuteStatusMap.remove(cubeKey);
         cubeNameAndCubeMap.remove(cubeKey);
-        clearLevelLRUCache(cubeKey);
     }
 
     /**
@@ -169,16 +169,6 @@ public final class InMemoryTableStore {
      */
     public void clearTableAndCurrentRSMap(String key) {
         tableAndCurrentRSMap.remove(key);
-    }
-
-    /**
-     * @param cubeKey
-     */
-    public void clearLevelLRUCache(String cubeKey) {
-        if (isLevelCacheEnabled()) {
-            CarbonLRULevelCache levelCache = CarbonLRULevelCache.getInstance();
-            levelCache.removeAllKeysForGivenCube(cubeKey);
-        }
     }
 
     /**
@@ -587,8 +577,8 @@ public final class InMemoryTableStore {
      * This method will update the level access count in level LRU cache
      */
     public void updateLevelAccessCountInLRUCache(final String levelCacheUniqueId) {
-        CarbonLRULevelCache instance = CarbonLRULevelCache.getInstance();
-        LevelInfo levelInfo = instance.get(levelCacheUniqueId);
+        CarbonLRUCache instance = null;
+        LevelInfo levelInfo = (LevelInfo)instance.get(levelCacheUniqueId);
         if (null != levelInfo) {
             if (levelInfo.getAccessCount() > 0) {
                 levelInfo.decrementAccessCount();
@@ -605,10 +595,6 @@ public final class InMemoryTableStore {
      * @return
      */
     public boolean isLevelCacheEnabled() {
-        CarbonLRULevelCache levelCacheInstance = CarbonLRULevelCache.getInstance();
-        if (levelCacheInstance.getLRUCacheSize() >= 0) {
-            return true;
-        }
         return false;
     }
 
@@ -667,7 +653,7 @@ public final class InMemoryTableStore {
      */
     private void checkAndAddToUnloadedLevelList(List<String> levelCacheKeys,
             List<LevelInfo> notLoadedLevels, String key) {
-        LevelInfo levelInfo = CarbonLRULevelCache.getInstance().get(key);
+        LevelInfo levelInfo = null;
         if (null != levelInfo) {
             if (!levelInfo.isLoaded()) {
                 notLoadedLevels.add(levelInfo);
@@ -691,8 +677,8 @@ public final class InMemoryTableStore {
             levelInfo = iterator.next();
             if (levelInfo.isLoaded()) {
                 levelInfo.incrementAccessCount();
-                levelCacheKeys.add(cubeUniqueName + '_' + levelInfo.getLoadName() + '_' + levelInfo
-                        .getColumn());
+//                levelCacheKeys.add(cubeUniqueName + '_' + levelInfo.getLoadName() + '_' + levelInfo
+//                        .getColumn());
                 iterator.remove();
             }
         }
@@ -711,11 +697,11 @@ public final class InMemoryTableStore {
         for (LevelInfo info : notLoadedLevels) {
             for (InMemoryTable slice : activeSlices) {
                 // check slice load number level info load name
-                if (!slice.getLoadName().equals(info.getLoadName()) || !slice.getTableName()
-                        .equals(info.getTableName())) {
-                    continue;
-                }
-                dimensionCache = slice.getDimensionAndHierarchyCache(info.getName());
+//                if (!slice.getLoadName().equals(info.getLoadName()) || !slice.getTableName()
+//                        .equals(info.getTableName())) {
+//                    continue;
+//                }
+//                dimensionCache = slice.getDimensionAndHierarchyCache(info.getName());
                 if (null != dimensionCache) {
                     // add size check here and set loaded false in case
                     // level
@@ -727,11 +713,10 @@ public final class InMemoryTableStore {
                     // then only one should go ahead and load that level
                     synchronized (info) {
                         dimensionCache
-                                .processCacheFromFileStore(info.getFilePath(), executorService);
+                                .processCacheFromFileStore("", executorService);
                     }
-                    CarbonLRULevelCache levelCacheInstance = CarbonLRULevelCache.getInstance();
-                    String key = cubeUniqueName + '_' + info.getLoadName() + '_' + info.getColumn();
-                    levelCacheInstance.loadLevelInCache(key);
+                    CarbonLRUCache levelCacheInstance = null;
+                    String key = cubeUniqueName;
                     info.incrementAccessCount();
                     levelCacheKey.add(key);
                     break;
@@ -759,13 +744,13 @@ public final class InMemoryTableStore {
      * @return
      */
     private boolean checkAndRemoveFromLevelLRUCache(LevelInfo info) {
-        CarbonLRULevelCache levelCache = CarbonLRULevelCache.getInstance();
+        CarbonLRUCache levelCache = null;
         // check if required size is greater than total LRU cache size
         if (canRequiredLevelBeLoaded(info, levelCache)) {
             // check if available size is LRU cache is sufficient to load the
             // required level
             if (isLevelDeletionFromCacheRequired(info, levelCache)) {
-                List<String> keysToBeRemoved = levelCache.getKeysToBeremoved(info.getFileSize());
+                List<String> keysToBeRemoved = null;
                 // this scenario will come when all the levels loaded in memory
                 // are getting used or levels that can be unloaded from memory
                 // does not free up the sufficient space
@@ -775,9 +760,8 @@ public final class InMemoryTableStore {
                 for (String key : keysToBeRemoved) {
                     String cubeUniqueName =
                             key.substring(0, (key.indexOf(CarbonCommonConstants.LOAD_FOLDER) - 1));
-                    LevelInfo levelInfo = levelCache.get(key);
+                    Cacheable levelInfo = levelCache.get(key);
                     unloadLevelFile(cubeUniqueName, levelInfo);
-                    levelCache.unloadLevelInCache(key);
                 }
             }
             return true;
@@ -790,22 +774,15 @@ public final class InMemoryTableStore {
      * @return
      */
     private boolean isLevelDeletionFromCacheRequired(LevelInfo info,
-            CarbonLRULevelCache levelCache) {
-        long requiredSize = info.getFileSize() + levelCache.getCurrentSize();
-        if (requiredSize <= levelCache.getLRUCacheSize()) {
-            return false;
-        }
-        return true;
+            CarbonLRUCache levelCache) {
+        return false;
     }
 
     /**
      * @param info
      * @return
      */
-    private boolean canRequiredLevelBeLoaded(LevelInfo info, CarbonLRULevelCache levelCache) {
-        if (info.getFileSize() > levelCache.getLRUCacheSize()) {
-            return false;
-        }
+    private boolean canRequiredLevelBeLoaded(LevelInfo info, CarbonLRUCache levelCache) {
         return true;
     }
 
@@ -813,26 +790,26 @@ public final class InMemoryTableStore {
      * @param cubeUniqueName
      * @param levelInfo
      */
-    public void unloadLevelFile(String cubeUniqueName, LevelInfo levelInfo) {
+    public void unloadLevelFile(String cubeUniqueName, Cacheable levelInfo) {
         DimensionHierarichyStore dimensionCache = null;
         List<InMemoryTable> activeSlices = getInstance().getActiveSlices(cubeUniqueName);
-        for (InMemoryTable slice : activeSlices) {
-            // check slice load number with load id
-            if (!slice.getLoadName().equals(levelInfo.getLoadName()) || !slice.getTableName()
-                    .equals(levelInfo.getTableName())) {
-                continue;
-            }
-            dimensionCache = slice.getDimensionAndHierarchyCache(levelInfo.getName());
-            if (null != dimensionCache) {
-                dimensionCache.unloadLevelFile(levelInfo.getTableName(), levelInfo.getName(),
-                        levelInfo.getName(), levelInfo.getColumn());
-                LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-                        "*****unloaded level file for cube " + cubeUniqueName
-                                + " with level name as " + levelInfo.getLoadName() + '_' + levelInfo
-                                .getColumn());
-                break;
-            }
-        }
+//        for (InMemoryTable slice : activeSlices) {
+//            // check slice load number with load id
+//            if (!slice.getLoadName().equals(levelInfo.getLoadName()) || !slice.getTableName()
+//                    .equals(levelInfo.getTableName())) {
+//                continue;
+//            }
+//            dimensionCache = slice.getDimensionAndHierarchyCache(levelInfo.getName());
+//            if (null != dimensionCache) {
+//                dimensionCache.unloadLevelFile(levelInfo.getTableName(), levelInfo.getName(),
+//                        levelInfo.getName(), levelInfo.getColumn());
+//                LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
+//                        "*****unloaded level file for cube " + cubeUniqueName
+//                                + " with level name as " + levelInfo.getLoadName() + '_' + levelInfo
+//                                .getColumn());
+//                break;
+//            }
+//        }
     }
 
     private SliceMetaData readSliceMetaDataFile(String path) {

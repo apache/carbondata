@@ -17,45 +17,47 @@
  * under the License.
  */
 
-package org.carbondata.core.carbon;
+package org.carbondata.core.cache.dictionary;
 
-import java.io.Serializable;
+import org.carbondata.core.carbon.CarbonTableIdentifier;
 
 /**
- * Identifier class which will hold the table qualified name
+ * dictionary column identifier which includes table identifier and column identifier
  */
-public class CarbonTableIdentifier implements Serializable{
+public class DictionaryColumnUniqueIdentifier {
 
     /**
-     * database name
+     * table fully qualified name
      */
-    private String databaseName;
+    private CarbonTableIdentifier carbonTableIdentifier;
 
     /**
-     * table name
+     * unique column id
      */
-    private String tableName;
+    private String columnIdentifier;
 
     /**
-     * constructor
+     * @param carbonTableIdentifier
+     * @param columnIdentifier
      */
-    public CarbonTableIdentifier(String databaseName, String tableName) {
-        this.databaseName = databaseName;
-        this.tableName = tableName;
+    public DictionaryColumnUniqueIdentifier(CarbonTableIdentifier carbonTableIdentifier,
+            String columnIdentifier) {
+        this.carbonTableIdentifier = carbonTableIdentifier;
+        this.columnIdentifier = columnIdentifier;
     }
 
     /**
-     * return database name
+     * @return table identifier
      */
-    public String getDatabaseName() {
-        return databaseName;
+    public CarbonTableIdentifier getCarbonTableIdentifier() {
+        return carbonTableIdentifier;
     }
 
     /**
-     * return table name
+     * @return columnIdentifier
      */
-    public String getTableName() {
-        return tableName;
+    public String getColumnIdentifier() {
+        return columnIdentifier;
     }
 
     /**
@@ -67,9 +69,9 @@ public class CarbonTableIdentifier implements Serializable{
     @Override public boolean equals(Object other) {
         if (this == other) return true;
         if (other == null || getClass() != other.getClass()) return false;
-        CarbonTableIdentifier that = (CarbonTableIdentifier) other;
-        if (!databaseName.equals(that.databaseName)) return false;
-        return tableName.equals(that.tableName);
+        DictionaryColumnUniqueIdentifier that = (DictionaryColumnUniqueIdentifier) other;
+        if (!carbonTableIdentifier.equals(that.carbonTableIdentifier)) return false;
+        return columnIdentifier.equals(that.columnIdentifier);
 
     }
 
@@ -79,8 +81,8 @@ public class CarbonTableIdentifier implements Serializable{
      * @return
      */
     @Override public int hashCode() {
-        int result = databaseName.hashCode();
-        result = 31 * result + tableName.hashCode();
+        int result = carbonTableIdentifier.hashCode();
+        result = 31 * result + columnIdentifier.hashCode();
         return result;
     }
 }

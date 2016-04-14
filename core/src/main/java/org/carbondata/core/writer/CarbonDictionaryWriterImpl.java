@@ -165,7 +165,8 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
         }
         // if one chunk size is equal to list size then write the data to file
         checkAndWriteDictionaryChunkToFile();
-        oneDictionaryChunkList.add(ByteBuffer.wrap(value.getBytes(Charset.defaultCharset())));
+        oneDictionaryChunkList.add(ByteBuffer
+                .wrap(value.getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET))));
         totalRecordCount++;
     }
 

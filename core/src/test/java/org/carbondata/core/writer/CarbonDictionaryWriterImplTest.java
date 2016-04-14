@@ -58,12 +58,6 @@ import static org.junit.Assert.assertTrue;
  */
 public class CarbonDictionaryWriterImplTest {
 
-    /**
-     * one segment entry length
-     * 4 byte each for segmentId, min, max value and 8 byte for endOffset which is of long type
-     */
-    private static final int ONE_SEGMENT_DETAIL_LENGTH = 20;
-
     private static final String PROPERTY_FILE_NAME = "carbonTest.properties";
 
     private CarbonTableIdentifier carbonTableIdentifier;
@@ -72,7 +66,7 @@ public class CarbonDictionaryWriterImplTest {
 
     private String tableName;
 
-    private String hdfsStorePath;
+    private String carbonStorePath;
 
     private String columnIdentifier;
 
@@ -103,7 +97,7 @@ public class CarbonDictionaryWriterImplTest {
         init();
         this.databaseName = props.getProperty("database", "testSchema");
         this.tableName = props.getProperty("tableName", "carbon");
-        this.hdfsStorePath = props.getProperty("storePath", "carbonStore");
+        this.carbonStorePath = props.getProperty("storePath", "carbonStore");
         this.columnIdentifier = "Name";
         carbonTableIdentifier = new CarbonTableIdentifier(databaseName, tableName);
         deleteStorePath();
@@ -203,7 +197,7 @@ public class CarbonDictionaryWriterImplTest {
      */
     private CarbonDictionaryWriterImpl prepareWriter(boolean isSharedDimension) {
         initDictionaryDirPaths(isSharedDimension);
-        return new CarbonDictionaryWriterImpl(this.hdfsStorePath, carbonTableIdentifier,
+        return new CarbonDictionaryWriterImpl(this.carbonStorePath, carbonTableIdentifier,
                 columnIdentifier, isSharedDimension);
     }
 
@@ -232,9 +226,9 @@ public class CarbonDictionaryWriterImplTest {
             } finally {
                 writer.close();
             }
-            FileFactory.FileType fileType = FileFactory.getFileType(this.hdfsStorePath);
+            FileFactory.FileType fileType = FileFactory.getFileType(this.carbonStorePath);
             // check for file existence and assert
-            boolean fileExist = FileFactory.isFileExist(this.hdfsStorePath, fileType);
+            boolean fileExist = FileFactory.isFileExist(this.carbonStorePath, fileType);
             assertFalse(fileExist);
         } catch (IOException e) {
             e.printStackTrace();
@@ -315,7 +309,7 @@ public class CarbonDictionaryWriterImplTest {
      */
     private String createDictionaryDirectory(boolean isSharedDimension) {
         String directoryPath = CarbonDictionaryUtil
-                .getDirectoryPath(carbonTableIdentifier, hdfsStorePath, isSharedDimension);
+                .getDirectoryPath(carbonTableIdentifier, carbonStorePath, isSharedDimension);
         String dictionaryFilePath = CarbonDictionaryUtil
                 .getDictionaryFilePath(carbonTableIdentifier, directoryPath, columnIdentifier,
                         isSharedDimension);
@@ -408,7 +402,8 @@ public class CarbonDictionaryWriterImplTest {
             List<byte[]> dictionaryByteArrayList) {
         List<String> valueList = new ArrayList<>(dictionaryByteArrayList.size());
         for (byte[] value : dictionaryByteArrayList) {
-            valueList.add(new String(value, Charset.defaultCharset()));
+            valueList
+                    .add(new String(value, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
         }
         return valueList;
     }
@@ -469,7 +464,8 @@ public class CarbonDictionaryWriterImplTest {
     private List<byte[]> convertStringListToByteArray(List<String> valueList) {
         List<byte[]> byteArrayList = new ArrayList<>(valueList.size());
         for (String value : valueList) {
-            byteArrayList.add(value.getBytes(Charset.defaultCharset()));
+            byteArrayList
+                    .add(value.getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
         }
         return byteArrayList;
     }
@@ -505,7 +501,7 @@ public class CarbonDictionaryWriterImplTest {
     private List<CarbonDictionaryColumnMetaChunk> readDictionaryMetadataFile(
             boolean isSharedDimension) throws IOException {
         CarbonDictionaryMetadataReaderImpl columnMetadataReaderImpl =
-                new CarbonDictionaryMetadataReaderImpl(this.hdfsStorePath,
+                new CarbonDictionaryMetadataReaderImpl(this.carbonStorePath,
                         this.carbonTableIdentifier, this.columnIdentifier, isSharedDimension);
         List<CarbonDictionaryColumnMetaChunk> dictionaryMetaChunkList = null;
         // read metadata file
@@ -524,7 +520,7 @@ public class CarbonDictionaryWriterImplTest {
     private List<byte[]> readDictionaryFile(boolean isSharedDimension, long dictionaryStartOffset,
             long dictionaryEndOffset) throws IOException {
         CarbonDictionaryReaderImpl dictionaryReader =
-                new CarbonDictionaryReaderImpl(this.hdfsStorePath, this.carbonTableIdentifier,
+                new CarbonDictionaryReaderImpl(this.carbonStorePath, this.carbonTableIdentifier,
                         this.columnIdentifier, isSharedDimension);
         List<byte[]> dictionaryValues =
                 new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -545,8 +541,8 @@ public class CarbonDictionaryWriterImplTest {
      * this method will delete the store path
      */
     private void deleteStorePath() {
-        FileFactory.FileType fileType = FileFactory.getFileType(this.hdfsStorePath);
-        CarbonFile carbonFile = FileFactory.getCarbonFile(this.hdfsStorePath, fileType);
+        FileFactory.FileType fileType = FileFactory.getFileType(this.carbonStorePath);
+        CarbonFile carbonFile = FileFactory.getCarbonFile(this.carbonStorePath, fileType);
         deleteRecursiveSilent(carbonFile);
     }
 
@@ -592,7 +588,7 @@ public class CarbonDictionaryWriterImplTest {
      */
     private void initDictionaryDirPaths(boolean isSharedDimension) {
         this.directoryPath = CarbonDictionaryUtil
-                .getDirectoryPath(carbonTableIdentifier, hdfsStorePath, isSharedDimension);
+                .getDirectoryPath(carbonTableIdentifier, carbonStorePath, isSharedDimension);
         this.dictionaryFilePath = CarbonDictionaryUtil
                 .getDictionaryFilePath(carbonTableIdentifier, this.directoryPath, columnIdentifier,
                         isSharedDimension);

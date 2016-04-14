@@ -44,7 +44,7 @@ import org.carbondata.core.metadata.CarbonSchemaReader;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.CarbonUtilException;
 import org.carbondata.core.vo.HybridStoreModel;
-import org.carbondata.query.datastorage.cache.CarbonLRULevelCache;
+import org.carbondata.core.cache.CarbonLRUCache;
 import org.carbondata.query.datastorage.cache.LevelInfo;
 import org.carbondata.query.util.CacheUtil;
 import org.carbondata.query.util.CarbonEngineLogEvent;
@@ -126,7 +126,7 @@ public class InMemoryTable implements Comparable<InMemoryTable> {
     private int[] dimensionCardinality;
     private KeyGenerator keyGenerator;
     private String tableName;
-    private CarbonLRULevelCache levelCache;
+    private CarbonLRUCache levelCache;
     private Cube metaCube;
     private HybridStoreModel hybridStoreModel;
     /**
@@ -148,7 +148,6 @@ public class InMemoryTable implements Comparable<InMemoryTable> {
         this.cubeUniqueName = this.schemaName + '_' + this.cubeName;
         this.id = counter.incrementAndGet();
         this.factTableName = CarbonSchemaReader.getFactTableName(cube);
-        this.levelCache = CarbonLRULevelCache.getInstance();
         this.tableName = tableName;
         this.fileStore = fileStore;
         this.modificationTime = modificationTime;
@@ -288,10 +287,9 @@ public class InMemoryTable implements Comparable<InMemoryTable> {
                     if (null == levelCache.get(levelCacheKey)) {
                         long memberFileSize = CacheUtil.getMemberFileSize(fileName);
                         LevelInfo levelInfo =
-                                new LevelInfo(memberFileSize, dimension.name, levelActualName,
-                                        factTableName, fileStore, loadFolderName);
+                                new LevelInfo();
                         levelInfo.setLoaded(false);
-                        levelCache.put(levelCacheKey, levelInfo);
+                        levelCache.put(levelCacheKey, levelInfo, memberFileSize);
                     }
                 } else {
                     cache.processCacheFromFileStore(fileStore, executorService);

@@ -46,7 +46,7 @@ import org.carbondata.core.util.ValueCompressionUtil;
 import org.carbondata.query.aggregator.dimension.DimensionAggregatorInfo;
 import org.carbondata.query.datastorage.InMemoryTableStore;
 import org.carbondata.query.datastorage.cache.LevelInfo;
-import org.carbondata.query.datastorage.cache.CarbonLRULevelCache;
+import org.carbondata.core.cache.CarbonLRUCache;
 import org.carbondata.query.executer.CarbonQueryExecutorModel;
 import org.carbondata.query.executer.impl.topn.TopNModel;
 import org.carbondata.query.expression.BinaryExpression;
@@ -1301,7 +1301,7 @@ public final class CarbonQueryParseUtil {
         String levelCacheKey = null;
         String columnActualName = null;
         String cubeUniqueName = null;
-        CarbonLRULevelCache levelCacheInstance = CarbonLRULevelCache.getInstance();
+        CarbonLRUCache levelCacheInstance = null;
         for (String columnName : columns) {
             for (String loadName : listOfLoadFolders) {
                 for (int i = 0; i < partitionCount; i++) {
@@ -1313,7 +1313,7 @@ public final class CarbonQueryParseUtil {
                         Dimension dimension = cube.getDimension(columnName);
                         columnActualName = null != dimension ? dimension.getColName() : columnName;
                         levelCacheKey = cubeUniqueName + '_' + loadName + '_' + columnActualName;
-                        LevelInfo levelInfo = levelCacheInstance.get(levelCacheKey);
+                        LevelInfo levelInfo = null;
                         if (null != levelInfo) {
                             if (levelInfo.isLoaded()) {
                                 InMemoryTableStore.getInstance()
