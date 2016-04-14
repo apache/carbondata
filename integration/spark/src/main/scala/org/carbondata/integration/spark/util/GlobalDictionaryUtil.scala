@@ -249,10 +249,10 @@ object GlobalDictionaryUtil extends Logging {
    */
   def generateGlobalDictionary(sqlContext: SQLContext,
                                carbonLoadModel: CarbonLoadModel,
+                               hdfsLocation: String,
                                isSharedDimension: Boolean) = {
     val rtn = 1
     try {
-      val hdfsLocation = CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION_HDFS)
       val table = new CarbonTableIdentifier(carbonLoadModel.getSchemaName, carbonLoadModel.getTableName)
 
       //create dictionary folder if not exists
