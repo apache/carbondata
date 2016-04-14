@@ -289,8 +289,9 @@ public class SchemaRestructurer {
         newSliceMetaData.setMeasuresAggregator(
                 measureAggregators.toArray(new String[measureAggregators.size()]));
 
-        newSliceMetaData.setHeirAnKeySize(
-                CarbonSchemaParser.getHeirAndKeySizeMapForFact(cube.dimensions, schema));
+        //TO-DO need to pass new schema
+        /*newSliceMetaData.setHeirAnKeySize(
+                CarbonSchemaParser.getHeirAndKeySizeMapForFact(cube.dimensions, schema));*/
 
         int[] updatedCardinality =
                 ArrayUtils.toPrimitive(dimLens.toArray(new Integer[dimLens.size()]));

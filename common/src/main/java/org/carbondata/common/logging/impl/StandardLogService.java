@@ -102,7 +102,7 @@ public final class StandardLogService implements LogService {
         props.setProperty("log4j.logger.com.huawei", logLevel + ",stdout");
         props.setProperty("log4j.logger.com.huawei", logLevel + ",AUDL");
 
-    	/*PropertyConfigurator.configure(props);*/
+        /*PropertyConfigurator.configure(props);*/
         logger = Logger.getLogger(clazzName);
 
     }

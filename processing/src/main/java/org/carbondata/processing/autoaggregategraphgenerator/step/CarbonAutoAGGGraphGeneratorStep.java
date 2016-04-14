@@ -233,10 +233,11 @@ public class CarbonAutoAGGGraphGeneratorStep extends BaseStep implements StepInt
         model.setTableName(meta.getAggTables());
         model.setLoadNames(meta.getLoadNames());
         model.setModificationOrDeletionTime(meta.getModificationOrDeletionTime());
-        generator = new GraphGenerator(model, meta.isHDFSMode(), meta.getPartitionId(),
+        //TO-DO Generate graph for aggregate table from GraphGenerator instead of generating in CarbonAutoAGGGraphGeneratorStep
+        /*generator = new GraphGenerator(model, meta.isHDFSMode(), meta.getPartitionId(),
                 parseStringToSchema(meta.getSchema()), meta.getFactStoreLocation(),
                 meta.getCurrentRestructNumber(), 1);
-        getAllAggregateTableDetails(generator.getAllAggTables(), generator.getCube());
+        getAllAggregateTableDetails(generator.getAllAggTables(), generator.getCube());*/
     }
 
     private Schema parseStringToSchema(String schema) throws Exception {

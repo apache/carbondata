@@ -59,6 +59,11 @@ public class TableInfo implements Serializable {
      * last updated time to update the cube if any changes
      */
     private long lastUpdatedTime;
+    
+    /**
+     * metadata file path (check if it is really required )
+     */
+    private String metaDataFilepath;
 
     public TableInfo() {
         aggregateTableList =
@@ -163,6 +168,20 @@ public class TableInfo implements Serializable {
         this.lastUpdatedTime = lastUpdatedTime;
     }
 
+    /**
+     * @return
+     */
+    public String getMetaDataFilepath() {
+      return metaDataFilepath;
+    }
+    
+    /**
+     * @param metaDataFilepath
+     */
+    public void setMetaDataFilepath(String metaDataFilepath) {
+      this.metaDataFilepath = metaDataFilepath;
+    }
+    
     /**
      * to generate the hash code
      */

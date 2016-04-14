@@ -22,17 +22,39 @@
  */
 package org.carbondata.integration.spark.load;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 
-import com.google.gson.Gson;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.carbon.CarbonDataLoadSchema;
 import org.carbondata.core.carbon.CarbonDef;
-import org.carbondata.core.carbon.CarbonDef.*;
+import org.carbondata.core.carbon.CarbonDef.AggLevel;
+import org.carbondata.core.carbon.CarbonDef.AggMeasure;
+import org.carbondata.core.carbon.CarbonDef.AggName;
+import org.carbondata.core.carbon.CarbonDef.AggTable;
+import org.carbondata.core.carbon.CarbonDef.CubeDimension;
+import org.carbondata.core.carbon.CarbonDef.Level;
+import org.carbondata.core.carbon.CarbonDef.Measure;
+import org.carbondata.core.carbon.CarbonDef.Schema;
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.fileperations.AtomicFileOperations;
 import org.carbondata.core.datastorage.store.fileperations.AtomicFileOperationsImpl;
@@ -65,18 +87,20 @@ import org.carbondata.query.datastorage.InMemoryTable;
 import org.carbondata.query.datastorage.InMemoryTableStore;
 import org.carbondata.query.directinterface.impl.CarbonQueryParseUtil;
 
+import com.google.gson.Gson;
+
 public final class CarbonLoaderUtil {
 
     private static final LogService LOGGER =
-            LogServiceFactory.getLogService(CarbonLoaderUtil.class.getName());
+    		LogServiceFactory.getLogService(CarbonLoaderUtil.class.getName());
 
     private CarbonLoaderUtil() {
 
     }
 
     private static void generateGraph(IDataProcessStatus schmaModel, SchemaInfo info,
-            String tableName, String partitionID, Schema schema, String factStoreLocation,
-            int currentRestructNumber, List<LoadMetadataDetails> loadMetadataDetails)
+            String tableName, String partitionID, String factStoreLocation, int currentRestructNumber,
+            List<LoadMetadataDetails> loadMetadataDetails, CarbonDataLoadSchema carbonDataLoadSchema)
             throws GraphGeneratorException {
         DataLoadModel model = new DataLoadModel();
         model.setCsvLoad(
@@ -94,8 +118,8 @@ public final class CarbonLoaderUtil {
         int allocate =
                 null != schmaModel.getCsvFilePath() ? 1 : schmaModel.getFilesToProcess().size();
         GraphGenerator generator =
-                new GraphGenerator(model, hdfsReadMode, partitionID, schema, factStoreLocation,
-                        currentRestructNumber, allocate);
+                new GraphGenerator(model, hdfsReadMode, partitionID, factStoreLocation,
+                        currentRestructNumber, allocate,carbonDataLoadSchema);
         generator.generateGraph();
     }
 
@@ -155,13 +179,13 @@ public final class CarbonLoaderUtil {
         info.setComplexDelimiterLevel2(loadModel.getComplexDelimiterLevel2());
 
         generateGraph(schmaModel, info, loadModel.getTableName(), loadModel.getPartitionId(),
-                loadModel.getSchema(), loadModel.getFactStoreLocation(), currentRestructNumber,
-                loadModel.getLoadMetadataDetails());
+                loadModel.getFactStoreLocation(), currentRestructNumber,
+                loadModel.getLoadMetadataDetails(), loadModel.getCarbonDataLoadSchema());
 
         DataGraphExecuter graphExecuter = new DataGraphExecuter(schmaModel);
         graphExecuter.executeGraph(graphPath,
                 new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN), info,
-                loadModel.getPartitionId(), loadModel.getSchema());
+                loadModel.getPartitionId(), loadModel.getCarbonDataLoadSchema());
     }
 
     public static String[] getStorelocs(String schemaName, String cubeName, String factTableName,
@@ -743,12 +767,14 @@ public final class CarbonLoaderUtil {
 
         String dataLoadLocation = null;
         //String dataLoadLocation = getLoadFolderPath(loadModel);
-
-        dataLoadLocation =
+        dataLoadLocation = loadModel.getCarbonDataLoadSchema().getCarbonTable().getMetaDataFilepath()+ File.separator
+                + CarbonCommonConstants.LOADMETADATA_FILENAME
+                + CarbonCommonConstants.CARBON_METADATA_EXTENSION;
+       /* dataLoadLocation =
                 extractLoadMetadataFileLocation(loadModel.getSchema(), loadModel.getSchemaName(),
                         loadModel.getCubeName()) + File.separator
                         + CarbonCommonConstants.LOADMETADATA_FILENAME
-                        + CarbonCommonConstants.CARBON_METADATA_EXTENSION;
+                        + CarbonCommonConstants.CARBON_METADATA_EXTENSION;*/
         Gson gsonObjectToRead = new Gson();
         List<LoadMetadataDetails> listOfLoadFolderDetails = null;
         DataInputStream dataInputStream = null;
@@ -785,18 +811,21 @@ public final class CarbonLoaderUtil {
 
             CarbonUtil.closeStreams(dataInputStream);
         }
-        writeLoadMetadata(loadModel.getSchema(), loadModel.getSchemaName(), loadModel.getCubeName(),
+        writeLoadMetadata(loadModel.getCarbonDataLoadSchema(), loadModel.getSchemaName(), loadModel.getCubeName(),
                 listOfLoadFolderDetails);
 
     }
 
-    public static void writeLoadMetadata(Schema schema, String schemaName, String cubeName,
+    public static void writeLoadMetadata(CarbonDataLoadSchema schema, String schemaName, String cubeName,
             List<LoadMetadataDetails> listOfLoadFolderDetails) throws IOException {
 
-        String dataLoadLocation =
+        /*String dataLoadLocation =
                 extractLoadMetadataFileLocation(schema, schemaName, cubeName) + File.separator
                         + CarbonCommonConstants.LOADMETADATA_FILENAME
-                        + CarbonCommonConstants.CARBON_METADATA_EXTENSION;
+                        + CarbonCommonConstants.CARBON_METADATA_EXTENSION;*/
+    	String dataLoadLocation = schema.getCarbonTable().getMetaDataFilepath()+ File.separator
+                 + CarbonCommonConstants.LOADMETADATA_FILENAME
+                 + CarbonCommonConstants.CARBON_METADATA_EXTENSION;
         DataOutputStream dataOutputStream;
         Gson gsonObjectToWrite = new Gson();
         BufferedWriter brWriter = null;
@@ -852,34 +881,33 @@ public final class CarbonLoaderUtil {
         return date;
     }
 
-    public static CubeDimension[][] getDimensionSplit(Schema schema, String cubeName,
+    public static CarbonDimension[][] getDimensionSplit(CarbonDataLoadSchema schema, String cubeName,
             int numberOfPartition) {
-        CubeDimension[] allDims = CarbonSchemaParser.getMondrianCube(schema, cubeName).dimensions;
-        Measure[] msrs = CarbonSchemaParser.getMondrianCube(schema, cubeName).measures;
-        List<CubeDimension> selectedDims =
-                new ArrayList<CubeDimension>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-        for (int i = 0; i < allDims.length; i++) {
-            Level extractHierarchies =
-                    CarbonSchemaParser.extractHierarchies(schema, allDims[i])[0].levels[0];
-            for (int j = 0; j < msrs.length; j++) {
-                if (extractHierarchies.column.equals(msrs[j].column)) {
-                    selectedDims.add(allDims[i]);
+    	
+    	List<CarbonDimension> allDims=schema.getCarbonTable().getDimensionByTableName(cubeName);
+    	List<CarbonMeasure> msrs = schema.getCarbonTable().getMeasureByTableName(cubeName);
+        List<CarbonDimension> selectedDims =
+                new ArrayList<CarbonDimension>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+        for (int i = 0; i < allDims.size(); i++) {
+            for (int j = 0; j < msrs.size(); j++) {
+                if (selectedDims.get(j).getColName().equals(msrs.get(j).getColName())) {
+                    selectedDims.add(allDims.get(i));
                 }
             }
         }
-        allDims = selectedDims.toArray(new CubeDimension[selectedDims.size()]);
-        if (allDims.length < 1) {
-            return new CubeDimension[0][0];
+        CarbonDimension[] allDimsArr = selectedDims.toArray(new CarbonDimension[selectedDims.size()]);
+        if (allDimsArr.length < 1) {
+            return new CarbonDimension[0][0];
         }
         int[] numberOfNodeToScanForEachThread =
-                getNumberOfNodeToScanForEachThread(allDims.length, numberOfPartition);
-        CubeDimension[][] out = new CubeDimension[numberOfNodeToScanForEachThread.length][];
+                getNumberOfNodeToScanForEachThread(allDimsArr.length, numberOfPartition);
+        CarbonDimension[][] out = new CarbonDimension[numberOfNodeToScanForEachThread.length][];
         int counter = 0;
 
         for (int i = 0; i < numberOfNodeToScanForEachThread.length; i++) {
-            out[i] = new CubeDimension[numberOfNodeToScanForEachThread[i]];
+            out[i] = new CarbonDimension[numberOfNodeToScanForEachThread[i]];
             for (int j = 0; j < numberOfNodeToScanForEachThread[i]; j++) {
-                out[i][j] = allDims[counter++];
+                out[i][j] = allDimsArr[counter++];
             }
         }
 

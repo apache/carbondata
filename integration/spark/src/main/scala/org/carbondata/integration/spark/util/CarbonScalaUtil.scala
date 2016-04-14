@@ -24,11 +24,10 @@ import org.apache.spark.sql.hive.CarbonMetaData
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{CarbonEnv, CarbonContext, CarbonRelation, SchemaRDD}
 import org.carbondata.core.constants.CarbonCommonConstants
-import org.carbondata.core.metadata.CarbonMetadata
-import org.carbondata.core.metadata.CarbonMetadata.Cube
 import org.carbondata.query.expression.{DataType => CarbonDataType}
-
 import scala.collection.JavaConversions._
+import org.apache.spark.sql.catalyst.plans.logical.Cube
+import org.carbondata.core.carbon.metadata.schema.table.CarbonTable
 
 object CarbonScalaUtil {
   def convertSparkToCarbonDataType(dataType: org.apache.spark.sql.types.DataType): CarbonDataType =
@@ -84,19 +83,18 @@ object CarbonScalaUtil {
   case class TransformHolder(rdd: Any, mataData: CarbonMetaData)
 
   object CarbonSparkUtil {
-    def createBaseRDD(carbonContext: CarbonContext, cube: Cube): TransformHolder = {
-      val carbonCube = CarbonMetadata.getInstance().getCube(cube.getCubeName())
-      val relation = CarbonEnv.getInstance(carbonContext).carbonCatalog.lookupRelation1(Option(cube.getSchemaName()),
-        cube.getOnlyCubeName(), None)(carbonContext).asInstanceOf[CarbonRelation]
+    def createBaseRDD(carbonContext: CarbonContext, carbonTable: CarbonTable): TransformHolder = {
+      val relation = CarbonEnv.getInstance(carbonContext).carbonCatalog.lookupRelation1(Option(carbonTable.getDatabaseName),
+        carbonTable.getFactTableName, None)(carbonContext).asInstanceOf[CarbonRelation]
       var rdd = new SchemaRDD(carbonContext, relation)
-      rdd.registerTempTable(cube.getOnlyCubeName())
-      TransformHolder(rdd, createSparkMeta(cube))
+      rdd.registerTempTable(carbonTable.getFactTableName)
+      TransformHolder(rdd, createSparkMeta(carbonTable))
     }
 
-    def createSparkMeta(cube: Cube): CarbonMetaData = {
-      val dimensionsAttr = cube.getDimensions(cube.getFactTableName).map(x => x.getName()) // wf : may be problem
-      val measureAttr = cube.getMeasures(cube.getFactTableName).map(x => x.getName())
-      CarbonMetaData(dimensionsAttr, measureAttr, cube)
+    def createSparkMeta(carbonTable: CarbonTable): CarbonMetaData = {
+      val dimensionsAttr = carbonTable.getDimensionByTableName(carbonTable.getFactTableName).map(x => x.getColName) // wf : may be problem
+      val measureAttr = carbonTable.getMeasureByTableName(carbonTable.getFactTableName).map(x => x.getColName)
+      CarbonMetaData(dimensionsAttr, measureAttr, carbonTable)
     }
 
   }

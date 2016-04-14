@@ -21,20 +21,46 @@ package org.carbondata.processing.util;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.carbon.CarbonDataLoadSchema;
+import org.carbondata.core.carbon.CarbonDef;
+import org.carbondata.core.carbon.CarbonDataLoadSchema.DimensionRelation;
+import org.carbondata.core.carbon.CarbonDef.AggLevel;
+import org.carbondata.core.carbon.CarbonDef.Annotations;
+import org.carbondata.core.carbon.CarbonDef.Cube;
+import org.carbondata.core.carbon.CarbonDef.CubeDimension;
+import org.carbondata.core.carbon.CarbonDef.Dimension;
+import org.carbondata.core.carbon.CarbonDef.DimensionUsage;
+import org.carbondata.core.carbon.CarbonDef.Hierarchy;
+import org.carbondata.core.carbon.CarbonDef.Level;
+import org.carbondata.core.carbon.CarbonDef.Measure;
+import org.carbondata.core.carbon.CarbonDef.Property;
+import org.carbondata.core.carbon.CarbonDef.RelationOrJoin;
+import org.carbondata.core.carbon.CarbonDef.Schema;
+import org.carbondata.core.carbon.CarbonDef.Table;
+import org.carbondata.core.carbon.DimensionType;
+import org.carbondata.core.carbon.LevelType;
+import org.carbondata.core.carbon.Util;
+import org.carbondata.core.carbon.metadata.datatype.DataType;
+import org.carbondata.core.carbon.metadata.encoder.Encoding;
+import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.carbondata.core.metadata.CarbonMetadata;
-import org.carbondata.core.carbon.DimensionType;
-import org.carbondata.core.carbon.LevelType;
-import org.carbondata.core.carbon.CarbonDef;
-import org.carbondata.core.carbon.CarbonDef.*;
-import org.carbondata.core.carbon.Util;
 import org.carbondata.processing.api.dataloader.SchemaInfo;
 import org.carbondata.processing.datatypes.ArrayDataType;
 import org.carbondata.processing.datatypes.GenericDataType;
@@ -133,12 +159,12 @@ public final class CarbonSchemaParser {
      * @param dimensions
      * @return
      */
-    public static String getDimensionSQLQueries(Cube cube, CubeDimension[] dimensions,
-            Schema schema, boolean isQuotesRequired, String quote) {
+    public static String getDimensionSQLQueries(List<CarbonDimension> dimensions,
+            CarbonDataLoadSchema carbonDataLoadSchema, boolean isQuotesRequired, String quote) {
         if (isQuotesRequired) {
-            return getDimensionSQLQueriesWithQuotes(cube, dimensions, schema, quote);
+            return getDimensionSQLQueriesWithQuotes(dimensions, carbonDataLoadSchema, quote);
         } else {
-            return getDimensionSQLQueries(cube, dimensions, schema);
+            return getDimensionSQLQueries(dimensions, carbonDataLoadSchema);
         }
     }
 
@@ -254,46 +280,24 @@ public final class CarbonSchemaParser {
         return true;
     }
 
-    public static String getDenormColNames(CubeDimension[] dimensions, Schema schema) {
+        
+    public static String getDenormColNames(List<CarbonDimension> dimensions, CarbonDataLoadSchema carbonDataLoadSchema) {
         //
         List<String> foreignKeys = new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+        Set<String> allRelationCols = new HashSet<String>();
 
-        for (CubeDimension dim : dimensions) {
-            //
-            Hierarchy[] hierarchies = null;
-            hierarchies = extractHierarchies(schema, dim);
-            for (Hierarchy hierarchy : hierarchies) {
-                RelationOrJoin relation = hierarchy.relation;
-                if (relation == null) {
-                    continue;
-                }
-
-                foreignKeys.add(dim.foreignKey);
-
-            }
+        for(DimensionRelation dimensionRelation : carbonDataLoadSchema.getDimensionRelationList())
+        {
+        	foreignKeys.add(dimensionRelation.getRelation().getFactForeignKeyColumn());
+        	allRelationCols.addAll(dimensionRelation.getColumns());
         }
-
+        
         StringBuilder columns = new StringBuilder();
 
-        for (CubeDimension dim : dimensions) {
-            //
-            Hierarchy[] hierarchies = null;
-            hierarchies = extractHierarchies(schema, dim);
-            for (Hierarchy hierarchy : hierarchies) {
-                RelationOrJoin relation = hierarchy.relation;
-                if (relation == null) {
-
-                    for (Level levels : hierarchy.levels) {
-                        if (levels.parentname != null) continue;
-                        if (foreignKeys.contains(levels.name)) {
-                            columns.append(levels.name);
-                            columns.append(CarbonCommonConstants.HASH_SPC_CHARACTER);
-                        }
-
-                    }
-
-                }
-
+        for (CarbonDimension dim : dimensions) {
+            if (foreignKeys.contains(dim.getColName()) && !allRelationCols.contains(dim.getColName())) {
+                columns.append(dim.getColName());
+                columns.append(CarbonCommonConstants.HASH_SPC_CHARACTER);
             }
         }
 
@@ -312,99 +316,64 @@ public final class CarbonSchemaParser {
      * @param isQuotesRequired
      * @return
      */
-    private static String getDimensionSQLQueries(Cube cube, CubeDimension[] dimensions,
-            Schema schema) {
+    private static String getDimensionSQLQueries(List<CarbonDimension> dimensions,
+            CarbonDataLoadSchema carbonDataLoadSchema) {
         //
         List<String> queryList = new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-        for (CubeDimension dim : dimensions) {
-            if (!dim.visible) {
+        for (CarbonDimension dim : dimensions) {
+        	
+        	String tableName = extractDimensionTableName(dim.getColName(), carbonDataLoadSchema);
+            StringBuilder query;
+            String factTableName = carbonDataLoadSchema.getCarbonTable().getFactTableName();
+            if (factTableName.equals(tableName)) {
                 continue;
             }
-
-            //
-            Hierarchy[] hierarchies = null;
-            hierarchies = extractHierarchies(schema, dim);
-            StringBuilder query;
-            for (Hierarchy hierarchy : hierarchies) {
-                // String tableName = hierarchy.relation.toString();
-                RelationOrJoin relation = hierarchy.relation;
-                if (relation == null) {
-                    continue;
-                }
-                String tableName = ((Table) hierarchy.relation).name;
-
-                //check if fact table name is same as dimension table then skip the dimension loading.
-                String factTableName = getFactTableName(cube);
-                if (factTableName.equals(tableName)) {
-                    continue;
-                }
-
-                String dimName = dim.name;
-                dimName = dimName.replaceAll(" ", "_");
-
-                if (null == hierarchy.name) {
-                    query = new StringBuilder(
-                            dimName + '_' + dimName + CarbonCommonConstants.COLON_SPC_CHARACTER);
-                } else {
-                    String hierName = hierarchy.name.replaceAll(" ", "_");
-                    query = new StringBuilder(
-                            dimName + '_' + hierName + CarbonCommonConstants.COLON_SPC_CHARACTER);
-                }
-                //
-                query.append("SELECT ");
-
-                query.append(hierarchy.primaryKey + ',');
-
-                query.append(hierarchy.levels[0].column);
-                //
-                if (hasOrdinalColumn(hierarchy.levels[0])) {
-                    query.append(',' + hierarchy.levels[0].ordinalColumn);
-                }
-
-                addNameColumnAndPropertyInQuery(tableName, hierarchy.levels[0].column, dimensions,
-                        schema, query);
-
-                //                if(null!=hierarchy.levels[0].nameColumn)
-                //                {
-                //                    query.append(',' + hierarchy.levels[0].nameColumn);
-                //                }
-                //                //
-                //                properties = hierarchy.levels[0].properties;
-                //                if(properties.length > 0)
-                //                {
-                //                    for(int j = 0;j < properties.length;j++)
-                //                    {
-                //                        query.append(',' + properties[j].column);
-                //                    }
-                //                }
-                //
-                for (int i = 1; i < hierarchy.levels.length; i++) {
-                    query.append(',' + hierarchy.levels[i].column);
-
-                    if (hasOrdinalColumn(hierarchy.levels[0])) {
-                        query.append(',' + hierarchy.levels[0].ordinalColumn);
-                    }
-
-                    addNameColumnAndPropertyInQuery(tableName, hierarchy.levels[0].column,
-                            dimensions, schema, query);
-
-                    //                    if(null!=hierarchy.levels[i].nameColumn)
-                    //                    {
-                    //                        query.append(',' + hierarchy.levels[i].nameColumn);
-                    //                    }
-                    //                    properties = hierarchy.levels[i].properties;
-                    //                    if(properties.length > 0)
-                    //                    {
-                    //                        for(int j = 0;j < properties.length;j++)
-                    //                        {
-                    //                            query.append(',' + properties[j].column);
-                    //                        }
-                    //                    }
-                }
-                //
-                query.append(" FROM " + tableName);
-                queryList.add(query.toString());
+            String dimName = dim.getColName();
+            query = new StringBuilder(
+                        dimName + '_' + tableName + CarbonCommonConstants.COLON_SPC_CHARACTER);
+            
+            String primaryKey = null;
+            for(DimensionRelation dimensionRelation : carbonDataLoadSchema.getDimensionRelationList())
+            {
+            	for(String field : dimensionRelation.getColumns())
+            	{
+            		if(dimName.equals(field))
+            		{
+            			primaryKey = dimensionRelation.getRelation().getDimensionPrimaryKeyColumn();
+            			break;
+            		}
+            	}
+            	if(null != primaryKey)
+            	{
+            		break;
+            	}
             }
+            query.append("SELECT ");
+
+            query.append(primaryKey + ',');
+
+            query.append(dimName);
+            
+            //No property support in new schema
+//                if (hasOrdinalColumn(hierarchy.levels[0])) {
+//                    query.append(',' + hierarchy.levels[0].ordinalColumn);
+//                }
+//
+//                addNameColumnAndPropertyInQuery(tableName, hierarchy.levels[0].column, dimensions,
+//                        schema, query);
+//
+//                for (int i = 1; i < hierarchy.levels.length; i++) {
+//                    query.append(',' + hierarchy.levels[i].column);
+//
+//                    if (hasOrdinalColumn(hierarchy.levels[0])) {
+//                        query.append(',' + hierarchy.levels[0].ordinalColumn);
+//                    }
+//
+//                    addNameColumnAndPropertyInQuery(tableName, hierarchy.levels[0].column,
+//                            dimensions, schema, query);
+//                }
+            query.append(" FROM " + tableName);
+            queryList.add(query.toString());
         }
         StringBuilder finalQuryString = new StringBuilder();
 
@@ -423,101 +392,63 @@ public final class CarbonSchemaParser {
      * @param dimensions
      * @return
      */
-    private static String getDimensionSQLQueriesWithQuotes(Cube cube, CubeDimension[] dimensions,
-            Schema schema, String quotes) {
+    
+    private static String getDimensionSQLQueriesWithQuotes(List<CarbonDimension> dimensions,
+            CarbonDataLoadSchema carbonDataLoadSchema, String quotes) {
         //
         List<String> queryList = new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
         //        Property[] properties = null;
-        for (CubeDimension dim : dimensions) {
-            if (!dim.visible) {
+        for (CarbonDimension dim : dimensions) {
+
+            String tableName = extractDimensionTableName(dim.getColName(), carbonDataLoadSchema);
+            StringBuilder query;
+            String factTableName = carbonDataLoadSchema.getCarbonTable().getFactTableName();
+            if (factTableName.equals(tableName)) {
                 continue;
             }
-
-            //
-            Hierarchy[] hierarchies = null;
-            hierarchies = extractHierarchies(schema, dim);
-            for (Hierarchy hrrchy : hierarchies) {
-                StringBuilder query;
-                // String tableName = hierarchy.relation.toString();
-                RelationOrJoin relation = hrrchy.relation;
-                if (relation == null) {
-                    continue;
-                }
-                String tableName = ((Table) hrrchy.relation).name;
-                //check if fact table name is same as dimension table then skip the dimension loading.
-                String factTableName = getFactTableName(cube);
-                if (factTableName.equals(tableName)) {
-                    continue;
-                }
-                String dimName = dim.name;
-                dimName = dimName.replaceAll(" ", "_");
-
-                if (null == hrrchy.name) {
-                    query = new StringBuilder(
-                            dimName + '_' + dimName + CarbonCommonConstants.COLON_SPC_CHARACTER);
-                } else {
-                    String hierName = hrrchy.name.replaceAll(" ", "_");
-                    query = new StringBuilder(
-                            dimName + '_' + hierName + CarbonCommonConstants.COLON_SPC_CHARACTER);
-                }
-                //
-                query.append("SELECT ");
-
-                query.append(quotes + hrrchy.primaryKey + quotes + ',');
-
-                query.append(quotes + hrrchy.levels[0].column + quotes);
-                //
-                if (hasOrdinalColumn(hrrchy.levels[0])) {
-                    query.append(',' + quotes + hrrchy.levels[0].ordinalColumn + quotes);
-                }
-
-                addNameColumnAndPropertyInQueryWithQuotes(tableName, hrrchy.levels[0].column,
-                        dimensions, schema, query, quotes);
-
-                //                if(null!=hierarchy.levels[0].nameColumn)
-                //                {
-                //                    query.append(',' + quotes + hierarchy.levels[0].nameColumn
-                //                            + quotes);
-                //                }
-                //                //
-                //                properties = hierarchy.levels[0].properties;
-                //                if(properties.length > 0)
-                //                {
-                //                    for(int j = 0;j < properties.length;j++)
-                //                    {
-                //                        query.append(',' + quotes + properties[j].column
-                //                                + quotes);
-                //                    }
-                //                }
-                //
-                for (int i = 1; i < hrrchy.levels.length; i++) {
-                    query.append(',' + quotes + hrrchy.levels[i].column + quotes);
-                    if (hasOrdinalColumn(hrrchy.levels[0])) {
-                        query.append(',' + quotes + hrrchy.levels[0].ordinalColumn + quotes);
-                    }
-
-                    addNameColumnAndPropertyInQueryWithQuotes(tableName, hrrchy.levels[i].column,
-                            dimensions, schema, query, quotes);
-
-                    //                    if(null != hierarchy.levels[i].nameColumn)
-                    //                    {
-                    //                        query.append(',' + quotes
-                    //                                + hierarchy.levels[i].nameColumn + quotes);
-                    //                    }
-                    //                    properties = hierarchy.levels[i].properties;
-                    //                    if(properties.length > 0)
-                    //                    {
-                    //                        for(int j = 0;j < properties.length;j++)
-                    //                        {
-                    //                            query.append(',' + quotes + properties[j].column
-                    //                                    + quotes);
-                    //                        }
-                    //                    }
-                }
-                //
-                query.append(" FROM " + quotes + tableName + quotes);
-                queryList.add(query.toString());
+            String dimName = dim.getColName();
+            query = new StringBuilder(
+                        dimName + '_' + tableName + CarbonCommonConstants.COLON_SPC_CHARACTER);
+            
+            String primaryKey = null;
+            for(DimensionRelation dimensionRelation : carbonDataLoadSchema.getDimensionRelationList())
+            {
+            	for(String field : dimensionRelation.getColumns())
+            	{
+            		if(dimName.equals(field))
+            		{
+            			primaryKey = dimensionRelation.getRelation().getDimensionPrimaryKeyColumn();
+            			break;
+            		}
+            	}
+            	if(null != primaryKey)
+            	{
+            		break;
+            	}
             }
+            query.append("SELECT ");
+
+            query.append(quotes + primaryKey + quotes + ',');
+
+            query.append(quotes + dimName + quotes);
+                // not supported in new schema
+//                if (hasOrdinalColumn(hrrchy.levels[0])) {
+//                    query.append(',' + quotes + hrrchy.levels[0].ordinalColumn + quotes);
+//                }
+//
+//                addNameColumnAndPropertyInQueryWithQuotes(tableName, dimName,
+//                        dimensions, carbonDataLoadSchema, query, quotes);
+//
+//                for (int i = 1; i < hrrchy.levels.length; i++) {
+//                    query.append(',' + quotes + hrrchy.levels[i].column + quotes);
+//                    if (hasOrdinalColumn(hrrchy.levels[0])) {
+//                        query.append(',' + quotes + hrrchy.levels[0].ordinalColumn + quotes);
+//                    }
+//                    addNameColumnAndPropertyInQueryWithQuotes(tableName, hrrchy.levels[i].column,
+//                            dimensions, schema, query, quotes);
+//                }
+            query.append(" FROM " + quotes + tableName + quotes);
+            queryList.add(query.toString());
         }
         StringBuilder finalQuryString = new StringBuilder();
 
@@ -530,78 +461,7 @@ public final class CarbonSchemaParser {
         }
         return finalQuryString.toString();
     }
-
-    private static void addNameColumnAndPropertyInQueryWithQuotes(String tableName,
-            String levelColumn, CubeDimension[] dimensions, Schema schema, StringBuilder query,
-            String quotes) {
-
-        for (CubeDimension cDimension : dimensions) {
-            Hierarchy[] hierarchies = null;
-            hierarchies = extractHierarchies(schema, cDimension);
-            for (Hierarchy hierarchy : hierarchies) {
-                RelationOrJoin relation = hierarchy.relation;
-                if (relation == null) {
-                    continue;
-                }
-                String dimTableName = ((Table) hierarchy.relation).name;
-                if (tableName.equals(dimTableName)) {
-                    for (Level level : hierarchy.levels) {
-                        if (level.parentname != null) continue;
-                        if (levelColumn.equals(level.column)) {
-                            if (null != level.nameColumn) {
-                                query.append(',' + quotes + level.nameColumn + quotes);
-                            }
-                            //
-                            Property[] properties = level.properties;
-                            if (properties.length > 0) {
-                                for (int j = 0; j < properties.length; j++) {
-                                    query.append(',' + quotes + properties[j].column + quotes);
-                                }
-                            }
-                        }
-                    }
-                }
-
-            }
-        }
-
-    }
-
-    private static void addNameColumnAndPropertyInQuery(String tableName, String levelColumn,
-            CubeDimension[] dimensions, Schema schema, StringBuilder query) {
-
-        for (CubeDimension cDimension : dimensions) {
-            Hierarchy[] hierarchies = null;
-            hierarchies = extractHierarchies(schema, cDimension);
-            for (Hierarchy hierarchy : hierarchies) {
-                RelationOrJoin relation = hierarchy.relation;
-                if (relation == null) {
-                    continue;
-                }
-                String dimensionTableName = ((Table) hierarchy.relation).name;
-                if (tableName.equals(dimensionTableName)) {
-                    for (Level level : hierarchy.levels) {
-                        if (level.parentname != null) continue;
-                        if (levelColumn.equals(level.column)) {
-                            if (null != level.nameColumn) {
-                                query.append(',' + level.nameColumn);
-                            }
-                            //
-                            Property[] properties = level.properties;
-                            if (properties.length > 0) {
-                                for (int j = 0; j < properties.length; j++) {
-                                    query.append(',' + properties[j].column);
-                                }
-                            }
-                        }
-                    }
-                }
-
-            }
-        }
-
-    }
-
+    
     /**
      * @param dimensions
      * @param measures
@@ -610,27 +470,28 @@ public final class CarbonSchemaParser {
      * @param schemaInfo
      * @return
      */
-    public static String getTableInputSQLQuery(CubeDimension[] dimensions, Measure[] measures,
-            String factTableName, boolean isQuotesRequired, Schema schema) {
+    public static String getTableInputSQLQuery(List<CarbonDimension> dimensions, List<CarbonMeasure> measures,
+            String factTableName, boolean isQuotesRequired, CarbonDataLoadSchema carbonDataLoadSchema) {
         StringBuilder query = new StringBuilder("SELECT ");
 
-        getQueryForDimension(dimensions, query, factTableName, isQuotesRequired, schema);
+        getQueryForDimension(dimensions, query, factTableName, isQuotesRequired, carbonDataLoadSchema);
 
-        if (checkIfDenormalized(dimensions, schema)) {
-            if (!isQuotesRequired) {
-                getPropetiesQuerypart(dimensions, query, factTableName, schema);
-            } else {
-                getPropetiesQuerypartWithQuotes(dimensions, query, factTableName, schema);
-            }
-        }
+        //No properties in new Schema
+//        if (checkIfDenormalized(carbonDataLoadSchema)) {
+//            if (!isQuotesRequired) {
+//                getPropetiesQuerypart(dimensions, query, factTableName, schema);
+//            } else {
+//                getPropetiesQuerypartWithQuotes(dimensions, query, factTableName, schema);
+//            }
+//        }
         if (!"select".equalsIgnoreCase(query.toString().trim())) {
             query.append(",");
         }
         Set<String> uniqueMsrCols =
                 new HashSet<String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-        for (int i = 0; i < measures.length; i++) {
+        for (int i = 0; i < measures.size(); i++) {
 
-            uniqueMsrCols.add(measures[i].column);
+            uniqueMsrCols.add(measures.get(i).getColName());
         }
         String[] uniqueMeasure = uniqueMsrCols.toArray(new String[uniqueMsrCols.size()]);
         for (int j = 0; j < uniqueMeasure.length; j++) {
@@ -655,19 +516,6 @@ public final class CarbonSchemaParser {
         }
 
         return query.toString();
-    }
-
-    private static boolean checkIfDenormalized(CubeDimension[] dimensions, Schema schema) {
-        for (int i = 0; i < dimensions.length; i++) {
-            Hierarchy[] hierarchies = extractHierarchies(schema, dimensions[i]);
-            for (Hierarchy hierarchy : hierarchies) {
-                RelationOrJoin relation = hierarchy.relation;
-                if (null != relation && null != ((Table) hierarchy.relation).name) {
-                    return false;
-                }
-            }
-        }
-        return true;
     }
 
     /**
@@ -716,189 +564,50 @@ public final class CarbonSchemaParser {
         return queryBuilder.toString();
     }
 
-    private static void getPropetiesQuerypart(CubeDimension[] dimensions, StringBuilder query,
-            String factTableName, Schema schema) {
-        Property[] properties;
-        for (CubeDimension cDim : dimensions) {
-            Hierarchy[] hierarchies = null;
-            hierarchies = extractHierarchies(schema, cDim);
-            for (Hierarchy hierarchy : hierarchies) {
-                if (hierarchy.normalized) {
-                    continue;
-                }
-                // String tableName = hierarchy.relation.toString();
-                RelationOrJoin relation = hierarchy.relation;
-                String dimName = cDim.name;
-                dimName = dimName.replaceAll(" ", "_");
+    private static void getQueryForDimension(List<CarbonDimension> dimensions, StringBuilder query,
+            String factTableName, boolean isQuotesRequired, CarbonDataLoadSchema carbonDataLoadSchema) {
+    	int counter = 0;
+        for (CarbonDimension cDim : dimensions) {
 
-                String hierarchyTbl =
-                        relation == null ? factTableName : ((Table) hierarchy.relation).name;
-                if (hasOrdinalColumn(hierarchy.levels[0])) {
-                    query.append(System.getProperty("line.separator"));
-                    // query.append("\n"); 
-                    query.append(',' + hierarchyTbl + '.' + hierarchy.levels[0].ordinalColumn);
-                }
-                if (null != hierarchy.levels[0].nameColumn) {
-                    query.append(System.getProperty("line.separator"));
-                    // query.append("\n");
-                    query.append(',' + hierarchyTbl + '.' + hierarchy.levels[0].nameColumn);
-                }
-                properties = hierarchy.levels[0].properties;
-                if (properties.length > 0) {
-                    for (int j = 0; j < properties.length; j++) {
-                        query.append(System.getProperty("line.separator"));
-                        // query.append("\n");
-                        query.append(',' + hierarchyTbl + '.' + properties[j].column);
-                    }
-                }
-                for (int i = 1; i < hierarchy.levels.length; i++) {
-                    if (hasOrdinalColumn(hierarchy.levels[i])) {
-                        query.append(System.getProperty("line.separator"));
-                        // query.append("\n");
-                        query.append(',' + hierarchyTbl + '.' + hierarchy.levels[i].ordinalColumn);
-                    }
-                    if (null != hierarchy.levels[i].nameColumn) {
-                        query.append(System.getProperty("line.separator"));
-                        // query.append("\n");
-                        query.append(',' + hierarchyTbl + '.' + hierarchy.levels[i].nameColumn);
-                    }
-                    properties = hierarchy.levels[i].properties;
-                    if (properties.length > 0) {
-                        for (int j = 0; j < properties.length; j++) {
-                            query.append(System.getProperty("line.separator"));
-                            // query.append("\n");
-                            query.append(',' + hierarchyTbl + '.' + properties[j].column);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private static void getPropetiesQuerypartWithQuotes(CubeDimension[] dimensions,
-            StringBuilder query, String factTableName, Schema schema) {
-        Property[] properties;
-        for (CubeDimension cDim : dimensions) {
-            Hierarchy[] hierarchies = null;
-            hierarchies = extractHierarchies(schema, cDim);
-            for (Hierarchy hierarchy : hierarchies) {
-                //String tableName = hierarchy.relation.toString();
-                if (hierarchy.normalized) {
-                    continue;
-                }
-                RelationOrJoin relation = hierarchy.relation;
-
-                String hierarchyTable =
-                        relation == null ? factTableName : ((Table) hierarchy.relation).name;
-                if (hasOrdinalColumn(hierarchy.levels[0])) {
-                    query.append(System.getProperty("line.separator"));
-                    // query.append("\n");
-                    query.append(',' + QUOTES + hierarchyTable + QUOTES + '.' + QUOTES
-                            + hierarchy.levels[0].ordinalColumn + QUOTES);
-                }
-                if (null != hierarchy.levels[0].nameColumn) {
-                    query.append(System.getProperty("line.separator"));
-                    //query.append("\n");
-                    query.append(',' + QUOTES + hierarchyTable + QUOTES + '.' + QUOTES
-                            + hierarchy.levels[0].nameColumn + QUOTES);
-                }
-                properties = hierarchy.levels[0].properties;
-                if (properties.length > 0) {
-                    for (int j = 0; j < properties.length; j++) {
-                        query.append(System.getProperty("line.separator"));
-                        // query.append("\n");
-                        query.append(',' + QUOTES + hierarchyTable + QUOTES + '.' + QUOTES
-                                + properties[j].column + QUOTES);
-                    }
-                }
-                for (int i = 1; i < hierarchy.levels.length; i++) {
-                    if (hasOrdinalColumn(hierarchy.levels[i])) {
-                        query.append(System.getProperty("line.separator"));
-                        // query.append("\n");
-                        query.append(',' + QUOTES + hierarchyTable + QUOTES + '.' + QUOTES
-                                + hierarchy.levels[i].ordinalColumn + QUOTES);
-                    }
-                    if (null != hierarchy.levels[i].nameColumn) {
-                        query.append(System.getProperty("line.separator"));
-                        // query.append("\n");
-                        query.append(',' + QUOTES + hierarchyTable + QUOTES + '.' + QUOTES
-                                + hierarchy.levels[i].nameColumn + QUOTES);
-                    }
-                    properties = hierarchy.levels[i].properties;
-                    if (properties.length > 0) {
-                        for (int j = 0; j < properties.length; j++) {
-                            query.append(System.getProperty("line.separator"));
-                            // query.append("\n");
-                            query.append(',' + QUOTES + hierarchyTable + QUOTES + '.' + QUOTES
-                                    + properties[j].column + QUOTES);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private static int getQueryForDimension(CubeDimension[] dimensions, StringBuilder query,
-            String factTableName, boolean isQuotesRequired, Schema schema) {
-        //
-        int counter = 0;
-        for (CubeDimension cDim : dimensions) {
-            //
-            Hierarchy[] hierarchies = null;
-            hierarchies = extractHierarchies(schema, cDim);
-            for (Hierarchy hierarchy : hierarchies) {
-
-                if (hierarchy.normalized) {
-                    query.append(System.getProperty("line.separator"));
-                    if (counter != 0) {
-                        query.append(',');
-                    }
-
-                    if (isQuotesRequired) {
-                        query.append(QUOTES + cDim.foreignKey + QUOTES);
-                    } else {
-                        query.append(cDim.foreignKey);
-                    }
-                    counter++;
-                    continue;
+        	String foreignKey = null;
+        	for(DimensionRelation dimensionRelation : carbonDataLoadSchema.getDimensionRelationList())
+        	{
+        		for(String field : dimensionRelation.getColumns())
+        		{
+        			if(cDim.getColName().equals(field))
+        			{
+        				foreignKey = dimensionRelation.getRelation().getFactForeignKeyColumn();
+        			}
+        		}
+        	}
+            if (foreignKey != null) {
+                query.append(System.getProperty("line.separator"));
+                if (counter != 0) {
+                    query.append(',');
                 }
 
-                if (hierarchy.primaryKey != null && cDim.foreignKey != null) {
-                    query.append(System.getProperty("line.separator"));
-                    if (counter != 0) {
-                        query.append(',');
-                    }
-
-                    if (isQuotesRequired) {
-                        query.append(QUOTES + cDim.foreignKey + QUOTES);
-                    } else {
-                        query.append(cDim.foreignKey);
-                    }
-                    counter++;
-                    continue;
+                if (isQuotesRequired) {
+                    query.append(QUOTES + foreignKey + QUOTES);
                 } else {
+                    query.append(foreignKey);
+                }
+                continue;
+            } else {
+                query.append(System.getProperty("line.separator"));
+                if (counter != 0) {
+                    query.append(',');
+                }
 
-                    Level[] levels = hierarchy.levels;
-                    for (Level level : levels) {
-                        if (level.parentname != null) continue;
-                        query.append(System.getProperty("line.separator"));
-                        if (counter != 0) {
-                            query.append(',');
-                        }
-
-                        if (isQuotesRequired) {
-                            query.append(
-                                    QUOTES + factTableName + QUOTES + '.' + QUOTES + level.column
-                                            + QUOTES);
-                        } else {
-                            query.append(factTableName + '.' + level.column);
-                        }
-                        counter++;
-                    }
+                if (isQuotesRequired) {
+                    query.append(
+                            QUOTES + factTableName + QUOTES + '.' + QUOTES + cDim.getColName()
+                                    + QUOTES);
+                } else {
+                    query.append(factTableName + '.' + cDim.getColName());
                 }
             }
+            counter++;
         }
-        return counter;
     }
 
     /**
@@ -909,75 +618,21 @@ public final class CarbonSchemaParser {
      * @param dimensions
      * @return
      */
-    public static int getDimensionString(Cube cube, CubeDimension[] dimensions,
-            StringBuilder dimString, int counter, Schema schema) {
-        for (CubeDimension cDimension : dimensions) {
-            if (cDimension.noDictionary) {
+    public static int getDimensionString(List<CarbonDimension> dimensions,
+            StringBuilder dimString, int counter, CarbonDataLoadSchema carbonDataLoadSchema) {
+        for (CarbonDimension cDimension : dimensions) {
+            if (!cDimension.getEncoder().contains(Encoding.DICTIONARY)) {
                 continue;
             }
-            Hierarchy[] hierarchies = null;
-            hierarchies = extractHierarchies(schema, cDimension);
-            for (Hierarchy hierarchy : hierarchies) {
-                RelationOrJoin relation = hierarchy.relation;
 
-                String tableName = relation == null ?
-                        getFactTableName(cube) :
-                        ((Table) hierarchy.relation).name;
-                int i = hierarchy.levels.length;
-                boolean appendComma = true;
-                for (Level level : hierarchy.levels) {
-                    if (level.parentname != null) {
-                        appendComma = false;
-                        continue;
-                    }
-                    if (hierarchy.normalized) {
-                        if (i == 1) {
-                            dimString.append(tableName + '_' + level.column
-                                    + CarbonCommonConstants.COLON_SPC_CHARACTER + counter
-                                    + CarbonCommonConstants.COLON_SPC_CHARACTER
-                                    + level.levelCardinality
-                                    + CarbonCommonConstants.COLON_SPC_CHARACTER + 'Y');
-
-                        } else {
-                            dimString.append(tableName + '_' + level.column
-                                    + CarbonCommonConstants.COLON_SPC_CHARACTER + counter
-                                    + CarbonCommonConstants.COLON_SPC_CHARACTER
-                                    + level.levelCardinality
-                                    + CarbonCommonConstants.COLON_SPC_CHARACTER + 'N');
-                        }
-                        if (i > 1) {
-                            dimString.append(CarbonCommonConstants.COMA_SPC_CHARACTER);
-
-                        }
-                        counter++;
-                    } else {
-
-                        dimString.append(tableName + '_' + level.column
-                                + CarbonCommonConstants.COLON_SPC_CHARACTER + counter
-                                + CarbonCommonConstants.COLON_SPC_CHARACTER + level.levelCardinality
-                                + CarbonCommonConstants.COLON_SPC_CHARACTER + 'Y');
-                        counter++;
-                        if (i > 1) {
-                            dimString.append(CarbonCommonConstants.COMA_SPC_CHARACTER);
-
-                        }
-
-                    }
-
-                    i--;
-
-                }
-                if (appendComma) dimString.append(CarbonCommonConstants.COMA_SPC_CHARACTER);
-            }
+            String tableName = extractDimensionTableName(cDimension.getColName(), carbonDataLoadSchema);
+            dimString.append(tableName + '_' + cDimension.getColName()
+                    + CarbonCommonConstants.COLON_SPC_CHARACTER + counter
+                    + CarbonCommonConstants.COLON_SPC_CHARACTER + -1
+                    + CarbonCommonConstants.COLON_SPC_CHARACTER + 'Y'
+                    + CarbonCommonConstants.COMA_SPC_CHARACTER);
+            counter++;
         }
-/*
-        String dimstr = dimString.toString();
-        if(dimstr.length() > 0 && dimstr.endsWith(CarbonCommonConstants.COMA_SPC_CHARACTER))
-        {
-            dimstr = dimstr.substring(0, dimstr.length()
-                    - CarbonCommonConstants.COMA_SPC_CHARACTER.length());
-        }*/
-
         return counter;
     }
 
@@ -1016,38 +671,13 @@ public final class CarbonSchemaParser {
     /**
      * Return mapping of Column name to cardinality
      */
-    public static Map<String, String> getCardinalities(String factTableName,
-            CubeDimension[] dimensions, Schema schema) {
+    
+    public static Map<String, String> getCardinalities(List<CarbonDimension> dimensions, 
+    		CarbonDataLoadSchema carbonDataLoadSchema) {
         Map<String, String> cardinalities = new LinkedHashMap<String, String>();
-        //
-        for (CubeDimension cDimension : dimensions) {
-            Hierarchy[] hierarchies = null;
-            hierarchies = extractHierarchies(schema, cDimension);
-            //
-            for (Hierarchy hierarchy : hierarchies) {
-                //String tableName = hierarchy.relation.toString();
-                RelationOrJoin relation = hierarchy.relation;
-                //                String dimName = cDimension.name;
-                //                dimName = dimName.replaceAll(" ", "_");
-
-                String tableName =
-                        relation == null ? factTableName : ((Table) hierarchy.relation).name;
-                int counter = 0;
-                for (Level level : hierarchy.levels) {
-                    if (level.parentname != null) continue;
-                    if (hierarchy.normalized) {
-                        if (counter == hierarchy.levels.length - 1) {
-                            cardinalities.put(tableName + '_' + level.column,
-                                    level.levelCardinality + "");
-                        }
-                    } else {
-                        cardinalities
-                                .put(tableName + '_' + level.column, level.levelCardinality + "");
-                    }
-                    counter++;
-
-                }
-            }
+        for (CarbonDimension cDimension : dimensions) {
+        	String tableName = extractDimensionTableName(cDimension.getColName(), carbonDataLoadSchema);
+            cardinalities.put(tableName + '_' + cDimension.getColName(), -1 + "");
         }
         return cardinalities;
     }
@@ -1090,13 +720,13 @@ public final class CarbonSchemaParser {
      * @param measures
      * @return
      */
-    public static String getMeasureString(Measure[] measures, int counter) {
+    public static String getMeasureString(List<CarbonMeasure> measures, int counter) {
         StringBuilder measureString = new StringBuilder();
-        int i = measures.length;
-        for (Measure measure : measures) {
+        int i = measures.size();
+        for (CarbonMeasure measure : measures) {
 
             measureString
-                    .append(measure.column + CarbonCommonConstants.COLON_SPC_CHARACTER + counter);
+                    .append(measure.getColName() + CarbonCommonConstants.COLON_SPC_CHARACTER + counter);
             counter++;
             if (i > 1) {
                 measureString.append(CarbonCommonConstants.COMA_SPC_CHARACTER);
@@ -1156,11 +786,11 @@ public final class CarbonSchemaParser {
      * @param measures
      * @return
      */
-    public static String[] getMeasures(Measure[] measures) {
-        String[] measuresStringArray = new String[measures.length];
+    public static String[] getMeasures(List<CarbonMeasure> measures) {
+        String[] measuresStringArray = new String[measures.size()];
 
         for (int i = 0; i < measuresStringArray.length; i++) {
-            measuresStringArray[i] = measures[i].column;
+            measuresStringArray[i] = measures.get(i).getColName();
         }
         return measuresStringArray;
     }
@@ -1173,64 +803,21 @@ public final class CarbonSchemaParser {
      * @param dimensions
      * @return
      */
-    public static String getHierarchyString(CubeDimension[] dimensions, Schema schema) {
+    public static String getHierarchyString(List<CarbonDimension> dimensions, CarbonDataLoadSchema carbonDataLoadSchema) {
         StringBuilder hierString = new StringBuilder();
-        int hierIndex = -1;
         String hierStr = "";
-        int lengthOfLevels = 0;
-        int counter = 0;
 
-        for (CubeDimension cDimension : dimensions) {
-            if (cDimension.noDictionary) {
+        for (CarbonDimension cDimension : dimensions) {
+            if (cDimension.getEncoder().contains(Encoding.DICTIONARY)) {
                 continue;
             }
-            Hierarchy[] hierarchies = null;
-            hierarchies = extractHierarchies(schema, cDimension);
-            String cDimName = cDimension.name;
-
-            for (Hierarchy hierarchy : hierarchies) {
-                String hName = hierarchy.name;
-                if (hName == null || "".equals(hName.trim())) {
-                    hName = cDimName;
-                }
-                // Replace the hierarchy name space with "_"
-                hName = hName.replaceAll(" ", "_");
-                //                RelationOrJoin relation = hierarchy.relation;
-                cDimName = cDimName.replaceAll(" ", "_");
-
-                //                String tableName = relation == null ? dimName : ((Table)hierarchy.relation).name;
-
-                lengthOfLevels = hierarchy.levels.length;
-                int hierlength = hierarchy.levels.length;
-                if (hierlength > 0) {
-                    StringBuilder localString = new StringBuilder();
-
-                    for (int i = 0; i < hierlength; i++) {
-                        if (hierIndex == -1) {
-                            localString.append(counter++);
-                        } else {
-                            localString.append(++hierIndex);
-                        }
-
-                        if (lengthOfLevels > 1) {
-                            localString.append(CarbonCommonConstants.COMA_SPC_CHARACTER);
-
-                        }
-                        lengthOfLevels--;
-                    }
-                    localString.append(CarbonCommonConstants.AMPERSAND_SPC_CHARACTER);
-                    hierStr = localString.toString();
-                    hierStr = cDimName + '_' + hName + CarbonCommonConstants.COLON_SPC_CHARACTER
+            String tableName = extractDimensionTableName(cDimension.getColName(), carbonDataLoadSchema);
+            String cDimName = cDimension.getColName();
+            hierStr = 0 + CarbonCommonConstants.AMPERSAND_SPC_CHARACTER;
+            hierStr = cDimName + '_' + tableName + CarbonCommonConstants.COLON_SPC_CHARACTER
                             + hierStr;
-                    hierString.append(hierStr);
-                } else {
-                    counter++;
-                }
-
-            }
+            hierString.append(hierStr);
         }
-
-        //   }
 
         hierStr = hierString.toString();
         if (hierStr.length() > 0 && hierStr
@@ -1356,28 +943,36 @@ public final class CarbonSchemaParser {
      * @param cube
      * @return
      */
-    public static String[] getCubeDimensions(Cube cube, Schema schema) {
+    public static String[] getCubeDimensions(List<CarbonDimension> dimensions, CarbonDataLoadSchema carbonDataLoadSchema) {
         List<String> list = new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-        CarbonDef.CubeDimension[] dimensions = cube.dimensions;
-        for (CubeDimension cDimension : dimensions) {
+        for (CarbonDimension cDimension : dimensions) {
             //Ignoring the dimensions which are high cardinality dimension
-            if (cDimension.noDictionary) {
+            if (!cDimension.getEncoder().contains(Encoding.DICTIONARY)) {
                 continue;
             }
-            Hierarchy[] hierarchies = null;
-            hierarchies = extractHierarchies(schema, cDimension);
-            for (Hierarchy hierarchy : hierarchies) {
-                //                String dimName = cDimension.name;
-                //                dimName = dimName.replaceAll(" ", "_");
-                String factTableName = getFactTableName(cube);
-                list.addAll(getTableNames(factTableName, hierarchy));
-            }
+            list.add(extractDimensionTableName(cDimension.getColName(), carbonDataLoadSchema) +"_"+cDimension.getColName());
         }
         String[] fields = new String[list.size()];
         fields = list.toArray(fields);
         return fields;
     }
-
+    
+    private static String extractDimensionTableName(String dimensionColName, CarbonDataLoadSchema carbonDataLoadSchema)
+    {
+    	List<DimensionRelation> dimensionRelationList = carbonDataLoadSchema.getDimensionRelationList();
+    	
+    	for(DimensionRelation dimensionRelation: dimensionRelationList)
+    	{
+    		for(String field : dimensionRelation.getColumns())
+    		{
+    			if(dimensionColName.equals(field))
+    			{
+    				return dimensionRelation.getTableName();
+    			}
+    		}
+    	}
+    	return carbonDataLoadSchema.getCarbonTable().getFactTableName();
+    }
     /**
      * Get the high cardinality dimensions from the cube metadata, for these dims
      * no metadata will be generated.
@@ -1583,25 +1178,12 @@ public final class CarbonSchemaParser {
      * @param schema
      * @return
      */
-    public static String getDimensionsStoreType(Cube cube, Schema schema) {
+    public static String getDimensionsStoreType(List<CarbonDimension> dimensions) {
         StringBuffer buffer = new StringBuffer();
-        CarbonDef.CubeDimension[] dimensions = cube.dimensions;
         int dimCounter = 0;
-        for (CubeDimension cDimension : dimensions) {
-            //
-            Hierarchy[] hierarchies = null;
-            hierarchies = extractHierarchies(schema, cDimension);
-            for (Hierarchy hierarchy : hierarchies) {
-                for (int i = 0; i < hierarchy.levels.length; i++) {
-                    // buffer.append(level.column+"!@#"+level.columnar);
-                    buffer.append(hierarchy.levels[i].columnar);
-                    if (i < hierarchy.levels.length - 1) {
-                        buffer.append(",");
-                    }
-
-                }
-            }
-            if (dimCounter < dimensions.length - 1) {
+        for (CarbonDimension cDimension : dimensions) {
+            buffer.append(cDimension.isColumnar());
+            if (dimCounter < dimensions.size() - 1) {
                 buffer.append(",");
             }
             dimCounter++;
@@ -2068,38 +1650,19 @@ public final class CarbonSchemaParser {
      * @param schema
      * @return String
      */
-    public static String getHeirAndCardinalityString(CubeDimension[] dimensions, Schema schema) {
+    public static String getHeirAndCardinalityString(List<CarbonDimension> dimensions, CarbonDataLoadSchema carbonDataLoadSchema) {
         StringBuilder builder = new StringBuilder();
         String heirName = null;
-        List<Integer> cardinalityList =
-                new ArrayList<Integer>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-        for (CubeDimension cDimension : dimensions) {
-            Hierarchy[] hierarchies = null;
-            hierarchies = extractHierarchies(schema, cDimension);
-            String dimName = cDimension.name;
-            for (Hierarchy hierarchy : hierarchies) {
-                dimName = dimName.replaceAll(" ", "_");
-                heirName = hierarchy.name;
-                if (heirName == null || "".equals(heirName.trim())) {
-                    heirName = cDimension.name;
-                }
-                heirName = heirName.replaceAll(" ", "_");
-                builder.append(dimName + '_' + heirName + ".hierarchy");
-                for (Level level : hierarchy.levels) {
-                    if (level.parentname != null) continue;
-                    cardinalityList.add(level.levelCardinality);
-                }
-                for (int i = 0; i < cardinalityList.size(); i++) {
-                    builder.append(CarbonCommonConstants.COLON_SPC_CHARACTER);
-                    builder.append(cardinalityList.get(i));
-                }
-                builder.append(CarbonCommonConstants.AMPERSAND_SPC_CHARACTER);
-                cardinalityList = new ArrayList<Integer>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-            }
+        for (CarbonDimension cDimension : dimensions) {
+            heirName = extractDimensionTableName(cDimension.getColName(), carbonDataLoadSchema);
+            String dimName = cDimension.getColName();
+            builder.append(dimName + '_' + heirName + ".hierarchy");
+            builder.append(CarbonCommonConstants.COLON_SPC_CHARACTER);
+            builder.append(-1);
+            builder.append(CarbonCommonConstants.AMPERSAND_SPC_CHARACTER);
         }
         return builder.toString();
     }
-
     //TODO SIMIAN
 
     /**
@@ -2144,204 +1707,24 @@ public final class CarbonSchemaParser {
      * @param dimensions
      * @return
      */
-    public static String getMetaHeirString(CubeDimension[] dimensions, Schema schema,
-            String factTableName) {
+    public static String getMetaHeirString(List<CarbonDimension> dimensions, CarbonTable schema){
         StringBuilder propString = new StringBuilder();
-
-        for (CubeDimension cDimension : dimensions) {
-            Hierarchy[] hierarchies = null;
-            hierarchies = extractHierarchies(schema, cDimension);
-            for (Hierarchy hierarchy : hierarchies) {
-                propString.append(perpareMetaHeirString(cDimension, hierarchy, factTableName,
-                        dimensions, schema));
-                int lastIndexOf = propString.lastIndexOf(CarbonCommonConstants.COLON_SPC_CHARACTER);
-                propString.delete(lastIndexOf,
-                        lastIndexOf + CarbonCommonConstants.COLON_SPC_CHARACTER.length());
-                propString.append(CarbonCommonConstants.HASH_SPC_CHARACTER);
-                String type = null;
-                if (cDimension instanceof Dimension) {
-                    type = ((CarbonDef.Dimension) cDimension).type;
-                } else if (cDimension instanceof DimensionUsage) {
-                    String sourceDimensionName = ((DimensionUsage) cDimension).source;
-                    Dimension[] schemaGlobalDimensions = schema.dimensions;
-                    for (Dimension dimension : schemaGlobalDimensions) {
-                        if (sourceDimensionName.equals(dimension.name)) {
-                            type = ((CarbonDef.Dimension) dimension).type;
-                        }
-                    }
-                }
-                if (DimensionType.TimeDimension.name().equals(type)) {
-                    propString.append(true);
-                    propString.append(levelTypeColumnString(hierarchy));
-                    lastIndexOf = propString.lastIndexOf(CarbonCommonConstants.STAR_SPC_CHARACTER);
-                    propString.delete(lastIndexOf,
-                            lastIndexOf + CarbonCommonConstants.STAR_SPC_CHARACTER.length());
-                } else {
-                    propString.append(false);
-                    propString.append(CarbonCommonConstants.SEMICOLON_SPC_CHARACTER);
-                    propString.append("");
-
-                }
-
-                propString.append(CarbonCommonConstants.AMPERSAND_SPC_CHARACTER);
-            }
-            // }
-            //            int lastIndexOf = propString.lastIndexOf(":");
-            //            propString.deleteCharAt(lastIndexOf);
-            //            propString.append("&");
+        String tableName=schema.getFactTableName();
+        for(CarbonDimension cDimension:dimensions){
+        	propString.append(tableName+"_"+cDimension.getColName());
+        	propString.append(CarbonCommonConstants.HASH_SPC_CHARACTER);
+        	
         }
-
-        // Delete the last & character
+        // Delete the last special character
         String prop = propString.toString();
-        if (prop.endsWith(CarbonCommonConstants.AMPERSAND_SPC_CHARACTER)) {
+        if (prop.endsWith(CarbonCommonConstants.HASH_SPC_CHARACTER)) {
             prop = prop.substring(0,
-                    prop.length() - CarbonCommonConstants.AMPERSAND_SPC_CHARACTER.length());
-        }
-        //        propString.deleteCharAt(lastIndexOf);
+                    prop.length() - CarbonCommonConstants.HASH_SPC_CHARACTER.length());
+         }
         return prop;
     }
 
-    /**
-     * @param hierarchy
-     * @return
-     */
-    private static String levelTypeColumnString(Hierarchy hierarchy) {
-        StringBuilder propString = new StringBuilder();
-        boolean isFirst = true;
-
-        propString.append(CarbonCommonConstants.SEMICOLON_SPC_CHARACTER);
-        for (Level level : hierarchy.levels) {
-            if (level.parentname != null) continue;
-            String levelType = level.levelType;
-            if (LevelType.TimeYears.name().equals(levelType)) {
-                propString.append("YEAR" + CarbonCommonConstants.COMA_SPC_CHARACTER + level.column
-                        + CarbonCommonConstants.STAR_SPC_CHARACTER);
-            } else if (LevelType.TimeMonths.name().equals(levelType)) {
-                propString.append("MONTHS" + CarbonCommonConstants.COMA_SPC_CHARACTER + level.column
-                        + CarbonCommonConstants.STAR_SPC_CHARACTER);
-            } else if (LevelType.TimeDays.name().equals(levelType)) {
-                propString.append("DAYS" + CarbonCommonConstants.COMA_SPC_CHARACTER + level.column
-                        + CarbonCommonConstants.STAR_SPC_CHARACTER);
-            } else if (LevelType.TimeHours.name().equals(levelType) || LevelType.TimeMinutes.name()
-                    .equals(levelType)) {
-                if (isFirst) {
-                    propString.append(CarbonCommonConstants.STAR_SPC_CHARACTER);
-                    isFirst = false;
-                }
-            }
-
-        }
-        return propString.toString();
-    }
-
-    /**
-     * @param propString
-     * @param dimension
-     * @param hierarchy
-     * @param schema
-     * @param dimensions
-     */
-    private static String perpareMetaHeirString(CubeDimension dimension, Hierarchy hierarchy,
-            String factTableName, CubeDimension[] dimensions, Schema schema) {
-        StringBuilder propString = new StringBuilder();
-        // String tableName = hierarchy.relation.toString();
-        RelationOrJoin relation = hierarchy.relation;
-        String dimName = dimension.name;
-        dimName = dimName.replaceAll(" ", "_");
-
-        String tableName = relation == null ? factTableName : ((Table) hierarchy.relation).name;
-        if (hierarchy.name != null) {
-            String hierName = hierarchy.name.replaceAll(" ", "_");
-            propString.append(dimName + '_' + hierName);
-        } else {
-            propString.append(dimName + '_' + dimName);
-        }
-
-        propString.append(CarbonCommonConstants.COLON_SPC_CHARACTER);
-        for (Level level : hierarchy.levels) {
-            if (level.parentname != null) continue;
-            propString.append(tableName + '_' + level.column);
-
-            // First is ordinal column
-            if (hasOrdinalColumn(level)) {
-                propString.append(CarbonCommonConstants.COMA_SPC_CHARACTER);
-                propString.append(tableName + '_' + level.ordinalColumn);
-
-            }
-
-            // Add the Name column if present.
-            addNameColumnsAndProperty(tableName, level.column, dimensions, schema, propString,
-                    factTableName);
-            // Second is name column
-            //            if(level.nameColumn != null
-            //                    && !"".equals(tableName + '_' + level.nameColumn))
-            //            {
-            //                propString.append(CarbonCommonConstants.COMA_SPC_CHARACTER);
-            //                propString.append(tableName + '_' + level.nameColumn);
-            //            }
-            //
-            //            // Next all properties
-            //            for(Property property : level.properties)
-            //            {
-            //                propString.append(CarbonCommonConstants.COMA_SPC_CHARACTER);
-            //                propString.append(tableName + '_' + property.column);
-            //            }
-            propString.append(CarbonCommonConstants.COLON_SPC_CHARACTER);
-
-        }
-        String prop = propString.toString();
-        //        if(prop.length()>0 && prop.endsWith(CarbonCommonConstants.COLON_SPC_CHARACTER))
-        //        {
-        //            prop=prop.substring(0, prop.length()-CarbonCommonConstants.COLON_SPC_CHARACTER.length());
-        //        }
-        return prop;
-    }
-
-    /**
-     * This method will add the name column and property in the output string.
-     *
-     * @param tableName
-     * @param levelColumn
-     * @param dimensions
-     * @param schema
-     * @param propString
-     */
-    private static void addNameColumnsAndProperty(String tableName, String levelColumn,
-            CubeDimension[] dimensions, Schema schema, StringBuilder propString,
-            String factTableName) {
-        for (CubeDimension cDimension : dimensions) {
-            Hierarchy[] hierarchies = null;
-            hierarchies = extractHierarchies(schema, cDimension);
-            for (Hierarchy hierarchy : hierarchies) {
-                RelationOrJoin relation = hierarchy.relation;
-                String dimTableName =
-                        relation == null ? factTableName : ((Table) hierarchy.relation).name;
-                //                if(relation == null)
-                //                {
-                //                    continue;
-                //                }
-                //                String dimTableName = ((Table)hierarchy.relation).name;
-                if (tableName.equals(dimTableName)) {
-                    for (Level level : hierarchy.levels) {
-                        if (level.parentname != null) continue;
-                        if (levelColumn.equals(level.column)) {
-                            if (level.nameColumn != null && !""
-                                    .equals(tableName + '_' + level.nameColumn)) {
-                                propString.append(CarbonCommonConstants.COMA_SPC_CHARACTER);
-                                propString.append(tableName + '_' + level.nameColumn);
-                            }
-
-                            for (Property property : level.properties) {
-                                propString.append(CarbonCommonConstants.COMA_SPC_CHARACTER);
-                                propString.append(tableName + '_' + property.column);
-                            }
-                        }
-                    }
-                }
-
-            }
-        }
-    }
+   
 
     /**
      * Check whether to consider Ordinal column separately if it is configured.
@@ -2350,36 +1733,19 @@ public final class CarbonSchemaParser {
         return (null != level.ordinalColumn && !level.column.equals(level.ordinalColumn));
     }
 
-    /**
-     * @param dimensions
-     * @return
-     */
-    public static String getTableNameString(String factTableName, CubeDimension[] dimensions,
-            Schema schema) {
+
+    
+    public static String getTableNameString(String factTableName, List<CarbonDimension> dimensions,
+    		CarbonDataLoadSchema carbonDataLoadSchema) {
         StringBuffer stringBuffer = new StringBuffer();
 
-        for (CubeDimension cDimension : dimensions) {
-            Hierarchy[] hierarchies = null;
-            hierarchies = extractHierarchies(schema, cDimension);
-            String dimName = cDimension.name;
-            dimName = dimName.replaceAll(" ", "_");
-            for (Hierarchy hierarchy : hierarchies) {
-                String hierName = hierarchy.name;
-                if (null == hierName || "".equals(hierName.trim())) {
-                    hierName = dimName;
-                }
-                //String tableName = hierarchy.relation.toString();
-                RelationOrJoin relation = hierarchy.relation;
-                //                String dimName = cDimension.name;
-                hierName = hierName.replaceAll(" ", "_");
+        for (CarbonDimension cDimension : dimensions) {
+            String tableName = extractDimensionTableName(cDimension.getColName(), carbonDataLoadSchema);
 
-                String tableName =
-                        relation == null ? factTableName : ((Table) hierarchy.relation).name;
-                stringBuffer.append(dimName + '_' + hierName);
-                stringBuffer.append(CarbonCommonConstants.COLON_SPC_CHARACTER);
-                stringBuffer.append(tableName);
-                stringBuffer.append(CarbonCommonConstants.AMPERSAND_SPC_CHARACTER);
-            }
+            stringBuffer.append(cDimension.getColName() + '_' + cDimension.getColName());
+            stringBuffer.append(CarbonCommonConstants.COLON_SPC_CHARACTER);
+            stringBuffer.append(tableName);
+            stringBuffer.append(CarbonCommonConstants.AMPERSAND_SPC_CHARACTER);
         }
         // Delete the last & character
         String string = stringBuffer.toString();
@@ -2395,9 +1761,13 @@ public final class CarbonSchemaParser {
      * @param schema
      * @return
      */
-    public static String getMdkeySizeForFact(CubeDimension[] dimensions, Schema schema) {
-        int[] dims = getDimsArray(dimensions, schema);
-        return KeyGeneratorFactory.getKeyGenerator(dims).getKeySizeInBytes() + "";
+    public static String getMdkeySizeForFact(List<CarbonDimension> dimensions) {
+    	int[] dims = new int[dimensions.size()];
+    	for(int i=0;i<dims.length;i++)
+    	{
+    		dims[i] = -1;
+    	}
+    	return KeyGeneratorFactory.getKeyGenerator(dims).getKeySizeInBytes() + "";
     }
 
     private static int[] getDimsArray(CubeDimension[] dimensions, Schema schema) {
@@ -2470,104 +1840,47 @@ public final class CarbonSchemaParser {
      * @param schema
      * @return
      */
-    public static String getHeirAndKeySizeMapForFact(CubeDimension[] dimensions, Schema schema) {
+    public static String getHeirAndKeySizeMapForFact(List<CarbonDimension> dimensions, 
+    		CarbonDataLoadSchema carbonDataLoadSchema) {
         StringBuffer stringBuffer = new StringBuffer();
-        List<Integer> cardinalityList = null;
         String heirName = null;
         int[] dims = null;
         int keySizeInBytes = 0;
-        for (CubeDimension cDimension : dimensions) {
-            cardinalityList = new ArrayList<Integer>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-            Hierarchy[] hierarchies = null;
-            hierarchies = extractHierarchies(schema, cDimension);
-            String dimName = cDimension.name;
-            for (Hierarchy hierarchy : hierarchies) {
-                dimName = dimName.replaceAll(" ", "_");
-                heirName = hierarchy.name;
-                if (heirName == null || "".equals(heirName.trim())) {
-                    heirName = dimName;
-                }
-                heirName = heirName.replaceAll(" ", "_");
-                for (Level level : hierarchy.levels) {
-                    if (level.parentname != null) continue;
-                    cardinalityList.add(level.levelCardinality);
-                }
-                dims = new int[cardinalityList.size()];
-                for (int i = 0; i < cardinalityList.size(); i++) {
-                    dims[i] = cardinalityList.get(i);
-                }
-                keySizeInBytes = KeyGeneratorFactory.getKeyGenerator(dims).getKeySizeInBytes();
-                stringBuffer.append(dimName + '_' + heirName
-                        + CarbonCommonConstants.HIERARCHY_FILE_EXTENSION
-                        + CarbonCommonConstants.COLON_SPC_CHARACTER + keySizeInBytes
-                        + CarbonCommonConstants.AMPERSAND_SPC_CHARACTER);
-                cardinalityList.clear();
-            }
+        for (CarbonDimension cDimension : dimensions) {
+            String dimName = cDimension.getColName();
+            heirName = extractDimensionTableName(dimName, carbonDataLoadSchema);
+            dims = new int[]{-1};
+            keySizeInBytes = KeyGeneratorFactory.getKeyGenerator(dims).getKeySizeInBytes();
+            stringBuffer.append(dimName + '_' + heirName
+                    + CarbonCommonConstants.HIERARCHY_FILE_EXTENSION
+                    + CarbonCommonConstants.COLON_SPC_CHARACTER + keySizeInBytes
+                    + CarbonCommonConstants.AMPERSAND_SPC_CHARACTER);
         }
         return stringBuffer.toString();
     }
+
 
     /**
      * @param dimensions
      * @return
      */
-    public static String getHierarchyStringWithColumnNames(CubeDimension[] dimensions,
-            Schema schema) {
+    public static String getHierarchyStringWithColumnNames(List<CarbonDimension> dimensions,
+            CarbonDataLoadSchema carbonDataLoadSchema) {
 
-        StringBuilder hierString = new StringBuilder();
+    	StringBuilder hierString = new StringBuilder();
         String hierStr = "";
-        int lengthOfLevels = 0;
 
-        for (CubeDimension cDimension : dimensions) {
-            Hierarchy[] hierarchies = null;
-            hierarchies = extractHierarchies(schema, cDimension);
-            String dimName = cDimension.name;
-
-            for (Hierarchy hierarchy : hierarchies) {
-                String hName = hierarchy.name;
-                if (hName == null || "".equals(hName.trim())) {
-                    hName = dimName;
-                }
-
-                // Replace the hierarchy name space with "_"
-                hName = hName.replaceAll(" ", "_");
-
-                // String tableName = hierarchy.relation.toString();
-                //                RelationOrJoin relation = hierarchy.relation;
-                dimName = dimName.replaceAll(" ", "_");
-
-                //                String tableName = relation == null ? dimName
-                //                        : ((Table)hierarchy.relation).name;
-
-                lengthOfLevels = hierarchy.levels.length;
-                int hierlength = hierarchy.levels.length;
-                if (hierlength > 0) {
-                    StringBuilder localString = new StringBuilder();
-
-                    // for(int i = 0;i < hierlength;i++)
-                    // {
-                    for (Level level : hierarchy.levels) {
-                        if (level.parentname != null) continue;
-
-                        localString.append(level.column);
-
-                        if (lengthOfLevels > 1) {
-                            localString.append(CarbonCommonConstants.COMA_SPC_CHARACTER);
-
-                        }
-                        lengthOfLevels--;
-                    }
-                    // }
-                    localString.append(CarbonCommonConstants.AMPERSAND_SPC_CHARACTER);
-                    hierStr = localString.toString();
-                    hierStr = dimName + '_' + hName + CarbonCommonConstants.COLON_SPC_CHARACTER
-                            + hierStr;
-                    hierString.append(hierStr);
-                }
+        for (CarbonDimension cDimension : dimensions) {
+            if (cDimension.getEncoder().contains(Encoding.DICTIONARY)) {
+                continue;
             }
+            String tableName = extractDimensionTableName(cDimension.getColName(), carbonDataLoadSchema);
+            String cDimName = cDimension.getColName();
+            hierStr = cDimName + CarbonCommonConstants.AMPERSAND_SPC_CHARACTER;
+            hierStr = cDimName + '_' + tableName + CarbonCommonConstants.COLON_SPC_CHARACTER
+                            + hierStr;
+            hierString.append(hierStr);
         }
-
-        // }
 
         hierStr = hierString.toString();
         if (hierStr.length() > 0 && hierStr
@@ -2649,27 +1962,27 @@ public final class CarbonSchemaParser {
      * @param dimensions
      * @return
      */
-    public static String[] getForeignKeyForTables(CubeDimension[] dimensions, Schema schema) {
-        Set<String> foreignKey = new LinkedHashSet<String>();
-        for (CubeDimension cDimension : dimensions) {
-            Dimension dimension = null;
-            if (cDimension instanceof DimensionUsage) {
-                String sourceDimensionName = ((DimensionUsage) cDimension).source;
-                Dimension[] schemaGlobalDimensions = schema.dimensions;
-                for (Dimension dim : schemaGlobalDimensions) {
-                    if (sourceDimensionName.equals(dim.name)) {
-                        dimension = dim;
-                    }
-                }
-            } else {
-                dimension = (Dimension) cDimension;
-            }
-            if (null != dimension) {
-                foreignKey.add(dimension.foreignKey);
-            }
+    public static String[] getForeignKeyForTables(List<CarbonDimension> dimensions, 
+    		CarbonDataLoadSchema carbonDataLoadSchema) {
+    	Set<String> foreignKey = new LinkedHashSet<String>();
+        for (CarbonDimension cDimension : dimensions) {
+            
+        	List<DimensionRelation> dimensionRelationList = carbonDataLoadSchema.getDimensionRelationList();
+        	
+        	for(DimensionRelation dimensionRelation: dimensionRelationList)
+        	{
+        		for(String field : dimensionRelation.getColumns())
+        		{
+        			if(cDimension.getColName().equals(field))
+        			{
+        				foreignKey.add(dimensionRelation.getRelation().getFactForeignKeyColumn());
+        			}
+        		}
+        	}
 
         }
         return foreignKey.toArray(new String[foreignKey.size()]);
+
     }
 
     /**
@@ -2678,42 +1991,33 @@ public final class CarbonSchemaParser {
      * @param dimensions
      * @return
      */
-    public static String getForeignKeyHierarchyString(CubeDimension[] dimensions, Schema schema,
-            String factTable) {
+    public static String getForeignKeyHierarchyString(List<CarbonDimension> dimensions, 
+    		CarbonDataLoadSchema carbonDataLoadSchema, String factTable) {
         StringBuilder foreignKeyHierarchyString = new StringBuilder();
         String columns = "";
 
-        for (CubeDimension cDimension : dimensions) {
-            Hierarchy[] hierarchies = null;
-            hierarchies = extractHierarchies(schema, cDimension);
-            String dimName = cDimension.name;
+        for (CarbonDimension cDimension : dimensions) {
+            String dimTableName = extractDimensionTableName(cDimension.getColName(), carbonDataLoadSchema);
+            String dimName = cDimension.getColName();
 
-            for (Hierarchy hierarchy : hierarchies) {
-                String foreignKey = cDimension.foreignKey;
-
-                String hierName = hierarchy.name;
-                if (null == hierName) {
-                    hierName = dimName;
-                }
-                hierName = hierName.replaceAll(" ", "_");
-
-                //                RelationOrJoin relation = hierarchy.relation;
-                dimName = dimName.replaceAll(" ", "_");
-
-                //                String tableName = relation == null ? dimName
-                //                        : ((Table)hierarchy.relation).name;
-
-                RelationOrJoin relation = hierarchy.relation;
-
-                String tableName = relation == null ? dimName : ((Table) hierarchy.relation).name;
-
-                if (tableName.equals(factTable)) {
-                    continue;
-                }
+            if (dimTableName.equals(factTable)) {
+            	continue;
+            }
+            
+            String foreignKey = null;
+            for (DimensionRelation dimensionRelation : carbonDataLoadSchema.getDimensionRelationList()) {
+            	for(String field : dimensionRelation.getColumns())
+            	{
+            		if(dimName.equals(field))
+            		{
+            			foreignKey = dimensionRelation.getRelation().getFactForeignKeyColumn();
+            			break;
+            		}
+            	}
 
                 foreignKeyHierarchyString.append(foreignKey);
                 foreignKeyHierarchyString.append(CarbonCommonConstants.COLON_SPC_CHARACTER);
-                foreignKeyHierarchyString.append(dimName + '_' + hierName);
+                foreignKeyHierarchyString.append(dimName + '_' + dimTableName);
                 foreignKeyHierarchyString.append(CarbonCommonConstants.AMPERSAND_SPC_CHARACTER);
             }
         }
@@ -2734,46 +2038,15 @@ public final class CarbonSchemaParser {
      * @param factTableName
      * @return
      */
-    public static String getForeignKeyAndPrimaryKeyMapString(CubeDimension[] dimensions,
-            Schema schema, String factTableName) {
+    public static String getForeignKeyAndPrimaryKeyMapString(List<DimensionRelation> dimensionRelationList) {
         StringBuilder foreignKeyHierarchyString = new StringBuilder();
         String columns = "";
 
-        for (CubeDimension cDimension : dimensions) {
-            Hierarchy[] hierarchies = null;
-            hierarchies = extractHierarchies(schema, cDimension);
-
-            for (Hierarchy hierarchy : hierarchies) {
-                String foreignKey = cDimension.foreignKey;
-
-                RelationOrJoin relation = hierarchy.relation;
-                String dimName = cDimension.name;
-                dimName = dimName.replaceAll(" ", "_");
-
-                String hierName = hierarchy.name;
-                if (null != hierName) {
-                    hierName = hierName.replaceAll(" ", "_");
-                } else {
-                    hierName = dimName;
-                }
-
-                String tableName = relation == null ? dimName : ((Table) hierarchy.relation).name;
-
-                if (tableName.equals(factTableName)) {
-                    continue;
-                }
-
-                String primaryKey = hierarchy.primaryKey;
-
-                if (null == foreignKey || null == primaryKey) {
-                    continue;
-                }
-
-                foreignKeyHierarchyString.append(foreignKey);
-                foreignKeyHierarchyString.append(CarbonCommonConstants.COLON_SPC_CHARACTER);
-                foreignKeyHierarchyString.append(tableName + '_' + primaryKey);
-                foreignKeyHierarchyString.append(CarbonCommonConstants.AMPERSAND_SPC_CHARACTER);
-            }
+        for (DimensionRelation dimensionRelation : dimensionRelationList) {
+            foreignKeyHierarchyString.append(dimensionRelation.getRelation().getFactForeignKeyColumn());
+            foreignKeyHierarchyString.append(CarbonCommonConstants.COLON_SPC_CHARACTER);
+            foreignKeyHierarchyString.append(dimensionRelation.getTableName() + '_' + dimensionRelation.getRelation().getDimensionPrimaryKeyColumn());
+            foreignKeyHierarchyString.append(CarbonCommonConstants.AMPERSAND_SPC_CHARACTER);
         }
         columns = foreignKeyHierarchyString.toString();
         if (columns.length() > 0 && columns
@@ -2791,24 +2064,35 @@ public final class CarbonSchemaParser {
      * @param dimensions
      * @return
      */
-    public static String getPrimaryKeyString(CubeDimension[] dimensions, Schema schema) {
+    public static String getPrimaryKeyString(List<CarbonDimension> dimensions, 
+    		CarbonDataLoadSchema carbonDataLoadSchema) {
         StringBuffer primaryKeyStringbuffer = new StringBuffer();
-        for (CubeDimension cDimension : dimensions) {
-            Hierarchy[] hierarchies = null;
-            hierarchies = extractHierarchies(schema, cDimension);
+        for (CarbonDimension cDimension : dimensions) {
+            String dimTableName = extractDimensionTableName(cDimension.getColName(), carbonDataLoadSchema);
+            String dimName = cDimension.getColName();
 
-            for (Hierarchy hierarchy : hierarchies) {
-                String primaryKey = hierarchy.primaryKey;
-
-                RelationOrJoin relation = hierarchy.relation;
-                String dimName = cDimension.name;
-                dimName = dimName.replaceAll(" ", "_");
-
-                String tableName = relation == null ? dimName : ((Table) hierarchy.relation).name;
-
-                primaryKeyStringbuffer.append(tableName + '_' + primaryKey);
-                primaryKeyStringbuffer.append(CarbonCommonConstants.AMPERSAND_SPC_CHARACTER);
+            String primaryKey = null;
+            if(dimTableName.equals(carbonDataLoadSchema.getCarbonTable().getFactTableName()))
+            {
+            	dimTableName = dimName;
             }
+            else
+            {
+            	for(DimensionRelation dimensionRelation : carbonDataLoadSchema.getDimensionRelationList())
+            	{
+            		for(String field : dimensionRelation.getColumns())
+            		{
+            			if(field.equals(dimName))
+            			{
+            				primaryKey = dimensionRelation.getRelation().getDimensionPrimaryKeyColumn();
+            				break;
+            			}
+            		}
+            	}
+            }
+
+            primaryKeyStringbuffer.append(dimTableName + '_' + primaryKey);
+            primaryKeyStringbuffer.append(CarbonCommonConstants.AMPERSAND_SPC_CHARACTER);
 
         }
 
@@ -2874,12 +2158,11 @@ public final class CarbonSchemaParser {
      * @param cube
      * @return
      */
-    public static String getMeasuresNamesString(Cube cube) {
-        Measure[] measures = cube.measures;
+    public static String getMeasuresNamesString(List<CarbonMeasure> measures) {
         StringBuilder measureNames = new StringBuilder();
 
-        for (int i = 0; i < measures.length; i++) {
-            measureNames.append(measures[i].name);
+        for (int i = 0; i < measures.size(); i++) {
+            measureNames.append(measures.get(i).getColName());
             measureNames.append(CarbonCommonConstants.AMPERSAND_SPC_CHARACTER);
         }
 
@@ -2894,7 +2177,6 @@ public final class CarbonSchemaParser {
 
         return measureNameString;
     }
-
     /**
      * Get Measure Name String
      *
@@ -2925,14 +2207,13 @@ public final class CarbonSchemaParser {
      * @param cube
      * @return
      */
-    public static String getMeasuresUniqueColumnNamesString(Cube cube) {
-        Measure[] measures = cube.measures;
+    public static String getMeasuresUniqueColumnNamesString(List<CarbonMeasure> measures) {
         StringBuilder measureNames = new StringBuilder();
         Set<String> set = new HashSet<String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-        for (int i = 0; i < measures.length; i++) {
-            if (!set.contains(measures[i].column)) {
-                set.add(measures[i].column);
-                measureNames.append(measures[i].column);
+        for (int i = 0; i < measures.size(); i++) {
+            if (!set.contains(measures.get(i).getColName())) {
+                set.add(measures.get(i).getColName());
+                measureNames.append(measures.get(i).getColName());
                 measureNames.append(CarbonCommonConstants.AMPERSAND_SPC_CHARACTER);
             }
         }
@@ -2993,12 +2274,11 @@ public final class CarbonSchemaParser {
      * @param cube
      * @return
      */
-    public static String[] getMeasuresAggragatorArray(Cube cube) {
-        Measure[] measures = cube.measures;
-        String[] msrAggregators = new String[measures.length];
+    public static String[] getMeasuresAggragatorArray(List<CarbonMeasure> measures) {
+        String[] msrAggregators = new String[measures.size()];
 
         for (int i = 0; i < msrAggregators.length; i++) {
-            msrAggregators[i] = measures[i].aggregator;
+            msrAggregators[i] = "sum";
         }
 
         return msrAggregators;
@@ -3009,80 +2289,15 @@ public final class CarbonSchemaParser {
      * @param cube
      * @return
      */
-    public static String getActualDimensions(SchemaInfo schemaInfo, Cube cube, Schema schema) {
-        //
+    public static String getActualDimensions(List<CarbonDimension> dimensions) {
         StringBuilder actualDim = new StringBuilder();
-        CarbonDef.CubeDimension[] dimensions = cube.dimensions;
-        //        if(!(GraphExecutionUtil.checkKeyOrdinalDefined(schemaInfo, cube.getName(), getFactTableName(cube))))
-        //        {
-        //            int levelCounter=0;
-        //            int count =0;
-        //            for(CubeDimension cDimension : dimensions)
-        //            {
-        //                //
-        //                Hierarchy[] hierarchies = null;
-        //                hierarchies = extractHierarchies(schema, cDimension);
-        //
-        //                for(Hierarchy hierarchy : hierarchies)
-        //                {
-        //                    for(int i=0; i<hierarchy.levels.length ;i++)
-        //                    {
-        //                        levelCounter++;
-        //                    }
-        //                }
-        //            }
-        //
-        //            for(int j = 0;j < levelCounter;j++)
-        //            {
-        //
-        //                loops:
-        //                    for(CubeDimension cDimension : dimensions)
-        //                    {
-        //                        //
-        //                        Hierarchy[] hierarchies = null;
-        //                        hierarchies = extractHierarchies(schema, cDimension);
-        //
-        //                        for(Hierarchy hierarchy : hierarchies)
-        //                        {
-        //                            for(Level level : hierarchy.levels)
-        //                            {
-        //                                Integer keyOrdinal = level.keyOrdinal;
-        //                                if(count == keyOrdinal)
-        //                                {
-        //                                    count++;
-        //                                    actualDim.append(level.column);
-        //                                    actualDim.append('&');
-        //                                    break loops;
-        //                                }
-        //
-        //                            }
-        //                        }
-        //                    }
-        //            }
-        //        }
-        //        else
-        //        {
-        for (CubeDimension cDimension : dimensions) {
-
-            if (cDimension.noDictionary) {
+        for (CarbonDimension cDimension : dimensions) {
+            if (!cDimension.getEncoder().contains(Encoding.DICTIONARY)) {
                 continue;
             }
-
-            //
-            Hierarchy[] hierarchies = null;
-            hierarchies = extractHierarchies(schema, cDimension);
-
-            for (Hierarchy hierarchy : hierarchies) {
-                for (Level level : hierarchy.levels) {
-                    if (level.parentname != null) continue;
-                    actualDim.append(level.column);
-                    actualDim.append(CarbonCommonConstants.AMPERSAND_SPC_CHARACTER);
-                }
-
-            }
+            actualDim.append(cDimension.getColName());
+            actualDim.append(CarbonCommonConstants.AMPERSAND_SPC_CHARACTER);
         }
-
-        //        }
 
         String actualDimString = actualDim.toString();
 
@@ -3095,7 +2310,6 @@ public final class CarbonSchemaParser {
 
         return actualDimString;
     }
-
     /**
      * @param cube
      * @return
@@ -3154,12 +2368,11 @@ public final class CarbonSchemaParser {
 
     }
 
-    public static String getMeasuresDataType(Cube cube) {
+    public static String getMeasuresDataType(List<CarbonMeasure> measures) {
         StringBuilder measureDataTypeString = new StringBuilder();
-        CarbonDef.Measure[] measures = cube.measures;
 
-        for (CarbonDef.Measure measure : measures) {
-            measureDataTypeString.append(measure.datatype)
+        for (CarbonMeasure measure : measures) {
+            measureDataTypeString.append(measure.getDataType())
                     .append(CarbonCommonConstants.AMPERSAND_SPC_CHARACTER);
         }
 
@@ -3180,25 +2393,6 @@ public final class CarbonSchemaParser {
      * @param column
      * @param cube
      */
-    private static boolean isMeasureColumnAsSomeOtherAggregator(String msrColumnName, Cube cube) {
-        Measure[] measures = cube.measures;
-        for (Measure measure : measures) {
-            if (msrColumnName.equals(measure.column)) {
-                Annotations annotations = measure.annotations;
-                if (null == annotations) {
-                    String aggregator = measure.aggregator;
-                    if (aggregator.equals("count") || aggregator.equals("distinct-count")) {
-                        continue;
-                    } else {
-                        return true;
-                    }
-                }
-            }
-        }
-
-        return false;
-    }
-
     public static Map<String, Integer> getLevelOrdinals(Cube cube, Schema schema) {
         Map<String, Integer> ordinalMap =
                 new HashMap<String, Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -3250,28 +2444,15 @@ public final class CarbonSchemaParser {
      * @param cube
      * @return String
      */
-    public static String getLevelAndDataTypeMapString(CubeDimension[] dimensions, Schema schema,
-            Cube cube) {
+    public static String getLevelAndDataTypeMapString(List<CarbonDimension> dimensions, 
+    		CarbonDataLoadSchema carbonDataLoadSchema) {
         StringBuilder dimString = new StringBuilder();
-        for (CubeDimension cDimension : dimensions) {
-            Hierarchy[] hierarchies = null;
-            hierarchies = extractHierarchies(schema, cDimension);
-            for (Hierarchy hierarchy : hierarchies) {
-                RelationOrJoin relation = hierarchy.relation;
-                // String dimName = cDimension.name;
-                // dimName = dimName.replaceAll(" ", "_");
-
-                String tableName = relation == null ?
-                        getFactTableName(cube) :
-                        ((Table) hierarchy.relation).name;
-
-                for (Level level : hierarchy.levels) {
-                    String levelName = tableName + '_' + level.column;
-                    dimString.append(levelName + CarbonCommonConstants.LEVEL_FILE_EXTENSION
-                            + CarbonCommonConstants.COLON_SPC_CHARACTER + level.type
-                            + CarbonCommonConstants.HASH_SPC_CHARACTER);
-                }
-            }
+        for (CarbonDimension cDimension : dimensions) {
+                String tableName = extractDimensionTableName(cDimension.getColName(), carbonDataLoadSchema);
+                String levelName = tableName + '_' + cDimension.getColName();
+                dimString.append(levelName + CarbonCommonConstants.LEVEL_FILE_EXTENSION
+                        + CarbonCommonConstants.COLON_SPC_CHARACTER + cDimension.getDataType()
+                        + CarbonCommonConstants.HASH_SPC_CHARACTER);
         }
         return dimString.toString();
     }
@@ -3284,36 +2465,24 @@ public final class CarbonSchemaParser {
      * @param cube
      * @return String
      */
-    public static String getLevelDataTypeAndParentMapString(Cube cube, Schema schema) {
+    public static String getLevelDataTypeAndParentMapString(List<CarbonDimension> dimensions) {
         StringBuilder dimString = new StringBuilder();
-        CarbonDef.CubeDimension[] dimensions = cube.dimensions;
-        for (CubeDimension cDimension : dimensions) {
-            Hierarchy[] hierarchies = null;
-            hierarchies = extractHierarchies(schema, cDimension);
-            for (Hierarchy hierarchy : hierarchies) {
-                if (hierarchy.levels.length > 1 && (hierarchy.levels[0].type.equals("Array")
-                        || hierarchy.levels[0].type.equals("Struct"))) {
-                    Level levelZero = hierarchy.levels[0];
-                    boolean isFirst = true;
-                    dimString.append(levelZero.name + CarbonCommonConstants.COLON_SPC_CHARACTER
-                            + levelZero.type + CarbonCommonConstants.COLON_SPC_CHARACTER + ""
-                            + CarbonCommonConstants.HASH_SPC_CHARACTER);
-                    for (Level level : hierarchy.levels) {
-                        if (isFirst) {
-                            isFirst = false;
-                            continue;
-                        }
-                        dimString.append(level.name + CarbonCommonConstants.COLON_SPC_CHARACTER
-                                + level.type + CarbonCommonConstants.COLON_SPC_CHARACTER
-                                + level.parentname + CarbonCommonConstants.HASH_SPC_CHARACTER);
-                    }
-                    dimString.append(CarbonCommonConstants.SEMICOLON_SPC_CHARACTER);
-                }
+        for (int i=0;i<dimensions.size();i++) {
+    		CarbonDimension dimension = dimensions.get(i);
+            if (dimension.getDataType().equals(DataType.ARRAY)
+                    || dimension.getDataType().equals(DataType.STRUCT)) {
+            	for(int j=0;j<dimension.getNumberOfChild();j++,i++)
+            	{
+            		dimension = dimensions.get(i);
+            		dimString.append(dimension.getColName() + CarbonCommonConstants.COLON_SPC_CHARACTER
+                        + dimension.getDataType() + CarbonCommonConstants.COLON_SPC_CHARACTER + ""
+                        + CarbonCommonConstants.HASH_SPC_CHARACTER);
+            	}
+                dimString.append(CarbonCommonConstants.SEMICOLON_SPC_CHARACTER);
             }
         }
         return dimString.toString();
     }
-
     /**
      * Below method is to get the dimension
      *
@@ -3338,76 +2507,21 @@ public final class CarbonSchemaParser {
      * @param dimensions
      * @return
      */
-    public static int getNoDictionaryDimensionString(Cube cube, CubeDimension[] dimensions,
-            StringBuilder dimString, int counter, Schema schema) {
-        for (CubeDimension cDimension : dimensions) {
-            if (!cDimension.noDictionary) {
+    public static int getNoDictionaryDimensionString(List<CarbonDimension> dimensions,
+            StringBuilder dimString, int counter, CarbonDataLoadSchema carbonDataLoadSchema) {
+        for (CarbonDimension cDimension : dimensions) {
+            if (cDimension.getEncoder().contains(Encoding.DICTIONARY)) {
                 continue;
             }
-            Hierarchy[] hierarchies = null;
-            hierarchies = extractHierarchies(schema, cDimension);
 
-            for (Hierarchy hierarchy : hierarchies) {
-                RelationOrJoin relation = hierarchy.relation;
-                // String dimName = cDimension.name;
-                // dimName = dimName.replaceAll(" ", "_");
-
-                String tableName = relation == null ?
-                        getFactTableName(cube) :
-                        ((Table) hierarchy.relation).name;
-                // String tableName = hierarchy.relation.toString();
-                int i = hierarchy.levels.length;
-
-                for (Level level : hierarchy.levels) {
-
-                    if (hierarchy.normalized) {
-                        if (i == 1) {
-                            dimString.append(tableName + '_' + level.column
-                                    + CarbonCommonConstants.COLON_SPC_CHARACTER + counter
-                                    + CarbonCommonConstants.COLON_SPC_CHARACTER
-                                    + level.levelCardinality
-                                    + CarbonCommonConstants.COLON_SPC_CHARACTER + 'Y');
-
-                        } else {
-                            dimString.append(tableName + '_' + level.column
-                                    + CarbonCommonConstants.COLON_SPC_CHARACTER + counter
-                                    + CarbonCommonConstants.COLON_SPC_CHARACTER
-                                    + level.levelCardinality
-                                    + CarbonCommonConstants.COLON_SPC_CHARACTER + 'N');
-                        }
-                        if (i > 1) {
-                            dimString.append(CarbonCommonConstants.COMA_SPC_CHARACTER);
-
-                        }
-                        counter++;
-                    } else {
-
-                        dimString.append(tableName + '_' + level.column
-                                + CarbonCommonConstants.COLON_SPC_CHARACTER + counter
-                                + CarbonCommonConstants.COLON_SPC_CHARACTER + level.levelCardinality
-                                + CarbonCommonConstants.COLON_SPC_CHARACTER + 'Y');
-                        counter++;
-                        if (i > 1) {
-                            dimString.append(CarbonCommonConstants.COMA_SPC_CHARACTER);
-
-                        }
-
-                    }
-
-                    i--;
-
-                }
-                dimString.append(CarbonCommonConstants.COMA_SPC_CHARACTER);
-            }
+            String tableName = extractDimensionTableName(cDimension.getColName(), carbonDataLoadSchema);
+            dimString.append(tableName + '_' + cDimension.getColName()
+                    + CarbonCommonConstants.COLON_SPC_CHARACTER + counter
+                    + CarbonCommonConstants.COLON_SPC_CHARACTER + -1
+                    + CarbonCommonConstants.COLON_SPC_CHARACTER + 'Y'
+                    + CarbonCommonConstants.COMA_SPC_CHARACTER);
+            counter++;
         }
-/*
-        String dimstr = dimString.toString();
-        if(dimstr.length() > 0 && dimstr.endsWith(CarbonCommonConstants.COMA_SPC_CHARACTER))
-        {
-            dimstr = dimstr.substring(0, dimstr.length()
-                    - CarbonCommonConstants.COMA_SPC_CHARACTER.length());
-        }*/
-
         return counter;
     }
 

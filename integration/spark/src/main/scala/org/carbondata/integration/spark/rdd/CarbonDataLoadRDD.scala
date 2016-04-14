@@ -51,7 +51,8 @@ class CarbonLoadPartition(rddId: Int, val idx: Int, @transient val tableSplit: T
 
 class CarbonDataLoadRDD[K, V](
                               sc: SparkContext,
-                              result: Result[K, V], carbonLoadModel: CarbonLoadModel,
+                              result: Result[K, V],
+                              carbonLoadModel: CarbonLoadModel,
                               var storeLocation: String,
                               hdfsStoreLocation: String,
                               kettleHomePath: String,
@@ -179,8 +180,8 @@ class CarbonDataLoadRDD[K, V](
       }
 
       def checkAndLoadAggregationTable(): String = {
-        val schema = model.getSchema
-        val aggTables = schema.cubes(0).fact.asInstanceOf[CarbonDef.Table].aggTables
+        val schema = model.getCarbonDataLoadSchema
+        val aggTables =schema.getCarbonTable.getAggregateTablesName
         if (null != aggTables && !aggTables.isEmpty) {
           val details = model.getLoadMetadataDetails.toSeq.toArray
           val newSlice = CarbonCommonConstants.LOAD_FOLDER + loadCount
@@ -239,8 +240,8 @@ class CarbonDataLoadRDD[K, V](
       }
 
       def recreateAggregationTableForRetention() = {
-        val schema = model.getSchema
-        val aggTables = schema.cubes(0).fact.asInstanceOf[CarbonDef.Table].aggTables
+        val schema = model.getCarbonDataLoadSchema
+        val aggTables = schema.getCarbonTable.getAggregateTablesName
         if (null != aggTables && !aggTables.isEmpty) {
           val details = model.getLoadMetadataDetails.toSeq.toArray
           val listOfLoadFolders = CarbonLoaderUtil.getListOfValidSlices(details)
@@ -258,15 +259,14 @@ class CarbonDataLoadRDD[K, V](
           iterateOverAggTables(aggTables, listOfLoadFolders, listOfUpdatedLoadFolders, loadFolders)
         }
       }
-
-      def iterateOverAggTables(aggTables: Array[CarbonDef.AggTable], listOfLoadFolders: java.util.List[String], listOfUpdatedLoadFolders: java.util.List[String], loadFolders: Array[String]): String = {
+      //TO-DO Aggregate table needs to be handled
+      def iterateOverAggTables(aggTables: java.util.List[String], listOfLoadFolders: java.util.List[String], listOfUpdatedLoadFolders: java.util.List[String], loadFolders: Array[String]): String = {
         model.setAggLoadRequest(true)
         aggTables.foreach { aggTable =>
-          val aggTableName = CarbonLoaderUtil.getAggregateTableName(aggTable)
-          model.setAggTableName(aggTableName)
+          model.setAggTableName(aggTable)
           dataloadStatus = loadAggregationTable(listOfLoadFolders, listOfUpdatedLoadFolders, loadFolders)
           if (CarbonCommonConstants.STORE_LOADSTATUS_FAILURE.equals(dataloadStatus)) {
-            logInfo(s"Aggregate table creation failed :: $aggTableName")
+            logInfo(s"Aggregate table creation failed :: aggTable")
             return dataloadStatus
           }
         }

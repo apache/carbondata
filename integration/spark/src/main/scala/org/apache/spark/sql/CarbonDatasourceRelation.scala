@@ -20,7 +20,6 @@
 package org.apache.spark.sql
 
 import java.util.LinkedHashSet
-
 import org.apache.spark.Logging
 import org.apache.spark.sql.catalyst.analysis.MultiInstanceRelation
 import org.apache.spark.sql.catalyst.expressions.AttributeReference
@@ -29,9 +28,9 @@ import org.apache.spark.sql.hive.{TableMeta, CarbonMetaData, CarbonMetastoreType
 import org.apache.spark.sql.sources.{BaseRelation, RelationProvider}
 import org.apache.spark.sql.types.{DataType, StructType}
 import org.carbondata.core.carbon.CarbonDef
-
 import scala.collection.JavaConversions.{asScalaBuffer, asScalaSet, seqAsJavaList}
 import scala.language.implicitConversions
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
 
 
 /**
@@ -97,7 +96,7 @@ case class CarbonRelation(schemaName: String,
   def tableName = cubeName
 
   def recursiveMethod(dimName: String) : String = {
-	metaData.cube.getChildren(dimName).map(childDim => {
+	metaData.carbonTable.getChildren(dimName).map(childDim => {
 		childDim.getDataType().toString.toLowerCase match {
 			case "array" => s"array<${getArrayChildren(childDim.getColName)}>"
 			case "struct" => s"struct<${getStructChildren(childDim.getColName)}>"
@@ -107,9 +106,9 @@ case class CarbonRelation(schemaName: String,
   }
   
   def getArrayChildren(dimName: String) : String = {
-	metaData.cube.getChildren(dimName).map(childDim => {
+	metaData.carbonTable.getChildren(dimName).map(childDim => {
 		childDim.getDataType().toString.toLowerCase match {
-		    case "array" => s"array<${getArrayChildren(childDim.getColName())}>"
+		  case "array" => s"array<${getArrayChildren(childDim.getColName())}>"
 			case "struct" => s"struct<${getStructChildren(childDim.getColName())}>"
 			case dType => dType
 		}
@@ -117,11 +116,11 @@ case class CarbonRelation(schemaName: String,
   }
   
   def getStructChildren(dimName: String) : String = {
-    metaData.cube.getChildren(dimName).map(childDim => {
+    metaData.carbonTable.getChildren(dimName).map(childDim => {
 		childDim.getDataType().toString.toLowerCase match {
-		    case "array" => s"${childDim.getColName().substring(childDim.getParentName.length()+1)}:array<${getArrayChildren(childDim.getColName())}>"
-        case "struct" => s"struct<${metaData.cube.getChildren(childDim.getColName).map(f => s"${recursiveMethod(f.getColName)}")}>"
-        case dType => s"${childDim.getColName.substring(childDim.getParentName.length()+1)}:${dType}"
+		    case "array" => s"${childDim.getColName().substring(dimName.length()+1)}:array<${getArrayChildren(childDim.getColName())}>"
+        case "struct" => s"struct<${metaData.carbonTable.getChildren(childDim.getColName).map(f => s"${recursiveMethod(f.getColName)}")}>"
+        case dType => s"${childDim.getColName.substring(dimName.length()+1)}:${dType}"
       }
 	  }).mkString(",")
   }
@@ -129,36 +128,32 @@ case class CarbonRelation(schemaName: String,
   override def newInstance() = CarbonRelation(schemaName, cubeName, metaData, cubeMeta, alias)(sqlContext).asInstanceOf[this.type]
 
   val dimensionsAttr = {
-    val filteredDimAttr = cubeMeta.schema.cubes(0).dimensions.filter { aDim => (null == aDim.asInstanceOf[CarbonDef.Dimension].hierarchies(0).levels(0).visible) ||
-      (aDim.asInstanceOf[CarbonDef.Dimension].hierarchies(0).levels(0).visible)
-    }
-    
-     
-    val sett = new LinkedHashSet(filteredDimAttr.toSeq)
+    val sett = new LinkedHashSet(cubeMeta.carbonTable.getDimensionByTableName(cubeMeta.tableName).toSeq)
     sett.toSeq.map(dim => 
     {
-    	val output: DataType = metaData.cube.getDimension(dim.name).getDataType().toString.toLowerCase match {
-    	  case "array" => CarbonMetastoreTypes.toDataType(s"array<${getArrayChildren(dim.name)}>")
-    	  case "struct" => CarbonMetastoreTypes.toDataType(s"struct<${getStructChildren(dim.name)}>")
+    	val output: DataType = metaData.carbonTable.getDimensionByName(metaData.carbonTable.getFactTableName,dim.getColName).getDataType().toString.toLowerCase match {
+    	  case "array" => CarbonMetastoreTypes.toDataType(s"array<${getArrayChildren(dim.getColName)}>")
+    	  case "struct" => CarbonMetastoreTypes.toDataType(s"struct<${getStructChildren(dim.getColName)}>")
 //    	  case "int" => CarbonMetastoreTypes.toDataType("double")
     	  case dType => CarbonMetastoreTypes.toDataType(dType)
     	  }
 
       AttributeReference(
-        dim.name,
+        dim.getColName,
         output,
         nullable = true)(qualifiers = tableName +: alias.toSeq)
     })
   }
 
   val measureAttr = {
-    val filteredMeasureAttr = cubeMeta.schema.cubes(0).measures.filter { aMsr => (null == aMsr.visible) || (aMsr.visible) }
-    new LinkedHashSet(filteredMeasureAttr.toSeq).toSeq.map(x => AttributeReference(
-      x.name,
-      CarbonMetastoreTypes.toDataType(metaData.cube.getMeasure(x.name).getDataType().toString.toLowerCase match
+//    val filteredMeasureAttr = cubeMeta.carbonTable.getmeasures.filter { aMsr => (null == aMsr.visible) || (aMsr.visible) }
+    val factTable = cubeMeta.carbonTable.getFactTableName
+    new LinkedHashSet(cubeMeta.carbonTable.getMeasureByTableName(cubeMeta.carbonTable.getFactTableName).toSeq).toSeq.map(x => AttributeReference(
+      x.getColName,
+      CarbonMetastoreTypes.toDataType(metaData.carbonTable.getMeasureByName(factTable, x.getColName).getDataType.toString.toLowerCase match
       {
         case "int" => "double"
-        case _ => metaData.cube.getMeasure(x.name).getDataType().toString.toLowerCase
+        case _ => metaData.carbonTable.getMeasureByName(factTable, x.getColName).getDataType.toString.toLowerCase
       }),
       nullable = true)(qualifiers = tableName +: alias.toSeq))
   }

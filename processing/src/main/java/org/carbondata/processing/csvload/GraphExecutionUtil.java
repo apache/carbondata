@@ -19,7 +19,11 @@
 
 package org.carbondata.processing.csvload;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -28,12 +32,22 @@ import java.util.Set;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.carbon.CarbonDataLoadSchema;
+import org.carbondata.core.carbon.CarbonDataLoadSchema.DimensionRelation;
+import org.carbondata.core.carbon.CarbonDef.Cube;
+import org.carbondata.core.carbon.CarbonDef.CubeDimension;
+import org.carbondata.core.carbon.CarbonDef.Hierarchy;
+import org.carbondata.core.carbon.CarbonDef.Level;
+import org.carbondata.core.carbon.CarbonDef.RelationOrJoin;
+import org.carbondata.core.carbon.CarbonDef.Schema;
+import org.carbondata.core.carbon.CarbonDef.Table;
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
-import org.carbondata.core.carbon.CarbonDef.*;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.processing.etl.DataLoadingException;
 import org.carbondata.processing.schema.metadata.AggregateTable;
@@ -199,64 +213,53 @@ public final class GraphExecutionUtil {
      * @param tableName
      * @param schema
      */
-    public static Set<String> getSchemaColumnNames(Cube cube, String tableName, Schema schema) {
+    public static Set<String> getSchemaColumnNames(CarbonDataLoadSchema schema, String tableName) {
         Set<String> columnNames = new HashSet<String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-        String factTableName = CarbonSchemaParser.getFactTableName(cube);
+        String factTableName = schema.getCarbonTable().getFactTableName();
         if (tableName.equals(factTableName)) {
-            CubeDimension[] dimensions = cube.dimensions;
+        	
+        	List<CarbonDimension> dimensions = schema.getCarbonTable().getDimensionByTableName(factTableName);
 
-            for (CubeDimension dimension : dimensions) {
-                String foreignKey = dimension.foreignKey;
+            for (CarbonDimension dimension : dimensions) {
+            	
+            	String foreignKey = null;
+            	for(DimensionRelation dimRel : schema.getDimensionRelationList())
+            	{
+            		for(String field : dimRel.getColumns())
+            		{
+            			if(dimension.equals(field))
+            			{
+            				foreignKey = dimRel.getRelation().getFactForeignKeyColumn();
+            				break;
+            			}
+            		}
+            		if(null != foreignKey)
+            		{
+            			break;
+            		}
+            	}
                 if (null == foreignKey) {
-                    Hierarchy[] extractHierarchies =
-                            CarbonSchemaParser.extractHierarchies(schema, dimension);
-
-                    for (Hierarchy hier : extractHierarchies) {
-                        Level[] levels = hier.levels;
-
-                        for (Level level : levels) {
-                            if (level.visible && null == level.parentname) {
-                                columnNames.add(level.column.trim());
-                            }
-                        }
-                    }
-                } else {
-                    if (dimension.visible) {
+                	columnNames.add(dimension.getColName());
+                	} else {
                         columnNames.add(foreignKey);
-                    }
                 }
             }
 
-            Measure[] measures = cube.measures;
-            for (Measure msr : measures) {
-                /*if (false == msr.visible)
-                {
-                    continue;
-                }*/
-                if (!msr.visible) {
-                    continue;
-                }
-
-                columnNames.add(msr.column);
+            List<CarbonMeasure> measures = schema.getCarbonTable().getMeasureByTableName(factTableName);
+            for (CarbonMeasure msr : measures) {
+                columnNames.add(msr.getColName());
             }
         } else {
-            AggregateTable[] aggregateTable = CarbonSchemaParser.getAggregateTable(cube, schema);
-
-            for (AggregateTable aggTable : aggregateTable) {
-                if (tableName.equals(aggTable.getAggregateTableName())) {
-                    String[] aggLevels = aggTable.getAggLevels();
-                    for (String aggLevel : aggLevels) {
-                        columnNames.add(aggLevel);
-                    }
-
-                    String[] aggMeasure = aggTable.getAggMeasure();
-                    for (String aggMsr : aggMeasure) {
-                        columnNames.add(aggMsr);
-                    }
-                }
+        	List<CarbonDimension> dimensions = schema.getCarbonTable().getDimensionByTableName(tableName);
+            for (CarbonDimension dimension : dimensions) {
+            	columnNames.add(dimension.getColName());
             }
-
+            
+            List<CarbonMeasure> measures = schema.getCarbonTable().getMeasureByTableName(tableName);
+            for (CarbonMeasure msr : measures) {
+                columnNames.add(msr.getColName());
+            }
         }
 
         return columnNames;
@@ -381,33 +384,21 @@ public final class GraphExecutionUtil {
         return true;
     }
 
-    public static Set<String> getDimensionColumnNames(Cube cube, String factTableName,
-            String dimTableName, Schema schema) {
+    public static Set<String> getDimensionColumnNames(String dimTableName, 
+    		CarbonDataLoadSchema schema) {
         Set<String> columnNames = new HashSet<String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-        String factTableNameLocal = CarbonSchemaParser.getFactTableName(cube);
-        if (factTableName.equals(factTableNameLocal)) {
-            CubeDimension[] dimensions = cube.dimensions;
-
-            for (CubeDimension dimension : dimensions) {
-                Hierarchy[] extractHierarchies =
-                        CarbonSchemaParser.extractHierarchies(schema, dimension);
-
-                for (Hierarchy hier : extractHierarchies) {
-                    RelationOrJoin relation = hier.relation;
-                    String tableName = relation == null ? null : ((Table) hier.relation).name;
-                    if (null != tableName && tableName.equalsIgnoreCase(dimTableName)) {
-                        Level[] levels = hier.levels;
-
-                        for (Level level : levels) {
-                            columnNames.add(level.column.trim());
-                        }
-                    }
-
-                }
-            }
+        for(DimensionRelation dimRel : schema.getDimensionRelationList())
+        {
+        	if(dimRel.getTableName().equals(dimTableName))
+        	{
+        		for(String field : dimRel.getColumns())
+        		{
+        			columnNames.add(field);
+        		}
+        		break;
+        	}
         }
-
         return columnNames;
     }
 }

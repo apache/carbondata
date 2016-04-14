@@ -27,15 +27,10 @@ import java.util.List;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
-import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.core.metadata.CarbonMetadata;
 import org.carbondata.core.carbon.CarbonDef;
 import org.carbondata.core.carbon.SqlStatement;
 import org.carbondata.core.util.CarbonProperties;
-import org.carbondata.processing.suggest.autoagg.AutoAggSuggestionFactory;
-import org.carbondata.processing.suggest.autoagg.AutoAggSuggestionService;
-import org.carbondata.processing.suggest.autoagg.exception.AggSuggestException;
-import org.carbondata.processing.suggest.autoagg.model.Request;
 import org.carbondata.processing.suggest.datastats.LoadSampler;
 import org.carbondata.processing.suggest.datastats.load.LevelMetaInfo;
 import org.carbondata.processing.suggest.datastats.model.LoadModel;
@@ -46,71 +41,9 @@ import org.carbondata.query.executer.QueryExecutor;
 import org.carbondata.query.executer.exception.QueryExecutionException;
 import org.carbondata.query.holders.CarbonResultHolder;
 import org.carbondata.query.queryinterface.filter.CarbonFilterInfo;
-import org.carbondata.query.querystats.Preference;
-import org.carbondata.query.result.RowResult;
 
 public class Main {
 
-    public static void main(String[] args) throws QueryExecutionException {
-
-		/*long a=Long.parseLong("00111111111111111111111111111111111111111111111111101011010000101",2);
-        long b=Long.parseLong(  "00011111111111111111111111111111111111111111111111101011010000101",2);
-		System.out.print(Long.toBinaryString(a-b));*/
-
-        // utility();
-
-        String basePath = null, metaPath = null;
-
-        basePath = "hdfs://10.19.92.135:54310/VmallData/VmallStore/";
-        metaPath = basePath + "schemas/default/Vmall_user_prof1/metadata";
-		 
-
-		/*basePath = "D:/githuawei/spark_cube/CI/FTScenarios/Small/store/";
-		metaPath = basePath + "schemas/default/Small/metadata";*/
-
-        basePath = "D:/githuawei/spark_cube/CI/FTScenarios/DynCar/store/";
-        metaPath = basePath + "schemas/default/Carbon_DR_FT/metadata";
-		 
-		/*
-		 * basePath="/opt/ashok/test/DynCar/";
-		 * metaPath=basePath+"schemas/default/Carbon_DR_FT/metadata";
-		 */
-
-        CarbonProperties.getInstance().addProperty("carbon.storelocation", basePath + "store");
-        // CarbonProperties.getInstance().addProperty("carbon.schemaslocation",
-        // basePath+"schemas");
-        CarbonProperties.getInstance().addProperty("carbon.number.of.cores", "4");
-        CarbonProperties.getInstance().addProperty("carbon.smartJump.avoid.percent", "70");
-        CarbonProperties.getInstance().addProperty(Preference.AGG_LOAD_COUNT, "4");
-        CarbonProperties.getInstance().addProperty(Preference.AGG_FACT_COUNT, "2");
-        CarbonProperties.getInstance().addProperty(Preference.AGG_REC_COUNT, "5");
-        //CarbonProperties.getInstance().addProperty("aggregate.columnar.keyblock","false");
-
-        AutoAggSuggestionService aggServer =
-                AutoAggSuggestionFactory.getAggregateService(Request.DATA_STATS);
-        CarbonDef.Schema schema = TestUtil.readMetaData(metaPath).get(0);
-        CarbonDef.Cube cube = schema.cubes[0];
-
-        LoadModel loadModel =
-                TestUtil.createLoadModel(schema.name, cube.name, schema, cube, basePath + "store",
-                        basePath + "schemas/default/Carbon_DR_FT/");
-        List<String> combs;
-        try {
-            combs = aggServer.getAggregateDimensions(loadModel);
-            //			List<String> combs=aggServer.getAggregateScripts(loadModel);
-            for (String comb : combs) {
-                System.out.println(comb);
-            }
-
-        } catch (AggSuggestException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-
-        // serialize(dimCos);
-        //executeQuery(schema,cube);
-
-    }
 
     public static void executeQuery(CarbonDef.Schema schema, CarbonDef.Cube cube)
             throws QueryExecutionException {
@@ -130,8 +63,8 @@ public class Main {
         QueryExecutor queryExecutor = DataStatsUtil
                 .getQueryExecuter(loadSampler.getMetaCube(), cube.fact.getAlias(),
                         loadSampler.getQueryScopeObject());
-        CarbonIterator<RowResult> rowIterator = queryExecutor.execute(model);
-        System.out.println("hello");
+         queryExecutor.execute(model);
+      
     }
 
     public static CarbonQueryExecutorModel createQueryExecutorModel(LoadSampler loadSampler) {

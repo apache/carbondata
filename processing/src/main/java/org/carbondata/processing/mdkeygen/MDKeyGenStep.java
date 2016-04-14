@@ -252,22 +252,27 @@ public class MDKeyGenStep extends BaseStep {
         String levelCardinalityFilePath = storeLocation + File.separator +
                 CarbonCommonConstants.LEVEL_METADATA_FILE + meta.getTableName() + ".metadata";
 
-        try {
-            int[] dimLensWithComplex =
+        int[] dimLensWithComplex=null;
+        try{
+          dimLensWithComplex =
                     CarbonUtil.getCardinalityFromLevelMetadataFile(levelCardinalityFilePath);
-            List<Integer> dimsLenList = new ArrayList<Integer>();
-            for (int eachDimLen : dimLensWithComplex) {
-                if (eachDimLen != 0) dimsLenList.add(eachDimLen);
-            }
-            dimLens = new int[dimsLenList.size()];
-            for (int i = 0; i < dimsLenList.size(); i++) {
-                dimLens[i] = dimsLenList.get(i);
-            }
-        } catch (CarbonUtilException e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
+        }catch(CarbonUtilException e){
+          LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "Level cardinality file :: " + e.getMessage());
-            return false;
+                 return false;
         }
+        if(null==dimLensWithComplex){
+          return false;
+        }
+        List<Integer> dimsLenList = new ArrayList<Integer>();
+        for (int eachDimLen : dimLensWithComplex) {
+            if (eachDimLen != 0) dimsLenList.add(eachDimLen);
+        }
+        dimLens = new int[dimsLenList.size()];
+        for (int i = 0; i < dimsLenList.size(); i++) {
+            dimLens[i] = dimsLenList.get(i);
+        }
+ 
         String[] dimStoreType = meta.getDimensionsStoreType().split(",");
         boolean[] dimensionStoreType = new boolean[dimLens.length];
         for (int i = 0; i < dimensionStoreType.length; i++) {

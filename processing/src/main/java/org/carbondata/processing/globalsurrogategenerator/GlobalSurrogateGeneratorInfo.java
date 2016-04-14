@@ -21,6 +21,7 @@ package org.carbondata.processing.globalsurrogategenerator;
 
 import org.carbondata.core.carbon.CarbonDef.CubeDimension;
 import org.carbondata.core.carbon.CarbonDef.Schema;
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 
 public class GlobalSurrogateGeneratorInfo {
 

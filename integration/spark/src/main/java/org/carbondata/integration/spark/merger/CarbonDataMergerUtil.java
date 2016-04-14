@@ -27,6 +27,7 @@ import java.util.List;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
@@ -382,7 +383,7 @@ public final class CarbonDataMergerUtil {
 
         try {
             CarbonLoaderUtil
-                    .writeLoadMetadata(carbonLoadModel.getSchema(), carbonLoadModel.getSchemaName(),
+                    .writeLoadMetadata(carbonLoadModel.getCarbonDataLoadSchema(), carbonLoadModel.getSchemaName(),
                             carbonLoadModel.getCubeName(), Arrays.asList(loadDetails));
         } catch (IOException e) {
             LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
@@ -394,7 +395,10 @@ public final class CarbonDataMergerUtil {
     public static void cleanUnwantedMergeLoadFolder(CarbonLoadModel loadModel, int partitionCount,
             String storeLocation, boolean isForceDelete, int currentRestructNumber) {
 
-        String loadMetadataFilePath = CarbonLoaderUtil.extractLoadMetadataFileLocation(loadModel);
+       CarbonTable cube = org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance().getCarbonTable(loadModel.getSchemaName() + '_' + loadModel.getCubeName());
+        
+        String loadMetadataFilePath =cube.getMetaDataFilepath();
+        //String loadMetadataFilePath = CarbonLoaderUtil.extractLoadMetadataFileLocation(loadModel);
 
         LoadMetadataDetails[] details = CarbonUtil.readLoadMetadata(loadMetadataFilePath);
 

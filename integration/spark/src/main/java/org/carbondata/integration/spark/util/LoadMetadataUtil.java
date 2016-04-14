@@ -30,6 +30,7 @@ package org.carbondata.integration.spark.util;
 
 import java.io.File;
 
+import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
@@ -45,9 +46,9 @@ public final class LoadMetadataUtil {
     }
 
     public static boolean isLoadDeletionRequired(CarbonLoadModel loadModel) {
-        String metaDataLocation = CarbonLoaderUtil
-                .extractLoadMetadataFileLocation(loadModel.getSchema(), loadModel.getSchemaName(),
-                        loadModel.getCubeName());
+    	CarbonTable cube = org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance().getCarbonTable(loadModel.getSchemaName() + '_' + loadModel.getCubeName());
+        
+        String metaDataLocation =cube.getMetaDataFilepath();
         LoadMetadataDetails[] details = CarbonUtil.readLoadMetadata(metaDataLocation);
         if (details != null && details.length != 0) {
             for (LoadMetadataDetails oneRow : details) {

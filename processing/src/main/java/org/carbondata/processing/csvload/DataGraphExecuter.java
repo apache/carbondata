@@ -36,8 +36,10 @@ import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
+import org.carbondata.core.carbon.CarbonDataLoadSchema;
 import org.carbondata.core.carbon.CarbonDef.Cube;
 import org.carbondata.core.carbon.CarbonDef.Schema;
+import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.processing.api.dataloader.SchemaInfo;
 import org.carbondata.processing.constants.DataProcessorConstants;
@@ -115,14 +117,9 @@ public class DataGraphExecuter {
      * @return column names array.
      */
     private String[] getColumnNames(SchemaInfo schemaInfo, String tableName, String partitionId,
-            Schema schema) {
-        if (schema == null) {
-            schema = CarbonSchemaParser.loadXML(schemaInfo.getSchemaPath());
-        }
+            CarbonDataLoadSchema schema) {
 
-        Cube cube = CarbonSchemaParser.getMondrianCube(schema, schemaInfo.getCubeName());
-
-        Set<String> columnNames = GraphExecutionUtil.getSchemaColumnNames(cube, tableName, schema);
+        Set<String> columnNames = GraphExecutionUtil.getSchemaColumnNames(schema, tableName);
 
         return columnNames.toArray(new String[columnNames.size()]);
     }
@@ -135,28 +132,15 @@ public class DataGraphExecuter {
      * @return column names array.
      */
     private String[] getDimColumnNames(SchemaInfo schemaInfo, String factTableName,
-            String dimTableName, String partitionId, Schema schema) {
-        Cube cube = null;
-        if (schema == null) {
-            schema = CarbonSchemaParser.loadXML(schemaInfo.getSchemaPath());
-            cube = CarbonSchemaParser.getMondrianCube(schema, schemaInfo.getCubeName());
+            String dimTableName, String partitionId, CarbonDataLoadSchema schema) {
 
-            if (partitionId != null) {
-                String originalSchemaName = schema.name;
-                String originalCubeName = cube.name;
-                schema.name = originalSchemaName + '_' + partitionId;
-                cube.name = originalCubeName + '_' + partitionId;
-            }
-        } else {
-            cube = CarbonSchemaParser.getMondrianCube(schema, schemaInfo.getCubeName());
-        }
-        Set<String> columnNames = GraphExecutionUtil
-                .getDimensionColumnNames(cube, factTableName, dimTableName, schema);
+    	Set<String> columnNames = GraphExecutionUtil
+                .getDimensionColumnNames(dimTableName, schema);
         return columnNames.toArray(new String[columnNames.size()]);
     }
 
     private void validateCSV(SchemaInfo schemaInfo, String tableName, CarbonFile f,
-            String partitionId, Schema schema, String delimiter) throws DataLoadingException {
+            String partitionId, CarbonDataLoadSchema schema, String delimiter) throws DataLoadingException {
 
         String[] columnNames = getColumnNames(schemaInfo, tableName, partitionId, schema);
 
@@ -179,7 +163,7 @@ public class DataGraphExecuter {
     }
 
     public void executeGraph(String graphFilePath, List<String> measureColumns,
-            SchemaInfo schemaInfo, String partitionId, Schema schema) throws DataLoadingException {
+            SchemaInfo schemaInfo, String partitionId, CarbonDataLoadSchema schema) throws DataLoadingException {
 
         //This Method will validate the both fact and dimension csv files.
         if (!schemaInfo.isAutoAggregateRequest()) {
@@ -520,7 +504,7 @@ public class DataGraphExecuter {
                 + model.getTableName();
     }
 
-    private void validateHeader(SchemaInfo schemaInfo, String partitionId, Schema schema)
+    private void validateHeader(SchemaInfo schemaInfo, String partitionId, CarbonDataLoadSchema schema)
             throws DataLoadingException {
         String[] columnNames =
                 getColumnNames(schemaInfo, model.getTableName(), partitionId, schema);
@@ -554,7 +538,7 @@ public class DataGraphExecuter {
      * @param schemaInfo
      * @throws DataLoadingException
      */
-    private void validateCSVFiles(SchemaInfo schemaInfo, String partitionId, Schema schema)
+    private void validateCSVFiles(SchemaInfo schemaInfo, String partitionId, CarbonDataLoadSchema schema)
             throws DataLoadingException {
         // Validate the Fact CSV Files.
         String csvFilePath = model.getCsvFilePath();
@@ -699,7 +683,7 @@ public class DataGraphExecuter {
      * @throws DataLoadingException
      */
     private void validateDimensionCSV(SchemaInfo schemaInfo, String factTableName,
-            String dimTableName, CarbonFile dimFile, String partitionId, Schema schema,
+            String dimTableName, CarbonFile dimFile, String partitionId, CarbonDataLoadSchema schema,
             String delimiter) throws DataLoadingException {
         String[] columnNames =
                 getDimColumnNames(schemaInfo, factTableName, dimTableName, partitionId, schema);

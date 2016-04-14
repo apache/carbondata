@@ -23,12 +23,18 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
+import org.apache.thrift.TBase;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
-import org.carbondata.core.metadata.CarbonMetadata;
+import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
+import org.carbondata.core.carbon.CarbonDataLoadSchema;
 import org.carbondata.core.carbon.CarbonDef.Cube;
 import org.carbondata.core.carbon.CarbonDef.Schema;
+import org.carbondata.core.carbon.metadata.converter.SchemaConverter;
+import org.carbondata.core.carbon.metadata.converter.ThriftWrapperSchemaConverterImpl;
+import org.carbondata.core.reader.ThriftReader;
+import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
+import org.carbondata.format.TableInfo;
 import org.carbondata.processing.suggest.datastats.model.LoadModel;
 import org.carbondata.query.querystats.Preference;
 import org.eigenbase.xom.DOMWrapper;
@@ -38,76 +44,33 @@ import org.eigenbase.xom.XOMUtil;
 
 public class TestUtil {
 
-    public static List<Schema> readMetaData(String metaDataPath) {
-        if (null == metaDataPath) {
-            return null;
-        }
-        FileFactory.FileType fileType = FileFactory.getFileType(metaDataPath);
-        CarbonFile metaDataFile = FileFactory.getCarbonFile(metaDataPath, fileType);
-        if (!metaDataFile.exists()) {
-            return null;
-        }
-
-        List<Schema> list = new ArrayList<Schema>();
-        try {
-
-            DataInputStream in = FileFactory.getDataInputStream(metaDataPath, fileType);
-            int len = in.readInt();
-            while (len > 0) {
-                byte[] schemaNameBytes = new byte[len];
-                in.readFully(schemaNameBytes);
-
-                String schemaName = new String(schemaNameBytes, "UTF8");
-                int cubeNameLen = in.readInt();
-                byte[] cubeNameBytes = new byte[cubeNameLen];
-                in.readFully(cubeNameBytes);
-                String cubeName = new String(cubeNameBytes, "UTF8");
-                int dataPathLen = in.readInt();
-                byte[] dataPathBytes = new byte[dataPathLen];
-                in.readFully(dataPathBytes);
-                String dataPath = new String(dataPathBytes, "UTF8");
-
-                int versionLength = in.readInt();
-                byte[] versionBytes = new byte[versionLength];
-                in.readFully(versionBytes);
-                String version = new String(versionBytes, "UTF8");
-
-                int schemaLen = in.readInt();
-                byte[] schemaBytes = new byte[schemaLen];
-                in.readFully(schemaBytes);
-
-                String schema = new String(schemaBytes, "UTF8");
-                int partitionLength = in.readInt();
-                byte[] partitionBytes = new byte[partitionLength];
-                in.readFully(partitionBytes);
-
-                ByteArrayInputStream inStream = new ByteArrayInputStream(partitionBytes);
-                ObjectInputStream objStream = new ObjectInputStream(inStream);
-
-                objStream.close();
-
-                Schema mondSchema = parseStringToSchema(schema);
-                CarbonMetadata.getInstance().loadSchema(mondSchema);
-
-                list.add(mondSchema);
-                try {
-                    len = in.readInt();
-                } catch (EOFException eof) {
-                    len = 0;
-                }
-
-            }
-
-            return list;
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (XOMException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-
-        return null;
+    public static CarbonDataLoadSchema readMetaData(String metaDataPath,String schemaName,String tableName) {
+    	try{
+    		FileType fileType=FileFactory.getFileType(metaDataPath);
+        	CarbonProperties.getInstance().addProperty("carbon.storelocation", metaDataPath);
+        	if (FileFactory.isFileExist(metaDataPath, fileType)) {
+        	
+        		ThriftReader.TBaseCreator createTBase=	new ThriftReader.TBaseCreator() {
+                    public TBase create(){
+                        return new TableInfo();
+                    }
+                 };
+                 ThriftReader thriftReader= new ThriftReader(metaDataPath,  createTBase);
+                 thriftReader.open();
+                 TableInfo tableInfo=(TableInfo)thriftReader.read();
+                 thriftReader.close();
+                 SchemaConverter converter=new ThriftWrapperSchemaConverterImpl();
+                 org.carbondata.core.carbon.metadata.schema.table.TableInfo  wrappedTableInfo=converter.fromExternalToWrapperTableInfo(tableInfo, schemaName, tableName);
+                 org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance().loadTableMetadata(wrappedTableInfo);
+                 CarbonDataLoadSchema carbonDataLoadSchema=new CarbonDataLoadSchema(org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance().getCarbonTable(tableName));
+                 
+                 return carbonDataLoadSchema;
+        	}
+    	}catch(Exception e){
+    		
+    	}
+    	
+    	return null;
     }
 
     public static Schema parseStringToSchema(String schema) throws XOMException {

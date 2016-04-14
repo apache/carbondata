@@ -69,8 +69,8 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll  {
 
   def buildCarbonLoadModel(relation: CarbonRelation, dimensionFilePath: String): CarbonLoadModel = {
     val carbonLoadModel = new CarbonLoadModel
-    carbonLoadModel.setTableName(relation.cubeMeta.cubeName)
-    carbonLoadModel.setSchemaName(relation.cubeMeta.schemaName)
+    carbonLoadModel.setTableName(relation.cubeMeta.dbName)
+    carbonLoadModel.setSchemaName(relation.cubeMeta.tableName)
     carbonLoadModel.setSchema(relation.cubeMeta.schema)
     carbonLoadModel.setFactFilePath(filePath)
     carbonLoadModel.setDimFolderPath(dimensionFilePath)

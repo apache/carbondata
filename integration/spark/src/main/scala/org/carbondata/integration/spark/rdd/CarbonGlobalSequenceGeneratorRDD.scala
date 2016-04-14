@@ -26,10 +26,11 @@ import org.carbondata.core.carbon.CarbonDef.CubeDimension
 import org.carbondata.integration.spark.KeyVal
 import org.carbondata.integration.spark.load.{CarbonLoadModel, CarbonLoaderUtil}
 import org.carbondata.query.scanner.impl.{CarbonKey, CarbonValue}
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
 
 
 class CarbonGlobalDimensionsPartition(
-                                      columns: Array[CubeDimension], partitionColumns: Array[String], noPartition: Int, idx: Int)
+                                      columns: Array[CarbonDimension], partitionColumns: Array[String], noPartition: Int, idx: Int)
   extends Partition {
   override val index: Int = idx
   val serializableHadoopSplit = columns
@@ -59,7 +60,7 @@ class CarbonGlobalSequenceGeneratorRDD[K, V](
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
 
   override def getPartitions: Array[Partition] = {
-    val splits = CarbonLoaderUtil.getDimensionSplit(carbonLoadModel.getSchema(), carbonLoadModel.getCubeName(), partitioner.partitionCount)
+    val splits = CarbonLoaderUtil.getDimensionSplit(carbonLoadModel.getCarbonDataLoadSchema, carbonLoadModel.getCubeName(), partitioner.partitionCount)
     val result = new Array[Partition](splits.length)
     for (i <- 0 until result.length) {
       //      result(i) = new CarbonDataPartition(id, i, splits(i))
@@ -79,7 +80,8 @@ class CarbonGlobalSequenceGeneratorRDD[K, V](
         storeLocation = System.getProperty("java.io.tmpdir")
         storeLocation = storeLocation + "/carbonstore/" + System.currentTimeMillis()
       }
-      CarbonLoaderUtil.generateGlobalSurrogates(carbonLoadModel, hdfsStoreLocation, split.numberOfPartition, split.partitionColumn, split.serializableHadoopSplit, currentRestructNumber)
+      //TO-DO need to check if this code is required
+      //CarbonLoaderUtil.generateGlobalSurrogates(carbonLoadModel, hdfsStoreLocation, split.numberOfPartition, split.partitionColumn, split.serializableHadoopSplit, currentRestructNumber)
 
       var havePair = false
       var finished = false

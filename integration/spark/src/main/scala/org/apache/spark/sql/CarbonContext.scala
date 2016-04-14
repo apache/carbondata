@@ -59,11 +59,6 @@ class CarbonContext(val sc: SparkContext, metadataPath: String) extends HiveCont
 
   experimental.extraStrategies = CarbonStrategy.getStrategy(self) :: Nil
 
-  def loadSchema(schemaPath: String, encrypted: Boolean = true, aggTablesGen: Boolean = true, partitioner: Partitioner = null) {
-    CarbonContext.updateCarbonPorpertiesPath(this)
-    CarbonEnv.getInstance(this).carbonCatalog.loadCube(schemaPath, encrypted, aggTablesGen, partitioner)(this)
-  }
-
   def updateSchema(schemaPath: String, encrypted: Boolean = true, aggTablesGen: Boolean = false) {
     CarbonEnv.getInstance(this).carbonCatalog.updateCube(schemaPath, encrypted, aggTablesGen)(this)
   }

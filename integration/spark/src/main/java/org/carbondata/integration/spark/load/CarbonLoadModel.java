@@ -25,8 +25,9 @@ package org.carbondata.integration.spark.load;
 import java.io.Serializable;
 import java.util.List;
 
-import org.carbondata.core.load.LoadMetadataDetails;
 import org.carbondata.core.carbon.CarbonDef.Schema;
+import org.carbondata.core.carbon.CarbonDataLoadSchema;
+import org.carbondata.core.load.LoadMetadataDetails;
 
 public class CarbonLoadModel implements Serializable {
     /**
@@ -57,8 +58,10 @@ public class CarbonLoadModel implements Serializable {
     private String partitionId;
 
     private Schema schema;
+    
+    private CarbonDataLoadSchema carbonDataLoadSchema;
 
-    private String[] aggTables;
+	private String[] aggTables;
 
     private String aggTableName;
 
@@ -137,6 +140,20 @@ public class CarbonLoadModel implements Serializable {
      */
     public void setSchema(Schema schema) {
         this.schema = schema;
+    }
+    
+    /**
+     * @return carbon dataload schema
+     */
+    public CarbonDataLoadSchema getCarbonDataLoadSchema() {
+    	return carbonDataLoadSchema;
+    }
+    
+    /**
+     * @param carbon datadload schema
+     */
+    public void setCarbonDataLoadSchema(CarbonDataLoadSchema carbonDataLoadSchema) {
+    	this.carbonDataLoadSchema = carbonDataLoadSchema;
     }
 
     /**
@@ -302,6 +319,7 @@ public class CarbonLoadModel implements Serializable {
         copy.isRetentionRequest = isRetentionRequest;
         copy.complexDelimiterLevel1 = complexDelimiterLevel1;
         copy.complexDelimiterLevel2 = complexDelimiterLevel2;
+        copy.carbonDataLoadSchema = carbonDataLoadSchema;
         if (uniqueId != null && schema != null) {
             String originalSchemaName = schema.name;
             String originalCubeName = schema.cubes[0].name;
@@ -332,6 +350,8 @@ public class CarbonLoadModel implements Serializable {
         copyObj.aggLoadRequest = aggLoadRequest;
         copyObj.loadMetadataDetails = loadMetadataDetails;
         copyObj.isRetentionRequest = isRetentionRequest;
+        copyObj.carbonDataLoadSchema = carbonDataLoadSchema;
+        
         if (uniqueId != null && schema != null) {
             String originalSchemaName = schema.name;
             String originalCubeName = schema.cubes[0].name;

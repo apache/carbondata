@@ -41,6 +41,7 @@ import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.execution.LeafNode
 import org.apache.spark.unsafe.types.UTF8String
 import org.carbondata.query.scanner.impl.{CarbonKey, CarbonValue}
+import org.carbondata.core.metadata.CarbonMetadata.Cube
 
 import scala.collection.JavaConversions.{asScalaBuffer, bufferAsJavaList}
 import scala.collection.JavaConverters._

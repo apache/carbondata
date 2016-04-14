@@ -19,6 +19,8 @@
 package org.carbondata.core.carbon.metadata.schema.table.column;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import org.carbondata.core.carbon.metadata.datatype.ConvertedType;
@@ -55,6 +57,11 @@ public class CarbonDimension implements Serializable {
     protected int ordinal;
     
     /**
+     * List of child dimension for complex type
+     */
+    private List<CarbonDimension> listOfChildDimensions;
+    
+    /**
      * default value for in case of restructuring will be used 
      * when older segment does not have particular column
      */
@@ -65,9 +72,50 @@ public class CarbonDimension implements Serializable {
         this.ordinal = ordinal;
     }
 
+    /**
+     * this method will initialize list based on number of child dimensions Count
+     */
+    public void initializeChildDimensionsList(int childDimensions)
+    {
+        listOfChildDimensions = new ArrayList<CarbonDimension>(childDimensions);
+    }
+    
+    /**
+     * @return convertedType
+     */
     public ConvertedType getConvertedType()
     {
     	return columnSchema.getConvertedType();
+    }
+    
+    /**
+     * @return number of children for complex type
+     */
+    public int getNumberOfChild()
+    {
+    	return columnSchema.getNumberOfChild();
+    }
+    
+    /**
+     * @return columnar or row based
+     */
+    public boolean isColumnar()
+    {
+    	return columnSchema.isColumnar();
+    }
+
+    /**
+     * @return list of children dims for complex type
+     */
+    public List<CarbonDimension> getListOfChildDimensions() {
+      return listOfChildDimensions;
+    }
+    
+    /**
+     * @param listOfChildDimensions
+     */
+    public void setListOfChildDimensions(List<CarbonDimension> listOfChildDimensions) {
+      this.listOfChildDimensions = listOfChildDimensions;
     }
     /**
      * @return column unique id

@@ -19,15 +19,27 @@
 
 package org.carbondata.processing.graphgenerator;
 
-import java.io.*;
-import java.util.*;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.carbon.CarbonDef.Cube;
-import org.carbondata.core.carbon.CarbonDef.CubeDimension;
-import org.carbondata.core.carbon.CarbonDef.Measure;
-import org.carbondata.core.carbon.CarbonDef.Schema;
+import org.carbondata.core.carbon.CarbonDataLoadSchema;
+import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.csvreader.checkpoint.CheckPointHanlder;
 import org.carbondata.core.keygenerator.KeyGenerator;
@@ -156,7 +168,7 @@ public class GraphGenerator {
     /**
      * cube
      */
-    private Cube cube;
+//    private Cube cube;
     /**
      * schemaInfo
      */
@@ -180,7 +192,7 @@ public class GraphGenerator {
     /**
      * schema
      */
-    private Schema schema;
+    private CarbonDataLoadSchema carbonDataLoadSchema;
     /**
      * aggregateTable
      */
@@ -204,14 +216,15 @@ public class GraphGenerator {
     private int allocate;
 
     public GraphGenerator(DataLoadModel dataLoadModel, boolean isHDFSReadMode, String partitionID,
-            Schema schema, String factStoreLocation, int currentRestructNum, int allocate) {
+            String factStoreLocation, int currentRestructNum, int allocate, CarbonDataLoadSchema carbonDataLoadSchema) {
         this.schemaInfo = dataLoadModel.getSchemaInfo();
         this.tableName = dataLoadModel.getTableName();
         this.isCSVLoad = dataLoadModel.isCsvLoad();
         this.modifiedDimension = dataLoadModel.getModifiedDimesion();
         this.isAutoAggRequest = schemaInfo.isAutoAggregateRequest();
-        this.schema = schema;
-        this.schemaName = schema.name;
+        //this.schema = schema;
+        this.carbonDataLoadSchema = carbonDataLoadSchema;
+        this.schemaName = carbonDataLoadSchema.getCarbonTable().getDatabaseName();
         this.partitionID = partitionID;
         this.factStoreLocation = factStoreLocation;
         this.isColumnar =
@@ -268,26 +281,17 @@ public class GraphGenerator {
     }
 
     private void initialise() {
-        if (null == schema) {
-            schema = CarbonSchemaParser.loadXML(schemaInfo.getSchemaPath());
-            String originalSchemaName = schema.name;
-            if (partitionID != null) {
-                schema.name = originalSchemaName + "_" + partitionID;
-                cube = CarbonSchemaParser.getMondrianCube(schema, schemaInfo.getCubeName());
-                cube.name = cube.name + "_" + partitionID;
-            }
-        }
-        this.cube = CarbonSchemaParser.getMondrianCube(schema, schemaInfo.getCubeName());
-        this.cubeName = cube.name;
+        this.cubeName = carbonDataLoadSchema.getCarbonTable().getFactTableName();
         this.instance = CarbonProperties.getInstance();
-        aggregateTable = CarbonSchemaParser.getAggregateTable(cube, schema);
-        this.factTableName = CarbonSchemaParser.getFactTableName(cube);
+        //TO-DO need to take care while supporting aggregate table using new schema.
+        //aggregateTable = CarbonSchemaParser.getAggregateTable(cube, schema);
+        this.factTableName = carbonDataLoadSchema.getCarbonTable().getFactTableName();
     }
 
     public void generateGraph() throws GraphGeneratorException {
         validateAndInitialiseKettelEngine();
-        String factTableName = CarbonSchemaParser.getFactTableName(cube);
-        GraphConfigurationInfo graphConfigInfoForFact = getGraphConfigInfoForFact(schema);
+        String factTableName = carbonDataLoadSchema.getCarbonTable().getFactTableName();
+        GraphConfigurationInfo graphConfigInfoForFact = getGraphConfigInfoForFact(carbonDataLoadSchema);
         if (factTableName.equals(tableName)) {
             generateGraph(graphConfigInfoForFact, graphConfigInfoForFact.getTableName() + ": Graph",
                     isCSVLoad, graphConfigInfoForFact);
@@ -300,7 +304,7 @@ public class GraphGenerator {
                     xAxixLocation = 50;
                     if (aggregateTable[i].getAggregateTableName().equals(tableName)) {
                         GraphConfigurationInfo graphConfigInfoForAGG =
-                                getGraphConfigInfoForCSVBasedAGG(aggregateTable[i], schema);
+                                getGraphConfigInfoForCSVBasedAGG(aggregateTable[i], carbonDataLoadSchema);
 
                         generateGraph(graphConfigInfoForAGG,
                                 graphConfigInfoForAGG.getTableName() + ": Graph", isCSVLoad,
@@ -329,7 +333,7 @@ public class GraphGenerator {
 
     private void validateAndInitialiseKettelEngine() throws GraphGeneratorException {
         File file = new File(
-                outputLocation + File.separator + schemaName + File.separator + cubeName
+                outputLocation + File.separator + schemaInfo.getSchemaName() + File.separator + schemaInfo.getCubeName()
                         + File.separator);
         boolean isDirCreated = false;
         if (!file.exists()) {
@@ -374,14 +378,14 @@ public class GraphGenerator {
         GraphConfigurationInfo graphConfigInfoForFact = null;
 
         if (isGeneratedFromFactTables) {
-            graphConfigInfoForFact = getGraphConfigInfoForFact(schema);
+            graphConfigInfoForFact = getGraphConfigInfoForFact(carbonDataLoadSchema);
         } else {
             AggregateTable aggTablesUsedForgeneration = null;
             for (int i = 0; i < aggregateTable.length; i++) {
                 if (aggregateTable[i].getAggregateTableName().equals(factTableName)) {
                     aggTablesUsedForgeneration = aggregateTable[i];
                     graphConfigInfoForFact =
-                            getGraphConfigInfoForCSVBasedAGG(aggTablesUsedForgeneration, schema);
+                            getGraphConfigInfoForCSVBasedAGG(aggTablesUsedForgeneration, carbonDataLoadSchema);
                     break;
                 }
             }
@@ -416,7 +420,7 @@ public class GraphGenerator {
         for (int i = 0; i < aggTableListSize; i++) {
             for (int j = 0; j < aggTables.length; j++) {
                 if (aggTables[j].getAggregateTableName().equals(aggTableList[i])) {
-                    graphConfigInfoForAGG = getGraphConfigInfoForCSVBasedAGG(aggTables[j], schema);
+                    graphConfigInfoForAGG = getGraphConfigInfoForCSVBasedAGG(aggTables[j], carbonDataLoadSchema);
                     aggType = graphConfigInfoForAGG.getAggType();
                     for (int k = 0; k < aggType.length; k++) {
                         if (aggType[k].equals(CarbonCommonConstants.CUSTOM)) {
@@ -441,7 +445,7 @@ public class GraphGenerator {
     private void generateGraphForManualAgg(AggregateTable[] aggTableList, String factTableName,
             StepMeta grapgGeneratorStep) throws GraphGeneratorException {
         StringBuilder builder = new StringBuilder();
-        GraphConfigurationInfo graphConfigInfoForFact = getGraphConfigInfoForFact(schema);
+        GraphConfigurationInfo graphConfigInfoForFact = getGraphConfigInfoForFact(carbonDataLoadSchema);
         List<StepMeta> stepMetaList = new ArrayList<StepMeta>();
         xAxixLocation = 50;
         for (int i = 0; i < aggTableList.length; i++) {
@@ -449,7 +453,7 @@ public class GraphGenerator {
                 if (aggregateTable[j].getAggregateTableName()
                         .equals(aggTableList[i].getAggregateTableName())) {
                     GraphConfigurationInfo graphConfigInfoForAGG =
-                            getGraphConfigInfoForCSVBasedAGG(aggregateTable[j], schema);
+                            getGraphConfigInfoForCSVBasedAGG(aggregateTable[j], carbonDataLoadSchema);
                     stepMetaList.add(getSliceMeregerStep(graphConfigInfoForAGG,
                             graphConfigInfoForFact));
                     builder.append(aggTableList[i].getAggregateTableName());
@@ -648,7 +652,7 @@ public class GraphGenerator {
         trans.addTransHop(mdkeyToSliceMerger);
 
         String graphFilePath =
-                outputLocation + File.separator + schemaName + File.separator + cubeName
+                outputLocation + File.separator + schemaInfo.getSchemaName() + File.separator + schemaInfo.getCubeName()
                         + File.separator + configurationInfo.getTableName() + ".ktr";
         generateGraphFile(trans, graphFilePath);
     }
@@ -773,8 +777,8 @@ public class GraphGenerator {
         sliceMerger.setMdkeySize(configurationInfo.getMdkeySize());
         sliceMerger.setMeasureCount(configurationInfo.getMeasureCount());
         sliceMerger.setTabelName(configurationInfo.getTableName());
-        sliceMerger.setCubeName(cubeName);
-        sliceMerger.setSchemaName(schemaName);
+        sliceMerger.setCubeName(schemaInfo.getCubeName());
+        sliceMerger.setSchemaName(schemaInfo.getSchemaName());
         if (null != this.factStoreLocation) {
             sliceMerger.setCurrentRestructNumber(
                     CarbonUtil.getRestructureNumber(this.factStoreLocation, this.factTableName));
@@ -827,7 +831,8 @@ public class GraphGenerator {
         CarbonAutoAGGGraphGeneratorMeta meta = new CarbonAutoAGGGraphGeneratorMeta();
         meta.setCubeName(cubeName);
         meta.setSchemaName(schemaName);
-        meta.setSchema(schema.toXML());
+        //TO-DO Generate graph for aggregate table from GraphGenerator instead of generating in CarbonAutoAGGGraphGeneratorStep
+        // meta.setSchema(schema.toXML());
         meta.setIsHDFSMode(isHDFSReadMode + "");
         meta.setFactStoreLocation(factStoreLocation);
         meta.setCurrentRestructNumber(currentRestructNumber);
@@ -859,7 +864,8 @@ public class GraphGenerator {
         factReader.setAggregateTableName(tableName);
         factReader.setCubeName(cubeName);
         factReader.setSchemaName(schemaName);
-        factReader.setSchema(schema.toXML());
+        //Pass all information required in CarbonFactReaderStep
+        //factReader.setSchema(schema.toXML());
         factReader.setPartitionID(partitionID);
         factReader.setLoadNames(this.loadNames);
         factReader.setModificationOrDeletionTime(this.modificationOrDeletionTime);
@@ -1078,8 +1084,8 @@ public class GraphGenerator {
         seqMeta.setComplexTypeString(graphConfiguration.getComplexTypeString());
         seqMeta.setBatchSize(Integer.parseInt(graphConfiguration.getBatchSize()));
         seqMeta.setNoDictionaryDims(graphConfiguration.getNoDictionaryDims());
-        seqMeta.setCubeName(cubeName);
-        seqMeta.setSchemaName(schemaName);
+        seqMeta.setCubeName(schemaInfo.getCubeName());
+        seqMeta.setSchemaName(schemaInfo.getSchemaName());
         seqMeta.setComplexDelimiterLevel1(schemaInfo.getComplexDelimiterLevel1());
         seqMeta.setComplexDelimiterLevel2(schemaInfo.getComplexDelimiterLevel2());
         seqMeta.setCurrentRestructNumber(graphConfiguration.getCurrentRestructNumber());
@@ -1145,8 +1151,8 @@ public class GraphGenerator {
         MDKeyGenStepMeta carbonMdKey = new MDKeyGenStepMeta();
         carbonMdKey.setNumberOfCores(graphConfiguration.getNumberOfCores());
         carbonMdKey.setTableName(graphConfiguration.getTableName());
-        carbonMdKey.setSchemaName(schemaName);
-        carbonMdKey.setCubeName(cubeName);
+        carbonMdKey.setSchemaName(schemaInfo.getSchemaName());
+        carbonMdKey.setCubeName(schemaInfo.getCubeName());
         carbonMdKey.setComplexTypeString(graphConfiguration.getComplexTypeString());
         carbonMdKey.setCurrentRestructNumber(graphConfiguration.getCurrentRestructNumber());
         carbonMdKey.setAggregateLevels(CarbonDataProcessorUtil
@@ -1578,8 +1584,8 @@ public class GraphGenerator {
 
         SortKeyStepMeta sortRowsMeta = new SortKeyStepMeta();
         sortRowsMeta.setTabelName(graphConfiguration.getTableName());
-        sortRowsMeta.setCubeName(cubeName);
-        sortRowsMeta.setSchemaName(schemaName);
+        sortRowsMeta.setCubeName(schemaInfo.getCubeName());
+        sortRowsMeta.setSchemaName(schemaInfo.getSchemaName());
         sortRowsMeta.setOutputRowSize(actualMeasures.length + 1 + "");
         sortRowsMeta.setCurrentRestructNumber(graphConfiguration.getCurrentRestructNumber());
         sortRowsMeta.setDimensionCount(graphConfiguration.getDimensions().length + "");
@@ -1607,86 +1613,89 @@ public class GraphGenerator {
         return sortRowsStep;
     }
 
-    private GraphConfigurationInfo getGraphConfigInfoForFact(Schema schema)
+    private GraphConfigurationInfo getGraphConfigInfoForFact(CarbonDataLoadSchema carbonDataLoadSchema)
             throws GraphGeneratorException {
         //
         GraphConfigurationInfo graphConfiguration = new GraphConfigurationInfo();
         graphConfiguration.setCurrentRestructNumber(currentRestructNumber);
-        CubeDimension[] dimensions = cube.dimensions;
-        graphConfiguration.setDimensions(CarbonSchemaParser.getCubeDimensions(cube, schema));
-        graphConfiguration.setActualDims(CarbonSchemaParser.getDimensions(cube, schema));
+        List<CarbonDimension> dimensions = carbonDataLoadSchema.getCarbonTable().
+        		getDimensionByTableName(carbonDataLoadSchema.getCarbonTable().getFactTableName());
+        graphConfiguration.setDimensions(CarbonSchemaParser.getCubeDimensions(dimensions, carbonDataLoadSchema));
+        graphConfiguration.setActualDims(CarbonSchemaParser.getCubeDimensions(dimensions, carbonDataLoadSchema));
         graphConfiguration.setComplexTypeString(
-                CarbonSchemaParser.getLevelDataTypeAndParentMapString(cube, schema));
-        String factTableName = CarbonSchemaParser.getFactTableName(cube);
+                CarbonSchemaParser.getLevelDataTypeAndParentMapString(dimensions));
+        String factTableName = carbonDataLoadSchema.getCarbonTable().getFactTableName();
         graphConfiguration.setTableName(factTableName);
         StringBuilder dimString = new StringBuilder();
         //
         int currentCount =
-                CarbonSchemaParser.getDimensionString(cube, dimensions, dimString, 0, schema);
+                CarbonSchemaParser.getDimensionString(dimensions, dimString, 0, carbonDataLoadSchema);
         StringBuilder noDictionarydimString = new StringBuilder();
         CarbonSchemaParser
-                .getNoDictionaryDimensionString(cube, dimensions, noDictionarydimString, 0,
-                        schema);
+                .getNoDictionaryDimensionString(dimensions, noDictionarydimString , 0,
+                		carbonDataLoadSchema);
         graphConfiguration.setNoDictionaryDims(noDictionarydimString.toString());
 
         String tableString =
-                CarbonSchemaParser.getTableNameString(factTableName, dimensions, schema);
+                CarbonSchemaParser.getTableNameString(factTableName, dimensions, carbonDataLoadSchema);
         graphConfiguration.setDimensionTableNames(tableString);
         graphConfiguration.setDimensionString(dimString.toString());
 
         StringBuilder propString = new StringBuilder();
-        currentCount =
-                CarbonSchemaParser.getPropertyString(dimensions, propString, currentCount, schema);
-        //
+        //Will not be supported in new schema
+//        currentCount =
+//                CarbonSchemaParser.getPropertyString(dimensions, propString, currentCount, carbonDataLoadSchema);
+//        graphConfiguration.setPropertiesString(propString.toString());
         graphConfiguration
-                .setForignKey(CarbonSchemaParser.getForeignKeyForTables(dimensions, schema));
-        graphConfiguration.setPropertiesString(propString.toString());
+                .setForignKey(CarbonSchemaParser.getForeignKeyForTables(dimensions, carbonDataLoadSchema));
+        List<CarbonMeasure> measures = carbonDataLoadSchema.getCarbonTable().
+        		getMeasureByTableName(carbonDataLoadSchema.getCarbonTable().getFactTableName());
         graphConfiguration
-                .setMeasuresString(CarbonSchemaParser.getMeasureString(cube.measures, currentCount));
-        graphConfiguration.setHiersString(CarbonSchemaParser.getHierarchyString(dimensions, schema));
+                .setMeasuresString(CarbonSchemaParser.getMeasureString(measures, currentCount));
+        graphConfiguration.setHiersString(CarbonSchemaParser.getHierarchyString(dimensions, carbonDataLoadSchema));
         graphConfiguration.setHierColumnString(
-                CarbonSchemaParser.getHierarchyStringWithColumnNames(dimensions, schema));
+                CarbonSchemaParser.getHierarchyStringWithColumnNames(dimensions, carbonDataLoadSchema));
         graphConfiguration.setMeasureUniqueColumnNamesString(
-                CarbonSchemaParser.getMeasuresUniqueColumnNamesString(cube));
+                CarbonSchemaParser.getMeasuresUniqueColumnNamesString(measures));
         graphConfiguration.setForeignKeyHierarchyString(
-                CarbonSchemaParser.getForeignKeyHierarchyString(dimensions, schema, factTableName));
+                CarbonSchemaParser.getForeignKeyHierarchyString(dimensions, carbonDataLoadSchema, factTableName));
         graphConfiguration.setConnectionName("target");
         graphConfiguration.setHeirAndDimLens(
-                CarbonSchemaParser.getHeirAndCardinalityString(dimensions, schema));
+                CarbonSchemaParser.getHeirAndCardinalityString(dimensions, carbonDataLoadSchema));
         //setting dimension store types
         graphConfiguration.setDimensionStoreTypeString(
-                CarbonSchemaParser.getDimensionsStoreType(cube, schema));
+                CarbonSchemaParser.getDimensionsStoreType(dimensions));
         graphConfiguration
-                .setPrimaryKeyString(CarbonSchemaParser.getPrimaryKeyString(dimensions, schema));
+                .setPrimaryKeyString(CarbonSchemaParser.getPrimaryKeyString(dimensions, carbonDataLoadSchema));
         graphConfiguration
-                .setDenormColumns(CarbonSchemaParser.getDenormColNames(dimensions, schema));
+                .setDenormColumns(CarbonSchemaParser.getDenormColNames(dimensions, carbonDataLoadSchema));
 
         graphConfiguration.setLevelAnddataType(
-                CarbonSchemaParser.getLevelAndDataTypeMapString(dimensions, schema, cube));
+                CarbonSchemaParser.getLevelAndDataTypeMapString(dimensions, carbonDataLoadSchema));
 
         graphConfiguration.setForgienKeyAndPrimaryKeyMapString(CarbonSchemaParser
-                .getForeignKeyAndPrimaryKeyMapString(dimensions, schema, factTableName));
+                .getForeignKeyAndPrimaryKeyMapString(carbonDataLoadSchema.getDimensionRelationList()));
 
-        graphConfiguration.setMdkeySize(CarbonSchemaParser.getMdkeySizeForFact(dimensions, schema));
-        Set<String> measureColumn = new HashSet<String>(cube.measures.length);
-        Measure[] m = cube.measures;
-        for (int i = 0; i < m.length; i++) {
-            measureColumn.add(m[i].column);
+        graphConfiguration.setMdkeySize(CarbonSchemaParser.getMdkeySizeForFact(dimensions));
+        Set<String> measureColumn = new HashSet<String>(measures.size());
+        for (int i = 0; i < measures.size(); i++) {
+            measureColumn.add(measures.get(i).getColName());
         }
         char[] type = new char[measureColumn.size()];
         Arrays.fill(type, 'n');
         graphConfiguration.setType(type);
         graphConfiguration.setMeasureCount(measureColumn.size() + "");
         graphConfiguration.setHeirAndKeySizeString(
-                CarbonSchemaParser.getHeirAndKeySizeMapForFact(dimensions, schema));
-        graphConfiguration.setAggType(CarbonSchemaParser.getMeasuresAggragatorArray(cube));
-        graphConfiguration.setMeasureNamesString(CarbonSchemaParser.getMeasuresNamesString(cube));
+                CarbonSchemaParser.getHeirAndKeySizeMapForFact(dimensions, carbonDataLoadSchema));
+        graphConfiguration.setAggType(CarbonSchemaParser.getMeasuresAggragatorArray(measures));
+        graphConfiguration.setMeasureNamesString(CarbonSchemaParser.getMeasuresNamesString(measures));
         graphConfiguration.setActualDimensionColumns(
-                CarbonSchemaParser.getActualDimensions(schemaInfo, cube, schema));
-        graphConfiguration.setNormHiers(CarbonSchemaParser.getNormHiers(cube, schema));
-        graphConfiguration.setMeasureDataTypeInfo(CarbonSchemaParser.getMeasuresDataType(cube));
+                CarbonSchemaParser.getActualDimensions(dimensions));
+        //TODO: It will always be empty
+        //graphConfiguration.setNormHiers(CarbonSchemaParser.getNormHiers(cube, schema));
+        graphConfiguration.setMeasureDataTypeInfo(CarbonSchemaParser.getMeasuresDataType(measures));
 
-        graphConfiguration.setStoreLocation(this.schemaName + '/' + cube.name);
+        graphConfiguration.setStoreLocation(this.schemaName + '/' + carbonDataLoadSchema.getCarbonTable().getFactTableName());
         graphConfiguration.setLeafNodeSize((instance
                 .getProperty("com.huawei.unibi.carbon.leaf.node.size", DEFAULE_LEAF_NODE_SIZE)));
         graphConfiguration.setMaxLeafInFile((instance
@@ -1701,20 +1710,20 @@ public class GraphGenerator {
             quote = getQuoteType(schemaInfo);
         }
         graphConfiguration.setTableInputSqlQuery(CarbonSchemaParser
-                .getTableInputSQLQuery(dimensions, cube.measures,
-                        CarbonSchemaParser.getFactTableName(cube), isQuotesRequired, schema));
+                .getTableInputSQLQuery(dimensions, measures,
+                		carbonDataLoadSchema.getCarbonTable().getFactTableName(), isQuotesRequired, carbonDataLoadSchema));
         graphConfiguration
                 .setBatchSize((instance.getProperty("carbon.batch.size", DEFAULT_BATCH_SIZE)));
         graphConfiguration
                 .setSortSize((instance.getProperty("carbon.sort.size", DEFAULT_SORT_SIZE)));
         graphConfiguration.setDimensionSqlQuery(CarbonSchemaParser
-                .getDimensionSQLQueries(cube, dimensions, schema, isQuotesRequired, quote));
+                .getDimensionSQLQueries(dimensions, carbonDataLoadSchema, isQuotesRequired, quote));
         graphConfiguration.setMetaHeirString(
-                CarbonSchemaParser.getMetaHeirString(dimensions, schema, factTableName));
+                CarbonSchemaParser.getMetaHeirString(dimensions, carbonDataLoadSchema.getCarbonTable()));
         graphConfiguration.setDimCardinalities(
-                CarbonSchemaParser.getCardinalities(factTableName, dimensions, schema));
+                CarbonSchemaParser.getCardinalities(dimensions, carbonDataLoadSchema));
 
-        graphConfiguration.setMeasures(CarbonSchemaParser.getMeasures(cube.measures));
+        graphConfiguration.setMeasures(CarbonSchemaParser.getMeasures(measures));
         graphConfiguration.setAGG(false);
         graphConfiguration.setUsername(schemaInfo.getSrcUserName());
         graphConfiguration.setPassword(schemaInfo.getSrcPwd());
@@ -1723,18 +1732,20 @@ public class GraphGenerator {
         return graphConfiguration;
     }
 
+
     private GraphConfigurationInfo getGraphConfigInfoForCSVBasedAGG(AggregateTable aggtable,
-            Schema schema) throws GraphGeneratorException {
+            CarbonDataLoadSchema schema) throws GraphGeneratorException {
         GraphConfigurationInfo graphConfiguration = new GraphConfigurationInfo();
         graphConfiguration.setCurrentRestructNumber(currentRestructNumber);
-        CubeDimension[] dimensions = cube.dimensions;
+        List<CarbonDimension> dimensions = carbonDataLoadSchema.getCarbonTable().
+        		getDimensionByTableName(carbonDataLoadSchema.getCarbonTable().getFactTableName());
         graphConfiguration.setDimensions(aggtable.getAggLevelsActualName());
         graphConfiguration.setActualDims(aggtable.getAggLevels());
         graphConfiguration.setMeasures(aggtable.getAggMeasure());
         graphConfiguration.setAggClass(aggtable.getAggregateClass());
-        String factTableName = CarbonSchemaParser.getFactTableName(cube);
+        String factTableName = schema.getCarbonTable().getFactTableName();
         Map<String, String> cardinalities =
-                CarbonSchemaParser.getCardinalities(factTableName, dimensions, schema);
+                CarbonSchemaParser.getCardinalities(dimensions, schema);
         graphConfiguration.setDimCardinalities(cardinalities);
         graphConfiguration.setDimensionTableNames(
                 CarbonSchemaParser.getTableNameString(factTableName, dimensions, schema));
@@ -1791,7 +1802,7 @@ public class GraphGenerator {
         }
         graphConfiguration.setType(type);
         graphConfiguration.setAggType(aggtable.getAggregator());
-        graphConfiguration.setStoreLocation(this.schemaName + '/' + cube.name);
+        graphConfiguration.setStoreLocation(this.schemaName + '/' + carbonDataLoadSchema.getCarbonTable().getFactTableName());
         graphConfiguration.setLeafNodeSize((instance
                 .getProperty("com.huawei.unibi.carbon.leaf.node.size", DEFAULE_LEAF_NODE_SIZE)));
         graphConfiguration.setMaxLeafInFile((instance
@@ -1866,8 +1877,8 @@ public class GraphGenerator {
         return aggregateTable;
     }
 
-    public Cube getCube() {
-        return cube;
+    public CarbonTable getCube() {
+        return carbonDataLoadSchema.getCarbonTable();
     }
 
     private int getNoDictionaryDimsCountInAggQuery(String[] NoDictionaryDims, String[] actualDims) {
