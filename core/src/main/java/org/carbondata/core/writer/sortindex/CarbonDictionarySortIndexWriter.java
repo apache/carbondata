@@ -16,34 +16,33 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.carbondata.core.writer;
+package org.carbondata.core.writer.sortindex;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.List;
 
 /**
- * dictionary writer interface
+ * Interface for writing the dictionary sort index and sort index revers data.
  */
-public interface CarbonDictionaryWriter extends Closeable {
-    /**
-     * write method that accepts one value at a time
-     * This method can be used when data is huge and memory is les. In that
-     * case data can be stored to a file and an iterator can iterate over it and
-     * pass one value at a time
-     *
-     * @param value unique dictionary value
-     * @throws IOException if an I/O error occurs
-     */
-    void write(String value) throws IOException;
+public interface CarbonDictionarySortIndexWriter extends Closeable {
 
     /**
-     * write method that accepts list of byte arrays as value
-     * This can be used when data is less, then string can be converted
-     * to byte array for each value and added to a list
+     * The method is used write the dictionary sortIndex data to columns
+     * sortedIndex file in thrif format.
      *
-     * @param valueList list of byte array. Each byte array is unique dictionary value
-     * @throws IOException if an I/O error occurs
+     * @param sortIndexList list of sortIndex
+     * @throws IOException In Case of any I/O errors occurs.
      */
-    void write(List<byte[]> valueList) throws IOException;
+    public void writeSortIndex(List<Integer> sortIndexList) throws IOException;
+
+    /**
+     * The method is used write the dictionary sortIndexInverted data to columns
+     * sortedIndex file in thrif format.
+     *
+     * @param invertedSortIndexList list of  sortIndexInverted
+     * @throws IOException In Case of any I/O errors occurs.
+     */
+    public void writeInvertedSortIndex(List<Integer> invertedSortIndexList) throws IOException;
+
 }

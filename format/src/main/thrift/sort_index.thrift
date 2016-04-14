@@ -23,6 +23,6 @@
 namespace java org.carbondata.format
 
 struct ColumnSortInfo {
-	1: list<binary> sort_index; // the surrogate values sorted by the original value order
-	2: list<binary> sort_index_inverted; // The inverted sort index
+	1: list<i32> sort_index; // the surrogate values sorted by the original value order
+	2: list<i32> sort_index_inverted; // The inverted sort index
 }

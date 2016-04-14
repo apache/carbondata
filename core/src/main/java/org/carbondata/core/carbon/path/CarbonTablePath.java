@@ -164,6 +164,15 @@ public class CarbonTablePath {
     }
 
     /**
+     * The method returns the folder path containing the carbon file.
+     *
+     * @param carbonFilePath
+     */
+    public static String getFolderContainingFile(String carbonFilePath) {
+        return carbonFilePath.substring(0, carbonFilePath.lastIndexOf(File.separator));
+    }
+
+    /**
      * To manage data file name and composition
      */
     static public class DataFileUtil {

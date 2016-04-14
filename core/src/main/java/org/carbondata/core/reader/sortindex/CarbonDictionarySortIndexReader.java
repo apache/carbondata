@@ -16,34 +16,32 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.carbondata.core.writer;
+package org.carbondata.core.reader.sortindex;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.List;
 
 /**
- * dictionary writer interface
+ * Interface for reading the dictionary sort index and sort index inverted
  */
-public interface CarbonDictionaryWriter extends Closeable {
-    /**
-     * write method that accepts one value at a time
-     * This method can be used when data is huge and memory is les. In that
-     * case data can be stored to a file and an iterator can iterate over it and
-     * pass one value at a time
-     *
-     * @param value unique dictionary value
-     * @throws IOException if an I/O error occurs
-     */
-    void write(String value) throws IOException;
+public interface CarbonDictionarySortIndexReader extends Closeable {
 
     /**
-     * write method that accepts list of byte arrays as value
-     * This can be used when data is less, then string can be converted
-     * to byte array for each value and added to a list
+     * method for reading the carbon dictionary sort index data
+     * from columns sortIndex file.
      *
-     * @param valueList list of byte array. Each byte array is unique dictionary value
-     * @throws IOException if an I/O error occurs
+     * @return The method return's the list of dictionary sort Index and sort Index reverse
+     * @throws IOException In case any I/O error occurs
      */
-    void write(List<byte[]> valueList) throws IOException;
+    public List<Integer> readSortIndex() throws IOException;
+
+    /**
+     * method for reading the carbon dictionary inverted sort index data
+     * from columns sortIndex file.
+     *
+     * @return The method return's the list of dictionary inverted sort Index
+     * @throws IOException In case any I/O error occurs
+     */
+    public List<Integer> readInvertedSortIndex() throws IOException;
 }
