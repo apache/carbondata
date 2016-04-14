@@ -35,7 +35,7 @@ public abstract class AbstractColumnarDataStoreProcessor implements DataStoreBlo
         this.columnarDataStoreBlockInfo = columnarDataStoreBlockInfo;
     }
 
-    protected void fillKeyValue(BlockDataHolder blockDataHolder) {
+    protected void fillKeyValue(BlockDataHolder blockDataHolder,int[] noDictionaryColIndexes) {
         keyValue.reset();
         keyValue.setMeasureBlock(blockDataHolder.getLeafDataBlock()
                 .getNodeMsrDataWrapper(columnarDataStoreBlockInfo.getAllSelectedMeasures(),
@@ -44,7 +44,7 @@ public abstract class AbstractColumnarDataStoreProcessor implements DataStoreBlo
         ColumnarKeyStoreDataHolder[] columnarKeyStore = blockDataHolder.getLeafDataBlock()
                 .getColumnarKeyStore(columnarDataStoreBlockInfo.getFileHolder(),
                         columnarDataStoreBlockInfo.getAllSelectedDimensions(),
-                        new boolean[columnarDataStoreBlockInfo.getAllSelectedDimensions().length]);
+                        new boolean[columnarDataStoreBlockInfo.getAllSelectedDimensions().length],noDictionaryColIndexes);
         ColumnarKeyStoreDataHolder[] temp =
                 new ColumnarKeyStoreDataHolder[columnarDataStoreBlockInfo
                         .getTotalNumberOfDimension()];
@@ -55,8 +55,8 @@ public abstract class AbstractColumnarDataStoreProcessor implements DataStoreBlo
     }
 
     @Override
-    public AbstractColumnarScanResult getScannedData(BlockDataHolder blockDataHolder) {
-        fillKeyValue(blockDataHolder);
+    public AbstractColumnarScanResult getScannedData(BlockDataHolder blockDataHolder,int[] noDictionaryColIndexes) {
+        fillKeyValue(blockDataHolder,noDictionaryColIndexes);
         return keyValue;
     }
 }

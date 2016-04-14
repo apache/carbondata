@@ -319,7 +319,7 @@ public class SliceExecutionInfo {
 
     private boolean isFileBasedQuery;
 
-    private boolean[] highCardinalityTypes;
+    private boolean[] noDictionaryTypes;
 
     private HybridStoreModel hybridStoreMeta;
     private HashMap<Integer, Integer> measureOrdinalMap;
@@ -328,8 +328,14 @@ public class SliceExecutionInfo {
 
     private Dimension[] dimensions;
     private Map<Integer, GenericQueryType> complexQueryDimensions;
+    /**
+     * 
+     * @return
+     */
+    private Dimension[] currentDimTables;
+    
 
-    public Dimension[] getDimensions() {
+	public Dimension[] getDimensions() {
         return dimensions;
     }
 
@@ -1029,22 +1035,22 @@ public class SliceExecutionInfo {
     }
 
     /**
-     * setHighCardinalityType.
+     * setNoDictionaryType.
      *
-     * @param highCardinalityTypes
+     * @param noDictionaryTypes
      */
-    public void setHighCardinalityType(boolean[] highCardinalityTypes) {
-        this.highCardinalityTypes = highCardinalityTypes;
+    public void setNoDictionaryType(boolean[] noDictionaryTypes) {
+        this.noDictionaryTypes = noDictionaryTypes;
 
     }
 
     /**
-     * getHighCardinalityTypes.
+     * getNoDictionaryTypes.
      *
      * @return
      */
-    public boolean[] getHighCardinalityTypes() {
-        return highCardinalityTypes;
+    public boolean[] getNoDictionaryTypes() {
+        return noDictionaryTypes;
     }
 
     public HashMap<Integer, Integer> getMeasureOrdinalMap() {
@@ -1054,4 +1060,20 @@ public class SliceExecutionInfo {
     public void setMeasureOrdinalMap(HashMap<Integer, Integer> measureOrdinal) {
         this.measureOrdinalMap = measureOrdinal;
     }
+    
+    /**
+     * return the dimension with respect to the fact table.
+     * @return
+     */
+    public Dimension[] getCurrentDimTables() {
+		return currentDimTables;
+	}
+
+    /**
+     * set the dimensions with respect to the current fact table.
+     * @param currentDimTables
+     */
+	public void setCurrentDimTables(Dimension[] currentDimTables) {
+		this.currentDimTables = currentDimTables;
+	}
 }

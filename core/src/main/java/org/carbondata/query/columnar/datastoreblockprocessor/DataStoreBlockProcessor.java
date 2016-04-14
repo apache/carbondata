@@ -23,6 +23,6 @@ import org.carbondata.query.columnar.keyvalue.AbstractColumnarScanResult;
 import org.carbondata.query.evaluators.BlockDataHolder;
 
 public interface DataStoreBlockProcessor {
-    AbstractColumnarScanResult getScannedData(BlockDataHolder blockDataHolder);
+    AbstractColumnarScanResult getScannedData(BlockDataHolder blockDataHolder,int[] noDictionaryColIndexes);
 
 }

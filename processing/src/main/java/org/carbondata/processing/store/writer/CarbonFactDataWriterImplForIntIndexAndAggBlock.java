@@ -45,16 +45,16 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
     protected boolean[] aggBlocks;
     private NumberCompressor numberCompressor;
     private boolean[] isComplexType;
-    private int highCardCount;
+    private int NoDictionaryCount;
 
     public CarbonFactDataWriterImplForIntIndexAndAggBlock(String storeLocation, int measureCount,
             int mdKeyLength, String tableName, boolean isNodeHolder,
             IFileManagerComposite fileManager, int[] keyBlockSize, boolean[] aggBlocks,
-            boolean isUpdateFact, boolean[] isComplexType, int highCardCount) {
+            boolean isUpdateFact, boolean[] isComplexType, int NoDictionaryCount) {
         this(storeLocation, measureCount, mdKeyLength, tableName, isNodeHolder, fileManager,
                 keyBlockSize, aggBlocks, isUpdateFact);
         this.isComplexType = isComplexType;
-        this.highCardCount = highCardCount;
+        this.NoDictionaryCount = NoDictionaryCount;
     }
 
     public CarbonFactDataWriterImplForIntIndexAndAggBlock(String storeLocation, int measureCount,

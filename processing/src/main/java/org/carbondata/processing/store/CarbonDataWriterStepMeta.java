@@ -131,7 +131,7 @@ public class CarbonDataWriterStepMeta extends BaseStepMeta implements StepMetaIn
 
     private int currentRestructNumber;
 
-    private int highCardCount;
+    private int NoDictionaryCount;
 
     /**
      * CarbonDataWriterStepMeta constructor to initialize this class
@@ -162,7 +162,7 @@ public class CarbonDataWriterStepMeta extends BaseStepMeta implements StepMetaIn
         factLevelsString = "";
         mdkeyLength = "";
         currentRestructNumber = -1;
-        highCardCount = -1;
+        NoDictionaryCount = -1;
     }
 
     /**
@@ -196,7 +196,7 @@ public class CarbonDataWriterStepMeta extends BaseStepMeta implements StepMetaIn
         retval.append("    ").append(XMLHandler.addTagValue("mdkeyLength", mdkeyLength));
         retval.append("    ")
                 .append(XMLHandler.addTagValue("currentRestructNumber", currentRestructNumber));
-        retval.append("    ").append(XMLHandler.addTagValue("highCardCount", highCardCount));
+        retval.append("    ").append(XMLHandler.addTagValue("NoDictionaryCount", NoDictionaryCount));
         return retval.toString();
     }
 
@@ -230,7 +230,7 @@ public class CarbonDataWriterStepMeta extends BaseStepMeta implements StepMetaIn
             mdkeyLength = XMLHandler.getTagValue(stepnode, "mdkeyLength");
             currentRestructNumber =
                     Integer.parseInt(XMLHandler.getTagValue(stepnode, "currentRestructNumber"));
-            highCardCount = Integer.parseInt(XMLHandler.getTagValue(stepnode, "highCardCount"));
+            NoDictionaryCount = Integer.parseInt(XMLHandler.getTagValue(stepnode, "NoDictionaryCount"));
         } catch (Exception e) {
             // TODO Auto-generated catch block
             throw new KettleXMLException("Unable to read step info from XML node", e);
@@ -293,7 +293,7 @@ public class CarbonDataWriterStepMeta extends BaseStepMeta implements StepMetaIn
             rep.saveStepAttribute(idTransformation, idStep, "mdkeyLength", mdkeyLength);
             rep.saveStepAttribute(idTransformation, idStep, "currentRestructNumber",
                     currentRestructNumber);
-            rep.saveStepAttribute(idTransformation, idStep, "highCardCount", highCardCount);
+            rep.saveStepAttribute(idTransformation, idStep, "NoDictionaryCount", NoDictionaryCount);
 
         } catch (Exception e) {
             //
@@ -336,7 +336,7 @@ public class CarbonDataWriterStepMeta extends BaseStepMeta implements StepMetaIn
             mdkeyLength = rep.getStepAttributeString(idStep, "mdkeyLength");
             currentRestructNumber =
                     (int) rep.getStepAttributeInteger(idStep, "currentRestructNumber");
-            highCardCount = (int) rep.getStepAttributeInteger(idStep, "highCardCount");
+            NoDictionaryCount = (int) rep.getStepAttributeInteger(idStep, "NoDictionaryCount");
         } catch (Exception ex3) {
             //
             throw new KettleException(BaseMessages.getString(pkg,
@@ -654,16 +654,16 @@ public class CarbonDataWriterStepMeta extends BaseStepMeta implements StepMetaIn
     }
 
     /**
-     * @return the highCardCount
+     * @return the NoDictionaryCount
      */
-    public int gethighCardCount() {
-        return highCardCount;
+    public int getNoDictionaryCount() {
+        return NoDictionaryCount;
     }
 
     /**
-     * @param highCardCount the highCardCount to set
+     * @param NoDictionaryCount the NoDictionaryCount to set
      */
-    public void sethighCardCount(int highCardCount) {
-        this.highCardCount = highCardCount;
+    public void setNoDictionaryCount(int NoDictionaryCount) {
+        this.NoDictionaryCount = NoDictionaryCount;
     }
 }

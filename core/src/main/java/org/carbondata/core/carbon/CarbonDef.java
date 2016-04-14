@@ -268,7 +268,7 @@ public class CarbonDef {
         public Boolean visible;  // attribute default: true
         public String description;  // optional attribute
         public String foreignKey;  // optional attribute
-        public Boolean highCardinality;  // attribute default: false
+        public Boolean noDictionary;  // attribute default: false
         public Boolean columnar = true;
 
         /**
@@ -291,8 +291,8 @@ public class CarbonDef {
                         (String) _parser.getAttribute("description", "String", null, null, false);
                 foreignKey =
                         (String) _parser.getAttribute("foreignKey", "String", null, null, false);
-                highCardinality = (Boolean) _parser
-                        .getAttribute("highCardinality", "Boolean", "false", null, false);
+                noDictionary = (Boolean) _parser
+                        .getAttribute("noDictionary", "Boolean", "false", null, false);
                 annotations = (Annotations) _parser.getElement(Annotations.class, false);
             } catch (org.eigenbase.xom.XOMException _ex) {
                 throw new org.eigenbase.xom.XOMException(
@@ -311,7 +311,7 @@ public class CarbonDef {
             displayAttribute(_out, "visible", visible, _indent + 1);
             displayAttribute(_out, "description", description, _indent + 1);
             displayAttribute(_out, "foreignKey", foreignKey, _indent + 1);
-            displayAttribute(_out, "highCardinality", highCardinality, _indent + 1);
+            displayAttribute(_out, "noDictionary", noDictionary, _indent + 1);
             displayElement(_out, "annotations", (org.eigenbase.xom.ElementDef) annotations,
                     _indent + 1);
         }
@@ -320,7 +320,7 @@ public class CarbonDef {
             _out.beginTag("CubeDimension",
                     new org.eigenbase.xom.XMLAttrVector().add("name", name).add("caption", caption)
                             .add("visible", visible).add("description", description)
-                            .add("foreignKey", foreignKey).add("highCardinality", highCardinality));
+                            .add("foreignKey", foreignKey).add("noDictionary", noDictionary));
             displayXMLElement(_out, (org.eigenbase.xom.ElementDef) annotations);
             _out.endTag("CubeDimension");
         }
@@ -337,8 +337,8 @@ public class CarbonDef {
                     _out, _indent + 1);
             _diff = _diff && displayAttributeDiff("foreignKey", foreignKey, _cother.foreignKey,
                     _out, _indent + 1);
-            _diff = _diff && displayAttributeDiff("highCardinality", highCardinality,
-                    _cother.highCardinality, _out, _indent + 1);
+            _diff = _diff && displayAttributeDiff("noDictionary", noDictionary,
+                    _cother.noDictionary, _out, _indent + 1);
             _diff = _diff && displayElementDiff("annotations", annotations, _cother.annotations,
                     _out, _indent + 1);
             return _diff;
@@ -821,8 +821,8 @@ public class CarbonDef {
                         (String) _parser.getAttribute("description", "String", null, null, false);
                 foreignKey =
                         (String) _parser.getAttribute("foreignKey", "String", null, null, false);
-                highCardinality = (Boolean) _parser
-                        .getAttribute("highCardinality", "Boolean", "false", null, false);
+                noDictionary = (Boolean) _parser
+                        .getAttribute("noDictionary", "Boolean", "false", null, false);
                 name = (String) _parser.getAttribute("name", "String", null, null, false);
                 annotations = (Annotations) _parser.getElement(Annotations.class, false);
             } catch (org.eigenbase.xom.XOMException _ex) {
@@ -842,7 +842,7 @@ public class CarbonDef {
             displayAttribute(_out, "visible", visible, _indent + 1);
             displayAttribute(_out, "description", description, _indent + 1);
             displayAttribute(_out, "foreignKey", foreignKey, _indent + 1);
-            displayAttribute(_out, "highCardinality", highCardinality, _indent + 1);
+            displayAttribute(_out, "noDictionary", noDictionary, _indent + 1);
             displayAttribute(_out, "name", name, _indent + 1);
             displayElement(_out, "annotations", (org.eigenbase.xom.ElementDef) annotations,
                     _indent + 1);
@@ -853,7 +853,7 @@ public class CarbonDef {
                     new org.eigenbase.xom.XMLAttrVector().add("cubeName", cubeName)
                             .add("caption", caption).add("visible", visible)
                             .add("description", description).add("foreignKey", foreignKey)
-                            .add("highCardinality", highCardinality).add("name", name));
+                            .add("noDictionary", noDictionary).add("name", name));
             displayXMLElement(_out, (org.eigenbase.xom.ElementDef) annotations);
             _out.endTag("VirtualCubeDimension");
         }
@@ -983,8 +983,8 @@ public class CarbonDef {
                         (String) _parser.getAttribute("description", "String", null, null, false);
                 foreignKey =
                         (String) _parser.getAttribute("foreignKey", "String", null, null, false);
-                highCardinality = (Boolean) _parser
-                        .getAttribute("highCardinality", "Boolean", "false", null, false);
+                noDictionary = (Boolean) _parser
+                        .getAttribute("noDictionary", "Boolean", "false", null, false);
                 annotations = (Annotations) _parser.getElement(Annotations.class, false);
             } catch (org.eigenbase.xom.XOMException _ex) {
                 throw new org.eigenbase.xom.XOMException(
@@ -1006,7 +1006,7 @@ public class CarbonDef {
             displayAttribute(_out, "visible", visible, _indent + 1);
             displayAttribute(_out, "description", description, _indent + 1);
             displayAttribute(_out, "foreignKey", foreignKey, _indent + 1);
-            displayAttribute(_out, "highCardinality", highCardinality, _indent + 1);
+            displayAttribute(_out, "noDictionary", noDictionary, _indent + 1);
             displayElement(_out, "annotations", (org.eigenbase.xom.ElementDef) annotations,
                     _indent + 1);
         }
@@ -1017,7 +1017,7 @@ public class CarbonDef {
                             .add("usagePrefix", usagePrefix).add("name", name)
                             .add("caption", caption).add("visible", visible)
                             .add("description", description).add("foreignKey", foreignKey)
-                            .add("highCardinality", highCardinality));
+                            .add("noDictionary", noDictionary));
             displayXMLElement(_out, (org.eigenbase.xom.ElementDef) annotations);
             _out.endTag("DimensionUsage");
         }
@@ -1086,8 +1086,8 @@ public class CarbonDef {
                 visible = (Boolean) _parser.getAttribute("visible", "Boolean", "true", null, false);
                 foreignKey =
                         (String) _parser.getAttribute("foreignKey", "String", null, null, false);
-                highCardinality = (Boolean) _parser
-                        .getAttribute("highCardinality", "Boolean", "false", null, false);
+                noDictionary = (Boolean) _parser
+                        .getAttribute("noDictionary", "Boolean", "false", null, false);
                 name = (String) _parser.getAttribute("name", "String", null, null, true);
                 caption = (String) _parser.getAttribute("caption", "String", null, null, false);
                 description =
@@ -1113,7 +1113,7 @@ public class CarbonDef {
             displayAttribute(_out, "usagePrefix", usagePrefix, _indent + 1);
             displayAttribute(_out, "visible", visible, _indent + 1);
             displayAttribute(_out, "foreignKey", foreignKey, _indent + 1);
-            displayAttribute(_out, "highCardinality", highCardinality, _indent + 1);
+            displayAttribute(_out, "noDictionary", noDictionary, _indent + 1);
             displayAttribute(_out, "name", name, _indent + 1);
             displayAttribute(_out, "caption", caption, _indent + 1);
             displayAttribute(_out, "description", description, _indent + 1);
@@ -1125,7 +1125,7 @@ public class CarbonDef {
         public void displayXML(org.eigenbase.xom.XMLOutput _out, int _indent) {
             _out.beginTag("Dimension", new org.eigenbase.xom.XMLAttrVector().add("type", type)
                     .add("usagePrefix", usagePrefix).add("visible", visible)
-                    .add("foreignKey", foreignKey).add("highCardinality", highCardinality)
+                    .add("foreignKey", foreignKey).add("noDictionary", noDictionary)
                     .add("name", name).add("caption", caption).add("description", description));
             displayXMLElement(_out, (org.eigenbase.xom.ElementDef) annotations);
             displayXMLElementArray(_out, hierarchies);

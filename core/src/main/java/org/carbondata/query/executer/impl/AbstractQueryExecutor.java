@@ -110,15 +110,15 @@ public abstract class AbstractQueryExecutor implements QueryExecutor {
         }
 
         //        Cube cube = queryModel.getCube();
-        executerProperties.isHighCardinality = new boolean[aggTypeCount];
+        executerProperties.isNoDictionary = new boolean[aggTypeCount];
         int index = 0;
         iterator = queryModel.getDimensionAggInfo().iterator();
         for (int i = 0; i < queryModel.getDimensionAggInfo().size(); i++) {
             DimensionAggregatorInfo dimAggInfo = queryModel.getDimensionAggInfo().get(i);
             if (null != dimAggInfo) {
 
-                if (dimAggInfo.getDim().isHighCardinalityDim()) {
-                    executerProperties.isHighCardinality[index] = true;
+                if (dimAggInfo.getDim().isNoDictionaryDim()) {
+                    executerProperties.isNoDictionary[index] = true;
                 }
                 // executerProperties.a
             }

@@ -145,7 +145,7 @@ public class CarbonFactReaderStep extends BaseStep implements StepInterface {
     /**
      * this is used to store the mapping of high card dims along with agg types.
      */
-    private boolean[] isHighCardinality;
+    private boolean[] isNoDictionary;
 
     /**
      * CarbonFactReaderStep Constructor to initialize the step
@@ -408,7 +408,7 @@ public class CarbonFactReaderStep extends BaseStep implements StepInterface {
     private String[] getAggTypes() {
         String[] aggTypes = new String[aggMeasures.length];
         // initializing high card mapping.
-        isHighCardinality = new boolean[aggTypes.length];
+        isNoDictionary = new boolean[aggTypes.length];
 
         // executerProperties.a
         for (int i = 0; i < aggMeasures.length; i++) {
@@ -416,8 +416,8 @@ public class CarbonFactReaderStep extends BaseStep implements StepInterface {
                 for (DimensionAggregatorInfo dimAgg : dimAggInfo) {
                     // checking if the dimension aggregate is high cardinality or not.
                     if (aggMeasures[i].column.equals(dimAgg.getColumnName()) && dimAgg.getDim()
-                            .isHighCardinalityDim()) {
-                        isHighCardinality[i] = true;
+                            .isNoDictionaryDim()) {
+                        isNoDictionary[i] = true;
                     }
                 }
             }
@@ -612,13 +612,13 @@ public class CarbonFactReaderStep extends BaseStep implements StepInterface {
                         next[j++] = value;
                         next[j++] = Double.valueOf(count);
                         // converting high card dims into single byte buffer [].
-                        byte[] highCardByteArr = null;
+                        byte[] NoDictionaryByteArr = null;
 
-                        if (null != key.getDirectSurrogateKeyList()) {
-                            highCardByteArr = RemoveDictionaryUtil
-                                    .convertListByteArrToSingleArr(key.getDirectSurrogateKeyList());
+                        if (null != key.getNoDictionaryValKeyList()) {
+                            NoDictionaryByteArr = RemoveDictionaryUtil
+                                    .convertListByteArrToSingleArr(key.getNoDictionaryValKeyList());
                         }
-                        next[j++] = highCardByteArr;
+                        next[j++] = NoDictionaryByteArr;
                         next[j] = key.getMaskedKey();
                         putRow(data.outputRowMeta, next);
                         writeCounter++;

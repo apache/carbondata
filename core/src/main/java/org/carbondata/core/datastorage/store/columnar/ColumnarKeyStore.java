@@ -28,9 +28,11 @@ public interface ColumnarKeyStore {
      *
      * @param fileHolder
      * @return mdkey
+     * @noDictionaryValKeyIndexes, directkey indexes for determining the NO_DICTIONARY
+     * Col inorder to process the direct surrogates data.
      */
     ColumnarKeyStoreDataHolder[] getUnCompressedKeyArray(FileHolder fileHolder, int[] blockIndex,
-            boolean[] needCompressedData);
+            boolean[] needCompressedData,int[] noDictionaryValKeyIndexes);
 
     /**
      * This method will be used to get the actual mdkeys array present in the
@@ -40,6 +42,6 @@ public interface ColumnarKeyStore {
      * @return mdkey
      */
     ColumnarKeyStoreDataHolder getUnCompressedKeyArray(FileHolder fileHolder, int blockIndex,
-            boolean needCompressedData);
+            boolean needCompressedData,int[] noDictionaryValKeyIndexes);
 
 }

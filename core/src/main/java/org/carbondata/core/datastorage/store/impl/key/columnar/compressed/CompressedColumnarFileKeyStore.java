@@ -19,9 +19,7 @@
 
 package org.carbondata.core.datastorage.store.impl.key.columnar.compressed;
 
-import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
 import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreDataHolder;
@@ -39,7 +37,7 @@ public class CompressedColumnarFileKeyStore extends AbstractColumnarKeyStore {
 
     @Override
     public ColumnarKeyStoreDataHolder[] getUnCompressedKeyArray(FileHolder fileHolder,
-            int[] blockIndex, boolean[] needCompressedData) {
+            int[] blockIndex, boolean[] needCompressedData,int[] noDictionaryColIndexes) {
         ColumnarKeyStoreDataHolder[] columnarKeyStoreDataHolders =
                 new ColumnarKeyStoreDataHolder[blockIndex.length];
 
@@ -55,7 +53,8 @@ public class CompressedColumnarFileKeyStore extends AbstractColumnarKeyStore {
                     .readByteArray(columnarStoreInfo.getFilePath(),
                             columnarStoreInfo.getKeyBlockOffsets()[blockIndex[i]],
                             columnarStoreInfo.getKeyBlockLengths()[blockIndex[i]]));
-            if (blockIndex[i] <= this.columnarStoreInfo.getAggKeyBlock().length - 1
+            boolean isNoDictionaryBlock=CompressedColumnarKeyStoreUtil.isNoDictionaryBlock(noDictionaryColIndexes, blockIndex[i]);
+            if (!isNoDictionaryBlock
                     && this.columnarStoreInfo.getAggKeyBlock()[blockIndex[i]]) {
                 dataIndex = columnarStoreInfo.getNumberCompressor().unCompress(fileHolder
                         .readByteArray(columnarStoreInfo.getFilePath(),
@@ -82,19 +81,20 @@ public class CompressedColumnarFileKeyStore extends AbstractColumnarKeyStore {
                         columnarStoreInfo.getNumberCompressor());
                 columnKeyBlockReverseIndexes = getColumnIndexForNonFilter(columnKeyBlockIndex);
             }
-            //Since its anhigh cardinality dimension
-            if (blockIndex[i] > this.columnarStoreInfo.getSizeOfEachBlock().length - 1) {
+            //Since its an high cardinality dimension adding the direct surrogates as part of
+            //columnarKeyStoreMetadata so that later it will be used with bytearraywrapper instance.
+            if (isNoDictionaryBlock) {
                 columnarKeyStoreMetadata = new ColumnarKeyStoreMetadata(0);
                 columnarKeyStoreMetadata.setColumnIndex(columnKeyBlockIndex);
                 columnarKeyStoreMetadata.setColumnReverseIndex(columnKeyBlockReverseIndexes);
-                columnarKeyStoreMetadata.setDirectSurrogateColumn(true);
+                columnarKeyStoreMetadata.setNoDictionaryValColumn(true);
+                columnarKeyStoreMetadata.setUnCompressed(true);
                 columnarKeyStoreMetadata.setSorted(columnarStoreInfo.getIsSorted()[blockIndex[i]]);
                 //System is reading the direct surrogates data from byte array which contains both length and the
                 //direct surrogates data
-                mapColumnIndexWithKeyColumnarKeyBlockData(columnarKeyBlockData,
-                        columnarKeyStoreMetadata);
+                List<byte[]> noDictionaryValBasedKeyBlockData= CompressedColumnarKeyStoreUtil.readColumnarKeyBlockDataForNoDictionaryCols(columnarKeyBlockData);
                 columnarKeyStoreDataHolders[i] =
-                        new ColumnarKeyStoreDataHolder(columnarKeyBlockData,
+                        new ColumnarKeyStoreDataHolder(noDictionaryValBasedKeyBlockData,
                                 columnarKeyStoreMetadata);
             } else {
                 columnarKeyStoreMetadata = new ColumnarKeyStoreMetadata(
@@ -112,33 +112,9 @@ public class CompressedColumnarFileKeyStore extends AbstractColumnarKeyStore {
         return columnarKeyStoreDataHolders;
     }
 
-    /**
-     * The high cardinality dimensions rows will be send in byte array with its data length
-     * appended in the ColumnarKeyStoreDataHolder byte array since high cardinality dim data will not be
-     * part of MDKey/Surrogate keys. In this method the byte array will be scanned and the length which is
-     * stored in short will be removed.
-     */
-    private void mapColumnIndexWithKeyColumnarKeyBlockData(byte[] columnarKeyBlockData,
-            ColumnarKeyStoreMetadata columnarKeyStoreMetadata) {
-        Map<Integer, byte[]> mapOfColumnarKeyBlockData = new HashMap<Integer, byte[]>(50);
-        ByteBuffer directSurrogateKeyStoreDataHolder =
-                ByteBuffer.allocate(columnarKeyBlockData.length);
-        directSurrogateKeyStoreDataHolder.put(columnarKeyBlockData);
-        directSurrogateKeyStoreDataHolder.flip();
-        int row = -1;
-        while (directSurrogateKeyStoreDataHolder.hasRemaining()) {
-            short dataLength = directSurrogateKeyStoreDataHolder.getShort();
-            byte[] directSurrKeyData = new byte[dataLength];
-            directSurrogateKeyStoreDataHolder.get(directSurrKeyData);
-            mapOfColumnarKeyBlockData.put(++row, directSurrKeyData);
-        }
-        columnarKeyStoreMetadata.setDirectSurrogateKeyMembers(mapOfColumnarKeyBlockData);
-
-    }
-
     @Override
     public ColumnarKeyStoreDataHolder getUnCompressedKeyArray(FileHolder fileHolder, int blockIndex,
-            boolean needCompressedData) {
+            boolean needCompressedData,int[] noDictionaryColIndexes) {
         byte[] columnarKeyBlockData = null;
         int[] columnKeyBlockIndex = null;
         int[] columnKeyBlockReverseIndex = null;
@@ -150,7 +126,8 @@ public class CompressedColumnarFileKeyStore extends AbstractColumnarKeyStore {
                 .readByteArray(columnarStoreInfo.getFilePath(),
                         columnarStoreInfo.getKeyBlockOffsets()[blockIndex],
                         columnarStoreInfo.getKeyBlockLengths()[blockIndex]));
-        if (blockIndex <= this.columnarStoreInfo.getAggKeyBlock().length - 1
+        boolean isNoDictionaryBlock=CompressedColumnarKeyStoreUtil.isNoDictionaryBlock(noDictionaryColIndexes, blockIndex);
+        if (!isNoDictionaryBlock
                 && this.columnarStoreInfo.getAggKeyBlock()[blockIndex]) {
             dataIndex = columnarStoreInfo.getNumberCompressor().unCompress(fileHolder
                     .readByteArray(columnarStoreInfo.getFilePath(),
@@ -178,21 +155,16 @@ public class CompressedColumnarFileKeyStore extends AbstractColumnarKeyStore {
                     columnarStoreInfo.getNumberCompressor());
             columnKeyBlockReverseIndex = getColumnIndexForNonFilter(columnKeyBlockIndex);
         }
-
         //Since its an high cardinality dimension, For filter queries.
-        if (blockIndex > this.columnarStoreInfo.getSizeOfEachBlock().length - 1) {
-            columnarKeyStoreMetadata = new ColumnarKeyStoreMetadata(0);
-            columnarKeyStoreMetadata.setDirectSurrogateColumn(true);
-            columnarKeyStoreMetadata.setColumnIndex(columnKeyBlockIndex);
-            columnarKeyStoreMetadata.setColumnReverseIndex(columnKeyBlockReverseIndex);
-            columnarKeyStoreMetadata.setSorted(columnarStoreInfo.getIsSorted()[blockIndex]);
-            columnarKeyStoreMetadata.setUnCompressed(true);
-            mapColumnIndexWithKeyColumnarKeyBlockData(columnarKeyBlockData,
-                    columnarKeyStoreMetadata);
-            ColumnarKeyStoreDataHolder columnarKeyStoreDataHolders =
-                    new ColumnarKeyStoreDataHolder(columnarKeyBlockData, columnarKeyStoreMetadata);
-            return columnarKeyStoreDataHolders;
-        }
+      if (isNoDictionaryBlock) {
+      columnarKeyStoreMetadata = new ColumnarKeyStoreMetadata(0);
+      ColumnarKeyStoreDataHolder columnarKeyStoreDataHolders =
+          CompressedColumnarKeyStoreUtil.createColumnarKeyStoreMetadataForHCDims(blockIndex,
+            columnarKeyBlockData, columnKeyBlockIndex, columnKeyBlockReverseIndex,
+            columnarStoreInfo);
+      new ColumnarKeyStoreDataHolder(columnarKeyBlockData, columnarKeyStoreMetadata);
+      return columnarKeyStoreDataHolders;
+      }
         columnarKeyStoreMetadata =
                 new ColumnarKeyStoreMetadata(columnarStoreInfo.getSizeOfEachBlock()[blockIndex]);
         columnarKeyStoreMetadata.setColumnIndex(columnKeyBlockIndex);

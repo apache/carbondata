@@ -142,7 +142,7 @@ public final class FilterUtil {
                     TableDataStore dataCache = info.getSlices().get(info.getCurrentSliceIndex())
                             .getDataCache(info.getFactTableName());
                     if (currentCondExpression.getColumnList().get(0).getDim()
-                            .isHighCardinalityDim()) {
+                            .isNoDictionaryDim()) {
                         if (checkIfExpressionContainsColumn(currentCondExpression.getLeft())
                                 || checkIfExpressionContainsColumn(
                                 currentCondExpression.getRight())) {
@@ -191,7 +191,7 @@ public final class FilterUtil {
                     TableDataStore dataCache = info.getSlices().get(info.getCurrentSliceIndex())
                             .getDataCache(info.getFactTableName());
                     if (currentCondExpression.getColumnList().get(0).getDim()
-                            .isHighCardinalityDim()) {
+                            .isNoDictionaryDim()) {
                         if (checkIfExpressionContainsColumn(currentCondExpression.getLeft())
                                 || checkIfExpressionContainsColumn(
                                 currentCondExpression.getRight())) {
@@ -239,7 +239,7 @@ public final class FilterUtil {
                     if (newDimensionIndex == -1) {
                         TableDataStore dataCache = info.getSlices().get(info.getCurrentSliceIndex())
                                 .getDataCache(info.getFactTableName());
-                        if (condExpression.getColumnList().get(0).getDim().isHighCardinalityDim()) {
+                        if (condExpression.getColumnList().get(0).getDim().isNoDictionaryDim()) {
                             if (checkIfExpressionContainsColumn(currentCondExpression.getLeft())
                                     || checkIfExpressionContainsColumn(
                                     currentCondExpression.getRight())) {
@@ -331,7 +331,7 @@ public final class FilterUtil {
         return byteIndexs;
     }
 
-    private static List<byte[]> getDirectSurrogateKeyMemberForFilter(FilterEvaluatorInfo info,
+    private static List<byte[]> getNoDictionaryValKeyMemberForFilter(FilterEvaluatorInfo info,
             ColumnExpression columnExpression, List<String> evaluateResultListFinal,
             boolean isIncludeFilter) {
         List<byte[]> filterValuesList = new ArrayList<byte[]>(20);
@@ -472,8 +472,8 @@ public final class FilterUtil {
                 evaluateResultListFinal.add(result.getString());
             }
             if (null != columnExpression.getDim() && columnExpression.getDim()
-                    .isHighCardinalityDim()) {
-                filterValuesList = getDirectSurrogateKeyMemberForFilter(info, columnExpression,
+                    .isNoDictionaryDim()) {
+                filterValuesList = getNoDictionaryValKeyMemberForFilter(info, columnExpression,
                         evaluateResultListFinal, isIncludeFilter);
             } else {
                 filterValuesList = getFilterValues(info, columnExpression, evaluateResultListFinal,

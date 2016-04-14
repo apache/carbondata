@@ -35,9 +35,9 @@ public class UnCompressedColumnarFileKeyStore extends AbstractColumnarKeyStore {
 
     @Override
     public ColumnarKeyStoreDataHolder[] getUnCompressedKeyArray(FileHolder fileHolder,
-            int[] blockIndex, boolean[] needCompressedData) {
+            int[] blockIndex, boolean[] needCompressedData,int[] noDictionaryColIndexes) {
         ColumnarKeyStoreDataHolder[] columnarKeyStoreDataHolders =
-                new ColumnarKeyStoreDataHolder[blockIndex.length];
+                new ColumnarKeyStoreDataHolder[blockIndex.length]; 
         byte[] columnarKeyBlockData = null;
         int[] columnKeyBlockIndex = null;
         ColumnarKeyStoreMetadata columnarKeyStoreMetadata = null;
@@ -86,7 +86,7 @@ public class UnCompressedColumnarFileKeyStore extends AbstractColumnarKeyStore {
 
     @Override
     public ColumnarKeyStoreDataHolder getUnCompressedKeyArray(FileHolder fileHolder, int blockIndex,
-            boolean needCompressedData) {
+            boolean needCompressedData,int[] noDictionaryColIndexes) {
         return null;
     }
 }

@@ -188,7 +188,7 @@ public class CarbonSortKeyAndGroupByStepMeta extends BaseStepMeta implements Ste
     /**
      *
      */
-    private int highCardinalityCount;
+    private int noDictionaryCount;
 
     /**
      * set the default value for all the properties
@@ -218,7 +218,7 @@ public class CarbonSortKeyAndGroupByStepMeta extends BaseStepMeta implements Ste
         factDimLensString = "";
         factStorePath = "";
         currentRestructNumber = -1;
-        highCardinalityCount = -1;
+        noDictionaryCount = -1;
         mdkeyLength = "";
     }
 
@@ -293,7 +293,7 @@ public class CarbonSortKeyAndGroupByStepMeta extends BaseStepMeta implements Ste
         strBuffValue.append("    ")
                 .append(XMLHandler.addTagValue("currentRestructNumber", currentRestructNumber));
         strBuffValue.append("    ")
-                .append(XMLHandler.addTagValue("highCardinalityCount", highCardinalityCount));
+                .append(XMLHandler.addTagValue("noDictionaryCount", noDictionaryCount));
         strBuffValue.append("    ").append(XMLHandler.addTagValue("mdkeyLength", mdkeyLength));
         return strBuffValue.toString();
     }
@@ -335,8 +335,8 @@ public class CarbonSortKeyAndGroupByStepMeta extends BaseStepMeta implements Ste
             manualAutoAggRequest = XMLHandler.getTagValue(stepnode, "isManualAutoAggRequest");
             currentRestructNumber =
                     Integer.parseInt(XMLHandler.getTagValue(stepnode, "currentRestructNumber"));
-            highCardinalityCount =
-                    Integer.parseInt(XMLHandler.getTagValue(stepnode, "highCardinalityCount"));
+            noDictionaryCount =
+                    Integer.parseInt(XMLHandler.getTagValue(stepnode, "noDictionaryCount"));
             mdkeyLength = XMLHandler.getTagValue(stepnode, "mdkeyLength");
         } catch (Exception e) {
             throw new KettleXMLException("Unable to read step info from XML node", e);
@@ -392,8 +392,8 @@ public class CarbonSortKeyAndGroupByStepMeta extends BaseStepMeta implements Ste
                     manualAutoAggRequest);
             rep.saveStepAttribute(idTransformation, idStep, "currentRestructNumber",
                     currentRestructNumber);
-            rep.saveStepAttribute(idTransformation, idStep, "highCardinalityCount",
-                    highCardinalityCount);
+            rep.saveStepAttribute(idTransformation, idStep, "noDictionaryCount",
+                    noDictionaryCount);
             rep.saveStepAttribute(idTransformation, idStep, "mdkeyLength", mdkeyLength);
         } catch (Exception e) {
             throw new KettleException(BaseMessages
@@ -441,8 +441,8 @@ public class CarbonSortKeyAndGroupByStepMeta extends BaseStepMeta implements Ste
             manualAutoAggRequest = rep.getStepAttributeString(idStep, "isManualAutoAggRequest");
             currentRestructNumber =
                     (int) rep.getStepAttributeInteger(idStep, "currentRestructNumber");
-            highCardinalityCount =
-                    (int) rep.getStepAttributeInteger(idStep, "highCardinalityCount");
+            noDictionaryCount =
+                    (int) rep.getStepAttributeInteger(idStep, "noDictionaryCount");
             mdkeyLength = rep.getStepAttributeString(idStep, "mdkeyLength");
         } catch (Exception e) {
             throw new KettleException(BaseMessages.getString(PKG,
@@ -941,15 +941,15 @@ public class CarbonSortKeyAndGroupByStepMeta extends BaseStepMeta implements Ste
     /**
      * @return
      */
-    public int getHighCardinalityCount() {
-        return highCardinalityCount;
+    public int getNoDictionaryCount() {
+        return noDictionaryCount;
     }
 
     /**
-     * @param highCardinalityCount the highCardinalityCount to set
+     * @param noDictionaryCount the noDictionaryCount to set
      */
-    public void setHighCardinalityCount(int highCardinalityCount) {
-        this.highCardinalityCount = highCardinalityCount;
+    public void setNoDictionaryCount(int noDictionaryCount) {
+        this.noDictionaryCount = noDictionaryCount;
     }
 
 }

@@ -182,7 +182,7 @@ public class SampleAnalyzer {
      * @param tableName
      * @param data                : member value of given dimension
      * @param distinctOfMasterDim
-     * @param highCardinalities
+     * @param NoDictionaryinalities
      * @return dimension's ordinal and its distinct value for given member value
      * @throws AggSuggestException
      */

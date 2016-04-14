@@ -203,7 +203,7 @@ public class CarbonSortKeys {
 
     private CarbonSortKeyHashbasedAggregator hashedBasedAgg;
 
-    private int highCardinalityCount;
+    private int noDictionaryCount;
 
     private Object[] mergedMinValue;
 
@@ -211,13 +211,13 @@ public class CarbonSortKeys {
             CheckPointInterface checkpoint, SortObserver observer, boolean autoAggRequest,
             boolean isFactMdkeyInInputRow, int factMdkeyLength, String[] aggregators,
             String[] aggregatorClass, int[] factDims, String schemaName, String cubeName,
-            boolean isUpdateMemberRequest, int highCardinalityCount, char[] type) {
+            boolean isUpdateMemberRequest, int noDictionaryCount, char[] type) {
         // set table name
         this.tableName = tabelName;
         // set measure count
         this.measureCount = measureCount;
 
-        this.highCardinalityCount = highCardinalityCount;
+        this.noDictionaryCount = noDictionaryCount;
         // set mdkey index
         this.mdKeyIndex = mdkeyIndex;
         // set mdkey length
@@ -792,7 +792,7 @@ public class CarbonSortKeys {
                                 || isUpdateMemberRequest), this.isFactMdkeyInInputRow,
                         this.factMdkeyLength, sortTempFileNoOFRecordsInCompression,
                         isSortTempFileCompressionEnabled, type, prefetch, bufferSize,
-                        this.aggregators, this.highCardinalityCount);
+                        this.aggregators, this.noDictionaryCount);
         executorService.submit(merger);
     }
 
@@ -869,10 +869,10 @@ public class CarbonSortKeys {
 
                 // write the high cardinality if present.
 
-                int highCardIndex = this.mdKeyIndex - 1;
-                if (null != row[highCardIndex]) {
-                    byte[] singleHighCardArr = (byte[]) row[highCardIndex];
-                    stream.write(singleHighCardArr);
+                int NoDictionaryIndex = this.mdKeyIndex - 1;
+                if (null != row[NoDictionaryIndex]) {
+                    byte[] singleNoDictionaryArr = (byte[]) row[NoDictionaryIndex];
+                    stream.write(singleNoDictionaryArr);
                 }
 
                 // write mdkey

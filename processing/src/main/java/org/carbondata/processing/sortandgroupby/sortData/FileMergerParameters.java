@@ -55,7 +55,7 @@ public class FileMergerParameters {
     /**
      * measure count
      */
-    private int highCardinalityCount;
+    private int noDictionaryCount;
 
     /**
      * outFile
@@ -181,16 +181,16 @@ public class FileMergerParameters {
     }
 
     /**
-     * @return the highCardinalityCount
+     * @return the noDictionaryCount
      */
-    public int getHighCardinalityCount() {
-        return highCardinalityCount;
+    public int getNoDictionaryCount() {
+        return noDictionaryCount;
     }
 
     /**
-     * @param highCardinalityCount the highCardinalityCount to set
+     * @param noDictionaryCount the noDictionaryCount to set
      */
-    public void setHighCardinalityCount(int highCardinalityCount) {
-        this.highCardinalityCount = highCardinalityCount;
+    public void setNoDictionaryCount(int noDictionaryCount) {
+        this.noDictionaryCount = noDictionaryCount;
     }
 }

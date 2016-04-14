@@ -19,8 +19,6 @@
 
 package org.carbondata.core.datastorage.store.columnar;
 
-import java.util.Map;
-
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 
@@ -40,14 +38,9 @@ public class ColumnarKeyStoreMetadata {
     private KeyGenerator keyGenerator;
 
     /**
-     * isDirectSurrogateColumn.
+     * isNoDictionaryValColumn.
      */
-    private boolean isDirectSurrogateColumn;
-
-    /**
-     * mapOfColumnarKeyBlockData
-     */
-    private Map<Integer, byte[]> mapOfColumnarKeyBlockData;
+    private boolean isNoDictionaryValColumn;
     private boolean isRowStore;
 
     public ColumnarKeyStoreMetadata(int eachRowSize) {
@@ -141,34 +134,17 @@ public class ColumnarKeyStoreMetadata {
     /**
      * @return
      */
-    public boolean isDirectSurrogateColumn() {
-        return isDirectSurrogateColumn;
+    public boolean isNoDictionaryValColumn() {
+        return isNoDictionaryValColumn;
+        
     }
 
     /**
-     * @param isDirectSurrogateColumn
+     * @param isNoDictionaryValColumn
      */
-    public void setDirectSurrogateColumn(boolean isDirectSurrogateColumn) {
-        this.isDirectSurrogateColumn = isDirectSurrogateColumn;
+    public void setNoDictionaryValColumn(boolean isNoDictionaryValColumn) {
+        this.isNoDictionaryValColumn = isNoDictionaryValColumn;
 
     }
 
-    /**
-     * setDirectSurrogateKeyMembers.
-     *
-     * @param mapOfColumnarKeyBlockData
-     */
-    public void setDirectSurrogateKeyMembers(Map<Integer, byte[]> mapOfColumnarKeyBlockData) {
-        this.mapOfColumnarKeyBlockData = mapOfColumnarKeyBlockData;
-
-    }
-
-    /**
-     * getMapOfColumnarKeyBlockDataForDirectSurroagtes.
-     *
-     * @return
-     */
-    public Map<Integer, byte[]> getMapOfColumnarKeyBlockDataForDirectSurroagtes() {
-        return mapOfColumnarKeyBlockData;
-    }
 }

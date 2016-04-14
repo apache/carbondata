@@ -26,7 +26,7 @@ import org.carbondata.query.schema.metadata.ColumnarStorageScannerInfo;
 
 public class ColumnarStorageScannerImpl extends AbstractColumnarStorageScanner {
     private long counter;
-
+    private int[] noDictionaryColIndexes;
     private int limit;
 
     public ColumnarStorageScannerImpl(ColumnarStorageScannerInfo columnarStorageScannerInfo) {
@@ -38,6 +38,11 @@ public class ColumnarStorageScannerImpl extends AbstractColumnarStorageScanner {
                         columnarStorageScannerInfo.getColumnarAggregatorInfo()));
         limit = columnarStorageScannerInfo.getColumnarAggregatorInfo().getLimit();
     }
+    
+    public ColumnarStorageScannerImpl(ColumnarStorageScannerInfo columnarStorageScannerInfo,int[] noDictionaryColIndexes) {
+      this(columnarStorageScannerInfo);
+      this.noDictionaryColIndexes=noDictionaryColIndexes;
+    }
 
     @Override
     public void scanStore() {
@@ -46,7 +51,7 @@ public class ColumnarStorageScannerImpl extends AbstractColumnarStorageScanner {
             addToQueryStats(blockDataHolder);
             blockDataHolder.reset();
             counter += this.columnarAggaregator
-                    .aggregateData(blockProcessor.getScannedData(blockDataHolder));
+                    .aggregateData(blockProcessor.getScannedData(blockDataHolder,noDictionaryColIndexes));
             finish();
             if (limit != -1 && counter >= limit) {
                 break;

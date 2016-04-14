@@ -60,7 +60,7 @@ public final class QueryExecutorUtil {
         long[] max = new long[dimTables.length];
         Arrays.fill(max, 0L);
         for (int i = 0; i < queryDimensions.length; i++) {
-            if (queryDimensions[i].isHighCardinalityDim()) {
+            if (queryDimensions[i].isNoDictionaryDim()) {
                 continue;
             }
             max[queryDimensions[i].getOrdinal()] = Long.MAX_VALUE;
@@ -180,7 +180,7 @@ public final class QueryExecutorUtil {
 
         for (int i = 0; i < queryDimensions.length; i++) {
 
-            if (queryDimensions[i].isHighCardinalityDim()) {
+            if (queryDimensions[i].isNoDictionaryDim()) {
                 continue;
             } else if (queryDimensions[i].getDataType() == SqlStatement.Type.ARRAY) {
                 continue;

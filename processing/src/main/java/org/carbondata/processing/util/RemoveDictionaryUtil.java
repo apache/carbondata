@@ -218,31 +218,31 @@ public class RemoveDictionaryUtil {
     /**
      * This will extract the high cardinality count from the string.
      */
-    public static int extractHighCardCount(String highCardinalityDim) {
-        return extractHighCardDimsArr(highCardinalityDim).length;
+    public static int extractNoDictionaryCount(String noDictionaryDim) {
+        return extractNoDictionaryDimsArr(noDictionaryDim).length;
     }
 
     /**
      * This method will split one single byte array of high card dims into array
      * of byte arrays.
      *
-     * @param highCardArr
-     * @param highCardCount
+     * @param NoDictionaryArr
+     * @param NoDictionaryCount
      * @return
      */
-    public static byte[][] splitHighCardKey(byte[] highCardArr, int highCardCount) {
-        byte[][] split = new byte[highCardCount][];
+    public static byte[][] splitNoDictionaryKey(byte[] NoDictionaryArr, int NoDictionaryCount) {
+        byte[][] split = new byte[NoDictionaryCount][];
 
-        ByteBuffer buff = ByteBuffer.wrap(highCardArr, 2, highCardCount * 2);
+        ByteBuffer buff = ByteBuffer.wrap(NoDictionaryArr, 2, NoDictionaryCount * 2);
 
-        int remainingCol = highCardCount;
+        int remainingCol = NoDictionaryCount;
         short secIndex = 0;
         short firstIndex = 0;
-        for (int i = 0; i < highCardCount; i++) {
+        for (int i = 0; i < NoDictionaryCount; i++) {
 
             if (remainingCol == 1) {
                 firstIndex = buff.getShort();
-                int length = highCardArr.length - firstIndex;
+                int length = NoDictionaryArr.length - firstIndex;
 
                 // add 2 bytes (short) as length required to determine size of
                 // each column value.
@@ -251,7 +251,7 @@ public class RemoveDictionaryUtil {
                 ByteBuffer splittedCol = ByteBuffer.wrap(split[i]);
                 splittedCol.putShort((short) length);
 
-                System.arraycopy(highCardArr, firstIndex, split[i], 2, length);
+                System.arraycopy(NoDictionaryArr, firstIndex, split[i], 2, length);
 
             } else {
 
@@ -266,7 +266,7 @@ public class RemoveDictionaryUtil {
                 ByteBuffer splittedCol = ByteBuffer.wrap(split[i]);
                 splittedCol.putShort((short) length);
 
-                System.arraycopy(highCardArr, firstIndex, split[i], 2, length);
+                System.arraycopy(NoDictionaryArr, firstIndex, split[i], 2, length);
                 buff.position(buff.position() - 2);
 
             }
@@ -291,26 +291,26 @@ public class RemoveDictionaryUtil {
     /**
      * This will extract the high cardinality count from the string.
      */
-    public static String[] extractHighCardDimsArr(String highCardinalityDim) {
+    public static String[] extractNoDictionaryDimsArr(String noDictionaryDim) {
 
-        if (null == highCardinalityDim || highCardinalityDim.isEmpty()) {
+        if (null == noDictionaryDim || noDictionaryDim.isEmpty()) {
             return new String[0];
         }
 
-        String[] highCard = highCardinalityDim.split(CarbonCommonConstants.COMA_SPC_CHARACTER);
+        String[] NoDictionary = noDictionaryDim.split(CarbonCommonConstants.COMA_SPC_CHARACTER);
         List<String> list1 = new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-        for (int i = 0; i < highCard.length; i++) {
-            String[] dim = highCard[i].split(CarbonCommonConstants.COLON_SPC_CHARACTER);
+        for (int i = 0; i < NoDictionary.length; i++) {
+            String[] dim = NoDictionary[i].split(CarbonCommonConstants.COLON_SPC_CHARACTER);
             list1.add(dim[0]);
         }
 
         return list1.toArray(new String[list1.size()]);
     }
 
-    public static byte[] convertListByteArrToSingleArr(List<byte[]> directSurrogateKeyList) {
-        ByteBuffer[] buffArr = new ByteBuffer[directSurrogateKeyList.size()];
+    public static byte[] convertListByteArrToSingleArr(List<byte[]> noDictionaryValKeyList) {
+        ByteBuffer[] buffArr = new ByteBuffer[noDictionaryValKeyList.size()];
         int index = 0;
-        for (byte[] singleColVal : directSurrogateKeyList) {
+        for (byte[] singleColVal : noDictionaryValKeyList) {
             buffArr[index] = ByteBuffer.allocate(singleColVal.length);
             buffArr[index].put(singleColVal);
             buffArr[index++].rewind();

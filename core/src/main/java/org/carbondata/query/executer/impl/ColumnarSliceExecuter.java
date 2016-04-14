@@ -26,6 +26,7 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.common.logging.impl.StandardLogService;
 import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
+import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.columnar.aggregator.ColumnarAggregatorInfo;
 import org.carbondata.query.columnar.datastoreblockprocessor.ColumnarDataStoreBlockProcessorInfo;
 import org.carbondata.query.columnar.datastoreblockprocessor.DataStoreBlockProcessor;
@@ -62,14 +63,16 @@ public class ColumnarSliceExecuter implements Callable<Void> {
         this.partitionID = StandardLogService.getPartitionID(info.getCubeName());
         this.queryID = info.getQueryId();
         StandardLogService.setThreadName(partitionID, queryID);
+        int [] noDictionaryColIndexes=CarbonUtil.getNoDictionaryColIndex(info.getCurrentDimTables());
         if (!info.isDetailQuery()) {
             this.columnarstorageScanner = new ColumnarStorageAggregatedScannerImpl(
                     getColumnarStorageScannerInfo(info, scannedResultProcessor, dataStoreBlock,
-                            numberOfNodesToScan));
+                      
+                            numberOfNodesToScan),noDictionaryColIndexes);
         } else {
             this.columnarstorageScanner = new ColumnarStorageScannerImpl(
                     getColumnarStorageScannerInfo(info, scannedResultProcessor, dataStoreBlock,
-                            numberOfNodesToScan));
+                            numberOfNodesToScan),noDictionaryColIndexes);
         }
     }
 
@@ -84,7 +87,7 @@ public class ColumnarSliceExecuter implements Callable<Void> {
         columnarStorageScannerInfo.setScannedResultProcessor(scannedResultProcessor);
         columnarStorageScannerInfo.setRestructurHolder(info.getRestructureHolder());
         columnarStorageScannerInfo.setAutoAggregateTableRequest(info.isCustomMeasure());
-        //int [] queryDimOrdinalValue=QueryExecutorUtil.removeHighCardinalityDimOrdinal(info.getQueryDimOrdinal(),info.getQueryDimensions());
+        //int [] queryDimOrdinalValue=QueryExecutorUtil.removeNoDictionaryDimOrdinal(info.getQueryDimOrdinal(),info.getQueryDimensions());
         if (null != info.getColumnarSplitter()) {
             columnarStorageScannerInfo.setKeySize(
                     info.getColumnarSplitter().getKeySizeByBlock(info.getQueryDimOrdinal()));
@@ -117,7 +120,7 @@ public class ColumnarSliceExecuter implements Callable<Void> {
         aggregatorInfo.setCubeUniqueName(sliceInfo.getSlice().getCubeUniqueName());
         aggregatorInfo.setMeasureOrdinal(sliceInfo.getMeasureOrdinal());
         aggregatorInfo.setAggType(sliceInfo.getAggType());
-        aggregatorInfo.setHighCardinalityType(sliceInfo.getHighCardinalityTypes());
+        aggregatorInfo.setNoDictionaryType(sliceInfo.getNoDictionaryTypes());
         aggregatorInfo.setCustomExpressions(sliceInfo.getCustomExpressions());
         aggregatorInfo.setMsrMinValue(sliceInfo.getMsrMinValue());
         aggregatorInfo.setMeasureStartIndex(sliceInfo.getMeasureStartIndex());
@@ -150,7 +153,7 @@ public class ColumnarSliceExecuter implements Callable<Void> {
                 new ColumnarDataStoreBlockProcessorInfo();
         blockProcessorInfo.setDimensionIndexes(sliceInfo.getQueryDimOrdinal());
         blockProcessorInfo.setFileHolder(fileHolder);
-        //int [] queryDimOrdinalValue=QueryExecutorUtil.removeHighCardinalityDimOrdinal(sliceInfo.getQueryDimOrdinal(),sliceInfo.getQueryDimensions());
+        //int [] queryDimOrdinalValue=QueryExecutorUtil.removeNoDictionaryDimOrdinal(sliceInfo.getQueryDimOrdinal(),sliceInfo.getQueryDimensions());
         if (null != sliceInfo.getColumnarSplitter()) {
             blockProcessorInfo.setKeySize(sliceInfo.getColumnarSplitter()
                     .getKeySizeByBlock(sliceInfo.getQueryDimOrdinal()));

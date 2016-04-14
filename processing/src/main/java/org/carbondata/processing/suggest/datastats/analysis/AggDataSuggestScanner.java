@@ -26,8 +26,10 @@ import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreDataHolder;
+import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreMetadata;
 import org.carbondata.query.columnar.keyvalue.AbstractColumnarScanResult;
 import org.carbondata.query.complex.querytypes.GenericQueryType;
 import org.carbondata.query.wrappers.ByteArrayWrapper;
@@ -128,7 +130,7 @@ public class AggDataSuggestScanner extends AbstractColumnarScanResult {
     }
 
     @Override
-    public byte[] getHighCardinalityDimDataForAgg(int dimOrdinal) {
+    public byte[] getNo_DictionayDimDataForAgg(int dimOrdinal) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -138,6 +140,35 @@ public class AggDataSuggestScanner extends AbstractColumnarScanResult {
             ByteArrayWrapper keyVal) {
         // TODO Auto-generated method stub
         return null;
+    }
+    
+    /**
+     * Read the columnar data blocks from columnar data holder instance.
+     * @param noOfRows
+     * @param mergedData
+     * @param dataHolder
+     */
+    public void getLimitedDataBlockForNoDictionaryVals(int noOfRows,Set<byte[]> mergedData,ColumnarKeyStoreDataHolder dataHolder)
+    {
+    	if(null!=dataHolder)
+    	{
+    		ColumnarKeyStoreMetadata keyStoreMetadata=dataHolder.getColumnarKeyStoreMetadata();
+			if (null != dataHolder.getNoDictionaryValBasedKeyBlockData()) {
+				List<byte[]> listOfNoDictionaryVals = dataHolder
+						.getNoDictionaryValBasedKeyBlockData();
+				for(int i=0;i<noOfRows;i++)
+				{
+					if(null==keyStoreMetadata.getColumnReverseIndex())
+					{
+						mergedData.add(listOfNoDictionaryVals.get(i));
+					}
+					else
+					{
+						mergedData.add(listOfNoDictionaryVals.get(keyStoreMetadata.getColumnReverseIndex()[i]));	
+					}
+				}
+			}
+    	}
     }
 
 }

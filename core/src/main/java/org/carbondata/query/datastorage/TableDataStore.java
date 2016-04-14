@@ -408,7 +408,7 @@ public class TableDataStore {
                 boolean isAggKeyBlock = Boolean.parseBoolean(
                         CarbonCommonConstants.AGGREAGATE_COLUMNAR_KEY_BLOCK_DEFAULTVALUE);
                 if (isAggKeyBlock) {
-                    int highCardinalityValue = Integer.parseInt(CarbonProperties.getInstance()
+                    int noDictionaryValue = Integer.parseInt(CarbonProperties.getInstance()
                             .getProperty(CarbonCommonConstants.HIGH_CARDINALITY_VALUE,
                                     CarbonCommonConstants.HIGH_CARDINALITY_VALUE_DEFAULTVALUE));
                     int aggIndex = 0;
@@ -427,7 +427,7 @@ public class TableDataStore {
                         if (dimCardinality[i] == 0) {
                             continue;
                         }
-                        if (dimCardinality[i] < highCardinalityValue) {
+                        if (dimCardinality[i] < noDictionaryValue) {
                             this.aggKeyBlock[aggIndex++] = true;
                             continue;
                         }

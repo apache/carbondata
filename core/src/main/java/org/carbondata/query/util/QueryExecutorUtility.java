@@ -275,7 +275,7 @@ public final class QueryExecutorUtility {
         int index = 0;
         for (int i = 0; i < queryDimensions.length; i++) {
             Set<Integer> integers = new TreeSet<Integer>();
-            if (queryDimensions[i].isHighCardinalityDim()) {
+            if (queryDimensions[i].isNoDictionaryDim()) {
                 continue;
             }
             int[] range = generator.getKeyByteOffsets(queryDimensions[i].getOrdinal());
@@ -318,7 +318,7 @@ public final class QueryExecutorUtility {
         int[][] dimensionCompareIndex = new int[queryDimensions.length][];
         int index = 0;
         for (int i = 0; i < queryDimensions.length; i++) {
-            if (queryDimensions[i].isHighCardinalityDim()) {
+            if (queryDimensions[i].isNoDictionaryDim()) {
                 continue;
             }
             Set<Integer> integers = new TreeSet<Integer>();
@@ -540,10 +540,10 @@ public final class QueryExecutorUtility {
             HybridStoreModel hybridStoreModel) {
         //it can be possible that multiple queryDim will be part of row store and hence .if row store index is already added then its not required to add again.
         Set<Integer> selectedDimensionList = new HashSet<Integer>(queryDims.length);
-        int highCardStartIndex = hybridStoreModel.getColumnStoreOrdinals().length;
+        int NoDictionaryStartIndex = hybridStoreModel.getColumnStoreOrdinals().length;
         for (Dimension dimension : queryDims) {
-            if (dimension.isHighCardinalityDim()) {
-                selectedDimensionList.add(highCardStartIndex++);
+            if (dimension.isNoDictionaryDim()) {
+                selectedDimensionList.add(NoDictionaryStartIndex++);
             } else {
                 int storeIndex = hybridStoreModel.getStoreIndex(dimension.getOrdinal());
                 selectedDimensionList.add(storeIndex);

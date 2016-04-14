@@ -271,9 +271,9 @@ public class CarbonDataWriterStep extends BaseStep implements StepInterface {
         String[] measures = sliceMetaData.getMeasures();
         this.aggregators = sliceMetaData.getMeasuresAggregator();
         this.measureCount = measures.length;
-        int highCardIndex = measureCount;
+        int NoDictionaryIndex = measureCount;
         // incremented the index of mdkey by 1 so that the earlier one is high card index.
-        this.mdKeyIndex = highCardIndex + 1;
+        this.mdKeyIndex = NoDictionaryIndex + 1;
         bufferSize = CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE;
 
         try {
@@ -383,7 +383,7 @@ public class CarbonDataWriterStep extends BaseStep implements StepInterface {
         SingleThreadFinalMerger finalMergerThread =
                 new SingleThreadFinalMerger(tempFileLocation, tableName, mdkeyLength, measureCount,
                         mdKeyIndex, meta.isFactMdKeyInInputRow(), meta.getFactMdkeyLength(), type,
-                        this.aggregators, this.meta.gethighCardCount());
+                        this.aggregators, this.meta.getNoDictionaryCount());
         finalMergerThread.startFinalMerge();
         int recordCounter = 0;
         while (finalMergerThread.hasNext()) {
@@ -555,7 +555,7 @@ public class CarbonDataWriterStep extends BaseStep implements StepInterface {
                     CarbonDataProcessorUtil.getDimLens(meta.getFactDimLensString()),
                     isByteArrayInMeasure, meta.isUpdateMemberRequest(), dimLens,
                     meta.getFactLevels(), meta.getAggregateLevels(), true,
-                    meta.getCurrentRestructNumber(), this.meta.gethighCardCount(), null,
+                    meta.getCurrentRestructNumber(), this.meta.getNoDictionaryCount(), null,
                     type);
         } else {
             dataHandler = new CarbonFactDataHandler(meta.getSchemaName(), meta.getCubeName(),

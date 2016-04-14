@@ -80,7 +80,7 @@ public abstract class AbstractConditionalEvalutor implements FilterEvaluator {
                         dimColumnEvaluatorInfo.setColumnIndex(
                                 getColumnStoreIndex(columnExpression.getDim().getOrdinal(),
                                         info.getHybridStoreModel()));
-                        if (!columnExpression.getDim().isHighCardinalityDim()) {
+                        if (!columnExpression.getDim().isNoDictionaryDim()) {
                             dimColumnEvaluatorInfo.setNeedCompressedData(
                                     info.getSlices().get(info.getCurrentSliceIndex())
                                             .getDataCache(info.getFactTableName())
@@ -107,7 +107,7 @@ public abstract class AbstractConditionalEvalutor implements FilterEvaluator {
                     } else {
                         dimColumnEvaluatorInfo
                                 .setColumnIndex(columnExpression.getDim().getOrdinal());
-                        if (!columnExpression.getDim().isHighCardinalityDim()) {
+                        if (!columnExpression.getDim().isNoDictionaryDim()) {
                             dimColumnEvaluatorInfo.setNeedCompressedData(
                                     info.getSlices().get(info.getCurrentSliceIndex())
                                             .getDataCache(info.getFactTableName())
@@ -128,13 +128,13 @@ public abstract class AbstractConditionalEvalutor implements FilterEvaluator {
             ConditionalExpression conditionalExpression = (ConditionalExpression) exp;
             List<ColumnExpression> columnList = conditionalExpression.getColumnList();
             dimColumnEvaluatorInfo.setColumnIndex(columnList.get(0).getDim().getOrdinal());
-            if (!columnList.get(0).getDim().isHighCardinalityDim()) {
+            if (!columnList.get(0).getDim().isNoDictionaryDim()) {
                 dimColumnEvaluatorInfo.setNeedCompressedData(
                         info.getSlices().get(info.getCurrentSliceIndex())
                                 .getDataCache(info.getFactTableName()).getAggKeyBlock()[columnList
                                 .get(0).getDim().getOrdinal()]);
             }
-            if (columnList.get(0).getDim().isHighCardinalityDim()) {
+            if (columnList.get(0).getDim().isNoDictionaryDim()) {
                 dimColumnEvaluatorInfo.setFilterValues(
                         FilterUtil.getFilterList(info, exp, columnList.get(0), isIncludeFilter));
             } else if (!(columnList.get(0).getDim().getDataType() == Type.ARRAY

@@ -147,7 +147,7 @@ public class QueryExecuterProperties {
      */
     protected byte[] sortDimIndexes;
 
-    protected boolean[] isHighCardinality;
+    protected boolean[] isNoDictionary;
 
     /**
      * Hybrid store model, it will have detail about columnar and row stores

@@ -131,7 +131,7 @@ public class SortTempFileChunkHolder {
      */
     private int totalRecordFetch;
 
-    private int highCardinalityCount;
+    private int noDictionaryCount;
 
     private char[] aggType;
 
@@ -142,7 +142,7 @@ public class SortTempFileChunkHolder {
      * @param measureCount measure count
      */
     public SortTempFileChunkHolder(File tempFile, int dimensionCount, int complexDimensionCount,
-            int measureCount, int fileBufferSize, int highCardinalityCount, char[] aggType) {
+            int measureCount, int fileBufferSize, int noDictionaryCount, char[] aggType) {
         // set temp file
         this.tempFile = tempFile;
 
@@ -151,11 +151,11 @@ public class SortTempFileChunkHolder {
         this.dimensionCount = dimensionCount;
         this.complexDimensionCount = complexDimensionCount;
 
-        this.highCardinalityCount = highCardinalityCount;
+        this.noDictionaryCount = noDictionaryCount;
         // set mdkey length
         this.fileBufferSize = fileBufferSize;
         this.executorService = Executors.newFixedThreadPool(1);
-        this.outRecSize = this.measureCount + dimensionCount + this.highCardinalityCount
+        this.outRecSize = this.measureCount + dimensionCount + this.noDictionaryCount
                 + complexDimensionCount;
         this.aggType = aggType;
     }
@@ -206,7 +206,7 @@ public class SortTempFileChunkHolder {
         try {
             reader = TempSortFileReaderFactory.getInstance()
                     .getTempSortFileReader(isSortTempFileCompressionEnabled, dimensionCount,
-                            complexDimensionCount, measureCount, tempFile, highCardinalityCount);
+                            complexDimensionCount, measureCount, tempFile, noDictionaryCount);
 
             if (isSortTempFileCompressionEnabled) {
                 this.bufferSize = sortTempFileNoOFRecordsInCompression;
@@ -321,12 +321,12 @@ public class SortTempFileChunkHolder {
             }
 
             //Complex Type ByteArray to be read and kept for columnar
-            for (int i = 0; i < this.complexDimensionCount; i++) {
+           /* for (int i = 0; i < this.complexDimensionCount; i++) {
                 byte[] complexArray = new byte[stream.readInt()];
                 stream.read(complexArray);
                 holder[index++] = complexArray;
-            }
-            if (this.highCardinalityCount > 0) {
+            }*/
+            if (this.noDictionaryCount > 0) {
                 short lengthOfByteArray = stream.readShort();
                 ByteBuffer buff = ByteBuffer.allocate(lengthOfByteArray + 2);
                 buff.putShort(lengthOfByteArray);

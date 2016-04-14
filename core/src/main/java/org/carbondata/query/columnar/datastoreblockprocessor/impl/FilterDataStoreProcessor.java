@@ -50,12 +50,12 @@ public class FilterDataStoreProcessor extends AbstractColumnarDataStoreProcessor
                 columnarDataStoreBlockInfo.getDimensionIndexes());
     }
 
-    public AbstractColumnarScanResult getScannedData(BlockDataHolder blockDataHolder) {
-        fillKeyValue(blockDataHolder);
+    public AbstractColumnarScanResult getScannedData(BlockDataHolder blockDataHolder,int[] noDictionaryColIndexes) {
+        fillKeyValue(blockDataHolder,noDictionaryColIndexes);
         return keyValue;
     }
 
-    protected void fillKeyValue(BlockDataHolder blockDataHolder) {
+    protected void fillKeyValue(BlockDataHolder blockDataHolder,int[] noDictionaryColIndexes) {
         keyValue.reset();
         boolean isMinMaxEnabled = true;
         String minMaxEnableValue = CarbonProperties.getInstance().getProperty("carbon.enableMinMax");
@@ -66,6 +66,8 @@ public class FilterDataStoreProcessor extends AbstractColumnarDataStoreProcessor
             BitSet bitSet = filterEvaluatorTree
                     .isScanRequired(blockDataHolder.getLeafDataBlock().getBlockMaxData(),
                             blockDataHolder.getLeafDataBlock().getBlockMinData());
+            
+            
 
             if (bitSet.isEmpty()) {
                 keyValue.setNumberOfRows(0);
@@ -82,7 +84,7 @@ public class FilterDataStoreProcessor extends AbstractColumnarDataStoreProcessor
             }
         }
 
-        BitSet bitSet = filterEvaluatorTree.applyFilter(blockDataHolder, null);
+        BitSet bitSet = filterEvaluatorTree.applyFilter(blockDataHolder, null,noDictionaryColIndexes);
 
         if (bitSet.isEmpty()) {
             keyValue.setNumberOfRows(0);
@@ -104,7 +106,7 @@ public class FilterDataStoreProcessor extends AbstractColumnarDataStoreProcessor
                     .getAllSelectedDimensions()[i]]) {
                 keyBlocks[i] = blockDataHolder.getLeafDataBlock()
                         .getColumnarKeyStore(columnarDataStoreBlockInfo.getFileHolder(),
-                                columnarDataStoreBlockInfo.getAllSelectedDimensions()[i], false);
+                                columnarDataStoreBlockInfo.getAllSelectedDimensions()[i], false,noDictionaryColIndexes);
             } else {
                 keyBlocks[i] = blockDataHolder.getColumnarKeyStore()[columnarDataStoreBlockInfo
                         .getAllSelectedDimensions()[i]];

@@ -31,6 +31,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import com.google.gson.Gson;
+
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.carbondata.common.logging.LogService;
@@ -47,6 +49,7 @@ import org.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.keygenerator.mdkey.NumberCompressor;
 import org.carbondata.core.load.LoadMetadataDetails;
+import org.carbondata.core.metadata.CarbonMetadata.Dimension;
 import org.carbondata.core.metadata.LeafNodeInfo;
 import org.carbondata.core.metadata.LeafNodeInfoColumnar;
 import org.carbondata.core.metadata.SliceMetaData;
@@ -379,13 +382,13 @@ public final class CarbonUtil {
     /**
      * @param dimCardinality                : dimension cardinality
      * @param dimensionStoreType            : dimension store type: true->columnar, false->row
-     * @param highCardDimOrdinals
+     * @param NoDictionaryDimOrdinals
      * @param columnarStoreColumns->columns for columnar store
      * @param rowStoreColumns               -> columns for row store
      * @return
      */
     public static HybridStoreModel getHybridStoreMeta(int[] dimCardinality,
-            boolean[] dimensionStoreType, List<Integer> highCardDimOrdinals) {
+            boolean[] dimensionStoreType, List<Integer> noDictionaryDimOrdinals) {
         //get dimension store type
         HybridStoreModel hybridStoreMeta = new HybridStoreModel();
 
@@ -435,9 +438,9 @@ public final class CarbonUtil {
         }
 
         //updating with highcardinality dimension store detail
-        if (null != highCardDimOrdinals) {
-            for (Integer highCardDimOrdinal : highCardDimOrdinals) {
-                dimOrdinalStoreIndexMapping.put(highCardDimOrdinal, storeIndex++);
+        if (null != noDictionaryDimOrdinals) {
+            for (Integer noDictionaryDimOrdinal : noDictionaryDimOrdinals) {
+                dimOrdinalStoreIndexMapping.put(noDictionaryDimOrdinal, storeIndex++);
             }
         }
 
@@ -1963,6 +1966,26 @@ public final class CarbonUtil {
         FileFactory.FileType fileType = FileFactory.getFileType(filePath);
         CarbonFile carbonFile = FileFactory.getCarbonFile(filePath, fileType);
         return carbonFile.getSize();
+    }
+    
+    /**
+     * This API will record the indexes of the dimension which doesnt have
+     * Dictionary values.
+     * @param currentDims .
+     * @return
+     */
+    public static int[] getNoDictionaryColIndex(Dimension[] currentDims)
+    {
+      List<Integer> dirSurrogateList=new ArrayList<Integer>(currentDims.length);
+      for(Dimension dim:currentDims)
+      {
+        if(dim.isNoDictionaryDim())
+        {
+          dirSurrogateList.add(dim.getOrdinal());
+        }
+      }
+      int[] noDictionaryValIndex=ArrayUtils.toPrimitive(dirSurrogateList.toArray(new Integer[dirSurrogateList.size()]));
+      return noDictionaryValIndex;
     }
 }
 

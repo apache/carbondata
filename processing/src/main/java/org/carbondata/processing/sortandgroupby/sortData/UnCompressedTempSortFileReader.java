@@ -31,8 +31,8 @@ public class UnCompressedTempSortFileReader extends AbstractTempSortFileReader {
      * @param tempFile
      */
     public UnCompressedTempSortFileReader(int dimensionCount, int complexDimensionCount,
-            int measureCount, File tempFile, int highCardinalityCount) {
-        super(dimensionCount, complexDimensionCount, measureCount, tempFile, highCardinalityCount);
+            int measureCount, File tempFile, int noDictionaryCount) {
+        super(dimensionCount, complexDimensionCount, measureCount, tempFile, noDictionaryCount);
     }
 
     /**

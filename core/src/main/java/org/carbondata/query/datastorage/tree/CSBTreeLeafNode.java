@@ -180,13 +180,13 @@ public class CSBTreeLeafNode extends CSBNode {
 
     @Override
     public ColumnarKeyStoreDataHolder[] getColumnarKeyStore(FileHolder fileHolder, int[] blockIndex,
-            boolean[] needCompressedData) {
+            boolean[] needCompressedData,int[] noDictionaryVals) {
         return null;
     }
 
     @Override
     public ColumnarKeyStoreDataHolder getColumnarKeyStore(FileHolder fileHolder, int blockIndex,
-            boolean needCompressedData) {
+            boolean needCompressedData,int[] noDictionaryVals) {
         return null;
     }
 

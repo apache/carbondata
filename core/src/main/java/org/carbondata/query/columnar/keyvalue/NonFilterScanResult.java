@@ -72,21 +72,18 @@ public class NonFilterScanResult extends AbstractColumnarScanResult {
     }
 
     @Override
-    public byte[] getHighCardinalityDimDataForAgg(int dimOrdinal) {
-
+    public byte[] getNo_DictionayDimDataForAgg(int dimOrdinal) {
         ColumnarKeyStoreMetadata columnarKeyStoreMetadata =
                 columnarKeyStoreDataHolder[dimOrdinal].getColumnarKeyStoreMetadata();
-        if (null != columnarKeyStoreMetadata.getMapOfColumnarKeyBlockDataForDirectSurroagtes()) {
-            Map<Integer, byte[]> mapOfDirectSurrogates =
-                    columnarKeyStoreMetadata.getMapOfColumnarKeyBlockDataForDirectSurroagtes();
+        List<byte[]> noDictionaryValsColumnarBlock=columnarKeyStoreDataHolder[dimOrdinal].getNoDictionaryValBasedKeyBlockData();
+        if (null != noDictionaryValsColumnarBlock) {
             if (null == columnarKeyStoreMetadata.getColumnReverseIndex()) {
-                return mapOfDirectSurrogates.get(currentRow);
+                return noDictionaryValsColumnarBlock.get(currentRow);
             }
-            return mapOfDirectSurrogates
+            return noDictionaryValsColumnarBlock
                     .get(columnarKeyStoreMetadata.getColumnReverseIndex()[currentRow]);
         }
         return null;
-
     }
 
     @Override

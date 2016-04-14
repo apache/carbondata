@@ -78,10 +78,10 @@ public class ExpressionAggregator {
                     default:
                         row[j] = keyValue.getDoubleValue(dimension.getOrdinal());
                     }
-                } else if (dimension.isHighCardinalityDim()) {
-                    byte[] directSurrogate =
-                            keyValue.getHighCardinalityDimDataForAgg(dimension.getOrdinal());
-                    row[j] = DataTypeConverter.getDataBasedOnDataType(new String(directSurrogate),
+                } else if (dimension.isNoDictionaryDim()) {
+                    byte[] noDictionaryVal =
+                            keyValue.getNo_DictionayDimDataForAgg(dimension.getOrdinal());
+                    row[j] = DataTypeConverter.getDataBasedOnDataType(new String(noDictionaryVal),
                             dimension.getDataType());
                 } else {
                     if (dimension.getDataType() != Type.ARRAY

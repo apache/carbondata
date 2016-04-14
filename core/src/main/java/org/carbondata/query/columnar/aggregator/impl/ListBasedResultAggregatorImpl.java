@@ -92,7 +92,7 @@ public class ListBasedResultAggregatorImpl implements ColumnarScannedResultAggre
             value = AggUtil.getAggregators(columnaraggreagtorInfo.getAggType(), isAggTable, null,
                     columnaraggreagtorInfo.getCubeUniqueName(),
                     columnaraggreagtorInfo.getMsrMinValue(),
-                    columnaraggreagtorInfo.getHighCardinalityTypes(),
+                    columnaraggreagtorInfo.getNoDictionaryTypes(),
                     columnaraggreagtorInfo.getDataTypes());
             dataAggregator.aggregateData(keyValue, value, key);
             keys.add(key);
@@ -141,8 +141,15 @@ public class ListBasedResultAggregatorImpl implements ColumnarScannedResultAggre
                         && restructureHolder.metaData.getNewDimsDefVals().length > 0) {
                     for (int k = 0;
                          k < restructureHolder.metaData.getNewDimsDefVals().length; k++) {
+                      if(restructureHolder.getIsNoDictionaryNewDims()[k])
+                      {
+                        key.addToNoDictionaryValKeyList(restructureHolder.metaData.getNewDimsDefVals()[k].getBytes());
+                      }
+                      else
+                      {
                         updatedData[data.length + k] =
                                 restructureHolder.metaData.getNewDimsSurrogateKeys()[k];
+                      }
                     }
                 }
                 if (restructureHolder.getQueryDimsCount() == columnaraggreagtorInfo

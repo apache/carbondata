@@ -172,11 +172,11 @@ public class SortDataRows {
     /**
      * To know how many columns are of high cardinality.
      */
-    private int highCardinalityCount;
+    private int noDictionaryCount;
 
     public SortDataRows(String tabelName, int dimColCount, int complexDimColCount,
             int measureColCount, SortObserver observer, int currentRestructNum,
-            int highCardinalityCount, String[] measureDatatype) {
+            int noDictionaryCount, String[] measureDatatype) {
         // set table name
         this.tableName = tabelName;
 
@@ -185,7 +185,7 @@ public class SortDataRows {
 
         this.dimColCount = dimColCount;
 
-        this.highCardinalityCount = highCardinalityCount;
+        this.noDictionaryCount = noDictionaryCount;
         this.complexDimColCount = complexDimColCount;
 
         // processed file list
@@ -515,14 +515,14 @@ public class SortDataRows {
                     //                	stream.writeInt((Integer)row[fieldIndex++]);
                 }
 
-                for (int dimCount = 0; dimCount < this.complexDimColCount; dimCount++) {
+               /* for (int dimCount = 0; dimCount < this.complexDimColCount; dimCount++) {
                     int complexByteArrayLength = ((byte[]) row[fieldIndex]).length;
                     stream.writeInt(complexByteArrayLength);
                     stream.write(((byte[]) row[fieldIndex++]));
-                }
+                }*/
 
                 // if any high cardinality dims are present then write it to the file.
-                if (this.highCardinalityCount > 0) {
+                if (this.noDictionaryCount > 0) {
                     stream.write(RemoveDictionaryUtil.getByteArrayForNoDictionaryCols(row));
                 }
 
@@ -600,7 +600,7 @@ public class SortDataRows {
         TempSortFileWriter chunkWriter = null;
         TempSortFileWriter writer = TempSortFileWriterFactory.getInstance()
                 .getTempSortFileWriter(isSortFileCompressionEnabled, dimColCount,
-                        complexDimColCount, measureColCount, highCardinalityCount,
+                        complexDimColCount, measureColCount, noDictionaryCount,
                         fileWriteBufferSize);
 
         if (prefetch && !isSortFileCompressionEnabled) {
@@ -636,7 +636,7 @@ public class SortDataRows {
         parameters.setPrefetch(prefetch);
         parameters.setPrefetchBufferSize(bufferSize);
         parameters.setAggType(aggType);
-        parameters.setHighCardinalityCount(highCardinalityCount);
+        parameters.setNoDictionaryCount(noDictionaryCount);
 
         IntermediateFileMerger merger = new IntermediateFileMerger(parameters);
         executorService.submit(merger);

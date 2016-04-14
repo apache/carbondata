@@ -253,6 +253,10 @@ public class SchemaRestructurer {
                 defaultVal = defaultValues.get(aDimension.name) == null ?
                         null :
                         defaultValues.get(aDimension.name);
+                if(aDimension.noDictionary)
+                {
+                	continue;
+                }
                 if (null != defaultVal) {
                     defValuesWithFactTableNames.put(tableName + '_' + levelColName, defaultVal);
                     dimLens.add(2);

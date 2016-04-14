@@ -140,9 +140,9 @@ public class CarbonSortTempFileChunkHolder {
     private String[] aggregator;
 
     /**
-     * highCardCount
+     * NoDictionaryCount
      */
-    private int highCardCount;
+    private int NoDictionaryCount;
 
     /**
      * CarbonSortTempFileChunkHolder Constructor
@@ -182,14 +182,14 @@ public class CarbonSortTempFileChunkHolder {
      * @param isFactMdkeyInInputRow2
      * @param factMdkeyLength2
      * @param aggregators
-     * @param highCardCount
+     * @param NoDictionaryCount
      */
     public CarbonSortTempFileChunkHolder(File tmpFile, int measureCount2, int mdkeyLength2,
             int fileBufferSize2, boolean isFactMdkeyInInputRow2, int factMdkeyLength2,
-            String[] aggregators, int highCardCount, char[] type) {
+            String[] aggregators, int NoDictionaryCount, char[] type) {
         this(tmpFile, measureCount2, mdkeyLength2, fileBufferSize2, isFactMdkeyInInputRow2,
                 factMdkeyLength2, aggregators, type);
-        this.highCardCount = highCardCount;
+        this.NoDictionaryCount = NoDictionaryCount;
     }
 
     /**
@@ -384,7 +384,7 @@ public class CarbonSortTempFileChunkHolder {
             holder[this.aggregator.length - 1] = stream.readDouble();
 
             //Read byte [] of high cardinality from stream.
-            if (highCardCount > 0) {
+            if (NoDictionaryCount > 0) {
                 short lengthOfByteArray = stream.readShort();
                 ByteBuffer buff = ByteBuffer.allocate(lengthOfByteArray + 2);
                 buff.putShort(lengthOfByteArray);

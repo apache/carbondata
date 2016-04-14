@@ -167,13 +167,13 @@ public class SortKeyStep extends BaseStep {
                 msrdataTypes = new String[0];
             }
 
-            this.meta.setHighCardinalityCount(
-                    RemoveDictionaryUtil.extractHighCardCount(meta.getHighCardinalityDims()));
+            this.meta.setNoDictionaryCount(
+                    RemoveDictionaryUtil.extractNoDictionaryCount(meta.getNoDictionaryDims()));
 
             this.sortDataRows = new SortDataRows(meta.getTabelName(),
                     meta.getDimensionCount() - meta.getComplexDimensionCount(),
                     meta.getComplexDimensionCount(), meta.getMeasureCount(), this.observer,
-                    meta.getCurrentRestructNumber(), meta.getHighCardinalityCount(), msrdataTypes);
+                    meta.getCurrentRestructNumber(), meta.getNoDictionaryCount(), msrdataTypes);
             try {
                 // initialize sort
                 this.sortDataRows.initialize(meta.getSchemaName(), meta.getCubeName());

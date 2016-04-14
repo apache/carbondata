@@ -22,29 +22,65 @@ package org.carbondata.integration.spark.testsuite.detailquery
 import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
+import org.apache.spark.sql.Row
 
 
 /**
- * Test Class for aggregate query on multiple datatypes
- * @author N00902756
+ * Test Class for verifying NO_DICTIONARY_COLUMN feature.
+ * @author S71955
  *
  */
-class HybridStoreDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
+class NO_DICTIONARY_COL_TestCase extends QueryTest with BeforeAndAfterAll {
 
- /* override def beforeAll {
-    sql("create cube highcardinality dimensions(column1 string,column2 string,column3 string,column4 string,column5 string, column6 string,column7 string,column8 string,column9 string,column10 string) measures(measure1 numeric,measure2 numeric,measure3 numeric,measure4 numeric) OPTIONS (HIGH_CARDINALITY_DIMS(column10),PARTITIONER [CLASS = 'org.carbondata.integration.spark.partition.api.impl.SampleDataPartitionerImpl' columns= (column1) PARTITION_COUNT=1])")
-    sql("LOAD DATA FACT FROM './src/test/resources/10dim_4msr.csv' INTO Cube highcardinality partitionData(DELIMITER ',' ,QUOTECHAR '\"', FILEHEADER 'column1,column2,column3,column4,column5,column6,column7,column8,column9,column10,measure1,measure2,measure3,measure4')");
-    sql("create table highcardinality_hive(column1 string,column2 string,column3 string,column4 string,column5 string, column6 string,column7 string,column8 string,column9 string,column10 string,measure1 double,measure2 double,measure3 double,measure4 double) row format delimited fields terminated by ',' collection items terminated by '$' map keys terminated by ':'")
-    sql("load data local inpath './src/test/resources/10dim_4msr.csv' into table highcardinality_hive");
-  }
+  override def beforeAll {
+    //For the Hive table creation and data loading
+    sql("create table NO_DICTIONARY_HIVE_6(empno int,empname string,designation string,doj Timestamp,workgroupcategory int, workgroupcategoryname string,deptno int, deptname string, projectcode int, projectjoindate Timestamp,projectenddate Timestamp,attendance int,utilization int,salary int) row format delimited fields terminated by ',' collection items terminated by '$' map keys terminated by ':'")
+    sql("load data local inpath './src/test/resources/data.csv' into table NO_DICTIONARY_HIVE_6");
+    //For Carbon cube creation.
+    sql("CREATE CUBE NO_DICTIONARY_CARBON_6 DIMENSIONS (empno Integer, empname String, " +
+      "designation String, doj Timestamp, workgroupcategory Integer, workgroupcategoryname String, " +
+      "deptno Integer, deptname String, projectcode Integer, projectjoindate Timestamp, " +
+      "projectenddate Timestamp) MEASURES (attendance Integer,utilization Integer,salary Integer) " + "OPTIONS (NO_DICTIONARY(empno,empname,deptname)PARTITIONER [PARTITION_COUNT=1])").show()
+    sql("LOAD DATA fact from './src/test/resources/data.csv' INTO CUBE NO_DICTIONARY_CARBON_6 PARTITIONDATA(DELIMITER ',', QUOTECHAR '\"')");
 
-  test("select empno,empname,utilization,count(salary),sum(empno) from alldatatypescube where empname in ('arvind','ayushi') group by empno,empname,utilization") {
-    checkAnswer(sql("select * from highcardinality"),
-      sql("select * from highcardinality_hive"))
   }
+  test("Detail Query with NO_DICTIONARY_COLUMN Compare With HIVE RESULT") {
+    
+  
+    checkAnswer(
+      sql("select empno from NO_DICTIONARY_CARBON_6"),
+      Seq(Row(11), Row(12), Row(13), Row(14), Row(15), Row(16), Row(17), Row(18), Row(19), Row(20)))
+      
+     
+  }
+  
+   test("Filter Query with NO_DICTIONARY_COLUMN Compare With HIVE RESULT") {
+    
+     checkAnswer(
+      sql("select empno from NO_DICTIONARY_HIVE_6 where empno=15"),
+      sql("select empno from NO_DICTIONARY_CARBON_6 where empno=15"))
+   }
+   
+    test("Filter Query with NO_DICTIONARY_COLUMN and DICTIONARY_COLUMN Compare With HIVE RESULT") {
+    
+     checkAnswer(
+      sql("select empno from NO_DICTIONARY_HIVE_6 where empno=15 and deptno=12"),
+      sql("select empno from NO_DICTIONARY_CARBON_6 where empno=15 and deptno=12"))
+   }
+    
+    test("Distinct Query with NO_DICTIONARY_COLUMN  Compare With HIVE RESULT") {
+    
+     checkAnswer(
+      sql("select count(distinct empno) from NO_DICTIONARY_HIVE_6"),
+      sql("select count(distinct empno) from NO_DICTIONARY_CARBON_6"))
+   }
+    
+     
+    
+    
 
   override def afterAll {
-    sql("drop cube highcardinality")
-    sql("drop cube highcardinality_hive")
-  }*/
+   //sql("drop cube NO_DICTIONARY_HIVE_1")
+   //sql("drop cube NO_DICTIONARY_CARBON_1")
+  }
 }

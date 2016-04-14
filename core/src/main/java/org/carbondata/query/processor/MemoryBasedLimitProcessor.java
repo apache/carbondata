@@ -74,10 +74,10 @@ public class MemoryBasedLimitProcessor implements DataProcessorExt {
         if (limit == -1 || result.size() < limit) {
             ByteArrayWrapper arrayWrapper = new ByteArrayWrapper();
             arrayWrapper.setMaskedKey(key.getMaskedKey());
-            List<byte[]> listOfDirectKey = key.getDirectSurrogateKeyList();
+            List<byte[]> listOfDirectKey = key.getNoDictionaryValKeyList();
             if (null != listOfDirectKey) {
                 for (byte[] byteArray : listOfDirectKey) {
-                    arrayWrapper.addToDirectSurrogateKeyList(byteArray);
+                    arrayWrapper.addToNoDictionaryValKeyList(byteArray);
                 }
             }
             List<byte[]> listOfComplexTypes = key.getCompleteComplexTypeData();

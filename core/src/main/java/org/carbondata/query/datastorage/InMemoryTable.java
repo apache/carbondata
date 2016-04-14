@@ -233,10 +233,10 @@ public class InMemoryTable implements Comparable<InMemoryTable> {
             List<Dimension> dimensions = metaCube.getDimensions(tableName);
 
             boolean[] dimensionStoreType = new boolean[dimensionCardinality.length];
-            List<Integer> highCardDimOrdinals = new ArrayList<Integer>();
+            List<Integer> NoDictionaryDimOrdinals = new ArrayList<Integer>();
             for (Dimension dimension : dimensions) {
-                if (dimension.isHighCardinalityDim()) {
-                    highCardDimOrdinals.add(dimension.getOrdinal());
+                if (dimension.isNoDictionaryDim()) {
+                    NoDictionaryDimOrdinals.add(dimension.getOrdinal());
                     continue;
                 }
                 if (dimension.isColumnar()) {
@@ -245,7 +245,7 @@ public class InMemoryTable implements Comparable<InMemoryTable> {
             }
             hybridStoreModel = CarbonUtil
                     .getHybridStoreMeta(findRequiredDimensionForStartAndEndKey(),
-                            dimensionStoreType, highCardDimOrdinals);
+                            dimensionStoreType, NoDictionaryDimOrdinals);
             keyGenerator = KeyGeneratorFactory
                     .getKeyGenerator(hybridStoreModel.getHybridCardinality(),
                             hybridStoreModel.getDimensionPartitioner());
@@ -274,7 +274,7 @@ public class InMemoryTable implements Comparable<InMemoryTable> {
         // Process dimension and hierarchies cache
         for (int i = 0; i < carbonCube.dimensions.length; i++) {
             dimension = carbonCube.dimensions[i];
-            if (dimension.visible && !dimension.highCardinality) {
+            if (dimension.visible && !dimension.noDictionary) {
                 DimensionHierarichyStore cache =
                         new DimensionHierarichyStore(dimension, membersCache, cubeUniqueName,
                                 factTableName, schema);

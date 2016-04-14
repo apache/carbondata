@@ -101,7 +101,7 @@ public class DataProcessorInfo {
     private List<InMemoryTable> slices;
     private int blockSize;
     private byte[] sortedDimIndex;
-    private boolean[] highCardinalityTypes;
+    private boolean[] noDictionaryTypes;
 
     /**
      * @return the keySize
@@ -401,12 +401,12 @@ public class DataProcessorInfo {
         this.dataTypes = dataTypes;
     }
 
-    public boolean[] getHighCardinalityTypes() {
-        return highCardinalityTypes;
+    public boolean[] getNoDictionaryTypes() {
+        return noDictionaryTypes;
     }
 
-    public void setHighCardinalityTypes(boolean[] highCardinalityTypes) {
-        this.highCardinalityTypes = highCardinalityTypes;
+    public void setNoDictionaryTypes(boolean[] noDictionaryTypes) {
+        this.noDictionaryTypes = noDictionaryTypes;
 
     }
 

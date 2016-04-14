@@ -38,8 +38,8 @@ public class CompressedTempSortFileWriter extends AbstractTempSortFileWriter {
      * @param measureCount
      */
     public CompressedTempSortFileWriter(int dimensionCount, int complexDimensionCount,
-            int measureCount, int highCardinalityCount, int writeBufferSize) {
-        super(dimensionCount, complexDimensionCount, measureCount, highCardinalityCount,
+            int measureCount, int noDictionaryCount, int writeBufferSize) {
+        super(dimensionCount, complexDimensionCount, measureCount, noDictionaryCount,
                 writeBufferSize);
     }
 
@@ -63,7 +63,7 @@ public class CompressedTempSortFileWriter extends AbstractTempSortFileWriter {
 
             UnCompressedTempSortFileWriter
                     .writeDataOutputStream(records, dataOutputStream, measureCount, dimensionCount,
-                            highCardinalityCount, complexDimensionCount);
+                            noDictionaryCount, complexDimensionCount);
 
             stream.writeInt(records.length);
             byte[] byteArray =

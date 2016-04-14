@@ -52,9 +52,9 @@ public abstract class AbstractTempSortFileWriter implements TempSortFileWriter {
     protected DataOutputStream stream;
 
     /**
-     * highCardinalityCount
+     * noDictionaryCount
      */
-    protected int highCardinalityCount;
+    protected int noDictionaryCount;
 
     /**
      * AbstractTempSortFileWriter
@@ -64,12 +64,12 @@ public abstract class AbstractTempSortFileWriter implements TempSortFileWriter {
      * @param measureCount
      */
     public AbstractTempSortFileWriter(int dimensionCount, int complexDimensionCount,
-            int measureCount, int highCardinalityCount, int writeBufferSize) {
+            int measureCount, int noDictionaryCount, int writeBufferSize) {
         this.writeBufferSize = writeBufferSize;
         this.dimensionCount = dimensionCount;
         this.complexDimensionCount = complexDimensionCount;
         this.measureCount = measureCount;
-        this.highCardinalityCount = highCardinalityCount;
+        this.noDictionaryCount = noDictionaryCount;
     }
 
     /**

@@ -168,11 +168,11 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
         this.isAggKeyBlock = Boolean.parseBoolean(
                 CarbonCommonConstants.AGGREAGATE_COLUMNAR_KEY_BLOCK_DEFAULTVALUE);
         if (isAggKeyBlock) {
-            int highCardinalityVal = Integer.parseInt(CarbonProperties.getInstance()
+            int noDictionaryVal = Integer.parseInt(CarbonProperties.getInstance()
                     .getProperty(CarbonCommonConstants.HIGH_CARDINALITY_VALUE,
                             CarbonCommonConstants.HIGH_CARDINALITY_VALUE_DEFAULTVALUE));
             for (int i = 0; i < carbonFactDataMergerInfo.getDimLens().length; i++) {
-                if (carbonFactDataMergerInfo.getDimLens()[i] < highCardinalityVal) {
+                if (carbonFactDataMergerInfo.getDimLens()[i] < noDictionaryVal) {
                     this.aggKeyBlock[i] = true;
                 }
             }

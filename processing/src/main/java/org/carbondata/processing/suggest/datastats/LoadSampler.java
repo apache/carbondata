@@ -20,17 +20,29 @@
 package org.carbondata.processing.suggest.datastats;
 
 import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.CarbonDef;
 import org.carbondata.core.carbon.CarbonDef.Schema;
+import org.carbondata.core.carbon.CarbonDef;
+import org.carbondata.core.carbon.CarbonDef.Schema;
+import org.carbondata.core.carbon.SqlStatement.Type;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
+import org.carbondata.core.iterator.CarbonIterator;
+import org.carbondata.core.metadata.CarbonMetadata;
 import org.carbondata.core.metadata.CarbonMetadata.Cube;
 import org.carbondata.core.metadata.CarbonMetadata.Dimension;
+import org.carbondata.core.metadata.CarbonMetadata.Measure;
 import org.carbondata.core.metadata.SliceMetaData;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
@@ -40,13 +52,21 @@ import org.carbondata.processing.suggest.datastats.load.FactDataReader;
 import org.carbondata.processing.suggest.datastats.load.LoadHandler;
 import org.carbondata.processing.suggest.datastats.model.LoadModel;
 import org.carbondata.processing.suggest.datastats.util.DataStatsUtil;
+import org.carbondata.query.aggregator.dimension.DimensionAggregatorInfo;
 import org.carbondata.query.datastorage.InMemoryTable;
 import org.carbondata.query.datastorage.InMemoryTableStore;
 import org.carbondata.query.datastorage.Member;
 import org.carbondata.query.datastorage.MemberStore;
+import org.carbondata.query.executer.CarbonQueryExecutorModel;
+import org.carbondata.query.executer.QueryExecutor;
+import org.carbondata.query.executer.exception.QueryExecutionException;
+import org.carbondata.query.holders.CarbonResultHolder;
 import org.carbondata.query.querystats.Preference;
 import org.carbondata.query.scope.QueryScopeObject;
+import org.carbondata.query.result.RowResult;
 import org.carbondata.query.util.CarbonEngineLogEvent;
+
+import com.jcraft.jsch.Logger;
 
 /**
  * This class have all loads for which data sampling needs to be done
@@ -83,6 +103,7 @@ public class LoadSampler {
      * modification time as value.
      */
     private QueryScopeObject queryScopeObject;
+    private int[] noDictionaryValgateIndex;
 
     /**
      * This will have dimension ordinal as key and dimension cardinality as value
@@ -94,6 +115,8 @@ public class LoadSampler {
      * Dimension present in cube.
      */
     private List<Dimension> visibleDimensions;
+
+	private List<String> partitionNames;
 
     /**
      * loading stores
@@ -111,13 +134,15 @@ public class LoadSampler {
             cubeName = loadModel.getCubeName() + '_' + partitionId;
         }
         this.tableName = loadModel.getTableName();
-
+        this.partitionNames=loadModel.getPartitionNames();
         this.cubeUniqueName = schemaName + '_' + cubeName;
 
         loadHandlers = new ArrayList<LoadHandler>();
         // Load data in memory
         LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
                 "Loading data to BPlus tree started");
+        Dimension[] listOfAllDims=visibleDimensions.toArray(new Dimension[visibleDimensions.size()]);
+        noDictionaryValgateIndex=CarbonUtil.getNoDictionaryColIndex(listOfAllDims);
         metaCube = InMemoryTableStore.getInstance()
                 .loadCubeMetadataIfRequired(schema, cube, partitionId,
                         loadModel.getSchemaLastUpdatedTime());
@@ -183,6 +208,10 @@ public class LoadSampler {
         String[] sliceDimensions = sliceMetaData.getDimensions();
         int[] sliceCardinalities = sliceMetaData.getActualDimLens();
         for (Dimension dimension : visibleDimensions) {
+        	if(dimension.isNoDictionaryDim())
+        	{
+        		addCardinalityBasedOnNoDictionaryColumn(dimension);
+        	}
             String dimName = dimension.getColName();
             Integer dimensionCardinality = 1;
             for (int i = 0; i < sliceDimensions.length; i++) {
@@ -199,7 +228,75 @@ public class LoadSampler {
         }
     }
 
-    /**
+    private void addCardinalityBasedOnNoDictionaryColumn(Dimension dimension) {
+    	  // Create QueryExecution model
+        CarbonQueryExecutorModel queryExecutionModel =
+                createQueryExecutorModel(dimension);
+    	Cube cube = CarbonMetadata.getInstance().getCube(cubeUniqueName);	
+    	 queryExecutionModel.setCube(cube);
+         QueryExecutor queryExecutor = DataStatsUtil
+                 .getQueryExecuter(queryExecutionModel.getCube(),
+                        queryExecutionModel.getFactTable(),queryScopeObject);
+         try
+         {
+          CarbonIterator<RowResult> rowIterator=queryExecutor.execute(queryExecutionModel);
+          RowResult rowResult = rowIterator.next();
+          Object[] results = rowResult.getKey().getKey();
+          if(null!=results)
+          {
+        	  Integer result=Integer.parseInt(results[0].toString());
+        	  dimCardinality.put(dimension.getOrdinal(), result);
+          }
+         }
+         catch(QueryExecutionException e)
+         {
+        	 LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
+                     "Unable to fetch the cardinality for NO_DICTIONARY column with column name: "+dimension.getColName());
+         }
+
+	}
+
+	private CarbonQueryExecutorModel createQueryExecutorModel(
+			Dimension dimension) {
+
+        CarbonQueryExecutorModel executorModel = new CarbonQueryExecutorModel();
+        executorModel.setSparkExecution(true);
+        String factTableName = metaCube.getFactTableName();
+        executorModel.setCube(metaCube);
+        executorModel.sethIterator(new CarbonResultHolder(new ArrayList<Type>(1)));
+        executorModel.setFactTable(factTableName);
+
+        Dimension[] dimensions=new Dimension[0];
+        executorModel.setSortedDimensions(new Dimension[0]);
+        executorModel.setSortOrder(new byte[0]);
+        executorModel.setDims(dimensions);
+        executorModel.setMsrs(new ArrayList<Measure>());
+        List<DimensionAggregatorInfo> dimensionAggregatorInfos =
+                new ArrayList<DimensionAggregatorInfo>(
+                        CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+        List<Integer> orderList=new ArrayList<Integer>(1);
+        orderList.add(0);
+        DimensionAggregatorInfo dimensionAggregatorInfo=new DimensionAggregatorInfo();
+        dimensionAggregatorInfo.addAgg(CarbonCommonConstants.DISTINCT_COUNT);
+        dimensionAggregatorInfo.setDim(dimension);
+        dimensionAggregatorInfo.setDimensionPresentInCurrentSlice(true);
+        dimensionAggregatorInfo.setOrder(0);
+        dimensionAggregatorInfo.setColumnName(dimension.getColName());
+        dimensionAggregatorInfos.add(dimensionAggregatorInfo);
+        executorModel.setDimensionAggInfo(dimensionAggregatorInfos);
+        executorModel.setActualDimsRows(executorModel.getDims());
+        executorModel.setActualDimsCols(new Dimension[0]);
+        executorModel.setCalcMeasures(new ArrayList<Measure>(1));
+        executorModel.setAnalyzerDims(executorModel.getDims());
+        executorModel.setLimit(-1);
+        executorModel.setDetailQuery(false);
+        executorModel.setQueryId(System.nanoTime() + "");
+        executorModel.setOutLocation(CarbonProperties.getInstance()
+                .getProperty(CarbonCommonConstants.STORE_LOCATION_HDFS));
+        return executorModel;
+	}
+
+	/**
      * This will extract visible dimension from cube
      *
      * @param cube
@@ -251,58 +348,83 @@ public class LoadSampler {
      * @return
      * @throws AggSuggestException
      */
-    public List<String> getSampleData(Dimension dimension, String cubeUniqueName)
-            throws AggSuggestException {
+	public List<String> getSampleData(Dimension dimension, String cubeUniqueName)
+			throws AggSuggestException {
 
-        // Sample data
-        HashSet<Integer> surrogates = new HashSet<Integer>(100);
-        for (LoadHandler loadHandler : loadHandlers) {
+		// Sample data
+		HashSet<Integer> surrogates = new HashSet<Integer>(100);
+		HashSet<byte[]> noDictionaryColIndexes = new HashSet<byte[]>(100);
+		for (LoadHandler loadHandler : loadHandlers) {
 
-            try {
-                //check if dimension exist in this load
-                if (!loadHandler.isDimensionExist(dimension, tableName)) {
-                    continue;
-                }
-                FactDataHandler factDataHandler = loadHandler.handleFactData(getTableName());
-                if (null != factDataHandler) {
-                    FactDataReader reader = factDataHandler.getFactDataReader();
-                    surrogates.addAll(reader.getSampleFactData(dimension.getOrdinal(),
-                            DataStatsUtil.getNumberOfRows(dimension)));
-                }
-            } catch (AggSuggestException e) {
-                LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e.getMessage());
-            }
+			try {
+				// check if dimension exist in this load
+				if (!loadHandler.isDimensionExist(dimension, tableName)) {
+					continue;
+				}
+				FactDataHandler factDataHandler = loadHandler
+						.handleFactData(getTableName());
+				if (null != factDataHandler) {
+					FactDataReader reader = factDataHandler.getFactDataReader();
+					if (dimension.isNoDictionaryDim()) {
+						reader.getSampleFactDataForNoDictionaryValKey(
+								dimension.getOrdinal(),
+								DataStatsUtil.getNumberOfRows(dimension),
+								noDictionaryValgateIndex, noDictionaryColIndexes);
+					} else {
+						surrogates.addAll(reader.getSampleFactData(
+								dimension.getOrdinal(),
+								DataStatsUtil.getNumberOfRows(dimension)));
+					}
+				}
+			} catch (AggSuggestException e) {
+				LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
+						e.getMessage());
+			}
 
-        }
-        if (surrogates.size() == 0) {
-            // in case of cube alteration, its possible that dimension will not have value in load. Hence
-            // in that case, pass "null" value.
-            List<String> nullData = new ArrayList<String>(1);
-            nullData.add("null");
-            return nullData;
-        }
+		}
+		if (surrogates.size() == 0 && noDictionaryColIndexes.size()==0) {
+			// in case of cube alteration, its possible that dimension will not
+			// have value in load. Hence
+			// in that case, pass "null" value.
+			List<String> nullData = new ArrayList<String>(1);
+			nullData.add("null");
+			return nullData;
+		}
 
-        String levelName = dimension.getTableName() + '_' + dimension.getColName() + '_' + dimension
-                .getDimName() + '_' + dimension.getHierName();
-        List<String> realDatas = new ArrayList<String>(surrogates.size());
-        for (int surrogate : surrogates) {
+		String levelName = dimension.getTableName() + '_'
+				+ dimension.getColName() + '_' + dimension.getDimName() + '_'
+				+ dimension.getHierName();
+		List<String> realDatas = new ArrayList<String>(surrogates.size());
+		if(noDictionaryColIndexes.size()>0)
+		{
+			Iterator<byte[]> itr=noDictionaryColIndexes.iterator();
+			while(itr.hasNext())
+			{
+				String data=new String(itr.next());
+				realDatas.add(data);
+			}
+		}
+      else {
+		for (int surrogate : surrogates) {
 
-            String data = getDimensionValueFromSurrogate(cubeUniqueName, levelName, surrogate);
-            if (null == data) {
-                LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-                        "Member value of dimension," + dimension.getName() + ",for surrogate,"
-                                + surrogate + ",is not found in level file");
-                continue;
-            }
+			String data = getDimensionValueFromSurrogate(cubeUniqueName,
+					levelName, surrogate);
+			if (null == data) {
+				LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
+						"Member value of dimension," + dimension.getName()
+								+ ",for surrogate," + surrogate
+								+ ",is not found in level file");
+				continue;
+			}
 
-            realDatas.add(data);
-
-        }
-        LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-                dimension.getName() + " Load size:" + loadHandlers.size() + ":Sample size:"
-                        + realDatas.size());
-        return realDatas;
-    }
+			realDatas.add(data);
+		}
+		}
+		LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
+				dimension.getName() + " Load size:" + loadHandlers.size()
+						+ ":Sample size:" + realDatas.size());
+		return realDatas;
+	}
 
     /**
      * Get actual dimension value from member cache by passing surrogate key

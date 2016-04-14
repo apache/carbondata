@@ -127,7 +127,7 @@ public class ColumnarAggregatorInfo {
     /**
      *
      */
-    private boolean[] highCardinalityTypes;
+    private boolean[] noDictionaryTypes;
     private HashMap<Integer, Integer> measureOrdinalMap;
 
     /**
@@ -361,22 +361,22 @@ public class ColumnarAggregatorInfo {
     }
 
     /**
-     * setHighCardinalityType.
+     * setNoDictionaryType.
      *
-     * @param highCardinalityTypes
+     * @param noDictionaryTypes
      */
-    public void setHighCardinalityType(boolean[] highCardinalityTypes) {
-        this.highCardinalityTypes = highCardinalityTypes;
+    public void setNoDictionaryType(boolean[] noDictionaryTypes) {
+        this.noDictionaryTypes = noDictionaryTypes;
 
     }
 
     /**
-     * getHighCardinalityTypes.
+     * getNoDictionaryTypes.
      *
      * @return
      */
-    public boolean[] getHighCardinalityTypes() {
-        return highCardinalityTypes;
+    public boolean[] getNoDictionaryTypes() {
+        return noDictionaryTypes;
     }
 
     public HashMap<Integer, Integer> getMeasureOrdinalMap() {

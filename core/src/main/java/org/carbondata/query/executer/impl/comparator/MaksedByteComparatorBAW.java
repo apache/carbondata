@@ -83,13 +83,13 @@ public class MaksedByteComparatorBAW implements Comparator<DataFileWriter.KeyVal
                 }
             }
         }
-        List<byte[]> listOfDirectSurrogateVal1 = byteArrayWrapper1.key.getDirectSurrogateKeyList();
-        List<byte[]> listOfDirectSurrogateVal2 = byteArrayWrapper2.key.getDirectSurrogateKeyList();
+        List<byte[]> listOfNoDictionaryValVal1 = byteArrayWrapper1.key.getNoDictionaryValKeyList();
+        List<byte[]> listOfNoDictionaryValVal2 = byteArrayWrapper2.key.getNoDictionaryValKeyList();
         if (cmp == 0) {
-            if (null != listOfDirectSurrogateVal1 && null != listOfDirectSurrogateVal2) {
-                for (int i = 0; i < listOfDirectSurrogateVal1.size(); i++) {
-                    cmp = UnsafeComparer.INSTANCE.compareTo(listOfDirectSurrogateVal1.get(i),
-                            listOfDirectSurrogateVal2.get(i));
+            if (null != listOfNoDictionaryValVal1 && null != listOfNoDictionaryValVal2) {
+                for (int i = 0; i < listOfNoDictionaryValVal1.size(); i++) {
+                    cmp = UnsafeComparer.INSTANCE.compareTo(listOfNoDictionaryValVal1.get(i),
+                            listOfNoDictionaryValVal2.get(i));
                     if (cmp != 0) {
 
                         if (sortOrder == 1) {

@@ -912,7 +912,7 @@ public final class CarbonSchemaParser {
     public static int getDimensionString(Cube cube, CubeDimension[] dimensions,
             StringBuilder dimString, int counter, Schema schema) {
         for (CubeDimension cDimension : dimensions) {
-            if (cDimension.highCardinality) {
+            if (cDimension.noDictionary) {
                 continue;
             }
             Hierarchy[] hierarchies = null;
@@ -1181,7 +1181,7 @@ public final class CarbonSchemaParser {
         int counter = 0;
 
         for (CubeDimension cDimension : dimensions) {
-            if (cDimension.highCardinality) {
+            if (cDimension.noDictionary) {
                 continue;
             }
             Hierarchy[] hierarchies = null;
@@ -1361,7 +1361,7 @@ public final class CarbonSchemaParser {
         CarbonDef.CubeDimension[] dimensions = cube.dimensions;
         for (CubeDimension cDimension : dimensions) {
             //Ignoring the dimensions which are high cardinality dimension
-            if (cDimension.highCardinality) {
+            if (cDimension.noDictionary) {
                 continue;
             }
             Hierarchy[] hierarchies = null;
@@ -1386,12 +1386,12 @@ public final class CarbonSchemaParser {
      * @param schema
      * @return String[].
      */
-    public static String[] getHighCardinalityDimensions(Cube cube, Schema schema) {
+    public static String[] getNoDictionaryDimensions(Cube cube, Schema schema) {
         List<String> list = new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
         CarbonDef.CubeDimension[] dimensions = cube.dimensions;
         for (CubeDimension cDimension : dimensions) {
             //Ignoring the dimensions which are high cardinality dimension
-            if (!cDimension.highCardinality) {
+            if (!cDimension.noDictionary) {
                 continue;
             }
             Hierarchy[] hierarchies = null;
@@ -3064,7 +3064,7 @@ public final class CarbonSchemaParser {
         //        {
         for (CubeDimension cDimension : dimensions) {
 
-            if (cDimension.highCardinality) {
+            if (cDimension.noDictionary) {
                 continue;
             }
 
@@ -3338,10 +3338,10 @@ public final class CarbonSchemaParser {
      * @param dimensions
      * @return
      */
-    public static int getHighCardinalityDimensionString(Cube cube, CubeDimension[] dimensions,
+    public static int getNoDictionaryDimensionString(Cube cube, CubeDimension[] dimensions,
             StringBuilder dimString, int counter, Schema schema) {
         for (CubeDimension cDimension : dimensions) {
-            if (!cDimension.highCardinality) {
+            if (!cDimension.noDictionary) {
                 continue;
             }
             Hierarchy[] hierarchies = null;

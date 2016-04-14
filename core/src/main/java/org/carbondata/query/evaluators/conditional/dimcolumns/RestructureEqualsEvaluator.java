@@ -35,7 +35,7 @@ public class RestructureEqualsEvaluator extends AbastractRSConditionalEvalutor {
 
     @Override
     public BitSet applyFilter(BlockDataHolder blockDataHolder,
-            FilterProcessorPlaceHolder placeHolder) {
+            FilterProcessorPlaceHolder placeHolder,int[] noDictionaryColIndexes) {
         BitSet bitSet = new BitSet(blockDataHolder.getLeafDataBlock().getnKeys());
         byte[][] filterValues = dimColEvaluatorInfoList.get(0).getFilterValues();
         if (null != filterValues && filterValues.length > 0) {

@@ -92,11 +92,11 @@ public class FactDataHandler {
         boolean isAggKeyBlock = Boolean.parseBoolean(
                 CarbonCommonConstants.AGGREAGATE_COLUMNAR_KEY_BLOCK_DEFAULTVALUE);
         if (isAggKeyBlock) {
-            int highCardinalityValue = Integer.parseInt(CarbonProperties.getInstance()
+            int noDictionaryValue = Integer.parseInt(CarbonProperties.getInstance()
                     .getProperty(CarbonCommonConstants.HIGH_CARDINALITY_VALUE,
                             CarbonCommonConstants.HIGH_CARDINALITY_VALUE_DEFAULTVALUE));
             for (int i = 0; i < dimensionCardinality.length; i++) {
-                if (dimensionCardinality[i] < highCardinalityValue) {
+                if (dimensionCardinality[i] < noDictionaryValue) {
                     aggKeyBlock[i] = true;
                 }
             }

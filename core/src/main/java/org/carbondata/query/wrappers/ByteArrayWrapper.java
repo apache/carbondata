@@ -42,9 +42,9 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializa
      */
     protected byte[] maskedKey;
     protected List<byte[]> complexTypesData;
-    List<byte[]> listOfDirectSurrogateVal;
+    List<byte[]> listOfNoDictionaryValVal;
     private XXHash32 xxHash32;
-    private byte[] directSurrogateVal;
+    private byte[] noDictionaryValVal;
 
     public ByteArrayWrapper() {
         this.complexTypesData = new ArrayList<byte[]>();
@@ -142,11 +142,11 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializa
         for (int j = 0; j < len; j++) {
             result = 31 * result + maskedKey[j];
         }
-        if (null != listOfDirectSurrogateVal) {
+        if (null != listOfNoDictionaryValVal) {
             int index = 0;
-            for (byte[] directSurrogateValue : listOfDirectSurrogateVal) {
-                for (int i = 0; i < directSurrogateValue.length; i++) {
-                    result = 31 * result + directSurrogateValue[i];
+            for (byte[] noDictionaryValValue : listOfNoDictionaryValVal) {
+                for (int i = 0; i < noDictionaryValValue.length; i++) {
+                    result = 31 * result + noDictionaryValValue[i];
                 }
             }
         }
@@ -170,14 +170,14 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializa
         // ByteArrayWrapper, so
         // the same has to be compared to know whether the byte array wrappers
         // are equals or not.
-        List<byte[]> otherList = ((ByteArrayWrapper) other).getDirectSurrogateKeyList();
-        if (null != listOfDirectSurrogateVal) {
-            if (listOfDirectSurrogateVal.size() != otherList.size()) {
+        List<byte[]> otherList = ((ByteArrayWrapper) other).getNoDictionaryValKeyList();
+        if (null != listOfNoDictionaryValVal) {
+            if (listOfNoDictionaryValVal.size() != otherList.size()) {
                 return false;
             } else {
-                for (int i = 0; i < listOfDirectSurrogateVal.size(); i++) {
+                for (int i = 0; i < listOfNoDictionaryValVal.size(); i++) {
                     result = UnsafeComparer.INSTANCE
-                            .equals(listOfDirectSurrogateVal.get(i), otherList.get(i));
+                            .equals(listOfNoDictionaryValVal.get(i), otherList.get(i));
                     if (!result) {
                         return false;
                     }
@@ -216,10 +216,10 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializa
     public int compareTo(ByteArrayWrapper other) {
         int compareTo = UnsafeComparer.INSTANCE.compareTo(maskedKey, other.maskedKey);
         if (compareTo == 0) {
-            if (null != listOfDirectSurrogateVal) {
-                for (int i = 0; i < listOfDirectSurrogateVal.size(); i++) {
-                    compareTo = UnsafeComparer.INSTANCE.compareTo(listOfDirectSurrogateVal.get(i),
-                            other.listOfDirectSurrogateVal.get(i));
+            if (null != listOfNoDictionaryValVal) {
+                for (int i = 0; i < listOfNoDictionaryValVal.size(); i++) {
+                    compareTo = UnsafeComparer.INSTANCE.compareTo(listOfNoDictionaryValVal.get(i),
+                            other.listOfNoDictionaryValVal.get(i));
                     if (compareTo != 0) {
                         return compareTo;
                     }
@@ -238,35 +238,35 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializa
     }
 
     /**
-     * addToDirectSurrogateKeyList
+     * addToNoDictionaryValKeyList
      *
-     * @param directSurrKeyData
+     * @param noDictionaryValKeyData
      */
-    public void addToDirectSurrogateKeyList(byte[] directSurrKeyData) {
-        if (null == listOfDirectSurrogateVal) {
-            listOfDirectSurrogateVal =
+    public void addToNoDictionaryValKeyList(byte[] noDictionaryValKeyData) {
+        if (null == listOfNoDictionaryValVal) {
+            listOfNoDictionaryValVal =
                     new ArrayList<byte[]>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-            listOfDirectSurrogateVal.add(directSurrKeyData);
+            listOfNoDictionaryValVal.add(noDictionaryValKeyData);
         } else {
-            listOfDirectSurrogateVal.add(directSurrKeyData);
+            listOfNoDictionaryValVal.add(noDictionaryValKeyData);
         }
 
     }
 
     /**
-     * addToDirectSurrogateKeyList
+     * addToNoDictionaryValKeyList
      *
-     * @param directSurrKeyData
+     * @param noDictionaryValKeyData
      */
-    public void addToDirectSurrogateKeyList(List<byte[]> directSurrKeyData) {
+    public void addToNoDictionaryValKeyList(List<byte[]> noDictionaryValKeyData) {
         //Add if any direct surrogates are really present.
-        if (null != directSurrKeyData && !directSurrKeyData.isEmpty()) {
-            if (null == listOfDirectSurrogateVal) {
-                listOfDirectSurrogateVal =
+        if (null != noDictionaryValKeyData && !noDictionaryValKeyData.isEmpty()) {
+            if (null == listOfNoDictionaryValVal) {
+                listOfNoDictionaryValVal =
                         new ArrayList<byte[]>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-                listOfDirectSurrogateVal.addAll(directSurrKeyData);
+                listOfNoDictionaryValVal.addAll(noDictionaryValKeyData);
             } else {
-                listOfDirectSurrogateVal.addAll(directSurrKeyData);
+                listOfNoDictionaryValVal.addAll(noDictionaryValKeyData);
             }
         }
 
@@ -275,7 +275,7 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializa
     /**
      * @return
      */
-    public List<byte[]> getDirectSurrogateKeyList() {
-        return listOfDirectSurrogateVal;
+    public List<byte[]> getNoDictionaryValKeyList() {
+        return listOfNoDictionaryValVal;
     }
 }

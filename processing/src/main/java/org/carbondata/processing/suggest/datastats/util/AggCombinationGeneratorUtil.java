@@ -51,10 +51,10 @@ public final class AggCombinationGeneratorUtil {
         // It will be sorted based on cardinality in descending order
         Arrays.sort(aggCombinationLevels);
 
-        Level highCardLevel = aggCombinationLevels[0];
+        Level NoDictionaryLevel = aggCombinationLevels[0];
 
-        int highCardinality = highCardLevel.getCardinality();
-        BigInteger rows = BigInteger.valueOf(highCardinality);
+        int noDictionary = NoDictionaryLevel.getCardinality();
+        BigInteger rows = BigInteger.valueOf(noDictionary);
         for (int i = 1; i < aggCombinationLevels.length; i++) {
             int cardinality = aggCombinationLevels[i].getCardinality();
             int distinct = cardinality;

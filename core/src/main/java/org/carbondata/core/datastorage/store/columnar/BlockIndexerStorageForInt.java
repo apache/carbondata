@@ -62,7 +62,7 @@ public class BlockIndexerStorageForInt implements IndexStorage<int[]> {
     }
 
     public BlockIndexerStorageForInt(byte[][] keyBlock, boolean compressData,
-            boolean isHighCardinality, boolean isSortRequired, boolean isRowBlock) {
+            boolean isNoDictionary, boolean isSortRequired, boolean isRowBlock) {
         //in case of row block sort is not required
         if (isRowBlock) {
             this.keyBlock = keyBlock;
@@ -70,7 +70,7 @@ public class BlockIndexerStorageForInt implements IndexStorage<int[]> {
             return;
         }
         ColumnWithIntIndex[] columnWithIndexs =
-                createColumnWithIndexArray(keyBlock, isHighCardinality);
+                createColumnWithIndexArray(keyBlock, isNoDictionary);
         if (isSortRequired) {
             Arrays.sort(columnWithIndexs);
         }
@@ -86,9 +86,9 @@ public class BlockIndexerStorageForInt implements IndexStorage<int[]> {
      * @return
      */
     private ColumnWithIntIndex[] createColumnWithIndexArray(byte[][] keyBlock,
-            boolean isHighCardinality) {
+            boolean isNoDictionary) {
         ColumnWithIntIndex[] columnWithIndexs;
-        if (isHighCardinality) {
+        if (isNoDictionary) {
             columnWithIndexs = new ColumnWithIntIndexForHighCard[keyBlock.length];
             for (int i = 0; i < columnWithIndexs.length; i++) {
                 columnWithIndexs[i] = new ColumnWithIntIndexForHighCard(keyBlock[i], i);

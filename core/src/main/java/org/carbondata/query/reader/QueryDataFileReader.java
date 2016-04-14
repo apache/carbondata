@@ -95,7 +95,7 @@ public class QueryDataFileReader {
         MeasureAggregator[] measureAggregators =
                 AggUtil.getAggregators(info.getAggType(), false, info.getKeyGenerator(),
                         info.getCubeUniqueName(), info.getMsrMinValue(),
-                        info.getHighCardinalityTypes(), info.getDataTypes());
+                        info.getNoDictionaryTypes(), info.getDataTypes());
 
         DataInputStream[] msrStreams = new DataInputStream[leafNodeInfo.getMeasureLength().length];
 
@@ -121,7 +121,7 @@ public class QueryDataFileReader {
                 measureAggregators =
                         AggUtil.getAggregators(info.getAggType(), false, info.getKeyGenerator(),
                                 info.getCubeUniqueName(), info.getMsrMinValue(),
-                                info.getHighCardinalityTypes(), info.getDataTypes());
+                                info.getNoDictionaryTypes(), info.getDataTypes());
             }
         } catch (IOException e) {
             LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e,

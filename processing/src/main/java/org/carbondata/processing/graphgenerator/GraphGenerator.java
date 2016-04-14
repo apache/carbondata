@@ -1077,7 +1077,7 @@ public class GraphGenerator {
         seqMeta.setCarbondim(graphConfiguration.getDimensionString());
         seqMeta.setComplexTypeString(graphConfiguration.getComplexTypeString());
         seqMeta.setBatchSize(Integer.parseInt(graphConfiguration.getBatchSize()));
-        seqMeta.setHighCardinalityDims(graphConfiguration.getHighCardinalityDims());
+        seqMeta.setNoDictionaryDims(graphConfiguration.getNoDictionaryDims());
         seqMeta.setCubeName(cubeName);
         seqMeta.setSchemaName(schemaName);
         seqMeta.setComplexDelimiterLevel1(schemaInfo.getComplexDelimiterLevel1());
@@ -1174,7 +1174,7 @@ public class GraphGenerator {
         mdkeyStepMeta.setDescription(
                 "Generate MDKey For Table Data: " + GraphGeneratorConstants.MDKEY_GENERATOR
                         + graphConfiguration.getTableName());
-        carbonMdKey.setHighCardinalityDims(graphConfiguration.getHighCardinalityDims());
+        carbonMdKey.setNoDictionaryDims(graphConfiguration.getNoDictionaryDims());
 
         return mdkeyStepMeta;
     }
@@ -1189,11 +1189,11 @@ public class GraphGenerator {
                 CarbonUtil.getRestructureNumber(this.factStoreLocation, this.factTableName));
 
         // getting the high cardinality string from graphjConfigurationForFact.
-        String[] highCardDims = RemoveDictionaryUtil
-                .extractHighCardDimsArr(graphjConfigurationForFact.getHighCardinalityDims());
+        String[] NoDictionaryDims = RemoveDictionaryUtil
+                .extractNoDictionaryDimsArr(graphjConfigurationForFact.getNoDictionaryDims());
         // using the string [] of high card dims , trying to get the count of the high cardinality dims in the agg query.
-        carbonDataWriter.sethighCardCount(
-                getHighCardDimsCountInAggQuery(highCardDims, graphConfiguration.getDimensions()));
+        carbonDataWriter.setNoDictionaryCount(
+                getNoDictionaryDimsCountInAggQuery(NoDictionaryDims, graphConfiguration.getDimensions()));
 
         processAutoAggRequest(graphConfiguration, graphjConfigurationForFact, carbonDataWriter);
 
@@ -1444,10 +1444,10 @@ public class GraphGenerator {
         sortRowsMeta.setCurrentRestructNumber(
                 CarbonUtil.getRestructureNumber(this.factStoreLocation, this.factTableName));
 
-        String[] highCardDims = RemoveDictionaryUtil
-                .extractHighCardDimsArr(configurationInfoFact.getHighCardinalityDims());
-        sortRowsMeta.setHighCardinalityCount(
-                getHighCardDimsCountInAggQuery(highCardDims, graphConfiguration.getDimensions()));
+        String[] NoDictionaryDims = RemoveDictionaryUtil
+                .extractNoDictionaryDimsArr(configurationInfoFact.getNoDictionaryDims());
+        sortRowsMeta.setNoDictionaryCount(
+                getNoDictionaryDimsCountInAggQuery(NoDictionaryDims, graphConfiguration.getDimensions()));
         sortRowsMeta.setIsAutoAggRequest(isAutoAggRequest + "");
         boolean isFactMdKeyInInputRow = false;
         StringBuilder builder = null;
@@ -1589,7 +1589,7 @@ public class GraphGenerator {
                         split(CarbonCommonConstants.SEMICOLON_SPC_CHARACTER).length + "");
         sortRowsMeta.setIsUpdateMemberRequest(isUpdateMemberRequest + "");
         sortRowsMeta.setMeasureCount(graphConfiguration.getMeasureCount() + "");
-        sortRowsMeta.setHighCardinalityDims(graphConfiguration.getHighCardinalityDims());
+        sortRowsMeta.setNoDictionaryDims(graphConfiguration.getNoDictionaryDims());
         sortRowsMeta.setMeasureDataType(graphConfiguration.getMeasureDataTypeInfo());
         StepMeta sortRowsStep = new StepMeta(
                 GraphGeneratorConstants.SORT_KEY_AND_GROUPBY + graphConfiguration.getTableName(),
@@ -1623,11 +1623,11 @@ public class GraphGenerator {
         //
         int currentCount =
                 CarbonSchemaParser.getDimensionString(cube, dimensions, dimString, 0, schema);
-        StringBuilder highCardinalitydimString = new StringBuilder();
+        StringBuilder noDictionarydimString = new StringBuilder();
         CarbonSchemaParser
-                .getHighCardinalityDimensionString(cube, dimensions, highCardinalitydimString, 0,
+                .getNoDictionaryDimensionString(cube, dimensions, noDictionarydimString, 0,
                         schema);
-        graphConfiguration.setHighCardinalityDims(highCardinalitydimString.toString());
+        graphConfiguration.setNoDictionaryDims(noDictionarydimString.toString());
 
         String tableString =
                 CarbonSchemaParser.getTableNameString(factTableName, dimensions, schema);
@@ -1870,11 +1870,11 @@ public class GraphGenerator {
         return cube;
     }
 
-    private int getHighCardDimsCountInAggQuery(String[] highCardDims, String[] actualDims) {
+    private int getNoDictionaryDimsCountInAggQuery(String[] NoDictionaryDims, String[] actualDims) {
         int count = 0;
         for (String eachSelectedDim : actualDims) {
-            for (String eachHighCardDim : highCardDims) {
-                if (eachSelectedDim.equalsIgnoreCase(eachHighCardDim)) {
+            for (String eachNoDictionaryDim : NoDictionaryDims) {
+                if (eachSelectedDim.equalsIgnoreCase(eachNoDictionaryDim)) {
                     count++;
                 }
             }

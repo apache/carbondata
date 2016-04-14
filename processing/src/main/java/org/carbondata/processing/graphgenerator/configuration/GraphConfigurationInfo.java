@@ -42,7 +42,7 @@ public class GraphConfigurationInfo {
 
     private String[] dimensions;
 
-    private String highCardinalityDims;
+    private String noDictionaryDims;
 
     private String[] measures;
 
@@ -922,20 +922,20 @@ public class GraphConfigurationInfo {
     }
 
     /**
-     * getHighCardinalityDims.
+     * getNoDictionaryDims.
      *
      * @return
      */
-    public String getHighCardinalityDims() {
-        return highCardinalityDims;
+    public String getNoDictionaryDims() {
+        return noDictionaryDims;
     }
 
     /**
-     * setHighCardinalityDims.
+     * setNoDictionaryDims.
      *
-     * @param highCardinalityDims
+     * @param noDictionaryDims
      */
-    public void setHighCardinalityDims(String highCardinalityDims) {
-        this.highCardinalityDims = highCardinalityDims;
+    public void setNoDictionaryDims(String noDictionaryDims) {
+        this.noDictionaryDims = noDictionaryDims;
     }
 }

@@ -246,7 +246,7 @@ public class CarbonSortKeyAndGroupByStep extends BaseStep {
                             meta.getAggregatorClass(),
                             CarbonDataProcessorUtil.getDimLens(meta.getFactDimLensString()),
                             meta.getSchemaName(), meta.getCubeName(), meta.isUpdateMemberRequest(),
-                            meta.getHighCardinalityCount(), aggType);
+                            meta.getNoDictionaryCount(), aggType);
             try {
                 // initialize sort
                 this.carbonSortKeys.initialize(meta.getSchemaName(), meta.getCubeName(),
@@ -448,7 +448,7 @@ public class CarbonSortKeyAndGroupByStep extends BaseStep {
         String[] aggreateLevels = meta.getAggregateLevels();
         String[] factLevels = meta.getFactLevels();
         int[] cardinality = meta.getFactDimLens();
-        int[] aggCardinality = new int[aggreateLevels.length - meta.getHighCardinalityCount()];
+        int[] aggCardinality = new int[aggreateLevels.length - meta.getNoDictionaryCount()];
         Arrays.fill(aggCardinality, -1);
         for (int k = 0; k < aggreateLevels.length; k++) {
             for (int j = 0; j < factLevels.length; j++) {

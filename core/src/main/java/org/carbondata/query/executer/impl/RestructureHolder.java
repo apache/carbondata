@@ -32,8 +32,13 @@ public class RestructureHolder {
      *
      */
     public boolean updateRequired;
-
     /**
+     * 
+     */
+    private boolean[] isNoDictionaryNewDims;
+
+
+	/**
      *
      */
     public SliceMetaData metaData;
@@ -108,4 +113,18 @@ public class RestructureHolder {
     public void setKeyGenerator(KeyGenerator keyGenerator) {
         this.keyGenerator = keyGenerator;
     }
+    /*
+     * get the new high cardinality dims as part of restructure.
+     */
+    public boolean[] getIsNoDictionaryNewDims() {
+		return isNoDictionaryNewDims;
+	}
+
+    /**
+     * setting the new high cardinality dims as part of restructure
+     * @param isNoDictionaryNewDims
+     */
+	public void setIsNoDictionaryNewDims(boolean[] isNoDictionaryNewDims) {
+		this.isNoDictionaryNewDims = isNoDictionaryNewDims;
+	}
 }

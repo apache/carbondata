@@ -116,7 +116,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     /**
      *
      */
-    protected String[] highCardCols;
+    protected String[] NoDictionaryCols;
     /**
      * measureColumn
      */
@@ -184,7 +184,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
      * carbonTime
      */
     private String carbonTime;
-    private String highCardinalityDims;
+    private String noDictionaryDims;
     /**
      * carbonSchema
      */
@@ -543,7 +543,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
         metaHeirSQLQuery = "";
         carbonMetaHier = "";
         dimesionTableNames = "";
-        highCardinalityDims = "";
+        noDictionaryDims = "";
         tableName = "";
         carbonhierColumn = "";
         foreignKeyHierarchyString = "";
@@ -606,7 +606,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
         retval.append("    ")
                 .append(XMLHandler.addTagValue("dimHierReleation", dimesionTableNames));
         retval.append("    ")
-                .append(XMLHandler.addTagValue("dimHighCardinality", highCardinalityDims));
+                .append(XMLHandler.addTagValue("dimNoDictionary", noDictionaryDims));
         retval.append("    ").append(XMLHandler.addTagValue("factOrAggTable", tableName));
         retval.append("    ").append(XMLHandler.addTagValue("carbonhierColumn", carbonhierColumn));
         retval.append("    ").append(XMLHandler.addTagValue("normHiers", normHiers));
@@ -665,7 +665,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
             columnAndTableNameColumnMapForAggString =
                     XMLHandler.getTagValue(stepnode, "columnAndTableName_ColumnMapForAggString");
             dimesionTableNames = XMLHandler.getTagValue(stepnode, "dimHierReleation");
-            highCardinalityDims = XMLHandler.getTagValue(stepnode, "dimHighCardinality");
+            noDictionaryDims = XMLHandler.getTagValue(stepnode, "dimNoDictionary");
             tableName = XMLHandler.getTagValue(stepnode, "factOrAggTable");
             cubeName = XMLHandler.getTagValue(stepnode, "cubeName");
             schemaName = XMLHandler.getTagValue(stepnode, "schemaName");
@@ -704,7 +704,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
         if (null != complexTypeString) {
             complexTypes = getComplexTypesMap(complexTypeString);
         }
-        updateDimensions(carbondim, carbonmsr, highCardinalityDims);
+        updateDimensions(carbondim, carbonmsr, noDictionaryDims);
 
         hirches = getHierarichies(carbonhier);
 
@@ -1158,7 +1158,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
 
     }
 
-    private void updateDimensions(String ds, String msr, String highCardinalityDims) {
+    private void updateDimensions(String ds, String msr, String noDictionaryDims) {
         String[] sp = null;
         if (null != ds) {
             sp = ds.split(CarbonCommonConstants.COMA_SPC_CHARACTER);
@@ -1186,7 +1186,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
         dimColNames = list.toArray(new String[list.size()]);
 
         // get high cardinality dimension Array
-        highCardCols = RemoveDictionaryUtil.extractHighCardDimsArr(highCardinalityDims);
+        NoDictionaryCols = RemoveDictionaryUtil.extractNoDictionaryDimsArr(noDictionaryDims);
 
         String[] sm = msr.split(CarbonCommonConstants.COMA_SPC_CHARACTER);
         int[] m = new int[sm.length];
@@ -1226,7 +1226,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
             msrAggregatorString = rep.getStepAttributeString(idStep, "msrAggregatorString");
 
             dimesionTableNames = rep.getStepAttributeString(idStep, "dimHierReleation");
-            highCardinalityDims = rep.getStepAttributeString(idStep, "dimHighCardinality");
+            noDictionaryDims = rep.getStepAttributeString(idStep, "dimNoDictionary");
             normHiers = rep.getStepAttributeString(idStep, "normHiers");
             tableName = rep.getStepAttributeString(idStep, "factOrAggTable");
             batchSize = Integer.parseInt(rep.getStepAttributeString(idStep, "batchSize"));
@@ -1273,8 +1273,8 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
             rep.saveStepAttribute(idTransformation, idStep, "carbonMetaHier", carbonMetaHier);
             rep.saveStepAttribute(idTransformation, idStep, "batchSize", batchSize);
             rep.saveStepAttribute(idTransformation, idStep, "dimHierReleation", dimesionTableNames);
-            rep.saveStepAttribute(idTransformation, idStep, "dimHighCardinality",
-                    highCardinalityDims);
+            rep.saveStepAttribute(idTransformation, idStep, "dimNoDictionary",
+                    noDictionaryDims);
             rep.saveStepAttribute(idTransformation, idStep, "foreignKeyHierarchyString",
                     foreignKeyHierarchyString);
             rep.saveStepAttribute(idTransformation, idStep, "primaryKeysString", primaryKeysString);
@@ -1499,12 +1499,12 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
         this.currentRestructNumber = currentRestructNum;
     }
 
-    public String getHighCardinalityDims() {
-        return highCardinalityDims;
+    public String getNoDictionaryDims() {
+        return noDictionaryDims;
     }
 
-    public void setHighCardinalityDims(String highCardinalityDims) {
-        this.highCardinalityDims = highCardinalityDims;
+    public void setNoDictionaryDims(String noDictionaryDims) {
+        this.noDictionaryDims = noDictionaryDims;
     }
 }
 

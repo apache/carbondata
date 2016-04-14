@@ -133,7 +133,7 @@ public final class ScannedResultProcessorUtil {
                     for (int i = 0; i
                             < queryDimension.length; i++) { // CHECKSTYLE:OFF Approval No:Approval-V1R2C10_006
 
-                        if (queryDimension[i].isHighCardinalityDim()) {
+                        if (queryDimension[i].isNoDictionaryDim()) {
                             continue;
                         }
                         if (sortedDimensionIndex[i] == 1) {
@@ -143,9 +143,9 @@ public final class ScannedResultProcessorUtil {
                                             dataProcessorInfo.getSlices());
                         }
                     }// CHECKSTYLE:ON
-                    List<byte[]> listOfDirectSurrogates = key.getDirectSurrogateKeyList();
+                    List<byte[]> listOfNoDictionaryVals = key.getNoDictionaryValKeyList();
                     key = new ByteArrayWrapper();
-                    key.addToDirectSurrogateKeyList(listOfDirectSurrogates);
+                    key.addToNoDictionaryValKeyList(listOfNoDictionaryVals);
                     key.setMaskedKey(
                             getMaskedKey(keyGenerator.generateKey(keyArray), dataProcessorInfo));
                 }
@@ -249,7 +249,7 @@ public final class ScannedResultProcessorUtil {
         dataProcessorInfo.setDimensionMasks(info.getDimensionMaskKeys());
         dataProcessorInfo.setQueryId(info.getQueryId());
         dataProcessorInfo.setAggType(info.getAggType());
-        dataProcessorInfo.setHighCardinalityTypes(info.getHighCardinalityTypes());
+        dataProcessorInfo.setNoDictionaryTypes(info.getNoDictionaryTypes());
         dataProcessorInfo.setMsrMinValue(info.getMsrMinValue());
         dataProcessorInfo.setSortedDimensionIndex(info.getSortedDimensionsIndex());
         dataProcessorInfo.setDataTypes(info.getDataTypes());

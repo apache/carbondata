@@ -530,7 +530,7 @@ public final class CarbonMetadata {
 
             dimension.setNameColumnIndex(getNameColumnIndexInSchemaOrder(levHolder, levelList));
             dimension.setPropertyIndexes(getPropertyColumnIndexes(levHolder, levelList));
-            updateDimensionWithHighCardinalityVal(dimension, schema.cubes[0].dimensions);
+            updateDimensionWithNoDictionaryVal(dimension, schema.cubes[0].dimensions);
 
             // Update properties and its data types in dimension
             CarbonDef.Property[] properties = lev.properties;
@@ -561,11 +561,11 @@ public final class CarbonMetadata {
         return levelToColumnMap;
     }
 
-    private void updateDimensionWithHighCardinalityVal(Dimension dimension,
+    private void updateDimensionWithNoDictionaryVal(Dimension dimension,
             CarbonDef.CubeDimension[] dimensions) {
         for (CarbonDef.CubeDimension cubeDimension : dimensions) {
-            if (dimension.getName().equals(cubeDimension.name) && cubeDimension.highCardinality) {
-                dimension.setHighCardinalityDims(cubeDimension.highCardinality);
+            if (dimension.getName().equals(cubeDimension.name) && cubeDimension.noDictionary) {
+                dimension.setNoDictionaryDims(cubeDimension.noDictionary);
                 break;
             }
 
@@ -802,7 +802,7 @@ public final class CarbonMetadata {
         copy.annotations = globalDimension.annotations;
         copy.description = globalDimension.description;
         copy.hierarchies = globalDimension.hierarchies;
-        copy.highCardinality = globalDimension.highCardinality;
+        copy.noDictionary = globalDimension.noDictionary;
         copy.type = globalDimension.type;
         copy.usagePrefix = globalDimension.usagePrefix;
         copy.visible = globalDimension.visible;
@@ -1301,7 +1301,7 @@ public final class CarbonMetadata {
          */
         private String parentName;
 
-        private boolean highCardinalityDim;
+        private boolean noDictionaryDim;
 
         /**
          * dataBlockIndexs
@@ -1382,20 +1382,20 @@ public final class CarbonMetadata {
         }
 
         /**
-         * @param highCardinalityDim
+         * @param noDictionaryDim
          */
-        public void setHighCardinalityDims(boolean highCardinalityDim) {
-            this.highCardinalityDim = highCardinalityDim;
+        public void setNoDictionaryDims(boolean noDictionaryDim) {
+            this.noDictionaryDim = noDictionaryDim;
 
         }
 
         /**
-         * isHighCardinalityDim.
+         * isNoDictionaryDim.
          *
          * @return
          */
-        public boolean isHighCardinalityDim() {
-            return highCardinalityDim;
+        public boolean isNoDictionaryDim() {
+            return noDictionaryDim;
         }
 
         /**
@@ -1478,7 +1478,7 @@ public final class CarbonMetadata {
             copy.keyOrdinal = this.keyOrdinal;
             copy.schemaOrdinal = this.schemaOrdinal;
             copy.hasOrdinalCol = this.hasOrdinalCol;
-            copy.highCardinalityDim = this.highCardinalityDim;
+            copy.noDictionaryDim = this.noDictionaryDim;
             copy.allApplicableDataBlockIndexs = this.allApplicableDataBlockIndexs;
             copy.propertyCount = this.propertyCount;
             copy.propertyTypes = this.propertyTypes;

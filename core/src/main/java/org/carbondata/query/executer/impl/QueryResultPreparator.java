@@ -92,7 +92,7 @@ public class QueryResultPreparator {
         QueryResult.QueryResultIterator iterator = result.iterator();
         long[] keyArray = null;
         int currentRow = 0;
-        Map<Integer, Integer> ordinalAndResultIndexMap = getHighCardinalityIndexInResult(dims);
+        Map<Integer, Integer> ordinalAndResultIndexMap = getNoDictionaryIndexInResult(dims);
 
         if (!executerProperties.isFunctionQuery && dimensionCount == 0 && size == 0
                 && result.size() > 0) {
@@ -112,12 +112,12 @@ public class QueryResultPreparator {
             //CHECKSTYLE:OFF Approval No:Approval-V1R2C10_006
             int index = 0;
             for (int i = 0; i < dimensionCount; i++) {
-                if (dims[i].isHighCardinalityDim() && null != keyWrapper
-                        .getDirectSurrogateKeyList()) {
-                    resultData[currentRow][i] = keyWrapper.getDirectSurrogateKeyList()
+                if (dims[i].isNoDictionaryDim() && null != keyWrapper
+                        .getNoDictionaryValKeyList()) {
+                    resultData[currentRow][i] = keyWrapper.getNoDictionaryValKeyList()
                             .get(ordinalAndResultIndexMap.get(dims[i].getOrdinal()));
                 } else {
-                    if (dims[i].isHighCardinalityDim()) {
+                    if (dims[i].isNoDictionaryDim()) {
                         continue;
                     }
                     GenericQueryType complexType = queryModel.getComplexDimensionsMap()
@@ -163,12 +163,12 @@ public class QueryResultPreparator {
         return getResult(queryModel, resultData);
     }
 
-    private Map<Integer, Integer> getHighCardinalityIndexInResult(Dimension[] dims) {
+    private Map<Integer, Integer> getNoDictionaryIndexInResult(Dimension[] dims) {
         Map<Integer, Integer> ordinalAndResultIndexMap = new HashMap<>();
         Dimension[] dimTables = executerProperties.dimTables;
         int index = 0;
         for (int i = 0; i < dimTables.length; i++) {
-            if (dimTables[i].isHighCardinalityDim()) {
+            if (dimTables[i].isNoDictionaryDim()) {
                 for (int j = 0; j < dims.length; j++) {
                     if (dims[j].equals(dimTables[i])) {
                         ordinalAndResultIndexMap.put(dims[j].getOrdinal(), index++);

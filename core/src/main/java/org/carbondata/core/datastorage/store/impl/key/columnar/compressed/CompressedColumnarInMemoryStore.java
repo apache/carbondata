@@ -19,6 +19,8 @@
 
 package org.carbondata.core.datastorage.store.impl.key.columnar.compressed;
 
+import java.util.List;
+
 import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreDataHolder;
 import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreInfo;
@@ -36,7 +38,7 @@ public class CompressedColumnarInMemoryStore extends AbstractColumnarKeyStore {
 
     @Override
     public ColumnarKeyStoreDataHolder[] getUnCompressedKeyArray(FileHolder fileHolder,
-            int[] blockIndex, boolean[] needCompressedData) {
+            int[] blockIndex, boolean[] needCompressedData,int[] noDictionaryColIndexes) {
         ColumnarKeyStoreDataHolder[] columnarKeyStoreDataHolders =
                 new ColumnarKeyStoreDataHolder[blockIndex.length];
         for (int i = 0; i < columnarKeyStoreDataHolders.length; i++) {
@@ -48,7 +50,8 @@ public class CompressedColumnarInMemoryStore extends AbstractColumnarKeyStore {
             int[] dataIndex = null;
             boolean isUnCompressed = true;
             columnarKeyBlockDataTemp = COMPRESSOR.unCompress(columnarKeyBlockData[blockIndex[i]]);
-            if (this.columnarStoreInfo.getAggKeyBlock()[blockIndex[i]]) {
+            boolean isNoDictionaryBlock=CompressedColumnarKeyStoreUtil.isNoDictionaryBlock(noDictionaryColIndexes, blockIndex[i]);
+            if (!isNoDictionaryBlock && this.columnarStoreInfo.getAggKeyBlock()[blockIndex[i]]) {
                 dataIndex = columnarStoreInfo.getNumberCompressor().unCompress(
                         columnarUniqueblockKeyBlockIndex[mapOfAggDataIndex.get(blockIndex[i])]);
                 if (!needCompressedData[i]) {
@@ -68,6 +71,20 @@ public class CompressedColumnarInMemoryStore extends AbstractColumnarKeyStore {
                         columnarStoreInfo.getNumberCompressor());
                 columnKeyBlockReverseIndexes = getColumnIndexForNonFilter(columnKeyBlockIndex);
             }
+            if (isNoDictionaryBlock) {
+              columnarKeyStoreMetadata = new ColumnarKeyStoreMetadata(0);
+              columnarKeyStoreMetadata.setColumnIndex(columnKeyBlockIndex);
+              columnarKeyStoreMetadata.setColumnReverseIndex(columnKeyBlockReverseIndexes);
+              columnarKeyStoreMetadata.setNoDictionaryValColumn(true);
+              columnarKeyStoreMetadata.setUnCompressed(true);
+              columnarKeyStoreMetadata.setSorted(columnarStoreInfo.getIsSorted()[blockIndex[i]]);
+              //System is reading the direct surrogates data from byte array which contains both length and the
+              //direct surrogates data
+              List<byte[]> noDictionaryValBasedKeyBlockData= CompressedColumnarKeyStoreUtil.readColumnarKeyBlockDataForNoDictionaryCols(columnarKeyBlockDataTemp);
+              columnarKeyStoreDataHolders[i] =
+                      new ColumnarKeyStoreDataHolder(noDictionaryValBasedKeyBlockData,
+                              columnarKeyStoreMetadata);
+          }
             columnarKeyStoreMetadata = new ColumnarKeyStoreMetadata(
                     columnarStoreInfo.getSizeOfEachBlock()[blockIndex[i]]);
             columnarKeyStoreMetadata.setColumnIndex(columnKeyBlockIndex);
@@ -84,7 +101,7 @@ public class CompressedColumnarInMemoryStore extends AbstractColumnarKeyStore {
 
     @Override
     public ColumnarKeyStoreDataHolder getUnCompressedKeyArray(FileHolder fileHolder, int blockIndex,
-            boolean needCompressedData) {
+            boolean needCompressedData,int[] noDictionaryVals) {
 
         byte[] columnarKeyBlockDataTemp = null;
         int[] columnKeyBlockIndex = null;
@@ -94,7 +111,8 @@ public class CompressedColumnarInMemoryStore extends AbstractColumnarKeyStore {
         int[] dataIndex = null;
         boolean isUnCompressed = true;
         columnarKeyBlockDataTemp = COMPRESSOR.unCompress(columnarKeyBlockData[blockIndex]);
-        if (this.columnarStoreInfo.getAggKeyBlock()[blockIndex]) {
+        boolean isNoDictionaryBlock=CompressedColumnarKeyStoreUtil.isNoDictionaryBlock(noDictionaryVals,blockIndex);
+        if (!isNoDictionaryBlock && this.columnarStoreInfo.getAggKeyBlock()[blockIndex]) {
             dataIndex = columnarStoreInfo.getNumberCompressor().unCompress(
                     columnarUniqueblockKeyBlockIndex[mapOfAggDataIndex.get(blockIndex)]);
             if (!needCompressedData) {
@@ -114,6 +132,13 @@ public class CompressedColumnarInMemoryStore extends AbstractColumnarKeyStore {
                     columnarStoreInfo.getNumberCompressor());
             columnKeyBlockReverseIndex = getColumnIndexForNonFilter(columnKeyBlockIndex);
         }
+       if (isNoDictionaryBlock) {
+        ColumnarKeyStoreDataHolder colKeystoreDataHolders =
+          CompressedColumnarKeyStoreUtil.createColumnarKeyStoreMetadataForHCDims(blockIndex,
+            columnarKeyBlockDataTemp, columnKeyBlockIndex, columnKeyBlockReverseIndex,
+            columnarStoreInfo);
+         return colKeystoreDataHolders;
+       }
         columnarKeyStoreMetadata =
                 new ColumnarKeyStoreMetadata(columnarStoreInfo.getSizeOfEachBlock()[blockIndex]);
         columnarKeyStoreMetadata.setColumnIndex(columnKeyBlockIndex);

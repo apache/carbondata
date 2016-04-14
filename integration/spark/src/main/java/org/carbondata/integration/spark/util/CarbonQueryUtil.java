@@ -268,7 +268,7 @@ public final class CarbonQueryUtil {
         executorModel.setFactTable(factTableName);
         List<Dimension> dimensions = cube.getDimensions(factTableName);
         executorModel.setDims(getDimensions(logicalPlan.getDimensions(), dimensions));
-        updateDimensionWithHighCardinalityVal(schema, executorModel);
+        updateDimensionWithNoDictionaryVal(schema, executorModel);
         fillSortInfoInModel(executorModel, logicalPlan.getSortedDimemsions(), dimensions);
         List<Measure> measures = cube.getMeasures(factTableName);
         executorModel.setMsrs(
@@ -880,7 +880,7 @@ public final class CarbonQueryUtil {
         return executer;
     }
 
-    public static void updateDimensionWithHighCardinalityVal(CarbonDef.Schema schema,
+    public static void updateDimensionWithNoDictionaryVal(CarbonDef.Schema schema,
             CarbonQueryExecutorModel queryModel) {
 
         CubeDimension[] cubeDimensions = schema.cubes[0].dimensions;
@@ -889,8 +889,8 @@ public final class CarbonQueryUtil {
         for (Dimension metadataDimension : metadataDimensions) {
             for (CubeDimension cubeDimension : cubeDimensions) {
                 if (metadataDimension.getName().equals(cubeDimension.name)
-                        && cubeDimension.highCardinality) {
-                    metadataDimension.setHighCardinalityDims(cubeDimension.highCardinality);
+                        && cubeDimension.noDictionary) {
+                    metadataDimension.setNoDictionaryDims(cubeDimension.noDictionary);
                     break;
                 }
 

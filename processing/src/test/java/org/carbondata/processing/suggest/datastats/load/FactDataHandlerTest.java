@@ -70,7 +70,7 @@ public class FactDataHandlerTest {
     }
 
     @Test
-    public void testInitialise_trueAggKeyBlock_TestHighCardinality() {
+    public void testInitialise_trueAggKeyBlock_TestNoDictionary() {
         CarbonProperties.getInstance()
                 .addProperty(CarbonCommonConstants.AGGREAGATE_COLUMNAR_KEY_BLOCK, "true");
         LevelMetaInfo levelInfo = new MockUp<LevelMetaInfo>() {

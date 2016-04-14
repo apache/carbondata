@@ -55,10 +55,28 @@ public class FactDataNode {
     }
 
     public ColumnarKeyStoreDataHolder[] getColumnData(FileHolder fileHolder, int[] dimensions,
-            boolean[] needCompression) {
+            boolean[] needCompression,int[] noDictionaryColIndexes) {
 
         ColumnarKeyStoreDataHolder[] keyDataHolderUncompressed =
-                keyStore.getUnCompressedKeyArray(fileHolder, dimensions, needCompression);
+                keyStore.getUnCompressedKeyArray(fileHolder, dimensions, needCompression,noDictionaryColIndexes);
+
+        return keyDataHolderUncompressed;
+
+    }
+    
+    /**
+     * getColumnData.
+     * @param fileHolder
+     * @param dimensions
+     * @param needCompression
+     * @param noDictionaryColIndexes
+     * @return
+     */
+    public ColumnarKeyStoreDataHolder getColumnData(FileHolder fileHolder, int dimensions,
+            boolean needCompression,int[] noDictionaryColIndexes) {
+
+        ColumnarKeyStoreDataHolder keyDataHolderUncompressed =
+                keyStore.getUnCompressedKeyArray(fileHolder, dimensions, needCompression,noDictionaryColIndexes);
 
         return keyDataHolderUncompressed;
 

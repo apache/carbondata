@@ -111,13 +111,13 @@ public class SingleThreadFinalMerger {
 
     private String[] aggregators;
     /**
-     * highCardCount
+     * NoDictionaryCount
      */
-    private int highCardCount;
+    private int NoDictionaryCount;
 
     public SingleThreadFinalMerger(String tempFileLocation, String tableName, int mdkeyLength,
             int measureCount, int mdKeyIndex, boolean isFactMdkeyInInputRow, int factMdkeyLength,
-            char[] type, String[] aggregators, int highCardCount) {
+            char[] type, String[] aggregators, int NoDictionaryCount) {
         this.tempFileLocation = tempFileLocation;
         this.tableName = tableName;
         this.measureCount = measureCount;
@@ -127,7 +127,7 @@ public class SingleThreadFinalMerger {
         this.factMdkeyLength = factMdkeyLength;
         this.type = type;
         this.aggregators = aggregators;
-        this.highCardCount = highCardCount;
+        this.NoDictionaryCount = NoDictionaryCount;
     }
 
     /**
@@ -192,7 +192,7 @@ public class SingleThreadFinalMerger {
                     CarbonSortTempFileChunkHolder carbonSortTempFileChunkHolder =
                             new CarbonSortTempFileChunkHolder(tmpFile, measureCount, mdkeyLength,
                                     fileBufferSize, isFactMdkeyInInputRow, factMdkeyLength,
-                                    aggregators, highCardCount, type);
+                                    aggregators, NoDictionaryCount, type);
                     // initialize
                     carbonSortTempFileChunkHolder.initialize();
                     carbonSortTempFileChunkHolder.readRow();

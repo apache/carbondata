@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.List;
 
 import org.carbondata.core.datastorage.store.FileHolder;
+import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreDataHolder;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.processing.suggest.datastats.analysis.AggDataSuggestScanner;
 import org.carbondata.query.querystats.Preference;
@@ -63,7 +64,7 @@ public class FactDataReader {
             AggDataSuggestScanner scanner = new AggDataSuggestScanner(keySize, dimensions);
 
             scanner.setKeyBlock(
-                    factDataNodes.get(i).getColumnData(fileHolder, dimensions, needCompression));
+                    factDataNodes.get(i).getColumnData(fileHolder, dimensions, needCompression,null));
 
             scanner.setNumberOfRows(factDataNodes.get(i).getMaxKeys());
             mergedData.addAll(scanner.getLimitedDataBlock(noOfRows));
@@ -72,4 +73,35 @@ public class FactDataReader {
         return mergedData;
 
     }
+
+    /**
+     * getSampleFactDataForNoDictionaryValKey.
+     * @param ordinal
+     * @param numberOfRows
+     * @param noDictionaryValgateIndex
+     * @param noDictionaryColIndexes
+     */
+	public void getSampleFactDataForNoDictionaryValKey(int dimension,
+			int numberOfRows, int[] noDictionaryColIndexes, HashSet<byte[]> mergedData) {
+		int[] dimensions = new int[] { dimension };
+		boolean[] needCompression = new boolean[dimensions.length];
+		Arrays.fill(needCompression, true);
+		String configFactSize = CarbonProperties.getInstance().getProperty(
+				Preference.AGG_FACT_COUNT);
+		int noOfFactsToRead = factDataNodes.size();
+		if (null != configFactSize
+				&& Integer.parseInt(configFactSize) < noOfFactsToRead) {
+			noOfFactsToRead = Integer.parseInt(configFactSize);
+		}
+		for (int i = 0; i < noOfFactsToRead; i++) {
+			AggDataSuggestScanner scanner = new AggDataSuggestScanner(keySize,
+					dimensions);
+			ColumnarKeyStoreDataHolder dataHolder = factDataNodes.get(i)
+					.getColumnData(fileHolder, dimension, false,
+							noDictionaryColIndexes);
+			scanner.getLimitedDataBlockForNoDictionaryVals(numberOfRows,
+					mergedData, dataHolder);
+		}
+
+	}
 }

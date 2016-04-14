@@ -34,13 +34,13 @@ public final class TempSortFileReaderFactory {
 
     public TempSortFileReader getTempSortFileReader(boolean isCompressionEnabled,
             int dimensionCount, int complexDimensionCount, int measureCount, File tempFile,
-            int highCardinalityCount) {
+            int noDictionaryCount) {
         if (isCompressionEnabled) {
             return new CompressedTempSortFileReader(dimensionCount, complexDimensionCount,
-                    measureCount, tempFile, highCardinalityCount);
+                    measureCount, tempFile, noDictionaryCount);
         } else {
             return new UnCompressedTempSortFileReader(dimensionCount, complexDimensionCount,
-                    measureCount, tempFile, highCardinalityCount);
+                    measureCount, tempFile, noDictionaryCount);
         }
     }
 }

@@ -38,13 +38,13 @@ public class UnCompressedTempSortFileWriter extends AbstractTempSortFileWriter {
      * @param measureCount
      */
     public UnCompressedTempSortFileWriter(int dimensionCount, int complexDimensionCount,
-            int measureCount, int highCardinalityCount, int writeBufferSize) {
-        super(dimensionCount, complexDimensionCount, measureCount, highCardinalityCount,
+            int measureCount, int noDictionaryCount, int writeBufferSize) {
+        super(dimensionCount, complexDimensionCount, measureCount, noDictionaryCount,
                 writeBufferSize);
     }
 
     public static void writeDataOutputStream(Object[][] records, DataOutputStream dataOutputStream,
-            int measureCount, int dimensionCount, int highCardinalityCount,
+            int measureCount, int dimensionCount, int noDictionaryCount,
             int complexDimensionCount) throws IOException {
         Object[] row;
         for (int recordIndex = 0; recordIndex < records.length; recordIndex++) {
@@ -57,7 +57,7 @@ public class UnCompressedTempSortFileWriter extends AbstractTempSortFileWriter {
             }
 
             //write byte[] of high card dims
-            if (highCardinalityCount > 0) {
+            if (noDictionaryCount > 0) {
                 dataOutputStream.write(RemoveDictionaryUtil.getByteArrayForNoDictionaryCols(row));
             }
             fieldIndex = 0;
@@ -101,7 +101,7 @@ public class UnCompressedTempSortFileWriter extends AbstractTempSortFileWriter {
             dataOutputStream = new DataOutputStream(blockDataArray);
 
             writeDataOutputStream(records, dataOutputStream, measureCount, dimensionCount,
-                    highCardinalityCount, complexDimensionCount);
+                    noDictionaryCount, complexDimensionCount);
             stream.writeInt(records.length);
             byte[] byteArray = blockDataArray.toByteArray();
             stream.writeInt(byteArray.length);

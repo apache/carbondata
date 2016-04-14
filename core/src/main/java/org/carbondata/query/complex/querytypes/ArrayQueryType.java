@@ -199,7 +199,7 @@ public class ArrayQueryType implements GenericQueryType {
     public void fillRequiredBlockData(BlockDataHolder blockDataHolder) {
         if (null == blockDataHolder.getColumnarKeyStore()[blockIndex]) {
             blockDataHolder.getColumnarKeyStore()[blockIndex] = blockDataHolder.getLeafDataBlock()
-                    .getColumnarKeyStore(blockDataHolder.getFileHolder(), blockIndex, false);
+                    .getColumnarKeyStore(blockDataHolder.getFileHolder(), blockIndex, false,null);
         } else {
             if (!blockDataHolder.getColumnarKeyStore()[blockIndex].getColumnarKeyStoreMetadata()
                     .isUnCompressed()) {

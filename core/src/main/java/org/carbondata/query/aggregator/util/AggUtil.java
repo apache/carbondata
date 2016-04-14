@@ -118,7 +118,7 @@ public final class AggUtil {
      * @param generator      key generator
      * @return MeasureAggregator
      */
-    public static MeasureAggregator getAggregator(String aggregatorType, boolean isHighCardinality,
+    public static MeasureAggregator getAggregator(String aggregatorType, boolean isNoDictionary,
             boolean hasFactCount, KeyGenerator generator,
             boolean isSurrogateBasedDistinctCountRequired, Object minValue,
             SqlStatement.Type dataType) {
@@ -137,7 +137,7 @@ public final class AggUtil {
                 return new AvgOfAvgDoubleAggregator();
             }
         } else {
-            return getAggregator(aggregatorType, isHighCardinality, generator,
+            return getAggregator(aggregatorType, isNoDictionary, generator,
                     isSurrogateBasedDistinctCountRequired, minValue, dataType);
         }
     }
@@ -154,7 +154,7 @@ public final class AggUtil {
     /*
         get  Aggregator by dataType and aggregatorType
      */
-    private static MeasureAggregator getAggregator(String aggregatorType, boolean isHighCardinality,
+    private static MeasureAggregator getAggregator(String aggregatorType, boolean isNoDictionary,
             KeyGenerator generator, boolean isSurrogateGeneratedDistinctCount, Object minValue,
             SqlStatement.Type dataType) {
         // get the MeasureAggregator based on aggregate type
@@ -183,7 +183,7 @@ public final class AggUtil {
         }
         //
         else if (CarbonCommonConstants.DISTINCT_COUNT.equalsIgnoreCase(aggregatorType)) {
-            if (isHighCardinality) {
+            if (isNoDictionary) {
                 return new DistinctStringCountAggregator();
             }
             return new DistinctCountAggregator(minValue);
@@ -383,13 +383,13 @@ public final class AggUtil {
 
     public static MeasureAggregator[] getAggregators(String[] aggType, boolean hasFactCount,
             KeyGenerator generator, String cubeUniqueName, Object[] minValue,
-            boolean[] highCardinalityTypes, SqlStatement.Type[] dataTypes) {
+            boolean[] noDictionaryTypes, SqlStatement.Type[] dataTypes) {
         MeasureAggregator[] aggregators = new MeasureAggregator[aggType.length];
         for (int i = 0; i < aggType.length; i++) {
             SqlStatement.Type dataType = dataTypes[i];
-            if (null != highCardinalityTypes) {
+            if (null != noDictionaryTypes) {
                 aggregators[i] =
-                        getAggregator(aggType[i], highCardinalityTypes[i], hasFactCount, generator,
+                        getAggregator(aggType[i], noDictionaryTypes[i], hasFactCount, generator,
                                 false, minValue[i], dataType);
             } else {
                 aggregators[i] = getAggregator(aggType[i], false, hasFactCount, generator, false,
@@ -403,7 +403,7 @@ public final class AggUtil {
     public static MeasureAggregator[] getAggregators(String[] aggType,
             List<CustomCarbonAggregateExpression> aggregateExpressions, boolean hasFactCount,
             KeyGenerator generator, String cubeUniqueName, Object[] minValue,
-            boolean[] highCardinalityTypes, SqlStatement.Type[] dataTypes) {
+            boolean[] noDictionaryTypes, SqlStatement.Type[] dataTypes) {
         MeasureAggregator[] aggregators = new MeasureAggregator[aggType.length];
         int customIndex = 0;
         for (int i = 0; i < aggType.length; i++) {
@@ -418,9 +418,9 @@ public final class AggUtil {
                 }
             } else {
                 SqlStatement.Type dataType = dataTypes[i];
-                if (null != highCardinalityTypes) {
+                if (null != noDictionaryTypes) {
                     aggregators[i] =
-                            getAggregator(aggType[i], highCardinalityTypes[i], hasFactCount,
+                            getAggregator(aggType[i], noDictionaryTypes[i], hasFactCount,
                                     generator, false, minValue[i], dataType);
                 } else {
                     aggregators[i] =

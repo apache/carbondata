@@ -350,6 +350,7 @@ public class QueryExecutorImpl extends AbstractQueryExecutor {
         info.setKeyGenerator(slice.getKeyGenerator(queryModel.getFactTable()));
         info.setQueryDimensions(queryDimensions);
         info.setDimensions(currentDimTables);
+        info.setCurrentDimTables(currentDimTables);
         info.setMeasureOrdinal(measureOrdinal);
         info.setCubeName(executerProperties.cubeName);
         info.setPartitionId(queryModel.getPartitionId());
@@ -478,7 +479,7 @@ public class QueryExecutorImpl extends AbstractQueryExecutor {
         info.setCurrentSliceIndex(currentSliceIndex);
         info.setMsrMinValue(executerProperties.msrMinValue);
         info.setAggType(executerProperties.aggTypes);
-        info.setHighCardinalityType(executerProperties.isHighCardinality);
+        info.setNoDictionaryType(executerProperties.isNoDictionary);
         info.setAllSelectedMeasures(QueryExecutorUtility
                 .getAllSelectedMeasureOrdinals(measures, executerProperties.aggExpMeasures,
                         sliceMataData.getMeasures()));

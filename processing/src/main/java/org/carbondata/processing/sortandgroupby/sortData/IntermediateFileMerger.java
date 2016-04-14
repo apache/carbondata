@@ -167,7 +167,7 @@ public class IntermediateFileMerger implements Callable<Void> {
                             mergerParameters.getDimColCount(),
                             mergerParameters.getComplexDimColCount(),
                             mergerParameters.getMeasureColCount(),
-                            mergerParameters.getHighCardinalityCount(),
+                            mergerParameters.getNoDictionaryCount(),
                             mergerParameters.getFileWriteBufferSize());
             writer.initiaize(mergerParameters.getOutFile(), totalNumberOfRecords);
 
@@ -248,7 +248,7 @@ public class IntermediateFileMerger implements Callable<Void> {
                             mergerParameters.getComplexDimColCount(),
                             mergerParameters.getMeasureColCount(),
                             mergerParameters.getFileReadBufferSize(),
-                            mergerParameters.getHighCardinalityCount(),
+                            mergerParameters.getNoDictionaryCount(),
                             mergerParameters.getAggType());
 
             // initialize
@@ -344,7 +344,7 @@ public class IntermediateFileMerger implements Callable<Void> {
             }
 
             // added for high card also
-            if (mergerParameters.getHighCardinalityCount() > 0) {
+            if (mergerParameters.getNoDictionaryCount() > 0) {
                 stream.write(RemoveDictionaryUtil.getByteArrayForNoDictionaryCols(row));
             }
 

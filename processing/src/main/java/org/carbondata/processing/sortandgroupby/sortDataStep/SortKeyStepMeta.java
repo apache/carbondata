@@ -77,7 +77,7 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
     /**
      * Dimension Count
      */
-    private int highCardinalityCount;
+    private int noDictionaryCount;
 
     /**
      * measureCount
@@ -95,7 +95,7 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
 
     private String measureDataType;
 
-    private String highCardinalityDims;
+    private String noDictionaryDims;
 
     /**
      * set the default value for all the properties
@@ -106,7 +106,7 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
         factDimLensString = "";
         outputRowSize = "";
         schemaName = "";
-        highCardinalityDims = "";
+        noDictionaryDims = "";
         cubeName = "";
         dimensionCount = "";
         complexDimensionCount = "";
@@ -132,7 +132,7 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
         retval.append("    ").append(XMLHandler.addTagValue("schemaName", this.schemaName));
         retval.append("    ").append(XMLHandler.addTagValue("dimensionCount", this.dimensionCount));
         retval.append("    ")
-                .append(XMLHandler.addTagValue("highCardinalityDims", this.highCardinalityDims));
+                .append(XMLHandler.addTagValue("noDictionaryDims", this.noDictionaryDims));
         retval.append("    ").append(XMLHandler
                 .addTagValue("complexDimensionCount", this.complexDimensionCount));
         retval.append("    ").append(XMLHandler.addTagValue("measureCount", this.measureCount));
@@ -161,7 +161,7 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
             this.cubeName = XMLHandler.getTagValue(stepnode, "cubeName");
             this.schemaName = XMLHandler.getTagValue(stepnode, "schemaName");
             this.dimensionCount = XMLHandler.getTagValue(stepnode, "dimensionCount");
-            this.highCardinalityDims = XMLHandler.getTagValue(stepnode, "highCardinalityDims");
+            this.noDictionaryDims = XMLHandler.getTagValue(stepnode, "noDictionaryDims");
             this.complexDimensionCount = XMLHandler.getTagValue(stepnode, "complexDimensionCount");
             this.measureCount = XMLHandler.getTagValue(stepnode, "measureCount");
             this.updateMemberRequest = XMLHandler.getTagValue(stepnode, "isUpdateMemberRequest");
@@ -191,8 +191,8 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
             rep.saveStepAttribute(idTransformation, idStep, "cubeName", this.cubeName);
             rep.saveStepAttribute(idTransformation, idStep, "schemaName", this.schemaName);
             rep.saveStepAttribute(idTransformation, idStep, "dimensionCount", this.dimensionCount);
-            rep.saveStepAttribute(idTransformation, idStep, "highCardinalityDims",
-                    this.highCardinalityDims);
+            rep.saveStepAttribute(idTransformation, idStep, "noDictionaryDims",
+                    this.noDictionaryDims);
             rep.saveStepAttribute(idTransformation, idStep, "complexDimensionCount",
                     this.complexDimensionCount);
             rep.saveStepAttribute(idTransformation, idStep, "measureCount", this.measureCount);
@@ -225,7 +225,7 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
             this.schemaName = rep.getStepAttributeString(idStep, "schemaName");
             this.cubeName = rep.getStepAttributeString(idStep, "cubeName");
             this.dimensionCount = rep.getStepAttributeString(idStep, "dimensionCount");
-            this.highCardinalityDims = rep.getStepAttributeString(idStep, "highCardinalityDims");
+            this.noDictionaryDims = rep.getStepAttributeString(idStep, "noDictionaryDims");
             this.complexDimensionCount =
                     rep.getStepAttributeString(idStep, "complexDimensionCount");
             this.measureCount = rep.getStepAttributeString(idStep, "measureCount");
@@ -433,26 +433,26 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
         this.measureDataType = measureDataType;
     }
 
-    public String getHighCardinalityDims() {
-        return highCardinalityDims;
+    public String getNoDictionaryDims() {
+        return noDictionaryDims;
     }
 
-    public void setHighCardinalityDims(String highCardinalityDims) {
-        this.highCardinalityDims = highCardinalityDims;
-    }
-
-    /**
-     * @return the highCardinalityCount
-     */
-    public int getHighCardinalityCount() {
-        return highCardinalityCount;
+    public void setNoDictionaryDims(String noDictionaryDims) {
+        this.noDictionaryDims = noDictionaryDims;
     }
 
     /**
-     * @param highCardinalityCount the highCardinalityCount to set
+     * @return the noDictionaryCount
      */
-    public void setHighCardinalityCount(int highCardinalityCount) {
-        this.highCardinalityCount = highCardinalityCount;
+    public int getNoDictionaryCount() {
+        return noDictionaryCount;
+    }
+
+    /**
+     * @param noDictionaryCount the noDictionaryCount to set
+     */
+    public void setNoDictionaryCount(int noDictionaryCount) {
+        this.noDictionaryCount = noDictionaryCount;
     }
 
 }

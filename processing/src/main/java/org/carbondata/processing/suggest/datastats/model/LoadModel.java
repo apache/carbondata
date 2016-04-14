@@ -33,8 +33,10 @@ public class LoadModel {
     private String partitionId = "0";
 
     private String tableName;
+    
+    private List<String> partitionNames;
 
-    private Cube metaCube;
+	private Cube metaCube;
 
     private String schemaName;
 
@@ -211,6 +213,23 @@ public class LoadModel {
     public void setSchemaLastUpdatedTime(long schemaLastUpdatedTime) {
         this.schemaLastUpdatedTime = schemaLastUpdatedTime;
     }
+    
+    /**
+     * API will return partion names.
+     * @return
+     */
+    public List<String> getPartitionNames() {
+		return partitionNames;
+	}
+
+    /**
+     * setting the partition name for suggest aggregate
+     * @param partitionNames
+     */
+	public void setPartitionNames(List<String> partitionNames) {
+		this.partitionNames = partitionNames;
+	}
+
 
     /**
      *  return loadMetadata Details

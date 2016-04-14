@@ -906,11 +906,11 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
         return integers;
     }
 
-    private String[] getUpdatedDims(String[] dims, String[] highCardCols, boolean[] presentDims) {
+    private String[] getUpdatedDims(String[] dims, String[] NoDictionaryCols, boolean[] presentDims) {
         int k = 0;
         String[] normDims = null;
-        if (null != meta.highCardCols) {
-            normDims = new String[meta.normLength + meta.highCardCols.length];
+        if (null != meta.NoDictionaryCols) {
+            normDims = new String[meta.normLength + meta.NoDictionaryCols.length];
         } else {
             normDims = new String[meta.normLength];
         }
@@ -920,9 +920,9 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
                 k++;
             }
         }
-        if (null != highCardCols) {
-            for (int j = 0; j < highCardCols.length; j++) {
-                normDims[k++] = highCardCols[j];
+        if (null != NoDictionaryCols) {
+            for (int j = 0; j < NoDictionaryCols.length; j++) {
+                normDims[k++] = NoDictionaryCols[j];
             }
         }
         return normDims;
@@ -949,7 +949,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
         SliceMetaData sliceMetaData = new SliceMetaData();
         //
         sliceMetaData.setDimensions(
-                getUpdatedDims(meta.dimColNames, meta.highCardCols, meta.dimPresent));
+                getUpdatedDims(meta.dimColNames, meta.NoDictionaryCols, meta.dimPresent));
         sliceMetaData.setActualDimensions(meta.dimColNames);
         sliceMetaData.setMeasures(meta.measureColumn);
         sliceMetaData.setActualDimLens(getUpdatedCardinality(meta.dimLens));
@@ -1239,8 +1239,8 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
         Object[] newArray = new Object[CarbonCommonConstants.ARRAYSIZE];
 
         ByteBuffer[] byteBufferArr = null;
-        if (null != meta.highCardCols) {
-            byteBufferArr = new ByteBuffer[meta.highCardCols.length + meta.complexTypes.size()];
+        if (null != meta.NoDictionaryCols) {
+            byteBufferArr = new ByteBuffer[meta.NoDictionaryCols.length + meta.complexTypes.size()];
         }
         int i = 0;
         int n = 0;
@@ -1248,16 +1248,16 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
         int l = 0;
         int msrCount = 0;
         boolean isNull = false;
-        int complexIndex = meta.highCardCols.length;
+        int complexIndex = meta.NoDictionaryCols.length;
         for (int j = 0; j < inputColumnsSize; j++) {
             String columnName = metaColumnNames[j];
             String foreignKeyColumnName = foreignKeyMappingColumns[j];
 
             // TODO check if it is ignore dictionary dimension or not . if yes directly write byte buffer
 
-            if (null != meta.highCardCols && isDimensionHighCardinality(meta.highCardCols,
+            if (null != meta.NoDictionaryCols && isDimensionNoDictionary(meta.NoDictionaryCols,
                     columnName) && !measurePresentMapping[j]) {
-                processhighCardinalityDim(getIndexOfHighCardDims(meta.highCardCols, columnName),
+                processnoDictionaryDim(getIndexOfNoDictionaryDims(meta.NoDictionaryCols, columnName),
                         (String) r[j], byteBufferArr);
                 continue;
             }
@@ -2177,7 +2177,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
         }
     }
 
-    private void processhighCardinalityDim(int index, String dimension, ByteBuffer[] out) {
+    private void processnoDictionaryDim(int index, String dimension, ByteBuffer[] out) {
 
         String dimensionValue = dimension;
         ByteBuffer buffer = ByteBuffer.allocate(dimensionValue.length());
@@ -2188,12 +2188,12 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
     }
 
     /**
-     * @param highCardDims
+     * @param NoDictionaryDims
      * @param columnName
      * @return true if the dimension is high cardinality.
      */
-    private boolean isDimensionHighCardinality(String[] highCardDims, String columnName) {
-        for (String colName : highCardDims) {
+    private boolean isDimensionNoDictionary(String[] NoDictionaryDims, String columnName) {
+        for (String colName : NoDictionaryDims) {
             if (colName.equalsIgnoreCase(
                     meta.getTableName() + CarbonCommonConstants.UNDERSCORE + columnName)) {
                 return true;
@@ -2205,13 +2205,13 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
     /**
      * This method will give the correct index where to place the high card dims
      *
-     * @param highCardCols
+     * @param NoDictionaryCols
      * @param columnName
      * @return
      */
-    private int getIndexOfHighCardDims(String[] highCardCols, String columnName) {
-        for (int i = 0; i < highCardCols.length; i++) {
-            if (highCardCols[i].equalsIgnoreCase(
+    private int getIndexOfNoDictionaryDims(String[] NoDictionaryCols, String columnName) {
+        for (int i = 0; i < NoDictionaryCols.length; i++) {
+            if (NoDictionaryCols[i].equalsIgnoreCase(
                     meta.getTableName() + CarbonCommonConstants.UNDERSCORE + columnName)) {
                 // if found return index of high card dims
                 return i;

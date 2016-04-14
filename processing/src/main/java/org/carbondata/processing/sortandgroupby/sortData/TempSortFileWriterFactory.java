@@ -32,13 +32,13 @@ public final class TempSortFileWriterFactory {
 
     public TempSortFileWriter getTempSortFileWriter(boolean isCompressionEnabled,
             int dimensionCount, int complexDimensionCount, int measureCount,
-            int highCardinalityCount, int writeBufferSize) {
+            int noDictionaryCount, int writeBufferSize) {
         if (isCompressionEnabled) {
             return new CompressedTempSortFileWriter(dimensionCount, complexDimensionCount,
-                    measureCount, highCardinalityCount, writeBufferSize);
+                    measureCount, noDictionaryCount, writeBufferSize);
         } else {
             return new UnCompressedTempSortFileWriter(dimensionCount, complexDimensionCount,
-                    measureCount, highCardinalityCount, writeBufferSize);
+                    measureCount, noDictionaryCount, writeBufferSize);
         }
     }
 }

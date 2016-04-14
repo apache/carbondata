@@ -134,7 +134,7 @@ class CarbonDataRDD[K, V](
           carbonQueryModel.setCube(cube)
           carbonQueryModel.setOutLocation(dataPath)
         }
-        CarbonQueryUtil.updateDimensionWithHighCardinalityVal(schema, carbonQueryModel)
+        CarbonQueryUtil.updateDimensionWithNoDictionaryVal(schema, carbonQueryModel)
 
         if (CarbonQueryUtil.isQuickFilter(carbonQueryModel)) {
           rowIterator = CarbonQueryUtil.getQueryExecuter(carbonQueryModel.getCube(), carbonQueryModel.getFactTable(), carbonQueryModel.getQueryScopeObject).executeDimension(carbonQueryModel);

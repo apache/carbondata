@@ -34,10 +34,10 @@ public interface DataStoreBlock {
     byte[] getBackKeyArray(FileHolder fileHolder);
 
     ColumnarKeyStoreDataHolder[] getColumnarKeyStore(FileHolder fileHolder, int[] blockIndex,
-            boolean[] needCompressedData);
+            boolean[] needCompressedData,int[] noDictionaryColIndexes);
 
     ColumnarKeyStoreDataHolder getColumnarKeyStore(FileHolder fileHolder, int blockIndex,
-            boolean needCompressedData);
+            boolean needCompressedData,int[] noDictionaryColIndexes);
 
     MeasureDataWrapper getNodeMsrDataWrapper(int[] cols, FileHolder fileHolder);
 

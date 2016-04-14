@@ -154,11 +154,11 @@ public class CarbonColumnarLeafNodeIterator implements CarbonIterator<AbstractCo
         boolean isAggKeyBlock = Boolean.parseBoolean(
                 CarbonCommonConstants.AGGREAGATE_COLUMNAR_KEY_BLOCK_DEFAULTVALUE);
         if (isAggKeyBlock) {
-            int highCardinalityValue = Integer.parseInt(CarbonProperties.getInstance()
+            int noDictionaryValue = Integer.parseInt(CarbonProperties.getInstance()
                     .getProperty(CarbonCommonConstants.HIGH_CARDINALITY_VALUE,
                             CarbonCommonConstants.HIGH_CARDINALITY_VALUE_DEFAULTVALUE));
             for (int i = 0; i < iteratorInfo.getDimLens().length; i++) {
-                if (iteratorInfo.getDimLens()[i] < highCardinalityValue) {
+                if (iteratorInfo.getDimLens()[i] < noDictionaryValue) {
                     this.isUniqueBlock[i] = true;
                 }
             }
@@ -217,7 +217,7 @@ public class CarbonColumnarLeafNodeIterator implements CarbonIterator<AbstractCo
         this.keyValue.setNumberOfRows(this.entryCount);
         this.keyValue.setMeasureBlock(this.dataStore.getValues());
         ColumnarKeyStoreDataHolder[] unCompressedKeyArray =
-                keyStore.getUnCompressedKeyArray(fileHolder, blockIndexes, needCompressedData);
+                keyStore.getUnCompressedKeyArray(fileHolder, blockIndexes, needCompressedData,null);
 
         for (int i = 0; i < unCompressedKeyArray.length; i++) {
             if (this.isUniqueBlock[blockIndexes[i]]) {

@@ -105,12 +105,12 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
      * false: row
      */
     private String dimensionsStoreType;
-    private String highCardinalityDims;
+    private String noDictionaryDims;
 
     /**
-     * highCardinalityCount
+     * noDictionaryCount
      */
-    private int highCardinalityCount;
+    private int noDictionaryCount;
 
     private String measureDataType;
 
@@ -131,7 +131,7 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
         cubeName = "";
         schemaName = "";
         dimensionsStoreType = "";
-        highCardinalityDims = "";
+        noDictionaryDims = "";
         currentRestructNumber = -1;
         measureDataType = "";
     }
@@ -145,7 +145,7 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
         retval.append("    ").append(XMLHandler.addTagValue("cubeName", cubeName));
         retval.append("    ").append(XMLHandler.addTagValue("schemaName", schemaName));
         retval.append("    ")
-                .append(XMLHandler.addTagValue("highCardinalityDims", highCardinalityDims));
+                .append(XMLHandler.addTagValue("noDictionaryDims", noDictionaryDims));
         retval.append("    ").append(XMLHandler.addTagValue("measureCount", measureCount));
         retval.append("    ")
                 .append(XMLHandler.addTagValue("dimensionsStoreType", dimensionsStoreType));
@@ -168,7 +168,7 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
             numberOfCores = XMLHandler.getTagValue(stepnode, "NumberOfCores");
             schemaName = XMLHandler.getTagValue(stepnode, "schemaName");
             cubeName = XMLHandler.getTagValue(stepnode, "cubeName");
-            highCardinalityDims = XMLHandler.getTagValue(stepnode, "highCardinalityDims");
+            noDictionaryDims = XMLHandler.getTagValue(stepnode, "noDictionaryDims");
             measureCount = XMLHandler.getTagValue(stepnode, "measureCount");
             dimensionsStoreType = XMLHandler.getTagValue(stepnode, "dimensionsStoreType");
             dimensionCount = XMLHandler.getTagValue(stepnode, "dimensionCount");
@@ -191,8 +191,8 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
             rep.saveStepAttribute(idTransformation, idStep, "NumberOfCores", numberOfCores);
             rep.saveStepAttribute(idTransformation, idStep, "schemaName", schemaName);
             rep.saveStepAttribute(idTransformation, idStep, "cubeName", cubeName);
-            rep.saveStepAttribute(idTransformation, idStep, "highCardinalityDims",
-                    highCardinalityDims);
+            rep.saveStepAttribute(idTransformation, idStep, "noDictionaryDims",
+                    noDictionaryDims);
             rep.saveStepAttribute(idTransformation, idStep, "measureCount", measureCount);
             rep.saveStepAttribute(idTransformation, idStep, "dimensionsStoreType",
                     dimensionsStoreType);
@@ -219,7 +219,7 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
             numberOfCores = rep.getStepAttributeString(idStep, "NumberOfCores");
             schemaName = rep.getStepAttributeString(idStep, "schemaName");
             cubeName = rep.getStepAttributeString(idStep, "cubeName");
-            highCardinalityDims = rep.getStepAttributeString(idStep, "highCardinalityDims");
+            noDictionaryDims = rep.getStepAttributeString(idStep, "noDictionaryDims");
             measureCount = rep.getStepAttributeString(idStep, "measureCount");
             dimensionsStoreType = rep.getStepAttributeString(idStep, "dimensionsStoreType");
             dimensionCount = rep.getStepAttributeString(idStep, "dimensionCount");
@@ -384,29 +384,29 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
     /**
      * @return
      */
-    public String getHighCardinalityDims() {
-        return highCardinalityDims;
+    public String getNoDictionaryDims() {
+        return noDictionaryDims;
     }
 
     /**
-     * @param highCardinalityDims
+     * @param noDictionaryDims
      */
-    public void setHighCardinalityDims(String highCardinalityDims) {
-        this.highCardinalityDims = highCardinalityDims;
+    public void setNoDictionaryDims(String noDictionaryDims) {
+        this.noDictionaryDims = noDictionaryDims;
     }
 
     /**
-     * @return the highCardinalityCount
+     * @return the noDictionaryCount
      */
-    public int getHighCardinalityCount() {
-        return highCardinalityCount;
+    public int getNoDictionaryCount() {
+        return noDictionaryCount;
     }
 
     /**
-     * @param highCardinalityCount the highCardinalityCount to set
+     * @param noDictionaryCount the noDictionaryCount to set
      */
-    public void setHighCardinalityCount(int highCardinalityCount) {
-        this.highCardinalityCount = highCardinalityCount;
+    public void setNoDictionaryCount(int noDictionaryCount) {
+        this.noDictionaryCount = noDictionaryCount;
     }
 
     public void setDimensionsStoreTypeString(String dimensionStoreType) {

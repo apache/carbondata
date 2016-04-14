@@ -108,7 +108,7 @@ public class UnSortedResultMerger implements Callable<Void> {
                                         dataProcessorInfo.getKeyGenerator(),
                                         dataProcessorInfo.getCubeUniqueName(),
                                         dataProcessorInfo.getMsrMinValue(),
-                                        dataProcessorInfo.getHighCardinalityTypes(),
+                                        dataProcessorInfo.getNoDictionaryTypes(),
                                         dataProcessorInfo.getDataTypes()),
                                 dataProcessorInfo.getFileBufferSize());
                 // initialize
@@ -149,7 +149,7 @@ public class UnSortedResultMerger implements Callable<Void> {
                                     dataProcessorInfo.getKeyGenerator(),
                                     dataProcessorInfo.getCubeUniqueName(),
                                     dataProcessorInfo.getMsrMinValue(),
-                                    dataProcessorInfo.getHighCardinalityTypes(),
+                                    dataProcessorInfo.getNoDictionaryTypes(),
                                     dataProcessorInfo.getDataTypes()));
                 }
             } catch (DataProcessorException e) {

@@ -161,9 +161,9 @@ public class IntermediateFileMerger implements Callable<Void> {
     private String[] aggregator;
 
     /**
-     * highCardinalityCount
+     * noDictionaryCount
      */
-    private int highCardinalityCount;
+    private int noDictionaryCount;
 
     /**
      * IntermediateFileMerger Constructor
@@ -178,7 +178,7 @@ public class IntermediateFileMerger implements Callable<Void> {
             int fileWriteBufferSize, boolean isRenamingRequired, boolean isFactMdkeyInInputRow,
             int factMdkeyLength, int sortTempFileNoOFRecordsInCompression,
             boolean isSortTempFileCompressionEnabled, char[] type, boolean prefetch,
-            int prefetchBufferSize, String[] aggregator, int highCardinalityCount) {
+            int prefetchBufferSize, String[] aggregator, int noDictionaryCount) {
         this.intermediateFiles = intermediateFiles;
         this.measureCount = measureCount;
         this.mdKeyLength = mdKeyLength;
@@ -196,7 +196,7 @@ public class IntermediateFileMerger implements Callable<Void> {
         this.prefetch = prefetch;
         this.prefetchBufferSize = prefetchBufferSize;
         this.aggregator = aggregator;
-        this.highCardinalityCount = highCardinalityCount;
+        this.noDictionaryCount = noDictionaryCount;
     }
 
     @Override
@@ -346,7 +346,7 @@ public class IntermediateFileMerger implements Callable<Void> {
             carbonSortTempFileChunkHolder =
                     new CarbonSortTempFileChunkHolder(tempFile, this.measureCount, this.mdKeyLength,
                             this.fileReadBufferSize, this.isFactMdkeyInInputRow,
-                            this.factMdkeyLength, this.aggregator, this.highCardinalityCount,
+                            this.factMdkeyLength, this.aggregator, this.noDictionaryCount,
                             this.type);
             // initialize
             carbonSortTempFileChunkHolder.initialize();
@@ -436,10 +436,10 @@ public class IntermediateFileMerger implements Callable<Void> {
             stream.writeDouble((Double) row[aggregatorIndexInRowObject + 1]);
 
             // writing the high cardinality data.
-            if (highCardinalityCount > 0) {
-                int highCardIndex = this.mdKeyIndex - 1;
-                byte[] singleHighCardArr = (byte[]) row[highCardIndex];
-                stream.write(singleHighCardArr);
+            if (noDictionaryCount > 0) {
+                int NoDictionaryIndex = this.mdKeyIndex - 1;
+                byte[] singleNoDictionaryArr = (byte[]) row[NoDictionaryIndex];
+                stream.write(singleNoDictionaryArr);
             }
 
             // write mdkye

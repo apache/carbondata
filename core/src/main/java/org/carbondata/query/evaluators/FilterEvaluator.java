@@ -26,7 +26,7 @@ import org.carbondata.query.schema.metadata.FilterEvaluatorInfo;
 public interface FilterEvaluator {
     void resolve(FilterEvaluatorInfo info);
 
-    BitSet applyFilter(BlockDataHolder blockDataHolder, FilterProcessorPlaceHolder placeHolder);
+    BitSet applyFilter(BlockDataHolder blockDataHolder, FilterProcessorPlaceHolder placeHolder,int[] noDictionaryColIndexes);
 
     FilterEvaluator getLeft();
 

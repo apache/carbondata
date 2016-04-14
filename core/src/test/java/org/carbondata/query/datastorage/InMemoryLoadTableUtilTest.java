@@ -289,7 +289,7 @@ public class InMemoryLoadTableUtilTest {
         String schemaStr = "<Schema name=\"default\">\n"
                 + "\t<Cube name=\"alldatatypescube_1\" visible=\"true\" cache=\"true\" enabled=\"true\" autoAggregationType=\"NONE\" mode=\"file\">\n"
                 + "\t\t<Table name=\"alldatatypescube_1\">\n" + "\t\t</Table>\n"
-                + "\t\t<Dimension type=\"StandardDimension\" visible=\"true\" highCardinality=\"false\" name=\"empno\">\n"
+                + "\t\t<Dimension type=\"StandardDimension\" visible=\"true\" noDictionary=\"false\" name=\"empno\">\n"
                 + "\t\t\t<Hierarchy name=\"empno\" visible=\"true\" hasAll=\"true\" normalized=\"false\">\n"
                 + "\t\t\t\t<Level name=\"empno\" visible=\"true\" columnIndex=\"-1\" keyOrdinal=\"-1\" levelCardinality=\"-1\" ordinalColumnIndex=\"-1\" nameColumnIndex=\"-1\" column=\"empno\" type=\"Integer\" uniqueMembers=\"false\" columnar=\"true\" levelType=\"Regular\" hideMemberIf=\"Never\" isParent=\"true\">\n"
                 + "\t\t\t\t</Level>\n" + "\t\t\t</Hierarchy>\n" + "\t\t</Dimension>\n"
