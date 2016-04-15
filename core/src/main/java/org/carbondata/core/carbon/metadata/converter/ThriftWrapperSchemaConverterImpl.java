@@ -164,7 +164,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       return org.carbondata.format.Encoding.RLE;
     case INVERTED_INDEX:
       return org.carbondata.format.Encoding.INVERTED_INDEX;
-    case BITPACKED:
+    case BIT_PACKED:
       return org.carbondata.format.Encoding.BIT_PACKED;
     default:
       return org.carbondata.format.Encoding.DICTIONARY;
@@ -185,16 +185,16 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     switch (dataType) {
       case STRING:
         return org.carbondata.format.DataType.STRING;
-      case INTEGER:
-        return org.carbondata.format.DataType.INTEGER;
+      case INT:
+        return org.carbondata.format.DataType.INT;
       case LONG:
         return org.carbondata.format.DataType.LONG;
       case DOUBLE:
         return org.carbondata.format.DataType.DOUBLE;
-      case BIG_DECIMAL:
-        return org.carbondata.format.DataType.BIG_DECIMAL;
-      case TIME_STAMP:
-        return org.carbondata.format.DataType.TIME_STAMP;
+      case DECIMAL:
+        return org.carbondata.format.DataType.DECIMAL;
+      case TIMESTAMP:
+        return org.carbondata.format.DataType.TIMESTAMP;
       case ARRAY:
         return org.carbondata.format.DataType.ARRAY;
       case STRUCT:
@@ -337,7 +337,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     case INVERTED_INDEX:
       return Encoding.INVERTED_INDEX;
     case BIT_PACKED:
-      return Encoding.BITPACKED;
+      return Encoding.BIT_PACKED;
     default:
       return Encoding.DICTIONARY;
     }
@@ -356,16 +356,16 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     switch (dataType) {
     case STRING:
       return DataType.STRING;
-    case INTEGER:
-      return DataType.INTEGER;
+    case INT:
+      return DataType.INT;
     case LONG:
       return DataType.LONG;
     case DOUBLE:
       return DataType.DOUBLE;
-    case BIG_DECIMAL:
-      return DataType.BIG_DECIMAL;
-    case TIME_STAMP:
-      return DataType.TIME_STAMP;
+    case DECIMAL:
+      return DataType.DECIMAL;
+    case TIMESTAMP:
+      return DataType.TIMESTAMP;
     case ARRAY:
       return DataType.ARRAY;
     case STRUCT:

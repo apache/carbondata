@@ -76,6 +76,8 @@ import scala.collection.JavaConversions._
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import org.carbondata.integration.spark.util.GlobalDictionaryUtil
 import org.carbondata.core.locks.{CarbonLockFactory, LockUsage}
+import scala.collection.JavaConversions.{asScalaBuffer, asScalaSet, seqAsJavaList}
+import scala.language.implicitConversions
 
 case class CubeModel(
                       ifNotExistsSet: Boolean,
@@ -176,7 +178,7 @@ class CubeNewProcessor(cm: CubeModel, sqlContext: SQLContext) {
     columnSchema.setColumnName(colName)
     columnSchema.setColumnUniqueId(index)
     columnSchema.setColumnar(isCol)
-    val encoderSet = Set(encoders: _*)
+    val encoderSet = new java.util.HashSet(encoders)
     columnSchema.setEncodintList(encoderSet)
     columnSchema.setDimensionColumn(isDimensionCol)
     //TODO: Need to fill RowGroupID, Precision, Scala, converted type & Number of Children after DDL finalization   
@@ -186,11 +188,11 @@ class CubeNewProcessor(cm: CubeModel, sqlContext: SQLContext) {
   private def normalizeType(dataType: String): DataType = {
     dataType match {
       case "String" => DataType.STRING
-      case "Integer" => DataType.INTEGER
+      case "Integer" => DataType.INT
       case "Long" => DataType.LONG
       case "Double" => DataType.DOUBLE
-      case "Decimal" => DataType.BIG_DECIMAL
-      case "Timestamp" => DataType.TIME_STAMP
+      case "Decimal" => DataType.DECIMAL
+      case "Timestamp" => DataType.TIMESTAMP
       case "Array" => DataType.ARRAY
       case "Struct" => DataType.STRUCT
       case _ => DataType.STRING

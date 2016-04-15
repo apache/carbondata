@@ -26,5 +26,5 @@ public enum Encoding {
     DELTA,
     RLE,
     INVERTED_INDEX,
-    BITPACKED;
+    BIT_PACKED;
 }

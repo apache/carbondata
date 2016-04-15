@@ -35,25 +35,25 @@ struct SegmentInfo{
 /**
 *	Btree index of one node.
 */
-struct LeafNodeBTreeIndex{
-	1: required binary start_key; // Bit-packed start key of one leaf node
-	2: required binary end_key;	// Bit-packed start key of one leaf node
+struct BlockletBTreeIndex{
+	1: required binary start_key; // Bit-packed start key of one blocklet
+	2: required binary end_key;	// Bit-packed start key of one blocklet
 }
 
 /**
 *	Min-max index of one complete file
 */
-struct LeafNodeMinMaxIndex{
-	1: required list<binary> min_values; //Min value of all columns of one leaf node Bit-Packed
-	2: required list<binary> max_values; //Max value of all columns of one leaf node Bit-Packed
+struct BlockletMinMaxIndex{
+	1: required list<binary> min_values; //Min value of all columns of one blocklet Bit-Packed
+	2: required list<binary> max_values; //Max value of all columns of one blocklet Bit-Packed
 }
 
 /**
-*	Index of all leaf nodes in one file
+*	Index of all blocklets in one file
 */
-struct LeafNodeIndex{
-	1: optional list<LeafNodeMinMaxIndex> min_max_index;
-	2: optional list<LeafNodeBTreeIndex> b_tree_index;
+struct BlockletIndex{
+	1: optional list<BlockletMinMaxIndex> min_max_index;
+	2: optional list<BlockletBTreeIndex> b_tree_index;
 }
 
 /**
@@ -73,7 +73,7 @@ enum CompressionCodec{
 }
 
 /**
-* Represents the data of one dimension one dimension group in one leaf node
+* Represents the data of one dimension one dimension group in one blocklet
 */
 // add a innger level placeholder for further I/O granulatity
 struct ChunkCompressionMeta{
@@ -114,11 +114,11 @@ struct DataChunk{
 
 
 /**
-*	Information about a leaf node
+*	Information about a blocklet
 */
-struct LeafNodeInfo{
-    1: required i32 num_rows;	// Number of rows in this leaf node
-    2: required list<DataChunk> column_data_chunks;	// Information about all column chunks in this leaf node
+struct BlockletInfo{
+    1: required i32 num_rows;	// Number of rows in this blocklet
+    2: required list<DataChunk> column_data_chunks;	// Information about all column chunks in this blocklet
 }
 
 /**
@@ -128,7 +128,7 @@ struct FileMeta{
 	1: required i32 version; // version used for data compatibility
 	2: required i64 num_rows; // Total number of rows in this file
 	3: required SegmentInfo segment_info;	// Segment info (will be same/repeated for all files in this segment)
-	4: required LeafNodeIndex index;	// Leaf node index of all leaf nodes in this file
+	4: required BlockletIndex index;	// blocklet index of all blocklets in this file
 	5: required list<schema.ColumnSchema> table_columns;	// Description of columns in this file
-	6: required list<LeafNodeInfo> leaf_node_info;	// Information about leaf nodes of all columns in this file
+	6: required list<BlockletInfo> leaf_node_info;	// Information about blocklets of all columns in this file
 }

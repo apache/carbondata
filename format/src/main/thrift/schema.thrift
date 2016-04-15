@@ -27,11 +27,11 @@ namespace java org.carbondata.format
 */
 enum DataType {
 	STRING = 0,
-	INTEGER = 1,
+	INT = 1,
 	LONG = 2,
 	DOUBLE = 3,
-	BIG_DECIMAL = 4,
-	TIME_STAMP = 5,
+	DECIMAL = 4,
+	TIMESTAMP = 5,
 	ARRAY = 20,
 	STRUCT = 21,
 }

@@ -21,11 +21,11 @@ package org.carbondata.core.carbon.metadata.datatype;
 public enum DataType {
 
     STRING,
-    INTEGER,
+    INT,
     LONG,
     DOUBLE,
-    BIG_DECIMAL,
-    TIME_STAMP,
+    DECIMAL,
+    TIMESTAMP,
     ARRAY,
     STRUCT,
     MAP;

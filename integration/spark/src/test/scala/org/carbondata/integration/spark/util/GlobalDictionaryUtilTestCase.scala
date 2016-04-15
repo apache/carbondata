@@ -24,6 +24,7 @@ import java.io.File
 import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.{CarbonHiveContext, QueryTest}
 import org.apache.spark.sql.{CarbonEnv, CarbonRelation}
+import org.carbondata.core.carbon.CarbonDataLoadSchema
 import org.carbondata.integration.spark.load.CarbonLoadModel
 import org.scalatest.BeforeAndAfterAll
 
@@ -71,7 +72,9 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll  {
     val carbonLoadModel = new CarbonLoadModel
     carbonLoadModel.setTableName(relation.cubeMeta.dbName)
     carbonLoadModel.setSchemaName(relation.cubeMeta.tableName)
-    carbonLoadModel.setSchema(relation.cubeMeta.schema)
+    //carbonLoadModel.setSchema(relation.cubeMeta.schema)
+    val carbonSchema = new CarbonDataLoadSchema(relation.cubeMeta.carbonTable)
+    carbonLoadModel.setCarbonDataLoadSchema(carbonSchema)
     carbonLoadModel.setFactFilePath(filePath)
     carbonLoadModel.setDimFolderPath(dimensionFilePath)
     carbonLoadModel
@@ -90,6 +93,7 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll  {
     var rtn = GlobalDictionaryUtil.generateGlobalDictionary(CarbonHiveContext, carbonLoadModel, sampleRelation.cubeMeta.dataPath, false)
     assert( rtn === 1)
     //test for dimension table
+    //TODO - Need to fill and send the dimension table data as per new DimensionRelation in CarbonDataLoadModel
     carbonLoadModel = buildCarbonLoadModel(dimSampleRelation, dimFilePath)
     rtn = GlobalDictionaryUtil.generateGlobalDictionary(CarbonHiveContext, carbonLoadModel, dimSampleRelation.cubeMeta.dataPath, false)
     assert( rtn === 1)

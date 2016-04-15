@@ -65,13 +65,13 @@ public class CarbonMetadataUtil {
         return numberOfRows;
     }
 
-    private static LeafNodeIndex getLeafNodeIndex(List<LeafNodeInfoColumnar> infoList) {
+    private static BlockletIndex getLeafNodeIndex(List<LeafNodeInfoColumnar> infoList) {
 
-        List<LeafNodeMinMaxIndex> leafNodeMinMaxIndexes = new ArrayList<LeafNodeMinMaxIndex>();
-        List<LeafNodeBTreeIndex> leafNodeBTreeIndexes = new ArrayList<LeafNodeBTreeIndex>();
+        List<BlockletMinMaxIndex> leafNodeMinMaxIndexes = new ArrayList<BlockletMinMaxIndex>();
+        List<BlockletBTreeIndex> leafNodeBTreeIndexes = new ArrayList<BlockletBTreeIndex>();
 
         for (LeafNodeInfoColumnar info : infoList) {
-            LeafNodeMinMaxIndex leafNodeMinMaxIndex = new LeafNodeMinMaxIndex();
+            BlockletMinMaxIndex leafNodeMinMaxIndex = new BlockletMinMaxIndex();
             //TODO: Need to seperate minmax and set.
             for (byte[] minMax : info.getColumnMinMaxData()) {
                 leafNodeMinMaxIndex.addToMax_values(ByteBuffer.wrap(minMax));
@@ -79,22 +79,22 @@ public class CarbonMetadataUtil {
             }
             leafNodeMinMaxIndexes.add(leafNodeMinMaxIndex);
 
-            LeafNodeBTreeIndex leafNodeBTreeIndex = new LeafNodeBTreeIndex();
+            BlockletBTreeIndex leafNodeBTreeIndex = new BlockletBTreeIndex();
             leafNodeBTreeIndex.setStart_key(info.getStartKey());
             leafNodeBTreeIndex.setEnd_key(info.getEndKey());
             leafNodeBTreeIndexes.add(leafNodeBTreeIndex);
         }
 
-        LeafNodeIndex leafNodeIndex = new LeafNodeIndex();
+        BlockletIndex leafNodeIndex = new BlockletIndex();
         leafNodeIndex.setMin_max_index(leafNodeMinMaxIndexes);
         leafNodeIndex.setB_tree_index(leafNodeBTreeIndexes);
         return leafNodeIndex;
     }
 
-    private static LeafNodeInfo getLeafNodeInfo(LeafNodeInfoColumnar leafNodeInfoColumnar)
+    private static BlockletInfo getLeafNodeInfo(LeafNodeInfoColumnar leafNodeInfoColumnar)
             throws IOException {
 
-        LeafNodeInfo leafNodeInfo = new LeafNodeInfo();
+        BlockletInfo leafNodeInfo = new BlockletInfo();
         leafNodeInfo.setNum_rows(leafNodeInfoColumnar.getNumberOfKeys());
 
         List<DataChunk> colDataChunks = new ArrayList<DataChunk>();
@@ -202,7 +202,7 @@ public class CarbonMetadataUtil {
             throws IOException {
         List<LeafNodeInfoColumnar> listOfNodeInfo =
                 new ArrayList<LeafNodeInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-        for (LeafNodeInfo leafNodeInfo : fileMeta.getLeaf_node_info()) {
+        for (BlockletInfo leafNodeInfo : fileMeta.getLeaf_node_info()) {
             LeafNodeInfoColumnar leafNodeInfoColumnar = new LeafNodeInfoColumnar();
             leafNodeInfoColumnar.setNumberOfKeys(leafNodeInfo.getNum_rows());
             List<DataChunk> columnChunks = leafNodeInfo.getColumn_data_chunks();
@@ -299,18 +299,18 @@ public class CarbonMetadataUtil {
 
     private static void setLeafNodeIndex(FileMeta fileMeta,
             List<LeafNodeInfoColumnar> listOfNodeInfo) {
-        LeafNodeIndex leafNodeIndex = fileMeta.getIndex();
-        List<LeafNodeBTreeIndex> bTreeIndexes = leafNodeIndex.getB_tree_index();
-        List<LeafNodeMinMaxIndex> min_max_indexes = leafNodeIndex.getMin_max_index();
+      BlockletIndex leafNodeIndex = fileMeta.getIndex();
+        List<BlockletBTreeIndex> bTreeIndexes = leafNodeIndex.getB_tree_index();
+        List<BlockletMinMaxIndex> min_max_indexes = leafNodeIndex.getMin_max_index();
         int i = 0;
-        for (LeafNodeBTreeIndex bTreeIndex : bTreeIndexes) {
+        for (BlockletBTreeIndex bTreeIndex : bTreeIndexes) {
             listOfNodeInfo.get(i).setStartKey(bTreeIndex.getStart_key());
             listOfNodeInfo.get(i).setEndKey(bTreeIndex.getEnd_key());
             i++;
         }
 
         i = 0;
-        for (LeafNodeMinMaxIndex minMaxIndex : min_max_indexes) {
+        for (BlockletMinMaxIndex minMaxIndex : min_max_indexes) {
 
             byte[][] minMax = new byte[minMaxIndex.getMax_values().size()][];
             int j = 0;
