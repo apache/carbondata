@@ -17,11 +17,12 @@
  * under the License.
  */
 
-/**
- *
- */
+
 package org.carbondata.integration.spark.rdd
 
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.io.{LongWritable, Text}
+import org.apache.spark.rdd.{DummyLoadRDD, NewHadoopRDD}
 import org.apache.spark.sql.cubemodel.Partitioner
 import org.apache.spark.sql.hive.HiveContext
 import org.apache.spark.sql.{CarbonEnv, CarbonRelation, SQLContext}
@@ -50,7 +51,6 @@ import org.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 /**
  * This is the factory class which can create different RDD depends on user needs.
  *
- * @author R00900208
  */
 object CarbonDataRDDFactory extends Logging {
 
@@ -296,7 +296,19 @@ object CarbonDataRDDFactory extends Logging {
       val loadStartTime = CarbonLoaderUtil.readCurrentTime();
       val cubeCreationTime = CarbonEnv.getInstance(sc).carbonCatalog.getCubeCreationTime(carbonLoadModel.getSchemaName, carbonLoadModel.getCubeName)
       val schemaLastUpdatedTime = CarbonEnv.getInstance(sc).carbonCatalog.getSchemaLastUpdatedTime(carbonLoadModel.getSchemaName, carbonLoadModel.getCubeName)
-      val status = new CarbonDataLoadRDD(sc.sparkContext, new ResultImpl(), carbonLoadModel, storeLocation, hdfsStoreLocation, kettleHomePath, partitioner, columinar, currentRestructNumber, currentLoadCount, cubeCreationTime, schemaLastUpdatedTime).collect()
+
+      /**
+        * 1)clone the hadoop configuration,and set the file path to the configuration
+        * 2)use NewHadoopRDD to get split,splitsize:Math.max(minSize, Math.min(maxSize, blockSize))
+        * 3)use DummyLoadRDD to group blocks by host,and let spark to balance the block location
+        * 4)DummyLoadRDD output (host,Array[BlockDetails]) as the parameter to CarbonDataLoadRDD which parititon by host
+        */
+      val hadoopConfiguration = new Configuration(sc.sparkContext.hadoopConfiguration)
+      hadoopConfiguration.set("mapreduce.input.fileinputformat.inputdir", carbonLoadModel.getFactFilePath)
+      hadoopConfiguration.set("mapreduce.input.fileinputformat.input.dir.recursive", "true")
+      val newHadoopRDD = new NewHadoopRDD[LongWritable, Text](sc.sparkContext, classOf[org.apache.hadoop.mapreduce.lib.input.TextInputFormat], classOf[LongWritable], classOf[Text], hadoopConfiguration)
+      val part = new DummyLoadRDD(newHadoopRDD).collect().groupBy[String](_._1).map { iter => (iter._1, iter._2.map(_._2)) }.toArray
+      val status = new CarbonDataLoadRDD(sc.sparkContext, new ResultImpl(), carbonLoadModel, storeLocation, hdfsStoreLocation, kettleHomePath, partitioner, columinar, currentRestructNumber, currentLoadCount, cubeCreationTime, schemaLastUpdatedTime, part).collect()
       val newStatusMap = scala.collection.mutable.Map.empty[String, String]
       status.foreach { eachLoadStatus =>
         val state = newStatusMap.get(eachLoadStatus._2.getPartitionCount)

@@ -39,6 +39,7 @@ public class DataLoadModel {
      * Modified Dimension
      */
     private String[] modifiedDimesion;
+
     /**
      * loadNames separated by HASH_SPC_CHARACTER
      */
@@ -47,6 +48,8 @@ public class DataLoadModel {
      * modificationOrDeletionTime separated by HASH_SPC_CHARACTER
      */
     private String modificationOrDeletionTime;
+
+    private String blocksID;
 
     /**
      * @return Returns the schemaInfo.
@@ -130,6 +133,24 @@ public class DataLoadModel {
      */
     public void setLoadNames(String loadNames) {
         this.loadNames = loadNames;
+    }
+
+    /**
+     * get block id
+     *
+     * @return
+     */
+    public String getBlocksID() {
+        return blocksID;
+    }
+
+    /**
+     * set block id to data load model
+     *
+     * @param blocksID
+     */
+    public void setBlocksID(String blocksID) {
+        this.blocksID = blocksID;
     }
 }
 

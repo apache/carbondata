@@ -113,6 +113,8 @@ public final class CarbonLoaderUtil {
             model.setModificationOrDeletionTime(CarbonDataProcessorUtil
                     .getModificationOrDeletionTimesFromLoadMetadataDetails(loadMetadataDetails));
         }
+        model.setBlocksID(schmaModel.getBlocksID());
+
         boolean hdfsReadMode = schmaModel.getCsvFilePath() != null && schmaModel.getCsvFilePath()
                 .startsWith("hdfs:");
         int allocate =
@@ -165,6 +167,8 @@ public final class CarbonLoaderUtil {
             schmaModel.setCsvDelimiter(loadModel.getCsvDelimiter());
             schmaModel.setCsvHeader(loadModel.getCsvHeader());
         }
+
+        schmaModel.setBlocksID(loadModel.getBlocksID());
         SchemaInfo info = new SchemaInfo();
 
         info.setSchemaName(schemaName);

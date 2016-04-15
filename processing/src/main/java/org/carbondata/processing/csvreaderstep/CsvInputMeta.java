@@ -97,6 +97,9 @@ public class CsvInputMeta extends BaseStepMeta
 
     private int currentRestructNumber;
 
+    private String blocksID;
+
+
     public CsvInputMeta() {
         super(); // allocate BaseStepMeta
         allocate(0);
@@ -115,6 +118,7 @@ public class CsvInputMeta extends BaseStepMeta
         isaddresult = false;
         bufferSize = "50000";
         currentRestructNumber = -1;
+        blocksID = "";
     }
 
     private void readData(Node stepnode) throws KettleXMLException {
@@ -150,6 +154,7 @@ public class CsvInputMeta extends BaseStepMeta
             encoding = XMLHandler.getTagValue(stepnode, getXmlCode("ENCODING"));
             currentRestructNumber =
                     Integer.parseInt(XMLHandler.getTagValue(stepnode, "currentRestructNumber"));
+            blocksID = XMLHandler.getTagValue(stepnode, "blocksID");
 
             Node fields = XMLHandler.getSubNode(stepnode, getXmlCode("FIELDS"));
             int nrfields = XMLHandler.countNodes(fields, getXmlCode("FIELD"));
@@ -216,6 +221,7 @@ public class CsvInputMeta extends BaseStepMeta
         retval.append("    ").append(XMLHandler.addTagValue(getXmlCode("ENCODING"), encoding));
         retval.append("    ")
                 .append(XMLHandler.addTagValue("currentRestructNumber", currentRestructNumber));
+        retval.append("    ").append(XMLHandler.addTagValue("blocksID", blocksID));
 
         retval.append("    ").append(XMLHandler.openTag(getXmlCode("FIELDS"))).append(Const.CR);
         for (int i = 0; i < inputFields.length; i++) {
@@ -271,7 +277,7 @@ public class CsvInputMeta extends BaseStepMeta
             encoding = rep.getStepAttributeString(idStep, getRepCode("ENCODING"));
             currentRestructNumber =
                     (int) rep.getStepAttributeInteger(idStep, "currentRestructNumber");
-
+            blocksID = rep.getStepAttributeString(idStep, getRepCode("blocksID"));
             int nrfields = rep.countNrStepAttributes(idStep, getRepCode("FIELD_NAME"));
 
             allocate(nrfields);
@@ -332,7 +338,7 @@ public class CsvInputMeta extends BaseStepMeta
             rep.saveStepAttribute(idTransformation, idStep, getRepCode("ENCODING"), encoding);
             rep.saveStepAttribute(idTransformation, idStep, "currentRestructNumber",
                     currentRestructNumber);
-
+            rep.saveStepAttribute(idTransformation, idStep, getRepCode("blocksID"), blocksID);
             for (int i = 0; i < inputFields.length; i++) {
                 TextFileInputField field = inputFields[i];
 
@@ -727,6 +733,14 @@ public class CsvInputMeta extends BaseStepMeta
         this.encoding = encoding;
     }
 
+    public String getBlocksID() {
+        return blocksID;
+    }
+
+    public void setBlocksID(String blocksID) {
+        this.blocksID = blocksID;
+    }
+
     /**
      * Since the exported transformation that runs this will reside in a ZIP file, we can't reference files relatively.
      * So what this does is turn the name of files into absolute paths OR it simply includes the resource in the ZIP file.
@@ -809,6 +823,8 @@ public class CsvInputMeta extends BaseStepMeta
                     encoding = (String) entry.getValue();
                 } else if ("currentRestructNumber".equals(attributeKey)) {
                     currentRestructNumber = (Integer) entry.getValue();
+                } else if ("blocksID".equals(attributeKey)) {
+                    blocksID = (String) entry.getValue();
                 } else {
                     throw new RuntimeException(
                             "Unhandled metadata injection of attribute: " + attr.toString() + " - "

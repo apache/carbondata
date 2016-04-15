@@ -66,7 +66,7 @@ class CarbonMergerRDD[K, V](
       val split = theSplit.asInstanceOf[CarbonLoadPartition]
       logInfo("Input split: " + split.serializableHadoopSplit.value)
       val partitionId = split.serializableHadoopSplit.value.getPartition().getUniqueID()
-      val model = carbonLoadModel.getCopyWithPartition(split.serializableHadoopSplit.value.getPartition().getUniqueID())
+      val model = carbonLoadModel.getCopyWithPartition(split.serializableHadoopSplit.value.getPartition().getUniqueID(),null)
 
       val mergedLoadMetadataDetails = CarbonDataMergerUtil.executeMerging(model, storeLocation, hdfsStoreLocation, currentRestructNumber, metadataFilePath, loadsToMerge, mergedLoadName)
 
@@ -212,14 +212,12 @@ class CarbonMergerRDD[K, V](
   override def checkpoint() {
     // Do nothing. Hadoop RDD should not be checkpointed.
   }
+}
+class CarbonLoadPartition(rddId: Int, val idx: Int, @transient val tableSplit: TableSplit)
+  extends Partition {
 
-  class CarbonLoadPartition(rddId: Int, val idx: Int, @transient val tableSplit: TableSplit)
-    extends Partition {
+  override val index: Int = idx
+  val serializableHadoopSplit = new SerializableWritable[TableSplit](tableSplit)
 
-    override val index: Int = idx
-    val serializableHadoopSplit = new SerializableWritable[TableSplit](tableSplit)
-
-    override def hashCode(): Int = 41 * (41 + rddId) + idx
-  }
-
+  override def hashCode(): Int = 41 * (41 + rddId) + idx
 }

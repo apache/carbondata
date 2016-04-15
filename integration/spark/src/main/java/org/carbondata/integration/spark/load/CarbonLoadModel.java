@@ -80,6 +80,24 @@ public class CarbonLoadModel implements Serializable {
     private boolean isDirectLoad;
     private List<LoadMetadataDetails> loadMetadataDetails;
 
+    private String blocksID;
+
+    /**
+     * get blocck id
+     * @return
+     */
+    public String getBlocksID() {
+        return blocksID;
+    }
+
+    /**
+     * set block id for carbon load model
+     * @param blocksDetailID
+     */
+    public void setBlocksID(String blocksDetailID) {
+        this.blocksID = blocksID;
+    }
+
     public String getCsvDelimiter() {
         return csvDelimiter;
     }
@@ -136,7 +154,7 @@ public class CarbonLoadModel implements Serializable {
     }
 
     /**
-     * @param schemaPath the schemaPath to set
+     * @param schema the schemaPath to set
      */
     public void setSchema(Schema schema) {
         this.schema = schema;
@@ -150,7 +168,7 @@ public class CarbonLoadModel implements Serializable {
     }
     
     /**
-     * @param carbon datadload schema
+     * @param carbonDataLoadSchema
      */
     public void setCarbonDataLoadSchema(CarbonDataLoadSchema carbonDataLoadSchema) {
     	this.carbonDataLoadSchema = carbonDataLoadSchema;
@@ -298,7 +316,13 @@ public class CarbonLoadModel implements Serializable {
         this.driverClass = driverClass;
     }
 
-    public CarbonLoadModel getCopyWithPartition(String uniqueId) {
+    /**
+     * get copy with parition and blocks id
+     * @param uniqueId
+     * @param blocksID
+     * @return
+     */
+    public CarbonLoadModel getCopyWithPartition(String uniqueId,String blocksID) {
         CarbonLoadModel copy = new CarbonLoadModel();
         copy.cubeName = cubeName + '_' + uniqueId;
         copy.dbPwd = dbPwd;
@@ -320,6 +344,7 @@ public class CarbonLoadModel implements Serializable {
         copy.complexDelimiterLevel1 = complexDelimiterLevel1;
         copy.complexDelimiterLevel2 = complexDelimiterLevel2;
         copy.carbonDataLoadSchema = carbonDataLoadSchema;
+        copy.blocksID = blocksID;
         if (uniqueId != null && schema != null) {
             String originalSchemaName = schema.name;
             String originalCubeName = schema.cubes[0].name;
@@ -330,8 +355,17 @@ public class CarbonLoadModel implements Serializable {
         return copy;
     }
 
+    /**
+     * get CarbonLoadModel with partition
+     * @param uniqueId
+     * @param filesForPartition
+     * @param header
+     * @param delimiter
+     * @param blocksID
+     * @return
+     */
     public CarbonLoadModel getCopyWithPartition(String uniqueId, List<String> filesForPartition,
-            String header, String delimiter) {
+            String header, String delimiter, String blocksID) {
         CarbonLoadModel copyObj = new CarbonLoadModel();
         copyObj.cubeName = cubeName + '_' + uniqueId;
         copyObj.dbPwd = dbPwd;
@@ -364,8 +398,10 @@ public class CarbonLoadModel implements Serializable {
         copyObj.csvDelimiter = delimiter;
         copyObj.complexDelimiterLevel1 = complexDelimiterLevel1;
         copyObj.complexDelimiterLevel2 = complexDelimiterLevel2;
+        copyObj.blocksID = blocksID;
         return copyObj;
     }
+
 
     /**
      * @return the partitionId

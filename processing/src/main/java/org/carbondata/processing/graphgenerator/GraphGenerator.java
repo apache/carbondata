@@ -44,6 +44,7 @@ import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.csvreader.checkpoint.CheckPointHanlder;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
+import org.carbondata.core.load.BlockDetails;
 import org.carbondata.core.metadata.SliceMetaData;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
@@ -215,6 +216,9 @@ public class GraphGenerator {
     private int currentRestructNumber;
     private int allocate;
 
+    private String blocksID;
+    public final static HashMap<String,BlockDetails[]> blockInfo = new HashMap<>();
+
     public GraphGenerator(DataLoadModel dataLoadModel, boolean isHDFSReadMode, String partitionID,
             String factStoreLocation, int currentRestructNum, int allocate, CarbonDataLoadSchema carbonDataLoadSchema) {
         this.schemaInfo = dataLoadModel.getSchemaInfo();
@@ -233,6 +237,8 @@ public class GraphGenerator {
         this.allocate = allocate > 1 ? allocate : 1;
         this.loadNames = dataLoadModel.getLoadNames();
         this.modificationOrDeletionTime = dataLoadModel.getModificationOrDeletionTime();
+        this.blocksID = dataLoadModel.getBlocksID();
+
         initialise();
         LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                 "************* Is Columnar Storage" + isColumnar);
@@ -579,11 +585,9 @@ public class GraphGenerator {
         StepMeta inputStep = null;
         StepMeta carbonSurrogateKeyStep = null;
         StepMeta selectValueToChangeTheDataType = null;
-        StepMeta getFileNames = null;
 
         // get all step
         if (isCSV) {
-            getFileNames = getFileNamesStep(configurationInfo);
             if (CheckPointHanlder.IS_CHECK_POINT_NEEDED) {
                 inputStep = getCsvReaderStep(configurationInfo);
             } else {
@@ -606,9 +610,6 @@ public class GraphGenerator {
         carbonSliceMergerStep = getSliceMeregerStep(configurationInfo, configurationInfoForFact);
 
         // add all steps to trans
-        if (isCSV) {
-            trans.addStep(getFileNames);
-        }
         trans.addStep(inputStep);
 
         if (!isCSV) {
@@ -620,12 +621,10 @@ public class GraphGenerator {
         trans.addStep(carbonMDKeyStep);
 
         trans.addStep(carbonSliceMergerStep);
-        TransHopMeta getFilesInputTocsvFileInput = null;
         TransHopMeta inputStepToSelectValueHop = null;
         TransHopMeta tableInputToSelectValue = null;
 
         if (isCSV) {
-            getFilesInputTocsvFileInput = new TransHopMeta(getFileNames, inputStep);
             inputStepToSelectValueHop = new TransHopMeta(inputStep, carbonSurrogateKeyStep);
         } else {
             inputStepToSelectValueHop = new TransHopMeta(inputStep, selectValueToChangeTheDataType);
@@ -640,7 +639,6 @@ public class GraphGenerator {
         mdkeyToSliceMerger = new TransHopMeta(carbonMDKeyStep, carbonSliceMergerStep);
 
         if (isCSV) {
-            trans.addTransHop(getFilesInputTocsvFileInput);
             trans.addTransHop(inputStepToSelectValueHop);
         } else {
             trans.addTransHop(inputStepToSelectValueHop);
@@ -701,6 +699,8 @@ public class GraphGenerator {
         csvInputMeta.setLazyConversionActive(false);
         csvInputMeta.setBufferSize(instance.getProperty(CarbonCommonConstants.CSV_READ_BUFFER_SIZE,
                 CarbonCommonConstants.CSV_READ_BUFFER_SIZE_DEFAULT));
+        //set blocks info id
+        csvInputMeta.setBlocksID(this.blocksID);
         int copies = 1;
         try {
             copies = Integer.parseInt(instance.getProperty(CarbonCommonConstants.NUM_CORES_LOADING,
@@ -708,9 +708,9 @@ public class GraphGenerator {
         } catch (NumberFormatException e) {
             copies = Integer.parseInt(CarbonCommonConstants.DEFAULT_NUMBER_CORES);
         }
-        if (copies > 1) {
-            csvDataStep.setCopies(copies);
-        }
+//        if (copies > 1) {
+//            csvDataStep.setCopies(copies);
+//        }
         csvDataStep.setDraw(true);
         csvDataStep.setDescription("Read raw data from " + GraphGeneratorConstants.CSV_INPUT);
 

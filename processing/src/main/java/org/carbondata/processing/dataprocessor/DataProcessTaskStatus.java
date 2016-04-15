@@ -85,6 +85,9 @@ public class DataProcessTaskStatus implements IDataProcessStatus, Serializable {
      */
     private boolean isFromPathApi;
 
+    private String blocksID;
+
+
     public DataProcessTaskStatus(String schemaName, String cubeName, String tableName) {
         this.schemaName = schemaName;
         this.cubeName = cubeName;
@@ -283,4 +286,11 @@ public class DataProcessTaskStatus implements IDataProcessStatus, Serializable {
         this.dimCSVDirLoc = dimCSVDirLoc;
     }
 
+    public String getBlocksID() {
+        return blocksID;
+    }
+
+    public void setBlocksID(String blocksID) {
+        this.blocksID = blocksID;
+    }
 }

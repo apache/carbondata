@@ -20,64 +20,85 @@
 
 package org.carbondata.integration.spark.rdd
 
+import java.util.UUID
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.cubemodel.Partitioner
-import org.apache.spark.{Logging, Partition, SerializableWritable, SparkContext, TaskContext}
+import org.apache.spark.{Logging, Partition, SparkContext, TaskContext}
 import org.carbondata.common.logging.LogServiceFactory
 import org.carbondata.common.logging.impl.StandardLogService
 import org.carbondata.core.constants.CarbonCommonConstants
-import org.carbondata.core.load.LoadMetadataDetails
+import org.carbondata.core.load.{BlockDetails, LoadMetadataDetails}
 import org.carbondata.core.carbon.CarbonDef
+import org.carbondata.core.datastorage.store.impl.FileFactory
 import org.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.carbondata.integration.spark.Result
 import org.carbondata.integration.spark.load.{CarbonLoadModel, CarbonLoaderUtil}
-import org.carbondata.integration.spark.splits.TableSplit
 import org.carbondata.integration.spark.util.{CarbonQueryUtil, CarbonSparkInterFaceLogEvent}
 import org.carbondata.processing.constants.DataProcessorConstants
 import org.carbondata.processing.etl.DataLoadingException
+import org.carbondata.processing.graphgenerator.GraphGenerator
 import org.carbondata.query.datastorage.InMemoryTableStore
 
 import scala.collection.JavaConversions._
 
-class CarbonLoadPartition(rddId: Int, val idx: Int, @transient val tableSplit: TableSplit)
+/**
+  * this class is use for this rdd to partitioin
+  * @param rddId
+  * @param idx
+  * @param host
+  * @param nodeBlocksDetails
+  */
+class CarbonNodeLoadPartition(rddId: Int, val idx: Int, host:String, val nodeBlocksDetails: Array[BlockDetails])
   extends Partition {
 
   override val index: Int = idx
-  val serializableHadoopSplit = new SerializableWritable[TableSplit](tableSplit)
+  val serializableHadoopSplit = host
+  val nodeBlockDetail = nodeBlocksDetails
 
   override def hashCode(): Int = 41 * (41 + rddId) + idx
 }
 
+/**
+  *  Use this RDD class to load data
+  * @param sc
+  * @param result
+  * @param carbonLoadModel
+  * @param storeLocation
+  * @param hdfsStoreLocation
+  * @param kettleHomePath
+  * @param partitioner
+  * @param columinar
+  * @param currentRestructNumber
+  * @param loadCount
+  * @param cubeCreationTime
+  * @param schemaLastUpdatedTime
+  * @param part
+  * @tparam K
+  * @tparam V
+  */
 class CarbonDataLoadRDD[K, V](
-                              sc: SparkContext,
-                              result: Result[K, V],
-                              carbonLoadModel: CarbonLoadModel,
-                              var storeLocation: String,
-                              hdfsStoreLocation: String,
-                              kettleHomePath: String,
-                              partitioner: Partitioner,
-                              columinar: Boolean,
-                              currentRestructNumber: Integer,
-                              loadCount: Integer,
-                              cubeCreationTime: Long,
-                              schemaLastUpdatedTime: Long)
+                           sc: SparkContext,
+                           result: Result[K, V], carbonLoadModel: CarbonLoadModel,
+                           var storeLocation: String,
+                           hdfsStoreLocation: String,
+                           kettleHomePath: String,
+                           partitioner: Partitioner,
+                           columinar: Boolean,
+                           currentRestructNumber: Integer,
+                           loadCount: Integer,
+                           cubeCreationTime: Long,
+                           schemaLastUpdatedTime: Long,
+                           part:Array[(String,Array[BlockDetails])]
+                         )
   extends RDD[(K, V)](sc, Nil) with Logging {
 
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
 
   override def getPartitions: Array[Partition] = {
-    var splits = Array[TableSplit]();
-    if (carbonLoadModel.isDirectLoad()) {
-      splits = CarbonQueryUtil.getTableSplitsForDirectLoad(carbonLoadModel.getFactFilePath(), partitioner.nodeList, partitioner.partitionCount)
-    }
-    else {
-      splits = CarbonQueryUtil.getTableSplits(carbonLoadModel.getSchemaName(), carbonLoadModel.getCubeName(), null, partitioner)
-    }
-    //
-    val result = new Array[Partition](splits.length)
+    val result = new Array[Partition](part.length)
     for (i <- 0 until result.length) {
-      result(i) = new CarbonLoadPartition(id, i, splits(i))
+      result(i) = new CarbonNodeLoadPartition(id, i,part(i)._1,part(i)._2)
     }
     result
   }
@@ -88,7 +109,6 @@ class CarbonDataLoadRDD[K, V](
 
   override def compute(theSplit: Partition, context: TaskContext) = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass().getName());
-
     val iter = new Iterator[(K, V)] {
       var dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
       //var loadCount = 0
@@ -100,31 +120,37 @@ class CarbonDataLoadRDD[K, V](
         if (null == carbonPropertiesFilePath) {
           System.setProperty("carbon.properties.filepath", System.getProperty("user.dir") + '/' + "conf" + '/' + "carbon.properties");
         }
-        val split = theSplit.asInstanceOf[CarbonLoadPartition]
-        logInfo("Input split: " + split.serializableHadoopSplit.value)
-        CarbonProperties.getInstance().addProperty("carbon.is.columnar.storage", "true");
-        CarbonProperties.getInstance().addProperty("carbon.dimension.split.value.in.columnar", "1");
-        CarbonProperties.getInstance().addProperty("carbon.is.fullyfilled.bits", "true");
-        CarbonProperties.getInstance().addProperty("is.int.based.indexer", "true");
-        CarbonProperties.getInstance().addProperty("aggregate.columnar.keyblock", "true");
-        CarbonProperties.getInstance().addProperty("high.cardinality.value", "100000");
-        CarbonProperties.getInstance().addProperty("is.compressed.keyblock", "false");
-        CarbonProperties.getInstance().addProperty("carbon.leaf.node.size", "120000");
+        val split = theSplit.asInstanceOf[CarbonNodeLoadPartition]
+        logInfo("Input split: " + split.serializableHadoopSplit)
+        logInfo("Input detail length : " + split.nodeBlockDetail.length)
+        CarbonProperties.getInstance().addProperty("carbon.is.columnar.storage", "true")
+        CarbonProperties.getInstance().addProperty("carbon.dimension.split.value.in.columnar", "1")
+        CarbonProperties.getInstance().addProperty("carbon.is.fullyfilled.bits", "true")
+        CarbonProperties.getInstance().addProperty("is.int.based.indexer", "true")
+        CarbonProperties.getInstance().addProperty("aggregate.columnar.keyblock", "true")
+        CarbonProperties.getInstance().addProperty("high.cardinality.value", "100000")
+        CarbonProperties.getInstance().addProperty("is.compressed.keyblock", "false")
+        CarbonProperties.getInstance().addProperty("carbon.leaf.node.size", "120000")
         if (storeLocation == null) {
           storeLocation = System.getProperty("java.io.tmpdir")
           storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()
         }
 
+        val blocksID = carbonLoadModel.getSchemaName + "_" + carbonLoadModel.getCubeName + "_" + UUID.randomUUID()
+        GraphGenerator.blockInfo.put(blocksID, split.nodeBlockDetail)
+
         if (carbonLoadModel.isDirectLoad()) {
-          model = carbonLoadModel.getCopyWithPartition(split.serializableHadoopSplit.value.getPartition().getUniqueID(),
-            split.serializableHadoopSplit.value.getPartition().getFilesPath, carbonLoadModel.getCsvHeader(), carbonLoadModel.getCsvDelimiter())
+          val filelist: java.util.List[String] = new java.util.ArrayList[String](CarbonCommonConstants.CONSTANT_SIZE_TEN)
+          CarbonQueryUtil.getAllFiles(carbonLoadModel.getFactFilePath, filelist, FileFactory.getFileType(carbonLoadModel.getFactFilePath))
+          model = carbonLoadModel.getCopyWithPartition(partitionID, filelist, carbonLoadModel.getCsvHeader(), carbonLoadModel.getCsvDelimiter(), blocksID)
         }
         else {
-          model = carbonLoadModel.getCopyWithPartition(split.serializableHadoopSplit.value.getPartition().getUniqueID())
+          model = carbonLoadModel.getCopyWithPartition(partitionID, blocksID)
         }
-        partitionID = split.serializableHadoopSplit.value.getPartition().getUniqueID()
-        StandardLogService.setThreadName(partitionID, null)
+
+        StandardLogService.setThreadName(blocksID, null)
         dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
+
         if (model.isRetentionRequest()) {
           recreateAggregationTableForRetention
         }
@@ -344,8 +370,8 @@ class CarbonDataLoadRDD[K, V](
   }
 
   override def getPreferredLocations(split: Partition): Seq[String] = {
-    val theSplit = split.asInstanceOf[CarbonLoadPartition]
-    val s = theSplit.serializableHadoopSplit.value.getLocations //.filter(_ != "localhost")
+    val theSplit = split.asInstanceOf[CarbonNodeLoadPartition]
+    val s: Seq[String] = List(theSplit.serializableHadoopSplit)
     logInfo("Prefered Location for split : " + s(0))
     s
   }

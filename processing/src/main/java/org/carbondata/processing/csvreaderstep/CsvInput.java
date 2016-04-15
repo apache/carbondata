@@ -32,27 +32,26 @@ package org.carbondata.processing.csvreaderstep;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
-import org.apache.commons.vfs.FileObject;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.common.logging.impl.StandardLogService;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.datastorage.store.impl.FileFactory;
+import org.carbondata.core.load.BlockDetails;
+import org.carbondata.core.util.CarbonProperties;
+import org.carbondata.processing.graphgenerator.GraphGenerator;
 import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.pentaho.di.core.Const;
-import org.pentaho.di.core.ResultFile;
-import org.pentaho.di.core.exception.KettleConversionException;
 import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.core.exception.KettleFileException;
-import org.pentaho.di.core.exception.KettleValueException;
 import org.pentaho.di.core.logging.LogChannelInterface;
-import org.pentaho.di.core.row.RowDataUtil;
 import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.ValueMetaInterface;
-import org.pentaho.di.core.vfs.KettleVFS;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
@@ -71,8 +70,32 @@ public class CsvInput extends BaseStep implements StepInterface {
     private CsvInputMeta meta;
     private CsvInputData data;
 
+    /**
+     * resultArray
+     */
+    private Future[] resultArray;
+
+    private boolean isTerminated;
+    /**
+     * ReentrantLock getFileBlockLock
+     */
+    private final Object getBlockListLock = new Object();
+    /**
+     * ReentrantLock putRowLock
+     */
+    private final Object putRowLock = new Object();
+
+    /**
+     * NUM_CORES_DEFAULT_VAL
+     */
+    private static final int NUM_CORES_DEFAULT_VAL = 2;
+
+    private List<List<BlockDetails>> threadBlockList = new ArrayList<>();
+
+    private ExecutorService exec;
+
     public CsvInput(StepMeta stepMeta, StepDataInterface stepDataInterface, int copyNr,
-            TransMeta transMeta, Trans trans) {
+                    TransMeta transMeta, Trans trans) {
         super(stepMeta, stepDataInterface, copyNr, transMeta, trans);
         LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                 "** Using csv file **");
@@ -91,7 +114,7 @@ public class CsvInput extends BaseStep implements StepInterface {
      * @throws KettleException
      */
     public static final String[] guessStringsFromLine(LogChannelInterface log, String line,
-            String delimiter, String enclosure, String escapeCharacter) throws KettleException {
+                                                      String delimiter, String enclosure, String escapeCharacter) throws KettleException {
         List<String> strings = new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
         //        int fieldnr;
 
@@ -300,15 +323,8 @@ public class CsvInput extends BaseStep implements StepInterface {
 
         if (first) {
             first = false;
-
             data.outputRowMeta = new RowMeta();
             meta.getFields(data.outputRowMeta, getStepname(), null, null, this);
-
-            if (data.filenames == null) {
-                // We're expecting the list of filenames from the previous step(s)...
-                //
-                getFilenamesFromPreviousSteps();
-            }
 
             // We only run in parallel if we have at least one file to process
             // AND if we have more than one step copy running...
@@ -320,6 +336,7 @@ public class CsvInput extends BaseStep implements StepInterface {
             // conversion.
             //
             data.convertRowMeta = data.outputRowMeta.clone();
+
             for (ValueMetaInterface valueMeta : data.convertRowMeta.getValueMetaList()) {
                 valueMeta.setStorageType(ValueMetaInterface.STORAGE_TYPE_BINARY_STRING);
             }
@@ -338,104 +355,146 @@ public class CsvInput extends BaseStep implements StepInterface {
                     data.rownumFieldIndex++;
                 }
             }
-
-            // Now handle the parallel reading aspect: determine total of all the file sizes
-            // Then skip to the appropriate file and location in the file to start reading...
-            // Also skip to right after the first newline
-            //
-            if (data.parallel) {
-                prepareToRunInParallel();
-            }
-
-            // Open the next file...
-            //
-            if (!openNextFile()) {
-                setOutputDone();
-                return false; // nothing to see here, move along...
-            }
         }
 
+        // start multi-thread to process
+        int numberOfNodes;
         try {
-            Object[] outputRowData = readOneRow(true);    // get row, set busy!
-            if (outputRowData == null)  // no more input to be expected...
-            {
-                if (openNextFile()) {
-                    return true; // try again on the next loop...
-                } else {
-                    setOutputDone(); // last file, end here
-                    return false;
-                }
-            } else {
-                incrementLinesRead();
-                putRow(data.outputRowMeta,
-                        outputRowData);     // copy row to possible alternate rowset(s).
-                verifyRejectionRates();
-                if (checkFeedback(getLinesInput())) {
-                    if (log.isBasic()) {
-                        logBasic(BaseMessages.getString(PKG, "CsvInput.Log.LineNumber",
-                                Long.toString(getLinesInput()))); //$NON-NLS-1$
-                    }
-                }
-            }
-        } catch (KettleConversionException e) {
-            if (getStepMeta().isDoingErrorHandling()) {
-                StringBuffer errorDescriptions = new StringBuffer(100);
-                StringBuffer errorFields = new StringBuffer(50);
-                for (int i = 0; i < e.getCauses().size(); i++) {
-                    if (i > 0) {
-                        errorDescriptions.append(", "); //$NON-NLS-1$
-                        errorFields.append(", "); //$NON-NLS-1$
-                    }
-                    errorDescriptions.append(e.getCauses().get(i).getMessage());
-                    errorFields.append(e.getFields().get(i).toStringMeta());
-                }
+            numberOfNodes = Integer.parseInt(CarbonProperties.getInstance()
+                    .getProperty(CarbonCommonConstants.NUM_CORES_LOADING,
+                            CarbonCommonConstants.NUM_CORES_DEFAULT_VAL));
+        } catch (NumberFormatException exc) {
+            numberOfNodes = NUM_CORES_DEFAULT_VAL;
+        }
 
-                putError(data.outputRowMeta, e.getRowData(), e.getCauses().size(),
-                        errorDescriptions.toString(), errorFields.toString(),
-                        "CSVINPUT001"); //$NON-NLS-1$
-            } else {
-                // Only forward the first cause.
-                //
-                throw new KettleException(e.getMessage(), e.getCauses().get(0));
+        BlockDetails[] blocksInfo = GraphGenerator.blockInfo.get(meta.getBlocksID());
+
+        if (numberOfNodes > blocksInfo.length) {
+            numberOfNodes = blocksInfo.length;
+        }
+
+        //new the empty lists
+        for (int pos = 0; pos < numberOfNodes; pos++) {
+            threadBlockList.add(new ArrayList<BlockDetails>());
+        }
+
+        //block balance to every thread
+        for (int pos = 0; pos < blocksInfo.length; ) {
+            for (int threadNum = 0; threadNum < numberOfNodes; threadNum++) {
+                if (pos < blocksInfo.length) {
+                    threadBlockList.get(threadNum).add(blocksInfo[pos++]);
+                }
             }
         }
 
-        return true;
+        startProcess(numberOfNodes);
+        setOutputDone();
+        return false;
     }
 
-    private void prepareToRunInParallel() throws KettleException {
-    }
 
-    private void getFilenamesFromPreviousSteps() throws KettleException {
-        List<String> filenames = new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-        boolean firstRow = true;
-        int index = -1;
-        Object[] row = getRow();
-        while (row != null) {
+    private void startProcess(final int numberOfNodes) throws RuntimeException {
+        exec = Executors.newFixedThreadPool(numberOfNodes);
 
-            if (firstRow) {
-                firstRow = false;
-
-                // Get the filename field index...
-                //
-                String filenameField = environmentSubstitute(meta.getFilenameField());
-                index = getInputRowMeta().indexOfValue(filenameField);
-                if (index < 0) {
-                    throw new KettleException(BaseMessages
-                            .getString(PKG, "CsvInput.Exception.FilenameFieldNotFound",
-                                    filenameField)); //$NON-NLS-1$
+        Callable<Void> callable = new Callable<Void>() {
+            @Override
+            public Void call() throws RuntimeException {
+                StandardLogService
+                        .setThreadName(("PROCESS_BLOCKS"), null);
+                try {
+                    doProcess();
+                } catch (Throwable e) {
+                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
+                            "Thread is terminated due to error");
                 }
+                return null;
             }
-
-            String filename = getInputRowMeta().getString(row, index);
-            filenames.add(filename);  // add it to the list...
-
-            row = getRow(); // Grab another row...
+        };
+        List<Future<Void>> results = new ArrayList<Future<Void>>(10);
+        for (int i = 0; i < numberOfNodes; i++) {
+            results.add(exec.submit(callable));
         }
 
-        data.filenames = filenames.toArray(new String[filenames.size()]);
-        logBasic(BaseMessages.getString(PKG, "CsvInput.Log.ReadingFromNrFiles",
-                Integer.toString(data.filenames.length))); //$NON-NLS-1$
+        resultArray = results.toArray(new Future[results.size()]);
+        boolean completed = false;
+        try {
+            while (!completed) {
+                completed = true;
+                for (int j = 0; j < resultArray.length; j++) {
+                    if (!resultArray[j].isDone()) {
+                        completed = false;
+                    }
+
+                }
+                if (isTerminated) {
+                    exec.shutdownNow();
+                    throw new RuntimeException("Interrupted due to failing of other threads");
+                }
+                Thread.sleep(100);
+
+            }
+        } catch (InterruptedException e) {
+            throw new RuntimeException("Thread InterruptedException", e);
+        }
+        exec.shutdown();
+    }
+
+    private void doProcess() throws RuntimeException {
+        try {
+            List<BlockDetails> blocksListForProcess = null;
+            synchronized (getBlockListLock) {
+                //get the blocksList for this thread
+                blocksListForProcess = threadBlockList.get(threadBlockList.size() - 1);
+                threadBlockList.remove(threadBlockList.size() - 1);
+            }
+            /**
+             * 1) Skip first line always for every block other than first block in file
+             * 2) Always read line by line
+             * 3) Always read first line of next block and break
+             */
+            BlockDataHandler blockDataHandler = new BlockDataHandler();
+            Object[] out = null;
+            int processingBlockIndex = 0;
+            while (processingBlockIndex < blocksListForProcess.size()) {
+                //get block to handle
+                BlockDetails blockDetails = blocksListForProcess.get(processingBlockIndex);
+                //move to next block for next time to handle
+                processingBlockIndex++;
+                //open file and seek to block offset
+                if (blockDataHandler.openFile(meta, data, getTransMeta(), blockDetails)) {
+                    while (true) {
+                        //scan the block data
+                        if (blockDetails.getBlockOffset() != 0 && blockDataHandler.isNeedToSkipFirstLineInBlock) {
+                            //move cursor to the block offset
+                            blockDataHandler.initializeFileReader(blockDetails.getFilePath(), blockDetails.getBlockOffset());
+                            //skip first line
+                            blockDataHandler.readOneRow(false);
+                            blockDataHandler.isNeedToSkipFirstLineInBlock = false;
+                        }
+                        if (blockDataHandler.currentOffset <= blockDetails.getBlockLength()) {
+                            out = blockDataHandler.readOneRow(true);
+                            if (out != null) {
+                                synchronized (putRowLock) {
+                                    putRow(data.outputRowMeta, out);
+                                }
+                            }
+                        }
+                        if (out == null || blockDetails.getBlockLength() < blockDataHandler.currentOffset) {
+                            //over the block size or end of the block
+                            break;
+                        }
+                    }
+                }
+            }
+            //close the last inputstream
+            if(blockDataHandler.bufferedInputStream != null){
+                blockDataHandler.bufferedInputStream.close();
+            }
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -446,490 +505,15 @@ public class CsvInput extends BaseStep implements StepInterface {
             if (data.bufferedInputStream != null) {
                 data.bufferedInputStream.close();
             }
+            // Clean the block info in map
+            if (GraphGenerator.blockInfo.get(meta.getBlocksID()) != null) {
+                GraphGenerator.blockInfo.remove(meta.getBlocksID());
+            }
         } catch (Exception e) {
             logError("Error closing file channel", e);
         }
 
         super.dispose(smi, sdi);
-    }
-
-    protected boolean openNextFile() throws KettleException {
-        try {
-
-            // Close the previous file...
-            //
-            if (data.bufferedInputStream != null) {
-                data.bufferedInputStream.close();
-            }
-
-            if (data.filenr >= data.filenames.length) {
-                return false;
-            }
-
-            // Open the next one...
-            //
-            FileObject fileObject =
-                    KettleVFS.getFileObject(data.filenames[data.filenr], getTransMeta());
-
-            if (meta.isLazyConversionActive()) {
-                data.binaryFilename =
-                        data.filenames[data.filenr].getBytes(Charset.defaultCharset());
-            }
-
-            initializeFileReader(fileObject);
-
-            // Add filename to result filenames ?
-            if (meta.isAddResultFile()) {
-                ResultFile resultFile = new ResultFile(ResultFile.FILE_TYPE_GENERAL, fileObject,
-                        getTransMeta().getName(), toString());
-                resultFile.setComment("File was read by a Csv input step");
-                addResultFile(resultFile);
-            }
-
-            // Move to the next filename
-            //
-            data.filenr++;
-
-            // See if we need to skip a row...
-            // - If you have a header row checked and if you're not running in parallel
-            // - If you're running in parallel, if a header row is checked, if you're at
-            // the beginning of a file
-            //
-            if (meta.isHeaderPresent()) {
-                if ((!data.parallel) || // Standard flat file : skip header
-                        (data.parallel && data.bytesToSkipInFirstFile <= 0)) {
-                    readHeader(); // skip this row.
-                    logBasic(BaseMessages.getString(PKG, "CsvInput.Log.HeaderRowSkipped",
-                            data.filenames[data.filenr - 1])); //$NON-NLS-1$
-                }
-            }
-
-            // Reset the row number pointer...
-            //
-            data.rowNumber = 1L;
-
-            // Don't skip again in the next file...
-            //
-            data.bytesToSkipInFirstFile = -1L;
-
-            return true;
-        } catch (KettleException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new KettleException(e);
-        }
-    }
-
-    public void readHeader() throws KettleException {
-        readOneRow(false);
-    }
-
-    protected void initializeFileReader(FileObject fileObject) throws IOException {
-        String filePath = KettleVFS.getFilename(fileObject);
-        data.bufferedInputStream = FileFactory.getDataInputStream(KettleVFS.getFilename(fileObject),
-                FileFactory.getFileType(filePath), data.preferredBufferSize);
-    }
-
-    /**
-     * Check to see if the buffer size is large enough given the data.endBuffer pointer.<br>
-     * Resize the buffer if there is not enough room.
-     *
-     * @return false if everything is OK, true if there is a problem and we should stop.
-     * @throws IOException in case there is a I/O problem (read error)
-     */
-    private boolean checkBufferSize() throws IOException {
-        if (data.endBuffer >= data.bufferSize) {
-            // Oops, we need to read more data...
-            // Better resize this before we read other things in it...
-            //
-            data.resizeByteBufferArray();
-
-            // Also read another chunk of data, now that we have the space for it...
-            //
-            int n = data.readBufferFromFile();
-
-            // If we didn't manage to read something, we return true to indicate we're done
-            //
-            return n < 0;
-        }
-        return false;
-    }
-
-    /**
-     * Read a single row of data from the file...
-     *
-     * @param doConversions if you want to do conversions, set to false for the header row.
-     * @return a row of data...
-     * @throws KettleException
-     */
-    private Object[] readOneRow(boolean doConversions) throws KettleException {
-
-        try {
-
-            Object[] outputRowData = RowDataUtil
-                    .allocateRowData(data.outputRowMeta.size() - RowDataUtil.OVER_ALLOCATE_SIZE);
-            int outputIndex = 0;
-            boolean newLineFound = false;
-            boolean endOfBuffer = false;
-            int newLines = 0;
-            List<Exception> conversionExceptions = null;
-            List<ValueMetaInterface> exceptionFields = null;
-
-            // The strategy is as follows...
-            // We read a block of byte[] from the file.
-            // We scan for the separators in the file (NOT for line feeds etc)
-            // Then we scan that block of data.
-            // We keep a byte[] that we extend if needed..
-            // At the end of the block we read another, etc.
-            //
-            // Let's start by looking where we left off reading.
-            //
-            while (!newLineFound && outputIndex < meta.getInputFields().length) {
-
-                if (checkBufferSize() && outputRowData != null) {
-                    // Last row was being discarded if the last item is null and
-                    // there is no end of line delimiter
-                    //if (outputRowData != null) {
-                    // Make certain that at least one record exists before
-                    // filling the rest of them with null
-                    if (outputIndex > 0) {
-                        return (outputRowData);
-                    }
-                    //	}
-
-                    return null; // nothing more to read, call it a day.
-                }
-
-                // OK, at this point we should have data in the byteBuffer and we should be able
-                // to scan for the next
-                // delimiter (;)
-                // So let's look for a delimiter.
-                // Also skip over the enclosures ("), it is NOT taking into account
-                // escaped enclosures.
-                // Later we can add an option for having escaped or double enclosures
-                // in the file. <sigh>
-                //
-                boolean delimiterFound = false;
-                boolean enclosureFound = false;
-                int escapedEnclosureFound = 0;
-                while (!delimiterFound) {
-                    // If we find the first char, we might find others as well ;-)
-                    // Single byte delimiters only for now.
-                    //
-                    if (data.delimiterMatcher
-                            .matchesPattern(data.byteBuffer, data.endBuffer, data.delimiter)) {
-                        delimiterFound = true;
-                    }
-                    // Perhaps we found a (pre-mature) new line?
-                    //
-                    else if (
-                        // In case we are not using an enclosure and in case fields contain new
-                        // lines we need to make sure that we check the newlines possible flag.
-                        // If the flag is enable we skip newline checking except for the last field
-                        // in the row. In that one we can't support newlines without
-                        // enclosure (handled below).
-                        //
-                            (!meta.isNewlinePossibleInFields()
-                                    || outputIndex == meta.getInputFields().length - 1) && (
-                                    data.crLfMatcher.isReturn(data.byteBuffer, data.endBuffer)
-                                            || data.crLfMatcher
-                                            .isLineFeed(data.byteBuffer, data.endBuffer))) {
-
-                        if (data.encodingType.equals(EncodingType.DOUBLE_LITTLE_ENDIAN)
-                                || data.encodingType.equals(EncodingType.DOUBLE_BIG_ENDIAN)) {
-                            data.endBuffer += 2;
-                        } else {
-                            data.endBuffer++;
-                        }
-
-                        data.totalBytesRead++;
-                        newLines = 1;
-
-                        if (data.endBuffer >= data.bufferSize) {
-                            // Oops, we need to read more data...
-                            // Better resize this before we read other things in it...
-                            //
-                            data.resizeByteBufferArray();
-
-                            // Also read another chunk of data, now that we have the space for it...
-                            // Ignore EOF, there might be other stuff in the buffer.
-                            //
-                            data.readBufferFromFile();
-                        }
-
-                        // re-check for double delimiters...
-                        if (data.crLfMatcher.isReturn(data.byteBuffer, data.endBuffer)
-                                || data.crLfMatcher.isLineFeed(data.byteBuffer, data.endBuffer)) {
-                            data.endBuffer++;
-                            data.totalBytesRead++;
-                            newLines = 2;
-                            if (data.endBuffer >= data.bufferSize) {
-                                // Oops, we need to read more data...
-                                // Better resize this before we read other things in it...
-                                //
-                                data.resizeByteBufferArray();
-
-                                // Also read another chunk of data, now that we have the space for
-                                // it...
-                                // Ignore EOF, there might be other stuff in the buffer.
-                                //
-                                data.readBufferFromFile();
-                            }
-                        }
-
-                        newLineFound = true;
-                        delimiterFound = true;
-                    }
-                    // Perhaps we need to skip over an enclosed part?
-                    // We always expect exactly one enclosure character
-                    // If we find the enclosure doubled, we consider it escaped.
-                    // --> "" is converted to " later on.
-                    //
-                    else if (data.enclosure != null && data.enclosureMatcher
-                            .matchesPattern(data.byteBuffer, data.endBuffer, data.enclosure)) {
-
-                        enclosureFound = true;
-                        boolean keepGoing;
-                        do {
-                            if (data.increaseEndBuffer()) {
-                                enclosureFound = false;
-                                break;
-                            }
-                            keepGoing = !data.enclosureMatcher
-                                    .matchesPattern(data.byteBuffer, data.endBuffer,
-                                            data.enclosure);
-                            if (!keepGoing) {
-                                // We found an enclosure character.
-                                // Read another byte...
-                                if (data.increaseEndBuffer()) {
-                                    enclosureFound = false;
-                                    break;
-                                }
-
-                                // If this character is also an enclosure, we can consider the
-                                // enclosure "escaped".
-                                // As such, if this is an enclosure, we keep going...
-                                //
-                                keepGoing = data.enclosureMatcher
-                                        .matchesPattern(data.byteBuffer, data.endBuffer,
-                                                data.enclosure);
-                                if (keepGoing) {
-                                    escapedEnclosureFound++;
-                                } else {
-                                    /**
-                                     * <pre>
-                                     * fix for customer issue.
-                                     * after last enclosure there must be either field end or row
-                                     * end otherwise enclosure is field content.
-                                     * Example:
-                                     * EMPNAME, COMPANY
-                                     * 'emp'aa','comab'
-                                     * 'empbb','com'cd'
-                                     * Here enclosure after emp(emp') and after com(com')
-                                     * are not the last enclosures
-                                     * </pre>
-                                     */
-                                    keepGoing = !(data.delimiterMatcher
-                                            .matchesPattern(data.byteBuffer, data.endBuffer,
-                                                    data.delimiter) || data.crLfMatcher
-                                            .isReturn(data.byteBuffer, data.endBuffer)
-                                            || data.crLfMatcher
-                                            .isLineFeed(data.byteBuffer, data.endBuffer));
-                                }
-
-                            }
-                        } while (keepGoing);
-
-                        // Did we reach the end of the buffer?
-                        //
-                        if (data.endBuffer >= data.bufferSize) {
-                            newLineFound = true; // consider it a newline to break out of the upper
-                            // while loop
-                            newLines += 2; // to remove the enclosures in case of missing
-                            // newline on last line.
-                            endOfBuffer = true;
-                            break;
-                        }
-                    } else {
-
-                        data.endBuffer++;
-                        data.totalBytesRead++;
-
-                        if (checkBufferSize()) {
-                            if (data.endBuffer >= data.bufferSize) {
-                                newLineFound = true;
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                // If we're still here, we found a delimiter..
-                // Since the starting point never changed really, we just can grab range:
-                //
-                //    [startBuffer-endBuffer[
-                //
-                // This is the part we want.
-                // data.byteBuffer[data.startBuffer]
-                //
-                int length =
-                        calculateFieldLength(newLineFound, newLines, enclosureFound, endOfBuffer);
-
-                byte[] field = new byte[length];
-                System.arraycopy(data.byteBuffer, data.startBuffer, field, 0, length);
-
-                // Did we have any escaped characters in there?
-                //
-                if (escapedEnclosureFound > 0) {
-                    if (log.isRowLevel()) {
-                        logRowlevel("Escaped enclosures found in " + new String(field,
-                                Charset.defaultCharset()));
-                    }
-                    field = data.removeEscapedEnclosures(field, escapedEnclosureFound);
-                }
-
-                if (doConversions) {
-                    if (meta.isLazyConversionActive()) {
-                        outputRowData[outputIndex++] = field;
-                    } else {
-                        // We're not lazy so we convert the data right here and now.
-                        // The convert object uses binary storage as such we just have to ask
-                        // the native type from it.
-                        // That will do the actual conversion.
-                        //
-                        ValueMetaInterface sourceValueMeta =
-                                data.convertRowMeta.getValueMeta(outputIndex);
-                        try {
-                            outputRowData[outputIndex++] =
-                                    sourceValueMeta.convertBinaryStringToNativeType(field);
-                        } catch (KettleValueException e) {
-                            // There was a conversion error,
-                            //
-                            outputRowData[outputIndex++] = null;
-
-                            if (conversionExceptions == null) {
-                                conversionExceptions = new ArrayList<Exception>(
-                                        CarbonCommonConstants.CONSTANT_SIZE_TEN);
-                                exceptionFields = new ArrayList<ValueMetaInterface>(
-                                        CarbonCommonConstants.CONSTANT_SIZE_TEN);
-                            }
-
-                            conversionExceptions.add(e);
-                            exceptionFields.add(sourceValueMeta);
-                        }
-                    }
-                } else {
-                    outputRowData[outputIndex++] =
-                            null; // nothing for the header, no conversions here.
-                }
-
-                // OK, move on to the next field...
-                if (!newLineFound) {
-                    data.endBuffer++;
-                    data.totalBytesRead++;
-                }
-                data.startBuffer = data.endBuffer;
-            }
-
-            // See if we reached the end of the line.
-            // If not, we need to skip the remaining items on the line until the next newline...
-            //
-            if (!newLineFound && !checkBufferSize()) {
-                do {
-                    data.endBuffer++;
-                    data.totalBytesRead++;
-
-                    if (checkBufferSize()) {
-                        break; // nothing more to read.
-                    }
-
-                    // HANDLE: if we're using quoting we might be dealing with a very dirty file
-                    // with quoted newlines in trailing fields. (imagine that)
-                    // In that particular case we want to use the same logic we use above
-                    // (refactored a bit) to skip these fields.
-
-                } while (!data.crLfMatcher.isReturn(data.byteBuffer, data.endBuffer)
-                        && !data.crLfMatcher.isLineFeed(data.byteBuffer, data.endBuffer));
-
-                if (!checkBufferSize()) {
-                    while (data.crLfMatcher.isReturn(data.byteBuffer, data.endBuffer)
-                            || data.crLfMatcher.isLineFeed(data.byteBuffer, data.endBuffer)) {
-                        data.endBuffer++;
-                        data.totalBytesRead++;
-                        if (checkBufferSize()) {
-                            break; // nothing more to read.
-                        }
-                    }
-                }
-
-                // Make sure we start at the right position the next time around.
-                data.startBuffer = data.endBuffer;
-            }
-
-            // Optionally add the current filename to the mix as well...
-            //
-            if (meta.isIncludingFilename() && !Const.isEmpty(meta.getFilenameField())) {
-                if (meta.isLazyConversionActive()) {
-                    outputRowData[data.filenameFieldIndex] = data.binaryFilename;
-                } else {
-                    outputRowData[data.filenameFieldIndex] = data.filenames[data.filenr - 1];
-                }
-            }
-
-            addRowDetails(outputRowData);
-
-            incrementLinesInput();
-            if (conversionExceptions != null && conversionExceptions.size() > 0) {
-                // Forward the first exception
-                //
-                throw new KettleConversionException(
-                        "There were " + conversionExceptions.size() + " conversion errors on line "
-                                + getLinesInput(), conversionExceptions, exceptionFields,
-                        outputRowData);
-            }
-
-            return outputRowData;
-        } catch (KettleConversionException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new KettleFileException("Exception reading line using NIO", e);
-        }
-
-    }
-
-    protected void addRowDetails(Object[] outputRowData) {
-        if (data.isAddingRowNumber) {
-            outputRowData[data.rownumFieldIndex] = Long.valueOf(data.rowNumber++);
-        }
-    }
-
-    private int calculateFieldLength(boolean newLineFound, int newLines, boolean enclosureFound,
-            boolean endOfBuffer) {
-
-        int length = data.endBuffer - data.startBuffer;
-        if (newLineFound) {
-            length -= newLines;
-            if (length <= 0) {
-                length = 0;
-            }
-            if (endOfBuffer) {
-                data.startBuffer++; // offset for the enclosure in last field before EOF
-            }
-        }
-        if (enclosureFound) {
-            data.startBuffer++;
-            length -= 2;
-            if (length <= 0) {
-                length = 0;
-            }
-        }
-        if (length <= 0) {
-            length = 0;
-        }
-        if (data.encodingType != EncodingType.SINGLE) {
-            length--;
-        }
-        return length;
     }
 
     public boolean init(StepMetaInterface smi, StepDataInterface sdi) {
@@ -952,7 +536,7 @@ public class CsvInput extends BaseStep implements StepInterface {
                     return false;
                 }
 
-                data.filenames = new String[] { filename, };
+                data.filenames = new String[]{filename,};
             } else {
                 data.filenames = null;
                 data.filenr = 0;
@@ -1018,15 +602,15 @@ public class CsvInput extends BaseStep implements StepInterface {
             }
 
             switch (data.encodingType) {
-            case DOUBLE_BIG_ENDIAN:
-                data.crLfMatcher = new MultiByteBigCrLfMatcher();
-                break;
-            case DOUBLE_LITTLE_ENDIAN:
-                data.crLfMatcher = new MultiByteLittleCrLfMatcher();
-                break;
-            default:
-                data.crLfMatcher = new SingleByteCrLfMatcher();
-                break;
+                case DOUBLE_BIG_ENDIAN:
+                    data.crLfMatcher = new MultiByteBigCrLfMatcher();
+                    break;
+                case DOUBLE_LITTLE_ENDIAN:
+                    data.crLfMatcher = new MultiByteLittleCrLfMatcher();
+                    break;
+                default:
+                    data.crLfMatcher = new SingleByteCrLfMatcher();
+                    break;
             }
 
             return true;

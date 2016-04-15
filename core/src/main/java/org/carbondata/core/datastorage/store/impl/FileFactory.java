@@ -129,6 +129,37 @@ public final class FileFactory {
         }
     }
 
+    /**
+     *  return the datainputStream which is seek to the offset of file
+     * @param path
+     * @param fileType
+     * @param bufferSize
+     * @param offset
+     * @return DataInputStream
+     * @throws IOException
+     */
+    public static DataInputStream getDataInputStream(String path, FileType fileType, int bufferSize,long offset)
+            throws IOException {
+        path = path.replace("\\", "/");
+        switch (fileType) {
+            case HDFS:
+                Path pt = new Path(path);
+                FileSystem fs = pt.getFileSystem(configuration);
+                FSDataInputStream stream = fs.open(pt, bufferSize);
+                stream.seek(offset);
+                return stream;
+            default:
+                FileInputStream fis = new FileInputStream(path);
+                long actualSkipSize = 0;
+                long skipSize = offset;
+                while (actualSkipSize != offset) {
+                    actualSkipSize += fis.skip(skipSize);
+                    skipSize = skipSize - actualSkipSize;
+                }
+                return new DataInputStream(new BufferedInputStream(fis));
+        }
+    }
+
     public static DataOutputStream getDataOutputStream(String path, FileType fileType)
             throws IOException {
         path = path.replace("\\", "/");

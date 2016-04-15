@@ -17,9 +17,7 @@
  * under the License.
  */
 
-/**
- *
- */
+
 package org.carbondata.integration.spark.util;
 
 import java.io.*;
