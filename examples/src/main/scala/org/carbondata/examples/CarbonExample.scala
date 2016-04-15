@@ -17,6 +17,8 @@
 
 package org.carbondata.examples
 
+import java.io.File
+
 import org.apache.spark.sql.CarbonContext
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -24,31 +26,37 @@ object CarbonExample {
 
   def main(args: Array[String]) {
 
-    //please replace with your local machine path
-    val hdfsCarbonBasePath = "/home/root1/carbon/metadata"
+    //get current directory:/examples
+    val currentDirectory = new File(this.getClass.getResource("/").getPath+"/../../").getCanonicalPath
+
+    //specify parameters
+    val storeLocation = currentDirectory + "/target/store"
+    val kettleHome = new File(currentDirectory + "/../processing/carbonplugins").getCanonicalPath
+    val hiveMetaPath = currentDirectory + "/target/hivemetadata"
+    val testData = currentDirectory + "/src/main/resources/data.csv"
+
     val sc = new SparkContext(new SparkConf()
-      .setAppName("CarbonSpark")
+      .setAppName("CarbonExample")
       .setMaster("local[2]"))
 
-    val oc = new CarbonContext(sc, hdfsCarbonBasePath)
+    val cc = new CarbonContext(sc, storeLocation)
 
-    //please replace with your local machine path
-    oc.setConf("carbon.kettle.home", "/home/root1/carbon/carbondata/processing/carbonplugins/")
-     oc.setConf("hive.metastore.warehouse.dir", "/home/root1/carbon/hivemetadata")
+    //As Carbon using kettle, so need to set kettle configuration
+    cc.setConf("carbon.kettle.home", kettleHome)
+    cc.setConf("hive.metastore.warehouse.dir", hiveMetaPath)
 
     //When you excute the second time, need to enable it
-    //oc.sql("drop cube alldatatypescube")
+   // cc.sql("drop cube testTable")
 
-    oc.sql("CREATE CUBE alldatatypescube DIMENSIONS (empno Integer, empname String, " +
-      "designation String, doj Timestamp, workgroupcategory Integer, workgroupcategoryname String, " +
-      "deptno Integer, deptname String, projectcode Integer, projectjoindate Timestamp, " +
-      "projectenddate Timestamp) MEASURES (attendance Integer,utilization Integer,salary Integer) " +
+    cc.sql("CREATE CUBE testTable DIMENSIONS (ID Integer, Date Timestamp, " +
+      "Country String, Name String, Phonetype String, Serialname String" +
+
+      ") MEASURES (Salary Integer) " +
       "OPTIONS (PARTITIONER [PARTITION_COUNT=1])")
 
-    //please replace with your local machine path
-    oc.sql("LOAD DATA fact from '/home/root1/carbon/carbondata/integration/spark/src/test/resources/data.csv' INTO CUBE alldatatypescube PARTITIONDATA(DELIMITER ',', QUOTECHAR '\"')");
+    cc.sql(s"LOAD DATA FACT FROM '$testData' INTO CUBE testTable OPTIONS(DELIMITER ',', FILEHEADER '')")
 
-    oc.sql("select empno,empname,utilization,count(salary),sum(empno) from alldatatypescube where empname in ('arvind','ayushi') group by empno,empname,utilization").show()
+    cc.sql("select Country,count(salary) from testTable where Country in ('china','france') group by Country").show()
 
   }
 
