@@ -211,6 +211,7 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
         holder.setCompressionModel(compressionModel);
         //setting column min max value
         holder.setColumnMinMaxData(columnMinMaxData);
+        holder.setAggBlocks(aggBlocks);
         if (!this.isNodeHolderRequired) {
             writeDataToFile(holder);
         } else {
@@ -336,6 +337,8 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
     protected LeafNodeInfoColumnar getLeafNodeInfo(NodeHolder nodeHolder, long offset) {
         // create the info object for leaf entry
         LeafNodeInfoColumnar info = new LeafNodeInfoColumnar();
+        //add aggBlocks array
+        info.setAggKeyBlock(nodeHolder.getAggBlocks());
         // add total entry count
         info.setNumberOfKeys(nodeHolder.getEntryCount());
 

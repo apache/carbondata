@@ -106,6 +106,11 @@ public class NodeHolder {
     private ValueCompressionModel compressionModel;
 
     /**
+     * array of aggBlocks flag to identify the aggBlocks
+     */
+    private boolean []aggBlocks;
+
+    /**
      * @return the keyArray
      */
     public byte[] getKeyArray() {
@@ -338,5 +343,21 @@ public class NodeHolder {
 
     public void setCompressionModel(ValueCompressionModel compressionModel) {
         this.compressionModel = compressionModel;
+    }
+
+    /**
+     * returns array of aggBlocks flag to identify the aag blocks
+     * @return
+     */
+    public boolean[] getAggBlocks() {
+        return aggBlocks;
+    }
+
+    /**
+     * set array of aggBlocks flag to identify the aggBlocks
+     * @param aggBlocks
+     */
+    public void setAggBlocks(boolean[] aggBlocks) {
+        this.aggBlocks = aggBlocks;
     }
 }

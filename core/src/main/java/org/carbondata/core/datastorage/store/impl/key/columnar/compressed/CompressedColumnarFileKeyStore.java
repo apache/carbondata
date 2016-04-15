@@ -46,7 +46,6 @@ public class CompressedColumnarFileKeyStore extends AbstractColumnarKeyStore {
             int[] columnKeyBlockIndex = null;
             int[] columnKeyBlockReverseIndexes = null;
             ColumnarKeyStoreMetadata columnarKeyStoreMetadata = null;
-            int columnarKeyBlockIndex = 0;
             int[] dataIndex = null;
             boolean isUnCompressed = true;
             columnarKeyBlockData = COMPRESSOR.unCompress(fileHolder
@@ -72,12 +71,11 @@ public class CompressedColumnarFileKeyStore extends AbstractColumnarKeyStore {
                 }
             }
             if (!columnarStoreInfo.getIsSorted()[blockIndex[i]]) {
-                columnarKeyBlockIndex = mapOfColumnIndexAndColumnBlockIndex.get(blockIndex[i]);
                 columnKeyBlockIndex = CarbonUtil.getUnCompressColumnIndex(
-                        columnarStoreInfo.getKeyBlockIndexLength()[columnarKeyBlockIndex],
+                        columnarStoreInfo.getKeyBlockIndexLength()[blockIndex[i]],
                         fileHolder.readByteArray(columnarStoreInfo.getFilePath(),
-                                columnarStoreInfo.getKeyBlockIndexOffsets()[columnarKeyBlockIndex],
-                                columnarStoreInfo.getKeyBlockIndexLength()[columnarKeyBlockIndex]),
+                                columnarStoreInfo.getKeyBlockIndexOffsets()[blockIndex[i]],
+                                columnarStoreInfo.getKeyBlockIndexLength()[blockIndex[i]]),
                         columnarStoreInfo.getNumberCompressor());
                 columnKeyBlockReverseIndexes = getColumnIndexForNonFilter(columnKeyBlockIndex);
             }
@@ -119,7 +117,6 @@ public class CompressedColumnarFileKeyStore extends AbstractColumnarKeyStore {
         int[] columnKeyBlockIndex = null;
         int[] columnKeyBlockReverseIndex = null;
         ColumnarKeyStoreMetadata columnarKeyStoreMetadata = null;
-        int columnarKeyBlockIndex = 0;
         int[] dataIndex = null;
         boolean isUnCompressed = true;
         columnarKeyBlockData = COMPRESSOR.unCompress(fileHolder
@@ -145,13 +142,12 @@ public class CompressedColumnarFileKeyStore extends AbstractColumnarKeyStore {
             }
         }
         if (!columnarStoreInfo.getIsSorted()[blockIndex]) {
-            columnarKeyBlockIndex = mapOfColumnIndexAndColumnBlockIndex.get(blockIndex);
             columnKeyBlockIndex = CarbonUtil.getUnCompressColumnIndex(
-                    columnarStoreInfo.getKeyBlockIndexLength()[columnarKeyBlockIndex], fileHolder
+                    columnarStoreInfo.getKeyBlockIndexLength()[blockIndex], fileHolder
                             .readByteArray(columnarStoreInfo.getFilePath(), columnarStoreInfo
-                                            .getKeyBlockIndexOffsets()[columnarKeyBlockIndex],
+                                            .getKeyBlockIndexOffsets()[blockIndex],
                                     columnarStoreInfo
-                                            .getKeyBlockIndexLength()[columnarKeyBlockIndex]),
+                                            .getKeyBlockIndexLength()[blockIndex]),
                     columnarStoreInfo.getNumberCompressor());
             columnKeyBlockReverseIndex = getColumnIndexForNonFilter(columnKeyBlockIndex);
         }

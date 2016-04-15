@@ -100,18 +100,23 @@ public class CarbonMetadataUtil {
         List<DataChunk> colDataChunks = new ArrayList<DataChunk>();
         leafNodeInfoColumnar.getKeyLengths();
         int j = 0;
+        int aggregateIndex = 0 ;
         for (int i = 0; i < leafNodeInfoColumnar.getKeyLengths().length; i++) {
             DataChunk dataChunk = new DataChunk();
             dataChunk.setChunk_meta(getChunkCompressionMeta());
             boolean[] isSortedKeyColumn = leafNodeInfoColumnar.getIsSortedKeyColumn();
+            boolean[] aggKeyBlock = leafNodeInfoColumnar.getAggKeyBlock();
             //TODO : Need to find how to set it.
             dataChunk.setRow_chunk(false);
             //TODO : Once schema PR is merged and information needs to be passed here.
             dataChunk.setColumn_ids(new ArrayList<Integer>());
             dataChunk.setData_page_length(leafNodeInfoColumnar.getKeyLengths()[i]);
             dataChunk.setData_page_offset(leafNodeInfoColumnar.getKeyOffSets()[i]);
-            dataChunk.setRle_page_offset(leafNodeInfoColumnar.getDataIndexMapOffsets()[i]);
-            dataChunk.setRle_page_length(leafNodeInfoColumnar.getDataIndexMapLength()[i]);
+            if(aggKeyBlock[i]) {
+                dataChunk.setRle_page_offset(leafNodeInfoColumnar.getDataIndexMapOffsets()[aggregateIndex]);
+                dataChunk.setRle_page_length(leafNodeInfoColumnar.getDataIndexMapLength()[aggregateIndex]);
+                aggregateIndex++;
+            }
             dataChunk.setSort_state(
                     isSortedKeyColumn[i] ? SortState.SORT_EXPLICIT : SortState.SORT_NATIVE);
 
