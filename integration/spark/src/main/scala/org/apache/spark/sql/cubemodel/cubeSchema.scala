@@ -1040,7 +1040,7 @@ private[sql] case class AlterCube(
 //      }
 
       val metaDataPath = CarbonMetadata.getInstance()
-        .getCube(relation.cubeMeta.dbName + '_' + relation.cubeMeta.tableName)
+        .getCube(relation.cubeMeta.carbonTableIdentifier.getTableUniqueName)
         .getMetaDataFilepath
       val fileType = FileFactory.getFileType(metaDataPath)
       val file = FileFactory.getCarbonFile(metaDataPath, fileType)
@@ -1117,8 +1117,8 @@ private[sql] case class AlterCube(
 //        relation.cubeMeta.carbonTable,
         null,
         carbonDefSchema,
-        relation.cubeMeta.dbName,
-        relation.cubeMeta.tableName,
+        relation.cubeMeta.carbonTableIdentifier.getDatabaseName,
+        relation.cubeMeta.carbonTableIdentifier.getTableName,
         relation.cubeMeta.dataPath,
         cubeXML.dimensions,
         cubeXML.measures,
@@ -1690,8 +1690,8 @@ private[sql] case class LoadCube(
         CarbonEnv.getInstance(sqlContext).carbonCatalog.lookupRelation1(Option(schemaName), cubeName, None)(sqlContext).asInstanceOf[CarbonRelation]
       if (relation == null) sys.error(s"Cube $schemaName.$cubeName does not exist")
       val carbonLoadModel = new CarbonLoadModel()
-      carbonLoadModel.setCubeName(relation.cubeMeta.tableName)
-      carbonLoadModel.setSchemaName(relation.cubeMeta.dbName)
+      carbonLoadModel.setCubeName(relation.cubeMeta.carbonTableIdentifier.getTableName)
+      carbonLoadModel.setSchemaName(relation.cubeMeta.carbonTableIdentifier.getDatabaseName)
       if (dimFilesPath.isEmpty) {
         carbonLoadModel.setDimFolderPath(null)
       }
@@ -1711,7 +1711,7 @@ private[sql] case class LoadCube(
       var storeLocation = CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION_TEMP_PATH, System.getProperty("java.io.tmpdir"))
       
 
-      var partitionLocation = relation.cubeMeta.dataPath + "/partition/" + relation.cubeMeta.dbName + "/" + relation.cubeMeta.tableName + "/"
+      var partitionLocation = relation.cubeMeta.dataPath + "/partition/" + relation.cubeMeta.carbonTableIdentifier.getDatabaseName + "/" + relation.cubeMeta.carbonTableIdentifier.getTableName + "/"
       val fileType = FileFactory.getFileType(partitionLocation)
       if (FileFactory.isFileExist(partitionLocation, fileType)) {
         val file = FileFactory.getCarbonFile(partitionLocation, fileType)
@@ -2025,8 +2025,8 @@ private[sql] case class SuggestAggregates(
 //      val schema: CarbonDef.Schema = relation.cubeMeta.schema
 //      val cubes: Array[CarbonDef.Cube] = relation.cubeMeta.schema.cubes.filter { x => cubeName.equalsIgnoreCase(x.name) }
       val loadModel: LoadModel = new LoadModel
-      loadModel.setSchemaName(relation.cubeMeta.dbName)
-      loadModel.setCubeName(relation.cubeMeta.tableName)
+      loadModel.setSchemaName(relation.cubeMeta.carbonTableIdentifier.getDatabaseName)
+      loadModel.setCubeName(relation.cubeMeta.carbonTableIdentifier.getTableName)
       val table = relation.metaData.carbonTable
       loadModel.setTableName(table.getFactTableName)
       loadModel.setDataPath(relation.cubeMeta.dataPath)
@@ -2179,8 +2179,8 @@ private[sql] case class DropCubeCommand(ifExistsSet: Boolean, schemaNameOp: Opti
 
           CarbonEnv.getInstance(sqlContext).carbonCatalog.dropCube(relation.cubeMeta.partitioner.partitionCount,
             relation.cubeMeta.dataPath,
-            relation.cubeMeta.dbName,
-            relation.cubeMeta.tableName)(sqlContext)
+            relation.cubeMeta.carbonTableIdentifier.getDatabaseName,
+            relation.cubeMeta.carbonTableIdentifier.getTableName)(sqlContext)
           CarbonDataRDDFactory.dropCube(sqlContext.sparkContext, schemaName, cubeName, relation.cubeMeta.partitioner)
           QueryPartitionHelper.getInstance().removePartition(schemaName, cubeName);
 
@@ -2302,8 +2302,8 @@ private[sql] case class DescribeCommandFormatted(
       (field.name, field.dataType.simpleString, comment)
     }
     results ++= Seq(("", "", ""), ("##Detailed Table Information", "", ""))
-    results ++= Seq(("Schema Name : ", relation.cubeMeta.dbName, ""))
-    results ++= Seq(("Cube Name : ", relation.cubeMeta.tableName, ""))
+    results ++= Seq(("Schema Name : ", relation.cubeMeta.carbonTableIdentifier.getDatabaseName, ""))
+    results ++= Seq(("Cube Name : ", relation.cubeMeta.carbonTableIdentifier.getTableName, ""))
     results ++= Seq(("CARBON Store Path : ", relation.cubeMeta.dataPath, ""))
 //    val partitioner = relation.cubeMeta.partitioner
 //    results ++= Seq(("#Partition Details : ", "", ""))
@@ -2388,7 +2388,7 @@ private[sql] case class DeleteLoadByDate(
       schemaName,
       cubeName,
       tableName,
-      CarbonEnv.getInstance(sqlContext).carbonCatalog.metadataPath,
+      CarbonEnv.getInstance(sqlContext).carbonCatalog.storePath,
       level,
       actualColName,
       dateValue,
@@ -2416,8 +2416,8 @@ private[sql] case class CleanFiles(
     }
 
     val carbonLoadModel = new CarbonLoadModel()
-    carbonLoadModel.setCubeName(relation.cubeMeta.tableName)
-    carbonLoadModel.setSchemaName(relation.cubeMeta.dbName)
+    carbonLoadModel.setCubeName(relation.cubeMeta.carbonTableIdentifier.getTableName)
+    carbonLoadModel.setSchemaName(relation.cubeMeta.carbonTableIdentifier.getDatabaseName)
     val table = relation.cubeMeta.carbonTable
     carbonLoadModel.setAggTables(table.getAggregateTablesName.map(_.toString).toArray)
     carbonLoadModel.setTableName(table.getFactTableName)

@@ -62,7 +62,7 @@ object CarbonDataRDDFactory extends Logging {
     //     CarbonQueryUtil.loadSchema("G:/mavenlib/PCC_Java.xml", null, null)
     val catalog = CarbonEnv.getInstance(sc.asInstanceOf[SQLContext]).carbonCatalog
     val cubeCreationTime = catalog.getCubeCreationTime(schemaName, cubeName)
-    new CarbonDataCacheRDD(sc, kv, schema, catalog.metadataPath, cubeName, schemaName, partitioner, columinar, cubeCreationTime).collect
+    new CarbonDataCacheRDD(sc, kv, schema, catalog.storePath, cubeName, schemaName, partitioner, columinar, cubeCreationTime).collect
   }
 
   def partitionCarbonData(sc: SparkContext,

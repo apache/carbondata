@@ -128,7 +128,7 @@ case class CarbonRelation(schemaName: String,
   override def newInstance() = CarbonRelation(schemaName, cubeName, metaData, cubeMeta, alias)(sqlContext).asInstanceOf[this.type]
 
   val dimensionsAttr = {
-    val sett = new LinkedHashSet(cubeMeta.carbonTable.getDimensionByTableName(cubeMeta.tableName).toSeq)
+    val sett = new LinkedHashSet(cubeMeta.carbonTable.getDimensionByTableName(cubeMeta.carbonTableIdentifier.getTableName).toSeq)
     sett.toSeq.map(dim => 
     {
     	val output: DataType = metaData.carbonTable.getDimensionByName(metaData.carbonTable.getFactTableName,dim.getColName).getDataType().toString.toLowerCase match {

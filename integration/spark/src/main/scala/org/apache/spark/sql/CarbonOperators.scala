@@ -446,7 +446,7 @@ case class CarbonCubeScan(
         true, 
         cubeCreationTime,
         schemaLastUpdatedTime,
-        catalog.metadataPath)
+        catalog.storePath)
     big
   }
 

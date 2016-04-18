@@ -57,6 +57,13 @@ public class CarbonTableIdentifier implements Serializable{
     public String getTableName() {
         return tableName;
     }
+    
+    /**
+     * @return table unique name 
+     */
+    public String getTableUniqueName() {
+      return databaseName + '_' + tableName;
+    }
 
     /**
      * overridden equals method
@@ -82,5 +89,13 @@ public class CarbonTableIdentifier implements Serializable{
         int result = databaseName.hashCode();
         result = 31 * result + tableName.hashCode();
         return result;
+    }
+
+    /* 
+     * @return table unidque name 
+     */
+    @Override
+    public String toString() {
+      return databaseName + '_' + tableName;
     }
 }
