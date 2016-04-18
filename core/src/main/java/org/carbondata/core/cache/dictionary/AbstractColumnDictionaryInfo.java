@@ -20,8 +20,8 @@
 package org.carbondata.core.cache.dictionary;
 
 import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.carbondata.core.constants.CarbonCommonConstants;
@@ -34,8 +34,7 @@ public abstract class AbstractColumnDictionaryInfo implements DictionaryInfo {
     /**
      * list that will hold all the dictionary chunks for one column
      */
-    protected List<List<byte[]>> dictionaryChunks =
-            new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    protected List<List<byte[]>> dictionaryChunks = new CopyOnWriteArrayList<>();
 
     /**
      * atomic integer to maintain the access count for a column access
@@ -126,6 +125,50 @@ public abstract class AbstractColumnDictionaryInfo implements DictionaryInfo {
     }
 
     /**
+     * This method will find and return the sort index for a given dictionary id.
+     * Applicable scenarios:
+     * 1. Used in case of order by queries when data sorting is required
+     *
+     * @param surrogateKey a unique ID for a dictionary value
+     * @return if found returns key else 0
+     */
+    @Override public int getSortedIndex(int surrogateKey) {
+        return 0;
+    }
+
+    /**
+     * This method will find and return the dictionary value from sorted index.
+     * Applicable scenarios:
+     * 1. Query final result preparation in case of order by queries:
+     * While convert the final result which will
+     * be surrogate key back to original dictionary values this method will be used
+     *
+     * @param sortedIndex sort index of dictionary value
+     * @return value if found else null
+     */
+    @Override public String getDictionaryValueFromSortedIndex(int sortedIndex) {
+        return null;
+    }
+
+    /**
+     * This method will set the sort order index of a dictionary column.
+     * Sort order index if the index of dictionary values after they are sorted.
+     *
+     * @param sortOrderIndex
+     */
+    @Override public void setSortOrderIndex(List<Integer> sortOrderIndex) {
+    }
+
+    /**
+     * This method will set the sort reverse index of a dictionary column.
+     * Sort reverse index is the index of dictionary values before they are sorted.
+     *
+     * @param sortReverseOrderIndex
+     */
+    @Override public void setSortReverseOrderIndex(List<Integer> sortReverseOrderIndex) {
+    }
+
+    /**
      * This method will find and return the dictionary value for a given surrogate key.
      * Applicable scenarios:
      * 1. Query final result preparation : While convert the final result which will
@@ -136,6 +179,23 @@ public abstract class AbstractColumnDictionaryInfo implements DictionaryInfo {
      */
     @Override public String getDictionaryValueForKey(int surrogateKey) {
         String dictionaryValue = null;
+        byte[] dictionaryValueInBytes = getDictionaryBytesFromSurrogate(surrogateKey);
+        if (null != dictionaryValueInBytes) {
+            dictionaryValue = new String(dictionaryValueInBytes,
+                    Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+        }
+        return dictionaryValue;
+    }
+
+    /**
+     * This method will find and return the dictionary value as byte array for a
+     * given surrogate key
+     *
+     * @param surrogateKey
+     * @return
+     */
+    protected byte[] getDictionaryBytesFromSurrogate(int surrogateKey) {
+        byte[] dictionaryValueInBytes = null;
         int totalSizeOfDictionaryChunksTraversed = 0;
         for (List<byte[]> oneDictionaryChunk : dictionaryChunks) {
             totalSizeOfDictionaryChunksTraversed =
@@ -151,12 +211,52 @@ public abstract class AbstractColumnDictionaryInfo implements DictionaryInfo {
             int surrogatePositionInDictionaryChunk =
                     surrogateKey - (totalSizeOfDictionaryChunksTraversed - oneDictionaryChunk
                             .size()) - 1;
-            byte[] dictionaryValueInBytes =
-                    oneDictionaryChunk.get(surrogatePositionInDictionaryChunk);
-            dictionaryValue = new String(dictionaryValueInBytes,
-                    Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+            dictionaryValueInBytes = oneDictionaryChunk.get(surrogatePositionInDictionaryChunk);
             break;
         }
-        return dictionaryValue;
+        return dictionaryValueInBytes;
+    }
+
+    /**
+     * This method will find and return the surrogate key for a given dictionary value
+     * Applicable scenario:
+     * 1. Incremental data load : Dictionary will not be generated for existing values. For
+     * that values have to be looked up in the existing dictionary cache.
+     * 2. Filter scenarios where from value surrogate key has to be found.
+     *
+     * @param value dictionary value
+     * @return if found returns key else 0
+     */
+    @Override public int getSurrogateKey(String value) {
+        byte[] keyData = value.getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+        return getSurrogateKey(keyData);
+    }
+
+    /**
+     * This method will convert array list of dictionary chunk to
+     * copy on write array list
+     *
+     * @param dictionaryChunk
+     * @return
+     */
+    protected List<byte[]> convertDictionaryChunkArrayListToCopyOnWriteArrayList(
+            List<byte[]> dictionaryChunk) {
+        List<byte[]> copyOnWriteList = new CopyOnWriteArrayList<>();
+        copyOnWriteList.addAll(dictionaryChunk);
+        return copyOnWriteList;
+    }
+
+    /**
+     * This method will convert array list of sort index chunk to
+     * copy on write array list
+     *
+     * @param sortIndexChunk
+     * @return
+     */
+    protected List<Integer> convertSortIndexChunkArrayListToCopyOnWriteArrayList(
+            List<Integer> sortIndexChunk) {
+        List<Integer> copyOnWriteList = new CopyOnWriteArrayList<>();
+        copyOnWriteList.addAll(sortIndexChunk);
+        return copyOnWriteList;
     }
 }

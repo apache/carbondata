@@ -129,12 +129,13 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
      *                                         tableName and columnIdentifier
      * @param dictionaryInfo
      * @param lruCacheKey
+     * @param loadSortIndex                    read and load sort index file in memory
      * @return true if key added to lru cache and dictionary data loaded successfully,
      * false otherwise
      */
     protected boolean checkAndLoadDictionaryData(
             DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier,
-            DictionaryInfo dictionaryInfo, String lruCacheKey) {
+            DictionaryInfo dictionaryInfo, String lruCacheKey, boolean loadSortIndex) {
         boolean dictionaryLoadSuccessfull = false;
         try {
             // read last segment dictionary meta chunk entry to get the end offset of file
@@ -168,7 +169,7 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
                             // load dictionary data
                             loadDictionaryData(dictionaryInfo, dictionaryColumnUniqueIdentifier,
                                     dictionaryInfo.getMemorySize(),
-                                    carbonDictionaryColumnMetaChunk.getEnd_offset());
+                                    carbonDictionaryColumnMetaChunk.getEnd_offset(), loadSortIndex);
                             // increment the column access count
                             incrementDictionaryAccessCount(dictionaryInfo);
                             // set ne file timestamp
@@ -218,16 +219,18 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
      *                                         be read
      * @param dictionaryChunkEndOffset         end offset till where dictionary file has to
      *                                         be read
+     * @param loadSortIndex
      * @throws IOException
      */
-    protected void loadDictionaryData(DictionaryInfo dictionaryInfo,
+    private void loadDictionaryData(DictionaryInfo dictionaryInfo,
             DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier,
-            long dictionaryChunkStartOffset, long dictionaryChunkEndOffset) throws IOException {
+            long dictionaryChunkStartOffset, long dictionaryChunkEndOffset, boolean loadSortIndex)
+            throws IOException {
         DictionaryCacheLoader dictionaryCacheLoader = new DictionaryCacheLoaderImpl(
                 dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier(), carbonStorePath);
         dictionaryCacheLoader
                 .load(dictionaryInfo, dictionaryColumnUniqueIdentifier.getColumnIdentifier(),
-                        dictionaryChunkStartOffset, dictionaryChunkEndOffset);
+                        dictionaryChunkStartOffset, dictionaryChunkEndOffset, loadSortIndex);
     }
 
     /**

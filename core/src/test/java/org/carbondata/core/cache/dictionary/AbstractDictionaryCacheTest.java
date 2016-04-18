@@ -38,6 +38,8 @@ public class AbstractDictionaryCacheTest {
 
     protected List<String> dataSet2;
 
+    protected List<String> dataSet3;
+
     protected String[] columnIdentifiers;
 
     /**
@@ -46,6 +48,7 @@ public class AbstractDictionaryCacheTest {
     protected void prepareDataSet() {
         dataSet1 = Arrays.asList(new String[] { "a", "b", "c" });
         dataSet2 = Arrays.asList(new String[] { "d", "e", "f" });
+        dataSet3 = Arrays.asList(new String[] { "b", "c", "a", "d" });
     }
 
     /**

@@ -56,4 +56,20 @@ public interface DictionaryInfo extends Cacheable, Dictionary {
      * @param dictionaryChunk
      */
     void addDictionaryChunk(List<byte[]> dictionaryChunk);
+
+    /**
+     * This method will set the sort order index of a dictionary column.
+     * Sort order index if the index of dictionary values after they are sorted.
+     *
+     * @param sortOrderIndex
+     */
+    void setSortOrderIndex(List<Integer> sortOrderIndex);
+
+    /**
+     * This method will set the sort reverse index of a dictionary column.
+     * Sort reverse index is the index of dictionary values before they are sorted.
+     *
+     * @param sortReverseOrderIndex
+     */
+    void setSortReverseOrderIndex(List<Integer> sortReverseOrderIndex);
 }

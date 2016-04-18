@@ -149,10 +149,11 @@ public class ReverseDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
             ColumnReverseDictionaryInfo columnReverseDictionaryInfo =
                     getColumnReverseDictionaryInfo(dictionaryColumnUniqueIdentifier,
                             columnIdentifier);
+            // do not load sort index file for reverse dictionary
             if (checkAndLoadDictionaryData(dictionaryColumnUniqueIdentifier,
                     columnReverseDictionaryInfo,
                     getLruCacheKey(dictionaryColumnUniqueIdentifier.getColumnIdentifier(),
-                            CacheType.REVERSE_DICTIONARY))) {
+                            CacheType.REVERSE_DICTIONARY), false)) {
                 reverseDictionary = new ReverseDictionary(columnReverseDictionaryInfo);
             }
         }

@@ -147,9 +147,10 @@ public class ForwardDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
             String columnIdentifier = dictionaryColumnUniqueIdentifier.getColumnIdentifier();
             ColumnDictionaryInfo columnDictionaryInfo =
                     getColumnDictionaryInfo(dictionaryColumnUniqueIdentifier, columnIdentifier);
+            // load sort index file in case of forward dictionary
             if (checkAndLoadDictionaryData(dictionaryColumnUniqueIdentifier, columnDictionaryInfo,
                     getLruCacheKey(dictionaryColumnUniqueIdentifier.getColumnIdentifier(),
-                            CacheType.FORWARD_DICTIONARY))) {
+                            CacheType.FORWARD_DICTIONARY), true)) {
                 forwardDictionary = new ForwardDictionary(columnDictionaryInfo);
             }
         }

@@ -33,8 +33,11 @@ public interface DictionaryCacheLoader {
      *                                   be read
      * @param dictionaryChunkEndOffset   end offset till where dictionary file has to
      *                                   be read
+     * @param loadSortIndex              flag to indicate whether the sort index file has to be
+     *                                   read in memory after dictionary loading
      * @throws IOException
      */
     void load(DictionaryInfo dictionaryInfo, String columnIdentifier,
-            long dictionaryChunkStartOffset, long dictionaryChunkEndOffset) throws IOException;
+            long dictionaryChunkStartOffset, long dictionaryChunkEndOffset, boolean loadSortIndex)
+            throws IOException;
 }

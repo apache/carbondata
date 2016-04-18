@@ -19,8 +19,8 @@
 
 package org.carbondata.core.cache.dictionary;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.IOException;
+import java.util.*;
 
 import org.carbondata.core.cache.Cache;
 import org.carbondata.core.cache.CacheProvider;
@@ -28,6 +28,8 @@ import org.carbondata.core.cache.CacheType;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.CarbonProperties;
+import org.carbondata.core.writer.sortindex.CarbonDictionarySortIndexWriter;
+import org.carbondata.core.writer.sortindex.CarbonDictionarySortIndexWriterImpl;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -74,6 +76,8 @@ public class ForwardDictionaryCacheTest extends AbstractDictionaryCacheTest {
         String columnIdentifier = columnIdentifiers[0];
         // prepare dictionary writer and write data
         prepareWriterAndWriteData(dataSet1, columnIdentifier);
+        // write sort index file
+        writeSortIndexFile(dataSet1, columnIdentifier);
         // create dictionary column unique identifier instance
         DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
                 createDictionaryColumnUniqueIdentifier(columnIdentifier);
@@ -96,6 +100,8 @@ public class ForwardDictionaryCacheTest extends AbstractDictionaryCacheTest {
         String columnIdentifier = columnIdentifiers[0];
         // prepare dictionary writer and write data
         prepareWriterAndWriteData(dataSet1, columnIdentifier);
+        // write sort index file
+        writeSortIndexFile(dataSet1, columnIdentifier);
         List<DictionaryColumnUniqueIdentifier> dictionaryColumnUniqueIdentifiers =
                 new ArrayList<>(3);
         // create dictionary column unique identifier instance
@@ -105,6 +111,8 @@ public class ForwardDictionaryCacheTest extends AbstractDictionaryCacheTest {
         // prepare dictionary writer and write data
         columnIdentifier = columnIdentifiers[1];
         prepareWriterAndWriteData(dataSet1, columnIdentifier);
+        // write sort index file
+        writeSortIndexFile(dataSet1, columnIdentifier);
         // create dictionary column unique identifier instance
         dictionaryColumnUniqueIdentifier = createDictionaryColumnUniqueIdentifier(columnIdentifier);
         dictionaryColumnUniqueIdentifiers.add(dictionaryColumnUniqueIdentifier);
@@ -129,6 +137,8 @@ public class ForwardDictionaryCacheTest extends AbstractDictionaryCacheTest {
         String columnIdentifier = columnIdentifiers[0];
         // prepare dictionary writer and write data
         prepareWriterAndWriteData(dataSet1, columnIdentifier);
+        // write sort index file
+        writeSortIndexFile(dataSet1, columnIdentifier);
         // create dictionary column unique identifier instance
         DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
                 createDictionaryColumnUniqueIdentifier(columnIdentifier);
@@ -139,6 +149,11 @@ public class ForwardDictionaryCacheTest extends AbstractDictionaryCacheTest {
         assertTrue(null != forwardDictionary);
         // prepare dictionary writer and write data
         prepareWriterAndWriteData(dataSet2, columnIdentifier);
+        // write sort index file
+        List<String> allDictionaryChunkList = new ArrayList<>(6);
+        allDictionaryChunkList.addAll(dataSet1);
+        allDictionaryChunkList.addAll(dataSet2);
+        writeSortIndexFile(allDictionaryChunkList, columnIdentifier);
         // get the forward dictionary object
         forwardDictionary =
                 (Dictionary) forwardDictionaryCache.get(dictionaryColumnUniqueIdentifier);
@@ -156,6 +171,70 @@ public class ForwardDictionaryCacheTest extends AbstractDictionaryCacheTest {
         removeKeyFromLRUCache(forwardDictionaryCache);
     }
 
+    @Test public void testSortedAndInvertedSortIndex() throws Exception {
+        // delete store path
+        deleteStorePath();
+        String columnIdentifier = columnIdentifiers[0];
+        // prepare dictionary writer and write data
+        prepareWriterAndWriteData(dataSet3, columnIdentifier);
+        // write sort index file
+        writeSortIndexFile(dataSet3, columnIdentifier);
+        // create dictionary column unique identifier instance
+        DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
+                createDictionaryColumnUniqueIdentifier(columnIdentifier);
+        // get the forward dictionary object
+        Dictionary forwardDictionary =
+                (Dictionary) forwardDictionaryCache.get(dictionaryColumnUniqueIdentifier);
+        // forward dictionary object should not be null
+        assertTrue(null != forwardDictionary);
+        // compare that surrogate key for data inserted and actual data should be same
+        compareSurrogateKeyData(dataSet3, forwardDictionary);
+        // compare the surrogate keys for given dictionary values
+        compareDictionaryValueFromSortedIndex(dataSet3, forwardDictionary);
+        // decrement its access count
+        forwardDictionary.clear();
+        // remove keys from lru cache
+        removeKeyFromLRUCache(forwardDictionaryCache);
+    }
+
+    /**
+     * This method will prepare the sort index data from the given data and write
+     * it to a sort index file
+     *
+     * @param data
+     * @param columnIdentifier
+     * @throws IOException
+     */
+    private void writeSortIndexFile(List<String> data, String columnIdentifier) throws IOException {
+        Map<String, Integer> dataToSurrogateKeyMap = new HashMap<>(data.size());
+        int surrogateKey = 0;
+        List<Integer> invertedIndexList = new ArrayList<>(data.size());
+        for (int i = 0; i < data.size(); i++) {
+            dataToSurrogateKeyMap.put(data.get(i), ++surrogateKey);
+        }
+        List<String> sortedKeyList = new ArrayList<>(dataToSurrogateKeyMap.keySet());
+        Collections.sort(sortedKeyList);
+        List<Integer> sortedIndexList = new ArrayList<>(data.size());
+        int[] invertedIndexArray = new int[sortedKeyList.size()];
+        for (int i = 0; i < sortedKeyList.size(); i++) {
+            Integer key = dataToSurrogateKeyMap.get(sortedKeyList.get(i));
+            sortedIndexList.add(key);
+            invertedIndexArray[--key] = i + 1;
+        }
+        for (int i = 0; i < invertedIndexArray.length; i++) {
+            invertedIndexList.add(invertedIndexArray[i]);
+        }
+        CarbonDictionarySortIndexWriter dictionarySortIndexWriter =
+                new CarbonDictionarySortIndexWriterImpl(carbonTableIdentifier, columnIdentifier,
+                        carbonStorePath, false);
+        try {
+            dictionarySortIndexWriter.writeSortIndex(sortedIndexList);
+            dictionarySortIndexWriter.writeInvertedSortIndex(invertedIndexList);
+        } finally {
+            dictionarySortIndexWriter.close();
+        }
+    }
+
     /**
      * This method will compare the actual data with expected data
      *
@@ -168,6 +247,27 @@ public class ForwardDictionaryCacheTest extends AbstractDictionaryCacheTest {
             surrogateKey++;
             String dictionaryValue = forwardDictionary.getDictionaryValueForKey(surrogateKey);
             assertTrue(data.get(i).equals(dictionaryValue));
+        }
+    }
+
+    /**
+     * This method will get the dictionary value from sorted index and compare with the data set
+     *
+     * @param data
+     * @param forwardDictionary
+     */
+    private void compareDictionaryValueFromSortedIndex(List<String> data,
+            Dictionary forwardDictionary) {
+        int expectedSurrogateKey = 0;
+        for (int i = 0; i < data.size(); i++) {
+            expectedSurrogateKey++;
+            String expectedDictionaryValue = data.get(i);
+            int actualSurrogateKey = forwardDictionary.getSurrogateKey(expectedDictionaryValue);
+            assertTrue(actualSurrogateKey == expectedSurrogateKey);
+            int sortedIndex = forwardDictionary.getSortedIndex(actualSurrogateKey);
+            String actualDictionaryValue =
+                    forwardDictionary.getDictionaryValueFromSortedIndex(sortedIndex);
+            assertTrue(expectedDictionaryValue.equals(actualDictionaryValue));
         }
     }
 }

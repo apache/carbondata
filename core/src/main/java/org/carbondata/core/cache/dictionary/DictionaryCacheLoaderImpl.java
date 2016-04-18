@@ -25,6 +25,8 @@ import java.util.List;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.reader.CarbonDictionaryReader;
 import org.carbondata.core.reader.CarbonDictionaryReaderImpl;
+import org.carbondata.core.reader.sortindex.CarbonDictionarySortIndexReader;
+import org.carbondata.core.reader.sortindex.CarbonDictionarySortIndexReaderImpl;
 
 /**
  * This class is responsible for loading the dictionary data for given columns
@@ -61,12 +63,18 @@ public class DictionaryCacheLoaderImpl implements DictionaryCacheLoader {
      *                                   be read
      * @param dictionaryChunkEndOffset   end offset till where dictionary file has to
      *                                   be read
+     * @param loadSortIndex              flag to indicate whether the sort index file has to be
+     *                                   read in memory after dictionary loading
      * @throws IOException
      */
     @Override public void load(DictionaryInfo dictionaryInfo, String columnIdentifier,
-            long dictionaryChunkStartOffset, long dictionaryChunkEndOffset) throws IOException {
+            long dictionaryChunkStartOffset, long dictionaryChunkEndOffset, boolean loadSortIndex)
+            throws IOException {
         List<byte[]> dictionaryChunk =
                 load(columnIdentifier, dictionaryChunkStartOffset, dictionaryChunkEndOffset);
+        if (loadSortIndex) {
+            readSortIndexFile(dictionaryInfo, columnIdentifier);
+        }
         dictionaryInfo.addDictionaryChunk(dictionaryChunk);
     }
 
@@ -92,16 +100,44 @@ public class DictionaryCacheLoaderImpl implements DictionaryCacheLoader {
     }
 
     /**
+     * This method will read the sort index file and load into memory
+     *
+     * @param dictionaryInfo
+     * @param columnIdentifier
+     * @throws IOException
+     */
+    private void readSortIndexFile(DictionaryInfo dictionaryInfo, String columnIdentifier)
+            throws IOException {
+        CarbonDictionarySortIndexReader sortIndexReader = getSortIndexReader(columnIdentifier);
+        try {
+            dictionaryInfo.setSortOrderIndex(sortIndexReader.readSortIndex());
+            dictionaryInfo.setSortReverseOrderIndex(sortIndexReader.readInvertedSortIndex());
+        } finally {
+            sortIndexReader.close();
+        }
+    }
+
+    /**
      * This method will create a dictionary reader instance to read the dictionary file
      *
      * @param columnIdentifier unique column identifier
      * @return carbon dictionary reader instance
-     * @throws IOException
      */
     private CarbonDictionaryReader getDictionaryReader(String columnIdentifier) {
         CarbonDictionaryReader dictionaryReader =
                 new CarbonDictionaryReaderImpl(carbonStorePath, carbonTableIdentifier,
                         columnIdentifier, false);
         return dictionaryReader;
+    }
+
+    /**
+     * @param columnIdentifier unique column identifier
+     * @return sort index reader instance
+     */
+    private CarbonDictionarySortIndexReader getSortIndexReader(String columnIdentifier) {
+        CarbonDictionarySortIndexReader sortIndexReader =
+                new CarbonDictionarySortIndexReaderImpl(carbonTableIdentifier, columnIdentifier,
+                        carbonStorePath, false);
+        return sortIndexReader;
     }
 }
