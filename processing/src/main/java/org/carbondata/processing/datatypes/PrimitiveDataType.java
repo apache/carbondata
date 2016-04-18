@@ -25,6 +25,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.processing.surrogatekeysgenerator.csvbased.CarbonCSVBasedDimSurrogateKeyGen;
@@ -88,7 +89,7 @@ public class PrimitiveDataType implements GenericDataType {
             String[] delimiter, int delimiterIndex, DataOutputStream dataOutputStream,
             CarbonCSVBasedDimSurrogateKeyGen surrogateKeyGen) throws KettleException, IOException {
         dataOutputStream.writeInt(surrogateKeyGen
-                .generateSurrogateKeys(inputString, tableName + "_" + name, index, new Object[0]));
+                .generateSurrogateKeys(inputString, tableName + CarbonCommonConstants.UNDERSCORE + name ));
     }
 
     @Override

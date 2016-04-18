@@ -26,6 +26,8 @@ import java.util.Map.Entry;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.cache.dictionary.*;
+import org.carbondata.core.cache.dictionary.Dictionary;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.file.manager.composite.FileData;
 import org.carbondata.core.file.manager.composite.IFileManagerComposite;
@@ -364,7 +366,7 @@ public final class DimenionLoadCommandHelper {
     public boolean isDimCacheExist(String[] actualColumns, String tableName,
             Map<String, String[]> columnPropMap, DimensionLoadInfo dimensionLoadInfo) {
         CarbonCSVBasedDimSurrogateKeyGen surrogateKeyGen = dimensionLoadInfo.getSurrogateKeyGen();
-        Map<String, Map<String, Integer>> memberCache = surrogateKeyGen.getMemberCache();
+        Map<String, Dictionary> dictionaryCaches = surrogateKeyGen.getDictionaryCaches();
 
         if (null == actualColumns || !(actualColumns.length > 0)) {
             return true;
@@ -389,8 +391,8 @@ public final class DimenionLoadCommandHelper {
                     continue;
                 }
             }
-            Map<String, Integer> memberMap = memberCache.get(dimColumnName);
-            if (null != memberMap && memberMap.size() > 0) {
+            Dictionary dicCache = dictionaryCaches.get(dimColumnName);
+            if (null != dicCache) {
                 actualColCount++;
             }
         }
@@ -511,70 +513,6 @@ public final class DimenionLoadCommandHelper {
         }
 
         return dimTableNames;
-    }
-
-    /**
-     * Below method will be used to member cache
-     *
-     * @param levelTypeColumnMap
-     * @param tableName
-     * @param columnIndex
-     * @param columnNames
-     * @param columnAndMemberListMap
-     */
-    public void updateMemberCache(DimensionLoadInfo dimensionLoadInfo,
-            Map<String, String> levelTypeColumnMap, String tableName, String[] columnNames,
-            int[] columnIndex, Map<String, Set<String>> columnAndMemberListMap,
-            Map<String, Integer> levelAndCardinalityMap) {
-        CarbonCSVBasedDimSurrogateKeyGen surrogateKeyGen = dimensionLoadInfo.getSurrogateKeyGen();
-
-        surrogateKeyGen.setTimDimMax(new int[surrogateKeyGen.getDimsFiles().length]);
-        surrogateKeyGen.setTimeDimCache(new HashMap<String, Map<String, Integer>>(
-                CarbonCommonConstants.DEFAULT_COLLECTION_SIZE));
-
-        if (null == levelTypeColumnMap || levelTypeColumnMap.isEmpty()) {
-            return;
-        }
-
-        dataPropertyReader = new RealTimeDataPropertyReader(
-                dimensionLoadInfo.getMeta().getSchemaName() + '/' + dimensionLoadInfo.getMeta()
-                        .getCubeName(), columnAndMemberListMap, levelTypeColumnMap,
-                levelAndCardinalityMap);
-
-        Map<String, Map<String, Integer>> memberCache = surrogateKeyGen.getMemberCache();
-
-        String yearColumn = levelTypeColumnMap.get("YEAR");
-        if (null != yearColumn) {
-            Map<String, Integer> yearMap = memberCache.get(tableName + '_' + yearColumn);
-
-            surrogateKeyGen.getTimeDimCache()
-                    .put(tableName + '_' + yearColumn, new HashMap<String, Integer>(yearMap));
-
-            yearMap.putAll(dataPropertyReader.getYearMap());
-
-        }
-        String monthColumn = levelTypeColumnMap.get("MONTHS");
-        if (null != monthColumn) {
-            Map<String, Integer> monthsMap = memberCache.get(tableName + '_' + monthColumn);
-
-            surrogateKeyGen.getTimeDimCache()
-                    .put(tableName + '_' + monthColumn, new HashMap<String, Integer>(monthsMap));
-
-            monthsMap.putAll(dataPropertyReader.getMonthMap());
-
-        }
-
-        String dayColumn = levelTypeColumnMap.get("DAYS");
-        if (null != dayColumn) {
-            Map<String, Integer> dayMap = memberCache.get(tableName + '_' + dayColumn);
-
-            surrogateKeyGen.getTimeDimCache()
-                    .put(tableName + '_' + dayColumn, new HashMap<String, Integer>(dayMap));
-
-            dayMap.putAll(dataPropertyReader.getDayMap());
-
-        }
-
     }
 
     /**

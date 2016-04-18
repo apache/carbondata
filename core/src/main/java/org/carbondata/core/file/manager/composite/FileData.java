@@ -20,7 +20,6 @@
 package org.carbondata.core.file.manager.composite;
 
 import org.carbondata.core.writer.HierarchyValueWriterForCSV;
-import org.carbondata.core.writer.LevelValueWriter;
 
 public class FileData extends AbstractFileManager {
     /**
@@ -32,11 +31,6 @@ public class FileData extends AbstractFileManager {
      * Store Path
      */
     private String storePath;
-
-    /**
-     * levelValueWriter
-     */
-    private LevelValueWriter levelValueWriter;
 
     /**
      * hierarchyValueWriter
@@ -70,24 +64,6 @@ public class FileData extends AbstractFileManager {
      */
     public String getStorePath() {
         return storePath;
-    }
-
-    /**
-     * get LevelValueWriter
-     *
-     * @return
-     */
-    public LevelValueWriter getLevelValueWriter() {
-        return levelValueWriter;
-    }
-
-    /**
-     * set level ValueWriter
-     *
-     * @param levelValueWriter
-     */
-    public void setLevelValueWriter(LevelValueWriter levelValueWriter) {
-        this.levelValueWriter = levelValueWriter;
     }
 
     /**

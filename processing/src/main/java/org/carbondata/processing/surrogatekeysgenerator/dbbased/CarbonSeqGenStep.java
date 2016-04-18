@@ -884,7 +884,7 @@ public class CarbonSeqGenStep extends BaseStep implements StepInterface {
             LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
         }
         surrogateKeyGen.hierCache = null;
-        surrogateKeyGen.memberCache = null;
+        surrogateKeyGen.dictionaryCaches = null;
         super.dispose(smi, sdi);
     }
 }

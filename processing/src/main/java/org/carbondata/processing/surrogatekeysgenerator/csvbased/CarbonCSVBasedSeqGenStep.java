@@ -32,6 +32,8 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.common.logging.impl.StandardLogService;
+import org.carbondata.core.cache.dictionary.*;
+import org.carbondata.core.cache.dictionary.Dictionary;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.csvreader.checkpoint.CheckPointHanlder;
 import org.carbondata.core.csvreader.checkpoint.CheckPointInterface;
@@ -61,8 +63,6 @@ import org.carbondata.processing.dimension.load.info.DimensionLoadInfo;
 import org.carbondata.processing.schema.metadata.HierarchiesInfo;
 import org.carbondata.processing.schema.metadata.CarbonInfo;
 import org.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
-import org.carbondata.processing.surrogatekeysgenerator.lru.LRUCache;
-import org.carbondata.processing.surrogatekeysgenerator.lru.CarbonSeqGenCacheHolder;
 import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.carbondata.processing.util.CarbonDataProcessorUtil;
 import org.carbondata.processing.util.RemoveDictionaryUtil;
@@ -503,23 +503,17 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
                                     for (GenericDataType eachPrimitive : primitiveChild) {
                                         surrogateKeyGenObj.generateSurrogateKeys(
                                                 CarbonCommonConstants.MEMBER_DEFAULT_VAL,
-                                                meta.getTableName() + "_" + eachPrimitive.getName(),
-                                                index, new Object[0]);
+                                                meta.getTableName() + CarbonCommonConstants.UNDERSCORE + eachPrimitive.getName());
                                         index++;
                                     }
                                 } else {
                                     surrogateKeyGenObj.generateSurrogateKeys(
                                             CarbonCommonConstants.MEMBER_DEFAULT_VAL,
-                                            meta.dimColNames[j], index, new Object[0]);
+                                            meta.dimColNames[j]);
                                     index++;
                                 }
                             }
                         }
-                    }
-
-                    List<HierarchiesInfo> metahierVoList = meta.getMetahierVoList();
-                    if (null != metahierVoList && !meta.isAggregate()) {
-                        updateHierarichiesFromMetaDataFile(metahierVoList);
                     }
                 }
             }
@@ -548,8 +542,6 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
             }
 
             startReadingProcess(numberOfNodes);
-
-            data.getSurrogateKeyGen().writeHeirDataToFileAndCloseStreams();
             updateAndWriteSliceMetadataFile();
             CarbonUtil.writeLevelCardinalityFile(loadFolderLoc, meta.getTableName(),
                     getUpdatedCardinality(data.getSurrogateKeyGen().max));
@@ -557,7 +549,6 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
             badRecordslogger.closeStreams();
             if (!meta.isAggregate()) {
                 closeNormalizedHierFiles();
-                data.getSurrogateKeyGen().closeMeasureLevelValWriter();
             }
             if (writeCounter == 0) {
                 putRow(data.getOutputRowMeta(), new Object[outSize]);
@@ -636,9 +627,8 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
             return false;
         }
         try {
-            data.getSurrogateKeyGen().writeHeirDataToFileAndCloseStreams();
             updateAndWriteSliceMetadataFile();
-        } catch (KeyGenException e) {
+        } catch (Exception e) {
             LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
                     "Not able to get Key genrator");
             throw new KettleException();
@@ -1231,7 +1221,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
             return null;
         }
 
-        Map<String, Map<String, Integer>> allMemberCache = surrogateKeyGen.getMemberCache();
+        Map<String, Dictionary> dictionaryCaches = surrogateKeyGen.getDictionaryCaches();
         Object[] out = new Object[meta.normLength + meta.msrs.length + checkPoint
                 .getCheckPointInfoFieldCount()];
         int dimLen = meta.dims.length;
@@ -1286,7 +1276,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
                         }
                     } else {
                         surrogate = surrogateKeyGen
-                                .generateSurrogateKeys(msr, foreignKeyColumnName, n, new Object[0]);
+                                .generateSurrogateKeys(msr, foreignKeyColumnName);
                     }
 
                     out[memberMapping[dimLen + index]] = surrogate.doubleValue();
@@ -1343,7 +1333,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
                 String[] splittedHiers = foreignKeyMappingColumnsForMultiple[j];
 
                 for (String hierForignKey : splittedHiers) {
-                    Map<String, Integer> memberCache = allMemberCache.get(hierForignKey);
+                    Dictionary dicCache = dictionaryCaches.get(hierForignKey);
 
                     String actualHierName = null;
                     if (!isPresentInSchema) {
@@ -1355,7 +1345,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
                     int[] surrogateKeyForHierarchy = null;
                     if (null != cache) {
 
-                        Integer keyFromCsv = memberCache.get(((String) r[j]));
+                        Integer keyFromCsv = dicCache.getSurrogateKey(((String) r[j]));
 
                         if (null != keyFromCsv) {
                             surrogateKeyForHierarchy = cache.get(keyFromCsv);
@@ -1386,8 +1376,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
                         }
                         surrogateKeyForHierarchy = new int[1];
                         surrogateKeyForHierarchy[0] = surrogateKeyGen
-                                .generateSurrogateKeys((String) r[j], foreignKeyColumnName, n,
-                                        props);
+                                .generateSurrogateKeys((String) r[j], foreignKeyColumnName);
                     }
                     for (int k = 0; k < surrogateKeyForHierarchy.length; k++) {
                         if (dimPresentCsvOrder[i]) {
@@ -1424,7 +1413,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
                     }
                     i++;
                 } else {
-                    Map<String, Integer> memberCache = allMemberCache.get(foreignKeyColumnName);
+                    Dictionary dicCache = dictionaryCaches.get(foreignKeyColumnName);
 
                     String actualHierName = null;
                     if (!isPresentInSchema) {
@@ -1435,7 +1424,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
                     Int2ObjectMap<int[]> cache = surrogateKeyGen.getHierCache().get(actualHierName);
                     int[] surrogateKeyForHrrchy = null;
                     if (null != cache) {
-                        Integer keyFromCsv = memberCache.get(((String) r[j]));
+                        Integer keyFromCsv = dicCache.getSurrogateKey(((String) r[j]));
 
                         if (null != keyFromCsv) {
                             surrogateKeyForHrrchy = cache.get(keyFromCsv);
@@ -1469,8 +1458,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
                             generatedSurrogate = -1;
                         } else {
                             surrogateKeyForHrrchy[0] = surrogateKeyGen
-                                    .generateSurrogateKeys(((String) r[j]), foreignKeyColumnName, n,
-                                            properties);
+                                    .generateSurrogateKeys(((String) r[j]), foreignKeyColumnName);
                         }
                         if (surrogateKeyForHrrchy[0] == -1) {
                             addCardinalityExcededEntry(r, inputColumnsSize, j, columnName);
@@ -1646,7 +1634,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
             throws KettleException {
         String colName = meta.getTableName() + '_' + columnName;
 
-        return data.getSurrogateKeyGen().getSurrogateForMeasure(member, colName, index);
+        return data.getSurrogateKeyGen().getSurrogateForMeasure(member, colName);
 
     }
 
@@ -1928,40 +1916,6 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
         return true;
     }
 
-    private void updateHierarichiesFromMetaDataFile(List<HierarchiesInfo> metahierVoList)
-            throws KettleException {
-        DimensionLoadActionInvoker actionInvoker;
-        DimensionLoadCommand loadCommand;
-
-        DimensionLoadInfo dimensionLoadInfo = new DimensionLoadInfo();
-        dimensionLoadInfo.setHierVOlist(metahierVoList);
-        dimensionLoadInfo.setSurrogateKeyGen(data.getSurrogateKeyGen());
-        dimensionLoadInfo.setModifiedDimesions(modifiedDimesions);
-        dimensionLoadInfo.setCons(cons);
-        dimensionLoadInfo.setMeta(meta);
-        dimensionLoadInfo.setDimFileLocDir(dimTableFileLoc);
-        dimensionLoadInfo.setDrivers(DRIVERS);
-        dimensionLoadInfo.setDimCardinality(meta.dimLens);
-        dimensionLoadInfo.setKeyGeneratorMap(data.getKeyGenerators());
-
-        if (null != dimTableFileLoc && !dimTableFileLoc.isEmpty()) {
-            dimensionLoadInfo.setDimTableNames(DimenionLoadCommandHelper.getInstance()
-                    .getDimensionTableNameArray(meta.getDimTableArray()));
-        }
-
-        loadCommand =
-                new CSVDimensionLoadCommand(dimensionLoadInfo, meta.getCurrentRestructNumber(),
-                        surrogateKeyGen.dimensionWriter);
-        actionInvoker = new DimensionLoadActionInvoker(loadCommand);
-
-        try {
-            actionInvoker.execute();
-        } catch (Exception e) {
-            throw new KettleException(e);
-        }
-
-    }
-
     private void closeConnections() throws KettleException {
         try {
             for (Entry<String, Connection> entry : cons.entrySet()) {
@@ -2123,23 +2077,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
                     .getProperty(CarbonCommonConstants.CARBON_SEQ_GEN_INMEMORY_LRU_CACHE_ENABLED,
                             CarbonCommonConstants.CARBON_SEQ_GEN_INMEMORY_LRU_CACHE_ENABLED_DEFAULT_VALUE));
             if (null != surKeyGen) {
-
-                if (isCacheEnabled) {
-                    CarbonSeqGenCacheHolder holder = new CarbonSeqGenCacheHolder();
-                    holder.setHierCache(surKeyGen.getHierCache());
-                    holder.setHierCacheReverse(surKeyGen.getHierCacheReverse());
-                    holder.setMax(surKeyGen.getMax());
-                    holder.setTimDimMax(surKeyGen.getTimDimMax());
-                    holder.setMemberCache(surKeyGen.getMemberCache());
-                    holder.setTimeDimCache(surKeyGen.getTimeDimCache());
-                    holder.setMeasureMaxSurroagetMap(surKeyGen.getMeasureMaxSurroagetMap());
-                    String cacheKey = meta.getSchemaName() + '_' + meta.getCubeName();
-                    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-                            "************************************Storing in SEQ GEN LRU cache");
-                    LRUCache.getIntance().put(cacheKey, holder);
-                }
-
-                surKeyGen.setMemberCache(null);
+                surKeyGen.setDictionaryCaches(null);
                 surKeyGen.setHierCache(null);
                 surKeyGen.setHierCacheReverse(null);
                 surKeyGen.setTimeDimCache(null);

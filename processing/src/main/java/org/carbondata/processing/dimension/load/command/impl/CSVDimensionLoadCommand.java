@@ -33,7 +33,6 @@ import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.util.CarbonUtil;
-import org.carbondata.core.writer.LevelValueWriter;
 import org.carbondata.processing.dimension.load.command.DimensionLoadCommand;
 import org.carbondata.processing.dimension.load.info.DimensionLoadInfo;
 import org.carbondata.processing.schema.metadata.HierarchiesInfo;
@@ -55,13 +54,9 @@ public class CSVDimensionLoadCommand implements DimensionLoadCommand {
 
     private int currentRestructNumber;
 
-    private LevelValueWriter[] dimensionWriter;
-
-    public CSVDimensionLoadCommand(DimensionLoadInfo loadInfo, int currentRestructNum,
-            LevelValueWriter[] dimensionWriter) {
+    public CSVDimensionLoadCommand(DimensionLoadInfo loadInfo, int currentRestructNum) {
         this.dimensionLoadInfo = loadInfo;
         this.currentRestructNumber = currentRestructNum;
-        this.dimensionWriter = dimensionWriter;
     }
 
     /**
@@ -118,17 +113,6 @@ public class CSVDimensionLoadCommand implements DimensionLoadCommand {
             }
         } catch (Exception e) {
             throw new KettleException(e.getMessage(), e);
-        }
-
-        if (CheckPointHanlder.IS_CHECK_POINT_NEEDED) {
-            // close the streams
-            try {
-                dimensionLoadInfo.getSurrogateKeyGen().writeHeirDataToFileAndCloseStreams();
-
-            } catch (KeyGenException e) {
-                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-                        "Not able to close the stream for level value and hierarchy files.");
-            }
         }
     }
 
@@ -213,8 +197,6 @@ public class CSVDimensionLoadCommand implements DimensionLoadCommand {
 
         primaryKeyColumnName = tblName + '_' + primaryKeyColumnName.replace("\"", "").trim();
         isTimeDim = false;
-
-        LevelValueWriter primaryKeyValueWriter = null;
         boolean fileAlreadyCreated = false;
         DataInputStream fileReader = null;
         BufferedReader bufferedReader = null;
@@ -267,17 +249,6 @@ public class CSVDimensionLoadCommand implements DimensionLoadCommand {
                 }
                 String dimFileName =
                         primaryKeyColumnName + CarbonCommonConstants.LEVEL_FILE_EXTENSION;
-                for (int i = 0; i < dimensionWriter.length; i++) {
-                    if (dimFileName.equals(dimensionWriter[i].getMemberFileName())) {
-                        primaryKeyValueWriter = dimensionWriter[i];
-                        fileAlreadyCreated = true;
-                        break;
-                    }
-                }
-                if (null == primaryKeyValueWriter) {
-                    primaryKeyValueWriter = new LevelValueWriter(dimFileName,
-                            surrogateKeyGen.getStoreFolderWithLoadNumber());
-                }
             }
 
             int[] outputVal = new int[columnNames.length];
@@ -312,12 +283,7 @@ public class CSVDimensionLoadCommand implements DimensionLoadCommand {
                 if (!isKeyExceeded) {
                     if (primaryIndexInLevel >= 0) {
                         primaryKeySurrogate = outputVal[primaryIndexInLevel];
-                    } else {
-                        primaryKeySurrogate = surrogateKeyGen
-                                .getSurrogateKeyForPrimaryKey(primaryKey, primaryKeyColumnName,
-                                        primaryKeyValueWriter);
                     }
-
                     if (loadToHier) {
                         surrogateKeyGen
                                 .checkHierExists(outputVal, hierarichiesName, primaryKeySurrogate);
@@ -325,41 +291,9 @@ public class CSVDimensionLoadCommand implements DimensionLoadCommand {
                 }
             }
 
-            if (0 == recordCnt) {
-                Map<String, Map<String, Integer>> memberCache = surrogateKeyGen.getMemberCache();
-                Map<String, Integer> primaryKeyColName = memberCache.get(primaryKeyColumnName);
-                if (null == primaryKeyColName) {
-                    memberCache.put(primaryKeyColumnName, new HashMap<String, Integer>(0));
-                }
-            }
-
         } catch (KettleException e) {
             throw new KettleException(e.getMessage(), e);
         } finally {
-            if (null != primaryKeyValueWriter && !fileAlreadyCreated) {
-                try {
-                    primaryKeyValueWriter.writeMaxValue();
-                } catch (IOException e) {
-                    throw new KettleException(e.getMessage(), e);
-                }
-                CarbonUtil.closeStreams(primaryKeyValueWriter.getBufferedOutputStream());
-
-                String storePath = surrogateKeyGen.getStoreFolderWithLoadNumber();
-                String levelFileName = primaryKeyValueWriter.getMemberFileName();
-                int counter = primaryKeyValueWriter.getCounter();
-
-                String changedFileName = levelFileName + (counter - 1);
-                String inProgFileName =
-                        changedFileName + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
-                File inProgress = new File(storePath + File.separator + inProgFileName);
-                File destFile = new File(storePath + File.separator + changedFileName);
-
-                if (!inProgress.renameTo(destFile)) {
-                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-                            "Renaming of file is not successfull : " + inProgress
-                                    .getAbsolutePath());
-                }
-            }
             if (null != bufferedReader) {
                 CarbonUtil.closeStreams(bufferedReader);
             }
@@ -408,7 +342,7 @@ public class CSVDimensionLoadCommand implements DimensionLoadCommand {
                                 propertyvalue);
             } else {
                 output[i] = surrogateKeyGen
-                        .generateSurrogateKeys(tuple, columnName, columnIndex[i], propertyvalue);
+                        .generateSurrogateKeys(tuple, columnName);
 
             }
             if (output[i] == -1) {

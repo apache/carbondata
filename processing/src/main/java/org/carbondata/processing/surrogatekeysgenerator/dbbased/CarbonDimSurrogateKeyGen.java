@@ -29,6 +29,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.cache.dictionary.Dictionary;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.processing.schema.metadata.CarbonInfo;
@@ -49,7 +50,7 @@ public abstract class CarbonDimSurrogateKeyGen {
      * Cache should be map only. because, multiple levels can map to same
      * database column. This case duplicate storage should be avoided.
      */
-    protected Map<String, Map<String, Integer>> memberCache;
+    protected Map<String, Dictionary> dictionaryCaches;
     /**
      * dimsFiles
      */
@@ -108,54 +109,6 @@ public abstract class CarbonDimSurrogateKeyGen {
         setHierFileNames(carbonInfo.getHierTables());
     }
 
-    public int[] generateSurrogateKeys(String[] timeTuples, int[] out, int[] columnIndex,
-            List<Integer> timeOrdinalColValues) throws KettleException {
-        Integer key = null;
-        for (int i = 0; i < columnIndex.length; i++) {
-            Map<String, Integer> cache =
-                    memberCache.get(carbonInfo.getDimColNames()[columnIndex[i]]);
-
-            key = cache.get(timeTuples[i]);
-            if (key == null) {
-                // Validate the key against cardinality bits
-                if (max[i] >= carbonInfo.getMaxKeys()[i]) {
-                    throw new KettleException(new KeyGenException(
-                            "Invalid cardinality. Key size exceeded cardinality for: " + carbonInfo
-                                    .getDimColNames()[i]));
-                }
-                // Extract properties from tuple
-                Object[] props = getProperties(new Object[0], timeOrdinalColValues, columnIndex[i]);
-
-                // Need to create a new surrogate key.
-                key = getSurrogateFromStore(timeTuples[i], columnIndex[i], props);
-                cache.put(timeTuples[i], key);
-            }
-            out[i] = key;
-        }
-        return out;
-    }
-
-    public Integer generateSurrogateKeys(String tuples, String columnNames, int index,
-            Object[] props) throws KettleException {
-        Integer key = null;
-        Map<String, Integer> cache = memberCache.get(columnNames);
-
-        key = cache.get(tuples);
-        if (key == null) {
-            if (max[index] >= carbonInfo.getMaxKeys()[index]) {
-                LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-                        "Invalid cardinality. Key size exceeded cardinality for: " + carbonInfo
-                                .getDimColNames()[index]);
-                return -1;
-            }
-            // Extract properties from tuple
-            // Need to create a new surrogate key.
-            key = getSurrogateFromStore(tuples, index, props);
-            cache.put(tuples, key);
-        }
-        return key;
-    }
-
     public Object[] generateSurrogateKeys(Object[] tuple, Object[] out,
             List<Integer> timeOrdinalColValues) throws KettleException {
         boolean[] dimsPresent = carbonInfo.getDimsPresent();
@@ -182,31 +135,10 @@ public abstract class CarbonDimSurrogateKeyGen {
             }
             String dimS = value.toString().trim();
             // getting values from local cache
-            Map<String, Integer> cache = memberCache.get(dimColNames[i]);
+            Dictionary dicCache = dictionaryCaches.get(dimColNames[i]);
 
-            key = cache.get(dimS);
-            // here we added this null check
-            if (key == null) {
-                // Validate the key against cardinality bits
-                // Commenting for testing if this required will be enabled
-                if (max[i] >= carbonInfo.getMaxKeys()[i]) {
-                    out = new Object[0];
-                    return out;
-                }
-                try {
-                    // Extract properties from tuple
-                    wLock.lock();
-                    key = cache.get(dimS);
-                    if (null == key) {
-                        Object[] props = getProperties(tuple, timeOrdinalColValues, i);
-                        key = getSurrogateFromStore(dimS, i, props);
-                        cache.put(dimS, key);
-                    }
-                } finally {
-                    wLock.unlock();
-                }
+            key = dicCache.getSurrogateKey(dimS);
 
-            }
             // Update the generated key in output.
             out[k] = key;
             k++;
@@ -325,14 +257,6 @@ public abstract class CarbonDimSurrogateKeyGen {
     private void setDimensionTables(String[] dimeFileNames) {
         this.dimsFiles = dimeFileNames;
         max = new int[dimeFileNames.length];
-
-        memberCache = new HashMap<String, Map<String, Integer>>(
-                CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-        for (int i = 0; i < dimeFileNames.length; i++) {
-            memberCache.put(dimeFileNames[i],
-                    new HashMap<String, Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE));
-        }
-
         createRespectiveDimFilesForDimTables();
     }
 

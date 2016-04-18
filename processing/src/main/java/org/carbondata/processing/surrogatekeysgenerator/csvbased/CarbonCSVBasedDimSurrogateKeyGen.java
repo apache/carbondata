@@ -37,12 +37,12 @@ import org.carbondata.core.file.manager.composite.IFileManagerComposite;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.writer.HierarchyValueWriterForCSV;
-import org.carbondata.core.writer.LevelValueWriter;
 import org.carbondata.processing.datatypes.GenericDataType;
 import org.carbondata.processing.schema.metadata.ArrayWrapper;
 import org.carbondata.processing.schema.metadata.CarbonInfo;
 import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.pentaho.di.core.exception.KettleException;
+import org.carbondata.core.cache.dictionary.Dictionary;
 
 public abstract class CarbonCSVBasedDimSurrogateKeyGen {
 
@@ -68,10 +68,6 @@ public abstract class CarbonCSVBasedDimSurrogateKeyGen {
      * carbonInfo
      */
     protected CarbonInfo carbonInfo;
-    /**
-     * measureValWriter
-     */
-    protected Map<String, LevelValueWriter> measureValWriterMap;
     protected IFileManagerComposite measureFilemanager;
     /**
      * primary key max surrogate key map
@@ -85,15 +81,12 @@ public abstract class CarbonCSVBasedDimSurrogateKeyGen {
      * File manager
      */
     protected IFileManagerComposite fileManager;
-    /**
-     * dimensionWriter
-     */
-    protected LevelValueWriter[] dimensionWriter;
+
     /**
      * Cache should be map only. because, multiple levels can map to same
      * database column. This case duplicate storage should be avoided.
      */
-    private Map<String, Map<String, Integer>> memberCache;
+    private Map<String, Dictionary > dictionaryCaches;
     /**
      * Year Cache
      */
@@ -141,107 +134,42 @@ public abstract class CarbonCSVBasedDimSurrogateKeyGen {
         setHierFileNames(carbonInfo.getHierTables());
     }
 
-    public Integer generateSurrogateKeys(String tuples, String columnNames, int index,
-            Object[] props) throws KettleException {
+    /**
+     * @param tuple The string value whose surrogate key will be gennerated.
+     * @param tabColumnName  The K of dictionaryCaches Map, for example "tablename_columnname"
+     */
+    public Integer generateSurrogateKeys(String tuple, String tabColumnName) throws KettleException {
         Integer key = null;
-        Map<String, Integer> cache = memberCache.get(columnNames);
-
-        key = cache.get(tuples);
-        if (key == null) {
-            synchronized (cache) {
-                key = cache.get(tuples);
-                if (null == key) {
-                    key = getSurrogateFromStore(tuples, index, props);
-                    cache.put(tuples, key);
-                }
-            }
-
-        }
+        Dictionary dicCache = dictionaryCaches.get(tabColumnName);
+        key = dicCache.getSurrogateKey(tuple);
         return key;
     }
 
-    public void closeMeasureLevelValWriter() {
-
-        if (null == measureFilemanager || null == measureValWriterMap) {
-            return;
-        }
-        int fileMangerSize = measureFilemanager.size();
-
-        for (int i = 0; i < fileMangerSize; i++) {
-            FileData memberFile = (FileData) measureFilemanager.get(i);
-            String msrLvlInProgressFileName = memberFile.getFileName();
-            LevelValueWriter measureValueWriter = measureValWriterMap.get(msrLvlInProgressFileName);
-            if (null == measureValueWriter) {
-                continue;
-            }
-
-            // now write the byte array in the file.
-            OutputStream bufferedOutputStream = measureValueWriter.getBufferedOutputStream();
-            if (null == bufferedOutputStream) {
-                continue;
-
-            }
-            CarbonUtil.closeStreams(bufferedOutputStream);
-            measureValueWriter.clearOutputStream();
-            String storePath = memberFile.getStorePath();
-            String levelFileName = measureValueWriter.getMemberFileName();
-            int counter = measureValueWriter.getCounter();
-
-            String changedFileName = levelFileName + (counter - 1);
-
-            String inProgFileName = changedFileName + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
-
-            File currentFile = new File(storePath + File.separator + inProgFileName);
-            File destFile = new File(storePath + File.separator + changedFileName);
-
-            if (!currentFile.exists()) {
-                continue;
-            }
-            if (currentFile.length() == 0) {
-                boolean isDeleted = currentFile.delete();
-                if (!isDeleted) {
-                    LOGGER.debug(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-                            "Failed to delete file " + currentFile.getName());
-                }
-            }
-
-            if (!currentFile.renameTo(destFile)) {
-                LOGGER.debug(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-                        "Failed to rename from " + currentFile.getName() + " to " + destFile
-                                .getName());
-            }
-        }
-
-    }
-
-    public Integer generateSurrogateKeysForTimeDims(String tuples, String columnName, int index,
+    public Integer generateSurrogateKeysForTimeDims(String tuple, String columnName, int index,
             Object[] props) throws KettleException {
         Integer key = null;
-        Map<String, Integer> cache = memberCache.get(columnName);
-
-        key = cache.get(tuples);
+        Dictionary dicCache = dictionaryCaches.get(columnName);
+        key = dicCache.getSurrogateKey(tuple);
         if (key == null) {
             if (timDimMax[index] >= carbonInfo.getMaxKeys()[index]) {
-                if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(tuples)) {
-                    tuples = null;
+                if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(tuple)) {
+                    tuple = null;
                 }
                 LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                         "Invalid cardinality. Key size exceeded cardinality for: " + carbonInfo
-                                .getDimColNames()[index] + ": MemberValue: " + tuples);
+                                .getDimColNames()[index] + ": MemberValue: " + tuple);
                 return -1;
             }
             timDimMax[index]++;
             Map<String, Integer> timeCache = timeDimCache.get(columnName);
             // Extract properties from tuple
             // Need to create a new surrogate key.
-            key = getSurrogateFromStore(tuples, index, props);
-            cache.put(tuples, key);
+            key = getSurrogateFromStore(tuple, index, props);
             if (null != timeCache) {
-                timeCache.put(tuples, key);
+                timeCache.put(tuple, key);
             }
         } else {
-
-            return updateSurrogateToStore(tuples, columnName, index, key, props);
+            return updateSurrogateToStore(tuple, columnName, index, key, props);
         }
         return key;
     }
@@ -288,9 +216,6 @@ public abstract class CarbonCSVBasedDimSurrogateKeyGen {
             connection.close();
         }
     }
-
-    public abstract void writeHeirDataToFileAndCloseStreams()
-            throws KettleException, KeyGenException;
 
     public abstract void writeDataToFileAndCloseStreams() throws KettleException, KeyGenException;
 
@@ -344,21 +269,12 @@ public abstract class CarbonCSVBasedDimSurrogateKeyGen {
             int key, Object[] properties) throws KettleException;
 
     /**
-     * generate the surroagate key for the primary keys.
-     *
-     * @return
-     * @throws KettleException
-     */
-    public abstract int getSurrogateKeyForPrimaryKey(String value, String fileName,
-            LevelValueWriter levelValueWriter) throws KettleException;
-
-    /**
      * generate the surroagate key for the measure values.
      *
      * @return
      * @throws KettleException
      */
-    public abstract int getSurrogateForMeasure(String tuple, String columnName, int index)
+    public abstract int getSurrogateForMeasure(String tuple, String columnName)
             throws KettleException;
 
     private Int2ObjectMap<int[]> getHCache(String hName) {
@@ -397,7 +313,7 @@ public abstract class CarbonCSVBasedDimSurrogateKeyGen {
     private void setDimensionTables(String[] dimeFileNames) {
         int noOfPrimitiveDims = 0;
         List<String> dimFilesForPrimitives = new ArrayList<String>();
-        memberCache = new ConcurrentHashMap<String, Map<String, Integer>>();
+        dictionaryCaches = new ConcurrentHashMap<String, Dictionary >();
         for (int i = 0; i < dimeFileNames.length; i++) {
             GenericDataType complexType = carbonInfo.getComplexTypesMap()
                     .get(dimeFileNames[i].substring(carbonInfo.getTableName().length() + 1));
@@ -405,15 +321,12 @@ public abstract class CarbonCSVBasedDimSurrogateKeyGen {
                 List<GenericDataType> primitiveChild = new ArrayList<GenericDataType>();
                 complexType.getAllPrimitiveChildren(primitiveChild);
                 for (GenericDataType eachPrimitive : primitiveChild) {
-                    memberCache.put(carbonInfo.getTableName() + "_" + eachPrimitive.getName(),
-                            new ConcurrentHashMap<String, Integer>());
                     dimFilesForPrimitives
-                            .add(carbonInfo.getTableName() + "_" + eachPrimitive.getName());
+                            .add(carbonInfo.getTableName() + CarbonCommonConstants.UNDERSCORE + eachPrimitive.getName());
                     eachPrimitive.setSurrogateIndex(noOfPrimitiveDims);
                     noOfPrimitiveDims++;
                 }
             } else {
-                memberCache.put(dimeFileNames[i], new ConcurrentHashMap<String, Integer>());
                 dimFilesForPrimitives.add(dimeFileNames[i]);
                 noOfPrimitiveDims++;
             }
@@ -453,17 +366,17 @@ public abstract class CarbonCSVBasedDimSurrogateKeyGen {
     }
 
     /**
-     * @return Returns the memberCache.
+     * @return Returns the dictionaryCaches.
      */
-    public Map<String, Map<String, Integer>> getMemberCache() {
-        return memberCache;
+    public Map<String, Dictionary> getDictionaryCaches() {
+        return dictionaryCaches;
     }
 
     /**
-     * @param memberCache The memberCache to set.
+     * @param dictionaryCaches The dictionaryCaches to set.
      */
-    public void setMemberCache(Map<String, Map<String, Integer>> memberCache) {
-        this.memberCache = memberCache;
+    public void setDictionaryCaches(Map<String, Dictionary> dictionaryCaches) {
+        this.dictionaryCaches = dictionaryCaches;
     }
 
     /**

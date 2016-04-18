@@ -22,22 +22,28 @@ package org.carbondata.processing.surrogatekeysgenerator.dbbased;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.nio.charset.Charset;
 import java.util.*;
 import java.util.Map.Entry;
 
-import org.apache.commons.codec.binary.Base64;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.cache.Cache;
+import org.carbondata.core.cache.CacheProvider;
+import org.carbondata.core.cache.CacheType;
+import org.carbondata.core.cache.dictionary.*;
+import org.carbondata.core.cache.dictionary.Dictionary;
+import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.file.manager.composite.FileData;
 import org.carbondata.core.file.manager.composite.IFileManagerComposite;
 import org.carbondata.core.file.manager.composite.LoadFolderData;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.KeyGenerator;
+import org.carbondata.core.reader.CarbonDictionaryColumnMetaChunk;
+import org.carbondata.core.reader.CarbonDictionaryMetadataReaderImpl;
+import org.carbondata.core.util.CarbonDictionaryUtil;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
-import org.carbondata.core.writer.LevelValueWriter;
 import org.carbondata.processing.schema.metadata.CarbonInfo;
 import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.pentaho.di.core.exception.KettleException;
@@ -45,12 +51,6 @@ import org.pentaho.di.core.exception.KettleException;
 public class FileStoreSurrogateKeyGen extends CarbonDimSurrogateKeyGen {
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(FileStoreSurrogateKeyGen.class.getName());
-
-    /**
-     * dimensionWriter
-     */
-    private LevelValueWriter[] dimensionWriter;
-
     /**
      * hierValueWriter
      */
@@ -101,16 +101,6 @@ public class FileStoreSurrogateKeyGen extends CarbonDimSurrogateKeyGen {
 
         fileManager = new LoadFolderData();
         fileManager.setName(loadFolderName + CarbonCommonConstants.FILE_INPROGRESS_STATUS);
-
-        dimensionWriter = new LevelValueWriter[dimInsertFileNames.length];
-        for (int i = 0; i < dimensionWriter.length; i++) {
-            String dimFileName =
-                    dimInsertFileNames[i] + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
-            dimensionWriter[i] = new LevelValueWriter(dimFileName, storeFolderWithLoadNumber);
-            FileData fileData = new FileData(dimFileName, storeFolderWithLoadNumber);
-            fileManager.add(fileData);
-        }
-
         hierValueWriter = new HashMap<String, HierarchyValueWriter>(
                 CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
@@ -158,48 +148,76 @@ public class FileStoreSurrogateKeyGen extends CarbonDimSurrogateKeyGen {
         return basePath;
     }
 
-    private void populateCache() throws KettleException {
-        //
-        checkAndUpdateFolderList(baseStorePath);
-        // Fixing Check style
-        String exceptionMsg = "";
+    /**
+     * This method will update the maxkey information.
+     * @param carbonStorePath       location where Carbon will create the store and write the data in its own format.
+     * @param carbonTableIdentifier table identifier which will give table name and database name
+     * @param columnName            the name of column
+     * @param tabColumnName         tablename + "_" + columnname, for example table_col
+     */
+    private void updateMaxKeyInfo(String carbonStorePath, CarbonTableIdentifier carbonTableIdentifier,
+                                  String columnName, String tabColumnName) throws IOException {
+        CarbonDictionaryMetadataReaderImpl columnMetadataReaderImpl =
+                new CarbonDictionaryMetadataReaderImpl(carbonStorePath, carbonTableIdentifier, columnName, false);
+        CarbonDictionaryColumnMetaChunk lastEntryOfDictionaryMetaChunk = null;
+        // read metadata file
         try {
-            for (File folder : folderList) {
-                exceptionMsg = "Not able to read level mapping File.";
-                // update the member cache
-                for (int i = 0; i < dimInsertFileNames.length; i++) {
-                    File file = new File(
-                            folder.getAbsolutePath() + File.separator + dimInsertFileNames[i]);
-
-                    if (file.exists()) {
-                        //
-                        readLevelFileAndUpdateCache(file, dimInsertFileNames[i]);
-                    }
-
-                }
-
-                // Update the hierarchy cache
-                exceptionMsg = "Not able to read hierarchy mapping File.";
-                for (Entry<String, String> entry : hierInsertFileNames.entrySet()) {
-                    File hierarchyFile = new File(
-                            folder.getAbsolutePath() + File.separator + entry.getKey()
-                                    + HIERARCHY_FILE_EXTENSION);
-                    //
-                    if (hierarchyFile.exists()) {
-
-                        readHierarchyAndUpdateCache(hierarchyFile, entry.getKey());
-
-                    }
-
-                }
-
-            }
+            lastEntryOfDictionaryMetaChunk = columnMetadataReaderImpl.readLastEntryOfDictionaryMetaChunk();
         } catch (IOException e) {
-            throw new KettleException(exceptionMsg, e);
+            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, "Can not find the dictionary meta" +
+                    " file of this column: " + columnName);
+            throw new IOException();
+        } finally {
+            columnMetadataReaderImpl.close();
         }
-        folderList.clear();
-
+        int maxKey = lastEntryOfDictionaryMetaChunk.getMax_surrogate_key();
+        checkAndUpdateMap(maxKey, tabColumnName);
     }
+
+    /**
+     * This method will generate cache for all the global dictionaries during data loading.
+     */
+    private void populateCache() throws KettleException {
+        String carbonStorePath = CarbonProperties.getInstance()
+                .getProperty(CarbonCommonConstants.STORE_LOCATION_HDFS);
+        String[] dimColumnNames = carbonInfo.getDimColNames();
+        boolean isSharedDimension = false;
+        String databaseName = carbonInfo.getSchemaName().substring(0, carbonInfo.getSchemaName().lastIndexOf("_"));
+        String tableName = carbonInfo.getTableName();
+        CarbonTableIdentifier carbonTableIdentifier = new CarbonTableIdentifier(databaseName, tableName);
+        //update the member cache for dimension
+        for (int i = 0; i < dimColumnNames.length; i++) {
+            String dimColName = dimColumnNames[i].substring(tableName.length() + 1);
+            initDicCacheInfo(carbonTableIdentifier, dimColName, dimColumnNames[i], carbonStorePath);
+            try {
+                updateMaxKeyInfo(carbonStorePath, carbonTableIdentifier, dimColName, dimColumnNames[i]);
+            } catch (IOException e) {
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, "Can not read metadata file" +
+                        "of this column: " + dimColName);
+            }
+        }
+    }
+
+    /**
+     * This method will initial the needed information for a dictionary of one column.
+     *
+     * @param carbonTableIdentifier table identifier which will give table name and database name
+     * @param columnName            the name of column
+     * @param tabColumnName         tablename + "_" + columnname, for example table_col
+     * @param carbonStorePath       location where Carbon will create the store and write the data in its own format.
+     */
+    private void initDicCacheInfo(CarbonTableIdentifier carbonTableIdentifier, String columnName, String tabColumnName,
+                                  String carbonStorePath){
+        DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
+                new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnName);
+        CacheProvider cacheProvider = CacheProvider.getInstance();
+        Cache reverseDictionaryCache = cacheProvider.createCache(CacheType.REVERSE_DICTIONARY, carbonStorePath);
+        Dictionary reverseDictionary =(Dictionary) reverseDictionaryCache.get(dictionaryColumnUniqueIdentifier);
+        if(null != reverseDictionary){
+            dictionaryCaches.put(tabColumnName, reverseDictionary);
+        }
+    }
+
 
     /**
      * This method recursively checks the folder with Load_ inside each and every RS_x/TableName/Load_x
@@ -259,48 +277,11 @@ public class FileStoreSurrogateKeyGen extends CarbonDimSurrogateKeyGen {
             throws KettleException {
         max[index]++;
         int key = max[index];
-
-        dimensionWriter[index].writeIntoLevelFile(value, key, properties);
-
         return key;
     }
 
     public void writeHeirDataToFileAndCloseStreams() throws KettleException {
-        // For closing Level value writer bufferred streams
-        for (int i = 0; i < dimensionWriter.length; i++) {
-            String memberFileName = dimensionWriter[i].getMemberFileName();
-            OutputStream bufferedOutputStream = dimensionWriter[i].getBufferedOutputStream();
-            if (null == bufferedOutputStream) {
-                continue;
-            }
-            CarbonUtil.closeStreams(bufferedOutputStream);
-            int size = fileManager.size();
-            for (int j = 0; j < size; j++) {
-                FileData fileData = (FileData) fileManager.get(j);
-                String fileName = fileData.getFileName();
-                if (memberFileName.equals(fileName)) {
-                    String storePath = fileData.getStorePath();
-                    String inProgFileName = fileData.getFileName();
-                    String changedFileName = fileName.substring(0, fileName.lastIndexOf('.'));
-
-                    File currentFile = new File(storePath + File.separator + inProgFileName);
-                    File destFile = new File(storePath + File.separator + changedFileName);
-
-                    if (!currentFile.renameTo(destFile)) {
-                        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-                                "Not Able to rename " + currentFile.getName() + " to " + destFile
-                                        .getName());
-                    }
-
-                    break;
-                }
-
-            }
-
-        }
-
-        // For closing stream inside hierarchy writer 
-
+        // For closing stream inside hierarchy writer
         for (Entry<String, String> entry : hierInsertFileNames.entrySet()) {
             // First we need to sort the byte array
             List<byte[]> byteArrayList = hierValueWriter.get(entry.getKey()).getByteArrayList();
@@ -396,57 +377,6 @@ public class FileStoreSurrogateKeyGen extends CarbonDimSurrogateKeyGen {
             hCache.put(wrapper, true);
         }
         wLock2.unlock();
-
-    }
-
-    private void readLevelFileAndUpdateCache(File memberFile, String dimInsertFileNames)
-            throws IOException, KettleException {
-        // create an object of FileOutputStream
-        FileInputStream fos = new FileInputStream(memberFile);
-
-        FileChannel fileChannel = fos.getChannel();
-        try {
-            Map<String, Integer> memberMap = memberCache.get(dimInsertFileNames);
-            // ByteBuffer toltalLength, memberLength, surrogateKey, bf3;
-            long size = fileChannel.size();
-            int maxKey = 0;      //CHECKSTYLE:OFF    Approval No:Approval-V1R2C10_005
-            boolean enableEncoding = Boolean.valueOf(CarbonProperties.getInstance()
-                    .getProperty(CarbonCommonConstants.ENABLE_BASE64_ENCODING,
-                            CarbonCommonConstants.ENABLE_BASE64_ENCODING_DEFAULT));
-            //CHECKSTYLE:ON
-            while (fileChannel.position() < size) {
-                ByteBuffer rowlengthToRead = ByteBuffer.allocate(4);
-                fileChannel.read(rowlengthToRead);
-                rowlengthToRead.rewind();
-                int len = rowlengthToRead.getInt();
-
-                ByteBuffer row = ByteBuffer.allocate(len);
-                fileChannel.read(row);
-                row.rewind();
-                int toread = row.getInt();
-                byte[] bytes = new byte[toread];
-                row.get(bytes);
-                String value = null;//CHECKSTYLE:OFF
-
-                if (enableEncoding) {
-                    value = new String(Base64.decodeBase64(bytes), Charset.defaultCharset());
-                } else {
-                    value = new String(bytes, Charset.defaultCharset());
-                }
-
-                int surrogateValue = row.getInt();
-                memberMap.put(value, surrogateValue);
-
-                // check if max key is less than Surrogate key then update the max
-                // key
-                maxKey = surrogateValue;
-            }
-
-            //Check the previous value assigned for surrogate key and initialize the value.
-            checkAndUpdateMap(maxKey, dimInsertFileNames);
-        } finally {
-            CarbonUtil.closeStreams(fileChannel, fos);
-        }
 
     }
 
