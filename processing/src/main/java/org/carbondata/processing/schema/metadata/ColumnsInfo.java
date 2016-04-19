@@ -26,7 +26,7 @@ import java.util.Set;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.processing.datatypes.GenericDataType;
 
-public class CarbonInfo {
+public class ColumnsInfo {
 
     /**
      * Indices for dimensions in the record. Doesn't include any properties.
@@ -143,6 +143,11 @@ public class CarbonInfo {
     private String schemaName;
 
     private Map<String, GenericDataType> complexTypesMap;
+
+    /**
+     * column Ids of dimensions in a table
+     */
+    private String[] dimensionColumnIds;
 
     public Map<String, GenericDataType> getComplexTypesMap() {
         return complexTypesMap;
@@ -469,4 +474,17 @@ public class CarbonInfo {
         this.schemaName = schemaName;
     }
 
+    /**
+     * @return column Ids
+     */
+    public String[] getDimensionColumnIds() {
+        return dimensionColumnIds;
+    }
+
+    /**
+     * @param dimensionColumnIds column Ids for dimensions in a table
+     */
+    public void setDimensionColumnIds(String[] dimensionColumnIds) {
+        this.dimensionColumnIds = dimensionColumnIds;
+    }
 }

@@ -21,35 +21,14 @@ package org.carbondata.processing.util;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.CarbonDataLoadSchema;
-import org.carbondata.core.carbon.CarbonDef;
 import org.carbondata.core.carbon.CarbonDataLoadSchema.DimensionRelation;
-import org.carbondata.core.carbon.CarbonDef.AggLevel;
-import org.carbondata.core.carbon.CarbonDef.Annotations;
-import org.carbondata.core.carbon.CarbonDef.Cube;
-import org.carbondata.core.carbon.CarbonDef.CubeDimension;
-import org.carbondata.core.carbon.CarbonDef.Dimension;
-import org.carbondata.core.carbon.CarbonDef.DimensionUsage;
-import org.carbondata.core.carbon.CarbonDef.Hierarchy;
-import org.carbondata.core.carbon.CarbonDef.Level;
-import org.carbondata.core.carbon.CarbonDef.Measure;
-import org.carbondata.core.carbon.CarbonDef.Property;
-import org.carbondata.core.carbon.CarbonDef.RelationOrJoin;
-import org.carbondata.core.carbon.CarbonDef.Schema;
-import org.carbondata.core.carbon.CarbonDef.Table;
-import org.carbondata.core.carbon.DimensionType;
-import org.carbondata.core.carbon.LevelType;
+import org.carbondata.core.carbon.CarbonDef;
+import org.carbondata.core.carbon.CarbonDef.*;
 import org.carbondata.core.carbon.Util;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
@@ -61,7 +40,6 @@ import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.carbondata.core.metadata.CarbonMetadata;
-import org.carbondata.processing.api.dataloader.SchemaInfo;
 import org.carbondata.processing.datatypes.ArrayDataType;
 import org.carbondata.processing.datatypes.GenericDataType;
 import org.carbondata.processing.datatypes.PrimitiveDataType;
@@ -1745,6 +1723,27 @@ public final class CarbonSchemaParser {
             stringBuffer.append(cDimension.getColName() + '_' + cDimension.getColName());
             stringBuffer.append(CarbonCommonConstants.COLON_SPC_CHARACTER);
             stringBuffer.append(tableName);
+            stringBuffer.append(CarbonCommonConstants.AMPERSAND_SPC_CHARACTER);
+        }
+        // Delete the last & character
+        String string = stringBuffer.toString();
+        if (string.endsWith(CarbonCommonConstants.AMPERSAND_SPC_CHARACTER)) {
+            string = string.substring(0,
+                    string.length() - CarbonCommonConstants.AMPERSAND_SPC_CHARACTER.length());
+        }
+        return string;
+    }
+
+    /**
+     * This method will concatenate all the column ids for a given list of dimensions
+     *
+     * @param dimensions
+     * @return
+     */
+    public static String getColumnIdString(List<CarbonDimension> dimensions) {
+        StringBuffer stringBuffer = new StringBuffer();
+        for (CarbonDimension cDimension : dimensions) {
+            stringBuffer.append(cDimension.getColumnId());
             stringBuffer.append(CarbonCommonConstants.AMPERSAND_SPC_CHARACTER);
         }
         // Delete the last & character

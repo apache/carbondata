@@ -274,6 +274,10 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
      */
     private String dimesionTableNames;
     /**
+     * column Ids of dimensions in a table
+     */
+    private String dimensionColumnIds;
+    /**
      * dimTableArray
      */
     private String[] dimTableArray;
@@ -547,6 +551,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
         metaHeirSQLQuery = "";
         carbonMetaHier = "";
         dimesionTableNames = "";
+        dimensionColumnIds = "";
         noDictionaryDims = "";
         tableName = "";
         carbonhierColumn = "";
@@ -610,6 +615,8 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
         retval.append("    ")
                 .append(XMLHandler.addTagValue("dimHierReleation", dimesionTableNames));
         retval.append("    ")
+                .append(XMLHandler.addTagValue("dimensionColumnIds", dimensionColumnIds));
+        retval.append("    ")
                 .append(XMLHandler.addTagValue("dimNoDictionary", noDictionaryDims));
         retval.append("    ").append(XMLHandler.addTagValue("factOrAggTable", tableName));
         retval.append("    ").append(XMLHandler.addTagValue("carbonhierColumn", carbonhierColumn));
@@ -670,6 +677,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
             columnAndTableNameColumnMapForAggString =
                     XMLHandler.getTagValue(stepnode, "columnAndTableName_ColumnMapForAggString");
             dimesionTableNames = XMLHandler.getTagValue(stepnode, "dimHierReleation");
+            dimensionColumnIds = XMLHandler.getTagValue(stepnode, "dimensionColumnIds");
             noDictionaryDims = XMLHandler.getTagValue(stepnode, "dimNoDictionary");
             tableName = XMLHandler.getTagValue(stepnode, "factOrAggTable");
             cubeName = XMLHandler.getTagValue(stepnode, "cubeName");
@@ -1231,6 +1239,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
             msrAggregatorString = rep.getStepAttributeString(idStep, "msrAggregatorString");
 
             dimesionTableNames = rep.getStepAttributeString(idStep, "dimHierReleation");
+            dimensionColumnIds = rep.getStepAttributeString(idStep, "dimensionColumnIds");
             noDictionaryDims = rep.getStepAttributeString(idStep, "dimNoDictionary");
             normHiers = rep.getStepAttributeString(idStep, "normHiers");
             tableName = rep.getStepAttributeString(idStep, "factOrAggTable");
@@ -1279,6 +1288,8 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
             rep.saveStepAttribute(idTransformation, idStep, "carbonMetaHier", carbonMetaHier);
             rep.saveStepAttribute(idTransformation, idStep, "batchSize", batchSize);
             rep.saveStepAttribute(idTransformation, idStep, "dimHierReleation", dimesionTableNames);
+            rep.saveStepAttribute(idTransformation, idStep, "dimensionColumnIds",
+                    dimensionColumnIds);
             rep.saveStepAttribute(idTransformation, idStep, "dimNoDictionary",
                     noDictionaryDims);
             rep.saveStepAttribute(idTransformation, idStep, "foreignKeyHierarchyString",
@@ -1343,6 +1354,20 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
 
     public void setTableNames(String dimHierReleation) {
         this.dimesionTableNames = dimHierReleation;
+    }
+
+    /**
+     * @return column Ids
+     */
+    public String[] getDimensionColumnIds() {
+        return dimensionColumnIds.split(CarbonCommonConstants.AMPERSAND_SPC_CHARACTER);
+    }
+
+    /**
+     * @param dimensionColumnIds column Ids for dimensions in a table
+     */
+    public void setDimensionColumnIds(String dimensionColumnIds) {
+        this.dimensionColumnIds = dimensionColumnIds;
     }
 
     public String getTableName() {

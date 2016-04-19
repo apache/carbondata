@@ -1094,6 +1094,7 @@ public class GraphGenerator {
         seqMeta.setCarbonProps(graphConfiguration.getPropertiesString());
         seqMeta.setCarbonhier(graphConfiguration.getHiersString());
         seqMeta.setCarbonhierColumn(graphConfiguration.getHierColumnString());
+        seqMeta.setDimensionColumnIds(graphConfiguration.getDimensionColumnIds());
         seqMeta.setMetaMetaHeirSQLQueries(graphConfiguration.getDimensionSqlQuery());
         seqMeta.setColumnAndTableNameColumnMapForAggString(
                 graphConfiguration.getColumnAndTableNameColumnMapForAgg());
@@ -1642,9 +1643,10 @@ public class GraphGenerator {
 
         String tableString =
                 CarbonSchemaParser.getTableNameString(factTableName, dimensions, carbonDataLoadSchema);
+        String dimensionColumnIds = CarbonSchemaParser.getColumnIdString(dimensions);
         graphConfiguration.setDimensionTableNames(tableString);
         graphConfiguration.setDimensionString(dimString.toString());
-
+        graphConfiguration.setDimensionColumnIds(dimensionColumnIds);
         StringBuilder propString = new StringBuilder();
         //Will not be supported in new schema
 //        currentCount =

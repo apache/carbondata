@@ -19,14 +19,11 @@
 
 package org.carbondata.processing.surrogatekeysgenerator.csvbased;
 
-import java.io.DataInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.Map.Entry;
 
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
@@ -35,15 +32,10 @@ import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.cache.Cache;
 import org.carbondata.core.cache.CacheProvider;
 import org.carbondata.core.cache.CacheType;
-import org.carbondata.core.cache.dictionary.*;
 import org.carbondata.core.cache.dictionary.Dictionary;
-import org.carbondata.core.carbon.CarbonTableIdentifier;
+import org.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.csvreader.checkpoint.CheckPointHanlder;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
-import org.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
-import org.carbondata.core.datastorage.store.impl.FileFactory;
-import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
 import org.carbondata.core.file.manager.composite.FileData;
 import org.carbondata.core.file.manager.composite.IFileManagerComposite;
 import org.carbondata.core.file.manager.composite.LoadFolderData;
@@ -51,14 +43,10 @@ import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.reader.CarbonDictionaryColumnMetaChunk;
 import org.carbondata.core.reader.CarbonDictionaryMetadataReaderImpl;
-import org.carbondata.core.util.ByteUtil;
-import org.carbondata.core.util.CarbonDictionaryUtil;
 import org.carbondata.core.util.CarbonProperties;
-import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.writer.ByteArrayHolder;
 import org.carbondata.core.writer.HierarchyValueWriterForCSV;
-import org.carbondata.processing.schema.metadata.ArrayWrapper;
-import org.carbondata.processing.schema.metadata.CarbonInfo;
+import org.carbondata.processing.schema.metadata.ColumnsInfo;
 import org.carbondata.processing.surrogatekeysgenerator.dbbased.FileStoreSurrogateKeyGen;
 import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.pentaho.di.core.exception.KettleException;
@@ -66,15 +54,10 @@ import org.pentaho.di.core.exception.KettleException;
 public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKeyGen {
 
     /**
-     * Comment for <code>LOGGER</code>
+     * LOGGER
      */
     private static final LogService LOGGER =
             LogServiceFactory.getLogService(FileStoreSurrogateKeyGen.class.getName());
-
-    /**
-     * syncObject
-     */
-    private final Object syncObject = new Object();
 
     /**
      * hierValueWriter
@@ -111,26 +94,21 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
     private String partitionID;
 
     /**
-     *
-     */
-    private Object lock = new Object();
-
-    /**
-     * @param carbonInfo
+     * @param columnsInfo
      * @throws KettleException
      */
-    public FileStoreSurrogateKeyGenForCSV(CarbonInfo carbonInfo,String partitionID)
+    public FileStoreSurrogateKeyGenForCSV(ColumnsInfo columnsInfo,String partitionID)
             throws KettleException {
-        super(carbonInfo);
-        populatePrimaryKeyarray(dimInsertFileNames, carbonInfo.getPrimaryKeyMap());
+        super(columnsInfo);
+        populatePrimaryKeyarray(dimInsertFileNames, columnsInfo.getPrimaryKeyMap());
         this.partitionID = partitionID;
         keyGenerator =
                 new HashMap<String, KeyGenerator>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-        baseStorePath = carbonInfo.getBaseStoreLocation();
+        baseStorePath = columnsInfo.getBaseStoreLocation();
         setStoreFolderWithLoadNumber(
-                checkAndCreateLoadFolderNumber(baseStorePath, carbonInfo.getSchemaName(),
-                        carbonInfo.getCubeName()));
+                checkAndCreateLoadFolderNumber(baseStorePath, columnsInfo.getSchemaName(),
+                        columnsInfo.getCubeName()));
         fileManager = new LoadFolderData();
         fileManager.setName(loadFolderName + CarbonCommonConstants.FILE_INPROGRESS_STATUS);
 
@@ -141,7 +119,7 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
             String hierFileName = entry.getValue().trim();
             hierValueWriter.put(entry.getKey(),
                     new HierarchyValueWriterForCSV(hierFileName, getStoreFolderWithLoadNumber()));
-            Map<String, KeyGenerator> keyGenerators = carbonInfo.getKeyGenerators();
+            Map<String, KeyGenerator> keyGenerators = columnsInfo.getKeyGenerators();
             keyGenerator.put(entry.getKey(), keyGenerators.get(entry.getKey()));
             FileData fileData = new FileData(hierFileName, getStoreFolderWithLoadNumber());
             fileData.setHierarchyValueWriter(hierValueWriter.get(entry.getKey()));
@@ -153,22 +131,19 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
     }
 
     private void populatePrimaryKeyarray(String[] dimInsertFileNames, Map<String, Boolean> map) {
-        List<String> primaryKeyList = new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-
+        List<String> primaryKeyList =
+                new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
         for (String columnName : dimInsertFileNames) {
             if (null != map.get(columnName)) {
                 map.put(columnName, false);
             }
         }
-
         Set<Entry<String, Boolean>> entrySet = map.entrySet();
-
         for (Entry<String, Boolean> entry : entrySet) {
             if (entry.getValue()) {
                 primaryKeyList.add(entry.getKey().trim());
             }
         }
-
         primaryKeyStringArray = primaryKeyList.toArray(new String[primaryKeyList.size()]);
     }
 
@@ -176,8 +151,7 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
      * update the
      */
     private void updatePrimaryKeyMaxSurrogateMap() {
-        Map<String, Boolean> primaryKeyMap = carbonInfo.getPrimaryKeyMap();
-
+        Map<String, Boolean> primaryKeyMap = columnsInfo.getPrimaryKeyMap();
         for (Entry<String, Boolean> entry : primaryKeyMap.entrySet()) {
             if (!primaryKeyMap.get(entry.getKey())) {
                 int repeatedPrimaryFromLevels =
@@ -190,7 +164,6 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
                 primaryKeysMaxSurroagetMap.put(entry.getKey(), max[repeatedPrimaryFromLevels]);
             }
         }
-
     }
 
     private int getRepeatedPrimaryFromLevels(String[] columnNames, String primaryKey) {
@@ -222,46 +195,26 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
         return carbonDataDirectoryPath;
     }
 
-    private CarbonFile[] getFilesArray(String baseStorePath, final String fileNameSearchPattern) {
-        FileType fileType = FileFactory.getFileType(baseStorePath);
-        CarbonFile storeFolder = FileFactory.getCarbonFile(baseStorePath, fileType);
-
-        CarbonFile[] listFiles = storeFolder.listFiles(new CarbonFileFilter() {
-
-            @Override
-            public boolean accept(CarbonFile pathname) {
-                if (pathname.getName().indexOf(fileNameSearchPattern) > -1 && !pathname.getName()
-                        .endsWith(CarbonCommonConstants.FILE_INPROGRESS_STATUS)) {
-                    return true;
-                }
-                return false;
-            }
-        });
-
-        return listFiles;
-    }
-
     /**
      * This method will update the maxkey information.
+     *
      * @param carbonStorePath       location where Carbon will create the store and write the data in its own format.
      * @param carbonTableIdentifier table identifier which will give table name and database name
-     * @param columnName            the name of column
+     * @param columnId            the name of column
      * @param tabColumnName         tablename + "_" + columnname, for example table_col
-     * @param isMeasure whether this column is measure or not
+     * @param isMeasure             whether this column is measure or not
      */
-    private void updateMaxKeyInfo(String carbonStorePath, CarbonTableIdentifier carbonTableIdentifier, String columnName,
-                                  String tabColumnName, boolean isMeasure) throws IOException {
+    private void updateMaxKeyInfo(String carbonStorePath,
+            CarbonTableIdentifier carbonTableIdentifier, String columnId, String tabColumnName,
+            boolean isMeasure) throws IOException {
         CarbonDictionaryMetadataReaderImpl columnMetadataReaderImpl =
-                new CarbonDictionaryMetadataReaderImpl(carbonStorePath,
-                        carbonTableIdentifier, columnName, false);
+                new CarbonDictionaryMetadataReaderImpl(carbonStorePath, carbonTableIdentifier,
+                        columnId, false);
         CarbonDictionaryColumnMetaChunk lastEntryOfDictionaryMetaChunk = null;
         // read metadata file
         try {
-            lastEntryOfDictionaryMetaChunk = columnMetadataReaderImpl.readLastEntryOfDictionaryMetaChunk();
-        } catch (IOException e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, "Can not find the dictionary meta" +
-                    " file of this column: " + columnName);
-            throw new IOException();
+            lastEntryOfDictionaryMetaChunk =
+                    columnMetadataReaderImpl.readLastEntryOfDictionaryMetaChunk();
         } finally {
             columnMetadataReaderImpl.close();
         }
@@ -280,137 +233,66 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
      * This method will generate cache for all the global dictionaries during data loading.
      */
     private void populateCache() throws KettleException {
-        String hdfsStorePath = CarbonProperties.getInstance()
+        String carbonStorePath = CarbonProperties.getInstance()
                 .getProperty(CarbonCommonConstants.STORE_LOCATION_HDFS);
-        String[] dimColumnNames = carbonInfo.getDimColNames();
-        String[] mesColumnNames = carbonInfo.getMeasureColumns();
-        boolean isSharedDimension = false;
-        String databaseName = carbonInfo.getSchemaName();
-        String tableName = carbonInfo.getTableName();
-        CarbonTableIdentifier carbonTableIdentifier = new CarbonTableIdentifier(databaseName, tableName);
-        String directoryPath = CarbonDictionaryUtil.getDirectoryPath(carbonTableIdentifier, hdfsStorePath, isSharedDimension);
+        String[] dimColumnNames = columnsInfo.getDimColNames();
+        String[] dimColumnIds = columnsInfo.getDimensionColumnIds();
+        String databaseName = columnsInfo.getSchemaName();
+        String tableName = columnsInfo.getTableName();
+        CarbonTableIdentifier carbonTableIdentifier =
+                new CarbonTableIdentifier(databaseName, tableName);
+        CacheProvider cacheProvider = CacheProvider.getInstance();
+        Cache reverseDictionaryCache =
+                cacheProvider.createCache(CacheType.REVERSE_DICTIONARY, carbonStorePath);
         //update the member cache for dimension
         for (int i = 0; i < dimColumnNames.length; i++) {
             String dimColName = dimColumnNames[i].substring(tableName.length() + 1);
-            initDicCacheInfo(carbonTableIdentifier, dimColName, dimColumnNames[i], hdfsStorePath);
+            initDictionaryCacheInfo(carbonTableIdentifier, dimColumnIds[i], dimColumnNames[i],
+                    reverseDictionaryCache);
             try {
-                updateMaxKeyInfo(hdfsStorePath, carbonTableIdentifier, dimColName, dimColumnNames[i], false);
+                updateMaxKeyInfo(carbonStorePath, carbonTableIdentifier, dimColumnIds[i],
+                        dimColumnNames[i], false);
             } catch (IOException e) {
-                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, "Can not read metadata file" +
-                        "of this column: " + dimColName);
+                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
+                        "Can not read metadata file" +
+                                "of this column: " + dimColName);
             }
         }
-        //update the member cache for measure
-        for (int i = 0; i < mesColumnNames.length; i++) {
-            String mesDictionaryFilePath = CarbonDictionaryUtil.getDictionaryFilePath(carbonTableIdentifier,
-                    directoryPath, mesColumnNames[i],isSharedDimension);
-            if (CarbonUtil.isFileExists(mesDictionaryFilePath)) {
-                String mesTabColumnName = carbonInfo.getTableName() + CarbonCommonConstants.UNDERSCORE + mesColumnNames[i];
-                initDicCacheInfo(carbonTableIdentifier, mesColumnNames[i], mesTabColumnName, hdfsStorePath);
-                try {
-                    updateMaxKeyInfo(hdfsStorePath, carbonTableIdentifier, mesColumnNames[i], mesTabColumnName, true);
-                } catch (IOException e) {
-                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, "Can not read metadata file" +
-                            "of this column: " + mesColumnNames[i]);
-                }
-            }
-        }
-
     }
 
     /**
      * This method will initial the needed information for a dictionary of one column.
      *
      * @param carbonTableIdentifier table identifier which will give table name and database name
-     * @param columnName            the name of column
+     * @param columnId              unique column Id for a column
      * @param tabColumnName         tablename + "_" + columnname, for example table_col
-     * @param carbonStorePath       location where Carbon will create the store and write the data in its own format.
+     * @param reverseDictionaryCache       cache object for surrogate key look up for a given value
      */
-    private void initDicCacheInfo(CarbonTableIdentifier carbonTableIdentifier, String columnName, String tabColumnName,
-                                  String carbonStorePath ){
+    private void initDictionaryCacheInfo(CarbonTableIdentifier carbonTableIdentifier,
+            String columnId, String tabColumnName, Cache reverseDictionaryCache) {
         DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
-                new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnName);
-        CacheProvider cacheProvider = CacheProvider.getInstance();
-        Cache reverseDictionaryCache = cacheProvider.createCache(CacheType.REVERSE_DICTIONARY, carbonStorePath );
-        Dictionary reverseDictionary = (Dictionary) reverseDictionaryCache.get(dictionaryColumnUniqueIdentifier);
-        if(null != reverseDictionary){
+                new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnId);
+        Dictionary reverseDictionary =
+                (Dictionary) reverseDictionaryCache.get(dictionaryColumnUniqueIdentifier);
+        if (null != reverseDictionary) {
             getDictionaryCaches().put(tabColumnName, reverseDictionary);
         }
     }
 
-    /**
-     * This method recursively checks the folder with Load_ inside each and every RS_x/TableName/Load_x
-     * and add in the folder list the load folders.
-     *
-     * @param baseStorePath
-     * @return
-     * @throws KettleException
-     */
-    private CarbonFile[] checkAndUpdateFolderList(String baseStorePath) {
-        FileType fileType = FileFactory.getFileType(baseStorePath);
-        try {
-            if (!FileFactory.isFileExist(baseStorePath, fileType)) {
-                return new CarbonFile[0];
-            }
-        } catch (IOException e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
-                    e.getMessage());
-        }
-        CarbonFile folders = FileFactory.getCarbonFile(baseStorePath, fileType);
-        CarbonFile[] rsFolders = folders.listFiles(new CarbonFileFilter() {
-            @Override
-            public boolean accept(CarbonFile pathname) {
-                boolean check = false;
-                if (CheckPointHanlder.IS_CHECK_POINT_NEEDED) {
-                    check = pathname.isDirectory()
-                            && pathname.getAbsolutePath().indexOf(CarbonCommonConstants.LOAD_FOLDER)
-                            > -1;
-                } else {
-                    check = pathname.isDirectory()
-                            && pathname.getAbsolutePath().indexOf(CarbonCommonConstants.LOAD_FOLDER)
-                            > -1 &&
-                            pathname.getName().indexOf(CarbonCommonConstants.FILE_INPROGRESS_STATUS)
-                                    == -1;
-
-                }
-                if (check) {
-                    return true;
-                } else {
-                    //
-                    CarbonFile[] checkFolder = checkAndUpdateFolderList(pathname.getAbsolutePath());
-                    if (null != checkFolder) {
-                        for (CarbonFile f : checkFolder) {
-                            folderList.add(f);
-                        }
-                    }
-                }
-                return false;
-            }
-        });
-
-        return rsFolders;
-
-    }
-
-    @Override
-    protected byte[] getHierFromStore(int[] val, String hier, int primaryKey) throws KettleException
-
-    {
-
+    @Override protected byte[] getHierFromStore(int[] val, String hier, int primaryKey)
+            throws KettleException {
         byte[] bytes;
         try {
-            bytes = carbonInfo.getKeyGenerators().get(hier).generateKey(val);
+            bytes = columnsInfo.getKeyGenerators().get(hier).generateKey(val);
             hierValueWriter.get(hier).getByteArrayList()
                     .add(new ByteArrayHolder(bytes, primaryKey));
         } catch (KeyGenException e) {
             throw new KettleException(e);
         }
         return bytes;
-
     }
 
-    @Override
-    protected int getSurrogateFromStore(String value, int index, Object[] properties)
+    @Override protected int getSurrogateFromStore(String value, int index, Object[] properties)
             throws KettleException {
         max[index]++;
         int key = max[index];
@@ -430,45 +312,6 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
         return key;
     }
 
-    private void readHierarchyAndUpdateCache(CarbonFile hierarchyFile, String hierarchy)
-            throws IOException {
-        KeyGenerator generator = keyGenerator.get(hierarchy);
-        int keySizeInBytes = generator.getKeySizeInBytes();
-        int rowLength = keySizeInBytes + 4;
-        DataInputStream inputStream = null;
-
-        inputStream = FileFactory.getDataInputStream(hierarchyFile.getAbsolutePath(),
-                FileFactory.getFileType(hierarchyFile.getAbsolutePath()));
-
-        long size = hierarchyFile.getSize();
-        long position = 0;
-        Int2ObjectMap<int[]> hCache = getHierCache().get(hierarchy);
-        Map<ArrayWrapper, Integer> hierCacheReverse = getHierCacheReverse().get(hierarchy);
-        ByteBuffer rowlengthToRead = ByteBuffer.allocate(rowLength);
-        byte[] rowlengthToReadBytes = new byte[rowLength];
-        try {
-            while (position < size) {
-                inputStream.readFully(rowlengthToReadBytes);
-                position += rowLength;
-                rowlengthToRead = ByteBuffer.wrap(rowlengthToReadBytes);
-                rowlengthToRead.rewind();
-
-                byte[] mdKey = new byte[keySizeInBytes];
-                rowlengthToRead.get(mdKey);
-                int primaryKey = rowlengthToRead.getInt();
-                int[] keyArray = ByteUtil.convertToIntArray(generator.getKeyArray(mdKey));
-                // Change long to int
-                // update the cache
-                hCache.put(primaryKey, keyArray);
-                hierCacheReverse.put(new ArrayWrapper(keyArray), primaryKey);
-                rowlengthToRead.clear();
-            }
-        } finally {
-            CarbonUtil.closeStreams(inputStream);
-        }
-
-    }
-
     private void checkAndUpdateMap(int maxKey, String dimInsertFileNames) {
         String[] dimsFiles2 = getDimsFiles();
         for (int i = 0; i < dimsFiles2.length; i++) {
@@ -482,10 +325,9 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
 
     }
 
-    @Override
-    public boolean isCacheFilled(String[] columns) {
+    @Override public boolean isCacheFilled(String[] columns) {
         for (String column : columns) {
-            org.carbondata.core.cache.dictionary.Dictionary dicCache = getDictionaryCaches().get(column);
+            Dictionary dicCache = getDictionaryCaches().get(column);
             if (null != dicCache) {
                 continue;
             } else {
@@ -499,12 +341,11 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
         return fileManager;
     }
 
-    @Override
-    protected byte[] getNormalizedHierFromStore(int[] val, String hier, int primaryKey,
+    @Override protected byte[] getNormalizedHierFromStore(int[] val, String hier, int primaryKey,
             HierarchyValueWriterForCSV hierWriter) throws KettleException {
         byte[] bytes;
         try {
-            bytes = carbonInfo.getKeyGenerators().get(hier).generateKey(val);
+            bytes = columnsInfo.getKeyGenerators().get(hier).generateKey(val);
             hierWriter.getByteArrayList().add(new ByteArrayHolder(bytes, primaryKey));
         } catch (KeyGenException e) {
             throw new KettleException(e);
@@ -512,23 +353,16 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
         return bytes;
     }
 
-    @Override
-    public int getSurrogateForMeasure(String tuple, String columnName)
+    @Override public int getSurrogateForMeasure(String tuple, String columnName)
             throws KettleException {
-
         Integer measureSurrogate = null;
-
-        Map<String, org.carbondata.core.cache.dictionary.Dictionary> dictionaryCaches = getDictionaryCaches();
-
-        org.carbondata.core.cache.dictionary.Dictionary dicCache = dictionaryCaches.get(columnName);
-
+        Map<String, Dictionary> dictionaryCaches = getDictionaryCaches();
+        Dictionary dicCache = dictionaryCaches.get(columnName);
         measureSurrogate = dicCache.getSurrogateKey(tuple);
-
         return measureSurrogate;
     }
 
-    @Override
-    public void writeDataToFileAndCloseStreams() throws KettleException, KeyGenException {
+    @Override public void writeDataToFileAndCloseStreams() throws KettleException, KeyGenException {
 
         // For closing stream inside hierarchy writer 
 

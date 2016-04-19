@@ -43,7 +43,7 @@ import org.carbondata.core.metadata.SliceMetaData;
 import org.carbondata.core.carbon.LevelType;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
-import org.carbondata.processing.schema.metadata.CarbonInfo;
+import org.carbondata.processing.schema.metadata.ColumnsInfo;
 import org.carbondata.processing.schema.metadata.HierarchiesInfo;
 import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.carbondata.processing.util.CarbonDataProcessorUtil;
@@ -188,34 +188,34 @@ public class CarbonSeqGenStep extends BaseStep implements StepInterface {
 
                 // Make info object with all the data required for surrogate key
                 // generator
-                CarbonInfo carbonInfo = new CarbonInfo();
-                carbonInfo.setDims(meta.dims);
-                carbonInfo.setDimColNames(meta.dimColNames);
-                carbonInfo.setKeyGenerators(data.getKeyGenerators());
-                carbonInfo.setHierTables(meta.hirches.keySet());
-                carbonInfo.setBatchSize(meta.getBatchSize());
-                carbonInfo.setAggregateLoad(meta.isAggregate());
-                carbonInfo.setStoreType(meta.getStoreType());
-                carbonInfo.setMaxKeys(meta.dimLens);
-                carbonInfo.setPropColumns(meta.getPropertiesColumns());
-                carbonInfo.setPropIndx(meta.getPropertiesIndices());
-                carbonInfo.setTimDimIndex(meta.timeDimeIndex);
-                carbonInfo.setTimeOrdinalCols(meta.timeOrdinalCols);
-                carbonInfo.setPropTypes(meta.getPropTypes());
-                carbonInfo.setBaseStoreLocation(
+                ColumnsInfo columnsInfo = new ColumnsInfo();
+                columnsInfo.setDims(meta.dims);
+                columnsInfo.setDimColNames(meta.dimColNames);
+                columnsInfo.setKeyGenerators(data.getKeyGenerators());
+                columnsInfo.setHierTables(meta.hirches.keySet());
+                columnsInfo.setBatchSize(meta.getBatchSize());
+                columnsInfo.setAggregateLoad(meta.isAggregate());
+                columnsInfo.setStoreType(meta.getStoreType());
+                columnsInfo.setMaxKeys(meta.dimLens);
+                columnsInfo.setPropColumns(meta.getPropertiesColumns());
+                columnsInfo.setPropIndx(meta.getPropertiesIndices());
+                columnsInfo.setTimDimIndex(meta.timeDimeIndex);
+                columnsInfo.setTimeOrdinalCols(meta.timeOrdinalCols);
+                columnsInfo.setPropTypes(meta.getPropTypes());
+                columnsInfo.setBaseStoreLocation(
                         updateStoreLocationAndPopulateCarbonInfo(meta.getStoreLocation()));
-                carbonInfo.setTableName(meta.getTableName());
-                carbonInfo.setDimsPresent(meta.dimPresent);
+                columnsInfo.setTableName(meta.getTableName());
+                columnsInfo.setDimsPresent(meta.dimPresent);
 
                 if (meta.timeIndex != -1) {
-                    carbonInfo
-                            .setTimDimIndexEnd(carbonInfo.getTimDimIndex() + meta.timeLevels.length);
+                    columnsInfo
+                            .setTimDimIndexEnd(columnsInfo.getTimDimIndex() + meta.timeLevels.length);
                 }
 
-                carbonInfo.setTimeOrdinalIndices(meta.timeOrdinalIndices);
+                columnsInfo.setTimeOrdinalIndices(meta.timeOrdinalIndices);
 
                 data.setSurrogateKeyGen(
-                        new FileStoreSurrogateKeyGen(carbonInfo, meta.getCurrentRestructNumber()));
+                        new FileStoreSurrogateKeyGen(columnsInfo, meta.getCurrentRestructNumber()));
 
                 if (meta.timeIndex >= 0) {
                     handleDimWithTime();

@@ -19,8 +19,6 @@
 
 package org.carbondata.processing.surrogatekeysgenerator.csvbased;
 
-import java.io.File;
-import java.io.OutputStream;
 import java.sql.Connection;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,14 +30,12 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.file.manager.composite.FileData;
 import org.carbondata.core.file.manager.composite.IFileManagerComposite;
 import org.carbondata.core.keygenerator.KeyGenException;
-import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.writer.HierarchyValueWriterForCSV;
 import org.carbondata.processing.datatypes.GenericDataType;
 import org.carbondata.processing.schema.metadata.ArrayWrapper;
-import org.carbondata.processing.schema.metadata.CarbonInfo;
+import org.carbondata.processing.schema.metadata.ColumnsInfo;
 import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.pentaho.di.core.exception.KettleException;
 import org.carbondata.core.cache.dictionary.Dictionary;
@@ -65,9 +61,9 @@ public abstract class CarbonCSVBasedDimSurrogateKeyGen {
      */
     protected String[] dimInsertFileNames;
     /**
-     * carbonInfo
+     * columnsInfo
      */
-    protected CarbonInfo carbonInfo;
+    protected ColumnsInfo columnsInfo;
     protected IFileManagerComposite measureFilemanager;
     /**
      * primary key max surrogate key map
@@ -124,14 +120,14 @@ public abstract class CarbonCSVBasedDimSurrogateKeyGen {
     private String storeFolderWithLoadNumber;
 
     /**
-     * @param carbonInfo CarbonInfo With all the required details for surrogate key generation and
+     * @param columnsInfo ColumnsInfo With all the required details for surrogate key generation and
      *                  hierarchy entries.
      */
-    public CarbonCSVBasedDimSurrogateKeyGen(CarbonInfo carbonInfo) {
-        this.carbonInfo = carbonInfo;
+    public CarbonCSVBasedDimSurrogateKeyGen(ColumnsInfo columnsInfo) {
+        this.columnsInfo = columnsInfo;
 
-        setDimensionTables(carbonInfo.getDimColNames());
-        setHierFileNames(carbonInfo.getHierTables());
+        setDimensionTables(columnsInfo.getDimColNames());
+        setHierFileNames(columnsInfo.getHierTables());
     }
 
     /**
@@ -151,12 +147,12 @@ public abstract class CarbonCSVBasedDimSurrogateKeyGen {
         Dictionary dicCache = dictionaryCaches.get(columnName);
         key = dicCache.getSurrogateKey(tuple);
         if (key == null) {
-            if (timDimMax[index] >= carbonInfo.getMaxKeys()[index]) {
+            if (timDimMax[index] >= columnsInfo.getMaxKeys()[index]) {
                 if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(tuple)) {
                     tuple = null;
                 }
                 LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-                        "Invalid cardinality. Key size exceeded cardinality for: " + carbonInfo
+                        "Invalid cardinality. Key size exceeded cardinality for: " + columnsInfo
                                 .getDimColNames()[index] + ": MemberValue: " + tuple);
                 return -1;
             }
@@ -315,14 +311,14 @@ public abstract class CarbonCSVBasedDimSurrogateKeyGen {
         List<String> dimFilesForPrimitives = new ArrayList<String>();
         dictionaryCaches = new ConcurrentHashMap<String, Dictionary >();
         for (int i = 0; i < dimeFileNames.length; i++) {
-            GenericDataType complexType = carbonInfo.getComplexTypesMap()
-                    .get(dimeFileNames[i].substring(carbonInfo.getTableName().length() + 1));
+            GenericDataType complexType = columnsInfo.getComplexTypesMap()
+                    .get(dimeFileNames[i].substring(columnsInfo.getTableName().length() + 1));
             if (complexType != null) {
                 List<GenericDataType> primitiveChild = new ArrayList<GenericDataType>();
                 complexType.getAllPrimitiveChildren(primitiveChild);
                 for (GenericDataType eachPrimitive : primitiveChild) {
                     dimFilesForPrimitives
-                            .add(carbonInfo.getTableName() + CarbonCommonConstants.UNDERSCORE + eachPrimitive.getName());
+                            .add(columnsInfo.getTableName() + CarbonCommonConstants.UNDERSCORE + eachPrimitive.getName());
                     eachPrimitive.setSurrogateIndex(noOfPrimitiveDims);
                     noOfPrimitiveDims++;
                 }

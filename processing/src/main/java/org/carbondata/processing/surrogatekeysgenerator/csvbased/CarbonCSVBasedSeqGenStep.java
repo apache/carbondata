@@ -35,21 +35,18 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.common.logging.impl.StandardLogService;
+import org.carbondata.core.cache.dictionary.Dictionary;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
-import org.carbondata.core.cache.dictionary.*;
-import org.carbondata.core.cache.dictionary.Dictionary;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.csvreader.checkpoint.CheckPointHanlder;
 import org.carbondata.core.csvreader.checkpoint.CheckPointInterface;
 import org.carbondata.core.file.manager.composite.FileData;
 import org.carbondata.core.file.manager.composite.IFileManagerComposite;
 import org.carbondata.core.file.manager.composite.LoadFolderData;
-import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
-import org.carbondata.core.metadata.SliceMetaData;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.DataTypeUtil;
@@ -60,12 +57,7 @@ import org.carbondata.processing.dataprocessor.queue.impl.DataProcessorQueue;
 import org.carbondata.processing.dataprocessor.queue.impl.RecordComparator;
 import org.carbondata.processing.dataprocessor.record.holder.DataProcessorRecordHolder;
 import org.carbondata.processing.datatypes.GenericDataType;
-import org.carbondata.processing.dimension.load.command.DimensionLoadCommand;
-import org.carbondata.processing.dimension.load.command.impl.CSVDimensionLoadCommand;
-import org.carbondata.processing.dimension.load.command.impl.DimenionLoadCommandHelper;
-import org.carbondata.processing.dimension.load.command.invoker.DimensionLoadActionInvoker;
-import org.carbondata.processing.dimension.load.info.DimensionLoadInfo;
-import org.carbondata.processing.schema.metadata.CarbonInfo;
+import org.carbondata.processing.schema.metadata.ColumnsInfo;
 import org.carbondata.processing.schema.metadata.HierarchiesInfo;
 import org.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
@@ -389,29 +381,29 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
                         data.setOutputRowMeta((RowMetaInterface) getInputRowMeta().clone());
                     }
 
-                    CarbonInfo carbonInfo = new CarbonInfo();
-                    carbonInfo.setDims(meta.dims);
-                    carbonInfo.setDimColNames(meta.dimColNames);
-                    carbonInfo.setKeyGenerators(data.getKeyGenerators());
-                    carbonInfo.setSchemaName(meta.getSchemaName());
-                    carbonInfo.setCubeName(meta.getCubeName());
-                    carbonInfo.setHierTables(meta.hirches.keySet());
-                    carbonInfo.setBatchSize(meta.getBatchSize());
-                    carbonInfo.setStoreType(meta.getStoreType());
-                    carbonInfo.setAggregateLoad(meta.isAggregate());
-                    carbonInfo.setMaxKeys(meta.dimLens);
-                    carbonInfo.setPropColumns(meta.getPropertiesColumns());
-                    carbonInfo.setPropIndx(meta.getPropertiesIndices());
-                    carbonInfo.setTimeOrdinalCols(meta.timeOrdinalCols);
-                    carbonInfo.setPropTypes(meta.getPropTypes());
-                    carbonInfo.setTimDimIndex(meta.timeDimeIndex);
-                    carbonInfo.setDimHierRel(meta.getDimTableArray());
-                    carbonInfo.setBaseStoreLocation(getCarbonLocalBaseStoreLocation());
-                    carbonInfo.setTableName(meta.getTableName());
-                    carbonInfo.setPrimaryKeyMap(meta.getPrimaryKeyMap());
-                    carbonInfo.setMeasureColumns(meta.measureColumn);
-                    carbonInfo.setComplexTypesMap(meta.getComplexTypes());
-
+                    ColumnsInfo columnsInfo = new ColumnsInfo();
+                    columnsInfo.setDims(meta.dims);
+                    columnsInfo.setDimColNames(meta.dimColNames);
+                    columnsInfo.setKeyGenerators(data.getKeyGenerators());
+                    columnsInfo.setSchemaName(meta.getSchemaName());
+                    columnsInfo.setCubeName(meta.getCubeName());
+                    columnsInfo.setHierTables(meta.hirches.keySet());
+                    columnsInfo.setBatchSize(meta.getBatchSize());
+                    columnsInfo.setStoreType(meta.getStoreType());
+                    columnsInfo.setAggregateLoad(meta.isAggregate());
+                    columnsInfo.setMaxKeys(meta.dimLens);
+                    columnsInfo.setPropColumns(meta.getPropertiesColumns());
+                    columnsInfo.setPropIndx(meta.getPropertiesIndices());
+                    columnsInfo.setTimeOrdinalCols(meta.timeOrdinalCols);
+                    columnsInfo.setPropTypes(meta.getPropTypes());
+                    columnsInfo.setTimDimIndex(meta.timeDimeIndex);
+                    columnsInfo.setDimHierRel(meta.getDimTableArray());
+                    columnsInfo.setBaseStoreLocation(getCarbonLocalBaseStoreLocation());
+                    columnsInfo.setTableName(meta.getTableName());
+                    columnsInfo.setPrimaryKeyMap(meta.getPrimaryKeyMap());
+                    columnsInfo.setMeasureColumns(meta.measureColumn);
+                    columnsInfo.setComplexTypesMap(meta.getComplexTypes());
+                    columnsInfo.setDimensionColumnIds(meta.getDimensionColumnIds());
                     updateBagLogFileName();
                     String key = meta.getSchemaName() + '/' + meta.getCubeName() + '_' + meta
                             .getTableName();
@@ -419,9 +411,9 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
                             getBadLogStoreLocation(
                                     meta.getSchemaName() + '/' + meta.getCubeName()));
 
-                    carbonInfo.setTimeOrdinalIndices(meta.timeOrdinalIndices);
+                    columnsInfo.setTimeOrdinalIndices(meta.timeOrdinalIndices);
                     surrogateKeyGen =
-                            new FileStoreSurrogateKeyGenForCSV(carbonInfo, meta.getPartitionID());
+                            new FileStoreSurrogateKeyGenForCSV(columnsInfo, meta.getPartitionID());
                     data.setSurrogateKeyGen(surrogateKeyGen);
 
                     updateStoreLocation();
@@ -496,7 +488,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
                         if (null != surrogateKeyGenObj) {
                             int index = 0;
                             for (int j = 0; j < meta.dimColNames.length; j++) {
-                                GenericDataType complexType = carbonInfo.getComplexTypesMap()
+                                GenericDataType complexType = columnsInfo.getComplexTypesMap()
                                         .get(meta.dimColNames[j]
                                                 .substring(meta.getTableName().length() + 1));
                                 if (complexType != null) {

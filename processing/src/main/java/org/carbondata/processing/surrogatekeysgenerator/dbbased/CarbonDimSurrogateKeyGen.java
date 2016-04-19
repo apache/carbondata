@@ -32,8 +32,7 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.cache.dictionary.Dictionary;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.keygenerator.KeyGenException;
-import org.carbondata.processing.schema.metadata.CarbonInfo;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
+import org.carbondata.processing.schema.metadata.ColumnsInfo;
 import org.pentaho.di.core.exception.KettleException;
 
 public abstract class CarbonDimSurrogateKeyGen {
@@ -78,9 +77,9 @@ public abstract class CarbonDimSurrogateKeyGen {
             new HashMap<String, Map<IntArrayWrapper, Boolean>>(
                     CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     /**
-     * carbonInfo
+     * columnsInfo
      */
-    protected CarbonInfo carbonInfo;
+    protected ColumnsInfo columnsInfo;
     /**
      * rwLock
      */
@@ -99,27 +98,27 @@ public abstract class CarbonDimSurrogateKeyGen {
     protected Lock wLock2 = rwLock2.writeLock();
 
     /**
-     * @param carbonInfo CarbonInfo With all the required details for surrogate key generation and
+     * @param columnsInfo ColumnsInfo With all the required details for surrogate key generation and
      *                  hierarchy entries.
      */
-    public CarbonDimSurrogateKeyGen(CarbonInfo carbonInfo) {
-        this.carbonInfo = carbonInfo;
+    public CarbonDimSurrogateKeyGen(ColumnsInfo columnsInfo) {
+        this.columnsInfo = columnsInfo;
 
-        setDimensionTables(carbonInfo.getDimColNames());
-        setHierFileNames(carbonInfo.getHierTables());
+        setDimensionTables(columnsInfo.getDimColNames());
+        setHierFileNames(columnsInfo.getHierTables());
     }
 
     public Object[] generateSurrogateKeys(Object[] tuple, Object[] out,
             List<Integer> timeOrdinalColValues) throws KettleException {
-        boolean[] dimsPresent = carbonInfo.getDimsPresent();
-        int[] dims = carbonInfo.getDims();
+        boolean[] dimsPresent = columnsInfo.getDimsPresent();
+        int[] dims = columnsInfo.getDims();
 
-        String[] dimColNames = carbonInfo.getDimColNames();
+        String[] dimColNames = columnsInfo.getDimColNames();
         int k = 0;
         for (int i = 0; i < dims.length; i++) {
             Integer key = null;
             Object value = null;
-            if (carbonInfo.isAggregateLoad()) {
+            if (columnsInfo.isAggregateLoad()) {
                 value = tuple[i];
             } else {
                 if (dimsPresent[i]) {
@@ -148,17 +147,17 @@ public abstract class CarbonDimSurrogateKeyGen {
 
     private Object[] getProperties(Object[] tuple, List<Integer> timeOrdinalColValues, int i) {
         Object[] props = new Object[0];
-        if (carbonInfo.getTimDimIndex() != -1 && i >= carbonInfo.getTimDimIndex() && i < carbonInfo
+        if (columnsInfo.getTimDimIndex() != -1 && i >= columnsInfo.getTimDimIndex() && i < columnsInfo
                 .getTimDimIndexEnd()) {
             //For time dimensions only ordinal columns is considered.
-            int ordinalIndx = carbonInfo.getTimeOrdinalIndices()[i - carbonInfo.getTimDimIndexEnd()];
+            int ordinalIndx = columnsInfo.getTimeOrdinalIndices()[i - columnsInfo.getTimDimIndexEnd()];
             if (ordinalIndx != -1) {
                 props = new Object[1];
                 props[0] = timeOrdinalColValues.get(ordinalIndx);
             }
         } else {
-            if (carbonInfo.getPropIndx() != null) {
-                int[] pIndices = carbonInfo.getPropIndx()[i];
+            if (columnsInfo.getPropIndx() != null) {
+                int[] pIndices = columnsInfo.getPropIndx()[i];
                 props = new Object[pIndices.length];
                 for (int j = 0; j < props.length; j++) {
                     props[j] = tuple[pIndices[j]];

@@ -41,10 +41,9 @@ import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.reader.CarbonDictionaryColumnMetaChunk;
 import org.carbondata.core.reader.CarbonDictionaryMetadataReaderImpl;
-import org.carbondata.core.util.CarbonDictionaryUtil;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
-import org.carbondata.processing.schema.metadata.CarbonInfo;
+import org.carbondata.processing.schema.metadata.ColumnsInfo;
 import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.pentaho.di.core.exception.KettleException;
 
@@ -84,20 +83,20 @@ public class FileStoreSurrogateKeyGen extends CarbonDimSurrogateKeyGen {
     private int currentRestructNumber;
 
     /**
-     * @param carbonInfo
+     * @param columnsInfo
      * @throws KettleException
      */
-    public FileStoreSurrogateKeyGen(CarbonInfo carbonInfo, int currentRestructNum)
+    public FileStoreSurrogateKeyGen(ColumnsInfo columnsInfo, int currentRestructNum)
             throws KettleException {
-        super(carbonInfo);
+        super(columnsInfo);
 
         keyGeneratorMap =
                 new HashMap<String, KeyGenerator>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-        baseStorePath = carbonInfo.getBaseStoreLocation();
+        baseStorePath = columnsInfo.getBaseStoreLocation();
 
         String storeFolderWithLoadNumber =
-                checkAndCreateLoadFolderNumber(baseStorePath, carbonInfo.getTableName());
+                checkAndCreateLoadFolderNumber(baseStorePath, columnsInfo.getTableName());
 
         fileManager = new LoadFolderData();
         fileManager.setName(loadFolderName + CarbonCommonConstants.FILE_INPROGRESS_STATUS);
@@ -109,7 +108,7 @@ public class FileStoreSurrogateKeyGen extends CarbonDimSurrogateKeyGen {
                     entry.getValue().trim() + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
             hierValueWriter.put(entry.getKey(),
                     new HierarchyValueWriter(hierFileName, storeFolderWithLoadNumber));
-            Map<String, KeyGenerator> keyGenerators = carbonInfo.getKeyGenerators();
+            Map<String, KeyGenerator> keyGenerators = columnsInfo.getKeyGenerators();
             keyGeneratorMap.put(entry.getKey(), keyGenerators.get(entry.getKey()));
 
             FileData fileData = new FileData(hierFileName, storeFolderWithLoadNumber);
@@ -180,10 +179,10 @@ public class FileStoreSurrogateKeyGen extends CarbonDimSurrogateKeyGen {
     private void populateCache() throws KettleException {
         String carbonStorePath = CarbonProperties.getInstance()
                 .getProperty(CarbonCommonConstants.STORE_LOCATION_HDFS);
-        String[] dimColumnNames = carbonInfo.getDimColNames();
+        String[] dimColumnNames = columnsInfo.getDimColNames();
         boolean isSharedDimension = false;
-        String databaseName = carbonInfo.getSchemaName().substring(0, carbonInfo.getSchemaName().lastIndexOf("_"));
-        String tableName = carbonInfo.getTableName();
+        String databaseName = columnsInfo.getSchemaName().substring(0, columnsInfo.getSchemaName().lastIndexOf("_"));
+        String tableName = columnsInfo.getTableName();
         CarbonTableIdentifier carbonTableIdentifier = new CarbonTableIdentifier(databaseName, tableName);
         //update the member cache for dimension
         for (int i = 0; i < dimColumnNames.length; i++) {
@@ -263,7 +262,7 @@ public class FileStoreSurrogateKeyGen extends CarbonDimSurrogateKeyGen {
 
         byte[] bytes;
         try {
-            bytes = carbonInfo.getKeyGenerators().get(hier).generateKey(value);
+            bytes = columnsInfo.getKeyGenerators().get(hier).generateKey(value);
             hierValueWriter.get(hier).getByteArrayList().add(bytes);
         } catch (KeyGenException ex) {
             throw new KettleException(ex);
@@ -286,7 +285,7 @@ public class FileStoreSurrogateKeyGen extends CarbonDimSurrogateKeyGen {
             // First we need to sort the byte array
             List<byte[]> byteArrayList = hierValueWriter.get(entry.getKey()).getByteArrayList();
             String hierFileName = hierValueWriter.get(entry.getKey()).getHierarchyName();
-            Collections.sort(byteArrayList, carbonInfo.getKeyGenerators().get(entry.getKey()));
+            Collections.sort(byteArrayList, columnsInfo.getKeyGenerators().get(entry.getKey()));
             byte[] bytesTowrite = null;
             for (byte[] bytes : byteArrayList) {
                 bytesTowrite = new byte[bytes.length + 4];
@@ -395,7 +394,7 @@ public class FileStoreSurrogateKeyGen extends CarbonDimSurrogateKeyGen {
             HierarchyValueWriter hierWriter) throws KettleException {
         byte[] bytes;
         try {
-            bytes = carbonInfo.getKeyGenerators().get(hier).generateKey(val);
+            bytes = columnsInfo.getKeyGenerators().get(hier).generateKey(val);
             hierWriter.getByteArrayList().add(bytes);
         } catch (KeyGenException e) {
             throw new KettleException(e);

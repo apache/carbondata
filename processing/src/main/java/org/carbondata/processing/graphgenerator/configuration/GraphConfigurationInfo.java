@@ -88,6 +88,11 @@ public class GraphConfigurationInfo {
     private String dimensionTableNames;
 
     /**
+     * column Ids concatenated by a delimeter
+     */
+    private String dimensionColumnIds;
+
+    /**
      * Agg type
      */
     private String[] aggType;
@@ -638,6 +643,20 @@ public class GraphConfigurationInfo {
      */
     public void setDimensionTableNames(String dimensionTableNames) {
         this.dimensionTableNames = dimensionTableNames;
+    }
+
+    /**
+     * @return
+     */
+    public String getDimensionColumnIds() {
+        return dimensionColumnIds;
+    }
+
+    /**
+     * @param dimensionColumnIds column Ids for dimensions in a table
+     */
+    public void setDimensionColumnIds(String dimensionColumnIds) {
+        this.dimensionColumnIds = dimensionColumnIds;
     }
 
     /**
