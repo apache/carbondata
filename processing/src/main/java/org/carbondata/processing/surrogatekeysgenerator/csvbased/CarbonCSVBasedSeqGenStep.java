@@ -44,10 +44,10 @@ import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.carbondata.core.metadata.SliceMetaData;
-import org.carbondata.core.util.DataTypeUtil;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.CarbonVersion;
+import org.carbondata.core.util.DataTypeUtil;
 import org.carbondata.core.writer.ByteArrayHolder;
 import org.carbondata.core.writer.HierarchyValueWriterForCSV;
 import org.carbondata.processing.dataprocessor.manager.CarbonDataProcessorManager;
@@ -60,8 +60,8 @@ import org.carbondata.processing.dimension.load.command.impl.CSVDimensionLoadCom
 import org.carbondata.processing.dimension.load.command.impl.DimenionLoadCommandHelper;
 import org.carbondata.processing.dimension.load.command.invoker.DimensionLoadActionInvoker;
 import org.carbondata.processing.dimension.load.info.DimensionLoadInfo;
-import org.carbondata.processing.schema.metadata.HierarchiesInfo;
 import org.carbondata.processing.schema.metadata.CarbonInfo;
+import org.carbondata.processing.schema.metadata.HierarchiesInfo;
 import org.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.carbondata.processing.util.CarbonDataProcessorUtil;
@@ -614,7 +614,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
     }
 
     private boolean processWhenRowIsNull() throws KettleException {
-        // If first request itself is null then It will not enter the first block and 
+        // If first request itself is null then It will not enter the first block and
         // in data surrogatekeygen will not be initialized so it can throw NPE.
         if (data.getSurrogateKeyGen() == null) {
             setOutputDone();
@@ -1252,9 +1252,9 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
                 continue;
             }
 
-            // There is a possibility that measure can be referred as dimensions also 
+            // There is a possibility that measure can be referred as dimensions also
             // so in that case we need to just copy the value into the measure column index.
-            //if it enters here means 3 possibility 
+            //if it enters here means 3 possibility
             //1) this is not foreign key it can be direct columns
             //2) This column present in the csv file but in the schema it is not present.
             //3) This column can be measure column
@@ -1265,8 +1265,8 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
                 if (measureSurrogateReqMapping[j] && !isNull) {
                     Integer surrogate = 0;
                     if (null == foreignKeyColumnName) {
-                        // If foreignKeyColumnName is null till here that means this 
-                        // measure column is of type count and data type may be string 
+                        // If foreignKeyColumnName is null till here that means this
+                        // measure column is of type count and data type may be string
                         // so we have to create the surrogate key for the values.
                         surrogate = createSurrogateForMeasure(msr, columnName,
                                 presentColumnMapIndex[j]);
@@ -1311,7 +1311,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
 
             boolean isPresentInSchema = false;
             if (null == foreignKeyColumnName) {
-                //if it enters here means 3 possibility 
+                //if it enters here means 3 possibility
                 //1) this is not foreign key it can be direct columns
                 //2) This column present in the csv file but in the schema it is not present.
                 //3) This column can be measure column
@@ -1759,7 +1759,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
             {
                 if (!meta.isAggregate()) {
                     currentColName.add(uniqueName);
-                    //add to duplicate column list if it is a repeated column. it is required since the member mapping is 1 to 1 mapping 
+                    //add to duplicate column list if it is a repeated column. it is required since the member mapping is 1 to 1 mapping
                     //of csv columns and schema columns. so if schema columns are repeated then we have to handle it in special way.
                     checkAndAddDuplicateCols(duplicateNames, uniqueName);
                 } else {
@@ -1778,7 +1778,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
         String[] currentColNamesArray = currentColName.toArray(new String[currentColName.size()]);
 
         // We will use same array for dimensions and measures
-        // First create the mapping for dimensions. 
+        // First create the mapping for dimensions.
         int dimIndex = 0;
         Map<String, Boolean> counterMap = new HashMap<String, Boolean>(16);
         // Setting dimPresent value in CSV order as we need it later
@@ -1836,11 +1836,11 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
             }
         }
 
-        // Now create the mapping of measures 
-        // There may be case when measure column is present in the CSV file 
-        // but not present in the schema , in that case we need to skip that column while 
+        // Now create the mapping of measures
+        // There may be case when measure column is present in the CSV file
+        // but not present in the schema , in that case we need to skip that column while
         // sending the output to next step.
-        // Or Measure can be in any ordinal in the csv 
+        // Or Measure can be in any ordinal in the csv
 
         int k = 0;
         Map<String, Boolean> existsMap = new HashMap<String, Boolean>(16);
@@ -1934,7 +1934,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
         // The group is called after the thread-name of the transformation or
         // job that is running
         // The name of that threadname is expected to be unique (it is in
-        // Kettle) 
+        // Kettle)
         // So the deal is that if there is another thread using that, we go for
         // it.
         //
@@ -2003,6 +2003,18 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
                 String[] columns = meta.hierColumnMap.get(name);
 
                 if (meta.getComplexTypes().get(columns[0]) != null) {
+                    continue;
+                }
+                boolean isNoDictionary = false;
+                for (int i = 0; i < a.length; i++) {
+                    if (null != meta.NoDictionaryCols && isDimensionNoDictionary(
+                            meta.NoDictionaryCols, columns[i])) {
+                        isNoDictionary = true;
+                        break;
+                    }
+                }
+                //if no dictionary column then do not populate the dim lens
+                if (isNoDictionary) {
                     continue;
                 }
                 //

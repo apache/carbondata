@@ -353,7 +353,7 @@ public class MDKeyGenStep extends BaseStep {
         //aggType = valueCompressionModel.getType();
         initAggType(msrdataTypes);
         finalMerger = new SingleThreadFinalSortFilesMerger(dataFolderLocation, tableName,
-                dimensionCount - meta.getComplexDimsCount()-meta.getNoDictionaryCount(), meta.getComplexDimsCount(),
+                dimensionCount - meta.getComplexDimsCount(), meta.getComplexDimsCount(),
                 measureCount, meta.getNoDictionaryCount(), aggType);
         if (meta.getNoDictionaryCount() > 0) {
             dataHandler = new CarbonFactDataHandlerColumnar(meta.getSchemaName(), meta.getCubeName(),
