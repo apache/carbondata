@@ -7,6 +7,8 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.cache.Cache;
 import org.carbondata.core.cache.CacheType;
 import org.carbondata.core.cache.CarbonLRUCache;
+import org.carbondata.core.carbon.path.CarbonStorePath;
+import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
@@ -61,16 +63,12 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
      */
     protected boolean isFileExistsForGivenColumn(
             DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
-        String dictionaryLocation = CarbonDictionaryUtil
-                .getDirectoryPath(dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier(),
-                        carbonStorePath, false);
-        String dictionaryFilePath = CarbonDictionaryUtil
-                .getDictionaryFilePath(dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier(),
-                        dictionaryLocation, dictionaryColumnUniqueIdentifier.getColumnIdentifier(),
-                        false);
-        String dictionaryMetadataFilePath = CarbonDictionaryUtil.getDictionaryMetadataFilePath(
-                dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier(), dictionaryLocation,
-                dictionaryColumnUniqueIdentifier.getColumnIdentifier(), false);
+        CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonStorePath,
+                dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier());
+        String dictionaryFilePath = carbonTablePath
+                .getDictionaryFilePath(dictionaryColumnUniqueIdentifier.getColumnIdentifier());
+        String dictionaryMetadataFilePath = carbonTablePath
+                .getDictionaryMetaFilePath(dictionaryColumnUniqueIdentifier.getColumnIdentifier());
         // check if both dictionary and its metadata file exists for a given column
         return CarbonUtil.isFileExists(dictionaryFilePath) && CarbonUtil
                 .isFileExists(dictionaryMetadataFilePath);
@@ -109,13 +107,10 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
      */
     protected long getDictionaryFileLastModifiedTime(
             DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
-        String dictionaryLocation = CarbonDictionaryUtil
-                .getDirectoryPath(dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier(),
-                        carbonStorePath, false);
-        String dictionaryFilePath = CarbonDictionaryUtil
-                .getDictionaryFilePath(dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier(),
-                        dictionaryLocation, dictionaryColumnUniqueIdentifier.getColumnIdentifier(),
-                        false);
+        CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonStorePath,
+                dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier());
+        String dictionaryFilePath = carbonTablePath
+                .getDictionaryFilePath(dictionaryColumnUniqueIdentifier.getColumnIdentifier());
         FileFactory.FileType fileType = FileFactory.getFileType(dictionaryFilePath);
         CarbonFile carbonFile = FileFactory.getCarbonFile(dictionaryFilePath, fileType);
         return carbonFile.getLastModifiedTime();

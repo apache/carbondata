@@ -22,39 +22,23 @@
  */
 package org.carbondata.integration.spark.load;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
+import com.google.gson.Gson;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.CarbonDataLoadSchema;
 import org.carbondata.core.carbon.CarbonDef;
-import org.carbondata.core.carbon.CarbonDef.AggLevel;
-import org.carbondata.core.carbon.CarbonDef.AggMeasure;
-import org.carbondata.core.carbon.CarbonDef.AggName;
-import org.carbondata.core.carbon.CarbonDef.AggTable;
-import org.carbondata.core.carbon.CarbonDef.CubeDimension;
-import org.carbondata.core.carbon.CarbonDef.Level;
-import org.carbondata.core.carbon.CarbonDef.Measure;
-import org.carbondata.core.carbon.CarbonDef.Schema;
+import org.carbondata.core.carbon.CarbonDef.*;
+import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
+import org.carbondata.core.carbon.path.CarbonStorePath;
+import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.fileperations.AtomicFileOperations;
 import org.carbondata.core.datastorage.store.fileperations.AtomicFileOperationsImpl;
@@ -87,8 +71,6 @@ import org.carbondata.query.datastorage.InMemoryTable;
 import org.carbondata.query.datastorage.InMemoryTableStore;
 import org.carbondata.query.directinterface.impl.CarbonQueryParseUtil;
 
-import com.google.gson.Gson;
-
 public final class CarbonLoaderUtil {
 
     private static final LogService LOGGER =
@@ -99,8 +81,9 @@ public final class CarbonLoaderUtil {
     }
 
     private static void generateGraph(IDataProcessStatus schmaModel, SchemaInfo info,
-            String tableName, String partitionID, String factStoreLocation, int currentRestructNumber,
-            List<LoadMetadataDetails> loadMetadataDetails, CarbonDataLoadSchema carbonDataLoadSchema)
+            String partitionID, String factStoreLocation, int currentRestructNumber,
+            List<LoadMetadataDetails> loadMetadataDetails, CarbonDataLoadSchema carbonDataLoadSchema,
+            String taskNo, String factTimeStamp)
             throws GraphGeneratorException {
         DataLoadModel model = new DataLoadModel();
         model.setCsvLoad(
@@ -114,7 +97,8 @@ public final class CarbonLoaderUtil {
                     .getModificationOrDeletionTimesFromLoadMetadataDetails(loadMetadataDetails));
         }
         model.setBlocksID(schmaModel.getBlocksID());
-
+        model.setTaskNo(taskNo);
+        model.setFactTimeStamp(factTimeStamp);
         boolean hdfsReadMode = schmaModel.getCsvFilePath() != null && schmaModel.getCsvFilePath()
                 .startsWith("hdfs:");
         int allocate =
@@ -134,31 +118,29 @@ public final class CarbonLoaderUtil {
                     "Error while new File(storeLocation).mkdirs() ");
         }
         String outPutLoc = storeLocation + "/etl";
-        String schemaName = loadModel.getSchemaName();
-        String cubeName = loadModel.getCubeName();
-        String tempLocationKey = schemaName + '_' + cubeName;
+        String databaseName = loadModel.getDatabaseName();
+        String tableName = loadModel.getTableName();
+        String tempLocationKey = databaseName + '_' + tableName;
         CarbonProperties.getInstance().addProperty(tempLocationKey, storeLocation);
         CarbonProperties.getInstance()
                 .addProperty(CarbonCommonConstants.STORE_LOCATION_HDFS, hdfsStoreLocation);
         CarbonProperties.getInstance().addProperty("store_output_location", outPutLoc);
         CarbonProperties.getInstance().addProperty("send.signal.load", "false");
 
-        String tableName = loadModel.getTableName();
         String fileNamePrefix = "";
         if (loadModel.isAggLoadRequest()) {
-            tableName = loadModel.getAggTableName();
             fileNamePrefix = "graphgenerator";
         }
-        String graphPath =
-                outPutLoc + '/' + loadModel.getSchemaName() + '/' + loadModel.getCubeName() + '/'
-                        + tableName.replaceAll(",", "") + fileNamePrefix + ".ktr";
+        String graphPath = outPutLoc + File.separator + databaseName + File.separator + tableName
+                + File.separator + loadModel.getPartitionId() + File.separator + tableName +
+                fileNamePrefix + ".ktr";
         File path = new File(graphPath);
         if (path.exists()) {
             path.delete();
         }
 
         DataProcessTaskStatus schmaModel =
-                new DataProcessTaskStatus(schemaName, cubeName, tableName);
+                new DataProcessTaskStatus(databaseName, tableName, loadModel.getTableName());
         schmaModel.setCsvFilePath(loadModel.getFactFilePath());
         schmaModel.setDimCSVDirLoc(loadModel.getDimFolderPath());
         if (loadModel.isDirectLoad()) {
@@ -171,20 +153,21 @@ public final class CarbonLoaderUtil {
         schmaModel.setBlocksID(loadModel.getBlocksID());
         SchemaInfo info = new SchemaInfo();
 
-        info.setSchemaName(schemaName);
+        info.setSchemaName(databaseName);
         info.setSrcDriverName(loadModel.getDriverClass());
         info.setSrcConUrl(loadModel.getJdbcUrl());
         info.setSrcUserName(loadModel.getDbUserName());
         info.setSrcPwd(loadModel.getDbPwd());
-        info.setCubeName(cubeName);
+        info.setCubeName(tableName);
         info.setSchemaPath(loadModel.getSchemaPath());
         info.setAutoAggregateRequest(loadModel.isAggLoadRequest());
         info.setComplexDelimiterLevel1(loadModel.getComplexDelimiterLevel1());
         info.setComplexDelimiterLevel2(loadModel.getComplexDelimiterLevel2());
 
-        generateGraph(schmaModel, info, loadModel.getTableName(), loadModel.getPartitionId(),
+        generateGraph(schmaModel, info, loadModel.getPartitionId(),
                 loadModel.getFactStoreLocation(), currentRestructNumber,
-                loadModel.getLoadMetadataDetails(), loadModel.getCarbonDataLoadSchema());
+                loadModel.getLoadMetadataDetails(), loadModel.getCarbonDataLoadSchema(),
+                loadModel.getTaskNo(), loadModel.getFactTimeStamp());
 
         DataGraphExecuter graphExecuter = new DataGraphExecuter(schmaModel);
         graphExecuter.executeGraph(graphPath,
@@ -488,7 +471,7 @@ public final class CarbonLoaderUtil {
             String hdfsStoreLocation, int currentRestructNumber) {
         String loadFolderName = factLoadFolderLocation
                 .substring(factLoadFolderLocation.indexOf(CarbonCommonConstants.LOAD_FOLDER));
-        String aggLoadFolderLocation = getTableLocation(model.getSchemaName(), model.getCubeName(),
+        String aggLoadFolderLocation = getTableLocation(model.getDatabaseName(), model.getTableName(),
                 model.getAggTableName(), hdfsStoreLocation, currentRestructNumber);
         aggLoadFolderLocation = aggLoadFolderLocation + File.separator + loadFolderName;
         FileType fileType = FileFactory.getFileType(hdfsStoreLocation);
@@ -503,39 +486,108 @@ public final class CarbonLoaderUtil {
                 "Empty folder created for aggregation table");
     }
 
-    public static void copyCurrentLoadToHDFS(CarbonLoadModel loadModel, int currentRestructNumber,
-            String loadName, List<String> updatedSlices, int sliceRestructNumber)
-            throws IOException, CarbonUtilException {
-        //Copy the current load folder to HDFS
+    /**
+     * This method will copy the current segment load to cgiven carbon store path
+     *
+     * @param loadModel
+     * @param segmentName
+     * @param updatedSlices
+     * @throws IOException
+     * @throws CarbonUtilException
+     */
+    public static void copyCurrentLoadToHDFS(CarbonLoadModel loadModel, String segmentName,
+            List<String> updatedSlices) throws IOException, CarbonUtilException {
+        //Copy the current load folder to carbon store
         boolean copyStore = Boolean.valueOf(
                 CarbonProperties.getInstance().getProperty("dataload.hdfs.copy", "true"));
-
-        String schemaName = loadModel.getSchemaName();
-        String cubeName = loadModel.getCubeName();
-        String factTable = loadModel.getTableName();
+        String databaseName = loadModel.getDatabaseName();
+        String tableName = loadModel.getTableName();
         String aggTableName = loadModel.getAggTableName();
-
         if (copyStore) {
-            String hdfsLocation = CarbonProperties.getInstance()
-                    .getProperty(CarbonCommonConstants.STORE_LOCATION_HDFS);
-            String tempLocationKey = schemaName + '_' + cubeName;
-            String localStore = CarbonProperties.getInstance()
-                    .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
-            if (!loadModel.isAggLoadRequest()) {
-                copyToHDFS(loadName, schemaName, cubeName, factTable, hdfsLocation, localStore,
-                        currentRestructNumber, false, sliceRestructNumber);
-            }
-            if (null != aggTableName) {
-                String sliceNumber = loadName.substring(CarbonCommonConstants.LOAD_FOLDER.length());
-                boolean isUpdate = false;
-                if (updatedSlices.contains(sliceNumber)) {
+            CarbonTableIdentifier carbonTableIdentifier =
+                    new CarbonTableIdentifier(databaseName, tableName);
+            String segmentId = segmentName.substring(CarbonCommonConstants.LOAD_FOLDER.length());
+            // form carbon store location
+            String carbonStoreLocation = getStoreLocation(CarbonProperties.getInstance()
+                            .getProperty(CarbonCommonConstants.STORE_LOCATION_HDFS), carbonTableIdentifier,
+                    Integer.parseInt(segmentId), loadModel.getPartitionId());
+            String tempLocationKey = databaseName + '_' + tableName;
+            // form local store location
+            String localStoreLocation = getStoreLocation(CarbonProperties.getInstance()
+                            .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL),
+                    carbonTableIdentifier, Integer.parseInt(segmentId), loadModel.getPartitionId());
+            boolean isUpdate = false;
+            if (loadModel.isAggLoadRequest() && null != aggTableName) {
+                if (updatedSlices.contains(segmentId)) {
                     isUpdate = true;
                 }
-                copyToHDFS(loadName, schemaName, cubeName, aggTableName, hdfsLocation, localStore,
-                        currentRestructNumber, isUpdate, sliceRestructNumber);
             }
-            CarbonUtil.deleteFoldersAndFiles(new File[] { new File(
-                    localStore + File.separator + schemaName + File.separator + cubeName) });
+            copyToHDFS(carbonStoreLocation, localStoreLocation, isUpdate);
+            CarbonUtil.deleteFoldersAndFiles(new File[] { new File(localStoreLocation) });
+        }
+    }
+
+    /**
+     * This method will get the store location for the given path, segemnt id and partition id
+     *
+     * @param storePath
+     * @param carbonTableIdentifier
+     * @param segmentId
+     * @param partitionId
+     * @return
+     */
+    private static String getStoreLocation(String storePath,
+            CarbonTableIdentifier carbonTableIdentifier, int segmentId, String partitionId) {
+        CarbonTablePath carbonTablePath =
+                CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier);
+        String carbonDataFilePath =
+                carbonTablePath.getCarbonDataDirectoryPath(partitionId, segmentId);
+        return carbonDataFilePath;
+    }
+
+    /**
+     * This method will copy the carbon data files form local store segment folder
+     * to carbon store segment location
+     *
+     * @param carbonStoreLocation
+     * @param localStoreLocation
+     * @param isUpdate
+     * @throws IOException
+     */
+    private static void copyToHDFS(String carbonStoreLocation, String localStoreLocation,
+            boolean isUpdate) throws IOException {
+        //If the carbon store and the local store configured differently, then copy
+        if (carbonStoreLocation != null && !carbonStoreLocation.equals(localStoreLocation)) {
+            long copyStartTime = System.currentTimeMillis();
+            // isUpdate will be true only when the below 2 conditions are satisfied
+            // 1. slice is marked for update, 2. request is for aggregate table creation
+            if (isUpdate) {
+                renameFactFile(localStoreLocation);
+            }
+            LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
+                    "Copying " + localStoreLocation + " --> " + carbonStoreLocation);
+            CarbonUtil.checkAndCreateFolder(carbonStoreLocation);
+            Path carbonStorePath = new Path(carbonStoreLocation);
+            FileSystem fs = carbonStorePath.getFileSystem(FileFactory.getConfiguration());
+            CarbonFile carbonFile = FileFactory
+                    .getCarbonFile(localStoreLocation, FileFactory.getFileType(localStoreLocation));
+            CarbonFile[] listFiles = carbonFile.listFiles(new CarbonFileFilter() {
+                @Override public boolean accept(CarbonFile path) {
+                    return path.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT) && !path
+                            .getName().endsWith(CarbonCommonConstants.FILE_INPROGRESS_STATUS);
+                }
+            });
+            for (int i = 0; i < listFiles.length; i++) {
+                // delete src file, overwrite source file, create new path for a file and
+                // carbon store location
+                fs.copyFromLocalFile(true, true, new Path(listFiles[i].getCanonicalPath()),
+                        carbonStorePath);
+            }
+            LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
+                    "Total copy time (ms):  " + (System.currentTimeMillis() - copyStartTime));
+        } else {
+            LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
+                    "Separate carbon.storelocation.hdfs is not configured for carbon store path");
         }
     }
 
@@ -543,7 +595,7 @@ public final class CarbonLoaderUtil {
             int numberOfPartiiton, String[] partitionColumn, CubeDimension[] dims,
             int currentRestructNumber) {
         GlobalSurrogateGeneratorInfo generatorInfo = new GlobalSurrogateGeneratorInfo();
-        generatorInfo.setCubeName(loadModel.getCubeName());
+        generatorInfo.setCubeName(loadModel.getTableName());
         generatorInfo.setSchema(loadModel.getSchema());
         generatorInfo.setStoreLocation(storeLocation);
         generatorInfo.setTableName(loadModel.getTableName());
@@ -554,127 +606,12 @@ public final class CarbonLoaderUtil {
         generator.generateGlobalSurrogates(currentRestructNumber);
     }
 
-    public static void copyToHDFS(String loadName, String schemaName, String cubeName,
-            String factTable, String hdfsLocation, String localStore, int currentRestructNumber,
-            boolean isUpdate, int sliceRestructNumber) throws IOException {
-        //If the hdfs store and the local store configured differently, then copy
-        if (hdfsLocation != null && !hdfsLocation.equals(localStore)) {
-            /**
-             * Identify the Load_X folder from thhe local store folder
-             */
-            String currentloadedStore = localStore;
-            currentloadedStore =
-                    currentloadedStore + File.separator + schemaName + File.separator + cubeName;
 
-            int rsCounter = currentRestructNumber;
-
-            if (rsCounter == -1) {
-                LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-                        "Unable to find the local store details (RS_-1) " + currentloadedStore);
-                return;
-            }
-            String localLoadedTable =
-                    currentloadedStore + File.separator + CarbonCommonConstants.RESTRUCTRE_FOLDER
-                            + rsCounter + File.separator + factTable;
-
-            localLoadedTable = localLoadedTable.replace("\\", "/");
-
-            int loadCounter = CarbonUtil.checkAndReturnCurrentLoadFolderNumber(localLoadedTable);
-
-            if (loadCounter == -1) {
-                LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-                        "Unable to find the local store details (Load_-1) " + currentloadedStore);
-
-                return;
-            }
-
-            String localLoadFolder =
-                    localLoadedTable + File.separator + CarbonCommonConstants.LOAD_FOLDER
-                            + loadCounter;
-
-            LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-                    "Local data loaded folder ... = " + localLoadFolder);
-
-            /**
-             * Identify the Load_X folder in the HDFS store
-             */
-
-            if (isUpdate) {
-                renameFactFile(localLoadFolder, factTable);
-            }
-
-            String hdfsStoreLocation = hdfsLocation;
-            hdfsStoreLocation =
-                    hdfsStoreLocation + File.separator + schemaName + File.separator + cubeName;
-
-            rsCounter = currentRestructNumber;
-            if (rsCounter == -1) {
-                rsCounter = 0;
-            }
-
-            String hdfsLoadedTable =
-                    hdfsStoreLocation + File.separator + CarbonCommonConstants.RESTRUCTRE_FOLDER
-                            + rsCounter + File.separator + factTable;
-
-            hdfsLoadedTable = hdfsLoadedTable.replace("\\", "/");
-
-            String hdfsStoreLoadFolder = hdfsLoadedTable + File.separator + loadName;
-
-            LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-                    "HDFS data load folder ... = " + hdfsStoreLoadFolder);
-
-            /**
-             * Copy the data created through latest ETL run, to the HDFS store
-             */
-
-            LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-                    "Copying " + localLoadFolder + " --> " + hdfsStoreLoadFolder);
-
-            long time1 = System.currentTimeMillis();
-
-            hdfsStoreLoadFolder = hdfsStoreLoadFolder.replace("\\", "/");
-            Path path = new Path(hdfsStoreLocation);
-
-            FileSystem fs = path.getFileSystem(FileFactory.getConfiguration());
-            FileType fileType = FileFactory.getFileType(hdfsStoreLoadFolder);
-            if (FileFactory.isFileExist(hdfsStoreLoadFolder, fileType)) {
-                CarbonFile carbonFile = FileFactory
-                        .getCarbonFile(localLoadFolder, FileFactory.getFileType(localLoadFolder));
-                CarbonFile[] listFiles = carbonFile.listFiles();
-                for (int i = 0; i < listFiles.length; i++) {
-                    fs.copyFromLocalFile(true, true, new Path(listFiles[i].getCanonicalPath()),
-                            new Path(hdfsStoreLoadFolder));
-                }
-            } else {
-                fs.copyFromLocalFile(true, true, new Path(localLoadFolder),
-                        new Path(hdfsStoreLoadFolder));
-            }
-
-            LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-                    "Copying sliceMetaData from " + localLoadedTable + " --> " + hdfsLoadedTable);
-
-            /**
-             *Handler:  Delete the Load_X folder from local path also can be done through
-             *the boolean parameter in  fs.copyFromLocalFile(...) call.
-             */
-            fs.copyFromLocalFile(true, true,
-                    new Path(localLoadedTable + ("/sliceMetaData" + "." + currentRestructNumber)),
-                    new Path(hdfsLoadedTable + ("/sliceMetaData" + "." + sliceRestructNumber)));
-            LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-                    "Total HDFS copy time (ms):  " + (System.currentTimeMillis() - time1));
-
-        } else {
-            LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-                    "Separate carbon.storelocation.hdfs is not configured for hdfs store path");
-        }
-    }
-
-    private static void renameFactFile(String location, String tableName) {
-        FileType fileType = FileFactory.getFileType(location);
-        CarbonFile carbonFile = null;
+    private static void renameFactFile(String localStoreLocation) {
+        FileType fileType = FileFactory.getFileType(localStoreLocation);
         try {
-            if (FileFactory.isFileExist(location, fileType)) {
-                carbonFile = FileFactory.getCarbonFile(location, fileType);
+            if (FileFactory.isFileExist(localStoreLocation, fileType)) {
+                CarbonFile carbonFile = FileFactory.getCarbonFile(localStoreLocation, fileType);
                 CarbonFile[] listFiles = carbonFile.listFiles(new CarbonFileFilter() {
                     @Override public boolean accept(CarbonFile path) {
                         return path.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT) && !path
@@ -728,8 +665,8 @@ public final class CarbonLoaderUtil {
 
         // CHECKSTYLE:ON
         if (null == cubeName && null == schemaName) {
-            schemaName = loadModel.getSchemaName();
-            cubeName = loadModel.getCubeName();
+            schemaName = loadModel.getDatabaseName();
+            cubeName = loadModel.getTableName();
         }
         String factTable = loadModel.getTableName();
         String hdfsLoadedTable = null;
@@ -775,8 +712,8 @@ public final class CarbonLoaderUtil {
                 + CarbonCommonConstants.LOADMETADATA_FILENAME
                 + CarbonCommonConstants.CARBON_METADATA_EXTENSION;
        /* dataLoadLocation =
-                extractLoadMetadataFileLocation(loadModel.getSchema(), loadModel.getSchemaName(),
-                        loadModel.getCubeName()) + File.separator
+                extractLoadMetadataFileLocation(loadModel.getSchema(), loadModel.getDatabaseName(),
+                        loadModel.getTableName()) + File.separator
                         + CarbonCommonConstants.LOADMETADATA_FILENAME
                         + CarbonCommonConstants.CARBON_METADATA_EXTENSION;*/
         Gson gsonObjectToRead = new Gson();
@@ -815,7 +752,7 @@ public final class CarbonLoaderUtil {
 
             CarbonUtil.closeStreams(dataInputStream);
         }
-        writeLoadMetadata(loadModel.getCarbonDataLoadSchema(), loadModel.getSchemaName(), loadModel.getCubeName(),
+        writeLoadMetadata(loadModel.getCarbonDataLoadSchema(), loadModel.getDatabaseName(), loadModel.getTableName(),
                 listOfLoadFolderDetails);
 
     }
@@ -936,15 +873,15 @@ public final class CarbonLoaderUtil {
 
     public static String extractLoadMetadataFileLocation(CarbonLoadModel loadModel) {
         Cube cube = CarbonMetadata.getInstance()
-                .getCube(loadModel.getSchemaName() + '_' + loadModel.getCubeName());
+                .getCube(loadModel.getDatabaseName() + '_' + loadModel.getTableName());
         if (null == cube) {
             Schema schema = loadModel.getSchema();
             CarbonDef.Cube mondrianCube =
-                    CarbonSchemaParser.getMondrianCube(schema, loadModel.getCubeName());
+                    CarbonSchemaParser.getMondrianCube(schema, loadModel.getTableName());
             CarbonMetadata.getInstance()
                     .loadCube(schema, schema.name, mondrianCube.name, mondrianCube);
             cube = CarbonMetadata.getInstance()
-                    .getCube(loadModel.getSchemaName() + '_' + loadModel.getCubeName());
+                    .getCube(loadModel.getDatabaseName() + '_' + loadModel.getTableName());
         }
 
         return cube.getMetaDataFilepath();
@@ -976,7 +913,7 @@ public final class CarbonLoaderUtil {
     public static Set<String> getColumnListFromAggTable(CarbonLoadModel model) {
         Set<String> columnList = new HashSet<String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         Cube metadataCube = CarbonMetadata.getInstance()
-                .getCube(model.getSchemaName() + '_' + model.getCubeName());
+                .getCube(model.getDatabaseName() + '_' + model.getTableName());
         CarbonDef.Cube cube = model.getSchema().cubes[0];
         CarbonDef.Table factTable = (CarbonDef.Table) cube.fact;
         List<Dimension> dimensions = metadataCube.getDimensions(factTable.name);
@@ -1013,8 +950,8 @@ public final class CarbonLoaderUtil {
         boolean copyStore = Boolean.valueOf(
                 CarbonProperties.getInstance().getProperty("dataload.hdfs.copy", "true"));
 
-        String schemaName = loadModel.getSchemaName();
-        String cubeName = loadModel.getCubeName();
+        String schemaName = loadModel.getDatabaseName();
+        String cubeName = loadModel.getTableName();
         String factTable = loadModel.getTableName();
         String aggTableName = loadModel.getAggTableName();
 

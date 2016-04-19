@@ -36,7 +36,7 @@ public class CarbonFactDataWriterImpl extends AbstractFactDataWriter<short[]> {
             String tableName, boolean isNodeHolder, IFileManagerComposite fileManager,
             int[] keyBlockSize, boolean isUpdateFact) {
         super(storeLocation, measureCount, mdKeyLength, tableName, isNodeHolder, fileManager,
-                keyBlockSize, isUpdateFact);
+                keyBlockSize, isUpdateFact, null);
     }
 
     @Override

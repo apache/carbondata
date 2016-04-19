@@ -99,6 +99,10 @@ public class CarbonSliceMergerStepMeta extends BaseStepMeta implements StepMetaI
     private int currentRestructNumber = -1;
 
     private String levelAnddataTypeString;
+    /**
+     * partitionID
+     */
+    private String partitionID;
 
     /**
      * CarbonDataWriterStepMeta constructor to initialize this class
@@ -124,6 +128,7 @@ public class CarbonSliceMergerStepMeta extends BaseStepMeta implements StepMetaI
         factDimLensString = "";
         currentRestructNumber = -1;
         levelAnddataTypeString = "";
+        partitionID = "";
     }
 
     /**
@@ -150,6 +155,7 @@ public class CarbonSliceMergerStepMeta extends BaseStepMeta implements StepMetaI
                 .append(XMLHandler.addTagValue("currentRestructNumber", currentRestructNumber));
         retval.append("    ")
                 .append(XMLHandler.addTagValue("levelAnddataTypeString", levelAnddataTypeString));
+        retval.append("    ").append(XMLHandler.addTagValue("partitionID", partitionID));
         return retval.toString();
     }
 
@@ -178,6 +184,7 @@ public class CarbonSliceMergerStepMeta extends BaseStepMeta implements StepMetaI
             levelAnddataTypeString = XMLHandler.getTagValue(stepnode, "levelAnddataTypeString");
             currentRestructNumber =
                     Integer.parseInt(XMLHandler.getTagValue(stepnode, "currentRestructNumber"));
+            partitionID = XMLHandler.getTagValue(stepnode, "partitionID");
         } catch (Exception e) {
             throw new KettleXMLException("Unable to read step info from XML node", e);
         }
@@ -211,7 +218,7 @@ public class CarbonSliceMergerStepMeta extends BaseStepMeta implements StepMetaI
                     levelAnddataTypeString);
             rep.saveStepAttribute(idTransformation, idStep, "currentRestructNumber",
                     currentRestructNumber);
-
+            rep.saveStepAttribute(idTransformation, idStep, "partitionID", partitionID);
         } catch (Exception e) {
             throw new KettleException(BaseMessages
                     .getString(PKG, "TemplateStep.Exception.UnableToSaveStepInfoToRepository")
@@ -256,6 +263,7 @@ public class CarbonSliceMergerStepMeta extends BaseStepMeta implements StepMetaI
             levelAnddataTypeString = rep.getStepAttributeString(idStep, "levelAnddataTypeString");
             currentRestructNumber =
                     (int) rep.getStepAttributeInteger(idStep, "currentRestructNumber");
+            partitionID = rep.getStepAttributeString(idStep, "partitionID");
         } catch (Exception exception) {
             throw new KettleException(BaseMessages.getString(PKG,
                     "CarbonDataWriterStepMeta.Exception.UnexpectedErrorInReadingStepInfo"),
@@ -512,5 +520,19 @@ public class CarbonSliceMergerStepMeta extends BaseStepMeta implements StepMetaI
 
     public void setLevelAnddataTypeString(String levelAnddataTypeString) {
         this.levelAnddataTypeString = levelAnddataTypeString;
+    }
+
+    /**
+     * @return partitionId
+     */
+    public String getPartitionID() {
+        return partitionID;
+    }
+
+    /**
+     * @param partitionID
+     */
+    public void setPartitionID(String partitionID) {
+        this.partitionID = partitionID;
     }
 }

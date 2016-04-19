@@ -29,6 +29,9 @@ import java.util.Map.Entry;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.carbon.CarbonTableIdentifier;
+import org.carbondata.core.carbon.path.CarbonStorePath;
+import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.cache.Cache;
 import org.carbondata.core.cache.CacheProvider;
 import org.carbondata.core.cache.CacheType;
@@ -102,30 +105,32 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
      * primaryKeyStringArray
      */
     private String[] primaryKeyStringArray;
+    /**
+     * partitionID
+     */
+    private String partitionID;
 
     /**
      *
      */
     private Object lock = new Object();
 
-    private int currentRestructNumber;
-
     /**
      * @param carbonInfo
      * @throws KettleException
      */
-    public FileStoreSurrogateKeyGenForCSV(CarbonInfo carbonInfo, int currentRestructNum)
+    public FileStoreSurrogateKeyGenForCSV(CarbonInfo carbonInfo,String partitionID)
             throws KettleException {
         super(carbonInfo);
-        currentRestructNumber = currentRestructNum;
         populatePrimaryKeyarray(dimInsertFileNames, carbonInfo.getPrimaryKeyMap());
-
+        this.partitionID = partitionID;
         keyGenerator =
                 new HashMap<String, KeyGenerator>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
         baseStorePath = carbonInfo.getBaseStoreLocation();
         setStoreFolderWithLoadNumber(
-                checkAndCreateLoadFolderNumber(baseStorePath, carbonInfo.getTableName()));
+                checkAndCreateLoadFolderNumber(baseStorePath, carbonInfo.getSchemaName(),
+                        carbonInfo.getCubeName()));
         fileManager = new LoadFolderData();
         fileManager.setName(loadFolderName + CarbonCommonConstants.FILE_INPROGRESS_STATUS);
 
@@ -197,47 +202,24 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
         return -1;
     }
 
-    private String checkAndCreateLoadFolderNumber(String baseStorePath, String tableName)
+    private String checkAndCreateLoadFolderNumber(String baseStorePath, String databaseName,
+            String tableName)
             throws KettleException {
-        int restrctFolderCount = currentRestructNumber;
-        //
-        if (restrctFolderCount == -1) {
-            restrctFolderCount = 0;
-        }
-        //
-        String baseStorePathWithTableName =
-                baseStorePath + File.separator + CarbonCommonConstants.RESTRUCTRE_FOLDER
-                        + restrctFolderCount + File.separator + tableName;
-        int counter = CarbonUtil.checkAndReturnCurrentLoadFolderNumber(baseStorePathWithTableName);
-        if (!CheckPointHanlder.IS_CHECK_POINT_NEEDED) {
-            counter++;
-        } else if (counter == -1) {
-            counter++;
-        }
-        String basePath =
-                baseStorePathWithTableName + File.separator + CarbonCommonConstants.LOAD_FOLDER
-                        + counter;
-        // Incase of normalized data we will load dinemnsion data first and will rename the files, level files
-        // extension from inprogress to normal , so in that case we need to start create new folder with 
-        // next available folder.
-        if (new File(basePath).exists()) {
-            counter++;
-        }
-
-        basePath = baseStorePathWithTableName + File.separator + CarbonCommonConstants.LOAD_FOLDER
-                + counter + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
-
-        loadFolderName = CarbonCommonConstants.LOAD_FOLDER + counter;
-
-        if (new File(basePath).exists()) {
-            return basePath;
-        }
-        //
-        boolean isDirCreated = new File(basePath).mkdirs();
+        CarbonTableIdentifier carbonTableIdentifier =
+                new CarbonTableIdentifier(databaseName, tableName);
+        CarbonTablePath carbonTablePath =
+                CarbonStorePath.getCarbonTablePath(baseStorePath, carbonTableIdentifier);
+        String carbonDataDirectoryPath = carbonTablePath
+                .getCarbonDataDirectoryPath(this.partitionID,
+                        CarbonCommonConstants.SEGMENT_ID_FOR_LOCAL_STORE_FOLDER_CREATION);
+        carbonDataDirectoryPath = carbonDataDirectoryPath
+                + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
+        boolean isDirCreated = new File(carbonDataDirectoryPath).mkdirs();
         if (!isDirCreated) {
-            throw new KettleException("Unable to create dataload directory" + basePath);
+            throw new KettleException(
+                    "Unable to create data load directory" + carbonDataDirectoryPath);
         }
-        return basePath;
+        return carbonDataDirectoryPath;
     }
 
     private CarbonFile[] getFilesArray(String baseStorePath, final String fileNameSearchPattern) {
@@ -303,7 +285,7 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
         String[] dimColumnNames = carbonInfo.getDimColNames();
         String[] mesColumnNames = carbonInfo.getMeasureColumns();
         boolean isSharedDimension = false;
-        String databaseName = carbonInfo.getSchemaName().substring(0, carbonInfo.getSchemaName().lastIndexOf("_"));
+        String databaseName = carbonInfo.getSchemaName();
         String tableName = carbonInfo.getTableName();
         CarbonTableIdentifier carbonTableIdentifier = new CarbonTableIdentifier(databaseName, tableName);
         String directoryPath = CarbonDictionaryUtil.getDirectoryPath(carbonTableIdentifier, hdfsStorePath, isSharedDimension);

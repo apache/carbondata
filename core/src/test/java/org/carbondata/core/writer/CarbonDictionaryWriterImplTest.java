@@ -35,6 +35,8 @@ import mockit.Mock;
 import mockit.MockUp;
 import org.apache.thrift.TBase;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
+import org.carbondata.core.carbon.path.CarbonStorePath;
+import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
@@ -71,11 +73,6 @@ public class CarbonDictionaryWriterImplTest {
     private String columnIdentifier;
 
     private Properties props;
-
-    /**
-     * directory path for dictionary file
-     */
-    private String directoryPath;
 
     /**
      * dictionary file path
@@ -196,7 +193,7 @@ public class CarbonDictionaryWriterImplTest {
      * prepare the dictionary writer object
      */
     private CarbonDictionaryWriterImpl prepareWriter(boolean isSharedDimension) {
-        initDictionaryDirPaths(isSharedDimension);
+        initDictionaryDirPaths();
         return new CarbonDictionaryWriterImpl(this.carbonStorePath, carbonTableIdentifier,
                 columnIdentifier, isSharedDimension);
     }
@@ -586,14 +583,10 @@ public class CarbonDictionaryWriterImplTest {
     /**
      * this method will form the dictionary directory paths
      */
-    private void initDictionaryDirPaths(boolean isSharedDimension) {
-        this.directoryPath = CarbonDictionaryUtil
-                .getDirectoryPath(carbonTableIdentifier, carbonStorePath, isSharedDimension);
-        this.dictionaryFilePath = CarbonDictionaryUtil
-                .getDictionaryFilePath(carbonTableIdentifier, this.directoryPath, columnIdentifier,
-                        isSharedDimension);
-        this.dictionaryMetaFilePath = CarbonDictionaryUtil
-                .getDictionaryMetadataFilePath(carbonTableIdentifier, this.directoryPath,
-                        columnIdentifier, isSharedDimension);
+    private void initDictionaryDirPaths() {
+        CarbonTablePath carbonTablePath =
+                CarbonStorePath.getCarbonTablePath(this.carbonStorePath, carbonTableIdentifier);
+        this.dictionaryFilePath = carbonTablePath.getDictionaryFilePath(columnIdentifier);
+        this.dictionaryMetaFilePath = carbonTablePath.getDictionaryMetaFilePath(columnIdentifier);
     }
 }

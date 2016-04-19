@@ -24,7 +24,7 @@ import scala.collection.mutable.HashMap
 import scala.collection.mutable.HashSet
 import scala.collection.JavaConversions.{asScalaBuffer, asScalaSet, seqAsJavaList}
 import scala.language.implicitConversions
-import org.apache.spark.sql.{ DataFrame, SQLContext }
+import org.apache.spark.sql.{DataFrame, SQLContext}
 import org.carbondata.core.carbon.CarbonDef.Schema
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
 import org.carbondata.integration.spark.load.CarbonLoadModel
@@ -33,13 +33,13 @@ import org.carbondata.integration.spark.rdd.CarbonBlockDistinctValuesCombineRDD
 import org.carbondata.integration.spark.rdd.CarbonGlobalDictionaryGenerateRDD
 import org.apache.spark.Logging
 import org.carbondata.core.carbon.CarbonTableIdentifier
-import org.carbondata.core.util.CarbonProperties
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.writer.CarbonDictionaryWriter
 import org.carbondata.core.writer.CarbonDictionaryWriterImpl
-import org.carbondata.core.util.CarbonDictionaryUtil
 import org.carbondata.core.util.CarbonUtil
 import java.io.IOException
+
+import org.carbondata.core.carbon.path.{CarbonStorePath, CarbonTablePath}
 import org.carbondata.core.reader.CarbonDictionaryReader
 import org.carbondata.core.reader.CarbonDictionaryReaderImpl
 import org.carbondata.integration.spark.rdd.DictionaryLoadModel
@@ -143,9 +143,9 @@ object GlobalDictionaryUtil extends Logging {
     //list dictionary file path
     val dictFilePaths = new Array[String](columns.length)
     val dictFileExists = new Array[Boolean](columns.length)
+    val carbonTablePath = CarbonStorePath.getCarbonTablePath(hdfsLocation, table)
     for (i <- 0 until columns.length) {
-      dictFilePaths(i) = CarbonDictionaryUtil.getDictionaryFilePath(table,
-        dictfolderPath, columns(i), isSharedDimension)
+      dictFilePaths(i) = carbonTablePath.getDictionaryFilePath(columns(i))
       dictFileExists(i) = CarbonUtil.isFileExists(dictFilePaths(i))
     }
     new DictionaryLoadModel(table,
@@ -257,10 +257,11 @@ object GlobalDictionaryUtil extends Logging {
                                isSharedDimension: Boolean) = {
     val rtn = 1
     try {
-      val table = new CarbonTableIdentifier(carbonLoadModel.getSchemaName, carbonLoadModel.getTableName)
+      val table = new CarbonTableIdentifier(carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName)
 
       //create dictionary folder if not exists
-      val dictfolderPath = CarbonDictionaryUtil.getDirectoryPath(table, hdfsLocation, isSharedDimension)
+      val carbonTablePath = CarbonStorePath.getCarbonTablePath(hdfsLocation, table)
+      val dictfolderPath = carbonTablePath.getMetadataDirectoryPath
       val created = CarbonUtil.checkAndCreateFolder(dictfolderPath)
       if (!created) {
         logError("Dictionary Folder creation status :: " + created)

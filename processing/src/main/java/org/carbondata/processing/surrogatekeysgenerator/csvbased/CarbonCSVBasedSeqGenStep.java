@@ -19,7 +19,10 @@
 
 package org.carbondata.processing.surrogatekeysgenerator.csvbased;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
@@ -32,6 +35,9 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.common.logging.impl.StandardLogService;
+import org.carbondata.core.carbon.CarbonTableIdentifier;
+import org.carbondata.core.carbon.path.CarbonStorePath;
+import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.cache.dictionary.*;
 import org.carbondata.core.cache.dictionary.Dictionary;
 import org.carbondata.core.constants.CarbonCommonConstants;
@@ -46,7 +52,6 @@ import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.carbondata.core.metadata.SliceMetaData;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
-import org.carbondata.core.util.CarbonVersion;
 import org.carbondata.core.util.DataTypeUtil;
 import org.carbondata.core.writer.ByteArrayHolder;
 import org.carbondata.core.writer.HierarchyValueWriterForCSV;
@@ -64,7 +69,6 @@ import org.carbondata.processing.schema.metadata.CarbonInfo;
 import org.carbondata.processing.schema.metadata.HierarchiesInfo;
 import org.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
-import org.carbondata.processing.util.CarbonDataProcessorUtil;
 import org.carbondata.processing.util.RemoveDictionaryUtil;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.database.ConnectionPoolUtil;
@@ -305,7 +309,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
         try {
             meta = (CarbonCSVBasedSeqGenMeta) smi;
             StandardLogService
-                    .setThreadName(StandardLogService.getPartitionID(meta.getCubeName()), null);
+                    .setThreadName(meta.getPartitionID(), null);
             data = (CarbonCSVBasedSeqGenData) sdi;
 
             Object[] r = getRow();  // get row, blocks when needed!
@@ -402,8 +406,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
                     carbonInfo.setPropTypes(meta.getPropTypes());
                     carbonInfo.setTimDimIndex(meta.timeDimeIndex);
                     carbonInfo.setDimHierRel(meta.getDimTableArray());
-                    carbonInfo.setBaseStoreLocation(updateStoreLocationAndPopulateCarbonInfo(
-                            meta.getSchemaName() + '/' + meta.getCubeName()));
+                    carbonInfo.setBaseStoreLocation(getCarbonLocalBaseStoreLocation());
                     carbonInfo.setTableName(meta.getTableName());
                     carbonInfo.setPrimaryKeyMap(meta.getPrimaryKeyMap());
                     carbonInfo.setMeasureColumns(meta.measureColumn);
@@ -417,8 +420,8 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
                                     meta.getSchemaName() + '/' + meta.getCubeName()));
 
                     carbonInfo.setTimeOrdinalIndices(meta.timeOrdinalIndices);
-                    surrogateKeyGen = new FileStoreSurrogateKeyGenForCSV(carbonInfo,
-                            meta.getCurrentRestructNumber());
+                    surrogateKeyGen =
+                            new FileStoreSurrogateKeyGenForCSV(carbonInfo, meta.getPartitionID());
                     data.setSurrogateKeyGen(surrogateKeyGen);
 
                     updateStoreLocation();
@@ -542,10 +545,8 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
             }
 
             startReadingProcess(numberOfNodes);
-            updateAndWriteSliceMetadataFile();
             CarbonUtil.writeLevelCardinalityFile(loadFolderLoc, meta.getTableName(),
                     getUpdatedCardinality(data.getSurrogateKeyGen().max));
-            writeDataFileVersion();
             badRecordslogger.closeStreams();
             if (!meta.isAggregate()) {
                 closeNormalizedHierFiles();
@@ -627,7 +628,6 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
             return false;
         }
         try {
-            updateAndWriteSliceMetadataFile();
         } catch (Exception e) {
             LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
                     "Not able to get Key genrator");
@@ -799,20 +799,17 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
      */
     private void updateStoreLocation() {
         String tempLocationKey = meta.getSchemaName() + '_' + meta.getCubeName();
-        String store = CarbonProperties.getInstance()
+        String baseStorePath = CarbonProperties.getInstance()
                 .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
-        store = store + File.separator + meta.getSchemaName() + '/' + meta.getCubeName();
-
-        int rsCounter = meta.getCurrentRestructNumber()/*CarbonUtil.checkAndReturnNextRestructFolderNumber(store,"RS_")*/;
-
-        store = store + File.separator + CarbonCommonConstants.RESTRUCTRE_FOLDER + rsCounter
-                + File.separator + meta.getTableName();
-
-        int loadCounter = CarbonUtil.checkAndReturnCurrentLoadFolderNumber(store);
-
-        loadFolderLoc = store + File.separator + CarbonCommonConstants.LOAD_FOLDER + loadCounter
+        CarbonTableIdentifier carbonTableIdentifier =
+                new CarbonTableIdentifier(meta.getSchemaName(), meta.getCubeName());
+        CarbonTablePath carbonTablePath =
+                CarbonStorePath.getCarbonTablePath(baseStorePath, carbonTableIdentifier);
+        String partitionId = meta.getPartitionID();
+        String carbonDataDirectoryPath = carbonTablePath.getCarbonDataDirectoryPath(partitionId,
+                CarbonCommonConstants.SEGMENT_ID_FOR_LOCAL_STORE_FOLDER_CREATION);
+        loadFolderLoc = carbonDataDirectoryPath
                 + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
-
     }
 
     private String getBadLogStoreLocation(String storeLocation) {
@@ -916,41 +913,6 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
             }
         }
         return normDims;
-    }
-
-    /**
-     * updateAndWriteSliceMetadataFile
-     *
-     * @throws KettleException
-     */
-    private void updateAndWriteSliceMetadataFile() throws KettleException {
-        String storeLocation = updateStoreLocationAndPopulateCarbonInfo(
-                meta.getSchemaName() + '/' + meta.getCubeName());
-        //
-
-        int restructFolderNumber = meta.getCurrentRestructNumber()/*CarbonUtil.checkAndReturnNextRestructFolderNumber(storeLocation,"RS_")*/;
-
-        String sliceMetaDataFilePath =
-                storeLocation + File.separator + CarbonCommonConstants.RESTRUCTRE_FOLDER
-                        + restructFolderNumber + File.separator + meta.getTableName()
-                        + File.separator + CarbonUtil
-                        .getSliceMetaDataFileName(meta.getCurrentRestructNumber());
-
-        SliceMetaData sliceMetaData = new SliceMetaData();
-        //
-        sliceMetaData.setDimensions(
-                getUpdatedDims(meta.dimColNames, meta.NoDictionaryCols, meta.dimPresent));
-        sliceMetaData.setActualDimensions(meta.dimColNames);
-        sliceMetaData.setMeasures(meta.measureColumn);
-        sliceMetaData.setActualDimLens(getUpdatedCardinality(meta.dimLens));
-        sliceMetaData.setDimLens(getUpdatedLens(meta.dimLens, meta.dimPresent));
-        sliceMetaData.setMeasuresAggregator(meta.msrAggregators);
-        sliceMetaData.setHeirAnKeySize(meta.getHeirKeySize());
-        sliceMetaData.setTableNamesToLoadMandatory(null);
-        sliceMetaData.setComplexTypeString(meta.getComplexTypeString());
-        sliceMetaData.setKeyGenerator(
-                KeyGeneratorFactory.getKeyGenerator(getUpdatedLens(meta.dimLens, meta.dimPresent)));
-        CarbonDataProcessorUtil.writeFileAsObjectStream(sliceMetaDataFilePath, sliceMetaData);
     }
 
     /**
@@ -1138,21 +1100,12 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
         });
     }
 
-    private String updateStoreLocationAndPopulateCarbonInfo(String schemaCubeName) {
-        //
+    private String getCarbonLocalBaseStoreLocation() {
         String tempLocationKey = meta.getSchemaName() + '_' + meta.getCubeName();
         String strLoc = CarbonProperties.getInstance()
                 .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
         File f = new File(strLoc);
         String absoluteStorePath = f.getAbsolutePath();
-        //
-        if (absoluteStorePath.length() > 0
-                && absoluteStorePath.charAt(absoluteStorePath.length() - 1) == '/') {
-            absoluteStorePath = absoluteStorePath + schemaCubeName;
-        } else {
-            absoluteStorePath =
-                    absoluteStorePath + System.getProperty("file.separator") + schemaCubeName;
-        }
         return absoluteStorePath;
     }
 
@@ -2105,26 +2058,6 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
         super.dispose(smi, sdi);
         meta = null;
         data = null;
-    }
-
-    private void writeDataFileVersion() throws KettleException {
-        FileWriter versionWriter = null;
-        try {
-            versionWriter = new FileWriter(loadFolderLoc + File.separator + ".version");
-            versionWriter
-                    .write(CarbonCommonConstants.DATA_VERSION + '=' + CarbonVersion.getDataVersion());
-            versionWriter.flush();
-        } catch (IOException e) {
-            throw new KettleException("Not able to write version File", e);
-        } finally {
-            try {
-                if (null != versionWriter) {
-                    versionWriter.close();
-                }
-            } catch (IOException e) {
-                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
-            }
-        }
     }
 
     private void processnoDictionaryDim(int index, String dimension, ByteBuffer[] out) {

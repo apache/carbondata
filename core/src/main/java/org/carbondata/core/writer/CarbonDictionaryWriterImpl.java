@@ -29,13 +29,14 @@ import org.apache.thrift.TBase;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
+import org.carbondata.core.carbon.path.CarbonStorePath;
+import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.reader.CarbonDictionaryColumnMetaChunk;
 import org.carbondata.core.reader.CarbonDictionaryMetadataReaderImpl;
 import org.carbondata.core.util.CarbonCoreLogEvent;
-import org.carbondata.core.util.CarbonDictionaryUtil;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.format.ColumnDictionaryChunk;
@@ -86,11 +87,6 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
      * shared dimension flag
      */
     private boolean isSharedDimension;
-
-    /**
-     * directory path for dictionary file
-     */
-    private String directoryPath;
 
     /**
      * dictionary file path
@@ -234,20 +230,10 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
      */
     private void init() throws IOException {
         initDictionaryChunkSize();
-        this.directoryPath = CarbonDictionaryUtil
-                .getDirectoryPath(carbonTableIdentifier, hdfsStorePath, isSharedDimension);
-        boolean created = CarbonUtil.checkAndCreateFolder(directoryPath);
-        if (!created) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-                    "Dictionary Folder creation status :: " + created);
-            throw new IOException("Failed to created dictionary folder");
-        }
-        this.dictionaryFilePath = CarbonDictionaryUtil
-                .getDictionaryFilePath(carbonTableIdentifier, this.directoryPath, columnIdentifier,
-                        isSharedDimension);
-        this.dictionaryMetaFilePath = CarbonDictionaryUtil
-                .getDictionaryMetadataFilePath(carbonTableIdentifier, this.directoryPath,
-                        columnIdentifier, isSharedDimension);
+        CarbonTablePath carbonTablePath =
+                CarbonStorePath.getCarbonTablePath(this.hdfsStorePath, carbonTableIdentifier);
+        this.dictionaryFilePath = carbonTablePath.getDictionaryFilePath(columnIdentifier);
+        this.dictionaryMetaFilePath = carbonTablePath.getDictionaryMetaFilePath(columnIdentifier);
         if (CarbonUtil.isFileExists(this.dictionaryFilePath)) {
             this.chunk_start_offset = CarbonUtil.getFileSize(this.dictionaryFilePath);
             validateDictionaryFileOffsetWithLastSegmentEntryOffset();

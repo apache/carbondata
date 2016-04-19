@@ -35,9 +35,7 @@ public class CarbonLoadModel implements Serializable {
      */
     private static final long serialVersionUID = 6580168429197697465L;
 
-    private String schemaName;
-
-    private String cubeName;
+    private String databaseName;
 
     private String tableName;
 
@@ -81,6 +79,15 @@ public class CarbonLoadModel implements Serializable {
     private List<LoadMetadataDetails> loadMetadataDetails;
 
     private String blocksID;
+
+    /**
+     * task id, each spark task has a unique id
+     */
+    private String taskNo;
+    /**
+     * new load start time
+     */
+    private String factTimeStamp;
 
     /**
      * get blocck id
@@ -175,31 +182,31 @@ public class CarbonLoadModel implements Serializable {
     }
 
     /**
-     * @return the schemaName
+     * @return the databaseName
      */
-    public String getSchemaName() {
-        return schemaName;
+    public String getDatabaseName() {
+        return databaseName;
     }
 
     /**
-     * @param schemaName the schemaName to set
+     * @param databaseName the databaseName to set
      */
-    public void setSchemaName(String schemaName) {
-        this.schemaName = schemaName;
+    public void setDatabaseName(String databaseName) {
+        this.databaseName = databaseName;
     }
 
     /**
-     * @return the cubeName
+     * @return the tableName
      */
-    public String getCubeName() {
-        return cubeName;
+    public String getTableName() {
+        return tableName;
     }
 
     /**
-     * @param cubeName the cubeName to set
+     * @param tableName the tableName to set
      */
-    public void setCubeName(String cubeName) {
-        this.cubeName = cubeName;
+    public void setTableName(String tableName) {
+        this.tableName = tableName;
     }
 
     /**
@@ -230,20 +237,6 @@ public class CarbonLoadModel implements Serializable {
      */
     public void setDimFolderPath(String dimFolderPath) {
         this.dimFolderPath = dimFolderPath;
-    }
-
-    /**
-     * @return the tableName
-     */
-    public String getTableName() {
-        return tableName;
-    }
-
-    /**
-     * @param tableName the tableName to set
-     */
-    public void setTableName(String tableName) {
-        this.tableName = tableName;
     }
 
     /**
@@ -324,16 +317,15 @@ public class CarbonLoadModel implements Serializable {
      */
     public CarbonLoadModel getCopyWithPartition(String uniqueId,String blocksID) {
         CarbonLoadModel copy = new CarbonLoadModel();
-        copy.cubeName = cubeName + '_' + uniqueId;
+        copy.tableName = tableName;
         copy.dbPwd = dbPwd;
         copy.dbUserName = dbUserName;
         copy.dimFolderPath = dimFolderPath;
         copy.driverClass = driverClass;
         copy.factFilePath = factFilePath + '/' + uniqueId;
         copy.jdbcUrl = jdbcUrl;
-        copy.schemaName = schemaName + '_' + uniqueId;
+        copy.databaseName = databaseName;
         copy.schemaPath = schemaPath;
-        copy.tableName = tableName;
         copy.partitionId = uniqueId;
         copy.aggTables = aggTables;
         copy.aggTableName = aggTableName;
@@ -345,13 +337,8 @@ public class CarbonLoadModel implements Serializable {
         copy.complexDelimiterLevel2 = complexDelimiterLevel2;
         copy.carbonDataLoadSchema = carbonDataLoadSchema;
         copy.blocksID = blocksID;
-        if (uniqueId != null && schema != null) {
-            String originalSchemaName = schema.name;
-            String originalCubeName = schema.cubes[0].name;
-            copy.schema.name = originalSchemaName + '_' + uniqueId;
-            copy.schema.cubes[0].name = originalCubeName + '_' + uniqueId;
-        }
-
+        copy.taskNo = taskNo;
+        copy.factTimeStamp = factTimeStamp;
         return copy;
     }
 
@@ -367,16 +354,15 @@ public class CarbonLoadModel implements Serializable {
     public CarbonLoadModel getCopyWithPartition(String uniqueId, List<String> filesForPartition,
             String header, String delimiter, String blocksID) {
         CarbonLoadModel copyObj = new CarbonLoadModel();
-        copyObj.cubeName = cubeName + '_' + uniqueId;
+        copyObj.tableName = tableName;
         copyObj.dbPwd = dbPwd;
         copyObj.dbUserName = dbUserName;
         copyObj.dimFolderPath = dimFolderPath;
         copyObj.driverClass = driverClass;
         copyObj.factFilePath = null;
         copyObj.jdbcUrl = jdbcUrl;
-        copyObj.schemaName = schemaName + '_' + uniqueId;
+        copyObj.databaseName = databaseName;
         copyObj.schemaPath = schemaPath;
-        copyObj.tableName = tableName;
         copyObj.partitionId = uniqueId;
         copyObj.aggTables = aggTables;
         copyObj.aggTableName = aggTableName;
@@ -385,13 +371,6 @@ public class CarbonLoadModel implements Serializable {
         copyObj.loadMetadataDetails = loadMetadataDetails;
         copyObj.isRetentionRequest = isRetentionRequest;
         copyObj.carbonDataLoadSchema = carbonDataLoadSchema;
-        
-        if (uniqueId != null && schema != null) {
-            String originalSchemaName = schema.name;
-            String originalCubeName = schema.cubes[0].name;
-            copyObj.schema.name = originalSchemaName + '_' + uniqueId;
-            copyObj.schema.cubes[0].name = originalCubeName + '_' + uniqueId;
-        }
         copyObj.csvHeader = header;
         copyObj.factFilesToProcess = filesForPartition;
         copyObj.isDirectLoad = true;
@@ -399,6 +378,8 @@ public class CarbonLoadModel implements Serializable {
         copyObj.complexDelimiterLevel1 = complexDelimiterLevel1;
         copyObj.complexDelimiterLevel2 = complexDelimiterLevel2;
         copyObj.blocksID = blocksID;
+        copyObj.taskNo = taskNo;
+        copyObj.factTimeStamp = factTimeStamp;
         return copyObj;
     }
 
@@ -507,4 +488,31 @@ public class CarbonLoadModel implements Serializable {
         this.loadMetadataDetails = loadMetadataDetails;
     }
 
+    /**
+     * @return
+     */
+    public String getTaskNo() {
+        return taskNo;
+    }
+
+    /**
+     * @param taskNo
+     */
+    public void setTaskNo(String taskNo) {
+        this.taskNo = taskNo;
+    }
+
+    /**
+     * @return
+     */
+    public String getFactTimeStamp() {
+        return factTimeStamp;
+    }
+
+    /**
+     * @param factTimeStamp
+     */
+    public void setFactTimeStamp(String factTimeStamp) {
+        this.factTimeStamp = factTimeStamp;
+    }
 }

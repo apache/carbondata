@@ -136,9 +136,9 @@ class CarbonDataLoadRDD[K, V](
           storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()
         }
 
-        val blocksID = carbonLoadModel.getSchemaName + "_" + carbonLoadModel.getCubeName + "_" + UUID.randomUUID()
+        val blocksID = carbonLoadModel.getDatabaseName + "_" + carbonLoadModel.getTableName + "_" + UUID.randomUUID()
         GraphGenerator.blockInfo.put(blocksID, split.nodeBlockDetail)
-
+        carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
         if (carbonLoadModel.isDirectLoad()) {
           val filelist: java.util.List[String] = new java.util.ArrayList[String](CarbonCommonConstants.CONSTANT_SIZE_TEN)
           CarbonQueryUtil.getAllFiles(carbonLoadModel.getFactFilePath, filelist, FileFactory.getFileType(carbonLoadModel.getFactFilePath))
@@ -178,7 +178,7 @@ class CarbonDataLoadRDD[K, V](
               val newSlice = CarbonCommonConstants.LOAD_FOLDER + loadCount
               var isCopyFailed = false
               try {
-                CarbonLoaderUtil.copyCurrentLoadToHDFS(model, currentRestructNumber, newSlice, null, currentRestructNumber);
+                CarbonLoaderUtil.copyCurrentLoadToHDFS(model, newSlice, null);
               } catch {
                 case e: Exception =>
                   isCopyFailed = true
@@ -220,14 +220,14 @@ class CarbonDataLoadRDD[K, V](
           val copyListOfUpdatedLoadFolders = listOfUpdatedLoadFolders.toList
           loadCubeSlices(listOfAllLoadFolders, details)
           var loadFolders = Array[String]()
-          val loadFolder = CarbonLoaderUtil.getAggLoadFolderLocation(newSlice, model.getSchemaName, model.getCubeName, model.getTableName, hdfsStoreLocation, currentRestructNumber)
+          val loadFolder = CarbonLoaderUtil.getAggLoadFolderLocation(newSlice, model.getDatabaseName, model.getTableName, model.getTableName, hdfsStoreLocation, currentRestructNumber)
           if (null != loadFolder) {
             loadFolders :+= loadFolder
           }
           dataloadStatus = iterateOverAggTables(aggTables, copyListOfLoadFolders, copyListOfUpdatedLoadFolders, loadFolders)
           if (CarbonCommonConstants.STORE_LOADSTATUS_FAILURE.equals(dataloadStatus)) {
             // remove the current slice from memory not the cube
-            CarbonLoaderUtil.removeSliceFromMemory(model.getSchemaName, model.getCubeName, newSlice)
+            CarbonLoaderUtil.removeSliceFromMemory(model.getDatabaseName, model.getTableName, newSlice)
             logInfo(s"Aggregate table creation failed")
           }
           else {
@@ -252,7 +252,7 @@ class CarbonDataLoadRDD[K, V](
         var loadFolders = Array[String]()
         var restructFolders = Array[String]()
         for (number <- 0 to currentRestructNumber) {
-          restructFolders = CarbonLoaderUtil.getStorelocs(model.getSchemaName, model.getCubeName, model.getTableName, hdfsStoreLocation, number)
+          restructFolders = CarbonLoaderUtil.getStorelocs(model.getDatabaseName, model.getTableName, model.getTableName, hdfsStoreLocation, number)
           loadFolders = loadFolders ++ restructFolders
         }
         val aggTable = model.getAggTableName
@@ -277,7 +277,7 @@ class CarbonDataLoadRDD[K, V](
           var loadFolders = Array[String]()
           listOfUpdatedLoadFolders.foreach { sliceNum =>
             val newSlice = CarbonCommonConstants.LOAD_FOLDER + sliceNum
-            val loadFolder = CarbonLoaderUtil.getAggLoadFolderLocation(newSlice, model.getSchemaName, model.getCubeName, model.getTableName, hdfsStoreLocation, currentRestructNumber)
+            val loadFolder = CarbonLoaderUtil.getAggLoadFolderLocation(newSlice, model.getDatabaseName, model.getTableName, model.getTableName, hdfsStoreLocation, currentRestructNumber)
             if (null != loadFolder) {
               loadFolders :+= loadFolder
             }
@@ -304,7 +304,7 @@ class CarbonDataLoadRDD[K, V](
         if (InMemoryTableStore.getInstance.isLevelCacheEnabled()) {
           val columnList = CarbonLoaderUtil.getColumnListFromAggTable(model)
           val details = model.getLoadMetadataDetails.toSeq.toArray
-          levelCacheKeys = CarbonQueryUtil.loadRequiredLevels(CarbonQueryUtil.getListOfSlices(details), model.getSchemaName + '_' + model.getCubeName, columnList).toList
+          levelCacheKeys = CarbonQueryUtil.loadRequiredLevels(CarbonQueryUtil.getListOfSlices(details), model.getDatabaseName + '_' + model.getTableName, columnList).toList
         }
         loadFolders.foreach { loadFolder =>
           val restructNumber = CarbonUtil.getRestructureNumber(loadFolder, model.getTableName)
@@ -324,7 +324,7 @@ class CarbonDataLoadRDD[K, V](
             if (!CarbonCommonConstants.STORE_LOADSTATUS_FAILURE.equals(dataloadStatus)) {
               val loadName = loadFolder.substring(loadFolder.indexOf(CarbonCommonConstants.LOAD_FOLDER))
               try {
-                CarbonLoaderUtil.copyCurrentLoadToHDFS(model, restructNumber, loadName, listOfUpdatedLoadFolders, currentRestructNumber)
+                CarbonLoaderUtil.copyCurrentLoadToHDFS(model, loadName, listOfUpdatedLoadFolders)
               }
               catch {
                 case e: Exception =>

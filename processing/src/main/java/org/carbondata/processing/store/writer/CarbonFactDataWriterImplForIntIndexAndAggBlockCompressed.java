@@ -35,7 +35,7 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlockCompressed
             IFileManagerComposite fileManager, int[] keyBlockSize, boolean[] aggBlocks,
             int[] cardinality, boolean isUpdateFact) {
         super(storeLocation, measureCount, mdKeyLength, tableName, isNodeHolder, fileManager,
-                keyBlockSize, aggBlocks, isUpdateFact);
+                keyBlockSize, aggBlocks, isUpdateFact, null);
         this.keyBlockCompressor = new NumberCompressor[cardinality.length];
         for (int i = 0; i < cardinality.length; i++) {
             this.keyBlockCompressor[i] =

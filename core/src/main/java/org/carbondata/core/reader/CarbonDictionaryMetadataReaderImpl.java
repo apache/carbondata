@@ -25,8 +25,9 @@ import java.util.List;
 
 import org.apache.thrift.TBase;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
+import org.carbondata.core.carbon.path.CarbonStorePath;
+import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.util.CarbonDictionaryUtil;
 import org.carbondata.format.ColumnDictionaryChunkMeta;
 
 /**
@@ -158,11 +159,10 @@ public class CarbonDictionaryMetadataReaderImpl implements CarbonDictionaryMetad
      * This method will form the path for dictionary metadata file for a given column
      */
     private void initFileLocation() {
-        String dictionaryFolder = CarbonDictionaryUtil
-                .getDirectoryPath(carbonTableIdentifier, hdfsStorePath, isSharedDimension);
-        this.columnDictionaryMetadataFilePath = CarbonDictionaryUtil
-                .getDictionaryMetadataFilePath(carbonTableIdentifier, dictionaryFolder,
-                        columnIdentifier, isSharedDimension);
+        CarbonTablePath carbonTablePath =
+                CarbonStorePath.getCarbonTablePath(this.hdfsStorePath, carbonTableIdentifier);
+        this.columnDictionaryMetadataFilePath =
+                carbonTablePath.getDictionaryMetaFilePath(columnIdentifier);
     }
 
     /**

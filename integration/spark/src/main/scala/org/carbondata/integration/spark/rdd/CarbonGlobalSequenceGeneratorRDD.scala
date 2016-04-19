@@ -60,7 +60,7 @@ class CarbonGlobalSequenceGeneratorRDD[K, V](
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
 
   override def getPartitions: Array[Partition] = {
-    val splits = CarbonLoaderUtil.getDimensionSplit(carbonLoadModel.getCarbonDataLoadSchema, carbonLoadModel.getCubeName(), partitioner.partitionCount)
+    val splits = CarbonLoaderUtil.getDimensionSplit(carbonLoadModel.getCarbonDataLoadSchema, carbonLoadModel.getTableName(), partitioner.partitionCount)
     val result = new Array[Partition](splits.length)
     for (i <- 0 until result.length) {
       //      result(i) = new CarbonDataPartition(id, i, splits(i))

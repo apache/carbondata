@@ -33,7 +33,7 @@ public class CarbonTablePath {
     private static final String TABLE_STATUS_FILE = "tablestatus";
     private static final String FACT_DIR = "Fact";
     private static final String AGGREGATE_TABLE_PREFIX = "Agg";
-    private static final String SEGMENT_PREFIX = "Segment";
+    private static final String SEGMENT_PREFIX = "Segment_";
     private static final String PARTITION_PREFIX = "Part";
     private static final String CARBON_DATA_EXT = ".carbondata";
     private static final String DATA_PART_PREFIX = "part";
@@ -57,6 +57,15 @@ public class CarbonTablePath {
      */
     public String getDictionaryFilePath(String columnId) {
         return getMetaDataDir() + File.separator + columnId + DICTIONARY_EXT;
+    }
+
+    /**
+     * This method will return the metadata directory location for a table
+     *
+     * @return
+     */
+    public String getMetadataDirectoryPath() {
+        return getMetaDataDir();
     }
 
     /**
@@ -102,6 +111,17 @@ public class CarbonTablePath {
             Integer taskNo, String factUpdateTimeStamp) {
         return getSegmentDir(partitionId, segmentId) + File.separator + getCarbonDataFileName(
                 filePartNo, taskNo, factUpdateTimeStamp);
+    }
+
+    /**
+     * Gets absolute path of data file
+     *
+     * @param partitionId unique partition identifier
+     * @param segmentId   unique partition identifier
+     * @return absolute path of data file stored in carbon data format
+     */
+    public String getCarbonDataDirectoryPath(String partitionId, Integer segmentId) {
+        return getSegmentDir(partitionId, segmentId);
     }
 
     /**

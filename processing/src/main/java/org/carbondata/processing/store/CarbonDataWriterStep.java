@@ -556,7 +556,7 @@ public class CarbonDataWriterStep extends BaseStep implements StepInterface {
                     isByteArrayInMeasure, meta.isUpdateMemberRequest(), dimLens,
                     meta.getFactLevels(), meta.getAggregateLevels(), true,
                     meta.getCurrentRestructNumber(), this.meta.getNoDictionaryCount(), null,
-                    type);
+                    type, null);
         } else {
             dataHandler = new CarbonFactDataHandler(meta.getSchemaName(), meta.getCubeName(),
                     this.tableName, meta.isGroupByEnabled(), measureCount, mdkeyLength, mdKeyIndex,

@@ -113,8 +113,18 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
     private int noDictionaryCount;
 
     private String measureDataType;
-
-
+    /**
+     * task id, each spark task has a unique id
+     */
+    private String taskNo;
+    /**
+     * new load start time
+     */
+    private String factTimeStamp;
+    /**
+     * partitionID
+     */
+    private String partitionID;
 
     /**
      * Constructor
@@ -134,6 +144,9 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
         noDictionaryDims = "";
         currentRestructNumber = -1;
         measureDataType = "";
+        taskNo = "";
+        factTimeStamp = "";
+        partitionID = "";
     }
 
     public String getXML() {
@@ -156,6 +169,10 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
         retval.append("    ")
                 .append(XMLHandler.addTagValue("currentRestructNumber", currentRestructNumber));
         retval.append("    ").append(XMLHandler.addTagValue("measureDataType", measureDataType));
+        retval.append("    ").append(XMLHandler.addTagValue("taskNo", taskNo));
+        retval.append("    ").append(XMLHandler.addTagValue("factTimeStamp", factTimeStamp));
+        retval.append("    ").append(XMLHandler.addTagValue("factTimeStamp", factTimeStamp));
+        retval.append("    ").append(XMLHandler.addTagValue("partitionID", partitionID));
         return retval.toString();
     }
 
@@ -177,6 +194,9 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
             currentRestructNumber =
                     Integer.parseInt(XMLHandler.getTagValue(stepnode, "currentRestructNumber"));
             measureDataType = XMLHandler.getTagValue(stepnode, "measureDataType");
+            taskNo = XMLHandler.getTagValue(stepnode, "taskNo");
+            factTimeStamp = XMLHandler.getTagValue(stepnode, "factTimeStamp");
+            partitionID = XMLHandler.getTagValue(stepnode, "partitionID");
         } catch (Exception e) {
             throw new KettleXMLException("Unable to read step info from XML node", e);
         }
@@ -202,6 +222,9 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
             rep.saveStepAttribute(idTransformation, idStep, "currentRestructNumber",
                     currentRestructNumber);
             rep.saveStepAttribute(idTransformation, idStep, "measureDataType", measureDataType);
+            rep.saveStepAttribute(idTransformation, idStep, "taskNo", taskNo);
+            rep.saveStepAttribute(idTransformation, idStep, "factTimeStamp", factTimeStamp);
+            rep.saveStepAttribute(idTransformation, idStep, "partitionID", partitionID);
         } catch (Exception e) {
             throw new KettleException(BaseMessages
                     .getString(pkg, "TemplateStep.Exception.UnableToSaveStepInfoToRepository")
@@ -228,6 +251,9 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
             currentRestructNumber =
                     (int) rep.getStepAttributeInteger(idStep, "currentRestructNumber");
             measureDataType = rep.getStepAttributeString(idStep, "measureDataType");
+            taskNo = rep.getStepAttributeString(idStep, "taskNo");
+            factTimeStamp = rep.getStepAttributeString(idStep, "factTimeStamp");
+            partitionID = rep.getStepAttributeString(idStep, "partitionID");
         } catch (Exception e) {
             throw new KettleException(BaseMessages.getString(pkg,
                     "CarbonMDKeyStepMeta.Exception.UnexpectedErrorInReadingStepInfo"), e);
@@ -461,4 +487,45 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
         this.measureDataType = measureDataType;
     }
 
+    /**
+     * @param taskNo
+     */
+    public void setTaskNo(String taskNo) {
+        this.taskNo = taskNo;
+    }
+
+    /**
+     * @return
+     */
+    public int getTaskNo() {
+        return Integer.parseInt(taskNo);
+    }
+
+    /**
+     * @param factTimeStamp
+     */
+    public void setFactTimeStamp(String factTimeStamp) {
+        this.factTimeStamp = factTimeStamp;
+    }
+
+    /**
+     * @return
+     */
+    public String getFactTimeStamp() {
+        return factTimeStamp;
+    }
+
+    /**
+     * @return partitionId
+     */
+    public String getPartitionID() {
+        return partitionID;
+    }
+
+    /**
+     * @param partitionID
+     */
+    public void setPartitionID(String partitionID) {
+        this.partitionID = partitionID;
+    }
 }

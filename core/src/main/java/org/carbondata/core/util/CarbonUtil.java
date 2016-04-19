@@ -31,7 +31,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import com.google.gson.Gson;
-
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.UserGroupInformation;
@@ -1636,8 +1635,8 @@ public final class CarbonUtil {
     public static void writeLevelCardinalityFile(String loadFolderLoc, String tableName,
             int[] dimCardinality) throws KettleException {
         String levelCardinalityFilePath = loadFolderLoc + File.separator +
-                CarbonCommonConstants.LEVEL_METADATA_FILE + tableName + ".metadata";
-
+                CarbonCommonConstants.LEVEL_METADATA_FILE + tableName
+                + CarbonCommonConstants.CARBON_METADATA_EXTENSION;
         FileOutputStream fileOutputStream = null;
         FileChannel channel = null;
         try {

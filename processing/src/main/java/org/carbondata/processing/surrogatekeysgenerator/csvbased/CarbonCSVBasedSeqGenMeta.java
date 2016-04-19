@@ -315,6 +315,10 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
      */
     private String schemaName;
     private int currentRestructNumber;
+    /**
+     * partitionID
+     */
+    private String partitionID;
 
     public CarbonCSVBasedSeqGenMeta() {
         super();
@@ -562,7 +566,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
         checkPointFileExits = "";
         denormColumNames = "";
         currentRestructNumber = -1;
-        //
+        partitionID = "";
     }
 
     // helper method to allocate the arrays
@@ -627,7 +631,8 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
         retval.append("    ").append(XMLHandler.addTagValue("denormColumNames", denormColumNames));
         retval.append("    ")
                 .append(XMLHandler.addTagValue("currentRestructNumber", currentRestructNumber));
-
+        retval.append("    ")
+                .append(XMLHandler.addTagValue("partitionID", partitionID));
         return retval.toString();
     }
 
@@ -673,7 +678,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
             denormColumNames = XMLHandler.getTagValue(stepnode, "denormColumNames");
             currentRestructNumber =
                     Integer.parseInt(XMLHandler.getTagValue(stepnode, "currentRestructNumber"));
-
+            partitionID = XMLHandler.getTagValue(stepnode, "partitionID");
             String batchConfig = XMLHandler.getTagValue(stepnode, "batchSize");
 
             if (batchConfig != null) {
@@ -1244,6 +1249,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
             denormColumNames = rep.getStepAttributeString(idStep, "denormColumNames");
             currentRestructNumber =
                     (int) rep.getStepAttributeInteger(idStep, "currentRestructNumber");
+            partitionID = rep.getStepAttributeString(idStep, "partitionID");
             int nrKeys = rep.countNrStepAttributes(idStep, "lookup_keyfield");
             allocate(nrKeys);
         } catch (Exception e) {
@@ -1297,6 +1303,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
             rep.saveStepAttribute(idTransformation, idStep, "denormColumNames", denormColumNames);
             rep.saveStepAttribute(idTransformation, idStep, "currentRestructNumber",
                     currentRestructNumber);
+            rep.saveStepAttribute(idTransformation, idStep, "partitionID", partitionID);
         } catch (Exception e) {
             throw new KettleException(BaseMessages
                     .getString(pkg, "CarbonStep.Exception.UnableToSaveStepInfoToRepository")
@@ -1505,6 +1512,19 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
 
     public void setNoDictionaryDims(String noDictionaryDims) {
         this.noDictionaryDims = noDictionaryDims;
+    }
+    /**
+     * @return partitionId
+     */
+    public String getPartitionID() {
+        return partitionID;
+    }
+
+    /**
+     * @param partitionID
+     */
+    public void setPartitionID(String partitionID) {
+        this.partitionID = partitionID;
     }
 }
 

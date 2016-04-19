@@ -19,20 +19,8 @@
 
 package org.carbondata.processing.graphgenerator;
 
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.io.*;
+import java.util.*;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
@@ -217,6 +205,14 @@ public class GraphGenerator {
     private int allocate;
 
     private String blocksID;
+    /**
+     * task id, each spark task has a unique id
+     */
+    private String taskNo;
+    /**
+     * new load start time
+     */
+    private String factTimeStamp;
     public final static HashMap<String,BlockDetails[]> blockInfo = new HashMap<>();
 
     public GraphGenerator(DataLoadModel dataLoadModel, boolean isHDFSReadMode, String partitionID,
@@ -238,7 +234,8 @@ public class GraphGenerator {
         this.loadNames = dataLoadModel.getLoadNames();
         this.modificationOrDeletionTime = dataLoadModel.getModificationOrDeletionTime();
         this.blocksID = dataLoadModel.getBlocksID();
-
+        this.taskNo = dataLoadModel.getTaskNo();
+        this.factTimeStamp = dataLoadModel.getFactTimeStamp();
         initialise();
         LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                 "************* Is Columnar Storage" + isColumnar);
@@ -339,8 +336,8 @@ public class GraphGenerator {
 
     private void validateAndInitialiseKettelEngine() throws GraphGeneratorException {
         File file = new File(
-                outputLocation + File.separator + schemaInfo.getSchemaName() + File.separator + schemaInfo.getCubeName()
-                        + File.separator);
+                outputLocation + File.separator + schemaInfo.getSchemaName() + File.separator
+                        + this.tableName + File.separator + this.partitionID + File.separator);
         boolean isDirCreated = false;
         if (!file.exists()) {
             isDirCreated = file.mkdirs();
@@ -650,8 +647,9 @@ public class GraphGenerator {
         trans.addTransHop(mdkeyToSliceMerger);
 
         String graphFilePath =
-                outputLocation + File.separator + schemaInfo.getSchemaName() + File.separator + schemaInfo.getCubeName()
-                        + File.separator + configurationInfo.getTableName() + ".ktr";
+                outputLocation + File.separator + schemaInfo.getSchemaName() + File.separator
+                        + this.tableName + File.separator + partitionID + File.separator
+                        + this.tableName + ".ktr";
         generateGraphFile(trans, graphFilePath);
     }
 
@@ -773,6 +771,7 @@ public class GraphGenerator {
             GraphConfigurationInfo graphjConfigurationForFact) {
         CarbonSliceMergerStepMeta sliceMerger = new CarbonSliceMergerStepMeta();
         sliceMerger.setDefault();
+        sliceMerger.setPartitionID(partitionID);
         sliceMerger.setHeirAndKeySize(configurationInfo.getHeirAndKeySizeString());
         sliceMerger.setMdkeySize(configurationInfo.getMdkeySize());
         sliceMerger.setMeasureCount(configurationInfo.getMeasureCount());
@@ -1080,6 +1079,7 @@ public class GraphGenerator {
     private StepMeta getCarbonCSVBasedSurrogateKeyStep(GraphConfigurationInfo graphConfiguration) {
         //
         CarbonCSVBasedSeqGenMeta seqMeta = new CarbonCSVBasedSeqGenMeta();
+        seqMeta.setPartitionID(partitionID);
         seqMeta.setCarbondim(graphConfiguration.getDimensionString());
         seqMeta.setComplexTypeString(graphConfiguration.getComplexTypeString());
         seqMeta.setBatchSize(Integer.parseInt(graphConfiguration.getBatchSize()));
@@ -1149,6 +1149,7 @@ public class GraphGenerator {
 
     private StepMeta getMDKeyStep(GraphConfigurationInfo graphConfiguration) {
         MDKeyGenStepMeta carbonMdKey = new MDKeyGenStepMeta();
+        carbonMdKey.setPartitionID(partitionID);
         carbonMdKey.setNumberOfCores(graphConfiguration.getNumberOfCores());
         carbonMdKey.setTableName(graphConfiguration.getTableName());
         carbonMdKey.setSchemaName(schemaInfo.getSchemaName());
@@ -1167,6 +1168,8 @@ public class GraphGenerator {
                 graphConfiguration.getComplexTypeString().
                         split(CarbonCommonConstants.SEMICOLON_SPC_CHARACTER).length + "");
         carbonMdKey.setMeasureDataType(graphConfiguration.getMeasureDataTypeInfo());
+        carbonMdKey.setTaskNo(taskNo);
+        carbonMdKey.setFactTimeStamp(factTimeStamp);
         StepMeta mdkeyStepMeta = new StepMeta(
                 GraphGeneratorConstants.MDKEY_GENERATOR + graphConfiguration.getTableName(),
                 (StepMetaInterface) carbonMdKey);
@@ -1583,6 +1586,7 @@ public class GraphGenerator {
         String[] actualMeasures = graphConfiguration.getMeasures();
 
         SortKeyStepMeta sortRowsMeta = new SortKeyStepMeta();
+        sortRowsMeta.setPartitionID(partitionID);
         sortRowsMeta.setTabelName(graphConfiguration.getTableName());
         sortRowsMeta.setCubeName(schemaInfo.getCubeName());
         sortRowsMeta.setSchemaName(schemaInfo.getSchemaName());

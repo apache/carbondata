@@ -36,6 +36,7 @@ import org.carbondata.core.metadata.LeafNodeInfoColumnar;
 import org.carbondata.core.util.CarbonMetadataUtil;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.writer.CarbonMetaDataWriter;
+import org.carbondata.processing.store.CarbonDataFileAttributes;
 import org.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 
@@ -50,19 +51,21 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
     public CarbonFactDataWriterImplForIntIndexAndAggBlock(String storeLocation, int measureCount,
             int mdKeyLength, String tableName, boolean isNodeHolder,
             IFileManagerComposite fileManager, int[] keyBlockSize, boolean[] aggBlocks,
-            boolean isUpdateFact, boolean[] isComplexType, int NoDictionaryCount) {
+            boolean isUpdateFact, boolean[] isComplexType, int NoDictionaryCount,
+            CarbonDataFileAttributes carbonDataFileAttributes, String databaseName) {
         this(storeLocation, measureCount, mdKeyLength, tableName, isNodeHolder, fileManager,
-                keyBlockSize, aggBlocks, isUpdateFact);
+                keyBlockSize, aggBlocks, isUpdateFact, carbonDataFileAttributes);
         this.isComplexType = isComplexType;
         this.NoDictionaryCount = NoDictionaryCount;
+        this.databaseName = databaseName;
     }
 
     public CarbonFactDataWriterImplForIntIndexAndAggBlock(String storeLocation, int measureCount,
             int mdKeyLength, String tableName, boolean isNodeHolder,
             IFileManagerComposite fileManager, int[] keyBlockSize, boolean[] aggBlocks,
-            boolean isUpdateFact) {
+            boolean isUpdateFact, CarbonDataFileAttributes carbonDataFileAttributes) {
         super(storeLocation, measureCount, mdKeyLength, tableName, isNodeHolder, fileManager,
-                keyBlockSize, isUpdateFact);
+                keyBlockSize, isUpdateFact, carbonDataFileAttributes);
         this.aggBlocks = aggBlocks;
         this.numberCompressor = new NumberCompressor(Integer.parseInt(CarbonProperties.getInstance()
                 .getProperty(CarbonCommonConstants.LEAFNODE_SIZE,

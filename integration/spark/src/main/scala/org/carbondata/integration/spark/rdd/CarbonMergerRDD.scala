@@ -126,14 +126,14 @@ class CarbonMergerRDD[K, V](
           val copyListOfUpdatedLoadFolders = listOfUpdatedLoadFolders.toList
           loadCubeSlices(listOfAllLoadFolders, details)
           var loadFolders = Array[String]()
-          val loadFolder = CarbonLoaderUtil.getAggLoadFolderLocation(newSlice, model.getSchemaName, model.getCubeName, model.getTableName, hdfsStoreLocation, currentRestructNumber)
+          val loadFolder = CarbonLoaderUtil.getAggLoadFolderLocation(newSlice, model.getDatabaseName, model.getTableName, model.getTableName, hdfsStoreLocation, currentRestructNumber)
           if (null != loadFolder) {
             loadFolders :+= loadFolder
           }
           dataloadStatus = iterateOverAggTables(aggTables, copyListOfLoadFolders, copyListOfUpdatedLoadFolders, loadFolders)
           if (CarbonCommonConstants.STORE_LOADSTATUS_FAILURE.equals(dataloadStatus)) {
             // remove the current slice from memory not the cube
-            CarbonLoaderUtil.removeSliceFromMemory(model.getSchemaName, model.getCubeName, newSlice)
+            CarbonLoaderUtil.removeSliceFromMemory(model.getDatabaseName, model.getTableName, newSlice)
             logInfo(s"Aggregate table creation failed")
           } else {
             logInfo("Aggregate tables creation successfull")
@@ -178,7 +178,7 @@ class CarbonMergerRDD[K, V](
           } finally {
             if (!CarbonCommonConstants.STORE_LOADSTATUS_FAILURE.equals(dataloadStatus)) {
               val loadName = loadFolder.substring(loadFolder.indexOf(CarbonCommonConstants.LOAD_FOLDER))
-              CarbonLoaderUtil.copyCurrentLoadToHDFS(model, restructNumber, loadName, listOfUpdatedLoadFolders, restructNumber)
+              CarbonLoaderUtil.copyCurrentLoadToHDFS(model, loadName, listOfUpdatedLoadFolders)
             } else {
               logInfo(s"Load creation failed :: $loadFolder")
               return CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
@@ -201,7 +201,7 @@ class CarbonMergerRDD[K, V](
   }
 
   override def getPartitions: Array[Partition] = {
-    val splits = CarbonQueryUtil.getTableSplits(carbonLoadModel.getSchemaName(), carbonLoadModel.getCubeName(), null, partitioner)
+    val splits = CarbonQueryUtil.getTableSplits(carbonLoadModel.getDatabaseName(), carbonLoadModel.getTableName(), null, partitioner)
     val result = new Array[Partition](splits.length)
     for (i <- 0 until result.length) {
       result(i) = new CarbonLoadPartition(id, i, splits(i))

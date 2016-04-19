@@ -21,7 +21,6 @@ package org.carbondata.processing.store.writer;
 
 import java.io.*;
 import java.nio.channels.FileChannel;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -29,6 +28,9 @@ import java.util.concurrent.*;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.carbon.CarbonTableIdentifier;
+import org.carbondata.core.carbon.path.CarbonStorePath;
+import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.file.manager.composite.FileData;
 import org.carbondata.core.file.manager.composite.IFileManagerComposite;
@@ -38,6 +40,7 @@ import org.carbondata.core.util.CarbonMetadataUtil;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.writer.CarbonMetaDataWriter;
+import org.carbondata.processing.store.CarbonDataFileAttributes;
 import org.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 
@@ -117,10 +120,18 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
      * Local cardinality for the segment
      */
     protected int[] localCardinality;
+    protected String databaseName;
+
+    /**
+     * data file attributes which will used for file construction
+     */
+    private CarbonDataFileAttributes carbonDataFileAttributes;
+    private CarbonTablePath carbonTablePath;
 
     public AbstractFactDataWriter(String storeLocation, int measureCount, int mdKeyLength,
             String tableName, boolean isNodeHolder, IFileManagerComposite fileManager,
-            int[] keyBlockSize, boolean isUpdateFact) {
+            int[] keyBlockSize, boolean isUpdateFact,
+            CarbonDataFileAttributes carbonDataFileAttributes) {
 
         // measure count
         this.measureCount = measureCount;
@@ -129,16 +140,6 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
 
         this.storeLocation = storeLocation;
         // create the leaf node file format
-        if (isUpdateFact) {
-            this.fileNameFormat =
-                    System.getProperty("java.io.tmpdir") + File.separator + this.tableName + '_'
-                            + "{0}" + CarbonCommonConstants.FACT_UPDATE_EXTENSION;
-        } else {
-            this.fileNameFormat = storeLocation + File.separator + this.tableName + '_' + "{0}"
-                    + CarbonCommonConstants.FACT_FILE_EXT;
-        }
-
-        this.fileName = MessageFormat.format(this.fileNameFormat, this.fileCount);
         this.leafNodeInfoList =
                 new ArrayList<LeafNodeInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
         // get max file size;
@@ -171,6 +172,10 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
         //TODO: We should delete the levelmetadata file after reading here.
         this.localCardinality = CarbonMergerUtil
                 .getCardinalityFromLevelMetadata(storeLocation, tableName);
+        this.carbonDataFileAttributes = carbonDataFileAttributes;
+        CarbonTableIdentifier tableIdentifier = new CarbonTableIdentifier(databaseName, tableName);
+        carbonTablePath =
+                CarbonStorePath.getCarbonTablePath(storeLocation, tableIdentifier);
     }
 
     /**
@@ -223,14 +228,16 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
         // update the filename with new new sequence
         // increment the file sequence counter
         initFileCount();
-        this.fileName = MessageFormat.format(this.fileNameFormat, this.fileCount);
+        String carbonDataFileName = carbonTablePath
+                .getCarbonDataFileName(fileCount, carbonDataFileAttributes.getTaskId(),
+                        carbonDataFileAttributes.getFactTimeStamp());
         String actualFileNameVal =
-                this.tableName + '_' + this.fileCount + CarbonCommonConstants.FACT_FILE_EXT
+                carbonDataFileName
                         + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
         FileData fileData = new FileData(actualFileNameVal, this.storeLocation);
         fileManager.add(fileData);
-        this.fileName = this.fileName + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
-
+        this.fileName = storeLocation + File.separator + carbonDataFileName
+                + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
         this.fileCount++;
         try {
             // open channle for new leaf node file

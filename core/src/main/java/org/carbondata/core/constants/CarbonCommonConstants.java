@@ -299,7 +299,7 @@ public final class CarbonCommonConstants {
     /**
      * Load Folder Name
      */
-    public static final String LOAD_FOLDER = "Load_";
+    public static final String LOAD_FOLDER = "Segment_";
     /**
      * RESTructure Folder
      */
@@ -513,7 +513,7 @@ public final class CarbonCommonConstants {
     /**
      * FACT_FILE_EXT
      */
-    public static final String FACT_FILE_EXT = ".fact";
+    public static final String FACT_FILE_EXT = ".carbondata";
     /**
      * MEASUREMETADATA_FILE_EXT
      */
@@ -1216,7 +1216,7 @@ public final class CarbonCommonConstants {
     /**
      * FACT_UPDATE_EXTENSION.
      */
-    public static final String FACT_UPDATE_EXTENSION = ".fact_update";
+    public static final String FACT_UPDATE_EXTENSION = ".carbondata_update";
     public static final String FACT_DELETE_EXTENSION = "_delete";
     /**
      * MARKED_FOR_UPDATION
@@ -1422,11 +1422,6 @@ public final class CarbonCommonConstants {
     public static final String FILE_EXTENSION = ".file";
 
     /**
-     * Segment folder prefix
-     */
-    public static final String SEGMENT_CONSTANT = "segment_";
-
-    /**
      * File separator charcater
      */
     public static final char FILE_SEPARATOR_CHAR = '/';
@@ -1455,6 +1450,12 @@ public final class CarbonCommonConstants {
      * default charset to be used for reading and writing
      */
     public static final String DEFAULT_CHARSET = "UTF-8";
+
+    /**
+     * segment id will be always zero as in local at a time only one
+     * folder will be created for one block processing
+     */
+    public static final int SEGMENT_ID_FOR_LOCAL_STORE_FOLDER_CREATION = 0;
 
     private CarbonCommonConstants() {
 

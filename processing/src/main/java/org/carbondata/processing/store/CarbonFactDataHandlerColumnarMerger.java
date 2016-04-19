@@ -643,7 +643,7 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
                     "*************************************aggregated and int");
             return new CarbonFactDataWriterImplForIntIndexAndAggBlock(storeLocation, measureCount,
                     mdKeyLength, tableName, isNodeHolder, fileManager, keyBlockSize, aggKeyBlock,
-                    isUpdateFact);
+                    isUpdateFact, null);
         } else if (isIntBasedIndexer) {
             LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "************************************************int");

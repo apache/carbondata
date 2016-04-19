@@ -26,8 +26,9 @@ import java.util.List;
 
 import org.apache.thrift.TBase;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
+import org.carbondata.core.carbon.path.CarbonStorePath;
+import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.util.CarbonDictionaryUtil;
 import org.carbondata.format.ColumnDictionaryChunk;
 
 /**
@@ -205,12 +206,9 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
      * This method will form the path for dictionary file for a given column
      */
     private void initFileLocation() {
-        String dictionaryFolder = CarbonDictionaryUtil
-                .getDirectoryPath(carbonTableIdentifier, hdfsStorePath, isSharedDimension);
-        this.columnDictionaryFilePath = CarbonDictionaryUtil
-                .getDictionaryFilePath(carbonTableIdentifier, dictionaryFolder, columnIdentifier,
-                        isSharedDimension);
-
+        CarbonTablePath carbonTablePath =
+                CarbonStorePath.getCarbonTablePath(this.hdfsStorePath, carbonTableIdentifier);
+        this.columnDictionaryFilePath = carbonTablePath.getDictionaryFilePath(columnIdentifier);
     }
 
     /**

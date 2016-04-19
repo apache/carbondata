@@ -37,7 +37,6 @@ import org.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.load.LoadMetadataDetails;
 import org.carbondata.core.util.CarbonUtil;
-import org.carbondata.integration.spark.load.CarbonLoaderUtil;
 import org.carbondata.integration.spark.load.CarbonLoadModel;
 
 public final class LoadMetadataUtil {
@@ -46,7 +45,7 @@ public final class LoadMetadataUtil {
     }
 
     public static boolean isLoadDeletionRequired(CarbonLoadModel loadModel) {
-    	CarbonTable cube = org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance().getCarbonTable(loadModel.getSchemaName() + '_' + loadModel.getCubeName());
+    	CarbonTable cube = org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance().getCarbonTable(loadModel.getDatabaseName() + '_' + loadModel.getTableName());
         
         String metaDataLocation =cube.getMetaDataFilepath();
         LoadMetadataDetails[] details = CarbonUtil.readLoadMetadata(metaDataLocation);
@@ -66,8 +65,8 @@ public final class LoadMetadataUtil {
     public static String createLoadFolderPath(CarbonLoadModel model, String hdfsStoreLocation,
             int partitionId, int currentRestructNumber) {
         hdfsStoreLocation =
-                hdfsStoreLocation + File.separator + model.getSchemaName() + '_' + partitionId
-                        + File.separator + model.getCubeName() + '_' + partitionId;
+                hdfsStoreLocation + File.separator + model.getDatabaseName() + '_' + partitionId
+                        + File.separator + model.getTableName() + '_' + partitionId;
         int rsCounter = currentRestructNumber;
         if (rsCounter == -1) {
             rsCounter = 0;
@@ -82,8 +81,8 @@ public final class LoadMetadataUtil {
     public static CarbonFile[] getAggregateTableList(final CarbonLoadModel model,
             String hdfsStoreLocation, int partitionId, int currentRestructNumber) {
         hdfsStoreLocation =
-                hdfsStoreLocation + File.separator + model.getSchemaName() + '_' + partitionId
-                        + File.separator + model.getCubeName() + '_' + partitionId;
+                hdfsStoreLocation + File.separator + model.getDatabaseName() + '_' + partitionId
+                        + File.separator + model.getTableName() + '_' + partitionId;
 
         int rsCounter = currentRestructNumber;
         if (rsCounter == -1) {

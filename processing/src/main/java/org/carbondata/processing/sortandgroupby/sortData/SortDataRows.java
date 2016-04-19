@@ -31,10 +31,13 @@ import java.util.concurrent.TimeUnit;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.carbon.CarbonTableIdentifier;
+import org.carbondata.core.carbon.path.CarbonStorePath;
+import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.util.DataTypeUtil;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
+import org.carbondata.core.util.DataTypeUtil;
 import org.carbondata.processing.exception.CarbonDataProcessorException;
 import org.carbondata.processing.schema.metadata.SortObserver;
 import org.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
@@ -163,8 +166,6 @@ public class SortDataRows {
      */
     private Object[] uniqueValue;
 
-    private int currentRestructNumber;
-
     private String[] measureDatatype;
 
     private char[] aggType;
@@ -173,13 +174,17 @@ public class SortDataRows {
      * To know how many columns are of high cardinality.
      */
     private int noDictionaryCount;
+    /**
+     * partitionID
+     */
+    private String partitionID;
 
     public SortDataRows(String tabelName, int dimColCount, int complexDimColCount,
             int measureColCount, SortObserver observer, int currentRestructNum,
-            int noDictionaryCount, String[] measureDatatype) {
+            int noDictionaryCount, String[] measureDatatype,String partitionID) {
         // set table name
         this.tableName = tabelName;
-
+        this.partitionID = partitionID;
         // set measure count
         this.measureColCount = measureColCount;
 
@@ -196,8 +201,6 @@ public class SortDataRows {
 
         // observer of writing file in thread
         this.threadStatusObserver = new ThreadStatusObserver();
-
-        this.currentRestructNumber = currentRestructNum;
 
         this.measureDatatype = measureDatatype;
         this.aggType = new char[measureColCount];
@@ -764,25 +767,17 @@ public class SortDataRows {
 
         // get the base store location
         String tempLocationKey = schemaName + '_' + cubeName;
-        String baseStorelocation = instance.getProperty(tempLocationKey,
-                CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL) + File.separator + schemaName
-                + File.separator + cubeName;
-
-        int restructFolderNumber = currentRestructNumber;
-
-        baseStorelocation =
-                baseStorelocation + File.separator + CarbonCommonConstants.RESTRUCTRE_FOLDER
-                        + restructFolderNumber + File.separator + this.tableName;
-
-        // get the current folder sequence
-        int counter = CarbonUtil.checkAndReturnCurrentLoadFolderNumber(baseStorelocation);
-
-        File file = new File(baseStorelocation);
-
-        // get the store location
-        String storeLocation =
-                file.getAbsolutePath() + File.separator + CarbonCommonConstants.LOAD_FOLDER + counter
-                        + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
+        String baseStoreLocation = instance.getProperty(tempLocationKey,
+                CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
+        CarbonTableIdentifier carbonTableIdentifier =
+                new CarbonTableIdentifier(schemaName, cubeName);
+        CarbonTablePath carbonTablePath =
+                CarbonStorePath.getCarbonTablePath(baseStoreLocation, carbonTableIdentifier);
+        String carbonDataDirectoryPath = carbonTablePath
+                .getCarbonDataDirectoryPath(this.partitionID,
+                        CarbonCommonConstants.SEGMENT_ID_FOR_LOCAL_STORE_FOLDER_CREATION);
+        String storeLocation = carbonDataDirectoryPath
+                + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
 
         String metaDataFileName = CarbonCommonConstants.MEASURE_METADATA_FILE_NAME + this.tableName
                 + CarbonCommonConstants.MEASUREMETADATA_FILE_EXT

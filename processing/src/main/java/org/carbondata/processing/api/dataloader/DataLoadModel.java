@@ -50,6 +50,14 @@ public class DataLoadModel {
     private String modificationOrDeletionTime;
 
     private String blocksID;
+    /**
+     * task id, each spark task has a unique id
+     */
+    private String taskNo;
+    /**
+     * new load start time
+     */
+    private String factTimeStamp;
 
     /**
      * @return Returns the schemaInfo.
@@ -151,6 +159,34 @@ public class DataLoadModel {
      */
     public void setBlocksID(String blocksID) {
         this.blocksID = blocksID;
+    }
+
+    /**
+     * @return
+     */
+    public String getTaskNo() {
+        return taskNo;
+    }
+
+    /**
+     * @param taskNo
+     */
+    public void setTaskNo(String taskNo) {
+        this.taskNo = taskNo;
+    }
+
+    /**
+     * @return
+     */
+    public String getFactTimeStamp() {
+        return factTimeStamp;
+    }
+
+    /**
+     * @param factTimeStamp
+     */
+    public void setFactTimeStamp(String factTimeStamp) {
+        this.factTimeStamp = factTimeStamp;
     }
 }
 

@@ -44,7 +44,7 @@ public class CarbonFactDataWriterImplForIntIndex extends AbstractFactDataWriter<
             int mdKeyLength, String tableName, boolean isNodeHolder,
             IFileManagerComposite fileManager, int[] keyBlockSize, boolean isUpdateFact) {
         super(storeLocation, measureCount, mdKeyLength, tableName, isNodeHolder, fileManager,
-                keyBlockSize, isUpdateFact);
+                keyBlockSize, isUpdateFact, null);
 
         this.numberCompressor = new NumberCompressor(Integer.parseInt(CarbonProperties.getInstance()
                 .getProperty(CarbonCommonConstants.LEAFNODE_SIZE,

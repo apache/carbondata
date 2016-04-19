@@ -14,6 +14,8 @@ import java.util.Properties;
 
 import org.carbondata.core.cache.Cache;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
+import org.carbondata.core.carbon.path.CarbonStorePath;
+import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.util.CarbonUtil;
@@ -107,6 +109,9 @@ public class AbstractDictionaryCacheTest {
         CarbonDictionaryWriter carbonDictionaryWriter =
                 new CarbonDictionaryWriterImpl(carbonStorePath, carbonTableIdentifier,
                         columnIdentifier, false);
+        CarbonTablePath carbonTablePath =
+                CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier);
+        CarbonUtil.checkAndCreateFolder(carbonTablePath.getMetadataDirectoryPath());
         List<byte[]> valueList = convertStringListToByteArray(data);
         try {
             carbonDictionaryWriter.write(valueList);

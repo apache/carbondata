@@ -21,23 +21,20 @@ package org.carbondata.processing.merger.step;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.io.IOException;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.common.logging.impl.StandardLogService;
+import org.carbondata.core.carbon.CarbonTableIdentifier;
+import org.carbondata.core.carbon.path.CarbonStorePath;
+import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.csvreader.checkpoint.CheckPointHanlder;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.CarbonUtilException;
-import org.carbondata.processing.dimension.load.command.impl.DimenionLoadCommandHelper;
-import org.carbondata.processing.merger.Util.CarbonSliceMergerUtil;
 import org.carbondata.processing.merger.exeception.SliceMergerException;
-import org.carbondata.processing.util.LevelSortIndexWriter;
 import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.carbondata.processing.util.CarbonDataProcessorUtil;
 import org.pentaho.di.core.exception.KettleException;
@@ -221,77 +218,24 @@ public class CarbonSliceMergerStep extends BaseStep {
             throws SliceMergerException {
         // get the base store location
         String tempLocationKey = meta.getSchemaName() + '_' + meta.getCubeName();
-        String baseStorelocation = CarbonProperties.getInstance()
-                .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL)
-                + File.separator + storeLocation;
-
-        int rsCount = meta.getCurrentRestructNumber();
-        if (rsCount < 0) {
-            return false;
+        String baseStorePath = CarbonProperties.getInstance()
+                .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
+        CarbonTableIdentifier carbonTableIdentifier =
+                new CarbonTableIdentifier(meta.getSchemaName(), meta.getCubeName());
+        CarbonTablePath carbonTablePath =
+                CarbonStorePath.getCarbonTablePath(baseStorePath, carbonTableIdentifier);
+        String partitionId = meta.getPartitionID();
+        String carbonDataDirectoryPath = carbonTablePath.getCarbonDataDirectoryPath(partitionId,
+                CarbonCommonConstants.SEGMENT_ID_FOR_LOCAL_STORE_FOLDER_CREATION);
+        String baseStoreLocation =
+                carbonDataDirectoryPath + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
+        File currentFolder = new File(baseStoreLocation);
+        File destFolder = new File(carbonDataDirectoryPath);
+        if (!currentFolder.renameTo(destFolder)) {
+            throw new SliceMergerException("Problem while renaming inprogress folder to actual");
         }
-        baseStorelocation =
-                baseStorelocation + File.separator + CarbonCommonConstants.RESTRUCTRE_FOLDER
-                        + rsCount + File.separator + meta.getTabelName();
-
-        int counter = CarbonUtil.checkAndReturnCurrentLoadFolderNumber(baseStorelocation);
-        if (counter < 0) {
-            return false;
-        }
-        String destFol =
-                baseStorelocation + File.separator + CarbonCommonConstants.LOAD_FOLDER + counter;
-
-        baseStorelocation =
-                baseStorelocation + File.separator + CarbonCommonConstants.LOAD_FOLDER + counter
-                        + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
-
-        //With Checkpoint case can be there when while loading the data to memory. 
-        // It throws Outofmemory exception. and because of that it got restared , so in that case the in progress
-        // folder will be renamed to normal folders. So In that case we need to return false here if 
-        // the inprogress folder is not present.
-
-        if (CheckPointHanlder.IS_CHECK_POINT_NEEDED && !meta.isGroupByEnabled()) {
-            if (!(new File(baseStorelocation)).exists()) {
-                return true;
-            }
-        }
-
-        // Merge the level files and hierarchy files before send the files
-        // for final merge as the load is completed and now we are at the
-        // step to rename the laod folder name.
-        if (!meta.isGroupByEnabled()) {
-            try {
-                DimenionLoadCommandHelper.mergeFiles(baseStorelocation,
-                        CarbonSliceMergerUtil.getHeirAndKeySizeMap(meta.getHeirAndKeySize()));
-
-            } catch (IOException e1) {
-                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-                        "Not able to merge the level Files");
-                throw new SliceMergerException(e1.getMessage());
-            }
-
-            String levelAnddataTypeString = meta.getLevelAnddataTypeString();
-            String[] split = levelAnddataTypeString.split(CarbonCommonConstants.HASH_SPC_CHARACTER);
-            Map<String, String> levelAndDataTypeMap = new HashMap<String, String>();
-            for (int i = 0; i < split.length; i++) {
-                String[] split2 = split[i].split(CarbonCommonConstants.COLON_SPC_CHARACTER);
-                levelAndDataTypeMap.put(split2[0], split2[1]);
-            }
-
-            LevelSortIndexWriter levelFileUpdater = new LevelSortIndexWriter(levelAndDataTypeMap);
-            levelFileUpdater.updateLevelFiles(baseStorelocation);
-
-        }
-        File currentFolder = new File(baseStorelocation);
-        File destFolder = new File(destFol);
-        if (!containsInProgressFiles(currentFolder)) {
-            if (!currentFolder.renameTo(destFolder)) {
-                throw new SliceMergerException(
-                        "Problem while renaming inprogress folder to actual");
-            }
-            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-                    "Folder renamed successfully to :: " + destFolder.getAbsolutePath());
-        }
-
+        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
+                "Folder renamed successfully to :: " + destFolder.getAbsolutePath());
         return true;
     }
 

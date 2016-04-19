@@ -23,9 +23,6 @@ import org.apache.spark.Logging
 import org.apache.spark.Partition
 import org.apache.spark.TaskContext
 import scala.collection.mutable.HashSet
-import java.io.File
-import org.carbondata.integration.spark.load.CarbonLoadModel
-import org.carbondata.core.datastorage.store.impl.FileFactory
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.integration.spark.util.GlobalDictionaryUtil
 import org.apache.spark.Partitioner
@@ -34,8 +31,6 @@ import scala.collection.mutable.ArrayBuffer
 import org.carbondata.common.logging.LogServiceFactory
 import org.carbondata.integration.spark.util.CarbonSparkInterFaceLogEvent
 import org.carbondata.core.carbon.CarbonTableIdentifier
-import org.carbondata.core.util.CarbonDictionaryUtil
-import org.carbondata.core.util.CarbonUtil
 
 /**
  * A partitioner partition by column.

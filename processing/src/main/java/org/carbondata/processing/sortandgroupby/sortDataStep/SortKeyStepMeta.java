@@ -96,6 +96,10 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
     private String measureDataType;
 
     private String noDictionaryDims;
+    /**
+     * partitionID
+     */
+    private String partitionID;
 
     /**
      * set the default value for all the properties
@@ -114,6 +118,7 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
         updateMemberRequest = "";
         currentRestructNumber = -1;
         measureDataType = "";
+        partitionID = "";
     }
 
     /**
@@ -141,6 +146,7 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
         retval.append("    ")
                 .append(XMLHandler.addTagValue("currentRestructNumber", currentRestructNumber));
         retval.append("    ").append(XMLHandler.addTagValue("measureDataType", measureDataType));
+        retval.append("    ").append(XMLHandler.addTagValue("partitionID", partitionID));
         return retval.toString();
     }
 
@@ -168,6 +174,7 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
             this.measureDataType = XMLHandler.getTagValue(stepnode, "measureDataType");
             currentRestructNumber =
                     Integer.parseInt(XMLHandler.getTagValue(stepnode, "currentRestructNumber"));
+            this.partitionID = XMLHandler.getTagValue(stepnode, "partitionID");
         } catch (Exception e) {
             throw new KettleXMLException("Unable to read step info from XML node", e);
         }
@@ -201,6 +208,7 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
             rep.saveStepAttribute(idTransformation, idStep, "currentRestructNumber",
                     currentRestructNumber);
             rep.saveStepAttribute(idTransformation, idStep, "measureDataType", measureDataType);
+            rep.saveStepAttribute(idTransformation, idStep, "partitionID", partitionID);
         } catch (Exception e) {
             throw new KettleException(BaseMessages
                     .getString(PKG, "TemplateStep.Exception.UnableToSaveStepInfoToRepository",
@@ -233,6 +241,7 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
             this.measureDataType = rep.getStepAttributeString(idStep, "measureDataType");
             this.currentRestructNumber =
                     (int) rep.getStepAttributeInteger(idStep, "currentRestructNumber");
+            this.partitionID = rep.getStepAttributeString(idStep, "partitionID");
         } catch (Exception ex) {
             throw new KettleException(BaseMessages.getString(PKG,
                     "CarbonDataWriterStepMeta.Exception.UnexpectedErrorInReadingStepInfo",
@@ -455,4 +464,17 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
         this.noDictionaryCount = noDictionaryCount;
     }
 
+    /**
+     * @return partitionId
+     */
+    public String getPartitionID() {
+        return partitionID;
+    }
+
+    /**
+     * @param partitionID
+     */
+    public void setPartitionID(String partitionID) {
+        this.partitionID = partitionID;
+    }
 }

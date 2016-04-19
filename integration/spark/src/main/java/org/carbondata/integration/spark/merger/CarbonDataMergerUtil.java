@@ -64,10 +64,10 @@ public final class CarbonDataMergerUtil {
                 .addProperty(CarbonCommonConstants.STORE_LOCATION_HDFS, hdfsStoreLocation);
         CarbonSliceMergerInfo carbonSliceMergerInfo = new CarbonSliceMergerInfo();
 
-        carbonSliceMergerInfo.setCubeName(carbonLoadModel.getCubeName());
+        carbonSliceMergerInfo.setCubeName(carbonLoadModel.getTableName());
         carbonSliceMergerInfo.setPartitionID(carbonLoadModel.getPartitionId());
         carbonSliceMergerInfo.setSchema(carbonLoadModel.getSchema());
-        carbonSliceMergerInfo.setSchemaName(carbonLoadModel.getSchemaName());
+        carbonSliceMergerInfo.setSchemaName(carbonLoadModel.getDatabaseName());
         carbonSliceMergerInfo.setSchemaPath(carbonLoadModel.getSchemaPath());
         carbonSliceMergerInfo.setTableName(carbonLoadModel.getTableName());
         carbonSliceMergerInfo.setMetadataPath(metadataFilePath);
@@ -383,8 +383,8 @@ public final class CarbonDataMergerUtil {
 
         try {
             CarbonLoaderUtil
-                    .writeLoadMetadata(carbonLoadModel.getCarbonDataLoadSchema(), carbonLoadModel.getSchemaName(),
-                            carbonLoadModel.getCubeName(), Arrays.asList(loadDetails));
+                    .writeLoadMetadata(carbonLoadModel.getCarbonDataLoadSchema(), carbonLoadModel.getDatabaseName(),
+                            carbonLoadModel.getTableName(), Arrays.asList(loadDetails));
         } catch (IOException e) {
             LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
                     "Error while writing metadata", e);
@@ -395,7 +395,7 @@ public final class CarbonDataMergerUtil {
     public static void cleanUnwantedMergeLoadFolder(CarbonLoadModel loadModel, int partitionCount,
             String storeLocation, boolean isForceDelete, int currentRestructNumber) {
 
-       CarbonTable cube = org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance().getCarbonTable(loadModel.getSchemaName() + '_' + loadModel.getCubeName());
+       CarbonTable cube = org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance().getCarbonTable(loadModel.getDatabaseName() + '_' + loadModel.getTableName());
         
         String loadMetadataFilePath =cube.getMetaDataFilepath();
         //String loadMetadataFilePath = CarbonLoaderUtil.extractLoadMetadataFileLocation(loadModel);

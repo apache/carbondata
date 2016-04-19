@@ -288,6 +288,11 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     private Object[] uniqueValue;
 
     /**
+     * data file attributes which will used for file construction
+     */
+    private CarbonDataFileAttributes carbonDataFileAttributes;
+
+    /**
      * decimalPointers
      */
     private final byte decimalPointers = Byte.parseByte(CarbonProperties.getInstance()
@@ -315,11 +320,13 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
             String[] factLevels, String[] aggLevels, boolean isDataWritingRequest,
             int currentRestructNum, int NoDictionaryCount, int dimensionCount,
             Map<Integer, GenericDataType> complexIndexMap, int[] primitiveDimLens,
-            HybridStoreModel hybridStoreModel, char[] aggType) {
+            HybridStoreModel hybridStoreModel, char[] aggType,
+            CarbonDataFileAttributes carbonDataFileAttributes) {
         this(schemaName, cubeName, tableName, isGroupByEnabled, measureCount, mdkeyLength,
                 mdKeyIndex, aggregators, aggregatorClass, storeLocation, factDimLens,
                 isMergingRequestForCustomAgg, isUpdateMemberRequest, dimLens, factLevels, aggLevels,
-                isDataWritingRequest, currentRestructNum, NoDictionaryCount, hybridStoreModel, aggType);
+                isDataWritingRequest, currentRestructNum, NoDictionaryCount, hybridStoreModel,
+                aggType, carbonDataFileAttributes);
         this.dimensionCount = dimensionCount;
         this.complexIndexMap = complexIndexMap;
         this.primitiveDimLens = primitiveDimLens;
@@ -395,7 +402,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
             boolean isMergingRequestForCustomAgg, boolean isUpdateMemberRequest, int[] dimLens,
             String[] factLevels, String[] aggLevels, boolean isDataWritingRequest,
             int currentRestructNum, int NoDictionaryCount, HybridStoreModel hybridStoreModel,
-            char[] aggType) {
+            char[] aggType, CarbonDataFileAttributes carbonDataFileAttributes) {
         this.schemaName = schemaName;
         this.cubeName = cubeName;
         this.tableName = tableName;
@@ -412,7 +419,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         this.hybridStoreModel = hybridStoreModel;
         this.completeDimLens = dimLens;
         this.dimLens = hybridStoreModel.getHybridCardinality();
-
+        this.carbonDataFileAttributes = carbonDataFileAttributes;
         this.currentRestructNumber = currentRestructNum;
         this.type = aggType;
         isIntBasedIndexer =
@@ -1110,7 +1117,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
                     "*************************************aggregated and int");
             return new CarbonFactDataWriterImplForIntIndexAndAggBlock(storeLocation, measureCount,
                     mdKeyLength, tableName, isNodeHolder, fileManager, keyBlockSize, aggKeyBlock,
-                    false, isComplexTypes(), NoDictionaryCount);
+                    false, isComplexTypes(), NoDictionaryCount, carbonDataFileAttributes, schemaName);
         } else if (isIntBasedIndexer) {
             LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                     "************************************************int");

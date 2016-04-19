@@ -26,17 +26,23 @@ import java.util.Map.Entry;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.common.logging.impl.StandardLogService;
+import org.carbondata.core.carbon.CarbonTableIdentifier;
+import org.carbondata.core.carbon.path.CarbonStorePath;
+import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.file.manager.composite.FileData;
 import org.carbondata.core.file.manager.composite.IFileManagerComposite;
 import org.carbondata.core.file.manager.composite.LoadFolderData;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
-import org.carbondata.core.util.*;
+import org.carbondata.core.util.CarbonProperties;
+import org.carbondata.core.util.CarbonUtil;
+import org.carbondata.core.util.CarbonUtilException;
+import org.carbondata.core.util.DataTypeUtil;
 import org.carbondata.core.vo.HybridStoreModel;
 import org.carbondata.processing.datatypes.GenericDataType;
+import org.carbondata.processing.store.CarbonDataFileAttributes;
 import org.carbondata.processing.store.CarbonFactDataHandlerColumnar;
 import org.carbondata.processing.store.CarbonFactHandler;
 import org.carbondata.processing.store.SingleThreadFinalSortFilesMerger;
@@ -142,7 +148,7 @@ public class MDKeyGenStep extends BaseStep {
     public boolean processRow(StepMetaInterface smi, StepDataInterface sdi) throws KettleException {
         meta = (MDKeyGenStepMeta) smi;
         StandardLogService
-                .setThreadName(StandardLogService.getPartitionID(meta.getCubeName()), null);
+                .setThreadName(meta.getPartitionID(), null);
         data = (MDKeyGenStepData) sdi;
 
         meta.initialize();
@@ -216,29 +222,22 @@ public class MDKeyGenStep extends BaseStep {
         this.tableName = meta.getTableName();
         CarbonProperties instance = CarbonProperties.getInstance();
         String tempLocationKey = meta.getSchemaName() + '_' + meta.getCubeName();
-        String baseStorelocation = instance.getProperty(tempLocationKey,
-                CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL) + File.separator + meta
-                .getSchemaName() + File.separator + meta.getCubeName();
-
-        int restructFolderNumber = meta.getCurrentRestructNumber()/*CarbonUtil.checkAndReturnNextRestructFolderNumber(baseStorelocation,"RS_")*/;
-
-        String restructFolderlocation =
-                baseStorelocation + File.separator + CarbonCommonConstants.RESTRUCTRE_FOLDER
-                        + restructFolderNumber + File.separator + this.tableName;
-
-        int counter = CarbonUtil.checkAndReturnCurrentLoadFolderNumber(restructFolderlocation);
-
-        // This check is just to get the absolute path because from the property file Relative path 
-        // will come and sometimes FileOutPutstream was not able to Create the file.
-        File file = new File(restructFolderlocation);
-        storeLocation = file.getAbsolutePath() + File.separator + CarbonCommonConstants.LOAD_FOLDER
-                + counter;
+        String baseStorePath = CarbonProperties.getInstance()
+                .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
+        CarbonTableIdentifier carbonTableIdentifier =
+                new CarbonTableIdentifier(meta.getSchemaName(), meta.getCubeName());
+        CarbonTablePath carbonTablePath =
+                CarbonStorePath.getCarbonTablePath(baseStorePath, carbonTableIdentifier);
+        String partitionId = meta.getPartitionID();
+        String carbonDataDirectoryPath = carbonTablePath.getCarbonDataDirectoryPath(partitionId,
+                CarbonCommonConstants.SEGMENT_ID_FOR_LOCAL_STORE_FOLDER_CREATION);
+        storeLocation = carbonDataDirectoryPath
+                + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
 
         fileManager = new LoadFolderData();
-        fileManager.setName(CarbonCommonConstants.LOAD_FOLDER + counter
+        fileManager.setName(CarbonCommonConstants.LOAD_FOLDER
+                + CarbonCommonConstants.SEGMENT_ID_FOR_LOCAL_STORE_FOLDER_CREATION
                 + CarbonCommonConstants.FILE_INPROGRESS_STATUS);
-
-        storeLocation = storeLocation + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
 
         if (!(new File(storeLocation).exists())) {
             LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
@@ -250,8 +249,8 @@ public class MDKeyGenStep extends BaseStep {
                 RemoveDictionaryUtil.extractNoDictionaryCount(this.meta.getNoDictionaryDims()));
 
         String levelCardinalityFilePath = storeLocation + File.separator +
-                CarbonCommonConstants.LEVEL_METADATA_FILE + meta.getTableName() + ".metadata";
-
+                CarbonCommonConstants.LEVEL_METADATA_FILE + meta.getTableName()
+                + CarbonCommonConstants.CARBON_METADATA_EXTENSION;
         int[] dimLensWithComplex=null;
         try{
           dimLensWithComplex =
@@ -327,15 +326,15 @@ public class MDKeyGenStep extends BaseStep {
 
         FileData fileData = new FileData(metaDataFileName, storeLocation);
         fileManager.add(fileData);
-
+        String baseSortTempLocation = baseStorePath + File.separator + meta
+                .getSchemaName() + File.separator + meta.getCubeName();
         // Set the data file location
-        this.dataFolderLocation = baseStorelocation + File.separator +
+        this.dataFolderLocation = baseSortTempLocation + File.separator +
                 CarbonCommonConstants.SORT_TEMP_FILE_LOCATION + File.separator + this.tableName;
         return true;
     }
 
     private void initDataHandler() {
-        ValueCompressionModel valueCompressionModel = getValueCompressionModel(storeLocation);
         int simpleDimsCount =
                 this.dimensionCount - meta.getComplexDimsCount() - meta.getNoDictionaryCount();
         int[] simpleDimsLen = new int[simpleDimsCount];
@@ -349,7 +348,8 @@ public class MDKeyGenStep extends BaseStep {
         } else {
             msrdataTypes = new String[0];
         }
-
+        CarbonDataFileAttributes carbonDataFileAttributes =
+                new CarbonDataFileAttributes(meta.getTaskNo(), meta.getFactTimeStamp());
         //aggType = valueCompressionModel.getType();
         initAggType(msrdataTypes);
         finalMerger = new SingleThreadFinalSortFilesMerger(dataFolderLocation, tableName,
@@ -361,23 +361,17 @@ public class MDKeyGenStep extends BaseStep {
                     data.generator[dimLens.length].getKeySizeInBytes(), measureCount + 1, null,
                     null, storeLocation, dimLens, false, false, dimLens, null, null, true,
                     meta.getCurrentRestructNumber(), meta.getNoDictionaryCount(), dimensionCount,
-                    complexIndexMap, simpleDimsLen, this.hybridStoreModel, aggType);
+                    complexIndexMap, simpleDimsLen, this.hybridStoreModel, aggType,
+                    carbonDataFileAttributes);
         } else {
             dataHandler = new CarbonFactDataHandlerColumnar(meta.getSchemaName(), meta.getCubeName(),
                     this.tableName, false, measureCount,
                     data.generator[dimLens.length].getKeySizeInBytes(), measureCount, null, null,
                     storeLocation, dimLens, false, false, dimLens, null, null, true,
                     meta.getCurrentRestructNumber(), meta.getNoDictionaryCount(), dimensionCount,
-                    complexIndexMap, simpleDimsLen, this.hybridStoreModel, aggType);
+                    complexIndexMap, simpleDimsLen, this.hybridStoreModel, aggType,
+                    carbonDataFileAttributes);
         }
-    }
-
-    private ValueCompressionModel getValueCompressionModel(String storeLocation) {
-        String measureMetaDataFileLoc =
-                storeLocation + CarbonCommonConstants.MEASURE_METADATA_FILE_NAME + this.tableName
-                        + CarbonCommonConstants.MEASUREMETADATA_FILE_EXT;
-        return ValueCompressionUtil
-                .getValueCompressionModel(measureMetaDataFileLoc, this.measureCount);
     }
 
     private void initAggType(String[] msrdataTypes) {

@@ -1614,8 +1614,8 @@ private[sql] case class LoadCubeAPI(schemaName: String, cubeName: String, factPa
       Option(schemaName), cubeName, None)(sqlContext).asInstanceOf[CarbonRelation]
     if (relation == null) sys.error(s"Cube $schemaName.$cubeName does not exist")
     val carbonLoadModel = new CarbonLoadModel()
-    carbonLoadModel.setCubeName(cubeName)
-    carbonLoadModel.setSchemaName(schemaName)
+    carbonLoadModel.setTableName(cubeName)
+    carbonLoadModel.setDatabaseName(schemaName)
     if (dimFilesPath == "") {
       carbonLoadModel.setDimFolderPath(null)
     }
@@ -1690,8 +1690,8 @@ private[sql] case class LoadCube(
         CarbonEnv.getInstance(sqlContext).carbonCatalog.lookupRelation1(Option(schemaName), cubeName, None)(sqlContext).asInstanceOf[CarbonRelation]
       if (relation == null) sys.error(s"Cube $schemaName.$cubeName does not exist")
       val carbonLoadModel = new CarbonLoadModel()
-      carbonLoadModel.setCubeName(relation.cubeMeta.carbonTableIdentifier.getTableName)
-      carbonLoadModel.setSchemaName(relation.cubeMeta.carbonTableIdentifier.getDatabaseName)
+      carbonLoadModel.setTableName(relation.cubeMeta.carbonTableIdentifier.getTableName)
+      carbonLoadModel.setDatabaseName(relation.cubeMeta.carbonTableIdentifier.getDatabaseName)
       if (dimFilesPath.isEmpty) {
         carbonLoadModel.setDimFolderPath(null)
       }
@@ -1917,8 +1917,8 @@ private[sql] case class LoadAggregationTable(
       None)(sqlContext).asInstanceOf[CarbonRelation]
     if (relation == null) sys.error(s"Cube $schemaName.$cubeName does not exist")
     val carbonLoadModel = new CarbonLoadModel()
-    carbonLoadModel.setCubeName(cubeName)
-    carbonLoadModel.setSchemaName(schemaName)
+    carbonLoadModel.setTableName(cubeName)
+    carbonLoadModel.setDatabaseName(schemaName)
     val table = relation.cubeMeta.carbonTable
     carbonLoadModel.setAggTableName(aggTableName)
     carbonLoadModel.setTableName(table.getFactTableName)
@@ -2119,8 +2119,8 @@ private[sql] case class MergeCube(schemaName: String, cubeName: String, tableNam
     val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog.lookupRelation2(Seq(schemaName, cubeName), None)(sqlContext).asInstanceOf[CarbonRelation]
     if (relation == null) sys.error(s"Cube $schemaName.$cubeName does not exist")
     val carbonLoadModel = new CarbonLoadModel()
-    carbonLoadModel.setCubeName(cubeName)
-    carbonLoadModel.setSchemaName(schemaName)
+    carbonLoadModel.setTableName(cubeName)
+    carbonLoadModel.setDatabaseName(schemaName)
     val table = relation.cubeMeta.carbonTable
     var isTablePresent = false;
     if (table.getFactTableName.equals(tableName)) isTablePresent = true
@@ -2416,8 +2416,8 @@ private[sql] case class CleanFiles(
     }
 
     val carbonLoadModel = new CarbonLoadModel()
-    carbonLoadModel.setCubeName(relation.cubeMeta.carbonTableIdentifier.getTableName)
-    carbonLoadModel.setSchemaName(relation.cubeMeta.carbonTableIdentifier.getDatabaseName)
+    carbonLoadModel.setTableName(relation.cubeMeta.carbonTableIdentifier.getTableName)
+    carbonLoadModel.setDatabaseName(relation.cubeMeta.carbonTableIdentifier.getDatabaseName)
     val table = relation.cubeMeta.carbonTable
     carbonLoadModel.setAggTables(table.getAggregateTablesName.map(_.toString).toArray)
     carbonLoadModel.setTableName(table.getFactTableName)

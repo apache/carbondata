@@ -109,7 +109,7 @@ public class SortKeyStep extends BaseStep {
         // get step meta 
         this.meta = ((SortKeyStepMeta) smi);
         StandardLogService
-                .setThreadName(StandardLogService.getPartitionID(this.meta.getCubeName()), null);
+                .setThreadName(meta.getPartitionID(), null);
         // get step data 
         this.data = ((SortKeyStepData) sdi);
 
@@ -173,7 +173,8 @@ public class SortKeyStep extends BaseStep {
             this.sortDataRows = new SortDataRows(meta.getTabelName(),
                     meta.getDimensionCount() - meta.getComplexDimensionCount(),
                     meta.getComplexDimensionCount(), meta.getMeasureCount(), this.observer,
-                    meta.getCurrentRestructNumber(), meta.getNoDictionaryCount(), msrdataTypes);
+                    meta.getCurrentRestructNumber(), meta.getNoDictionaryCount(), msrdataTypes,
+                    meta.getPartitionID());
             try {
                 // initialize sort
                 this.sortDataRows.initialize(meta.getSchemaName(), meta.getCubeName());
