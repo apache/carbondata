@@ -73,7 +73,7 @@ public class ColumnSchema implements Serializable {
      * The group ID for column used for row format columns,
      * where in columns in each group are chunked together.
      */
-    private int rowGroupId = -1;
+    private int columnGroupId = -1;
 
     /**
      * Optional When the schema is the result of a conversion from another model
@@ -163,17 +163,17 @@ public class ColumnSchema implements Serializable {
     }
 
     /**
-     * @return the rowGroupId
+     * @return the columnGroup
      */
-    public int getRowGroupId() {
-        return rowGroupId;
+    public int getColumnGroupId() {
+        return columnGroupId;
     }
 
     /**
-     * @param rowGroupId the rowGroupId to set
+     * @param columnGroup the columnGroup to set
      */
-    public void setRowGroupId(int rowGroupId) {
-        this.rowGroupId = rowGroupId;
+    public void setColumnGroup(int columnGroupId) {
+        this.columnGroupId = columnGroupId;
     }
 
     /**

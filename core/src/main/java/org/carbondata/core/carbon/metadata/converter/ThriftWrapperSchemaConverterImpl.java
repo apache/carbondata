@@ -222,7 +222,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
             wrapperColumnSchema.getColumnName(), wrapperColumnSchema.getColumnUniqueId(),
             wrapperColumnSchema.isColumnar(), encoders, wrapperColumnSchema.isDimensionColumn());
     thriftColumnSchema.setConverted_type(fromWrapperToExternalConvertedType(wrapperColumnSchema.getConvertedType()));
-    thriftColumnSchema.setColumn_group_id(wrapperColumnSchema.getRowGroupId());
+    thriftColumnSchema.setColumn_group_id(wrapperColumnSchema.getColumnGroupId());
     thriftColumnSchema.setScale(wrapperColumnSchema.getScale());
     thriftColumnSchema.setPrecision(wrapperColumnSchema.getPrecision());
     thriftColumnSchema.setNum_child(wrapperColumnSchema.getNumberOfChild());
@@ -455,7 +455,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     wrapperColumnSchema.setConvertedType(fromExternalToWrapperConvertedType(externalColumnSchema.getConverted_type()));
     wrapperColumnSchema.setNumberOfChild(externalColumnSchema.getNum_child());
     wrapperColumnSchema.setPrecision(externalColumnSchema.getPrecision());
-    wrapperColumnSchema.setRowGroupId(externalColumnSchema.getColumn_group_id());
+    wrapperColumnSchema.setColumnGroup(externalColumnSchema.getColumn_group_id());
     wrapperColumnSchema.setScale(externalColumnSchema.getScale());
     wrapperColumnSchema.setDefaultValue(externalColumnSchema.getDefault_value());
     wrapperColumnSchema.setAggregateFunction(externalColumnSchema.getAggregate_function());

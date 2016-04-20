@@ -188,10 +188,10 @@ public class CarbonDimension implements Serializable {
     }
 
     /**
-     * @return row group id if it is row based
+     * @return column group id if it is row based
      */
     public int columnGroupId() {
-        return columnSchema.getRowGroupId();
+        return columnSchema.getColumnGroupId();
     }
 
     /**
