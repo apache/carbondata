@@ -83,6 +83,17 @@ public interface Dictionary {
     String getDictionaryValueFromSortedIndex(int sortedIndex);
 
     /**
+     * The method return the dictionary chunks wrapper of a column
+     * The wrapper wraps the list<list<bye[]>> and provide the iterator to retrieve the chunks
+     * members.
+     * Applications Scenario:
+     * For preparing the column Sort info while writing the sort index file.
+     *
+     * @return
+     */
+    DictionaryChunksWrapper getDictionaryChunks();
+
+    /**
      * This method will release the objects and set default value for primitive types
      */
     void clear();

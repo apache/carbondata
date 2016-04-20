@@ -18,6 +18,7 @@
  */
 package org.carbondata.integration.spark.util
 
+import org.apache.spark.Logging
 import scala.util.control.Breaks._
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.HashMap
@@ -26,14 +27,9 @@ import scala.collection.JavaConversions.{asScalaBuffer, asScalaSet, seqAsJavaLis
 import scala.language.implicitConversions
 import org.apache.spark.sql.{DataFrame, SQLContext}
 import org.carbondata.core.carbon.CarbonDef.Schema
-import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
-import org.carbondata.integration.spark.load.CarbonLoadModel
-import org.carbondata.integration.spark.rdd.ColumnPartitioner
-import org.carbondata.integration.spark.rdd.CarbonBlockDistinctValuesCombineRDD
-import org.carbondata.integration.spark.rdd.CarbonGlobalDictionaryGenerateRDD
-import org.apache.spark.Logging
 import org.carbondata.core.carbon.CarbonTableIdentifier
 import org.carbondata.core.constants.CarbonCommonConstants
+import org.carbondata.core.datastorage.store.filesystem.CarbonFile
 import org.carbondata.core.writer.CarbonDictionaryWriter
 import org.carbondata.core.writer.CarbonDictionaryWriterImpl
 import org.carbondata.core.util.CarbonUtil
@@ -44,7 +40,17 @@ import org.carbondata.core.reader.CarbonDictionaryReader
 import org.carbondata.core.reader.CarbonDictionaryReaderImpl
 import org.carbondata.integration.spark.rdd.DictionaryLoadModel
 import org.carbondata.core.datastorage.store.impl.FileFactory
-import org.carbondata.core.datastorage.store.filesystem.CarbonFile
+import org.carbondata.core.reader.{CarbonDictionaryReader, CarbonDictionaryReaderImpl}
+import org.carbondata.core.util.{CarbonDictionaryUtil, CarbonUtil}
+import org.carbondata.core.writer.sortindex.{CarbonDictionarySortIndexWriter, CarbonDictionarySortIndexWriterImpl}
+import org.carbondata.core.writer.{CarbonDictionaryWriter, CarbonDictionaryWriterImpl}
+import org.carbondata.integration.spark.load.{CarbonDictionarySortInfo, CarbonDictionarySortInfoPreparator, CarbonLoadModel}
+import org.carbondata.integration.spark.rdd.{CarbonBlockDistinctValuesCombineRDD, CarbonGlobalDictionaryGenerateRDD, ColumnPartitioner, DictionaryLoadModel}
+
+import scala.collection.JavaConversions.asScalaBuffer
+import scala.collection.mutable.{ArrayBuffer, HashSet}
+import scala.language.implicitConversions
+import scala.util.control.Breaks._
 
 /**
  * A object which provide a method to generate global dictionary from CSV files.
@@ -97,6 +103,29 @@ object GlobalDictionaryUtil extends Logging {
       }
     } finally {
       writer.close
+    }
+  }
+
+  /**
+    * invokes the CarbonDictionarySortIndexWriter to write column sort info
+    * sortIndex and sortIndexInverted data to sortinsex file.
+    * @param model
+    * @param index
+    */
+  def writeGlobalDictionaryColumnSortInfo(model: DictionaryLoadModel, index: Int) = {
+    val preparator: CarbonDictionarySortInfoPreparator =
+      new CarbonDictionarySortInfoPreparator(model.hdfsLocation, model.table);
+    val dictionarySortInfo: CarbonDictionarySortInfo =
+      preparator.getDictionarySortInfo(model.columns(index))
+    val carbonDictionaryWriter: CarbonDictionarySortIndexWriter =
+      new CarbonDictionarySortIndexWriterImpl(model.table, model.columns(index), model.hdfsLocation,
+        false)
+    try {
+      carbonDictionaryWriter.writeSortIndex(dictionarySortInfo.getSortIndex)
+      carbonDictionaryWriter.writeInvertedSortIndex(dictionarySortInfo.getSortIndexInverted);
+    }
+    finally {
+      carbonDictionaryWriter.close();
     }
   }
 

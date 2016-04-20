@@ -20,6 +20,7 @@
 package org.carbondata.core.cache.dictionary;
 
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -115,6 +116,18 @@ public abstract class AbstractColumnDictionaryInfo implements DictionaryInfo {
      */
     @Override public void setFileTimeStamp(long fileTimeStamp) {
         this.fileTimeStamp = fileTimeStamp;
+    }
+
+    /**
+     * The method return the list of dictionary chunks of a column
+     * Applications Scenario.
+     * For preparing the column Sort info while writing the sort index file.
+     *
+     * @return
+     */
+    @Override public DictionaryChunksWrapper getDictionaryChunks() {
+        DictionaryChunksWrapper chunksWrapper = new DictionaryChunksWrapper(dictionaryChunks);
+        return chunksWrapper;
     }
 
     /**

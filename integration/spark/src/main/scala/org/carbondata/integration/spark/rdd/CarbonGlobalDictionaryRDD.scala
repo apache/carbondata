@@ -143,6 +143,7 @@ class CarbonGlobalDictionaryGenerateRDD(
         //write to file
         if (!model.dictFileExists(split.index) || distinctValues.size > 0) {
           GlobalDictionaryUtil.writeGlobalDictionaryToFile(model, split.index, distinctValues.toIterator)
+          GlobalDictionaryUtil.writeGlobalDictionaryColumnSortInfo(model, split.index);
         }
       } catch {
         case ex: Exception =>
