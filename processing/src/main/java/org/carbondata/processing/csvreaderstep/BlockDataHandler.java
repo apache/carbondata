@@ -171,12 +171,16 @@ public class BlockDataHandler {
             }
 
             // Open the next one...
-            FileObject fileObject =
-                    KettleVFS.getFileObject(blockDetails.getFilePath(), transMeta);
+            if (FileFactory.getFileType(blockDetails.getFilePath()) == FileFactory.FileType.HDFS) {
+                //when case HDFS file type, we use the file path directly
+                //give 0 offset as the file start offset when open a new file
+                initializeFileReader(blockDetails.getFilePath(), 0);
+            } else {
+                FileObject fileObject = KettleVFS.getFileObject(blockDetails.getFilePath(), transMeta);
+                initializeFileReader(fileObject);
+            }
+
             this.isNeedToSkipFirstLineInBlock = true;
-
-            initializeFileReader(fileObject);
-
 
             // See if we need to skip a row...
             // - If you have a header row checked and if you're not running in parallel
@@ -185,7 +189,7 @@ public class BlockDataHandler {
             if (meta.isHeaderPresent()) {
                 if ((!data.parallel) || // Standard flat file : skip header
                         (data.parallel && this.bytesToSkipInFirstFile <= 0)) {
-                   readOneRow(false);
+                    readOneRow(false);
                 }
             }
 
@@ -200,11 +204,11 @@ public class BlockDataHandler {
         }
     }
     protected void initializeFileReader(FileObject fileObject) throws IOException {
+        //using file object to get path can return a valid path which for new inputstream
         String filePath = KettleVFS.getFilename(fileObject);
-        this.bufferedInputStream = FileFactory.getDataInputStream(KettleVFS.getFilename(fileObject),
+        this.bufferedInputStream = FileFactory.getDataInputStream(filePath,
                 FileFactory.getFileType(filePath), this.preferredBufferSize);
     }
-
     /**
      *  skip the offset and reset the value
      * @param filePath
