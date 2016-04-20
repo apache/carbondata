@@ -145,7 +145,10 @@ class CubeNewProcessor(cm: tableModel, sqlContext: SQLContext) {
         index = index + 1
         rowGroup = rowGroup + 1
         if (field.children.get != null)
-          allColumns ++= getAllChildren(field.children)
+        {
+      	  coloumnSchema.setNumberOfChild(field.children.get.size)
+      	  allColumns ++= getAllChildren(field.children)
+      	}
       })
     })
     allColumns
@@ -181,7 +184,10 @@ class CubeNewProcessor(cm: tableModel, sqlContext: SQLContext) {
       index = index + 1
       rowGrp = rowGrp + 1
       if (None != field.children && field.children.get != null)
-        allColumns ++= getAllChildren(field.children)
+      {
+    	  columnSchema.setNumberOfChild(field.children.get.size)
+    	  allColumns ++= getAllChildren(field.children)
+      }
     })
 
     cm.msrCols.map(field => {

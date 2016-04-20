@@ -512,12 +512,12 @@ public final class CarbonQueryUtil {
      * unique name.But user needs to give one unique name for each level,that level he needs to
      * mention in query.
      */
-    public static CarbonDimension getCarbonDimension(List<Dimension> dimensions, String carbonDim) {
-        for (Dimension dimension : dimensions) {
+    public static CarbonDimension getCarbonDimension(List<org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension> dimensions, String carbonDim) {
+        for (org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension dimension : dimensions) {
             //Its just a temp work around to use level name as unique name. we need to provide a way
             // to configure unique name
             //to user in schema.
-            if (dimension.getName().equalsIgnoreCase(carbonDim)) {
+            if (dimension.getColName().equalsIgnoreCase(carbonDim)) {
                 return new CarbonDimension(carbonDim);
             }
         }
@@ -527,12 +527,12 @@ public final class CarbonQueryUtil {
     /**
      * This method returns dimension ordinal for given dimensions name
      */
-    public static int[] getDimensionOrdinal(List<Dimension> dimensions, String[] dimensionNames) {
+    public static int[] getDimensionOrdinal(List<org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension> dimensions, String[] dimensionNames) {
         int[] dimOrdinals = new int[dimensionNames.length];
         int index = 0;
         for (String dimensionName : dimensionNames) {
-            for (Dimension dimension : dimensions) {
-                if (dimension.getName().equals(dimensionName)) {
+            for (org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension dimension : dimensions) {
+                if (dimension.getColName().equals(dimensionName)) {
                     dimOrdinals[index++] = dimension.getOrdinal();
                     break;
                 }
@@ -600,10 +600,8 @@ public final class CarbonQueryUtil {
         return null;
     }
 
-    public static CarbonMeasure getCarbonMeasure(String name, List<Measure> measures) {
+    public static CarbonMeasure getCarbonMeasure(String name, List<org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure> measures) {
 
-        //dcd fix
-        //String aggName = null;
         String msrName = name;
         //we assume the format is like sum(colName). need to handle in proper way.
         int indexOf = name.indexOf("(");
@@ -615,8 +613,8 @@ public final class CarbonQueryUtil {
         if (msrName.equals("*")) {
             return new CarbonMeasure(name);
         }
-        for (Measure measure : measures) {
-            if (measure.getName().equalsIgnoreCase(msrName)) {
+        for (org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure measure : measures) {
+            if (measure.getColName().equalsIgnoreCase(msrName)) {
                 return new CarbonMeasure(name);
             }
         }

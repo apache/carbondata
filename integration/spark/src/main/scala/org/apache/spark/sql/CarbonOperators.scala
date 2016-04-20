@@ -60,7 +60,7 @@ case class CarbonCubeScan(
   extends LeafNode {
 
   val cubeName = relation.cubeName
-  val cube = relation.metaData.cube
+  val carbonTable = relation.metaData.carbonTable
   val selectedDims = scala.collection.mutable.MutableList[CarbonDimension]()
   val selectedMsrs = scala.collection.mutable.MutableList[CarbonMeasure]()
   var outputColumns = scala.collection.mutable.MutableList[Attribute]()
@@ -229,7 +229,7 @@ case class CarbonCubeScan(
     var queryOrder: Integer = 0
     attributes.map(
       attr => {
-        val carbonDimension = CarbonQueryUtil.getCarbonDimension(cube.getDimensions(cube.getFactTableName()), attr.name);
+        val carbonDimension = CarbonQueryUtil.getCarbonDimension(carbonTable.getDimensionByTableName(carbonTable.getFactTableName), attr.name);
         if (carbonDimension != null) {
           //TO-DO if we can add ordina in carbonDimension, it will be good
           allDims += attr.name
@@ -238,7 +238,7 @@ case class CarbonCubeScan(
           queryOrder = queryOrder + 1
           selectedDims += dim
         } else {
-          val carbonMeasure = CarbonQueryUtil.getCarbonMeasure(attr.name, cube.getMeasures(cube.getFactTableName()));
+          val carbonMeasure = CarbonQueryUtil.getCarbonMeasure(attr.name, carbonTable.getMeasureByTableName(carbonTable.getFactTableName()));
           if (carbonMeasure != null) {
             val m1 = new CarbonMeasure(attr.name)
             m1.setQueryOrder(queryOrder);
@@ -468,8 +468,8 @@ case class CarbonCubeScan(
       queryStats.setCubeName(cubeName)
       queryStats.setSchemaName(relation.schemaName)
       queryStats.setGroupBy(isGroupByPresent)
-      queryStats.setFactTableName(cube.getFactTableName)
-      queryStats.setDimOrdinals(CarbonQueryUtil.getDimensionOrdinal(cube.getDimensions(cube.getFactTableName), allDims.toArray))
+      queryStats.setFactTableName(carbonTable.getFactTableName)
+      queryStats.setDimOrdinals(CarbonQueryUtil.getDimensionOrdinal(carbonTable.getDimensionByTableName(carbonTable.getFactTableName), allDims.toArray))
       //check if query has limit parameter
       val limt: Int = buildCarbonPlan.getLimit
       if (limt != -1) {

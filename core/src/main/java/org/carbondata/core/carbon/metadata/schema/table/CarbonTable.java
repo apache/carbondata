@@ -256,7 +256,7 @@ public class CarbonTable implements Serializable {
     public CarbonDimension getDimensionByName(String tableName, String columnName) {
         List<CarbonDimension> dimensionList = tableDimensionsMap.get(tableName);
         for (CarbonDimension dims : dimensionList) {
-            if (dims.getColName().equalsIgnoreCase(columnName)) ;
+            if (dims.getColName().equalsIgnoreCase(columnName))
             {
                 return dims;
             }
@@ -282,24 +282,42 @@ public class CarbonTable implements Serializable {
         return null;
     }
     
-    /**
-     * gets all children dimension for complex type
-     * 
-     * @param dimName
-     * @return
-     */
-    public List<CarbonDimension> getChildren(String dimName) {
-        List<CarbonDimension> retList = new ArrayList<CarbonDimension>();
-        for (List<CarbonDimension> list : tableDimensionsMap.values()) {
-            for (CarbonDimension carbonDimension : list) {
-                if (carbonDimension.getColName().equals(dimName) || 
-                		carbonDimension.getColName().startsWith(dimName +".")) {
-                    retList.add(carbonDimension);
-                }
-            }
-        }
-        return retList;
+  /**
+   * gets all children dimension for complex type
+   * @param dimName
+   * @return list of child dimensions
+   */
+  public List<CarbonDimension> getChildren(String dimName) {
+    for (List<CarbonDimension> list : tableDimensionsMap.values()) {
+      List<CarbonDimension> childDims = getChildren(dimName, list);
+      if (childDims != null) {
+        return childDims;
+      }
     }
+    return null;
+  }
+
+  /**
+   * returns level 2 or more child dimensions
+   * @param dimName
+   * @param dimensions
+   * @return list of child dimensions
+   */
+  public List<CarbonDimension> getChildren(String dimName, List<CarbonDimension> dimensions) {
+    for (CarbonDimension carbonDimension : dimensions) {
+      if (carbonDimension.getColName().equals(dimName)) {
+        return carbonDimension.getListOfChildDimensions();
+      } else if (null != carbonDimension.getListOfChildDimensions()
+          && carbonDimension.getListOfChildDimensions().size() > 0) {
+        List<CarbonDimension> childDims =
+            getChildren(dimName, carbonDimension.getListOfChildDimensions());
+        if (childDims != null) {
+          return childDims;
+        }
+      }
+    }
+    return null;
+  }
 
 	/**
 	 * @param databaseName
