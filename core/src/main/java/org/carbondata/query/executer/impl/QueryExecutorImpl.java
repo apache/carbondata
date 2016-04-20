@@ -68,7 +68,7 @@ import org.carbondata.query.scope.QueryScopeObject;
 import org.carbondata.query.util.CarbonEngineLogEvent;
 import org.carbondata.query.util.DataTypeConverter;
 import org.carbondata.query.util.QueryExecutorUtility;
-
+@Deprecated
 public class QueryExecutorImpl extends AbstractQueryExecutor {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(QueryExecutorImpl.class.getName());
@@ -336,8 +336,8 @@ public class QueryExecutorImpl extends AbstractQueryExecutor {
     filterInfo.setDimensions(executerProperties.dimTables);
     if (null != queryModel.getFilterExpression() && null != slice
         .getDataCache(queryModel.getFactTable())) {
-      info.setFilterEvaluatorTree(
-          FilterUtil.getFilterEvaluator(queryModel.getFilterExpression(), filterInfo));
+//      info.setFilterEvaluatorTree(
+//          //FilterUtil.getFilterEvaluator(queryModel.getFilterExpression(), filterInfo));
     }
     info.setFileBasedQuery(queryModel.isDetailQuery());
     info.setHybridStoreMeta(slice.getHybridStoreModel());

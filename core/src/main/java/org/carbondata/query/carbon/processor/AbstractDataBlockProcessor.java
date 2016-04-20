@@ -77,7 +77,7 @@ public abstract class AbstractDataBlockProcessor implements BlockProcessor {
         blockExecutionInfo.getTotalNumberOfMeasureBlock());
     blocksChunkHolder.setFileReader(fileReader);
 
-    if (blockExecutionInfo.getFilterEvaluatorTree() != null) {
+    if (blockExecutionInfo.getFilterExecuterTree() != null) {
       blockletScanner = new FilterScanner(blockExecutionInfo);
     } else {
       blockletScanner = new NonFilterScanner(blockExecutionInfo);

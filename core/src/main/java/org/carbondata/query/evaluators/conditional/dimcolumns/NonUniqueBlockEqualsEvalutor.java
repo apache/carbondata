@@ -30,7 +30,7 @@ import org.carbondata.query.evaluators.AbstractConditionalEvalutor;
 import org.carbondata.query.evaluators.BlockDataHolder;
 import org.carbondata.query.evaluators.FilterProcessorPlaceHolder;
 import org.carbondata.query.expression.Expression;
-
+@Deprecated
 public class NonUniqueBlockEqualsEvalutor extends AbstractConditionalEvalutor {
 
   public NonUniqueBlockEqualsEvalutor(Expression exp, boolean isExpressionResolve,
@@ -117,7 +117,7 @@ public class NonUniqueBlockEqualsEvalutor extends AbstractConditionalEvalutor {
     int last = 0;
     int startIndex = 0;
     BitSet bitSet = new BitSet(numerOfRows);
-    byte[][] filterValues = dimColEvaluatorInfoList.get(0).getFilterValues();
+  /*  byte[][] filterValues = dimColEvaluatorInfoList.get(0).getFilterValues();
     for (int i = 0; i < filterValues.length; i++) {
       start = CarbonUtil.getFirstIndexUsingBinarySearch(keyBlockArray, startIndex, numerOfRows - 1,
           filterValues[i]);
@@ -139,8 +139,8 @@ public class NonUniqueBlockEqualsEvalutor extends AbstractConditionalEvalutor {
       startIndex = last;
       if (startIndex >= numerOfRows) {
         break;
-      }
-    }
+      }*/
+    
     return bitSet;
   }
 
@@ -150,7 +150,7 @@ public class NonUniqueBlockEqualsEvalutor extends AbstractConditionalEvalutor {
     int last = 0;
     BitSet bitSet = new BitSet(numerOfRows);
     int startIndex = 0;
-    byte[][] filterValues = dimColEvaluatorInfoList.get(0).getFilterValues();
+   /* byte[][] filterValues = dimColEvaluatorInfoList.get(0).getFilterValues();
     for (int k = 0; k < filterValues.length; k++) {
       start = CarbonUtil.getFirstIndexUsingBinarySearch(keyBlockArray, startIndex, numerOfRows - 1,
           filterValues[k]);
@@ -173,7 +173,7 @@ public class NonUniqueBlockEqualsEvalutor extends AbstractConditionalEvalutor {
       if (startIndex >= numerOfRows) {
         break;
       }
-    }
+    }*/
     return bitSet;
   }
 

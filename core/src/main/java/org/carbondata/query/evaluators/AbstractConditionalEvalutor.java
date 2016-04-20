@@ -32,7 +32,7 @@ import org.carbondata.query.expression.conditional.BinaryConditionalExpression;
 import org.carbondata.query.expression.conditional.ConditionalExpression;
 import org.carbondata.query.filters.measurefilter.util.FilterUtil;
 import org.carbondata.query.schema.metadata.FilterEvaluatorInfo;
-
+@Deprecated
 public abstract class AbstractConditionalEvalutor implements FilterEvaluator {
   protected List<DimColumnEvaluatorInfo> dimColEvaluatorInfoList;
 
@@ -83,8 +83,8 @@ public abstract class AbstractConditionalEvalutor implements FilterEvaluator {
                       .getDataCache(info.getFactTableName()).getAggKeyBlock()[getColumnStoreIndex(
                       columnExpression.getDim().getOrdinal(), info.getHybridStoreModel())]);
             }
-            dimColumnEvaluatorInfo.setFilterValues(
-                FilterUtil.getFilterList(info, rightExp, columnExpression, this.isIncludeFilter));
+           // dimColumnEvaluatorInfo.setFilterValues(
+            //    FilterUtil.getFilterList(info, rightExp, columnExpression, this.isIncludeFilter));
             dimColumnEvaluatorInfo.setDims(columnExpression.getDim());
           }
         }
@@ -107,8 +107,8 @@ public abstract class AbstractConditionalEvalutor implements FilterEvaluator {
                       .getDataCache(info.getFactTableName()).getAggKeyBlock()[columnExpression
                       .getDim().getOrdinal()]);
             }
-            dimColumnEvaluatorInfo.setFilterValues(
-                FilterUtil.getFilterList(info, leftExp, columnExpression, isIncludeFilter));
+           // dimColumnEvaluatorInfo.setFilterValues(
+               // FilterUtil.getFilterList(info, leftExp, columnExpression, isIncludeFilter));
             dimColumnEvaluatorInfo.setDims(columnExpression.getDim());
           }
         }
@@ -127,12 +127,12 @@ public abstract class AbstractConditionalEvalutor implements FilterEvaluator {
                 .getAggKeyBlock()[columnList.get(0).getDim().getOrdinal()]);
       }
       if (columnList.get(0).getDim().isNoDictionaryDim()) {
-        dimColumnEvaluatorInfo.setFilterValues(
-            FilterUtil.getFilterList(info, exp, columnList.get(0), isIncludeFilter));
+       // dimColumnEvaluatorInfo.setFilterValues(
+           // FilterUtil.getFilterList(info, exp, columnList.get(0), isIncludeFilter));
       } else if (!(columnList.get(0).getDim().getDataType() == Type.ARRAY
           || columnList.get(0).getDim().getDataType() == Type.STRUCT)) {
-        dimColumnEvaluatorInfo.setFilterValues(
-            FilterUtil.getFilterListForAllMembers(info, exp, columnList.get(0), isIncludeFilter));
+      //  dimColumnEvaluatorInfo.setFilterValues(
+           // FilterUtil.getFilterListForAllMembers(info, exp, columnList.get(0), isIncludeFilter));
       }
     }
     dimColEvaluatorInfoList.add(dimColumnEvaluatorInfo);

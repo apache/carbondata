@@ -29,7 +29,7 @@ import org.carbondata.query.carbon.processor.BlocksChunkHolder;
 import org.carbondata.query.carbon.result.AbstractScannedResult;
 import org.carbondata.query.carbon.result.impl.FilterQueryScannedResult;
 import org.carbondata.query.carbon.scanner.AbstractBlockletScanner;
-import org.carbondata.query.evaluators.FilterEvaluator;
+import org.carbondata.query.filter.executer.FilterExecuter;
 
 /**
  * Below class will be used for filter query processing
@@ -41,7 +41,7 @@ public class FilterScanner extends AbstractBlockletScanner {
   /**
    * filter tree
    */
-  private FilterEvaluator filterEvaluator;
+  private FilterExecuter filterExecuter;
 
   /**
    * this will be used to apply min max
@@ -63,7 +63,7 @@ public class FilterScanner extends AbstractBlockletScanner {
       isMinMaxEnabled = Boolean.parseBoolean(minMaxEnableValue);
     }
     // get the filter tree
-    this.filterEvaluator = blockExecutionInfo.getFilterEvaluatorTree();
+    this.filterExecuter = blockExecutionInfo.getFilterExecuterTree();
   }
 
   /**
@@ -95,7 +95,7 @@ public class FilterScanner extends AbstractBlockletScanner {
 
     // apply min max
     if (isMinMaxEnabled) {
-      BitSet bitSet = this.filterEvaluator
+      BitSet bitSet = this.filterExecuter
           .isScanRequired(blocksChunkHolder.getDataBlock().getColumnsMaxValue(),
               blocksChunkHolder.getDataBlock().getColumnsMinValue());
       if (bitSet.isEmpty()) {
@@ -106,7 +106,7 @@ public class FilterScanner extends AbstractBlockletScanner {
     }
     BitSet bitSet = new BitSet();
     // apply filter on actual data
-
+    bitSet=this.filterExecuter.applyFilter(blocksChunkHolder);
     // if indexes is empty then return with empty result
     if (bitSet.isEmpty()) {
       scannedResult.setNumberOfRows(0);

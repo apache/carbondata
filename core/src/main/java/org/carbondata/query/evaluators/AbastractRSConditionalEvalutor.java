@@ -31,6 +31,7 @@ import org.carbondata.query.expression.conditional.ConditionalExpression;
 import org.carbondata.query.filters.measurefilter.util.FilterUtil;
 import org.carbondata.query.schema.metadata.FilterEvaluatorInfo;
 
+@Deprecated
 public abstract class AbastractRSConditionalEvalutor implements FilterEvaluator {
   protected List<DimColumnEvaluatorInfo> dimColEvaluatorInfoList;
 
@@ -80,8 +81,8 @@ public abstract class AbastractRSConditionalEvalutor implements FilterEvaluator 
             // .setNeedCompressedData(info.getSlices().get(info.getCurrentSliceIndex())
             // .getDataCache(info.getFactTableName()).getAggKeyBlock()[columnExpression.getDim()
             // .getOrdinal()]);
-            dimColumnEvaluatorInfo.setFilterValues(
-                FilterUtil.getFilterListForRS(right, columnExpression, defaultValue, surrogate));
+           // dimColumnEvaluatorInfo.setFilterValues(
+               // FilterUtil.getFilterListForRS(right, columnExpression, defaultValue, surrogate));
           }
         }
       } else if (right instanceof ColumnExpression) {
@@ -104,8 +105,8 @@ public abstract class AbastractRSConditionalEvalutor implements FilterEvaluator 
             // .setNeedCompressedData(info.getSlices().get(info.getCurrentSliceIndex())
             // .getDataCache(info.getFactTableName()).getAggKeyBlock()[columnExpression.getDim()
             // .getOrdinal()]);
-            dimColumnEvaluatorInfo.setFilterValues(
-                FilterUtil.getFilterListForRS(left, columnExpression, defaultValue, surrogate));
+            //dimColumnEvaluatorInfo.setFilterValues(
+              //  FilterUtil.getFilterListForRS(left, columnExpression, defaultValue, surrogate));
           }
         }
       }
@@ -114,9 +115,9 @@ public abstract class AbastractRSConditionalEvalutor implements FilterEvaluator 
       ConditionalExpression conditionalExpression = (ConditionalExpression) exp;
       List<ColumnExpression> columnList = conditionalExpression.getColumnList();
       dimColumnEvaluatorInfo.setColumnIndex(columnList.get(0).getDim().getOrdinal());
-      dimColumnEvaluatorInfo.setFilterValues(FilterUtil
-          .getFilterListForAllMembersRS(exp, columnList.get(0), defaultValue, surrogate,
-              isIncludeFilter));
+      //dimColumnEvaluatorInfo.setFilterValues(FilterUtil
+        //  .getFilterListForAllMembersRS(exp, columnList.get(0), defaultValue, surrogate,
+         //     isIncludeFilter));
     }
     dimColEvaluatorInfoList.add(dimColumnEvaluatorInfo);
   }

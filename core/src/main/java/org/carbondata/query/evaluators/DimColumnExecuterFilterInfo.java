@@ -16,29 +16,17 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.carbondata.query.evaluators;
 
-import java.util.BitSet;
+public class DimColumnExecuterFilterInfo {
 
-import org.carbondata.query.schema.metadata.FilterEvaluatorInfo;
-@Deprecated
-public interface FilterEvaluator {
-  void resolve(FilterEvaluatorInfo info);
+	byte[][] filterKeys;
 
-  BitSet applyFilter(BlockDataHolder blockDataHolder, FilterProcessorPlaceHolder placeHolder,
-      int[] noDictionaryColIndexes);
+	public DimColumnExecuterFilterInfo(byte[][] filterKeys) {
+		this.filterKeys = filterKeys;
+	}
 
-  FilterEvaluator getLeft();
-
-  FilterEvaluator getRight();
-
-  /**
-   * This methods checks if filter has to be applied
-   *
-   * @param blockMaxValue
-   * @param blockMinValue
-   * @return
-   */
-  BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue);
+	public byte[][] getFilterKeys() {
+		return filterKeys;
+	}
 }

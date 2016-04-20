@@ -52,7 +52,7 @@ import org.carbondata.query.schema.metadata.FilterEvaluatorInfo;
 import org.carbondata.query.util.CarbonEngineLogEvent;
 import org.carbondata.query.util.DataTypeConverter;
 import org.carbondata.query.util.QueryExecutorUtility;
-
+@Deprecated
 public class RowLevelFilterEvalutor extends AbstractConditionalEvalutor {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(RowLevelFilterEvalutor.class.getName());
@@ -116,9 +116,9 @@ public class RowLevelFilterEvalutor extends AbstractConditionalEvalutor {
                 info.getSlices().get(info.getCurrentSliceIndex())
                     .getDataCache(info.getFactTableName()).getType()[((Measure) columnExpression
                     .getDim()).getOrdinal()] == 'c' ? true : false);
-            msrColumnEvalutorInfo.setType(info.getSlices().get(info.getCurrentSliceIndex())
-                .getDataCache(info.getFactTableName()).getType()[((Measure) columnExpression
-                .getDim()).getOrdinal()]);
+          //  msrColumnEvalutorInfo.setType(info.getSlices().get(info.getCurrentSliceIndex())
+              //  .getDataCache(info.getFactTableName()).getType()[((Measure) columnExpression
+              //  .getDim()).getOrdinal()]);
           } else {
             msrColumnEvalutorInfo.setMeasureExistsInCurrentSlice(false);
             msrColumnEvalutorInfo.setDefaultValue(info.getNewDefaultValues()[measureIndex]);
@@ -256,7 +256,7 @@ public class RowLevelFilterEvalutor extends AbstractConditionalEvalutor {
 
     SqlStatement.Type msrType;
 
-    for (MsrColumnEvalutorInfo msrColumnEvalutorInfo : msrColEvalutorInfoList) {
+  /*  for (MsrColumnEvalutorInfo msrColumnEvalutorInfo : msrColEvalutorInfoList) {
       switch (msrColumnEvalutorInfo.getType()) {
         case 'l':
           msrType = SqlStatement.Type.LONG;
@@ -310,7 +310,7 @@ public class RowLevelFilterEvalutor extends AbstractConditionalEvalutor {
           }
         }
       }
-    }
+    }*/
     row.setValues(record);
   }
 

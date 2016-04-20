@@ -19,6 +19,7 @@
 
 package org.carbondata.query.evaluators;
 
+
 public class MsrColumnEvalutorInfo {
   private int columnIndex = -1;
 
@@ -34,7 +35,7 @@ public class MsrColumnEvalutorInfo {
 
   private Object defaultValue;
 
-  private char type;
+  private org.carbondata.core.carbon.metadata.datatype.DataType  type;
 
   public int getColumnIndex() {
     return columnIndex;
@@ -68,12 +69,12 @@ public class MsrColumnEvalutorInfo {
     this.uniqueValue = uniqueValue;
   }
 
-  public char getType() {
+  public org.carbondata.core.carbon.metadata.datatype.DataType getType() {
     return type;
   }
 
-  public void setType(char type) {
-    this.type = type;
+  public void setType(org.carbondata.core.carbon.metadata.datatype.DataType dataType) {
+    this.type = dataType;
   }
 
   /**

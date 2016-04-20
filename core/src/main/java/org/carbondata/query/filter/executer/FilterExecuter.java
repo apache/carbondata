@@ -16,29 +16,28 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
-package org.carbondata.query.evaluators;
+package org.carbondata.query.filter.executer;
 
 import java.util.BitSet;
 
-import org.carbondata.query.schema.metadata.FilterEvaluatorInfo;
-@Deprecated
-public interface FilterEvaluator {
-  void resolve(FilterEvaluatorInfo info);
+import org.carbondata.query.carbon.processor.BlocksChunkHolder;
 
-  BitSet applyFilter(BlockDataHolder blockDataHolder, FilterProcessorPlaceHolder placeHolder,
-      int[] noDictionaryColIndexes);
 
-  FilterEvaluator getLeft();
+public interface FilterExecuter {
 
-  FilterEvaluator getRight();
-
-  /**
-   * This methods checks if filter has to be applied
-   *
-   * @param blockMaxValue
-   * @param blockMinValue
-   * @return
-   */
-  BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue);
+	/**
+	 * API will apply filter based on resolver instance
+	 * @param blocksChunkHolder
+	 * @param placeHolder
+	 * @return
+	 */
+    BitSet applyFilter(BlocksChunkHolder blocksChunkHolder);
+    /**
+     * API will verify whether the block can be shortlisted based on block
+     * max and min key.
+     * @param blockMaxValue, maximum value of the 
+     * @param blockMinValue
+     * @return BitSet
+     */
+    BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue);
 }

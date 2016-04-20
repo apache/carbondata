@@ -49,8 +49,12 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.apache.commons.lang.ArrayUtils;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.carbon.datastore.chunk.impl.FixedLengthDimensionDataChunk;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.carbon.metadata.leafnode.DataFileFooter;
@@ -77,12 +81,9 @@ import org.carbondata.core.metadata.ValueEncoderMeta;
 import org.carbondata.core.reader.CarbonFooterReader;
 import org.carbondata.core.vo.HybridStoreModel;
 import org.carbondata.query.util.DataFileFooterConverter;
+import org.pentaho.di.core.exception.KettleException;
 
 import com.google.gson.Gson;
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.security.UserGroupInformation;
-import org.pentaho.di.core.exception.KettleException;
 
 public final class CarbonUtil {
 
@@ -1195,13 +1196,13 @@ public final class CarbonUtil {
     return -1;
   }
 
-  public static int getFirstIndexUsingBinarySearch(ColumnarKeyStoreDataHolder keyBlockArray,
+  public static int getFirstIndexUsingBinarySearch(FixedLengthDimensionDataChunk dimColumnDataChunk,
       int low, int high, byte[] compareValue) {
     int cmpResult = 0;
     while (high >= low) {
       int mid = (low + high) / 2;
       cmpResult = ByteUtil.UnsafeComparer.INSTANCE
-          .compareTo(keyBlockArray.getKeyBlockData(), mid * compareValue.length,
+          .compareTo(dimColumnDataChunk.getCompleteDataChunk(), mid * compareValue.length,
               compareValue.length, compareValue, 0, compareValue.length);
       if (cmpResult < 0) {
         low = mid + 1;
@@ -1210,7 +1211,7 @@ public final class CarbonUtil {
       } else {
         int currentIndex = mid;
         while (currentIndex - 1 >= 0 && ByteUtil.UnsafeComparer.INSTANCE
-            .compareTo(keyBlockArray.getKeyBlockData(), (currentIndex - 1) * compareValue.length,
+            .compareTo(dimColumnDataChunk.getCompleteDataChunk(), (currentIndex - 1) * compareValue.length,
                 compareValue.length, compareValue, 0, compareValue.length) == 0) {
           --currentIndex;
         }

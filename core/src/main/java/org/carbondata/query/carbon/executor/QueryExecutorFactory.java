@@ -42,7 +42,7 @@ public class QueryExecutorFactory {
     // aggregation expression are empty and is count start query is true
     // with one measure on which counter will be executed
     // then its a counter start query
-    if (queryModel.isCountStarQuery() && null == queryModel.getFilterEvaluatorTree()
+    if (queryModel.isCountStarQuery() && null == queryModel.getFilterExpressionResolverTree()
         && queryModel.getQueryDimension().size() < 1 && queryModel.getQueryDimension().size() < 2
         && queryModel.getDimAggregationInfo().size() < 1
         && queryModel.getExpressions().size() == 0) {
@@ -53,7 +53,7 @@ public class QueryExecutorFactory {
     // count(1)
     // in that case we need to return empty record of size number of records
     // present in the carbon data file
-    else if (null == queryModel.getFilterEvaluatorTree()
+    else if (null == queryModel.getFilterExpressionResolverTree()
         && queryModel.getQueryDimension().size() == 0 && queryModel.getQueryMeasures().size() == 0
         && queryModel.getDimAggregationInfo().size() == 0
         && queryModel.getExpressions().size() == 0) {

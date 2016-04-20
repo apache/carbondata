@@ -16,29 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package org.carbondata.query.carbonfilterinterface;
 
-package org.carbondata.query.evaluators;
+public enum FilterExecuterType {
 
-import java.util.BitSet;
+	INCLUDE, EXCLUDE, OR, AND, RESTRUCTURE, ROWLEVEL
 
-import org.carbondata.query.schema.metadata.FilterEvaluatorInfo;
-@Deprecated
-public interface FilterEvaluator {
-  void resolve(FilterEvaluatorInfo info);
-
-  BitSet applyFilter(BlockDataHolder blockDataHolder, FilterProcessorPlaceHolder placeHolder,
-      int[] noDictionaryColIndexes);
-
-  FilterEvaluator getLeft();
-
-  FilterEvaluator getRight();
-
-  /**
-   * This methods checks if filter has to be applied
-   *
-   * @param blockMaxValue
-   * @param blockMinValue
-   * @return
-   */
-  BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue);
 }
