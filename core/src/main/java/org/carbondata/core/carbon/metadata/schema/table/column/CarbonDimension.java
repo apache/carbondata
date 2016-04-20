@@ -120,7 +120,7 @@ public class CarbonDimension implements Serializable {
     /**
      * @return column unique id
      */
-    public int getColumnId() {
+    public String getColumnId() {
         return columnSchema.getColumnUniqueId();
     }
 
@@ -247,5 +247,9 @@ public class CarbonDimension implements Serializable {
             return false;
         }
         return true;
+    }
+    
+    public boolean hasEncoding(Encoding encoding){
+    	return columnSchema.getEncodingList().contains(encoding);
     }
 }

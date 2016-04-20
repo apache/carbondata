@@ -18,10 +18,7 @@
  */
 package org.carbondata.core.carbon.metadata.schema.table;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import junit.framework.TestCase;
 
@@ -76,7 +73,7 @@ public class CarbonTableTest extends TestCase {
         ColumnSchema dimColumn = new ColumnSchema();
         dimColumn.setColumnar(true);
         dimColumn.setColumnName("IMEI");
-        dimColumn.setColumnUniqueId(1);
+        dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
         dimColumn.setDataType(DataType.STRING);
         dimColumn.setDimensionColumn(true);
         Set<Encoding> encodeList =
@@ -91,7 +88,7 @@ public class CarbonTableTest extends TestCase {
         ColumnSchema dimColumn = new ColumnSchema();
         dimColumn.setAggregateFunction("SUM");
         dimColumn.setColumnName("IMEI_COUNT");
-        dimColumn.setColumnUniqueId(1);
+        dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
         dimColumn.setDataType(DataType.STRING);
         return dimColumn;
     }

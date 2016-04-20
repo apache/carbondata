@@ -18,13 +18,7 @@
  */
 package org.carbondata.core.carbon.metadata;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 import junit.framework.TestCase;
-
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.carbon.metadata.schema.table.TableInfo;
@@ -34,6 +28,8 @@ import org.carbondata.core.constants.CarbonCommonConstants;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.util.*;
 
 public class CarbonMetadataTest extends TestCase {
 
@@ -108,7 +104,7 @@ public class CarbonMetadataTest extends TestCase {
         ColumnSchema dimColumn = new ColumnSchema();
         dimColumn.setColumnar(true);
         dimColumn.setColumnName("IMEI");
-        dimColumn.setColumnUniqueId(1);
+        dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
         dimColumn.setDataType(DataType.STRING);
         dimColumn.setDimensionColumn(true);
         Set<Encoding> encodeList =
@@ -123,7 +119,7 @@ public class CarbonMetadataTest extends TestCase {
         ColumnSchema dimColumn = new ColumnSchema();
         dimColumn.setAggregateFunction("SUM");
         dimColumn.setColumnName("IMEI_COUNT");
-        dimColumn.setColumnUniqueId(1);
+        dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
         dimColumn.setDataType(DataType.STRING);
         return dimColumn;
     }

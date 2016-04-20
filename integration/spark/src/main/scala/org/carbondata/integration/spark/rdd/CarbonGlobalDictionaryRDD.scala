@@ -47,7 +47,8 @@ class ColumnPartitioner(numParts: Int) extends Partitioner {
  * a case class to package some attributes
  */
 case class DictionaryLoadModel(table: CarbonTableIdentifier,
-  columns: Array[String],
+  columnNames: Array[String],
+  columnIds: Array[String],
   hdfsLocation: String,
   dictfolderPath: String,
   isSharedDimension: Boolean,
@@ -79,7 +80,7 @@ class CarbonBlockDistinctValuesCombineRDD(
       //load exists dictionary file to list of HashMap
       val (dicts, existDicts) = GlobalDictionaryUtil.readGlobalDictionaryFromFile(model)
       //local combine set
-      val numColumns = model.columns.length
+      val numColumns = model.columnNames.length
       val sets = new Array[HashSet[String]](numColumns)
       for (i <- 0 until numColumns) {
         sets(i) = new HashSet[String]
@@ -163,7 +164,7 @@ class CarbonGlobalDictionaryGenerateRDD(
       }
 
       override def next(): (String, String) = {
-        (model.columns(split.index), status)
+        (model.columnNames(split.index), status)
       }
     }
     iter

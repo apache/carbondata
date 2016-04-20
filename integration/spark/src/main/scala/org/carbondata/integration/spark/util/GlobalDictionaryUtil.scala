@@ -19,6 +19,7 @@
 package org.carbondata.integration.spark.util
 
 import org.apache.spark.Logging
+
 import scala.util.control.Breaks._
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.HashMap
@@ -46,6 +47,8 @@ import org.carbondata.core.writer.sortindex.{CarbonDictionarySortIndexWriter, Ca
 import org.carbondata.core.writer.{CarbonDictionaryWriter, CarbonDictionaryWriterImpl}
 import org.carbondata.integration.spark.load.{CarbonDictionarySortInfo, CarbonDictionarySortInfoPreparator, CarbonLoadModel}
 import org.carbondata.integration.spark.rdd.{CarbonBlockDistinctValuesCombineRDD, CarbonGlobalDictionaryGenerateRDD, ColumnPartitioner, DictionaryLoadModel}
+import org.carbondata.core.carbon.metadata.encoder.Encoding
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
 
 import scala.collection.JavaConversions.asScalaBuffer
 import scala.collection.mutable.{ArrayBuffer, HashSet}
@@ -81,6 +84,25 @@ object GlobalDictionaryUtil extends Logging {
     }
     columnBuffer.toArray
   }
+  
+  def pruneDimensions(dimensions: Array[CarbonDimension], columns: Array[String]) = {
+    val columnNameBuffer = new ArrayBuffer[String]
+    val columnIdBuffer = new ArrayBuffer[String]
+    for (dim <- dimensions) {
+        if(dim.hasEncoding(Encoding.DICTIONARY)){
+          breakable {
+          for (i <- 0 until columns.length) {
+            if (dim.getColName.equalsIgnoreCase(columns(i))) {
+              columnNameBuffer += dim.getColName
+              columnIdBuffer += dim.getColumnId
+              break
+            }
+          }
+        }
+      }
+    }
+    (columnNameBuffer.toArray, columnIdBuffer.toArray)
+  }
 
   /**
    * invoke CarbonDictionaryWriter to write dictionary to file.
@@ -93,7 +115,7 @@ object GlobalDictionaryUtil extends Logging {
                                   columnIndex: Int,
                                   iter: Iterator[String]) = {
     val writer: CarbonDictionaryWriter = new CarbonDictionaryWriterImpl(
-      model.hdfsLocation, model.table, model.columns(columnIndex), model.isSharedDimension)
+      model.hdfsLocation, model.table, model.columnIds(columnIndex), model.isSharedDimension)
     try {
       if (!model.dictFileExists(columnIndex)) {
         writer.write(CarbonCommonConstants.MEMBER_DEFAULT_VAL)
@@ -116,9 +138,9 @@ object GlobalDictionaryUtil extends Logging {
     val preparator: CarbonDictionarySortInfoPreparator =
       new CarbonDictionarySortInfoPreparator(model.hdfsLocation, model.table);
     val dictionarySortInfo: CarbonDictionarySortInfo =
-      preparator.getDictionarySortInfo(model.columns(index))
+      preparator.getDictionarySortInfo(model.columnIds(index))
     val carbonDictionaryWriter: CarbonDictionarySortIndexWriter =
-      new CarbonDictionarySortIndexWriterImpl(model.table, model.columns(index), model.hdfsLocation,
+      new CarbonDictionarySortIndexWriterImpl(model.table, model.columnIds(index), model.hdfsLocation,
         false)
     try {
       carbonDictionaryWriter.writeSortIndex(dictionarySortInfo.getSortIndex)
@@ -136,13 +158,13 @@ object GlobalDictionaryUtil extends Logging {
    * @return: scala.Tuple2<scala.collection.mutable.HashSet<java.lang.String>[],boolean[]>
    */
   def readGlobalDictionaryFromFile(model: DictionaryLoadModel) = {
-    val dicts = new Array[HashSet[String]](model.columns.length)
-    val existDicts = new Array[Boolean](model.columns.length)
-    for (i <- 0 until model.columns.length) {
+    val dicts = new Array[HashSet[String]](model.columnIds.length)
+    val existDicts = new Array[Boolean](model.columnIds.length)
+    for (i <- 0 until model.columnIds.length) {
       dicts(i) = new HashSet[String]
       if (model.dictFileExists(i)) {
         val reader: CarbonDictionaryReader = new CarbonDictionaryReaderImpl(
-          model.hdfsLocation, model.table, model.columns(i), model.isSharedDimension)
+          model.hdfsLocation, model.table, model.columnIds(i), model.isSharedDimension)
         val values = reader.read
         if (values != null) {
           for (j <- 0 until values.size)
@@ -165,20 +187,21 @@ object GlobalDictionaryUtil extends Logging {
    * @return: org.carbondata.integration.spark.rdd.DictionaryLoadModel
    */
   def createDictionaryLoadModel(table: CarbonTableIdentifier,
-                                columns: Array[String],
+                                columnNames: Array[String],
+                                columnIds: Array[String],
                                 hdfsLocation: String,
                                 dictfolderPath: String,
                                 isSharedDimension: Boolean) = {
     //list dictionary file path
-    val dictFilePaths = new Array[String](columns.length)
-    val dictFileExists = new Array[Boolean](columns.length)
+    val dictFilePaths = new Array[String](columnIds.length)
+    val dictFileExists = new Array[Boolean](columnIds.length)
     val carbonTablePath = CarbonStorePath.getCarbonTablePath(hdfsLocation, table)
-    for (i <- 0 until columns.length) {
-      dictFilePaths(i) = carbonTablePath.getDictionaryFilePath(columns(i))
+    for (i <- 0 until columnIds.length) {      dictFilePaths(i) = carbonTablePath.getDictionaryFilePath(columnIds(i))
       dictFileExists(i) = CarbonUtil.isFileExists(dictFilePaths(i))
     }
     new DictionaryLoadModel(table,
-      columns,
+      columnNames,
+      columnIds,
       hdfsLocation,
       dictfolderPath,
       isSharedDimension,
@@ -314,11 +337,11 @@ object GlobalDictionaryUtil extends Logging {
       }
       //columns which need to generate global dictionary file
       val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-      val requireColumns = pruneColumns(carbonTable.getDimensionByTableName(carbonTable.getFactTableName).toSeq.map(dim => dim.getColName).toArray, df.columns)
+      val (requireColumns, requireColumnIds) = pruneDimensions(carbonTable.getDimensionByTableName(carbonTable.getFactTableName).map(x=>x).toArray, df.columns)
       if (requireColumns.size >= 1) {
         //select column to push down pruning
         df = df.select(requireColumns.head, requireColumns.tail: _*)
-        val model = createDictionaryLoadModel(table, requireColumns,
+        val model = createDictionaryLoadModel(table, requireColumns, requireColumnIds,
           hdfsLocation, dictfolderPath, isSharedDimension)
         //combine distinct value in a block and partition by column
         val inputRDD = new CarbonBlockDistinctValuesCombineRDD(df.rdd, model)
@@ -340,7 +363,7 @@ object GlobalDictionaryUtil extends Logging {
           val requireColumnsforDim = pruneColumns(dimensionSet.toArray, dimDataframe.columns)
           if (requireColumnsforDim.size >= 1) {
             dimDataframe = dimDataframe.select(requireColumnsforDim.head, requireColumnsforDim.tail: _*)
-            val modelforDim = createDictionaryLoadModel(table, requireColumnsforDim,
+            val modelforDim = createDictionaryLoadModel(table, requireColumnsforDim, null,
               hdfsLocation, dictfolderPath, isSharedDimension)
             val inputRDDforDim = new CarbonBlockDistinctValuesCombineRDD(dimDataframe.rdd, modelforDim)
               .partitionBy(new ColumnPartitioner(requireColumnsforDim.length))

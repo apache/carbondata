@@ -52,7 +52,7 @@ public class ColumnSchema implements Serializable {
      * Unique ID for a column. if this is dimension,
      * it is an unique ID that used in dictionary
      */
-    private int columnUniqueId;
+    private String columnUniqueId;
 
     /**
      * whether it is stored as columnar format or row format
@@ -123,14 +123,14 @@ public class ColumnSchema implements Serializable {
     /**
      * @return the columnUniqueId
      */
-    public int getColumnUniqueId() {
+    public String getColumnUniqueId() {
         return columnUniqueId;
     }
 
     /**
      * @param columnUniqueId the columnUniqueId to set
      */
-    public void setColumnUniqueId(int columnUniqueId) {
+    public void setColumnUniqueId(String columnUniqueId) {
         this.columnUniqueId = columnUniqueId;
     }
 

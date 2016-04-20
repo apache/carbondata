@@ -20,85 +20,59 @@
 package org.apache.spark.sql.cubemodel
 
 import java.text.SimpleDateFormat
+import java.util.UUID
 
+import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.execution.{RunnableCommand, SparkPlan}
 import org.apache.spark.sql.hive.{CarbonMetastoreCatalog, HiveContext}
 import org.apache.spark.sql.types.TimestampType
-import org.apache.spark.sql.{CarbonContext, CarbonEnv, CarbonRelation, DataFrame, Row, SQLContext, getDB}
 import org.carbondata.common.logging.LogServiceFactory
-import org.carbondata.core.carbon.CarbonDef
-import org.carbondata.core.carbon.CarbonDef.AggTable
-import org.carbondata.core.carbon.CarbonDef.CubeDimension
+import org.carbondata.core.carbon.CarbonDef.{AggTable, CubeDimension}
+import org.carbondata.core.carbon.metadata.datatype.DataType
+import org.carbondata.core.carbon.metadata.encoder.Encoding
+import org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema
+import org.carbondata.core.carbon.metadata.schema.table.{TableInfo, TableSchema}
+import org.carbondata.core.carbon.metadata.schema.{SchemaEvolution, SchemaEvolutionEntry}
+import org.carbondata.core.carbon.{CarbonDataLoadSchema, CarbonDef}
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.datastorage.store.impl.FileFactory
+import org.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.carbondata.core.metadata.CarbonMetadata
-import org.carbondata.core.carbon.CarbonDef
-import org.carbondata.core.carbon.CarbonDef.{AggTable, CubeDimension}
-import org.carbondata.core.carbon.CarbonDataLoadSchema
-import org.carbondata.core.carbon.metadata.schema.table.TableInfo
-import org.carbondata.core.carbon.metadata.schema.table.TableSchema
-import org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema
-import org.carbondata.core.carbon.metadata.schema.SchemaEvolution
-import org.carbondata.core.carbon.metadata.schema.SchemaEvolutionEntry
-import org.carbondata.core.carbon.metadata.encoder.Encoding
-import org.carbondata.core.carbon.metadata.datatype.DataType
 import org.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.carbondata.integration.spark.load.{CarbonLoadModel, CarbonLoaderUtil, DeleteLoadFromMetadata}
 import org.carbondata.integration.spark.partition.api.impl.QueryPartitionHelper
 import org.carbondata.integration.spark.rdd.CarbonDataRDDFactory
-import org.carbondata.integration.spark.util.CarbonQueryUtil
-import org.carbondata.integration.spark.util.CarbonScalaUtil
-import org.carbondata.integration.spark.util.CarbonSparkInterFaceLogEvent
-import org.carbondata.processing.suggest.autoagg.AutoAggSuggestionFactory
-import org.carbondata.processing.suggest.autoagg.AutoAggSuggestionService
+import org.carbondata.integration.spark.util.{CarbonScalaUtil, CarbonSparkInterFaceLogEvent, GlobalDictionaryUtil}
 import org.carbondata.processing.suggest.autoagg.model.Request
 import org.carbondata.processing.suggest.autoagg.util.CommonUtil
+import org.carbondata.processing.suggest.autoagg.{AutoAggSuggestionFactory, AutoAggSuggestionService}
 import org.carbondata.processing.suggest.datastats.model.LoadModel
-import org.carbondata.processing.util.CarbonSchemaParser
-import org.carbondata.core.util.CarbonUtil
-import org.carbondata.core.carbon.CarbonDef.CubeDimension
-import org.carbondata.core.util.CarbonProperties
-import org.carbondata.core.constants.CarbonCommonConstants
-import org.carbondata.processing.suggest.autoagg.AutoAggSuggestionService
-import org.carbondata.processing.suggest.datastats.model.LoadModel
-import org.carbondata.common.logging.LogServiceFactory
-import org.carbondata.processing.util.CarbonSchemaParser
-import org.carbondata.core.carbon.CarbonDef
-import org.carbondata.core.datastorage.store.impl.FileFactory
-import org.carbondata.core.carbon.CarbonDef.AggTable
-import org.carbondata.processing.suggest.autoagg.util.CommonUtil
-import org.carbondata.processing.suggest.autoagg.AutoAggSuggestionFactory
-import org.carbondata.core.metadata.CarbonMetadata
-import org.carbondata.core.carbon.metadata.schema.table.TableInfo
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConversions.{asScalaBuffer, seqAsJavaList, _}
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
-import org.carbondata.integration.spark.util.GlobalDictionaryUtil
-import org.carbondata.core.locks.{CarbonLockFactory, LockUsage}
-import scala.collection.JavaConversions.{asScalaBuffer, asScalaSet, seqAsJavaList}
 import scala.language.implicitConversions
 
-case class CubeModel(
-                      ifNotExistsSet: Boolean,
-                      //SchmemaNameOp is used to temporarily to hold schema and then set to var schemaName
-                      var schemaName: String,
-                      schemaNameOp: Option[String],
-                      cubeName: String,
-                      dimCols: Seq[Field],
-                      msrCols: Seq[Field],
-                      fromKeyword: String,
-                      withKeyword: String,
-                      source: Object,
-                      factFieldsList: Option[FilterCols],
-                      dimRelations: Seq[DimensionRelation],
-                      simpleDimRelations: Seq[DimensionRelation],
-    highcardinalitydims:Option[Seq[String]],
-                      aggregation: Seq[Aggregation],
-                      partitioner: Option[Partitioner])
+case class tableModel(
+                       ifNotExistsSet: Boolean,
+                       //SchmemaNameOp is used to temporarily to hold schema and then set to var schemaName
+                       var schemaName: String,
+                       schemaNameOp: Option[String],
+                       cubeName: String,
+                       dimCols: Seq[Field],
+                       msrCols: Seq[Field],
+                       fromKeyword: String,
+                       withKeyword: String,
+                       source: Object,
+                       factFieldsList: Option[FilterCols],
+                       dimRelations: Seq[DimensionRelation],
+                       simpleDimRelations: Seq[DimensionRelation],
+                       highcardinalitydims: Option[Seq[String]],
+                       aggregation: Seq[Aggregation],
+                       partitioner: Option[Partitioner],
+                       columnGroups: Seq[String])
 
-
-case class Field(column: String, dataType: Option[String], name: Option[String], children : Option[List[Field]], parent: String = null,storeType: Option[String]=Some("columnar"))
+case class Field(column: String, dataType: Option[String], name: Option[String], children: Option[List[Field]], parent: String = null, storeType: Option[String] = Some("columnar"))
 
 case class ArrayDataType(dataType: String)
 
@@ -120,19 +94,21 @@ case class AggregateTableAttributes(colName: String, aggType: String = null)
 
 case class Partitioner(partitionClass: String, partitionColumn: Array[String], partitionCount: Int, nodeList: Array[String])
 
+case class PartitionerField(partitionColumn: String, dataType: Option[String], columnComment: String)
+
 case class DimensionRelation(tableName: String, dimSource: Object, relation: Relation, includeKey: Option[String], cols: Option[Seq[String]])
 
 case class Relation(leftColumn: String, rightColumn: String)
 
-case class LoadSchema(tableInfo: TableInfo, dimensionTables : Array[DimensionRelation])
+case class LoadSchema(tableInfo: TableInfo, dimensionTables: Array[DimensionRelation])
 
-case class Level(name: String, val column: String, cardinality: Int, dataType: String, parent: String = null, storeType: String ="Columnar",levelType: String = "Regular")
+case class Level(name: String, val column: String, cardinality: Int, dataType: String, parent: String = null, storeType: String = "Columnar", levelType: String = "Regular")
 
 case class Measure(name: String, column: String, dataType: String, aggregator: String = "SUM", visible: Boolean = true)
 
 case class Hierarchy(name: String, primaryKey: Option[String], levels: Seq[Level], tableName: Option[String], normalized: Boolean = false)
 
-case class Dimension(name: String, hierarchies: Seq[Hierarchy], foreignKey: Option[String], dimType: String = "StandardDimension", visible: Boolean = true,var highCardinality: Boolean = false)
+case class Dimension(name: String, hierarchies: Seq[Hierarchy], foreignKey: Option[String], dimType: String = "StandardDimension", visible: Boolean = true, var highCardinality: Boolean = false)
 
 case class FilterCols(includeKey: String, fieldList: Seq[String])
 
@@ -143,92 +119,81 @@ case class Default(key: String, value: String)
 case class DataLoadTableFileMapping(table: String, loadPath: String)
 
 /**
- * New Cube processor which will create wrapper TableInfo object
- *
- */
+  * New Cube processor which will create wrapper TableInfo object
+  *
+  */
 object CubeNewProcessor {
-  def apply(cm: CubeModel, sqlContext: SQLContext): TableInfo = {
+  def apply(cm: tableModel, sqlContext: SQLContext): TableInfo = {
     new CubeNewProcessor(cm, sqlContext).process
   }
 }
 
-class CubeNewProcessor(cm: CubeModel, sqlContext: SQLContext) {
-  
-  var index =0;
-  def getAllChildren(fieldChildren : Option[List[Field]]) : Seq[ColumnSchema]  = {
-     var allColumns: Seq[ColumnSchema] = Seq[ColumnSchema]()
-	   fieldChildren.map(fields => {
-	        fields.map(field => {
-  		    		 var encoders = Seq[Encoding]();
-      	       encoders ++= Seq(Encoding.DICTIONARY)
-            val coloumnSchema: ColumnSchema = getColumnSchema(normalizeType(field.dataType.getOrElse("")),field.name.getOrElse(field.column), index, true, encoders ,true)
-      		   //  allColumns ++= Seq(new ColumnSchema(normalizeType(field.dataType.getOrElse("")), field.name.getOrElse(field.column), index, true, encoders, true))
-            allColumns ++= Seq(coloumnSchema)
-            index=index + 1;
-      	       if(field.children.get != null)
-      	  	     allColumns ++= getAllChildren(field.children)
-	      	})
-	   })
-	   allColumns
+class CubeNewProcessor(cm: tableModel, sqlContext: SQLContext) {
+
+  var index = 0
+  var rowGroup = 0
+
+  def getAllChildren(fieldChildren: Option[List[Field]]): Seq[ColumnSchema] = {
+    var allColumns: Seq[ColumnSchema] = Seq[ColumnSchema]()
+    fieldChildren.map(fields => {
+      fields.map(field => {
+        var encoders = Seq[Encoding]();
+        encoders ++= Seq(Encoding.DICTIONARY)
+        val coloumnSchema: ColumnSchema = getColumnSchema(normalizeType(field.dataType.getOrElse("")), field.name.getOrElse(field.column), index, true, encoders, true, rowGroup)
+        //  allColumns ++= Seq(new ColumnSchema(normalizeType(field.dataType.getOrElse("")), field.name.getOrElse(field.column), index, true, encoders, true))
+        allColumns ++= Seq(coloumnSchema)
+        index = index + 1
+        rowGroup = rowGroup + 1
+        if (field.children.get != null)
+          allColumns ++= getAllChildren(field.children)
+      })
+    })
+    allColumns
   }
 
-  def getColumnSchema(dataType: DataType, colName: String, index: Integer, isCol: Boolean, encoders: Seq[Encoding], isDimensionCol: Boolean): ColumnSchema = {
+  def getColumnSchema(dataType: DataType, colName: String, index: Integer, isCol: Boolean, encoders: Seq[Encoding], isDimensionCol: Boolean, colGroup: Integer): ColumnSchema = {
     val columnSchema = new ColumnSchema()
     columnSchema.setDataType(dataType)
     columnSchema.setColumnName(colName)
-    columnSchema.setColumnUniqueId(index)
+    columnSchema.setColumnUniqueId(UUID.randomUUID().toString())
     columnSchema.setColumnar(isCol)
     val encoderSet = new java.util.HashSet(encoders)
     columnSchema.setEncodintList(encoderSet)
     columnSchema.setDimensionColumn(isDimensionCol)
-    //TODO: Need to fill RowGroupID, Precision, Scala, converted type & Number of Children after DDL finalization   
+    columnSchema.setColumnGroup(colGroup)
+    //TODO: Need to fill RowGroupID, Precision, Scala, converted type & Number of Children after DDL finalization
     columnSchema
   }
 
-  private def normalizeType(dataType: String): DataType = {
-    dataType match {
-      case "String" => DataType.STRING
-      case "Integer" => DataType.INT
-      case "Long" => DataType.LONG
-      case "Double" => DataType.DOUBLE
-      case "Decimal" => DataType.DECIMAL
-      case "Timestamp" => DataType.TIMESTAMP
-      case "Array" => DataType.ARRAY
-      case "Struct" => DataType.STRUCT
-      case _ => DataType.STRING
-    }
-  }
-
   /**
-   * process create dml fields and create wrapper TableInfo object
-   */
+    * process create dml fields and create wrapper TableInfo object
+    */
   def process(): TableInfo = {
     val LOGGER = LogServiceFactory.getLogService(CubeNewProcessor.getClass().getName())
     var allColumns = Seq[ColumnSchema]()
-
+    var rowGrp = 0
     var index = 0
-      cm.dimCols.map(field =>
-      {
-    		 var encoders = Seq[Encoding]();
-    	   encoders ++= Seq(Encoding.DICTIONARY)
-        val columnSchema: ColumnSchema = getColumnSchema(normalizeType(field.dataType.getOrElse("")), field.name.getOrElse(field.column), index, true, encoders ,true)
-        allColumns ++= Seq(columnSchema)
-    		 index = index + 1
-    	   if(field.children.get != null)
-    	  	 allColumns ++= getAllChildren(field.children)
-      })
-      
-      cm.msrCols.map(field => 
-        {
-          var encoders = Seq[Encoding]();
-    	    encoders ++= Seq(Encoding.DICTIONARY)
-          val coloumnSchema: ColumnSchema = getColumnSchema(normalizeType(field.dataType.getOrElse("")), field.name.getOrElse(field.column), index, true, encoders ,false)
-    	   // val measureCol = new ColumnSchema(normalizeType(field.dataType.getOrElse("")), field.name.getOrElse(field.column), index, true, encoders, false)
-          val measureCol = coloumnSchema
-    	    
-          allColumns ++= Seq(measureCol)
-          index = index + 1
-        })
+    cm.dimCols.map(field => {
+      var encoders = Seq[Encoding]();
+      encoders ++= Seq(Encoding.DICTIONARY)
+      val columnSchema: ColumnSchema = getColumnSchema(normalizeType(field.dataType.getOrElse("")), field.name.getOrElse(field.column), index, true, encoders, true, rowGrp)
+      allColumns ++= Seq(columnSchema)
+      index = index + 1
+      rowGrp = rowGrp + 1
+      if (None != field.children && field.children.get != null)
+        allColumns ++= getAllChildren(field.children)
+    })
+
+    cm.msrCols.map(field => {
+      var encoders = Seq[Encoding]();
+      val coloumnSchema: ColumnSchema = getColumnSchema(normalizeType(field.dataType.getOrElse("")), field.name.getOrElse(field.column), index, true, encoders, false, rowGrp)
+      // val measureCol = new ColumnSchema(normalizeType(field.dataType.getOrElse("")), field.name.getOrElse(field.column), index, true, encoders, false)
+      val measureCol = coloumnSchema
+
+      allColumns ++= Seq(measureCol)
+      index = index + 1
+      rowGrp = rowGrp + 1
+    })
 
     // Check if there is any duplicate measures or dimensions. Its based on the dimension name and measure name
     allColumns.groupBy(_.getColumnName).foreach(f => if (f._2.size > 1) {
@@ -238,64 +203,61 @@ class CubeNewProcessor(cm: CubeModel, sqlContext: SQLContext) {
       sys.error(s"Duplicate dimensions found with name : $name")
     })
 
-    val highCardinalityDims=cm.highcardinalitydims.getOrElse(Seq())
-    for(column <- allColumns)
-    {
-      if(highCardinalityDims.contains(column.getColumnName))
-      {
+    val highCardinalityDims = cm.highcardinalitydims.getOrElse(Seq())
+
+    checkColGroupsValidity(cm.columnGroups, allColumns, highCardinalityDims)
+
+    updateColumnGroupsInFields(cm.columnGroups, allColumns)
+
+    for (column <- allColumns) {
+      if (highCardinalityDims.contains(column.getColumnName)) {
         column.getEncodingList.remove(Encoding.DICTIONARY)
       }
     }
-    
+
     var newOrderedDims = scala.collection.mutable.ListBuffer[ColumnSchema]()
     val highCardDims = scala.collection.mutable.ListBuffer[ColumnSchema]()
     val complexDims = scala.collection.mutable.ListBuffer[ColumnSchema]()
     val measures = scala.collection.mutable.ListBuffer[ColumnSchema]()
-    for(column <- allColumns)
-    {
-      if(highCardinalityDims.contains(column.getColumnName))
-      {
+    for (column <- allColumns) {
+      if (highCardinalityDims.contains(column.getColumnName)) {
         highCardDims.add(column)
       }
-      else if(column.getDataType == DataType.ARRAY || column.getDataType == DataType.STRUCT
-          || column.getColumnName.contains("."))
-      {
-    	  complexDims.add(column)
+      else if (column.getDataType == DataType.ARRAY || column.getDataType == DataType.STRUCT
+        || column.getColumnName.contains(".")) {
+        complexDims.add(column)
       }
-      else if(column.isDimensionColumn)
-      {
-    	  newOrderedDims.add(column)
+      else if (column.isDimensionColumn) {
+        newOrderedDims.add(column)
       }
-      else
-      {
+      else {
         measures.add(column)
       }
-      
+
     }
-    
+
     //Adding dummy measure if no measure is provided
-    if(measures.size < 1)
-    {
-       val encoders = Seq[Encoding]();
-    	 encoders.add(Encoding.DICTIONARY)
-      val coloumnSchema: ColumnSchema = getColumnSchema(DataType.DOUBLE,CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE, index, true, encoders ,false)
-    	// val measureColumn = new ColumnSchema(DataType.DOUBLE,CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE, index, true, encoders, false)
+    if (measures.size < 1) {
+      val encoders = Seq[Encoding]();
+      encoders.add(Encoding.DICTIONARY)
+      val coloumnSchema: ColumnSchema = getColumnSchema(DataType.DOUBLE, CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE, index, true, encoders, false, rowGrp)
+      // val measureColumn = new ColumnSchema(DataType.DOUBLE,CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE, index, true, encoders, false)
       val measureColumn = coloumnSchema
-       measures.add(measureColumn)
+      measures.add(measureColumn)
     }
-    
+
     newOrderedDims = newOrderedDims ++ highCardDims ++ complexDims ++ measures
     //Update measures with aggregators if specified.
     //Not required in new schema, as its a column in table.
-//    val msrsUpdatedWithAggregators = cm.aggregation match {
-//      case aggs: Seq[Aggregation] =>
-//        measures.map { f =>
-//          val matchedMapping = aggs.filter(agg => f.column_name.equals(agg.msrName))
-//          if (matchedMapping.length == 0) f
-//          else f.setAggregator(new Aggregator(getSchemaAggregates(matchedMapping.head.aggType)))
-//        }
-//      case _ => measures
-//    }
+    //    val msrsUpdatedWithAggregators = cm.aggregation match {
+    //      case aggs: Seq[Aggregation] =>
+    //        measures.map { f =>
+    //          val matchedMapping = aggs.filter(agg => f.column_name.equals(agg.msrName))
+    //          if (matchedMapping.length == 0) f
+    //          else f.setAggregator(new Aggregator(getSchemaAggregates(matchedMapping.head.aggType)))
+    //        }
+    //      case _ => measures
+    //    }
 
     val partitioner = cm.partitioner match {
       case Some(part: Partitioner) =>
@@ -303,17 +265,22 @@ class CubeNewProcessor(cm: CubeModel, sqlContext: SQLContext) {
         val columnBuffer = new ArrayBuffer[String]
         part.partitionColumn.foreach { col =>
           newOrderedDims.foreach { dim =>
-            if(dim.getColumnName.equalsIgnoreCase(col)){
-              definedpartCols=definedpartCols.dropWhile {c => c.equals(col)}
+            if (dim.getColumnName.equalsIgnoreCase(col)) {
+              definedpartCols = definedpartCols.dropWhile { c => c.equals(col) }
               columnBuffer.add(col)
             }
           }
         }
 
-
         //Special Case, where Partition count alone is sent to Carbon for dataloading
-        if (part.partitionClass.isEmpty() && part.partitionColumn(0).isEmpty()) {
-          Partitioner("org.carbondata.integration.spark.partition.api.impl.SampleDataPartitionerImpl", Array(""), part.partitionCount, null)
+        if (part.partitionClass.isEmpty()) {
+          if (part.partitionColumn(0).isEmpty()) {
+            Partitioner("org.carbondata.integration.spark.partition.api.impl.SampleDataPartitionerImpl", Array(""), part.partitionCount, null)
+          }
+          else {
+            // case where partition cols are set and partition class is not set. so setting the default value.
+            Partitioner("org.carbondata.integration.spark.partition.api.impl.SampleDataPartitionerImpl", part.partitionColumn, part.partitionCount, null)
+          }
         }
         else if (definedpartCols.size > 0) {
           val msg = definedpartCols.mkString(", ")
@@ -339,7 +306,7 @@ class CubeNewProcessor(cm: CubeModel, sqlContext: SQLContext) {
         Partitioner("org.carbondata.integration.spark.partition.api.impl.SampleDataPartitionerImpl", Array(""), 20, null)
     }
     val tableInfo = new TableInfo()
-    val tableSchema =new TableSchema()
+    val tableSchema = new TableSchema()
     val schemaEvol = new SchemaEvolution()
     schemaEvol.setSchemaEvolutionEntryList(scala.collection.mutable.ListBuffer[SchemaEvolutionEntry]())
     tableSchema.setTableId(1)
@@ -347,40 +314,119 @@ class CubeNewProcessor(cm: CubeModel, sqlContext: SQLContext) {
     tableSchema.setListOfColumns(allColumns)
     tableSchema.setSchemaEvalution(schemaEvol)
     tableInfo.setDatabaseName(cm.schemaName)
-    tableInfo.setTableUniqueName(cm.schemaName+"_"+cm.cubeName)
+    tableInfo.setTableUniqueName(cm.schemaName + "_" + cm.cubeName)
     tableInfo.setLastUpdatedTime(System.currentTimeMillis())
     tableInfo.setFactTable(tableSchema)
     tableInfo.setAggregateTableList(scala.collection.mutable.ListBuffer[TableSchema]())
-//    new CubeProcessor(cm, sqlContext, tableInfo).process
+    //    new CubeProcessor(cm, sqlContext, tableInfo).process
     tableInfo
+  }
+
+  private def normalizeType(dataType: String): DataType = {
+    dataType match {
+      case "String" => DataType.STRING
+      case "Integer" => DataType.INT
+      case "Long" => DataType.LONG
+      case "Double" => DataType.DOUBLE
+      case "Decimal" => DataType.DECIMAL
+      case "Timestamp" => DataType.TIMESTAMP
+      case "Array" => DataType.ARRAY
+      case "Struct" => DataType.STRUCT
+      case _ => DataType.STRING
+    }
+  }
+
+  /**
+    * For checking if the specified col group columns are specified in fields list.
+    *
+    * @param colGrps
+    * @param allCols
+    */
+  protected def checkColGroupsValidity(colGrps: Seq[String],
+                                       allCols: Seq[ColumnSchema],
+                                       highCardCols: Seq[String]): Unit = {
+    if (null != colGrps) {
+      colGrps.foreach(columngroup => {
+        var rowCols = columngroup.split(",")
+        var rowGroupId = -1
+        rowCols.foreach(colForGrouping => {
+          var found: Boolean = false
+          // check for dimensions + measures
+          allCols.foreach(eachCol => {
+            if (eachCol.getColumnName.equalsIgnoreCase(colForGrouping)) {
+              found = true
+            }
+          })
+          // check for No Dicitonary dimensions
+          highCardCols.foreach(noDicCol => {
+            if (colForGrouping.equalsIgnoreCase(noDicCol)) {
+              found = true
+            }
+          })
+
+          if (!found) {
+            sys.error(s"column $colForGrouping is not present in Field list")
+          }
+        })
+      })
+    }
+  }
+
+  /**
+    * For updating the col group details for fields.
+    *
+    * @param colGrps
+    * @param allCols
+    */
+  private def updateColumnGroupsInFields(colGrps: Seq[String], allCols: Seq[ColumnSchema]): Unit = {
+    if (null != colGrps) {
+      colGrps.foreach(columngroup => {
+        var rowCols = columngroup.split(",")
+        var colGroupId = -1
+        rowCols.foreach(row => {
+
+          allCols.map(eachCol => {
+
+            if (eachCol.getColumnName.equalsIgnoreCase(row)) {
+              if (-1 != colGroupId) {
+                eachCol.setColumnGroup(colGroupId)
+              }
+              else {
+                colGroupId = eachCol.getColumnGroupId()
+              }
+            }
+          })
+        })
+      })
+    }
   }
 }
 
 object CubeProcessor {
-  def apply(cm: CubeModel, sqlContext: SQLContext): Cube = {
+  def apply(cm: tableModel, sqlContext: SQLContext): Cube = {
     new CubeProcessor(cm, sqlContext).process
   }
 }
 
-class CubeProcessor(cm: CubeModel, sqlContext: SQLContext) {
+class CubeProcessor(cm: tableModel, sqlContext: SQLContext) {
   val timeDims = Seq("TimeYears", "TimeMonths", "TimeDays", "TimeHours", "TimeMinutes")
   val numericTypes = Seq(CarbonCommonConstants.INTEGER_TYPE, CarbonCommonConstants.DOUBLE_TYPE, CarbonCommonConstants.LONG_TYPE, CarbonCommonConstants.FLOAT_TYPE)
 
-  def getAllChildren(fieldChildren : Option[List[Field]]) : Seq[Level]  = {
-      var levels: Seq[Level] = Seq[Level]()
-	   fieldChildren.map(fields => {
-	        fields.map(field => {
-	        	  if(field.parent != null)
-		    		 levels ++= Seq(Level(field.name.getOrElse(field.column), field.column, Int.MaxValue, field.dataType.getOrElse(CarbonCommonConstants.STRING), field.parent,field.storeType.getOrElse("Columnar")))
-		    	 else
-		    		 levels ++= Seq(Level(field.name.getOrElse(field.column), field.column, Int.MaxValue, field.dataType.getOrElse(CarbonCommonConstants.STRING),field.storeType.getOrElse("Columnar")))
-	        	  if(field.children.get != null)
-	        		  levels ++= getAllChildren(field.children)
-	      	})
-	   })
-	   levels
+  def getAllChildren(fieldChildren: Option[List[Field]]): Seq[Level] = {
+    var levels: Seq[Level] = Seq[Level]()
+    fieldChildren.map(fields => {
+      fields.map(field => {
+        if (field.parent != null)
+          levels ++= Seq(Level(field.name.getOrElse(field.column), field.column, Int.MaxValue, field.dataType.getOrElse(CarbonCommonConstants.STRING), field.parent, field.storeType.getOrElse("Columnar")))
+        else
+          levels ++= Seq(Level(field.name.getOrElse(field.column), field.column, Int.MaxValue, field.dataType.getOrElse(CarbonCommonConstants.STRING), field.storeType.getOrElse("Columnar")))
+        if (field.children.get != null)
+          levels ++= getAllChildren(field.children)
+      })
+    })
+    levels
   }
-  
+
   def process(): Cube = {
 
     var levels = Seq[Level]()
@@ -389,16 +435,15 @@ class CubeProcessor(cm: CubeModel, sqlContext: SQLContext) {
     val LOGGER = LogServiceFactory.getLogService(CubeProcessor.getClass().getName())
 
     // Create Cube DDL with Schema defination
-//    levels = 
-      cm.dimCols.map(field =>
-      {
-    	 if(field.parent != null)
-    		 levels ++= Seq(Level(field.name.getOrElse(field.column), field.column, Int.MaxValue, field.dataType.getOrElse(CarbonCommonConstants.STRING), field.parent,field.storeType.getOrElse(CarbonCommonConstants.COLUMNAR)))
-    	 else
-    		 levels ++= Seq(Level(field.name.getOrElse(field.column), field.column, Int.MaxValue, field.dataType.getOrElse(CarbonCommonConstants.STRING),field.parent,field.storeType.getOrElse(CarbonCommonConstants.COLUMNAR)))
-    	 if(field.children.get != null)
-    		 levels ++= getAllChildren(field.children)
-      })
+    //    levels =
+    cm.dimCols.map(field => {
+      if (field.parent != null)
+        levels ++= Seq(Level(field.name.getOrElse(field.column), field.column, Int.MaxValue, field.dataType.getOrElse(CarbonCommonConstants.STRING), field.parent, field.storeType.getOrElse(CarbonCommonConstants.COLUMNAR)))
+      else
+        levels ++= Seq(Level(field.name.getOrElse(field.column), field.column, Int.MaxValue, field.dataType.getOrElse(CarbonCommonConstants.STRING), field.parent, field.storeType.getOrElse(CarbonCommonConstants.COLUMNAR)))
+      if (field.children.get != null)
+        levels ++= getAllChildren(field.children)
+    })
     measures = cm.msrCols.map(field => Measure(field.name.getOrElse(field.column), field.column, field.dataType.getOrElse(CarbonCommonConstants.NUMERIC)))
 
     if (cm.withKeyword.equalsIgnoreCase(CarbonCommonConstants.WITH) && cm.simpleDimRelations.size > 0) {
@@ -475,58 +520,52 @@ class CubeProcessor(cm: CubeModel, sqlContext: SQLContext) {
         })
       })
     })
-    
-//    val hierarchies = levels.map(field => Hierarchy(field.name, None, Seq(field), None))
-    
-//    val hierarchies = levels.groupBy(
-//        _.name.split('.')(0)
-//        ).map(
-//        fields => 
-//          Hierarchy(fields._1, None, fields._2, None)
-//        ).toSeq
-    
+
+    //    val hierarchies = levels.map(field => Hierarchy(field.name, None, Seq(field), None))
+
+    //    val hierarchies = levels.groupBy(
+    //        _.name.split('.')(0)
+    //        ).map(
+    //        fields =>
+    //          Hierarchy(fields._1, None, fields._2, None)
+    //        ).toSeq
+
     val groupedSeq = levels.groupBy(_.name.split('.')(0))
     val hierarchies = levels.filter(level => !level.name.contains(".")).map(parentLevel => Hierarchy(parentLevel.name, None, groupedSeq.get(parentLevel.name).get, None))
     var dimensions = hierarchies.map(field => Dimension(field.name, Seq(field), None))
 
     dimensions = dimensions ++ dimSrcDimensions
-//    val highCardinalityDims=cm.highcardinalitydims.get
-    val highCardinalityDims=cm.highcardinalitydims.getOrElse(Seq())
-    for(dimension <- dimensions)
-    {
-      
-      if(highCardinalityDims.contains(dimension.name))
-      {
-        dimension.highCardinality=true
+    //    val highCardinalityDims=cm.highcardinalitydims.get
+    val highCardinalityDims = cm.highcardinalitydims.getOrElse(Seq())
+    for (dimension <- dimensions) {
+
+      if (highCardinalityDims.contains(dimension.name)) {
+        dimension.highCardinality = true
       }
-      
+
     }
-    
+
     var newOrderedDims = scala.collection.mutable.ListBuffer[Dimension]()
     val highCardDims = scala.collection.mutable.ListBuffer[Dimension]()
     val complexDims = scala.collection.mutable.ListBuffer[Dimension]()
-     for(dimension <- dimensions)
-    {
-      if(highCardinalityDims.contains(dimension.name))
-      {
-       // dimension.highCardinality=true
+    for (dimension <- dimensions) {
+      if (highCardinalityDims.contains(dimension.name)) {
+        // dimension.highCardinality=true
         highCardDims.add(dimension)
       }
-      else if(dimension.hierarchies(0).levels.length > 1)
-      {
-    	  complexDims.add(dimension)
+      else if (dimension.hierarchies(0).levels.length > 1) {
+        complexDims.add(dimension)
       }
-      else
-      {
-       newOrderedDims.add(dimension)
+      else {
+        newOrderedDims.add(dimension)
       }
-      
+
     }
-    
+
     newOrderedDims = newOrderedDims ++ highCardDims ++ complexDims
 
     dimensions = newOrderedDims
-    
+
     if (measures.length <= 0) {
       measures = measures ++ Seq(Measure(CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE, CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE, CarbonCommonConstants.NUMERIC, CarbonCommonConstants.SUM, false))
     }
@@ -612,7 +651,7 @@ class CubeProcessor(cm: CubeModel, sqlContext: SQLContext) {
   }
 }
 
-private[sql] case class ShowCreateCube(cm: CubeModel, override val output: Seq[Attribute])
+private[sql] case class ShowCreateCube(cm: tableModel, override val output: Seq[Attribute])
   extends RunnableCommand {
 
   val numericTypes = Seq(CarbonCommonConstants.INTEGER_TYPE, CarbonCommonConstants.DOUBLE_TYPE, CarbonCommonConstants.LONG_TYPE, CarbonCommonConstants.FLOAT_TYPE)
@@ -662,15 +701,14 @@ private[sql] case class ShowCreateCube(cm: CubeModel, override val output: Seq[A
         specifiedCols = cols.map(_._1)
         cols
       } else {
-        df.dtypes.map(f => 
-          if(f._2.startsWith("ArrayType") || f._2.startsWith("StructType"))
-          {
-        	  val fieldIndex = df.schema.getFieldIndex(f._1).get
-        	  (f._1.trim(), df.schema.fields(fieldIndex).dataType.simpleString)
+        df.dtypes.map(f =>
+          if (f._2.startsWith("ArrayType") || f._2.startsWith("StructType")) {
+            val fieldIndex = df.schema.getFieldIndex(f._1).get
+            (f._1.trim(), df.schema.fields(fieldIndex).dataType.simpleString)
           }
           else
-        	  (f._1.trim(), f._2))
-        
+            (f._1.trim(), f._2))
+
       }
 
       val columns = rawColumns.filter(c => !c._2.equalsIgnoreCase(CarbonCommonConstants.BINARY_TYPE))
@@ -750,12 +788,12 @@ private[sql] case class ShowCreateCube(cm: CubeModel, override val output: Seq[A
           levels = levels.dropWhile(p => p.column.equalsIgnoreCase(relationEntry.relation.leftColumn) && !specifiedCols.map(x => x.toLowerCase()).contains(p.column.toLowerCase()))
           measures = measures.dropWhile(p => p.column.equalsIgnoreCase(relationEntry.relation.leftColumn) && !specifiedCols.map(x => x.toLowerCase()).contains(p.column.toLowerCase()))
 
-          var dimFileLevels: Seq[Level] = Seq[Level]() 
-            relColumns.map(field => {
-//            		dimFileLevels ++ = CarbonScalaUtil.convertSparkColumnToCarbonLevel(field)
-            		Level(field._1, field._1, Int.MaxValue, CarbonScalaUtil.convertSparkToCarbonSchemaDataType(field._2))
-            	}
-              )
+          var dimFileLevels: Seq[Level] = Seq[Level]()
+          relColumns.map(field => {
+            //            		dimFileLevels ++ = CarbonScalaUtil.convertSparkColumnToCarbonLevel(field)
+            Level(field._1, field._1, Int.MaxValue, CarbonScalaUtil.convertSparkToCarbonSchemaDataType(field._2))
+          }
+          )
           val dimFileHierarchies = dimFileLevels.map(field => Hierarchy(relationEntry.tableName, Some(dimFileLevels.find(dl => dl.name.equalsIgnoreCase(relationEntry.relation.rightColumn)).get.column), Seq(field), Some(relationEntry.tableName)))
           dimFileDimensions = dimFileDimensions ++ dimFileHierarchies.map(field => Dimension(field.levels.head.name, Seq(field), Some(relationEntry.relation.leftColumn)))
 
@@ -773,7 +811,7 @@ private[sql] case class ShowCreateCube(cm: CubeModel, override val output: Seq[A
       levelsToCheckDuplicate = levelsToCheckDuplicate ++ levels
     }
     else {
-      // Create Cube DDL with Schema defination 
+      // Create Cube DDL with Schema defination
       levels = cm.dimCols.map(field => Level(field.name.getOrElse(field.column), field.column, Int.MaxValue, field.dataType.getOrElse(CarbonCommonConstants.STRING)))
       measures = cm.msrCols.map(field => Measure(field.name.getOrElse(field.column), field.column, field.dataType.getOrElse(CarbonCommonConstants.NUMERIC)))
       levelsToCheckDuplicate = levels
@@ -904,7 +942,7 @@ private[sql] case class ShowCreateCube(cm: CubeModel, override val output: Seq[A
 
       case None =>
     }
-//    println(command.toString)
+    //    println(command.toString)
     Seq(Row(command.toString))
   }
 
@@ -975,18 +1013,18 @@ private[sql] case class ShowCreateCube(cm: CubeModel, override val output: Seq[A
   * 3.CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE is always added as a measure.So we need to ignore this to check duplicates
   */
 private[sql] case class AlterCube(
-                                   cm: CubeModel,
+                                   cm: tableModel,
                                    dropCols: Seq[String],
                                    defaultVals: Seq[Default]) extends RunnableCommand {
 
-//  override def getControlPrivileges(sqlContext: SQLContext): Set[PrivObject] = {
-//    Set(new PrivObject(
-//      ObjectType.TABLE,
-//      getDB.getDatabaseName(cm.schemaNameOp, sqlContext),
-//      cm.cubeName,
-//      null,
-//      Set(PrivType.OWNER_PRIV)))
-//  }
+  //  override def getControlPrivileges(sqlContext: SQLContext): Set[PrivObject] = {
+  //    Set(new PrivObject(
+  //      ObjectType.TABLE,
+  //      getDB.getDatabaseName(cm.schemaNameOp, sqlContext),
+  //      cm.cubeName,
+  //      null,
+  //      Set(PrivType.OWNER_PRIV)))
+  //  }
 
   def run(sqlContext: SQLContext) = {
     val LOGGER = LogServiceFactory.getLogService("org.apache.spark.sql.cubemodel.cubeSchema")
@@ -1002,7 +1040,7 @@ private[sql] case class AlterCube(
       sys.error(s"Cube $schemaName.$cubeName does not exist")
     }
 
-     val carbonLock = CarbonLockFactory.getCarbonLockObj(tmpCube.getMetaDataFilepath(),LockUsage.METADATA_LOCK)
+    val carbonLock = CarbonLockFactory.getCarbonLockObj(tmpCube.getMetaDataFilepath(), LockUsage.METADATA_LOCK)
     try {
       if (carbonLock.lockWithRetries()) {
         logInfo("Successfully able to get the cube metadata file lock")
@@ -1030,14 +1068,14 @@ private[sql] case class AlterCube(
       val curTime = System.nanoTime()
       //Not applicable with new schema. No partitioner column
       //check if the dimension to drop is a partition column.We do not allow to delete partition column
-//      val partitionCols = relation.cubeMeta.partitioner.partitionColumn
-//
-//      if (partitionCols.exists(partCol => dropColsList.contains(partCol.toLowerCase()))) {
-//        val partitionColsString = partitionCols.mkString(",")
-//        LOGGER.audit(s"Altering cube with Schema name [$schemaName] and cube name [$cubeName] failed")
-//        LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, s"Cannot Delete the partition column(s).")
-//        sys.error(s"Cannot Delete the partition column(s).Partition columns are [$partitionColsString]")
-//      }
+      //      val partitionCols = relation.cubeMeta.partitioner.partitionColumn
+      //
+      //      if (partitionCols.exists(partCol => dropColsList.contains(partCol.toLowerCase()))) {
+      //        val partitionColsString = partitionCols.mkString(",")
+      //        LOGGER.audit(s"Altering cube with Schema name [$schemaName] and cube name [$cubeName] failed")
+      //        LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, s"Cannot Delete the partition column(s).")
+      //        sys.error(s"Cannot Delete the partition column(s).Partition columns are [$partitionColsString]")
+      //      }
 
       val metaDataPath = CarbonMetadata.getInstance()
         .getCube(relation.cubeMeta.carbonTableIdentifier.getTableUniqueName)
@@ -1045,7 +1083,7 @@ private[sql] case class AlterCube(
       val fileType = FileFactory.getFileType(metaDataPath)
       val file = FileFactory.getCarbonFile(metaDataPath, fileType)
 
-      val (_, _, _, tmpSchemaXML, _,_) = CarbonEnv.getInstance(sqlContext).carbonCatalog.readCubeMetaDataFile(file, fileType)
+      val (_, _, _, tmpSchemaXML, _, _) = CarbonEnv.getInstance(sqlContext).carbonCatalog.readCubeMetaDataFile(file, fileType)
 
       val carbonDefSchema = CarbonMetastoreCatalog.parseStringToSchema(tmpSchemaXML)
 
@@ -1114,7 +1152,7 @@ private[sql] case class AlterCube(
         sqlContext.asInstanceOf[HiveContext],
         sqlContext.sparkContext,
         //TODO : need to handle carbontable in alter cube flow.
-//        relation.cubeMeta.carbonTable,
+        //        relation.cubeMeta.carbonTable,
         null,
         carbonDefSchema,
         relation.cubeMeta.carbonTableIdentifier.getDatabaseName,
@@ -1144,12 +1182,12 @@ private[sql] case class AlterCube(
 
         //need to remove the existing cube and load it again
         //TODO : need to handle carbontable in alter cube flow.
-//        CarbonMetadata.getInstance().loadCube(updatedRelation.cubeMeta.schema,
-//            updatedRelation.cubeMeta.schema.name,
-//            updatedRelation.cubeMeta.schema.cubes(0).name,
-//            updatedRelation.cubeMeta.schema.cubes(0))
-//        updatedRelation.cubeMeta.cube = CarbonMetadata.getInstance()
-//          .getCube(updatedRelation.cubeMeta.schemaName + '_' + updatedRelation.cubeMeta.cubeName)
+        //        CarbonMetadata.getInstance().loadCube(updatedRelation.cubeMeta.schema,
+        //            updatedRelation.cubeMeta.schema.name,
+        //            updatedRelation.cubeMeta.schema.cubes(0).name,
+        //            updatedRelation.cubeMeta.schema.cubes(0))
+        //        updatedRelation.cubeMeta.cube = CarbonMetadata.getInstance()
+        //          .getCube(updatedRelation.cubeMeta.schemaName + '_' + updatedRelation.cubeMeta.cubeName)
 
         LOGGER.audit(s"Altering cube with Schema name [$schemaName] and cube name [$cubeName] succeeded")
       }
@@ -1253,37 +1291,35 @@ private[sql] case class AlterCube(
       dimNameList += dim.name.toLowerCase()
       dimColumnList += dim.asInstanceOf[CarbonDef.Dimension].hierarchies(0).levels(0).column.toLowerCase()
     }
-    
+
     for (msr <- cube.measures) {
       msrNameList += msr.name.toLowerCase()
       msrColumnList += msr.column.toLowerCase()
     }
-    
+
     newDims.foreach { newDim =>
       val name = newDim.name.toLowerCase()
       val column = newDim.asInstanceOf[CarbonDef.Dimension].hierarchies(0).levels(0).column.toLowerCase()
       //Same column name for two Dimention/Measures is not currently supported, can later be corrected.
       if (dimNameList.contains(name) || dimColumnList.contains(name) || dimNameList.contains(column) || dimColumnList.contains(column)
-          ||msrNameList.contains(name) || msrColumnList.contains(name) || msrNameList.contains(column) || msrColumnList.contains(column)) 
-      {
+        || msrNameList.contains(name) || msrColumnList.contains(name) || msrNameList.contains(column) || msrColumnList.contains(column)) {
         return true
       }
-    }    
+    }
 
     newMsrs.foreach { newMsr =>
       val name = newMsr.name.toLowerCase()
       val column = newMsr.column.toLowerCase()
       //Same column name for two Dimention/Measures is not currently supported, can later be corrected.
       if (dimNameList.contains(name) || dimColumnList.contains(name) || dimNameList.contains(column) || dimColumnList.contains(column)
-          || msrNameList.contains(name) || msrColumnList.contains(name) || msrNameList.contains(column) || msrColumnList.contains(column))
-      {
+        || msrNameList.contains(name) || msrColumnList.contains(name) || msrNameList.contains(column) || msrColumnList.contains(column)) {
         return true
       }
     }
     return false
   }
 
-  private def getNewDimensionMeasures(cm: CubeModel, sqlContext: SQLContext): CarbonDef.Cube = {
+  private def getNewDimensionMeasures(cm: tableModel, sqlContext: SQLContext): CarbonDef.Cube = {
     // use the same CubeProcessor used by CreateCube so that the  validations are common
     val cube = CubeProcessor(cm, sqlContext)
     val cubeXML = new CarbonDef.Cube
@@ -1397,6 +1433,27 @@ private[sql] case class AlterCube(
     }
   }
 
+  private def updateAggTablesMeasures(curTime: Long, factMeas: CarbonDef.Measure, aggTables: Array[AggTable]): Array[AggTable] = {
+    aggTables.map { anAggTable => {
+      anAggTable.measures = anAggTable.getAggMeasures.map { anAggMeasure => {
+        if (anAggMeasure.name.endsWith('[' + factMeas.name + ']')) {
+          val newName: String = factMeas.name + "_" + curTime
+          val index = anAggMeasure.name.lastIndexOf('[')
+          if (-1 != index) {
+            anAggMeasure.name = anAggMeasure.name.substring(0, index + 1) + newName + ']'
+            anAggMeasure.column = newName
+          } else {
+            sys.error(s"Invalid agg table $anAggTable.getName in $cm.schemaName.$cm.cubeName.Agg measures are of wrong format")
+          }
+        }
+        anAggMeasure
+      }
+      }
+      anAggTable
+    }
+    }
+  }
+
   private def processDroppedDimensions(
                                         carbonDefSchema: CarbonDef.Schema,
                                         curTime: Long,
@@ -1452,41 +1509,20 @@ private[sql] case class AlterCube(
     }
     }
   }
-
-  private def updateAggTablesMeasures(curTime: Long, factMeas: CarbonDef.Measure, aggTables: Array[AggTable]): Array[AggTable] = {
-    aggTables.map { anAggTable => {
-      anAggTable.measures = anAggTable.getAggMeasures.map { anAggMeasure => {
-        if (anAggMeasure.name.endsWith('[' + factMeas.name + ']')) {
-          val newName: String = factMeas.name + "_" + curTime
-          val index = anAggMeasure.name.lastIndexOf('[')
-          if (-1 != index) {
-            anAggMeasure.name = anAggMeasure.name.substring(0, index + 1) + newName + ']'
-            anAggMeasure.column = newName
-          } else {
-            sys.error(s"Invalid agg table $anAggTable.getName in $cm.schemaName.$cm.cubeName.Agg measures are of wrong format")
-          }
-        }
-        anAggMeasure
-      }
-      }
-      anAggTable
-    }
-    }
-  }
 }
 
 
-private[sql] case class CreateCube(cm: CubeModel) extends RunnableCommand {
+private[sql] case class CreateCube(cm: tableModel) extends RunnableCommand {
 
-//  override def getControlPrivileges(sqlContext: SQLContext): Set[PrivObject] = {
-//    //CREATE privilege@ database level
-//    Set(new PrivObject(
-//      ObjectType.DATABASE,
-//      getDB.getDatabaseName(cm.schemaNameOp, sqlContext),
-//      null,
-//      null,
-//      Set(PrivType.OWNER_PRIV)))
-//  }
+  //  override def getControlPrivileges(sqlContext: SQLContext): Set[PrivObject] = {
+  //    //CREATE privilege@ database level
+  //    Set(new PrivObject(
+  //      ObjectType.DATABASE,
+  //      getDB.getDatabaseName(cm.schemaNameOp, sqlContext),
+  //      null,
+  //      null,
+  //      Set(PrivType.OWNER_PRIV)))
+  //  }
 
   def run(sqlContext: SQLContext) = {
     val LOGGER = LogServiceFactory.getLogService("org.apache.spark.sql.cubemodel.cubeSchema");
@@ -1514,7 +1550,7 @@ private[sql] case class CreateCube(cm: CubeModel) extends RunnableCommand {
 
       //Add schema to catalog and persist
       val catalog = CarbonEnv.getInstance(sqlContext).carbonCatalog
-//      val cubePath = catalog.createCube(cube.schemaName, cube.cubeName, schema.toXML(), cube.partitioner, false)(sqlContext)
+      //      val cubePath = catalog.createCube(cube.schemaName, cube.cubeName, schema.toXML(), cube.partitioner, false)(sqlContext)
       //Need to fill partitioner class when we support partition
       val cubePath = catalog.createCubeFromThrift(tableInfo, dbName, cubeName, null)(sqlContext)
       try {
@@ -1579,10 +1615,10 @@ private[sql] case class DeleteLoadsById(
         cubeName,
         None)(sqlContext).asInstanceOf[CarbonRelation]
       //TODO : Need to update the code to use carbontable
-//      var schema = relation.cubeMeta.schema
-//      var mondrianCube = CarbonSchemaParser.getMondrianCube(schema, cubeName);
-//      CarbonMetadata.getInstance().loadCube(schema, schema.name, mondrianCube.name, mondrianCube);
-//      cube = CarbonMetadata.getInstance().getCube(schemaName + '_' + cubeName);
+      //      var schema = relation.cubeMeta.schema
+      //      var mondrianCube = CarbonSchemaParser.getMondrianCube(schema, cubeName);
+      //      CarbonMetadata.getInstance().loadCube(schema, schema.name, mondrianCube.name, mondrianCube);
+      //      cube = CarbonMetadata.getInstance().getCube(schemaName + '_' + cubeName);
     }
     var path = cube.getMetaDataFilepath()
 
@@ -1638,7 +1674,7 @@ private[sql] case class LoadCubeAPI(schemaName: String, cubeName: String, factPa
     var kettleHomePath = sqlContext.getConf("carbon.kettle.home", null)
     if (kettleHomePath == null) sys.error(s"carbon.kettle.home is not set")
 
-    val carbonLock = CarbonLockFactory.getCarbonLockObj(CarbonMetadata.getInstance().getCube(schemaName + "_" + cubeName).getMetaDataFilepath(),LockUsage.METADATA_LOCK)
+    val carbonLock = CarbonLockFactory.getCarbonLockObj(CarbonMetadata.getInstance().getCube(schemaName + "_" + cubeName).getMetaDataFilepath(), LockUsage.METADATA_LOCK)
     try {
       CarbonDataRDDFactory.loadCarbonData(sqlContext, carbonLoadModel, storeLocation, relation.cubeMeta.dataPath, kettleHomePath, relation.cubeMeta.partitioner, columinar, false);
 
@@ -1668,15 +1704,15 @@ private[sql] case class LoadCube(
   def run(sqlContext: SQLContext) = {
 
     val schemaName = getDB.getDatabaseName(schemaNameOp, sqlContext)
-    if(null==org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance.getCarbonTable(schemaName + "_" + cubeName)){
+    if (null == org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance.getCarbonTable(schemaName + "_" + cubeName)) {
       logError("Data loading failed. cube not found: " + schemaName + "_" + cubeName)
       LOGGER.audit("Data loading failed. cube not found: " + schemaName + "_" + cubeName)
       sys.error("Data loading failed. cube not found: " + schemaName + "_" + cubeName)
     }
     CarbonProperties.getInstance().addProperty("zookeeper.enable.lock", "false")
     val carbonLock = CarbonLockFactory.getCarbonLockObj(org.carbondata.core.
-          carbon.metadata.CarbonMetadata.getInstance().getCarbonTable(schemaName + "_" + cubeName).
-          getMetaDataFilepath(), LockUsage.METADATA_LOCK)
+      carbon.metadata.CarbonMetadata.getInstance().getCarbonTable(schemaName + "_" + cubeName).
+      getMetaDataFilepath(), LockUsage.METADATA_LOCK)
     try {
       if (carbonLock.lockWithRetries()) {
         logInfo("Successfully able to get the cube metadata file lock")
@@ -1703,13 +1739,13 @@ private[sql] case class LoadCube(
       val table = relation.cubeMeta.carbonTable
       carbonLoadModel.setAggTables(table.getAggregateTablesName.map(_.toString).toArray)
       carbonLoadModel.setTableName(table.getFactTableName)
-//      carbonLoadModel.setSchema(relation.cubeMeta.schema);
+      //      carbonLoadModel.setSchema(relation.cubeMeta.schema);
       val dataLoadSchema = new CarbonDataLoadSchema(table)
-    //Need to fill dimension relation
-    //dataLoadSchema.setDimensionRelationList(x$1)
+      //Need to fill dimension relation
+      //dataLoadSchema.setDimensionRelationList(x$1)
       carbonLoadModel.setCarbonDataLoadSchema(dataLoadSchema)
       var storeLocation = CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION_TEMP_PATH, System.getProperty("java.io.tmpdir"))
-      
+
 
       var partitionLocation = relation.cubeMeta.dataPath + "/partition/" + relation.cubeMeta.carbonTableIdentifier.getDatabaseName + "/" + relation.cubeMeta.carbonTableIdentifier.getTableName + "/"
       val fileType = FileFactory.getFileType(partitionLocation)
@@ -1740,17 +1776,15 @@ private[sql] case class LoadCube(
       if (multiLine.equals("true")) {
         booleanValForMultiLine = true
       }
-      
-      if(delimiter.equalsIgnoreCase(complex_delimiter_level_1) || 
-          complex_delimiter_level_1.equalsIgnoreCase(complex_delimiter_level_2) ||
-          delimiter.equalsIgnoreCase(complex_delimiter_level_2))
-      {
-    	  sys.error(s"Field Delimiter & Complex types delimiter are same")
+
+      if (delimiter.equalsIgnoreCase(complex_delimiter_level_1) ||
+        complex_delimiter_level_1.equalsIgnoreCase(complex_delimiter_level_2) ||
+        delimiter.equalsIgnoreCase(complex_delimiter_level_2)) {
+        sys.error(s"Field Delimiter & Complex types delimiter are same")
       }
-      else
-      {
-    	  carbonLoadModel.setComplexDelimiterLevel1(CarbonUtil.escapeComplexDelimiterChar(complex_delimiter_level_1))
-    	  carbonLoadModel.setComplexDelimiterLevel2(CarbonUtil.escapeComplexDelimiterChar(complex_delimiter_level_2))
+      else {
+        carbonLoadModel.setComplexDelimiterLevel1(CarbonUtil.escapeComplexDelimiterChar(complex_delimiter_level_1))
+        carbonLoadModel.setComplexDelimiterLevel2(CarbonUtil.escapeComplexDelimiterChar(complex_delimiter_level_2))
       }
 
       var partitionStatus = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
@@ -1852,7 +1886,7 @@ private[sql] case class AddAggregatesToCube(
     val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog.lookupRelation1(Option(schemaName), cubeName, None)(sqlContext).asInstanceOf[CarbonRelation]
     if (relation == null) sys.error(s"Cube $schemaName.$cubeName does not exist")
     if (aggregateAttributes.size == 0) sys.error(s"No columns found in the query. Please provide the valid column names to create an aggregate table successfully")
-    val carbonLock =  CarbonLockFactory.getCarbonLockObj(CarbonMetadata.getInstance().getCube(schemaName + "_" + cubeName).getMetaDataFilepath(),LockUsage.METADATA_LOCK)
+    val carbonLock = CarbonLockFactory.getCarbonLockObj(CarbonMetadata.getInstance().getCube(schemaName + "_" + cubeName).getMetaDataFilepath(), LockUsage.METADATA_LOCK)
     try {
       if (carbonLock.lockWithRetries()) {
         logInfo("Successfully able to get the cube metadata file lock")
@@ -1867,14 +1901,14 @@ private[sql] case class AddAggregatesToCube(
 
       val fileType = FileFactory.getFileType(path)
       val file = FileFactory.getCarbonFile(path, fileType)
-      val (schemaName1, cubeNameInSchema, dataPath1, schema1, partitioner1,cubeCreationTime) = CarbonEnv.getInstance(sqlContext).carbonCatalog.readCubeMetaDataFile(file, fileType)
+      val (schemaName1, cubeNameInSchema, dataPath1, schema1, partitioner1, cubeCreationTime) = CarbonEnv.getInstance(sqlContext).carbonCatalog.readCubeMetaDataFile(file, fileType)
 
       val mondSchema = CarbonMetastoreCatalog.parseStringToSchema(schema1)
 
       val schema = CarbonEnv.getInstance(sqlContext).carbonCatalog.updateCubeWithAggregates(mondSchema, schemaName, cubeNameInSchema, aggTableName, aggregateAttributes.toList)
       LoadAggregationTable(schema, schemaName, cubeNameInSchema, aggTableName).run(sqlContext)
       //TODO: Need to handle this case with carbonTable
-//      CarbonEnv.getInstance(sqlContext).carbonCatalog.updateCubeWithAggregatesDetail(relation.cubeMeta.schema, mondSchema)
+      //      CarbonEnv.getInstance(sqlContext).carbonCatalog.updateCubeWithAggregatesDetail(relation.cubeMeta.schema, mondSchema)
       LOGGER.audit(s"The aggregate table creation request is successful :: $aggTableName")
     } finally {
       if (carbonLock != null) {
@@ -1896,7 +1930,7 @@ private[sql] case class PartitionData(schemaName: String, cubeName: String, fact
   def run(sqlContext: SQLContext) = {
     val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog.lookupRelation1(Option(schemaName), cubeName, None)(sqlContext).asInstanceOf[CarbonRelation]
     val targetFolder = targetPath //relation.cubeMeta.dataPath.subSequence(0, relation.cubeMeta.dataPath.indexOf("/store"))+"/"+cubeName+System.currentTimeMillis()
-//    partitionStatus = CarbonDataRDDFactory.partitionCarbonData(sqlContext.sparkContext, schemaName, cubeName, factPath, targetFolder, CarbonQueryUtil.getAllColumns(relation.cubeMeta.schema), fileHeader, delimiter, quoteChar, escapeChar, multiLine, relation.cubeMeta.partitioner)
+    //    partitionStatus = CarbonDataRDDFactory.partitionCarbonData(sqlContext.sparkContext, schemaName, cubeName, factPath, targetFolder, CarbonQueryUtil.getAllColumns(relation.cubeMeta.schema), fileHeader, delimiter, quoteChar, escapeChar, multiLine, relation.cubeMeta.partitioner)
     if (partitionStatus == CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS) {
       logInfo("Bad Record Found while partitioning data")
     }
@@ -1979,17 +2013,17 @@ private[sql] case class LoadAggregationTable(
 private[sql] case class ShowAllCubesInSchema(
                                               schemaNameOp: Option[String],
                                               override val output: Seq[Attribute]
-                                            ) extends RunnableCommand  {
-//
-//  override def getControlPrivileges(sqlContext: SQLContext): Set[PrivObject] = {
-//    //SELECT privilege @ database level // TODO: handle use database case
-//    Set(new PrivObject(
-//      ObjectType.DATABASE,
-//      getDB.getDatabaseName(schemaNameOp, sqlContext),
-//      null,
-//      null,
-//      Set(PrivType.SELECT_NOGRANT)))
-//  }
+                                            ) extends RunnableCommand {
+  //
+  //  override def getControlPrivileges(sqlContext: SQLContext): Set[PrivObject] = {
+  //    //SELECT privilege @ database level // TODO: handle use database case
+  //    Set(new PrivObject(
+  //      ObjectType.DATABASE,
+  //      getDB.getDatabaseName(schemaNameOp, sqlContext),
+  //      null,
+  //      null,
+  //      Set(PrivType.SELECT_NOGRANT)))
+  //  }
 
   override def run(sqlContext: SQLContext): Seq[Row] = {
     val schemaName = getDB.getDatabaseName(schemaNameOp, sqlContext)
@@ -1997,15 +2031,15 @@ private[sql] case class ShowAllCubesInSchema(
   }
 }
 
-private[sql] case class ShowAllCubes( override val output: Seq[Attribute]) 
-                  extends RunnableCommand {
+private[sql] case class ShowAllCubes(override val output: Seq[Attribute])
+  extends RunnableCommand {
 
   override def run(sqlContext: SQLContext): Seq[Row] = {
     CarbonEnv.getInstance(sqlContext).carbonCatalog.getAllCubes()(sqlContext)
-//      .filter(x =>
-//        if (allowedDatabases.isDefined) allowedDatabases.get.contains(x._1)
-//        else true
-//      )
+      //      .filter(x =>
+      //        if (allowedDatabases.isDefined) allowedDatabases.get.contains(x._1)
+      //        else true
+      //      )
       .map(x => Row(x._1, x._2, sqlContext.asInstanceOf[HiveContext].catalog.tableExists(Seq(x._1, x._2)))).toSeq
   }
 }
@@ -2022,8 +2056,8 @@ private[sql] case class SuggestAggregates(
     val schemaName = getDB.getDatabaseName(schemaNameOp, sqlContext)
     val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog.lookupRelation1(Some(schemaName), cubeName, None)(sqlContext).asInstanceOf[CarbonRelation]
     try {
-//      val schema: CarbonDef.Schema = relation.cubeMeta.schema
-//      val cubes: Array[CarbonDef.Cube] = relation.cubeMeta.schema.cubes.filter { x => cubeName.equalsIgnoreCase(x.name) }
+      //      val schema: CarbonDef.Schema = relation.cubeMeta.schema
+      //      val cubes: Array[CarbonDef.Cube] = relation.cubeMeta.schema.cubes.filter { x => cubeName.equalsIgnoreCase(x.name) }
       val loadModel: LoadModel = new LoadModel
       loadModel.setSchemaName(relation.cubeMeta.carbonTableIdentifier.getDatabaseName)
       loadModel.setCubeName(relation.cubeMeta.carbonTableIdentifier.getTableName)
@@ -2047,12 +2081,10 @@ private[sql] case class SuggestAggregates(
     catch {
       case e: Exception =>
         LOGGER.audit(s"Error while querying for aggregate table suggestion for [$schemaName] and cube name [$cubeName] failed :" + e)
-        if(null != e.getMessage)
-        {
-          sys.error(s"Aggregate table suggestion request for [$schemaName] and cube [$cubeName] is failed."+e.getMessage)
+        if (null != e.getMessage) {
+          sys.error(s"Aggregate table suggestion request for [$schemaName] and cube [$cubeName] is failed." + e.getMessage)
         }
-        else
-        {
+        else {
           sys.error(s"Aggregate table suggestion request for [$schemaName] and cube [$cubeName] is failed.")
         }
     }
@@ -2132,7 +2164,7 @@ private[sql] case class MergeCube(schemaName: String, cubeName: String, tableNam
     }
     if (!isTablePresent) sys.error("Invalid table name!")
     carbonLoadModel.setTableName(tableName)
-//    carbonLoadModel.setSchema(relation.cubeMeta.schema);
+    //    carbonLoadModel.setSchema(relation.cubeMeta.schema);
     val dataLoadSchema = new CarbonDataLoadSchema(relation.cubeMeta.carbonTable)
     //Need to fill dimension relation
     //dataLoadSchema.setDimensionRelationList(x$1)
@@ -2150,7 +2182,7 @@ private[sql] case class DropCubeCommand(ifExistsSet: Boolean, schemaNameOp: Opti
   def run(sqlContext: SQLContext) = {
     val LOGGER = LogServiceFactory.getLogService("org.apache.spark.sql.cubemodel.cubeSchema");
     val schemaName = getDB.getDatabaseName(schemaNameOp, sqlContext)
-    val tmpCube=org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance.getCarbonTable(schemaName + "_" + cubeName)
+    val tmpCube = org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance.getCarbonTable(schemaName + "_" + cubeName)
     if (null == tmpCube) {
       if (!ifExistsSet) {
         LOGGER.audit(s"Dropping cube with Schema name [$schemaName] and cube name [$cubeName] failed")
@@ -2160,7 +2192,7 @@ private[sql] case class DropCubeCommand(ifExistsSet: Boolean, schemaNameOp: Opti
     }
     else {
       CarbonProperties.getInstance().addProperty("zookeeper.enable.lock", "false")
-      val carbonLock =  CarbonLockFactory.getCarbonLockObj(tmpCube.getMetaDataFilepath(),LockUsage.METADATA_LOCK)
+      val carbonLock = CarbonLockFactory.getCarbonLockObj(tmpCube.getMetaDataFilepath(), LockUsage.METADATA_LOCK)
       try {
         if (carbonLock.lockWithRetries()) {
           logInfo("Successfully able to get the cube metadata file lock")
@@ -2192,10 +2224,10 @@ private[sql] case class DropCubeCommand(ifExistsSet: Boolean, schemaNameOp: Opti
           if (carbonLock.unlock()) {
             logInfo("Cube MetaData Unlocked Successfully after dropping the cube")
             val fileType = FileFactory.getFileType(tmpCube.getMetaDataFilepath())
-             if (FileFactory.isFileExist(tmpCube.getMetaDataFilepath(), fileType)) {
-     	           val file = FileFactory.getCarbonFile(tmpCube.getMetaDataFilepath(), fileType)
-     	            CarbonUtil.deleteFoldersAndFiles(file.getParentFile)
-              }
+            if (FileFactory.isFileExist(tmpCube.getMetaDataFilepath(), fileType)) {
+              val file = FileFactory.getCarbonFile(tmpCube.getMetaDataFilepath(), fileType)
+              CarbonUtil.deleteFoldersAndFiles(file.getParentFile)
+            }
           } else {
             logError("Unable to unlock Cube MetaData")
           }
@@ -2209,7 +2241,7 @@ private[sql] case class DropCubeCommand(ifExistsSet: Boolean, schemaNameOp: Opti
 
 private[sql] case class DropAggregateTableCommand(ifExistsSet: Boolean,
                                                   schemaNameOp: Option[String],
-                                                  tableName: String) extends RunnableCommand  {
+                                                  tableName: String) extends RunnableCommand {
 
   def run(sqlContext: SQLContext) = {
     val schemaName = getDB.getDatabaseName(schemaNameOp, sqlContext)
@@ -2241,7 +2273,7 @@ private[sql] case class ShowLoads(
   override def run(sqlContext: SQLContext): Seq[Row] = {
     val schemaName = getDB.getDatabaseName(schemaNameOp, sqlContext)
     var cube = CarbonMetadata.getInstance().getCube(schemaName + '_' + cubeName)
-    
+
     val path = cube.getMetaDataFilepath()
 
     val loadMetadataDetailsArray = CarbonUtil.readLoadMetadata(path)
@@ -2305,11 +2337,11 @@ private[sql] case class DescribeCommandFormatted(
     results ++= Seq(("Schema Name : ", relation.cubeMeta.carbonTableIdentifier.getDatabaseName, ""))
     results ++= Seq(("Cube Name : ", relation.cubeMeta.carbonTableIdentifier.getTableName, ""))
     results ++= Seq(("CARBON Store Path : ", relation.cubeMeta.dataPath, ""))
-//    val partitioner = relation.cubeMeta.partitioner
-//    results ++= Seq(("#Partition Details : ", "", ""))
-//    results ++= Seq(("", "Partitioner Class :", relation.cubeMeta.partitioner.partitionClass))
-//    results ++= Seq(("", "Partitioner Column :", relation.cubeMeta.partitioner.partitionColumn.mkString(", ")))
-//    results ++= Seq(("", "Partition Count :", relation.cubeMeta.partitioner.partitionCount.toString))
+    //    val partitioner = relation.cubeMeta.partitioner
+    //    results ++= Seq(("#Partition Details : ", "", ""))
+    //    results ++= Seq(("", "Partitioner Class :", relation.cubeMeta.partitioner.partitionClass))
+    //    results ++= Seq(("", "Partitioner Column :", relation.cubeMeta.partitioner.partitionColumn.mkString(", ")))
+    //    results ++= Seq(("", "Partition Count :", relation.cubeMeta.partitioner.partitionCount.toString))
     results ++= Seq(("", "", ""), ("#Aggregate Tables", "", ""))
     val carbonTable = relation.cubeMeta.carbonTable
     val aggTables = carbonTable.getAggregateTablesName
@@ -2318,7 +2350,7 @@ private[sql] case class DescribeCommandFormatted(
     } else {
       val visibleColumns = child.schema.fields.map(field => field.name)
       aggTables.map(aggTable => {
-        results ++= Seq(("", "", ""), ("Agg Table :" + aggTable , "#Columns", "#AggregateType"))
+        results ++= Seq(("", "", ""), ("Agg Table :" + aggTable, "#Columns", "#AggregateType"))
         carbonTable.getDimensionByTableName(aggTable).map(dim => {
           results ++= Seq(("", dim.getColName, ""))
         })
@@ -2383,7 +2415,7 @@ private[sql] case class DeleteLoadByDate(
     CarbonDataRDDFactory.deleteLoadByDate(
       sqlContext,
       //TODO: Need to use carbonTable
-//      relation.cubeMeta.carbonTable,
+      //      relation.cubeMeta.carbonTable,
       null,
       schemaName,
       cubeName,
@@ -2401,7 +2433,7 @@ private[sql] case class DeleteLoadByDate(
 
 private[sql] case class CleanFiles(
                                     schemaNameOp: Option[String],
-                                    cubeName: String) extends RunnableCommand  {
+                                    cubeName: String) extends RunnableCommand {
 
   val LOGGER = LogServiceFactory.getLogService("org.apache.spark.sql.cubemodel.cubeSchema");
 

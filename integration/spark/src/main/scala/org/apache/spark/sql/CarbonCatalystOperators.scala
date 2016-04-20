@@ -38,7 +38,7 @@ import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.expressions.PartialAggregate1
 import org.carbondata.integration.spark.agg._
 import scala.collection.mutable.MutableList
-import org.apache.spark.sql.cubemodel.CubeModel
+import org.apache.spark.sql.cubemodel.tableModel
 import org.apache.spark.sql.hive.HiveContext
 
 /**
@@ -73,7 +73,7 @@ case class ShowSchemaCommand(cmd: Option[String]) extends LogicalPlan with Comma
 /**
   * Shows AggregateTables of a schema
   */
-case class ShowCreateCubeCommand(cm: CubeModel) extends LogicalPlan with Command {
+case class ShowCreateCubeCommand(cm: tableModel) extends LogicalPlan with Command {
   override def children: Seq[LogicalPlan] = Seq.empty
 
   override def output =

@@ -138,9 +138,9 @@ public class TableSchema implements Serializable {
      * @param columnUniqueId
      * @return column schema if matches the id
      */
-    public ColumnSchema getColumnSchemaById(int columnUniqueId) {
+    public ColumnSchema getColumnSchemaById(String columnUniqueId) {
         for (ColumnSchema tableColumn : listOfColumns) {
-            if (tableColumn.getColumnUniqueId() == columnUniqueId) {
+            if (tableColumn.getColumnUniqueId().equalsIgnoreCase(columnUniqueId)) {
                 return tableColumn;
             }
         }

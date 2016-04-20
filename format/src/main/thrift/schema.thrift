@@ -182,7 +182,7 @@ struct ColumnSchema{
 	* For Array types, two columns will be stored one for the array type and one for the primitive type with the name parent_column.value
 	*/
 	2: required string column_name;  //
-	3: required i32 column_id;  // Unique ID for a column. if this is dimension, it is an unique ID that used in dictionary
+	3: required string column_id;  // Unique ID for a column. if this is dimension, it is an unique ID that used in dictionary
 	4: required bool columnar; // wether it is stored as columnar format or row format
 	5: required list<Encoding> encoders; // List of encoders that are chained to encode the data for this column
 	6: required bool dimension;  // Whether the column is a dimension or measure
