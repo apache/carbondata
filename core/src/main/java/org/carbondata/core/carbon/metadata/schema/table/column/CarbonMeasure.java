@@ -16,12 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.carbondata.core.carbon.metadata.schema.table.column;
 
 /**
  * class represent column(measure) in table
  */
-public class CarbonMeasure extends CarbonDimension {
+public class CarbonMeasure extends CarbonColumn {
 
   /**
    * serialization version
