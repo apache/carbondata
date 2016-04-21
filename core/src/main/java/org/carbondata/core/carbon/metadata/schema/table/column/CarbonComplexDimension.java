@@ -45,7 +45,7 @@ public class CarbonComplexDimension extends CarbonDimension implements Serializa
     /**
      * @return number of children for complex type
      */
-    public int getNumberOfChild()
+    @Override public int getNumberOfChild()
     {
     	return columnSchema.getNumberOfChild();
     }
@@ -53,22 +53,8 @@ public class CarbonComplexDimension extends CarbonDimension implements Serializa
     /**
      * @return list of children dims for complex type
      */
-    public List<CarbonDimension> getListOfChildDimensions() {
+    @Override public List<CarbonDimension> getListOfChildDimensions() {
       return listOfChildDimensions;
-    }
-    
-    /**
-     * @param listOfChildDimensions
-     */
-    public void setListOfChildDimensions(List<CarbonDimension> listOfChildDimensions) {
-      this.listOfChildDimensions = listOfChildDimensions;
-    }
-
-    /**
-     * @return return the number of child present in case of complex type
-     */
-    public int numberOfChild() {
-        return columnSchema.getNumberOfChild();
     }
 
     /**

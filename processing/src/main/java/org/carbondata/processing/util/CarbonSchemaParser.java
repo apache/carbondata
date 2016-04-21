@@ -51,6 +51,7 @@ import org.carbondata.core.carbon.Util;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonComplexDimension;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.carbondata.core.constants.CarbonCommonConstants;
@@ -2288,7 +2289,8 @@ public final class CarbonSchemaParser {
       CarbonDimension dimension = dimensions.get(i);
       if (dimension.getDataType().equals(DataType.ARRAY) || dimension.getDataType()
           .equals(DataType.STRUCT)) {
-        for (int j = 0; j < dimension.getNumberOfChild(); j++, i++) {
+        assert(dimension.getClass().equals(CarbonComplexDimension.class));
+        for (int j = 0; j < ((CarbonComplexDimension)dimension).getNumberOfChild(); j++, i++) {
           dimension = dimensions.get(i);
           dimString.append(
               dimension.getColName() + CarbonCommonConstants.COLON_SPC_CHARACTER + dimension

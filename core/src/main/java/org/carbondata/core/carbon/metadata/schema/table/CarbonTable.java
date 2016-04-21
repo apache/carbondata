@@ -252,6 +252,23 @@ public class CarbonTable implements Serializable {
   }
 
   /**
+   * to get particular measure from a table
+   *
+   * @param tableName
+   * @param columnName
+   * @return
+   */
+  public CarbonMeasure getMeasureByName(String tableName, String columnName) {
+    List<CarbonMeasure> measureList = tableMeasuresMap.get(tableName);
+    for (CarbonMeasure measure : measureList) {
+      if (measure.getColName().equalsIgnoreCase(columnName)) {
+        return measure;
+      }
+    }
+    return null;
+  }
+
+  /**
    * to get particular dimension from a table
    *
    * @param tableName
@@ -267,9 +284,6 @@ public class CarbonTable implements Serializable {
     }
     return null;
   }
-
-  return null;
-}
 
   /**
    * gets all children dimension for complex type
@@ -293,7 +307,7 @@ public class CarbonTable implements Serializable {
    * @param dimName
    * @param dimensions
    * @return list of child dimensions
-
+   */
   public List<CarbonDimension> getChildren(String dimName, List<CarbonDimension> dimensions) {
     for (CarbonDimension carbonDimension : dimensions) {
       if (carbonDimension.getColName().equals(dimName)) {
@@ -309,7 +323,6 @@ public class CarbonTable implements Serializable {
     }
     return null;
   }
-*/
 
   /**
    * @param databaseName

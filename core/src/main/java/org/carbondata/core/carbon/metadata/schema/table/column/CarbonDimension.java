@@ -19,8 +19,25 @@
 
 package org.carbondata.core.carbon.metadata.schema.table.column;
 
+import java.util.LinkedList;
+import java.util.List;
+
 public class CarbonDimension extends CarbonColumn {
-    public CarbonDimension(ColumnSchema columnSchema, int ordinal) {
-        super(columnSchema, ordinal);
-    }
+  public CarbonDimension(ColumnSchema columnSchema, int ordinal) {
+    super(columnSchema, ordinal);
+  }
+
+  /**
+   * @return 0 since this is a single column
+   */
+  public int getNumberOfChild() {
+    return 0;
+  }
+
+  /**
+   * @return empty list since this is a single column
+   */
+  public List<CarbonDimension> getListOfChildDimensions() {
+    return new LinkedList<CarbonDimension>();
+  }
 }

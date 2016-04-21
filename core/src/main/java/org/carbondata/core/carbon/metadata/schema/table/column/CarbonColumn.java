@@ -19,117 +19,123 @@
 
 package org.carbondata.core.carbon.metadata.schema.table.column;
 
+import java.io.Serializable;
+import java.util.Set;
+
 import org.carbondata.core.carbon.metadata.datatype.ConvertedType;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
 
-import java.io.Serializable;
-import java.util.Set;
-
 public class CarbonColumn implements Serializable {
 
-    /**
-     * serialization version
-     */
-    private static final long serialVersionUID = 3648269871256322681L;
+  /**
+   * serialization version
+   */
+  private static final long serialVersionUID = 3648269871256322681L;
 
-    /**
-     * column schema
-     */
-    protected ColumnSchema columnSchema;
+  /**
+   * column schema
+   */
+  protected ColumnSchema columnSchema;
 
-    /**
-     * table ordinal
-     */
-    protected int ordinal;
+  /**
+   * table ordinal
+   */
+  protected int ordinal;
 
-    /**
-     * default value for in case of restructuring will be used
-     * when older segment does not have particular column
-     */
-    protected byte[] defaultValue;
+  /**
+   * default value for in case of restructuring will be used
+   * when older segment does not have particular column
+   */
+  protected byte[] defaultValue;
 
-    public CarbonColumn(ColumnSchema columnSchema, int ordinal) {
-        this.columnSchema = columnSchema;
-        this.ordinal = ordinal;
-    }
+  public CarbonColumn(ColumnSchema columnSchema, int ordinal) {
+    this.columnSchema = columnSchema;
+    this.ordinal = ordinal;
+  }
 
-    /**
-     * @return convertedType
-     */
-    public ConvertedType getConvertedType()
-    {
-    	return columnSchema.getConvertedType();
-    }
+  /**
+   * @return convertedType
+   */
+  public ConvertedType getConvertedType() {
+    return columnSchema.getConvertedType();
+  }
 
-    /**
-     * @return columnar or row based
-     */
-    public boolean isColumnar()
-    {
-    	return columnSchema.isColumnar();
-    }
+  /**
+   * @return columnar or row based
+   */
+  public boolean isColumnar() {
+    return columnSchema.isColumnar();
+  }
 
-    /**
-     * @return column unique id
-     */
-    public int getColumnId() {
-        return columnSchema.getColumnUniqueId();
-    }
+  /**
+   * @return column unique id
+   */
+  public String getColumnId() {
+    return columnSchema.getColumnUniqueId();
+  }
 
-    /**
-     * @return the dataType
-     */
-    public DataType getDataType() {
-        return columnSchema.getDataType();
-    }
+  /**
+   * @return the dataType
+   */
+  public DataType getDataType() {
+    return columnSchema.getDataType();
+  }
 
-    /**
-     * @return the colName
-     */
-    public String getColName() {
-        return columnSchema.getColumnName();
-    }
+  /**
+   * @return the colName
+   */
+  public String getColName() {
+    return columnSchema.getColumnName();
+  }
 
-    /**
-     * @return the ordinal
-     */
-    public int getOrdinal() {
-        return ordinal;
-    }
+  /**
+   * @return the ordinal
+   */
+  public int getOrdinal() {
+    return ordinal;
+  }
 
-    /**
-     * @param ordinal the ordinal to set
-     */
-    public void setOrdinal(int ordinal) {
-        this.ordinal = ordinal;
-    }
+  /**
+   * @param ordinal the ordinal to set
+   */
+  public void setOrdinal(int ordinal) {
+    this.ordinal = ordinal;
+  }
 
-    /**
-     * @return the list of encoder used in dimension
-     */
-    public Set<Encoding> getEncoder() {
-        return columnSchema.getEncodingList();
-    }
+  /**
+   * @return the list of encoder used in dimension
+   */
+  public Set<Encoding> getEncoder() {
+    return columnSchema.getEncodingList();
+  }
 
-    /**
-     * @return row group id if it is row based
-     */
-    public int columnGroupId() {
-        return columnSchema.getRowGroupId();
-    }
+  /**
+   * @return row group id if it is row based
+   */
+  public int columnGroupId() {
+    return columnSchema.getColumnGroupId();
+  }
 
-    /**
-	 * @return the defaultValue
-	 */
-	public byte[] getDefaultValue() {
-		return defaultValue;
-	}
+  /**
+   * @return the defaultValue
+   */
+  public byte[] getDefaultValue() {
+    return defaultValue;
+  }
 
-    /**
-	 * @param defaultValue the defaultValue to set
-	 */
-	public void setDefaultValue(byte[] defaultValue) {
-		this.defaultValue = defaultValue;
-	}
+  /**
+   * @param defaultValue the defaultValue to set
+   */
+  public void setDefaultValue(byte[] defaultValue) {
+    this.defaultValue = defaultValue;
+  }
+
+  /**
+   * @param encoding
+   * @return true if contains the passing encoding
+   */
+  public boolean hasEncoding(Encoding encoding) {
+    return getEncoder().contains(encoding);
+  }
 }
