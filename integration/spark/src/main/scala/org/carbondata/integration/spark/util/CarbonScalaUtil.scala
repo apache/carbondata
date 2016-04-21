@@ -17,7 +17,7 @@
 
 package org.carbondata.integration.spark.util
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.{CarbonContext, CarbonEnv, CarbonRelation, SchemaRDD}
 import org.apache.spark.sql.cubemodel.Level
@@ -104,9 +104,9 @@ object CarbonScalaUtil {
 
     def createSparkMeta(carbonTable: CarbonTable): CarbonMetaData = {
       val dimensionsAttr = carbonTable.getDimensionByTableName(carbonTable.getFactTableName)
-        .map(x => x.getColName) // wf : may be problem
+        .asScala.map(x => x.getColName) // wf : may be problem
       val measureAttr = carbonTable.getMeasureByTableName(carbonTable.getFactTableName)
-          .map(x => x.getColName)
+          .asScala.map(x => x.getColName)
       CarbonMetaData(dimensionsAttr, measureAttr, carbonTable)
     }
 

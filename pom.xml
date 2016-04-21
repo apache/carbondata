@@ -67,7 +67,7 @@
                     <failsOnError>true</failsOnError>
                     <linkXRef>false</linkXRef>
                     <verbose>false</verbose>
-                    <!--<failOnViolation>true</failOnViolation>-->
+                    <failOnViolation>true</failOnViolation>
                     <includeTestSourceDirectory>false</includeTestSourceDirectory>
                     <sourceDirectory>${basedir}/src</sourceDirectory>
                     <testSourceDirectory>${basedir}/src/test/java</testSourceDirectory>
@@ -96,7 +96,7 @@
                 </executions>
                 <configuration>
                     <verbose>false</verbose>
-                    <failOnViolation>false</failOnViolation>
+                    <failOnViolation>true</failOnViolation>
                     <includeTestSourceDirectory>false</includeTestSourceDirectory>
                     <failOnWarning>false</failOnWarning>
                     <sourceDirectory>${basedir}/src/main/scala</sourceDirectory>

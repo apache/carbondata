@@ -269,7 +269,8 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
     private def allAggregates(exprs: Seq[Expression]) =
       exprs.flatMap(_.collect { case a: AggregateExpression => a })
 
-    private def canPushDownJoin(otherRDDPlan: LogicalPlan, joinCondition: Option[Expression]): Boolean = {
+    private def canPushDownJoin(otherRDDPlan: LogicalPlan,
+                                joinCondition: Option[Expression]): Boolean = {
       val pushdowmJoinEnabled = sqlContext.sparkContext.conf
         .getBoolean("spark.carbon.pushdown.join.as.filter", true)
 
@@ -301,7 +302,7 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
     /**
      * Create carbon scan
      */
-    def carbonScan(projectList: Seq[NamedExpression],
+    private def carbonScan(projectList: Seq[NamedExpression],
                    predicates: Seq[Expression],
                    relation: CarbonRelation,
                    groupExprs: Option[Seq[Expression]],

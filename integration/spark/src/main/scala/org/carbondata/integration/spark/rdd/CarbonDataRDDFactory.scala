@@ -39,7 +39,7 @@ import org.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.carbondata.core.metadata.CarbonMetadata
 import org.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.carbondata.integration.spark._
-import org.carbondata.integration.spark.load.{CarbonLoadModel, CarbonLoaderUtil, DeleteLoadFolders}
+import org.carbondata.integration.spark.load._
 import org.carbondata.integration.spark.merger.CarbonDataMergerUtil
 import org.carbondata.integration.spark.util.LoadMetadataUtil
 import org.carbondata.processing.util.CarbonDataProcessorUtil
@@ -57,14 +57,13 @@ object CarbonDataRDDFactory extends Logging {
                       cubeName: String, schemaName: String, partitioner: Partitioner,
                       columinar: Boolean) {
     val kv: KeyVal[CarbonKey, CarbonValue] = new KeyValImpl();
-    //     CarbonQueryUtil.loadSchema(schema, null, null)
-    //     CarbonQueryUtil.loadSchema("G:/mavenlib/PCC_Java.xml", null, null)
     val catalog = CarbonEnv.getInstance(sc.asInstanceOf[SQLContext]).carbonCatalog
     val cubeCreationTime = catalog.getCubeCreationTime(schemaName, cubeName)
     new CarbonDataCacheRDD(sc, kv, schema, catalog.storePath, cubeName, schemaName, partitioner,
       columinar, cubeCreationTime).collect
   }
 
+  // scalastyle:off
   def partitionCarbonData(sc: SparkContext,
                           schemaName: String,
                           cubeName: String,
@@ -77,7 +76,7 @@ object CarbonDataRDDFactory extends Logging {
                           escapeChar: String,
                           multiLine: Boolean,
                           partitioner: Partitioner): String = {
-
+    // scalastyle:on
     val status = new
         CarbonDataPartitionRDD(sc, new PartitionResultImpl(), schemaName, cubeName, sourcePath,
           targetFolder, requiredColumns, headers, delimiter, quoteChar, escapeChar, multiLine,
@@ -495,6 +494,7 @@ object CarbonDataRDDFactory extends Logging {
 
   }
 
+  // scalastyle:off
   def alterCube(
                  hiveContext: HiveContext,
                  sc: SparkContext,
@@ -510,7 +510,7 @@ object CarbonDataRDDFactory extends Logging {
                  curTime: Long,
                  defaultVals: Map[String, String],
                  partitioner: Partitioner): Boolean = {
-
+    // scalastyle:on
     val cube = CarbonMetadata.getInstance().getCubeWithCubeName(cubeName, schemaName);
 
     val metaDataPath: String = cube.getMetaDataFilepath()

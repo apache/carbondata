@@ -18,9 +18,10 @@
 package org.apache.spark.sql.cubemodel
 
 import java.text.SimpleDateFormat
+import java.util
 import java.util.UUID
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import scala.language.implicitConversions
 
@@ -43,7 +44,7 @@ import org.carbondata.core.datastorage.store.impl.FileFactory
 import org.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.carbondata.core.metadata.CarbonMetadata
 import org.carbondata.core.util.{CarbonProperties, CarbonUtil}
-import org.carbondata.integration.spark.load.{CarbonLoadModel, CarbonLoaderUtil, DeleteLoadFromMetadata}
+import org.carbondata.integration.spark.load._
 import org.carbondata.integration.spark.partition.api.impl.QueryPartitionHelper
 import org.carbondata.integration.spark.rdd.CarbonDataRDDFactory
 import org.carbondata.integration.spark.util.{CarbonScalaUtil, CarbonSparkInterFaceLogEvent, GlobalDictionaryUtil}
@@ -173,7 +174,7 @@ class CubeNewProcessor(cm: tableModel, sqlContext: SQLContext) {
     columnSchema.setColumnName(colName)
     columnSchema.setColumnUniqueId(UUID.randomUUID().toString())
     columnSchema.setColumnar(isCol)
-    val encoderSet = new java.util.HashSet(encoders)
+    val encoderSet = new java.util.HashSet(encoders.asJava)
     columnSchema.setEncodintList(encoderSet)
     columnSchema.setDimensionColumn(isDimensionCol)
     columnSchema.setColumnGroup(colGroup)
@@ -245,29 +246,28 @@ class CubeNewProcessor(cm: tableModel, sqlContext: SQLContext) {
     val measures = scala.collection.mutable.ListBuffer[ColumnSchema]()
     for (column <- allColumns) {
       if (highCardinalityDims.contains(column.getColumnName)) {
-        highCardDims.add(column)
+        highCardDims += (column)
       }
       else if (column.getDataType == DataType.ARRAY || column.getDataType == DataType.STRUCT
         || column.getColumnName.contains(".")) {
-        complexDims.add(column)
+        complexDims += (column)
       }
       else if (column.isDimensionColumn) {
-        newOrderedDims.add(column)
+        newOrderedDims += (column)
       }
       else {
-        measures.add(column)
+        measures += (column)
       }
 
     }
 
     // Adding dummy measure if no measure is provided
     if (measures.size < 1) {
-      val encoders = Seq[Encoding]();
-      encoders.add(Encoding.DICTIONARY)
+      val encoders = Seq[Encoding](Encoding.DICTIONARY);
       val coloumnSchema: ColumnSchema = getColumnSchema(DataType.DOUBLE,
         CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE, index, true, encoders, false, rowGrp)
       val measureColumn = coloumnSchema
-      measures.add(measureColumn)
+      measures += (measureColumn)
     }
 
     newOrderedDims = newOrderedDims ++ highCardDims ++ complexDims ++ measures
@@ -280,7 +280,7 @@ class CubeNewProcessor(cm: tableModel, sqlContext: SQLContext) {
           newOrderedDims.foreach { dim =>
             if (dim.getColumnName.equalsIgnoreCase(col)) {
               definedpartCols = definedpartCols.dropWhile { c => c.equals(col) }
-              columnBuffer.add(col)
+              columnBuffer += (col)
             }
           }
         }
@@ -332,16 +332,16 @@ class CubeNewProcessor(cm: tableModel, sqlContext: SQLContext) {
     val tableSchema = new TableSchema()
     val schemaEvol = new SchemaEvolution()
     schemaEvol
-      .setSchemaEvolutionEntryList(scala.collection.mutable.ListBuffer[SchemaEvolutionEntry]())
+      .setSchemaEvolutionEntryList(new util.ArrayList[SchemaEvolutionEntry]())
     tableSchema.setTableId(1)
     tableSchema.setTableName(cm.cubeName)
-    tableSchema.setListOfColumns(allColumns)
+    tableSchema.setListOfColumns(allColumns.asJava)
     tableSchema.setSchemaEvalution(schemaEvol)
     tableInfo.setDatabaseName(cm.schemaName)
     tableInfo.setTableUniqueName(cm.schemaName + "_" + cm.cubeName)
     tableInfo.setLastUpdatedTime(System.currentTimeMillis())
     tableInfo.setFactTable(tableSchema)
-    tableInfo.setAggregateTableList(scala.collection.mutable.ListBuffer[TableSchema]())
+    tableInfo.setAggregateTableList(new util.ArrayList[TableSchema]())
     tableInfo
   }
 
@@ -602,13 +602,13 @@ class CubeProcessor(cm: tableModel, sqlContext: SQLContext) {
     for (dimension <- dimensions) {
       if (highCardinalityDims.contains(dimension.name)) {
         // dimension.highCardinality=true
-        highCardDims.add(dimension)
+        highCardDims += (dimension)
       }
       else if (dimension.hierarchies(0).levels.length > 1) {
-        complexDims.add(dimension)
+        complexDims += (dimension)
       }
       else {
-        newOrderedDims.add(dimension)
+        newOrderedDims += (dimension)
       }
 
     }
@@ -644,7 +644,7 @@ class CubeProcessor(cm: tableModel, sqlContext: SQLContext) {
               hier.levels.foreach { lev =>
                 if (lev.name.equalsIgnoreCase(col)) {
                   definedpartCols = definedpartCols.dropWhile(c => c.equals(col))
-                  columnBuffer.add(lev.name)
+                  columnBuffer += (lev.name)
                 }
               }
             }
@@ -1043,7 +1043,7 @@ private[sql] case class ShowCreateCube(cm: tableModel, override val output: Seq[
               hier.levels.foreach { lev =>
                 if (lev.name.equalsIgnoreCase(col)) {
                   definedpartCols = definedpartCols.dropWhile(c => c.equals(col))
-                  columnBuffer.add(lev.name)
+                  columnBuffer += (lev.name)
                 }
               }
             }
@@ -1191,7 +1191,7 @@ private[sql] case class AlterCube(
       val foundDropColsList = new ArrayBuffer[String]
       val dropColsList = new ArrayBuffer[String]
       dropCols.foreach { eachElem => if (!dropColsList.contains(eachElem.toLowerCase())) {
-        dropColsList.add(eachElem.toLowerCase())
+        dropColsList += (eachElem.toLowerCase())
       }
       }
       val curTime = System.nanoTime()
@@ -1552,8 +1552,8 @@ private[sql] case class AlterCube(
     carbonDefSchema.cubes(0).measures = carbonDefSchema.cubes(0).measures.map { aMsr =>
       if (dropColsList.contains(aMsr.name.toLowerCase())) {
         if (!foundDropColsList.contains(aMsr.name.toLowerCase())) {
-          foundDropColsList.add(aMsr.name.toLowerCase())
-          validDropMsrList.add(aMsr.name)
+          foundDropColsList += (aMsr.name.toLowerCase())
+          validDropMsrList += (aMsr.name)
         }
         aMsr.visible = false
         updateAggTablesMeasures(curTime, aMsr,
@@ -1604,8 +1604,8 @@ private[sql] case class AlterCube(
         eachHierarchy.levels = eachHierarchy.levels.map { eachLevel =>
           if (dropColsList.contains(eachLevel.name.toLowerCase())) {
             if (!foundDropColsList.contains(eachLevel.name.toLowerCase())) {
-              foundDropColsList.add(eachLevel.name.toLowerCase())
-              validDropDimList.add(eachLevel.name)
+              foundDropColsList += (eachLevel.name.toLowerCase())
+              validDropDimList += (eachLevel.name)
             }
             eachLevel.visible = false
             updateAggTablesDimensions(curTime, eachLevel.name, eachHierarchy.name, eachDim.name,
@@ -1759,7 +1759,7 @@ private[sql] case class DeleteLoadsById(
     var path = cube.getMetaDataFilepath()
 
 
-    var invalidLoadIds = DeleteLoadFromMetadata.updateDeletionStatus(loadids, path)
+    var invalidLoadIds = DeleteLoadFromMetadata.updateDeletionStatus(loadids.asJava, path).asScala
 
     if (!invalidLoadIds.isEmpty) {
       if (invalidLoadIds.length == loadids.length) {
@@ -1806,7 +1806,7 @@ private[sql] case class LoadCubeAPI(schemaName: String, cubeName: String, factPa
     carbonLoadModel.setFactFilePath(factPath)
 
     val table = relation.cubeMeta.carbonTable
-    carbonLoadModel.setAggTables(table.getAggregateTablesName.map(_.toString).toArray)
+    carbonLoadModel.setAggTables(table.getAggregateTablesName.asScala.map(_.toString).toArray)
     carbonLoadModel.setTableName(table.getFactTableName)
     val dataLoadSchema = new CarbonDataLoadSchema(table)
     // Need to fill dimension relation
@@ -1890,7 +1890,7 @@ private[sql] case class LoadCube(
       }
 
       val table = relation.cubeMeta.carbonTable
-      carbonLoadModel.setAggTables(table.getAggregateTablesName.map(_.toString).toArray)
+      carbonLoadModel.setAggTables(table.getAggregateTablesName.asScala.map(_.toString).toArray)
       carbonLoadModel.setTableName(table.getFactTableName)
       val dataLoadSchema = new CarbonDataLoadSchema(table)
       // Need to fill dimension relation
@@ -2222,7 +2222,7 @@ private[sql] case class SuggestAggregates(
         val aggService: AutoAggSuggestionService = AutoAggSuggestionFactory
           .getAggregateService(aggSuggReqType)
         val aggCombs = aggService.getAggregateScripts(loadModel)
-        aggCombs.map { x => Row(aggSuggReqType.getAggSuggestionType, x) }
+        aggCombs.asScala.map { x => Row(aggSuggReqType.getAggSuggestionType, x) }
 
       }
       else {
@@ -2234,9 +2234,9 @@ private[sql] case class SuggestAggregates(
         val queryAggCombs = queryAggService.getAggregateScripts(loadModel)
         val agg_suggestion = new scala.collection.mutable.ListBuffer[Row]()
         dataAggCombs
-          .map { x => agg_suggestion.add(Row(Request.DATA_STATS.getAggSuggestionType, x)) }
+          .asScala.map { x => agg_suggestion += (Row(Request.DATA_STATS.getAggSuggestionType, x)) }
         queryAggCombs
-          .map { x => agg_suggestion.add(Row(Request.QUERY_STATS.getAggSuggestionType, x)) }
+          .asScala.map { x => agg_suggestion += (Row(Request.QUERY_STATS.getAggSuggestionType, x)) }
         agg_suggestion.toSeq
       }
     }
@@ -2246,7 +2246,7 @@ private[sql] case class SuggestAggregates(
         val aggService: AutoAggSuggestionService = AutoAggSuggestionFactory
           .getAggregateService(aggSuggType)
         val aggCombs = aggService.getAggregateDimensions(loadModel)
-        aggCombs.map { x => Row(aggSuggType.getAggSuggestionType, x) }
+        aggCombs.asScala.map { x => Row(aggSuggType.getAggSuggestionType, x) }
 
       }
       else {
@@ -2258,9 +2258,9 @@ private[sql] case class SuggestAggregates(
         val queryAggCombs = queryAggService.getAggregateDimensions(loadModel)
         val agg_suggestion = new scala.collection.mutable.ListBuffer[Row]()
         dataAggCombs
-          .map { x => agg_suggestion.add(Row(Request.DATA_STATS.getAggSuggestionType, x)) }
+          .asScala.map { x => agg_suggestion += (Row(Request.DATA_STATS.getAggSuggestionType, x)) }
         queryAggCombs
-          .map { x => agg_suggestion.add(Row(Request.QUERY_STATS.getAggSuggestionType, x)) }
+          .asScala.map { x => agg_suggestion += (Row(Request.QUERY_STATS.getAggSuggestionType, x)) }
         agg_suggestion.toSeq
 
       }
@@ -2294,7 +2294,7 @@ private[sql] case class MergeCube(schemaName: String, cubeName: String, tableNam
     var isTablePresent = false;
     if (table.getFactTableName.equals(tableName)) isTablePresent = true
     if (!isTablePresent) {
-      val aggTables = table.getAggregateTablesName.map(_.toString).toArray
+      val aggTables = table.getAggregateTablesName.asScala.map(_.toString).toArray
       var aggTable = null
       for (aggTable <- aggTables if (aggTable.equals(tableName)))
         isTablePresent = true
@@ -2303,7 +2303,7 @@ private[sql] case class MergeCube(schemaName: String, cubeName: String, tableNam
     carbonLoadModel.setTableName(tableName)
     val dataLoadSchema = new CarbonDataLoadSchema(relation.cubeMeta.carbonTable)
     // Need to fill dimension relation
-    //dataLoadSchema.setDimensionRelationList(x$1)
+    // dataLoadSchema.setDimensionRelationList(x$1)
     carbonLoadModel.setCarbonDataLoadSchema(dataLoadSchema);
     var storeLocation = CarbonProperties.getInstance
       .getProperty(CarbonCommonConstants.STORE_LOCATION_TEMP_PATH,
@@ -2499,12 +2499,12 @@ private[sql] case class DescribeCommandFormatted(
       results ++= Seq(("NONE", "", ""))
     } else {
       val visibleColumns = child.schema.fields.map(field => field.name)
-      aggTables.map(aggTable => {
+      aggTables.asScala.map(aggTable => {
         results ++= Seq(("", "", ""), ("Agg Table :" + aggTable, "#Columns", "#AggregateType"))
-        carbonTable.getDimensionByTableName(aggTable).map(dim => {
+        carbonTable.getDimensionByTableName(aggTable).asScala.map(dim => {
           results ++= Seq(("", dim.getColName, ""))
         })
-        carbonTable.getMeasureByTableName(aggTable).map(measure => {
+        carbonTable.getMeasureByTableName(aggTable).asScala.map(measure => {
           results ++= Seq(("", measure.getColName, measure.getAggregateFunction))
         })
       }
@@ -2563,7 +2563,7 @@ private[sql] case class DeleteLoadByDate(
       sys.error(s"Cube $schemaName.$cubeName does not contain date field " + dateField)
     }
     else {
-      level = matches.get(0).name;
+      level = matches.asJava.get(0).name;
     }
     var tableName = relation.metaData.carbonTable.getFactTableName
 
@@ -2608,7 +2608,7 @@ private[sql] case class CleanFiles(
     carbonLoadModel.setTableName(relation.cubeMeta.carbonTableIdentifier.getTableName)
     carbonLoadModel.setDatabaseName(relation.cubeMeta.carbonTableIdentifier.getDatabaseName)
     val table = relation.cubeMeta.carbonTable
-    carbonLoadModel.setAggTables(table.getAggregateTablesName.map(_.toString).toArray)
+    carbonLoadModel.setAggTables(table.getAggregateTablesName.asScala.map(_.toString).toArray)
     carbonLoadModel.setTableName(table.getFactTableName)
 
     CarbonDataRDDFactory.cleanFiles(

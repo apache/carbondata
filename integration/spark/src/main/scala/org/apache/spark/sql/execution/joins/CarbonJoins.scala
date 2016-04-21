@@ -20,11 +20,12 @@ package org.apache.spark.sql.execution.joins
 
 import scala.Array.canBuildFrom
 
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.CarbonCubeScan
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.{BindReferences, Expression, Literal}
-import org.apache.spark.sql.execution.metric.SQLMetrics
 import org.apache.spark.sql.execution.{BinaryNode, SparkPlan}
+import org.apache.spark.sql.execution.metric.SQLMetrics
 import org.apache.spark.unsafe.types.UTF8String
 
 case class FilterPushJoin(
@@ -40,7 +41,7 @@ case class FilterPushJoin(
     "numRightRows" -> SQLMetrics.createLongMetric(sparkContext, "number of right rows"),
     "numOutputRows" -> SQLMetrics.createLongMetric(sparkContext, "number of output rows"))
 
-  override def doExecute() = {
+  override def doExecute(): RDD[InternalRow] = {
 
     val numOutputRows = longMetric("numOutputRows")
     val (numBuildRows, numStreamedRows) = buildSide match {
@@ -64,9 +65,11 @@ case class FilterPushJoin(
         input.map(
           r => {
             val curr = k.eval(r)
-            if (curr.isInstanceOf[UTF8String])
+            if (curr.isInstanceOf[UTF8String]) {
               Literal(curr.toString).asInstanceOf[Expression]
-            else Literal(curr).asInstanceOf[Expression]
+            } else {
+              Literal(curr).asInstanceOf[Expression]
+            }
           })
     }
     val carbonScan = buildSide match {
@@ -75,8 +78,9 @@ case class FilterPushJoin(
     }
 
     val cubeScan = carbonScan.collectFirst { case a: CarbonCubeScan => a }
-    if (cubeScan.isDefined)
+    if (cubeScan.isDefined) {
       cubeScan.get.addPushdownFilters(streamedKeys, filters, condition)
+    }
 
     val streamedPlanOutput = streamedPlan.execute()
 

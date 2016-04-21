@@ -17,11 +17,12 @@
 
 package org.carbondata.integration.spark.rdd
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 
+import org.apache.spark.{Logging, Partition, SparkContext, TaskContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.cubemodel.Partitioner
-import org.apache.spark.{Logging, Partition, SparkContext, TaskContext}
+
 import org.carbondata.core.metadata.CarbonMetadata
 import org.carbondata.integration.spark.KeyVal
 import org.carbondata.integration.spark.util.CarbonQueryUtil
@@ -47,7 +48,7 @@ class CarbonDropCubeRDD[K, V](
     result
   }
 
-  override def compute(theSplit: Partition, context: TaskContext) = {
+  override def compute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
 
     val iter = new Iterator[(K, V)] {
       val split = theSplit.asInstanceOf[CarbonLoadPartition]
@@ -59,7 +60,7 @@ class CarbonDropCubeRDD[K, V](
         if (InMemoryTableStore.getInstance().getCubeNames().contains(cubeUniqueName)) {
           InMemoryTableStore.getInstance().clearCache(cubeUniqueName)
           val tables = cube.getMetaTableNames()
-          tables.foreach { tableName =>
+          tables.asScala.foreach { tableName =>
             val tabelUniqueName = cubeUniqueName + '_' + tableName
             InMemoryTableStore.getInstance().clearTableAndCurrentRSMap(tabelUniqueName)
           }

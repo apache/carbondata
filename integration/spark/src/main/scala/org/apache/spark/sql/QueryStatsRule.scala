@@ -17,6 +17,7 @@
 
 package org.apache.spark.sql
 
+import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, Filter, Join, Limit, LogicalPlan, Project, Sort, Subquery}
 import org.apache.spark.sql.catalyst.rules.Rule
 
@@ -78,7 +79,7 @@ class QueryStatsRule extends Rule[LogicalPlan] {
 case class QueryStatsLogicalPlan(plan: LogicalPlan) extends LogicalPlan {
   override def children: Seq[LogicalPlan] = Seq(plan)
 
-  override def output = plan.output
+  override def output: Seq[Attribute] = plan.output
 
-  def child = plan
+  def child: LogicalPlan = plan
 }
