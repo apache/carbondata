@@ -31,7 +31,7 @@ import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.load.LoadMetadataDetails
 import org.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.carbondata.integration.spark.MergeResult
-import org.carbondata.integration.spark.load.{CarbonLoadModel, CarbonLoaderUtil}
+import org.carbondata.integration.spark.load._
 import org.carbondata.integration.spark.merger.CarbonDataMergerUtil
 import org.carbondata.integration.spark.splits.TableSplit
 import org.carbondata.integration.spark.util.CarbonQueryUtil

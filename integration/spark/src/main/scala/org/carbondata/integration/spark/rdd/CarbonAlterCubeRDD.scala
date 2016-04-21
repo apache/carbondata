@@ -19,12 +19,13 @@ package org.carbondata.integration.spark.rdd
 
 import java.io.File
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
+import org.apache.spark.{Logging, Partition, SparkContext, TaskContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.cubemodel.Partitioner
-import org.apache.spark.{Logging, Partition, SparkContext, TaskContext}
+
 import org.carbondata.core.carbon.CarbonDef
 import org.carbondata.core.util.CarbonUtil
 import org.carbondata.integration.spark.RestructureResult
@@ -76,13 +77,15 @@ class CarbonAlterCubeRDD[K, V](
           SchemaRestructurer(schemaNameWithPartition, cubeNameWithPartition,
             factTableName, hdfsStoreLocation, currentRestructNumber, curTime)
       val status = schemaRestructureInvoker
-        .restructureSchema(addedDimensions, addedMeasures, defaultVals, origUnModifiedSchema,
-          schema, validDropDimList, validDropMsrList)
+        .restructureSchema(addedDimensions.asJava, addedMeasures.asJava,
+          defaultVals.asJava, origUnModifiedSchema,
+          schema, validDropDimList.asJava, validDropMsrList.asJava)
       if (status && InMemoryTableStore.getInstance.isLevelCacheEnabled()) {
         val listOfLoadFolders = CarbonQueryUtil
           .getListOfSlices(CarbonUtil.readLoadMetadata(metaDataPath))
         CarbonQueryUtil
-          .clearLevelLRUCacheForDroppedColumns(listOfLoadFolders, validDropDimList, schemaName,
+          .clearLevelLRUCacheForDroppedColumns(listOfLoadFolders,
+            validDropDimList.asJava, schemaName,
             cubeName, partitioner.partitionCount)
       }
       var loadCount: Integer = -1
@@ -125,7 +128,7 @@ class CarbonAlterCubeRDD[K, V](
 
   override def getPreferredLocations(split: Partition): Seq[String] = {
     val theSplit = split.asInstanceOf[CarbonLoadPartition]
-    val s = theSplit.serializableHadoopSplit.value.getLocations
+    val s = theSplit.serializableHadoopSplit.value.getLocations.asScala
     logInfo("Host Name : " + s(0) + s.length)
     s
   }

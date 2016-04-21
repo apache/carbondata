@@ -18,7 +18,7 @@
 
 package org.carbondata.integration.spark.rdd
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 
 import org.apache.spark.{Logging, Partition, SerializableWritable, SparkContext, TaskContext}
 import org.apache.spark.rdd.RDD
@@ -74,12 +74,8 @@ class CarbonDataPartitionRDD[K, V](
     result
   }
 
-  override def checkpoint() {
-    // Do nothing. Hadoop RDD should not be checkpointed.
-  }
-
-  override def compute(theSplit: Partition, context: TaskContext) = {
-    val iter = new Iterator[(K, V)] {
+  override def compute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
+    new Iterator[(K, V)] {
       val split = theSplit.asInstanceOf[CarbonDataPartition]
       StandardLogService
         .setThreadName(split.serializableHadoopSplit.value.getPartition().getUniqueID(), null);
@@ -88,7 +84,7 @@ class CarbonDataPartitionRDD[K, V](
       val csvPart = new CSVFilePartitioner(partitioner.partitionClass, sourcePath)
       csvPart.splitFile(schemaName, cubeName,
         split.serializableHadoopSplit.value.getPartition().getFilesPath, targetFolder,
-        partitioner.nodeList.toList, partitioner.partitionCount, partitioner.partitionColumn,
+        partitioner.nodeList.toList.asJava, partitioner.partitionCount, partitioner.partitionColumn,
         requiredColumns, delimiter, quoteChar, headers, escapeChar, multiLine)
 
       var finished = false
@@ -107,12 +103,11 @@ class CarbonDataPartitionRDD[K, V](
         results.getKey(partitioner.partitionCount, csvPart.isPartialSuccess)
       }
     }
-    iter
   }
 
   override def getPreferredLocations(split: Partition): Seq[String] = {
     val theSplit = split.asInstanceOf[CarbonDataPartition]
-    val s = theSplit.serializableHadoopSplit.value.getLocations
+    val s = theSplit.serializableHadoopSplit.value.getLocations.asScala
     logInfo("Host Name : " + s(0) + s.length)
     s
   }

@@ -25,7 +25,7 @@ import scala.language.implicitConversions
 import org.apache.spark.Logging
 import org.apache.spark.sql.catalyst.analysis.MultiInstanceRelation
 import org.apache.spark.sql.catalyst.expressions.AttributeReference
-import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, LeafNode, Statistics}
+import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.hive.{CarbonMetaData, CarbonMetastoreTypes, TableMeta}
 import org.apache.spark.sql.sources.{BaseRelation, RelationProvider}
 import org.apache.spark.sql.types.{DataType, StructType}

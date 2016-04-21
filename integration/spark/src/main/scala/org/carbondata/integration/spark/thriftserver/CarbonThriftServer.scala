@@ -26,7 +26,6 @@ import org.carbondata.core.util.CarbonProperties
 object CarbonThriftServer {
 
   def main(args: Array[String]): Unit = {
-    args.foreach(println)
     var conf = new SparkConf()
       .setMaster(args(0))
       .set("spark.executor.memory", args(1))
@@ -42,24 +41,22 @@ object CarbonThriftServer {
       .set("spark.sql.useSerializer2", "false")
       .set("spark.kryoserializer.buffer", "100k")
     val sparkHome = System.getenv.get("SPARK_HOME")
-    print("sparkHome: " + sparkHome)
     if (null != sparkHome) {
       conf.set("carbon.properties.filepath", sparkHome + '/' + "conf" + '/' + "carbon.properties")
       System.setProperty("carbon.properties.filepath",
         sparkHome + '/' + "conf" + '/' + "carbon.properties")
     }
-    print("Carbon Property file path: " + conf.get("carbon.properties.filepath"))
     val sc = new SparkContext(conf);
     val warmUpTime = CarbonProperties.getInstance().getProperty("carbon.spark.warmUpTime", "5000");
-    println("Sleeping for millisecs:" + warmUpTime);
     try {
       Thread.sleep(Integer.parseInt(warmUpTime));
     } catch {
-      case _ => {
+      case _ =>
+        // scalastyle:off
         println("Wrong value for carbon.spark.warmUpTime " + warmUpTime +
           "Using default Value and proceeding");
+        // scalastyle:on
         Thread.sleep(30000);
-      }
     }
 
     val carbonContext = new CarbonContext(sc, args(3))

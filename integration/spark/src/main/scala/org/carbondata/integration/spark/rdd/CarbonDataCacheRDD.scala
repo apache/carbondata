@@ -21,11 +21,12 @@ package org.carbondata.integration.spark.rdd
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 
+import org.apache.spark.{Logging, Partition, SerializableWritable, SparkContext, TaskContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.cubemodel.Partitioner
-import org.apache.spark.{Logging, Partition, SerializableWritable, SparkContext, TaskContext}
+
 import org.carbondata.core.carbon.CarbonDef
 import org.carbondata.core.util.CarbonProperties
 import org.carbondata.integration.spark.KeyVal
@@ -135,7 +136,7 @@ class CarbonDataCacheRDD[K, V](
 
   override def getPreferredLocations(split: Partition): Seq[String] = {
     val theSplit = split.asInstanceOf[CarbonCachePartition]
-    val s = theSplit.serializableHadoopSplit.value.getLocations
+    val s = theSplit.serializableHadoopSplit.value.getLocations.asScala
     logInfo("Host Name : " + s(0) + s.length)
     s
   }

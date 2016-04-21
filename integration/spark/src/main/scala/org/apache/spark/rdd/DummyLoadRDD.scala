@@ -33,8 +33,9 @@ class DummyLoadRDD(prev: NewHadoopRDD[LongWritable, Text])
 
   override def getPartitions: Array[Partition] = firstParent[(LongWritable, Text)].partitions
 
-  override def compute(theSplit: Partition, context: TaskContext) = {
-    val iter = new Iterator[(String, BlockDetails)] {
+  override def compute(theSplit: Partition,
+                       context: TaskContext): Iterator[(String, BlockDetails)] = {
+    new Iterator[(String, BlockDetails)] {
       val split = theSplit.asInstanceOf[NewHadoopPartition]
       var finished = false
 
@@ -58,7 +59,6 @@ class DummyLoadRDD(prev: NewHadoopRDD[LongWritable, Text])
         (host, nodeBlocksDetail)
       }
     }
-    iter
   }
 
 }
