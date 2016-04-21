@@ -1978,31 +1978,6 @@ private[sql] case class LoadCube(
           .loadCarbonData(sqlContext, carbonLoadModel, storeLocation, relation.cubeMeta.dataPath,
             kettleHomePath,
             relation.cubeMeta.partitioner, columinar, false, partitionStatus);
-        try {
-          val loadMetadataFilePath = CarbonLoaderUtil
-            .extractLoadMetadataFileLocation(carbonLoadModel)
-
-          val details = CarbonUtil
-            .readLoadMetadata(loadMetadataFilePath)
-          if (null != details) {
-            var listOfLoadFolders = CarbonLoaderUtil.getListOfValidSlices(details)
-            // CarbonProperties.getInstance.getProperty("carbon.kettle.home","false")
-            if (null != listOfLoadFolders && listOfLoadFolders.size() > 0 &&
-              CarbonProperties.getInstance
-                .getProperty(CarbonCommonConstants.LOADCUBE_DATALOAD, "false") == "true") {
-              var hc: HiveContext = sqlContext.asInstanceOf[HiveContext]
-              hc.sql(" select count(*) from " + schemaName + "." + cubeName).collect()
-
-            }
-          }
-        }
-        catch {
-          case ex: Exception =>
-            LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-              "Btree loading is failed after data loading process.")
-
-
-        }
       }
       catch {
         case ex: Exception =>

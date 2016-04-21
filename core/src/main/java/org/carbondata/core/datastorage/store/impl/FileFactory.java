@@ -119,7 +119,7 @@ public final class FileFactory {
         Path pt = new Path(path);
         FileSystem fs = pt.getFileSystem(configuration);
         FSDataInputStream stream = fs.open(pt);
-        return stream;
+        return new DataInputStream(new BufferedInputStream(stream));
       default:
         return new DataInputStream(new BufferedInputStream(new FileInputStream(path)));
     }
@@ -135,7 +135,7 @@ public final class FileFactory {
         Path pt = new Path(path);
         FileSystem fs = pt.getFileSystem(configuration);
         FSDataInputStream stream = fs.open(pt, bufferSize);
-        return stream;
+        return new DataInputStream(new BufferedInputStream(stream));
       default:
         return new DataInputStream(new BufferedInputStream(new FileInputStream(path)));
     }
@@ -160,7 +160,7 @@ public final class FileFactory {
         FileSystem fs = pt.getFileSystem(configuration);
         FSDataInputStream stream = fs.open(pt, bufferSize);
         stream.seek(offset);
-        return stream;
+        return new DataInputStream(new BufferedInputStream(stream));
       default:
         FileInputStream fis = new FileInputStream(path);
         long actualSkipSize = 0;
