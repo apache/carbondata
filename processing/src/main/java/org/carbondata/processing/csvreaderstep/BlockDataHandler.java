@@ -210,6 +210,12 @@ public class BlockDataHandler {
     String filePath = KettleVFS.getFilename(fileObject);
     this.bufferedInputStream = FileFactory.getDataInputStream(filePath,
         FileFactory.getFileType(filePath), this.preferredBufferSize);
+    //when open a new file, need to initialize all info
+    this.byteBuffer = new byte[this.preferredBufferSize];
+    this.bufferSize = 0;
+    this.startBuffer = 0;
+    this.endBuffer = 0;
+    this.currentOffset = 0;
   }
   /**
    *  skip the offset and reset the value
@@ -370,6 +376,20 @@ public class BlockDataHandler {
                 enclosureFound = false;
                 break;
               }
+
+              if (!doConversions) {
+                //when catch the block which need to skip first line
+                //the complete row like: abc,"cdf","efg",hij
+                //but this row is split to different blocks
+                //in this block,the remaining row like :  fg",hij
+                //so if we meet the enclosure in the skip line, when we meet \r or \n ,let's break
+                if (data.crLfMatcher.isReturn(this.byteBuffer, this.endBuffer)
+                        || data.crLfMatcher.isLineFeed(this.byteBuffer, this.endBuffer)) {
+                  enclosureFound = false;
+                  break;
+                }
+              }
+
               keepGoing = !data.enclosureMatcher
                   .matchesPattern(this.byteBuffer, this.endBuffer,
                       data.enclosure);
