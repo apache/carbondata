@@ -27,67 +27,66 @@ import java.util.List;
  */
 public class CarbonComplexDimension extends CarbonDimension implements Serializable {
 
-    /**
-     * serialization version
-     */
-    private static final long serialVersionUID = 3648269871656322681L;
+  /**
+   * serialization version
+   */
+  private static final long serialVersionUID = 3648269871656322681L;
 
-    /**
-     * List of child dimension for complex type
-     */
-    private List<CarbonDimension> listOfChildDimensions;
+  /**
+   * List of child dimension for complex type
+   */
+  private List<CarbonDimension> listOfChildDimensions;
 
-    public CarbonComplexDimension(ColumnSchema columnSchema, int ordinal, int childDimensions) {
-        super(columnSchema, ordinal);
-        listOfChildDimensions = new ArrayList<CarbonDimension>(childDimensions);
+  public CarbonComplexDimension(ColumnSchema columnSchema, int ordinal, int childDimensions) {
+    super(columnSchema, ordinal);
+    listOfChildDimensions = new ArrayList<CarbonDimension>(childDimensions);
+  }
+
+  /**
+   * @return number of children for complex type
+   */
+  @Override public int getNumberOfChild() {
+    return columnSchema.getNumberOfChild();
+  }
+
+  /**
+   * @return list of children dims for complex type
+   */
+  @Override public List<CarbonDimension> getListOfChildDimensions() {
+    return listOfChildDimensions;
+  }
+
+  /**
+   * to generate the hash code for this class
+   */
+  @Override public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + ((columnSchema == null) ? 0 : columnSchema.hashCode());
+    return result;
+  }
+
+  /**
+   * to check whether to dimension are equal or not
+   */
+  @Override public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
     }
-
-    /**
-     * @return number of children for complex type
-     */
-    @Override public int getNumberOfChild()
-    {
-    	return columnSchema.getNumberOfChild();
+    if (obj == null) {
+      return false;
     }
-
-    /**
-     * @return list of children dims for complex type
-     */
-    @Override public List<CarbonDimension> getListOfChildDimensions() {
-      return listOfChildDimensions;
+    if (!(obj instanceof CarbonComplexDimension)) {
+      return false;
     }
-
-    /**
-     * to generate the hash code for this class
-     */
-    @Override public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((columnSchema == null) ? 0 : columnSchema.hashCode());
-        return result;
+    CarbonComplexDimension other = (CarbonComplexDimension) obj;
+    if (columnSchema == null) {
+      if (other.columnSchema != null) {
+        return false;
+      }
+    } else if (!columnSchema.equals(other.columnSchema)) {
+      return false;
     }
-
-    /**
-     * to check whether to dimension are equal or not
-     */
-    @Override public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (!(obj instanceof CarbonComplexDimension)) {
-            return false;
-        }
-        CarbonComplexDimension other = (CarbonComplexDimension) obj;
-        if (columnSchema == null) {
-            if (other.columnSchema != null) {
-                return false;
-            }
-        } else if (!columnSchema.equals(other.columnSchema)) {
-            return false;
-        }
-        return true;
-    }
+    return true;
+  }
 }
