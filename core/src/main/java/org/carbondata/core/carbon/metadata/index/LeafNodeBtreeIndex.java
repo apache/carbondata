@@ -19,51 +19,50 @@ package org.carbondata.core.carbon.metadata.index;
 import java.io.Serializable;
 
 /**
- *Class hold the information about start and end key of one leaf node
- *
+ * Class hold the information about start and end key of one leaf node
  */
 public class LeafNodeBtreeIndex implements Serializable {
 
-    /**
-     * serialization version
-     */
-    private static final long serialVersionUID = 6116185464700853045L;
+  /**
+   * serialization version
+   */
+  private static final long serialVersionUID = 6116185464700853045L;
 
-    /**
-     * Bit-packed start key of one leaf node
-     */
-    private byte[] startKey;
+  /**
+   * Bit-packed start key of one leaf node
+   */
+  private byte[] startKey;
 
-    /**
-     * Bit-packed start key of one leaf node
-     */
-    private byte[] endKey;
+  /**
+   * Bit-packed start key of one leaf node
+   */
+  private byte[] endKey;
 
-    /**
-     * @return the startKey
-     */
-    public byte[] getStartKey() {
-        return startKey;
-    }
+  /**
+   * @return the startKey
+   */
+  public byte[] getStartKey() {
+    return startKey;
+  }
 
-    /**
-     * @param startKey the startKey to set
-     */
-    public void setStartKey(byte[] startKey) {
-        this.startKey = startKey;
-    }
+  /**
+   * @param startKey the startKey to set
+   */
+  public void setStartKey(byte[] startKey) {
+    this.startKey = startKey;
+  }
 
-    /**
-     * @return the endKey
-     */
-    public byte[] getEndKey() {
-        return endKey;
-    }
+  /**
+   * @return the endKey
+   */
+  public byte[] getEndKey() {
+    return endKey;
+  }
 
-    /**
-     * @param endKey the endKey to set
-     */
-    public void setEndKey(byte[] endKey) {
-        this.endKey = endKey;
-    }
+  /**
+   * @param endKey the endKey to set
+   */
+  public void setEndKey(byte[] endKey) {
+    this.endKey = endKey;
+  }
 }

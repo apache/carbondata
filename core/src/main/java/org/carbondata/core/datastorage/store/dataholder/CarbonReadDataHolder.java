@@ -23,93 +23,93 @@ import java.math.BigDecimal;
 
 public class CarbonReadDataHolder {
 
-    /**
-     * doubleValues
-     */
-    private double[] doubleValues;
+  /**
+   * doubleValues
+   */
+  private double[] doubleValues;
 
-    /**
-     * longValues
-     */
-    private long[] longValues;
+  /**
+   * longValues
+   */
+  private long[] longValues;
 
-    /**
-     * bigDecimalValues
-     */
-    private BigDecimal[] bigDecimalValues;
+  /**
+   * bigDecimalValues
+   */
+  private BigDecimal[] bigDecimalValues;
 
-    /**
-     * byteValues
-     */
-    private byte[][] byteValues;
+  /**
+   * byteValues
+   */
+  private byte[][] byteValues;
 
-    /**
-     * @return the doubleValues
-     */
-    public double[] getReadableDoubleValues() {
-        return doubleValues;
-    }
+  /**
+   * @return the doubleValues
+   */
+  public double[] getReadableDoubleValues() {
+    return doubleValues;
+  }
 
-    /**
-     * @param doubleValues the doubleValues to set
-     */
-    public void setReadableDoubleValues(double[] doubleValues) {
-        this.doubleValues = doubleValues;
-    }
+  /**
+   * @param doubleValues the doubleValues to set
+   */
+  public void setReadableDoubleValues(double[] doubleValues) {
+    this.doubleValues = doubleValues;
+  }
 
-    /**
-     * @return the byteValues
-     */
-    public byte[][] getReadableByteArrayValues() {
-        return byteValues;
-    }
+  /**
+   * @return the byteValues
+   */
+  public byte[][] getReadableByteArrayValues() {
+    return byteValues;
+  }
 
-    /**
-     * @param longValues the longValues to set
-     */
-    public void setReadableLongValues(long[] longValues) {
-        this.longValues = longValues;
-    }
+  /**
+   * @param longValues the longValues to set
+   */
+  public void setReadableLongValues(long[] longValues) {
+    this.longValues = longValues;
+  }
 
-    /**
-     * @param longValues the bigDecimalValues to set
-     */
-    public void setReadableBigDecimalValues(BigDecimal[] bigDecimalValues) {
-        this.bigDecimalValues = bigDecimalValues;
-    }
+  /**
+   * @param longValues the bigDecimalValues to set
+   */
+  public void setReadableBigDecimalValues(BigDecimal[] bigDecimalValues) {
+    this.bigDecimalValues = bigDecimalValues;
+  }
 
-    /**
-     * @param byteValues the byteValues to set
-     */
-    public void setReadableByteValues(byte[][] byteValues) {
-        this.byteValues = byteValues;
-    }
+  /**
+   * @param byteValues the byteValues to set
+   */
+  public void setReadableByteValues(byte[][] byteValues) {
+    this.byteValues = byteValues;
+  }
 
-    /**
-     * below method will be used to get the double value by index
-     *
-     * @param index
-     * @return double values
-     */
-    public double getReadableDoubleValueByIndex(int index) {
-        return this.doubleValues[index];
-    }
+  /**
+   * below method will be used to get the double value by index
+   *
+   * @param index
+   * @return double values
+   */
+  public double getReadableDoubleValueByIndex(int index) {
+    return this.doubleValues[index];
+  }
 
-    public long getReadableLongValueByIndex(int index) {
-        return this.longValues[index];
-    }
+  public long getReadableLongValueByIndex(int index) {
+    return this.longValues[index];
+  }
 
-    public BigDecimal getReadableBigDecimalValueByIndex(int index) {
-        return this.bigDecimalValues[index];
-    }
+  public BigDecimal getReadableBigDecimalValueByIndex(int index) {
+    return this.bigDecimalValues[index];
+  }
 
-    /**
-     * below method will be used to get the readable byte array value by index
-     *
-     * @param index
-     * @return byte array value
-     */
-    public byte[] getReadableByteArrayValueByIndex(int index) {
-        return this.byteValues[index];
-    }
+  /**
+   * below method will be used to get the readable byte array value by index
+   *
+   * @param index
+   * @return byte array value
+   */
+  public byte[] getReadableByteArrayValueByIndex(int index) {
+    return this.byteValues[index];
+  }
 }

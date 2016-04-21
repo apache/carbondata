@@ -26,52 +26,52 @@ import org.carbondata.core.keygenerator.mdkey.NumberCompressor;
 import org.carbondata.core.util.CarbonUtil;
 
 public class CarbonFactDataWriterImplForIntIndexAndAggBlockCompressed
-        extends CarbonFactDataWriterImplForIntIndexAndAggBlock {
+    extends CarbonFactDataWriterImplForIntIndexAndAggBlock {
 
-    private NumberCompressor[] keyBlockCompressor;
+  private NumberCompressor[] keyBlockCompressor;
 
-    public CarbonFactDataWriterImplForIntIndexAndAggBlockCompressed(String storeLocation,
-            int measureCount, int mdKeyLength, String tableName, boolean isNodeHolder,
-            IFileManagerComposite fileManager, int[] keyBlockSize, boolean[] aggBlocks,
-            int[] cardinality, boolean isUpdateFact) {
-        super(storeLocation, measureCount, mdKeyLength, tableName, isNodeHolder, fileManager,
-                keyBlockSize, aggBlocks, isUpdateFact, null);
-        this.keyBlockCompressor = new NumberCompressor[cardinality.length];
-        for (int i = 0; i < cardinality.length; i++) {
-            this.keyBlockCompressor[i] =
-                    new NumberCompressor(Long.toBinaryString(cardinality[i]).length(), CarbonUtil
-                            .getIncrementedFullyFilledRCDCardinalityFullyFilled(cardinality[i]));
-        }
+  public CarbonFactDataWriterImplForIntIndexAndAggBlockCompressed(String storeLocation,
+      int measureCount, int mdKeyLength, String tableName, boolean isNodeHolder,
+      IFileManagerComposite fileManager, int[] keyBlockSize, boolean[] aggBlocks, int[] cardinality,
+      boolean isUpdateFact) {
+    super(storeLocation, measureCount, mdKeyLength, tableName, isNodeHolder, fileManager,
+        keyBlockSize, aggBlocks, isUpdateFact, null);
+    this.keyBlockCompressor = new NumberCompressor[cardinality.length];
+    for (int i = 0; i < cardinality.length; i++) {
+      this.keyBlockCompressor[i] =
+          new NumberCompressor(Long.toBinaryString(cardinality[i]).length(),
+              CarbonUtil.getIncrementedFullyFilledRCDCardinalityFullyFilled(cardinality[i]));
     }
+  }
 
-    protected byte[][] fillAndCompressedKeyBlockData(IndexStorage<int[]>[] keyStorageArray,
-            int entryCount) {
-        byte[][] keyBlockData = new byte[keyStorageArray.length][];
-        int destPos = 0;
+  protected byte[][] fillAndCompressedKeyBlockData(IndexStorage<int[]>[] keyStorageArray,
+      int entryCount) {
+    byte[][] keyBlockData = new byte[keyStorageArray.length][];
+    int destPos = 0;
 
-        for (int i = 0; i < keyStorageArray.length; i++) {
-            destPos = 0;
-            if (aggBlocks[i]) {
-                keyBlockData[i] = new byte[keyStorageArray[i].getTotalSize()];
-                for (int m = 0; m < keyStorageArray[i].getKeyBlock().length; m++) {
-                    System.arraycopy(keyStorageArray[i].getKeyBlock()[m], 0, keyBlockData[i],
-                            destPos, keyStorageArray[i].getKeyBlock()[m].length);
-                    destPos += keyStorageArray[i].getKeyBlock()[m].length;
-                }
-                keyBlockData[i] = this.keyBlockCompressor[i].compressBytes(keyBlockData[i]);
-            } else {
-                keyBlockData[i] = new byte[entryCount * keyBlockSize[i]];
-                for (int j = 0; j < keyStorageArray[i].getKeyBlock().length; j++) {
-                    System.arraycopy(keyStorageArray[i].getKeyBlock()[j], 0, keyBlockData[i],
-                            destPos, keyBlockSize[i]);
-                    destPos += keyBlockSize[i];
-                }
-                keyBlockData[i] = this.keyBlockCompressor[i].compressBytes(keyBlockData[i]);
-                keyBlockData[i] = SnappyByteCompression.INSTANCE.compress(keyBlockData[i]);
-            }
-
+    for (int i = 0; i < keyStorageArray.length; i++) {
+      destPos = 0;
+      if (aggBlocks[i]) {
+        keyBlockData[i] = new byte[keyStorageArray[i].getTotalSize()];
+        for (int m = 0; m < keyStorageArray[i].getKeyBlock().length; m++) {
+          System.arraycopy(keyStorageArray[i].getKeyBlock()[m], 0, keyBlockData[i], destPos,
+              keyStorageArray[i].getKeyBlock()[m].length);
+          destPos += keyStorageArray[i].getKeyBlock()[m].length;
         }
-        return keyBlockData;
+        keyBlockData[i] = this.keyBlockCompressor[i].compressBytes(keyBlockData[i]);
+      } else {
+        keyBlockData[i] = new byte[entryCount * keyBlockSize[i]];
+        for (int j = 0; j < keyStorageArray[i].getKeyBlock().length; j++) {
+          System.arraycopy(keyStorageArray[i].getKeyBlock()[j], 0, keyBlockData[i], destPos,
+              keyBlockSize[i]);
+          destPos += keyBlockSize[i];
+        }
+        keyBlockData[i] = this.keyBlockCompressor[i].compressBytes(keyBlockData[i]);
+        keyBlockData[i] = SnappyByteCompression.INSTANCE.compress(keyBlockData[i]);
+      }
+
     }
+    return keyBlockData;
+  }
 
 }

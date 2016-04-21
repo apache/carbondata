@@ -26,25 +26,26 @@ import org.carbondata.query.evaluators.FilterEvaluator;
 import org.carbondata.query.evaluators.FilterProcessorPlaceHolder;
 
 public class OrFilterEvaluator extends AbstractLogicalFilterEvaluator {
-    public OrFilterEvaluator(FilterEvaluator leftEvalutor, FilterEvaluator rightEvalutor) {
-        super(leftEvalutor, rightEvalutor);
-    }
+  public OrFilterEvaluator(FilterEvaluator leftEvalutor, FilterEvaluator rightEvalutor) {
+    super(leftEvalutor, rightEvalutor);
+  }
 
-    @Override
-    public BitSet applyFilter(BlockDataHolder blockDataHolder,
-            FilterProcessorPlaceHolder placeHolder,int [] noDictionaryColIndexes) {
-        BitSet leftFilters = leftEvalutor.applyFilter(blockDataHolder, placeHolder,noDictionaryColIndexes);
-        BitSet rightFilters = rightEvalutor.applyFilter(blockDataHolder, placeHolder,noDictionaryColIndexes);
-        leftFilters.or(rightFilters);
-        return leftFilters;
-    }
+  @Override
+  public BitSet applyFilter(BlockDataHolder blockDataHolder, FilterProcessorPlaceHolder placeHolder,
+      int[] noDictionaryColIndexes) {
+    BitSet leftFilters =
+        leftEvalutor.applyFilter(blockDataHolder, placeHolder, noDictionaryColIndexes);
+    BitSet rightFilters =
+        rightEvalutor.applyFilter(blockDataHolder, placeHolder, noDictionaryColIndexes);
+    leftFilters.or(rightFilters);
+    return leftFilters;
+  }
 
-    @Override
-    public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
-        BitSet leftFilters = leftEvalutor.isScanRequired(blockMaxValue, blockMinValue);
-        BitSet rightFilters = rightEvalutor.isScanRequired(blockMaxValue, blockMinValue);
-        leftFilters.or(rightFilters);
-        return leftFilters;
-    }
+  @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
+    BitSet leftFilters = leftEvalutor.isScanRequired(blockMaxValue, blockMinValue);
+    BitSet rightFilters = rightEvalutor.isScanRequired(blockMaxValue, blockMinValue);
+    leftFilters.or(rightFilters);
+    return leftFilters;
+  }
 
 }

@@ -19,133 +19,139 @@
 
 package org.carbondata.processing.surrogatekeysgenerator.dbbased;
 
-import java.io.*;
+import java.io.BufferedOutputStream;
+import java.io.Closeable;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
+
 import org.pentaho.di.core.exception.KettleException;
 
 public class HierarchyValueWriter {
 
-    /**
-     * Comment for <code>LOGGER</code>
-     */
-    private static final LogService LOGGER =
-            LogServiceFactory.getLogService(HierarchyValueWriter.class.getName());
-    /**
-     * BUFFFER_SIZE
-     */
-    private static final int BUFFFER_SIZE = 32768;
-    /**
-     * hierarchyName
-     */
-    private String hierarchyName;
-    /**
-     * bufferedOutStream
-     */
-    private BufferedOutputStream bufferedOutStream;
-    /**
-     * storeFolderLocation
-     */
-    private String storeFolderLocation;
+  /**
+   * Comment for <code>LOGGER</code>
+   */
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(HierarchyValueWriter.class.getName());
+  /**
+   * BUFFFER_SIZE
+   */
+  private static final int BUFFFER_SIZE = 32768;
+  /**
+   * hierarchyName
+   */
+  private String hierarchyName;
+  /**
+   * bufferedOutStream
+   */
+  private BufferedOutputStream bufferedOutStream;
+  /**
+   * storeFolderLocation
+   */
+  private String storeFolderLocation;
 
-    /**
-     * byteArrayList
-     */
-    private List<byte[]> byteArrayList = new ArrayList<byte[]>();
+  /**
+   * byteArrayList
+   */
+  private List<byte[]> byteArrayList = new ArrayList<byte[]>();
 
-    public HierarchyValueWriter(String hierarchy, String storeFolderLocation) {
-        this.hierarchyName = hierarchy;
-        this.storeFolderLocation = storeFolderLocation;
+  public HierarchyValueWriter(String hierarchy, String storeFolderLocation) {
+    this.hierarchyName = hierarchy;
+    this.storeFolderLocation = storeFolderLocation;
+  }
+
+  /**
+   * @return Returns the byteArrayList.
+   */
+  public List<byte[]> getByteArrayList() {
+    return byteArrayList;
+  }
+
+  /**
+   * @param byteArrayList The byteArrayList to set.
+   */
+  public void setByteArrayList(List<byte[]> byteArrayList) {
+    this.byteArrayList = byteArrayList;
+  }
+
+  /**
+   * @return Returns the bufferedOutStream.
+   */
+  public BufferedOutputStream getBufferedOutStream() {
+    return bufferedOutStream;
+  }
+
+  public void writeIntoHierarchyFile(byte[] bytes) throws KettleException {
+    File f = new File(storeFolderLocation + File.separator + hierarchyName);
+
+    FileOutputStream fos = null;
+
+    boolean isFileCreated = false;
+    if (!f.exists()) {
+      try {
+        isFileCreated = f.createNewFile();
+
+      } catch (IOException e) {
+        throw new KettleException("unable to create file", e);
+      }
+      if (!isFileCreated) {
+        throw new KettleException("unable to create file" + f.getAbsolutePath());
+      }
     }
+    try {
+      if (null == bufferedOutStream) {
+        fos = new FileOutputStream(f);
+        bufferedOutStream = new BufferedOutputStream(fos, BUFFFER_SIZE);
 
-    /**
-     * @return Returns the byteArrayList.
-     */
-    public List<byte[]> getByteArrayList() {
-        return byteArrayList;
+      }
+      bufferedOutStream.write(bytes);
+
+    } catch (FileNotFoundException e) {
+      closeStreamAndDeleteFile(f, bufferedOutStream, fos);
+      throw new KettleException("hierarchy mapping file not found", e);
+    } catch (IOException e) {
+      closeStreamAndDeleteFile(f, bufferedOutStream, fos);
+      throw new KettleException("Error while writting in the hierarchy mapping file", e);
     }
+  }
 
-    /**
-     * @param byteArrayList The byteArrayList to set.
-     */
-    public void setByteArrayList(List<byte[]> byteArrayList) {
-        this.byteArrayList = byteArrayList;
-    }
-
-    /**
-     * @return Returns the bufferedOutStream.
-     */
-    public BufferedOutputStream getBufferedOutStream() {
-        return bufferedOutStream;
-    }
-
-    public void writeIntoHierarchyFile(byte[] bytes) throws KettleException {
-        File f = new File(storeFolderLocation + File.separator + hierarchyName);
-
-        FileOutputStream fos = null;
-
-        boolean isFileCreated = false;
-        if (!f.exists()) {
-            try {
-                isFileCreated = f.createNewFile();
-
-            } catch (IOException e) {
-                throw new KettleException("unable to create file", e);
-            }
-            if (!isFileCreated) {
-                throw new KettleException("unable to create file" + f.getAbsolutePath());
-            }
-        }
+  private void closeStreamAndDeleteFile(File f, Closeable... streams) throws KettleException {
+    boolean isDeleted = false;
+    for (Closeable stream : streams) {
+      if (null != stream) {
         try {
-            if (null == bufferedOutStream) {
-                fos = new FileOutputStream(f);
-                bufferedOutStream = new BufferedOutputStream(fos, BUFFFER_SIZE);
-
-            }
-            bufferedOutStream.write(bytes);
-
-        } catch (FileNotFoundException e) {
-            closeStreamAndDeleteFile(f, bufferedOutStream, fos);
-            throw new KettleException("hierarchy mapping file not found", e);
+          stream.close();
         } catch (IOException e) {
-            closeStreamAndDeleteFile(f, bufferedOutStream, fos);
-            throw new KettleException("Error while writting in the hierarchy mapping file", e);
-        }
-    }
-
-    private void closeStreamAndDeleteFile(File f, Closeable... streams) throws KettleException {
-        boolean isDeleted = false;
-        for (Closeable stream : streams) {
-            if (null != stream) {
-                try {
-                    stream.close();
-                } catch (IOException e) {
-                    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
-                            "unable to close the stream ");
-                }
-
-            }
+          LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
+              "unable to close the stream ");
         }
 
-        // delete the file
-        isDeleted = f.delete();
-        if (!isDeleted) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-                    "Unable to delete the file " + f.getAbsolutePath());
-        }
-
+      }
     }
 
-    /**
-     * @return Returns the hierarchyName.
-     */
-    public String getHierarchyName() {
-        return hierarchyName;
+    // delete the file
+    isDeleted = f.delete();
+    if (!isDeleted) {
+      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
+          "Unable to delete the file " + f.getAbsolutePath());
     }
+
+  }
+
+  /**
+   * @return Returns the hierarchyName.
+   */
+  public String getHierarchyName() {
+    return hierarchyName;
+  }
 
 }
 

@@ -31,26 +31,26 @@ import org.carbondata.query.wrappers.ByteArrayWrapper;
  * Version 1.0
  */
 public interface ParallelSliceExecutor {
-    /**
-     * Execute the slice based on ranges
-     *
-     * @param ranges
-     * @return the resultMap
-     * @throws Exception
-     */
-    Map<ByteArrayWrapper, MeasureAggregator[]> executeSliceInParallel() throws Exception;
+  /**
+   * Execute the slice based on ranges
+   *
+   * @param ranges
+   * @return the resultMap
+   * @throws Exception
+   */
+  Map<ByteArrayWrapper, MeasureAggregator[]> executeSliceInParallel() throws Exception;
 
-    /**
-     * Execute the slice based on ranges
-     *
-     * @param ranges
-     * @return the resultMap
-     * @throws Exception
-     */
-    QueryResult executeSlices() throws Exception;
+  /**
+   * Execute the slice based on ranges
+   *
+   * @param ranges
+   * @return the resultMap
+   * @throws Exception
+   */
+  QueryResult executeSlices() throws Exception;
 
-    /**
-     * It interrupts the executor.
-     */
-    void interruptExecutor();
+  /**
+   * It interrupts the executor.
+   */
+  void interruptExecutor();
 }

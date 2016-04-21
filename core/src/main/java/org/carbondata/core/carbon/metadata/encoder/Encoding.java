@@ -22,9 +22,9 @@ package org.carbondata.core.carbon.metadata.encoder;
  * Encoding type supported in carbon
  */
 public enum Encoding {
-    DICTIONARY,
-    DELTA,
-    RLE,
-    INVERTED_INDEX,
-    BIT_PACKED;
+  DICTIONARY,
+  DELTA,
+  RLE,
+  INVERTED_INDEX,
+  BIT_PACKED;
 }

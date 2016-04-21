@@ -25,37 +25,37 @@ import org.carbondata.query.columnar.scanner.AbstractColumnarStorageScanner;
 import org.carbondata.query.schema.metadata.ColumnarStorageScannerInfo;
 
 public class ColumnarStorageScannerImpl extends AbstractColumnarStorageScanner {
-    private long counter;
-    private int[] noDictionaryColIndexes;
-    private int limit;
+  private long counter;
+  private int[] noDictionaryColIndexes;
+  private int limit;
 
-    public ColumnarStorageScannerImpl(ColumnarStorageScannerInfo columnarStorageScannerInfo) {
-        super(columnarStorageScannerInfo);
+  public ColumnarStorageScannerImpl(ColumnarStorageScannerInfo columnarStorageScannerInfo) {
+    super(columnarStorageScannerInfo);
 
-        this.columnarAggaregator = new ListBasedResultAggregatorImpl(
-                columnarStorageScannerInfo.getColumnarAggregatorInfo(),
-                new DataAggregator(columnarStorageScannerInfo.isAutoAggregateTableRequest(),
-                        columnarStorageScannerInfo.getColumnarAggregatorInfo()));
-        limit = columnarStorageScannerInfo.getColumnarAggregatorInfo().getLimit();
-    }
-    
-    public ColumnarStorageScannerImpl(ColumnarStorageScannerInfo columnarStorageScannerInfo,int[] noDictionaryColIndexes) {
-      this(columnarStorageScannerInfo);
-      this.noDictionaryColIndexes=noDictionaryColIndexes;
-    }
+    this.columnarAggaregator =
+        new ListBasedResultAggregatorImpl(columnarStorageScannerInfo.getColumnarAggregatorInfo(),
+            new DataAggregator(columnarStorageScannerInfo.isAutoAggregateTableRequest(),
+                columnarStorageScannerInfo.getColumnarAggregatorInfo()));
+    limit = columnarStorageScannerInfo.getColumnarAggregatorInfo().getLimit();
+  }
 
-    @Override
-    public void scanStore() {
-        while (leafIterator.hasNext()) {
-            blockDataHolder.setLeafDataBlock(leafIterator.next());
-            addToQueryStats(blockDataHolder);
-            blockDataHolder.reset();
-            counter += this.columnarAggaregator
-                    .aggregateData(blockProcessor.getScannedData(blockDataHolder,noDictionaryColIndexes));
-            finish();
-            if (limit != -1 && counter >= limit) {
-                break;
-            }
-        }
+  public ColumnarStorageScannerImpl(ColumnarStorageScannerInfo columnarStorageScannerInfo,
+      int[] noDictionaryColIndexes) {
+    this(columnarStorageScannerInfo);
+    this.noDictionaryColIndexes = noDictionaryColIndexes;
+  }
+
+  @Override public void scanStore() {
+    while (leafIterator.hasNext()) {
+      blockDataHolder.setLeafDataBlock(leafIterator.next());
+      addToQueryStats(blockDataHolder);
+      blockDataHolder.reset();
+      counter += this.columnarAggaregator
+          .aggregateData(blockProcessor.getScannedData(blockDataHolder, noDictionaryColIndexes));
+      finish();
+      if (limit != -1 && counter >= limit) {
+        break;
+      }
     }
+  }
 }

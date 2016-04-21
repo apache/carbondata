@@ -29,37 +29,33 @@ import org.carbondata.query.wrappers.ByteArrayWrapper;
 
 public class RowProcessor implements DataProcessorExt {
 
-    protected DataProcessorExt dataProcessor;
+  protected DataProcessorExt dataProcessor;
 
-    public RowProcessor(DataProcessorExt dataProcessor) {
-        this.dataProcessor = dataProcessor;
-    }
+  public RowProcessor(DataProcessorExt dataProcessor) {
+    this.dataProcessor = dataProcessor;
+  }
 
-    @Override
-    public void initialise(DataProcessorInfo model) throws DataProcessorException {
-        dataProcessor.initialise(model);
-    }
+  @Override public void initialise(DataProcessorInfo model) throws DataProcessorException {
+    dataProcessor.initialise(model);
+  }
 
-    @Override
-    public void processRow(byte[] key, MeasureAggregator[] value) throws DataProcessorException {
-        dataProcessor.processRow(key, value);
-    }
+  @Override public void processRow(byte[] key, MeasureAggregator[] value)
+      throws DataProcessorException {
+    dataProcessor.processRow(key, value);
+  }
 
-    @Override
-    public void finish() throws DataProcessorException {
-        dataProcessor.finish();
-    }
+  @Override public void finish() throws DataProcessorException {
+    dataProcessor.finish();
+  }
 
-    @Override
-    public CarbonIterator<QueryResult> getQueryResultIterator() {
-        return dataProcessor.getQueryResultIterator();
-    }
+  @Override public CarbonIterator<QueryResult> getQueryResultIterator() {
+    return dataProcessor.getQueryResultIterator();
+  }
 
-    @Override
-    public void processRow(ByteArrayWrapper key, MeasureAggregator[] value)
-            throws DataProcessorException {
-        dataProcessor.processRow(key, value);
+  @Override public void processRow(ByteArrayWrapper key, MeasureAggregator[] value)
+      throws DataProcessorException {
+    dataProcessor.processRow(key, value);
 
-    }
+  }
 
 }

@@ -40,45 +40,45 @@ import org.carbondata.query.util.CarbonEngineLogEvent;
  */
 public class AggCombinationGenerator {
 
-    /**
-     * Attribute for Carbon LOGGER
-     */
-    private static final LogService LOGGER =
-            LogServiceFactory.getLogService(AggCombinationGenerator.class.getName());
-    private Level[] levelDetails;
-    private BigInteger maxPossibleRows;
-    private int benefitRatio = Preference.BENEFIT_RATIO;
+  /**
+   * Attribute for Carbon LOGGER
+   */
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(AggCombinationGenerator.class.getName());
+  private Level[] levelDetails;
+  private BigInteger maxPossibleRows;
+  private int benefitRatio = Preference.BENEFIT_RATIO;
 
-    public AggCombinationGenerator(Level[] dimensionDistinctData, String table) {
-        this.levelDetails = dimensionDistinctData;
+  public AggCombinationGenerator(Level[] dimensionDistinctData, String table) {
+    this.levelDetails = dimensionDistinctData;
 
-        this.maxPossibleRows = AggCombinationGeneratorUtil.getMaxPossibleRows(levelDetails);
-        String confBenefitRatio =
-                CarbonProperties.getInstance().getProperty("carbon.agg.benefit.ratio");
+    this.maxPossibleRows = AggCombinationGeneratorUtil.getMaxPossibleRows(levelDetails);
+    String confBenefitRatio =
+        CarbonProperties.getInstance().getProperty("carbon.agg.benefit.ratio");
 
-        if (null != confBenefitRatio) {
-            benefitRatio = Integer.parseInt(confBenefitRatio);
-
-        }
+    if (null != confBenefitRatio) {
+      benefitRatio = Integer.parseInt(confBenefitRatio);
 
     }
 
-    /**
-     * Generate all possible aggregate combinations
-     *
-     * @return
-     */
+  }
 
-    public List<AggSuggestion> generateAggregate() {
+  /**
+   * Generate all possible aggregate combinations
+   *
+   * @return
+   */
 
-        List<AggSuggestion> allCombinations = AggCombinationGeneratorUtil
-                .generateCombination(Arrays.asList(levelDetails), maxPossibleRows, benefitRatio);
+  public List<AggSuggestion> generateAggregate() {
 
-        for (AggSuggestion comb : allCombinations) {
-            LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "Processing:" + comb);
+    List<AggSuggestion> allCombinations = AggCombinationGeneratorUtil
+        .generateCombination(Arrays.asList(levelDetails), maxPossibleRows, benefitRatio);
 
-        }
-        return allCombinations;
+    for (AggSuggestion comb : allCombinations) {
+      LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "Processing:" + comb);
+
     }
+    return allCombinations;
+  }
 
 }

@@ -23,73 +23,75 @@ import java.nio.ByteBuffer;
 import java.util.List;
 
 public class ColumnarKeyStoreDataHolder {
-    private byte[] keyblockData;
-    private List<byte[]> noDictionaryValBasedKeyBlockData;
-	private ColumnarKeyStoreMetadata columnarKeyStoreMetadata;
-    public ColumnarKeyStoreDataHolder(final byte[] keyblockData,
-            final ColumnarKeyStoreMetadata columnarKeyStoreMetadata) {
-        this.keyblockData = keyblockData;
-        this.columnarKeyStoreMetadata = columnarKeyStoreMetadata;
-    }
-    //Added constructor for holding noDictionaryValBasedKeyBlockData
-    public ColumnarKeyStoreDataHolder(final List<byte[]> noDictionaryValBasedKeyBlockData,
-            final ColumnarKeyStoreMetadata columnarKeyStoreMetadata) {
-        this.noDictionaryValBasedKeyBlockData = noDictionaryValBasedKeyBlockData;
-        this.columnarKeyStoreMetadata = columnarKeyStoreMetadata;
-    }
+  private byte[] keyblockData;
+  private List<byte[]> noDictionaryValBasedKeyBlockData;
+  private ColumnarKeyStoreMetadata columnarKeyStoreMetadata;
 
-    public byte[] getKeyBlockData() {
-        return keyblockData;
-    }
+  public ColumnarKeyStoreDataHolder(final byte[] keyblockData,
+      final ColumnarKeyStoreMetadata columnarKeyStoreMetadata) {
+    this.keyblockData = keyblockData;
+    this.columnarKeyStoreMetadata = columnarKeyStoreMetadata;
+  }
 
-    /**
-     * @return the columnarKeyStoreMetadata
-     */
-    public ColumnarKeyStoreMetadata getColumnarKeyStoreMetadata() {
-        return columnarKeyStoreMetadata;
-    }
+  //Added constructor for holding noDictionaryValBasedKeyBlockData
+  public ColumnarKeyStoreDataHolder(final List<byte[]> noDictionaryValBasedKeyBlockData,
+      final ColumnarKeyStoreMetadata columnarKeyStoreMetadata) {
+    this.noDictionaryValBasedKeyBlockData = noDictionaryValBasedKeyBlockData;
+    this.columnarKeyStoreMetadata = columnarKeyStoreMetadata;
+  }
 
-    public void unCompress() {
-        if (columnarKeyStoreMetadata.isUnCompressed()) {
-            return;
-        }
-        this.keyblockData = UnBlockIndexer
-                .uncompressData(keyblockData, columnarKeyStoreMetadata.getDataIndex(),
-                        columnarKeyStoreMetadata.getEachRowSize());
-        columnarKeyStoreMetadata.setUnCompressed(true);
-    }
+  public byte[] getKeyBlockData() {
+    return keyblockData;
+  }
 
-    public int getSurrogateKey(int columnIndex) {
-        byte[] actual = new byte[4];
-        int startIndex;
-        if (null != columnarKeyStoreMetadata.getColumnReverseIndex()) {
-            startIndex = columnarKeyStoreMetadata.getColumnReverseIndex()[columnIndex]
-                    * columnarKeyStoreMetadata.getEachRowSize();
-        } else {
-            startIndex = columnIndex * columnarKeyStoreMetadata.getEachRowSize();
-        }
-        int destPos = 4 - columnarKeyStoreMetadata.getEachRowSize();
-        System.arraycopy(keyblockData, startIndex, actual, destPos,
-                columnarKeyStoreMetadata.getEachRowSize());
-        return ByteBuffer.wrap(actual).getInt();
-    }
-    
-    /**
-     * 
-     * get the byte[] for high cardinality column block
-     * @return List<byte[]>.
-     */
-    public List<byte[]> getNoDictionaryValBasedKeyBlockData() {
-		return noDictionaryValBasedKeyBlockData;
-	}
+  /**
+   * @return the columnarKeyStoreMetadata
+   */
+  public ColumnarKeyStoreMetadata getColumnarKeyStoreMetadata() {
+    return columnarKeyStoreMetadata;
+  }
 
-    /**
-     * 
-     * set the byte[] for high cardinality column block
-     * @param noDictionaryValBasedKeyBlockData
-     */
-	public void setNoDictionaryValBasedKeyBlockData(
-			List<byte[]> noDictionaryValBasedKeyBlockData) {
-		this.noDictionaryValBasedKeyBlockData = noDictionaryValBasedKeyBlockData;
-	}
+  public void unCompress() {
+    if (columnarKeyStoreMetadata.isUnCompressed()) {
+      return;
+    }
+    this.keyblockData = UnBlockIndexer
+        .uncompressData(keyblockData, columnarKeyStoreMetadata.getDataIndex(),
+            columnarKeyStoreMetadata.getEachRowSize());
+    columnarKeyStoreMetadata.setUnCompressed(true);
+  }
+
+  public int getSurrogateKey(int columnIndex) {
+    byte[] actual = new byte[4];
+    int startIndex;
+    if (null != columnarKeyStoreMetadata.getColumnReverseIndex()) {
+      startIndex =
+          columnarKeyStoreMetadata.getColumnReverseIndex()[columnIndex] * columnarKeyStoreMetadata
+              .getEachRowSize();
+    } else {
+      startIndex = columnIndex * columnarKeyStoreMetadata.getEachRowSize();
+    }
+    int destPos = 4 - columnarKeyStoreMetadata.getEachRowSize();
+    System.arraycopy(keyblockData, startIndex, actual, destPos,
+        columnarKeyStoreMetadata.getEachRowSize());
+    return ByteBuffer.wrap(actual).getInt();
+  }
+
+  /**
+   * get the byte[] for high cardinality column block
+   *
+   * @return List<byte[]>.
+   */
+  public List<byte[]> getNoDictionaryValBasedKeyBlockData() {
+    return noDictionaryValBasedKeyBlockData;
+  }
+
+  /**
+   * set the byte[] for high cardinality column block
+   *
+   * @param noDictionaryValBasedKeyBlockData
+   */
+  public void setNoDictionaryValBasedKeyBlockData(List<byte[]> noDictionaryValBasedKeyBlockData) {
+    this.noDictionaryValBasedKeyBlockData = noDictionaryValBasedKeyBlockData;
+  }
 }

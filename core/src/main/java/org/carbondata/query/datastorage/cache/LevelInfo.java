@@ -23,72 +23,72 @@ import org.carbondata.core.cache.Cacheable;
 
 public class LevelInfo implements Cacheable {
 
-    /**
-     * is level file loaded in memory
-     */
-    private boolean loaded;
+  /**
+   * is level file loaded in memory
+   */
+  private boolean loaded;
 
-    /**
-     * fileSize
-     */
-    private long fileSize;
+  /**
+   * fileSize
+   */
+  private long fileSize;
 
-    /**
-     * variable to mark for column access
-     */
-    private int accessCount;
+  /**
+   * variable to mark for column access
+   */
+  private int accessCount;
 
-    /**
-     * file timestamp
-     */
-    private long fileTimeStamp;
+  /**
+   * file timestamp
+   */
+  private long fileTimeStamp;
 
-    /**
-     * offset till where file is read
-     */
-    private long offsetTillFileIsRead;
+  /**
+   * offset till where file is read
+   */
+  private long offsetTillFileIsRead;
 
-    public synchronized void setFileTimeStamp(long fileTimeStamp) {
-        this.fileTimeStamp = fileTimeStamp;
-    }
+  public synchronized void setFileTimeStamp(long fileTimeStamp) {
+    this.fileTimeStamp = fileTimeStamp;
+  }
 
-    @Override public synchronized long getFileTimeStamp() {
-        return fileTimeStamp;
-    }
+  @Override public synchronized long getFileTimeStamp() {
+    return fileTimeStamp;
+  }
 
-    @Override public synchronized int getAccessCount() {
-        return accessCount;
-    }
+  @Override public synchronized int getAccessCount() {
+    return accessCount;
+  }
 
-    public synchronized void incrementAccessCount() {
-        accessCount++;
-    }
+  public synchronized void incrementAccessCount() {
+    accessCount++;
+  }
 
-    public synchronized void decrementAccessCount() {
-        accessCount--;
-    }
+  public synchronized void decrementAccessCount() {
+    accessCount--;
+  }
 
-    @Override public synchronized long getMemorySize() {
-        return fileSize;
-    }
+  @Override public synchronized long getMemorySize() {
+    return fileSize;
+  }
 
-    public synchronized void setMemorySize(long size) {
-        this.fileSize = size;
-    }
+  public synchronized void setMemorySize(long size) {
+    this.fileSize = size;
+  }
 
-    public synchronized boolean isLoaded() {
-        return loaded;
-    }
+  public synchronized boolean isLoaded() {
+    return loaded;
+  }
 
-    public synchronized void setLoaded(boolean loaded) {
-        this.loaded = loaded;
-    }
+  public synchronized void setLoaded(boolean loaded) {
+    this.loaded = loaded;
+  }
 
-    public long getOffsetTillFileIsRead() {
-        return offsetTillFileIsRead;
-    }
+  public long getOffsetTillFileIsRead() {
+    return offsetTillFileIsRead;
+  }
 
-    public void setOffsetTillFileIsRead(long offsetTillFileIsRead) {
-        this.offsetTillFileIsRead = offsetTillFileIsRead;
-    }
+  public void setOffsetTillFileIsRead(long offsetTillFileIsRead) {
+    this.offsetTillFileIsRead = offsetTillFileIsRead;
+  }
 }

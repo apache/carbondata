@@ -28,109 +28,105 @@ import java.io.Serializable;
  * Dimension class
  */
 public class CarbonDimension implements CarbonColumn, Serializable {
-    /**
-     *
-     */
-    private static final long serialVersionUID = 8447604537458509117L;
+  /**
+   *
+   */
+  private static final long serialVersionUID = 8447604537458509117L;
 
-    /**
-     * Dimension unique name
-     */
-    private String dimensionUniqueName;
+  /**
+   * Dimension unique name
+   */
+  private String dimensionUniqueName;
 
-    /**
-     * queryOrder
-     */
-    private int queryOrder;
+  /**
+   * queryOrder
+   */
+  private int queryOrder;
 
-    private boolean isDistinctCountQuery;
+  private boolean isDistinctCountQuery;
 
-    /**
-     * sort order type. default is no order.
-     */
-    private SortOrderType sortOrderType = SortOrderType.NONE;
+  /**
+   * sort order type. default is no order.
+   */
+  private SortOrderType sortOrderType = SortOrderType.NONE;
 
-    /**
-     * Constructor to create dimension.User needs to pass dimension unique name.
-     *
-     * @param dimensionUniqueName
-     */
-    public CarbonDimension(String dimensionUniqueName) {
-        this.dimensionUniqueName = dimensionUniqueName;
+  /**
+   * Constructor to create dimension.User needs to pass dimension unique name.
+   *
+   * @param dimensionUniqueName
+   */
+  public CarbonDimension(String dimensionUniqueName) {
+    this.dimensionUniqueName = dimensionUniqueName;
+  }
+
+  /**
+   * @return the sortOrderType
+   */
+  public SortOrderType getSortOrderType() {
+    return sortOrderType;
+  }
+
+  /**
+   * @param sortOrderType the sortOrderType to set
+   */
+  public void setSortOrderType(SortOrderType sortOrderType) {
+    this.sortOrderType = sortOrderType;
+  }
+
+  /**
+   * @return the dimensionUniqueName
+   */
+  public String getDimensionUniqueName() {
+    return dimensionUniqueName;
+  }
+
+  /* (non-Javadoc)
+   * @see java.lang.Object#hashCode()
+   */
+  @Override public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + ((dimensionUniqueName == null) ? 0 : dimensionUniqueName.hashCode());
+    return result;
+  }
+
+  /* (non-Javadoc)
+   * @see java.lang.Object#equals(java.lang.Object)
+   */
+  @Override public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
     }
-
-    /**
-     * @return the sortOrderType
-     */
-    public SortOrderType getSortOrderType() {
-        return sortOrderType;
+    if (obj == null) {
+      return false;
     }
-
-    /**
-     * @param sortOrderType the sortOrderType to set
-     */
-    public void setSortOrderType(SortOrderType sortOrderType) {
-        this.sortOrderType = sortOrderType;
+    if (getClass() != obj.getClass()) {
+      return false;
     }
-
-    /**
-     * @return the dimensionUniqueName
-     */
-    public String getDimensionUniqueName() {
-        return dimensionUniqueName;
+    CarbonDimension other = (CarbonDimension) obj;
+    if (dimensionUniqueName == null) {
+      if (other.dimensionUniqueName != null) {
+        return false;
+      }
+    } else if (!dimensionUniqueName.equals(other.dimensionUniqueName)) {
+      return false;
     }
+    return true;
+  }
 
-    /* (non-Javadoc)
-     * @see java.lang.Object#hashCode()
-     */
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((dimensionUniqueName == null) ?
-                0 :
-                dimensionUniqueName.hashCode());
-        return result;
-    }
+  public int getQueryOrder() {
+    return queryOrder;
+  }
 
-    /* (non-Javadoc)
-     * @see java.lang.Object#equals(java.lang.Object)
-     */
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        CarbonDimension other = (CarbonDimension) obj;
-        if (dimensionUniqueName == null) {
-            if (other.dimensionUniqueName != null) {
-                return false;
-            }
-        } else if (!dimensionUniqueName.equals(other.dimensionUniqueName)) {
-            return false;
-        }
-        return true;
-    }
+  public void setQueryOrder(int queryOrder) {
+    this.queryOrder = queryOrder;
+  }
 
-    public int getQueryOrder() {
-        return queryOrder;
-    }
+  public boolean isDistinctCountQuery() {
+    return isDistinctCountQuery;
+  }
 
-    public void setQueryOrder(int queryOrder) {
-        this.queryOrder = queryOrder;
-    }
-
-    public boolean isDistinctCountQuery() {
-        return isDistinctCountQuery;
-    }
-
-    public void setDistinctCountQuery(boolean isDistinctCountQuery) {
-        this.isDistinctCountQuery = isDistinctCountQuery;
-    }
+  public void setDistinctCountQuery(boolean isDistinctCountQuery) {
+    this.isDistinctCountQuery = isDistinctCountQuery;
+  }
 }

@@ -24,18 +24,18 @@ package org.carbondata.common.logging;
  */
 public interface LogEvent {
 
-    /**
-     * The Event code
-     *
-     * @return The event's code
-     */
-    String getEventCode();
+  /**
+   * The Event code
+   *
+   * @return The event's code
+   */
+  String getEventCode();
 
-    /**
-     * The module/bundle name from which the logging is done
-     *
-     * @return String
-     */
-    String getModuleName();
+  /**
+   * The module/bundle name from which the logging is done
+   *
+   * @return String
+   */
+  String getModuleName();
 
 }

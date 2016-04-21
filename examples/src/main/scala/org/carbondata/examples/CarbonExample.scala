@@ -27,7 +27,8 @@ object CarbonExample {
   def main(args: Array[String]) {
 
     //get current directory:/examples
-    val currentDirectory = new File(this.getClass.getResource("/").getPath+"/../../").getCanonicalPath
+    val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
+      .getCanonicalPath
 
     //specify parameters
     val storeLocation = currentDirectory + "/target/store"
@@ -37,7 +38,8 @@ object CarbonExample {
 
     val sc = new SparkContext(new SparkConf()
       .setAppName("CarbonExample")
-      .setMaster("local[2]"))
+      .setMaster("local[2]")
+    )
 
     val cc = new CarbonContext(sc, storeLocation)
 
@@ -46,17 +48,23 @@ object CarbonExample {
     cc.setConf("hive.metastore.warehouse.dir", hiveMetaPath)
 
     //When you excute the second time, need to enable it
-   // cc.sql("drop cube testTable")
+    // cc.sql("drop cube testTable")
 
     cc.sql("CREATE CUBE testTable DIMENSIONS (ID Integer, Date Timestamp, " +
       "Country String, Name String, Phonetype String, Serialname String" +
 
       ") MEASURES (Salary Integer) " +
-      "OPTIONS (PARTITIONER [PARTITION_COUNT=1])")
+      "OPTIONS (PARTITIONER [PARTITION_COUNT=1])"
+    )
 
-    cc.sql(s"LOAD DATA FACT FROM '$testData' INTO CUBE testTable OPTIONS(DELIMITER ',', FILEHEADER '')")
+    cc
+      .sql(s"LOAD DATA FACT FROM '$testData' INTO CUBE testTable OPTIONS(DELIMITER ',', " +
+        s"FILEHEADER '')")
 
-    cc.sql("select Country,count(salary) from testTable where Country in ('china','france') group by Country").show()
+    cc
+      .sql(
+        "select Country,count(salary) from testTable where Country in ('china','france') group by Country"
+      ).show()
 
   }
 

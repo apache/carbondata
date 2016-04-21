@@ -17,82 +17,86 @@
  * under the License.
  */
 
-package org.carbondata.processing.sortandgroupby.sortData;
+package org.carbondata.processing.sortandgroupby.sortdata;
 
-import java.io.*;
+import java.io.BufferedOutputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 
 public abstract class AbstractTempSortFileWriter implements TempSortFileWriter {
 
-    /**
-     * writeFileBufferSize
-     */
-    protected int writeBufferSize;
+  /**
+   * writeFileBufferSize
+   */
+  protected int writeBufferSize;
 
-    /**
-     * Measure count
-     */
-    protected int measureCount;
+  /**
+   * Measure count
+   */
+  protected int measureCount;
 
-    /**
-     * Measure count
-     */
-    protected int dimensionCount;
+  /**
+   * Measure count
+   */
+  protected int dimensionCount;
 
-    /**
-     * complexDimension count
-     */
-    protected int complexDimensionCount;
+  /**
+   * complexDimension count
+   */
+  protected int complexDimensionCount;
 
-    /**
-     * stream
-     */
-    protected DataOutputStream stream;
+  /**
+   * stream
+   */
+  protected DataOutputStream stream;
 
-    /**
-     * noDictionaryCount
-     */
-    protected int noDictionaryCount;
+  /**
+   * noDictionaryCount
+   */
+  protected int noDictionaryCount;
 
-    /**
-     * AbstractTempSortFileWriter
-     *
-     * @param writeBufferSize
-     * @param dimensionCount
-     * @param measureCount
-     */
-    public AbstractTempSortFileWriter(int dimensionCount, int complexDimensionCount,
-            int measureCount, int noDictionaryCount, int writeBufferSize) {
-        this.writeBufferSize = writeBufferSize;
-        this.dimensionCount = dimensionCount;
-        this.complexDimensionCount = complexDimensionCount;
-        this.measureCount = measureCount;
-        this.noDictionaryCount = noDictionaryCount;
+  /**
+   * AbstractTempSortFileWriter
+   *
+   * @param writeBufferSize
+   * @param dimensionCount
+   * @param measureCount
+   */
+  public AbstractTempSortFileWriter(int dimensionCount, int complexDimensionCount, int measureCount,
+      int noDictionaryCount, int writeBufferSize) {
+    this.writeBufferSize = writeBufferSize;
+    this.dimensionCount = dimensionCount;
+    this.complexDimensionCount = complexDimensionCount;
+    this.measureCount = measureCount;
+    this.noDictionaryCount = noDictionaryCount;
+  }
+
+  /**
+   * Below method will be used to initialize the stream and write the entry count
+   */
+  @Override public void initiaize(File file, int entryCount)
+      throws CarbonSortKeyAndGroupByException {
+    try {
+      stream = new DataOutputStream(
+          new BufferedOutputStream(new FileOutputStream(file), writeBufferSize));
+      stream.writeInt(entryCount);
+    } catch (FileNotFoundException e1) {
+      throw new CarbonSortKeyAndGroupByException(e1);
+    } catch (IOException e) {
+      throw new CarbonSortKeyAndGroupByException(e);
     }
+  }
 
-    /**
-     * Below method will be used to initialize the stream and write the entry count
-     */
-    @Override
-    public void initiaize(File file, int entryCount) throws CarbonSortKeyAndGroupByException {
-        try {
-            stream = new DataOutputStream(
-                    new BufferedOutputStream(new FileOutputStream(file), writeBufferSize));
-            stream.writeInt(entryCount);
-        } catch (FileNotFoundException e1) {
-            throw new CarbonSortKeyAndGroupByException(e1);
-        } catch (IOException e) {
-            throw new CarbonSortKeyAndGroupByException(e);
-        }
-    }
-
-    /**
-     * Below method will be used to close the stream
-     */
-    @Override
-    public void finish() {
-        CarbonUtil.closeStreams(stream);
-    }
+  /**
+   * Below method will be used to close the stream
+   */
+  @Override public void finish() {
+    CarbonUtil.closeStreams(stream);
+  }
 }

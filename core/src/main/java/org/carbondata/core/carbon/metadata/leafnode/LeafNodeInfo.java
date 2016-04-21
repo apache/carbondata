@@ -29,65 +29,65 @@ import org.carbondata.core.carbon.metadata.leafnode.datachunk.DataChunk;
  */
 public class LeafNodeInfo implements Serializable {
 
-    /**
-     * serialization id
-     */
-    private static final long serialVersionUID = 1873135459695635381L;
+  /**
+   * serialization id
+   */
+  private static final long serialVersionUID = 1873135459695635381L;
 
-    /**
-     * Number of rows in this leaf node
-     */
-    private int numberOfRows;
+  /**
+   * Number of rows in this leaf node
+   */
+  private int numberOfRows;
 
-    /**
-     * Information about dimension chunk of all dimensions in this leaf node
-     */
-    private List<DataChunk> dimensionColumnChunk;
+  /**
+   * Information about dimension chunk of all dimensions in this leaf node
+   */
+  private List<DataChunk> dimensionColumnChunk;
 
-    /**
-     * Information about measure chunk of all measures in this leaf node
-     */
-    private List<DataChunk> measureColumnChunk;
+  /**
+   * Information about measure chunk of all measures in this leaf node
+   */
+  private List<DataChunk> measureColumnChunk;
 
-    /**
-     * @return the numberOfRows
-     */
-    public int getNumberOfRows() {
-        return numberOfRows;
-    }
+  /**
+   * @return the numberOfRows
+   */
+  public int getNumberOfRows() {
+    return numberOfRows;
+  }
 
-    /**
-     * @param numberOfRows the numberOfRows to set
-     */
-    public void setNumberOfRows(int numberOfRows) {
-        this.numberOfRows = numberOfRows;
-    }
+  /**
+   * @param numberOfRows the numberOfRows to set
+   */
+  public void setNumberOfRows(int numberOfRows) {
+    this.numberOfRows = numberOfRows;
+  }
 
-    /**
-     * @return the dimensionColumnChunk
-     */
-    public List<DataChunk> getDimensionColumnChunk() {
-        return dimensionColumnChunk;
-    }
+  /**
+   * @return the dimensionColumnChunk
+   */
+  public List<DataChunk> getDimensionColumnChunk() {
+    return dimensionColumnChunk;
+  }
 
-    /**
-     * @param dimensionColumnChunk the dimensionColumnChunk to set
-     */
-    public void setDimensionColumnChunk(List<DataChunk> dimensionColumnChunk) {
-        this.dimensionColumnChunk = dimensionColumnChunk;
-    }
+  /**
+   * @param dimensionColumnChunk the dimensionColumnChunk to set
+   */
+  public void setDimensionColumnChunk(List<DataChunk> dimensionColumnChunk) {
+    this.dimensionColumnChunk = dimensionColumnChunk;
+  }
 
-    /**
-     * @return the measureColumnChunk
-     */
-    public List<DataChunk> getMeasureColumnChunk() {
-        return measureColumnChunk;
-    }
+  /**
+   * @return the measureColumnChunk
+   */
+  public List<DataChunk> getMeasureColumnChunk() {
+    return measureColumnChunk;
+  }
 
-    /**
-     * @param measureColumnChunk the measureColumnChunk to set
-     */
-    public void setMeasureColumnChunk(List<DataChunk> measureColumnChunk) {
-        this.measureColumnChunk = measureColumnChunk;
-    }
+  /**
+   * @param measureColumnChunk the measureColumnChunk to set
+   */
+  public void setMeasureColumnChunk(List<DataChunk> measureColumnChunk) {
+    this.measureColumnChunk = measureColumnChunk;
+  }
 }

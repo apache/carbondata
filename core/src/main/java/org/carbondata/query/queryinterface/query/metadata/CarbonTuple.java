@@ -26,53 +26,51 @@ import java.util.Arrays;
  * CarbonTuple class , it contains the each row or column information of query result.
  */
 public class CarbonTuple implements Serializable {
-    private static final long serialVersionUID = 6432454407461679716L;
+  private static final long serialVersionUID = 6432454407461679716L;
 
-    private CarbonMember[] tuple;
+  private CarbonMember[] tuple;
 
-    public CarbonTuple(CarbonMember[] tuple) {
-        this.tuple = tuple;
-    }
+  public CarbonTuple(CarbonMember[] tuple) {
+    this.tuple = tuple;
+  }
 
-    /**
-     * Size of tuple.
-     *
-     * @return
-     */
-    public int size() {
-        return tuple.length;
-    }
+  /**
+   * Size of tuple.
+   *
+   * @return
+   */
+  public int size() {
+    return tuple.length;
+  }
 
-    /**
-     * Get all members inside tuple.
-     *
-     * @return
-     */
-    public CarbonMember[] getTuple() {
-        return tuple;
-    }
+  /**
+   * Get all members inside tuple.
+   *
+   * @return
+   */
+  public CarbonMember[] getTuple() {
+    return tuple;
+  }
 
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + Arrays.hashCode(tuple);
-        return result;
-    }
+  @Override public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + Arrays.hashCode(tuple);
+    return result;
+  }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof CarbonTuple) {
-            if (this == obj) {
-                return true;
-            }
-            CarbonTuple other = (CarbonTuple) obj;
-            if (!Arrays.equals(tuple, other.tuple)) {
-                return false;
-            }
-            return true;
-
-        }
+  @Override public boolean equals(Object obj) {
+    if (obj instanceof CarbonTuple) {
+      if (this == obj) {
+        return true;
+      }
+      CarbonTuple other = (CarbonTuple) obj;
+      if (!Arrays.equals(tuple, other.tuple)) {
         return false;
+      }
+      return true;
+
     }
+    return false;
+  }
 }

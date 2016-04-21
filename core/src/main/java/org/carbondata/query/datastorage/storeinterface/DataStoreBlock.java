@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.carbondata.query.datastorage.storeInterfaces;
+package org.carbondata.query.datastorage.storeinterface;
 
 import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.core.datastorage.store.MeasureDataWrapper;
@@ -25,42 +25,42 @@ import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreDataHolder
 
 public interface DataStoreBlock {
 
-    KeyValue getNextKeyValue(int index);
+  KeyValue getNextKeyValue(int index);
 
-    DataStoreBlock getNext();
+  DataStoreBlock getNext();
 
-    int getnKeys();
+  int getnKeys();
 
-    byte[] getBackKeyArray(FileHolder fileHolder);
+  byte[] getBackKeyArray(FileHolder fileHolder);
 
-    ColumnarKeyStoreDataHolder[] getColumnarKeyStore(FileHolder fileHolder, int[] blockIndex,
-            boolean[] needCompressedData,int[] noDictionaryColIndexes);
+  ColumnarKeyStoreDataHolder[] getColumnarKeyStore(FileHolder fileHolder, int[] blockIndex,
+      boolean[] needCompressedData, int[] noDictionaryColIndexes);
 
-    ColumnarKeyStoreDataHolder getColumnarKeyStore(FileHolder fileHolder, int blockIndex,
-            boolean needCompressedData,int[] noDictionaryColIndexes);
+  ColumnarKeyStoreDataHolder getColumnarKeyStore(FileHolder fileHolder, int blockIndex,
+      boolean needCompressedData, int[] noDictionaryColIndexes);
 
-    MeasureDataWrapper getNodeMsrDataWrapper(int[] cols, FileHolder fileHolder);
+  MeasureDataWrapper getNodeMsrDataWrapper(int[] cols, FileHolder fileHolder);
 
-    MeasureDataWrapper getNodeMsrDataWrapper(int cols, FileHolder fileHolder);
+  MeasureDataWrapper getNodeMsrDataWrapper(int cols, FileHolder fileHolder);
 
-    short getValueSize();
+  short getValueSize();
 
-    long getNodeNumber();
+  long getNodeNumber();
 
-    /**
-     * This will give maximum value of given column
-     *
-     * @param colIndex
-     * @return
-     */
-    byte[][] getBlockMaxData();
+  /**
+   * This will give maximum value of given column
+   *
+   * @param colIndex
+   * @return
+   */
+  byte[][] getBlockMaxData();
 
-    /**
-     * It will give minimum value of given column
-     *
-     * @param colIndex
-     * @return
-     */
-    byte[][] getBlockMinData();
+  /**
+   * It will give minimum value of given column
+   *
+   * @param colIndex
+   * @return
+   */
+  byte[][] getBlockMinData();
 
 }

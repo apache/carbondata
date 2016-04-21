@@ -40,71 +40,71 @@ import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.integration.spark.load.CarbonLoadModel;
 
 public final class LoadMetadataUtil {
-    private LoadMetadataUtil() {
+  private LoadMetadataUtil() {
 
-    }
+  }
 
-    public static boolean isLoadDeletionRequired(CarbonLoadModel loadModel) {
-    	CarbonTable cube = org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance().getCarbonTable(loadModel.getDatabaseName() + '_' + loadModel.getTableName());
-        
-        String metaDataLocation =cube.getMetaDataFilepath();
-        LoadMetadataDetails[] details = CarbonUtil.readLoadMetadata(metaDataLocation);
-        if (details != null && details.length != 0) {
-            for (LoadMetadataDetails oneRow : details) {
-                if (CarbonCommonConstants.MARKED_FOR_DELETE.equalsIgnoreCase(oneRow.getLoadStatus())
-                        && oneRow.getVisibility().equalsIgnoreCase("true")) {
-                    return true;
-                }
-            }
+  public static boolean isLoadDeletionRequired(CarbonLoadModel loadModel) {
+    CarbonTable cube = org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
+        .getCarbonTable(loadModel.getDatabaseName() + '_' + loadModel.getTableName());
+
+    String metaDataLocation = cube.getMetaDataFilepath();
+    LoadMetadataDetails[] details = CarbonUtil.readLoadMetadata(metaDataLocation);
+    if (details != null && details.length != 0) {
+      for (LoadMetadataDetails oneRow : details) {
+        if (CarbonCommonConstants.MARKED_FOR_DELETE.equalsIgnoreCase(oneRow.getLoadStatus())
+            && oneRow.getVisibility().equalsIgnoreCase("true")) {
+          return true;
         }
-
-        return false;
-
+      }
     }
 
-    public static String createLoadFolderPath(CarbonLoadModel model, String hdfsStoreLocation,
-            int partitionId, int currentRestructNumber) {
-        hdfsStoreLocation =
-                hdfsStoreLocation + File.separator + model.getDatabaseName() + '_' + partitionId
-                        + File.separator + model.getTableName() + '_' + partitionId;
-        int rsCounter = currentRestructNumber;
-        if (rsCounter == -1) {
-            rsCounter = 0;
-        }
-        String hdfsLoadedTable =
-                hdfsStoreLocation + File.separator + CarbonCommonConstants.RESTRUCTRE_FOLDER
-                        + rsCounter + File.separator + model.getTableName();
-        hdfsLoadedTable = hdfsLoadedTable.replace("\\", "/");
-        return hdfsLoadedTable;
+    return false;
+
+  }
+
+  public static String createLoadFolderPath(CarbonLoadModel model, String hdfsStoreLocation,
+      int partitionId, int currentRestructNumber) {
+    hdfsStoreLocation =
+        hdfsStoreLocation + File.separator + model.getDatabaseName() + '_' + partitionId
+            + File.separator + model.getTableName() + '_' + partitionId;
+    int rsCounter = currentRestructNumber;
+    if (rsCounter == -1) {
+      rsCounter = 0;
+    }
+    String hdfsLoadedTable =
+        hdfsStoreLocation + File.separator + CarbonCommonConstants.RESTRUCTRE_FOLDER + rsCounter
+            + File.separator + model.getTableName();
+    hdfsLoadedTable = hdfsLoadedTable.replace("\\", "/");
+    return hdfsLoadedTable;
+  }
+
+  public static CarbonFile[] getAggregateTableList(final CarbonLoadModel model,
+      String hdfsStoreLocation, int partitionId, int currentRestructNumber) {
+    hdfsStoreLocation =
+        hdfsStoreLocation + File.separator + model.getDatabaseName() + '_' + partitionId
+            + File.separator + model.getTableName() + '_' + partitionId;
+
+    int rsCounter = currentRestructNumber;
+    if (rsCounter == -1) {
+      rsCounter = 0;
     }
 
-    public static CarbonFile[] getAggregateTableList(final CarbonLoadModel model,
-            String hdfsStoreLocation, int partitionId, int currentRestructNumber) {
-        hdfsStoreLocation =
-                hdfsStoreLocation + File.separator + model.getDatabaseName() + '_' + partitionId
-                        + File.separator + model.getTableName() + '_' + partitionId;
+    String hdfsLoadedTable =
+        hdfsStoreLocation + File.separator + CarbonCommonConstants.RESTRUCTRE_FOLDER + rsCounter;
 
-        int rsCounter = currentRestructNumber;
-        if (rsCounter == -1) {
-            rsCounter = 0;
-        }
+    CarbonFile rsFile =
+        FileFactory.getCarbonFile(hdfsLoadedTable, FileFactory.getFileType(hdfsLoadedTable));
 
-        String hdfsLoadedTable =
-                hdfsStoreLocation + File.separator + CarbonCommonConstants.RESTRUCTRE_FOLDER
-                        + rsCounter;
+    CarbonFile[] aggFiles = rsFile.listFiles(new CarbonFileFilter() {
 
-        CarbonFile rsFile =
-                FileFactory.getCarbonFile(hdfsLoadedTable, FileFactory.getFileType(hdfsLoadedTable));
+      @Override public boolean accept(CarbonFile file) {
+        return file.getName().startsWith(
+            CarbonCommonConstants.AGGREGATE_TABLE_START_TAG + CarbonCommonConstants.UNDERSCORE
+                + model.getTableName());
+      }
+    });
 
-        CarbonFile[] aggFiles = rsFile.listFiles(new CarbonFileFilter() {
-
-            @Override
-            public boolean accept(CarbonFile file) {
-                return file.getName().startsWith(CarbonCommonConstants.AGGREGATE_TABLE_START_TAG
-                        + CarbonCommonConstants.UNDERSCORE + model.getTableName());
-            }
-        });
-
-        return aggFiles;
-    }
+    return aggFiles;
+  }
 }

@@ -20,13 +20,13 @@
 package org.carbondata.core.csvreader.checkpoint;
 
 public enum CheckPointType {
-    /**
-     * csv
-     */
-    CSV,
+  /**
+   * csv
+   */
+  CSV,
 
-    /**
-     * db
-     */
-    DB
+  /**
+   * db
+   */
+  DB
 }

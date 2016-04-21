@@ -22,71 +22,71 @@ package org.carbondata.core.carbon.metadata.leafnode.compressor;
 import java.io.Serializable;
 
 /**
- *Represents the compression information of data of one dimension
- *one dimension group in one leaf node
+ * Represents the compression information of data of one dimension
+ * one dimension group in one leaf node
  */
 public class ChunkCompressorMeta implements Serializable {
 
-    /**
-     * serialization version
-     */
-    private static final long serialVersionUID = -6697087170420991140L;
+  /**
+   * serialization version
+   */
+  private static final long serialVersionUID = -6697087170420991140L;
 
-    /**
-     * data chunk compressor
-     */
-    private CompressionCodec compressor;
+  /**
+   * data chunk compressor
+   */
+  private CompressionCodec compressor;
 
-    /**
-     * total byte size of all uncompressed pages in this column chunk (including the headers)
-     */
-    private long uncompressedSize;
+  /**
+   * total byte size of all uncompressed pages in this column chunk (including the headers)
+   */
+  private long uncompressedSize;
 
-    /**
-     * total byte size of all compressed pages in this column chunk (including the headers)
-     */
-    private long compressedSize;
+  /**
+   * total byte size of all compressed pages in this column chunk (including the headers)
+   */
+  private long compressedSize;
 
-    /**
-     * @return the compressor
-     */
-    public CompressionCodec getCompressorCodec() {
-        return compressor;
-    }
+  /**
+   * @return the compressor
+   */
+  public CompressionCodec getCompressorCodec() {
+    return compressor;
+  }
 
-    /**
-     * @param compressor the compressor to set
-     */
-    public void setCompressor(CompressionCodec compressor) {
-        this.compressor = compressor;
-    }
+  /**
+   * @param compressor the compressor to set
+   */
+  public void setCompressor(CompressionCodec compressor) {
+    this.compressor = compressor;
+  }
 
-    /**
-     * @return the uncompressedSize
-     */
-    public long getUncompressedSize() {
-        return uncompressedSize;
-    }
+  /**
+   * @return the uncompressedSize
+   */
+  public long getUncompressedSize() {
+    return uncompressedSize;
+  }
 
-    /**
-     * @param uncompressedSize the uncompressedSize to set
-     */
-    public void setUncompressedSize(long uncompressedSize) {
-        this.uncompressedSize = uncompressedSize;
-    }
+  /**
+   * @param uncompressedSize the uncompressedSize to set
+   */
+  public void setUncompressedSize(long uncompressedSize) {
+    this.uncompressedSize = uncompressedSize;
+  }
 
-    /**
-     * @return the compressedSize
-     */
-    public long getCompressedSize() {
-        return compressedSize;
-    }
+  /**
+   * @return the compressedSize
+   */
+  public long getCompressedSize() {
+    return compressedSize;
+  }
 
-    /**
-     * @param compressedSize the compressedSize to set
-     */
-    public void setCompressedSize(long compressedSize) {
-        this.compressedSize = compressedSize;
-    }
+  /**
+   * @param compressedSize the compressedSize to set
+   */
+  public void setCompressedSize(long compressedSize) {
+    this.compressedSize = compressedSize;
+  }
 
 }

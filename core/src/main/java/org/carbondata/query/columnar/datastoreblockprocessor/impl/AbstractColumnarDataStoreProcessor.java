@@ -26,37 +26,37 @@ import org.carbondata.query.columnar.keyvalue.AbstractColumnarScanResult;
 import org.carbondata.query.evaluators.BlockDataHolder;
 
 public abstract class AbstractColumnarDataStoreProcessor implements DataStoreBlockProcessor {
-    protected AbstractColumnarScanResult keyValue;
+  protected AbstractColumnarScanResult keyValue;
 
-    protected ColumnarDataStoreBlockProcessorInfo columnarDataStoreBlockInfo;
+  protected ColumnarDataStoreBlockProcessorInfo columnarDataStoreBlockInfo;
 
-    public AbstractColumnarDataStoreProcessor(
-            ColumnarDataStoreBlockProcessorInfo columnarDataStoreBlockInfo) {
-        this.columnarDataStoreBlockInfo = columnarDataStoreBlockInfo;
+  public AbstractColumnarDataStoreProcessor(
+      ColumnarDataStoreBlockProcessorInfo columnarDataStoreBlockInfo) {
+    this.columnarDataStoreBlockInfo = columnarDataStoreBlockInfo;
+  }
+
+  protected void fillKeyValue(BlockDataHolder blockDataHolder, int[] noDictionaryColIndexes) {
+    keyValue.reset();
+    keyValue.setMeasureBlock(blockDataHolder.getLeafDataBlock()
+        .getNodeMsrDataWrapper(columnarDataStoreBlockInfo.getAllSelectedMeasures(),
+            columnarDataStoreBlockInfo.getFileHolder()).getValues());
+    keyValue.setNumberOfRows(blockDataHolder.getLeafDataBlock().getnKeys());
+    ColumnarKeyStoreDataHolder[] columnarKeyStore = blockDataHolder.getLeafDataBlock()
+        .getColumnarKeyStore(columnarDataStoreBlockInfo.getFileHolder(),
+            columnarDataStoreBlockInfo.getAllSelectedDimensions(),
+            new boolean[columnarDataStoreBlockInfo.getAllSelectedDimensions().length],
+            noDictionaryColIndexes);
+    ColumnarKeyStoreDataHolder[] temp =
+        new ColumnarKeyStoreDataHolder[columnarDataStoreBlockInfo.getTotalNumberOfDimension()];
+    for (int i = 0; i < columnarDataStoreBlockInfo.getAllSelectedDimensions().length; i++) {
+      temp[columnarDataStoreBlockInfo.getAllSelectedDimensions()[i]] = columnarKeyStore[i];
     }
+    keyValue.setKeyBlock(temp);
+  }
 
-    protected void fillKeyValue(BlockDataHolder blockDataHolder,int[] noDictionaryColIndexes) {
-        keyValue.reset();
-        keyValue.setMeasureBlock(blockDataHolder.getLeafDataBlock()
-                .getNodeMsrDataWrapper(columnarDataStoreBlockInfo.getAllSelectedMeasures(),
-                        columnarDataStoreBlockInfo.getFileHolder()).getValues());
-        keyValue.setNumberOfRows(blockDataHolder.getLeafDataBlock().getnKeys());
-        ColumnarKeyStoreDataHolder[] columnarKeyStore = blockDataHolder.getLeafDataBlock()
-                .getColumnarKeyStore(columnarDataStoreBlockInfo.getFileHolder(),
-                        columnarDataStoreBlockInfo.getAllSelectedDimensions(),
-                        new boolean[columnarDataStoreBlockInfo.getAllSelectedDimensions().length],noDictionaryColIndexes);
-        ColumnarKeyStoreDataHolder[] temp =
-                new ColumnarKeyStoreDataHolder[columnarDataStoreBlockInfo
-                        .getTotalNumberOfDimension()];
-        for (int i = 0; i < columnarDataStoreBlockInfo.getAllSelectedDimensions().length; i++) {
-            temp[columnarDataStoreBlockInfo.getAllSelectedDimensions()[i]] = columnarKeyStore[i];
-        }
-        keyValue.setKeyBlock(temp);
-    }
-
-    @Override
-    public AbstractColumnarScanResult getScannedData(BlockDataHolder blockDataHolder,int[] noDictionaryColIndexes) {
-        fillKeyValue(blockDataHolder,noDictionaryColIndexes);
-        return keyValue;
-    }
+  @Override public AbstractColumnarScanResult getScannedData(BlockDataHolder blockDataHolder,
+      int[] noDictionaryColIndexes) {
+    fillKeyValue(blockDataHolder, noDictionaryColIndexes);
+    return keyValue;
+  }
 }

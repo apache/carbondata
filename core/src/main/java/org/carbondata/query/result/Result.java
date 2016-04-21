@@ -23,19 +23,19 @@ import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.wrappers.ByteArrayWrapper;
 
 public interface Result<K, V> {
-    void addScannedResult(K key, V value);
+  void addScannedResult(K key, V value);
 
-    boolean hasNext();
+  boolean hasNext();
 
-    ByteArrayWrapper getKey();
+  ByteArrayWrapper getKey();
 
-    MeasureAggregator[] getValue();
+  MeasureAggregator[] getValue();
 
-    void merge(Result<K, V> otherResult);
+  void merge(Result<K, V> otherResult);
 
-    K getKeys();
+  K getKeys();
 
-    V getValues();
+  V getValues();
 
-    int size();
+  int size();
 }

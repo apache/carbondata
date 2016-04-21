@@ -25,41 +25,40 @@ import org.carbondata.query.processor.DataProcessorExt;
 import org.carbondata.query.processor.exception.DataProcessorException;
 
 public class AggreagtedRowProcessor extends RowProcessor {
-    /**
-     * prevMsrs
-     */
-    private MeasureAggregator[] prevMsrs;
-    /**
-     * prevKey
-     */
-    private byte[] prevKey;
+  /**
+   * prevMsrs
+   */
+  private MeasureAggregator[] prevMsrs;
+  /**
+   * prevKey
+   */
+  private byte[] prevKey;
 
-    public AggreagtedRowProcessor(DataProcessorExt dataProcessor) {
-        super(dataProcessor);
-    }
+  public AggreagtedRowProcessor(DataProcessorExt dataProcessor) {
+    super(dataProcessor);
+  }
 
-    @Override
-    public void processRow(final byte[] key, final MeasureAggregator[] value)
-            throws DataProcessorException {
-        if (prevKey != null) {
-            if (ByteUtil.compare(key, prevKey) == 0) {
-                aggregateData(prevMsrs, value);
-            } else {
-                dataProcessor.processRow(key, value);
-            }
-        }
-        prevKey = key.clone();
-        prevMsrs = value;
+  @Override public void processRow(final byte[] key, final MeasureAggregator[] value)
+      throws DataProcessorException {
+    if (prevKey != null) {
+      if (ByteUtil.compare(key, prevKey) == 0) {
+        aggregateData(prevMsrs, value);
+      } else {
+        dataProcessor.processRow(key, value);
+      }
     }
+    prevKey = key.clone();
+    prevMsrs = value;
+  }
 
-    private void aggregateData(final MeasureAggregator[] src, final MeasureAggregator[] dest) {
-        for (int i = 0; i < dest.length; i++) {
-            dest[i].merge(src[i]);
-        }
+  private void aggregateData(final MeasureAggregator[] src, final MeasureAggregator[] dest) {
+    for (int i = 0; i < dest.length; i++) {
+      dest[i].merge(src[i]);
     }
+  }
 
-    public void finish() throws DataProcessorException {
-        dataProcessor.processRow(prevKey, prevMsrs);
-        super.finish();
-    }
+  public void finish() throws DataProcessorException {
+    dataProcessor.processRow(prevKey, prevMsrs);
+    super.finish();
+  }
 }

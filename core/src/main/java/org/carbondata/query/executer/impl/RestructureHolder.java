@@ -23,108 +23,107 @@ import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.metadata.SliceMetaData;
 
 public class RestructureHolder {
-    /**
-     *
-     */
-    //    private RestructureStore rsStore;
+  /**
+   *
+   */
+  //    private RestructureStore rsStore;
 
-    /**
-     *
-     */
-    public boolean updateRequired;
-    /**
-     * 
-     */
-    private boolean[] isNoDictionaryNewDims;
+  /**
+   *
+   */
+  public boolean updateRequired;
+  /**
+   *
+   */
+  private boolean[] isNoDictionaryNewDims;
 
+  /**
+   *
+   */
+  public SliceMetaData metaData;
 
-	/**
-     *
-     */
-    public SliceMetaData metaData;
+  /**
+   * maskedByteRanges
+   */
+  public int[] maskedByteRanges;
 
-    /**
-     * maskedByteRanges
-     */
-    public int[] maskedByteRanges;
+  /**
+   * maskedByteRanges
+   */
+  private int queryDimsCount;
+  /**
+   * holder keyGenerator;
+   */
+  private KeyGenerator keyGenerator;
 
-    /**
-     * maskedByteRanges
-     */
-    private int queryDimsCount;
-    /**
-     * holder keyGenerator;
-     */
-    private KeyGenerator keyGenerator;
+  public int getQueryDimsCount() {
+    return queryDimsCount;
+  }
 
-    public int getQueryDimsCount() {
-        return queryDimsCount;
-    }
+  public void setQueryDimsCount(int queryDimsCount) {
+    this.queryDimsCount = queryDimsCount;
+  }
 
-    public void setQueryDimsCount(int queryDimsCount) {
-        this.queryDimsCount = queryDimsCount;
-    }
+  /* (non-Javadoc)
+   * @see java.lang.Object#hashCode()
+   */
+  @Override public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    int hashCode = 0;
+    //        if(null!=rsStore)
+    //        {
+    //            hashCode = rsStore.hashCode();
+    //        }
+    result = prime * result + hashCode;
+    return result;
+  }
 
-    /* (non-Javadoc)
-     * @see java.lang.Object#hashCode()
-     */
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        int hashCode = 0;
-        //        if(null!=rsStore)
-        //        {
-        //            hashCode = rsStore.hashCode();
-        //        }
-        result = prime * result + hashCode;
-        return result;
-    }
+  /* (non-Javadoc)
+   * @see java.lang.Object#equals(java.lang.Object)
+   */
+  @Override public boolean equals(Object obj) {
 
-    /* (non-Javadoc)
-     * @see java.lang.Object#equals(java.lang.Object)
-     */
-    @Override
-    public boolean equals(Object obj) {
-
-        if (obj instanceof RestructureHolder) {
-            if (this == obj) {
-                return true;
-            }
-            RestructureHolder other = (RestructureHolder) obj;
-            if (metaData == null) {
-                if (other.metaData != null) {
-                    return false;
-                }
-            } else if (!metaData.equals(other.metaData)) {
-                return false;
-            }
-            return true;
-        } else {
-            return false;
+    if (obj instanceof RestructureHolder) {
+      if (this == obj) {
+        return true;
+      }
+      RestructureHolder other = (RestructureHolder) obj;
+      if (metaData == null) {
+        if (other.metaData != null) {
+          return false;
         }
-
+      } else if (!metaData.equals(other.metaData)) {
+        return false;
+      }
+      return true;
+    } else {
+      return false;
     }
 
-    public KeyGenerator getKeyGenerator() {
-        return keyGenerator;
-    }
+  }
 
-    public void setKeyGenerator(KeyGenerator keyGenerator) {
-        this.keyGenerator = keyGenerator;
-    }
-    /*
-     * get the new high cardinality dims as part of restructure.
-     */
-    public boolean[] getIsNoDictionaryNewDims() {
-		return isNoDictionaryNewDims;
-	}
+  public KeyGenerator getKeyGenerator() {
+    return keyGenerator;
+  }
 
-    /**
-     * setting the new high cardinality dims as part of restructure
-     * @param isNoDictionaryNewDims
-     */
-	public void setIsNoDictionaryNewDims(boolean[] isNoDictionaryNewDims) {
-		this.isNoDictionaryNewDims = isNoDictionaryNewDims;
-	}
+  public void setKeyGenerator(KeyGenerator keyGenerator) {
+    this.keyGenerator = keyGenerator;
+  }
+
+  /*
+   * get the new high cardinality dims as part of restructure.
+   */
+  public boolean[] getIsNoDictionaryNewDims() {
+    return isNoDictionaryNewDims;
+  }
+
+  /**
+   * setting the new high cardinality dims as part of restructure
+   *
+   * @param isNoDictionaryNewDims
+   */
+  public void setIsNoDictionaryNewDims(boolean[] isNoDictionaryNewDims) {
+    this.isNoDictionaryNewDims = isNoDictionaryNewDims;
+  }
 }

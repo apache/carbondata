@@ -31,7 +31,11 @@ package org.carbondata.integration.spark.partition.api.impl;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
@@ -44,147 +48,146 @@ import org.carbondata.integration.spark.util.CarbonSparkInterFaceLogEvent;
 import org.apache.spark.sql.cubemodel.Partitioner;
 
 public final class QueryPartitionHelper {
-    private static final LogService LOGGER =
-            LogServiceFactory.getLogService(QueryPartitionHelper.class.getName());
-    private static QueryPartitionHelper instance = new QueryPartitionHelper();
-    private Properties properties;
-    private String defaultPartitionerClass;
-    private Map<String, DataPartitioner> partitionerMap =
-            new HashMap<String, DataPartitioner>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    private Map<String, DefaultLoadBalancer> loadBalancerMap =
-            new HashMap<String, DefaultLoadBalancer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(QueryPartitionHelper.class.getName());
+  private static QueryPartitionHelper instance = new QueryPartitionHelper();
+  private Properties properties;
+  private String defaultPartitionerClass;
+  private Map<String, DataPartitioner> partitionerMap =
+      new HashMap<String, DataPartitioner>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+  private Map<String, DefaultLoadBalancer> loadBalancerMap =
+      new HashMap<String, DefaultLoadBalancer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-    private QueryPartitionHelper() {
+  private QueryPartitionHelper() {
 
-    }
+  }
 
-    public static QueryPartitionHelper getInstance() {
-        return instance;
-    }
+  public static QueryPartitionHelper getInstance() {
+    return instance;
+  }
 
-    /**
-     * Read the properties from CSVFilePartitioner.properties
-     */
-    private static Properties loadProperties() {
-        Properties properties = new Properties();
+  /**
+   * Read the properties from CSVFilePartitioner.properties
+   */
+  private static Properties loadProperties() {
+    Properties properties = new Properties();
 
-        File file = new File("DataPartitioner.properties");
-        FileInputStream fis = null;
+    File file = new File("DataPartitioner.properties");
+    FileInputStream fis = null;
+    try {
+      if (file.exists()) {
+        fis = new FileInputStream(file);
+
+        properties.load(fis);
+      }
+    } catch (Exception e) {
+      LOGGER
+          .error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, e, e.getMessage());
+    } finally {
+      if (null != fis) {
         try {
-            if (file.exists()) {
-                fis = new FileInputStream(file);
-
-                properties.load(fis);
-            }
-        } catch (Exception e) {
-            LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, e,
-                    e.getMessage());
-        } finally {
-            if (null != fis) {
-                try {
-                    fis.close();
-                } catch (IOException e) {
-                    LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, e,
-                            e.getMessage());
-                }
-            }
+          fis.close();
+        } catch (IOException e) {
+          LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, e,
+              e.getMessage());
         }
-
-        return properties;
-
+      }
     }
 
-    private void checkInitialization(String cubeUniqueName, Partitioner partitioner) {
-        //Initialise if not done earlier
+    return properties;
 
-        //String nodeListString = null;
-        if (properties == null) {
-            properties = loadProperties();
+  }
 
-            // nodeListString = properties.getProperty("nodeList", "master,slave1,slave2,slave3");
+  private void checkInitialization(String cubeUniqueName, Partitioner partitioner) {
+    //Initialise if not done earlier
 
-            defaultPartitionerClass = properties.getProperty("partitionerClass",
-                   "org.carbondata.integration.spark.partition.api.impl.SampleDataPartitionerImpl");
+    //String nodeListString = null;
+    if (properties == null) {
+      properties = loadProperties();
 
-            LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-                    this.getClass().getSimpleName() + " is using following configurations.");
-            LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-                    "partitionerClass : " + defaultPartitionerClass);
-            LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-                    "nodeList : " + Arrays.toString(partitioner.nodeList()));
-        }
+      // nodeListString = properties.getProperty("nodeList", "master,slave1,slave2,slave3");
 
-        if (partitionerMap.get(cubeUniqueName) == null) {
-            DataPartitioner dataPartitioner;
-            try {
-                dataPartitioner =
-                        (DataPartitioner) Class.forName(partitioner.partitionClass()).newInstance();
-                dataPartitioner.initialize("", new String[0], partitioner);
+      defaultPartitionerClass = properties.getProperty("partitionerClass",
+          "org.carbondata.integration.spark.partition.api.impl.SampleDataPartitionerImpl");
 
-                List<Partition> partitions = dataPartitioner.getAllPartitions();
-                DefaultLoadBalancer loadBalancer =
-                        new DefaultLoadBalancer(Arrays.asList(partitioner.nodeList()), partitions);
-                partitionerMap.put(cubeUniqueName, dataPartitioner);
-                loadBalancerMap.put(cubeUniqueName, loadBalancer);
-            } catch (ClassNotFoundException e) {
-                LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, e,
-                        e.getMessage());
-            } catch (InstantiationException e) {
-                LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, e,
-                        e.getMessage());
-            } catch (IllegalAccessException e) {
-                LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, e,
-                        e.getMessage());
-            }
-        }
+      LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
+          this.getClass().getSimpleName() + " is using following configurations.");
+      LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
+          "partitionerClass : " + defaultPartitionerClass);
+      LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
+          "nodeList : " + Arrays.toString(partitioner.nodeList()));
     }
 
-    /**
-     * Get partitions applicable for query based on filters applied in query
-     */
-    public List<Partition> getPartitionsForQuery(CarbonQueryPlan queryPlan,
-            Partitioner partitioner) {
-        String cubeUniqueName = queryPlan.getSchemaName() + '_' + queryPlan.getCubeName();
-        checkInitialization(cubeUniqueName, partitioner);
+    if (partitionerMap.get(cubeUniqueName) == null) {
+      DataPartitioner dataPartitioner;
+      try {
+        dataPartitioner =
+            (DataPartitioner) Class.forName(partitioner.partitionClass()).newInstance();
+        dataPartitioner.initialize("", new String[0], partitioner);
 
-        DataPartitioner dataPartitioner = partitionerMap.get(cubeUniqueName);
-
-        List<Partition> queryPartitions = dataPartitioner.getPartitions(queryPlan);
-        return queryPartitions;
+        List<Partition> partitions = dataPartitioner.getAllPartitions();
+        DefaultLoadBalancer loadBalancer =
+            new DefaultLoadBalancer(Arrays.asList(partitioner.nodeList()), partitions);
+        partitionerMap.put(cubeUniqueName, dataPartitioner);
+        loadBalancerMap.put(cubeUniqueName, loadBalancer);
+      } catch (ClassNotFoundException e) {
+        LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, e,
+            e.getMessage());
+      } catch (InstantiationException e) {
+        LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, e,
+            e.getMessage());
+      } catch (IllegalAccessException e) {
+        LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, e,
+            e.getMessage());
+      }
     }
+  }
 
-    public List<Partition> getAllPartitions(String schemaName, String cubeName,
-            Partitioner partitioner) {
-        String cubeUniqueName = schemaName + '_' + cubeName;
-        checkInitialization(cubeUniqueName, partitioner);
+  /**
+   * Get partitions applicable for query based on filters applied in query
+   */
+  public List<Partition> getPartitionsForQuery(CarbonQueryPlan queryPlan, Partitioner partitioner) {
+    String cubeUniqueName = queryPlan.getSchemaName() + '_' + queryPlan.getCubeName();
+    checkInitialization(cubeUniqueName, partitioner);
 
-        DataPartitioner dataPartitioner = partitionerMap.get(cubeUniqueName);
+    DataPartitioner dataPartitioner = partitionerMap.get(cubeUniqueName);
 
-        return dataPartitioner.getAllPartitions();
-    }
+    List<Partition> queryPartitions = dataPartitioner.getPartitions(queryPlan);
+    return queryPartitions;
+  }
 
-    public void removePartition(String schemaName, String cubeName) {
-        String cubeUniqueName = schemaName + '_' + cubeName;
-        partitionerMap.remove(cubeUniqueName);
-    }
+  public List<Partition> getAllPartitions(String schemaName, String cubeName,
+      Partitioner partitioner) {
+    String cubeUniqueName = schemaName + '_' + cubeName;
+    checkInitialization(cubeUniqueName, partitioner);
 
-    /**
-     * Get the node name where the partition is assigned to.
-     */
-    public String getLocation(Partition partition, String schemaName, String cubeName,
-            Partitioner partitioner) {
-        String cubeUniqueName = schemaName + '_' + cubeName;
-        checkInitialization(cubeUniqueName, partitioner);
+    DataPartitioner dataPartitioner = partitionerMap.get(cubeUniqueName);
 
-        DefaultLoadBalancer loadBalancer = loadBalancerMap.get(cubeUniqueName);
-        return loadBalancer.getNodeForPartitions(partition);
-    }
+    return dataPartitioner.getAllPartitions();
+  }
 
-    public String[] getPartitionedColumns(String schemaName, String cubeName,
-            Partitioner partitioner) {
-        String cubeUniqueName = schemaName + '_' + cubeName;
-        checkInitialization(cubeUniqueName, partitioner);
-        DataPartitioner dataPartitioner = partitionerMap.get(cubeUniqueName);
-        return dataPartitioner.getPartitionedColumns();
-    }
+  public void removePartition(String schemaName, String cubeName) {
+    String cubeUniqueName = schemaName + '_' + cubeName;
+    partitionerMap.remove(cubeUniqueName);
+  }
+
+  /**
+   * Get the node name where the partition is assigned to.
+   */
+  public String getLocation(Partition partition, String schemaName, String cubeName,
+      Partitioner partitioner) {
+    String cubeUniqueName = schemaName + '_' + cubeName;
+    checkInitialization(cubeUniqueName, partitioner);
+
+    DefaultLoadBalancer loadBalancer = loadBalancerMap.get(cubeUniqueName);
+    return loadBalancer.getNodeForPartitions(partition);
+  }
+
+  public String[] getPartitionedColumns(String schemaName, String cubeName,
+      Partitioner partitioner) {
+    String cubeUniqueName = schemaName + '_' + cubeName;
+    checkInitialization(cubeUniqueName, partitioner);
+    DataPartitioner dataPartitioner = partitionerMap.get(cubeUniqueName);
+    return dataPartitioner.getPartitionedColumns();
+  }
 }

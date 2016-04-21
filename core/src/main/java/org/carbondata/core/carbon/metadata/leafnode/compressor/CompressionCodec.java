@@ -24,8 +24,8 @@ package org.carbondata.core.carbon.metadata.leafnode.compressor;
  */
 public enum CompressionCodec {
 
-    /**
-     * snappy compression
-     */
-    SNAPPY,
+  /**
+   * snappy compression
+   */
+  SNAPPY,
 }

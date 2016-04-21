@@ -19,7 +19,11 @@
 
 package org.carbondata.common.logging.impl;
 
-import java.io.*;
+import java.io.Closeable;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.Properties;
 
 import org.apache.log4j.Logger;
@@ -29,64 +33,64 @@ import org.apache.log4j.Logger;
  */
 public final class FileUtil {
 
-    public static final String CARBON_PROPERTIES_FILE_PATH = "../../../conf/carbon.properties";
-    private static final Logger LOG = Logger.getLogger(FileUtil.class.getName());
-    private static Properties carbonProperties;
+  public static final String CARBON_PROPERTIES_FILE_PATH = "../../../conf/carbon.properties";
+  private static final Logger LOG = Logger.getLogger(FileUtil.class.getName());
+  private static Properties carbonProperties;
 
-    private FileUtil() {
+  private FileUtil() {
 
+  }
+
+  public static Properties getCarbonProperties() {
+    if (null == carbonProperties) {
+      loadProperties();
     }
 
-    public static Properties getCarbonProperties() {
-        if (null == carbonProperties) {
-            loadProperties();
-        }
+    return carbonProperties;
+  }
 
-        return carbonProperties;
+  /**
+   * closes the stream
+   *
+   * @param stream stream to be closed.
+   */
+  public static void close(Closeable stream) {
+    if (null != stream) {
+      try {
+        stream.close();
+      } catch (IOException e) {
+        LOG.error("Exception while closing the Log stream");
+      }
     }
+  }
 
-    /**
-     * closes the stream
-     *
-     * @param stream stream to be closed.
-     */
-    public static void close(Closeable stream) {
-        if (null != stream) {
-            try {
-                stream.close();
-            } catch (IOException e) {
-                LOG.error("Exception while closing the Log stream");
-            }
-        }
+  private static void loadProperties() {
+    String property = System.getProperty("carbon.properties.filepath");
+    if (null == property) {
+      property = CARBON_PROPERTIES_FILE_PATH;
     }
+    File file = new File(property);
 
-    private static void loadProperties() {
-        String property = System.getProperty("carbon.properties.filepath");
-        if (null == property) {
-            property = CARBON_PROPERTIES_FILE_PATH;
-        }
-        File file = new File(property);
+    FileInputStream fis = null;
+    try {
+      if (file.exists()) {
+        fis = new FileInputStream(file);
 
-        FileInputStream fis = null;
+        carbonProperties = new Properties();
+        carbonProperties.load(fis);
+      }
+    } catch (FileNotFoundException e) {
+      LOG.error("Could not find carbon properties file in the path " + property);
+    } catch (IOException e) {
+      LOG.error("Error while reading carbon properties file in the path " + property);
+    } finally {
+      if (null != fis) {
         try {
-            if (file.exists()) {
-                fis = new FileInputStream(file);
-
-                carbonProperties = new Properties();
-                carbonProperties.load(fis);
-            }
-        } catch (FileNotFoundException e) {
-            LOG.error("Could not find carbon properties file in the path " + property);
+          fis.close();
         } catch (IOException e) {
-            LOG.error("Error while reading carbon properties file in the path " + property);
-        } finally {
-            if (null != fis) {
-                try {
-                    fis.close();
-                } catch (IOException e) {
-                    LOG.error("Error while closing the file stream for carbon.properties");
-                }
-            }
+          LOG.error("Error while closing the file stream for carbon.properties");
         }
+      }
     }
+  }
 }

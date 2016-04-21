@@ -20,16 +20,16 @@
 package org.carbondata.core.datastorage.store.columnar;
 
 public interface IndexStorage<T> {
-    boolean isAlreadySorted();
+  boolean isAlreadySorted();
 
-    T getDataAfterComp();
+  T getDataAfterComp();
 
-    T getIndexMap();
+  T getIndexMap();
 
-    byte[][] getKeyBlock();
+  byte[][] getKeyBlock();
 
-    T getDataIndexMap();
+  T getDataIndexMap();
 
-    int getTotalSize();
+  int getTotalSize();
 
 }

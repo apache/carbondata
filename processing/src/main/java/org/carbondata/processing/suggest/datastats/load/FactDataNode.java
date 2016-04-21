@@ -35,55 +35,55 @@ import org.carbondata.core.util.CarbonUtil;
  */
 public class FactDataNode {
 
-    /**
-     * Compressed keyblocks
-     */
-    private ColumnarKeyStore keyStore;
+  /**
+   * Compressed keyblocks
+   */
+  private ColumnarKeyStore keyStore;
 
-    private int maxKeys;
+  private int maxKeys;
 
-    public FactDataNode(int maxKeys, int[] eachBlockSize, boolean isFileStore,
-            FileHolder fileHolder, LeafNodeInfoColumnar leafNodeInfo,
-            ValueCompressionModel compressionModel) {
+  public FactDataNode(int maxKeys, int[] eachBlockSize, boolean isFileStore, FileHolder fileHolder,
+      LeafNodeInfoColumnar leafNodeInfo, ValueCompressionModel compressionModel) {
 
-        this.maxKeys = maxKeys;
+    this.maxKeys = maxKeys;
 
-        ColumnarKeyStoreInfo columnarStoreInfo =
-                CarbonUtil.getColumnarKeyStoreInfo(leafNodeInfo, eachBlockSize, null);
-        keyStore = StoreFactory.createColumnarKeyStore(columnarStoreInfo, fileHolder, isFileStore);
+    ColumnarKeyStoreInfo columnarStoreInfo =
+        CarbonUtil.getColumnarKeyStoreInfo(leafNodeInfo, eachBlockSize, null);
+    keyStore = StoreFactory.createColumnarKeyStore(columnarStoreInfo, fileHolder, isFileStore);
 
-    }
+  }
 
-    public ColumnarKeyStoreDataHolder[] getColumnData(FileHolder fileHolder, int[] dimensions,
-            boolean[] needCompression,int[] noDictionaryColIndexes) {
+  public ColumnarKeyStoreDataHolder[] getColumnData(FileHolder fileHolder, int[] dimensions,
+      boolean[] needCompression, int[] noDictionaryColIndexes) {
 
-        ColumnarKeyStoreDataHolder[] keyDataHolderUncompressed =
-                keyStore.getUnCompressedKeyArray(fileHolder, dimensions, needCompression,noDictionaryColIndexes);
+    ColumnarKeyStoreDataHolder[] keyDataHolderUncompressed = keyStore
+        .getUnCompressedKeyArray(fileHolder, dimensions, needCompression, noDictionaryColIndexes);
 
-        return keyDataHolderUncompressed;
+    return keyDataHolderUncompressed;
 
-    }
-    
-    /**
-     * getColumnData.
-     * @param fileHolder
-     * @param dimensions
-     * @param needCompression
-     * @param noDictionaryColIndexes
-     * @return
-     */
-    public ColumnarKeyStoreDataHolder getColumnData(FileHolder fileHolder, int dimensions,
-            boolean needCompression,int[] noDictionaryColIndexes) {
+  }
 
-        ColumnarKeyStoreDataHolder keyDataHolderUncompressed =
-                keyStore.getUnCompressedKeyArray(fileHolder, dimensions, needCompression,noDictionaryColIndexes);
+  /**
+   * getColumnData.
+   *
+   * @param fileHolder
+   * @param dimensions
+   * @param needCompression
+   * @param noDictionaryColIndexes
+   * @return
+   */
+  public ColumnarKeyStoreDataHolder getColumnData(FileHolder fileHolder, int dimensions,
+      boolean needCompression, int[] noDictionaryColIndexes) {
 
-        return keyDataHolderUncompressed;
+    ColumnarKeyStoreDataHolder keyDataHolderUncompressed = keyStore
+        .getUnCompressedKeyArray(fileHolder, dimensions, needCompression, noDictionaryColIndexes);
 
-    }
+    return keyDataHolderUncompressed;
 
-    public int getMaxKeys() {
-        return maxKeys;
-    }
+  }
+
+  public int getMaxKeys() {
+    return maxKeys;
+  }
 
 }

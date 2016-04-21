@@ -20,5 +20,5 @@
 package org.carbondata.processing.csvreaderstep;
 
 public interface PatternMatcherInterface {
-    boolean matchesPattern(byte[] source, int location, byte[] pattern);
+  boolean matchesPattern(byte[] source, int location, byte[] pattern);
 }

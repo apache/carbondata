@@ -25,14 +25,13 @@ import java.util.concurrent.Callable;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 
 public class ReaderThread implements Callable<Map<String, Integer>> {
-    CarbonFile file;
+  CarbonFile file;
 
-    public ReaderThread(CarbonFile file) {
-        this.file = file;
-    }
+  public ReaderThread(CarbonFile file) {
+    this.file = file;
+  }
 
-    @Override
-    public Map<String, Integer> call() throws Exception {
-        return LevelGlobalSurrogateGeneratorThread.readLevelFileAndUpdateCache(file);
-    }
+  @Override public Map<String, Integer> call() throws Exception {
+    return LevelGlobalSurrogateGeneratorThread.readLevelFileAndUpdateCache(file);
+  }
 }

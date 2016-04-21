@@ -20,19 +20,20 @@
 package org.carbondata.processing.mdkeygen;
 
 import org.carbondata.core.keygenerator.KeyGenerator;
+
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.step.BaseStepData;
 import org.pentaho.di.trans.step.StepDataInterface;
 
 public class MDKeyGenStepData extends BaseStepData implements StepDataInterface {
-    /**
-     * outputRowMeta
-     */
-    protected RowMetaInterface outputRowMeta;
+  /**
+   * outputRowMeta
+   */
+  protected RowMetaInterface outputRowMeta;
 
-    /**
-     * generator for each column independently
-     */
-    protected KeyGenerator[] generator;
+  /**
+   * generator for each column independently
+   */
+  protected KeyGenerator[] generator;
 
 }

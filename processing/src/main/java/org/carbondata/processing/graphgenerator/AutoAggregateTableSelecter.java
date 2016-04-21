@@ -28,113 +28,108 @@ import org.carbondata.processing.schema.metadata.AggregateTable;
 //import mondrian.carbon.MondrianDef.Cube;
 
 public class AutoAggregateTableSelecter extends AggregateTableSelecter {
-    private boolean isMatching;
+  private boolean isMatching;
 
-    public AutoAggregateTableSelecter(List<AggregateTable> aggregateTables) {
-        super(aggregateTables);
+  public AutoAggregateTableSelecter(List<AggregateTable> aggregateTables) {
+    super(aggregateTables);
+
+  }
+
+  public void selectTableForAggTableAggregationProcess(AggregateTable[] aggregateTablesArray,
+      Cube cube) {
+
+    AggregateTableDerivativeComposite aggregateTableDerivative = null;
+    for (int i = 0; i < aggregateTables.size(); i++) {
+
+      if (i == 0) {
+        factName = cube.fact.getAlias();
+        root = new AggregateTableDerivativeComposite();
+        aggregateTableDerivative =
+            new AggregateTableDerivativeComposite(factName, aggregateTables.get(i));
+        root.add(aggregateTableDerivative);
+      } else {
+
+        if (aggregateTableDerivative != null) {
+
+          addAggTableRelation(root, aggregateTables.get(i));
+          if (!isMatching) {
+            AggregateTableDerivative aggregateTableDerivativetemp =
+                new AggregateTableDerivativeComposite(factName, aggregateTables.get(i));
+            root.add(aggregateTableDerivativetemp);
+          }
+        }
+
+      }
 
     }
 
-    public void selectTableForAggTableAggregationProcess(AggregateTable[] aggregateTablesArray,
-            Cube cube) {
+  }
 
-        AggregateTableDerivativeComposite aggregateTableDerivative = null;
-        for (int i = 0; i < aggregateTables.size(); i++) {
+  private void addAggTableRelation(AggregateTableDerivative aggregateTableDerivative,
+      AggregateTable aggregateTable) {
 
-            if (i == 0) {
-                factName = cube.fact.getAlias();
-                root = new AggregateTableDerivativeComposite();
-                aggregateTableDerivative =
-                        new AggregateTableDerivativeComposite(factName, aggregateTables.get(i));
-                root.add(aggregateTableDerivative);
-            } else {
+    List<AggregateTableDerivative> listOfAggregateTableDerivativeChildren =
+        aggregateTableDerivative.getChildrens();
 
-                if (aggregateTableDerivative != null) {
+    AggregateTable aggregateTableOfDerivativecomp = null;
 
-                    addAggTableRelation(root, aggregateTables.get(i));
-                    if (!isMatching) {
-                        AggregateTableDerivative aggregateTableDerivativetemp =
-                                new AggregateTableDerivativeComposite(factName,
-                                        aggregateTables.get(i));
-                        root.add(aggregateTableDerivativetemp);
-                    }
-                }
-
-            }
-
+    if (listOfAggregateTableDerivativeChildren.isEmpty()) {
+      aggregateTableOfDerivativecomp =
+          ((AggregateTableDerivativeComposite) aggregateTableDerivative).getAggregateTable();
+      isMatching = isMatchingTable(aggregateTable, aggregateTableOfDerivativecomp, isMatching);
+      if (isMatching) {
+        AggregateTableDerivative derivedTable = new AggregateTableDerivativeComposite(
+            aggregateTableOfDerivativecomp.getAggregateTableName(), aggregateTable);
+        if (!processedAggTables.contains(aggregateTable)) {
+          aggregateTableDerivative.add(derivedTable);
+          processedAggTables.add(aggregateTable);
         }
 
+      }
+    } else {
+      for (int j = listOfAggregateTableDerivativeChildren.size() - 1; j >= 0; j--) {
+
+        AggregateTableDerivative aggTableDerivativeChild =
+            listOfAggregateTableDerivativeChildren.get(j);
+
+        addAggTableRelation(aggTableDerivativeChild, aggregateTable);
+
+        if (!isMatching) {
+          addNode(aggTableDerivativeChild, aggregateTable);
+        }
+      }
     }
 
-    private void addAggTableRelation(AggregateTableDerivative aggregateTableDerivative,
-            AggregateTable aggregateTable) {
+  }
 
-        List<AggregateTableDerivative> listOfAggregateTableDerivativeChildren =
-                aggregateTableDerivative.getChildrens();
+  private void addNode(AggregateTableDerivative aggTableDerivativeChild,
+      AggregateTable aggregateTable) {
+    AggregateTable aggregateTableOfDerivativecomp = null;
 
-        AggregateTable aggregateTableOfDerivativecomp = null;
-
-        if (listOfAggregateTableDerivativeChildren.isEmpty()) {
-            aggregateTableOfDerivativecomp =
-                    ((AggregateTableDerivativeComposite) aggregateTableDerivative)
-                            .getAggregateTable();
-            //			}
-            isMatching =
-                    isMatchingTable(aggregateTable, aggregateTableOfDerivativecomp, isMatching);
-            if (isMatching) {
-                AggregateTableDerivative derivedTable = new AggregateTableDerivativeComposite(
-                        aggregateTableOfDerivativecomp.getAggregateTableName(), aggregateTable);
-                if (!processedAggTables.contains(aggregateTable)) {
-                    aggregateTableDerivative.add(derivedTable);
-                    processedAggTables.add(aggregateTable);
-                }
-
-            }
-        } else {
-            for (int j = listOfAggregateTableDerivativeChildren.size() - 1; j >= 0; j--) {
-
-                AggregateTableDerivative aggTableDerivativeChild =
-                        listOfAggregateTableDerivativeChildren.get(j);
-
-                addAggTableRelation(aggTableDerivativeChild, aggregateTable);
-
-                if (!isMatching) {
-                    addNode(aggTableDerivativeChild, aggregateTable);
-                }
-            }
-        }
-
+    aggregateTableOfDerivativecomp =
+        ((AggregateTableDerivativeComposite) aggTableDerivativeChild).getAggregateTable();
+    isMatching = isMatchingTable(aggregateTable, aggregateTableOfDerivativecomp, isMatching);
+    if (isMatching) {
+      AggregateTableDerivative derivedTable = new AggregateTableDerivativeComposite(
+          aggregateTableOfDerivativecomp.getAggregateTableName(), aggregateTable);
+      if (!processedAggTables.contains(aggregateTable)) {
+        aggTableDerivativeChild.add(derivedTable);
+        processedAggTables.add(aggregateTable);
+      }
     }
 
-    private void addNode(AggregateTableDerivative aggTableDerivativeChild,
-            AggregateTable aggregateTable) {
-        AggregateTable aggregateTableOfDerivativecomp = null;
+  }
 
-        aggregateTableOfDerivativecomp =
-                ((AggregateTableDerivativeComposite) aggTableDerivativeChild).getAggregateTable();
-        isMatching = isMatchingTable(aggregateTable, aggregateTableOfDerivativecomp, isMatching);
-        if (isMatching) {
-            AggregateTableDerivative derivedTable = new AggregateTableDerivativeComposite(
-                    aggregateTableOfDerivativecomp.getAggregateTableName(), aggregateTable);
-            if (!processedAggTables.contains(aggregateTable)) {
-                aggTableDerivativeChild.add(derivedTable);
-                processedAggTables.add(aggregateTable);
-            }
-        }
-
-    }
-
-    private boolean isMatchingTable(AggregateTable aggregateTable,
-            AggregateTable aggregateTableOfDerivativecomp, boolean isMatching) {
-        List<String> levelsList =
-                Arrays.asList(aggregateTableOfDerivativecomp.getActualAggLevels());
-        for (String level : aggregateTable.getActualAggLevels()) {
-            isMatching = levelsList.contains(level);
-            if (!isMatching) {
-                return isMatching;
-            }
-        }
+  private boolean isMatchingTable(AggregateTable aggregateTable,
+      AggregateTable aggregateTableOfDerivativecomp, boolean isMatching) {
+    List<String> levelsList = Arrays.asList(aggregateTableOfDerivativecomp.getActualAggLevels());
+    for (String level : aggregateTable.getActualAggLevels()) {
+      isMatching = levelsList.contains(level);
+      if (!isMatching) {
         return isMatching;
+      }
     }
+    return isMatching;
+  }
 
 }

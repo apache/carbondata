@@ -26,63 +26,63 @@ import org.carbondata.core.carbon.CarbonTableIdentifier;
  */
 public class DictionaryColumnUniqueIdentifier {
 
-    /**
-     * table fully qualified name
-     */
-    private CarbonTableIdentifier carbonTableIdentifier;
+  /**
+   * table fully qualified name
+   */
+  private CarbonTableIdentifier carbonTableIdentifier;
 
-    /**
-     * unique column id
-     */
-    private String columnIdentifier;
+  /**
+   * unique column id
+   */
+  private String columnIdentifier;
 
-    /**
-     * @param carbonTableIdentifier
-     * @param columnIdentifier
-     */
-    public DictionaryColumnUniqueIdentifier(CarbonTableIdentifier carbonTableIdentifier,
-            String columnIdentifier) {
-        this.carbonTableIdentifier = carbonTableIdentifier;
-        this.columnIdentifier = columnIdentifier;
-    }
+  /**
+   * @param carbonTableIdentifier
+   * @param columnIdentifier
+   */
+  public DictionaryColumnUniqueIdentifier(CarbonTableIdentifier carbonTableIdentifier,
+      String columnIdentifier) {
+    this.carbonTableIdentifier = carbonTableIdentifier;
+    this.columnIdentifier = columnIdentifier;
+  }
 
-    /**
-     * @return table identifier
-     */
-    public CarbonTableIdentifier getCarbonTableIdentifier() {
-        return carbonTableIdentifier;
-    }
+  /**
+   * @return table identifier
+   */
+  public CarbonTableIdentifier getCarbonTableIdentifier() {
+    return carbonTableIdentifier;
+  }
 
-    /**
-     * @return columnIdentifier
-     */
-    public String getColumnIdentifier() {
-        return columnIdentifier;
-    }
+  /**
+   * @return columnIdentifier
+   */
+  public String getColumnIdentifier() {
+    return columnIdentifier;
+  }
 
-    /**
-     * overridden equals method
-     *
-     * @param other
-     * @return
-     */
-    @Override public boolean equals(Object other) {
-        if (this == other) return true;
-        if (other == null || getClass() != other.getClass()) return false;
-        DictionaryColumnUniqueIdentifier that = (DictionaryColumnUniqueIdentifier) other;
-        if (!carbonTableIdentifier.equals(that.carbonTableIdentifier)) return false;
-        return columnIdentifier.equals(that.columnIdentifier);
+  /**
+   * overridden equals method
+   *
+   * @param other
+   * @return
+   */
+  @Override public boolean equals(Object other) {
+    if (this == other) return true;
+    if (other == null || getClass() != other.getClass()) return false;
+    DictionaryColumnUniqueIdentifier that = (DictionaryColumnUniqueIdentifier) other;
+    if (!carbonTableIdentifier.equals(that.carbonTableIdentifier)) return false;
+    return columnIdentifier.equals(that.columnIdentifier);
 
-    }
+  }
 
-    /**
-     * overridden hashcode method
-     *
-     * @return
-     */
-    @Override public int hashCode() {
-        int result = carbonTableIdentifier.hashCode();
-        result = 31 * result + columnIdentifier.hashCode();
-        return result;
-    }
+  /**
+   * overridden hashcode method
+   *
+   * @return
+   */
+  @Override public int hashCode() {
+    int result = carbonTableIdentifier.hashCode();
+    result = 31 * result + columnIdentifier.hashCode();
+    return result;
+  }
 }

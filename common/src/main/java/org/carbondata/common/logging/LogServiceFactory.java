@@ -25,22 +25,22 @@ import org.carbondata.common.logging.impl.StandardLogService;
  * Log Service factory
  */
 public final class LogServiceFactory {
-    private LogServiceFactory() {
+  private LogServiceFactory() {
 
-    }
+  }
 
-    /**
-     * return Logger Service.
-     *
-     * @param className provides class name
-     * @return LogService
-     */
-    public static LogService getLogService(final String className) {
-        return new StandardLogService(className);
-    }
+  /**
+   * return Logger Service.
+   *
+   * @param className provides class name
+   * @return LogService
+   */
+  public static LogService getLogService(final String className) {
+    return new StandardLogService(className);
+  }
 
-    public static LogService getLogService() {
-        return new StandardLogService();
-    }
+  public static LogService getLogService() {
+    return new StandardLogService();
+  }
 
 }

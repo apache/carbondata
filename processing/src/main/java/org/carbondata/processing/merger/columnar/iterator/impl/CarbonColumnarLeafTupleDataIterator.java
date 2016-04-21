@@ -23,143 +23,140 @@ import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.util.ValueCompressionUtil;
-import org.carbondata.processing.factreader.FactReaderInfo;
 import org.carbondata.processing.factreader.CarbonSurrogateTupleHolder;
+import org.carbondata.processing.factreader.FactReaderInfo;
 import org.carbondata.processing.factreader.columnar.CarbonColumnarLeafNodeIterator;
 import org.carbondata.processing.iterator.CarbonIterator;
 import org.carbondata.processing.merger.columnar.iterator.CarbonDataIterator;
 import org.carbondata.query.columnar.keyvalue.AbstractColumnarScanResult;
 
 public class CarbonColumnarLeafTupleDataIterator
-        implements CarbonDataIterator<CarbonSurrogateTupleHolder> {
+    implements CarbonDataIterator<CarbonSurrogateTupleHolder> {
 
-    /**
-     * unique value if slice
-     */
-    private Object[] uniqueValue;
+  /**
+   * unique value if slice
+   */
+  private Object[] uniqueValue;
 
-    /**
-     * hash next
-     */
-    private boolean hasNext;
+  /**
+   * hash next
+   */
+  private boolean hasNext;
 
-    /**
-     * leaf node iterator
-     */
-    private CarbonIterator<AbstractColumnarScanResult> leafNodeIterator;
+  /**
+   * leaf node iterator
+   */
+  private CarbonIterator<AbstractColumnarScanResult> leafNodeIterator;
 
-    /**
-     * measureCount
-     */
-    private int measureCount;
+  /**
+   * measureCount
+   */
+  private int measureCount;
 
-    /**
-     * aggType
-     */
-    private char[] aggType;
+  /**
+   * aggType
+   */
+  private char[] aggType;
 
-    /**
-     * keyValue
-     */
-    private AbstractColumnarScanResult keyValue;
+  /**
+   * keyValue
+   */
+  private AbstractColumnarScanResult keyValue;
 
-    /**
-     * tuple
-     */
-    private CarbonSurrogateTupleHolder currentTuple;
+  /**
+   * tuple
+   */
+  private CarbonSurrogateTupleHolder currentTuple;
 
-    /**
-     * isMeasureUpdateResuired
-     */
-    private boolean isMeasureUpdateResuired;
+  /**
+   * isMeasureUpdateResuired
+   */
+  private boolean isMeasureUpdateResuired;
 
-    /**
-     * CarbonSliceTupleIterator constructor to initialise
-     *
-     * @param mdkeyLength mdkey length
-     */
-    public CarbonColumnarLeafTupleDataIterator(String sliceLocation, CarbonFile[] factFiles,
-            FactReaderInfo factItreatorInfo, int mdkeyLength) {
-        this.measureCount = factItreatorInfo.getMeasureCount();
-        ValueCompressionModel compressionModelObj =
-                getCompressionModel(sliceLocation, factItreatorInfo.getTableName(), measureCount);
-        this.uniqueValue = compressionModelObj.getUniqueValue();
-        this.leafNodeIterator =
-                new CarbonColumnarLeafNodeIterator(factFiles, mdkeyLength, compressionModelObj,
-                        factItreatorInfo);
-        this.aggType = compressionModelObj.getType();
-        initialise();
-        this.isMeasureUpdateResuired = factItreatorInfo.isUpdateMeasureRequired();
+  /**
+   * CarbonSliceTupleIterator constructor to initialise
+   *
+   * @param mdkeyLength mdkey length
+   */
+  public CarbonColumnarLeafTupleDataIterator(String sliceLocation, CarbonFile[] factFiles,
+      FactReaderInfo factItreatorInfo, int mdkeyLength) {
+    this.measureCount = factItreatorInfo.getMeasureCount();
+    ValueCompressionModel compressionModelObj =
+        getCompressionModel(sliceLocation, factItreatorInfo.getTableName(), measureCount);
+    this.uniqueValue = compressionModelObj.getUniqueValue();
+    this.leafNodeIterator =
+        new CarbonColumnarLeafNodeIterator(factFiles, mdkeyLength, compressionModelObj,
+            factItreatorInfo);
+    this.aggType = compressionModelObj.getType();
+    initialise();
+    this.isMeasureUpdateResuired = factItreatorInfo.isUpdateMeasureRequired();
+  }
+
+  /**
+   * below method will be used to initialise
+   */
+  private void initialise() {
+    if (this.leafNodeIterator.hasNext()) {
+      keyValue = leafNodeIterator.next();
+      this.hasNext = true;
     }
+  }
 
-    /**
-     * below method will be used to initialise
-     */
-    private void initialise() {
-        if (this.leafNodeIterator.hasNext()) {
-            keyValue = leafNodeIterator.next();
-            this.hasNext = true;
+  /**
+   * This method will be used to get the compression model for slice
+   *
+   * @param measureCount measure count
+   * @return compression model
+   */
+  private ValueCompressionModel getCompressionModel(String sliceLocation, String tableName,
+      int measureCount) {
+    ValueCompressionModel compressionModelObj = ValueCompressionUtil.getValueCompressionModel(
+        sliceLocation + CarbonCommonConstants.MEASURE_METADATA_FILE_NAME + tableName
+            + CarbonCommonConstants.MEASUREMETADATA_FILE_EXT, measureCount);
+    return compressionModelObj;
+  }
+
+  /**
+   * below method will be used to get the measure value from measure data
+   * wrapper
+   *
+   * @return
+   */
+  private Object[] getMeasure() {
+    Object[] measures = new Object[measureCount];
+    Object values = 0;
+    for (int i = 0; i < measures.length; i++) {
+      if (aggType[i] == 'n') {
+        values = keyValue.getDoubleValue(i);
+        if (this.isMeasureUpdateResuired && !values.equals(uniqueValue[i])) {
+          measures[i] = values;
         }
+      } else {
+        measures[i] = keyValue.getByteArrayValue(i);
+      }
     }
+    return measures;
+  }
 
-    /**
-     * This method will be used to get the compression model for slice
-     *
-     * @param measureCount measure count
-     * @return compression model
-     */
-    private ValueCompressionModel getCompressionModel(String sliceLocation, String tableName,
-            int measureCount) {
-        ValueCompressionModel compressionModelObj = ValueCompressionUtil.getValueCompressionModel(
-                sliceLocation + CarbonCommonConstants.MEASURE_METADATA_FILE_NAME + tableName
-                        + CarbonCommonConstants.MEASUREMETADATA_FILE_EXT, measureCount);
-        return compressionModelObj;
-    }
+  @Override public boolean hasNext() {
+    return hasNext;
+  }
 
-    /**
-     * below method will be used to get the measure value from measure data
-     * wrapper
-     *
-     * @return
-     */
-    private Object[] getMeasure() {
-        Object[] measures = new Object[measureCount];
-        Object values = 0;
-        for (int i = 0; i < measures.length; i++) {
-            if (aggType[i] == 'n') {
-                values = keyValue.getDoubleValue(i);
-                if (this.isMeasureUpdateResuired && !values.equals(uniqueValue[i])) {
-                    measures[i] = values;
-                }
-            } else {
-                measures[i] = keyValue.getByteArrayValue(i);
-            }
-        }
-        return measures;
+  @Override public void fetchNextData() {
+    CarbonSurrogateTupleHolder tuple = new CarbonSurrogateTupleHolder();
+    tuple.setSurrogateKey(keyValue.getKeyArray());
+    tuple.setMeasures(getMeasure());
+    if (keyValue.hasNext()) {
+      this.currentTuple = tuple;
+    } else if (!leafNodeIterator.hasNext()) {
+      hasNext = false;
+    } else {
+      initialise();
     }
+    this.currentTuple = tuple;
+  }
 
-    @Override
-    public boolean hasNext() {
-        return hasNext;
-    }
-
-    @Override
-    public void fetchNextData() {
-        CarbonSurrogateTupleHolder tuple = new CarbonSurrogateTupleHolder();
-        tuple.setSurrogateKey(keyValue.getKeyArray());
-        tuple.setMeasures(getMeasure());
-        if (keyValue.hasNext()) {
-            this.currentTuple = tuple;
-        } else if (!leafNodeIterator.hasNext()) {
-            hasNext = false;
-        } else {
-            initialise();
-        }
-        this.currentTuple = tuple;
-    }
-
-    @Override
-    public CarbonSurrogateTupleHolder getNextData() {
-        return this.currentTuple;
-    }
+  @Override public CarbonSurrogateTupleHolder getNextData() {
+    return this.currentTuple;
+  }
 }

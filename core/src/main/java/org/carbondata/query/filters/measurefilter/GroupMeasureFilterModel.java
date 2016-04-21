@@ -24,56 +24,56 @@ package org.carbondata.query.filters.measurefilter;
  */
 public class GroupMeasureFilterModel extends MeasureFilterModel {
 
+  /**
+   *
+   */
+  private static final long serialVersionUID = -1262669317890067272L;
+
+  private MeasureFilterModel[][] filterModels;
+
+  private MeasureFilterGroupType filterGroupType;
+
+  /**
+   * GroupMeasureFilterModel
+   *
+   * @param filterModels
+   * @param filterGroupType
+   */
+  public GroupMeasureFilterModel(MeasureFilterModel[][] filterModels,
+      MeasureFilterGroupType filterGroupType) {
+    this.filterModels = filterModels;
+    this.filterGroupType = filterGroupType;
+  }
+
+  /**
+   * getFilterModels
+   *
+   * @return the filterModels
+   */
+  public MeasureFilterModel[][] getFilterModels() {
+    return filterModels;
+  }
+
+  /**
+   * getFilterGroupType
+   *
+   * @return the filterGroupType
+   */
+  public MeasureFilterGroupType getFilterGroupType() {
+    return filterGroupType;
+  }
+
+  /**
+   * This enum for measure filter group types.
+   *
+   * @author R00900208
+   */
+  public static enum MeasureFilterGroupType {
     /**
-     *
+     * Enums declared for Metric filters inorder to process and
+     * and or operarations.
      */
-    private static final long serialVersionUID = -1262669317890067272L;
-
-    private MeasureFilterModel[][] filterModels;
-
-    private MeasureFilterGroupType filterGroupType;
-
-    /**
-     * GroupMeasureFilterModel
-     *
-     * @param filterModels
-     * @param filterGroupType
-     */
-    public GroupMeasureFilterModel(MeasureFilterModel[][] filterModels,
-            MeasureFilterGroupType filterGroupType) {
-        this.filterModels = filterModels;
-        this.filterGroupType = filterGroupType;
-    }
-
-    /**
-     * getFilterModels
-     *
-     * @return the filterModels
-     */
-    public MeasureFilterModel[][] getFilterModels() {
-        return filterModels;
-    }
-
-    /**
-     * getFilterGroupType
-     *
-     * @return the filterGroupType
-     */
-    public MeasureFilterGroupType getFilterGroupType() {
-        return filterGroupType;
-    }
-
-    /**
-     * This enum for measure filter group types.
-     *
-     * @author R00900208
-     */
-    public static enum MeasureFilterGroupType {
-        /**
-         * Enums declared for Metric filters inorder to process and
-         * and or operarations.
-         */
-        AND, OR;
-    }
+    AND, OR;
+  }
 
 }

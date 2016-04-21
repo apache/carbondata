@@ -22,60 +22,60 @@ package org.carbondata.query.evaluators;
 import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreDataHolder;
 import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
-import org.carbondata.query.datastorage.storeInterfaces.DataStoreBlock;
+import org.carbondata.query.datastorage.storeinterface.DataStoreBlock;
 
 public class BlockDataHolder {
-    private CarbonReadDataHolder[] measureBlocks;
+  private CarbonReadDataHolder[] measureBlocks;
 
-    private ColumnarKeyStoreDataHolder[] columnarKeyStore;
+  private ColumnarKeyStoreDataHolder[] columnarKeyStore;
 
-    private DataStoreBlock leafDataBlock;
+  private DataStoreBlock leafDataBlock;
 
-    private FileHolder fileHolder;
+  private FileHolder fileHolder;
 
-    public BlockDataHolder(int dimColumnCount, int msrColumnCount) {
-        this.measureBlocks = new CarbonReadDataHolder[msrColumnCount];
-        this.columnarKeyStore = new ColumnarKeyStoreDataHolder[dimColumnCount];
+  public BlockDataHolder(int dimColumnCount, int msrColumnCount) {
+    this.measureBlocks = new CarbonReadDataHolder[msrColumnCount];
+    this.columnarKeyStore = new ColumnarKeyStoreDataHolder[dimColumnCount];
+  }
+
+  public CarbonReadDataHolder[] getMeasureBlocks() {
+    return measureBlocks;
+  }
+
+  public void setMeasureBlocks(final CarbonReadDataHolder[] measureBlocks) {
+    this.measureBlocks = measureBlocks;
+  }
+
+  public ColumnarKeyStoreDataHolder[] getColumnarKeyStore() {
+    return columnarKeyStore;
+  }
+
+  public void setColumnarKeyStore(final ColumnarKeyStoreDataHolder[] columnarKeyStore) {
+    this.columnarKeyStore = columnarKeyStore;
+  }
+
+  public DataStoreBlock getLeafDataBlock() {
+    return leafDataBlock;
+  }
+
+  public void setLeafDataBlock(final DataStoreBlock dataBlock) {
+    this.leafDataBlock = dataBlock;
+  }
+
+  public FileHolder getFileHolder() {
+    return fileHolder;
+  }
+
+  public void setFileHolder(final FileHolder fileHolder) {
+    this.fileHolder = fileHolder;
+  }
+
+  public void reset() {
+    for (int i = 0; i < measureBlocks.length; i++) {
+      this.measureBlocks[i] = null;
     }
-
-    public CarbonReadDataHolder[] getMeasureBlocks() {
-        return measureBlocks;
+    for (int i = 0; i < columnarKeyStore.length; i++) {
+      this.columnarKeyStore[i] = null;
     }
-
-    public void setMeasureBlocks(final CarbonReadDataHolder[] measureBlocks) {
-        this.measureBlocks = measureBlocks;
-    }
-
-    public ColumnarKeyStoreDataHolder[] getColumnarKeyStore() {
-        return columnarKeyStore;
-    }
-
-    public void setColumnarKeyStore(final ColumnarKeyStoreDataHolder[] columnarKeyStore) {
-        this.columnarKeyStore = columnarKeyStore;
-    }
-
-    public DataStoreBlock getLeafDataBlock() {
-        return leafDataBlock;
-    }
-
-    public void setLeafDataBlock(final DataStoreBlock dataBlock) {
-        this.leafDataBlock = dataBlock;
-    }
-
-    public FileHolder getFileHolder() {
-        return fileHolder;
-    }
-
-    public void setFileHolder(final FileHolder fileHolder) {
-        this.fileHolder = fileHolder;
-    }
-
-    public void reset() {
-        for (int i = 0; i < measureBlocks.length; i++) {
-            this.measureBlocks[i] = null;
-        }
-        for (int i = 0; i < columnarKeyStore.length; i++) {
-            this.columnarKeyStore[i] = null;
-        }
-    }
+  }
 }

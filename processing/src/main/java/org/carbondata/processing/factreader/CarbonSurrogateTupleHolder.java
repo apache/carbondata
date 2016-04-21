@@ -20,30 +20,30 @@
 package org.carbondata.processing.factreader;
 
 public class CarbonSurrogateTupleHolder {
-    /**
-     * surrogateKey
-     */
-    private byte[] mdKey;
+  /**
+   * surrogateKey
+   */
+  private byte[] mdKey;
 
-    /**
-     * measures
-     */
-    private Object[] measures;
+  /**
+   * measures
+   */
+  private Object[] measures;
 
-    public byte[] getMdKey() {
-        return mdKey;
-    }
+  public byte[] getMdKey() {
+    return mdKey;
+  }
 
-    public void setSurrogateKey(byte[] mdKey) {
-        this.mdKey = mdKey;
-    }
+  public void setSurrogateKey(byte[] mdKey) {
+    this.mdKey = mdKey;
+  }
 
-    public Object[] getMeasures() {
-        return measures;
-    }
+  public Object[] getMeasures() {
+    return measures;
+  }
 
-    public void setMeasures(Object[] measures) {
-        this.measures = measures;
-    }
+  public void setMeasures(Object[] measures) {
+    this.measures = measures;
+  }
 
 }

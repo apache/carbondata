@@ -40,39 +40,39 @@ import org.carbondata.integration.spark.partition.api.Partition;
  * A sample load balancer to distribute the partitions to the available nodes in a round robin mode.
  */
 public class DefaultLoadBalancer {
-    private Map<String, List<Partition>> nodeToPartitonMap =
-            new HashMap<String, List<Partition>>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+  private Map<String, List<Partition>> nodeToPartitonMap =
+      new HashMap<String, List<Partition>>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-    private Map<Partition, String> partitonToNodeMap =
-            new HashMap<Partition, String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+  private Map<Partition, String> partitonToNodeMap =
+      new HashMap<Partition, String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-    public DefaultLoadBalancer(List<String> nodes, List<Partition> partitions) {
-        //Per form a round robin allocation
-        int nodeCount = nodes.size();
+  public DefaultLoadBalancer(List<String> nodes, List<Partition> partitions) {
+    //Per form a round robin allocation
+    int nodeCount = nodes.size();
 
-        int partitioner = 0;
-        for (Partition partition : partitions) {
-            int nodeindex = partitioner % nodeCount;
-            String node = nodes.get(nodeindex);
+    int partitioner = 0;
+    for (Partition partition : partitions) {
+      int nodeindex = partitioner % nodeCount;
+      String node = nodes.get(nodeindex);
 
-            List<Partition> oldList = nodeToPartitonMap.get(node);
-            if (oldList == null) {
-                oldList = new ArrayList<Partition>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-                nodeToPartitonMap.put(node, oldList);
-            }
-            oldList.add(partition);
+      List<Partition> oldList = nodeToPartitonMap.get(node);
+      if (oldList == null) {
+        oldList = new ArrayList<Partition>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+        nodeToPartitonMap.put(node, oldList);
+      }
+      oldList.add(partition);
 
-            partitonToNodeMap.put(partition, node);
+      partitonToNodeMap.put(partition, node);
 
-            partitioner++;
-        }
+      partitioner++;
     }
+  }
 
-    public List<Partition> getPartitionsForNode(String node) {
-        return nodeToPartitonMap.get(node);
-    }
+  public List<Partition> getPartitionsForNode(String node) {
+    return nodeToPartitonMap.get(node);
+  }
 
-    public String getNodeForPartitions(Partition partition) {
-        return partitonToNodeMap.get(partition);
-    }
+  public String getNodeForPartitions(Partition partition) {
+    return partitonToNodeMap.get(partition);
+  }
 }

@@ -19,57 +19,55 @@
 
 package org.carbondata.query.columnar.aggregator.impl.measure;
 
-import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.carbon.SqlStatement;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.columnar.aggregator.ColumnarAggregatorInfo;
 import org.carbondata.query.columnar.keyvalue.AbstractColumnarScanResult;
 
 public class AggregateTableAggregator extends FactTableAggregator {
-    private char[] type;
+  private char[] type;
 
-    public AggregateTableAggregator(ColumnarAggregatorInfo columnaraggreagtorInfo) {
-        super(columnaraggreagtorInfo);
-        type = new char[columnaraggreagtorInfo.getAggType().length];
-        for (int i = 0; i < type.length; i++) {
-            type[i] = CarbonUtil.getType(columnaraggreagtorInfo.getAggType()[i]);
-        }
+  public AggregateTableAggregator(ColumnarAggregatorInfo columnaraggreagtorInfo) {
+    super(columnaraggreagtorInfo);
+    type = new char[columnaraggreagtorInfo.getAggType().length];
+    for (int i = 0; i < type.length; i++) {
+      type[i] = CarbonUtil.getType(columnaraggreagtorInfo.getAggType()[i]);
     }
+  }
 
-    /**
-     * aggregateMsrs
-     *
-     * @param currentMsrRowData
-     */
-    public void aggregateMeasure(AbstractColumnarScanResult keyValue,
-            MeasureAggregator[] currentMsrRowData) {
-        byte[] byteValue = null;
-        Object measureValue = 0;
-        for (int i = 0; i < noOfMeasuresInQuery; i++) {
-            if (type[i] == CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE) {
-                int index = columnaraggreagtorInfo.getMeasureOrdinalMap().get(measureOrdinal[i]);
-                SqlStatement.Type dataType = this.columnaraggreagtorInfo.getDataTypes()[index];
-                switch (dataType) {
-                case LONG:
-                    measureValue = keyValue.getLongValue(measureOrdinal[i]);
-                    break;
-                case DECIMAL:
-                    measureValue = keyValue.getBigDecimalValue(measureOrdinal[i]);
-                    break;
-                default:
-                    measureValue = keyValue.getDoubleValue(measureOrdinal[i]);
-                }
-                if (!uniqueValues[measureOrdinal[i]].equals(measureValue)) {
-                    currentMsrRowData[columnaraggreagtorInfo.getMeasureStartIndex() + i]
-                            .agg(measureValue);
-                }
-            } else {
-                byteValue = keyValue.getByteArrayValue(measureOrdinal[i]);
-                currentMsrRowData[columnaraggreagtorInfo.getMeasureStartIndex() + i]
-                        .merge(byteValue);
-            }
+  /**
+   * aggregateMsrs
+   *
+   * @param currentMsrRowData
+   */
+  public void aggregateMeasure(AbstractColumnarScanResult keyValue,
+      MeasureAggregator[] currentMsrRowData) {
+    byte[] byteValue = null;
+    Object measureValue = 0;
+    for (int i = 0; i < noOfMeasuresInQuery; i++) {
+      if (type[i] == CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE) {
+        int index = columnaraggreagtorInfo.getMeasureOrdinalMap().get(measureOrdinal[i]);
+        SqlStatement.Type dataType = this.columnaraggreagtorInfo.getDataTypes()[index];
+        switch (dataType) {
+          case LONG:
+            measureValue = keyValue.getLongValue(measureOrdinal[i]);
+            break;
+          case DECIMAL:
+            measureValue = keyValue.getBigDecimalValue(measureOrdinal[i]);
+            break;
+          default:
+            measureValue = keyValue.getDoubleValue(measureOrdinal[i]);
         }
+        if (!uniqueValues[measureOrdinal[i]].equals(measureValue)) {
+          currentMsrRowData[columnaraggreagtorInfo.getMeasureStartIndex() + i].agg(measureValue);
+        }
+      } else {
+        byteValue = keyValue.getByteArrayValue(measureOrdinal[i]);
+        currentMsrRowData[columnaraggreagtorInfo.getMeasureStartIndex() + i].merge(byteValue);
+      }
     }
+  }
 
 }

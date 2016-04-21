@@ -27,40 +27,40 @@ import org.carbondata.format.FileMeta;
  */
 public class CarbonMetaDataWriter {
 
-    // It is version number of this format class.
-    private static int VERSION_NUMBER = 1;
+  // It is version number of this format class.
+  private static int VERSION_NUMBER = 1;
 
-    // Fact file path
-    private String filePath;
+  // Fact file path
+  private String filePath;
 
-    public CarbonMetaDataWriter(String filePath) {
-        this.filePath = filePath;
-    }
+  public CarbonMetaDataWriter(String filePath) {
+    this.filePath = filePath;
+  }
 
-    /**
-     * It writes FileMeta thrift format object to file.
-     *
-     * @param fileMeta
-     * @param currentPosition At where this metadata is going to be written.
-     * @throws IOException
-     */
-    public void writeMetaData(FileMeta fileMeta, long currentPosition) throws IOException {
+  /**
+   * It writes FileMeta thrift format object to file.
+   *
+   * @param fileMeta
+   * @param currentPosition At where this metadata is going to be written.
+   * @throws IOException
+   */
+  public void writeMetaData(FileMeta fileMeta, long currentPosition) throws IOException {
 
-        ThriftWriter thriftWriter = openThriftWriter(filePath);
-        fileMeta.setVersion(VERSION_NUMBER);
-        thriftWriter.write(fileMeta);
-        thriftWriter.writeOffset(currentPosition);
-        thriftWriter.close();
-    }
+    ThriftWriter thriftWriter = openThriftWriter(filePath);
+    fileMeta.setVersion(VERSION_NUMBER);
+    thriftWriter.write(fileMeta);
+    thriftWriter.writeOffset(currentPosition);
+    thriftWriter.close();
+  }
 
-    /**
-     * open thrift writer for writing dictionary chunk/meta object
-     */
-    private ThriftWriter openThriftWriter(String filePath) throws IOException {
-        // create thrift writer instance
-        ThriftWriter thriftWriter = new ThriftWriter(filePath, true);
-        // open the file stream
-        thriftWriter.open();
-        return thriftWriter;
-    }
+  /**
+   * open thrift writer for writing dictionary chunk/meta object
+   */
+  private ThriftWriter openThriftWriter(String filePath) throws IOException {
+    // create thrift writer instance
+    ThriftWriter thriftWriter = new ThriftWriter(filePath, true);
+    // open the file stream
+    thriftWriter.open();
+    return thriftWriter;
+  }
 }

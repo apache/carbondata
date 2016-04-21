@@ -23,18 +23,7 @@ import org.junit.Test;
 
 public class AggCombinationTest {
 
-    @Test
-    public void testAggCombinationWithNullLevel() {
-        /*try
-		{
-			AggCombination comb=new AggCombination(null,Request.DATA_STATS);
-			Assert.assertTrue(false);
-		}
-		catch(IllegalArgumentException args)
-		{
-			Assert.assertTrue(true);
-		}*/
-
-    }
+  @Test public void testAggCombinationWithNullLevel() {
+  }
 
 }

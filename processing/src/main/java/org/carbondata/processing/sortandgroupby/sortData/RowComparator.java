@@ -17,43 +17,43 @@
  * under the License.
  */
 
-package org.carbondata.processing.sortandgroupby.sortData;
+package org.carbondata.processing.sortandgroupby.sortdata;
 
 import java.util.Comparator;
 
 import org.carbondata.processing.util.RemoveDictionaryUtil;
 
 public class RowComparator implements Comparator<Object[]> {
-    /**
-     * dimension count
-     */
-    private int dimensionCount;
+  /**
+   * dimension count
+   */
+  private int dimensionCount;
 
-    /**
-     * CarbonRowComparator Constructor
-     *
-     * @param dimensionCount
-     */
-    public RowComparator(int dimensionCount) {
-        this.dimensionCount = dimensionCount;
-    }
+  /**
+   * CarbonRowComparator Constructor
+   *
+   * @param dimensionCount
+   */
+  public RowComparator(int dimensionCount) {
+    this.dimensionCount = dimensionCount;
+  }
 
-    /**
-     * Below method will be used to compare two mdkey
-     */
-    public int compare(Object[] rowA, Object[] rowB) {
-        int diff = 0;
+  /**
+   * Below method will be used to compare two mdkey
+   */
+  public int compare(Object[] rowA, Object[] rowB) {
+    int diff = 0;
 
-        for (int i = 0; i < dimensionCount; i++) {
+    for (int i = 0; i < dimensionCount; i++) {
 
-            int dimFieldA = RemoveDictionaryUtil.getDimension(i, rowA);
-            int dimFieldB = RemoveDictionaryUtil.getDimension(i, rowB);
+      int dimFieldA = RemoveDictionaryUtil.getDimension(i, rowA);
+      int dimFieldB = RemoveDictionaryUtil.getDimension(i, rowB);
 
-            diff = dimFieldA - dimFieldB;
-            if (diff != 0) {
-                return diff;
-            }
-        }
+      diff = dimFieldA - dimFieldB;
+      if (diff != 0) {
         return diff;
+      }
     }
+    return diff;
+  }
 }

@@ -22,173 +22,173 @@ package org.carbondata.query.schema.metadata;
 import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.query.columnar.aggregator.ColumnarAggregatorInfo;
 import org.carbondata.query.columnar.datastoreblockprocessor.DataStoreBlockProcessor;
-import org.carbondata.query.datastorage.storeInterfaces.DataStoreBlock;
+import org.carbondata.query.datastorage.storeinterface.DataStoreBlock;
 import org.carbondata.query.executer.impl.RestructureHolder;
 import org.carbondata.query.executer.processor.ScannedResultProcessor;
 
 public class ColumnarStorageScannerInfo {
-    private DataStoreBlock datablock;
+  private DataStoreBlock datablock;
 
-    private long totalNumberOfBlocksToScan;
+  private long totalNumberOfBlocksToScan;
 
-    private DataStoreBlockProcessor blockProcessor;
+  private DataStoreBlockProcessor blockProcessor;
 
-    private RestructureHolder restructurHolder;
+  private RestructureHolder restructurHolder;
 
-    private ColumnarAggregatorInfo columnarAggregatorInfo;
+  private ColumnarAggregatorInfo columnarAggregatorInfo;
 
-    private boolean isAutoAggregateTableRequest;
+  private boolean isAutoAggregateTableRequest;
 
-    private int keySize;
+  private int keySize;
 
-    private int dimColumnCount;
+  private int dimColumnCount;
 
-    private int msrColumnCount;
+  private int msrColumnCount;
 
-    private FileHolder fileHolder;
+  private FileHolder fileHolder;
 
-    private ScannedResultProcessor scannedResultProcessor;
+  private ScannedResultProcessor scannedResultProcessor;
 
-    private String queryId;
+  private String queryId;
 
-    /**
-     * partitionid
-     */
-    private String partitionId;
+  /**
+   * partitionid
+   */
+  private String partitionId;
 
-    /**
-     * @return the datablock
-     */
-    public DataStoreBlock getDatablock() {
-        return datablock;
-    }
+  /**
+   * @return the datablock
+   */
+  public DataStoreBlock getDatablock() {
+    return datablock;
+  }
 
-    /**
-     * @param datablock the datablock to set
-     */
-    public void setDatablock(DataStoreBlock datablock) {
-        this.datablock = datablock;
-    }
+  /**
+   * @param datablock the datablock to set
+   */
+  public void setDatablock(DataStoreBlock datablock) {
+    this.datablock = datablock;
+  }
 
-    /**
-     * @return the totalNumberOfBlocksToScan
-     */
-    public long getTotalNumberOfBlocksToScan() {
-        return totalNumberOfBlocksToScan;
-    }
+  /**
+   * @return the totalNumberOfBlocksToScan
+   */
+  public long getTotalNumberOfBlocksToScan() {
+    return totalNumberOfBlocksToScan;
+  }
 
-    /**
-     * @param totalNumberOfBlocksToScan the totalNumberOfBlocksToScan to set
-     */
-    public void setTotalNumberOfBlocksToScan(long totalNumberOfBlocksToScan) {
-        this.totalNumberOfBlocksToScan = totalNumberOfBlocksToScan;
-    }
+  /**
+   * @param totalNumberOfBlocksToScan the totalNumberOfBlocksToScan to set
+   */
+  public void setTotalNumberOfBlocksToScan(long totalNumberOfBlocksToScan) {
+    this.totalNumberOfBlocksToScan = totalNumberOfBlocksToScan;
+  }
 
-    /**
-     * @return the blockProcessor
-     */
-    public DataStoreBlockProcessor getBlockProcessor() {
-        return blockProcessor;
-    }
+  /**
+   * @return the blockProcessor
+   */
+  public DataStoreBlockProcessor getBlockProcessor() {
+    return blockProcessor;
+  }
 
-    /**
-     * @param blockProcessor the blockProcessor to set
-     */
-    public void setBlockProcessor(DataStoreBlockProcessor blockProcessor) {
-        this.blockProcessor = blockProcessor;
-    }
+  /**
+   * @param blockProcessor the blockProcessor to set
+   */
+  public void setBlockProcessor(DataStoreBlockProcessor blockProcessor) {
+    this.blockProcessor = blockProcessor;
+  }
 
-    /**
-     * @return the restructurHolder
-     */
-    public RestructureHolder getRestructurHolder() {
-        return restructurHolder;
-    }
+  /**
+   * @return the restructurHolder
+   */
+  public RestructureHolder getRestructurHolder() {
+    return restructurHolder;
+  }
 
-    /**
-     * @param restructurHolder the restructurHolder to set
-     */
-    public void setRestructurHolder(RestructureHolder restructurHolder) {
-        this.restructurHolder = restructurHolder;
-    }
+  /**
+   * @param restructurHolder the restructurHolder to set
+   */
+  public void setRestructurHolder(RestructureHolder restructurHolder) {
+    this.restructurHolder = restructurHolder;
+  }
 
-    /**
-     * @return the columnarAggregatorInfo
-     */
-    public ColumnarAggregatorInfo getColumnarAggregatorInfo() {
-        return columnarAggregatorInfo;
-    }
+  /**
+   * @return the columnarAggregatorInfo
+   */
+  public ColumnarAggregatorInfo getColumnarAggregatorInfo() {
+    return columnarAggregatorInfo;
+  }
 
-    /**
-     * @param columnarAggregatorInfo the columnarAggregatorInfo to set
-     */
-    public void setColumnarAggregatorInfo(ColumnarAggregatorInfo columnarAggregatorInfo) {
-        this.columnarAggregatorInfo = columnarAggregatorInfo;
-    }
+  /**
+   * @param columnarAggregatorInfo the columnarAggregatorInfo to set
+   */
+  public void setColumnarAggregatorInfo(ColumnarAggregatorInfo columnarAggregatorInfo) {
+    this.columnarAggregatorInfo = columnarAggregatorInfo;
+  }
 
-    public boolean isAutoAggregateTableRequest() {
-        return isAutoAggregateTableRequest;
-    }
+  public boolean isAutoAggregateTableRequest() {
+    return isAutoAggregateTableRequest;
+  }
 
-    public void setAutoAggregateTableRequest(boolean isAutoAggregateTableRequest) {
-        this.isAutoAggregateTableRequest = isAutoAggregateTableRequest;
-    }
+  public void setAutoAggregateTableRequest(boolean isAutoAggregateTableRequest) {
+    this.isAutoAggregateTableRequest = isAutoAggregateTableRequest;
+  }
 
-    public int getKeySize() {
-        return keySize;
-    }
+  public int getKeySize() {
+    return keySize;
+  }
 
-    public void setKeySize(int keySize) {
-        this.keySize = keySize;
-    }
+  public void setKeySize(int keySize) {
+    this.keySize = keySize;
+  }
 
-    public int getDimColumnCount() {
-        return dimColumnCount;
-    }
+  public int getDimColumnCount() {
+    return dimColumnCount;
+  }
 
-    public void setDimColumnCount(int dimColumnCount) {
-        this.dimColumnCount = dimColumnCount;
-    }
+  public void setDimColumnCount(int dimColumnCount) {
+    this.dimColumnCount = dimColumnCount;
+  }
 
-    public int getMsrColumnCount() {
-        return msrColumnCount;
-    }
+  public int getMsrColumnCount() {
+    return msrColumnCount;
+  }
 
-    public void setMsrColumnCount(int msrColumnCount) {
-        this.msrColumnCount = msrColumnCount;
-    }
+  public void setMsrColumnCount(int msrColumnCount) {
+    this.msrColumnCount = msrColumnCount;
+  }
 
-    public FileHolder getFileHolder() {
-        return fileHolder;
-    }
+  public FileHolder getFileHolder() {
+    return fileHolder;
+  }
 
-    public void setFileHolder(FileHolder fileHolder) {
-        this.fileHolder = fileHolder;
-    }
+  public void setFileHolder(FileHolder fileHolder) {
+    this.fileHolder = fileHolder;
+  }
 
-    public ScannedResultProcessor getScannedResultProcessor() {
-        return scannedResultProcessor;
-    }
+  public ScannedResultProcessor getScannedResultProcessor() {
+    return scannedResultProcessor;
+  }
 
-    public void setScannedResultProcessor(ScannedResultProcessor scannedResultProcessor) {
-        this.scannedResultProcessor = scannedResultProcessor;
-    }
+  public void setScannedResultProcessor(ScannedResultProcessor scannedResultProcessor) {
+    this.scannedResultProcessor = scannedResultProcessor;
+  }
 
-    public String getQueryId() {
-        return queryId;
-    }
+  public String getQueryId() {
+    return queryId;
+  }
 
-    public void setQueryId(String queryId) {
-        this.queryId = queryId;
+  public void setQueryId(String queryId) {
+    this.queryId = queryId;
 
-    }
+  }
 
-    public String getPartitionId() {
-        return partitionId;
-    }
+  public String getPartitionId() {
+    return partitionId;
+  }
 
-    public void setPartitionId(String partitionId) {
-        this.partitionId = partitionId;
+  public void setPartitionId(String partitionId) {
+    this.partitionId = partitionId;
 
-    }
+  }
 }

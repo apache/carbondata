@@ -25,118 +25,118 @@ import java.io.Serializable;
  * Measure filter
  */
 public class CarbonMeasureFilter implements Serializable {
-    private static final long serialVersionUID = -4253090536204072658L;
+  private static final long serialVersionUID = -4253090536204072658L;
+
+  /**
+   * filterValue
+   */
+  private double filterValue;
+
+  /**
+   * filterType
+   */
+  private FilterType filterType;
+
+  /**
+   * afterTopN
+   */
+  private boolean afterTopN;
+
+  /**
+   * Constructor that takes filter information for measure filter.
+   *
+   * @param filterValue
+   * @param filterType
+   */
+  public CarbonMeasureFilter(double filterValue, FilterType filterType) {
+    this.filterValue = filterValue;
+    this.filterType = filterType;
+  }
+
+  /**
+   * Constructor that takes filter information for measure filter.
+   *
+   * @param filterType
+   */
+  public CarbonMeasureFilter(FilterType filterType) {
+    this.filterType = filterType;
+  }
+
+  /**
+   * get FilterValue
+   *
+   * @return the filterValue
+   */
+  public double getFilterValue() {
+    return filterValue;
+  }
+
+  /**
+   * FilterType
+   *
+   * @return the filterType
+   */
+  public FilterType getFilterType() {
+    return filterType;
+  }
+
+  /**
+   * @return the afterTopN
+   */
+  public boolean isAfterTopN() {
+    return afterTopN;
+  }
+
+  /**
+   * @param afterTopN the afterTopN to set
+   */
+  public void setAfterTopN(boolean afterTopN) {
+    this.afterTopN = afterTopN;
+  }
+
+  public String toSQLConstruct(String levelName) {
+    return levelName + filterType.symbol + filterValue;
+  }
+
+  /**
+   * '
+   * Enum for measure filter types.
+   */
+  public enum FilterType {
+    /**
+     * EQUAL_TO
+     */
+    EQUAL_TO(" = "),
+    /**
+     * NOT_EQUAL_TO
+     */
+    NOT_EQUAL_TO(" != "),
+    /**
+     * GREATER_THAN
+     */
+    GREATER_THAN(" > "),
+    /**
+     * LESS_THAN
+     */
+    LESS_THAN(" < "),
+    /**
+     * LESS_THAN_EQUAL
+     */
+    LESS_THAN_EQUAL(" <= "),
+    /**
+     * GREATER_THAN_EQUAL
+     */
+    GREATER_THAN_EQUAL(" >= "),
 
     /**
-     * filterValue
+     * NOT_EMPTY
      */
-    private double filterValue;
+    NOT_EMPTY(" IS NOT NULL ");
 
-    /**
-     * filterType
-     */
-    private FilterType filterType;
+    String symbol;
 
-    /**
-     * afterTopN
-     */
-    private boolean afterTopN;
-
-    /**
-     * Constructor that takes filter information for measure filter.
-     *
-     * @param filterValue
-     * @param filterType
-     */
-    public CarbonMeasureFilter(double filterValue, FilterType filterType) {
-        this.filterValue = filterValue;
-        this.filterType = filterType;
+    FilterType(String symbol) {
+      this.symbol = symbol;
     }
-
-    /**
-     * Constructor that takes filter information for measure filter.
-     *
-     * @param filterType
-     */
-    public CarbonMeasureFilter(FilterType filterType) {
-        this.filterType = filterType;
-    }
-
-    /**
-     * get FilterValue
-     *
-     * @return the filterValue
-     */
-    public double getFilterValue() {
-        return filterValue;
-    }
-
-    /**
-     * FilterType
-     *
-     * @return the filterType
-     */
-    public FilterType getFilterType() {
-        return filterType;
-    }
-
-    /**
-     * @return the afterTopN
-     */
-    public boolean isAfterTopN() {
-        return afterTopN;
-    }
-
-    /**
-     * @param afterTopN the afterTopN to set
-     */
-    public void setAfterTopN(boolean afterTopN) {
-        this.afterTopN = afterTopN;
-    }
-
-    public String toSQLConstruct(String levelName) {
-        return levelName + filterType.symbol + filterValue;
-    }
-
-    /**
-     * '
-     * Enum for measure filter types.
-     */
-    public enum FilterType {
-        /**
-         * EQUAL_TO
-         */
-        EQUAL_TO(" = "),
-        /**
-         * NOT_EQUAL_TO
-         */
-        NOT_EQUAL_TO(" != "),
-        /**
-         * GREATER_THAN
-         */
-        GREATER_THAN(" > "),
-        /**
-         * LESS_THAN
-         */
-        LESS_THAN(" < "),
-        /**
-         * LESS_THAN_EQUAL
-         */
-        LESS_THAN_EQUAL(" <= "),
-        /**
-         * GREATER_THAN_EQUAL
-         */
-        GREATER_THAN_EQUAL(" >= "),
-
-        /**
-         * NOT_EMPTY
-         */
-        NOT_EMPTY(" IS NOT NULL ");
-
-        String symbol;
-
-        FilterType(String symbol) {
-            this.symbol = symbol;
-        }
-    }
+  }
 }

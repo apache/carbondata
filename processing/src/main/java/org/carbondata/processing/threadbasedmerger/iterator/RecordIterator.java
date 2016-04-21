@@ -22,73 +22,73 @@ package org.carbondata.processing.threadbasedmerger.iterator;
 import org.carbondata.processing.threadbasedmerger.container.Container;
 
 public class RecordIterator {
-    /**
-     * producer container
-     */
-    private final Container producerContainer;
+  /**
+   * producer container
+   */
+  private final Container producerContainer;
 
-    /**
-     * record holder array
-     */
-    private Object[][] sortHolderArray;
+  /**
+   * record holder array
+   */
+  private Object[][] sortHolderArray;
 
-    /**
-     * record counter
-     */
-    private int counter;
+  /**
+   * record counter
+   */
+  private int counter;
 
-    /**
-     * holder size
-     */
-    private int size;
+  /**
+   * holder size
+   */
+  private int size;
 
-    /**
-     * ProducerIterator constructor
-     *
-     * @param producerContainer
-     */
-    public RecordIterator(Container producerContainer) {
-        this.producerContainer = producerContainer;
-    }
+  /**
+   * ProducerIterator constructor
+   *
+   * @param producerContainer
+   */
+  public RecordIterator(Container producerContainer) {
+    this.producerContainer = producerContainer;
+  }
 
-    /**
-     * below method will be used to increment the counter
-     */
-    public void next() {
-        counter++;
-    }
+  /**
+   * below method will be used to increment the counter
+   */
+  public void next() {
+    counter++;
+  }
 
-    /**
-     * below method will be used to get the row from holder
-     *
-     * @return
-     */
-    public Object[] getRow() {
-        return sortHolderArray[counter];
-    }
+  /**
+   * below method will be used to get the row from holder
+   *
+   * @return
+   */
+  public Object[] getRow() {
+    return sortHolderArray[counter];
+  }
 
-    /**
-     * has next method will be used to check any more row is present or not
-     *
-     * @return is row present
-     */
-    public boolean hasNext() {
-        if (counter >= size) {
-            if (!producerContainer.isDone()) {
-                sortHolderArray = producerContainer.getContainerData();
-                if (null == sortHolderArray) {
-                    return false;
-                }
-                counter = 0;
-                size = sortHolderArray.length;
-                synchronized (producerContainer) {
-                    this.producerContainer.setFilled(false);
-                    producerContainer.notifyAll();
-                }
-            } else {
-                return false;
-            }
+  /**
+   * has next method will be used to check any more row is present or not
+   *
+   * @return is row present
+   */
+  public boolean hasNext() {
+    if (counter >= size) {
+      if (!producerContainer.isDone()) {
+        sortHolderArray = producerContainer.getContainerData();
+        if (null == sortHolderArray) {
+          return false;
         }
-        return true;
+        counter = 0;
+        size = sortHolderArray.length;
+        synchronized (producerContainer) {
+          this.producerContainer.setFilled(false);
+          producerContainer.notifyAll();
+        }
+      } else {
+        return false;
+      }
     }
+    return true;
+  }
 }

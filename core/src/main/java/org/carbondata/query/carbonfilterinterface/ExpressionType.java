@@ -21,23 +21,23 @@ package org.carbondata.query.carbonfilterinterface;
 
 public enum ExpressionType {
 
-    AND,
-    OR,
-    NOT,
-    EQUALS,
-    NOT_EQUALS,
-    LESSTHAN,
-    LESSTHAN_EQUALTO,
-    GREATERTHAN,
-    GREATERYHAN_EQUALTO,
-    ADD,
-    SUBSTRACT,
-    DIVIDE,
-    MULTIPLY,
-    IN,
-    LIST,
-    NOT_IN,
-    UNKNOWN,
-    LITERAL
+  AND,
+  OR,
+  NOT,
+  EQUALS,
+  NOT_EQUALS,
+  LESSTHAN,
+  LESSTHAN_EQUALTO,
+  GREATERTHAN,
+  GREATERYHAN_EQUALTO,
+  ADD,
+  SUBSTRACT,
+  DIVIDE,
+  MULTIPLY,
+  IN,
+  LIST,
+  NOT_IN,
+  UNKNOWN,
+  LITERAL
 
 }

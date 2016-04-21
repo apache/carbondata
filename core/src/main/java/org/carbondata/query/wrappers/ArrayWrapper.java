@@ -24,83 +24,80 @@ import java.util.Arrays;
 
 public class ArrayWrapper implements Serializable, Comparable<ArrayWrapper> {
 
-    /**
-     * serialVersionUID
-     */
-    private static final long serialVersionUID = 1L;
+  /**
+   * serialVersionUID
+   */
+  private static final long serialVersionUID = 1L;
 
-    /**
-     *
-     */
-    private long[] data;
+  /**
+   *
+   */
+  private long[] data;
 
-    public ArrayWrapper(long[] data) {
-        initialize(data);
+  public ArrayWrapper(long[] data) {
+    initialize(data);
+  }
+
+  /**
+   * This method is used to initialize data array
+   *
+   * @param data
+   */
+  public void initialize(long[] data) {
+    if (data == null) {
+      throw new IllegalArgumentException(" Data Array is NUll");
     }
+    this.data = data;
+  }
 
-    /**
-     * This method is used to initialize data array
-     *
-     * @param data
-     */
-    public void initialize(long[] data) {
-        if (data == null) {
-            throw new IllegalArgumentException(" Data Array is NUll");
-        }
-        this.data = data;
+  /**
+   * This method will be used check to ArrayWrapper object is equal or not
+   *
+   * @param object ArrayWrapper object
+   * @return boolean
+   * equal or not
+   */
+  @Override public boolean equals(Object other) {
+    if (other instanceof ArrayWrapper) {
+      return Arrays.equals(data, ((ArrayWrapper) other).data);
     }
+    return false;
+  }
 
-    /**
-     * This method will be used check to ArrayWrapper object is equal or not
-     *
-     * @param object ArrayWrapper object
-     * @return boolean
-     * equal or not
-     */
-    @Override
-    public boolean equals(Object other) {
-        if (other instanceof ArrayWrapper) {
-            return Arrays.equals(data, ((ArrayWrapper) other).data);
-        }
-        return false;
-    }
+  /**
+   * This method will be used to get the hascode, this will be used to the
+   * index for inserting ArrayWrapper object as a key in Map
+   *
+   * @return hascode
+   */
+  @Override public int hashCode() {
+    return Arrays.hashCode(data);
+  }
 
-    /**
-     * This method will be used to get the hascode, this will be used to the
-     * index for inserting ArrayWrapper object as a key in Map
-     *
-     * @return hascode
-     */
-    @Override
-    public int hashCode() {
-        return Arrays.hashCode(data);
-    }
+  /**
+   * This method will be used to get the long array surrogate keys
+   *
+   * @return data
+   */
+  public long[] getData() {
+    return data;
+  }
 
-    /**
-     * This method will be used to get the long array surrogate keys
-     *
-     * @return data
-     */
-    public long[] getData() {
-        return data;
+  /**
+   * Compare method for ArrayWrapper class this will used to compare Two
+   * ArrayWrapper data object, basically it will compare two surrogate keys
+   * array to check which one is greater
+   *
+   * @param other ArrayWrapper Object
+   */
+  @Override public int compareTo(ArrayWrapper other) {
+    for (int i = 0; i < data.length; i++) {
+      if (data[i] > other.data[i]) {
+        return 1;
+      } else if (data[i] < other.data[i]) {
+        return -1;
+      }
     }
-
-    /**
-     * Compare method for ArrayWrapper class this will used to compare Two
-     * ArrayWrapper data object, basically it will compare two surrogate keys
-     * array to check which one is greater
-     *
-     * @param other ArrayWrapper Object
-     */
-    @Override
-    public int compareTo(ArrayWrapper other) {
-        for (int i = 0; i < data.length; i++) {
-            if (data[i] > other.data[i]) {
-                return 1;
-            } else if (data[i] < other.data[i]) {
-                return -1;
-            }
-        }
-        return 0;
-    }
+    return 0;
+  }
 }

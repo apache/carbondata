@@ -22,39 +22,36 @@ package org.carbondata.query.expression.conditional;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.carbondata.query.carbonfilterinterface.ExpressionType;
+import org.carbondata.query.carbonfilterinterface.RowIntf;
 import org.carbondata.query.expression.Expression;
 import org.carbondata.query.expression.ExpressionResult;
 import org.carbondata.query.expression.exception.FilterUnsupportedException;
-import org.carbondata.query.carbonfilterinterface.ExpressionType;
-import org.carbondata.query.carbonfilterinterface.RowIntf;
 
 public class ListExpression extends Expression {
-    private static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 1L;
 
-    public ListExpression(List<Expression> children) {
-        this.children = children;
+  public ListExpression(List<Expression> children) {
+    this.children = children;
+  }
+
+  @Override public ExpressionResult evaluate(RowIntf value) throws FilterUnsupportedException {
+    List<ExpressionResult> listOfExprRes = new ArrayList<ExpressionResult>(10);
+
+    for (Expression expr : children) {
+      listOfExprRes.add(expr.evaluate(value));
     }
+    return new ExpressionResult(listOfExprRes);
+  }
 
-    @Override
-    public ExpressionResult evaluate(RowIntf value) throws FilterUnsupportedException {
-        List<ExpressionResult> listOfExprRes = new ArrayList<ExpressionResult>(10);
+  @Override public ExpressionType getFilterExpressionType() {
+    // TODO Auto-generated method stub
+    return ExpressionType.LIST;
+  }
 
-        for (Expression expr : children) {
-            listOfExprRes.add(expr.evaluate(value));
-        }
-        return new ExpressionResult(listOfExprRes);
-    }
-
-    @Override
-    public ExpressionType getFilterExpressionType() {
-        // TODO Auto-generated method stub
-        return ExpressionType.LIST;
-    }
-
-    @Override
-    public String getString() {
-        // TODO Auto-generated method stub
-        return null;
-    }
+  @Override public String getString() {
+    // TODO Auto-generated method stub
+    return null;
+  }
 
 }

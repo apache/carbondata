@@ -51,114 +51,106 @@ import org.carbondata.query.util.CarbonEngineLogEvent;
  * Class Version  : 1.0
  */
 public class UnSortedResultMerger implements Callable<Void> {
-    /**
-     * LOGGER
-     */
-    private static final LogService LOGGER =
-            LogServiceFactory.getLogService(UnSortedResultMerger.class.getName());
+  /**
+   * LOGGER
+   */
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(UnSortedResultMerger.class.getName());
 
-    /**
-     * dataProcessorInfo
-     */
-    private DataProcessorInfo dataProcessorInfo;
+  /**
+   * dataProcessorInfo
+   */
+  private DataProcessorInfo dataProcessorInfo;
 
-    /**
-     * List to hold all the temp files.
-     */
-    private List<ResultTempFileReader> recordHolderList;
+  /**
+   * List to hold all the temp files.
+   */
+  private List<ResultTempFileReader> recordHolderList;
 
-    /**
-     * dataProcessor This is the data processor object which will process the data.
-     */
-    private DataProcessor dataProcessor;
+  /**
+   * dataProcessor This is the data processor object which will process the data.
+   */
+  private DataProcessor dataProcessor;
 
-    /**
-     * files Temp files.
-     */
-    private CarbonFile[] files;
+  /**
+   * files Temp files.
+   */
+  private CarbonFile[] files;
 
-    /**
-     * @param dataProcessor
-     * @param dataProcessorInfo
-     * @param files
-     */
-    public UnSortedResultMerger(DataProcessor dataProcessor, DataProcessorInfo dataProcessorInfo,
-            CarbonFile[] files) {
-        this.dataProcessorInfo = dataProcessorInfo;
-        this.recordHolderList = new ArrayList<ResultTempFileReader>(files.length);
-        this.dataProcessor = dataProcessor;
-        this.files = files;
+  /**
+   * @param dataProcessor
+   * @param dataProcessorInfo
+   * @param files
+   */
+  public UnSortedResultMerger(DataProcessor dataProcessor, DataProcessorInfo dataProcessorInfo,
+      CarbonFile[] files) {
+    this.dataProcessorInfo = dataProcessorInfo;
+    this.recordHolderList = new ArrayList<ResultTempFileReader>(files.length);
+    this.dataProcessor = dataProcessor;
+    this.files = files;
+  }
+
+  /**
+   * @see Callable#call()
+   */
+  @Override public Void call() throws Exception {
+    try {
+      this.dataProcessor.initialise(dataProcessorInfo);
+
+      // For each intermediate result file.
+      for (CarbonFile file : files) {
+        // reads the temp files and creates ResultTempFileReader object.
+        ResultTempFileReader carbonSortTempFileChunkHolder =
+            new ResultTempFileReader(file.getAbsolutePath(), dataProcessorInfo.getKeySize(), AggUtil
+                .getAggregators(dataProcessorInfo.getAggType(), false,
+                    dataProcessorInfo.getKeyGenerator(), dataProcessorInfo.getCubeUniqueName(),
+                    dataProcessorInfo.getMsrMinValue(), dataProcessorInfo.getNoDictionaryTypes(),
+                    dataProcessorInfo.getDataTypes()), dataProcessorInfo.getFileBufferSize());
+        // initialize
+        carbonSortTempFileChunkHolder.initialize();
+        // add to list
+        this.recordHolderList.add(carbonSortTempFileChunkHolder);
+      }
+      // iterate through list and for each file process the each row of data.
+      writeRecordToFile();
+    } catch (ResultReaderException e) {
+      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
+      throw new ResultMergerException(e);
+    } finally {
+      dataProcessor.finish();
+      //delete the temp files.
+      CarbonUtil.deleteFoldersAndFiles(files);
     }
+    return null;
+  }
 
-    /**
-     * @see Callable#call()
-     */
-    @Override
-    public Void call() throws Exception {
-        try {
-            this.dataProcessor.initialise(dataProcessorInfo);
+  /**
+   * This method will be used to get the record from file
+   *
+   * @throws ResultMergerException
+   */
+  private void writeRecordToFile() throws ResultMergerException {
+    // for each file.
+    for (ResultTempFileReader poll : this.recordHolderList) {
+      try {
+        // for each entry in the file.
+        while (poll.hasNext()) {
+          poll.readRow();
+          // process each data to the data processor.
+          dataProcessor.processRow(poll.getKey(), poll.getMeasures());
 
-            // For each intermediate result file.
-            for (CarbonFile file : files) {
-                // reads the temp files and creates ResultTempFileReader object.
-                ResultTempFileReader carbonSortTempFileChunkHolder =
-                        new ResultTempFileReader(file.getAbsolutePath(),
-                                dataProcessorInfo.getKeySize(),
-                                AggUtil.getAggregators(dataProcessorInfo.getAggType(), false,
-                                        dataProcessorInfo.getKeyGenerator(),
-                                        dataProcessorInfo.getCubeUniqueName(),
-                                        dataProcessorInfo.getMsrMinValue(),
-                                        dataProcessorInfo.getNoDictionaryTypes(),
-                                        dataProcessorInfo.getDataTypes()),
-                                dataProcessorInfo.getFileBufferSize());
-                // initialize
-                carbonSortTempFileChunkHolder.initialize();
-                // add to list
-                this.recordHolderList.add(carbonSortTempFileChunkHolder);
-            }
-            // iterate through list and for each file process the each row of data.
-            writeRecordToFile();
-        } catch (ResultReaderException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
-            throw new ResultMergerException(e);
-        } finally {
-            dataProcessor.finish();
-            //delete the temp files.
-            CarbonUtil.deleteFoldersAndFiles(files);
+          poll.setMeasureAggs(AggUtil.getAggregators(dataProcessorInfo.getAggType(), false,
+              dataProcessorInfo.getKeyGenerator(), dataProcessorInfo.getCubeUniqueName(),
+              dataProcessorInfo.getMsrMinValue(), dataProcessorInfo.getNoDictionaryTypes(),
+              dataProcessorInfo.getDataTypes()));
         }
-        return null;
+      } catch (DataProcessorException e) {
+        throw new ResultMergerException(e);
+      } catch (ResultReaderException e) {
+        throw new ResultMergerException(e);
+      } finally {
+        poll.closeStream();
+      }
     }
-
-    /**
-     * This method will be used to get the record from file
-     *
-     * @throws ResultMergerException
-     */
-    private void writeRecordToFile() throws ResultMergerException {
-        // for each file.
-        for (ResultTempFileReader poll : this.recordHolderList) {      //CHECKSTYLE:OFF    Approval No:Approval-V1R2C10_007
-            try {
-                // for each entry in the file.
-                while (poll.hasNext()) {
-                    poll.readRow();
-                    // process each data to the data processor.
-                    dataProcessor.processRow(poll.getKey(), poll.getMeasures());
-
-                    poll.setMeasureAggs(
-                            AggUtil.getAggregators(dataProcessorInfo.getAggType(), false,
-                                    dataProcessorInfo.getKeyGenerator(),
-                                    dataProcessorInfo.getCubeUniqueName(),
-                                    dataProcessorInfo.getMsrMinValue(),
-                                    dataProcessorInfo.getNoDictionaryTypes(),
-                                    dataProcessorInfo.getDataTypes()));
-                }
-            } catch (DataProcessorException e) {
-                throw new ResultMergerException(e);
-            } catch (ResultReaderException e) {
-                throw new ResultMergerException(e);
-            } finally {
-                poll.closeStream();
-            }
-        }//CHECKSTYLE:ON
-    }
+  }
 }

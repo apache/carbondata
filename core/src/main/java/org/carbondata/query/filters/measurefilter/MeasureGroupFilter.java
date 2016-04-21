@@ -20,10 +20,10 @@
 package org.carbondata.query.filters.measurefilter;
 
 public interface MeasureGroupFilter {
-    /**
-     * whether measure filter is enabled or not.
-     *
-     * @return
-     */
-    boolean isMsrFilterEnabled();
+  /**
+   * whether measure filter is enabled or not.
+   *
+   * @return
+   */
+  boolean isMsrFilterEnabled();
 }

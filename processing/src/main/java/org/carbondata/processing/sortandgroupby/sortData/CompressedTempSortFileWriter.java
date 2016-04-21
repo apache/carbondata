@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.carbondata.processing.sortandgroupby.sortData;
+package org.carbondata.processing.sortandgroupby.sortdata;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -30,52 +30,50 @@ import org.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupB
 
 public class CompressedTempSortFileWriter extends AbstractTempSortFileWriter {
 
-    /**
-     * CompressedTempSortFileWriter
-     *
-     * @param writeBufferSize
-     * @param dimensionCount
-     * @param measureCount
-     */
-    public CompressedTempSortFileWriter(int dimensionCount, int complexDimensionCount,
-            int measureCount, int noDictionaryCount, int writeBufferSize) {
-        super(dimensionCount, complexDimensionCount, measureCount, noDictionaryCount,
-                writeBufferSize);
+  /**
+   * CompressedTempSortFileWriter
+   *
+   * @param writeBufferSize
+   * @param dimensionCount
+   * @param measureCount
+   */
+  public CompressedTempSortFileWriter(int dimensionCount, int complexDimensionCount,
+      int measureCount, int noDictionaryCount, int writeBufferSize) {
+    super(dimensionCount, complexDimensionCount, measureCount, noDictionaryCount, writeBufferSize);
+  }
+
+  /**
+   * Below method will be used to write the sort temp file
+   *
+   * @param records
+   */
+  public void writeSortTempFile(Object[][] records) throws CarbonSortKeyAndGroupByException {
+    DataOutputStream dataOutputStream = null;
+    ByteArrayOutputStream blockDataArray = null;
+    int totalSize = 0;
+    int recordSize = 0;
+    try {
+      recordSize = (measureCount * CarbonCommonConstants.DOUBLE_SIZE_IN_BYTE) + (dimensionCount
+          * CarbonCommonConstants.INT_SIZE_IN_BYTE);
+      totalSize = records.length * recordSize;
+
+      blockDataArray = new ByteArrayOutputStream(totalSize);
+      dataOutputStream = new DataOutputStream(blockDataArray);
+
+      UnCompressedTempSortFileWriter
+          .writeDataOutputStream(records, dataOutputStream, measureCount, dimensionCount,
+              noDictionaryCount, complexDimensionCount);
+
+      stream.writeInt(records.length);
+      byte[] byteArray = SnappyByteCompression.INSTANCE.compress(blockDataArray.toByteArray());
+      stream.writeInt(byteArray.length);
+      stream.write(byteArray);
+
+    } catch (IOException e) {
+      throw new CarbonSortKeyAndGroupByException(e);
+    } finally {
+      CarbonUtil.closeStreams(blockDataArray);
+      CarbonUtil.closeStreams(dataOutputStream);
     }
-
-    /**
-     * Below method will be used to write the sort temp file
-     *
-     * @param records
-     */
-    public void writeSortTempFile(Object[][] records) throws CarbonSortKeyAndGroupByException {
-        DataOutputStream dataOutputStream = null;
-        ByteArrayOutputStream blockDataArray = null;
-        int totalSize = 0;
-        int recordSize = 0;
-        try {
-            recordSize = (measureCount * CarbonCommonConstants.DOUBLE_SIZE_IN_BYTE) + (dimensionCount
-                    * CarbonCommonConstants.INT_SIZE_IN_BYTE);
-            totalSize = records.length * recordSize;
-
-            blockDataArray = new ByteArrayOutputStream(totalSize);
-            dataOutputStream = new DataOutputStream(blockDataArray);
-
-            UnCompressedTempSortFileWriter
-                    .writeDataOutputStream(records, dataOutputStream, measureCount, dimensionCount,
-                            noDictionaryCount, complexDimensionCount);
-
-            stream.writeInt(records.length);
-            byte[] byteArray =
-                    SnappyByteCompression.INSTANCE.compress(blockDataArray.toByteArray());
-            stream.writeInt(byteArray.length);
-            stream.write(byteArray);
-
-        } catch (IOException e) {
-            throw new CarbonSortKeyAndGroupByException(e);
-        } finally {
-            CarbonUtil.closeStreams(blockDataArray);
-            CarbonUtil.closeStreams(dataOutputStream);
-        }
-    }
+  }
 }

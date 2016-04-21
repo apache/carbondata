@@ -25,61 +25,60 @@ import java.util.Comparator;
 import org.carbondata.query.executer.pagination.impl.DataFileChunkHolder;
 
 public class MeasureComparatorDFCH implements Comparator<DataFileChunkHolder> {
-    /**
-     * msrIndex
-     */
-    private int msrIndex;
+  /**
+   * msrIndex
+   */
+  private int msrIndex;
 
-    /**
-     * sortOrder
-     */
-    private int sortOrder;
+  /**
+   * sortOrder
+   */
+  private int sortOrder;
 
-    /**
-     * MeasureComparator Constructor
-     *
-     * @param msrIndex
-     * @param sortOrder
-     */
-    public MeasureComparatorDFCH(int msrIndex, int sortOrder) {
-        this.msrIndex = msrIndex;
-        this.sortOrder = sortOrder;
+  /**
+   * MeasureComparator Constructor
+   *
+   * @param msrIndex
+   * @param sortOrder
+   */
+  public MeasureComparatorDFCH(int msrIndex, int sortOrder) {
+    this.msrIndex = msrIndex;
+    this.sortOrder = sortOrder;
+  }
+
+  /**
+   * This method will be used to compare two byte array
+   *
+   * @param o1
+   * @param o2
+   */
+  @Override public int compare(DataFileChunkHolder t1, DataFileChunkHolder t2) {
+    int cmp = 0;
+
+    if (t1.getMeasures()[this.msrIndex].toString().contains("Long")) {
+      long msrValue1Long = t1.getMeasures()[this.msrIndex].getLongValue();
+      long msrValue2Long = t2.getMeasures()[this.msrIndex].getLongValue();
+      if (msrValue1Long < msrValue2Long) {
+        cmp = -1;
+      } else if (msrValue1Long > msrValue2Long) {
+        cmp = 1;
+      }
+    } else if (t1.getMeasures()[this.msrIndex].toString().contains("Decimal")) {
+      BigDecimal msrValue1Decimal = t1.getMeasures()[this.msrIndex].getBigDecimalValue();
+      BigDecimal msrValue2Decimal = t2.getMeasures()[this.msrIndex].getBigDecimalValue();
+      cmp = msrValue1Decimal.compareTo(msrValue2Decimal);
+    } else {
+      double msrValue1Double = t1.getMeasures()[this.msrIndex].getDoubleValue();
+      double msrValue2Double = t2.getMeasures()[this.msrIndex].getDoubleValue();
+      if (msrValue1Double < msrValue2Double) {
+        cmp = -1;
+      } else if (msrValue1Double > msrValue2Double) {
+        cmp = 1;
+      }
     }
-
-    /**
-     * This method will be used to compare two byte array
-     *
-     * @param o1
-     * @param o2
-     */
-    @Override
-    public int compare(DataFileChunkHolder t1, DataFileChunkHolder t2) {
-        int cmp = 0;
-
-        if (t1.getMeasures()[this.msrIndex].toString().contains("Long")) {
-            long msrValue1Long = t1.getMeasures()[this.msrIndex].getLongValue();
-            long msrValue2Long = t2.getMeasures()[this.msrIndex].getLongValue();
-            if (msrValue1Long < msrValue2Long) {
-                cmp = -1;
-            } else if (msrValue1Long > msrValue2Long) {
-                cmp = 1;
-            }
-        } else if (t1.getMeasures()[this.msrIndex].toString().contains("Decimal")) {
-            BigDecimal msrValue1Decimal = t1.getMeasures()[this.msrIndex].getBigDecimalValue();
-            BigDecimal msrValue2Decimal = t2.getMeasures()[this.msrIndex].getBigDecimalValue();
-            cmp = msrValue1Decimal.compareTo(msrValue2Decimal);
-        } else {
-            double msrValue1Double = t1.getMeasures()[this.msrIndex].getDoubleValue();
-            double msrValue2Double = t2.getMeasures()[this.msrIndex].getDoubleValue();
-            if (msrValue1Double < msrValue2Double) {
-                cmp = -1;
-            } else if (msrValue1Double > msrValue2Double) {
-                cmp = 1;
-            }
-        }
-        if (this.sortOrder == 1 || this.sortOrder == 3) {
-            cmp *= -1;
-        }
-        return cmp;
+    if (this.sortOrder == 1 || this.sortOrder == 3) {
+      cmp *= -1;
     }
+    return cmp;
+  }
 }

@@ -19,92 +19,73 @@
 
 package org.carbondata.processing.suggest.datastats.load;
 
-import mockit.Mock;
-import mockit.MockUp;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.metadata.CarbonMetadata;
 import org.carbondata.core.util.CarbonProperties;
+
+import mockit.Mock;
+import mockit.MockUp;
 import org.junit.Test;
 
 public class FactDataHandlerTest {
 
-    @Test
-    public void testInitialise_falseAggKeyBlock() {
-        CarbonProperties.getInstance()
-                .addProperty(CarbonCommonConstants.AGGREAGATE_COLUMNAR_KEY_BLOCK, "false");
-        CarbonProperties.getInstance()
-                .addProperty(CarbonCommonConstants.CARBON_IS_LOAD_FACT_TABLE_IN_MEMORY, "false");
-        LevelMetaInfo levelInfo = new MockUp<LevelMetaInfo>() {
-            @Mock
-            public int[] getDimCardinality() {
-                return new int[] { 10, 12 };
-            }
+  @Test public void testInitialise_falseAggKeyBlock() {
+    CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.AGGREAGATE_COLUMNAR_KEY_BLOCK, "false");
+    CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_IS_LOAD_FACT_TABLE_IN_MEMORY, "false");
+    MockUp<LevelMetaInfo> mock1 = new MockUp<LevelMetaInfo>() {
+      @Mock public int[] getDimCardinality() {
+        return new int[] { 10, 12 };
+      }
+    };
+    LevelMetaInfo levelInfo = mock1.getMockInstance();
 
-        }.getMockInstance();
+    MockUp<CarbonMetadata.Cube> mock2 = new MockUp<CarbonMetadata.Cube>() {
+      @Mock public String getCubeName() {
+        return "default_test";
+      }
+      @Mock public String getSchemaName() {
+        return "default";
+      }
+      @Mock public String getMode() {
+        return "store";
+      }
+      @Mock public String getFactTableName() {
+        return "factTable";
+      }
+    };
+    CarbonMetadata.Cube cube = mock2.getMockInstance();
 
-        CarbonMetadata.Cube cube = new MockUp<CarbonMetadata.Cube>() {
-            @Mock
-            public String getCubeName() {
-                return "default_test";
-            }
+    FactDataHandler factHandler = new FactDataHandler(cube, levelInfo, "factTable", 0, null);
+  }
 
-            @Mock
-            public String getSchemaName() {
-                return "default";
-            }
+  @Test public void testInitialise_trueAggKeyBlock_TestNoDictionary() {
+    CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.AGGREAGATE_COLUMNAR_KEY_BLOCK, "true");
+    MockUp<LevelMetaInfo> mock1 = new MockUp<LevelMetaInfo>() {
+      @Mock public int[] getDimCardinality() {
+        return new int[] { 1000010, 12 };
+      }
+    };
+    LevelMetaInfo levelInfo = mock1.getMockInstance();
 
-            @Mock
-            public String getMode() {
-                return "store";
+    MockUp<CarbonMetadata.Cube> mock2 = new MockUp<CarbonMetadata.Cube>() {
+      @Mock public String getCubeName() {
+        return "default_test";
+      }
+      @Mock public String getSchemaName() {
+        return "default";
+      }
+      @Mock public String getMode() {
+        return "store";
+      }
+      @Mock public String getFactTableName() {
+        return "factTable";
+      }
+    };
+    CarbonMetadata.Cube cube = mock2.getMockInstance();
 
-            }
-
-            @Mock
-            public String getFactTableName() {
-                return "factTable";
-            }
-
-        }.getMockInstance();
-
-        FactDataHandler factHandler = new FactDataHandler(cube, levelInfo, "factTable", 0, null);
-    }
-
-    @Test
-    public void testInitialise_trueAggKeyBlock_TestNoDictionary() {
-        CarbonProperties.getInstance()
-                .addProperty(CarbonCommonConstants.AGGREAGATE_COLUMNAR_KEY_BLOCK, "true");
-        LevelMetaInfo levelInfo = new MockUp<LevelMetaInfo>() {
-            @Mock
-            public int[] getDimCardinality() {
-                return new int[] { 1000010, 12 };
-            }
-
-        }.getMockInstance();
-
-        CarbonMetadata.Cube cube = new MockUp<CarbonMetadata.Cube>() {
-            @Mock
-            public String getCubeName() {
-                return "default_test";
-            }
-
-            @Mock
-            public String getSchemaName() {
-                return "default";
-            }
-
-            @Mock
-            public String getMode() {
-                return "store";
-
-            }
-
-            @Mock
-            public String getFactTableName() {
-                return "factTable";
-            }
-
-        }.getMockInstance();
-
-        FactDataHandler factHandler = new FactDataHandler(cube, levelInfo, "factTable", 0, null);
-    }
+    FactDataHandler factHandler = new FactDataHandler(cube, levelInfo, "factTable", 0, null);
+  }
 }

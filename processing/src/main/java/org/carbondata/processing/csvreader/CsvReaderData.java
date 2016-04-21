@@ -23,17 +23,16 @@ import org.pentaho.di.trans.steps.csvinput.CsvInputData;
 
 public class CsvReaderData extends CsvInputData {
 
-    /**
-     * totalBytesFilesFinished
-     */
-    public long totalBytesFilesFinished;
+  /**
+   * totalBytesFilesFinished
+   */
+  public long totalBytesFilesFinished;
 
-    /**
-     * method to resize byte buffer array
-     */
-    @Override
-    public void resizeByteBufferArray() {
-        totalBytesFilesFinished = totalBytesFilesFinished + startBuffer;
-        super.resizeByteBufferArray();
-    }
+  /**
+   * method to resize byte buffer array
+   */
+  @Override public void resizeByteBufferArray() {
+    totalBytesFilesFinished = totalBytesFilesFinished + startBuffer;
+    super.resizeByteBufferArray();
+  }
 }

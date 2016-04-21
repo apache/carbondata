@@ -24,131 +24,131 @@ import org.carbondata.core.writer.CarbonDictionaryWriterImpl;
 
 public class AbstractDictionaryCacheTest {
 
-    protected static final String PROPERTY_FILE_NAME = "carbonTest.properties";
+  protected static final String PROPERTY_FILE_NAME = "carbonTest.properties";
 
-    protected CarbonTableIdentifier carbonTableIdentifier;
+  protected CarbonTableIdentifier carbonTableIdentifier;
 
-    protected String databaseName;
+  protected String databaseName;
 
-    protected String tableName;
+  protected String tableName;
 
-    protected String carbonStorePath;
+  protected String carbonStorePath;
 
-    protected Properties props;
+  protected Properties props;
 
-    protected List<String> dataSet1;
+  protected List<String> dataSet1;
 
-    protected List<String> dataSet2;
+  protected List<String> dataSet2;
 
-    protected List<String> dataSet3;
+  protected List<String> dataSet3;
 
-    protected String[] columnIdentifiers;
+  protected String[] columnIdentifiers;
 
-    /**
-     * prepare the dataset required for running test cases
-     */
-    protected void prepareDataSet() {
-        dataSet1 = Arrays.asList(new String[] { "a", "b", "c" });
-        dataSet2 = Arrays.asList(new String[] { "d", "e", "f" });
-        dataSet3 = Arrays.asList(new String[] { "b", "c", "a", "d" });
+  /**
+   * prepare the dataset required for running test cases
+   */
+  protected void prepareDataSet() {
+    dataSet1 = Arrays.asList(new String[] { "a", "b", "c" });
+    dataSet2 = Arrays.asList(new String[] { "d", "e", "f" });
+    dataSet3 = Arrays.asList(new String[] { "b", "c", "a", "d" });
+  }
+
+  /**
+   * This method will remove the column identifiers from lru cache
+   */
+  protected void removeKeyFromLRUCache(Cache cacheObject) {
+    for (int i = 0; i < columnIdentifiers.length; i++) {
+      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
+          createDictionaryColumnUniqueIdentifier(columnIdentifiers[i]);
+      cacheObject.invalidate(dictionaryColumnUniqueIdentifier);
     }
+  }
 
-    /**
-     * This method will remove the column identifiers from lru cache
-     */
-    protected void removeKeyFromLRUCache(Cache cacheObject) {
-        for (int i = 0; i < columnIdentifiers.length; i++) {
-            DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
-                    createDictionaryColumnUniqueIdentifier(columnIdentifiers[i]);
-            cacheObject.invalidate(dictionaryColumnUniqueIdentifier);
+  protected DictionaryColumnUniqueIdentifier createDictionaryColumnUniqueIdentifier(
+      String columnIdentifier) {
+    DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
+        new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnIdentifier);
+    return dictionaryColumnUniqueIdentifier;
+  }
+
+  /**
+   * this method will delete the store path
+   */
+  protected void deleteStorePath() {
+    FileFactory.FileType fileType = FileFactory.getFileType(this.carbonStorePath);
+    CarbonFile carbonFile = FileFactory.getCarbonFile(this.carbonStorePath, fileType);
+    deleteRecursiveSilent(carbonFile);
+  }
+
+  /**
+   * this method will delete the folders recursively
+   *
+   * @param f
+   */
+  protected static void deleteRecursiveSilent(CarbonFile f) {
+    if (f.isDirectory()) {
+      if (f.listFiles() != null) {
+        for (CarbonFile c : f.listFiles()) {
+          deleteRecursiveSilent(c);
         }
+      }
     }
+    if (f.exists() && !f.delete()) {
+      return;
+    }
+  }
 
-    protected DictionaryColumnUniqueIdentifier createDictionaryColumnUniqueIdentifier(
-            String columnIdentifier) {
-        DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
-                new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnIdentifier);
-        return dictionaryColumnUniqueIdentifier;
+  /**
+   * write dictionary data
+   *
+   * @param data
+   * @throws IOException
+   */
+  protected void prepareWriterAndWriteData(List<String> data, String columnIdentifier)
+      throws IOException {
+    CarbonDictionaryWriter carbonDictionaryWriter =
+        new CarbonDictionaryWriterImpl(carbonStorePath, carbonTableIdentifier, columnIdentifier,
+            false);
+    CarbonTablePath carbonTablePath =
+        CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier);
+    CarbonUtil.checkAndCreateFolder(carbonTablePath.getMetadataDirectoryPath());
+    List<byte[]> valueList = convertStringListToByteArray(data);
+    try {
+      carbonDictionaryWriter.write(valueList);
+    } finally {
+      carbonDictionaryWriter.close();
     }
+  }
 
-    /**
-     * this method will delete the store path
-     */
-    protected void deleteStorePath() {
-        FileFactory.FileType fileType = FileFactory.getFileType(this.carbonStorePath);
-        CarbonFile carbonFile = FileFactory.getCarbonFile(this.carbonStorePath, fileType);
-        deleteRecursiveSilent(carbonFile);
+  /**
+   * this method will convert list of string to list of byte array
+   */
+  protected List<byte[]> convertStringListToByteArray(List<String> valueList) {
+    List<byte[]> byteArrayList = new ArrayList<>(valueList.size());
+    for (String value : valueList) {
+      byteArrayList.add(value.getBytes(Charset.defaultCharset()));
     }
+    return byteArrayList;
+  }
 
-    /**
-     * this method will delete the folders recursively
-     *
-     * @param f
-     */
-    protected static void deleteRecursiveSilent(CarbonFile f) {
-        if (f.isDirectory()) {
-            if (f.listFiles() != null) {
-                for (CarbonFile c : f.listFiles()) {
-                    deleteRecursiveSilent(c);
-                }
-            }
-        }
-        if (f.exists() && !f.delete()) {
-            return;
-        }
+  /**
+   * this method will read the property file for required details
+   * like dbName, tableName, etc
+   */
+  protected void init() {
+    InputStream in = null;
+    props = new Properties();
+    try {
+      URI uri = getClass().getClassLoader().getResource(PROPERTY_FILE_NAME).toURI();
+      File file = new File(uri);
+      in = new FileInputStream(file);
+      props.load(in);
+    } catch (IOException e) {
+      e.printStackTrace();
+    } catch (URISyntaxException e) {
+      e.printStackTrace();
+    } finally {
+      CarbonUtil.closeStreams(in);
     }
-
-    /**
-     * write dictionary data
-     *
-     * @param data
-     * @throws IOException
-     */
-    protected void prepareWriterAndWriteData(List<String> data, String columnIdentifier)
-            throws IOException {
-        CarbonDictionaryWriter carbonDictionaryWriter =
-                new CarbonDictionaryWriterImpl(carbonStorePath, carbonTableIdentifier,
-                        columnIdentifier, false);
-        CarbonTablePath carbonTablePath =
-                CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier);
-        CarbonUtil.checkAndCreateFolder(carbonTablePath.getMetadataDirectoryPath());
-        List<byte[]> valueList = convertStringListToByteArray(data);
-        try {
-            carbonDictionaryWriter.write(valueList);
-        } finally {
-            carbonDictionaryWriter.close();
-        }
-    }
-
-    /**
-     * this method will convert list of string to list of byte array
-     */
-    protected List<byte[]> convertStringListToByteArray(List<String> valueList) {
-        List<byte[]> byteArrayList = new ArrayList<>(valueList.size());
-        for (String value : valueList) {
-            byteArrayList.add(value.getBytes(Charset.defaultCharset()));
-        }
-        return byteArrayList;
-    }
-
-    /**
-     * this method will read the property file for required details
-     * like dbName, tableName, etc
-     */
-    protected void init() {
-        InputStream in = null;
-        props = new Properties();
-        try {
-            URI uri = getClass().getClassLoader().getResource(PROPERTY_FILE_NAME).toURI();
-            File file = new File(uri);
-            in = new FileInputStream(file);
-            props.load(in);
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
-        } finally {
-            CarbonUtil.closeStreams(in);
-        }
-    }
+  }
 }

@@ -27,12 +27,12 @@ import org.carbondata.query.executer.pagination.impl.QueryResult;
 import org.carbondata.query.schema.metadata.SliceExecutionInfo;
 
 public interface SliceExecuter {
-    /**
-     * Below method will be used to execute the slices in parallel and get the
-     * processed query result from each slice lastesSlice
-     *
-     * @return query result
-     */
-    CarbonIterator<QueryResult> executeSlices(List<SliceExecutionInfo> infos, int[] sliceIndex)
-            throws QueryExecutionException;
+  /**
+   * Below method will be used to execute the slices in parallel and get the
+   * processed query result from each slice lastesSlice
+   *
+   * @return query result
+   */
+  CarbonIterator<QueryResult> executeSlices(List<SliceExecutionInfo> infos, int[] sliceIndex)
+      throws QueryExecutionException;
 }

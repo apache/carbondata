@@ -25,6 +25,6 @@ import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
  * MeasureDataWrapper, interface.
  */
 public interface MeasureDataWrapper {
-    CarbonReadDataHolder[] getValues();
+  CarbonReadDataHolder[] getValues();
 
 }

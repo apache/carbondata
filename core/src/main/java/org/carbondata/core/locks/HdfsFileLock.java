@@ -18,76 +18,75 @@
  */
 package org.carbondata.core.locks;
 
-import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.datastorage.store.impl.FileFactory;
-
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.datastorage.store.impl.FileFactory;
+
 /**
- * This class is used to handle the HDFS File locking.This is acheived using the concept of acquiring the data
- * out stream using Append option.
+ * This class is used to handle the HDFS File locking.
+ * This is acheived using the concept of acquiring the data out stream using Append option.
  */
 public class HdfsFileLock extends AbstractCarbonLock {
 
-    /**
-     * location hdfs file location
-     */
-    private String location;
+  /**
+   * location hdfs file location
+   */
+  private String location;
 
-    /**
-     * lockUsage is used to determine the type of the lock. according to this the lock folder will change.
-     */
-    private LockUsage lockUsage;
+  /**
+   * lockUsage is used to determine the type of the lock. according to this the lock
+   * folder will change.
+   */
+  private LockUsage lockUsage;
 
-    private DataOutputStream dataOutputStream;
+  private DataOutputStream dataOutputStream;
 
-    /**
-     * @param location
-     * @param lockUsage
-     */
-    public HdfsFileLock(String location, LockUsage lockUsage) {
-        this.location = location;
-        this.lockUsage = lockUsage;
-        if (this.lockUsage == LockUsage.METADATA_LOCK) {
-            this.location = location + File.separator + CarbonCommonConstants.METADATA_LOCK;
-        }
-        initRetry();
+  /**
+   * @param location
+   * @param lockUsage
+   */
+  public HdfsFileLock(String location, LockUsage lockUsage) {
+    this.location = location;
+    this.lockUsage = lockUsage;
+    if (this.lockUsage == LockUsage.METADATA_LOCK) {
+      this.location = location + File.separator + CarbonCommonConstants.METADATA_LOCK;
     }
+    initRetry();
+  }
 
-    /* (non-Javadoc)
-     * @see org.carbondata.core.locks.ICarbonLock#lock()
-     */
-    @Override
-    public boolean lock() {
-        try {
-            if (!FileFactory.isFileExist(location, FileFactory.getFileType(location))) {
-                FileFactory.createNewLockFile(location, FileFactory.getFileType(location));
-            }
-            dataOutputStream = FileFactory
-                    .getDataOutputStreamUsingAppend(location, FileFactory.getFileType(location));
+  /* (non-Javadoc)
+   * @see org.carbondata.core.locks.ICarbonLock#lock()
+   */
+  @Override public boolean lock() {
+    try {
+      if (!FileFactory.isFileExist(location, FileFactory.getFileType(location))) {
+        FileFactory.createNewLockFile(location, FileFactory.getFileType(location));
+      }
+      dataOutputStream =
+          FileFactory.getDataOutputStreamUsingAppend(location, FileFactory.getFileType(location));
 
-            return true;
+      return true;
 
-        } catch (IOException e) {
-            return false;
-        }
+    } catch (IOException e) {
+      return false;
     }
+  }
 
-    /* (non-Javadoc)
-     * @see org.carbondata.core.locks.ICarbonLock#unlock()
-     */
-    @Override
-    public boolean unlock() {
-        if (null != dataOutputStream) {
-            try {
-                dataOutputStream.close();
-            } catch (IOException e) {
-                return false;
-            }
-        }
-        return true;
+  /* (non-Javadoc)
+   * @see org.carbondata.core.locks.ICarbonLock#unlock()
+   */
+  @Override public boolean unlock() {
+    if (null != dataOutputStream) {
+      try {
+        dataOutputStream.close();
+      } catch (IOException e) {
+        return false;
+      }
     }
+    return true;
+  }
 
 }

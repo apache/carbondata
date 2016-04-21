@@ -24,98 +24,98 @@ import org.carbondata.query.queryinterface.query.CarbonQuery.AxisType;
 
 public class MeasureFilterProcessorModel {
 
-    /**
-     * dimIndex
-     */
-    private int dimIndex;
+  /**
+   * dimIndex
+   */
+  private int dimIndex;
 
-    /**
-     * topNBytePos
-     */
-    private byte[] maskedBytes;
+  /**
+   * topNBytePos
+   */
+  private byte[] maskedBytes;
 
-    /**
-     * topNBytePos
-     */
-    private int[] maskedBytesPos;
+  /**
+   * topNBytePos
+   */
+  private int[] maskedBytesPos;
 
-    /**
-     * dimension
-     */
-    private Dimension dimension;
+  /**
+   * dimension
+   */
+  private Dimension dimension;
 
-    /**
-     * AxisType
-     */
-    private AxisType axisType;
+  /**
+   * AxisType
+   */
+  private AxisType axisType;
 
-    /**
-     * @return the dimIndex
-     */
-    public int getDimIndex() {
-        return dimIndex;
-    }
+  /**
+   * @return the dimIndex
+   */
+  public int getDimIndex() {
+    return dimIndex;
+  }
 
-    /**
-     * @param dimIndex the dimIndex to set
-     */
-    public void setDimIndex(int dimIndex) {
-        this.dimIndex = dimIndex;
-    }
+  /**
+   * @param dimIndex the dimIndex to set
+   */
+  public void setDimIndex(int dimIndex) {
+    this.dimIndex = dimIndex;
+  }
 
-    /**
-     * @return the maskedBytes
-     */
-    public byte[] getMaskedBytes() {
-        return maskedBytes;
-    }
+  /**
+   * @return the maskedBytes
+   */
+  public byte[] getMaskedBytes() {
+    return maskedBytes;
+  }
 
-    /**
-     * @param maskedBytes the maskedBytes to set
-     */
-    public void setMaskedBytes(byte[] maskedBytes) {
-        this.maskedBytes = maskedBytes;
-    }
+  /**
+   * @param maskedBytes the maskedBytes to set
+   */
+  public void setMaskedBytes(byte[] maskedBytes) {
+    this.maskedBytes = maskedBytes;
+  }
 
-    /**
-     * @return the maskedBytesPos
-     */
-    public int[] getMaskedBytesPos() {
-        return maskedBytesPos;
-    }
+  /**
+   * @return the maskedBytesPos
+   */
+  public int[] getMaskedBytesPos() {
+    return maskedBytesPos;
+  }
 
-    /**
-     * @param maskedBytesPos the maskedBytesPos to set
-     */
-    public void setMaskedBytesPos(int[] maskedBytesPos) {
-        this.maskedBytesPos = maskedBytesPos;
-    }
+  /**
+   * @param maskedBytesPos the maskedBytesPos to set
+   */
+  public void setMaskedBytesPos(int[] maskedBytesPos) {
+    this.maskedBytesPos = maskedBytesPos;
+  }
 
-    /**
-     * @return the dimension
-     */
-    public Dimension getDimension() {
-        return dimension;
-    }
+  /**
+   * @return the dimension
+   */
+  public Dimension getDimension() {
+    return dimension;
+  }
 
-    /**
-     * @param dimension the dimension to set
-     */
-    public void setDimension(Dimension dimension) {
-        this.dimension = dimension;
-    }
+  /**
+   * @param dimension the dimension to set
+   */
+  public void setDimension(Dimension dimension) {
+    this.dimension = dimension;
+  }
 
-    /**
-     * @return the axisType
-     */
-    public AxisType getAxisType() {
-        return axisType;
-    }
+  /**
+   * @return the axisType
+   */
+  public AxisType getAxisType() {
+    return axisType;
+  }
 
-    /**
-     * @param axisType the axisType to set
-     */
-    public void setAxisType(AxisType axisType) {
-        this.axisType = axisType;
-    }
+  /**
+   * @param axisType the axisType to set
+   */
+  public void setAxisType(AxisType axisType) {
+    this.axisType = axisType;
+  }
 }

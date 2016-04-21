@@ -19,26 +19,24 @@
 
 package org.carbondata.common.logging;
 
-import junit.framework.TestCase;
 import org.carbondata.common.logging.impl.StandardLogService;
+
+import junit.framework.TestCase;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 public class LogServiceFactoryTest_UT extends TestCase {
 
-    @Before
-    public void setUp() throws Exception {
-    }
+  @Before public void setUp() throws Exception {
+  }
 
-    @After
-    public void tearDown() throws Exception {
-    }
+  @After public void tearDown() throws Exception {
+  }
 
-    @Test
-    public void testGetLogService() {
-        LogService logger = LogServiceFactory.getLogService("sampleclass");
-        assertTrue(logger instanceof StandardLogService);
-    }
+  @Test public void testGetLogService() {
+    LogService logger = LogServiceFactory.getLogService("sampleclass");
+    assertTrue(logger instanceof StandardLogService);
+  }
 
 }

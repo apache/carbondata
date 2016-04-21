@@ -24,185 +24,185 @@ import java.util.List;
 
 public class AggregateTable {
 
-    /**
-     * aggregateTableName
-     */
-    private String aggregateTableName;
+  /**
+   * aggregateTableName
+   */
+  private String aggregateTableName;
 
-    /**
-     * aggLevels
-     */
-    private String[] aggLevels;
+  /**
+   * aggLevels
+   */
+  private String[] aggLevels;
 
-    /**
-     * aggLevels
-     */
-    private String[] aggLevelsActualName;
+  /**
+   * aggLevels
+   */
+  private String[] aggLevelsActualName;
 
-    /**
-     * actualAggLevels
-     */
-    private String[] actualAggLevels;
+  /**
+   * actualAggLevels
+   */
+  private String[] actualAggLevels;
 
-    /**
-     * aggMeasure
-     */
-    private String[] aggMeasure;
+  /**
+   * aggMeasure
+   */
+  private String[] aggMeasure;
 
-    /**
-     * aggregator
-     */
-    private String[] aggregator;
+  /**
+   * aggregator
+   */
+  private String[] aggregator;
 
-    /**
-     * Agg Namesssss
-     */
-    private String[] aggNames;
+  /**
+   * Agg Namesssss
+   */
+  private String[] aggNames;
 
-    /**
-     * aggColuName
-     */
-    private String[] aggColuName;
+  /**
+   * aggColuName
+   */
+  private String[] aggColuName;
 
-    /**
-     * aggregateClass
-     */
-    private String[] aggregateClass;
+  /**
+   * aggregateClass
+   */
+  private String[] aggregateClass;
 
-    private List<AggregateTable> dependentAggTables = new ArrayList<AggregateTable>(10);
+  private List<AggregateTable> dependentAggTables = new ArrayList<AggregateTable>(10);
 
-    public List<AggregateTable> getDependentAggTables() {
-        return dependentAggTables;
-    }
+  public List<AggregateTable> getDependentAggTables() {
+    return dependentAggTables;
+  }
 
-    public void setDependentAggTables(List<AggregateTable> dependentAggTables) {
-        this.dependentAggTables = dependentAggTables;
-    }
+  public void setDependentAggTables(List<AggregateTable> dependentAggTables) {
+    this.dependentAggTables = dependentAggTables;
+  }
 
-    /**
-     * @return
-     */
-    public String getAggregateTableName() {
-        return aggregateTableName;
-    }
+  /**
+   * @return
+   */
+  public String getAggregateTableName() {
+    return aggregateTableName;
+  }
 
-    /**
-     * @param aggregateTableName
-     */
-    public void setAggregateTableName(String aggregateTableName) {
-        this.aggregateTableName = aggregateTableName;
-    }
+  /**
+   * @param aggregateTableName
+   */
+  public void setAggregateTableName(String aggregateTableName) {
+    this.aggregateTableName = aggregateTableName;
+  }
 
-    /**
-     * @return
-     */
-    public String[] getAggLevels() {
-        return aggLevels;
-    }
+  /**
+   * @return
+   */
+  public String[] getAggLevels() {
+    return aggLevels;
+  }
 
-    /**
-     * @param aggLevels
-     */
-    public void setAggLevels(String[] aggLevels) {
-        this.aggLevels = aggLevels;
-    }
+  /**
+   * @param aggLevels
+   */
+  public void setAggLevels(String[] aggLevels) {
+    this.aggLevels = aggLevels;
+  }
 
-    /**
-     * @return
-     */
-    public String[] getAggMeasure() {
-        return aggMeasure;
-    }
+  /**
+   * @return
+   */
+  public String[] getAggMeasure() {
+    return aggMeasure;
+  }
 
-    /**
-     * @param aggMeasure
-     */
-    public void setAggMeasure(String[] aggMeasure) {
-        this.aggMeasure = aggMeasure;
-    }
+  /**
+   * @param aggMeasure
+   */
+  public void setAggMeasure(String[] aggMeasure) {
+    this.aggMeasure = aggMeasure;
+  }
 
-    /**
-     * @return
-     */
-    public String[] getAggregator() {
-        return aggregator;
-    }
+  /**
+   * @return
+   */
+  public String[] getAggregator() {
+    return aggregator;
+  }
 
-    /**
-     * @param aggregator
-     */
-    public void setAggregator(String[] aggregator) {
-        this.aggregator = aggregator;
-    }
+  /**
+   * @param aggregator
+   */
+  public void setAggregator(String[] aggregator) {
+    this.aggregator = aggregator;
+  }
 
-    /**
-     * @return Returns the actualAggLevels.
-     */
-    public String[] getActualAggLevels() {
-        return actualAggLevels;
-    }
+  /**
+   * @return Returns the actualAggLevels.
+   */
+  public String[] getActualAggLevels() {
+    return actualAggLevels;
+  }
 
-    /**
-     * @param actualAggLevels The actualAggLevels to set.
-     */
-    public void setActualAggLevels(String[] actualAggLevels) {
-        this.actualAggLevels = actualAggLevels;
-    }
+  /**
+   * @param actualAggLevels The actualAggLevels to set.
+   */
+  public void setActualAggLevels(String[] actualAggLevels) {
+    this.actualAggLevels = actualAggLevels;
+  }
 
-    /**
-     * @return Returns the aggNames.
-     */
-    public String[] getAggNames() {
-        return aggNames;
-    }
+  /**
+   * @return Returns the aggNames.
+   */
+  public String[] getAggNames() {
+    return aggNames;
+  }
 
-    /**
-     * @param aggNames The aggNames to set.
-     */
-    public void setAggNames(String[] aggNames) {
-        this.aggNames = aggNames;
-    }
+  /**
+   * @param aggNames The aggNames to set.
+   */
+  public void setAggNames(String[] aggNames) {
+    this.aggNames = aggNames;
+  }
 
-    /**
-     * @return the aggregateClass
-     */
-    public String[] getAggregateClass() {
-        return aggregateClass;
-    }
+  /**
+   * @return the aggregateClass
+   */
+  public String[] getAggregateClass() {
+    return aggregateClass;
+  }
 
-    /**
-     * @param aggregateClass the aggregateClass to set
-     */
-    public void setAggregateClass(String[] aggregateClass) {
-        this.aggregateClass = aggregateClass;
-    }
+  /**
+   * @param aggregateClass the aggregateClass to set
+   */
+  public void setAggregateClass(String[] aggregateClass) {
+    this.aggregateClass = aggregateClass;
+  }
 
-    /**
-     * @return the aggLevelsActualName
-     */
-    public String[] getAggLevelsActualName() {
-        return aggLevelsActualName;
-    }
+  /**
+   * @return the aggLevelsActualName
+   */
+  public String[] getAggLevelsActualName() {
+    return aggLevelsActualName;
+  }
 
-    /**
-     * @param aggLevelsActualName the aggLevelsActualName to set
-     */
-    public void setAggLevelsActualName(String[] aggLevelsActualName) {
-        this.aggLevelsActualName = aggLevelsActualName;
-    }
+  /**
+   * @param aggLevelsActualName the aggLevelsActualName to set
+   */
+  public void setAggLevelsActualName(String[] aggLevelsActualName) {
+    this.aggLevelsActualName = aggLevelsActualName;
+  }
 
-    /**
-     * @return the aggColuName
-     */
-    public String[] getAggColuName() {
-        return aggColuName;
-    }
+  /**
+   * @return the aggColuName
+   */
+  public String[] getAggColuName() {
+    return aggColuName;
+  }
 
-    /**
-     * @param aggColuName the aggColuName to set
-     */
-    public void setAggColuName(String[] aggColuName) {
-        this.aggColuName = aggColuName;
-    }
+  /**
+   * @param aggColuName the aggColuName to set
+   */
+  public void setAggColuName(String[] aggColuName) {
+    this.aggColuName = aggColuName;
+  }
 
 }

@@ -29,123 +29,123 @@ import org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
  */
 public class BlockMetadata implements Serializable {
 
-    /**
-     * serialization id
-     */
-    private static final long serialVersionUID = -7284319972734500751L;
+  /**
+   * serialization id
+   */
+  private static final long serialVersionUID = -7284319972734500751L;
 
-    /**
-     * version used for data compatibility
-     */
-    private int versionId;
+  /**
+   * version used for data compatibility
+   */
+  private int versionId;
 
-    /**
-     * total number of rows in this file
-     */
-    private long numberOfRows;
+  /**
+   * total number of rows in this file
+   */
+  private long numberOfRows;
 
-    /**
-     * Segment info (will be same/repeated for all block in this segment)
-     */
-    private SegmentInfo segmentInfo;
+  /**
+   * Segment info (will be same/repeated for all block in this segment)
+   */
+  private SegmentInfo segmentInfo;
 
-    /**
-     * Information about leaf nodes of all columns in this file
-     */
-    private List<LeafNodeInfo> leafNodeList;
+  /**
+   * Information about leaf nodes of all columns in this file
+   */
+  private List<LeafNodeInfo> leafNodeList;
 
-    /**
-     * Leaf node index of all leaf nodes in this file
-     */
-    private LeafNodeIndex leafNodeIndex;
+  /**
+   * Leaf node index of all leaf nodes in this file
+   */
+  private LeafNodeIndex leafNodeIndex;
 
-    /**
-     * Description of columns in this file
-     */
-    private List<ColumnSchema> columnInTable;
+  /**
+   * Description of columns in this file
+   */
+  private List<ColumnSchema> columnInTable;
 
-    /**
-     * @return the versionId
-     */
-    public int getVersionId() {
-        return versionId;
-    }
+  /**
+   * @return the versionId
+   */
+  public int getVersionId() {
+    return versionId;
+  }
 
-    /**
-     * @param versionId the versionId to set
-     */
-    public void setVersionId(int versionId) {
-        this.versionId = versionId;
-    }
+  /**
+   * @param versionId the versionId to set
+   */
+  public void setVersionId(int versionId) {
+    this.versionId = versionId;
+  }
 
-    /**
-     * @return the numberOfRows
-     */
-    public long getNumberOfRows() {
-        return numberOfRows;
-    }
+  /**
+   * @return the numberOfRows
+   */
+  public long getNumberOfRows() {
+    return numberOfRows;
+  }
 
-    /**
-     * @param numberOfRows the numberOfRows to set
-     */
-    public void setNumberOfRows(long numberOfRows) {
-        this.numberOfRows = numberOfRows;
-    }
+  /**
+   * @param numberOfRows the numberOfRows to set
+   */
+  public void setNumberOfRows(long numberOfRows) {
+    this.numberOfRows = numberOfRows;
+  }
 
-    /**
-     * @return the segmentInfo
-     */
-    public SegmentInfo getSegmentInfo() {
-        return segmentInfo;
-    }
+  /**
+   * @return the segmentInfo
+   */
+  public SegmentInfo getSegmentInfo() {
+    return segmentInfo;
+  }
 
-    /**
-     * @param segmentInfo the segmentInfo to set
-     */
-    public void setSegmentInfo(SegmentInfo segmentInfo) {
-        this.segmentInfo = segmentInfo;
-    }
+  /**
+   * @param segmentInfo the segmentInfo to set
+   */
+  public void setSegmentInfo(SegmentInfo segmentInfo) {
+    this.segmentInfo = segmentInfo;
+  }
 
-    /**
-     * @return the leafNodeList
-     */
-    public List<LeafNodeInfo> getLeafNodeList() {
-        return leafNodeList;
-    }
+  /**
+   * @return the leafNodeList
+   */
+  public List<LeafNodeInfo> getLeafNodeList() {
+    return leafNodeList;
+  }
 
-    /**
-     * @param leafNodeList the leafNodeList to set
-     */
-    public void setLeafNodeList(List<LeafNodeInfo> leafNodeList) {
-        this.leafNodeList = leafNodeList;
-    }
+  /**
+   * @param leafNodeList the leafNodeList to set
+   */
+  public void setLeafNodeList(List<LeafNodeInfo> leafNodeList) {
+    this.leafNodeList = leafNodeList;
+  }
 
-    /**
-     * @return the leafNodeIndex
-     */
-    public LeafNodeIndex getLeafNodeIndex() {
-        return leafNodeIndex;
-    }
+  /**
+   * @return the leafNodeIndex
+   */
+  public LeafNodeIndex getLeafNodeIndex() {
+    return leafNodeIndex;
+  }
 
-    /**
-     * @param leafNodeIndex the leafNodeIndex to set
-     */
-    public void setLeafNodeIndex(LeafNodeIndex leafNodeIndex) {
-        this.leafNodeIndex = leafNodeIndex;
-    }
+  /**
+   * @param leafNodeIndex the leafNodeIndex to set
+   */
+  public void setLeafNodeIndex(LeafNodeIndex leafNodeIndex) {
+    this.leafNodeIndex = leafNodeIndex;
+  }
 
-    /**
-     * @return the columnInTable
-     */
-    public List<ColumnSchema> getColumnInTable() {
-        return columnInTable;
-    }
+  /**
+   * @return the columnInTable
+   */
+  public List<ColumnSchema> getColumnInTable() {
+    return columnInTable;
+  }
 
-    /**
-     * @param columnInTable the columnInTable to set
-     */
-    public void setColumnInTable(List<ColumnSchema> columnInTable) {
-        this.columnInTable = columnInTable;
-    }
+  /**
+   * @param columnInTable the columnInTable to set
+   */
+  public void setColumnInTable(List<ColumnSchema> columnInTable) {
+    this.columnInTable = columnInTable;
+  }
 
 }

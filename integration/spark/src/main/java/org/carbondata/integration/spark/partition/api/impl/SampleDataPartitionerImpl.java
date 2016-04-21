@@ -50,172 +50,168 @@ import org.apache.spark.sql.cubemodel.Partitioner;
  * Sample partition based on MSISDN.
  */
 public class SampleDataPartitionerImpl implements DataPartitioner {
-    private static final LogService LOGGER =
-            LogServiceFactory.getLogService(SampleDataPartitionerImpl.class.getName());
-    private int numberOfPartitions = 1;
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(SampleDataPartitionerImpl.class.getName());
+  private int numberOfPartitions = 1;
 
-    private int partionColumnIndex = -1;
+  private int partionColumnIndex = -1;
 
-    private String partitionColumn;
+  private String partitionColumn;
 
-    private Partitioner partitioner;
-    private List<Partition> allPartitions;
-    private String baseLocation;
+  private Partitioner partitioner;
+  private List<Partition> allPartitions;
+  private String baseLocation;
 
-    public SampleDataPartitionerImpl() {
+  public SampleDataPartitionerImpl() {
+  }
+
+  public void initialize(String basePath, String[] columns, Partitioner partitioner) {
+    this.partitioner = partitioner;
+    numberOfPartitions = partitioner.partitionCount();
+
+    partitionColumn = partitioner.partitionColumn()[0];
+    LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
+        "SampleDataPartitionerImpl initializing with following properties.");
+    LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
+        "partitionCount: " + numberOfPartitions);
+    LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
+        "partitionColumn: " + partitionColumn);
+    LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
+        "basePath: " + basePath);
+    LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
+        "columns: " + Arrays.toString(columns));
+
+    this.baseLocation = basePath;
+    allPartitions = new ArrayList<Partition>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+
+    for (int i = 0; i < columns.length; i++) {
+      if (columns[i].equalsIgnoreCase(partitionColumn)) {
+        partionColumnIndex = i;
+        break;
+      }
     }
 
-    public void initialize(String basePath, String[] columns, Partitioner partitioner) {
-        this.partitioner = partitioner;
-        numberOfPartitions = partitioner.partitionCount();
+    for (int partionCounter = 0; partionCounter < numberOfPartitions; partionCounter++) {
+      PartitionImpl partitionImpl =
+          new PartitionImpl("" + partionCounter, baseLocation + '/' + partionCounter);
 
-        partitionColumn = partitioner.partitionColumn()[0];
-        LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-                "SampleDataPartitionerImpl initializing with following properties.");
-        LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-                "partitionCount: " + numberOfPartitions);
-        LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-                "partitionColumn: " + partitionColumn);
-        LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-                "basePath: " + basePath);
-        LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-                "columns: " + Arrays.toString(columns));
+      CarbonDimensionLevelFilter filter = new CarbonDimensionLevelFilter();
+      List<Object> includedHashes = new ArrayList<Object>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+      includedHashes.add(partionCounter);
 
-        this.baseLocation = basePath;
-        allPartitions = new ArrayList<Partition>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+      filter.setIncludeFilter(includedHashes);
+      partitionImpl.setPartitionDetails(partitionColumn, filter);
 
-        for (int i = 0; i < columns.length; i++) {
-            if (columns[i].equalsIgnoreCase(partitionColumn)) {
-                partionColumnIndex = i;
-                break;
-            }
-        }
+      allPartitions.add(partitionImpl);
+    }
+  }
 
-        for (int partionCounter = 0; partionCounter < numberOfPartitions; partionCounter++) {
-            PartitionImpl partitionImpl =
-                    new PartitionImpl("" + partionCounter, baseLocation + '/' + partionCounter);
+  @Override public Partition getPartionForTuple(Object[] tuple, long rowCounter) {
+    int hashCode;
+    if (partionColumnIndex == -1) {
+      hashCode = hashCode(rowCounter);
+    } else {
+      try {
+        hashCode = hashCode(((String) tuple[partionColumnIndex]).hashCode());
+      } catch (NumberFormatException e) {
+        hashCode = hashCode(0);
+      }
+    }
+    return allPartitions.get(hashCode);
+  }
 
-            CarbonDimensionLevelFilter filter = new CarbonDimensionLevelFilter();
-            List<Object> includedHashes =
-                    new ArrayList<Object>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-            includedHashes.add(partionCounter);
+  /**
+   *
+   */
+  public List<Partition> getAllPartitions() {
+    return allPartitions;
+  }
 
-            filter.setIncludeFilter(includedHashes);
-            partitionImpl.setPartitionDetails(partitionColumn, filter);
+  /**
+   * @see DataPartitioner#getPartitions(CarbonQueryPlan)
+   */
+  public List<Partition> getPartitions(CarbonQueryPlan queryPlan) {
+    CarbonDimensionFilter msisdnFilter = null;
 
-            allPartitions.add(partitionImpl);
-        }
+    Map<CarbonDimension, CarbonDimensionFilter> filterMap = queryPlan.getDimensionFilters();
+    for (Map.Entry<CarbonDimension, CarbonDimensionFilter> entry : filterMap.entrySet()) {
+      CarbonDimension carbonDimension = entry.getKey();
+      if (partitionColumn.equalsIgnoreCase(carbonDimension.getDimensionUniqueName())) {
+        msisdnFilter = entry.getValue();
+        break;
+      }
     }
 
-    @Override
-    public Partition getPartionForTuple(Object[] tuple, long rowCounter) {
-        int hashCode;
-        if (partionColumnIndex == -1) {
-            hashCode = hashCode(rowCounter);
-        } else {
-            try {
-                hashCode = hashCode(((String) tuple[partionColumnIndex]).hashCode());
-            } catch (NumberFormatException e) {
-                hashCode = hashCode(0);
-            }
-        }
-        return allPartitions.get(hashCode);
+    if (msisdnFilter == null || msisdnFilter.getIncludeFilters().size() == 0) {
+      return allPartitions;
     }
 
-    /**
-     *
-     */
-    public List<Partition> getAllPartitions() {
-        return allPartitions;
+    List<Partition> allowedPartitions =
+        new ArrayList<Partition>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+    for (Partition aPartition : allPartitions) {
+      CarbonDimensionLevelFilter partitionFilterDetails =
+          aPartition.getPartitionDetails().get(partitionColumn);
+
+      //Check if the partition is serving any of the hash code generated for include
+      //filter of query
+      for (String includeFilter : msisdnFilter.getIncludeFilters()) {
+        int hashCode = hashCode(includeFilter.hashCode());
+        if (partitionFilterDetails.getIncludeFilter().contains(hashCode)) {
+          allowedPartitions.add(aPartition);
+          break;
+        }
+      }
     }
 
-    /**
-     * @see DataPartitioner#getPartitions(CarbonQueryPlan)
-     */
-    public List<Partition> getPartitions(CarbonQueryPlan queryPlan) {
-        CarbonDimensionFilter msisdnFilter = null;
+    return allowedPartitions;
+  }
 
-        Map<CarbonDimension, CarbonDimensionFilter> filterMap = queryPlan.getDimensionFilters();
-        for (Map.Entry<CarbonDimension, CarbonDimensionFilter> entry : filterMap.entrySet()) {
-            CarbonDimension carbonDimension = entry.getKey();
-            if (partitionColumn.equalsIgnoreCase(carbonDimension.getDimensionUniqueName())) {
-                msisdnFilter = entry.getValue();
-                break;
-            }
-        }
-
-        if (msisdnFilter == null || msisdnFilter.getIncludeFilters().size() == 0) {
-            return allPartitions;
-        }
-
-        List<Partition> allowedPartitions =
-                new ArrayList<Partition>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-        for (Partition aPartition : allPartitions) {
-            CarbonDimensionLevelFilter partitionFilterDetails =
-                    aPartition.getPartitionDetails().get(partitionColumn);
-
-            //Check if the partition is serving any of the hash code generated for include
-            //filter of query
-            for (String includeFilter : msisdnFilter.getIncludeFilters()) {
-                int hashCode = hashCode(includeFilter.hashCode());
-                if (partitionFilterDetails.getIncludeFilter().contains(hashCode)) {
-                    allowedPartitions.add(aPartition);
-                    break;
-                }
-            }
-        }
-
-        return allowedPartitions;
+  /**
+   * Identify the partitions applicable for the given filter
+   */
+  public List<Partition> getPartitions(Map<String, CarbonDimensionLevelFilter> filters) {
+    if (filters == null || filters.size() == 0 || filters.get(partitionColumn) == null) {
+      return allPartitions;
     }
 
-    /**
-     * Identify the partitions applicable for the given filter
-     */
-    public List<Partition> getPartitions(Map<String, CarbonDimensionLevelFilter> filters) {
-        if (filters == null || filters.size() == 0 || filters.get(partitionColumn) == null) {
-            return allPartitions;
+    CarbonDimensionLevelFilter msisdnFilter = filters.get(partitionColumn);
+    List<Partition> allowedPartitions =
+        new ArrayList<Partition>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+
+    if (msisdnFilter.getIncludeFilter().isEmpty()) {
+      // Partition check can be done only for include filter list.
+      // If the filter is of other type,return all the partitions list
+      return allPartitions;
+    }
+
+    for (Partition aPartition : allPartitions) {
+      CarbonDimensionLevelFilter partitionFilterDetails =
+          aPartition.getPartitionDetails().get(partitionColumn);
+
+      //Check if the partition is serving any of the
+      //hash code generated for include filter of query
+      for (Object includeFilter : msisdnFilter.getIncludeFilter()) {
+        int hashCode = hashCode(((String) includeFilter).hashCode());
+        if (partitionFilterDetails.getIncludeFilter().contains(hashCode)) {
+          allowedPartitions.add(aPartition);
+          break;
         }
-
-        CarbonDimensionLevelFilter msisdnFilter = filters.get(partitionColumn);
-        List<Partition> allowedPartitions =
-                new ArrayList<Partition>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-
-        if (msisdnFilter.getIncludeFilter().isEmpty()) {
-            // Partition check can be done only for include filter list.
-            // If the filter is of other type,return all the partitions list
-            return allPartitions;
-        }
-
-        for (Partition aPartition : allPartitions) {
-            CarbonDimensionLevelFilter partitionFilterDetails =
-                    aPartition.getPartitionDetails().get(partitionColumn);
-
-            //Check if the partition is serving any of the
-            //hash code generated for include filter of query
-            for (Object includeFilter : msisdnFilter.getIncludeFilter()) {
-                int hashCode = hashCode(((String) includeFilter).hashCode());
-                if (partitionFilterDetails.getIncludeFilter().contains(hashCode)) {
-                    allowedPartitions.add(aPartition);
-                    break;
-                }
-            }
-        }
-
-        return allowedPartitions;
+      }
     }
 
-    private int hashCode(long key) {
-        return (int) (Math.abs(key) % numberOfPartitions);
-    }
+    return allowedPartitions;
+  }
 
-    @Override
-    public String[] getPartitionedColumns() {
-        return new String[] { partitionColumn };
-    }
+  private int hashCode(long key) {
+    return (int) (Math.abs(key) % numberOfPartitions);
+  }
 
-    @Override
-    public Partitioner getPartitioner() {
-        return partitioner;
-    }
+  @Override public String[] getPartitionedColumns() {
+    return new String[] { partitionColumn };
+  }
+
+  @Override public Partitioner getPartitioner() {
+    return partitioner;
+  }
 
 }

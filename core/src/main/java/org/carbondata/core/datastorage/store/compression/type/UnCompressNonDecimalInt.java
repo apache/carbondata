@@ -25,7 +25,6 @@ import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.datastorage.store.compression.Compressor;
 import org.carbondata.core.datastorage.store.compression.SnappyCompression;
-import org.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
 import org.carbondata.core.datastorage.store.compression.ValueCompressonHolder.UnCompressValue;
 import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.carbondata.core.util.CarbonCoreLogEvent;
@@ -33,77 +32,68 @@ import org.carbondata.core.util.ValueCompressionUtil;
 import org.carbondata.core.util.ValueCompressionUtil.DataType;
 
 public class UnCompressNonDecimalInt implements UnCompressValue<int[]> {
-    /**
-     * Attribute for Carbon LOGGER
-     */
-    private static final LogService LOGGER =
-            LogServiceFactory.getLogService(UnCompressNonDecimalInt.class.getName());
-    /**
-     * intCompressor.
-     */
-    private static Compressor<int[]> intCompressor =
-            SnappyCompression.SnappyIntCompression.INSTANCE;
-    /**
-     * value.
-     */
-    private int[] value;
+  /**
+   * Attribute for Carbon LOGGER
+   */
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(UnCompressNonDecimalInt.class.getName());
+  /**
+   * intCompressor.
+   */
+  private static Compressor<int[]> intCompressor = SnappyCompression.SnappyIntCompression.INSTANCE;
+  /**
+   * value.
+   */
+  private int[] value;
 
-    @Override
-    public void setValue(int[] value) {
-        this.value = (int[]) value;
+  @Override public void setValue(int[] value) {
+    this.value = (int[]) value;
 
+  }
+
+  @Override public UnCompressValue getNew() {
+    try {
+      return (UnCompressValue) clone();
+    } catch (CloneNotSupportedException csne1) {
+      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, csne1, csne1.getMessage());
     }
+    return null;
+  }
 
-    @Override
-    public UnCompressValue getNew() {
-        try {
-            return (UnCompressValue) clone();
-        } catch (CloneNotSupportedException csne1) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, csne1, csne1.getMessage());
-        }
-        return null;
-    }
+  @Override public UnCompressValue compress() {
+    UnCompressNonDecimalByte byte1 = new UnCompressNonDecimalByte();
+    byte1.setValue(intCompressor.compress(value));
+    return byte1;
+  }
 
-    @Override
-    public UnCompressValue compress() {
-        UnCompressNonDecimalByte byte1 = new UnCompressNonDecimalByte();
-        byte1.setValue(intCompressor.compress(value));
-        return byte1;
-    }
+  @Override public byte[] getBackArrayData() {
+    return ValueCompressionUtil.convertToBytes(value);
+  }
 
-    @Override
-    public byte[] getBackArrayData() {
-        return ValueCompressionUtil.convertToBytes(value);
-    }
+  @Override public void setValueInBytes(byte[] bytesArr) {
+    ByteBuffer buffer = ByteBuffer.wrap(bytesArr);
+    this.value = ValueCompressionUtil.convertToIntArray(buffer, bytesArr.length);
+  }
 
-    @Override
-    public void setValueInBytes(byte[] bytesArr) {
-        ByteBuffer buffer = ByteBuffer.wrap(bytesArr);
-        this.value = ValueCompressionUtil.convertToIntArray(buffer, bytesArr.length);
-    }
+  /**
+   * @see ValueCompressonHolder.UnCompressValue#getCompressorObject()
+   */
+  @Override public UnCompressValue getCompressorObject() {
+    return new UnCompressNonDecimalByte();
+  }
 
-    /**
-     * @see ValueCompressonHolder.UnCompressValue#getCompressorObject()
-     */
-    @Override
-    public UnCompressValue getCompressorObject() {
-        return new UnCompressNonDecimalByte();
+  @Override public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {
+    double[] vals = new double[value.length];
+    for (int k = 0; k < vals.length; k++) {
+      vals[k] = value[k] / Math.pow(10, decimal);
     }
+    CarbonReadDataHolder dataHolder = new CarbonReadDataHolder();
+    dataHolder.setReadableDoubleValues(vals);
+    return dataHolder;
+  }
 
-    @Override
-    public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {
-        double[] vals = new double[value.length];
-        for (int k = 0; k < vals.length; k++) {
-            vals[k] = value[k] / Math.pow(10, decimal);
-        }
-        CarbonReadDataHolder dataHolder = new CarbonReadDataHolder();
-        dataHolder.setReadableDoubleValues(vals);
-        return dataHolder;
-    }
-
-    @Override
-    public UnCompressValue uncompress(DataType dataType) {
-        return null;
-    }
+  @Override public UnCompressValue uncompress(DataType dataType) {
+    return null;
+  }
 
 }

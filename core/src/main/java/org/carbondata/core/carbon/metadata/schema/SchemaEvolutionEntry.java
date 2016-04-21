@@ -28,66 +28,66 @@ import org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
  */
 public class SchemaEvolutionEntry implements Serializable {
 
-    /**
-     * serilization version
-     */
-    private static final long serialVersionUID = -7619477063676325276L;
+  /**
+   * serilization version
+   */
+  private static final long serialVersionUID = -7619477063676325276L;
 
-    /**
-     * time stamp of restructuring
-     */
-    private long timeStamp;
+  /**
+   * time stamp of restructuring
+   */
+  private long timeStamp;
 
-    /**
-     * new column added in restructuring
-     */
-    private List<ColumnSchema> added;
+  /**
+   * new column added in restructuring
+   */
+  private List<ColumnSchema> added;
 
-    /**
-     * column removed in restructuring
-     */
-    private List<ColumnSchema> removed;
+  /**
+   * column removed in restructuring
+   */
+  private List<ColumnSchema> removed;
 
-    /**
-     * @return the timeStamp
-     */
-    public long getTimeStamp() {
-        return timeStamp;
-    }
+  /**
+   * @return the timeStamp
+   */
+  public long getTimeStamp() {
+    return timeStamp;
+  }
 
-    /**
-     * @param timeStamp the timeStamp to set
-     */
-    public void setTimeStamp(long timeStamp) {
-        this.timeStamp = timeStamp;
-    }
+  /**
+   * @param timeStamp the timeStamp to set
+   */
+  public void setTimeStamp(long timeStamp) {
+    this.timeStamp = timeStamp;
+  }
 
-    /**
-     * @return the added
-     */
-    public List<ColumnSchema> getAdded() {
-        return added;
-    }
+  /**
+   * @return the added
+   */
+  public List<ColumnSchema> getAdded() {
+    return added;
+  }
 
-    /**
-     * @param added the added to set
-     */
-    public void setAdded(List<ColumnSchema> added) {
-        this.added = added;
-    }
+  /**
+   * @param added the added to set
+   */
+  public void setAdded(List<ColumnSchema> added) {
+    this.added = added;
+  }
 
-    /**
-     * @return the removed
-     */
-    public List<ColumnSchema> getRemoved() {
-        return removed;
-    }
+  /**
+   * @return the removed
+   */
+  public List<ColumnSchema> getRemoved() {
+    return removed;
+  }
 
-    /**
-     * @param removed the removed to set
-     */
-    public void setRemoved(List<ColumnSchema> removed) {
-        this.removed = removed;
-    }
+  /**
+   * @param removed the removed to set
+   */
+  public void setRemoved(List<ColumnSchema> removed) {
+    this.removed = removed;
+  }
 
 }

@@ -20,12 +20,12 @@
 package org.carbondata.query.carbonfilterinterface;
 
 public interface RowIntf {
-    Object getVal(int index);
+  Object getVal(int index);
 
-    Object[] getValues();
+  Object[] getValues();
 
-    void setValues(Object[] setValues);
+  void setValues(Object[] setValues);
 
-    int size();
+  int size();
 
 }

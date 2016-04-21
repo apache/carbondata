@@ -22,8 +22,8 @@ package org.carbondata.query.holders;
 import java.io.Serializable;
 import java.util.List;
 
-import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.carbon.SqlStatement.Type;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.scanner.impl.CarbonKey;
 import org.carbondata.query.scanner.impl.CarbonValue;
@@ -33,373 +33,372 @@ import org.carbondata.query.scanner.impl.CarbonValue;
  * Version 1.0
  */
 public class CarbonResultHolder implements Serializable {
-    /**
-     *
-     */
-    private static final long serialVersionUID = -3092243950989231605L;
+  /**
+   *
+   */
+  private static final long serialVersionUID = -3092243950989231605L;
 
-    /**
-     * result
-     */
-    private Object[][] result = null;
+  /**
+   * result
+   */
+  private Object[][] result = null;
 
-    /**
-     * pointer to result array
-     */
-    private int next = -1;
+  /**
+   * pointer to result array
+   */
+  private int next = -1;
 
-    /**
-     *
-     */
-    private boolean isLastValueNull;
+  /**
+   *
+   */
+  private boolean isLastValueNull;
 
-    /**
-     * SQL data types
-     */
-    private List<Type> dataTypes;
+  /**
+   * SQL data types
+   */
+  private List<Type> dataTypes;
 
-    private List<String> colHeaders;
+  private List<String> colHeaders;
 
-    /**
-     * totalRowCount
-     */
-    private int totalRowCount;
+  /**
+   * totalRowCount
+   */
+  private int totalRowCount;
 
-    private List<CarbonKey> keys;
+  private List<CarbonKey> keys;
 
-    private List<CarbonValue> values;
+  private List<CarbonValue> values;
 
-    /**
-     * This flag will be used to limit the results  to data readers from the result holder.
-     */
-    private int rowLimit = -1;
+  /**
+   * This flag will be used to limit the results  to data readers from the result holder.
+   */
+  private int rowLimit = -1;
 
-    /**
-     * CarbonResultHolder Constructor
-     *
-     * @param dataTypes SQL data types
-     */
-    public CarbonResultHolder(List<Type> dataTypes) {
-        this.dataTypes = dataTypes;
+  /**
+   * CarbonResultHolder Constructor
+   *
+   * @param dataTypes SQL data types
+   */
+  public CarbonResultHolder(List<Type> dataTypes) {
+    this.dataTypes = dataTypes;
+  }
+
+  /**
+   * @return Returns the rowLimit.
+   */
+  public int getRowLimit() {
+    return rowLimit;
+  }
+
+  /**
+   * @param rowLimit The rowLimit to set.
+   */
+  public void setRowLimit(int rowLimit) {
+    this.rowLimit = rowLimit;
+  }
+
+  /**
+   * @param d
+   */
+  public void createData(MeasureAggregator... d) {
+    result = new Object[d.length][1];
+    for (int i = 0; i < d.length; i++) {
+      switch (dataTypes.get(i)) {
+        case LONG:
+          result[i][0] = d[i].getLongValue();
+          break;
+        case DECIMAL:
+          result[i][0] = d[i].getBigDecimalValue();
+          break;
+        default:
+          result[i][0] = d[i].getDoubleValue();
+      }
+    }
+  }
+
+  /**
+   * Checks whether
+   *
+   * @return
+   */
+  public boolean isNext() {
+    next++;
+    if (result == null || result.length == 0 || next >= result[0].length) {
+      return false;
     }
 
-    /**
-     * @return Returns the rowLimit.
-     */
-    public int getRowLimit() {
-        return rowLimit;
+    if (rowLimit > 0 && next > rowLimit) {
+      return false;
     }
 
-    /**
-     * @param rowLimit The rowLimit to set.
-     */
-    public void setRowLimit(int rowLimit) {
-        this.rowLimit = rowLimit;
+    return true;
+  }
+
+  /**
+   * Change the cursor position to -1
+   */
+  public void reset() {
+    next = -1;
+  }
+
+  /**
+   * Set the result array
+   *
+   * @param data
+   */
+  public void setObject(Object[][] data) {
+    this.result = data;
+  }
+
+  /**
+   * This method returns the number of column
+   */
+  public int getColumnCount() {
+    return result.length;
+  }
+
+  /**
+   * Get the value for the column index
+   *
+   * @param columnIndex column index
+   * @return actual value
+   */
+  public Object getObject(int columnIndex) {
+    Object object = result[columnIndex - 1][next];
+    // TODO Shall we consider SQL NULL value?
+    isLastValueNull = (object == null || CarbonCommonConstants.SQLNULLVALUE.equals(object));
+    return object;
+  }
+
+  /**
+   * Get the value for the column index
+   *
+   * @param columnIndex column index
+   * @return actual value
+   */
+  public Object[][] getResult() {
+    return result;
+  }
+
+  /**
+   * Return the integer value for column
+   *
+   * @param columnIndex column index
+   * @return integer value
+   */
+  public int getInt(int columnIndex) {
+    Object object = getObject(columnIndex);
+    if (object == null || CarbonCommonConstants.SQLNULLVALUE.equals(object)) {
+      isLastValueNull = true;
+      return 0;
     }
-
-    /**
-     * @param d
-     */
-    public void createData(MeasureAggregator... d) {
-        result = new Object[d.length][1];
-        for (int i = 0; i < d.length; i++) {
-            switch (dataTypes.get(i)) {
-            case LONG:
-                result[i][0] = d[i].getLongValue();
-                break;
-            case DECIMAL:
-                result[i][0] = d[i].getBigDecimalValue();
-                break;
-            default:
-                result[i][0] = d[i].getDoubleValue();
-            }
-        }
+    String value = (String) object;
+    int val = 0;
+    try {
+      val = Integer.parseInt(value);
+    } catch (NumberFormatException e) {
+      isLastValueNull = true;
+      return 0;
     }
+    return val;
+  }
 
-    /**
-     * Checks whether
-     *
-     * @return
-     */
-    public boolean isNext() {
-        next++;
-        if (result == null || result.length == 0 || next >= result[0].length) {
-            return false;
-        }
-
-        if (rowLimit > 0 && next > rowLimit) {
-            return false;
-        }
-
-        return true;
+  /**
+   * Return the long value for column
+   *
+   * @param column column index
+   * @return long value
+   */
+  public long getLong(int columnIndex) {
+    Object object = getObject(columnIndex);
+    if (object == null || CarbonCommonConstants.SQLNULLVALUE.equals(object)) {
+      isLastValueNull = true;
+      return 0;
     }
-
-    /**
-     * Change the cursor position to -1
-     */
-    public void reset() {
-        next = -1;
+    String value = (String) object;
+    long val = 0;
+    try {
+      val = Long.parseLong(value);
+    } catch (NumberFormatException e) {
+      isLastValueNull = true;
+      return 0;
     }
+    return val;
+  }
 
-    /**
-     * Set the result array
-     *
-     * @param data
-     */
-    public void setObject(Object[][] data) {
-        this.result = data;
+  /**
+   * Return the double value for column
+   *
+   * @param column column index
+   * @return double value
+   */
+  public double getDouble(int columnIndex) {
+    Object object = getObject(columnIndex);
+    if (object == null || CarbonCommonConstants.SQLNULLVALUE.equals(object)) {
+      isLastValueNull = true;
+      return 0;
     }
+    String value = (String) object;
+    double val = 0;
+    try {
+      val = Double.parseDouble(value);
+    } catch (NumberFormatException e) {
+      isLastValueNull = true;
+      return 0;
+    }
+    return val;
+  }
 
-    /**
-     * This method returns the number of column
-     */
-    public int getColumnCount() {
-        return result.length;
+  /**
+   * Return the double value for column
+   *
+   * @param column column index
+   * @return double value
+   */
+  public double getDoubleValue(int columnIndex) {
+    Object object = getObject(columnIndex);
+    if (object == null || CarbonCommonConstants.SQLNULLVALUE.equals(object)) {
+      isLastValueNull = true;
+      return 0;
     }
+    double val = (Double) object;
+    return val;
+  }
 
-    /**
-     * Get the value for the column index
-     *
-     * @param columnIndex column index
-     * @return actual value
-     */
-    public Object getObject(int columnIndex) {
-        Object object = result[columnIndex - 1][next];
-        // TODO Shall we consider SQL NULL value?
-        isLastValueNull = (object == null || CarbonCommonConstants.SQLNULLVALUE.equals(object));
-        return object;
+  /**
+   * Return the double value for column
+   *
+   * @param column column index
+   * @return double value
+   */
+  public int getIntValue(int columnIndex) {
+    Object object = getObject(columnIndex);
+    if (object == null || CarbonCommonConstants.SQLNULLVALUE.equals(object)) {
+      isLastValueNull = true;
+      return 0;
     }
+    int val = (Integer) object;
+    return val;
+  }
 
-    /**
-     * Get the value for the column index
-     *
-     * @param columnIndex column index
-     * @return actual value
-     */
-    public Object[][] getResult() {
-        return result;
+  /**
+   * Return the double value for column
+   *
+   * @param column column index
+   * @return double value
+   */
+  public long getLongValue(int columnIndex) {
+    Object object = getObject(columnIndex);
+    if (object == null || CarbonCommonConstants.SQLNULLVALUE.equals(object)) {
+      isLastValueNull = true;
+      return 0;
     }
+    long val = (Long) object;
+    return val;
+  }
 
-    /**
-     * Return the integer value for column
-     *
-     * @param columnIndex column index
-     * @return integer value
-     */
-    public int getInt(int columnIndex) {
-        Object object = getObject(columnIndex);
-        if (object == null || CarbonCommonConstants.SQLNULLVALUE.equals(object)) {
-            isLastValueNull = true;
-            return 0;
-        }
-        String value = (String) object;
-        int val = 0;
-        try {
-            val = Integer.parseInt(value);
-        } catch (NumberFormatException e) {
-            isLastValueNull = true;
-            return 0;
-        }
-        return val;
-    }
+  /**
+   * Check whether last value is null or not
+   *
+   * @return last value was null or not
+   */
+  public boolean wasNull() {
+    return isLastValueNull;
+  }
 
-    /**
-     * Return the long value for column
-     *
-     * @param column column index
-     * @return long value
-     */
-    public long getLong(int columnIndex) {
-        Object object = getObject(columnIndex);
-        if (object == null || CarbonCommonConstants.SQLNULLVALUE.equals(object)) {
-            isLastValueNull = true;
-            return 0;
-        }
-        String value = (String) object;
-        long val = 0;
-        try {
-            val = Long.parseLong(value);
-        } catch (NumberFormatException e) {
-            isLastValueNull = true;
-            return 0;
-        }
-        return val;
-    }
+  /**
+   * Return the sql data type for column
+   *
+   * @param column column index
+   * @return data type
+   */
+  public Type getDataType(int column) {
+    return dataTypes.get(column);
+  }
 
-    /**
-     * Return the double value for column
-     *
-     * @param column column index
-     * @return double value
-     */
-    public double getDouble(int columnIndex) {
-        Object object = getObject(columnIndex);
-        if (object == null || CarbonCommonConstants.SQLNULLVALUE.equals(object)) {
-            isLastValueNull = true;
-            return 0;
-        }
-        String value = (String) object;
-        double val = 0;
-        try {
-            val = Double.parseDouble(value);
-        } catch (NumberFormatException e) {
-            isLastValueNull = true;
-            return 0;
-        }
-        return val;
-    }
+  /**
+   * Return the Sql data type
+   *
+   * @return Sql data type
+   */
+  public List<Type> getDataTypes() {
+    return dataTypes;
+  }
 
-    /**
-     * Return the double value for column
-     *
-     * @param column column index
-     * @return double value
-     */
-    public double getDoubleValue(int columnIndex) {
-        Object object = getObject(columnIndex);
-        if (object == null || CarbonCommonConstants.SQLNULLVALUE.equals(object)) {
-            isLastValueNull = true;
-            return 0;
-        }
-        double val = (Double) object;
-        return val;
-    }
+  /**
+   * Set the sql data type
+   *
+   * @param types sql data type
+   */
+  public void setDataTypes(List<Type> types) {
+    this.dataTypes = types;
+  }
 
-    /**
-     * Return the double value for column
-     *
-     * @param column column index
-     * @return double value
-     */
-    public int getIntValue(int columnIndex) {
-        Object object = getObject(columnIndex);
-        if (object == null || CarbonCommonConstants.SQLNULLVALUE.equals(object)) {
-            isLastValueNull = true;
-            return 0;
-        }
-        int val = (Integer) object;
-        return val;
-    }
+  /**
+   * @return the colHeaders
+   */
+  public List<String> getColHeaders() {
+    return colHeaders;
+  }
 
-    /**
-     * Return the double value for column
-     *
-     * @param column column index
-     * @return double value
-     */
-    public long getLongValue(int columnIndex) {
-        Object object = getObject(columnIndex);
-        if (object == null || CarbonCommonConstants.SQLNULLVALUE.equals(object)) {
-            isLastValueNull = true;
-            return 0;
-        }
-        long val = (Long) object;
-        return val;
-    }
+  /**
+   * @param colHeaders the colHeaders to set
+   */
+  public void setColHeaders(List<String> colHeaders) {
+    this.colHeaders = colHeaders;
+  }
 
-    /**
-     * Check whether last value is null or not
-     *
-     * @return last value was null or not
-     */
-    public boolean wasNull() {
-        return isLastValueNull;
-    }
+  /**
+   * @return the totalRowCount
+   */
+  public int getTotalRowCount() {
+    return totalRowCount;
+  }
 
-    /**
-     * Return the sql data type for column
-     *
-     * @param column column index
-     * @return data type
-     */
-    public Type getDataType(int column) {
-        return dataTypes.get(column);
-    }
+  /**
+   * @param totalRowCount the totalRowCount to set
+   */
+  public void setTotalRowCount(int totalRowCount) {
+    this.totalRowCount = totalRowCount;
+  }
 
-    /**
-     * Return the Sql data type
-     *
-     * @return Sql data type
-     */
-    public List<Type> getDataTypes() {
-        return dataTypes;
-    }
+  /**
+   * @return the keys
+   */
+  public List<CarbonKey> getKeys() {
+    return keys;
+  }
 
-    /**
-     * Set the sql data type
-     *
-     * @param types sql data type
-     */
-    public void setDataTypes(List<Type> types) {
-        this.dataTypes = types;
-    }
+  /**
+   * @param keys the keys to set
+   */
+  public void setKeys(List<CarbonKey> keys) {
+    this.keys = keys;
+  }
 
-    /**
-     * @return the colHeaders
-     */
-    public List<String> getColHeaders() {
-        return colHeaders;
-    }
+  /**
+   * @return the values
+   */
+  public List<CarbonValue> getValues() {
+    return values;
+  }
 
-    /**
-     * @param colHeaders the colHeaders to set
-     */
-    public void setColHeaders(List<String> colHeaders) {
-        this.colHeaders = colHeaders;
-    }
+  /**
+   * @param values the values to set
+   */
+  public void setValues(List<CarbonValue> values) {
+    this.values = values;
+  }
 
-    /**
-     * @return the totalRowCount
-     */
-    public int getTotalRowCount() {
-        return totalRowCount;
+  @Override public String toString() {
+    StringBuffer buffer = new StringBuffer();
+    for (int i = 0; i < result.length; i++) {
+      StringBuffer b = new StringBuffer();
+      for (int j = 0; j < result[i].length; j++) {
+        b.append(result[i][j]).append(',');
+      }
+      buffer.append(b.toString()).append("\n");
     }
-
-    /**
-     * @param totalRowCount the totalRowCount to set
-     */
-    public void setTotalRowCount(int totalRowCount) {
-        this.totalRowCount = totalRowCount;
-    }
-
-    /**
-     * @return the keys
-     */
-    public List<CarbonKey> getKeys() {
-        return keys;
-    }
-
-    /**
-     * @param keys the keys to set
-     */
-    public void setKeys(List<CarbonKey> keys) {
-        this.keys = keys;
-    }
-
-    /**
-     * @return the values
-     */
-    public List<CarbonValue> getValues() {
-        return values;
-    }
-
-    /**
-     * @param values the values to set
-     */
-    public void setValues(List<CarbonValue> values) {
-        this.values = values;
-    }
-
-    @Override
-    public String toString() {
-        StringBuffer buffer = new StringBuffer();
-        for (int i = 0; i < result.length; i++) {
-            StringBuffer b = new StringBuffer();
-            for (int j = 0; j < result[i].length; j++) {
-                b.append(result[i][j]).append(',');
-            }
-            buffer.append(b.toString()).append("\n");
-        }
-        return buffer.toString();
-    }
+    return buffer.toString();
+  }
 }

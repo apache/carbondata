@@ -23,26 +23,25 @@ import org.carbondata.query.evaluators.FilterEvaluator;
 import org.carbondata.query.schema.metadata.FilterEvaluatorInfo;
 
 public abstract class AbstractLogicalFilterEvaluator implements FilterEvaluator {
-    protected FilterEvaluator leftEvalutor;
+  protected FilterEvaluator leftEvalutor;
 
-    protected FilterEvaluator rightEvalutor;
+  protected FilterEvaluator rightEvalutor;
 
-    public AbstractLogicalFilterEvaluator(FilterEvaluator leftEvalutor,
-            FilterEvaluator rightEvalutor) {
-        this.leftEvalutor = leftEvalutor;
-        this.rightEvalutor = rightEvalutor;
-    }
+  public AbstractLogicalFilterEvaluator(FilterEvaluator leftEvalutor,
+      FilterEvaluator rightEvalutor) {
+    this.leftEvalutor = leftEvalutor;
+    this.rightEvalutor = rightEvalutor;
+  }
 
-    @Override
-    public void resolve(FilterEvaluatorInfo info) {
+  @Override public void resolve(FilterEvaluatorInfo info) {
 
-    }
+  }
 
-    public FilterEvaluator getLeft() {
-        return leftEvalutor;
-    }
+  public FilterEvaluator getLeft() {
+    return leftEvalutor;
+  }
 
-    public FilterEvaluator getRight() {
-        return rightEvalutor;
-    }
+  public FilterEvaluator getRight() {
+    return rightEvalutor;
+  }
 }

@@ -24,42 +24,42 @@ import java.util.List;
  * Model to hold the sortIndex and sortIndexInverted data
  */
 public class CarbonDictionarySortInfo {
-    /**
-     * Sort index after members are sorted
-     */
-    private List<Integer> sortIndex;
-    /**
-     * inverted sort index to get the member
-     */
-    private List<Integer> sortIndexInverted;
+  /**
+   * Sort index after members are sorted
+   */
+  private List<Integer> sortIndex;
+  /**
+   * inverted sort index to get the member
+   */
+  private List<Integer> sortIndexInverted;
 
-    /**
-     * The constructor to instantiate the CarbonDictionarySortInfo object
-     * with sortIndex and sortInverted Index data
-     *
-     * @param sortIndex
-     * @param sortIndexInverted
-     */
-    public CarbonDictionarySortInfo(List<Integer> sortIndex, List<Integer> sortIndexInverted) {
-        this.sortIndex = sortIndex;
-        this.sortIndexInverted = sortIndexInverted;
-    }
+  /**
+   * The constructor to instantiate the CarbonDictionarySortInfo object
+   * with sortIndex and sortInverted Index data
+   *
+   * @param sortIndex
+   * @param sortIndexInverted
+   */
+  public CarbonDictionarySortInfo(List<Integer> sortIndex, List<Integer> sortIndexInverted) {
+    this.sortIndex = sortIndex;
+    this.sortIndexInverted = sortIndexInverted;
+  }
 
-    /**
-     * return list of sortIndex
-     *
-     * @return
-     */
-    public List<Integer> getSortIndex() {
-        return sortIndex;
-    }
+  /**
+   * return list of sortIndex
+   *
+   * @return
+   */
+  public List<Integer> getSortIndex() {
+    return sortIndex;
+  }
 
-    /**
-     * returns list of sortindexinverted
-     *
-     * @return
-     */
-    public List<Integer> getSortIndexInverted() {
-        return sortIndexInverted;
-    }
+  /**
+   * returns list of sortindexinverted
+   *
+   * @return
+   */
+  public List<Integer> getSortIndexInverted() {
+    return sortIndexInverted;
+  }
 }

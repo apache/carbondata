@@ -25,12 +25,12 @@ import org.carbondata.query.wrappers.ByteArrayWrapper;
 
 public interface DataProcessorExt extends DataProcessor {
 
-    /**
-     * This interface will help the engine to process the data based on entire byte array object.
-     *
-     * @param key
-     * @param value
-     * @throws DataProcessorException
-     */
-    void processRow(ByteArrayWrapper key, MeasureAggregator[] value) throws DataProcessorException;
+  /**
+   * This interface will help the engine to process the data based on entire byte array object.
+   *
+   * @param key
+   * @param value
+   * @throws DataProcessorException
+   */
+  void processRow(ByteArrayWrapper key, MeasureAggregator[] value) throws DataProcessorException;
 }

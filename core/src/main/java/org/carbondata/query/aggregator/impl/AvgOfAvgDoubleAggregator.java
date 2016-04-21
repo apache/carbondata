@@ -25,27 +25,26 @@ import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 
 public class AvgOfAvgDoubleAggregator extends AvgDoubleAggregator {
 
-    /**
-     * serialVersionUID
-     */
-    private static final long serialVersionUID = 6482976744603672084L;
+  /**
+   * serialVersionUID
+   */
+  private static final long serialVersionUID = 6482976744603672084L;
 
-    /**
-     * Overloaded Aggregate function will be used for Aggregate tables because
-     * aggregate table will have fact_count as a measure.
-     *
-     * @param newVal new value
-     * @param index  index
-     */
-    @Override
-    public void agg(CarbonReadDataHolder newVal, int index) {
-        byte[] value = newVal.getReadableByteArrayValueByIndex(index);
-        ByteBuffer buffer = ByteBuffer.wrap(value);
-        double newValue = buffer.getDouble();
-        double factCount = buffer.getDouble();
-        aggVal += (newValue * factCount);
-        count += factCount;
-        firstTime = false;
-    }
+  /**
+   * Overloaded Aggregate function will be used for Aggregate tables because
+   * aggregate table will have fact_count as a measure.
+   *
+   * @param newVal new value
+   * @param index  index
+   */
+  @Override public void agg(CarbonReadDataHolder newVal, int index) {
+    byte[] value = newVal.getReadableByteArrayValueByIndex(index);
+    ByteBuffer buffer = ByteBuffer.wrap(value);
+    double newValue = buffer.getDouble();
+    double factCount = buffer.getDouble();
+    aggVal += (newValue * factCount);
+    count += factCount;
+    firstTime = false;
+  }
 
 }

@@ -25,69 +25,66 @@ import org.carbondata.core.util.ByteUtil;
 
 public class Member {
 
-    /**
-     * All the attributes related to member. ordinalCOlumn, caption column,
-     * names column and properties. Order is same as how SQLMemberSource reads
-     * the columns. Current Store: ordinalCOlumn, Properties.
-     */
-    protected Object[] attributes;
+  /**
+   * All the attributes related to member. ordinalCOlumn, caption column,
+   * names column and properties. Order is same as how SQLMemberSource reads
+   * the columns. Current Store: ordinalCOlumn, Properties.
+   */
+  protected Object[] attributes;
 
-    /**
-     *
-     */
-    protected byte[] name;
+  /**
+   *
+   */
+  protected byte[] name;
 
-    public Member(final byte[] name) {
-        this.name = name;
+  public Member(final byte[] name) {
+    this.name = name;
+  }
+
+  /**
+   * @return the name
+   */
+  public byte[] getCharArray() {
+    return name;
+  }
+
+  @Override public boolean equals(Object obj) {
+    if (obj instanceof Member) {
+      if (this == obj) {
+        return true;
+      }
+      return ByteUtil.UnsafeComparer.INSTANCE.equals(name, ((Member) obj).name);
+    } else {
+      return false;
     }
+  }
 
-    /**
-     * @return the name
-     */
-    public byte[] getCharArray() {
-        return name;
-    }
+  /**
+   * @see Object#hashCode()
+   */
+  @Override public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + Arrays.hashCode(name);
+    return result;
+  }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof Member) {
-            if (this == obj) {
-                return true;
-            }
-            return ByteUtil.UnsafeComparer.INSTANCE.equals(name, ((Member) obj).name);
-        } else {
-            return false;
-        }
-    }
+  @Override public String toString() {
+    return new String(name);
+  }
 
-    /**
-     * @see Object#hashCode()
-     */
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + Arrays.hashCode(name);
-        return result;
-    }
+  /**
+   * @return
+   */
+  public Object[] getAttributes() {
+    return attributes;
+  }
 
-    @Override
-    public String toString() {
-        return new String(name);
-    }
-
-    /**
-     * @return
-     */
-    public Object[] getAttributes() {
-        return attributes;
-    }
-
-    /**
-     * @param properties
-     */
-    public void setAttributes(final Object[] properties) {
-        this.attributes = properties;
-    }
+  /**
+   * @param properties
+   */
+  public void setAttributes(final Object[] properties) {
+    this.attributes = properties;
+  }
 
 }

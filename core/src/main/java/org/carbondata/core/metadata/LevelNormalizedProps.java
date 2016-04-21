@@ -20,88 +20,88 @@
 package org.carbondata.core.metadata;
 
 public class LevelNormalizedProps {
-    /**
-     * isLevelNormalized
-     */
-    private boolean isLevelNormalized;
+  /**
+   * isLevelNormalized
+   */
+  private boolean isLevelNormalized;
 
-    /**
-     * is this level present in fact file
-     */
-    private boolean isDimInFact;
+  /**
+   * is this level present in fact file
+   */
+  private boolean isDimInFact;
 
-    /**
-     * hierarchy Name
-     */
-    private String hierName;
+  /**
+   * hierarchy Name
+   */
+  private String hierName;
 
-    /**
-     * dimension Name
-     */
-    private String dimName;
+  /**
+   * dimension Name
+   */
+  private String dimName;
 
-    /**
-     *
-     */
-    private boolean hasAll;
+  /**
+   *
+   */
+  private boolean hasAll;
 
-    /**
-     * Constructor
-     */
-    public LevelNormalizedProps() {
+  /**
+   * Constructor
+   */
+  public LevelNormalizedProps() {
 
-    }
+  }
 
-    /**
-     * @return
-     */
-    public String getDimName() {
-        return dimName;
-    }
+  /**
+   * @return
+   */
+  public String getDimName() {
+    return dimName;
+  }
 
-    /**
-     * @param dimName
-     */
-    public void setDimName(String dimName) {
-        this.dimName = dimName;
-    }
+  /**
+   * @param dimName
+   */
+  public void setDimName(String dimName) {
+    this.dimName = dimName;
+  }
 
-    /**
-     * @return
-     */
-    public String getHierName() {
-        return hierName;
-    }
+  /**
+   * @return
+   */
+  public String getHierName() {
+    return hierName;
+  }
 
-    /**
-     * @param hierName
-     */
-    public void setHierName(String hierName) {
-        this.hierName = hierName;
-    }
+  /**
+   * @param hierName
+   */
+  public void setHierName(String hierName) {
+    this.hierName = hierName;
+  }
 
-    public boolean isLevelNormalized() {
-        return isLevelNormalized;
-    }
+  public boolean isLevelNormalized() {
+    return isLevelNormalized;
+  }
 
-    public void setLevelNormalized(boolean isLevelNormalized) {
-        this.isLevelNormalized = isLevelNormalized;
-    }
+  public void setLevelNormalized(boolean isLevelNormalized) {
+    this.isLevelNormalized = isLevelNormalized;
+  }
 
-    public boolean isDimInFact() {
-        return isDimInFact;
-    }
+  public boolean isDimInFact() {
+    return isDimInFact;
+  }
 
-    public void setDimInFact(boolean isDimInFact) {
-        this.isDimInFact = isDimInFact;
-    }
+  public void setDimInFact(boolean isDimInFact) {
+    this.isDimInFact = isDimInFact;
+  }
 
-    public boolean isHasAll() {
-        return hasAll;
-    }
+  public boolean isHasAll() {
+    return hasAll;
+  }
 
-    public void setHasAll(boolean hasAll) {
-        this.hasAll = hasAll;
-    }
+  public void setHasAll(boolean hasAll) {
+    this.hasAll = hasAll;
+  }
 
 }

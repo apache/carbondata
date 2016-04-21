@@ -25,26 +25,26 @@ import org.carbondata.core.keygenerator.mdkey.MultiDimKeyVarLengthGenerator;
 import org.carbondata.core.util.CarbonUtil;
 
 public final class KeyGeneratorFactory {
-    private KeyGeneratorFactory() {
+  private KeyGeneratorFactory() {
 
+  }
+
+  public static KeyGenerator getKeyGenerator(int[] dimesion) {
+    int[] incrementedCardinality = null;
+    boolean isFullyFilled =
+        Boolean.parseBoolean(CarbonCommonConstants.IS_FULLY_FILLED_BITS_DEFAULT_VALUE);
+    if (!isFullyFilled) {
+      incrementedCardinality = CarbonUtil.getIncrementedCardinality(dimesion);
+    } else {
+      incrementedCardinality = CarbonUtil.getIncrementedCardinalityFullyFilled(dimesion);
     }
+    return new MultiDimKeyVarLengthGenerator(incrementedCardinality);
+  }
 
-    public static KeyGenerator getKeyGenerator(int[] dimesion) {
-        int[] incrementedCardinality = null;
-        boolean isFullyFilled =
-                Boolean.parseBoolean(CarbonCommonConstants.IS_FULLY_FILLED_BITS_DEFAULT_VALUE);
-        if (!isFullyFilled) {
-            incrementedCardinality = CarbonUtil.getIncrementedCardinality(dimesion);
-        } else {
-            incrementedCardinality = CarbonUtil.getIncrementedCardinalityFullyFilled(dimesion);
-        }
-        return new MultiDimKeyVarLengthGenerator(incrementedCardinality);
-    }
+  public static KeyGenerator getKeyGenerator(int[] dimCardinality, int[][] splits) {
+    int[] dimsBitLens = CarbonUtil.getDimensionBitLength(dimCardinality, splits);
 
-    public static KeyGenerator getKeyGenerator(int[] dimCardinality, int[][] splits) {
-        int[] dimsBitLens = CarbonUtil.getDimensionBitLength(dimCardinality, splits);
-
-        return new MultiDimKeyVarLengthGenerator(dimsBitLens);
-    }
+    return new MultiDimKeyVarLengthGenerator(dimsBitLens);
+  }
 }
 

@@ -20,13 +20,13 @@
 package org.carbondata.processing.dimension.load.command;
 
 public interface DimensionLoadCommand {
-    /**
-     * This method will call the execute method based on the
-     * Run-time object reference.
-     *
-     * @throws Exception
-     */
-    void execute() throws Exception;
+  /**
+   * This method will call the execute method based on the
+   * Run-time object reference.
+   *
+   * @throws Exception
+   */
+  void execute() throws Exception;
 
 }
 

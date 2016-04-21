@@ -30,65 +30,62 @@ import org.carbondata.query.schema.metadata.DataProcessorInfo;
 import org.carbondata.query.wrappers.ByteArrayWrapper;
 
 public class MemoryBasedLimitProcessor implements DataProcessorExt {
-    private int limit;
+  private int limit;
 
-    private QueryResult result;
+  private QueryResult result;
 
-    public MemoryBasedLimitProcessor() {
-        result = new QueryResult();
+  public MemoryBasedLimitProcessor() {
+    result = new QueryResult();
+  }
+
+  @Override public void initialise(DataProcessorInfo model) throws DataProcessorException {
+    limit = model.getLimit();
+  }
+
+  @Override public void finish() throws DataProcessorException {
+
+  }
+
+  @Override public CarbonIterator<QueryResult> getQueryResultIterator() {
+    return new MemoryBasedResultIterator(result);
+  }
+
+  @Override public void processRow(byte[] key, MeasureAggregator[] value)
+      throws DataProcessorException {
+
+    if (limit == -1 || result.size() < limit) {
+      ByteArrayWrapper arrayWrapper = new ByteArrayWrapper();
+      arrayWrapper.setMaskedKey(key);
+      result.add(arrayWrapper, value);
     }
 
-    @Override
-    public void initialise(DataProcessorInfo model) throws DataProcessorException {
-        limit = model.getLimit();
-    }
+  }
 
-    @Override
-    public void finish() throws DataProcessorException {
-
-    }
-
-    @Override
-    public CarbonIterator<QueryResult> getQueryResultIterator() {
-        return new MemoryBasedResultIterator(result);
-    }
-
-    @Override
-    public void processRow(byte[] key, MeasureAggregator[] value) throws DataProcessorException {
-
-        if (limit == -1 || result.size() < limit) {
-            ByteArrayWrapper arrayWrapper = new ByteArrayWrapper();
-            arrayWrapper.setMaskedKey(key);
-            result.add(arrayWrapper, value);
+  /**
+   * While processing the row the direct surrogate key values will be added directly as byte[] to
+   * ByteArrayWrapper instance, Internally list will be maintaned in each ByteArrayWrapper instance
+   * inorder to hold the direct surrogate key value for different surrogate keys.
+   */
+  public void processRow(ByteArrayWrapper key, MeasureAggregator[] value)
+      throws DataProcessorException {
+    if (limit == -1 || result.size() < limit) {
+      ByteArrayWrapper arrayWrapper = new ByteArrayWrapper();
+      arrayWrapper.setMaskedKey(key.getMaskedKey());
+      List<byte[]> listOfDirectKey = key.getNoDictionaryValKeyList();
+      if (null != listOfDirectKey) {
+        for (byte[] byteArray : listOfDirectKey) {
+          arrayWrapper.addToNoDictionaryValKeyList(byteArray);
         }
-
-    }
-
-    /**
-     * While processing the row the direct surrogate key values will be added directly as byte[] to
-     * ByteArrayWrapper instance, Internally list will be maintaned in each ByteArrayWrapper instance
-     * inorder to hold the direct surrogate key value for different surrogate keys.
-     */
-    public void processRow(ByteArrayWrapper key, MeasureAggregator[] value)
-            throws DataProcessorException {
-        if (limit == -1 || result.size() < limit) {
-            ByteArrayWrapper arrayWrapper = new ByteArrayWrapper();
-            arrayWrapper.setMaskedKey(key.getMaskedKey());
-            List<byte[]> listOfDirectKey = key.getNoDictionaryValKeyList();
-            if (null != listOfDirectKey) {
-                for (byte[] byteArray : listOfDirectKey) {
-                    arrayWrapper.addToNoDictionaryValKeyList(byteArray);
-                }
-            }
-            List<byte[]> listOfComplexTypes = key.getCompleteComplexTypeData();
-            if (null != listOfComplexTypes) {
-                for (byte[] byteArray : listOfComplexTypes) {
-                    arrayWrapper.addComplexTypeData(byteArray);
-                }
-            }
-            result.add(arrayWrapper, value);
+      }
+      List<byte[]> listOfComplexTypes = key.getCompleteComplexTypeData();
+      if (null != listOfComplexTypes) {
+        for (byte[] byteArray : listOfComplexTypes) {
+          arrayWrapper.addComplexTypeData(byteArray);
         }
-
+      }
+      result.add(arrayWrapper, value);
     }
+
+  }
 
 }

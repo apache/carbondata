@@ -30,69 +30,67 @@ import org.carbondata.query.complex.querytypes.GenericQueryType;
 import org.carbondata.query.wrappers.ByteArrayWrapper;
 
 public class NonFilterScanResult extends AbstractColumnarScanResult {
-    public NonFilterScanResult(int keySize, int[] selectedDimensionIndex) {
-        super(keySize, selectedDimensionIndex);
-    }
+  public NonFilterScanResult(int keySize, int[] selectedDimensionIndex) {
+    super(keySize, selectedDimensionIndex);
+  }
 
-    public double getDoubleValue(int measureOrdinal) {
-        return measureBlocks[measureOrdinal].getReadableDoubleValueByIndex(currentRow);
-    }
+  public double getDoubleValue(int measureOrdinal) {
+    return measureBlocks[measureOrdinal].getReadableDoubleValueByIndex(currentRow);
+  }
 
-    public BigDecimal getBigDecimalValue(int measureOrdinal) {
-        return measureBlocks[measureOrdinal].getReadableBigDecimalValueByIndex(currentRow);
-    }
+  public BigDecimal getBigDecimalValue(int measureOrdinal) {
+    return measureBlocks[measureOrdinal].getReadableBigDecimalValueByIndex(currentRow);
+  }
 
-    public long getLongValue(int measureOrdinal) {
-        return measureBlocks[measureOrdinal].getReadableLongValueByIndex(currentRow);
-    }
+  public long getLongValue(int measureOrdinal) {
+    return measureBlocks[measureOrdinal].getReadableLongValueByIndex(currentRow);
+  }
 
-    public byte[] getByteArrayValue(int measureOrdinal) {
-        return measureBlocks[measureOrdinal].getReadableByteArrayValueByIndex(currentRow);
-    }
+  public byte[] getByteArrayValue(int measureOrdinal) {
+    return measureBlocks[measureOrdinal].getReadableByteArrayValueByIndex(currentRow);
+  }
 
-    public byte[] getKeyArray(ByteArrayWrapper keyVal) {
-        ++currentRow;
-        return getKeyArray(++sourcePosition, keyVal);
-    }
+  public byte[] getKeyArray(ByteArrayWrapper keyVal) {
+    ++currentRow;
+    return getKeyArray(++sourcePosition, keyVal);
+  }
 
-    public List<byte[]> getKeyArrayWithComplexTypes(Map<Integer, GenericQueryType> complexQueryDims,
-            ByteArrayWrapper keyVal) {
-        ++currentRow;
-        return getKeyArrayWithComplexTypes(++sourcePosition, complexQueryDims, keyVal);
-    }
+  public List<byte[]> getKeyArrayWithComplexTypes(Map<Integer, GenericQueryType> complexQueryDims,
+      ByteArrayWrapper keyVal) {
+    ++currentRow;
+    return getKeyArrayWithComplexTypes(++sourcePosition, complexQueryDims, keyVal);
+  }
 
-    public int getDimDataForAgg(int dimOrdinal) {
-        return getSurrogateKey(currentRow, dimOrdinal);
-    }
+  public int getDimDataForAgg(int dimOrdinal) {
+    return getSurrogateKey(currentRow, dimOrdinal);
+  }
 
-    @Override
-    public byte[] getKeyArray() {
-        ++currentRow;
-        return getKeyArray(++sourcePosition, null);
-    }
+  @Override public byte[] getKeyArray() {
+    ++currentRow;
+    return getKeyArray(++sourcePosition, null);
+  }
 
-    @Override
-    public byte[] getNo_DictionayDimDataForAgg(int dimOrdinal) {
-        ColumnarKeyStoreMetadata columnarKeyStoreMetadata =
-                columnarKeyStoreDataHolder[dimOrdinal].getColumnarKeyStoreMetadata();
-        List<byte[]> noDictionaryValsColumnarBlock=columnarKeyStoreDataHolder[dimOrdinal].getNoDictionaryValBasedKeyBlockData();
-        if (null != noDictionaryValsColumnarBlock) {
-            if (null == columnarKeyStoreMetadata.getColumnReverseIndex()) {
-                return noDictionaryValsColumnarBlock.get(currentRow);
-            }
-            return noDictionaryValsColumnarBlock
-                    .get(columnarKeyStoreMetadata.getColumnReverseIndex()[currentRow]);
-        }
-        return null;
+  @Override public byte[] getNo_DictionayDimDataForAgg(int dimOrdinal) {
+    ColumnarKeyStoreMetadata columnarKeyStoreMetadata =
+        columnarKeyStoreDataHolder[dimOrdinal].getColumnarKeyStoreMetadata();
+    List<byte[]> noDictionaryValsColumnarBlock =
+        columnarKeyStoreDataHolder[dimOrdinal].getNoDictionaryValBasedKeyBlockData();
+    if (null != noDictionaryValsColumnarBlock) {
+      if (null == columnarKeyStoreMetadata.getColumnReverseIndex()) {
+        return noDictionaryValsColumnarBlock.get(currentRow);
+      }
+      return noDictionaryValsColumnarBlock
+          .get(columnarKeyStoreMetadata.getColumnReverseIndex()[currentRow]);
     }
+    return null;
+  }
 
-    @Override
-    public void getComplexDimDataForAgg(GenericQueryType complexType,
-            DataOutputStream dataOutputStream) throws IOException {
-        getComplexSurrogateKey(currentRow, complexType, dataOutputStream);
-    }
+  @Override public void getComplexDimDataForAgg(GenericQueryType complexType,
+      DataOutputStream dataOutputStream) throws IOException {
+    getComplexSurrogateKey(currentRow, complexType, dataOutputStream);
+  }
 
-    public int getRowIndex() {
-        return currentRow;
-    }
+  public int getRowIndex() {
+    return currentRow;
+  }
 }

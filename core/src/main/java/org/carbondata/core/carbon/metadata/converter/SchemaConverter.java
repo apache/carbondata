@@ -26,7 +26,6 @@ import org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 
 /**
  * Converter interface which will be implemented for external to carbon schema
- *
  */
 public interface SchemaConverter {
   /**
@@ -54,8 +53,8 @@ public interface SchemaConverter {
    * @param wrapperTableSchema
    * @return
    */
-  org.carbondata.format.TableSchema
-      fromWrapperToExternalTableSchema(TableSchema wrapperTableSchema);
+  org.carbondata.format.TableSchema fromWrapperToExternalTableSchema(
+      TableSchema wrapperTableSchema);
 
   /**
    * @param wrapperTableInfo

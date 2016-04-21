@@ -27,31 +27,33 @@ import org.carbondata.query.schema.metadata.ColumnarStorageScannerInfo;
 
 public class ColumnarStorageAggregatedScannerImpl extends AbstractColumnarStorageScanner {
   private int[] noDictionaryColIndexes;
-    public ColumnarStorageAggregatedScannerImpl(
-            ColumnarStorageScannerInfo columnarStorageScannerInfo) {
-        super(columnarStorageScannerInfo);
-        this.columnarAggaregator = new MapBasedResultAggregatorImpl(
-                columnarStorageScannerInfo.getColumnarAggregatorInfo(),
-                new DataAggregator(columnarStorageScannerInfo.isAutoAggregateTableRequest(),
-                        columnarStorageScannerInfo.getColumnarAggregatorInfo()));
+
+  public ColumnarStorageAggregatedScannerImpl(
+      ColumnarStorageScannerInfo columnarStorageScannerInfo) {
+    super(columnarStorageScannerInfo);
+    this.columnarAggaregator =
+        new MapBasedResultAggregatorImpl(columnarStorageScannerInfo.getColumnarAggregatorInfo(),
+            new DataAggregator(columnarStorageScannerInfo.isAutoAggregateTableRequest(),
+                columnarStorageScannerInfo.getColumnarAggregatorInfo()));
+  }
+
+  public ColumnarStorageAggregatedScannerImpl(ColumnarStorageScannerInfo columnarStorageScannerInfo,
+      int[] noDictionaryColIndexes) {
+    this(columnarStorageScannerInfo);
+    this.noDictionaryColIndexes = noDictionaryColIndexes;
+
+  }
+
+  @Override public void scanStore() {
+    while (leafIterator.hasNext()) {
+      blockDataHolder.setLeafDataBlock(leafIterator.next());
+      addToQueryStats(blockDataHolder);
+      blockDataHolder.reset();
+      AbstractColumnarScanResult unProcessData =
+          blockProcessor.getScannedData(blockDataHolder, noDictionaryColIndexes);
+      this.columnarAggaregator.aggregateData(unProcessData);
     }
-    public ColumnarStorageAggregatedScannerImpl(
-            ColumnarStorageScannerInfo columnarStorageScannerInfo,int [] noDictionaryColIndexes) {
-          this(columnarStorageScannerInfo);
-          this.noDictionaryColIndexes=noDictionaryColIndexes;
-          
-        }
-    @Override
-    public void scanStore() {
-        while (leafIterator.hasNext()) {
-            blockDataHolder.setLeafDataBlock(leafIterator.next());
-            addToQueryStats(blockDataHolder);
-            blockDataHolder.reset();
-            AbstractColumnarScanResult unProcessData =
-                    blockProcessor.getScannedData(blockDataHolder,noDictionaryColIndexes);
-            this.columnarAggaregator.aggregateData(unProcessData);
-        }
-        finish();
-    }
-    
+    finish();
+  }
+
 }

@@ -20,28 +20,28 @@
 package org.carbondata.processing.dataprocessor.queue;
 
 public interface Queue<E> {
-    /**
-     * This method insert the element in the queue, and return false if it fails
-     * to isert in the queue.
-     *
-     * @param obj
-     * @return true if insererted properly false otherwise.
-     */
-    boolean offer(E obj);
+  /**
+   * This method insert the element in the queue, and return false if it fails
+   * to isert in the queue.
+   *
+   * @param obj
+   * @return true if insererted properly false otherwise.
+   */
+  boolean offer(E obj);
 
-    /**
-     * This method get the element from the head of the queue and
-     * remove the element from the queue.
-     *
-     * @return
-     */
-    E poll();
+  /**
+   * This method get the element from the head of the queue and
+   * remove the element from the queue.
+   *
+   * @return
+   */
+  E poll();
 
-    /**
-     * This method just return the element in the head of the queue.
-     *
-     * @return
-     */
-    E peek();
+  /**
+   * This method just return the element in the head of the queue.
+   *
+   * @return
+   */
+  E peek();
 
 }

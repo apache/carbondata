@@ -19,8 +19,6 @@
 
 package org.carbondata.core.load;
 
-
-
 import java.io.Serializable;
 
 /**
@@ -28,35 +26,35 @@ import java.io.Serializable;
  */
 public class BlockDetails implements Serializable {
 
-    //block offset
-    private long blockOffset;
-    //block length
-    private long blockLength;
-    //file path which block belong to
-    private String filePath;
+  //block offset
+  private long blockOffset;
+  //block length
+  private long blockLength;
+  //file path which block belong to
+  private String filePath;
 
-    public long getBlockOffset() {
-        return blockOffset;
-    }
+  public long getBlockOffset() {
+    return blockOffset;
+  }
 
-    public void setBlockOffset(long blockOffset) {
-        this.blockOffset = blockOffset;
-    }
+  public void setBlockOffset(long blockOffset) {
+    this.blockOffset = blockOffset;
+  }
 
-    public long getBlockLength() {
-        return blockLength;
-    }
+  public long getBlockLength() {
+    return blockLength;
+  }
 
-    public void setBlockLength(long blockLength) {
-        this.blockLength = blockLength;
-    }
+  public void setBlockLength(long blockLength) {
+    this.blockLength = blockLength;
+  }
 
-    public String getFilePath() {
-        return filePath;
-    }
+  public String getFilePath() {
+    return filePath;
+  }
 
-    public void setFilePath(String filePath) {
-        this.filePath = filePath;
-    }
-    
+  public void setFilePath(String filePath) {
+    this.filePath = filePath;
+  }
+
 }

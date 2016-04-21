@@ -25,7 +25,7 @@ import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.query.columnar.aggregator.ColumnarScannedResultAggregator;
 import org.carbondata.query.columnar.datastoreblockprocessor.DataStoreBlockProcessor;
 import org.carbondata.query.columnar.scanner.impl.BtreeLeafNodeIterator;
-import org.carbondata.query.datastorage.storeInterfaces.DataStoreBlock;
+import org.carbondata.query.datastorage.storeinterface.DataStoreBlock;
 import org.carbondata.query.datastorage.tree.CSBTreeColumnarLeafNode;
 import org.carbondata.query.evaluators.BlockDataHolder;
 import org.carbondata.query.executer.impl.RestructureHolder;
@@ -37,65 +37,64 @@ import org.carbondata.query.util.CarbonEngineLogEvent;
 
 public abstract class AbstractColumnarStorageScanner implements ColumnarStorageScanner {
 
-    /**
-     * LOGGER.
-     */
-    private static final LogService LOGGER =
-            LogServiceFactory.getLogService(AbstractColumnarStorageScanner.class.getName());
+  /**
+   * LOGGER.
+   */
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(AbstractColumnarStorageScanner.class.getName());
 
-    protected CarbonIterator<DataStoreBlock> leafIterator;
+  protected CarbonIterator<DataStoreBlock> leafIterator;
 
-    protected DataStoreBlockProcessor blockProcessor;
+  protected DataStoreBlockProcessor blockProcessor;
 
-    protected ScannedResultProcessor scannedResultProcessor;
+  protected ScannedResultProcessor scannedResultProcessor;
 
-    protected RestructureHolder restructurHolder;
+  protected RestructureHolder restructurHolder;
 
-    protected ColumnarScannedResultAggregator columnarAggaregator;
+  protected ColumnarScannedResultAggregator columnarAggaregator;
 
-    protected BlockDataHolder blockDataHolder;
+  protected BlockDataHolder blockDataHolder;
 
-    private String queryId;
+  private String queryId;
 
-    public AbstractColumnarStorageScanner(ColumnarStorageScannerInfo columnarStorageScannerInfo) {
-        leafIterator = new BtreeLeafNodeIterator(columnarStorageScannerInfo.getDatablock(),
-                columnarStorageScannerInfo.getTotalNumberOfBlocksToScan());
-        this.queryId = columnarStorageScannerInfo.getQueryId();
+  public AbstractColumnarStorageScanner(ColumnarStorageScannerInfo columnarStorageScannerInfo) {
+    leafIterator = new BtreeLeafNodeIterator(columnarStorageScannerInfo.getDatablock(),
+        columnarStorageScannerInfo.getTotalNumberOfBlocksToScan());
+    this.queryId = columnarStorageScannerInfo.getQueryId();
 
-        this.blockProcessor = columnarStorageScannerInfo.getBlockProcessor();
-        this.scannedResultProcessor = columnarStorageScannerInfo.getScannedResultProcessor();
-        this.restructurHolder = columnarStorageScannerInfo.getRestructurHolder();
-        this.blockDataHolder = new BlockDataHolder(columnarStorageScannerInfo.getDimColumnCount(),
-                columnarStorageScannerInfo.getMsrColumnCount());
-        this.blockDataHolder.setFileHolder(columnarStorageScannerInfo.getFileHolder());
+    this.blockProcessor = columnarStorageScannerInfo.getBlockProcessor();
+    this.scannedResultProcessor = columnarStorageScannerInfo.getScannedResultProcessor();
+    this.restructurHolder = columnarStorageScannerInfo.getRestructurHolder();
+    this.blockDataHolder = new BlockDataHolder(columnarStorageScannerInfo.getDimColumnCount(),
+        columnarStorageScannerInfo.getMsrColumnCount());
+    this.blockDataHolder.setFileHolder(columnarStorageScannerInfo.getFileHolder());
+  }
+
+  protected void finish() {
+    try {
+      this.scannedResultProcessor.addScannedResult(columnarAggaregator.getResult(restructurHolder));
+    } catch (Exception e) {
+      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
+    }
+  }
+
+  /**
+   * Add Query statistics, so that it can be logged analyzed for aggregate table suggestion
+   *
+   * @param blockDataHolder
+   */
+  public void addToQueryStats(BlockDataHolder blockDataHolder) {
+    PartitionStatsCollector partitionStatsCollector = PartitionStatsCollector.getInstance();
+    PartitionDetail partitionDetail = partitionStatsCollector.getPartionDetail(queryId);
+    if (null == partitionDetail) {
+      return;
+    }
+    DataStoreBlock dataStoreBlock = blockDataHolder.getLeafDataBlock();
+    if (dataStoreBlock instanceof CSBTreeColumnarLeafNode) {
+      partitionDetail.addNumberOfRowsScanned(blockDataHolder.getLeafDataBlock().getnKeys());
+      partitionStatsCollector.addPartitionDetail(queryId, partitionDetail);
     }
 
-    protected void finish() {
-        try {
-            this.scannedResultProcessor
-                    .addScannedResult(columnarAggaregator.getResult(restructurHolder));
-        } catch (Exception e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
-        }
-    }
-
-    /**
-     * Add Query statistics, so that it can be logged analyzed for aggregate table suggestion
-     *
-     * @param blockDataHolder
-     */
-    public void addToQueryStats(BlockDataHolder blockDataHolder) {
-        PartitionStatsCollector partitionStatsCollector = PartitionStatsCollector.getInstance();
-        PartitionDetail partitionDetail = partitionStatsCollector.getPartionDetail(queryId);
-        if (null == partitionDetail) {
-            return;
-        }
-        DataStoreBlock dataStoreBlock = blockDataHolder.getLeafDataBlock();
-        if (dataStoreBlock instanceof CSBTreeColumnarLeafNode) {
-            partitionDetail.addNumberOfRowsScanned(blockDataHolder.getLeafDataBlock().getnKeys());
-            partitionStatsCollector.addPartitionDetail(queryId, partitionDetail);
-        }
-
-    }
+  }
 
 }

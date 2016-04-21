@@ -35,38 +35,37 @@ import org.carbondata.query.util.CarbonEngineLogEvent;
  */
 public class LevelMetaInfo {
 
-    private static final LogService LOGGER =
-            LogServiceFactory.getLogService(LevelMetaInfo.class.getName());
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(LevelMetaInfo.class.getName());
 
-    private int[] dimCardinality;
+  private int[] dimCardinality;
 
-    public LevelMetaInfo(CarbonFile file, String tableName) {
-        initialise(file, tableName);
-    }
+  public LevelMetaInfo(CarbonFile file, String tableName) {
+    initialise(file, tableName);
+  }
 
-    private void initialise(CarbonFile file, final String tableName) {
+  private void initialise(CarbonFile file, final String tableName) {
 
-        if (file.isDirectory()) {
-            CarbonFile[] files = file.listFiles(new CarbonFileFilter() {
-                public boolean accept(CarbonFile pathname) {
-                    return (!pathname.isDirectory()) && pathname.getName()
-                            .startsWith(CarbonCommonConstants.LEVEL_METADATA_FILE) && pathname
-                            .getName().endsWith(tableName + ".metadata");
-                }
-
-            });
-            try {
-                dimCardinality =
-                        CarbonUtil.getCardinalityFromLevelMetadataFile(files[0].getAbsolutePath());
-            } catch (CarbonUtilException e) {
-                LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
-            }
+    if (file.isDirectory()) {
+      CarbonFile[] files = file.listFiles(new CarbonFileFilter() {
+        public boolean accept(CarbonFile pathname) {
+          return (!pathname.isDirectory()) && pathname.getName()
+              .startsWith(CarbonCommonConstants.LEVEL_METADATA_FILE) && pathname.getName()
+              .endsWith(tableName + ".metadata");
         }
 
+      });
+      try {
+        dimCardinality = CarbonUtil.getCardinalityFromLevelMetadataFile(files[0].getAbsolutePath());
+      } catch (CarbonUtilException e) {
+        LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
+      }
     }
 
-    public int[] getDimCardinality() {
-        return dimCardinality;
-    }
+  }
+
+  public int[] getDimCardinality() {
+    return dimCardinality;
+  }
 
 }

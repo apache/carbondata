@@ -22,5 +22,5 @@ package org.carbondata.processing.merger;
 import org.carbondata.processing.merger.exeception.SliceMergerException;
 
 public interface CarbonSliceMerger {
-    boolean fullMerge(int currentRestructNumber) throws SliceMergerException;
+  boolean fullMerge(int currentRestructNumber) throws SliceMergerException;
 }

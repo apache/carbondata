@@ -31,146 +31,139 @@ import org.carbondata.query.datastorage.Member;
  * AbstractMeasureAggregator
  * Used for custom Carbon Aggregator
  */
-public abstract class AbstractMeasureAggregator
-        implements MeasureAggregator
-{
-    private static final long serialVersionUID = 1L;
+public abstract class AbstractMeasureAggregator implements MeasureAggregator {
+  private static final long serialVersionUID = 1L;
 
-    private KeyGenerator generator;
+  private KeyGenerator generator;
 
-    private String cubeUniqueName;
+  private String cubeUniqueName;
 
-    private String schemaName;
+  private String schemaName;
 
-    private String cubeName;
+  private String cubeName;
 
-    private CustomAggregatorHelper aggregatorHelper;
+  private CustomAggregatorHelper aggregatorHelper;
 
-    /**
-     * isDataLoadRequest
-     */
-    private boolean isDataLoadRequest;
+  /**
+   * isDataLoadRequest
+   */
+  private boolean isDataLoadRequest;
 
-    public AbstractMeasureAggregator() {
+  public AbstractMeasureAggregator() {
 
-    }
+  }
 
-    public AbstractMeasureAggregator(KeyGenerator generator, String cubeUniqueName) {
-        this.generator = generator;
-        this.cubeUniqueName = cubeUniqueName;
-    }
+  public AbstractMeasureAggregator(KeyGenerator generator, String cubeUniqueName) {
+    this.generator = generator;
+    this.cubeUniqueName = cubeUniqueName;
+  }
 
-    public String getDimValue(byte[] key, int offset, int length, String tableName,
-            String columnName, String dimensionName, String hierarchyName, int keyOrdinal) {
-        byte[] val = new byte[length];
-        System.arraycopy(key, offset, val, 0, length);
-        long[] ls = generator.getKeyArray(val);
-        if (!isDataLoadRequest) {
-            Member memberByID = null;
-            List<InMemoryTable> slices =
-                    InMemoryTableStore.getInstance().getActiveSlices(cubeUniqueName);
-            for (InMemoryTable slic : slices) {
-                Member member = slic.getMemberCache(
-                        tableName + '_' + columnName + "_" + dimensionName + "_" + hierarchyName)
-                        .getMemberByID((int) ls[keyOrdinal]);
-                if (member != null) {
-                    memberByID = member;
-                    break;
-                }
-            }
-            if (memberByID == null) {
-                return "-";
-            }
-            return memberByID.toString();
-        } else {
-            return aggregatorHelper
-                    .getDimValue(tableName, columnName, (int) ls[keyOrdinal], cubeName,
-                            schemaName);
+  public String getDimValue(byte[] key, int offset, int length, String tableName, String columnName,
+      String dimensionName, String hierarchyName, int keyOrdinal) {
+    byte[] val = new byte[length];
+    System.arraycopy(key, offset, val, 0, length);
+    long[] ls = generator.getKeyArray(val);
+    if (!isDataLoadRequest) {
+      Member memberByID = null;
+      List<InMemoryTable> slices = InMemoryTableStore.getInstance().getActiveSlices(cubeUniqueName);
+      for (InMemoryTable slic : slices) {
+        Member member = slic.getMemberCache(
+            tableName + '_' + columnName + "_" + dimensionName + "_" + hierarchyName)
+            .getMemberByID((int) ls[keyOrdinal]);
+        if (member != null) {
+          memberByID = member;
+          break;
         }
+      }
+      if (memberByID == null) {
+        return "-";
+      }
+      return memberByID.toString();
+    } else {
+      return aggregatorHelper
+          .getDimValue(tableName, columnName, (int) ls[keyOrdinal], cubeName, schemaName);
     }
+  }
 
-    @Override
-    public void agg(double arg0) {
+  @Override public void agg(double arg0) {
 
-    }
+  }
 
-    @Override
-    public void setNewValue(Object arg0) {
+  @Override public void setNewValue(Object arg0) {
 
-    }
+  }
 
-    @Override
-    public MeasureAggregator getCopy() {
-        return null;
-    }
+  @Override public MeasureAggregator getCopy() {
+    return null;
+  }
 
-    /**
-     * @return the schemaName
-     */
-    public String getSchemaName() {
-        return schemaName;
-    }
+  /**
+   * @return the schemaName
+   */
+  public String getSchemaName() {
+    return schemaName;
+  }
 
-    /**
-     * @param schemaName the schemaName to set
-     */
-    public void setSchemaName(String schemaName) {
-        this.schemaName = schemaName;
-    }
+  /**
+   * @param schemaName the schemaName to set
+   */
+  public void setSchemaName(String schemaName) {
+    this.schemaName = schemaName;
+  }
 
-    /**
-     * @return the cubeName
-     */
-    public String getCubeName() {
-        return cubeName;
-    }
+  /**
+   * @return the cubeName
+   */
+  public String getCubeName() {
+    return cubeName;
+  }
 
-    /**
-     * @param cubeName the cubeName to set
-     */
-    public void setCubeName(String cubeName) {
-        this.cubeName = cubeName;
-    }
+  /**
+   * @param cubeName the cubeName to set
+   */
+  public void setCubeName(String cubeName) {
+    this.cubeName = cubeName;
+  }
 
-    /**
-     * @return the generator
-     */
-    public KeyGenerator getGenerator() {
-        return generator;
-    }
+  /**
+   * @return the generator
+   */
+  public KeyGenerator getGenerator() {
+    return generator;
+  }
 
-    /**
-     * @param generator the generator to set
-     */
-    public void setGenerator(KeyGenerator generator) {
-        this.generator = generator;
-    }
+  /**
+   * @param generator the generator to set
+   */
+  public void setGenerator(KeyGenerator generator) {
+    this.generator = generator;
+  }
 
-    /**
-     * @return the isDataLoadRequest
-     */
-    public boolean isDataLoadRequest() {
-        return isDataLoadRequest;
-    }
+  /**
+   * @return the isDataLoadRequest
+   */
+  public boolean isDataLoadRequest() {
+    return isDataLoadRequest;
+  }
 
-    /**
-     * @param isDataLoadRequest the isDataLoadRequest to set
-     */
-    public void setDataLoadRequest(boolean isDataLoadRequest) {
-        this.isDataLoadRequest = isDataLoadRequest;
-    }
+  /**
+   * @param isDataLoadRequest the isDataLoadRequest to set
+   */
+  public void setDataLoadRequest(boolean isDataLoadRequest) {
+    this.isDataLoadRequest = isDataLoadRequest;
+  }
 
-    /**
-     * @return the aggregatorHelper
-     */
-    public CustomAggregatorHelper getAggregatorHelper() {
-        return aggregatorHelper;
-    }
+  /**
+   * @return the aggregatorHelper
+   */
+  public CustomAggregatorHelper getAggregatorHelper() {
+    return aggregatorHelper;
+  }
 
-    /**
-     * @param aggregatorHelper the aggregatorHelper to set
-     */
-    public void setAggregatorHelper(CustomAggregatorHelper aggregatorHelper) {
-        this.aggregatorHelper = aggregatorHelper;
-    }
+  /**
+   * @param aggregatorHelper the aggregatorHelper to set
+   */
+  public void setAggregatorHelper(CustomAggregatorHelper aggregatorHelper) {
+    this.aggregatorHelper = aggregatorHelper;
+  }
 }

@@ -24,42 +24,42 @@ package org.carbondata.processing.dataprocessor.record.holder;
  */
 public class DataProcessorRecordHolder {
 
-    private Object[][] processedRecords;
+  private Object[][] processedRecords;
 
-    private Object[][] originalRecords;
+  private Object[][] originalRecords;
 
-    private int seqNumber;
+  private int seqNumber;
 
-    private int counter;
+  private int counter;
 
-    private int processCounter;
+  private int processCounter;
 
-    public DataProcessorRecordHolder(int size, int seqNumber) {
-        this.originalRecords = new Object[size][];
-        this.processedRecords = new Object[size][];
-        this.seqNumber = seqNumber;
-    }
+  public DataProcessorRecordHolder(int size, int seqNumber) {
+    this.originalRecords = new Object[size][];
+    this.processedRecords = new Object[size][];
+    this.seqNumber = seqNumber;
+  }
 
-    public Object[][] getOriginalRow() {
-        return originalRecords;
-    }
+  public Object[][] getOriginalRow() {
+    return originalRecords;
+  }
 
-    public void addRow(Object[] oriRow) {
-        originalRecords[counter++] = oriRow;
-    }
+  public void addRow(Object[] oriRow) {
+    originalRecords[counter++] = oriRow;
+  }
 
-    public void addProcessedRows(Object[] processedRows) {
-        processedRecords[processCounter++] = processedRows;
-    }
+  public void addProcessedRows(Object[] processedRows) {
+    processedRecords[processCounter++] = processedRows;
+  }
 
-    /**
-     * Returns the sequence number.
-     */
-    public int getSeqNumber() {
-        return seqNumber;
-    }
+  /**
+   * Returns the sequence number.
+   */
+  public int getSeqNumber() {
+    return seqNumber;
+  }
 
-    public Object[][] getProcessedRow() {
-        return processedRecords;
-    }
+  public Object[][] getProcessedRow() {
+    return processedRecords;
+  }
 }

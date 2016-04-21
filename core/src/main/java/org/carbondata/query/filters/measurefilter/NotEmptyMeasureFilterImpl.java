@@ -22,20 +22,18 @@ package org.carbondata.query.filters.measurefilter;
 import org.carbondata.query.aggregator.MeasureAggregator;
 
 public class NotEmptyMeasureFilterImpl implements MeasureFilter {
-    private int index;
+  private int index;
 
-    public NotEmptyMeasureFilterImpl(int index) {
-        this.index = index;
-    }
+  public NotEmptyMeasureFilterImpl(int index) {
+    this.index = index;
+  }
 
-    @Override
-    public boolean filter(MeasureAggregator[] msrValue) {
-        return !msrValue[index].isFirstTime();
-    }
+  @Override public boolean filter(MeasureAggregator[] msrValue) {
+    return !msrValue[index].isFirstTime();
+  }
 
-    @Override
-    public boolean filter(double[] msrValue, int msrStartIndex) {
-        return false;
-    }
+  @Override public boolean filter(double[] msrValue, int msrStartIndex) {
+    return false;
+  }
 
 }

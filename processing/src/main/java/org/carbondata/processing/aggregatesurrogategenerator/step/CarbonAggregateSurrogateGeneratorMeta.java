@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.carbondata.core.constants.CarbonCommonConstants;
+
 import org.pentaho.di.core.CheckResult;
 import org.pentaho.di.core.CheckResultInterface;
 import org.pentaho.di.core.Counter;
@@ -36,633 +37,628 @@ import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
-import org.pentaho.di.trans.step.*;
+import org.pentaho.di.trans.step.BaseStepMeta;
+import org.pentaho.di.trans.step.StepDataInterface;
+import org.pentaho.di.trans.step.StepInterface;
+import org.pentaho.di.trans.step.StepMeta;
+import org.pentaho.di.trans.step.StepMetaInterface;
 import org.w3c.dom.Node;
 
 public class CarbonAggregateSurrogateGeneratorMeta extends BaseStepMeta
-        implements StepMetaInterface {
-    /**
-     * for i18n purposes
-     */
-    private static final Class<?> PKG = CarbonAggregateSurrogateGeneratorMeta.class; // for
-    // i18n
+    implements StepMetaInterface {
+  /**
+   * for i18n purposes
+   */
+  private static final Class<?> PKG = CarbonAggregateSurrogateGeneratorMeta.class; // for
+  // i18n
 
-    /**
-     * aggDimeLensString
-     */
-    private String aggDimeLensString;
+  /**
+   * aggDimeLensString
+   */
+  private String aggDimeLensString;
 
-    /**
-     * aggregatorString
-     */
-    private String aggregatorString;
+  /**
+   * aggregatorString
+   */
+  private String aggregatorString;
 
-    /**
-     * aggregators
-     */
-    private String[] aggregators;
+  /**
+   * aggregators
+   */
+  private String[] aggregators;
 
-    /**
-     * aggDimeLens
-     */
-    private int[] aggDimeLens;
+  /**
+   * aggDimeLens
+   */
+  private int[] aggDimeLens;
 
-    /**
-     * measureCountString
-     */
-    private String measureCountString;
+  /**
+   * measureCountString
+   */
+  private String measureCountString;
 
-    /**
-     * aggregateMeasuresString
-     */
-    private String aggregateMeasuresString;
+  /**
+   * aggregateMeasuresString
+   */
+  private String aggregateMeasuresString;
 
-    /**
-     * aggregateMeasures
-     */
-    private String[] aggregateMeasures;
+  /**
+   * aggregateMeasures
+   */
+  private String[] aggregateMeasures;
 
-    /**
-     * aggregateMeasuresColumnNameString
-     */
-    private String aggregateMeasuresColumnNameString;
+  /**
+   * aggregateMeasuresColumnNameString
+   */
+  private String aggregateMeasuresColumnNameString;
 
-    /**
-     * aggregateMeasuresColumnName
-     */
-    private String[] aggregateMeasuresColumnName;
+  /**
+   * aggregateMeasuresColumnName
+   */
+  private String[] aggregateMeasuresColumnName;
 
-    /**
-     * aggregateLevelsString
-     */
-    private String aggregateLevelsString;
+  /**
+   * aggregateLevelsString
+   */
+  private String aggregateLevelsString;
 
-    /**
-     * aggregateLevels
-     */
-    private String[] aggregateLevels;
+  /**
+   * aggregateLevels
+   */
+  private String[] aggregateLevels;
 
-    /**
-     * factMeasureString
-     */
-    private String factMeasureString;
+  /**
+   * factMeasureString
+   */
+  private String factMeasureString;
 
-    /**
-     * factMeasure
-     */
-    private String[] factMeasure;
+  /**
+   * factMeasure
+   */
+  private String[] factMeasure;
 
-    /**
-     * factLevelsString
-     */
-    private String factLevelsString;
+  /**
+   * factLevelsString
+   */
+  private String factLevelsString;
 
-    /**
-     * factLevels
-     */
-    private String[] factLevels;
+  /**
+   * factLevels
+   */
+  private String[] factLevels;
 
-    /**
-     * schemaName
-     */
-    private String schemaName;
+  /**
+   * schemaName
+   */
+  private String schemaName;
 
-    /**
-     * cubeName
-     */
-    private String cubeName;
+  /**
+   * cubeName
+   */
+  private String cubeName;
 
-    /**
-     * tableName
-     */
-    private String tableName;
+  /**
+   * tableName
+   */
+  private String tableName;
 
-    /**
-     * factTableName
-     */
-    private String factTableName;
+  /**
+   * factTableName
+   */
+  private String factTableName;
 
-    /**
-     * heirAndKeySize
-     */
-    private String heirAndKeySize;
+  /**
+   * heirAndKeySize
+   */
+  private String heirAndKeySize;
 
-    /**
-     * heirAndDimLens
-     */
-    private String heirAndDimLens;
+  /**
+   * heirAndDimLens
+   */
+  private String heirAndDimLens;
 
-    /**
-     * isMdkeyInOutRowRequired
-     */
-    private String mdkeyInOutRowRequired;
+  /**
+   * isMdkeyInOutRowRequired
+   */
+  private String mdkeyInOutRowRequired;
 
-    /**
-     * isManualAutoAggRequest
-     */
-    private String manualAutoAggRequest;
+  /**
+   * isManualAutoAggRequest
+   */
+  private String manualAutoAggRequest;
 
-    /**
-     * factDimLensString
-     */
-    private String factDimLensString;
+  /**
+   * factDimLensString
+   */
+  private String factDimLensString;
 
-    /**
-     * factDimLens
-     */
-    private int[] factDimLens;
+  /**
+   * factDimLens
+   */
+  private int[] factDimLens;
 
-    private String factStorePath;
+  private String factStorePath;
 
-    /**
-     * set the default value for all the properties
-     */
-    @Override
-    public void setDefault() {
-        tableName = "";
-        schemaName = "";
-        cubeName = "";
-        factLevelsString = "";
-        factMeasureString = "";
-        aggregateLevelsString = "";
-        aggregateMeasuresString = "";
-        measureCountString = "";
-        factTableName = "";
-        heirAndKeySize = "";
-        heirAndDimLens = "";
-        aggregatorString = "";
-        aggDimeLensString = "";
-        aggregateMeasuresColumnNameString = "";
-        mdkeyInOutRowRequired = "";
-        manualAutoAggRequest = "";
-        factDimLensString = "";
-        factStorePath = "";
+  /**
+   * set the default value for all the properties
+   */
+  @Override public void setDefault() {
+    tableName = "";
+    schemaName = "";
+    cubeName = "";
+    factLevelsString = "";
+    factMeasureString = "";
+    aggregateLevelsString = "";
+    aggregateMeasuresString = "";
+    measureCountString = "";
+    factTableName = "";
+    heirAndKeySize = "";
+    heirAndDimLens = "";
+    aggregatorString = "";
+    aggDimeLensString = "";
+    aggregateMeasuresColumnNameString = "";
+    mdkeyInOutRowRequired = "";
+    manualAutoAggRequest = "";
+    factDimLensString = "";
+    factStorePath = "";
+  }
+
+  /**
+   * below method will be used initialise the meta
+   */
+  public void initialize() {
+    factMeasure = factMeasureString.split(CarbonCommonConstants.AMPERSAND_SPC_CHARACTER);
+    factLevels = factLevelsString.split(CarbonCommonConstants.HASH_SPC_CHARACTER);
+    aggregateLevels = aggregateLevelsString.split(CarbonCommonConstants.HASH_SPC_CHARACTER);
+    aggregateMeasures = aggregateMeasuresString.split(CarbonCommonConstants.HASH_SPC_CHARACTER);
+    aggregateMeasuresColumnName =
+        aggregateMeasuresColumnNameString.split(CarbonCommonConstants.HASH_SPC_CHARACTER);
+    String[] aggDimeLensStringArray =
+        aggDimeLensString.split(CarbonCommonConstants.COMA_SPC_CHARACTER);
+    aggDimeLens = new int[aggDimeLensStringArray.length];
+    for (int i = 0; i < aggDimeLens.length; i++) {
+      aggDimeLens[i] = Integer.parseInt(aggDimeLensStringArray[i]);
+    }
+    aggregators = aggregatorString.split(CarbonCommonConstants.HASH_SPC_CHARACTER);
+    String[] dimLensStringArray = factDimLensString.split(CarbonCommonConstants.COMA_SPC_CHARACTER);
+    factDimLens = new int[dimLensStringArray.length];
+    for (int i = 0; i < dimLensStringArray.length; i++) {
+      factDimLens[i] = Integer.parseInt(dimLensStringArray[i]);
+    }
+  }
+
+  /**
+   * Checks the settings of this step and puts the findings in a remarks List.
+   *
+   * @param remarks  The list to put the remarks in @see
+   *                 org.pentaho.di.core.CheckResult
+   * @param stepMeta The stepMeta to help checking
+   * @param prev     The fields coming from the previous step
+   * @param input    The input step names
+   * @param output   The output step names
+   * @param info     The fields that are used as information by the step
+   */
+  @Override public void check(List<CheckResultInterface> remarks, TransMeta transMeta,
+      StepMeta stepMeta, RowMetaInterface prev, String[] input, String[] output,
+      RowMetaInterface info) {
+    CheckResult chkResRef = null;
+    //See if we have input streams leading to this step!
+    if (input.length > 0) {
+      chkResRef =
+          new CheckResult(CheckResult.TYPE_RESULT_OK, "Step is receiving info from other steps.",
+              stepMeta);
+      remarks.add(chkResRef);
+    } else {
+      chkResRef =
+          new CheckResult(CheckResult.TYPE_RESULT_ERROR, "No input received from other steps!",
+              stepMeta);
+      remarks.add(chkResRef);
+    }
+  }
+
+  /**
+   * Get the executing step, needed by Trans to launch a step.
+   *
+   * @param stepMeta          The step info
+   * @param stepDataInterface the step data interface linked to this step. Here the step can
+   *                          store temporary data, database connections, etc.
+   * @param copyNr            The copy nr to get
+   * @param transMeta         The transformation info
+   * @param trans             The launching transformation
+   */
+  @Override public StepInterface getStep(StepMeta stepMeta, StepDataInterface stepDataInterface,
+      int copyNr, TransMeta transMeta, Trans trans) {
+    return new CarbonAggregateSurrogateGeneratorStep(stepMeta, stepDataInterface, copyNr, transMeta,
+        trans);
+  }
+
+  /**
+   * Get a new instance of the appropriate data class. This data class
+   * implements the StepDataInterface. It basically contains the persisting
+   * data that needs to live on, even if a worker thread is terminated.
+   *
+   * @return The appropriate StepDataInterface class.
+   */
+  @Override public StepDataInterface getStepData() {
+    return new CarbonAggregateSurrogateGeneratorData();
+  }
+
+  /**
+   * Get the XML that represents the values in this step
+   *
+   * @return the XML that represents the metadata in this step
+   * @throws KettleException in case there is a conversion or XML encoding error
+   */
+  public String getXML() {
+    StringBuffer stringBuffer1 = new StringBuffer(150);
+    stringBuffer1.append("    ").append(XMLHandler.addTagValue("TableName", tableName));
+    stringBuffer1.append("    ").append(XMLHandler.addTagValue("cubeName", cubeName));
+    stringBuffer1.append("    ").append(XMLHandler.addTagValue("schemaName", schemaName));
+    stringBuffer1.append("    ")
+        .append(XMLHandler.addTagValue("factLevelsString", factLevelsString));
+    stringBuffer1.append("    ")
+        .append(XMLHandler.addTagValue("factMeasureString", factMeasureString));
+    stringBuffer1.append("    ")
+        .append(XMLHandler.addTagValue("aggregateLevelsString", aggregateLevelsString));
+    stringBuffer1.append("    ")
+        .append(XMLHandler.addTagValue("aggregateMeasuresString", aggregateMeasuresString));
+    stringBuffer1.append("    ")
+        .append(XMLHandler.addTagValue("measureCountString", measureCountString));
+    stringBuffer1.append("    ").append(XMLHandler.addTagValue("factTableName", factTableName));
+    stringBuffer1.append("    ").append(XMLHandler.addTagValue("heirAndKeySize", heirAndKeySize));
+    stringBuffer1.append("    ").append(XMLHandler.addTagValue("heirAndDimLens", heirAndDimLens));
+    stringBuffer1.append("    ")
+        .append(XMLHandler.addTagValue("aggDimeLensString", aggDimeLensString));
+    stringBuffer1.append("    ")
+        .append(XMLHandler.addTagValue("aggregatorString", aggregatorString));
+    stringBuffer1.append("    ").append(XMLHandler
+        .addTagValue("aggregateMeasuresColumnNameString", aggregateMeasuresColumnNameString));
+    stringBuffer1.append("    ")
+        .append(XMLHandler.addTagValue("isMdkeyInOutRowRequired", mdkeyInOutRowRequired));
+    stringBuffer1.append("    ")
+        .append(XMLHandler.addTagValue("isManualAutoAggRequest", manualAutoAggRequest));
+    stringBuffer1.append("    ")
+        .append(XMLHandler.addTagValue("factDimLensString", factDimLensString));
+
+    stringBuffer1.append("    ").append(XMLHandler.addTagValue("factStorePath", factStorePath));
+
+    return stringBuffer1.toString();
+  }
+
+  /**
+   * Load the values for this step from an XML Node
+   *
+   * @param stepnode  the Node to get the info from
+   * @param databases The available list of databases to reference to
+   * @param counters  Counters to reference.
+   * @throws KettleXMLException When an unexpected XML error occurred. (malformed etc.)
+   */
+  @Override public void loadXML(Node stepnode, List<DatabaseMeta> databases,
+      Map<String, Counter> counters) throws KettleXMLException {
+    try {
+      tableName = XMLHandler.getTagValue(stepnode, "TableName");
+      schemaName = XMLHandler.getTagValue(stepnode, "schemaName");
+      cubeName = XMLHandler.getTagValue(stepnode, "cubeName");
+      factLevelsString = XMLHandler.getTagValue(stepnode, "factLevelsString");
+      factMeasureString = XMLHandler.getTagValue(stepnode, "factMeasureString");
+      aggregateLevelsString = XMLHandler.getTagValue(stepnode, "aggregateLevelsString");
+      aggregateMeasuresString = XMLHandler.getTagValue(stepnode, "aggregateMeasuresString");
+      measureCountString = XMLHandler.getTagValue(stepnode, "measureCountString");
+      factTableName = XMLHandler.getTagValue(stepnode, "factTableName");
+      heirAndKeySize = XMLHandler.getTagValue(stepnode, "heirAndKeySize");
+      heirAndDimLens = XMLHandler.getTagValue(stepnode, "heirAndDimLens");
+      aggDimeLensString = XMLHandler.getTagValue(stepnode, "aggDimeLensString");
+      aggregatorString = XMLHandler.getTagValue(stepnode, "aggregatorString");
+      aggregateMeasuresColumnNameString =
+          XMLHandler.getTagValue(stepnode, "aggregateMeasuresColumnNameString");
+      mdkeyInOutRowRequired = XMLHandler.getTagValue(stepnode, "isMdkeyInOutRowRequired");
+      manualAutoAggRequest = XMLHandler.getTagValue(stepnode, "isManualAutoAggRequest");
+      factDimLensString = XMLHandler.getTagValue(stepnode, "factDimLensString");
+      factStorePath = XMLHandler.getTagValue(stepnode, "factStorePath");
+    } catch (Exception e) {
+      throw new KettleXMLException("Unable to read step info from XML node", e);
     }
 
-    /**
-     * below method will be used initialise the meta
-     */
-    public void initialize() {
-        factMeasure = factMeasureString.split(CarbonCommonConstants.AMPERSAND_SPC_CHARACTER);
-        factLevels = factLevelsString.split(CarbonCommonConstants.HASH_SPC_CHARACTER);
-        aggregateLevels = aggregateLevelsString.split(CarbonCommonConstants.HASH_SPC_CHARACTER);
-        aggregateMeasures = aggregateMeasuresString.split(CarbonCommonConstants.HASH_SPC_CHARACTER);
-        aggregateMeasuresColumnName =
-                aggregateMeasuresColumnNameString.split(CarbonCommonConstants.HASH_SPC_CHARACTER);
-        String[] aggDimeLensStringArray =
-                aggDimeLensString.split(CarbonCommonConstants.COMA_SPC_CHARACTER);
-        aggDimeLens = new int[aggDimeLensStringArray.length];
-        for (int i = 0; i < aggDimeLens.length; i++) {
-            aggDimeLens[i] = Integer.parseInt(aggDimeLensStringArray[i]);
-        }
-        aggregators = aggregatorString.split(CarbonCommonConstants.HASH_SPC_CHARACTER);
-        String[] dimLensStringArray =
-                factDimLensString.split(CarbonCommonConstants.COMA_SPC_CHARACTER);
-        factDimLens = new int[dimLensStringArray.length];
-        for (int i = 0; i < dimLensStringArray.length; i++) {
-            factDimLens[i] = Integer.parseInt(dimLensStringArray[i]);
-        }
+  }
+
+  /**
+   * Read the steps information from a Kettle repository
+   *
+   * @param rep       The repository to read from
+   * @param idStep    The step ID
+   * @param databases The databases to reference
+   * @param counters  The counters to reference
+   * @throws KettleException When an unexpected error occurred (database, network, etc)
+   */
+  @Override public void readRep(Repository rep, ObjectId idStep, List<DatabaseMeta> databases,
+      Map<String, Counter> counters) throws KettleException {
+    try {
+      tableName = rep.getStepAttributeString(idStep, "TableName");
+      schemaName = rep.getStepAttributeString(idStep, "schemaName");
+      cubeName = rep.getStepAttributeString(idStep, "cubeName");
+      factLevelsString = rep.getStepAttributeString(idStep, "factLevelsString");
+      factMeasureString = rep.getStepAttributeString(idStep, "factMeasureString");
+      aggregateLevelsString = rep.getStepAttributeString(idStep, "aggregateLevelsString");
+      measureCountString = rep.getStepAttributeString(idStep, "measureCountString");
+      aggregateMeasuresString = rep.getStepAttributeString(idStep, "aggregateMeasuresString");
+      factTableName = rep.getStepAttributeString(idStep, "factTableName");
+      heirAndDimLens = rep.getStepAttributeString(idStep, "heirAndDimLens");
+      heirAndKeySize = rep.getStepAttributeString(idStep, "heirAndKeySize");
+      aggDimeLensString = rep.getStepAttributeString(idStep, "aggDimeLensString");
+      aggregatorString = rep.getStepAttributeString(idStep, "aggregatorString");
+      aggregateMeasuresColumnNameString =
+          rep.getStepAttributeString(idStep, "aggregateMeasuresColumnNameString");
+      mdkeyInOutRowRequired = rep.getStepAttributeString(idStep, "isMdkeyInOutRowRequired");
+      manualAutoAggRequest = rep.getStepAttributeString(idStep, "isManualAutoAggRequest");
+      factDimLensString = rep.getStepAttributeString(idStep, "factDimLensString");
+      factStorePath = rep.getStepAttributeString(idStep, "factStorePath");
+    } catch (Exception e) {
+      throw new KettleException(BaseMessages
+          .getString(PKG, "CarbonMDKeyStepMeta.Exception.UnexpectedErrorInReadingStepInfo"), e);
     }
 
-    /**
-     * Checks the settings of this step and puts the findings in a remarks List.
-     *
-     * @param remarks  The list to put the remarks in @see
-     *                 org.pentaho.di.core.CheckResult
-     * @param stepMeta The stepMeta to help checking
-     * @param prev     The fields coming from the previous step
-     * @param input    The input step names
-     * @param output   The output step names
-     * @param info     The fields that are used as information by the step
-     */
-    @Override
-    public void check(List<CheckResultInterface> remarks, TransMeta transMeta, StepMeta stepMeta,
-            RowMetaInterface prev, String[] input, String[] output, RowMetaInterface info) {
-        CheckResult chkResRef = null;
-        //See if we have input streams leading to this step!
-        if (input.length > 0) {
-            chkResRef = new CheckResult(CheckResult.TYPE_RESULT_OK,
-                    "Step is receiving info from other steps.", stepMeta);
-            remarks.add(chkResRef);
-        } else {
-            chkResRef = new CheckResult(CheckResult.TYPE_RESULT_ERROR,
-                    "No input received from other steps!", stepMeta);
-            remarks.add(chkResRef);
-        }
+  }
+
+  /**
+   * Save the steps data into a Kettle repository
+   *
+   * @param rep              The Kettle repository to save to
+   * @param idTransformation The transformation ID
+   * @param idStep           The step ID
+   * @throws KettleException When an unexpected error occurred (database, network, etc)
+   */
+  @Override public void saveRep(Repository rep, ObjectId idTransformation, ObjectId idStep)
+      throws KettleException {
+    try {
+      rep.saveStepAttribute(idTransformation, idStep, "TableName", tableName); //$NON-NLS-1$
+      rep.saveStepAttribute(idTransformation, idStep, "schemaName", schemaName);
+      rep.saveStepAttribute(idTransformation, idStep, "cubeName", cubeName);
+      rep.saveStepAttribute(idTransformation, idStep, "factLevelsString",
+          factLevelsString); //$NON-NLS-1$
+      rep.saveStepAttribute(idTransformation, idStep, "factMeasureString", factMeasureString);
+      rep.saveStepAttribute(idTransformation, idStep, "aggregateLevelsString",
+          aggregateLevelsString);
+      rep.saveStepAttribute(idTransformation, idStep, "measureCountString", measureCountString);
+      rep.saveStepAttribute(idTransformation, idStep, "aggregateMeasuresString",
+          aggregateMeasuresString);
+      rep.saveStepAttribute(idTransformation, idStep, "factTableName", factTableName);
+      rep.saveStepAttribute(idTransformation, idStep, "heirAndDimLens", heirAndDimLens);
+      rep.saveStepAttribute(idTransformation, idStep, "heirAndKeySize", heirAndKeySize);
+      rep.saveStepAttribute(idTransformation, idStep, "aggDimeLensString", aggDimeLensString);
+      rep.saveStepAttribute(idTransformation, idStep, "aggregatorString", aggregatorString);
+      rep.saveStepAttribute(idTransformation, idStep, "aggregateMeasuresColumnNameString",
+          aggregateMeasuresColumnNameString);
+      rep.saveStepAttribute(idTransformation, idStep, "isMdkeyInOutRowRequired",
+          mdkeyInOutRowRequired);
+      rep.saveStepAttribute(idTransformation, idStep, "isManualAutoAggRequest",
+          manualAutoAggRequest);
+      rep.saveStepAttribute(idTransformation, idStep, "factDimLensString", factDimLensString);
+      rep.saveStepAttribute(idTransformation, idStep, "factStorePath", factStorePath);
+    } catch (Exception e) {
+      throw new KettleException(
+          BaseMessages.getString(PKG, "TemplateStep.Exception.UnableToSaveStepInfoToRepository")
+              + idStep, e);
     }
+  }
 
-    /**
-     * Get the executing step, needed by Trans to launch a step.
-     *
-     * @param stepMeta          The step info
-     * @param stepDataInterface the step data interface linked to this step. Here the step can
-     *                          store temporary data, database connections, etc.
-     * @param copyNr            The copy nr to get
-     * @param transMeta         The transformation info
-     * @param trans             The launching transformation
-     */
-    @Override
-    public StepInterface getStep(StepMeta stepMeta, StepDataInterface stepDataInterface, int copyNr,
-            TransMeta transMeta, Trans trans) {
-        return new CarbonAggregateSurrogateGeneratorStep(stepMeta, stepDataInterface, copyNr,
-                transMeta, trans);
-    }
+  /**
+   * @return the measureCount
+   */
+  public int getMeasureCount() {
+    return Integer.parseInt(measureCountString);
+  }
 
-    /**
-     * Get a new instance of the appropriate data class. This data class
-     * implements the StepDataInterface. It basically contains the persisting
-     * data that needs to live on, even if a worker thread is terminated.
-     *
-     * @return The appropriate StepDataInterface class.
-     */
-    @Override
-    public StepDataInterface getStepData() {
-        return new CarbonAggregateSurrogateGeneratorData();
-    }
+  /**
+   * @param measureCount the measureCount to set
+   */
+  public void setMeasureCount(int measureCount) {
+    this.measureCountString = measureCount + "";
+  }
 
-    /**
-     * Get the XML that represents the values in this step
-     *
-     * @return the XML that represents the metadata in this step
-     * @throws KettleException in case there is a conversion or XML encoding error
-     */
-    public String getXML() {
-        StringBuffer stringBuffer1 = new StringBuffer(150);
-        stringBuffer1.append("    ").append(XMLHandler.addTagValue("TableName", tableName));
-        stringBuffer1.append("    ").append(XMLHandler.addTagValue("cubeName", cubeName));
-        stringBuffer1.append("    ").append(XMLHandler.addTagValue("schemaName", schemaName));
-        stringBuffer1.append("    ")
-                .append(XMLHandler.addTagValue("factLevelsString", factLevelsString));
-        stringBuffer1.append("    ")
-                .append(XMLHandler.addTagValue("factMeasureString", factMeasureString));
-        stringBuffer1.append("    ")
-                .append(XMLHandler.addTagValue("aggregateLevelsString", aggregateLevelsString));
-        stringBuffer1.append("    ")
-                .append(XMLHandler.addTagValue("aggregateMeasuresString", aggregateMeasuresString));
-        stringBuffer1.append("    ")
-                .append(XMLHandler.addTagValue("measureCountString", measureCountString));
-        stringBuffer1.append("    ").append(XMLHandler.addTagValue("factTableName", factTableName));
-        stringBuffer1.append("    ")
-                .append(XMLHandler.addTagValue("heirAndKeySize", heirAndKeySize));
-        stringBuffer1.append("    ")
-                .append(XMLHandler.addTagValue("heirAndDimLens", heirAndDimLens));
-        stringBuffer1.append("    ")
-                .append(XMLHandler.addTagValue("aggDimeLensString", aggDimeLensString));
-        stringBuffer1.append("    ")
-                .append(XMLHandler.addTagValue("aggregatorString", aggregatorString));
-        stringBuffer1.append("    ").append(XMLHandler
-                .addTagValue("aggregateMeasuresColumnNameString",
-                        aggregateMeasuresColumnNameString));
-        stringBuffer1.append("    ")
-                .append(XMLHandler.addTagValue("isMdkeyInOutRowRequired", mdkeyInOutRowRequired));
-        stringBuffer1.append("    ")
-                .append(XMLHandler.addTagValue("isManualAutoAggRequest", manualAutoAggRequest));
-        stringBuffer1.append("    ")
-                .append(XMLHandler.addTagValue("factDimLensString", factDimLensString));
+  /**
+   * @return the aggregateMeasures
+   */
+  public String[] getAggregateMeasures() {
+    return aggregateMeasures;
+  }
 
-        stringBuffer1.append("    ").append(XMLHandler.addTagValue("factStorePath", factStorePath));
+  /**
+   * @return the aggregateLevels
+   */
+  public String[] getAggregateLevels() {
+    return aggregateLevels;
+  }
 
-        return stringBuffer1.toString();
-    }
+  /**
+   * @return the factMeasure
+   */
+  public String[] getFactMeasure() {
+    return factMeasure;
+  }
 
-    /**
-     * Load the values for this step from an XML Node
-     *
-     * @param stepnode  the Node to get the info from
-     * @param databases The available list of databases to reference to
-     * @param counters  Counters to reference.
-     * @throws KettleXMLException When an unexpected XML error occurred. (malformed etc.)
-     */
-    @Override
-    public void loadXML(Node stepnode, List<DatabaseMeta> databases, Map<String, Counter> counters)
-            throws KettleXMLException {
-        try {
-            tableName = XMLHandler.getTagValue(stepnode, "TableName");
-            schemaName = XMLHandler.getTagValue(stepnode, "schemaName");
-            cubeName = XMLHandler.getTagValue(stepnode, "cubeName");
-            factLevelsString = XMLHandler.getTagValue(stepnode, "factLevelsString");
-            factMeasureString = XMLHandler.getTagValue(stepnode, "factMeasureString");
-            aggregateLevelsString = XMLHandler.getTagValue(stepnode, "aggregateLevelsString");
-            aggregateMeasuresString = XMLHandler.getTagValue(stepnode, "aggregateMeasuresString");
-            measureCountString = XMLHandler.getTagValue(stepnode, "measureCountString");
-            factTableName = XMLHandler.getTagValue(stepnode, "factTableName");
-            heirAndKeySize = XMLHandler.getTagValue(stepnode, "heirAndKeySize");
-            heirAndDimLens = XMLHandler.getTagValue(stepnode, "heirAndDimLens");
-            aggDimeLensString = XMLHandler.getTagValue(stepnode, "aggDimeLensString");
-            aggregatorString = XMLHandler.getTagValue(stepnode, "aggregatorString");
-            aggregateMeasuresColumnNameString =
-                    XMLHandler.getTagValue(stepnode, "aggregateMeasuresColumnNameString");
-            mdkeyInOutRowRequired = XMLHandler.getTagValue(stepnode, "isMdkeyInOutRowRequired");
-            manualAutoAggRequest = XMLHandler.getTagValue(stepnode, "isManualAutoAggRequest");
-            factDimLensString = XMLHandler.getTagValue(stepnode, "factDimLensString");
-            factStorePath = XMLHandler.getTagValue(stepnode, "factStorePath");
-        } catch (Exception e) {
-            throw new KettleXMLException("Unable to read step info from XML node", e);
-        }
+  /**
+   * @return the factLevels
+   */
+  public String[] getFactLevels() {
+    return factLevels;
+  }
 
-    }
+  /**
+   * @return the schemaName
+   */
+  public String getSchemaName() {
+    return schemaName;
+  }
 
-    /**
-     * Read the steps information from a Kettle repository
-     *
-     * @param rep       The repository to read from
-     * @param idStep    The step ID
-     * @param databases The databases to reference
-     * @param counters  The counters to reference
-     * @throws KettleException When an unexpected error occurred (database, network, etc)
-     */
-    @Override
-    public void readRep(Repository rep, ObjectId idStep, List<DatabaseMeta> databases,
-            Map<String, Counter> counters) throws KettleException {
-        try {
-            tableName = rep.getStepAttributeString(idStep, "TableName");
-            schemaName = rep.getStepAttributeString(idStep, "schemaName");
-            cubeName = rep.getStepAttributeString(idStep, "cubeName");
-            factLevelsString = rep.getStepAttributeString(idStep, "factLevelsString");
-            factMeasureString = rep.getStepAttributeString(idStep, "factMeasureString");
-            aggregateLevelsString = rep.getStepAttributeString(idStep, "aggregateLevelsString");
-            measureCountString = rep.getStepAttributeString(idStep, "measureCountString");
-            aggregateMeasuresString = rep.getStepAttributeString(idStep, "aggregateMeasuresString");
-            factTableName = rep.getStepAttributeString(idStep, "factTableName");
-            heirAndDimLens = rep.getStepAttributeString(idStep, "heirAndDimLens");
-            heirAndKeySize = rep.getStepAttributeString(idStep, "heirAndKeySize");
-            aggDimeLensString = rep.getStepAttributeString(idStep, "aggDimeLensString");
-            aggregatorString = rep.getStepAttributeString(idStep, "aggregatorString");
-            aggregateMeasuresColumnNameString =
-                    rep.getStepAttributeString(idStep, "aggregateMeasuresColumnNameString");
-            mdkeyInOutRowRequired = rep.getStepAttributeString(idStep, "isMdkeyInOutRowRequired");
-            manualAutoAggRequest = rep.getStepAttributeString(idStep, "isManualAutoAggRequest");
-            factDimLensString = rep.getStepAttributeString(idStep, "factDimLensString");
-            factStorePath = rep.getStepAttributeString(idStep, "factStorePath");
-        } catch (Exception e) {
-            throw new KettleException(BaseMessages.getString(PKG,
-                    "CarbonMDKeyStepMeta.Exception.UnexpectedErrorInReadingStepInfo"), e);
-        }
+  /**
+   * @param schemaName the schemaName to set
+   */
+  public void setSchemaName(String schemaName) {
+    this.schemaName = schemaName;
+  }
 
-    }
+  /**
+   * @return the cubeName
+   */
+  public String getCubeName() {
+    return cubeName;
+  }
 
-    /**
-     * Save the steps data into a Kettle repository
-     *
-     * @param rep              The Kettle repository to save to
-     * @param idTransformation The transformation ID
-     * @param idStep           The step ID
-     * @throws KettleException When an unexpected error occurred (database, network, etc)
-     */
-    @Override
-    public void saveRep(Repository rep, ObjectId idTransformation, ObjectId idStep)
-            throws KettleException {
-        try {
-            rep.saveStepAttribute(idTransformation, idStep, "TableName", tableName); //$NON-NLS-1$
-            rep.saveStepAttribute(idTransformation, idStep, "schemaName", schemaName);
-            rep.saveStepAttribute(idTransformation, idStep, "cubeName", cubeName);
-            rep.saveStepAttribute(idTransformation, idStep, "factLevelsString",
-                    factLevelsString); //$NON-NLS-1$
-            rep.saveStepAttribute(idTransformation, idStep, "factMeasureString", factMeasureString);
-            rep.saveStepAttribute(idTransformation, idStep, "aggregateLevelsString",
-                    aggregateLevelsString);
-            rep.saveStepAttribute(idTransformation, idStep, "measureCountString",
-                    measureCountString);
-            rep.saveStepAttribute(idTransformation, idStep, "aggregateMeasuresString",
-                    aggregateMeasuresString);
-            rep.saveStepAttribute(idTransformation, idStep, "factTableName", factTableName);
-            rep.saveStepAttribute(idTransformation, idStep, "heirAndDimLens", heirAndDimLens);
-            rep.saveStepAttribute(idTransformation, idStep, "heirAndKeySize", heirAndKeySize);
-            rep.saveStepAttribute(idTransformation, idStep, "aggDimeLensString", aggDimeLensString);
-            rep.saveStepAttribute(idTransformation, idStep, "aggregatorString", aggregatorString);
-            rep.saveStepAttribute(idTransformation, idStep, "aggregateMeasuresColumnNameString",
-                    aggregateMeasuresColumnNameString);
-            rep.saveStepAttribute(idTransformation, idStep, "isMdkeyInOutRowRequired",
-                    mdkeyInOutRowRequired);
-            rep.saveStepAttribute(idTransformation, idStep, "isManualAutoAggRequest",
-                    manualAutoAggRequest);
-            rep.saveStepAttribute(idTransformation, idStep, "factDimLensString", factDimLensString);
-            rep.saveStepAttribute(idTransformation, idStep, "factStorePath", factStorePath);
-        } catch (Exception e) {
-            throw new KettleException(BaseMessages
-                    .getString(PKG, "TemplateStep.Exception.UnableToSaveStepInfoToRepository")
-                    + idStep, e);
-        }
-    }
+  /**
+   * @param cubeName the cubeName to set
+   */
+  public void setCubeName(String cubeName) {
+    this.cubeName = cubeName;
+  }
 
-    /**
-     * @return the measureCount
-     */
-    public int getMeasureCount() {
-        return Integer.parseInt(measureCountString);
-    }
+  /**
+   * @return the tableName
+   */
+  public String getTableName() {
+    return tableName;
+  }
 
-    /**
-     * @param measureCount the measureCount to set
-     */
-    public void setMeasureCount(int measureCount) {
-        this.measureCountString = measureCount + "";
-    }
+  /**
+   * @param tableName the tableName to set
+   */
+  public void setTableName(String tableName) {
+    this.tableName = tableName;
+  }
 
-    /**
-     * @return the aggregateMeasures
-     */
-    public String[] getAggregateMeasures() {
-        return aggregateMeasures;
-    }
+  /**
+   * @return the factTableName
+   */
+  public String getFactTableName() {
+    return factTableName;
+  }
 
-    /**
-     * @return the aggregateLevels
-     */
-    public String[] getAggregateLevels() {
-        return aggregateLevels;
-    }
+  /**
+   * @param factTableName the factTableName to set
+   */
+  public void setFactTableName(String factTableName) {
+    this.factTableName = factTableName;
+  }
 
-    /**
-     * @return the factMeasure
-     */
-    public String[] getFactMeasure() {
-        return factMeasure;
-    }
+  /**
+   * @param measureCountString the measureCountString to set
+   */
+  public void setMeasureCountString(String measureCountString) {
+    this.measureCountString = measureCountString;
+  }
 
-    /**
-     * @return the factLevels
-     */
-    public String[] getFactLevels() {
-        return factLevels;
-    }
+  /**
+   * @param aggregateMeasuresString the aggregateMeasuresString to set
+   */
+  public void setAggregateMeasuresString(String aggregateMeasuresString) {
+    this.aggregateMeasuresString = aggregateMeasuresString;
+  }
 
-    /**
-     * @return the schemaName
-     */
-    public String getSchemaName() {
-        return schemaName;
-    }
+  /**
+   * @param aggregateLevelsString the aggregateLevelsString to set
+   */
+  public void setAggregateLevelsString(String aggregateLevelsString) {
+    this.aggregateLevelsString = aggregateLevelsString;
+  }
 
-    /**
-     * @param schemaName the schemaName to set
-     */
-    public void setSchemaName(String schemaName) {
-        this.schemaName = schemaName;
-    }
+  /**
+   * @param factMeasureString the factMeasureString to set
+   */
+  public void setFactMeasureString(String factMeasureString) {
+    this.factMeasureString = factMeasureString;
+  }
 
-    /**
-     * @return the cubeName
-     */
-    public String getCubeName() {
-        return cubeName;
-    }
+  /**
+   * @param factLevelsString the factLevelsString to set
+   */
+  public void setFactLevelsString(String factLevelsString) {
+    this.factLevelsString = factLevelsString;
+  }
 
-    /**
-     * @param cubeName the cubeName to set
-     */
-    public void setCubeName(String cubeName) {
-        this.cubeName = cubeName;
-    }
+  /**
+   * @param heirAndKeySize the heirAndKeySize to set
+   */
+  public void setHeirAndKeySize(String heirAndKeySize) {
+    this.heirAndKeySize = heirAndKeySize;
+  }
 
-    /**
-     * @return the tableName
-     */
-    public String getTableName() {
-        return tableName;
-    }
+  /**
+   * @param heirAndDimLens the heirAndDimLens to set
+   */
+  public void setHeirAndDimLens(String heirAndDimLens) {
+    this.heirAndDimLens = heirAndDimLens;
+  }
 
-    /**
-     * @param tableName the tableName to set
-     */
-    public void setTableName(String tableName) {
-        this.tableName = tableName;
-    }
+  /**
+   * @return the aggregators
+   */
+  public String[] getAggregators() {
+    return aggregators;
+  }
 
-    /**
-     * @return the factTableName
-     */
-    public String getFactTableName() {
-        return factTableName;
-    }
+  /**
+   * @param aggregators the aggregators to set
+   */
+  public void setAggregators(String[] aggregators) {
+    this.aggregators = aggregators;
+  }
 
-    /**
-     * @param factTableName the factTableName to set
-     */
-    public void setFactTableName(String factTableName) {
-        this.factTableName = factTableName;
-    }
+  /**
+   * @param aggDimeLensString the aggDimeLensString to set
+   */
+  public void setAggDimeLensString(String aggDimeLensString) {
+    this.aggDimeLensString = aggDimeLensString;
+  }
 
-    /**
-     * @param measureCountString the measureCountString to set
-     */
-    public void setMeasureCountString(String measureCountString) {
-        this.measureCountString = measureCountString;
-    }
+  /**
+   * @param aggregatorString the aggregatorString to set
+   */
+  public void setAggregatorString(String aggregatorString) {
+    this.aggregatorString = aggregatorString;
+  }
 
-    /**
-     * @param aggregateMeasuresString the aggregateMeasuresString to set
-     */
-    public void setAggregateMeasuresString(String aggregateMeasuresString) {
-        this.aggregateMeasuresString = aggregateMeasuresString;
-    }
+  /**
+   * @param aggregateMeasuresColumnNameString the aggregateMeasuresColumnNameString to set
+   */
+  public void setAggregateMeasuresColumnNameString(String aggregateMeasuresColumnNameString) {
+    this.aggregateMeasuresColumnNameString = aggregateMeasuresColumnNameString;
+  }
 
-    /**
-     * @param aggregateLevelsString the aggregateLevelsString to set
-     */
-    public void setAggregateLevelsString(String aggregateLevelsString) {
-        this.aggregateLevelsString = aggregateLevelsString;
-    }
+  /**
+   * @return the isMdkeyInOutRowRequired
+   */
+  public boolean isMdkeyInOutRowRequired() {
+    return Boolean.parseBoolean(mdkeyInOutRowRequired);
+  }
 
-    /**
-     * @param factMeasureString the factMeasureString to set
-     */
-    public void setFactMeasureString(String factMeasureString) {
-        this.factMeasureString = factMeasureString;
-    }
+  /**
+   * @param isMdkeyInOutRowRequired the isMdkeyInOutRowRequired to set
+   */
+  public void setMdkeyInOutRowRequired(String isMdkeyInOutRowRequired) {
+    this.mdkeyInOutRowRequired = isMdkeyInOutRowRequired;
+  }
 
-    /**
-     * @param factLevelsString the factLevelsString to set
-     */
-    public void setFactLevelsString(String factLevelsString) {
-        this.factLevelsString = factLevelsString;
-    }
+  /**
+   * @param manualAutoAggRequest the isManualAutoAggRequest to set
+   */
+  public void setIsManualAutoAggRequest(String manualAutoAggRequest) {
+    this.manualAutoAggRequest = manualAutoAggRequest;
+  }
 
-    /**
-     * @param heirAndKeySize the heirAndKeySize to set
-     */
-    public void setHeirAndKeySize(String heirAndKeySize) {
-        this.heirAndKeySize = heirAndKeySize;
-    }
+  /**
+   * @return the factDimLens
+   */
+  public int[] getFactDimLens() {
+    return factDimLens;
+  }
 
-    /**
-     * @param heirAndDimLens the heirAndDimLens to set
-     */
-    public void setHeirAndDimLens(String heirAndDimLens) {
-        this.heirAndDimLens = heirAndDimLens;
-    }
+  /**
+   * @param factDimLensString the factDimLensString to set
+   */
+  public void setFactDimLensString(String factDimLensString) {
+    this.factDimLensString = factDimLensString;
+  }
 
-    /**
-     * @return the aggregators
-     */
-    public String[] getAggregators() {
-        return aggregators;
-    }
-
-    /**
-     * @param aggregators the aggregators to set
-     */
-    public void setAggregators(String[] aggregators) {
-        this.aggregators = aggregators;
-    }
-
-    /**
-     * @param aggDimeLensString the aggDimeLensString to set
-     */
-    public void setAggDimeLensString(String aggDimeLensString) {
-        this.aggDimeLensString = aggDimeLensString;
-    }
-
-    /**
-     * @param aggregatorString the aggregatorString to set
-     */
-    public void setAggregatorString(String aggregatorString) {
-        this.aggregatorString = aggregatorString;
-    }
-
-    /**
-     * @param aggregateMeasuresColumnNameString the aggregateMeasuresColumnNameString to set
-     */
-    public void setAggregateMeasuresColumnNameString(String aggregateMeasuresColumnNameString) {
-        this.aggregateMeasuresColumnNameString = aggregateMeasuresColumnNameString;
-    }
-
-    /**
-     * @return the isMdkeyInOutRowRequired
-     */
-    public boolean isMdkeyInOutRowRequired() {
-        return Boolean.parseBoolean(mdkeyInOutRowRequired);
-    }
-
-    /**
-     * @param isMdkeyInOutRowRequired the isMdkeyInOutRowRequired to set
-     */
-    public void setMdkeyInOutRowRequired(String isMdkeyInOutRowRequired) {
-        this.mdkeyInOutRowRequired = isMdkeyInOutRowRequired;
-    }
-
-    /**
-     * @param manualAutoAggRequest the isManualAutoAggRequest to set
-     */
-    public void setIsManualAutoAggRequest(String manualAutoAggRequest) {
-        this.manualAutoAggRequest = manualAutoAggRequest;
-    }
-
-    /**
-     * @return the factDimLens
-     */
-    public int[] getFactDimLens() {
-        return factDimLens;
-    }
-
-    /**
-     * @param factDimLensString the factDimLensString to set
-     */
-    public void setFactDimLensString(String factDimLensString) {
-        this.factDimLensString = factDimLensString;
-    }
-
-    public void setFactStorePath(String factStorePath) {
-        this.factStorePath = factStorePath;
-    }
+  public void setFactStorePath(String factStorePath) {
+    this.factStorePath = factStorePath;
+  }
 }

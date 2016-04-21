@@ -28,43 +28,41 @@ import org.carbondata.query.scanner.impl.CarbonKey;
 import org.carbondata.query.scanner.impl.CarbonValue;
 
 public class ChunkResult implements CarbonIterator<RowResult> {
-    private List<CarbonKey> keys;
-    private List<CarbonValue> values;
+  private List<CarbonKey> keys;
+  private List<CarbonValue> values;
 
-    private int counter;
+  private int counter;
 
-    public ChunkResult() {
-        keys = new ArrayList<CarbonKey>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-        values = new ArrayList<CarbonValue>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    }
+  public ChunkResult() {
+    keys = new ArrayList<CarbonKey>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    values = new ArrayList<CarbonValue>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+  }
 
-    public List<CarbonKey> getKeys() {
-        return keys;
-    }
+  public List<CarbonKey> getKeys() {
+    return keys;
+  }
 
-    public void setKeys(List<CarbonKey> keys) {
-        this.keys = keys;
-    }
+  public void setKeys(List<CarbonKey> keys) {
+    this.keys = keys;
+  }
 
-    public List<CarbonValue> getValues() {
-        return values;
-    }
+  public List<CarbonValue> getValues() {
+    return values;
+  }
 
-    public void setValues(List<CarbonValue> values) {
-        this.values = values;
-    }
+  public void setValues(List<CarbonValue> values) {
+    this.values = values;
+  }
 
-    @Override
-    public boolean hasNext() {
-        return counter < keys.size();
-    }
+  @Override public boolean hasNext() {
+    return counter < keys.size();
+  }
 
-    @Override
-    public RowResult next() {
-        RowResult rowResult = new RowResult();
-        rowResult.setKey(keys.get(counter));
-        rowResult.setValue(values.get(counter));
-        counter++;
-        return rowResult;
-    }
+  @Override public RowResult next() {
+    RowResult rowResult = new RowResult();
+    rowResult.setKey(keys.get(counter));
+    rowResult.setValue(values.get(counter));
+    counter++;
+    return rowResult;
+  }
 }

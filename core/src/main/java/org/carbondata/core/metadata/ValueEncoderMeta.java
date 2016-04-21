@@ -26,80 +26,79 @@ import java.io.Serializable;
  */
 public class ValueEncoderMeta implements Serializable {
 
-    /**
-     * maxValue
-     */
-    private Object maxValue;
-    /**
-     * minValue.
-     */
-    private Object minValue;
+  /**
+   * maxValue
+   */
+  private Object maxValue;
+  /**
+   * minValue.
+   */
+  private Object minValue;
 
-    /**
-     * uniqueValue
-     */
-    private Object uniqueValue;
-    /**
-     * decimal.
-     */
-    private int decimal;
+  /**
+   * uniqueValue
+   */
+  private Object uniqueValue;
+  /**
+   * decimal.
+   */
+  private int decimal;
 
-    /**
-     * aggType
-     */
-    private char type;
+  /**
+   * aggType
+   */
+  private char type;
 
-    /**
-     * dataTypeSelected
-     */
-    private byte dataTypeSelected;
+  /**
+   * dataTypeSelected
+   */
+  private byte dataTypeSelected;
 
+  public Object getMaxValue() {
+    return maxValue;
+  }
 
-    public Object getMaxValue() {
-        return maxValue;
-    }
+  public void setMaxValue(Object maxValue) {
+    this.maxValue = maxValue;
+  }
 
-    public void setMaxValue(Object maxValue) {
-        this.maxValue = maxValue;
-    }
+  public Object getMinValue() {
+    return minValue;
+  }
 
-    public Object getMinValue() {
-        return minValue;
-    }
+  public void setMinValue(Object minValue) {
+    this.minValue = minValue;
+  }
 
-    public void setMinValue(Object minValue) {
-        this.minValue = minValue;
-    }
+  public Object getUniqueValue() {
+    return uniqueValue;
+  }
 
-    public Object getUniqueValue() {
-        return uniqueValue;
-    }
+  public void setUniqueValue(Object uniqueValue) {
+    this.uniqueValue = uniqueValue;
+  }
 
-    public void setUniqueValue(Object uniqueValue) {
-        this.uniqueValue = uniqueValue;
-    }
+  public int getDecimal() {
+    return decimal;
+  }
 
-    public int getDecimal() {
-        return decimal;
-    }
+  public void setDecimal(int decimal) {
+    this.decimal = decimal;
+  }
 
-    public void setDecimal(int decimal) {
-        this.decimal = decimal;
-    }
+  public char getType() {
+    return type;
+  }
 
-    public char getType() {
-        return type;
-    }
+  public void setType(char type) {
+    this.type = type;
+  }
 
-    public void setType(char type) {
-        this.type = type;
-    }
+  public byte getDataTypeSelected() {
+    return dataTypeSelected;
+  }
 
-    public byte getDataTypeSelected() {
-        return dataTypeSelected;
-    }
-
-    public void setDataTypeSelected(byte dataTypeSelected) {
-        this.dataTypeSelected = dataTypeSelected;
-    }
+  public void setDataTypeSelected(byte dataTypeSelected) {
+    this.dataTypeSelected = dataTypeSelected;
+  }
 }

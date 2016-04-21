@@ -24,54 +24,50 @@ import org.carbondata.query.executer.calcexp.CarbonCalcFunction;
 
 public class EqualsMeasureFilterImpl implements MeasureFilter {
 
-    private double filterValue;
+  private double filterValue;
 
-    private int index;
+  private int index;
 
-    private CarbonCalcFunction calcFunction;
+  private CarbonCalcFunction calcFunction;
 
-    /**
-     * Constructor that takes filter value
-     *
-     * @param filterValue
-     */
-    public EqualsMeasureFilterImpl(double filterValue, int index, CarbonCalcFunction calcFunction) {
-        this.filterValue = filterValue;
-        this.index = index;
-        this.calcFunction = calcFunction;
+  /**
+   * Constructor that takes filter value
+   *
+   * @param filterValue
+   */
+  public EqualsMeasureFilterImpl(double filterValue, int index, CarbonCalcFunction calcFunction) {
+    this.filterValue = filterValue;
+    this.index = index;
+    this.calcFunction = calcFunction;
+  }
+
+  /**
+   * See interface commnets.
+   *
+   * @param filterValue
+   */
+  @Override public boolean filter(MeasureAggregator[] msrValue) {
+    if (calcFunction != null) {
+      return 0 == Double.compare(calcFunction.calculate(msrValue), filterValue) ? true : false;
     }
-
-    /**
-     * See interface commnets.
-     *
-     * @param filterValue
-     */
-    @Override
-    public boolean filter(MeasureAggregator[] msrValue) {
-        if (calcFunction != null) {
-            return 0 == Double.compare(calcFunction.calculate(msrValue), filterValue) ?
-                    true :
-                    false;
-        }
-        double value;
-        if (msrValue[index].toString().contains("Long")) {
-            value = msrValue[index].getLongValue();
-        } else if (msrValue[index].toString().contains("Decimal")) {
-            value = msrValue[index].getBigDecimalValue().doubleValue();
-        } else {
-            value = msrValue[index].getDoubleValue();
-        }
-        return 0 == Double.compare(value, filterValue) ? true : false;
+    double value;
+    if (msrValue[index].toString().contains("Long")) {
+      value = msrValue[index].getLongValue();
+    } else if (msrValue[index].toString().contains("Decimal")) {
+      value = msrValue[index].getBigDecimalValue().doubleValue();
+    } else {
+      value = msrValue[index].getDoubleValue();
     }
+    return 0 == Double.compare(value, filterValue) ? true : false;
+  }
 
-    /**
-     * See interface commnets.
-     *
-     * @param filterValue
-     */
-    @Override
-    public boolean filter(double[] msrValue, int msrStartIndex) {
-        return 0 == Double.compare(msrValue[index + msrStartIndex], filterValue) ? true : false;
-    }
+  /**
+   * See interface commnets.
+   *
+   * @param filterValue
+   */
+  @Override public boolean filter(double[] msrValue, int msrStartIndex) {
+    return 0 == Double.compare(msrValue[index + msrStartIndex], filterValue) ? true : false;
+  }
 
 }

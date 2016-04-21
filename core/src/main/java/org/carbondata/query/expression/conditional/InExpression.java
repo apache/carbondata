@@ -22,82 +22,78 @@ package org.carbondata.query.expression.conditional;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.carbondata.query.carbonfilterinterface.ExpressionType;
+import org.carbondata.query.carbonfilterinterface.RowIntf;
 import org.carbondata.query.expression.DataType;
 import org.carbondata.query.expression.Expression;
 import org.carbondata.query.expression.ExpressionResult;
 import org.carbondata.query.expression.exception.FilterUnsupportedException;
-import org.carbondata.query.carbonfilterinterface.ExpressionType;
-import org.carbondata.query.carbonfilterinterface.RowIntf;
 
 public class InExpression extends BinaryConditionalExpression {
-    private static final long serialVersionUID = -3149927446694175489L;
+  private static final long serialVersionUID = -3149927446694175489L;
 
-    protected transient Set<ExpressionResult> setOfExprResult;
+  protected transient Set<ExpressionResult> setOfExprResult;
 
-    public InExpression(Expression left, Expression right) {
-        super(left, right);
-    }
+  public InExpression(Expression left, Expression right) {
+    super(left, right);
+  }
 
-    @Override
-    public ExpressionResult evaluate(RowIntf value) throws FilterUnsupportedException {
-        ExpressionResult leftRsult = left.evaluate(value);
+  @Override public ExpressionResult evaluate(RowIntf value) throws FilterUnsupportedException {
+    ExpressionResult leftRsult = left.evaluate(value);
 
-        if (setOfExprResult == null) {
-            ExpressionResult rightRsult = right.evaluate(value);
-            ExpressionResult val = null;
-            setOfExprResult = new HashSet<ExpressionResult>(10);
-            for (ExpressionResult expressionResVal : rightRsult.getList()) {
+    if (setOfExprResult == null) {
+      ExpressionResult rightRsult = right.evaluate(value);
+      ExpressionResult val = null;
+      setOfExprResult = new HashSet<ExpressionResult>(10);
+      for (ExpressionResult expressionResVal : rightRsult.getList()) {
 
-                if (leftRsult.getDataType().name().equals(expressionResVal.getDataType().name())) {
-                    if (expressionResVal.getDataType().getPresedenceOrder() < leftRsult
-                            .getDataType().getPresedenceOrder()) {
-                        val = leftRsult;
-                    } else {
-                        val = expressionResVal;
-                    }
+        if (leftRsult.getDataType().name().equals(expressionResVal.getDataType().name())) {
+          if (expressionResVal.getDataType().getPresedenceOrder() < leftRsult.getDataType()
+              .getPresedenceOrder()) {
+            val = leftRsult;
+          } else {
+            val = expressionResVal;
+          }
 
-                    switch (val.getDataType()) {
-                    case StringType:
-                        val = new ExpressionResult(val.getDataType(), expressionResVal.getString());
-                        break;
-                    case IntegerType:
-                        val = new ExpressionResult(val.getDataType(), expressionResVal.getInt());
-                        break;
-                    case DoubleType:
-                        val = new ExpressionResult(val.getDataType(), expressionResVal.getDouble());
-                        break;
-                    case TimestampType:
-                        val = new ExpressionResult(val.getDataType(), expressionResVal.getTime());
-                        break;
-                    case LongType:
-                        val = new ExpressionResult(val.getDataType(), expressionResVal.getLong());
-                        break;
-                    case DecimalType:
-                        val = new ExpressionResult(val.getDataType(),
-                                expressionResVal.getDecimal());
-                        break;
-                    default:
-                        break;
-                    }
+          switch (val.getDataType()) {
+            case StringType:
+              val = new ExpressionResult(val.getDataType(), expressionResVal.getString());
+              break;
+            case IntegerType:
+              val = new ExpressionResult(val.getDataType(), expressionResVal.getInt());
+              break;
+            case DoubleType:
+              val = new ExpressionResult(val.getDataType(), expressionResVal.getDouble());
+              break;
+            case TimestampType:
+              val = new ExpressionResult(val.getDataType(), expressionResVal.getTime());
+              break;
+            case LongType:
+              val = new ExpressionResult(val.getDataType(), expressionResVal.getLong());
+              break;
+            case DecimalType:
+              val = new ExpressionResult(val.getDataType(), expressionResVal.getDecimal());
+              break;
+            default:
+              break;
+          }
 
-                }
-                setOfExprResult.add(val);
-
-            }
         }
-        leftRsult.set(DataType.BooleanType, setOfExprResult.contains(leftRsult));
+        setOfExprResult.add(val);
 
-        return leftRsult;
+      }
     }
+    leftRsult.set(DataType.BooleanType, setOfExprResult.contains(leftRsult));
 
-    @Override
-    public ExpressionType getFilterExpressionType() {
-        return ExpressionType.IN;
-    }
+    return leftRsult;
+  }
 
-    @Override
-    public String getString() {
-        return "IN(" + left.getString() + ',' + right.getString() + ')';
-    }
+  @Override public ExpressionType getFilterExpressionType() {
+    return ExpressionType.IN;
+  }
+
+  @Override public String getString() {
+    return "IN(" + left.getString() + ',' + right.getString() + ')';
+  }
 
 }

@@ -25,71 +25,68 @@ import java.io.Serializable;
  * It is the Member object which holds information of each member which contained in query result.
  */
 public class CarbonMember implements Serializable {
-    private static final long serialVersionUID = 2149598237303284053L;
+  private static final long serialVersionUID = 2149598237303284053L;
 
-    private Object name;
+  private Object name;
 
-    private Object[] properties;
+  private Object[] properties;
 
-    /**
-     * Constructor that takes filter information for each member.
-     *
-     * @param name
-     * @param properties
-     */
-    public CarbonMember(Object name, Object[] properties) {
-        this.name = name;
-        this.properties = properties;
-    }
+  /**
+   * Constructor that takes filter information for each member.
+   *
+   * @param name
+   * @param properties
+   */
+  public CarbonMember(Object name, Object[] properties) {
+    this.name = name;
+    this.properties = properties;
+  }
 
-    /**
-     * @return the name
-     */
-    public Object getName() {
-        return name;
-    }
+  /**
+   * @return the name
+   */
+  public Object getName() {
+    return name;
+  }
 
-    /**
-     * @return the properties
-     */
-    public Object[] getProperties() {
-        return properties;
-    }
+  /**
+   * @return the properties
+   */
+  public Object[] getProperties() {
+    return properties;
+  }
 
-    /**
-     * @return the properties
-     */
-    public void setProperties(Object[] props) {
-        this.properties = props;
-    }
+  /**
+   * @return the properties
+   */
+  public void setProperties(Object[] props) {
+    this.properties = props;
+  }
 
-    @Override
-    public String toString() {
-        return name != null ? name.toString() : "";
-    }
+  @Override public String toString() {
+    return name != null ? name.toString() : "";
+  }
 
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((name == null) ? 0 : name.hashCode());
-        return result;
-    }
+  @Override public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + ((name == null) ? 0 : name.hashCode());
+    return result;
+  }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof CarbonMember) {
-            if (this == obj) {
-                return true;
-            }
+  @Override public boolean equals(Object obj) {
+    if (obj instanceof CarbonMember) {
+      if (this == obj) {
+        return true;
+      }
 
-            CarbonMember other = (CarbonMember) obj;
-            if (!(name == null ? other.name == null : name.equals(other.name))) {
-                return false;
-            }
-            return true;
-
-        }
+      CarbonMember other = (CarbonMember) obj;
+      if (!(name == null ? other.name == null : name.equals(other.name))) {
         return false;
+      }
+      return true;
+
     }
+    return false;
+  }
 }

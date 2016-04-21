@@ -23,26 +23,26 @@ import org.carbondata.query.filters.likefilters.FilterLikeExpressionIntf;
 
 public class CarbonLikeFilter extends CarbonDimensionFilter {
 
-    /**
-     *
-     */
-    private static final long serialVersionUID = 6243463940253685256L;
-    /**
-     * Include like filters.
-     * Ex: select employee_name,department_name,sum(salary) from employee
-     * where employee_name like ("a","b");
-     * then "a" and "b" will be the include like filters.
-     */
-    private FilterLikeExpressionIntf likeFilterExpressions;
+  /**
+   *
+   */
+  private static final long serialVersionUID = 6243463940253685256L;
+  /**
+   * Include like filters.
+   * Ex: select employee_name,department_name,sum(salary) from employee
+   * where employee_name like ("a","b");
+   * then "a" and "b" will be the include like filters.
+   */
+  private FilterLikeExpressionIntf likeFilterExpressions;
 
-    /**
-     * @return the excludeLikeFilter
-     */
-    public FilterLikeExpressionIntf getLikeFilterExpression() {
-        return likeFilterExpressions;
-    }
+  /**
+   * @return the excludeLikeFilter
+   */
+  public FilterLikeExpressionIntf getLikeFilterExpression() {
+    return likeFilterExpressions;
+  }
 
-    public void setLikeFilterExpression(FilterLikeExpressionIntf likeFilterExpre) {
-        this.likeFilterExpressions = likeFilterExpre;
-    }
+  public void setLikeFilterExpression(FilterLikeExpressionIntf likeFilterExpre) {
+    this.likeFilterExpressions = likeFilterExpre;
+  }
 }

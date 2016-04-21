@@ -20,5 +20,5 @@
 package org.carbondata.core.datastorage.store.filesystem;
 
 public interface CarbonFileFilter {
-    boolean accept(CarbonFile file);
+  boolean accept(CarbonFile file);
 }

@@ -20,35 +20,33 @@
 package org.carbondata.query.columnar.scanner.impl;
 
 import org.carbondata.core.iterator.CarbonIterator;
-import org.carbondata.query.datastorage.storeInterfaces.DataStoreBlock;
+import org.carbondata.query.datastorage.storeinterface.DataStoreBlock;
 
 public class BtreeLeafNodeIterator implements CarbonIterator<DataStoreBlock> {
-    /**
-     * data store block
-     */
-    protected DataStoreBlock datablock;
-    private int blockCounter;
-    private boolean hasNext = true;
-    private long totalNumberOfBlocksToScan;
+  /**
+   * data store block
+   */
+  protected DataStoreBlock datablock;
+  private int blockCounter;
+  private boolean hasNext = true;
+  private long totalNumberOfBlocksToScan;
 
-    public BtreeLeafNodeIterator(DataStoreBlock datablock, long totalNumberOfBlocksToScan) {
-        this.datablock = datablock;
-        this.totalNumberOfBlocksToScan = totalNumberOfBlocksToScan;
-    }
+  public BtreeLeafNodeIterator(DataStoreBlock datablock, long totalNumberOfBlocksToScan) {
+    this.datablock = datablock;
+    this.totalNumberOfBlocksToScan = totalNumberOfBlocksToScan;
+  }
 
-    @Override
-    public boolean hasNext() {
-        return hasNext;
-    }
+  @Override public boolean hasNext() {
+    return hasNext;
+  }
 
-    @Override
-    public DataStoreBlock next() {
-        DataStoreBlock datablockTemp = datablock;
-        datablock = datablock.getNext();
-        blockCounter++;
-        if (null == datablock || blockCounter >= this.totalNumberOfBlocksToScan) {
-            hasNext = false;
-        }
-        return datablockTemp;
+  @Override public DataStoreBlock next() {
+    DataStoreBlock datablockTemp = datablock;
+    datablock = datablock.getNext();
+    blockCounter++;
+    if (null == datablock || blockCounter >= this.totalNumberOfBlocksToScan) {
+      hasNext = false;
     }
+    return datablockTemp;
+  }
 }

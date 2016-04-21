@@ -35,25 +35,25 @@ import java.util.Map;
 import org.carbondata.query.queryinterface.query.metadata.CarbonDimensionLevelFilter;
 
 public interface Partition extends Serializable {
-    /**
-     * unique identification for the partition in the cluster.
-     */
-    String getUniqueID();
+  /**
+   * unique identification for the partition in the cluster.
+   */
+  String getUniqueID();
 
-    /**
-     * File path for the raw data represented by this partition
-     */
-    String getFilePath();
+  /**
+   * File path for the raw data represented by this partition
+   */
+  String getFilePath();
 
-    /**
-     * result
-     *
-     * @return
-     */
-    List<String> getFilesPath();
+  /**
+   * result
+   *
+   * @return
+   */
+  List<String> getFilesPath();
 
-    /**
-     * Column name and constraints used to distribute the data
-     */
-    Map<String, CarbonDimensionLevelFilter> getPartitionDetails();
+  /**
+   * Column name and constraints used to distribute the data
+   */
+  Map<String, CarbonDimensionLevelFilter> getPartitionDetails();
 }

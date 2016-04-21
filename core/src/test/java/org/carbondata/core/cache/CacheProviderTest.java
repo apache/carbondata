@@ -23,6 +23,7 @@ import org.carbondata.core.cache.dictionary.Dictionary;
 import org.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.carbondata.core.cache.dictionary.ForwardDictionaryCache;
 import org.carbondata.core.cache.dictionary.ReverseDictionaryCache;
+
 import org.junit.Test;
 
 import static org.junit.Assert.assertFalse;
@@ -33,25 +34,25 @@ import static org.junit.Assert.assertTrue;
  */
 public class CacheProviderTest {
 
-    @Test public void getInstance() throws Exception {
-        // get cache provider instance
-        CacheProvider cacheProvider = CacheProvider.getInstance();
-        // assert for cache provider instance
-        assertTrue(cacheProvider instanceof CacheProvider);
-    }
+  @Test public void getInstance() throws Exception {
+    // get cache provider instance
+    CacheProvider cacheProvider = CacheProvider.getInstance();
+    // assert for cache provider instance
+    assertTrue(cacheProvider instanceof CacheProvider);
+  }
 
-    @Test public void createCache() throws Exception {
-        // get cache provider instance
-        CacheProvider cacheProvider = CacheProvider.getInstance();
-        Cache<DictionaryColumnUniqueIdentifier, Dictionary> dictionaryCache =
-                cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, "carbonStore");
-        // assert that dictionary cache is an instance of Forward dictionary cache
-        assertTrue(dictionaryCache instanceof ForwardDictionaryCache);
-        assertFalse(dictionaryCache instanceof ReverseDictionaryCache);
-        Cache<DictionaryColumnUniqueIdentifier, Dictionary> reverseDictionaryCache =
-                cacheProvider.createCache(CacheType.REVERSE_DICTIONARY, "carbonStore");
-        // assert that dictionary cache is an instance of Reverse dictionary cache
-        assertTrue(reverseDictionaryCache instanceof ReverseDictionaryCache);
-        assertFalse(reverseDictionaryCache instanceof ForwardDictionaryCache);
-    }
+  @Test public void createCache() throws Exception {
+    // get cache provider instance
+    CacheProvider cacheProvider = CacheProvider.getInstance();
+    Cache<DictionaryColumnUniqueIdentifier, Dictionary> dictionaryCache =
+        cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, "carbonStore");
+    // assert that dictionary cache is an instance of Forward dictionary cache
+    assertTrue(dictionaryCache instanceof ForwardDictionaryCache);
+    assertFalse(dictionaryCache instanceof ReverseDictionaryCache);
+    Cache<DictionaryColumnUniqueIdentifier, Dictionary> reverseDictionaryCache =
+        cacheProvider.createCache(CacheType.REVERSE_DICTIONARY, "carbonStore");
+    // assert that dictionary cache is an instance of Reverse dictionary cache
+    assertTrue(reverseDictionaryCache instanceof ReverseDictionaryCache);
+    assertFalse(reverseDictionaryCache instanceof ForwardDictionaryCache);
+  }
 }

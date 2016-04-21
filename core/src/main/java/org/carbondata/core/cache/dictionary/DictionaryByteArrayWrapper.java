@@ -21,8 +21,9 @@ package org.carbondata.core.cache.dictionary;
 
 import java.util.Arrays;
 
-import net.jpountz.xxhash.XXHash32;
 import org.carbondata.core.util.ByteUtil;
+
+import net.jpountz.xxhash.XXHash32;
 
 /**
  * class that holds the byte array and overrides equals and hashcode method which
@@ -30,64 +31,64 @@ import org.carbondata.core.util.ByteUtil;
  */
 public class DictionaryByteArrayWrapper {
 
-    /**
-     * dictionary value as byte array
-     */
-    private byte[] data;
+  /**
+   * dictionary value as byte array
+   */
+  private byte[] data;
 
-    /**
-     * hashing algorithm to calculate hash code
-     */
-    private XXHash32 xxHash32;
+  /**
+   * hashing algorithm to calculate hash code
+   */
+  private XXHash32 xxHash32;
 
-    /**
-     * @param data
-     */
-    public DictionaryByteArrayWrapper(byte[] data) {
-        this.data = data;
+  /**
+   * @param data
+   */
+  public DictionaryByteArrayWrapper(byte[] data) {
+    this.data = data;
+  }
+
+  /**
+   * @param data
+   * @param xxHash32
+   */
+  public DictionaryByteArrayWrapper(byte[] data, XXHash32 xxHash32) {
+    this(data);
+    this.xxHash32 = xxHash32;
+  }
+
+  /**
+   * This method will compare 2 DictionaryByteArrayWrapper objects
+   *
+   * @param other
+   * @return
+   */
+  @Override public boolean equals(Object other) {
+    if (this == other) {
+      return true;
     }
-
-    /**
-     * @param data
-     * @param xxHash32
-     */
-    public DictionaryByteArrayWrapper(byte[] data, XXHash32 xxHash32) {
-        this(data);
-        this.xxHash32 = xxHash32;
+    if (other == null || getClass() != other.getClass()) {
+      return false;
     }
-
-    /**
-     * This method will compare 2 DictionaryByteArrayWrapper objects
-     *
-     * @param other
-     * @return
-     */
-    @Override public boolean equals(Object other) {
-        if (this == other) {
-            return true;
-        }
-        if (other == null || getClass() != other.getClass()) {
-            return false;
-        }
-        DictionaryByteArrayWrapper otherObjectToCompare = (DictionaryByteArrayWrapper) other;
-        if (data.length != otherObjectToCompare.data.length) {
-            return false;
-        }
-        return ByteUtil.UnsafeComparer.INSTANCE.equals(data, otherObjectToCompare.data);
-
+    DictionaryByteArrayWrapper otherObjectToCompare = (DictionaryByteArrayWrapper) other;
+    if (data.length != otherObjectToCompare.data.length) {
+      return false;
     }
+    return ByteUtil.UnsafeComparer.INSTANCE.equals(data, otherObjectToCompare.data);
 
-    /**
-     * This method will calculate the hash code for given data
-     *
-     * @return
-     */
-    @Override public int hashCode() {
-        if (null != xxHash32) {
-            return xxHash32.hash(data, 0, data.length, 0);
-        }
-        int result = Arrays.hashCode(data);
-        result = 31 * result;
-        return result;
+  }
+
+  /**
+   * This method will calculate the hash code for given data
+   *
+   * @return
+   */
+  @Override public int hashCode() {
+    if (null != xxHash32) {
+      return xxHash32.hash(data, 0, data.length, 0);
     }
+    int result = Arrays.hashCode(data);
+    result = 31 * result;
+    return result;
+  }
 }

@@ -17,32 +17,32 @@
  * under the License.
  */
 
-package org.carbondata.processing.sortandgroupby.sortData;
+package org.carbondata.processing.sortandgroupby.sortdata;
 
 import java.io.File;
 
 import org.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 
 public interface TempSortFileWriter {
-    /**
-     * Method will be used to initialize
-     *
-     * @param file
-     * @param entryCount
-     * @throws CarbonSortKeyAndGroupByException
-     */
-    void initiaize(File file, int entryCount) throws CarbonSortKeyAndGroupByException;
+  /**
+   * Method will be used to initialize
+   *
+   * @param file
+   * @param entryCount
+   * @throws CarbonSortKeyAndGroupByException
+   */
+  void initiaize(File file, int entryCount) throws CarbonSortKeyAndGroupByException;
 
-    /**
-     * Method will be used to finish
-     */
-    void finish();
+  /**
+   * Method will be used to finish
+   */
+  void finish();
 
-    /**
-     * Below method will be used to write the sort temp file
-     *
-     * @param records
-     * @throws CarbonSortKeyAndGroupByException
-     */
-    void writeSortTempFile(Object[][] records) throws CarbonSortKeyAndGroupByException;
+  /**
+   * Below method will be used to write the sort temp file
+   *
+   * @param records
+   * @throws CarbonSortKeyAndGroupByException
+   */
+  void writeSortTempFile(Object[][] records) throws CarbonSortKeyAndGroupByException;
 }

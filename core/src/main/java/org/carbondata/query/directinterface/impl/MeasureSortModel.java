@@ -28,76 +28,76 @@ import org.carbondata.core.metadata.CarbonMetadata.Measure;
  */
 public class MeasureSortModel implements Serializable {
 
-    /**
-     *
-     */
-    private static final long serialVersionUID = -8532335454146149584L;
+  /**
+   *
+   */
+  private static final long serialVersionUID = -8532335454146149584L;
 
-    /**
-     * measure
-     */
-    private Measure measure;
+  /**
+   * measure
+   */
+  private Measure measure;
 
-    /**
-     * measureIndex
-     */
-    private int measureIndex;
+  /**
+   * measureIndex
+   */
+  private int measureIndex;
 
-    /**
-     * sortOrder
-     */
-    private int sortOrder;
+  /**
+   * sortOrder
+   */
+  private int sortOrder;
 
-    /**
-     * isBreakHeir
-     */
-    private boolean isBreakHeir;
+  /**
+   * isBreakHeir
+   */
+  private boolean isBreakHeir;
 
-    public MeasureSortModel(Measure measure, int sortOrder) {
-        this.measure = measure;
-        this.sortOrder = sortOrder;
-    }
+  public MeasureSortModel(Measure measure, int sortOrder) {
+    this.measure = measure;
+    this.sortOrder = sortOrder;
+  }
 
-    /**
-     * @return the measureIndex
-     */
-    public int getMeasureIndex() {
-        return measureIndex;
-    }
+  /**
+   * @return the measureIndex
+   */
+  public int getMeasureIndex() {
+    return measureIndex;
+  }
 
-    /**
-     * @param measureIndex the measureIndex to set
-     */
-    public void setMeasureIndex(int measureIndex) {
-        this.measureIndex = measureIndex;
-    }
+  /**
+   * @param measureIndex the measureIndex to set
+   */
+  public void setMeasureIndex(int measureIndex) {
+    this.measureIndex = measureIndex;
+  }
 
-    /**
-     * @return the measure
-     */
-    public Measure getMeasure() {
-        return measure;
-    }
+  /**
+   * @return the measure
+   */
+  public Measure getMeasure() {
+    return measure;
+  }
 
-    /**
-     * @return the sortOrder
-     */
-    public int getSortOrder() {
-        return sortOrder;
-    }
+  /**
+   * @return the sortOrder
+   */
+  public int getSortOrder() {
+    return sortOrder;
+  }
 
-    /**
-     * @return the isBreakHeir
-     */
-    public boolean isBreakHeir() {
-        return isBreakHeir;
-    }
+  /**
+   * @return the isBreakHeir
+   */
+  public boolean isBreakHeir() {
+    return isBreakHeir;
+  }
 
-    /**
-     * @param isBreakHeir the isBreakHeir to set
-     */
-    public void setBreakHeir(boolean isBreakHeir) {
-        this.isBreakHeir = isBreakHeir;
-    }
+  /**
+   * @param isBreakHeir the isBreakHeir to set
+   */
+  public void setBreakHeir(boolean isBreakHeir) {
+    this.isBreakHeir = isBreakHeir;
+  }
 
 }

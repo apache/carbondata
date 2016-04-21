@@ -23,72 +23,72 @@ import java.io.Serializable;
 
 public class FilterModel implements Serializable {
 
-    /**
-     *
-     */
-    private static final long serialVersionUID = 2779048394090554034L;
+  /**
+   *
+   */
+  private static final long serialVersionUID = 2779048394090554034L;
 
-    /**
-     * Dimensions,filter index, the filter values
-     */
-    private byte[][][] filter;
+  /**
+   * Dimensions,filter index, the filter values
+   */
+  private byte[][][] filter;
 
-    /**
-     *
-     */
-    private byte[][] maxKey;
+  /**
+   *
+   */
+  private byte[][] maxKey;
 
-    /**
-     *
-     */
-    private int maxSize;
+  /**
+   *
+   */
+  private int maxSize;
 
-    public FilterModel(byte[][][] filter, byte[][] maxKey, int maxSize) {
-        this.filter = filter;
-        this.maxKey = maxKey;
-        this.maxSize = maxSize;
-    }
+  public FilterModel(byte[][][] filter, byte[][] maxKey, int maxSize) {
+    this.filter = filter;
+    this.maxKey = maxKey;
+    this.maxSize = maxSize;
+  }
 
-    /**
-     * @return the filter
-     */
-    public byte[][][] getFilter() {
-        return filter;
-    }
+  /**
+   * @return the filter
+   */
+  public byte[][][] getFilter() {
+    return filter;
+  }
 
-    /**
-     * @param filter the filter to set
-     */
-    public void setFilter(byte[][][] filter) {
-        this.filter = filter;
-    }
+  /**
+   * @param filter the filter to set
+   */
+  public void setFilter(byte[][][] filter) {
+    this.filter = filter;
+  }
 
-    /**
-     * @return the maxKey
-     */
-    public byte[][] getMaxKey() {
-        return maxKey;
-    }
+  /**
+   * @return the maxKey
+   */
+  public byte[][] getMaxKey() {
+    return maxKey;
+  }
 
-    /**
-     * @param maxKey the maxKey to set
-     */
-    public void setMaxKey(byte[][] maxKey) {
-        this.maxKey = maxKey;
-    }
+  /**
+   * @param maxKey the maxKey to set
+   */
+  public void setMaxKey(byte[][] maxKey) {
+    this.maxKey = maxKey;
+  }
 
-    /**
-     * @return the maxSize
-     */
-    public int getMaxSize() {
-        return maxSize;
-    }
+  /**
+   * @return the maxSize
+   */
+  public int getMaxSize() {
+    return maxSize;
+  }
 
-    /**
-     * @param maxSize the maxSize to set
-     */
-    public void setMaxSize(int maxSize) {
-        this.maxSize = maxSize;
-    }
+  /**
+   * @param maxSize the maxSize to set
+   */
+  public void setMaxSize(int maxSize) {
+    this.maxSize = maxSize;
+  }
 
 }

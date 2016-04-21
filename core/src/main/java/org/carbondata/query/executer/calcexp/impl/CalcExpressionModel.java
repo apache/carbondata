@@ -24,23 +24,23 @@ import java.util.List;
 import org.carbondata.core.metadata.CarbonMetadata.Measure;
 
 public class CalcExpressionModel {
-    /**
-     *
-     */
-    private List<Measure> msrsList;
+  /**
+   *
+   */
+  private List<Measure> msrsList;
 
-    /**
-     * @return the msrsList
-     */
-    public List<Measure> getMsrsList() {
-        return msrsList;
-    }
+  /**
+   * @return the msrsList
+   */
+  public List<Measure> getMsrsList() {
+    return msrsList;
+  }
 
-    /**
-     * @param msrsList the msrsList to set
-     */
-    public void setMsrsList(List<Measure> msrsList) {
-        this.msrsList = msrsList;
-    }
+  /**
+   * @param msrsList the msrsList to set
+   */
+  public void setMsrsList(List<Measure> msrsList) {
+    this.msrsList = msrsList;
+  }
 
 }

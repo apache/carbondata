@@ -30,38 +30,38 @@ import java.util.List;
  */
 public interface Cache<K, V> {
 
-    /**
-     * This method will get the value for the given key. If value does not exist
-     * for the given key, it will check and load the value.
-     *
-     * @param key
-     * @return
-     */
-    V get(K key);
+  /**
+   * This method will get the value for the given key. If value does not exist
+   * for the given key, it will check and load the value.
+   *
+   * @param key
+   * @return
+   */
+  V get(K key);
 
-    /**
-     * This method will return a list of values for the given list of keys.
-     * For each key, this method will check and load the data if required.
-     *
-     * @param keys
-     * @return
-     */
-    List<V> getAll(List<K> keys);
+  /**
+   * This method will return a list of values for the given list of keys.
+   * For each key, this method will check and load the data if required.
+   *
+   * @param keys
+   * @return
+   */
+  List<V> getAll(List<K> keys);
 
-    /**
-     * This method will return the value for the given key. It will not check and load
-     * the data for the given key
-     *
-     * @param key
-     * @return
-     */
-    V getIfPresent(K key);
+  /**
+   * This method will return the value for the given key. It will not check and load
+   * the data for the given key
+   *
+   * @param key
+   * @return
+   */
+  V getIfPresent(K key);
 
-    /**
-     * This method will remove the cache for a given key
-     *
-     * @param key
-     */
-    void invalidate(K key);
+  /**
+   * This method will remove the cache for a given key
+   *
+   * @param key
+   */
+  void invalidate(K key);
 }
 

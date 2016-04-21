@@ -24,127 +24,125 @@ import java.util.Arrays;
 
 public class CarbonPredicates implements Serializable {
 
-    private static final long serialVersionUID = -795961936216399659L;
+  private static final long serialVersionUID = -795961936216399659L;
 
-    /**
-     * include filters
-     */
-    private long[] include;
+  /**
+   * include filters
+   */
+  private long[] include;
 
-    /**
-     * exclude filters
-     */
-    private long[] exclude;
+  /**
+   * exclude filters
+   */
+  private long[] exclude;
 
-    /**
-     * include or filters
-     */
-    private long[] includeOr;
+  /**
+   * include or filters
+   */
+  private long[] includeOr;
 
-    /**
-     * Ordinal
-     */
-    private int ordinal;
+  /**
+   * Ordinal
+   */
+  private int ordinal;
 
-    public CarbonPredicates() {
-        include = new long[0];
-        exclude = new long[0];
-        includeOr = new long[0];
-    }
+  public CarbonPredicates() {
+    include = new long[0];
+    exclude = new long[0];
+    includeOr = new long[0];
+  }
 
-    /**
-     * @return the include
-     */
-    public long[] getInclude() {
-        return include;
-    }
+  /**
+   * @return the include
+   */
+  public long[] getInclude() {
+    return include;
+  }
 
-    /**
-     * @param include the include to set
-     */
-    public void setInclude(long[] include) {
-        Arrays.sort(include);
-        this.include = include;
-    }
+  /**
+   * @param include the include to set
+   */
+  public void setInclude(long[] include) {
+    Arrays.sort(include);
+    this.include = include;
+  }
 
-    /**
-     * @return the exclude
-     */
-    public long[] getExclude() {
-        return exclude;
-    }
+  /**
+   * @return the exclude
+   */
+  public long[] getExclude() {
+    return exclude;
+  }
 
-    /**
-     * @param exclude the exclude to set
-     */
-    public void setExclude(long[] exclude) {
-        Arrays.sort(exclude);
-        this.exclude = exclude;
-    }
+  /**
+   * @param exclude the exclude to set
+   */
+  public void setExclude(long[] exclude) {
+    Arrays.sort(exclude);
+    this.exclude = exclude;
+  }
 
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + Arrays.hashCode(exclude);
-        result = prime * result + Arrays.hashCode(include);
-        result = prime * result + Arrays.hashCode(includeOr);
-        return result;
-    }
+  @Override public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + Arrays.hashCode(exclude);
+    result = prime * result + Arrays.hashCode(include);
+    result = prime * result + Arrays.hashCode(includeOr);
+    return result;
+  }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof CarbonPredicates) {
-            if (this == obj) {
-                return true;
-            }
+  @Override public boolean equals(Object obj) {
+    if (obj instanceof CarbonPredicates) {
+      if (this == obj) {
+        return true;
+      }
 
-            CarbonPredicates other = (CarbonPredicates) obj;
-            if (!Arrays.equals(exclude, other.exclude)) {
-                return false;
-            }
-            if (!Arrays.equals(include, other.include)) {
-                return false;
-            }
-            if (!Arrays.equals(includeOr, other.includeOr)) {
-                return false;
-            }
-            if (ordinal != other.ordinal) {
-                return false;
-            }
-            return true;
-
-        }
-
+      CarbonPredicates other = (CarbonPredicates) obj;
+      if (!Arrays.equals(exclude, other.exclude)) {
         return false;
+      }
+      if (!Arrays.equals(include, other.include)) {
+        return false;
+      }
+      if (!Arrays.equals(includeOr, other.includeOr)) {
+        return false;
+      }
+      if (ordinal != other.ordinal) {
+        return false;
+      }
+      return true;
+
     }
 
-    /**
-     * @return the ordinal
-     */
-    public int getOrdinal() {
-        return ordinal;
-    }
+    return false;
+  }
 
-    /**
-     * @param ordinal the ordinal to set
-     */
-    public void setOrdinal(int ordinal) {
-        this.ordinal = ordinal;
-    }
+  /**
+   * @return the ordinal
+   */
+  public int getOrdinal() {
+    return ordinal;
+  }
 
-    /**
-     * @return the includeOr
-     */
-    public long[] getIncludeOr() {
-        return includeOr;
-    }
+  /**
+   * @param ordinal the ordinal to set
+   */
+  public void setOrdinal(int ordinal) {
+    this.ordinal = ordinal;
+  }
 
-    /**
-     * @param includeOr the includeOr to set
-     */
-    public void setIncludeOr(long[] includeOr) {
-        this.includeOr = includeOr;
-    }
+  /**
+   * @return the includeOr
+   */
+  public long[] getIncludeOr() {
+    return includeOr;
+  }
+
+  /**
+   * @param includeOr the includeOr to set
+   */
+  public void setIncludeOr(long[] includeOr) {
+    this.includeOr = includeOr;
+  }
 
 }

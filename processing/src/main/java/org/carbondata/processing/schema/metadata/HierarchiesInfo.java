@@ -23,108 +23,108 @@ import java.util.Map;
 
 public class HierarchiesInfo {
 
-    /**
-     * hierarichieName
-     */
-    private String hierarichieName;
+  /**
+   * hierarichieName
+   */
+  private String hierarichieName;
 
-    /**
-     * columnIndex
-     */
-    private int[] columnIndex;
+  /**
+   * columnIndex
+   */
+  private int[] columnIndex;
 
-    /**
-     * columnNames
-     */
-    private String[] columnNames;
+  /**
+   * columnNames
+   */
+  private String[] columnNames;
 
-    /**
-     * columnPropMap
-     */
-    private Map<String, String[]> columnPropMap;
+  /**
+   * columnPropMap
+   */
+  private Map<String, String[]> columnPropMap;
 
-    /**
-     * loadToHierarichiTable
-     */
-    private boolean loadToHierarichiTable;
+  /**
+   * loadToHierarichiTable
+   */
+  private boolean loadToHierarichiTable;
 
-    /**
-     * query
-     */
-    private String query;
+  /**
+   * query
+   */
+  private String query;
 
-    /**
-     * Is Time Dimension
-     */
-    private boolean isTimeDimension;
+  /**
+   * Is Time Dimension
+   */
+  private boolean isTimeDimension;
 
-    /**
-     * levelTypeColumnMap
-     */
-    private Map<String, String> levelTypeColumnMap;
+  /**
+   * levelTypeColumnMap
+   */
+  private Map<String, String> levelTypeColumnMap;
 
-    public boolean isLoadToHierarichiTable() {
-        return loadToHierarichiTable;
-    }
+  public boolean isLoadToHierarichiTable() {
+    return loadToHierarichiTable;
+  }
 
-    public void setLoadToHierarichiTable(boolean loadToHierarichiTable) {
-        this.loadToHierarichiTable = loadToHierarichiTable;
-    }
+  public void setLoadToHierarichiTable(boolean loadToHierarichiTable) {
+    this.loadToHierarichiTable = loadToHierarichiTable;
+  }
 
-    public String getHierarichieName() {
-        return hierarichieName;
-    }
+  public String getHierarichieName() {
+    return hierarichieName;
+  }
 
-    public void setHierarichieName(String hierarichieName) {
-        this.hierarichieName = hierarichieName;
-    }
+  public void setHierarichieName(String hierarichieName) {
+    this.hierarichieName = hierarichieName;
+  }
 
-    public int[] getColumnIndex() {
-        return columnIndex;
-    }
+  public int[] getColumnIndex() {
+    return columnIndex;
+  }
 
-    public void setColumnIndex(int[] columnIndex) {
-        this.columnIndex = columnIndex;
-    }
+  public void setColumnIndex(int[] columnIndex) {
+    this.columnIndex = columnIndex;
+  }
 
-    public String[] getColumnNames() {
-        return columnNames;
-    }
+  public String[] getColumnNames() {
+    return columnNames;
+  }
 
-    public void setColumnNames(String[] columnNames) {
-        this.columnNames = columnNames;
-    }
+  public void setColumnNames(String[] columnNames) {
+    this.columnNames = columnNames;
+  }
 
-    public Map<String, String[]> getColumnPropMap() {
-        return columnPropMap;
-    }
+  public Map<String, String[]> getColumnPropMap() {
+    return columnPropMap;
+  }
 
-    public void setColumnPropMap(Map<String, String[]> columnPropMap) {
-        this.columnPropMap = columnPropMap;
-    }
+  public void setColumnPropMap(Map<String, String[]> columnPropMap) {
+    this.columnPropMap = columnPropMap;
+  }
 
-    public String getQuery() {
-        return query;
-    }
+  public String getQuery() {
+    return query;
+  }
 
-    public void setQuery(String query) {
-        this.query = query;
-    }
+  public void setQuery(String query) {
+    this.query = query;
+  }
 
-    public boolean isTimeDimension() {
-        return isTimeDimension;
-    }
+  public boolean isTimeDimension() {
+    return isTimeDimension;
+  }
 
-    public void setTimeDimension(boolean isTimeDimension) {
-        this.isTimeDimension = isTimeDimension;
-    }
+  public void setTimeDimension(boolean isTimeDimension) {
+    this.isTimeDimension = isTimeDimension;
+  }
 
-    public Map<String, String> getLevelTypeColumnMap() {
-        return levelTypeColumnMap;
-    }
+  public Map<String, String> getLevelTypeColumnMap() {
+    return levelTypeColumnMap;
+  }
 
-    public void setLevelTypeColumnMap(Map<String, String> levelTypeColumnMap) {
-        this.levelTypeColumnMap = levelTypeColumnMap;
-    }
+  public void setLevelTypeColumnMap(Map<String, String> levelTypeColumnMap) {
+    this.levelTypeColumnMap = levelTypeColumnMap;
+  }
 
 }

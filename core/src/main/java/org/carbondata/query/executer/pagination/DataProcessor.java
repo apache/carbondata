@@ -25,31 +25,32 @@ import org.carbondata.query.executer.pagination.exception.CarbonPaginationExcept
 
 public interface DataProcessor {
 
-    /**
-     * Initialize the processor
-     *
-     * @param model
-     */
-    void initModel(PaginationModel model) throws CarbonPaginationException;
+  /**
+   * Initialize the processor
+   *
+   * @param model
+   */
+  void initModel(PaginationModel model) throws CarbonPaginationException;
 
-    /**
-     * Process the data
-     *
-     * @param key
-     * @param measures
-     */
-    void processRow(byte[] key, MeasureAggregator[] measures) throws CarbonPaginationException;
+  /**
+   * Process the data
+   *
+   * @param key
+   * @param measures
+   */
+  void processRow(byte[] key, MeasureAggregator[] measures) throws CarbonPaginationException;
 
-    /**
-     * It process the aggregated data which is done in previous step,which is used in measure filters and topN.
-     *
-     * @param groupByHolder
-     */
-    void processGroup(GroupByHolder groupByHolder) throws CarbonPaginationException;
+  /**
+   * It process the aggregated data which is done in previous step,which is used in measure
+   * filters and topN.
+   *
+   * @param groupByHolder
+   */
+  void processGroup(GroupByHolder groupByHolder) throws CarbonPaginationException;
 
-    /**
-     * finish processing
-     */
-    void finish() throws CarbonPaginationException;
+  /**
+   * finish processing
+   */
+  void finish() throws CarbonPaginationException;
 
 }

@@ -29,52 +29,47 @@ import org.junit.Test;
 
 public class AuditExtendedRollingFileAppenderTest_UT {
 
-    private AuditExtendedRollingFileAppender rAppender = null;
+  private AuditExtendedRollingFileAppender rAppender = null;
 
-    @Before
-    public void setUp() throws Exception {
-        rAppender = new AuditExtendedRollingFileAppender();
-        Deencapsulation.setField(rAppender, "fileName", "audit.log");
-        Deencapsulation.setField(rAppender, "maxBackupIndex", 1);
-        Deencapsulation.setField(rAppender, "maxFileSize", 1000L);
+  @Before public void setUp() throws Exception {
+    rAppender = new AuditExtendedRollingFileAppender();
+    Deencapsulation.setField(rAppender, "fileName", "audit.log");
+    Deencapsulation.setField(rAppender, "maxBackupIndex", 1);
+    Deencapsulation.setField(rAppender, "maxFileSize", 1000L);
 
+  }
+
+  @After public void tearDown() throws Exception {
+
+  }
+
+  @Test public void testRollOver() {
+    rAppender.rollOver();
+    rAppender.rollOver();
+    rAppender.rollOver();
+    Assert.assertTrue(true);
+  }
+
+  @Test public void testCleanLogs() {
+    final String startName = "audit";
+    final String folderPath = "./";
+    int maxBackupIndex = 1;
+
+    Deencapsulation.invoke(rAppender, "cleanLogs", startName, folderPath, maxBackupIndex);
+    Assert.assertTrue(true);
+  }
+
+  @Test public void testSubAppendLoggingEvent() {
+    Logger logger = Logger.getLogger(this.getClass());
+    LoggingEvent event = new LoggingEvent(null, logger, 0L, AuditLevel.AUDIT, null, null);
+
+    Deencapsulation.setField(rAppender, "qw", null);
+    try {
+      rAppender.subAppend(event);
+    } catch (Exception e) {
+      //
     }
-
-    @After
-    public void tearDown() throws Exception {
-
-    }
-
-    @Test
-    public void testRollOver() {
-        rAppender.rollOver();
-        rAppender.rollOver();
-        rAppender.rollOver();
-        Assert.assertTrue(true);
-    }
-
-    @Test
-    public void testCleanLogs() {
-        final String startName = "audit";
-        final String folderPath = "./";
-        int maxBackupIndex = 1;
-
-        Deencapsulation.invoke(rAppender, "cleanLogs", startName, folderPath, maxBackupIndex);
-        Assert.assertTrue(true);
-    }
-
-    @Test
-    public void testSubAppendLoggingEvent() {
-        Logger logger = Logger.getLogger(this.getClass());
-        LoggingEvent event = new LoggingEvent(null, logger, 0L, AuditLevel.AUDIT, null, null);
-
-        Deencapsulation.setField(rAppender, "qw", null);
-        try {
-            rAppender.subAppend(event);
-        } catch (Exception e) {
-            //
-        }
-        Assert.assertTrue(true);
-    }
+    Assert.assertTrue(true);
+  }
 
 }

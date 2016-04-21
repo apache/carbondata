@@ -26,21 +26,21 @@ import java.util.Locale;
  */
 public interface LocaleLogMessageFinder {
 
-    /**
-     * return Log Event Message
-     *
-     * @param event log event.
-     * @return String
-     */
-    String findLogEventMessage(LogEvent event);
+  /**
+   * return Log Event Message
+   *
+   * @param event log event.
+   * @return String
+   */
+  String findLogEventMessage(LogEvent event);
 
-    /**
-     * returns log event message based on Locale.
-     *
-     * @param locale based on Locale.
-     * @param event  based on event.
-     * @return String
-     */
-    String findLogEventMessage(Locale locale, LogEvent event);
+  /**
+   * returns log event message based on Locale.
+   *
+   * @param locale based on Locale.
+   * @param event  based on event.
+   * @return String
+   */
+  String findLogEventMessage(Locale locale, LogEvent event);
 
 }

@@ -27,22 +27,22 @@ import java.util.List;
  */
 public interface CarbonDictionarySortIndexWriter extends Closeable {
 
-    /**
-     * The method is used write the dictionary sortIndex data to columns
-     * sortedIndex file in thrif format.
-     *
-     * @param sortIndexList list of sortIndex
-     * @throws IOException In Case of any I/O errors occurs.
-     */
-    public void writeSortIndex(List<Integer> sortIndexList) throws IOException;
+  /**
+   * The method is used write the dictionary sortIndex data to columns
+   * sortedIndex file in thrif format.
+   *
+   * @param sortIndexList list of sortIndex
+   * @throws IOException In Case of any I/O errors occurs.
+   */
+  public void writeSortIndex(List<Integer> sortIndexList) throws IOException;
 
-    /**
-     * The method is used write the dictionary sortIndexInverted data to columns
-     * sortedIndex file in thrif format.
-     *
-     * @param invertedSortIndexList list of  sortIndexInverted
-     * @throws IOException In Case of any I/O errors occurs.
-     */
-    public void writeInvertedSortIndex(List<Integer> invertedSortIndexList) throws IOException;
+  /**
+   * The method is used write the dictionary sortIndexInverted data to columns
+   * sortedIndex file in thrif format.
+   *
+   * @param invertedSortIndexList list of  sortIndexInverted
+   * @throws IOException In Case of any I/O errors occurs.
+   */
+  public void writeInvertedSortIndex(List<Integer> invertedSortIndexList) throws IOException;
 
 }

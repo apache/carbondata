@@ -25,26 +25,26 @@ import org.carbondata.common.logging.LogEvent;
  * CarbonLogEvent
  */
 public enum CarbonCoreLogEvent implements LogEvent {
-    /**
-     * CARBONCORE_MSG
-     */
-    UNIBI_CARBONCORE_MSG("carbon.core");
+  /**
+   * CARBONCORE_MSG
+   */
+  UNIBI_CARBONCORE_MSG("carbon.core");
 
-    /**
-     * eventCode.
-     */
-    private String eventCode;
+  /**
+   * eventCode.
+   */
+  private String eventCode;
 
-    CarbonCoreLogEvent(final String eventCode) {
-        this.eventCode = eventCode;
-    }
+  CarbonCoreLogEvent(final String eventCode) {
+    this.eventCode = eventCode;
+  }
 
-    public String getEventCode() {
-        return eventCode;
-    }
+  public String getEventCode() {
+    return eventCode;
+  }
 
-    public String getModuleName() {
-        return "CARBON_CORE";
-    }
+  public String getModuleName() {
+    return "CARBON_CORE";
+  }
 
 }

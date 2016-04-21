@@ -29,30 +29,29 @@ import org.carbondata.query.wrappers.ByteArrayWrapper;
 
 public class DataAggregator {
 
-    private MeasureDataAggregator msrAggregator;
+  private MeasureDataAggregator msrAggregator;
 
-    private DimensionDataAggreagtor dimensionDataAggreagtor;
+  private DimensionDataAggreagtor dimensionDataAggreagtor;
 
-    private ExpressionAggregator expressionAggregator;
+  private ExpressionAggregator expressionAggregator;
 
-    public DataAggregator(boolean isAggTable, ColumnarAggregatorInfo columnarAggregatorInfo) {
-        if (!isAggTable) {
-            msrAggregator = new FactTableAggregator(columnarAggregatorInfo);
-        } else {
-            msrAggregator =
-                    new org.carbondata.query.columnar.aggregator.impl.measure.AggregateTableAggregator(
-                            columnarAggregatorInfo);
-        }
-
-        dimensionDataAggreagtor = new DimensionDataAggreagtor(columnarAggregatorInfo);
-        expressionAggregator = new ExpressionAggregator(columnarAggregatorInfo);
+  public DataAggregator(boolean isAggTable, ColumnarAggregatorInfo columnarAggregatorInfo) {
+    if (!isAggTable) {
+      msrAggregator = new FactTableAggregator(columnarAggregatorInfo);
+    } else {
+      msrAggregator =
+          new org.carbondata.query.columnar.aggregator.impl.measure.AggregateTableAggregator(
+              columnarAggregatorInfo);
     }
 
-    public void aggregateData(AbstractColumnarScanResult keyValue,
-            MeasureAggregator[] currentMsrRowData, ByteArrayWrapper dimensionsRowWrapper) {
-        dimensionDataAggreagtor
-                .aggregateDimension(keyValue, currentMsrRowData, dimensionsRowWrapper);
-        expressionAggregator.aggregateExpression(keyValue, currentMsrRowData);
-        msrAggregator.aggregateMeasure(keyValue, currentMsrRowData);
-    }
+    dimensionDataAggreagtor = new DimensionDataAggreagtor(columnarAggregatorInfo);
+    expressionAggregator = new ExpressionAggregator(columnarAggregatorInfo);
+  }
+
+  public void aggregateData(AbstractColumnarScanResult keyValue,
+      MeasureAggregator[] currentMsrRowData, ByteArrayWrapper dimensionsRowWrapper) {
+    dimensionDataAggreagtor.aggregateDimension(keyValue, currentMsrRowData, dimensionsRowWrapper);
+    expressionAggregator.aggregateExpression(keyValue, currentMsrRowData);
+    msrAggregator.aggregateMeasure(keyValue, currentMsrRowData);
+  }
 }

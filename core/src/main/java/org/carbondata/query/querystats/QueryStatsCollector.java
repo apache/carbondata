@@ -34,60 +34,60 @@ import org.carbondata.query.util.CarbonEngineLogEvent;
  */
 public final class QueryStatsCollector {
 
-    private static final LogService LOGGER =
-            LogServiceFactory.getLogService(QueryStatsCollector.class.getName());
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(QueryStatsCollector.class.getName());
 
-    private static QueryStatsCollector queryStatsCollector;
+  private static QueryStatsCollector queryStatsCollector;
 
-    private Map<String, QueryDetail> queryStats;
+  private Map<String, QueryDetail> queryStats;
 
-    private QueryStore queryStore;
+  private QueryStore queryStore;
 
-    private PartitionAccumulator partitionAccumulator;
+  private PartitionAccumulator partitionAccumulator;
 
-    private QueryStatsCollector() {
-        queryStore = new BinaryQueryStore();
-        queryStats = new ConcurrentHashMap<String, QueryDetail>(1000);
-        partitionAccumulator = new PartitionAccumulator();
-    }
+  private QueryStatsCollector() {
+    queryStore = new BinaryQueryStore();
+    queryStats = new ConcurrentHashMap<String, QueryDetail>(1000);
+    partitionAccumulator = new PartitionAccumulator();
+  }
 
-    public static synchronized QueryStatsCollector getInstance() {
-        if (null == queryStatsCollector) {
-            queryStatsCollector = new QueryStatsCollector();
-
-        }
-        return queryStatsCollector;
-    }
-
-    public void addQueryStats(String queryId, QueryDetail queryDetail) {
-        queryStats.put(queryId, queryDetail);
-    }
-
-    public void removeQueryStats(String queryId) {
-        queryStats.remove(queryId);
-    }
-
-    public QueryDetail getQueryStats(String queryId) {
-        return queryStats.get(queryId);
-    }
-
-    public void logQueryStats(QueryDetail queryDetail) {
-        try {
-            if (null != queryDetail.getDimOrdinals()) {
-                queryStore.logQuery(queryDetail);
-            }
-        } catch (Exception e) {
-            LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "Error in logging query:" + e);
-        }
+  public static synchronized QueryStatsCollector getInstance() {
+    if (null == queryStatsCollector) {
+      queryStatsCollector = new QueryStatsCollector();
 
     }
+    return queryStatsCollector;
+  }
 
-    public PartitionDetail getInitialPartitionAccumulatorValue() {
-        return null;
+  public void addQueryStats(String queryId, QueryDetail queryDetail) {
+    queryStats.put(queryId, queryDetail);
+  }
+
+  public void removeQueryStats(String queryId) {
+    queryStats.remove(queryId);
+  }
+
+  public QueryDetail getQueryStats(String queryId) {
+    return queryStats.get(queryId);
+  }
+
+  public void logQueryStats(QueryDetail queryDetail) {
+    try {
+      if (null != queryDetail.getDimOrdinals()) {
+        queryStore.logQuery(queryDetail);
+      }
+    } catch (Exception e) {
+      LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "Error in logging query:" + e);
     }
 
-    public PartitionAccumulator getPartitionAccumulatorParam() {
-        return partitionAccumulator;
-    }
+  }
+
+  public PartitionDetail getInitialPartitionAccumulatorValue() {
+    return null;
+  }
+
+  public PartitionAccumulator getPartitionAccumulatorParam() {
+    return partitionAccumulator;
+  }
 
 }

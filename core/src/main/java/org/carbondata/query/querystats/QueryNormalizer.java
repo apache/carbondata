@@ -31,135 +31,133 @@ import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
- * This class analyze history query and checks if it meets the criteria. If it meets than it will add to normalized query list
- *
- * @author A00902717
+ * This class analyze history query and checks if it meets the criteria. If it meets than it will
+ * add to normalized query list
  */
 public class QueryNormalizer {
 
-    private static final LogService LOGGER =
-            LogServiceFactory.getLogService(QueryNormalizer.class.getName());
-    private List<QueryDetail> normalizedQueryDetails = new ArrayList<QueryDetail>(1000);
-    /**
-     * If any logged query is expired than rewrite the log by removing expired query
-     */
-    private boolean reWriteQueryStats;
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(QueryNormalizer.class.getName());
+  private List<QueryDetail> normalizedQueryDetails = new ArrayList<QueryDetail>(1000);
+  /**
+   * If any logged query is expired than rewrite the log by removing expired query
+   */
+  private boolean reWriteQueryStats;
 
-    private int benefitRatio = Preference.BENEFIT_RATIO;
+  private int benefitRatio = Preference.BENEFIT_RATIO;
 
-    private int performanceGoal = Preference.PERFORMANCE_GOAL;
+  private int performanceGoal = Preference.PERFORMANCE_GOAL;
 
-    /**
-     * How old query should be considered
-     */
-    private int queryExpiryDays = Preference.QUERY_EXPIRY_DAYS;
+  /**
+   * How old query should be considered
+   */
+  private int queryExpiryDays = Preference.QUERY_EXPIRY_DAYS;
 
-    public QueryNormalizer() {
-        String confPerformanceGoal =
-                CarbonProperties.getInstance().getProperty(Preference.PERFORMANCE_GOAL_KEY);
-        if (null != confPerformanceGoal) {
-            performanceGoal = Integer.parseInt(confPerformanceGoal);
-        }
-        String confQueryExpiryDay =
-                CarbonProperties.getInstance().getProperty(Preference.QUERY_STATS_EXPIRY_DAYS_KEY);
-        if (null != confQueryExpiryDay) {
-            queryExpiryDays = Integer.parseInt(confQueryExpiryDay);
-        }
-        String confBenefitRatio =
-                CarbonProperties.getInstance().getProperty(Preference.BENEFIT_RATIO_KEY);
+  public QueryNormalizer() {
+    String confPerformanceGoal =
+        CarbonProperties.getInstance().getProperty(Preference.PERFORMANCE_GOAL_KEY);
+    if (null != confPerformanceGoal) {
+      performanceGoal = Integer.parseInt(confPerformanceGoal);
+    }
+    String confQueryExpiryDay =
+        CarbonProperties.getInstance().getProperty(Preference.QUERY_STATS_EXPIRY_DAYS_KEY);
+    if (null != confQueryExpiryDay) {
+      queryExpiryDays = Integer.parseInt(confQueryExpiryDay);
+    }
+    String confBenefitRatio =
+        CarbonProperties.getInstance().getProperty(Preference.BENEFIT_RATIO_KEY);
 
-        if (null != confBenefitRatio) {
-            benefitRatio = Integer.parseInt(confBenefitRatio);
-        }
-
+    if (null != confBenefitRatio) {
+      benefitRatio = Integer.parseInt(confBenefitRatio);
     }
 
-    public boolean addQueryDetail(QueryDetail queryDetail) {
-        if (queryDetail.getRecordSize() == 0) {
-            LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-                    "Filtering query as its result size is 0");
-            return false;
-        }
-        int actualBenefitRatio =
-                (int) (queryDetail.getNoOfRowsScanned() / queryDetail.getRecordSize());
-        if (actualBenefitRatio < benefitRatio) {
-            LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-                    "Filtering query as it doesn't meet benefit ration criteria");
-            return false;
-        }
-        queryDetail.setBenefitRatio(actualBenefitRatio);
-        // if current query already exist than increase its frequency
-        // and set lowest execution time of both
-        int indx = normalizedQueryDetails.indexOf(queryDetail);
-        if (indx != -1) {
-            QueryDetail existingQuery = normalizedQueryDetails.get(indx);
-            existingQuery.incrementFrequency();
-            if (existingQuery.getTotalExecutionTime() > queryDetail.getTotalExecutionTime()) {
-                existingQuery.setTotalExecutionTime(queryDetail.getTotalExecutionTime());
+  }
 
-            }
-            //if latest query record size is more than previous query record size, than consider record size of current query
-            if (queryDetail.getRecordSize() > existingQuery.getRecordSize()) {
-                existingQuery.setRecordSize(queryDetail.getRecordSize());
-            }
-        } else {
-
-            if (isExpired(queryDetail.getQueryStartTime())) {
-                reWriteQueryStats = true;
-                return false;
-            } else {
-                normalizedQueryDetails.add(queryDetail);
-            }
-
-        }
-        return true;
+  public boolean addQueryDetail(QueryDetail queryDetail) {
+    if (queryDetail.getRecordSize() == 0) {
+      LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
+          "Filtering query as its result size is 0");
+      return false;
     }
-
-    public boolean isReWriteRequired() {
-        return reWriteQueryStats;
+    int actualBenefitRatio = (int) (queryDetail.getNoOfRowsScanned() / queryDetail.getRecordSize());
+    if (actualBenefitRatio < benefitRatio) {
+      LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
+          "Filtering query as it doesn't meet benefit ration criteria");
+      return false;
     }
+    queryDetail.setBenefitRatio(actualBenefitRatio);
+    // if current query already exist than increase its frequency
+    // and set lowest execution time of both
+    int indx = normalizedQueryDetails.indexOf(queryDetail);
+    if (indx != -1) {
+      QueryDetail existingQuery = normalizedQueryDetails.get(indx);
+      existingQuery.incrementFrequency();
+      if (existingQuery.getTotalExecutionTime() > queryDetail.getTotalExecutionTime()) {
+        existingQuery.setTotalExecutionTime(queryDetail.getTotalExecutionTime());
 
-    /**
-     * if query time is older than 30 days and it's expired and should not be
-     * considered
-     *
-     * @param queryTime
-     * @return
-     */
-    private boolean isExpired(long queryTime) {
-        Calendar expDay = Calendar.getInstance();
-        expDay.add(Calendar.DAY_OF_YEAR, -queryExpiryDays);
+      }
+      //if latest query record size is more than previous query record size, than consider record
+      // size of current query
+      if (queryDetail.getRecordSize() > existingQuery.getRecordSize()) {
+        existingQuery.setRecordSize(queryDetail.getRecordSize());
+      }
+    } else {
 
-        if (queryTime < expDay.getTimeInMillis()) {
-            return true;
-        }
+      if (isExpired(queryDetail.getQueryStartTime())) {
+        reWriteQueryStats = true;
         return false;
+      } else {
+        normalizedQueryDetails.add(queryDetail);
+      }
+
+    }
+    return true;
+  }
+
+  public boolean isReWriteRequired() {
+    return reWriteQueryStats;
+  }
+
+  /**
+   * if query time is older than 30 days and it's expired and should not be
+   * considered
+   *
+   * @param queryTime
+   * @return
+   */
+  private boolean isExpired(long queryTime) {
+    Calendar expDay = Calendar.getInstance();
+    expDay.add(Calendar.DAY_OF_YEAR, -queryExpiryDays);
+
+    if (queryTime < expDay.getTimeInMillis()) {
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Calculate some parameter based on which aggregate combination will be decided
+   *
+   * @return
+   */
+  public List<QueryDetail> getNormalizedQueries() {
+    Iterator<QueryDetail> itr = normalizedQueryDetails.iterator();
+    while (itr.hasNext()) {
+      QueryDetail queryDetail = itr.next();
+      long performanceGap =
+          TimeUnit.MILLISECONDS.toSeconds(queryDetail.getTotalExecutionTime()) - performanceGoal;
+      if (performanceGap < 0) {
+        LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
+            "Filtering query as it doesn't meet performance goal criteria");
+        itr.remove();
+        continue;
+      }
+      long freqWeightedPerfGap = performanceGap * queryDetail.getFrequency();
+      long weightage = queryDetail.getBenefitRatio() * freqWeightedPerfGap;
+      queryDetail.setWeightage(weightage);
     }
 
-    /**
-     * Calculate some parameter based on which aggregate combination will be decided
-     *
-     * @return
-     */
-    public List<QueryDetail> getNormalizedQueries() {
-        Iterator<QueryDetail> itr = normalizedQueryDetails.iterator();
-        while (itr.hasNext()) {
-            QueryDetail queryDetail = itr.next();
-            long performanceGap =
-                    TimeUnit.MILLISECONDS.toSeconds(queryDetail.getTotalExecutionTime())
-                            - performanceGoal;
-            if (performanceGap < 0) {
-                LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-                        "Filtering query as it doesn't meet performance goal criteria");
-                itr.remove();
-                continue;
-            }
-            long freqWeightedPerfGap = performanceGap * queryDetail.getFrequency();
-            long weightage = queryDetail.getBenefitRatio() * freqWeightedPerfGap;
-            queryDetail.setWeightage(weightage);
-        }
-
-        return normalizedQueryDetails;
-    }
+    return normalizedQueryDetails;
+  }
 
 }

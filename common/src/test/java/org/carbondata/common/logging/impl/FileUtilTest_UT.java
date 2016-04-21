@@ -30,36 +30,33 @@ import org.junit.Test;
 
 public class FileUtilTest_UT extends TestCase {
 
-    /**
-     * @throws Exception
-     */
-    @Before
-    public void setUp() throws Exception {
-        File f = new File("myfile.txt");
-        if (!f.exists()) {
-            f.createNewFile();
-        }
+  /**
+   * @throws Exception
+   */
+  @Before public void setUp() throws Exception {
+    File f = new File("myfile.txt");
+    if (!f.exists()) {
+      f.createNewFile();
     }
+  }
 
-    /**
-     * @throws Exception
-     */
-    @After
-    public void tearDown() throws Exception {
-        File f = new File("myfile.txt");
-        if (f.exists()) {
-            f.delete();
-        }
+  /**
+   * @throws Exception
+   */
+  @After public void tearDown() throws Exception {
+    File f = new File("myfile.txt");
+    if (f.exists()) {
+      f.delete();
     }
+  }
 
-    @Test
-    public void testClose() {
-        try {
-            FileInputStream in = new FileInputStream(new File("myfile.txt"));
-            FileUtil.close(in);
-            assertTrue(true);
-        } catch (FileNotFoundException e) {
-            assertTrue(false);
-        }
+  @Test public void testClose() {
+    try {
+      FileInputStream in = new FileInputStream(new File("myfile.txt"));
+      FileUtil.close(in);
+      assertTrue(true);
+    } catch (FileNotFoundException e) {
+      assertTrue(false);
     }
+  }
 }

@@ -24,34 +24,34 @@ package org.carbondata.common.logging;
  */
 public enum Level {
 
-    NONE(0),
-    DEBUG(1),
-    INFO(2),
-    ERROR(3),
-    AUDIT(4),
-    WARN(5);
+  NONE(0),
+  DEBUG(1),
+  INFO(2),
+  ERROR(3),
+  AUDIT(4),
+  WARN(5);
 
-    /**
-     * Constructor.
-     *
-     * @param level
-     */
-    Level(final int level) {
+  /**
+   * Constructor.
+   *
+   * @param level
+   */
+  Level(final int level) {
 
+  }
+
+  /**
+   * Returns an Instance for the specified type.
+   *
+   * @param name instance type needed.
+   * @return {@link Level}
+   */
+  public static Level getInstance(String name) {
+    for (Level logLevel : Level.values()) {
+      if (logLevel.name().equalsIgnoreCase(name)) {
+        return logLevel;
+      }
     }
-
-    /**
-     * Returns an Instance for the specified type.
-     *
-     * @param name instance type needed.
-     * @return {@link Level}
-     */
-    public static Level getInstance(String name) {
-        for (Level logLevel : Level.values()) {
-            if (logLevel.name().equalsIgnoreCase(name)) {
-                return logLevel;
-            }
-        }
-        return null;
-    }
+    return null;
+  }
 }

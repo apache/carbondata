@@ -24,29 +24,29 @@ package org.carbondata.core.constants;
  * dimension,ignoreDictionary,measure columns.
  */
 public enum IgnoreDictionary {
-    /**
-     * POSITION WHERE DIMENSIONS R STORED IN OBJECT ARRAY.
-     */
-    DIMENSION_INDEX_IN_ROW(0),
+  /**
+   * POSITION WHERE DIMENSIONS R STORED IN OBJECT ARRAY.
+   */
+  DIMENSION_INDEX_IN_ROW(0),
 
-    /**
-     * POSITION WHERE BYTE[] (high cardinality) IS STORED IN OBJECT ARRAY.
-     */
-    BYTE_ARRAY_INDEX_IN_ROW(1),
+  /**
+   * POSITION WHERE BYTE[] (high cardinality) IS STORED IN OBJECT ARRAY.
+   */
+  BYTE_ARRAY_INDEX_IN_ROW(1),
 
-    /**
-     * POSITION WHERE MEASURES R STORED IN OBJECT ARRAY.
-     */
-    MEASURES_INDEX_IN_ROW(2);
+  /**
+   * POSITION WHERE MEASURES R STORED IN OBJECT ARRAY.
+   */
+  MEASURES_INDEX_IN_ROW(2);
 
-    private final int index;
+  private final int index;
 
-    IgnoreDictionary(int index) {
-        this.index = index;
-    }
+  IgnoreDictionary(int index) {
+    this.index = index;
+  }
 
-    public int getIndex() {
-        return this.index;
-    }
+  public int getIndex() {
+    return this.index;
+  }
 
 }

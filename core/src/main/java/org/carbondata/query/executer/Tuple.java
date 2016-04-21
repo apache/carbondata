@@ -26,42 +26,42 @@ import org.carbondata.query.aggregator.MeasureAggregator;
  * Version 1.0
  */
 public class Tuple {
-    /**
-     * key
-     */
-    private byte[] key;
+  /**
+   * key
+   */
+  private byte[] key;
 
-    /**
-     * measures
-     */
-    private MeasureAggregator[] measures;
+  /**
+   * measures
+   */
+  private MeasureAggregator[] measures;
 
-    /**
-     * @return the key
-     */
-    public byte[] getKey() {
-        return key;
-    }
+  /**
+   * @return the key
+   */
+  public byte[] getKey() {
+    return key;
+  }
 
-    /**
-     * @param key the key to set
-     */
-    public void setKey(byte[] key) {
-        this.key = key;
-    }
+  /**
+   * @param key the key to set
+   */
+  public void setKey(byte[] key) {
+    this.key = key;
+  }
 
-    /**
-     * @return the measures
-     */
-    public MeasureAggregator[] getMeasures() {
-        return measures;
-    }
+  /**
+   * @return the measures
+   */
+  public MeasureAggregator[] getMeasures() {
+    return measures;
+  }
 
-    /**
-     * @param measures the measures to set
-     */
-    public void setMeasures(MeasureAggregator[] measures) {
-        this.measures = measures;
-    }
+  /**
+   * @param measures the measures to set
+   */
+  public void setMeasures(MeasureAggregator[] measures) {
+    this.measures = measures;
+  }
 
 }

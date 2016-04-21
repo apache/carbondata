@@ -23,23 +23,23 @@ import org.carbondata.query.scanner.impl.CarbonKey;
 import org.carbondata.query.scanner.impl.CarbonValue;
 
 public class RowResult {
-    private CarbonKey key;
+  private CarbonKey key;
 
-    private CarbonValue value;
+  private CarbonValue value;
 
-    public CarbonKey getKey() {
-        return key;
-    }
+  public CarbonKey getKey() {
+    return key;
+  }
 
-    public void setKey(CarbonKey key) {
-        this.key = key;
-    }
+  public void setKey(CarbonKey key) {
+    this.key = key;
+  }
 
-    public CarbonValue getValue() {
-        return value;
-    }
+  public CarbonValue getValue() {
+    return value;
+  }
 
-    public void setValue(CarbonValue value) {
-        this.value = value;
-    }
+  public void setValue(CarbonValue value) {
+    this.value = value;
+  }
 }

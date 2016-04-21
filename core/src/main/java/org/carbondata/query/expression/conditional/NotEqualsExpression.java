@@ -19,78 +19,74 @@
 
 package org.carbondata.query.expression.conditional;
 
+import org.carbondata.query.carbonfilterinterface.ExpressionType;
+import org.carbondata.query.carbonfilterinterface.RowIntf;
 import org.carbondata.query.expression.DataType;
 import org.carbondata.query.expression.Expression;
 import org.carbondata.query.expression.ExpressionResult;
 import org.carbondata.query.expression.exception.FilterUnsupportedException;
-import org.carbondata.query.carbonfilterinterface.ExpressionType;
-import org.carbondata.query.carbonfilterinterface.RowIntf;
 
 public class NotEqualsExpression extends BinaryConditionalExpression {
 
-    private static final long serialVersionUID = 8684006025540863973L;
+  private static final long serialVersionUID = 8684006025540863973L;
 
-    public NotEqualsExpression(Expression left, Expression right) {
-        super(left, right);
+  public NotEqualsExpression(Expression left, Expression right) {
+    super(left, right);
+  }
+
+  @Override public ExpressionResult evaluate(RowIntf value) throws FilterUnsupportedException {
+    ExpressionResult elRes = left.evaluate(value);
+    ExpressionResult erRes = right.evaluate(value);
+
+    boolean result = false;
+    ExpressionResult val1 = elRes;
+    ExpressionResult val2 = erRes;
+
+    if (elRes.isNull() || erRes.isNull()) {
+      result = elRes.isNull() != erRes.isNull();
+      val1.set(DataType.BooleanType, result);
+      return val1;
     }
 
-    @Override
-    public ExpressionResult evaluate(RowIntf value) throws FilterUnsupportedException {
-        ExpressionResult elRes = left.evaluate(value);
-        ExpressionResult erRes = right.evaluate(value);
-
-        boolean result = false;
-        ExpressionResult val1 = elRes;
-        ExpressionResult val2 = erRes;
-
-        if (elRes.isNull() || erRes.isNull()) {
-            result = elRes.isNull() != erRes.isNull();
-            val1.set(DataType.BooleanType, result);
-            return val1;
-        }
-
-        //default implementation if the data types are different for the resultsets
-        if (elRes.getDataType() != erRes.getDataType()) {
-            //            result = elRes.getString().equals(erRes.getString());
-            if (elRes.getDataType().getPresedenceOrder() < erRes.getDataType()
-                    .getPresedenceOrder()) {
-                val1 = erRes;
-                val2 = elRes;
-            }
-        }
-        switch (val1.getDataType()) {
-        case StringType:
-            result = !val1.getString().equals(val2.getString());
-            break;
-        case IntegerType:
-            result = val1.getInt().intValue() != val2.getInt().intValue();
-            break;
-        case DoubleType:
-            result = val1.getDouble().doubleValue() != val2.getDouble().doubleValue();
-            break;
-        case TimestampType:
-            result = val1.getTime().longValue() != val2.getTime().longValue();
-            break;
-        case LongType:
-            result = elRes.getLong().longValue() != (erRes.getLong()).longValue();
-            break;
-        case DecimalType:
-            result = elRes.getDecimal().compareTo(erRes.getDecimal()) != 0;
-            break;
-        default:
-            break;
-        }
-        val1.set(DataType.BooleanType, result);
-        return val1;
+    //default implementation if the data types are different for the resultsets
+    if (elRes.getDataType() != erRes.getDataType()) {
+      //            result = elRes.getString().equals(erRes.getString());
+      if (elRes.getDataType().getPresedenceOrder() < erRes.getDataType().getPresedenceOrder()) {
+        val1 = erRes;
+        val2 = elRes;
+      }
     }
-
-    @Override
-    public ExpressionType getFilterExpressionType() {
-        return ExpressionType.NOT_EQUALS;
+    switch (val1.getDataType()) {
+      case StringType:
+        result = !val1.getString().equals(val2.getString());
+        break;
+      case IntegerType:
+        result = val1.getInt().intValue() != val2.getInt().intValue();
+        break;
+      case DoubleType:
+        result = val1.getDouble().doubleValue() != val2.getDouble().doubleValue();
+        break;
+      case TimestampType:
+        result = val1.getTime().longValue() != val2.getTime().longValue();
+        break;
+      case LongType:
+        result = elRes.getLong().longValue() != (erRes.getLong()).longValue();
+        break;
+      case DecimalType:
+        result = elRes.getDecimal().compareTo(erRes.getDecimal()) != 0;
+        break;
+      default:
+        break;
     }
+    val1.set(DataType.BooleanType, result);
+    return val1;
+  }
 
-    @Override
-    public String getString() {
-        return "NotEquals(" + left.getString() + ',' + right.getString() + ')';
-    }
+  @Override public ExpressionType getFilterExpressionType() {
+    return ExpressionType.NOT_EQUALS;
+  }
+
+  @Override public String getString() {
+    return "NotEquals(" + left.getString() + ',' + right.getString() + ')';
+  }
 }

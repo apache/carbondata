@@ -19,170 +19,160 @@
 
 package org.carbondata.processing.suggest.datastats.util;
 
-import java.io.*;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+
+import org.carbondata.core.carbon.SqlStatement;
+import org.carbondata.core.datastorage.store.impl.FileFactory;
+import org.carbondata.processing.suggest.datastats.model.Level;
+import org.carbondata.query.expression.DataType;
 
 import junit.framework.Assert;
 import mockit.Mock;
 import mockit.MockUp;
-import org.carbondata.core.datastorage.store.impl.FileFactory;
-import org.carbondata.core.carbon.SqlStatement;
-import org.carbondata.processing.suggest.datastats.model.Level;
-import org.carbondata.query.expression.DataType;
 import org.junit.Test;
 
 public class DataStatsUtilTest {
-    private String basePath = "src/test/resources";
+  private String basePath = "src/test/resources";
 
-    @Test
-    public void testSerializeObject_ExceptionFromDataOutputStream() {
-        File test = new File(basePath);
-        Level level = new Level(1, 10);
-        level.setName("1");
-        try {
-            new MockUp<FileFactory>() {
+  @Test public void testSerializeObject_ExceptionFromDataOutputStream() {
+    File test = new File(basePath);
+    Level level = new Level(1, 10);
+    level.setName("1");
+    try {
+      new MockUp<FileFactory>() {
 
-                @Mock
-                public DataOutputStream getDataOutputStream(String path,
-                        FileFactory.FileType fileType) throws IOException {
-                    throw new IOException();
-                }
-
-            };
-
-            DataStatsUtil.serializeObject(level, test.getCanonicalPath(), "test");
-            Assert.assertTrue(true);
-
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-    }
-
-    @Test
-    public void testReadSerializedFile_ExceptionFromDataInputputStream() {
-        File test = new File(basePath + "/test");
-        Level level = new Level(1, 10);
-        level.setName("1");
-
-        new MockUp<FileFactory>() {
-
-            @Mock
-            public DataInputStream getDataInputStream(String path, FileFactory.FileType fileType)
-                    throws IOException {
-                throw new IOException();
-            }
-
-        };
-
-        new MockUp<FileFactory>() {
-
-            @Mock
-            public boolean isFileExist(String filePath, FileFactory.FileType fileType,
-                    boolean performFileCheck) throws IOException {
-                return true;
-            }
-
-        };
-
-        DataStatsUtil.readSerializedFile(test.getAbsolutePath());
-        Assert.assertTrue(true);
-
-    }
-
-    @Test
-    public void testSerializeObject_ExceptionFromObjectStream() {
-        File test = new File(basePath);
-        Level level = new Level(1, 10);
-        level.setName("1");
-        try {
-            new MockUp<ObjectOutputStream>() {
-
-                @Mock
-                public final void writeObject(Object obj) throws IOException {
-                    throw new IOException();
-                }
-
-            };
-
-            DataStatsUtil.serializeObject(level, test.getCanonicalPath(), "test");
-            Assert.assertTrue(true);
-
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+        @Mock
+        public DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType)
+            throws IOException {
+          throw new IOException();
         }
 
+      };
+
+      DataStatsUtil.serializeObject(level, test.getCanonicalPath(), "test");
+      Assert.assertTrue(true);
+
+    } catch (IOException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
     }
+  }
 
-    @Test
-    public void testCreateDirectory_failedMakeDir() {
-        File test = new File(basePath + "/test");
-        new MockUp<FileFactory>() {
+  @Test public void testReadSerializedFile_ExceptionFromDataInputputStream() {
+    File test = new File(basePath + "/test");
+    Level level = new Level(1, 10);
+    level.setName("1");
 
-            @Mock
-            public boolean mkdirs(String filePath, FileFactory.FileType fileType)
-                    throws IOException {
-                return false;
-            }
+    new MockUp<FileFactory>() {
 
-        };
-        try {
-            if (test.exists()) {
-                test.delete();
-            }
-            Assert.assertTrue(!DataStatsUtil.createDirectory(test.getCanonicalPath()));
+      @Mock public DataInputStream getDataInputStream(String path, FileFactory.FileType fileType)
+          throws IOException {
+        throw new IOException();
+      }
 
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+    };
+
+    new MockUp<FileFactory>() {
+
+      @Mock public boolean isFileExist(String filePath, FileFactory.FileType fileType,
+          boolean performFileCheck) throws IOException {
+        return true;
+      }
+
+    };
+
+    DataStatsUtil.readSerializedFile(test.getAbsolutePath());
+    Assert.assertTrue(true);
+
+  }
+
+  @Test public void testSerializeObject_ExceptionFromObjectStream() {
+    File test = new File(basePath);
+    Level level = new Level(1, 10);
+    level.setName("1");
+    try {
+      new MockUp<ObjectOutputStream>() {
+
+        @Mock public final void writeObject(Object obj) throws IOException {
+          throw new IOException();
         }
+
+      };
+
+      DataStatsUtil.serializeObject(level, test.getCanonicalPath(), "test");
+      Assert.assertTrue(true);
+
+    } catch (IOException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
     }
 
-    @Test
-    public void testCreateDirectory_failedMakeDir_throwException() {
-        File test = new File(basePath + "/test");
-        new MockUp<FileFactory>() {
+  }
 
-            @Mock
-            public boolean mkdirs(String filePath, FileFactory.FileType fileType)
-                    throws IOException {
-                throw new IOException();
-            }
+  @Test public void testCreateDirectory_failedMakeDir() {
+    File test = new File(basePath + "/test");
+    new MockUp<FileFactory>() {
 
-        };
-        try {
-            if (test.exists()) {
-                test.delete();
-            }
-            Assert.assertTrue(!DataStatsUtil.createDirectory(test.getCanonicalPath()));
+      @Mock public boolean mkdirs(String filePath, FileFactory.FileType fileType)
+          throws IOException {
+        return false;
+      }
 
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+    };
+    try {
+      if (test.exists()) {
+        test.delete();
+      }
+      Assert.assertTrue(!DataStatsUtil.createDirectory(test.getCanonicalPath()));
+
+    } catch (IOException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
     }
+  }
 
-    @Test
-    public void testReadSerializedFile_FileExistThrowException() {
-        new MockUp<FileFactory>() {
+  @Test public void testCreateDirectory_failedMakeDir_throwException() {
+    File test = new File(basePath + "/test");
+    new MockUp<FileFactory>() {
 
-            @Mock
-            public boolean isFileExist(String filePath, FileFactory.FileType fileType,
-                    boolean performFileCheck) throws IOException {
-                throw new IOException();
-            }
+      @Mock public boolean mkdirs(String filePath, FileFactory.FileType fileType)
+          throws IOException {
+        throw new IOException();
+      }
 
-        };
-        DataStatsUtil.readSerializedFile("test/test");
-        Assert.assertTrue(true);
+    };
+    try {
+      if (test.exists()) {
+        test.delete();
+      }
+      Assert.assertTrue(!DataStatsUtil.createDirectory(test.getCanonicalPath()));
+
+    } catch (IOException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
     }
+  }
 
-    @Test
-    public void testGetDataType() {
-        Assert.assertEquals(DataType.DoubleType,
-                DataStatsUtil.getDataType(SqlStatement.Type.DOUBLE));
-        Assert.assertEquals(DataType.LongType, DataStatsUtil.getDataType(SqlStatement.Type.LONG));
-        Assert.assertEquals(DataType.BooleanType,
-                DataStatsUtil.getDataType(SqlStatement.Type.BOOLEAN));
-    }
+  @Test public void testReadSerializedFile_FileExistThrowException() {
+    new MockUp<FileFactory>() {
+
+      @Mock public boolean isFileExist(String filePath, FileFactory.FileType fileType,
+          boolean performFileCheck) throws IOException {
+        throw new IOException();
+      }
+
+    };
+    DataStatsUtil.readSerializedFile("test/test");
+    Assert.assertTrue(true);
+  }
+
+  @Test public void testGetDataType() {
+    Assert.assertEquals(DataType.DoubleType, DataStatsUtil.getDataType(SqlStatement.Type.DOUBLE));
+    Assert.assertEquals(DataType.LongType, DataStatsUtil.getDataType(SqlStatement.Type.LONG));
+    Assert.assertEquals(DataType.BooleanType, DataStatsUtil.getDataType(SqlStatement.Type.BOOLEAN));
+  }
 }

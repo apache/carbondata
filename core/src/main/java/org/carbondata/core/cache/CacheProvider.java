@@ -33,113 +33,114 @@ import org.carbondata.core.constants.CarbonCommonConstants;
  */
 public class CacheProvider {
 
-    /**
-     * cache provider instance
-     */
-    private static CacheProvider cacheProvider = new CacheProvider();
+  /**
+   * cache provider instance
+   */
+  private static CacheProvider cacheProvider = new CacheProvider();
 
-    /**
-     * a map that will hold the entry for cache type to cache object mapping
-     */
-    private Map<CacheType, Cache> cacheTypeToCacheMap =
-            new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+  /**
+   * a map that will hold the entry for cache type to cache object mapping
+   */
+  private Map<CacheType, Cache> cacheTypeToCacheMap =
+      new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-    /**
-     * a map that will hold the mapping of cache type to LRU cache instance
-     */
-    private Map<CacheType, CarbonLRUCache> cacheTypeToLRUCacheMap =
-            new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+  /**
+   * a map that will hold the mapping of cache type to LRU cache instance
+   */
+  private Map<CacheType, CarbonLRUCache> cacheTypeToLRUCacheMap =
+      new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-    /**
-     * object lock instance to be used in synchronization block
-     */
-    private final Object lock = new Object();
+  /**
+   * object lock instance to be used in synchronization block
+   */
+  private final Object lock = new Object();
 
-    /**
-     * private constructor to follow singleton design pattern for this class
-     */
-    private CacheProvider() {
+  /**
+   * private constructor to follow singleton design pattern for this class
+   */
+  private CacheProvider() {
 
-    }
+  }
 
-    /**
-     * @return cache provider instance
-     */
-    public static CacheProvider getInstance() {
-        return cacheProvider;
-    }
+  /**
+   * @return cache provider instance
+   */
+  public static CacheProvider getInstance() {
+    return cacheProvider;
+  }
 
-    /**
-     * This method will check if a cache already exists for given cache type and create in case
-     * it is not present in the map
-     *
-     * @param cacheType       type of cache
-     * @param carbonStorePath store path
-     * @param <K>
-     * @param <V>
-     * @return
-     */
-    public <K, V> Cache<K, V> createCache(CacheType cacheType, String carbonStorePath) {
-        //check if lru cache is null, if null create one
-        //check if cache is null for given cache type, if null create one
+  /**
+   * This method will check if a cache already exists for given cache type and create in case
+   * it is not present in the map
+   *
+   * @param cacheType       type of cache
+   * @param carbonStorePath store path
+   * @param <K>
+   * @param <V>
+   * @return
+   */
+  public <K, V> Cache<K, V> createCache(CacheType cacheType, String carbonStorePath) {
+    //check if lru cache is null, if null create one
+    //check if cache is null for given cache type, if null create one
+    if (!dictionaryCacheAlreadyExists(cacheType)) {
+      synchronized (lock) {
         if (!dictionaryCacheAlreadyExists(cacheType)) {
-            synchronized (lock) {
-                if (!dictionaryCacheAlreadyExists(cacheType)) {
-                    if (null == cacheTypeToLRUCacheMap.get(cacheType)) {
-                        createLRULevelCacheInstance(cacheType);
-                    }
-                    createDictionaryCacheForGivenType(cacheType, carbonStorePath);
-                }
-            }
+          if (null == cacheTypeToLRUCacheMap.get(cacheType)) {
+            createLRULevelCacheInstance(cacheType);
+          }
+          createDictionaryCacheForGivenType(cacheType, carbonStorePath);
         }
-        return cacheTypeToCacheMap.get(cacheType);
+      }
     }
+    return cacheTypeToCacheMap.get(cacheType);
+  }
 
-    /**
-     * This method will create the cache for given cache type
-     *
-     * @param cacheType       type of cache
-     * @param carbonStorePath store path
-     */
-    private void createDictionaryCacheForGivenType(CacheType cacheType, String carbonStorePath) {
-        Cache cacheObject = null;
-        if (cacheType.equals(CacheType.REVERSE_DICTIONARY)) {
-            cacheObject = new ReverseDictionaryCache<DictionaryColumnUniqueIdentifier, Dictionary>(
-                    carbonStorePath, cacheTypeToLRUCacheMap.get(cacheType));
-        } else if (cacheType.equals(CacheType.FORWARD_DICTIONARY)) {
-            cacheObject = new ForwardDictionaryCache<DictionaryColumnUniqueIdentifier, Dictionary>(
-                    carbonStorePath, cacheTypeToLRUCacheMap.get(cacheType));
-        }
-        cacheTypeToCacheMap.put(cacheType, cacheObject);
+  /**
+   * This method will create the cache for given cache type
+   *
+   * @param cacheType       type of cache
+   * @param carbonStorePath store path
+   */
+  private void createDictionaryCacheForGivenType(CacheType cacheType, String carbonStorePath) {
+    Cache cacheObject = null;
+    if (cacheType.equals(CacheType.REVERSE_DICTIONARY)) {
+      cacheObject =
+          new ReverseDictionaryCache<DictionaryColumnUniqueIdentifier, Dictionary>(carbonStorePath,
+              cacheTypeToLRUCacheMap.get(cacheType));
+    } else if (cacheType.equals(CacheType.FORWARD_DICTIONARY)) {
+      cacheObject =
+          new ForwardDictionaryCache<DictionaryColumnUniqueIdentifier, Dictionary>(carbonStorePath,
+              cacheTypeToLRUCacheMap.get(cacheType));
     }
+    cacheTypeToCacheMap.put(cacheType, cacheObject);
+  }
 
-    /**
-     * This method will create the lru cache instance based on the given type
-     *
-     * @param cacheType
-     */
-    private void createLRULevelCacheInstance(CacheType cacheType) {
-        CarbonLRUCache carbonLRUCache = null;
-        // if cache type is dictionary cache, then same lru cache instance has to be shared
-        // between forward and reverse cache
-        if (cacheType.equals(CacheType.REVERSE_DICTIONARY) || cacheType
-                .equals(CacheType.FORWARD_DICTIONARY)) {
-            carbonLRUCache =
-                    new CarbonLRUCache(CarbonCommonConstants.CARBON_MAX_LEVEL_CACHE_SIZE,
-                            CarbonCommonConstants.CARBON_MAX_LEVEL_CACHE_SIZE_DEFAULT);
-            cacheTypeToLRUCacheMap.put(CacheType.REVERSE_DICTIONARY, carbonLRUCache);
-            cacheTypeToLRUCacheMap.put(CacheType.FORWARD_DICTIONARY, carbonLRUCache);
-        }
+  /**
+   * This method will create the lru cache instance based on the given type
+   *
+   * @param cacheType
+   */
+  private void createLRULevelCacheInstance(CacheType cacheType) {
+    CarbonLRUCache carbonLRUCache = null;
+    // if cache type is dictionary cache, then same lru cache instance has to be shared
+    // between forward and reverse cache
+    if (cacheType.equals(CacheType.REVERSE_DICTIONARY) || cacheType
+        .equals(CacheType.FORWARD_DICTIONARY)) {
+      carbonLRUCache = new CarbonLRUCache(CarbonCommonConstants.CARBON_MAX_LEVEL_CACHE_SIZE,
+          CarbonCommonConstants.CARBON_MAX_LEVEL_CACHE_SIZE_DEFAULT);
+      cacheTypeToLRUCacheMap.put(CacheType.REVERSE_DICTIONARY, carbonLRUCache);
+      cacheTypeToLRUCacheMap.put(CacheType.FORWARD_DICTIONARY, carbonLRUCache);
     }
+  }
 
-    /**
-     * This method will check whether the map already has an entry for
-     * given cache type
-     *
-     * @param cacheType
-     * @return
-     */
-    private boolean dictionaryCacheAlreadyExists(CacheType cacheType) {
-        return null != cacheTypeToCacheMap.get(cacheType);
-    }
+  /**
+   * This method will check whether the map already has an entry for
+   * given cache type
+   *
+   * @param cacheType
+   * @return
+   */
+  private boolean dictionaryCacheAlreadyExists(CacheType cacheType) {
+    return null != cacheTypeToCacheMap.get(cacheType);
+  }
 }

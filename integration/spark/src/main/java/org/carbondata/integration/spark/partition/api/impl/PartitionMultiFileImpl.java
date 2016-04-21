@@ -26,37 +26,33 @@ import org.carbondata.integration.spark.partition.api.Partition;
 import org.carbondata.query.queryinterface.query.metadata.CarbonDimensionLevelFilter;
 
 public class PartitionMultiFileImpl implements Partition {
-    private static final long serialVersionUID = -4363447826181193976L;
-    private String uniqueID;
-    private List<String> folderPath;
+  private static final long serialVersionUID = -4363447826181193976L;
+  private String uniqueID;
+  private List<String> folderPath;
 
-    public PartitionMultiFileImpl(String uniqueID, List<String> folderPath) {
-        this.uniqueID = uniqueID;
-        this.folderPath = folderPath;
-    }
+  public PartitionMultiFileImpl(String uniqueID, List<String> folderPath) {
+    this.uniqueID = uniqueID;
+    this.folderPath = folderPath;
+  }
 
-    @Override
-    public String getUniqueID() {
-        // TODO Auto-generated method stub
-        return uniqueID;
-    }
+  @Override public String getUniqueID() {
+    // TODO Auto-generated method stub
+    return uniqueID;
+  }
 
-    @Override
-    public String getFilePath() {
-        // TODO Auto-generated method stub
-        return null;
-    }
+  @Override public String getFilePath() {
+    // TODO Auto-generated method stub
+    return null;
+  }
 
-    @Override
-    public Map<String, CarbonDimensionLevelFilter> getPartitionDetails() {
-        // TODO Auto-generated method stub
-        return null;
-    }
+  @Override public Map<String, CarbonDimensionLevelFilter> getPartitionDetails() {
+    // TODO Auto-generated method stub
+    return null;
+  }
 
-    @Override
-    public List<String> getFilesPath() {
-        // TODO Auto-generated method stub
-        return folderPath;
-    }
+  @Override public List<String> getFilesPath() {
+    // TODO Auto-generated method stub
+    return folderPath;
+  }
 
 }

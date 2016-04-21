@@ -19,67 +19,63 @@
 
 package org.carbondata.query.expression.arithmetic;
 
+import org.carbondata.query.carbonfilterinterface.ExpressionType;
+import org.carbondata.query.carbonfilterinterface.RowIntf;
 import org.carbondata.query.expression.DataType;
 import org.carbondata.query.expression.Expression;
 import org.carbondata.query.expression.ExpressionResult;
 import org.carbondata.query.expression.exception.FilterUnsupportedException;
-import org.carbondata.query.carbonfilterinterface.ExpressionType;
-import org.carbondata.query.carbonfilterinterface.RowIntf;
 
 public class DivideExpression extends BinaryArithmeticExpression {
-    private static final long serialVersionUID = -7269266926782365612L;
+  private static final long serialVersionUID = -7269266926782365612L;
 
-    public DivideExpression(Expression left, Expression right) {
-        super(left, right);
-    }
+  public DivideExpression(Expression left, Expression right) {
+    super(left, right);
+  }
 
-    @Override
-    public ExpressionResult evaluate(RowIntf value) throws FilterUnsupportedException {
-        ExpressionResult divideExprLeftRes = left.evaluate(value);
-        ExpressionResult divideExprRightRes = right.evaluate(value);
-        ExpressionResult val1 = divideExprLeftRes;
-        ExpressionResult val2 = divideExprRightRes;
-        if (divideExprLeftRes.isNull() || divideExprRightRes.isNull()) {
-            divideExprLeftRes.set(divideExprLeftRes.getDataType(), null);
-            return divideExprLeftRes;
-        }
-        if (divideExprLeftRes.getDataType() != divideExprRightRes.getDataType()) {
-            if (divideExprLeftRes.getDataType().getPresedenceOrder() < divideExprRightRes
-                    .getDataType().getPresedenceOrder()) {
-                val2 = divideExprLeftRes;
-                val1 = divideExprRightRes;
-            }
-        }
-        switch (val1.getDataType()) {
-        case StringType:
-        case DoubleType:
-            divideExprRightRes.set(DataType.DoubleType, val1.getDouble() / val2.getDouble());
-            break;
-        case IntegerType:
-            divideExprRightRes.set(DataType.IntegerType, val1.getInt() / val2.getInt());
-            break;
-        case LongType:
-            divideExprRightRes.set(DataType.LongType, val1.getLong() / val2.getLong());
-            break;
-        case DecimalType:
-            divideExprRightRes
-                    .set(DataType.DecimalType, val1.getDecimal().divide(val2.getDecimal()));
-            break;
-        default:
-            throw new FilterUnsupportedException(
-                    "Incompatible datatype for applying Add Expression Filter " + divideExprLeftRes
-                            .getDataType());
-        }
-        return divideExprRightRes;
+  @Override public ExpressionResult evaluate(RowIntf value) throws FilterUnsupportedException {
+    ExpressionResult divideExprLeftRes = left.evaluate(value);
+    ExpressionResult divideExprRightRes = right.evaluate(value);
+    ExpressionResult val1 = divideExprLeftRes;
+    ExpressionResult val2 = divideExprRightRes;
+    if (divideExprLeftRes.isNull() || divideExprRightRes.isNull()) {
+      divideExprLeftRes.set(divideExprLeftRes.getDataType(), null);
+      return divideExprLeftRes;
     }
+    if (divideExprLeftRes.getDataType() != divideExprRightRes.getDataType()) {
+      if (divideExprLeftRes.getDataType().getPresedenceOrder() < divideExprRightRes.getDataType()
+          .getPresedenceOrder()) {
+        val2 = divideExprLeftRes;
+        val1 = divideExprRightRes;
+      }
+    }
+    switch (val1.getDataType()) {
+      case StringType:
+      case DoubleType:
+        divideExprRightRes.set(DataType.DoubleType, val1.getDouble() / val2.getDouble());
+        break;
+      case IntegerType:
+        divideExprRightRes.set(DataType.IntegerType, val1.getInt() / val2.getInt());
+        break;
+      case LongType:
+        divideExprRightRes.set(DataType.LongType, val1.getLong() / val2.getLong());
+        break;
+      case DecimalType:
+        divideExprRightRes.set(DataType.DecimalType, val1.getDecimal().divide(val2.getDecimal()));
+        break;
+      default:
+        throw new FilterUnsupportedException(
+            "Incompatible datatype for applying Add Expression Filter " + divideExprLeftRes
+                .getDataType());
+    }
+    return divideExprRightRes;
+  }
 
-    @Override
-    public ExpressionType getFilterExpressionType() {
-        return ExpressionType.DIVIDE;
-    }
+  @Override public ExpressionType getFilterExpressionType() {
+    return ExpressionType.DIVIDE;
+  }
 
-    @Override
-    public String getString() {
-        return "Divide(" + left.getString() + ',' + right.getString() + ')';
-    }
+  @Override public String getString() {
+    return "Divide(" + left.getString() + ',' + right.getString() + ')';
+  }
 }

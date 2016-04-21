@@ -22,6 +22,7 @@ package org.carbondata.core.path;
 import java.io.IOException;
 
 import org.carbondata.core.carbon.path.CarbonSharedDictionaryPath;
+
 import org.junit.Test;
 
 import static junit.framework.TestCase.assertTrue;
@@ -31,17 +32,17 @@ import static junit.framework.TestCase.assertTrue;
  */
 public class CarbonFormatSharedDictionaryTest {
 
-    private final String CARBON_STORE = "/opt/carbonstore";
+  private final String CARBON_STORE = "/opt/carbonstore";
 
-    /**
-     * test shared dictionary location
-     */
-    @Test public void testSharedDimentionLocation() throws IOException {
-        assertTrue(CarbonSharedDictionaryPath.getDictionaryFilePath(CARBON_STORE, "d1", "shared_c1")
-                .equals(CARBON_STORE + "/d1/SharedDictionary/shared_c1.dict"));
-        assertTrue(CarbonSharedDictionaryPath.getDictionaryMetaFilePath(CARBON_STORE, "d1", "shared_c1")
-                .equals(CARBON_STORE + "/d1/SharedDictionary/shared_c1.dictmeta"));
-        assertTrue(CarbonSharedDictionaryPath.getSortIndexFilePath(CARBON_STORE, "d1", "shared_c1")
-                .equals(CARBON_STORE + "/d1/SharedDictionary/shared_c1.sortindex"));
-    }
+  /**
+   * test shared dictionary location
+   */
+  @Test public void testSharedDimentionLocation() throws IOException {
+    assertTrue(CarbonSharedDictionaryPath.getDictionaryFilePath(CARBON_STORE, "d1", "shared_c1")
+        .equals(CARBON_STORE + "/d1/SharedDictionary/shared_c1.dict"));
+    assertTrue(CarbonSharedDictionaryPath.getDictionaryMetaFilePath(CARBON_STORE, "d1", "shared_c1")
+        .equals(CARBON_STORE + "/d1/SharedDictionary/shared_c1.dictmeta"));
+    assertTrue(CarbonSharedDictionaryPath.getSortIndexFilePath(CARBON_STORE, "d1", "shared_c1")
+        .equals(CARBON_STORE + "/d1/SharedDictionary/shared_c1.sortindex"));
+  }
 }

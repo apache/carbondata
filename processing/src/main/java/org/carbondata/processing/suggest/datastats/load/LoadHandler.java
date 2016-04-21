@@ -41,101 +41,101 @@ import org.carbondata.query.util.CarbonDataInputStreamFactory;
  */
 public class LoadHandler {
 
-    private Cube metaCube;
+  private Cube metaCube;
 
-    private CarbonFile loadFolder;
+  private CarbonFile loadFolder;
 
-    private SliceMetaData sliceMetaData;
+  private SliceMetaData sliceMetaData;
 
-    private int msrCount;
+  private int msrCount;
 
-    public LoadHandler(SliceMetaData sliceMetaData, Cube metaCube, CarbonFile loadFolder) {
-        this.metaCube = metaCube;
-        this.loadFolder = loadFolder;
-        this.sliceMetaData = sliceMetaData;
-        if (null != sliceMetaData.getMeasures()) {
-            msrCount = sliceMetaData.getMeasures().length;
-        }
+  public LoadHandler(SliceMetaData sliceMetaData, Cube metaCube, CarbonFile loadFolder) {
+    this.metaCube = metaCube;
+    this.loadFolder = loadFolder;
+    this.sliceMetaData = sliceMetaData;
+    if (null != sliceMetaData.getMeasures()) {
+      msrCount = sliceMetaData.getMeasures().length;
+    }
+  }
+
+  public FactDataHandler handleFactData(String tableName) throws AggSuggestException {
+    FactDataHandler factDataHandler = null;
+    // Process fact and aggregate data cache
+    for (String table : metaCube.getTablesList()) {
+      if (!table.equals(tableName)) {
+        continue;
+      }
+      factDataHandler = handleTableData(loadFolder, table, msrCount);
+
+    }
+    return factDataHandler;
+  }
+
+  /**
+   * This checks if fact file present. In case of restructure, it will empty load
+   *
+   * @param loadFolder
+   * @param table
+   * @return
+   */
+  public boolean isDataAvailable(CarbonFile loadFolder, String table) {
+    CarbonFile[] files = DataStatsUtil.getCarbonFactFile(loadFolder, table);
+    if (null == files || files.length == 0) {
+      return false;
+    }
+    return true;
+  }
+
+  private FactDataHandler handleTableData(CarbonFile loadFolder, String table, int msrCount)
+      throws AggSuggestException {
+    // get list of fact file
+    CarbonFile[] files = DataStatsUtil.getCarbonFactFile(loadFolder, table);
+
+    // Create LevelMetaInfo to get each dimension cardinality
+    LevelMetaInfo levelMetaInfo = new LevelMetaInfo(loadFolder, table);
+    int[] dimensionCardinality = levelMetaInfo.getDimCardinality();
+    KeyGenerator keyGenerator = KeyGeneratorFactory.getKeyGenerator(dimensionCardinality);
+    int keySize = keyGenerator.getKeySizeInBytes();
+    String factTableColumn = metaCube.getFactCountColMapping(table);
+    boolean hasFactCount = factTableColumn != null && factTableColumn.length() > 0;
+    // Create dataInputStream for each fact file
+    List<DataInputStream> streams = new ArrayList<DataInputStream>(files.length);
+    for (CarbonFile aFile : files) {
+
+      streams.add(CarbonDataInputStreamFactory
+          .getDataInputStream(aFile.getAbsolutePath(), keySize, msrCount, hasFactCount,
+              loadFolder.getAbsolutePath(), table, FileFactory.getFileType()));
+    }
+    for (DataInputStream stream : streams) {
+      // Initialize offset value and other detail for each stream
+      stream.initInput();
     }
 
-    public FactDataHandler handleFactData(String tableName) throws AggSuggestException {
-        FactDataHandler factDataHandler = null;
-        // Process fact and aggregate data cache
-        for (String table : metaCube.getTablesList()) {
-            if (!table.equals(tableName)) {
-                continue;
-            }
-            factDataHandler = handleTableData(loadFolder, table, msrCount);
+    return new FactDataHandler(metaCube, levelMetaInfo, table, keySize, streams);
 
-        }
-        return factDataHandler;
-    }
+  }
 
-    /**
-     * This checks if fact file present. In case of restructure, it will empty load
-     *
-     * @param loadFolder
-     * @param table
-     * @return
-     */
-    public boolean isDataAvailable(CarbonFile loadFolder, String table) {
-        CarbonFile[] files = DataStatsUtil.getCarbonFactFile(loadFolder, table);
-        if (null == files || files.length == 0) {
-            return false;
-        }
+  public CarbonFile getLoadFolder() {
+    return loadFolder;
+  }
+
+  /**
+   * check if given dimension exist in current load in case of restructure.
+   *
+   * @param dimension
+   * @param tableName
+   * @return
+   */
+  public boolean isDimensionExist(Dimension dimension, String tableName) {
+    String[] sliceDimensions = sliceMetaData.getDimensions();
+    for (int i = 0; i < sliceDimensions.length; i++) {
+      String colName = sliceDimensions[i]
+          .substring(sliceDimensions[i].indexOf(tableName + "_") + tableName.length() + 1);
+      if (dimension.getColName().equals(colName)) {
         return true;
+      }
     }
-
-    private FactDataHandler handleTableData(CarbonFile loadFolder, String table, int msrCount)
-            throws AggSuggestException {
-        // get list of fact file
-        CarbonFile[] files = DataStatsUtil.getCarbonFactFile(loadFolder, table);
-
-        // Create LevelMetaInfo to get each dimension cardinality
-        LevelMetaInfo levelMetaInfo = new LevelMetaInfo(loadFolder, table);
-        int[] dimensionCardinality = levelMetaInfo.getDimCardinality();
-        KeyGenerator keyGenerator = KeyGeneratorFactory.getKeyGenerator(dimensionCardinality);
-        int keySize = keyGenerator.getKeySizeInBytes();
-        String factTableColumn = metaCube.getFactCountColMapping(table);
-        boolean hasFactCount = factTableColumn != null && factTableColumn.length() > 0;
-        // Create dataInputStream for each fact file
-        List<DataInputStream> streams = new ArrayList<DataInputStream>(files.length);
-        for (CarbonFile aFile : files) {
-
-            streams.add(CarbonDataInputStreamFactory
-                    .getDataInputStream(aFile.getAbsolutePath(), keySize, msrCount, hasFactCount,
-                            loadFolder.getAbsolutePath(), table, FileFactory.getFileType()));
-        }
-        for (DataInputStream stream : streams) {
-            // Initialize offset value and other detail for each stream
-            stream.initInput();
-        }
-
-        return new FactDataHandler(metaCube, levelMetaInfo, table, keySize, streams);
-
-    }
-
-    public CarbonFile getLoadFolder() {
-        return loadFolder;
-    }
-
-    /**
-     * check if given dimension exist in current load in case of restructure.
-     *
-     * @param dimension
-     * @param tableName
-     * @return
-     */
-    public boolean isDimensionExist(Dimension dimension, String tableName) {
-        String[] sliceDimensions = sliceMetaData.getDimensions();
-        for (int i = 0; i < sliceDimensions.length; i++) {
-            String colName = sliceDimensions[i].substring(
-                    sliceDimensions[i].indexOf(tableName + "_") + tableName.length() + 1);
-            if (dimension.getColName().equals(colName)) {
-                return true;
-            }
-        }
-        return false;
-    }
+    return false;
+  }
 
 }

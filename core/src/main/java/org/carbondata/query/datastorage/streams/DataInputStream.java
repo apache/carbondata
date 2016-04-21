@@ -27,17 +27,17 @@ import org.carbondata.core.metadata.LeafNodeInfoColumnar;
 import org.carbondata.query.schema.metadata.Pair;
 
 public interface DataInputStream {
-    void initInput();
+  void initInput();
 
-    void closeInput();
+  void closeInput();
 
-    ValueCompressionModel getValueCompressionMode();
+  ValueCompressionModel getValueCompressionMode();
 
-    List<LeafNodeInfoColumnar> getLeafNodeInfoColumnar();
+  List<LeafNodeInfoColumnar> getLeafNodeInfoColumnar();
 
-    List<LeafNodeInfo> getLeafNodeInfo();
+  List<LeafNodeInfo> getLeafNodeInfo();
 
-    Pair getNextHierTuple();
+  Pair getNextHierTuple();
 
-    byte[] getStartKey();
+  byte[] getStartKey();
 }

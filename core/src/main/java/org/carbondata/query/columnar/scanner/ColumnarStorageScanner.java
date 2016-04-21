@@ -20,6 +20,6 @@
 package org.carbondata.query.columnar.scanner;
 
 public interface ColumnarStorageScanner {
-    void scanStore();
+  void scanStore();
 
 }

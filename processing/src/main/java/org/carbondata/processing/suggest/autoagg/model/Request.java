@@ -26,25 +26,25 @@ package org.carbondata.processing.suggest.autoagg.model;
  */
 public enum Request {
 
-    DATA_STATS("DATA_STATS"), QUERY_STATS("QUERY_STATS");
+  DATA_STATS("DATA_STATS"), QUERY_STATS("QUERY_STATS");
 
-    //aggregate suggestion type
-    private String aggSuggType;
+  //aggregate suggestion type
+  private String aggSuggType;
 
-    Request(String aggSuggType) {
-        this.aggSuggType = aggSuggType;
+  Request(String aggSuggType) {
+    this.aggSuggType = aggSuggType;
+  }
+
+  public static Request getRequest(String requestType) {
+    if ("DATA_STATS".equalsIgnoreCase(requestType)) {
+      return DATA_STATS;
+    } else {
+      return QUERY_STATS;
     }
+  }
 
-    public static Request getRequest(String requestType) {
-        if ("DATA_STATS".equalsIgnoreCase(requestType)) {
-            return DATA_STATS;
-        } else {
-            return QUERY_STATS;
-        }
-    }
-
-    public String getAggSuggestionType() {
-        return this.aggSuggType;
-    }
+  public String getAggSuggestionType() {
+    return this.aggSuggType;
+  }
 
 }

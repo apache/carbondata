@@ -22,23 +22,23 @@ package org.carbondata.processing.util;
 import org.carbondata.common.logging.LogEvent;
 
 public enum CarbonDataProcessorLogEvent implements LogEvent {
-    /**
-     * CARBONENGINE_MSG
-     */
-    UNIBI_CARBONDATAPROCESSOR_MSG("carbon.processing");
+  /**
+   * CARBONENGINE_MSG
+   */
+  UNIBI_CARBONDATAPROCESSOR_MSG("carbon.processing");
 
-    private String eventCode;
+  private String eventCode;
 
-    private CarbonDataProcessorLogEvent(final String eventCode) {
-        this.eventCode = eventCode;
-    }
+  private CarbonDataProcessorLogEvent(final String eventCode) {
+    this.eventCode = eventCode;
+  }
 
-    public String getEventCode() {
-        return eventCode;
-    }
+  public String getEventCode() {
+    return eventCode;
+  }
 
-    public String getModuleName() {
-        return "CARBON_PROCESSING";
-    }
+  public String getModuleName() {
+    return "CARBON_PROCESSING";
+  }
 
 }

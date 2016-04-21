@@ -21,8 +21,8 @@ package org.carbondata.query.executer.calcexp;
 
 import java.util.List;
 
-import org.carbondata.core.metadata.CarbonMetadata.Measure;
 import org.carbondata.core.carbon.Exp;
+import org.carbondata.core.metadata.CarbonMetadata.Measure;
 import org.carbondata.query.executer.calcexp.impl.CalcExpressionModel;
 import org.carbondata.query.schema.metadata.Pair;
 
@@ -30,34 +30,34 @@ import org.carbondata.query.schema.metadata.Pair;
  * Utility to resolve expressions to Carbon understanble functions.
  */
 public final class CarbonCalcExpressionResolverUtil {
-    private CarbonCalcExpressionResolverUtil() {
+  private CarbonCalcExpressionResolverUtil() {
 
+  }
+
+  /**
+   * @param exp
+   * @param msrs
+   * @return
+   */
+  public static CarbonCalcFunction createCalcExpressions(Exp exp, List<Measure> msrs) {
+
+    CalcExpressionModel model = new CalcExpressionModel();
+    model.setMsrsList(msrs);
+    Pair<CarbonCalcFunction, Exp> pair = getCarbonExpression(exp);
+    if (pair.getKey() == null) {
+      return null;
     }
+    pair.getKey().compile(model, pair.getValue());
+    return pair.getKey();
+  }
 
-    /**
-     * @param exp
-     * @param msrs
-     * @return
-     */
-    public static CarbonCalcFunction createCalcExpressions(Exp exp, List<Measure> msrs) {
-
-        CalcExpressionModel model = new CalcExpressionModel();
-        model.setMsrsList(msrs);
-        Pair<CarbonCalcFunction, Exp> pair = getCarbonExpression(exp);
-        if (pair.getKey() == null) {
-            return null;
-        }
-        pair.getKey().compile(model, pair.getValue());
-        return pair.getKey();
-    }
-
-    /**
-     * @param exp
-     * @return
-     */
-    private static Pair<CarbonCalcFunction, Exp> getCarbonExpression(Exp exp) {
-        CarbonCalcFunction calcFunction = null;
-        return new Pair<CarbonCalcFunction, Exp>(calcFunction, exp);
-    }
+  /**
+   * @param exp
+   * @return
+   */
+  private static Pair<CarbonCalcFunction, Exp> getCarbonExpression(Exp exp) {
+    CarbonCalcFunction calcFunction = null;
+    return new Pair<CarbonCalcFunction, Exp>(calcFunction, exp);
+  }
 
 }

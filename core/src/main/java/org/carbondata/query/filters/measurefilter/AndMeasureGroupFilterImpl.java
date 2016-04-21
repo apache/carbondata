@@ -23,44 +23,41 @@ import org.carbondata.query.aggregator.MeasureAggregator;
 
 public class AndMeasureGroupFilterImpl implements MeasureFilter, MeasureGroupFilter {
 
-    private MeasureFilter[][] measureFilters;
+  private MeasureFilter[][] measureFilters;
 
-    private int[] msrFilterIndices;
+  private int[] msrFilterIndices;
 
-    public AndMeasureGroupFilterImpl(MeasureFilter[][] measureFilters) {
-        this.measureFilters = measureFilters;
-        msrFilterIndices = MeasureFilterUtil.getMsrFilterIndexes(measureFilters);
-    }
+  public AndMeasureGroupFilterImpl(MeasureFilter[][] measureFilters) {
+    this.measureFilters = measureFilters;
+    msrFilterIndices = MeasureFilterUtil.getMsrFilterIndexes(measureFilters);
+  }
 
-    @Override
-    public boolean filter(MeasureAggregator[] msrValue) {
-        for (int j = 0; j < msrFilterIndices.length; j++) {
-            MeasureFilter[] measureFilter = measureFilters[msrFilterIndices[j]];
-            for (int k = 0; k < measureFilter.length; k++) {
-                if (!(measureFilter[k].filter(msrValue))) {
-                    return false;
-                }
-            }
+  @Override public boolean filter(MeasureAggregator[] msrValue) {
+    for (int j = 0; j < msrFilterIndices.length; j++) {
+      MeasureFilter[] measureFilter = measureFilters[msrFilterIndices[j]];
+      for (int k = 0; k < measureFilter.length; k++) {
+        if (!(measureFilter[k].filter(msrValue))) {
+          return false;
         }
-        return true;
+      }
     }
+    return true;
+  }
 
-    @Override
-    public boolean filter(double[] msrValue, int msrStartIndex) {
-        for (int j = 0; j < msrFilterIndices.length; j++) {
-            MeasureFilter[] measureFilter = measureFilters[msrFilterIndices[j]];
-            for (int k = 0; k < measureFilter.length; k++) {
-                if (!(measureFilter[k].filter(msrValue, msrStartIndex))) {
-                    return true;
-                }
-            }
+  @Override public boolean filter(double[] msrValue, int msrStartIndex) {
+    for (int j = 0; j < msrFilterIndices.length; j++) {
+      MeasureFilter[] measureFilter = measureFilters[msrFilterIndices[j]];
+      for (int k = 0; k < measureFilter.length; k++) {
+        if (!(measureFilter[k].filter(msrValue, msrStartIndex))) {
+          return true;
         }
-        return false;
+      }
     }
+    return false;
+  }
 
-    @Override
-    public boolean isMsrFilterEnabled() {
-        return msrFilterIndices.length > 0;
-    }
+  @Override public boolean isMsrFilterEnabled() {
+    return msrFilterIndices.length > 0;
+  }
 
 }

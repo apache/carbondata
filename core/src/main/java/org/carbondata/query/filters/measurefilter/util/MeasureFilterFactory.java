@@ -26,122 +26,134 @@ import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.metadata.CarbonMetadata.Measure;
 import org.carbondata.query.executer.calcexp.CarbonCalcExpressionResolverUtil;
 import org.carbondata.query.executer.calcexp.CarbonCalcFunction;
-import org.carbondata.query.filters.measurefilter.*;
+import org.carbondata.query.filters.measurefilter.AndMeasureGroupFilterImpl;
+import org.carbondata.query.filters.measurefilter.EqualsMeasureFilterImpl;
+import org.carbondata.query.filters.measurefilter.GreaterThanMeaureFilterImpl;
+import org.carbondata.query.filters.measurefilter.GreaterThanOrEqualMeaureFilterImpl;
+import org.carbondata.query.filters.measurefilter.GroupMeasureFilterModel;
+import org.carbondata.query.filters.measurefilter.LessThanMeasureFilterImpl;
+import org.carbondata.query.filters.measurefilter.LessThanOrEqualToMeasureFilterImpl;
+import org.carbondata.query.filters.measurefilter.MeasureFilter;
+import org.carbondata.query.filters.measurefilter.MeasureFilterModel;
+import org.carbondata.query.filters.measurefilter.NotEmptyMeasureFilterImpl;
+import org.carbondata.query.filters.measurefilter.NotEqualsMeasureFilterImpl;
+import org.carbondata.query.filters.measurefilter.OrMeasureGroupFilterImpl;
 
 public final class MeasureFilterFactory {
-    private MeasureFilterFactory() {
+  private MeasureFilterFactory() {
 
+  }
+
+  /**
+   * Get the measue filter as per the filter type.
+   *
+   * @param filterType
+   * @param filterValue
+   * @return
+   */
+  public static MeasureFilter getMeasureFilter(MeasureFilterModel.MeasureFilterType filterType,
+      double filterValue, int index, CarbonCalcFunction calcFunction) {
+    switch (filterType) {
+      case EQUAL_TO:
+        return new EqualsMeasureFilterImpl(filterValue, index, calcFunction);
+      case NOT_EQUAL_TO:
+        return new NotEqualsMeasureFilterImpl(filterValue, index, calcFunction);
+      case GREATER_THAN:
+        return new GreaterThanMeaureFilterImpl(filterValue, index, calcFunction);
+      case LESS_THAN:
+        return new LessThanMeasureFilterImpl(filterValue, index, calcFunction);
+      case GREATER_THAN_EQUAL:
+        return new GreaterThanOrEqualMeaureFilterImpl(filterValue, index, calcFunction);
+      case LESS_THAN_EQUAL:
+        return new LessThanOrEqualToMeasureFilterImpl(filterValue, index, calcFunction);
+      case NOT_EMPTY:
+        return new NotEmptyMeasureFilterImpl(index);
+      default:
+        return null;
     }
+  }
 
-    /**
-     * Get the measue filter as per the filter type.
-     *
-     * @param filterType
-     * @param filterValue
-     * @return
-     */
-    public static MeasureFilter getMeasureFilter(MeasureFilterModel.MeasureFilterType filterType,
-            double filterValue, int index, CarbonCalcFunction calcFunction) {
-        switch (filterType) {
-        case EQUAL_TO:
-            return new EqualsMeasureFilterImpl(filterValue, index, calcFunction);
-        case NOT_EQUAL_TO:
-            return new NotEqualsMeasureFilterImpl(filterValue, index, calcFunction);
-        case GREATER_THAN:
-            return new GreaterThanMeaureFilterImpl(filterValue, index, calcFunction);
-        case LESS_THAN:
-            return new LessThanMeasureFilterImpl(filterValue, index, calcFunction);
-        case GREATER_THAN_EQUAL:
-            return new GreaterThanOrEqualMeaureFilterImpl(filterValue, index, calcFunction);
-        case LESS_THAN_EQUAL:
-            return new LessThanOrEqualToMeasureFilterImpl(filterValue, index, calcFunction);
-        case NOT_EMPTY:
-            return new NotEmptyMeasureFilterImpl(index);
-        default:
-            return null;
+  /**
+   * Get all the measure filter instances as per the passed filters.
+   *
+   * @param filters
+   * @return
+   */
+  public static MeasureFilter[] getMeasureFilter(MeasureFilterModel[] filters, int index,
+      List<Measure> queryMsrs) {
+
+    MeasureFilter[] msrfilters = new MeasureFilter[filters.length];
+
+    int i = 0;
+    for (MeasureFilterModel measureFilter : filters) {
+      if (measureFilter != null) {
+        CarbonCalcFunction calcFunction = null;
+        if (measureFilter.getExp() != null) {
+          calcFunction = CarbonCalcExpressionResolverUtil
+              .createCalcExpressions(measureFilter.getExp(), queryMsrs);
         }
+        msrfilters[i] =
+            getMeasureFilter(measureFilter.getFilterType(), measureFilter.getFilterValue(), index,
+                calcFunction);
+      }
+      i++;
     }
+    return msrfilters;
+  }
 
-    /**
-     * Get all the measure filter instances as per the passed filters.
-     *
-     * @param filters
-     * @return
-     */
-    public static MeasureFilter[] getMeasureFilter(MeasureFilterModel[] filters, int index,
-            List<Measure> queryMsrs) {
+  /**
+   * Get all the measure filter instances as per the passed filters.
+   *
+   * @param filters
+   * @return
+   */
+  public static MeasureFilter[][] getMeasureFilter(MeasureFilterModel[][] filters,
+      List<Measure> queryMsrs) {
 
-        MeasureFilter[] msrfilters = new MeasureFilter[filters.length];
+    MeasureFilter[][] msrfilters = new MeasureFilter[filters.length][];
 
-        int i = 0;
-        for (MeasureFilterModel measureFilter : filters) {
-            if (measureFilter != null) {
-                CarbonCalcFunction calcFunction = null;
-                if (measureFilter.getExp() != null) {
-                    calcFunction = CarbonCalcExpressionResolverUtil
-                            .createCalcExpressions(measureFilter.getExp(), queryMsrs);
-                }
-                msrfilters[i] = getMeasureFilter(measureFilter.getFilterType(),
-                        measureFilter.getFilterValue(), index, calcFunction);
-            }
-            i++;
-        }
-        return msrfilters;
+    int i = 0;
+    for (MeasureFilterModel[] measureFilter : filters) {
+      if (measureFilter != null) {
+        msrfilters[i] = getMeasureFilter(measureFilter, i, queryMsrs);
+      }
+      i++;
     }
+    return msrfilters;
+  }
 
-    /**
-     * Get all the measure filter instances as per the passed filters.
-     *
-     * @param filters
-     * @return
-     */
-    public static MeasureFilter[][] getMeasureFilter(MeasureFilterModel[][] filters,
-            List<Measure> queryMsrs) {
-
-        MeasureFilter[][] msrfilters = new MeasureFilter[filters.length][];
-
-        int i = 0;
-        for (MeasureFilterModel[] measureFilter : filters) {
-            if (measureFilter != null) {
-                msrfilters[i] = getMeasureFilter(measureFilter, i, queryMsrs);
-            }
-            i++;
-        }
-        return msrfilters;
+  /**
+   * Below method will be used to get the Measure Filter
+   *
+   * @param msrConstraints
+   * @return measure filters
+   */
+  public static MeasureFilter[] getFilterMeasures(GroupMeasureFilterModel[] msrConstraints,
+      List<Measure> queryMsrs) {
+    if (msrConstraints == null) {
+      return null;
     }
-
-    /**
-     * Below method will be used to get the Measure Filter
-     *
-     * @param msrConstraints
-     * @return measure filters
-     */
-    public static MeasureFilter[] getFilterMeasures(GroupMeasureFilterModel[] msrConstraints,
-            List<Measure> queryMsrs) {
-        if (msrConstraints == null) {
-            return null;
+    List<MeasureFilter> measureFilters =
+        new ArrayList<MeasureFilter>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+    for (int i = 0; i < msrConstraints.length; i++) {
+      if (msrConstraints[i] != null) {
+        if (msrConstraints[i].getFilterGroupType()
+            .equals(GroupMeasureFilterModel.MeasureFilterGroupType.OR)) {
+          OrMeasureGroupFilterImpl groupFilter = new OrMeasureGroupFilterImpl(
+              getMeasureFilter(msrConstraints[i].getFilterModels(), queryMsrs));
+          if (groupFilter.isMsrFilterEnabled()) {
+            measureFilters.add(groupFilter);
+          }
+        } else {
+          AndMeasureGroupFilterImpl andGroupFilter = new AndMeasureGroupFilterImpl(
+              getMeasureFilter(msrConstraints[i].getFilterModels(), queryMsrs));
+          if (andGroupFilter.isMsrFilterEnabled()) {
+            measureFilters.add(andGroupFilter);
+          }
         }
-        List<MeasureFilter> measureFilters =
-                new ArrayList<MeasureFilter>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-        for (int i = 0; i < msrConstraints.length; i++) {
-            if (msrConstraints[i] != null) {
-                if (msrConstraints[i].getFilterGroupType()
-                        .equals(GroupMeasureFilterModel.MeasureFilterGroupType.OR)) {
-                    OrMeasureGroupFilterImpl groupFilter = new OrMeasureGroupFilterImpl(
-                            getMeasureFilter(msrConstraints[i].getFilterModels(), queryMsrs));
-                    if (groupFilter.isMsrFilterEnabled()) {
-                        measureFilters.add(groupFilter);
-                    }
-                } else {
-                    AndMeasureGroupFilterImpl andGroupFilter = new AndMeasureGroupFilterImpl(
-                            getMeasureFilter(msrConstraints[i].getFilterModels(), queryMsrs));
-                    if (andGroupFilter.isMsrFilterEnabled()) {
-                        measureFilters.add(andGroupFilter);
-                    }
-                }
-            }
-        }
-        return measureFilters.toArray(new MeasureFilter[measureFilters.size()]);
+      }
     }
+    return measureFilters.toArray(new MeasureFilter[measureFilters.size()]);
+  }
 
 }

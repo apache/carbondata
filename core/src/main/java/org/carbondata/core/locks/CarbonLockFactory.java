@@ -27,45 +27,46 @@ import org.carbondata.core.util.CarbonProperties;
  */
 public class CarbonLockFactory {
 
-    /**
-     * lockTypeConfigured to check if zookeeper feature is enabled or not for carbon.
-     */
-    private static String lockTypeConfigured;
+  /**
+   * lockTypeConfigured to check if zookeeper feature is enabled or not for carbon.
+   */
+  private static String lockTypeConfigured;
 
-    static {
-        CarbonLockFactory.updateZooKeeperLockingStatus();
+  static {
+    CarbonLockFactory.updateZooKeeperLockingStatus();
+  }
+
+  /**
+   * This method will determine the lock type.
+   *
+   * @param Location
+   * @param lockUsage
+   * @return
+   */
+  public static ICarbonLock getCarbonLockObj(String location, LockUsage lockUsage) {
+    switch (lockTypeConfigured.toUpperCase()) {
+      case "LOCALLOCK":
+        return new LocalFileLock(location, lockUsage);
+
+      case "ZOOKEEPERLOCK":
+        return new ZooKeeperLocking(lockUsage);
+
+      case "HDFSLOCK":
+        return new HdfsFileLock(location, lockUsage);
+
+      default:
+        throw new UnsupportedOperationException("Not supported the lock type");
     }
 
-    /**
-     * This method will determine the lock type.
-     *
-     * @param Location
-     * @param lockUsage
-     * @return
-     */
-    public static ICarbonLock getCarbonLockObj(String location, LockUsage lockUsage) {
-        switch (lockTypeConfigured.toUpperCase()) {
-            case "LOCALLOCK":
-                return new LocalFileLock(location, lockUsage);
+  }
 
-            case "ZOOKEEPERLOCK":
-                return new ZooKeeperLocking(lockUsage);
+  /**
+   * This method will set the zookeeper status whether zookeeper to be used for locking or not.
+   */
+  private static void updateZooKeeperLockingStatus() {
+    lockTypeConfigured = CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.LOCK_TYPE, CarbonCommonConstants.LOCK_TYPE_DEFAULT);
 
-            case "HDFSLOCK":
-                return new HdfsFileLock(location, lockUsage);
-
-            default:
-                throw new UnsupportedOperationException("Not supported the lock type");
-        }
-
-    }
-
-    /**
-     * This method will set the zookeeper status whether zookeeper to be used for locking or not.
-     */
-    private static void updateZooKeeperLockingStatus() {
-        lockTypeConfigured = CarbonProperties.getInstance().getProperty(CarbonCommonConstants.LOCK_TYPE, CarbonCommonConstants.LOCK_TYPE_DEFAULT);
-
-    }
+  }
 
 }

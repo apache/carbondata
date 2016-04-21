@@ -26,222 +26,223 @@ import org.carbondata.core.load.LoadMetadataDetails;
 import org.carbondata.core.metadata.CarbonMetadata.Cube;
 
 public class LoadModel {
-    private CarbonDef.Schema schema;
+  private CarbonDef.Schema schema;
 
-    private CarbonDef.Cube cube;
+  private CarbonDef.Cube cube;
 
-    private String partitionId = "0";
+  private String partitionId = "0";
 
-    private String tableName;
-    
-    private List<String> partitionNames;
+  private String tableName;
 
-	private Cube metaCube;
+  private List<String> partitionNames;
 
-    private String schemaName;
+  private Cube metaCube;
 
-    private String cubeName;
+  private String schemaName;
 
-    private String dataPath;
+  private String cubeName;
 
-    private String metaDataPath;
+  private String dataPath;
 
-    private List<String> validSlices;
+  private String metaDataPath;
 
-    private List<String> validUpdateSlices;
+  private List<String> validSlices;
 
-    private List<String> calculatedLoads;
+  private List<String> validUpdateSlices;
 
-    private int restructureNo;
+  private List<String> calculatedLoads;
 
-    private long cubeCreationtime;
+  private int restructureNo;
 
-    private long schemaLastUpdatedTime;
+  private long cubeCreationtime;
 
-    /**
-     * Array of LoadMetadataDetails
-     */
-    private LoadMetadataDetails[] loadMetadataDetails;
+  private long schemaLastUpdatedTime;
 
-    /**
-     * this will have all load of store
-     */
-    private List<String> allLoads;
+  /**
+   * Array of LoadMetadataDetails
+   */
+  private LoadMetadataDetails[] loadMetadataDetails;
 
-    public String getTableName() {
-        return tableName;
-    }
+  /**
+   * this will have all load of store
+   */
+  private List<String> allLoads;
 
-    public void setTableName(String tableName) {
-        this.tableName = tableName;
+  public String getTableName() {
+    return tableName;
+  }
 
-    }
+  public void setTableName(String tableName) {
+    this.tableName = tableName;
 
-    public CarbonDef.Schema getSchema() {
-        return schema;
-    }
+  }
 
-    public void setSchema(CarbonDef.Schema schema) {
-        this.schema = schema;
+  public CarbonDef.Schema getSchema() {
+    return schema;
+  }
 
-    }
+  public void setSchema(CarbonDef.Schema schema) {
+    this.schema = schema;
 
-    public String getPartitionId() {
-        return partitionId;
-    }
+  }
 
-    public void setPartitionId(String partitionId) {
-        this.partitionId = partitionId;
+  public String getPartitionId() {
+    return partitionId;
+  }
 
-    }
+  public void setPartitionId(String partitionId) {
+    this.partitionId = partitionId;
 
-    public CarbonDef.Cube getCube() {
-        return cube;
-    }
+  }
 
-    public void setCube(CarbonDef.Cube cube) {
-        this.cube = cube;
-    }
+  public CarbonDef.Cube getCube() {
+    return cube;
+  }
 
-    public Cube getMetaCube() {
-        return this.metaCube;
-    }
+  public void setCube(CarbonDef.Cube cube) {
+    this.cube = cube;
+  }
 
-    public void setMetaCube(Cube metaCube) {
-        this.metaCube = metaCube;
+  public Cube getMetaCube() {
+    return this.metaCube;
+  }
 
-    }
+  public void setMetaCube(Cube metaCube) {
+    this.metaCube = metaCube;
 
-    public String getSchemaName() {
-        return this.schemaName;
-    }
+  }
 
-    public void setSchemaName(String schemaName) {
-        this.schemaName = schemaName;
+  public String getSchemaName() {
+    return this.schemaName;
+  }
 
-    }
+  public void setSchemaName(String schemaName) {
+    this.schemaName = schemaName;
 
-    public String getCubeName() {
-        return this.cubeName;
-    }
+  }
 
-    public void setCubeName(String cubeName) {
-        this.cubeName = cubeName;
-    }
+  public String getCubeName() {
+    return this.cubeName;
+  }
 
-    public String getDataPath() {
-        return dataPath;
-    }
+  public void setCubeName(String cubeName) {
+    this.cubeName = cubeName;
+  }
 
-    public void setDataPath(String dataPath) {
-        this.dataPath = dataPath;
-    }
+  public String getDataPath() {
+    return dataPath;
+  }
 
-    public String getMetaDataPath() {
-        return metaDataPath;
-    }
+  public void setDataPath(String dataPath) {
+    this.dataPath = dataPath;
+  }
 
-    public void setMetaDataPath(String metaDataPath) {
-        this.metaDataPath = metaDataPath;
-    }
+  public String getMetaDataPath() {
+    return metaDataPath;
+  }
 
-    public List<String> getValidSlices() {
-        return validSlices;
-    }
+  public void setMetaDataPath(String metaDataPath) {
+    this.metaDataPath = metaDataPath;
+  }
 
-    public void setValidSlices(List<String> validSlices) {
-        this.validSlices = validSlices;
-    }
+  public List<String> getValidSlices() {
+    return validSlices;
+  }
 
-    public List<String> getValidUpdateSlices() {
-        return validUpdateSlices;
-    }
+  public void setValidSlices(List<String> validSlices) {
+    this.validSlices = validSlices;
+  }
 
-    public void setValidUpdateSlices(List<String> validUpdateSlices) {
-        this.validUpdateSlices = validUpdateSlices;
-    }
+  public List<String> getValidUpdateSlices() {
+    return validUpdateSlices;
+  }
 
-    public int getRestructureNo() {
-        return this.restructureNo;
-    }
+  public void setValidUpdateSlices(List<String> validUpdateSlices) {
+    this.validUpdateSlices = validUpdateSlices;
+  }
 
-    public void setRestructureNo(int restructureNo) {
-        this.restructureNo = restructureNo;
-    }
+  public int getRestructureNo() {
+    return this.restructureNo;
+  }
 
-    public List<String> getCalculatedLoads() {
-        return calculatedLoads;
-    }
+  public void setRestructureNo(int restructureNo) {
+    this.restructureNo = restructureNo;
+  }
 
-    public void setCalculatedLoads(List<String> calculatedLoads) {
-        this.calculatedLoads = calculatedLoads;
-    }
+  public List<String> getCalculatedLoads() {
+    return calculatedLoads;
+  }
 
-    /**
-     * @return Returns the cubeCreationtime.
-     */
-    public long getCubeCreationtime() {
-        return cubeCreationtime;
-    }
+  public void setCalculatedLoads(List<String> calculatedLoads) {
+    this.calculatedLoads = calculatedLoads;
+  }
 
-    /**
-     * @param cubeCreationtime The cubeCreationtime to set.
-     */
-    public void setCubeCreationtime(long cubeCreationtime) {
-        this.cubeCreationtime = cubeCreationtime;
-    }
+  /**
+   * @return Returns the cubeCreationtime.
+   */
+  public long getCubeCreationtime() {
+    return cubeCreationtime;
+  }
 
-    public List<String> getAllLoads() {
-        return this.allLoads;
-    }
+  /**
+   * @param cubeCreationtime The cubeCreationtime to set.
+   */
+  public void setCubeCreationtime(long cubeCreationtime) {
+    this.cubeCreationtime = cubeCreationtime;
+  }
 
-    public void setAllLoads(List<String> allLoads) {
-        this.allLoads = allLoads;
+  public List<String> getAllLoads() {
+    return this.allLoads;
+  }
 
-    }
+  public void setAllLoads(List<String> allLoads) {
+    this.allLoads = allLoads;
 
-    /**
-     * @return Returns the schemaLastUpdatedTime.
-     */
-    public long getSchemaLastUpdatedTime() {
-        return schemaLastUpdatedTime;
-    }
+  }
 
-    /**
-     * @param schemaLastUpdatedTime The schemaLastUpdatedTime to set.
-     */
-    public void setSchemaLastUpdatedTime(long schemaLastUpdatedTime) {
-        this.schemaLastUpdatedTime = schemaLastUpdatedTime;
-    }
-    
-    /**
-     * API will return partion names.
-     * @return
-     */
-    public List<String> getPartitionNames() {
-		return partitionNames;
-	}
+  /**
+   * @return Returns the schemaLastUpdatedTime.
+   */
+  public long getSchemaLastUpdatedTime() {
+    return schemaLastUpdatedTime;
+  }
 
-    /**
-     * setting the partition name for suggest aggregate
-     * @param partitionNames
-     */
-	public void setPartitionNames(List<String> partitionNames) {
-		this.partitionNames = partitionNames;
-	}
+  /**
+   * @param schemaLastUpdatedTime The schemaLastUpdatedTime to set.
+   */
+  public void setSchemaLastUpdatedTime(long schemaLastUpdatedTime) {
+    this.schemaLastUpdatedTime = schemaLastUpdatedTime;
+  }
 
+  /**
+   * API will return partion names.
+   *
+   * @return
+   */
+  public List<String> getPartitionNames() {
+    return partitionNames;
+  }
 
-    /**
-     *  return loadMetadata Details
-     */
-    public LoadMetadataDetails[] getLoadMetadataDetails() {
-        return loadMetadataDetails;
-    }
+  /**
+   * setting the partition name for suggest aggregate
+   *
+   * @param partitionNames
+   */
+  public void setPartitionNames(List<String> partitionNames) {
+    this.partitionNames = partitionNames;
+  }
 
-    /**
-     * Set loadMetadataDetails
-     */
-    public void setLoadMetadataDetails(LoadMetadataDetails[] loadMetadataDetails) {
-        this.loadMetadataDetails = loadMetadataDetails;
-    }
+  /**
+   * return loadMetadata Details
+   */
+  public LoadMetadataDetails[] getLoadMetadataDetails() {
+    return loadMetadataDetails;
+  }
+
+  /**
+   * Set loadMetadataDetails
+   */
+  public void setLoadMetadataDetails(LoadMetadataDetails[] loadMetadataDetails) {
+    this.loadMetadataDetails = loadMetadataDetails;
+  }
 }

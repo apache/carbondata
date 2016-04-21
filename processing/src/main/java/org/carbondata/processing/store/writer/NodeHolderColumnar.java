@@ -22,114 +22,114 @@ package org.carbondata.processing.store.writer;
 import org.carbondata.core.datastorage.store.columnar.BlockIndexerStorage;
 
 public class NodeHolderColumnar {
-    /**
-     * keyArray
-     */
-    private BlockIndexerStorage[] keyStorageArray;
+  /**
+   * keyArray
+   */
+  private BlockIndexerStorage[] keyStorageArray;
 
-    /**
-     * dataArray
-     */
-    private byte[] dataArray;
+  /**
+   * dataArray
+   */
+  private byte[] dataArray;
 
-    /**
-     * measureLenght
-     */
-    private int[] measureLenght;
+  /**
+   * measureLenght
+   */
+  private int[] measureLenght;
 
-    /**
-     * startKey
-     */
-    private byte[] startKey;
+  /**
+   * startKey
+   */
+  private byte[] startKey;
 
-    /**
-     * endKey
-     */
-    private byte[] endKey;
+  /**
+   * endKey
+   */
+  private byte[] endKey;
 
-    /**
-     * entryCount
-     */
-    private int entryCount;
+  /**
+   * entryCount
+   */
+  private int entryCount;
 
-    /**
-     * @return the keyArray
-     */
-    public BlockIndexerStorage[] getKeyArray() {
-        return keyStorageArray;
-    }
+  /**
+   * @return the keyArray
+   */
+  public BlockIndexerStorage[] getKeyArray() {
+    return keyStorageArray;
+  }
 
-    public void setKeyArray(BlockIndexerStorage[] keyStorageArray) {
-        this.keyStorageArray = keyStorageArray;
-    }
+  public void setKeyArray(BlockIndexerStorage[] keyStorageArray) {
+    this.keyStorageArray = keyStorageArray;
+  }
 
-    /**
-     * @return the startKey
-     */
-    public byte[] getStartKey() {
-        return startKey;
-    }
+  /**
+   * @return the startKey
+   */
+  public byte[] getStartKey() {
+    return startKey;
+  }
 
-    /**
-     * @param startKey the startKey to set
-     */
-    public void setStartKey(byte[] startKey) {
-        this.startKey = startKey;
-    }
+  /**
+   * @param startKey the startKey to set
+   */
+  public void setStartKey(byte[] startKey) {
+    this.startKey = startKey;
+  }
 
-    /**
-     * @return the dataArray
-     */
-    public byte[] getDataArray() {
-        return dataArray;
-    }
+  /**
+   * @return the dataArray
+   */
+  public byte[] getDataArray() {
+    return dataArray;
+  }
 
-    /**
-     * @param dataArray the dataArray to set
-     */
-    public void setDataArray(byte[] dataArray) {
-        this.dataArray = dataArray;
-    }
+  /**
+   * @param dataArray the dataArray to set
+   */
+  public void setDataArray(byte[] dataArray) {
+    this.dataArray = dataArray;
+  }
 
-    /**
-     * @return the endKey
-     */
-    public byte[] getEndKey() {
-        return endKey;
-    }
+  /**
+   * @return the endKey
+   */
+  public byte[] getEndKey() {
+    return endKey;
+  }
 
-    /**
-     * @param endKey the endKey to set
-     */
-    public void setEndKey(byte[] endKey) {
-        this.endKey = endKey;
-    }
+  /**
+   * @param endKey the endKey to set
+   */
+  public void setEndKey(byte[] endKey) {
+    this.endKey = endKey;
+  }
 
-    /**
-     * @return the entryCount
-     */
-    public int getEntryCount() {
-        return entryCount;
-    }
+  /**
+   * @return the entryCount
+   */
+  public int getEntryCount() {
+    return entryCount;
+  }
 
-    /**
-     * @param entryCount the entryCount to set
-     */
-    public void setEntryCount(int entryCount) {
-        this.entryCount = entryCount;
-    }
+  /**
+   * @param entryCount the entryCount to set
+   */
+  public void setEntryCount(int entryCount) {
+    this.entryCount = entryCount;
+  }
 
-    /**
-     * @return the measureLenght
-     */
-    public int[] getMeasureLenght() {
-        return measureLenght;
-    }
+  /**
+   * @return the measureLenght
+   */
+  public int[] getMeasureLenght() {
+    return measureLenght;
+  }
 
-    /**
-     * @param measureLenght the measureLenght to set
-     */
-    public void setMeasureLenght(int[] measureLenght) {
-        this.measureLenght = measureLenght;
-    }
+  /**
+   * @param measureLenght the measureLenght to set
+   */
+  public void setMeasureLenght(int[] measureLenght) {
+    this.measureLenght = measureLenght;
+  }
 }

@@ -25,28 +25,27 @@ import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 
 public class CarbonFileFolderComparator implements Comparator<CarbonFile> {
 
-    /**
-     * Below method will be used to compare two file
-     *
-     * @param o1 first file
-     * @param o2 Second file
-     * @return compare result
-     */
-    @Override
-    public int compare(CarbonFile o1, CarbonFile o2) {
-        String firstFileName = o1.getName();
-        String secondFileName = o2.getName();
-        int lastIndexOfO1 = firstFileName.lastIndexOf('_');
-        int lastIndexOfO2 = secondFileName.lastIndexOf('_');
-        int file1 = 0;
-        int file2 = 0;
+  /**
+   * Below method will be used to compare two file
+   *
+   * @param o1 first file
+   * @param o2 Second file
+   * @return compare result
+   */
+  @Override public int compare(CarbonFile o1, CarbonFile o2) {
+    String firstFileName = o1.getName();
+    String secondFileName = o2.getName();
+    int lastIndexOfO1 = firstFileName.lastIndexOf('_');
+    int lastIndexOfO2 = secondFileName.lastIndexOf('_');
+    int file1 = 0;
+    int file2 = 0;
 
-        try {
-            file1 = Integer.parseInt(firstFileName.substring(lastIndexOfO1 + 1));
-            file2 = Integer.parseInt(secondFileName.substring(lastIndexOfO2 + 1));
-        } catch (NumberFormatException e) {
-            return -1;
-        }
-        return (file1 < file2) ? -1 : (file1 == file2 ? 0 : 1);
+    try {
+      file1 = Integer.parseInt(firstFileName.substring(lastIndexOfO1 + 1));
+      file2 = Integer.parseInt(secondFileName.substring(lastIndexOfO2 + 1));
+    } catch (NumberFormatException e) {
+      return -1;
     }
+    return (file1 < file2) ? -1 : (file1 == file2 ? 0 : 1);
+  }
 }

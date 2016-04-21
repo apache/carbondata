@@ -29,56 +29,55 @@ import org.carbondata.query.executer.pagination.impl.DataFileChunkHolder;
  */
 public class MaksedByteComparatorForDFCH implements Comparator<DataFileChunkHolder> {
 
-    /**
-     * compareRange
-     */
-    private int[] index;
+  /**
+   * compareRange
+   */
+  private int[] index;
 
-    /**
-     * sortOrder
-     */
-    private byte sortOrder;
+  /**
+   * sortOrder
+   */
+  private byte sortOrder;
 
-    /**
-     * maskedKey
-     */
-    private byte[] maskedKey;
+  /**
+   * maskedKey
+   */
+  private byte[] maskedKey;
 
-    /**
-     * MaksedByteResultComparator Constructor
-     */
-    public MaksedByteComparatorForDFCH(int[] compareRange, byte sortOrder, byte[] maskedKey) {
-        this.index = compareRange;
-        this.sortOrder = sortOrder;
-        this.maskedKey = maskedKey;
+  /**
+   * MaksedByteResultComparator Constructor
+   */
+  public MaksedByteComparatorForDFCH(int[] compareRange, byte sortOrder, byte[] maskedKey) {
+    this.index = compareRange;
+    this.sortOrder = sortOrder;
+    this.maskedKey = maskedKey;
+  }
+
+  /**
+   * This method will be used to compare two byte array
+   *
+   * @param o1
+   * @param o2
+   */
+  @Override public int compare(DataFileChunkHolder dataFileChunkHolder1,
+      DataFileChunkHolder dataFileChunkHolder2) {
+    int compare = 0;
+    byte[] o1 = dataFileChunkHolder1.getRow();
+    byte[] o2 = dataFileChunkHolder2.getRow();
+    for (int i = 0; i < index.length; i++) {
+      int a = (o1[index[i]] & this.maskedKey[i]) & 0xff;
+      int b = (o2[index[i]] & this.maskedKey[i]) & 0xff;
+      compare = a - b;
+      if (compare == 0) {
+        continue;
+      }
+      compare = compare < 0 ? -1 : 1;
+      break;
     }
-
-    /**
-     * This method will be used to compare two byte array
-     *
-     * @param o1
-     * @param o2
-     */
-    @Override
-    public int compare(DataFileChunkHolder dataFileChunkHolder1,
-            DataFileChunkHolder dataFileChunkHolder2) {
-        int compare = 0;
-        byte[] o1 = dataFileChunkHolder1.getRow();
-        byte[] o2 = dataFileChunkHolder2.getRow();
-        for (int i = 0; i < index.length; i++) {
-            int a = (o1[index[i]] & this.maskedKey[i]) & 0xff;
-            int b = (o2[index[i]] & this.maskedKey[i]) & 0xff;
-            compare = a - b;
-            if (compare == 0) {
-                continue;
-            }
-            compare = compare < 0 ? -1 : 1;
-            break;
-        }
-        if (sortOrder == 1) {
-            return compare * -1;
-        }
-        return compare;
+    if (sortOrder == 1) {
+      return compare * -1;
     }
+    return compare;
+  }
 
 }

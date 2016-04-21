@@ -25,86 +25,86 @@ import java.io.Serializable;
  * It is top count meta class
  */
 public class TopCount implements Serializable {
-    /**
-     *
-     */
-    private static final long serialVersionUID = -8571684898961076954L;
+  /**
+   *
+   */
+  private static final long serialVersionUID = -8571684898961076954L;
 
-    /**
-     * CarbonDimensionLevel
-     */
-    private CarbonDimensionLevel level;
+  /**
+   * CarbonDimensionLevel
+   */
+  private CarbonDimensionLevel level;
 
-    /**
-     * Measure
-     */
-    private CarbonMeasure msr;
+  /**
+   * Measure
+   */
+  private CarbonMeasure msr;
 
-    /**
-     * TopN count
-     */
-    private int count;
+  /**
+   * TopN count
+   */
+  private int count;
 
-    /**
-     * TopN type
-     */
-    private TopNType type;
+  /**
+   * TopN type
+   */
+  private TopNType type;
 
-    public TopCount(CarbonDimensionLevel level, CarbonMeasure msr, int count, TopNType type) {
-        this.level = level;
-        this.msr = msr;
-        this.count = count;
-        this.type = type;
-    }
+  public TopCount(CarbonDimensionLevel level, CarbonMeasure msr, int count, TopNType type) {
+    this.level = level;
+    this.msr = msr;
+    this.count = count;
+    this.type = type;
+  }
 
-    /**
-     * Get level
-     *
-     * @return the level
-     */
-    public CarbonDimensionLevel getLevel() {
-        return level;
-    }
+  /**
+   * Get level
+   *
+   * @return the level
+   */
+  public CarbonDimensionLevel getLevel() {
+    return level;
+  }
 
-    /**
-     * get measure
-     *
-     * @return the msr
-     */
-    public CarbonMeasure getMsr() {
-        return msr;
-    }
+  /**
+   * get measure
+   *
+   * @return the msr
+   */
+  public CarbonMeasure getMsr() {
+    return msr;
+  }
 
-    /**
-     * Get top count
-     *
-     * @return the count
-     */
-    public int getCount() {
-        return count;
-    }
+  /**
+   * Get top count
+   *
+   * @return the count
+   */
+  public int getCount() {
+    return count;
+  }
 
-    /**
-     * Get the topn type
-     *
-     * @return the type
-     */
-    public TopNType getType() {
-        return type;
-    }
+  /**
+   * Get the topn type
+   *
+   * @return the type
+   */
+  public TopNType getType() {
+    return type;
+  }
 
+  /**
+   * Enum for TopN types
+   */
+  public enum TopNType {
     /**
-     * Enum for TopN types
+     * Top
      */
-    public enum TopNType {
-        /**
-         * Top
-         */
-        TOP,
-        /**
-         * Bottom
-         */
-        BOTTOM;
-    }
+    TOP,
+    /**
+     * Bottom
+     */
+    BOTTOM;
+  }
 }
 

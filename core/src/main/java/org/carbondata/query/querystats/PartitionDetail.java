@@ -28,60 +28,53 @@ import java.io.Serializable;
  */
 public class PartitionDetail implements Serializable {
 
-    /**
-     *
-     */
-    private static final long serialVersionUID = 1L;
+  /**
+   *
+   */
+  private static final long serialVersionUID = 1L;
 
-    private String partitionId;
+  private String partitionId;
 
-    /**
-     * Fact file scanned by this query
-     * Commented this part because, it was giving serialization issue. Currently this parameter is not used
-     * and hence when required, please add Concurrent collection which is serializable
-     */
-    //private Set<String> scannedFactFile = new HashSet<String>();
+  /**
+   * No of nodes scanned for given query
+   */
+  private long numberOfNodesScanned;
 
-    /**
-     * No of nodes scanned for given query
-     */
-    private long numberOfNodesScanned;
+  private long noOfRowsScanned;
 
-    private long noOfRowsScanned;
+  public PartitionDetail() {
 
-    public PartitionDetail() {
+  }
 
-    }
+  public PartitionDetail(String partitionId) {
+    this.partitionId = partitionId;
+  }
 
-    public PartitionDetail(String partitionId) {
-        this.partitionId = partitionId;
-    }
+  public String getPartitionId() {
+    return partitionId;
+  }
 
-    public String getPartitionId() {
-        return partitionId;
-    }
+  public void addNumberOfNodesScanned(long numberOfNodesToScan) {
+    this.numberOfNodesScanned += numberOfNodesToScan;
 
-    public void addNumberOfNodesScanned(long numberOfNodesToScan) {
-        this.numberOfNodesScanned += numberOfNodesToScan;
+  }
 
-    }
+  public long getNumberOfNodesScanned() {
+    return this.numberOfNodesScanned;
+  }
 
-    public long getNumberOfNodesScanned() {
-        return this.numberOfNodesScanned;
-    }
+  /**
+   * add up no of rows for each leaf node
+   *
+   * @param noOfRows
+   */
+  public void addNumberOfRowsScanned(long noOfRows) {
+    noOfRowsScanned += noOfRows;
 
-    /**
-     * add up no of rows for each leaf node
-     *
-     * @param noOfRows
-     */
-    public void addNumberOfRowsScanned(long noOfRows) {
-        noOfRowsScanned += noOfRows;
+  }
 
-    }
-
-    public long getNoOfRowsScanned() {
-        return noOfRowsScanned;
-    }
+  public long getNoOfRowsScanned() {
+    return noOfRowsScanned;
+  }
 
 }

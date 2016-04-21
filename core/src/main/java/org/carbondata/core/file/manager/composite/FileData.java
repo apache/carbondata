@@ -22,67 +22,65 @@ package org.carbondata.core.file.manager.composite;
 import org.carbondata.core.writer.HierarchyValueWriterForCSV;
 
 public class FileData extends AbstractFileManager {
-    /**
-     * File Name
-     */
-    private String fileName;
+  /**
+   * File Name
+   */
+  private String fileName;
 
-    /**
-     * Store Path
-     */
-    private String storePath;
+  /**
+   * Store Path
+   */
+  private String storePath;
 
-    /**
-     * hierarchyValueWriter
-     */
-    private HierarchyValueWriterForCSV hierarchyValueWriter;
+  /**
+   * hierarchyValueWriter
+   */
+  private HierarchyValueWriterForCSV hierarchyValueWriter;
 
-    public FileData(String fileName, String storePath) {
-        this.fileName = fileName;
-        this.storePath = storePath;
-    }
+  public FileData(String fileName, String storePath) {
+    this.fileName = fileName;
+    this.storePath = storePath;
+  }
 
-    @Override
-    public boolean rename(IFileManagerComposite composite) {
-        return false;
-    }
+  @Override public boolean rename(IFileManagerComposite composite) {
+    return false;
+  }
 
-    @Override
-    public void setName(String name) {
-        this.fileName = name;
-    }
+  @Override public void setName(String name) {
+    this.fileName = name;
+  }
 
-    /**
-     * @return Returns the fileName.
-     */
-    public String getFileName() {
-        return fileName;
-    }
+  /**
+   * @return Returns the fileName.
+   */
+  public String getFileName() {
+    return fileName;
+  }
 
-    /**
-     * @return Returns the storePath.
-     */
-    public String getStorePath() {
-        return storePath;
-    }
+  /**
+   * @return Returns the storePath.
+   */
+  public String getStorePath() {
+    return storePath;
+  }
 
-    /**
-     * get Hierarchy Value writer
-     *
-     * @return
-     */
-    public HierarchyValueWriterForCSV getHierarchyValueWriter() {
-        return hierarchyValueWriter;
-    }
+  /**
+   * get Hierarchy Value writer
+   *
+   * @return
+   */
+  public HierarchyValueWriterForCSV getHierarchyValueWriter() {
+    return hierarchyValueWriter;
+  }
 
-    /**
-     * Set Hierarchy Value Writer.
-     *
-     * @param hierarchyValueWriter
-     */
-    public void setHierarchyValueWriter(HierarchyValueWriterForCSV hierarchyValueWriter) {
-        this.hierarchyValueWriter = hierarchyValueWriter;
-    }
+  /**
+   * Set Hierarchy Value Writer.
+   *
+   * @param hierarchyValueWriter
+   */
+  public void setHierarchyValueWriter(HierarchyValueWriterForCSV hierarchyValueWriter) {
+    this.hierarchyValueWriter = hierarchyValueWriter;
+  }
 
 }
 

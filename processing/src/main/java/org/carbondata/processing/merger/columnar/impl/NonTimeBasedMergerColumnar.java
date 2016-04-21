@@ -33,77 +33,76 @@ import org.carbondata.processing.store.writer.exception.CarbonDataWriterExceptio
 
 public class NonTimeBasedMergerColumnar extends ColumnarFactFileMerger {
 
-    /**
-     * record holder heap
-     */
-    private AbstractQueue<CarbonDataIterator<CarbonSurrogateTupleHolder>> recordHolderHeap;
+  /**
+   * record holder heap
+   */
+  private AbstractQueue<CarbonDataIterator<CarbonSurrogateTupleHolder>> recordHolderHeap;
 
-    public NonTimeBasedMergerColumnar(CarbonColumnarFactMergerInfo carbonColumnarFactMergerInfo,
-            int currentRestructNumber) {
-        super(carbonColumnarFactMergerInfo, currentRestructNumber);
-        if (leafTupleIteratorList.size() > 0) {
-            recordHolderHeap = new PriorityQueue<CarbonDataIterator<CarbonSurrogateTupleHolder>>(
-                    leafTupleIteratorList.size(), new CarbonMdkeyComparator());
-        }
+  public NonTimeBasedMergerColumnar(CarbonColumnarFactMergerInfo carbonColumnarFactMergerInfo,
+      int currentRestructNumber) {
+    super(carbonColumnarFactMergerInfo, currentRestructNumber);
+    if (leafTupleIteratorList.size() > 0) {
+      recordHolderHeap = new PriorityQueue<CarbonDataIterator<CarbonSurrogateTupleHolder>>(
+          leafTupleIteratorList.size(), new CarbonMdkeyComparator());
     }
+  }
 
-    @Override
-    public void mergerSlice() throws SliceMergerException {
+  @Override public void mergerSlice() throws SliceMergerException {
+    // index
+    int index = 0;
+    try {
+      dataHandler.initialise();
+      // add first record from each file
+      for (CarbonDataIterator<CarbonSurrogateTupleHolder> leaftTupleIterator : this
+          .leafTupleIteratorList) {
+        this.recordHolderHeap.add(leaftTupleIterator);
+        index++;
+      }
+      CarbonDataIterator<CarbonSurrogateTupleHolder> poll = null;
+      while (index > 1) {
+        // poll the top record
+        poll = this.recordHolderHeap.poll();
+        // get the mdkey
+        addRow(poll.getNextData());
+        // if there is no record in the leaf and all then decrement the
         // index
-        int index = 0;
-        try {
-            dataHandler.initialise();
-            // add first record from each file
-            for (CarbonDataIterator<CarbonSurrogateTupleHolder> leaftTupleIterator : this.leafTupleIteratorList) {
-                this.recordHolderHeap.add(leaftTupleIterator);
-                index++;
-            }
-            CarbonDataIterator<CarbonSurrogateTupleHolder> poll = null;
-            while (index > 1) {
-                // poll the top record
-                poll = this.recordHolderHeap.poll();
-                // get the mdkey
-                addRow(poll.getNextData());
-                // if there is no record in the leaf and all then decrement the
-                // index
-                if (!poll.hasNext()) {
-                    index--;
-                    continue;
-                }
-                poll.fetchNextData();
-                // add record to heap
-                this.recordHolderHeap.add(poll);
-            }
-            // if record holder is not empty then poll the slice holder from
-            // heap
-            poll = this.recordHolderHeap.poll();
-            while (true) {
-                addRow(poll.getNextData());
-                // check if leaf contains no record
-                if (!poll.hasNext()) {
-                    break;
-                }
-                poll.fetchNextData();
-            }
-            this.dataHandler.finish();
-
-        } catch (CarbonDataWriterException e) {
-            throw new SliceMergerException(
-                    "Problem while getting the file channel for Destination file: ", e);
-        } finally {
-            this.dataHandler.closeHandler();
+        if (!poll.hasNext()) {
+          index--;
+          continue;
         }
+        poll.fetchNextData();
+        // add record to heap
+        this.recordHolderHeap.add(poll);
+      }
+      // if record holder is not empty then poll the slice holder from
+      // heap
+      poll = this.recordHolderHeap.poll();
+      while (true) {
+        addRow(poll.getNextData());
+        // check if leaf contains no record
+        if (!poll.hasNext()) {
+          break;
+        }
+        poll.fetchNextData();
+      }
+      this.dataHandler.finish();
+
+    } catch (CarbonDataWriterException e) {
+      throw new SliceMergerException(
+          "Problem while getting the file channel for Destination file: ", e);
+    } finally {
+      this.dataHandler.closeHandler();
+    }
+  }
+
+  private class CarbonMdkeyComparator
+      implements Comparator<CarbonDataIterator<CarbonSurrogateTupleHolder>> {
+
+    @Override public int compare(CarbonDataIterator<CarbonSurrogateTupleHolder> o1,
+        CarbonDataIterator<CarbonSurrogateTupleHolder> o2) {
+      return ByteUtil.UnsafeComparer.INSTANCE
+          .compareTo(o1.getNextData().getMdKey(), o2.getNextData().getMdKey());
     }
 
-    private class CarbonMdkeyComparator
-            implements Comparator<CarbonDataIterator<CarbonSurrogateTupleHolder>> {
-
-        @Override
-        public int compare(CarbonDataIterator<CarbonSurrogateTupleHolder> o1,
-                CarbonDataIterator<CarbonSurrogateTupleHolder> o2) {
-            return ByteUtil.UnsafeComparer.INSTANCE
-                    .compareTo(o1.getNextData().getMdKey(), o2.getNextData().getMdKey());
-        }
-
-    }
+  }
 }

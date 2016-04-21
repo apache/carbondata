@@ -21,39 +21,39 @@ package org.carbondata.core.datastorage.store.filesystem;
 
 public interface CarbonFile {
 
-    String getAbsolutePath();
+  String getAbsolutePath();
 
-    CarbonFile[] listFiles(CarbonFileFilter fileFilter);
+  CarbonFile[] listFiles(CarbonFileFilter fileFilter);
 
-    CarbonFile[] listFiles();
+  CarbonFile[] listFiles();
 
-    String getName();
+  String getName();
 
-    boolean isDirectory();
+  boolean isDirectory();
 
-    boolean exists();
+  boolean exists();
 
-    String getCanonicalPath();
+  String getCanonicalPath();
 
-    CarbonFile getParentFile();
+  CarbonFile getParentFile();
 
-    String getPath();
+  String getPath();
 
-    long getSize();
+  long getSize();
 
-    boolean renameTo(String changetoName);
+  boolean renameTo(String changetoName);
 
-    boolean renameForce(String changetoName);
+  boolean renameForce(String changetoName);
 
-    boolean delete();
+  boolean delete();
 
-    boolean createNewFile();
+  boolean createNewFile();
 
-    boolean mkdirs();
+  boolean mkdirs();
 
-    long getLastModifiedTime();
+  long getLastModifiedTime();
 
-    boolean setLastModifiedTime(long timestamp);
+  boolean setLastModifiedTime(long timestamp);
 
-    boolean truncate(String fileName, long validDataEndOffset);
+  boolean truncate(String fileName, long validDataEndOffset);
 }

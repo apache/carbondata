@@ -30,39 +30,39 @@ import java.io.IOException;
  */
 
 public class LineReader {
-    private BufferedReader reader;
-    private boolean keepCarriageReturns;
+  private BufferedReader reader;
+  private boolean keepCarriageReturns;
 
-    /**
-     * LineReader constructor.
-     *
-     * @param reader              - Reader that data will be read from.
-     * @param keepCarriageReturns - true if carriage returns should remain in the data, false
-     *                            to remove them.
-     */
-    public LineReader(BufferedReader reader, boolean keepCarriageReturns) {
-        this.reader = reader;
-        this.keepCarriageReturns = keepCarriageReturns;
-    }
+  /**
+   * LineReader constructor.
+   *
+   * @param reader              - Reader that data will be read from.
+   * @param keepCarriageReturns - true if carriage returns should remain in the data, false
+   *                            to remove them.
+   */
+  public LineReader(BufferedReader reader, boolean keepCarriageReturns) {
+    this.reader = reader;
+    this.keepCarriageReturns = keepCarriageReturns;
+  }
 
-    /**
-     * Reads the next line from the Reader.
-     *
-     * @return - Line read from reader.
-     * @throws IOException - on error from BufferedReader
-     */
-    public String readLine() throws IOException {
-        return keepCarriageReturns ? readUntilNewline() : reader.readLine();
-    }
+  /**
+   * Reads the next line from the Reader.
+   *
+   * @return - Line read from reader.
+   * @throws IOException - on error from BufferedReader
+   */
+  public String readLine() throws IOException {
+    return keepCarriageReturns ? readUntilNewline() : reader.readLine();
+  }
 
-    private String readUntilNewline() throws IOException {
-        StringBuilder sb = new StringBuilder(CSVParser.INITIAL_READ_SIZE);
-        for (int c = reader.read();
-             c > -1 && c != '\n';
-             c = reader.read()) {      //CHECKSTYLE:OFF    Approval No:Approval-V1R2C10_006
-            sb.append((char) c);
-        }//CHECKSTYLE:ON
+  private String readUntilNewline() throws IOException {
+    StringBuilder sb = new StringBuilder(CSVParser.INITIAL_READ_SIZE);
+    for (int c = reader.read();
+         c > -1 && c != '\n';
+         c = reader.read()) {      //CHECKSTYLE:OFF    Approval No:Approval-V1R2C10_006
+      sb.append((char) c);
+    }//CHECKSTYLE:ON
 
-        return sb.length() > 0 ? sb.toString() : null;
-    }
+    return sb.length() > 0 ? sb.toString() : null;
+  }
 }

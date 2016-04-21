@@ -28,55 +28,54 @@ import org.carbondata.query.executer.Tuple;
  * Version 1.0
  */
 public class MaksedByteComparatorForTuple implements Comparator<Tuple> {
-    /**
-     * compareRange
-     */
-    private int[] index;
+  /**
+   * compareRange
+   */
+  private int[] index;
 
-    /**
-     * sortOrder
-     */
-    private byte sortOrder;
+  /**
+   * sortOrder
+   */
+  private byte sortOrder;
 
-    /**
-     * maskedKey
-     */
-    private byte[] maskedKey;
+  /**
+   * maskedKey
+   */
+  private byte[] maskedKey;
 
-    /**
-     * MaksedByteResultComparator Constructor
-     */
-    public MaksedByteComparatorForTuple(int[] compareRange, byte sortOrder, byte[] maskedKey) {
-        this.index = compareRange;
-        this.sortOrder = sortOrder;
-        this.maskedKey = maskedKey;
+  /**
+   * MaksedByteResultComparator Constructor
+   */
+  public MaksedByteComparatorForTuple(int[] compareRange, byte sortOrder, byte[] maskedKey) {
+    this.index = compareRange;
+    this.sortOrder = sortOrder;
+    this.maskedKey = maskedKey;
+  }
+
+  /**
+   * This method will be used to compare two byte array
+   *
+   * @param o1
+   * @param o2
+   */
+  @Override public int compare(Tuple tuple1, Tuple tuple2) {
+    int cmp = 0;
+    byte[] key1 = tuple1.getKey();
+    byte[] key2 = tuple2.getKey();
+    for (int i = 0; i < index.length; i++) {
+      int a = (key1[index[i]] & this.maskedKey[i]) & 0xff;
+      int b = (key2[index[i]] & this.maskedKey[i]) & 0xff;
+      cmp = a - b;
+      if (cmp == 0) {
+        continue;
+      }
+      cmp = cmp < 0 ? -1 : 1;
+      break;
     }
-
-    /**
-     * This method will be used to compare two byte array
-     *
-     * @param o1
-     * @param o2
-     */
-    @Override
-    public int compare(Tuple tuple1, Tuple tuple2) {
-        int cmp = 0;
-        byte[] key1 = tuple1.getKey();
-        byte[] key2 = tuple2.getKey();
-        for (int i = 0; i < index.length; i++) {
-            int a = (key1[index[i]] & this.maskedKey[i]) & 0xff;
-            int b = (key2[index[i]] & this.maskedKey[i]) & 0xff;
-            cmp = a - b;
-            if (cmp == 0) {
-                continue;
-            }
-            cmp = cmp < 0 ? -1 : 1;
-            break;
-        }
-        if (sortOrder == 1) {
-            return cmp * -1;
-        }
-        return cmp;
+    if (sortOrder == 1) {
+      return cmp * -1;
     }
+    return cmp;
+  }
 
 }

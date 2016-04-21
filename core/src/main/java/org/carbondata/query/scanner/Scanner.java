@@ -20,43 +20,43 @@
 package org.carbondata.query.scanner;
 
 import org.carbondata.core.datastorage.store.FileHolder;
-import org.carbondata.query.datastorage.storeInterfaces.DataStore;
-import org.carbondata.query.datastorage.storeInterfaces.DataStoreBlock;
-import org.carbondata.query.datastorage.storeInterfaces.KeyValue;
+import org.carbondata.query.datastorage.storeinterface.DataStore;
+import org.carbondata.query.datastorage.storeinterface.DataStoreBlock;
+import org.carbondata.query.datastorage.storeinterface.KeyValue;
 
 /**
  * Scanner is the interface provide the way to scan the data source
  */
 public interface Scanner {
 
-    /**
-     * It requires isDone to be called before calling this interface
-     *
-     * @return
-     */
-    KeyValue getNext();
+  /**
+   * It requires isDone to be called before calling this interface
+   *
+   * @return
+   */
+  KeyValue getNext();
 
-    /**
-     * It ensures the next valid key is ready to be returned on call of getNext
-     *
-     * @return true only when the scan is done
-     */
-    boolean isDone();
+  /**
+   * It ensures the next valid key is ready to be returned on call of getNext
+   *
+   * @return true only when the scan is done
+   */
+  boolean isDone();
 
-    /**
-     * Set the data store and data store block information.
-     *
-     * @param dataStore
-     * @param block
-     * @param currIndex
-     */
-    void setDataStore(DataStore dataStore, DataStoreBlock block, int currIndex);
+  /**
+   * Set the data store and data store block information.
+   *
+   * @param dataStore
+   * @param block
+   * @param currIndex
+   */
+  void setDataStore(DataStore dataStore, DataStoreBlock block, int currIndex);
 
-    /**
-     * Get file holder
-     *
-     * @return file holder
-     */
-    FileHolder getFileHolder();
+  /**
+   * Get file holder
+   *
+   * @return file holder
+   */
+  FileHolder getFileHolder();
 
 }

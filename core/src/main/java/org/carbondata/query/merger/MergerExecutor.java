@@ -42,39 +42,39 @@ import org.carbondata.query.writer.exception.ResultWriterException;
  * Class Version  : 1.0
  */
 public class MergerExecutor {
-    /**
-     * execService Service for maintaining thread pool.
-     */
-    private ExecutorService execService;
+  /**
+   * execService Service for maintaining thread pool.
+   */
+  private ExecutorService execService;
 
-    public MergerExecutor() {
-        execService = Executors.newFixedThreadPool(2);
-    }
+  public MergerExecutor() {
+    execService = Executors.newFixedThreadPool(2);
+  }
 
-    public void mergeResult(DataProcessor processor, DataProcessorInfo info, CarbonFile[] files) {
-        if (!info.isSortedData()) {
-            execService.submit(new UnSortedResultMerger(processor, info, files));
-        } else {
-            execService.submit(new SortedResultFileMerger(processor, info, files));
-        }
+  public void mergeResult(DataProcessor processor, DataProcessorInfo info, CarbonFile[] files) {
+    if (!info.isSortedData()) {
+      execService.submit(new UnSortedResultMerger(processor, info, files));
+    } else {
+      execService.submit(new SortedResultFileMerger(processor, info, files));
     }
+  }
 
-    public void mergeFinalResult(DataProcessor processor, DataProcessorInfo info, CarbonFile[] files)
-            throws Exception {
-        if (!info.isSortedData()) {
-            new UnSortedResultMerger(processor, info, files).call();
-        } else {
-            new SortedResultFileMerger(processor, info, files).call();
-        }
+  public void mergeFinalResult(DataProcessor processor, DataProcessorInfo info, CarbonFile[] files)
+      throws Exception {
+    if (!info.isSortedData()) {
+      new UnSortedResultMerger(processor, info, files).call();
+    } else {
+      new SortedResultFileMerger(processor, info, files).call();
     }
+  }
 
-    public void closeMerger() throws ResultWriterException {
-        execService.shutdown();
-        try {
-            execService.awaitTermination(2, TimeUnit.DAYS);
-        } catch (InterruptedException e) {
-            throw new ResultWriterException(e);
-        }
+  public void closeMerger() throws ResultWriterException {
+    execService.shutdown();
+    try {
+      execService.awaitTermination(2, TimeUnit.DAYS);
+    } catch (InterruptedException e) {
+      throw new ResultWriterException(e);
     }
+  }
 
 }

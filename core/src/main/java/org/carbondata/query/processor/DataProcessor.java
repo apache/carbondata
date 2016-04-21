@@ -27,16 +27,16 @@ import org.carbondata.query.schema.metadata.DataProcessorInfo;
 import org.carbondata.query.wrappers.ByteArrayWrapper;
 
 public interface DataProcessor {
-    void initialise(DataProcessorInfo model) throws DataProcessorException;
+  void initialise(DataProcessorInfo model) throws DataProcessorException;
 
-    void processRow(byte[] key, MeasureAggregator[] value) throws DataProcessorException;
+  void processRow(byte[] key, MeasureAggregator[] value) throws DataProcessorException;
 
-    //void processRow(ByteArrayWrapper key, MeasureAggregator[] value) throws DataProcessorException;
+  //void processRow(ByteArrayWrapper key, MeasureAggregator[] value) throws DataProcessorException;
 
-    void processRow(ByteArrayWrapper key, MeasureAggregator[] value) throws DataProcessorException;
+  void processRow(ByteArrayWrapper key, MeasureAggregator[] value) throws DataProcessorException;
 
-    void finish() throws DataProcessorException;
+  void finish() throws DataProcessorException;
 
-    CarbonIterator<QueryResult> getQueryResultIterator();
+  CarbonIterator<QueryResult> getQueryResultIterator();
 
 }

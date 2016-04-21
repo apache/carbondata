@@ -24,37 +24,35 @@ import org.carbondata.query.result.ChunkResult;
 import org.carbondata.query.result.RowResult;
 
 public class ChunkRowIterator implements CarbonIterator<RowResult> {
-    private CarbonIterator<ChunkResult> iterator;
+  private CarbonIterator<ChunkResult> iterator;
 
-    private ChunkResult currentchunk;
+  private ChunkResult currentchunk;
 
-    public ChunkRowIterator(CarbonIterator<ChunkResult> iterator) {
-        this.iterator = iterator;
-        if (iterator.hasNext()) {
-            currentchunk = iterator.next();
+  public ChunkRowIterator(CarbonIterator<ChunkResult> iterator) {
+    this.iterator = iterator;
+    if (iterator.hasNext()) {
+      currentchunk = iterator.next();
+    }
+  }
+
+  @Override public boolean hasNext() {
+    if (null != currentchunk) {
+      if ((currentchunk.hasNext())) {
+        return true;
+      } else if (!currentchunk.hasNext()) {
+        while (iterator.hasNext()) {
+          currentchunk = iterator.next();
+          if (currentchunk != null && currentchunk.hasNext()) {
+            return true;
+          }
         }
+      }
     }
+    return false;
+  }
 
-    @Override
-    public boolean hasNext() {
-        if (null != currentchunk) {
-            if ((currentchunk.hasNext())) {
-                return true;
-            } else if (!currentchunk.hasNext()) {
-                while (iterator.hasNext()) {
-                    currentchunk = iterator.next();
-                    if (currentchunk != null && currentchunk.hasNext()) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
-    @Override
-    public RowResult next() {
-        return currentchunk.next();
-    }
+  @Override public RowResult next() {
+    return currentchunk.next();
+  }
 
 }

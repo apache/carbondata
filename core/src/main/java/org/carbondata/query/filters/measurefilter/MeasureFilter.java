@@ -22,19 +22,19 @@ package org.carbondata.query.filters.measurefilter;
 import org.carbondata.query.aggregator.MeasureAggregator;
 
 public interface MeasureFilter {
-    /**
-     * Filter the measure as per the passed value satisfies the implemented class condition.
-     *
-     * @param msrValue
-     * @return
-     */
-    boolean filter(MeasureAggregator[] msrValue);
+  /**
+   * Filter the measure as per the passed value satisfies the implemented class condition.
+   *
+   * @param msrValue
+   * @return
+   */
+  boolean filter(MeasureAggregator[] msrValue);
 
-    /**
-     * Filter the measure as per the passed value satisfies the implemented class condition.
-     *
-     * @param msrValue
-     * @return
-     */
-    boolean filter(double[] msrValue, int msrStartIndex);
+  /**
+   * Filter the measure as per the passed value satisfies the implemented class condition.
+   *
+   * @param msrValue
+   * @return
+   */
+  boolean filter(double[] msrValue, int msrStartIndex);
 }

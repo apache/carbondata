@@ -25,22 +25,24 @@ import org.carbondata.query.result.RowResult;
 
 public interface QueryExecutor {
 
-    /**
-     * Below method will be used to execute the query
-     *
-     * @param queryModel query model, properties which will be required to execute the query
-     * @throws QueryExecutionException will throw query execution exception in case of any abnormal scenario
-     */
-    CarbonIterator<RowResult> execute(CarbonQueryExecutorModel queryModel)
-            throws QueryExecutionException;
+  /**
+   * Below method will be used to execute the query
+   *
+   * @param queryModel query model, properties which will be required to execute the query
+   * @throws QueryExecutionException will throw query execution exception in case of any
+   * abnormal scenario
+   */
+  CarbonIterator<RowResult> execute(CarbonQueryExecutorModel queryModel)
+      throws QueryExecutionException;
 
-    /**
-     * Below method will be used to execute the query of QuickFilter
-     *
-     * @param queryModel , properties which will be required to execute the query
-     * @throws QueryExecutionException will throw query execution exception in case of any abnormal scenario
-     */
-    CarbonIterator<RowResult> executeDimension(CarbonQueryExecutorModel queryModel)
-            throws QueryExecutionException;
+  /**
+   * Below method will be used to execute the query of QuickFilter
+   *
+   * @param queryModel , properties which will be required to execute the query
+   * @throws QueryExecutionException will throw query execution exception in case of any
+   * abnormal scenario
+   */
+  CarbonIterator<RowResult> executeDimension(CarbonQueryExecutorModel queryModel)
+      throws QueryExecutionException;
 
 }

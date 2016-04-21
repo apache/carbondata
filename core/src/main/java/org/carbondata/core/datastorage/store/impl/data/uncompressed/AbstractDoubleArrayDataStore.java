@@ -28,61 +28,55 @@ import org.carbondata.core.util.ValueCompressionUtil;
 
 public abstract class AbstractDoubleArrayDataStore implements NodeMeasureDataStore {
 
-    protected ValueCompressonHolder.UnCompressValue[] values;
+  protected ValueCompressonHolder.UnCompressValue[] values;
 
-    protected ValueCompressionModel compressionModel;
+  protected ValueCompressionModel compressionModel;
 
-    private char[] type;
+  private char[] type;
 
-    public AbstractDoubleArrayDataStore(ValueCompressionModel compressionModel) {
-        this.compressionModel = compressionModel;
-        if (null != compressionModel) {
-            values = new ValueCompressonHolder.UnCompressValue[compressionModel
-                    .getUnCompressValues().length];
-            type = compressionModel.getType();
+  public AbstractDoubleArrayDataStore(ValueCompressionModel compressionModel) {
+    this.compressionModel = compressionModel;
+    if (null != compressionModel) {
+      values =
+          new ValueCompressonHolder.UnCompressValue[compressionModel.getUnCompressValues().length];
+      type = compressionModel.getType();
+    }
+  }
+
+  @Override public byte[][] getWritableMeasureDataArray(CarbonWriteDataHolder[] dataHolder) {
+    values =
+        new ValueCompressonHolder.UnCompressValue[compressionModel.getUnCompressValues().length];
+    for (int i = 0; i < compressionModel.getUnCompressValues().length; i++) {
+      values[i] = compressionModel.getUnCompressValues()[i].getNew();
+      if (type[i] != CarbonCommonConstants.BYTE_VALUE_MEASURE
+          && type[i] != CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
+        if (type[i] == CarbonCommonConstants.BIG_INT_MEASURE) {
+          values[i].setValue(ValueCompressionUtil
+              .getCompressedValues(compressionModel.getCompType()[i],
+                  dataHolder[i].getWritableLongValues(), compressionModel.getChangedDataType()[i],
+                  (long) compressionModel.getMaxValue()[i], compressionModel.getDecimal()[i]));
+        } else {
+          values[i].setValue(ValueCompressionUtil
+              .getCompressedValues(compressionModel.getCompType()[i],
+                  dataHolder[i].getWritableDoubleValues(), compressionModel.getChangedDataType()[i],
+                  (double) compressionModel.getMaxValue()[i], compressionModel.getDecimal()[i]));
         }
+      } else {
+        values[i].setValue(dataHolder[i].getWritableByteArrayValues());
+      }
     }
 
-    @Override
-    public byte[][] getWritableMeasureDataArray(CarbonWriteDataHolder[] dataHolder) {
-        values = new ValueCompressonHolder.UnCompressValue[compressionModel
-                .getUnCompressValues().length];
-        for (int i = 0; i < compressionModel.getUnCompressValues().length; i++) {
-            values[i] = compressionModel.getUnCompressValues()[i].getNew();
-            if (type[i] != CarbonCommonConstants.BYTE_VALUE_MEASURE
-                    && type[i] != CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
-                if (type[i] == CarbonCommonConstants.BIG_INT_MEASURE) {
-                    values[i].setValue(ValueCompressionUtil
-                            .getCompressedValues(compressionModel.getCompType()[i],
-                                    dataHolder[i].getWritableLongValues(),
-                                    compressionModel.getChangedDataType()[i],
-                                    (long) compressionModel.getMaxValue()[i],
-                                    compressionModel.getDecimal()[i]));
-                } else {
-                    values[i].setValue(ValueCompressionUtil
-                            .getCompressedValues(compressionModel.getCompType()[i],
-                                    dataHolder[i].getWritableDoubleValues(),
-                                    compressionModel.getChangedDataType()[i],
-                                    (double) compressionModel.getMaxValue()[i],
-                                    compressionModel.getDecimal()[i]));
-                }
-            } else {
-                values[i].setValue(dataHolder[i].getWritableByteArrayValues());
-            }
-        }
+    byte[][] resturnValue = new byte[values.length][];
 
-        byte[][] resturnValue = new byte[values.length][];
-
-        for (int i = 0; i < values.length; i++) {
-            resturnValue[i] = values[i].getBackArrayData();
-        }
-        return resturnValue;
+    for (int i = 0; i < values.length; i++) {
+      resturnValue[i] = values[i].getBackArrayData();
     }
+    return resturnValue;
+  }
 
-    @Override
-    public short getLength() {
-        return values != null ? (short) values.length : 0;
-    }
+  @Override public short getLength() {
+    return values != null ? (short) values.length : 0;
+  }
 
 }
 

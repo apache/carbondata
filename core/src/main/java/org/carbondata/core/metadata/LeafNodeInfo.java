@@ -20,183 +20,183 @@
 package org.carbondata.core.metadata;
 
 public class LeafNodeInfo {
-    /**
-     * fileName.
-     */
-    private String fileName;
+  /**
+   * fileName.
+   */
+  private String fileName;
 
-    /**
-     * keyOffset.
-     */
-    private long keyOffset;
+  /**
+   * keyOffset.
+   */
+  private long keyOffset;
 
-    /**
-     * measureOffset.
-     */
-    private long[] measureOffset;
+  /**
+   * measureOffset.
+   */
+  private long[] measureOffset;
 
-    /**
-     * measureLength.
-     */
-    private int[] measureLength;
+  /**
+   * measureLength.
+   */
+  private int[] measureLength;
 
-    /**
-     * keyLength.
-     */
-    private int keyLength;
+  /**
+   * keyLength.
+   */
+  private int keyLength;
 
-    /**
-     * numberOfKeys.
-     */
-    private int numberOfKeys;
+  /**
+   * numberOfKeys.
+   */
+  private int numberOfKeys;
 
-    /**
-     * startKey.
-     */
-    private byte[] startKey;
+  /**
+   * startKey.
+   */
+  private byte[] startKey;
 
-    /**
-     * endKey.
-     */
-    private byte[] endKey;
+  /**
+   * endKey.
+   */
+  private byte[] endKey;
 
-    /**
-     * getFileName().
-     *
-     * @return String.
-     */
-    public String getFileName() {
-        return fileName;
-    }
+  /**
+   * getFileName().
+   *
+   * @return String.
+   */
+  public String getFileName() {
+    return fileName;
+  }
 
-    /**
-     * setFileName.
-     */
-    public void setFileName(String fileName) {
-        this.fileName = fileName;
-    }
+  /**
+   * setFileName.
+   */
+  public void setFileName(String fileName) {
+    this.fileName = fileName;
+  }
 
-    /**
-     * getKeyOffset.
-     *
-     * @return long.
-     */
-    public long getKeyOffset() {
-        return keyOffset;
-    }
+  /**
+   * getKeyOffset.
+   *
+   * @return long.
+   */
+  public long getKeyOffset() {
+    return keyOffset;
+  }
 
-    /**
-     * setKeyOffset.
-     *
-     * @param keyOffset
-     */
-    public void setKeyOffset(long keyOffset) {
-        this.keyOffset = keyOffset;
-    }
+  /**
+   * setKeyOffset.
+   *
+   * @param keyOffset
+   */
+  public void setKeyOffset(long keyOffset) {
+    this.keyOffset = keyOffset;
+  }
 
-    /**
-     * getMeasureLength
-     *
-     * @return int[].
-     */
-    public int[] getMeasureLength() {
-        return measureLength;
-    }
+  /**
+   * getMeasureLength
+   *
+   * @return int[].
+   */
+  public int[] getMeasureLength() {
+    return measureLength;
+  }
 
-    /**
-     * setMeasureLength.
-     *
-     * @param measureLength
-     */
-    public void setMeasureLength(int[] measureLength) {
-        this.measureLength = measureLength;
-    }
+  /**
+   * setMeasureLength.
+   *
+   * @param measureLength
+   */
+  public void setMeasureLength(int[] measureLength) {
+    this.measureLength = measureLength;
+  }
 
-    /**
-     * getKeyLength.
-     *
-     * @return
-     */
-    public int getKeyLength() {
-        return keyLength;
-    }
+  /**
+   * getKeyLength.
+   *
+   * @return
+   */
+  public int getKeyLength() {
+    return keyLength;
+  }
 
-    /**
-     * setKeyLength.
-     */
-    public void setKeyLength(int keyLength) {
-        this.keyLength = keyLength;
-    }
+  /**
+   * setKeyLength.
+   */
+  public void setKeyLength(int keyLength) {
+    this.keyLength = keyLength;
+  }
 
-    /**
-     * getMeasureOffset.
-     *
-     * @return long[].
-     */
-    public long[] getMeasureOffset() {
-        return measureOffset;
-    }
+  /**
+   * getMeasureOffset.
+   *
+   * @return long[].
+   */
+  public long[] getMeasureOffset() {
+    return measureOffset;
+  }
 
-    /**
-     * setMeasureOffset.
-     *
-     * @param measureOffset
-     */
-    public void setMeasureOffset(long[] measureOffset) {
-        this.measureOffset = measureOffset;
-    }
+  /**
+   * setMeasureOffset.
+   *
+   * @param measureOffset
+   */
+  public void setMeasureOffset(long[] measureOffset) {
+    this.measureOffset = measureOffset;
+  }
 
-    /**
-     * getNumberOfKeys()
-     *
-     * @return int.
-     */
-    public int getNumberOfKeys() {
-        return numberOfKeys;
-    }
+  /**
+   * getNumberOfKeys()
+   *
+   * @return int.
+   */
+  public int getNumberOfKeys() {
+    return numberOfKeys;
+  }
 
-    /**
-     * setNumberOfKeys.
-     *
-     * @param numberOfKeys
-     */
-    public void setNumberOfKeys(int numberOfKeys) {
-        this.numberOfKeys = numberOfKeys;
-    }
+  /**
+   * setNumberOfKeys.
+   *
+   * @param numberOfKeys
+   */
+  public void setNumberOfKeys(int numberOfKeys) {
+    this.numberOfKeys = numberOfKeys;
+  }
 
-    /**
-     * getStartKey().
-     *
-     * @return byte[].
-     */
-    public byte[] getStartKey() {
-        return startKey;
-    }
+  /**
+   * getStartKey().
+   *
+   * @return byte[].
+   */
+  public byte[] getStartKey() {
+    return startKey;
+  }
 
-    /**
-     * setStartKey.
-     *
-     * @param startKey
-     */
-    public void setStartKey(byte[] startKey) {
-        this.startKey = startKey;
-    }
+  /**
+   * setStartKey.
+   *
+   * @param startKey
+   */
+  public void setStartKey(byte[] startKey) {
+    this.startKey = startKey;
+  }
 
-    /**
-     * getEndKey().
-     *
-     * @return byte[].
-     */
-    public byte[] getEndKey() {
-        return endKey;
-    }
+  /**
+   * getEndKey().
+   *
+   * @return byte[].
+   */
+  public byte[] getEndKey() {
+    return endKey;
+  }
 
-    /**
-     * setEndKey.
-     *
-     * @param endKey
-     */
-    public void setEndKey(byte[] endKey) {
-        this.endKey = endKey;
-    }
+  /**
+   * setEndKey.
+   *
+   * @param endKey
+   */
+  public void setEndKey(byte[] endKey) {
+    this.endKey = endKey;
+  }
 }

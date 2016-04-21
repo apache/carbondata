@@ -28,59 +28,59 @@ import org.carbondata.query.expression.Expression;
 import org.carbondata.query.expression.logical.BinaryLogicalExpression;
 
 public abstract class BinaryConditionalExpression extends BinaryLogicalExpression
-        implements ConditionalExpression {
+    implements ConditionalExpression {
 
-    /**
-     *
-     */
-    private static final long serialVersionUID = 1L;
+  /**
+   *
+   */
+  private static final long serialVersionUID = 1L;
 
-    public BinaryConditionalExpression(Expression left, Expression right) {
-        super(left, right);
-        // TODO Auto-generated constructor stub
-    }
+  public BinaryConditionalExpression(Expression left, Expression right) {
+    super(left, right);
+    // TODO Auto-generated constructor stub
+  }
 
-    // Will get the column informations involved in the expressions by
-    // traversing the tree
-    public List<ColumnExpression> getColumnList() {
-        // TODO
-        List<ColumnExpression> listOfExp =
-                new ArrayList<ColumnExpression>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-        getColumnList(this, listOfExp);
-        return listOfExp;
-    }
+  // Will get the column informations involved in the expressions by
+  // traversing the tree
+  public List<ColumnExpression> getColumnList() {
+    // TODO
+    List<ColumnExpression> listOfExp =
+        new ArrayList<ColumnExpression>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    getColumnList(this, listOfExp);
+    return listOfExp;
+  }
 
-    private void getColumnList(Expression expression, List<ColumnExpression> lst) {
-        if (expression instanceof ColumnExpression) {
-            ColumnExpression colExp = (ColumnExpression) expression;
-            boolean found = false;
+  private void getColumnList(Expression expression, List<ColumnExpression> lst) {
+    if (expression instanceof ColumnExpression) {
+      ColumnExpression colExp = (ColumnExpression) expression;
+      boolean found = false;
 
-            for (ColumnExpression currentColExp : lst) {
-                if (currentColExp.getColumnName().equals(colExp.getColumnName())) {
-                    found = true;
-                    colExp.setColIndex(currentColExp.getColIndex());
-                    break;
-                }
-            }
-            if (!found) {
-                colExp.setColIndex(lst.size());
-                lst.add(colExp);
-            }
+      for (ColumnExpression currentColExp : lst) {
+        if (currentColExp.getColumnName().equals(colExp.getColumnName())) {
+          found = true;
+          colExp.setColIndex(currentColExp.getColIndex());
+          break;
         }
-        for (Expression child : expression.getChildren()) {
-            getColumnList(child, lst);
-        }
+      }
+      if (!found) {
+        colExp.setColIndex(lst.size());
+        lst.add(colExp);
+      }
     }
-
-    public boolean isSingleDimension() {
-        List<ColumnExpression> listOfExp =
-                new ArrayList<ColumnExpression>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-        getColumnList(this, listOfExp);
-        if (listOfExp.size() == 1 && listOfExp.get(0).isDimension()) {
-            return true;
-        }
-        return false;
-
+    for (Expression child : expression.getChildren()) {
+      getColumnList(child, lst);
     }
+  }
+
+  public boolean isSingleDimension() {
+    List<ColumnExpression> listOfExp =
+        new ArrayList<ColumnExpression>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    getColumnList(this, listOfExp);
+    if (listOfExp.size() == 1 && listOfExp.get(0).isDimension()) {
+      return true;
+    }
+    return false;
+
+  }
 
 }

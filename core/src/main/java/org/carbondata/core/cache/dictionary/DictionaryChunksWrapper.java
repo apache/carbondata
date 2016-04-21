@@ -29,99 +29,100 @@ import java.util.List;
  */
 public class DictionaryChunksWrapper implements Iterator<byte[]> {
 
-    /**
-     * list of dictionaryChunks
-     */
-    private List<List<byte[]>> dictionaryChunks;
+  /**
+   * list of dictionaryChunks
+   */
+  private List<List<byte[]>> dictionaryChunks;
 
-    /**
-     * size of the list
-     */
-    private int size;
+  /**
+   * size of the list
+   */
+  private int size;
 
-    /**
-     * Current index of the list
-     */
-    private int currentIndex = 0;
+  /**
+   * Current index of the list
+   */
+  private int currentIndex = 0;
 
-    /**
-     * variable holds the count of elements already iterated
-     */
-    private int iteratedListSize = 0;
+  /**
+   * variable holds the count of elements already iterated
+   */
+  private int iteratedListSize = 0;
 
-    /**
-     * variable holds the current index of List<List<byte[]>> being traversed
-     */
-    private int outerIndex = 0;
+  /**
+   * variable holds the current index of List<List<byte[]>> being traversed
+   */
+  private int outerIndex = 0;
 
-    /**
-     * Constructor of DictionaryChunksWrapper
-     * @param dictionaryChunks
-     */
-    public DictionaryChunksWrapper(List<List<byte[]>> dictionaryChunks) {
-        this.dictionaryChunks = dictionaryChunks;
-        for (List<byte[]> chunk : dictionaryChunks) {
-            this.size += chunk.size();
-        }
+  /**
+   * Constructor of DictionaryChunksWrapper
+   *
+   * @param dictionaryChunks
+   */
+  public DictionaryChunksWrapper(List<List<byte[]>> dictionaryChunks) {
+    this.dictionaryChunks = dictionaryChunks;
+    for (List<byte[]> chunk : dictionaryChunks) {
+      this.size += chunk.size();
     }
+  }
 
-    /**
-     * Returns {@code true} if the iteration has more elements.
-     * (In other words, returns {@code true} if {@link #next} would
-     * return an element rather than throwing an exception.)
-     *
-     * @return {@code true} if the iteration has more elements
-     */
-    @Override public boolean hasNext() {
-        return (currentIndex < size);
-    }
+  /**
+   * Returns {@code true} if the iteration has more elements.
+   * (In other words, returns {@code true} if {@link #next} would
+   * return an element rather than throwing an exception.)
+   *
+   * @return {@code true} if the iteration has more elements
+   */
+  @Override public boolean hasNext() {
+    return (currentIndex < size);
+  }
 
-    /**
-     * Returns the next element in the iteration.
-     * The method pics the next elements from the first inner list till first is not finished, pics
-     * the second inner list ...
-     *
-     * @return the next element in the iteration
-     */
-    @Override public byte[] next() {
-        int index = currentIndex++;
-        index = index - iteratedListSize;
-        while (index > dictionaryChunks.get(outerIndex).size()) {
-            int innerListSize = dictionaryChunks.get(outerIndex).size();
-            iteratedListSize += innerListSize;
-            index = index - innerListSize;
-            outerIndex++;
-        }
-        return dictionaryChunks.get(outerIndex).get(index);
+  /**
+   * Returns the next element in the iteration.
+   * The method pics the next elements from the first inner list till first is not finished, pics
+   * the second inner list ...
+   *
+   * @return the next element in the iteration
+   */
+  @Override public byte[] next() {
+    int index = currentIndex++;
+    index = index - iteratedListSize;
+    while (index > dictionaryChunks.get(outerIndex).size()) {
+      int innerListSize = dictionaryChunks.get(outerIndex).size();
+      iteratedListSize += innerListSize;
+      index = index - innerListSize;
+      outerIndex++;
     }
+    return dictionaryChunks.get(outerIndex).get(index);
+  }
 
-    /**
-     * Removes from the underlying collection the last element returned
-     * by this iterator (optional operation).  This method can be called
-     * only once per call to {@link #next}.  The behavior of an iterator
-     * is unspecified if the underlying collection is modified while the
-     * iteration is in progress in any way other than by calling this
-     * method.
-     *
-     * @throws UnsupportedOperationException if the {@code remove}
-     *                                       operation is not supported by this iterator
-     * @throws IllegalStateException         if the {@code next} method has not
-     *                                       yet been called, or the {@code remove} method has already
-     *                                       been called after the last call to the {@code next}
-     *                                       method
-     * @implSpec The default implementation throws an instance of
-     * {@link UnsupportedOperationException} and performs no other action.
-     */
-    @Override public void remove() {
-        throw new UnsupportedOperationException("Remove operation not supported");
-    }
+  /**
+   * Removes from the underlying collection the last element returned
+   * by this iterator (optional operation).  This method can be called
+   * only once per call to {@link #next}.  The behavior of an iterator
+   * is unspecified if the underlying collection is modified while the
+   * iteration is in progress in any way other than by calling this
+   * method.
+   *
+   * @throws UnsupportedOperationException if the {@code remove}
+   *                                       operation is not supported by this iterator
+   * @throws IllegalStateException         if the {@code next} method has not
+   *                                       yet been called, or the {@code remove} method has already
+   *                                       been called after the last call to the {@code next}
+   *                                       method
+   * @implSpec The default implementation throws an instance of
+   * {@link UnsupportedOperationException} and performs no other action.
+   */
+  @Override public void remove() {
+    throw new UnsupportedOperationException("Remove operation not supported");
+  }
 
-    /**
-     * returns the total element size in List<List<byte[]>>
-     *
-     * @return
-     */
-    public int getSize() {
-        return size;
-    }
+  /**
+   * returns the total element size in List<List<byte[]>>
+   *
+   * @return
+   */
+  public int getSize() {
+    return size;
+  }
 }

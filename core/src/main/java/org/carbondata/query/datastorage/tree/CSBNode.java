@@ -20,29 +20,29 @@
 package org.carbondata.query.datastorage.tree;
 
 import org.carbondata.core.datastorage.store.FileHolder;
-import org.carbondata.query.datastorage.storeInterfaces.DataStoreBlock;
+import org.carbondata.query.datastorage.storeinterface.DataStoreBlock;
 import org.carbondata.query.schema.metadata.Pair;
 
 public abstract class CSBNode implements DataStoreBlock {
-    public abstract boolean isLeafNode();
+  public abstract boolean isLeafNode();
 
-    public abstract double[] getValue(int keyindex);
+  public abstract double[] getValue(int keyindex);
 
-    public abstract CSBNode getChild(int childIndex);
+  public abstract CSBNode getChild(int childIndex);
 
-    public abstract int getnKeys();
+  public abstract int getnKeys();
 
-    public abstract CSBNode getNext();
+  public abstract CSBNode getNext();
 
-    public abstract void setNext(CSBNode nextNode);
+  public abstract void setNext(CSBNode nextNode);
 
-    public abstract void setChildren(CSBNode[] children);
+  public abstract void setChildren(CSBNode[] children);
 
-    public abstract void setNextNode(CSBNode nextNode);
+  public abstract void setNextNode(CSBNode nextNode);
 
-    public abstract void setKey(int keyindex, byte[] key);
+  public abstract void setKey(int keyindex, byte[] key);
 
-    public abstract byte[] getKey(int keyIndex, FileHolder fileHolder);
+  public abstract byte[] getKey(int keyIndex, FileHolder fileHolder);
 
-    public abstract void addEntry(Pair<byte[], double[]> entry);
+  public abstract void addEntry(Pair<byte[], double[]> entry);
 }

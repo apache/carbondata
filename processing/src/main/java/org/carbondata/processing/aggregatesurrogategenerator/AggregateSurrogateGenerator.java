@@ -20,58 +20,58 @@
 package org.carbondata.processing.aggregatesurrogategenerator;
 
 public class AggregateSurrogateGenerator {
-    /**
-     * measureIndex
-     */
-    private int[] measureIndex;
+  /**
+   * measureIndex
+   */
+  private int[] measureIndex;
 
-    /**
-     * isMdkeyInOutRowRequired
-     */
-    private boolean isMdkeyInOutRowRequired;
+  /**
+   * isMdkeyInOutRowRequired
+   */
+  private boolean isMdkeyInOutRowRequired;
 
-    /**
-     * AggregateSurrogateGenerator constructor
-     *
-     * @param factLevels
-     * @param aggreateLevels
-     * @param factMeasures
-     * @param aggregateMeasures
-     */
-    public AggregateSurrogateGenerator(String[] factLevels, String[] aggreateLevels,
-            String[] factMeasures, String[] aggregateMeasures, boolean isMdkeyInOutRowRequired,
-            int[] aggDimensioncardinality) {
-        measureIndex = new int[2];
-        this.isMdkeyInOutRowRequired = isMdkeyInOutRowRequired;
+  /**
+   * AggregateSurrogateGenerator constructor
+   *
+   * @param factLevels
+   * @param aggreateLevels
+   * @param factMeasures
+   * @param aggregateMeasures
+   */
+  public AggregateSurrogateGenerator(String[] factLevels, String[] aggreateLevels,
+      String[] factMeasures, String[] aggregateMeasures, boolean isMdkeyInOutRowRequired,
+      int[] aggDimensioncardinality) {
+    measureIndex = new int[2];
+    this.isMdkeyInOutRowRequired = isMdkeyInOutRowRequired;
 
+  }
+
+  /**
+   * Below method will be used to generate the surrogate for aggregate table
+   *
+   * @param factTuple
+   * @return aggregate tuple
+   */
+  public Object[] generateSurrogate(Object[] factTuple) {
+    // added 1 for the high card dims
+    int size = measureIndex.length + 1 + 1;
+    if (isMdkeyInOutRowRequired) {
+      size += 1;
     }
-
-    /**
-     * Below method will be used to generate the surrogate for aggregate table
-     *
-     * @param factTuple
-     * @return aggregate tuple
-     */
-    public Object[] generateSurrogate(Object[] factTuple) {
-        // added 1 for the high card dims
-        int size = measureIndex.length + 1 + 1;
-        if (isMdkeyInOutRowRequired) {
-            size += 1;
-        }
-        Object[] records = new Object[size];
-        int count = 0;
-        int i = 0;
-        for (; i < measureIndex.length - 1; i++) {
-            records[count++] = factTuple[i];
-        }
-        records[count++] = factTuple[i++];
-        // for high card cols.
-        records[count++] = (byte[]) factTuple[i++];
-        byte[] mdkey = (byte[]) factTuple[i++];
-        records[count++] = mdkey;
-        if (isMdkeyInOutRowRequired) {
-            records[records.length - 1] = mdkey;
-        }
-        return records;
+    Object[] records = new Object[size];
+    int count = 0;
+    int i = 0;
+    for (; i < measureIndex.length - 1; i++) {
+      records[count++] = factTuple[i];
     }
+    records[count++] = factTuple[i++];
+    // for high card cols.
+    records[count++] = (byte[]) factTuple[i++];
+    byte[] mdkey = (byte[]) factTuple[i++];
+    records[count++] = mdkey;
+    if (isMdkeyInOutRowRequired) {
+      records[records.length - 1] = mdkey;
+    }
+    return records;
+  }
 }

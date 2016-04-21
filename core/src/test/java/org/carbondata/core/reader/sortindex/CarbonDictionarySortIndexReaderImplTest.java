@@ -22,12 +22,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.commons.lang.ArrayUtils;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.writer.sortindex.CarbonDictionarySortIndexWriter;
 import org.carbondata.core.writer.sortindex.CarbonDictionarySortIndexWriterImpl;
+
+import org.apache.commons.lang.ArrayUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -37,85 +38,84 @@ import org.junit.Test;
  *
  */
 public class CarbonDictionarySortIndexReaderImplTest {
-    private String hdfsStorePath;
+  private String hdfsStorePath;
 
-    @Before public void setUp() throws Exception {
-        hdfsStorePath = "target/carbonStore";
+  @Before public void setUp() throws Exception {
+    hdfsStorePath = "target/carbonStore";
+  }
+
+  @After public void tearDown() throws Exception {
+
+    deleteStorePath();
+  }
+
+  /**
+   * Test to read the data from dictionary sort index file
+   *
+   * @throws Exception
+   */
+  @Test public void read() throws Exception {
+    deleteStorePath();
+    CarbonTableIdentifier carbonTableIdentifier = new CarbonTableIdentifier("testSchema", "carbon");
+    CarbonDictionarySortIndexWriter dictionarySortIndexWriter =
+        new CarbonDictionarySortIndexWriterImpl(carbonTableIdentifier, "Name", hdfsStorePath,
+            false);
+    List<int[]> expectedData = prepareExpectedData();
+
+    List<Integer> sortIndex = Arrays.asList(ArrayUtils.toObject(expectedData.get(0)));
+    List<Integer> invertedSortIndex = Arrays.asList(ArrayUtils.toObject(expectedData.get(1)));
+    dictionarySortIndexWriter.writeSortIndex(sortIndex);
+    dictionarySortIndexWriter.writeInvertedSortIndex(invertedSortIndex);
+    dictionarySortIndexWriter.close();
+    CarbonDictionarySortIndexReader dictionarySortIndexReader =
+        new CarbonDictionarySortIndexReaderImpl(carbonTableIdentifier, "Name", hdfsStorePath,
+            false);
+    List<Integer> actualSortIndex = dictionarySortIndexReader.readSortIndex();
+    List<Integer> actualInvertedSortIndex = dictionarySortIndexReader.readInvertedSortIndex();
+    for (int i = 0; i < actualSortIndex.size(); i++) {
+      Assert.assertEquals(sortIndex.get(i), actualSortIndex.get(i));
+      Assert.assertEquals(invertedSortIndex.get(i), actualInvertedSortIndex.get(i));
     }
 
-    @After public void tearDown() throws Exception {
+  }
 
-        deleteStorePath();
-    }
+  /**
+   * Method return the list of sortIndex and sortIndexInverted array
+   *
+   * @return
+   */
+  private List<int[]> prepareExpectedData() {
+    List<int[]> indexList = new ArrayList<>(2);
+    int[] sortIndex = { 0, 3, 2, 4, 1 };
+    int[] sortIndexInverted = { 0, 2, 4, 1, 2 };
+    indexList.add(0, sortIndex);
+    indexList.add(1, sortIndexInverted);
+    return indexList;
+  }
 
-    /**
-     * Test to read the data from dictionary sort index file
-     *
-     * @throws Exception
-     */
-    @Test public void read() throws Exception {
-        deleteStorePath();
-        CarbonTableIdentifier carbonTableIdentifier =
-                new CarbonTableIdentifier("testSchema", "carbon");
-        CarbonDictionarySortIndexWriter dictionarySortIndexWriter =
-                new CarbonDictionarySortIndexWriterImpl(carbonTableIdentifier, "Name",
-                        hdfsStorePath, false);
-        List<int[]> expectedData = prepareExpectedData();
+  /**
+   * this method will delete the store path
+   */
+  private void deleteStorePath() {
+    FileFactory.FileType fileType = FileFactory.getFileType(this.hdfsStorePath);
+    CarbonFile carbonFile = FileFactory.getCarbonFile(this.hdfsStorePath, fileType);
+    deleteRecursiveSilent(carbonFile);
+  }
 
-        List<Integer> sortIndex = Arrays.asList(ArrayUtils.toObject(expectedData.get(0)));
-        List<Integer> invertedSortIndex = Arrays.asList(ArrayUtils.toObject(expectedData.get(1)));
-        dictionarySortIndexWriter.writeSortIndex(sortIndex);
-        dictionarySortIndexWriter.writeInvertedSortIndex(invertedSortIndex);
-        dictionarySortIndexWriter.close();
-        CarbonDictionarySortIndexReader dictionarySortIndexReader =
-                new CarbonDictionarySortIndexReaderImpl(carbonTableIdentifier, "Name",
-                        hdfsStorePath, false);
-        List<Integer> actualSortIndex = dictionarySortIndexReader.readSortIndex();
-        List<Integer> actualInvertedSortIndex = dictionarySortIndexReader.readInvertedSortIndex();
-        for (int i = 0; i < actualSortIndex.size(); i++) {
-            Assert.assertEquals(sortIndex.get(i), actualSortIndex.get(i));
-            Assert.assertEquals(invertedSortIndex.get(i), actualInvertedSortIndex.get(i));
+  /**
+   * this method will delete the folders recursively
+   */
+  private static void deleteRecursiveSilent(CarbonFile f) {
+    if (f.isDirectory()) {
+      if (f.listFiles() != null) {
+        for (CarbonFile c : f.listFiles()) {
+          deleteRecursiveSilent(c);
         }
-
+      }
     }
-
-    /**
-     * Method return the list of sortIndex and sortIndexInverted array
-     *
-     * @return
-     */
-    private List<int[]> prepareExpectedData() {
-        List<int[]> indexList = new ArrayList<>(2);
-        int[] sortIndex = { 0, 3, 2, 4, 1 };
-        int[] sortIndexInverted = { 0, 2, 4, 1, 2 };
-        indexList.add(0, sortIndex);
-        indexList.add(1, sortIndexInverted);
-        return indexList;
+    if (f.exists() && !f.delete()) {
+      return;
     }
-
-    /**
-     * this method will delete the store path
-     */
-    private void deleteStorePath() {
-        FileFactory.FileType fileType = FileFactory.getFileType(this.hdfsStorePath);
-        CarbonFile carbonFile = FileFactory.getCarbonFile(this.hdfsStorePath, fileType);
-        deleteRecursiveSilent(carbonFile);
-    }
-
-    /**
-     * this method will delete the folders recursively
-     */
-    private static void deleteRecursiveSilent(CarbonFile f) {
-        if (f.isDirectory()) {
-            if (f.listFiles() != null) {
-                for (CarbonFile c : f.listFiles()) {
-                    deleteRecursiveSilent(c);
-                }
-            }
-        }
-        if (f.exists() && !f.delete()) {
-            return;
-        }
-    }
+  }
 
 }

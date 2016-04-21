@@ -34,276 +34,273 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
-import org.carbondata.processing.sortandgroupby.sortData.SortTempFileChunkHolder;
+import org.carbondata.processing.sortandgroupby.sortdata.SortTempFileChunkHolder;
 import org.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.carbondata.processing.util.CarbonDataProcessorUtil;
 import org.carbondata.processing.util.RemoveDictionaryUtil;
 
 public class SingleThreadFinalSortFilesMerger {
-    /**
-     * LOGGER
-     */
-    private static final LogService LOGGER =
-            LogServiceFactory.getLogService(SingleThreadFinalSortFilesMerger.class.getName());
+  /**
+   * LOGGER
+   */
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(SingleThreadFinalSortFilesMerger.class.getName());
 
-    /**
-     * lockObject
-     */
-    private static final Object LOCKOBJECT = new Object();
+  /**
+   * lockObject
+   */
+  private static final Object LOCKOBJECT = new Object();
 
-    /**
-     * fileCounter
-     */
-    private int fileCounter;
+  /**
+   * fileCounter
+   */
+  private int fileCounter;
 
-    /**
-     * fileBufferSize
-     */
-    private int fileBufferSize;
+  /**
+   * fileBufferSize
+   */
+  private int fileBufferSize;
 
-    /**
-     * recordHolderHeap
-     */
-    private AbstractQueue<SortTempFileChunkHolder> recordHolderHeapLocal;
+  /**
+   * recordHolderHeap
+   */
+  private AbstractQueue<SortTempFileChunkHolder> recordHolderHeapLocal;
 
-    /**
-     * tableName
-     */
-    private String tableName;
+  /**
+   * tableName
+   */
+  private String tableName;
 
-    /**
-     * measureCount
-     */
-    private int measureCount;
+  /**
+   * measureCount
+   */
+  private int measureCount;
 
-    /**
-     * dimensionCount
-     */
-    private int dimensionCount;
+  /**
+   * dimensionCount
+   */
+  private int dimensionCount;
 
-    /**
-     * measure count
-     */
-    private int noDictionaryCount;
+  /**
+   * measure count
+   */
+  private int noDictionaryCount;
 
-    /**
-     * complexDimensionCount
-     */
-    private int complexDimensionCount;
+  /**
+   * complexDimensionCount
+   */
+  private int complexDimensionCount;
 
-    /**
-     * tempFileLocation
-     */
-    private String tempFileLocation;
+  /**
+   * tempFileLocation
+   */
+  private String tempFileLocation;
 
-    private char[] aggType;
+  private char[] aggType;
 
-    public SingleThreadFinalSortFilesMerger(String tempFileLocation, String tableName,
-            int dimensionCount, int complexDimensionCount, int measureCount,
-            int noDictionaryCount, char[] aggType) {
-        this.tempFileLocation = tempFileLocation;
-        this.tableName = tableName;
-        this.dimensionCount = dimensionCount;
-        this.complexDimensionCount = complexDimensionCount;
-        this.measureCount = measureCount;
-        this.aggType = aggType;
-        this.noDictionaryCount = noDictionaryCount;
+  public SingleThreadFinalSortFilesMerger(String tempFileLocation, String tableName,
+      int dimensionCount, int complexDimensionCount, int measureCount, int noDictionaryCount,
+      char[] aggType) {
+    this.tempFileLocation = tempFileLocation;
+    this.tableName = tableName;
+    this.dimensionCount = dimensionCount;
+    this.complexDimensionCount = complexDimensionCount;
+    this.measureCount = measureCount;
+    this.aggType = aggType;
+    this.noDictionaryCount = noDictionaryCount;
+  }
+
+  /**
+   * This method will be used to merger the merged files
+   *
+   * @throws CarbonSortKeyAndGroupByException
+   */
+  public void startFinalMerge() throws CarbonDataWriterException {
+    // get all the merged files
+    File file = new File(tempFileLocation);
+
+    File[] fileList = file.listFiles(new FileFilter() {
+      public boolean accept(File pathname) {
+        return pathname.getName().startsWith(tableName);
+      }
+    });
+
+    if (null == fileList || fileList.length < 0) {
+      return;
+    }
+    startSorting(fileList);
+  }
+
+  /**
+   * Below method will be used to start storing process This method will get
+   * all the temp files present in sort temp folder then it will create the
+   * record holder heap and then it will read first record from each file and
+   * initialize the heap
+   *
+   * @throws CarbonSortKeyAndGroupByException
+   */
+  private void startSorting(File[] files) throws CarbonDataWriterException {
+    this.fileCounter = files.length;
+    this.fileBufferSize = CarbonDataProcessorUtil
+        .getFileBufferSize(this.fileCounter, CarbonProperties.getInstance(),
+            CarbonCommonConstants.CONSTANT_SIZE_TEN);
+
+    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
+        "Number of temp file: " + this.fileCounter);
+
+    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
+        "File Buffer Size: " + this.fileBufferSize);
+
+    // create record holder heap
+    createRecordHolderQueue(files);
+
+    // iterate over file list and create chunk holder and add to heap
+    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
+        "Started adding first record from each file");
+    int maxThreadForSorting = 0;
+    try {
+      maxThreadForSorting = Integer.parseInt(CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.CARBON_MAX_THREAD_FOR_SORTING,
+              CarbonCommonConstants.CARBON_MAX_THREAD_FOR_SORTING_DEFAULTVALUE));
+    } catch (NumberFormatException e) {
+      maxThreadForSorting =
+          Integer.parseInt(CarbonCommonConstants.CARBON_MAX_THREAD_FOR_SORTING_DEFAULTVALUE);
+    }
+    ExecutorService service = Executors.newFixedThreadPool(maxThreadForSorting);
+
+    for (final File tempFile : files) {
+
+      Callable<Void> runnable = new Callable<Void>() {
+        @Override public Void call() throws CarbonSortKeyAndGroupByException {
+          // create chunk holder
+          SortTempFileChunkHolder sortTempFileChunkHolder =
+              new SortTempFileChunkHolder(tempFile, dimensionCount, complexDimensionCount,
+                  measureCount, fileBufferSize, noDictionaryCount, aggType);
+
+          // initialize
+          sortTempFileChunkHolder.initialize();
+          sortTempFileChunkHolder.readRow();
+
+          synchronized (LOCKOBJECT) {
+            recordHolderHeapLocal.add(sortTempFileChunkHolder);
+          }
+
+          // add to heap
+          return null;
+        }
+      };
+      service.submit(runnable);
+    }
+    service.shutdown();
+
+    try {
+      service.awaitTermination(2, TimeUnit.HOURS);
+    } catch (Exception e) {
+      throw new CarbonDataWriterException(e.getMessage(), e);
     }
 
-    /**
-     * This method will be used to merger the merged files
-     *
-     * @throws CarbonSortKeyAndGroupByException
-     */
-    public void startFinalMerge() throws CarbonDataWriterException {
-        // get all the merged files 
-        File file = new File(tempFileLocation);
+    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
+        "Heap Size" + this.recordHolderHeapLocal.size());
+  }
 
-        File[] fileList = file.listFiles(new FileFilter() {
-            public boolean accept(File pathname) {
-                return pathname.getName().startsWith(tableName);
+  /**
+   * This method will be used to create the heap which will be used to hold
+   * the chunk of data
+   *
+   * @param listFiles list of temp files
+   */
+  private void createRecordHolderQueue(File[] listFiles) {
+    // creating record holder heap
+    this.recordHolderHeapLocal = new PriorityQueue<SortTempFileChunkHolder>(listFiles.length,
+        new Comparator<SortTempFileChunkHolder>() {
+          public int compare(SortTempFileChunkHolder holderA, SortTempFileChunkHolder holderB) {
+            Object[] rowA = holderA.getRow();
+            Object[] rowB = holderB.getRow();
+            int diff = 0;
+
+            for (int i = 0; i < dimensionCount; i++) {
+              int dimFieldA = (Integer) RemoveDictionaryUtil.getDimension(i, rowA);
+              int dimFieldB = (Integer) RemoveDictionaryUtil.getDimension(i, rowB);
+
+              diff = dimFieldA - dimFieldB;
+              if (diff != 0) {
+                return diff;
+              }
             }
+            return diff;
+          }
         });
+  }
 
-        if (null == fileList || fileList.length < 0) {
-            return;
-        }
-        startSorting(fileList);
+  /**
+   * This method will be used to get the sorted row
+   *
+   * @return sorted row
+   * @throws CarbonSortKeyAndGroupByException
+   */
+  public Object[] next() throws CarbonDataWriterException {
+    return getSortedRecordFromFile();
+  }
+
+  /**
+   * This method will be used to get the sorted record from file
+   *
+   * @return sorted record sorted record
+   * @throws CarbonSortKeyAndGroupByException
+   */
+  private Object[] getSortedRecordFromFile() throws CarbonDataWriterException {
+    Object[] row = null;
+
+    // poll the top object from heap
+    // heap maintains binary tree which is based on heap condition that will
+    // be based on comparator we are passing the heap
+    // when will call poll it will always delete root of the tree and then
+    // it does trickel down operation complexity is log(n)
+    SortTempFileChunkHolder poll = this.recordHolderHeapLocal.poll();
+
+    // get the row from chunk
+    row = poll.getRow();
+
+    // check if there no entry present
+    if (!poll.hasNext()) {
+      // if chunk is empty then close the stream
+      poll.closeStream();
+
+      // change the file counter
+      --this.fileCounter;
+
+      // reaturn row
+      return row;
     }
 
-    /**
-     * Below method will be used to start storing process This method will get
-     * all the temp files present in sort temp folder then it will create the
-     * record holder heap and then it will read first record from each file and
-     * initialize the heap
-     *
-     * @throws CarbonSortKeyAndGroupByException
-     */
-    private void startSorting(File[] files) throws CarbonDataWriterException {
-        this.fileCounter = files.length;
-        this.fileBufferSize = CarbonDataProcessorUtil
-                .getFileBufferSize(this.fileCounter, CarbonProperties.getInstance(),
-                        CarbonCommonConstants.CONSTANT_SIZE_TEN);
-
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-                "Number of temp file: " + this.fileCounter);
-
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-                "File Buffer Size: " + this.fileBufferSize);
-
-        // create record holder heap
-        createRecordHolderQueue(files);
-
-        // iterate over file list and create chunk holder and add to heap
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-                "Started adding first record from each file");
-        int maxThreadForSorting = 0;
-        try {
-            maxThreadForSorting = Integer.parseInt(CarbonProperties.getInstance()
-                    .getProperty(CarbonCommonConstants.CARBON_MAX_THREAD_FOR_SORTING,
-                            CarbonCommonConstants.CARBON_MAX_THREAD_FOR_SORTING_DEFAULTVALUE));
-        } catch (NumberFormatException e) {
-            maxThreadForSorting = Integer.parseInt(
-                    CarbonCommonConstants.CARBON_MAX_THREAD_FOR_SORTING_DEFAULTVALUE);
-        }
-        ExecutorService service = Executors.newFixedThreadPool(maxThreadForSorting);
-
-        for (final File tempFile : files) {
-
-            Callable<Void> runnable = new Callable<Void>() {
-                @Override
-                public Void call() throws CarbonSortKeyAndGroupByException {
-                    // create chunk holder
-                    SortTempFileChunkHolder sortTempFileChunkHolder =
-                            new SortTempFileChunkHolder(tempFile, dimensionCount,
-                                    complexDimensionCount, measureCount, fileBufferSize,
-                                    noDictionaryCount, aggType);
-
-                    // initialize
-                    sortTempFileChunkHolder.initialize();
-                    sortTempFileChunkHolder.readRow();
-
-                    synchronized (LOCKOBJECT) {
-                        recordHolderHeapLocal.add(sortTempFileChunkHolder);
-                    }
-
-                    // add to heap
-                    return null;
-                }
-            };
-            service.submit(runnable);
-        }
-        service.shutdown();
-
-        try {
-            service.awaitTermination(2, TimeUnit.HOURS);
-        } catch (Exception e) {
-            throw new CarbonDataWriterException(e.getMessage(), e);
-        }
-
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-                "Heap Size" + this.recordHolderHeapLocal.size());
+    // read new row
+    try {
+      poll.readRow();
+    } catch (CarbonSortKeyAndGroupByException e) {
+      throw new CarbonDataWriterException(e.getMessage(), e);
     }
 
-    /**
-     * This method will be used to create the heap which will be used to hold
-     * the chunk of data
-     *
-     * @param listFiles list of temp files
-     */
-    private void createRecordHolderQueue(File[] listFiles) {
-        // creating record holder heap
-        this.recordHolderHeapLocal = new PriorityQueue<SortTempFileChunkHolder>(listFiles.length,
-                new Comparator<SortTempFileChunkHolder>() {
-                    public int compare(SortTempFileChunkHolder holderA,
-                            SortTempFileChunkHolder holderB) {
-                        Object[] rowA = holderA.getRow();
-                        Object[] rowB = holderB.getRow();
-                        int diff = 0;
+    // add to heap
+    this.recordHolderHeapLocal.add(poll);
 
-                        for (int i = 0; i < dimensionCount; i++) {
-                            int dimFieldA = (Integer) RemoveDictionaryUtil.getDimension(i, rowA);
-                            int dimFieldB = (Integer) RemoveDictionaryUtil.getDimension(i, rowB);
+    // return row
+    return row;
+  }
 
-                            diff = dimFieldA - dimFieldB;
-                            if (diff != 0) {
-                                return diff;
-                            }
-                        }
-                        return diff;
-                    }
-                });
+  /**
+   * This method will be used to check whether any more element is present or
+   * not
+   *
+   * @return more element is present
+   */
+  public boolean hasNext() {
+    return this.fileCounter > 0;
+  }
+
+  public void clear() {
+    if (null != recordHolderHeapLocal) {
+      recordHolderHeapLocal = null;
     }
-
-    /**
-     * This method will be used to get the sorted row
-     *
-     * @return sorted row
-     * @throws CarbonSortKeyAndGroupByException
-     */
-    public Object[] next() throws CarbonDataWriterException {
-        return getSortedRecordFromFile();
-    }
-
-    /**
-     * This method will be used to get the sorted record from file
-     *
-     * @return sorted record sorted record
-     * @throws CarbonSortKeyAndGroupByException
-     */
-    private Object[] getSortedRecordFromFile() throws CarbonDataWriterException {
-        Object[] row = null;
-
-        // poll the top object from heap
-        // heap maintains binary tree which is based on heap condition that will
-        // be based on comparator we are passing the heap
-        // when will call poll it will always delete root of the tree and then
-        // it does trickel down operation complexity is log(n)
-        SortTempFileChunkHolder poll = this.recordHolderHeapLocal.poll();
-
-        // get the row from chunk
-        row = poll.getRow();
-
-        // check if there no entry present
-        if (!poll.hasNext()) {
-            // if chunk is empty then close the stream
-            poll.closeStream();
-
-            // change the file counter
-            --this.fileCounter;
-
-            // reaturn row
-            return row;
-        }
-
-        // read new row
-        try {
-            poll.readRow();
-        } catch (CarbonSortKeyAndGroupByException e) {
-            throw new CarbonDataWriterException(e.getMessage(), e);
-        }
-
-        // add to heap
-        this.recordHolderHeapLocal.add(poll);
-
-        // return row
-        return row;
-    }
-
-    /**
-     * This method will be used to check whether any more element is present or
-     * not
-     *
-     * @return more element is present
-     */
-    public boolean hasNext() {
-        return this.fileCounter > 0;
-    }
-
-    public void clear() {
-        if (null != recordHolderHeapLocal) {
-            recordHolderHeapLocal = null;
-        }
-    }
+  }
 }

@@ -23,23 +23,21 @@ import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.query.executer.pagination.impl.QueryResult;
 
 public class MemoryBasedResultIterator implements CarbonIterator<QueryResult> {
-    private QueryResult result;
+  private QueryResult result;
 
-    private boolean hasNext = true;
+  private boolean hasNext = true;
 
-    public MemoryBasedResultIterator(QueryResult result) {
-        this.result = result;
-    }
+  public MemoryBasedResultIterator(QueryResult result) {
+    this.result = result;
+  }
 
-    @Override
-    public boolean hasNext() {
-        return hasNext;
-    }
+  @Override public boolean hasNext() {
+    return hasNext;
+  }
 
-    @Override
-    public QueryResult next() {
-        hasNext = false;
-        return result;
-    }
+  @Override public QueryResult next() {
+    hasNext = false;
+    return result;
+  }
 
 }

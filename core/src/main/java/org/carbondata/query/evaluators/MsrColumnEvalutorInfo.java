@@ -20,89 +20,89 @@
 package org.carbondata.query.evaluators;
 
 public class MsrColumnEvalutorInfo {
-    private int columnIndex = -1;
+  private int columnIndex = -1;
 
-    private int rowIndex = -1;
+  private int rowIndex = -1;
 
-    private boolean isCustomMeasureValue;
+  private boolean isCustomMeasureValue;
 
-    private Object uniqueValue;
+  private Object uniqueValue;
 
-    private String aggregator;
+  private String aggregator;
 
-    private boolean isMeasureExistsInCurrentSlice = true;
+  private boolean isMeasureExistsInCurrentSlice = true;
 
-    private Object defaultValue;
+  private Object defaultValue;
 
-    private char type;
+  private char type;
 
-    public int getColumnIndex() {
-        return columnIndex;
-    }
+  public int getColumnIndex() {
+    return columnIndex;
+  }
 
-    public void setColumnIndex(int columnIndex) {
-        this.columnIndex = columnIndex;
-    }
+  public void setColumnIndex(int columnIndex) {
+    this.columnIndex = columnIndex;
+  }
 
-    public int getRowIndex() {
-        return rowIndex;
-    }
+  public int getRowIndex() {
+    return rowIndex;
+  }
 
-    public void setRowIndex(int rowIndex) {
-        this.rowIndex = rowIndex;
-    }
+  public void setRowIndex(int rowIndex) {
+    this.rowIndex = rowIndex;
+  }
 
-    public boolean isCustomMeasureValue() {
-        return isCustomMeasureValue;
-    }
+  public boolean isCustomMeasureValue() {
+    return isCustomMeasureValue;
+  }
 
-    public void setCustomMeasureValue(boolean isCustomMeasureValue) {
-        this.isCustomMeasureValue = isCustomMeasureValue;
-    }
+  public void setCustomMeasureValue(boolean isCustomMeasureValue) {
+    this.isCustomMeasureValue = isCustomMeasureValue;
+  }
 
-    public Object getUniqueValue() {
-        return uniqueValue;
-    }
+  public Object getUniqueValue() {
+    return uniqueValue;
+  }
 
-    public void setUniqueValue(Object uniqueValue) {
-        this.uniqueValue = uniqueValue;
-    }
+  public void setUniqueValue(Object uniqueValue) {
+    this.uniqueValue = uniqueValue;
+  }
 
-    public char getType() {
-        return type;
-    }
+  public char getType() {
+    return type;
+  }
 
-    public void setType(char type) {
-        this.type = type;
-    }
+  public void setType(char type) {
+    this.type = type;
+  }
 
-    /**
-     * @return Returns the aggregator.
-     */
-    public String getAggregator() {
-        return aggregator;
-    }
+  /**
+   * @return Returns the aggregator.
+   */
+  public String getAggregator() {
+    return aggregator;
+  }
 
-    /**
-     * @param aggregator The aggregator to set.
-     */
-    public void setAggregator(String aggregator) {
-        this.aggregator = aggregator;
-    }
+  /**
+   * @param aggregator The aggregator to set.
+   */
+  public void setAggregator(String aggregator) {
+    this.aggregator = aggregator;
+  }
 
-    public boolean isMeasureExistsInCurrentSlice() {
-        return isMeasureExistsInCurrentSlice;
-    }
+  public boolean isMeasureExistsInCurrentSlice() {
+    return isMeasureExistsInCurrentSlice;
+  }
 
-    public void setMeasureExistsInCurrentSlice(boolean isMeasureExistsInCurrentSlice) {
-        this.isMeasureExistsInCurrentSlice = isMeasureExistsInCurrentSlice;
-    }
+  public void setMeasureExistsInCurrentSlice(boolean isMeasureExistsInCurrentSlice) {
+    this.isMeasureExistsInCurrentSlice = isMeasureExistsInCurrentSlice;
+  }
 
-    public Object getDefaultValue() {
-        return defaultValue;
-    }
+  public Object getDefaultValue() {
+    return defaultValue;
+  }
 
-    public void setDefaultValue(double defaultValue) {
-        this.defaultValue = defaultValue;
-    }
+  public void setDefaultValue(double defaultValue) {
+    this.defaultValue = defaultValue;
+  }
 }

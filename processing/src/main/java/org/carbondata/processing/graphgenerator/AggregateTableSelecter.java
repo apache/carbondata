@@ -29,22 +29,22 @@ import org.carbondata.processing.schema.metadata.AggregateTable;
 
 public abstract class AggregateTableSelecter {
 
-    protected List<AggregateTable> aggregateTables;
-    protected List<AggregateTable> processedAggTables = new ArrayList<AggregateTable>(15);
-    protected String factName;
-    AggregateTableDerivativeComposite root;
+  protected List<AggregateTable> aggregateTables;
+  protected List<AggregateTable> processedAggTables = new ArrayList<AggregateTable>(15);
+  protected String factName;
+  AggregateTableDerivativeComposite root;
 
-    AggregateTableSelecter(List<AggregateTable> aggregateTables) {
-        this.aggregateTables = aggregateTables;
+  AggregateTableSelecter(List<AggregateTable> aggregateTables) {
+    this.aggregateTables = aggregateTables;
 
-    }
+  }
 
-    public abstract void selectTableForAggTableAggregationProcess(AggregateTable[] aggregateTable,
-            Cube cube);
+  public abstract void selectTableForAggTableAggregationProcess(AggregateTable[] aggregateTable,
+      Cube cube);
 
-    public AggregateTableDerivative getAggregateTableDerivativeInstanceForAggEval() {
+  public AggregateTableDerivative getAggregateTableDerivativeInstanceForAggEval() {
 
-        return root;
-    }
+    return root;
+  }
 
 }

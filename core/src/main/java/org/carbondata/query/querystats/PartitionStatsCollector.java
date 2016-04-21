@@ -28,32 +28,32 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author A00902717
  */
 public final class PartitionStatsCollector {
-    private static PartitionStatsCollector partitionStatsCollector;
+  private static PartitionStatsCollector partitionStatsCollector;
 
-    private Map<String, PartitionDetail> partitionsDetail;
+  private Map<String, PartitionDetail> partitionsDetail;
 
-    private PartitionStatsCollector() {
-        partitionsDetail = new ConcurrentHashMap<String, PartitionDetail>();
+  private PartitionStatsCollector() {
+    partitionsDetail = new ConcurrentHashMap<String, PartitionDetail>();
+  }
+
+  public static synchronized PartitionStatsCollector getInstance() {
+    if (null == partitionStatsCollector) {
+      partitionStatsCollector = new PartitionStatsCollector();
+
     }
+    return partitionStatsCollector;
+  }
 
-    public static synchronized PartitionStatsCollector getInstance() {
-        if (null == partitionStatsCollector) {
-            partitionStatsCollector = new PartitionStatsCollector();
+  public void addPartitionDetail(String queryId, PartitionDetail partitionDetail) {
+    partitionsDetail.put(queryId, partitionDetail);
+  }
 
-        }
-        return partitionStatsCollector;
-    }
+  public PartitionDetail getPartionDetail(String queryId) {
+    return partitionsDetail.get(queryId);
+  }
 
-    public void addPartitionDetail(String queryId, PartitionDetail partitionDetail) {
-        partitionsDetail.put(queryId, partitionDetail);
-    }
-
-    public PartitionDetail getPartionDetail(String queryId) {
-        return partitionsDetail.get(queryId);
-    }
-
-    public void removePartitionDetail(String queryId) {
-        partitionsDetail.remove(queryId);
-    }
+  public void removePartitionDetail(String queryId) {
+    partitionsDetail.remove(queryId);
+  }
 
 }

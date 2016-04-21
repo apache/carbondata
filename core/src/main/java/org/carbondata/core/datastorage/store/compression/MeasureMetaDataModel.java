@@ -20,198 +20,198 @@
 package org.carbondata.core.datastorage.store.compression;
 
 public class MeasureMetaDataModel {
-    /**
-     * maxValue
-     */
-    private Object[] maxValue;
+  /**
+   * maxValue
+   */
+  private Object[] maxValue;
 
-    /**
-     * minValue
-     */
-    private Object[] minValue;
+  /**
+   * minValue
+   */
+  private Object[] minValue;
 
-    /**
-     * decimal
-     */
-    private int[] decimal;
+  /**
+   * decimal
+   */
+  private int[] decimal;
 
-    /**
-     * measureCount
-     */
-    private int measureCount;
+  /**
+   * measureCount
+   */
+  private int measureCount;
 
-    /**
-     * uniqueValue
-     */
-    private Object[] uniqueValue;
+  /**
+   * uniqueValue
+   */
+  private Object[] uniqueValue;
 
-    /**
-     * type
-     */
-    private char[] type;
+  /**
+   * type
+   */
+  private char[] type;
 
-    /**
-     * dataTypeSelected
-     */
-    private byte[] dataTypeSelected;
+  /**
+   * dataTypeSelected
+   */
+  private byte[] dataTypeSelected;
 
-    private Object[] minValueFactForAgg;
+  private Object[] minValueFactForAgg;
 
-    public MeasureMetaDataModel() {
+  public MeasureMetaDataModel() {
 
-    }
+  }
 
-    /**
-     * MeasureMetaDataModel Constructor
-     *
-     * @param minValue
-     * @param maxValue
-     * @param decimal
-     * @param measureCount
-     * @param uniqueValue
-     * @param type
-     */
-    public MeasureMetaDataModel(Object[] minValue, Object[] maxValue, int[] decimal,
-            int measureCount, Object[] uniqueValue, char[] type, byte[] dataTypeSelected) {
-        this.minValue = minValue;
-        this.maxValue = maxValue;
-        this.decimal = decimal;
-        this.measureCount = measureCount;
-        this.uniqueValue = uniqueValue;
-        this.type = type;
-        this.dataTypeSelected = dataTypeSelected;
-    }
+  /**
+   * MeasureMetaDataModel Constructor
+   *
+   * @param minValue
+   * @param maxValue
+   * @param decimal
+   * @param measureCount
+   * @param uniqueValue
+   * @param type
+   */
+  public MeasureMetaDataModel(Object[] minValue, Object[] maxValue, int[] decimal, int measureCount,
+      Object[] uniqueValue, char[] type, byte[] dataTypeSelected) {
+    this.minValue = minValue;
+    this.maxValue = maxValue;
+    this.decimal = decimal;
+    this.measureCount = measureCount;
+    this.uniqueValue = uniqueValue;
+    this.type = type;
+    this.dataTypeSelected = dataTypeSelected;
+  }
 
-    /**
-     * get Max value
-     *
-     * @return
-     */
-    public Object[] getMaxValue() {
-        return maxValue;
-    }
+  /**
+   * get Max value
+   *
+   * @return
+   */
+  public Object[] getMaxValue() {
+    return maxValue;
+  }
 
-    /**
-     * set max value
-     *
-     * @param maxValue
-     */
-    public void setMaxValue(Object[] maxValue) {
-        this.maxValue = maxValue;
-    }
+  /**
+   * set max value
+   *
+   * @param maxValue
+   */
+  public void setMaxValue(Object[] maxValue) {
+    this.maxValue = maxValue;
+  }
 
-    /**
-     * getMinValue
-     *
-     * @return
-     */
-    public Object[] getMinValue() {
-        return minValue;
-    }
+  /**
+   * getMinValue
+   *
+   * @return
+   */
+  public Object[] getMinValue() {
+    return minValue;
+  }
 
-    /**
-     * setMinValue
-     *
-     * @param minValue
-     */
-    public void setMinValue(Object[] minValue) {
-        this.minValue = minValue;
-    }
+  /**
+   * setMinValue
+   *
+   * @param minValue
+   */
+  public void setMinValue(Object[] minValue) {
+    this.minValue = minValue;
+  }
 
-    /**
-     * getDecimal
-     *
-     * @return
-     */
-    public int[] getDecimal() {
-        return decimal;
-    }
+  /**
+   * getDecimal
+   *
+   * @return
+   */
+  public int[] getDecimal() {
+    return decimal;
+  }
 
-    /**
-     * setDecimal
-     *
-     * @param decimal
-     */
-    public void setDecimal(int[] decimal) {
-        this.decimal = decimal;
-    }
+  /**
+   * setDecimal
+   *
+   * @param decimal
+   */
+  public void setDecimal(int[] decimal) {
+    this.decimal = decimal;
+  }
 
-    /**
-     * getMeasureCount
-     *
-     * @return
-     */
-    public int getMeasureCount() {
-        return measureCount;
-    }
+  /**
+   * getMeasureCount
+   *
+   * @return
+   */
+  public int getMeasureCount() {
+    return measureCount;
+  }
 
-    /**
-     * setMeasureCount
-     *
-     * @param measureCount
-     */
-    public void setMeasureCount(int measureCount) {
-        this.measureCount = measureCount;
-    }
+  /**
+   * setMeasureCount
+   *
+   * @param measureCount
+   */
+  public void setMeasureCount(int measureCount) {
+    this.measureCount = measureCount;
+  }
 
-    /**
-     * getUniqueValue
-     *
-     * @return
-     */
-    public Object[] getUniqueValue() {
-        return uniqueValue;
-    }
+  /**
+   * getUniqueValue
+   *
+   * @return
+   */
+  public Object[] getUniqueValue() {
+    return uniqueValue;
+  }
 
-    /**
-     * setUniqueValue
-     *
-     * @param uniqueValue
-     */
-    public void setUniqueValue(Object[] uniqueValue) {
-        this.uniqueValue = uniqueValue;
-    }
+  /**
+   * setUniqueValue
+   *
+   * @param uniqueValue
+   */
+  public void setUniqueValue(Object[] uniqueValue) {
+    this.uniqueValue = uniqueValue;
+  }
 
-    /**
-     * @return the type
-     */
-    public char[] getType() {
-        return type;
-    }
+  /**
+   * @return the type
+   */
+  public char[] getType() {
+    return type;
+  }
 
-    /**
-     * @param type the type to set
-     */
-    public void setType(char[] type) {
-        this.type = type;
-    }
+  /**
+   * @param type the type to set
+   */
+  public void setType(char[] type) {
+    this.type = type;
+  }
 
-    /**
-     * @return the dataTypeSelected
-     */
-    public byte[] getDataTypeSelected() {
-        return dataTypeSelected;
-    }
+  /**
+   * @return the dataTypeSelected
+   */
+  public byte[] getDataTypeSelected() {
+    return dataTypeSelected;
+  }
 
-    /**
-     * @param dataTypeSelected the dataTypeSelected to set
-     */
-    public void setDataTypeSelected(byte[] dataTypeSelected) {
-        this.dataTypeSelected = dataTypeSelected;
-    }
+  /**
+   * @param dataTypeSelected the dataTypeSelected to set
+   */
+  public void setDataTypeSelected(byte[] dataTypeSelected) {
+    this.dataTypeSelected = dataTypeSelected;
+  }
 
-    /**
-     * @return the minValueFactForAgg
-     */
-    public Object[] getMinValueFactForAgg() {
-        return minValueFactForAgg;
-    }
+  /**
+   * @return the minValueFactForAgg
+   */
+  public Object[] getMinValueFactForAgg() {
+    return minValueFactForAgg;
+  }
 
-    /**
-     * @param minValueFactForAgg the minValueFactForAgg to set
-     */
-    public void setMinValueFactForAgg(Object[] minValueFactForAgg) {
-        this.minValueFactForAgg = minValueFactForAgg;
-    }
+  /**
+   * @param minValueFactForAgg the minValueFactForAgg to set
+   */
+  public void setMinValueFactForAgg(Object[] minValueFactForAgg) {
+    this.minValueFactForAgg = minValueFactForAgg;
+  }
 
 }

@@ -19,46 +19,42 @@
 
 package org.carbondata.query.expression.logical;
 
+import org.carbondata.query.carbonfilterinterface.ExpressionType;
+import org.carbondata.query.carbonfilterinterface.RowIntf;
 import org.carbondata.query.expression.DataType;
 import org.carbondata.query.expression.Expression;
 import org.carbondata.query.expression.ExpressionResult;
 import org.carbondata.query.expression.exception.FilterUnsupportedException;
-import org.carbondata.query.carbonfilterinterface.ExpressionType;
-import org.carbondata.query.carbonfilterinterface.RowIntf;
 
 public class OrExpression extends BinaryLogicalExpression {
 
-    private static final long serialVersionUID = 4220598043176438380L;
+  private static final long serialVersionUID = 4220598043176438380L;
 
-    public OrExpression(Expression left, Expression right) {
-        super(left, right);
+  public OrExpression(Expression left, Expression right) {
+    super(left, right);
+  }
+
+  @Override public ExpressionResult evaluate(RowIntf value) throws FilterUnsupportedException {
+    ExpressionResult resultLeft = left.evaluate(value);
+    ExpressionResult resultRight = right.evaluate(value);
+    switch (resultLeft.getDataType()) {
+      case BooleanType:
+        resultLeft.set(DataType.BooleanType, (resultLeft.getBoolean() || resultRight.getBoolean()));
+        break;
+      default:
+        throw new FilterUnsupportedException(
+            "Incompatible datatype for applying OR Expression Filter");
     }
 
-    @Override
-    public ExpressionResult evaluate(RowIntf value) throws FilterUnsupportedException {
-        ExpressionResult resultLeft = left.evaluate(value);
-        ExpressionResult resultRight = right.evaluate(value);
-        switch (resultLeft.getDataType()) {
-        case BooleanType:
-            resultLeft.set(DataType.BooleanType,
-                    (resultLeft.getBoolean() || resultRight.getBoolean()));
-            break;
-        default:
-            throw new FilterUnsupportedException(
-                    "Incompatible datatype for applying OR Expression Filter");
-        }
+    return resultLeft;
+  }
 
-        return resultLeft;
-    }
+  @Override public ExpressionType getFilterExpressionType() {
+    return ExpressionType.OR;
+  }
 
-    @Override
-    public ExpressionType getFilterExpressionType() {
-        return ExpressionType.OR;
-    }
-
-    @Override
-    public String getString() {
-        return "Or(" + left.getString() + ',' + right.getString() + ')';
-    }
+  @Override public String getString() {
+    return "Or(" + left.getString() + ',' + right.getString() + ')';
+  }
 
 }

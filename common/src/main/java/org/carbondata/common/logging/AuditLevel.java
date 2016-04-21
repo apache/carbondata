@@ -23,39 +23,39 @@ import org.apache.log4j.Level;
 
 public class AuditLevel extends Level {
 
-    public static final AuditLevel AUDIT = new AuditLevel(55000, "AUDIT", 0);
-    private static final long serialVersionUID = -209614723183147373L;
+  public static final AuditLevel AUDIT = new AuditLevel(55000, "AUDIT", 0);
+  private static final long serialVersionUID = -209614723183147373L;
 
-    /**
-     * Constructor
-     *
-     * @param level            log level
-     * @param levelStr         log level string
-     * @param syslogEquivalent syslogEquivalent
-     */
-    protected AuditLevel(int level, String levelStr, int syslogEquivalent) {
-        super(level, levelStr, syslogEquivalent);
-    }
+  /**
+   * Constructor
+   *
+   * @param level            log level
+   * @param levelStr         log level string
+   * @param syslogEquivalent syslogEquivalent
+   */
+  protected AuditLevel(int level, String levelStr, int syslogEquivalent) {
+    super(level, levelStr, syslogEquivalent);
+  }
 
-    /**
-     * Returns custom level for debug type log message
-     *
-     * @param val          value
-     * @param defaultLevel level
-     * @return custom level
-     */
-    public static AuditLevel toLevel(int val, Level defaultLevel) {
-        return AUDIT;
-    }
+  /**
+   * Returns custom level for debug type log message
+   *
+   * @param val          value
+   * @param defaultLevel level
+   * @return custom level
+   */
+  public static AuditLevel toLevel(int val, Level defaultLevel) {
+    return AUDIT;
+  }
 
-    /**
-     * Returns custom level for debug type log message
-     *
-     * @param sArg         sArg
-     * @param defaultLevel level
-     * @return custom level
-     */
-    public static AuditLevel toLevel(String sArg, Level defaultLevel) {
-        return AUDIT;
-    }
+  /**
+   * Returns custom level for debug type log message
+   *
+   * @param sArg         sArg
+   * @param defaultLevel level
+   * @return custom level
+   */
+  public static AuditLevel toLevel(String sArg, Level defaultLevel) {
+    return AUDIT;
+  }
 }

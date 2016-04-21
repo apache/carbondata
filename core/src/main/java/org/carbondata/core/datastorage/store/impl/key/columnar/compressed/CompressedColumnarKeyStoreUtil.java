@@ -28,85 +28,81 @@ import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreMetadata;
 
 /**
  * Utility helper class for managing the processing of columnar key store block.
- *
  */
 public final class CompressedColumnarKeyStoreUtil {
 
-    private CompressedColumnarKeyStoreUtil() {
+  private CompressedColumnarKeyStoreUtil() {
 
+  }
+
+  /**
+   * @param columnarKeyBlockData
+   * @param columnarKeyStoreMetadata
+   * @return
+   * @author s71955 The high cardinality dimensions rows will be send in byte
+   * array with its data length appended in the
+   * ColumnarKeyStoreDataHolder byte array since high cardinality dim
+   * data will not be part of MDKey/Surrogate keys. In this method the
+   * byte array will be scanned and the length which is stored in
+   * short will be removed.
+   */
+  public static List<byte[]> readColumnarKeyBlockDataForNoDictionaryCols(
+      byte[] columnarKeyBlockData) {
+    List<byte[]> columnarKeyBlockDataList = new ArrayList<byte[]>(50);
+    ByteBuffer noDictionaryValKeyStoreDataHolder = ByteBuffer.allocate(columnarKeyBlockData.length);
+    noDictionaryValKeyStoreDataHolder.put(columnarKeyBlockData);
+    noDictionaryValKeyStoreDataHolder.flip();
+    while (noDictionaryValKeyStoreDataHolder.hasRemaining()) {
+      short dataLength = noDictionaryValKeyStoreDataHolder.getShort();
+      byte[] noDictionaryValKeyData = new byte[dataLength];
+      noDictionaryValKeyStoreDataHolder.get(noDictionaryValKeyData);
+      columnarKeyBlockDataList.add(noDictionaryValKeyData);
     }
-	/**
-	 * @author s71955 The high cardinality dimensions rows will be send in byte
-	 *         array with its data length appended in the
-	 *         ColumnarKeyStoreDataHolder byte array since high cardinality dim
-	 *         data will not be part of MDKey/Surrogate keys. In this method the
-	 *         byte array will be scanned and the length which is stored in
-	 *         short will be removed.
-	 * @param columnarKeyBlockData
-	 * @param columnarKeyStoreMetadata
-	 * @return
-	 */
-	public static List<byte[]> readColumnarKeyBlockDataForNoDictionaryCols(
-			byte[] columnarKeyBlockData) {
-		List<byte[]> columnarKeyBlockDataList = new ArrayList<byte[]>(50);
-		ByteBuffer noDictionaryValKeyStoreDataHolder = ByteBuffer
-				.allocate(columnarKeyBlockData.length);
-		noDictionaryValKeyStoreDataHolder.put(columnarKeyBlockData);
-		noDictionaryValKeyStoreDataHolder.flip(); 
-		while (noDictionaryValKeyStoreDataHolder.hasRemaining()) {
-			short dataLength = noDictionaryValKeyStoreDataHolder.getShort();
-			byte[] noDictionaryValKeyData = new byte[dataLength];
-			noDictionaryValKeyStoreDataHolder.get(noDictionaryValKeyData);
-			columnarKeyBlockDataList.add(noDictionaryValKeyData);
-		}
-		return columnarKeyBlockDataList;
+    return columnarKeyBlockDataList;
 
-	}
+  }
 
-	/**
-	 * 
-	 * @param blockIndex
-	 * @param columnarKeyBlockData
-	 * @param columnKeyBlockIndex
-	 * @param columnKeyBlockReverseIndex
-	 * @param columnarStoreInfo
-	 * @return
-	 */
-	public static ColumnarKeyStoreDataHolder createColumnarKeyStoreMetadataForHCDims(
-			int blockIndex, byte[] columnarKeyBlockData,
-			int[] columnKeyBlockIndex, int[] columnKeyBlockReverseIndex,
-			ColumnarKeyStoreInfo columnarStoreInfo) {
-		ColumnarKeyStoreMetadata columnarKeyStoreMetadata;
-		columnarKeyStoreMetadata = new ColumnarKeyStoreMetadata(0);
-		columnarKeyStoreMetadata.setNoDictionaryValColumn(true);
-		columnarKeyStoreMetadata.setColumnIndex(columnKeyBlockIndex);
-		columnarKeyStoreMetadata
-				.setColumnReverseIndex(columnKeyBlockReverseIndex);
-		columnarKeyStoreMetadata
-				.setSorted(columnarStoreInfo.getIsSorted()[blockIndex]);
-		columnarKeyStoreMetadata.setUnCompressed(true);
-		List<byte[]> noDictionaryValBasedKeyBlockData = CompressedColumnarKeyStoreUtil
-				.readColumnarKeyBlockDataForNoDictionaryCols(columnarKeyBlockData);
-		ColumnarKeyStoreDataHolder columnarKeyStoreDataHolders = new ColumnarKeyStoreDataHolder(
-				noDictionaryValBasedKeyBlockData, columnarKeyStoreMetadata);
-		return columnarKeyStoreDataHolders;
-	}
+  /**
+   * @param blockIndex
+   * @param columnarKeyBlockData
+   * @param columnKeyBlockIndex
+   * @param columnKeyBlockReverseIndex
+   * @param columnarStoreInfo
+   * @return
+   */
+  public static ColumnarKeyStoreDataHolder createColumnarKeyStoreMetadataForHCDims(int blockIndex,
+      byte[] columnarKeyBlockData, int[] columnKeyBlockIndex, int[] columnKeyBlockReverseIndex,
+      ColumnarKeyStoreInfo columnarStoreInfo) {
+    ColumnarKeyStoreMetadata columnarKeyStoreMetadata;
+    columnarKeyStoreMetadata = new ColumnarKeyStoreMetadata(0);
+    columnarKeyStoreMetadata.setNoDictionaryValColumn(true);
+    columnarKeyStoreMetadata.setColumnIndex(columnKeyBlockIndex);
+    columnarKeyStoreMetadata.setColumnReverseIndex(columnKeyBlockReverseIndex);
+    columnarKeyStoreMetadata.setSorted(columnarStoreInfo.getIsSorted()[blockIndex]);
+    columnarKeyStoreMetadata.setUnCompressed(true);
+    List<byte[]> noDictionaryValBasedKeyBlockData = CompressedColumnarKeyStoreUtil
+        .readColumnarKeyBlockDataForNoDictionaryCols(columnarKeyBlockData);
+    ColumnarKeyStoreDataHolder columnarKeyStoreDataHolders =
+        new ColumnarKeyStoreDataHolder(noDictionaryValBasedKeyBlockData, columnarKeyStoreMetadata);
+    return columnarKeyStoreDataHolders;
+  }
 
-    /**
-     * This API will determine whether the requested block index is a  No dictionary
-     * column index.
-     * @param noDictionaryColIndexes
-     * @param blockIndex
-     * @return
-     */
-    public static boolean isNoDictionaryBlock(int[] noDictionaryColIndexes, int blockIndex) {
-        if (null != noDictionaryColIndexes) {
-            for (int noDictionaryValIndex : noDictionaryColIndexes) {
-                if (noDictionaryValIndex == blockIndex) {
-                    return true;
-                }
-            }
+  /**
+   * This API will determine whether the requested block index is a  No dictionary
+   * column index.
+   *
+   * @param noDictionaryColIndexes
+   * @param blockIndex
+   * @return
+   */
+  public static boolean isNoDictionaryBlock(int[] noDictionaryColIndexes, int blockIndex) {
+    if (null != noDictionaryColIndexes) {
+      for (int noDictionaryValIndex : noDictionaryColIndexes) {
+        if (noDictionaryValIndex == blockIndex) {
+          return true;
         }
-        return false;
+      }
     }
+    return false;
+  }
 }

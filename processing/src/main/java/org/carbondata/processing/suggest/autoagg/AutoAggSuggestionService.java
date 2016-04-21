@@ -31,24 +31,24 @@ import org.carbondata.processing.suggest.datastats.model.LoadModel;
  */
 public interface AutoAggSuggestionService {
 
-    /**
-     * This method gives list of all dimensions can be used in Aggregate table
-     *
-     * @param schema
-     * @param cube
-     * @return
-     * @throws AggSuggestException
-     */
-    List<String> getAggregateDimensions(LoadModel loadModel) throws AggSuggestException;
+  /**
+   * This method gives list of all dimensions can be used in Aggregate table
+   *
+   * @param schema
+   * @param cube
+   * @return
+   * @throws AggSuggestException
+   */
+  List<String> getAggregateDimensions(LoadModel loadModel) throws AggSuggestException;
 
-    /**
-     * this method gives all possible aggregate table script
-     *
-     * @param schema
-     * @param cube
-     * @return
-     * @throws AggSuggestException
-     */
-    List<String> getAggregateScripts(LoadModel loadModel) throws AggSuggestException;
+  /**
+   * this method gives all possible aggregate table script
+   *
+   * @param schema
+   * @param cube
+   * @return
+   * @throws AggSuggestException
+   */
+  List<String> getAggregateScripts(LoadModel loadModel) throws AggSuggestException;
 
 }

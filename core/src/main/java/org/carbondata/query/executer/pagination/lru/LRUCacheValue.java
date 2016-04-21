@@ -21,52 +21,52 @@ package org.carbondata.query.executer.pagination.lru;
 
 public class LRUCacheValue {
 
-    private long size;
+  private long size;
 
-    private long rowCount;
+  private long rowCount;
 
-    private LRUCacheKey cacheKey;
+  private LRUCacheKey cacheKey;
 
-    /**
-     * @return the size
-     */
-    public long getSize() {
-        return size;
-    }
+  /**
+   * @return the size
+   */
+  public long getSize() {
+    return size;
+  }
 
-    /**
-     * @param size the size to set
-     */
-    public void setSize(long size) {
-        this.size = size;
-    }
+  /**
+   * @param size the size to set
+   */
+  public void setSize(long size) {
+    this.size = size;
+  }
 
-    /**
-     * @return the rowCount
-     */
-    public long getRowCount() {
-        return rowCount;
-    }
+  /**
+   * @return the rowCount
+   */
+  public long getRowCount() {
+    return rowCount;
+  }
 
-    /**
-     * @param rowCount the rowCount to set
-     */
-    public void setRowCount(long rowCount) {
-        this.rowCount = rowCount;
-    }
+  /**
+   * @param rowCount the rowCount to set
+   */
+  public void setRowCount(long rowCount) {
+    this.rowCount = rowCount;
+  }
 
-    /**
-     * @return the cacheKey
-     */
-    public LRUCacheKey getCacheKey() {
-        return cacheKey;
-    }
+  /**
+   * @return the cacheKey
+   */
+  public LRUCacheKey getCacheKey() {
+    return cacheKey;
+  }
 
-    /**
-     * @param cacheKey the cacheKey to set
-     */
-    public void setCacheKey(LRUCacheKey cacheKey) {
-        this.cacheKey = cacheKey;
-    }
+  /**
+   * @param cacheKey the cacheKey to set
+   */
+  public void setCacheKey(LRUCacheKey cacheKey) {
+    this.cacheKey = cacheKey;
+  }
 
 }

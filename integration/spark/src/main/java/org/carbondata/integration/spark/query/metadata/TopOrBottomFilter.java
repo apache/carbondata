@@ -25,52 +25,50 @@ package org.carbondata.integration.spark.query.metadata;
 import java.io.Serializable;
 
 public class TopOrBottomFilter implements Serializable {
-    /**
-     *
-     */
-    private static final long serialVersionUID = 7524328420102662266L;
+  /**
+   *
+   */
+  private static final long serialVersionUID = 7524328420102662266L;
 
-    /**
-     * Type of filter, like TOP or BOTTOM
-     */
-    private TopOrBottomType topOrBottomType;
+  /**
+   * Type of filter, like TOP or BOTTOM
+   */
+  private TopOrBottomType topOrBottomType;
 
-    /**
-     * This constructor would be used if user apply topN/bottomN on all.
-     *
-     * @param topOrBottomType
-     * @param count
-     */
-    public TopOrBottomFilter(TopOrBottomType topOrBottomType, int count) {
-        this.topOrBottomType = topOrBottomType;
-    }
+  /**
+   * This constructor would be used if user apply topN/bottomN on all.
+   *
+   * @param topOrBottomType
+   * @param count
+   */
+  public TopOrBottomFilter(TopOrBottomType topOrBottomType, int count) {
+    this.topOrBottomType = topOrBottomType;
+  }
 
-    /**
-     * This constructor would be used if user apply topN/bottomN on particular dimension.
-     *
-     * @param topOrBottomType
-     * @param count
-     * @param dimension
-     */
-    public TopOrBottomFilter(TopOrBottomType topOrBottomType, int count, CarbonDimension dimension) {
-        this.topOrBottomType = topOrBottomType;
-    }
+  /**
+   * This constructor would be used if user apply topN/bottomN on particular dimension.
+   *
+   * @param topOrBottomType
+   * @param count
+   * @param dimension
+   */
+  public TopOrBottomFilter(TopOrBottomType topOrBottomType, int count, CarbonDimension dimension) {
+    this.topOrBottomType = topOrBottomType;
+  }
 
-    /**
-     * @return the topOrBottomType
-     */
-    public TopOrBottomType getTopOrBottomType() {
-        return topOrBottomType;
-    }
+  /**
+   * @return the topOrBottomType
+   */
+  public TopOrBottomType getTopOrBottomType() {
+    return topOrBottomType;
+  }
 
-
-    /**
-     * TopOrBottomType
-     *
-     */
-    public enum TopOrBottomType {
-        TOP,
-        BOTTOM
-    }
+  /**
+   * TopOrBottomType
+   */
+  public enum TopOrBottomType {
+    TOP,
+    BOTTOM
+  }
 
 }

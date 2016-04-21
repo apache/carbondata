@@ -23,37 +23,35 @@ package org.carbondata.query.queryinterface.query.metadata;
  * It is abstract class for CarbonLevel interface.
  */
 public abstract class AbstractCarbonLevel implements CarbonLevel {
-    private static final long serialVersionUID = -1487270452433379657L;
+  private static final long serialVersionUID = -1487270452433379657L;
 
-    private boolean visible = true;
+  private boolean visible = true;
 
-    /**
-     * See interface comments
-     */
-    @Override
-    public String getDimensionName() {
-        return null;
-    }
+  /**
+   * See interface comments
+   */
+  @Override public String getDimensionName() {
+    return null;
+  }
 
-    /**
-     * See interface comments
-     */
-    @Override
-    public String getHierarchyName() {
-        return null;
-    }
+  /**
+   * See interface comments
+   */
+  @Override public String getHierarchyName() {
+    return null;
+  }
 
-    /**
-     * @return the visible
-     */
-    public boolean isVisible() {
-        return visible;
-    }
+  /**
+   * @return the visible
+   */
+  public boolean isVisible() {
+    return visible;
+  }
 
-    /**
-     * @param visible the visible to set
-     */
-    public void setVisible(boolean visible) {
-        this.visible = visible;
-    }
+  /**
+   * @param visible the visible to set
+   */
+  public void setVisible(boolean visible) {
+    this.visible = visible;
+  }
 }

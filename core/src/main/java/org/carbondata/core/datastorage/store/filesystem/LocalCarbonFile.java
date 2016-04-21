@@ -19,7 +19,11 @@
 
 package org.carbondata.core.datastorage.store.filesystem;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.channels.FileChannel;
 
 import org.carbondata.common.logging.LogService;
@@ -30,200 +34,184 @@ import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonUtil;
 
 public class LocalCarbonFile implements CarbonFile {
-    private static final LogService LOGGER =
-            LogServiceFactory.getLogService(LocalCarbonFile.class.getName());
-    private File file;
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(LocalCarbonFile.class.getName());
+  private File file;
 
-    public LocalCarbonFile(String path) {
-        file = new File(path);
+  public LocalCarbonFile(String path) {
+    file = new File(path);
+  }
+
+  public LocalCarbonFile(File file) {
+    this.file = file;
+  }
+
+  @Override public String getAbsolutePath() {
+    return file.getAbsolutePath();
+  }
+
+  @Override public CarbonFile[] listFiles(final CarbonFileFilter fileFilter) {
+    if (!file.isDirectory()) {
+      return null;
     }
 
-    public LocalCarbonFile(File file) {
-        this.file = file;
+    File[] files = file.listFiles(new FileFilter() {
+
+      @Override public boolean accept(File pathname) {
+        return fileFilter.accept(new LocalCarbonFile(pathname));
+      }
+    });
+
+    if (files == null) {
+      return new CarbonFile[0];
     }
 
-    @Override
-    public String getAbsolutePath() {
-        return file.getAbsolutePath();
+    CarbonFile[] carbonFiles = new CarbonFile[files.length];
+
+    for (int i = 0; i < carbonFiles.length; i++) {
+      carbonFiles[i] = new LocalCarbonFile(files[i]);
     }
 
-    @Override
-    public CarbonFile[] listFiles(final CarbonFileFilter fileFilter) {
-        if (!file.isDirectory()) {
-            return null;
-        }
+    return carbonFiles;
+  }
 
-        File[] files = file.listFiles(new FileFilter() {
+  @Override public String getName() {
+    return file.getName();
+  }
 
-            @Override
-            public boolean accept(File pathname) {
-                return fileFilter.accept(new LocalCarbonFile(pathname));
-            }
-        });
+  @Override public boolean isDirectory() {
+    return file.isDirectory();
+  }
 
-        if (files == null) {
-            return new CarbonFile[0];
-        }
+  @Override public boolean exists() {
+    return file.exists();
+  }
 
-        CarbonFile[] carbonFiles = new CarbonFile[files.length];
+  @Override public String getCanonicalPath() {
+    try {
+      return file.getCanonicalPath();
+    } catch (IOException e) {
+      LOGGER
+          .error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e, "Exception occured" + e.getMessage());
+    }
+    return null;
+  }
 
-        for (int i = 0; i < carbonFiles.length; i++) {
-            carbonFiles[i] = new LocalCarbonFile(files[i]);
-        }
+  @Override public CarbonFile getParentFile() {
+    return new LocalCarbonFile(file.getParentFile());
+  }
 
-        return carbonFiles;
+  @Override public String getPath() {
+    return file.getPath();
+  }
+
+  @Override public long getSize() {
+    return file.length();
+  }
+
+  public boolean renameTo(String changetoName) {
+    return file.renameTo(new File(changetoName));
+  }
+
+  public boolean delete() {
+    return file.delete();
+  }
+
+  @Override public CarbonFile[] listFiles() {
+
+    if (!file.isDirectory()) {
+      return null;
+    }
+    File[] files = file.listFiles();
+    if (files == null) {
+      return new CarbonFile[0];
+    }
+    CarbonFile[] carbonFiles = new CarbonFile[files.length];
+    for (int i = 0; i < carbonFiles.length; i++) {
+      carbonFiles[i] = new LocalCarbonFile(files[i]);
     }
 
-    @Override
-    public String getName() {
-        return file.getName();
-    }
+    return carbonFiles;
 
-    @Override
-    public boolean isDirectory() {
-        return file.isDirectory();
-    }
+  }
 
-    @Override
-    public boolean exists() {
-        return file.exists();
+  @Override public boolean createNewFile() {
+    try {
+      return file.createNewFile();
+    } catch (IOException e) {
+      return false;
     }
+  }
 
-    @Override
-    public String getCanonicalPath() {
-        try {
-            return file.getCanonicalPath();
-        } catch (IOException e) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e,
-                    "Exception occured" + e.getMessage());
-        }
-        return null;
+  @Override public boolean mkdirs() {
+    return file.mkdirs();
+  }
+
+  @Override public long getLastModifiedTime() {
+    return file.lastModified();
+  }
+
+  @Override public boolean setLastModifiedTime(long timestamp) {
+    return file.setLastModified(timestamp);
+  }
+
+  /**
+   * This method will delete the data in file data from a given offset
+   */
+  @Override public boolean truncate(String fileName, long validDataEndOffset) {
+    FileChannel source = null;
+    FileChannel destination = null;
+    boolean fileTruncatedSuccessfully = false;
+    // if bytes to read less than 1024 then buffer size should be equal to the given offset
+    int bufferSize = validDataEndOffset > CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR ?
+        CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR :
+        (int) validDataEndOffset;
+    // temporary file name
+    String tempWriteFilePath = fileName + CarbonCommonConstants.TEMPWRITEFILEEXTENSION;
+    FileFactory.FileType fileType = FileFactory.getFileType(fileName);
+    try {
+      CarbonFile tempFile = null;
+      // delete temporary file if it already exists at a given path
+      if (FileFactory.isFileExist(tempWriteFilePath, fileType)) {
+        tempFile = FileFactory.getCarbonFile(tempWriteFilePath, fileType);
+        tempFile.delete();
+      }
+      // create new temporary file
+      FileFactory.createNewFile(tempWriteFilePath, fileType);
+      tempFile = FileFactory.getCarbonFile(tempWriteFilePath, fileType);
+      source = new FileInputStream(fileName).getChannel();
+      destination = new FileOutputStream(tempWriteFilePath).getChannel();
+      long read = destination.transferFrom(source, 0, validDataEndOffset);
+      long totalBytesRead = read;
+      long remaining = validDataEndOffset - totalBytesRead;
+      // read till required data offset is not reached
+      while (remaining > 0) {
+        read = destination.transferFrom(source, totalBytesRead, remaining);
+        totalBytesRead = totalBytesRead + read;
+        remaining = remaining - totalBytesRead;
+      }
+      CarbonUtil.closeStreams(source, destination);
+      // rename the temp file to original file
+      tempFile.renameForce(fileName);
+      fileTruncatedSuccessfully = true;
+    } catch (IOException e) {
+      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
+          "Exception occured while truncating the file " + e.getMessage());
+    } finally {
+      CarbonUtil.closeStreams(source, destination);
     }
+    return fileTruncatedSuccessfully;
+  }
 
-    @Override
-    public CarbonFile getParentFile() {
-        return new LocalCarbonFile(file.getParentFile());
-    }
-
-    @Override
-    public String getPath() {
-        return file.getPath();
-    }
-
-    @Override
-    public long getSize() {
-        return file.length();
-    }
-
-    public boolean renameTo(String changetoName) {
+  @Override public boolean renameForce(String changetoName) {
+    File destFile = new File(changetoName);
+    if (destFile.exists()) {
+      if (destFile.delete()) {
         return file.renameTo(new File(changetoName));
+      }
     }
 
-    public boolean delete() {
-        return file.delete();
-    }
+    return file.renameTo(new File(changetoName));
 
-    @Override
-    public CarbonFile[] listFiles() {
-
-        if (!file.isDirectory()) {
-            return null;
-        }
-        File[] files = file.listFiles();
-        if (files == null) {
-            return new CarbonFile[0];
-        }
-        CarbonFile[] carbonFiles = new CarbonFile[files.length];
-        for (int i = 0; i < carbonFiles.length; i++) {
-            carbonFiles[i] = new LocalCarbonFile(files[i]);
-        }
-
-        return carbonFiles;
-
-    }
-
-    @Override
-    public boolean createNewFile() {
-        try {
-            return file.createNewFile();
-        } catch (IOException e) {
-            return false;
-        }
-    }
-
-    @Override
-    public boolean mkdirs() {
-        return file.mkdirs();
-    }
-
-    @Override
-    public long getLastModifiedTime() {
-        return file.lastModified();
-    }
-
-    @Override
-    public boolean setLastModifiedTime(long timestamp) {
-        return file.setLastModified(timestamp);
-    }
-
-    /**
-     * This method will delete the data in file data from a given offset
-     */
-    @Override public boolean truncate(String fileName, long validDataEndOffset) {
-        FileChannel source = null;
-        FileChannel destination = null;
-        boolean fileTruncatedSuccessfully = false;
-        // if bytes to read less than 1024 then buffer size should be equal to the given offset
-        int bufferSize = validDataEndOffset > CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR ?
-                CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR :
-                (int) validDataEndOffset;
-        // temporary file name
-        String tempWriteFilePath = fileName + CarbonCommonConstants.TEMPWRITEFILEEXTENSION;
-        FileFactory.FileType fileType = FileFactory.getFileType(fileName);
-        try {
-            CarbonFile tempFile = null;
-            // delete temporary file if it already exists at a given path
-            if (FileFactory.isFileExist(tempWriteFilePath, fileType)) {
-                tempFile = FileFactory.getCarbonFile(tempWriteFilePath, fileType);
-                tempFile.delete();
-            }
-            // create new temporary file
-            FileFactory.createNewFile(tempWriteFilePath, fileType);
-            tempFile = FileFactory.getCarbonFile(tempWriteFilePath, fileType);
-            source = new FileInputStream(fileName).getChannel();
-            destination = new FileOutputStream(tempWriteFilePath).getChannel();
-            long read = destination.transferFrom(source, 0, validDataEndOffset);
-            long totalBytesRead = read;
-            long remaining = validDataEndOffset - totalBytesRead;
-            // read till required data offset is not reached
-            while(remaining > 0) {
-                read = destination.transferFrom(source, totalBytesRead, remaining);
-                totalBytesRead = totalBytesRead + read;
-                remaining = remaining - totalBytesRead;
-            }
-            CarbonUtil.closeStreams(source, destination);
-            // rename the temp file to original file
-            tempFile.renameForce(fileName);
-            fileTruncatedSuccessfully = true;
-        } catch (IOException e) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-                    "Exception occured while truncating the file " + e.getMessage());
-        } finally {
-            CarbonUtil.closeStreams(source, destination);
-        }
-        return fileTruncatedSuccessfully;
-    }
-
-    @Override
-    public boolean renameForce(String changetoName) {
-        File destFile = new File(changetoName);
-        if (destFile.exists()) {
-            if (destFile.delete()) {
-                return file.renameTo(new File(changetoName));
-            }
-        }
-
-        return file.renameTo(new File(changetoName));
-
-    }
+  }
 }

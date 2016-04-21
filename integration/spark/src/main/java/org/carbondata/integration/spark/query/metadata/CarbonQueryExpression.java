@@ -33,99 +33,99 @@ import org.carbondata.query.aggregator.MeasureAggregator;
  */
 public class CarbonQueryExpression implements Serializable {
 
-    /**
-     * <code>serialVersionUID</code>
-     */
-    private static final long serialVersionUID = -8173358957132456045L;
-    /**
-     * Expression used in query
-     */
-    private String expression;
-    /**
-     * usageType
-     */
-    private UsageType usageType;
-    /**
-     * Referred columns
-     */
-    private List<CarbonColumn> columns = new ArrayList<CarbonColumn>();
-    /**
-     * Identified and delegated from Spark Layer for UDAF in Carbon
-     */
-    private MeasureAggregator aggregator;
-    /**
-     * queryOrder
-     */
-    private int queryOrder;
-    /**
-     * sort order type. default is no order.
-     */
-    private SortOrderType sortOrderType = SortOrderType.NONE;
+  /**
+   * <code>serialVersionUID</code>
+   */
+  private static final long serialVersionUID = -8173358957132456045L;
+  /**
+   * Expression used in query
+   */
+  private String expression;
+  /**
+   * usageType
+   */
+  private UsageType usageType;
+  /**
+   * Referred columns
+   */
+  private List<CarbonColumn> columns = new ArrayList<CarbonColumn>();
+  /**
+   * Identified and delegated from Spark Layer for UDAF in Carbon
+   */
+  private MeasureAggregator aggregator;
+  /**
+   * queryOrder
+   */
+  private int queryOrder;
+  /**
+   * sort order type. default is no order.
+   */
+  private SortOrderType sortOrderType = SortOrderType.NONE;
 
-    public CarbonQueryExpression(String expression, UsageType usageType) {
-        this.expression = expression;
-        this.usageType = usageType;
-    }
+  public CarbonQueryExpression(String expression, UsageType usageType) {
+    this.expression = expression;
+    this.usageType = usageType;
+  }
 
-    public List<CarbonColumn> getColumns() {
-        return columns;
-    }
+  public List<CarbonColumn> getColumns() {
+    return columns;
+  }
 
-    /**
-     * @return the sortOrderType
-     */
-    public SortOrderType getSortOrderType() {
-        return sortOrderType;
-    }
+  /**
+   * @return the sortOrderType
+   */
+  public SortOrderType getSortOrderType() {
+    return sortOrderType;
+  }
 
-    /**
-     * @param sortOrderType the sortOrderType to set
-     */
-    public void setSortOrderType(SortOrderType sortOrderType) {
-        this.sortOrderType = sortOrderType;
-    }
+  /**
+   * @param sortOrderType the sortOrderType to set
+   */
+  public void setSortOrderType(SortOrderType sortOrderType) {
+    this.sortOrderType = sortOrderType;
+  }
 
-    public void addColumn(CarbonColumn column) {
-        columns.add(column);
-    }
+  public void addColumn(CarbonColumn column) {
+    columns.add(column);
+  }
 
-    public String getExpression() {
-        return expression;
-    }
+  public String getExpression() {
+    return expression;
+  }
 
-    public UsageType getUsageType() {
-        return usageType;
-    }
+  public UsageType getUsageType() {
+    return usageType;
+  }
 
-    /**
-     * @return MeasureAggregator
-     */
-    public MeasureAggregator getAggregator() {
-        return aggregator;
-    }
+  /**
+   * @return MeasureAggregator
+   */
+  public MeasureAggregator getAggregator() {
+    return aggregator;
+  }
 
-    /**
-     * @param aggregator
-     */
-    public void setAggregator(MeasureAggregator aggregator) {
-        this.aggregator = aggregator;
-    }
+  /**
+   * @param aggregator
+   */
+  public void setAggregator(MeasureAggregator aggregator) {
+    this.aggregator = aggregator;
+  }
 
-    public int getQueryOrder() {
-        return queryOrder;
-    }
+  public int getQueryOrder() {
+    return queryOrder;
+  }
 
-    public void setQueryOrder(int queryOrder) {
-        this.queryOrder = queryOrder;
-    }
+  public void setQueryOrder(int queryOrder) {
+    this.queryOrder = queryOrder;
+  }
 
-    /**
-     * Enum to specify the column usage. Weather used as part of expression OR this column alone.
-     *
-     * @author K00900207
-     */
-    public static enum UsageType {
-        SINGLE, // Only this measure is used
-        EXPRESSION; // Used as part of expression
-    }
+  /**
+   * Enum to specify the column usage. Weather used as part of expression OR this column alone.
+   *
+   * @author K00900207
+   */
+  public static enum UsageType {
+    SINGLE, // Only this measure is used
+    EXPRESSION; // Used as part of expression
+  }
 }

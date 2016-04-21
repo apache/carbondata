@@ -27,34 +27,33 @@ import org.carbondata.core.util.DataTypeUtil;
 
 public class AvgOfAvgBigDecimalAggregator extends AvgBigDecimalAggregator {
 
-    /**
-     * serialVersionUID
-     */
-    private static final long serialVersionUID = 6482976744603672084L;
+  /**
+   * serialVersionUID
+   */
+  private static final long serialVersionUID = 6482976744603672084L;
 
-    /**
-     * Overloaded Aggregate function will be used for Aggregate tables because
-     * aggregate table will have fact_count as a measure.
-     *
-     * @param newVal new value
-     * @param index  index
-     */
-    @Override
-    public void agg(CarbonReadDataHolder newVal, int index) {
-        byte[] value = newVal.getReadableByteArrayValueByIndex(index);
-        ByteBuffer buffer = ByteBuffer.wrap(value);
-        byte[] valueByte = new byte[buffer.getInt()];
-        buffer.get(valueByte);
-        BigDecimal newValue = DataTypeUtil.byteToBigDecimal(valueByte);
-        double factCount = buffer.getDouble();
+  /**
+   * Overloaded Aggregate function will be used for Aggregate tables because
+   * aggregate table will have fact_count as a measure.
+   *
+   * @param newVal new value
+   * @param index  index
+   */
+  @Override public void agg(CarbonReadDataHolder newVal, int index) {
+    byte[] value = newVal.getReadableByteArrayValueByIndex(index);
+    ByteBuffer buffer = ByteBuffer.wrap(value);
+    byte[] valueByte = new byte[buffer.getInt()];
+    buffer.get(valueByte);
+    BigDecimal newValue = DataTypeUtil.byteToBigDecimal(valueByte);
+    double factCount = buffer.getDouble();
 
-        if (firstTime) {
-            aggVal = newValue.multiply(new BigDecimal(factCount));
-            firstTime = false;
-        } else {
-            aggVal = aggVal.add(newValue.multiply(new BigDecimal(factCount)));
-        }
-        count += factCount;
+    if (firstTime) {
+      aggVal = newValue.multiply(new BigDecimal(factCount));
+      firstTime = false;
+    } else {
+      aggVal = aggVal.add(newValue.multiply(new BigDecimal(factCount)));
     }
+    count += factCount;
+  }
 
 }

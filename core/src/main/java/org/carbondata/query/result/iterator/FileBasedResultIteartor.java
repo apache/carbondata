@@ -45,59 +45,56 @@ import org.carbondata.query.util.CarbonEngineLogEvent;
  * Class Version  : 1.0
  */
 public class FileBasedResultIteartor implements CarbonIterator<QueryResult> {
-    private static final LogService LOGGER =
-            LogServiceFactory.getLogService(FileBasedResultIteartor.class.getName());
-    /**
-     * leafNodeInfos
-     */
-    private List<LeafNodeInfo> leafNodeInfos;
-    private int counter;
-    private QueryDataFileReader carbonQueryDataFileReader;
-    private boolean hasNext;
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(FileBasedResultIteartor.class.getName());
+  /**
+   * leafNodeInfos
+   */
+  private List<LeafNodeInfo> leafNodeInfos;
+  private int counter;
+  private QueryDataFileReader carbonQueryDataFileReader;
+  private boolean hasNext;
 
-    public FileBasedResultIteartor(String path, DataProcessorInfo info) {
-        readLeafNodeInfo(path, info);
-        carbonQueryDataFileReader = new QueryDataFileReader(path, info);
-    }
+  public FileBasedResultIteartor(String path, DataProcessorInfo info) {
+    readLeafNodeInfo(path, info);
+    carbonQueryDataFileReader = new QueryDataFileReader(path, info);
+  }
 
-    private void readLeafNodeInfo(String path, DataProcessorInfo info) {
-        CarbonFile carbonFile = FileFactory.getCarbonFile(path, FileFactory.getFileType(path));
-        try {
-            if (FileFactory.isFileExist(path, FileFactory.getFileType(path))) {
-                leafNodeInfos = CarbonUtil
-                        .getLeafNodeInfo(carbonFile, info.getAggType().length, info.getKeySize());
-            } else {
-                LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-                        "file doesnot exist " + path);
-            }
-            if (leafNodeInfos.size() > 0) {
-                hasNext = true;
-            }
-        } catch (IOException e) {
-            LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e.getMessage());
-        }
+  private void readLeafNodeInfo(String path, DataProcessorInfo info) {
+    CarbonFile carbonFile = FileFactory.getCarbonFile(path, FileFactory.getFileType(path));
+    try {
+      if (FileFactory.isFileExist(path, FileFactory.getFileType(path))) {
+        leafNodeInfos =
+            CarbonUtil.getLeafNodeInfo(carbonFile, info.getAggType().length, info.getKeySize());
+      } else {
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "file doesnot exist " + path);
+      }
+      if (leafNodeInfos.size() > 0) {
+        hasNext = true;
+      }
+    } catch (IOException e) {
+      LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e.getMessage());
     }
+  }
 
-    @Override
-    public boolean hasNext() {
-        return hasNext;
-    }
+  @Override public boolean hasNext() {
+    return hasNext;
+  }
 
-    @Override
-    public QueryResult next() {
-        QueryResult prepareResultFromFile = null;
-        try {
-            prepareResultFromFile =
-                    carbonQueryDataFileReader.prepareResultFromFile(leafNodeInfos.get(counter));
-        } catch (ResultReaderException e) {
-            carbonQueryDataFileReader.close();
-        }
-        counter++;
-        if (counter >= leafNodeInfos.size()) {
-            hasNext = false;
-            carbonQueryDataFileReader.close();
-        }
-        return prepareResultFromFile;
+  @Override public QueryResult next() {
+    QueryResult prepareResultFromFile = null;
+    try {
+      prepareResultFromFile =
+          carbonQueryDataFileReader.prepareResultFromFile(leafNodeInfos.get(counter));
+    } catch (ResultReaderException e) {
+      carbonQueryDataFileReader.close();
     }
+    counter++;
+    if (counter >= leafNodeInfos.size()) {
+      hasNext = false;
+      carbonQueryDataFileReader.close();
+    }
+    return prepareResultFromFile;
+  }
 
 }

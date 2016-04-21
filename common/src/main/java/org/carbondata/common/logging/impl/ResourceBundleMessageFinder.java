@@ -30,27 +30,27 @@ import org.carbondata.common.logging.LogEvent;
  */
 public class ResourceBundleMessageFinder implements LocaleLogMessageFinder {
 
-    private static final String LOG_BUNDLE_NAME = "LogResource";
+  private static final String LOG_BUNDLE_NAME = "LogResource";
 
-    public ResourceBundleMessageFinder() {
+  public ResourceBundleMessageFinder() {
 
+  }
+
+  public String findLogEventMessage(LogEvent event) {
+    return findLogEventMessage(Locale.getDefault(), event);
+  }
+
+  public String findLogEventMessage(Locale locale, LogEvent event) {
+    String message = null;
+    try {
+      String location = event.getModuleName() + LOG_BUNDLE_NAME;
+      ResourceBundle bundle =
+          ResourceBundle.getBundle(location, locale, event.getClass().getClassLoader());
+      message = bundle.getString(event.getEventCode());
+
+    } catch (NullPointerException e) {
+      return null;
     }
-
-    public String findLogEventMessage(LogEvent event) {
-        return findLogEventMessage(Locale.getDefault(), event);
-    }
-
-    public String findLogEventMessage(Locale locale, LogEvent event) {
-        String message = null;
-        try {
-            String location = event.getModuleName() + LOG_BUNDLE_NAME;
-            ResourceBundle bundle =
-                    ResourceBundle.getBundle(location, locale, event.getClass().getClassLoader());
-            message = bundle.getString(event.getEventCode());
-
-        } catch (NullPointerException e) {
-            return null;
-        }
-        return message;
-    }
+    return message;
+  }
 }

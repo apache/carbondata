@@ -29,25 +29,25 @@ import org.carbondata.core.constants.CarbonCommonConstants;
 
 public class DeletedLoadMetadata implements Serializable {
 
-    private static final long serialVersionUID = 7083059404172117208L;
-    private Map<String, String> deletedLoadMetadataMap =
-            new HashMap<String, String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+  private static final long serialVersionUID = 7083059404172117208L;
+  private Map<String, String> deletedLoadMetadataMap =
+      new HashMap<String, String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-    public void addDeletedLoadMetadata(String loadId, String status) {
-        deletedLoadMetadataMap.put(loadId, status);
+  public void addDeletedLoadMetadata(String loadId, String status) {
+    deletedLoadMetadataMap.put(loadId, status);
+  }
+
+  public List<String> getDeletedLoadMetadataIds() {
+    return new ArrayList<String>(deletedLoadMetadataMap.keySet());
+  }
+
+  public String getDeletedLoadMetadataStatus(String loadId) {
+    if (deletedLoadMetadataMap.containsKey(loadId)) {
+      return deletedLoadMetadataMap.get(loadId);
+    } else {
+      return null;
     }
 
-    public List<String> getDeletedLoadMetadataIds() {
-        return new ArrayList<String>(deletedLoadMetadataMap.keySet());
-    }
-
-    public String getDeletedLoadMetadataStatus(String loadId) {
-        if (deletedLoadMetadataMap.containsKey(loadId)) {
-            return deletedLoadMetadataMap.get(loadId);
-        } else {
-            return null;
-        }
-
-    }
+  }
 
 }

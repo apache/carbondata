@@ -17,23 +17,23 @@
  * under the License.
  */
 
-package org.carbondata.processing.sortandgroupby.sortData;
+package org.carbondata.processing.sortandgroupby.sortdata;
 
 public interface TempSortFileReader {
-    /**
-     * below method will be used to close the file holder
-     */
-    void finish();
+  /**
+   * below method will be used to close the file holder
+   */
+  void finish();
 
-    /**
-     * Below method will be used to get the row
-     */
-    Object[][] getRow();
+  /**
+   * Below method will be used to get the row
+   */
+  Object[][] getRow();
 
-    /**
-     * Below method will be used to get the total row count in temp file
-     *
-     * @return
-     */
-    int getEntryCount();
+  /**
+   * Below method will be used to get the total row count in temp file
+   *
+   * @return
+   */
+  int getEntryCount();
 }

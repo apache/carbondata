@@ -21,8 +21,8 @@ package org.carbondata.processing.csvreaderstep;
 
 public class EmptyPatternMatcher implements PatternMatcherInterface {
 
-    public boolean matchesPattern(byte[] source, int location, byte[] pattern) {
-        return false;
-    }
+  public boolean matchesPattern(byte[] source, int location, byte[] pattern) {
+    return false;
+  }
 
 }

@@ -29,6 +29,7 @@ import org.carbondata.processing.datatypes.GenericDataType;
 import org.carbondata.processing.datatypes.PrimitiveDataType;
 import org.carbondata.processing.datatypes.StructDataType;
 import org.carbondata.processing.util.CarbonDataProcessorUtil;
+
 import org.pentaho.di.core.CheckResultInterface;
 import org.pentaho.di.core.Counter;
 import org.pentaho.di.core.database.DatabaseMeta;
@@ -41,491 +42,485 @@ import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
-import org.pentaho.di.trans.step.*;
+import org.pentaho.di.trans.step.BaseStepMeta;
+import org.pentaho.di.trans.step.StepDataInterface;
+import org.pentaho.di.trans.step.StepInterface;
+import org.pentaho.di.trans.step.StepMeta;
+import org.pentaho.di.trans.step.StepMetaInterface;
 import org.w3c.dom.Node;
 
 public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface {
-    /**
-     * for i18n purposes
-     */
-    private static Class<?> pkg = MDKeyGenStepMeta.class;
+  /**
+   * for i18n purposes
+   */
+  private static Class<?> pkg = MDKeyGenStepMeta.class;
 
-    /**
-     * tableName
-     */
-    private String tableName;
+  /**
+   * tableName
+   */
+  private String tableName;
 
-    /**
-     * numberOfCores
-     */
-    private String numberOfCores;
+  /**
+   * numberOfCores
+   */
+  private String numberOfCores;
 
-    /**
-     * cubeName
-     */
-    private String cubeName;
+  /**
+   * cubeName
+   */
+  private String cubeName;
 
-    /**
-     * schemaName
-     */
-    private String schemaName;
+  /**
+   * schemaName
+   */
+  private String schemaName;
 
-    /**
-     * aggregateLevels
-     */
-    private String aggregateLevels;
+  /**
+   * aggregateLevels
+   */
+  private String aggregateLevels;
 
-    /**
-     * measureCount
-     */
-    private String measureCount;
+  /**
+   * measureCount
+   */
+  private String measureCount;
 
-    /**
-     * dimensionCount
-     */
-    private String dimensionCount;
+  /**
+   * dimensionCount
+   */
+  private String dimensionCount;
 
-    /**
-     * complexDimsCount
-     */
-    private String complexDimsCount;
+  /**
+   * complexDimsCount
+   */
+  private String complexDimsCount;
 
-    /**
-     * ComplexTypeString
-     */
-    private String complexTypeString;
+  /**
+   * ComplexTypeString
+   */
+  private String complexTypeString;
 
-    private Map<String, GenericDataType> complexTypes;
+  private Map<String, GenericDataType> complexTypes;
 
-    private int currentRestructNumber;
+  private int currentRestructNumber;
 
-    /**
-     * this states whether given dimension is columnar or row based store
-     * true: columnar
-     * false: row
-     */
-    private String dimensionsStoreType;
-    private String noDictionaryDims;
+  /**
+   * this states whether given dimension is columnar or row based store
+   * true: columnar
+   * false: row
+   */
+  private String dimensionsStoreType;
+  private String noDictionaryDims;
 
-    /**
-     * noDictionaryCount
-     */
-    private int noDictionaryCount;
+  /**
+   * noDictionaryCount
+   */
+  private int noDictionaryCount;
 
-    private String measureDataType;
-    /**
-     * task id, each spark task has a unique id
-     */
-    private String taskNo;
-    /**
-     * new load start time
-     */
-    private String factTimeStamp;
-    /**
-     * partitionID
-     */
-    private String partitionID;
+  private String measureDataType;
+  /**
+   * task id, each spark task has a unique id
+   */
+  private String taskNo;
+  /**
+   * new load start time
+   */
+  private String factTimeStamp;
+  /**
+   * partitionID
+   */
+  private String partitionID;
 
-    /**
-     * Constructor
-     */
-    public MDKeyGenStepMeta() {
-        super();
+  /**
+   * Constructor
+   */
+  public MDKeyGenStepMeta() {
+    super();
+  }
+
+  @Override public void setDefault() {
+    tableName = "";
+    numberOfCores = "";
+    aggregateLevels = "";
+    cubeName = "";
+    schemaName = "";
+    dimensionsStoreType = "";
+    noDictionaryDims = "";
+    currentRestructNumber = -1;
+    measureDataType = "";
+    taskNo = "";
+    factTimeStamp = "";
+    partitionID = "";
+  }
+
+  public String getXML() {
+    StringBuffer retval = new StringBuffer(150);
+
+    retval.append("    ").append(XMLHandler.addTagValue("TableName", tableName));
+    retval.append("    ").append(XMLHandler.addTagValue("AggregateLevels", aggregateLevels));
+    retval.append("    ").append(XMLHandler.addTagValue("NumberOfCores", numberOfCores));
+    retval.append("    ").append(XMLHandler.addTagValue("cubeName", cubeName));
+    retval.append("    ").append(XMLHandler.addTagValue("schemaName", schemaName));
+    retval.append("    ").append(XMLHandler.addTagValue("noDictionaryDims", noDictionaryDims));
+    retval.append("    ").append(XMLHandler.addTagValue("measureCount", measureCount));
+    retval.append("    ")
+        .append(XMLHandler.addTagValue("dimensionsStoreType", dimensionsStoreType));
+    retval.append("    ").append(XMLHandler.addTagValue("dimensionCount", dimensionCount));
+    retval.append("    ").append(XMLHandler.addTagValue("complexDimsCount", complexDimsCount));
+    retval.append("    ").append(XMLHandler.addTagValue("complexTypeString", complexTypeString));
+    retval.append("    ")
+        .append(XMLHandler.addTagValue("currentRestructNumber", currentRestructNumber));
+    retval.append("    ").append(XMLHandler.addTagValue("measureDataType", measureDataType));
+    retval.append("    ").append(XMLHandler.addTagValue("taskNo", taskNo));
+    retval.append("    ").append(XMLHandler.addTagValue("factTimeStamp", factTimeStamp));
+    retval.append("    ").append(XMLHandler.addTagValue("factTimeStamp", factTimeStamp));
+    retval.append("    ").append(XMLHandler.addTagValue("partitionID", partitionID));
+    return retval.toString();
+  }
+
+  @Override
+  public void loadXML(Node stepnode, List<DatabaseMeta> databases, Map<String, Counter> counters)
+      throws KettleXMLException {
+    try {
+      tableName = XMLHandler.getTagValue(stepnode, "TableName");
+      aggregateLevels = XMLHandler.getTagValue(stepnode, "AggregateLevels");
+      numberOfCores = XMLHandler.getTagValue(stepnode, "NumberOfCores");
+      schemaName = XMLHandler.getTagValue(stepnode, "schemaName");
+      cubeName = XMLHandler.getTagValue(stepnode, "cubeName");
+      noDictionaryDims = XMLHandler.getTagValue(stepnode, "noDictionaryDims");
+      measureCount = XMLHandler.getTagValue(stepnode, "measureCount");
+      dimensionsStoreType = XMLHandler.getTagValue(stepnode, "dimensionsStoreType");
+      dimensionCount = XMLHandler.getTagValue(stepnode, "dimensionCount");
+      complexDimsCount = XMLHandler.getTagValue(stepnode, "complexDimsCount");
+      complexTypeString = XMLHandler.getTagValue(stepnode, "complexTypeString");
+      currentRestructNumber =
+          Integer.parseInt(XMLHandler.getTagValue(stepnode, "currentRestructNumber"));
+      measureDataType = XMLHandler.getTagValue(stepnode, "measureDataType");
+      taskNo = XMLHandler.getTagValue(stepnode, "taskNo");
+      factTimeStamp = XMLHandler.getTagValue(stepnode, "factTimeStamp");
+      partitionID = XMLHandler.getTagValue(stepnode, "partitionID");
+    } catch (Exception e) {
+      throw new KettleXMLException("Unable to read step info from XML node", e);
+    }
+  }
+
+  @Override public void saveRep(Repository rep, ObjectId idTransformation, ObjectId idStep)
+      throws KettleException {
+    try {
+      rep.saveStepAttribute(idTransformation, idStep, "TableName", tableName);
+      rep.saveStepAttribute(idTransformation, idStep, "AggregateLevels", aggregateLevels);
+      rep.saveStepAttribute(idTransformation, idStep, "NumberOfCores", numberOfCores);
+      rep.saveStepAttribute(idTransformation, idStep, "schemaName", schemaName);
+      rep.saveStepAttribute(idTransformation, idStep, "cubeName", cubeName);
+      rep.saveStepAttribute(idTransformation, idStep, "noDictionaryDims", noDictionaryDims);
+      rep.saveStepAttribute(idTransformation, idStep, "measureCount", measureCount);
+      rep.saveStepAttribute(idTransformation, idStep, "dimensionsStoreType", dimensionsStoreType);
+      rep.saveStepAttribute(idTransformation, idStep, "dimensionCount", dimensionCount);
+      rep.saveStepAttribute(idTransformation, idStep, "complexDimsCount", complexDimsCount);
+      rep.saveStepAttribute(idTransformation, idStep, "complexTypeString", complexTypeString);
+      rep.saveStepAttribute(idTransformation, idStep, "currentRestructNumber",
+          currentRestructNumber);
+      rep.saveStepAttribute(idTransformation, idStep, "measureDataType", measureDataType);
+      rep.saveStepAttribute(idTransformation, idStep, "taskNo", taskNo);
+      rep.saveStepAttribute(idTransformation, idStep, "factTimeStamp", factTimeStamp);
+      rep.saveStepAttribute(idTransformation, idStep, "partitionID", partitionID);
+    } catch (Exception e) {
+      throw new KettleException(
+          BaseMessages.getString(pkg, "TemplateStep.Exception.UnableToSaveStepInfoToRepository")
+              + idStep, e);
     }
 
-    @Override
-    public void setDefault() {
-        tableName = "";
-        numberOfCores = "";
-        aggregateLevels = "";
-        cubeName = "";
-        schemaName = "";
-        dimensionsStoreType = "";
-        noDictionaryDims = "";
-        currentRestructNumber = -1;
-        measureDataType = "";
-        taskNo = "";
-        factTimeStamp = "";
-        partitionID = "";
+  }
+
+  @Override public void readRep(Repository rep, ObjectId idStep, List<DatabaseMeta> databases,
+      Map<String, Counter> counters) throws KettleException {
+    try {
+      tableName = rep.getStepAttributeString(idStep, "TableName");
+      aggregateLevels = rep.getStepAttributeString(idStep, "AggregateLevels");
+      numberOfCores = rep.getStepAttributeString(idStep, "NumberOfCores");
+      schemaName = rep.getStepAttributeString(idStep, "schemaName");
+      cubeName = rep.getStepAttributeString(idStep, "cubeName");
+      noDictionaryDims = rep.getStepAttributeString(idStep, "noDictionaryDims");
+      measureCount = rep.getStepAttributeString(idStep, "measureCount");
+      dimensionsStoreType = rep.getStepAttributeString(idStep, "dimensionsStoreType");
+      dimensionCount = rep.getStepAttributeString(idStep, "dimensionCount");
+      complexDimsCount = rep.getStepAttributeString(idStep, "complexDimsCount");
+      complexTypeString = rep.getStepAttributeString(idStep, "complexTypeString");
+      currentRestructNumber = (int) rep.getStepAttributeInteger(idStep, "currentRestructNumber");
+      measureDataType = rep.getStepAttributeString(idStep, "measureDataType");
+      taskNo = rep.getStepAttributeString(idStep, "taskNo");
+      factTimeStamp = rep.getStepAttributeString(idStep, "factTimeStamp");
+      partitionID = rep.getStepAttributeString(idStep, "partitionID");
+    } catch (Exception e) {
+      throw new KettleException(BaseMessages
+          .getString(pkg, "CarbonMDKeyStepMeta.Exception.UnexpectedErrorInReadingStepInfo"), e);
     }
+  }
 
-    public String getXML() {
-        StringBuffer retval = new StringBuffer(150);
+  @Override
+  public StepInterface getStep(StepMeta stepMeta, StepDataInterface stepDataInterface, int copyNr,
+      TransMeta transMeta, Trans trans) {
+    return new MDKeyGenStep(stepMeta, stepDataInterface, copyNr, transMeta, trans);
+  }
 
-        retval.append("    ").append(XMLHandler.addTagValue("TableName", tableName));
-        retval.append("    ").append(XMLHandler.addTagValue("AggregateLevels", aggregateLevels));
-        retval.append("    ").append(XMLHandler.addTagValue("NumberOfCores", numberOfCores));
-        retval.append("    ").append(XMLHandler.addTagValue("cubeName", cubeName));
-        retval.append("    ").append(XMLHandler.addTagValue("schemaName", schemaName));
-        retval.append("    ")
-                .append(XMLHandler.addTagValue("noDictionaryDims", noDictionaryDims));
-        retval.append("    ").append(XMLHandler.addTagValue("measureCount", measureCount));
-        retval.append("    ")
-                .append(XMLHandler.addTagValue("dimensionsStoreType", dimensionsStoreType));
-        retval.append("    ").append(XMLHandler.addTagValue("dimensionCount", dimensionCount));
-        retval.append("    ").append(XMLHandler.addTagValue("complexDimsCount", complexDimsCount));
-        retval.append("    ")
-                .append(XMLHandler.addTagValue("complexTypeString", complexTypeString));
-        retval.append("    ")
-                .append(XMLHandler.addTagValue("currentRestructNumber", currentRestructNumber));
-        retval.append("    ").append(XMLHandler.addTagValue("measureDataType", measureDataType));
-        retval.append("    ").append(XMLHandler.addTagValue("taskNo", taskNo));
-        retval.append("    ").append(XMLHandler.addTagValue("factTimeStamp", factTimeStamp));
-        retval.append("    ").append(XMLHandler.addTagValue("factTimeStamp", factTimeStamp));
-        retval.append("    ").append(XMLHandler.addTagValue("partitionID", partitionID));
-        return retval.toString();
+  @Override
+  public void check(List<CheckResultInterface> remarks, TransMeta transMeta, StepMeta stepMeta,
+      RowMetaInterface prev, String[] input, String[] output, RowMetaInterface info) {
+    CarbonDataProcessorUtil.checkResult(remarks, stepMeta, input);
+  }
+
+  @Override public StepDataInterface getStepData() {
+    return new MDKeyGenStepData();
+  }
+
+  public String getTableName() {
+    return tableName;
+  }
+
+  public void setTableName(String tableName) {
+    this.tableName = tableName;
+  }
+
+  public String getAggregateLevels() {
+    return aggregateLevels;
+  }
+
+  public void setAggregateLevels(String aggregateLevels) {
+    this.aggregateLevels = aggregateLevels;
+  }
+
+  public Map<String, GenericDataType> getComplexTypes() {
+    return complexTypes;
+  }
+
+  public void setComplexTypes(Map<String, GenericDataType> complexTypes) {
+    this.complexTypes = complexTypes;
+  }
+
+  public String getNumberOfCores() {
+    return numberOfCores;
+  }
+
+  public void setNumberOfCores(String numberOfCores) {
+    this.numberOfCores = numberOfCores;
+  }
+
+  /**
+   * @return the cubeName
+   */
+  public String getCubeName() {
+    return cubeName;
+  }
+
+  /**
+   * @param cubeName the cubeName to set
+   */
+  public void setCubeName(String cubeName) {
+    this.cubeName = cubeName;
+  }
+
+  /**
+   * @return the schemaName
+   */
+  public String getSchemaName() {
+    return schemaName;
+  }
+
+  /**
+   * @param schemaName the schemaName to set
+   */
+  public void setSchemaName(String schemaName) {
+    this.schemaName = schemaName;
+  }
+
+  /**
+   * @return the measureCount
+   */
+  public int getMeasureCount() {
+    return Integer.parseInt(measureCount);
+  }
+
+  /**
+   * @param measureCount the measureCount to set
+   */
+  public void setMeasureCount(String measureCount) {
+    this.measureCount = measureCount;
+  }
+
+  /**
+   * @return the dimensionCount
+   */
+  public int getDimensionCount() {
+    return Integer.parseInt(dimensionCount);
+  }
+
+  /**
+   * @param dimensionCount the dimensionCount to set
+   */
+  public void setDimensionCount(String dimensionCount) {
+    this.dimensionCount = dimensionCount;
+  }
+
+  /**
+   * @return the complexDimsCount
+   */
+  public int getComplexDimsCount() {
+    return Integer.parseInt(complexDimsCount);
+  }
+
+  /**
+   * @param complexDimsCount the complexDimsCount to set
+   */
+  public void setComplexDimsCount(String complexDimsCount) {
+    this.complexDimsCount = complexDimsCount;
+  }
+
+  /**
+   * @return the complexTypeString
+   */
+  public int getComplexTypeString() {
+    return Integer.parseInt(complexTypeString);
+  }
+
+  /**
+   * @param complexTypeString the complexTypeString to set
+   */
+  public void setComplexTypeString(String complexTypeString) {
+    this.complexTypeString = complexTypeString;
+  }
+
+  /**
+   * @return the currentRestructNumber
+   */
+  public int getCurrentRestructNumber() {
+    return currentRestructNumber;
+  }
+
+  /**
+   * @param currentRestructNum the currentRestructNumber to set
+   */
+  public void setCurrentRestructNumber(int currentRestructNum) {
+    this.currentRestructNumber = currentRestructNum;
+  }
+
+  /**
+   * @return
+   */
+  public String getNoDictionaryDims() {
+    return noDictionaryDims;
+  }
+
+  /**
+   * @param noDictionaryDims
+   */
+  public void setNoDictionaryDims(String noDictionaryDims) {
+    this.noDictionaryDims = noDictionaryDims;
+  }
+
+  /**
+   * @return the noDictionaryCount
+   */
+  public int getNoDictionaryCount() {
+    return noDictionaryCount;
+  }
+
+  /**
+   * @param noDictionaryCount the noDictionaryCount to set
+   */
+  public void setNoDictionaryCount(int noDictionaryCount) {
+    this.noDictionaryCount = noDictionaryCount;
+  }
+
+  public void setDimensionsStoreTypeString(String dimensionStoreType) {
+    this.dimensionsStoreType = dimensionStoreType;
+
+  }
+
+  public String getDimensionsStoreType() {
+    return this.dimensionsStoreType;
+  }
+
+  public void initialize() {
+    complexTypes = getComplexTypesMap(complexTypeString);
+  }
+
+  private Map<String, GenericDataType> getComplexTypesMap(String complexTypeString) {
+    if (null == complexTypeString) {
+      return new LinkedHashMap<>();
     }
-
-    @Override
-    public void loadXML(Node stepnode, List<DatabaseMeta> databases, Map<String, Counter> counters)
-            throws KettleXMLException {
-        try {
-            tableName = XMLHandler.getTagValue(stepnode, "TableName");
-            aggregateLevels = XMLHandler.getTagValue(stepnode, "AggregateLevels");
-            numberOfCores = XMLHandler.getTagValue(stepnode, "NumberOfCores");
-            schemaName = XMLHandler.getTagValue(stepnode, "schemaName");
-            cubeName = XMLHandler.getTagValue(stepnode, "cubeName");
-            noDictionaryDims = XMLHandler.getTagValue(stepnode, "noDictionaryDims");
-            measureCount = XMLHandler.getTagValue(stepnode, "measureCount");
-            dimensionsStoreType = XMLHandler.getTagValue(stepnode, "dimensionsStoreType");
-            dimensionCount = XMLHandler.getTagValue(stepnode, "dimensionCount");
-            complexDimsCount = XMLHandler.getTagValue(stepnode, "complexDimsCount");
-            complexTypeString = XMLHandler.getTagValue(stepnode, "complexTypeString");
-            currentRestructNumber =
-                    Integer.parseInt(XMLHandler.getTagValue(stepnode, "currentRestructNumber"));
-            measureDataType = XMLHandler.getTagValue(stepnode, "measureDataType");
-            taskNo = XMLHandler.getTagValue(stepnode, "taskNo");
-            factTimeStamp = XMLHandler.getTagValue(stepnode, "factTimeStamp");
-            partitionID = XMLHandler.getTagValue(stepnode, "partitionID");
-        } catch (Exception e) {
-            throw new KettleXMLException("Unable to read step info from XML node", e);
+    Map<String, GenericDataType> complexTypesMap = new LinkedHashMap<String, GenericDataType>();
+    String[] hierarchies = complexTypeString.split(CarbonCommonConstants.SEMICOLON_SPC_CHARACTER);
+    for (int i = 0; i < hierarchies.length; i++) {
+      String[] levels = hierarchies[i].split(CarbonCommonConstants.HASH_SPC_CHARACTER);
+      String[] levelInfo = levels[0].split(CarbonCommonConstants.COLON_SPC_CHARACTER);
+      GenericDataType g = levelInfo[1].equals("Array") ?
+          new ArrayDataType(levelInfo[0], "") :
+          new StructDataType(levelInfo[0], "");
+      complexTypesMap.put(levelInfo[0], g);
+      for (int j = 1; j < levels.length; j++) {
+        levelInfo = levels[j].split(CarbonCommonConstants.COLON_SPC_CHARACTER);
+        switch (levelInfo[1]) {
+          case "Array":
+            g.addChildren(new ArrayDataType(levelInfo[0], levelInfo[2]));
+            break;
+          case "Struct":
+            g.addChildren(new StructDataType(levelInfo[0], levelInfo[2]));
+            break;
+          default:
+            g.addChildren(new PrimitiveDataType(levelInfo[0], levelInfo[2]));
         }
+      }
     }
+    return complexTypesMap;
+  }
 
-    @Override
-    public void saveRep(Repository rep, ObjectId idTransformation, ObjectId idStep)
-            throws KettleException {
-        try {
-            rep.saveStepAttribute(idTransformation, idStep, "TableName", tableName);
-            rep.saveStepAttribute(idTransformation, idStep, "AggregateLevels", aggregateLevels);
-            rep.saveStepAttribute(idTransformation, idStep, "NumberOfCores", numberOfCores);
-            rep.saveStepAttribute(idTransformation, idStep, "schemaName", schemaName);
-            rep.saveStepAttribute(idTransformation, idStep, "cubeName", cubeName);
-            rep.saveStepAttribute(idTransformation, idStep, "noDictionaryDims",
-                    noDictionaryDims);
-            rep.saveStepAttribute(idTransformation, idStep, "measureCount", measureCount);
-            rep.saveStepAttribute(idTransformation, idStep, "dimensionsStoreType",
-                    dimensionsStoreType);
-            rep.saveStepAttribute(idTransformation, idStep, "dimensionCount", dimensionCount);
-            rep.saveStepAttribute(idTransformation, idStep, "complexDimsCount", complexDimsCount);
-            rep.saveStepAttribute(idTransformation, idStep, "complexTypeString", complexTypeString);
-            rep.saveStepAttribute(idTransformation, idStep, "currentRestructNumber",
-                    currentRestructNumber);
-            rep.saveStepAttribute(idTransformation, idStep, "measureDataType", measureDataType);
-            rep.saveStepAttribute(idTransformation, idStep, "taskNo", taskNo);
-            rep.saveStepAttribute(idTransformation, idStep, "factTimeStamp", factTimeStamp);
-            rep.saveStepAttribute(idTransformation, idStep, "partitionID", partitionID);
-        } catch (Exception e) {
-            throw new KettleException(BaseMessages
-                    .getString(pkg, "TemplateStep.Exception.UnableToSaveStepInfoToRepository")
-                    + idStep, e);
-        }
+  public String getMeasureDataType() {
+    return measureDataType;
+  }
 
-    }
+  public void setMeasureDataType(String measureDataType) {
+    this.measureDataType = measureDataType;
+  }
 
-    @Override
-    public void readRep(Repository rep, ObjectId idStep, List<DatabaseMeta> databases,
-            Map<String, Counter> counters) throws KettleException {
-        try {
-            tableName = rep.getStepAttributeString(idStep, "TableName");
-            aggregateLevels = rep.getStepAttributeString(idStep, "AggregateLevels");
-            numberOfCores = rep.getStepAttributeString(idStep, "NumberOfCores");
-            schemaName = rep.getStepAttributeString(idStep, "schemaName");
-            cubeName = rep.getStepAttributeString(idStep, "cubeName");
-            noDictionaryDims = rep.getStepAttributeString(idStep, "noDictionaryDims");
-            measureCount = rep.getStepAttributeString(idStep, "measureCount");
-            dimensionsStoreType = rep.getStepAttributeString(idStep, "dimensionsStoreType");
-            dimensionCount = rep.getStepAttributeString(idStep, "dimensionCount");
-            complexDimsCount = rep.getStepAttributeString(idStep, "complexDimsCount");
-            complexTypeString = rep.getStepAttributeString(idStep, "complexTypeString");
-            currentRestructNumber =
-                    (int) rep.getStepAttributeInteger(idStep, "currentRestructNumber");
-            measureDataType = rep.getStepAttributeString(idStep, "measureDataType");
-            taskNo = rep.getStepAttributeString(idStep, "taskNo");
-            factTimeStamp = rep.getStepAttributeString(idStep, "factTimeStamp");
-            partitionID = rep.getStepAttributeString(idStep, "partitionID");
-        } catch (Exception e) {
-            throw new KettleException(BaseMessages.getString(pkg,
-                    "CarbonMDKeyStepMeta.Exception.UnexpectedErrorInReadingStepInfo"), e);
-        }
-    }
+  /**
+   * @param taskNo
+   */
+  public void setTaskNo(String taskNo) {
+    this.taskNo = taskNo;
+  }
 
-    @Override
-    public StepInterface getStep(StepMeta stepMeta, StepDataInterface stepDataInterface, int copyNr,
-            TransMeta transMeta, Trans trans) {
-        return new MDKeyGenStep(stepMeta, stepDataInterface, copyNr, transMeta, trans);
-    }
+  /**
+   * @return
+   */
+  public int getTaskNo() {
+    return Integer.parseInt(taskNo);
+  }
 
-    @Override
-    public void check(List<CheckResultInterface> remarks, TransMeta transMeta, StepMeta stepMeta,
-            RowMetaInterface prev, String[] input, String[] output, RowMetaInterface info) {
-        CarbonDataProcessorUtil.checkResult(remarks, stepMeta, input);
-    }
+  /**
+   * @param factTimeStamp
+   */
+  public void setFactTimeStamp(String factTimeStamp) {
+    this.factTimeStamp = factTimeStamp;
+  }
 
-    @Override
-    public StepDataInterface getStepData() {
-        return new MDKeyGenStepData();
-    }
+  /**
+   * @return
+   */
+  public String getFactTimeStamp() {
+    return factTimeStamp;
+  }
 
-    public String getTableName() {
-        return tableName;
-    }
+  /**
+   * @return partitionId
+   */
+  public String getPartitionID() {
+    return partitionID;
+  }
 
-    public void setTableName(String tableName) {
-        this.tableName = tableName;
-    }
-
-    public String getAggregateLevels() {
-        return aggregateLevels;
-    }
-
-    public void setAggregateLevels(String aggregateLevels) {
-        this.aggregateLevels = aggregateLevels;
-    }
-
-    public Map<String, GenericDataType> getComplexTypes() {
-        return complexTypes;
-    }
-
-    public void setComplexTypes(Map<String, GenericDataType> complexTypes) {
-        this.complexTypes = complexTypes;
-    }
-
-    public String getNumberOfCores() {
-        return numberOfCores;
-    }
-
-    public void setNumberOfCores(String numberOfCores) {
-        this.numberOfCores = numberOfCores;
-    }
-
-    /**
-     * @return the cubeName
-     */
-    public String getCubeName() {
-        return cubeName;
-    }
-
-    /**
-     * @param cubeName the cubeName to set
-     */
-    public void setCubeName(String cubeName) {
-        this.cubeName = cubeName;
-    }
-
-    /**
-     * @return the schemaName
-     */
-    public String getSchemaName() {
-        return schemaName;
-    }
-
-    /**
-     * @param schemaName the schemaName to set
-     */
-    public void setSchemaName(String schemaName) {
-        this.schemaName = schemaName;
-    }
-
-    /**
-     * @return the measureCount
-     */
-    public int getMeasureCount() {
-        return Integer.parseInt(measureCount);
-    }
-
-    /**
-     * @param measureCount the measureCount to set
-     */
-    public void setMeasureCount(String measureCount) {
-        this.measureCount = measureCount;
-    }
-
-    /**
-     * @return the dimensionCount
-     */
-    public int getDimensionCount() {
-        return Integer.parseInt(dimensionCount);
-    }
-
-    /**
-     * @param dimensionCount the dimensionCount to set
-     */
-    public void setDimensionCount(String dimensionCount) {
-        this.dimensionCount = dimensionCount;
-    }
-
-    /**
-     * @return the complexDimsCount
-     */
-    public int getComplexDimsCount() {
-        return Integer.parseInt(complexDimsCount);
-    }
-
-    /**
-     * @param complexDimsCount the complexDimsCount to set
-     */
-    public void setComplexDimsCount(String complexDimsCount) {
-        this.complexDimsCount = complexDimsCount;
-    }
-
-    /**
-     * @return the complexTypeString
-     */
-    public int getComplexTypeString() {
-        return Integer.parseInt(complexTypeString);
-    }
-
-    /**
-     * @param complexTypeString the complexTypeString to set
-     */
-    public void setComplexTypeString(String complexTypeString) {
-        this.complexTypeString = complexTypeString;
-    }
-
-    /**
-     * @return the currentRestructNumber
-     */
-    public int getCurrentRestructNumber() {
-        return currentRestructNumber;
-    }
-
-    /**
-     * @param currentRestructNum the currentRestructNumber to set
-     */
-    public void setCurrentRestructNumber(int currentRestructNum) {
-        this.currentRestructNumber = currentRestructNum;
-    }
-
-    /**
-     * @return
-     */
-    public String getNoDictionaryDims() {
-        return noDictionaryDims;
-    }
-
-    /**
-     * @param noDictionaryDims
-     */
-    public void setNoDictionaryDims(String noDictionaryDims) {
-        this.noDictionaryDims = noDictionaryDims;
-    }
-
-    /**
-     * @return the noDictionaryCount
-     */
-    public int getNoDictionaryCount() {
-        return noDictionaryCount;
-    }
-
-    /**
-     * @param noDictionaryCount the noDictionaryCount to set
-     */
-    public void setNoDictionaryCount(int noDictionaryCount) {
-        this.noDictionaryCount = noDictionaryCount;
-    }
-
-    public void setDimensionsStoreTypeString(String dimensionStoreType) {
-        this.dimensionsStoreType = dimensionStoreType;
-
-    }
-
-    public String getDimensionsStoreType() {
-        return this.dimensionsStoreType;
-    }
-
-    public void initialize() {
-        complexTypes = getComplexTypesMap(complexTypeString);
-    }
-
-    private Map<String, GenericDataType> getComplexTypesMap(String complexTypeString) {
-        if (null == complexTypeString) {
-            return new LinkedHashMap<>();
-        }
-        Map<String, GenericDataType> complexTypesMap = new LinkedHashMap<String, GenericDataType>();
-        String[] hierarchies =
-                complexTypeString.split(CarbonCommonConstants.SEMICOLON_SPC_CHARACTER);
-        for (int i = 0; i < hierarchies.length; i++) {
-            String[] levels = hierarchies[i].split(CarbonCommonConstants.HASH_SPC_CHARACTER);
-            String[] levelInfo = levels[0].split(CarbonCommonConstants.COLON_SPC_CHARACTER);
-            GenericDataType g = levelInfo[1].equals("Array") ?
-                    new ArrayDataType(levelInfo[0], "") :
-                    new StructDataType(levelInfo[0], "");
-            complexTypesMap.put(levelInfo[0], g);
-            for (int j = 1; j < levels.length; j++) {
-                levelInfo = levels[j].split(CarbonCommonConstants.COLON_SPC_CHARACTER);
-                switch (levelInfo[1]) {
-                case "Array":
-                    g.addChildren(new ArrayDataType(levelInfo[0], levelInfo[2]));
-                    break;
-                case "Struct":
-                    g.addChildren(new StructDataType(levelInfo[0], levelInfo[2]));
-                    break;
-                default:
-                    g.addChildren(new PrimitiveDataType(levelInfo[0], levelInfo[2]));
-                }
-            }
-        }
-        return complexTypesMap;
-    }
-
-    public String getMeasureDataType() {
-        return measureDataType;
-    }
-
-    public void setMeasureDataType(String measureDataType) {
-        this.measureDataType = measureDataType;
-    }
-
-    /**
-     * @param taskNo
-     */
-    public void setTaskNo(String taskNo) {
-        this.taskNo = taskNo;
-    }
-
-    /**
-     * @return
-     */
-    public int getTaskNo() {
-        return Integer.parseInt(taskNo);
-    }
-
-    /**
-     * @param factTimeStamp
-     */
-    public void setFactTimeStamp(String factTimeStamp) {
-        this.factTimeStamp = factTimeStamp;
-    }
-
-    /**
-     * @return
-     */
-    public String getFactTimeStamp() {
-        return factTimeStamp;
-    }
-
-    /**
-     * @return partitionId
-     */
-    public String getPartitionID() {
-        return partitionID;
-    }
-
-    /**
-     * @param partitionID
-     */
-    public void setPartitionID(String partitionID) {
-        this.partitionID = partitionID;
-    }
+  /**
+   * @param partitionID
+   */
+  public void setPartitionID(String partitionID) {
+    this.partitionID = partitionID;
+  }
 }

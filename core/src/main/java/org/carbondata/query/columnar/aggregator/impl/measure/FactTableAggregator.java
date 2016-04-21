@@ -25,46 +25,46 @@ import org.carbondata.query.columnar.aggregator.ColumnarAggregatorInfo;
 import org.carbondata.query.columnar.keyvalue.AbstractColumnarScanResult;
 
 public class FactTableAggregator extends MeasureDataAggregator {
-    private boolean[] isMeasureExists;
+  private boolean[] isMeasureExists;
 
-    private Object[] measureDefaultValue;
+  private Object[] measureDefaultValue;
 
-    public FactTableAggregator(ColumnarAggregatorInfo columnaraggreagtorInfo) {
-        super(columnaraggreagtorInfo);
-        this.isMeasureExists = columnaraggreagtorInfo.getIsMeasureExistis();
-        this.measureDefaultValue = columnaraggreagtorInfo.getMsrDefaultValue();
+  public FactTableAggregator(ColumnarAggregatorInfo columnaraggreagtorInfo) {
+    super(columnaraggreagtorInfo);
+    this.isMeasureExists = columnaraggreagtorInfo.getIsMeasureExistis();
+    this.measureDefaultValue = columnaraggreagtorInfo.getMsrDefaultValue();
 
-    }
+  }
 
-    /**
-     * aggregateMsrs
-     *
-     * @param currentMsrRowData
-     */
-    public void aggregateMeasure(AbstractColumnarScanResult keyValue,
-            MeasureAggregator[] currentMsrRowData) {
-        Object value = null;
-        SqlStatement.Type dataType = null;
-        for (int i = 0; i < noOfMeasuresInQuery; i++) {
-            if (isMeasureExists[i]) {
-                int index = columnaraggreagtorInfo.getMeasureOrdinalMap().get(measureOrdinal[i]);
-                dataType = this.columnaraggreagtorInfo.getDataTypes()[index];
-                switch (dataType) {
-                case LONG:
-                    value = keyValue.getLongValue(measureOrdinal[i]);
-                    break;
-                case DECIMAL:
-                    value = keyValue.getBigDecimalValue(measureOrdinal[i]);
-                    break;
-                default:
-                    value = keyValue.getDoubleValue(measureOrdinal[i]);
-                }
-            } else {
-                value = measureDefaultValue[i];
-            }
-            if (!uniqueValues[measureOrdinal[i]].equals(value)) {
-                currentMsrRowData[columnaraggreagtorInfo.getMeasureStartIndex() + i].agg(value);
-            }
+  /**
+   * aggregateMsrs
+   *
+   * @param currentMsrRowData
+   */
+  public void aggregateMeasure(AbstractColumnarScanResult keyValue,
+      MeasureAggregator[] currentMsrRowData) {
+    Object value = null;
+    SqlStatement.Type dataType = null;
+    for (int i = 0; i < noOfMeasuresInQuery; i++) {
+      if (isMeasureExists[i]) {
+        int index = columnaraggreagtorInfo.getMeasureOrdinalMap().get(measureOrdinal[i]);
+        dataType = this.columnaraggreagtorInfo.getDataTypes()[index];
+        switch (dataType) {
+          case LONG:
+            value = keyValue.getLongValue(measureOrdinal[i]);
+            break;
+          case DECIMAL:
+            value = keyValue.getBigDecimalValue(measureOrdinal[i]);
+            break;
+          default:
+            value = keyValue.getDoubleValue(measureOrdinal[i]);
         }
+      } else {
+        value = measureDefaultValue[i];
+      }
+      if (!uniqueValues[measureOrdinal[i]].equals(value)) {
+        currentMsrRowData[columnaraggreagtorInfo.getMeasureStartIndex() + i].agg(value);
+      }
     }
+  }
 }

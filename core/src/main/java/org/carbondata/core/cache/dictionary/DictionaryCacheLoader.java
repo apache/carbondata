@@ -23,21 +23,20 @@ import java.io.IOException;
 
 public interface DictionaryCacheLoader {
 
-    /**
-     * This method will load the dictionary data for a given columnIdentifier
-     *
-     * @param dictionaryInfo             dictionary info object which will hold the required data
-     *                                   for a given column
-     * @param columnIdentifier           column unique identifier
-     * @param dictionaryChunkStartOffset start offset from where dictionary file has to
-     *                                   be read
-     * @param dictionaryChunkEndOffset   end offset till where dictionary file has to
-     *                                   be read
-     * @param loadSortIndex              flag to indicate whether the sort index file has to be
-     *                                   read in memory after dictionary loading
-     * @throws IOException
-     */
-    void load(DictionaryInfo dictionaryInfo, String columnIdentifier,
-            long dictionaryChunkStartOffset, long dictionaryChunkEndOffset, boolean loadSortIndex)
-            throws IOException;
+  /**
+   * This method will load the dictionary data for a given columnIdentifier
+   *
+   * @param dictionaryInfo             dictionary info object which will hold the required data
+   *                                   for a given column
+   * @param columnIdentifier           column unique identifier
+   * @param dictionaryChunkStartOffset start offset from where dictionary file has to
+   *                                   be read
+   * @param dictionaryChunkEndOffset   end offset till where dictionary file has to
+   *                                   be read
+   * @param loadSortIndex              flag to indicate whether the sort index file has to be
+   *                                   read in memory after dictionary loading
+   * @throws IOException
+   */
+  void load(DictionaryInfo dictionaryInfo, String columnIdentifier, long dictionaryChunkStartOffset,
+      long dictionaryChunkEndOffset, boolean loadSortIndex) throws IOException;
 }

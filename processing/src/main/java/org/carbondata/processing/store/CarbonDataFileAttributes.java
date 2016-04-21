@@ -21,12 +21,12 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import org.apache.spark.sql.columnar.TIMESTAMP;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
+
+import org.apache.spark.sql.columnar.TIMESTAMP;
 
 /**
  * This class contains attributes of file which are required to
@@ -34,61 +34,60 @@ import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
  */
 public class CarbonDataFileAttributes {
 
-    /**
-     * LOGGER
-     */
-    private static final LogService LOGGER =
-            LogServiceFactory.getLogService(CarbonDataFileAttributes.class.getName());
-    /**
-     * task Id which is unique for each spark task
-     */
-    private int taskId;
+  /**
+   * LOGGER
+   */
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(CarbonDataFileAttributes.class.getName());
+  /**
+   * task Id which is unique for each spark task
+   */
+  private int taskId;
 
-    /**
-     * load start time
-     */
-    private String factTimeStamp;
+  /**
+   * load start time
+   */
+  private String factTimeStamp;
 
-    /**
-     * @param taskId
-     * @param factTimeStamp
-     */
-    public CarbonDataFileAttributes(int taskId, String factTimeStamp) {
-        this.taskId = taskId;
-        this.factTimeStamp = factTimeStamp;
+  /**
+   * @param taskId
+   * @param factTimeStamp
+   */
+  public CarbonDataFileAttributes(int taskId, String factTimeStamp) {
+    this.taskId = taskId;
+    this.factTimeStamp = factTimeStamp;
+  }
+
+  /**
+   * @return
+   */
+  public int getTaskId() {
+    return taskId;
+  }
+
+  /**
+   * @return fact time stamp which is load start time
+   */
+  public String getFactTimeStamp() {
+    return convertTimeStampToString(factTimeStamp);
+  }
+
+  /**
+   * This method will convert a given timestamp to long value and then to string back
+   *
+   * @param factTimeStamp
+   * @return
+   */
+  private String convertTimeStampToString(String factTimeStamp) {
+    SimpleDateFormat parser = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP);
+    Date dateToStr = null;
+    try {
+      dateToStr = parser.parse(factTimeStamp);
+      return Long.toString(dateToStr.getTime());
+    } catch (ParseException e) {
+      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
+          "Cannot convert" + TIMESTAMP.toString() + " to Time/Long type value" + e.getMessage());
+      return null;
     }
-
-    /**
-     * @return
-     */
-    public int getTaskId() {
-        return taskId;
-    }
-
-    /**
-     * @return fact time stamp which is load start time
-     */
-    public String getFactTimeStamp() {
-        return convertTimeStampToString(factTimeStamp);
-    }
-
-    /**
-     * This method will convert a given timestamp to long value and then to string back
-     *
-     * @param factTimeStamp
-     * @return
-     */
-    private String convertTimeStampToString(String factTimeStamp) {
-        SimpleDateFormat parser = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP);
-        Date dateToStr = null;
-        try {
-            dateToStr = parser.parse(factTimeStamp);
-            return Long.toString(dateToStr.getTime());
-        } catch (ParseException e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-                    "Cannot convert" + TIMESTAMP.toString() + " to Time/Long type value" + e
-                            .getMessage());
-            return null;
-        }
-    }
+  }
 }

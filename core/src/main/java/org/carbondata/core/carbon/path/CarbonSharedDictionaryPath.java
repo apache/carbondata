@@ -25,47 +25,49 @@ import java.io.File;
  */
 public class CarbonSharedDictionaryPath {
 
-    static private final String SHAREDDIM_DIR = "SharedDictionary";
-    static private final String DICTIONARY_EXT = ".dict";
-    static private final String DICTIONARY_META_EXT = ".dictmeta";
-    static private final String SORT_INDEX_EXT = ".sortindex";
+  private static final String SHAREDDIM_DIR = "SharedDictionary";
+  private static final String DICTIONARY_EXT = ".dict";
+  private static final String DICTIONARY_META_EXT = ".dictmeta";
+  private static final String SORT_INDEX_EXT = ".sortindex";
 
-    /***
-     * @param storePath    store path
-     * @param databaseName data base name
-     * @param columnId     unique column identifier
-     * @return absolute path of shared dictionary file
-     */
-    static public String getDictionaryFilePath(String storePath, String databaseName, String columnId) {
-        return getSharedDictionaryDir(storePath, databaseName) + File.separator + columnId
-                + DICTIONARY_EXT;
-    }
+  /***
+   * @param storePath    store path
+   * @param databaseName data base name
+   * @param columnId     unique column identifier
+   * @return absolute path of shared dictionary file
+   */
+  public static String getDictionaryFilePath(String storePath, String databaseName,
+      String columnId) {
+    return getSharedDictionaryDir(storePath, databaseName) + File.separator + columnId
+        + DICTIONARY_EXT;
+  }
 
-    /***
-     * @param storePath    store path
-     * @param databaseName data base name
-     * @param columnId     unique column identifier
-     * @return absolute path of shared dictionary meta file
-     */
-    static public String getDictionaryMetaFilePath(String storePath, String databaseName,
-            String columnId) {
-        return getSharedDictionaryDir(storePath, databaseName) + File.separator + columnId
-                + DICTIONARY_META_EXT;
-    }
+  /***
+   * @param storePath    store path
+   * @param databaseName data base name
+   * @param columnId     unique column identifier
+   * @return absolute path of shared dictionary meta file
+   */
+  public static String getDictionaryMetaFilePath(String storePath, String databaseName,
+      String columnId) {
+    return getSharedDictionaryDir(storePath, databaseName) + File.separator + columnId
+        + DICTIONARY_META_EXT;
+  }
 
-    /***
-     * @param storePath    store path
-     * @param databaseName data base name
-     * @param columnId     unique column identifier
-     * @return absolute path of shared dictionary sort index file
-     */
-    static public String getSortIndexFilePath(String storePath, String databaseName, String columnId) {
-        return getSharedDictionaryDir(storePath, databaseName) + File.separator + columnId
-                + SORT_INDEX_EXT;
-    }
+  /***
+   * @param storePath    store path
+   * @param databaseName data base name
+   * @param columnId     unique column identifier
+   * @return absolute path of shared dictionary sort index file
+   */
+  public static String getSortIndexFilePath(String storePath, String databaseName,
+      String columnId) {
+    return getSharedDictionaryDir(storePath, databaseName) + File.separator + columnId
+        + SORT_INDEX_EXT;
+  }
 
-    static private String getSharedDictionaryDir(String storePath, String databaseName) {
-        return storePath + File.separator + databaseName + File.separator + SHAREDDIM_DIR;
-    }
+  private static String getSharedDictionaryDir(String storePath, String databaseName) {
+    return storePath + File.separator + databaseName + File.separator + SHAREDDIM_DIR;
+  }
 
 }

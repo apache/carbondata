@@ -39,6 +39,7 @@ import org.carbondata.processing.util.CarbonDataProcessorUtil;
 
 /**
  * This class will create store file based on provided schema
+ *
  * @author Administrator
  */
 public class StoreCreator {
@@ -50,7 +51,7 @@ public class StoreCreator {
 
     try {
       String metadataPath = "src/test/resources/schemas/default/carbon/metadata";
-      String schemaName="carbon";
+      String schemaName = "carbon";
       String tableName = "carbon";
       String factFilePath = "src/test/resources/input/100.csv";
       String storeLocation = "src/test/resources/store";
@@ -59,12 +60,12 @@ public class StoreCreator {
 
       String kettleHomePath = "carbonplugins";
       int currentRestructureNumber = 0;
-      CarbonDataLoadSchema schema = TestUtil.readMetaData(metadataPath,schemaName,tableName);
+      CarbonDataLoadSchema schema = TestUtil.readMetaData(metadataPath, schemaName, tableName);
       LoadModel loadModel = new LoadModel();
       String partitionId = "0";
       loadModel.setSchema(schema);
-      loadModel.setSchemaName(schemaName+"_"+partitionId);
-      loadModel.setCubeName(tableName+"_"+partitionId);
+      loadModel.setSchemaName(schemaName + "_" + partitionId);
+      loadModel.setCubeName(tableName + "_" + partitionId);
       loadModel.setTableName(tableName);
       loadModel.setFactFilePath(factFilePath);
       loadModel.setLoadMetadataDetails(new ArrayList<LoadMetadataDetails>());
@@ -86,6 +87,7 @@ public class StoreCreator {
 
   /**
    * Execute graph which will further load data
+   *
    * @param loadModel
    * @param storeLocation
    * @param kettleHomePath
@@ -120,17 +122,19 @@ public class StoreCreator {
 
     info.setSchemaName(schemaName);
     info.setCubeName(cubeName);
-   
+
     generateGraph(schmaModel, info, loadModel.getTableName(), "0", loadModel.getSchema(), null,
-      currentRestructNumber, loadModel.getLoadMetadataDetails());
+        currentRestructNumber, loadModel.getLoadMetadataDetails());
 
     DataGraphExecuter graphExecuter = new DataGraphExecuter(schmaModel);
-    graphExecuter.executeGraph(graphPath, new ArrayList<String>(
-        CarbonCommonConstants.CONSTANT_SIZE_TEN), info, "0", loadModel.getSchema());
+    graphExecuter
+        .executeGraph(graphPath, new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN),
+            info, "0", loadModel.getSchema());
   }
 
   /**
    * generate graph
+   *
    * @param schmaModel
    * @param info
    * @param tableName
@@ -150,8 +154,8 @@ public class StoreCreator {
     model.setSchemaInfo(info);
     model.setTableName(schmaModel.getTableName());
     if (null != loadMetadataDetails && !loadMetadataDetails.isEmpty()) {
-      model.setLoadNames(CarbonDataProcessorUtil
-          .getLoadNameFromLoadMetaDataDetails(loadMetadataDetails));
+      model.setLoadNames(
+          CarbonDataProcessorUtil.getLoadNameFromLoadMetaDataDetails(loadMetadataDetails));
       model.setModificationOrDeletionTime(CarbonDataProcessorUtil
           .getModificationOrDeletionTimesFromLoadMetadataDetails(loadMetadataDetails));
     }
@@ -160,17 +164,17 @@ public class StoreCreator {
     int allocate = null != schmaModel.getCsvFilePath() ? 1 : schmaModel.getFilesToProcess().size();
     GraphGenerator generator =
         new GraphGenerator(model, hdfsReadMode, partitionID, factStoreLocation,
-            currentRestructNumber, allocate,schema);
+            currentRestructNumber, allocate, schema);
     generator.generateGraph();
   }
 
   /**
    * This is local model object used inside this class to store information related to data loading
-   * @author Administrator
    *
+   * @author Administrator
    */
   static class LoadModel {
-    
+
     private CarbonDataLoadSchema schema;
     private String tableName;
     private String cubeName;

@@ -20,73 +20,73 @@
 package org.carbondata.processing.factreader;
 
 public class FactReaderInfo {
-    private int measureCount;
+  private int measureCount;
 
-    private int[] dimLens;
+  private int[] dimLens;
 
-    private String schemaName;
+  private String schemaName;
 
-    private String cubeName;
+  private String cubeName;
 
-    private String tableName;
+  private String tableName;
 
-    private int[] blockIndex;
+  private int[] blockIndex;
 
-    private boolean isUpdateMeasureRequired;
+  private boolean isUpdateMeasureRequired;
 
-    public int getMeasureCount() {
-        return measureCount;
-    }
+  public int getMeasureCount() {
+    return measureCount;
+  }
 
-    public void setMeasureCount(int measureCount) {
-        this.measureCount = measureCount;
-    }
+  public void setMeasureCount(int measureCount) {
+    this.measureCount = measureCount;
+  }
 
-    public int[] getDimLens() {
-        return dimLens;
-    }
+  public int[] getDimLens() {
+    return dimLens;
+  }
 
-    public void setDimLens(int[] dimLens) {
-        this.dimLens = dimLens;
-    }
+  public void setDimLens(int[] dimLens) {
+    this.dimLens = dimLens;
+  }
 
-    public String getSchemaName() {
-        return schemaName;
-    }
+  public String getSchemaName() {
+    return schemaName;
+  }
 
-    public void setSchemaName(String schemaName) {
-        this.schemaName = schemaName;
-    }
+  public void setSchemaName(String schemaName) {
+    this.schemaName = schemaName;
+  }
 
-    public String getCubeName() {
-        return cubeName;
-    }
+  public String getCubeName() {
+    return cubeName;
+  }
 
-    public void setCubeName(String cubeName) {
-        this.cubeName = cubeName;
-    }
+  public void setCubeName(String cubeName) {
+    this.cubeName = cubeName;
+  }
 
-    public String getTableName() {
-        return tableName;
-    }
+  public String getTableName() {
+    return tableName;
+  }
 
-    public void setTableName(String tableName) {
-        this.tableName = tableName;
-    }
+  public void setTableName(String tableName) {
+    this.tableName = tableName;
+  }
 
-    public int[] getBlockIndex() {
-        return blockIndex;
-    }
+  public int[] getBlockIndex() {
+    return blockIndex;
+  }
 
-    public void setBlockIndex(int[] blockIndex) {
-        this.blockIndex = blockIndex;
-    }
+  public void setBlockIndex(int[] blockIndex) {
+    this.blockIndex = blockIndex;
+  }
 
-    public boolean isUpdateMeasureRequired() {
-        return isUpdateMeasureRequired;
-    }
+  public boolean isUpdateMeasureRequired() {
+    return isUpdateMeasureRequired;
+  }
 
-    public void setUpdateMeasureRequired(boolean isUpdateMeasureRequired) {
-        this.isUpdateMeasureRequired = isUpdateMeasureRequired;
-    }
+  public void setUpdateMeasureRequired(boolean isUpdateMeasureRequired) {
+    this.isUpdateMeasureRequired = isUpdateMeasureRequired;
+  }
 }

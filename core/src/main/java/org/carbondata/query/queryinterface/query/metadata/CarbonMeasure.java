@@ -23,60 +23,59 @@ package org.carbondata.query.queryinterface.query.metadata;
  * Carbon Measure class
  */
 public class CarbonMeasure extends AbstractCarbonLevel {
-    private static final long serialVersionUID = 4257185028603048687L;
+  private static final long serialVersionUID = 4257185028603048687L;
 
-    /**
-     * Measure name
-     */
-    private String measureName;
+  /**
+   * Measure name
+   */
+  private String measureName;
 
-    private CarbonDimensionLevel dimensionLevel;
+  private CarbonDimensionLevel dimensionLevel;
 
-    /**
-     * Constructor
-     *
-     * @param measureName
-     */
-    public CarbonMeasure(String measureName) {
-        this.measureName = measureName;
-    }
+  /**
+   * Constructor
+   *
+   * @param measureName
+   */
+  public CarbonMeasure(String measureName) {
+    this.measureName = measureName;
+  }
 
-    /**
-     * Constructor
-     *
-     * @param measureName
-     * @param aggregateName
-     */
-    public CarbonMeasure(String measureName, String aggregateName) {
-        this.measureName = measureName;
-    }
+  /**
+   * Constructor
+   *
+   * @param measureName
+   * @param aggregateName
+   */
+  public CarbonMeasure(String measureName, String aggregateName) {
+    this.measureName = measureName;
+  }
 
-    /**
-     * @return the measureName
-     */
-    public String getName() {
-        return measureName;
-    }
+  /**
+   * @return the measureName
+   */
+  public String getName() {
+    return measureName;
+  }
 
-    /**
-     * See interface comments
-     */
-    @Override
-    public CarbonLevelType getType() {
-        return CarbonLevelType.MEASURE;
-    }
+  /**
+   * See interface comments
+   */
+  @Override public CarbonLevelType getType() {
+    return CarbonLevelType.MEASURE;
+  }
 
-    /**
-     * @return the dimensionLevel
-     */
-    public CarbonDimensionLevel getDimensionLevel() {
-        return dimensionLevel;
-    }
+  /**
+   * @return the dimensionLevel
+   */
+  public CarbonDimensionLevel getDimensionLevel() {
+    return dimensionLevel;
+  }
 
-    /**
-     * @param dimensionLevel the dimensionLevel to set
-     */
-    public void setDimensionLevel(CarbonDimensionLevel dimensionLevel) {
-        this.dimensionLevel = dimensionLevel;
-    }
+  /**
+   * @param dimensionLevel the dimensionLevel to set
+   */
+  public void setDimensionLevel(CarbonDimensionLevel dimensionLevel) {
+    this.dimensionLevel = dimensionLevel;
+  }
 }

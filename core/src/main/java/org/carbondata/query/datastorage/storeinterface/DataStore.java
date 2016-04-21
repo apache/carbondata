@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.carbondata.query.datastorage.storeInterfaces;
+package org.carbondata.query.datastorage.storeinterface;
 
 import java.util.List;
 
@@ -29,28 +29,28 @@ import org.carbondata.query.scanner.Scanner;
 
 public interface DataStore {
 
-    KeyValue get(byte[] key, Scanner scanner);
+  KeyValue get(byte[] key, Scanner scanner);
 
-    KeyValue getNext(byte[] key, Scanner scanner);
+  KeyValue getNext(byte[] key, Scanner scanner);
 
-    DataStoreBlock getBlock(byte[] startKey, FileHolder fileHolderImpl, boolean isFirst);
+  DataStoreBlock getBlock(byte[] startKey, FileHolder fileHolderImpl, boolean isFirst);
 
-    long size();
+  long size();
 
-    long getRangeSplitValue();
+  long getRangeSplitValue();
 
-    void build(List<DataInputStream> factStream, boolean hasFactCount);
+  void build(List<DataInputStream> factStream, boolean hasFactCount);
 
-    void buildColumnar(List<DataInputStream> factStream, boolean hasFactCount, Cube cube);
+  void buildColumnar(List<DataInputStream> factStream, boolean hasFactCount, Cube cube);
 
-    /**
-     * Gives different ranges based on number of keys
-     *
-     * @return
-     */
-    long[][] getRanges();
+  /**
+   * Gives different ranges based on number of keys
+   *
+   * @return
+   */
+  long[][] getRanges();
 
-    ValueCompressionModel getCompressionModel();
+  ValueCompressionModel getCompressionModel();
 
-    void build(DataInputStream factStream, boolean hasFactCount);
+  void build(DataInputStream factStream, boolean hasFactCount);
 }

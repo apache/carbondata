@@ -26,35 +26,36 @@ import java.util.List;
 import org.carbondata.query.queryinterface.query.CarbonQuery;
 
 /**
- * It is Axis class, it can be row,column or slice axis.It contains all information of query depends on levels and measures added in query.
+ * It is Axis class, it can be row,column or slice axis.It contains all information of
+ * query depends on levels and measures added in query.
  */
 public class Axis implements Serializable {
-    private static final long serialVersionUID = -574689684553603640L;
+  private static final long serialVersionUID = -574689684553603640L;
 
-    private List<CarbonLevelHolder> dims = new ArrayList<CarbonLevelHolder>(10);
+  private List<CarbonLevelHolder> dims = new ArrayList<CarbonLevelHolder>(10);
 
-    /**
-     * Add query details to this axis.
-     *
-     * @param level
-     * @param sortType
-     * @param msrFilters
-     * @param dimLevelFilter
-     */
-    public void add(CarbonLevel level, CarbonQuery.SortType sortType,
-            List<CarbonMeasureFilter> msrFilters, CarbonDimensionLevelFilter dimLevelFilter) {
-        CarbonLevelHolder holder = new CarbonLevelHolder(level, sortType);
-        holder.setMsrFilters(msrFilters);
-        holder.setDimLevelFilter(dimLevelFilter);
-        dims.add(holder);
-    }
+  /**
+   * Add query details to this axis.
+   *
+   * @param level
+   * @param sortType
+   * @param msrFilters
+   * @param dimLevelFilter
+   */
+  public void add(CarbonLevel level, CarbonQuery.SortType sortType,
+      List<CarbonMeasureFilter> msrFilters, CarbonDimensionLevelFilter dimLevelFilter) {
+    CarbonLevelHolder holder = new CarbonLevelHolder(level, sortType);
+    holder.setMsrFilters(msrFilters);
+    holder.setDimLevelFilter(dimLevelFilter);
+    dims.add(holder);
+  }
 
-    /**
-     * Get dims
-     *
-     * @return the dims
-     */
-    public List<CarbonLevelHolder> getDims() {
-        return dims;
-    }
+  /**
+   * Get dims
+   *
+   * @return the dims
+   */
+  public List<CarbonLevelHolder> getDims() {
+    return dims;
+  }
 }

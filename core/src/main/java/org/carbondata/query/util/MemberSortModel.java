@@ -34,119 +34,116 @@ import org.carbondata.query.datastorage.DataType;
  * @author K00900841
  */
 public class MemberSortModel implements Comparable<MemberSortModel> {
-    /**
-     * Surrogate key
-     */
-    private int key;
+  /**
+   * Surrogate key
+   */
+  private int key;
 
-    /**
-     * memberName
-     */
-    private String memberName;
+  /**
+   * memberName
+   */
+  private String memberName;
 
-    private byte[] memberBytes;
+  private byte[] memberBytes;
 
-    private DataType memberDataType;
+  private DataType memberDataType;
 
-    /**
-     * @param key
-     * @param member
-     */
-    public MemberSortModel(int key, String member, byte[] memberBytes, DataType memberDataType) {
-        this.key = key;
-        // this.member = member;
-        memberName = member;
-        this.memberBytes = memberBytes;
-        this.memberDataType = memberDataType;
-    }
+  /**
+   * @param key
+   * @param member
+   */
+  public MemberSortModel(int key, String member, byte[] memberBytes, DataType memberDataType) {
+    this.key = key;
+    // this.member = member;
+    memberName = member;
+    this.memberBytes = memberBytes;
+    this.memberDataType = memberDataType;
+  }
 
-    /**
-     * Compare
-     */
-    @Override
-    public int compareTo(MemberSortModel o) {
-        switch (memberDataType) {
-        case NUMBER:
-            Double d1 = null;
-            Double d2 = null;
-            try {
-                d1 = new Double(memberName);
-            } catch (NumberFormatException e) {
-                return -1;
-            }
-            try {
-                d2 = new Double(o.memberName);
-            } catch (NumberFormatException e) {
-                return 1;
-            }
-
-            return d1.compareTo(d2);
-        case TIMESTAMP:
-            SimpleDateFormat timeParser = new SimpleDateFormat(CarbonProperties.getInstance()
-                    .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-                            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
-            Date date1 = null;
-            Date date2 = null;
-            try {
-                date1 = timeParser.parse(memberName);
-            } catch (ParseException e) {
-                return -1;
-            }
-            try {
-                date2 = timeParser.parse(o.memberName);
-            } catch (ParseException e) {
-                return 1;
-            }
-            return (int) (date1.getTime() - date2.getTime());
-        case STRING:
-        default:
-            return ByteUtil.UnsafeComparer.INSTANCE.compareTo(this.memberBytes, o.memberBytes);
+  /**
+   * Compare
+   */
+  @Override public int compareTo(MemberSortModel o) {
+    switch (memberDataType) {
+      case NUMBER:
+        Double d1 = null;
+        Double d2 = null;
+        try {
+          d1 = new Double(memberName);
+        } catch (NumberFormatException e) {
+          return -1;
         }
-    }
-
-    /**
-     * @see Object#hashCode()
-     */
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((memberName == null) ? 0 : memberName.hashCode());
-        return result;
-    }
-
-    /**
-     * @see Object#equals(Object)
-     */
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof MemberSortModel) {
-            if (this == obj) {
-                return true;
-            }
-            MemberSortModel other = (MemberSortModel) obj;
-            if (memberName == null) {
-                if (other.memberName != null) {
-                    return false;
-                }
-            } else if (!memberName.equals(other.memberName)) {
-                return false;
-            }
-            return true;
-        } else {
-            return false;
+        try {
+          d2 = new Double(o.memberName);
+        } catch (NumberFormatException e) {
+          return 1;
         }
-    }
 
-    public int getKey() {
-        return key;
+        return d1.compareTo(d2);
+      case TIMESTAMP:
+        SimpleDateFormat timeParser = new SimpleDateFormat(CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+                CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+        Date date1 = null;
+        Date date2 = null;
+        try {
+          date1 = timeParser.parse(memberName);
+        } catch (ParseException e) {
+          return -1;
+        }
+        try {
+          date2 = timeParser.parse(o.memberName);
+        } catch (ParseException e) {
+          return 1;
+        }
+        return (int) (date1.getTime() - date2.getTime());
+      case STRING:
+      default:
+        return ByteUtil.UnsafeComparer.INSTANCE.compareTo(this.memberBytes, o.memberBytes);
     }
+  }
 
-    public String getMemberName() {
-        return memberName;
-    }
+  /**
+   * @see Object#hashCode()
+   */
+  @Override public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + ((memberName == null) ? 0 : memberName.hashCode());
+    return result;
+  }
 
-    public byte[] getMemberBytes() {
-        return memberBytes;
+  /**
+   * @see Object#equals(Object)
+   */
+  @Override public boolean equals(Object obj) {
+    if (obj instanceof MemberSortModel) {
+      if (this == obj) {
+        return true;
+      }
+      MemberSortModel other = (MemberSortModel) obj;
+      if (memberName == null) {
+        if (other.memberName != null) {
+          return false;
+        }
+      } else if (!memberName.equals(other.memberName)) {
+        return false;
+      }
+      return true;
+    } else {
+      return false;
     }
+  }
+
+  public int getKey() {
+    return key;
+  }
+
+  public String getMemberName() {
+    return memberName;
+  }
+
+  public byte[] getMemberBytes() {
+    return memberBytes;
+  }
 }

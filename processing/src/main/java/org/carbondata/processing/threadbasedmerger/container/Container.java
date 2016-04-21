@@ -24,100 +24,100 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 
 public class Container {
-    /**
-     * LOGGER
-     */
-    private static final LogService LOGGER =
-            LogServiceFactory.getLogService(Container.class.getName());
-    /**
-     * record array
-     */
-    private Object[][] sortHolderArray;
+  /**
+   * LOGGER
+   */
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(Container.class.getName());
+  /**
+   * record array
+   */
+  private Object[][] sortHolderArray;
 
-    /**
-     * is array filled
-     */
-    private boolean isFilled;
+  /**
+   * is array filled
+   */
+  private boolean isFilled;
 
-    /**
-     * is done
-     */
-    private boolean isDone;
+  /**
+   * is done
+   */
+  private boolean isDone;
 
-    /**
-     * container counter
-     */
-    private int containerCounter;
+  /**
+   * container counter
+   */
+  private int containerCounter;
 
-    /**
-     * Below method will be used to fill the container
-     *
-     * @param sortHolder
-     */
-    public void fillContainer(Object[][] sortHolder) {
-        sortHolderArray = sortHolder;
+  /**
+   * Below method will be used to fill the container
+   *
+   * @param sortHolder
+   */
+  public void fillContainer(Object[][] sortHolder) {
+    sortHolderArray = sortHolder;
+  }
+
+  /**
+   * below method will be used to get the container data
+   *
+   * @return
+   */
+  public Object[][] getContainerData() {
+    //CHECKSTYLE:OFF
+    while (!isFilled && !isDone) {
+      try//CHECKSTYLE:ON
+      {
+        Thread.sleep(10);
+      } catch (InterruptedException e) {
+        LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
+      }
     }
 
-    /**
-     * below method will be used to get the container data
-     *
-     * @return
-     */
-    public Object[][] getContainerData() {
-        //CHECKSTYLE:OFF
-        while (!isFilled && !isDone) {
-            try//CHECKSTYLE:ON
-            {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
-            }
-        }
+    Object[][] temp = sortHolderArray;
+    sortHolderArray = null;
+    return temp;
+  }
 
-        Object[][] temp = sortHolderArray;
-        sortHolderArray = null;
-        return temp;
-    }
+  /**
+   * @return the isFilled
+   */
+  public boolean isFilled() {
+    return isFilled;
+  }
 
-    /**
-     * @return the isFilled
-     */
-    public boolean isFilled() {
-        return isFilled;
-    }
+  /**
+   * @param isFilled the isFilled to set
+   */
+  public void setFilled(boolean isFilled) {
+    this.isFilled = isFilled;
+  }
 
-    /**
-     * @param isFilled the isFilled to set
-     */
-    public void setFilled(boolean isFilled) {
-        this.isFilled = isFilled;
-    }
+  /**
+   * @return the isDone
+   */
+  public boolean isDone() {
+    return isDone;
+  }
 
-    /**
-     * @return the isDone
-     */
-    public boolean isDone() {
-        return isDone;
-    }
+  /**
+   * @param isDone the isDone to set
+   */
+  public void setDone(boolean isDone) {
+    this.isDone = isDone;
+  }
 
-    /**
-     * @param isDone the isDone to set
-     */
-    public void setDone(boolean isDone) {
-        this.isDone = isDone;
-    }
+  /**
+   * @return the containerCounter
+   */
+  public int getContainerCounter() {
+    return containerCounter;
+  }
 
-    /**
-     * @return the containerCounter
-     */
-    public int getContainerCounter() {
-        return containerCounter;
-    }
-
-    /**
-     * @param containerCounter the containerCounter to set
-     */
-    public void setContainerCounter(int containerCounter) {
-        this.containerCounter = containerCounter;
-    }
+  /**
+   * @param containerCounter the containerCounter to set
+   */
+  public void setContainerCounter(int containerCounter) {
+    this.containerCounter = containerCounter;
+  }
 }

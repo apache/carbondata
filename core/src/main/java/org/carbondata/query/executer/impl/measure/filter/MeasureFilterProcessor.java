@@ -37,79 +37,75 @@ import org.carbondata.query.filters.measurefilter.util.MeasureFilterFactory;
  */
 public class MeasureFilterProcessor implements DataProcessor {
 
-    /**
-     * measureFilters
-     */
-    private MeasureFilter[] measureFilters;
+  /**
+   * measureFilters
+   */
+  private MeasureFilter[] measureFilters;
 
-    /**
-     * dataProcessor
-     */
-    private DataProcessor dataProcessor;
+  /**
+   * dataProcessor
+   */
+  private DataProcessor dataProcessor;
 
-    private boolean passGroupBy;
+  private boolean passGroupBy;
 
-    private boolean afterTopN;
+  private boolean afterTopN;
 
-    /**
-     * MeasureFilterProcessor Constructor
-     *
-     * @param dataProcessor
-     */
-    public MeasureFilterProcessor(DataProcessor dataProcessor, boolean afterTopN) {
-        this.dataProcessor = dataProcessor;
-        this.afterTopN = afterTopN;
+  /**
+   * MeasureFilterProcessor Constructor
+   *
+   * @param dataProcessor
+   */
+  public MeasureFilterProcessor(DataProcessor dataProcessor, boolean afterTopN) {
+    this.dataProcessor = dataProcessor;
+    this.afterTopN = afterTopN;
+  }
+
+  @Override public void initModel(PaginationModel model) throws CarbonPaginationException {
+
+    this.dataProcessor.initModel(model);
+    measureFilters = MeasureFilterFactory.getFilterMeasures(
+        afterTopN ? model.getMsrConstraintsAfterTopN() : model.getMsrConstraints(),
+        Arrays.asList(model.getQueryMsrs()));
+    if (dataProcessor instanceof TopNProcessorBytes) {
+      passGroupBy = true;
     }
+  }
 
-    @Override
-    public void initModel(PaginationModel model) throws CarbonPaginationException {
+  @Override public void processRow(byte[] key, MeasureAggregator[] measures)
+      throws CarbonPaginationException {
+    if (filterMeasure(measures)) {
+      this.dataProcessor.processRow(key, measures);
+    }
+  }
 
-        this.dataProcessor.initModel(model);
-        measureFilters = MeasureFilterFactory.getFilterMeasures(
-                afterTopN ? model.getMsrConstraintsAfterTopN() : model.getMsrConstraints(),
-                Arrays.asList(model.getQueryMsrs()));
-        if (dataProcessor instanceof TopNProcessorBytes) {
-            passGroupBy = true;
+  private boolean filterMeasure(MeasureAggregator[] measures) {
+    for (int k = 0; k < measureFilters.length; k++) {
+      if (!(measureFilters[k].filter(measures))) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  @Override public void finish() throws CarbonPaginationException {
+    this.dataProcessor.finish();
+  }
+
+  @Override public void processGroup(GroupByHolder groupByHolder) throws CarbonPaginationException {
+    if (filterMeasure(groupByHolder.getMeasureAggregators())) {
+      if (passGroupBy) {
+        dataProcessor.processGroup(groupByHolder);
+      } else {
+        List<byte[]> rows = groupByHolder.getRows();
+        List<MeasureAggregator[]> msrs = groupByHolder.getMsrs();
+
+        for (int i = 0; i < rows.size(); i++) {
+          this.dataProcessor.processRow(rows.get(i), msrs.get(i));
         }
+      }
     }
 
-    @Override
-    public void processRow(byte[] key, MeasureAggregator[] measures)
-            throws CarbonPaginationException {
-        if (filterMeasure(measures)) {
-            this.dataProcessor.processRow(key, measures);
-        }
-    }
-
-    private boolean filterMeasure(MeasureAggregator[] measures) {
-        for (int k = 0; k < measureFilters.length; k++) {
-            if (!(measureFilters[k].filter(measures))) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    @Override
-    public void finish() throws CarbonPaginationException {
-        this.dataProcessor.finish();
-    }
-
-    @Override
-    public void processGroup(GroupByHolder groupByHolder) throws CarbonPaginationException {
-        if (filterMeasure(groupByHolder.getMeasureAggregators())) {
-            if (passGroupBy) {
-                dataProcessor.processGroup(groupByHolder);
-            } else {
-                List<byte[]> rows = groupByHolder.getRows();
-                List<MeasureAggregator[]> msrs = groupByHolder.getMsrs();
-
-                for (int i = 0; i < rows.size(); i++) {
-                    this.dataProcessor.processRow(rows.get(i), msrs.get(i));
-                }
-            }
-        }
-
-    }
+  }
 
 }

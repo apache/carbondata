@@ -22,26 +22,26 @@ package org.carbondata.query.util;
 import org.carbondata.common.logging.LogEvent;
 
 public enum CarbonEngineLogEvent implements LogEvent {
-    /**
-     * CARBONENGINE_MSG
-     */
-    UNIBI_CARBONENGINE_MSG("carbon.core");
+  /**
+   * CARBONENGINE_MSG
+   */
+  UNIBI_CARBONENGINE_MSG("carbon.core");
 
-    /**
-     *
-     */
-    private String eventCode;
+  /**
+   *
+   */
+  private String eventCode;
 
-    private CarbonEngineLogEvent(final String eventCode) {
-        this.eventCode = eventCode;
-    }
+  private CarbonEngineLogEvent(final String eventCode) {
+    this.eventCode = eventCode;
+  }
 
-    public String getEventCode() {
-        return eventCode;
-    }
+  public String getEventCode() {
+    return eventCode;
+  }
 
-    public String getModuleName() {
-        return "CARBON_CORE";
-    }
+  public String getModuleName() {
+    return "CARBON_CORE";
+  }
 
 }

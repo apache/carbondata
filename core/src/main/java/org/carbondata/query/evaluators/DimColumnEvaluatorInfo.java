@@ -27,145 +27,145 @@ import org.carbondata.query.complex.querytypes.GenericQueryType;
 import org.carbondata.query.datastorage.InMemoryTable;
 
 public class DimColumnEvaluatorInfo {
-    /**
-     * column index in file
-     */
-    private int columnIndex = -1;
+  /**
+   * column index in file
+   */
+  private int columnIndex = -1;
 
-    /**
-     * need compressed data from file
-     */
-    private boolean needCompressedData;
+  /**
+   * need compressed data from file
+   */
+  private boolean needCompressedData;
 
-    /**
-     * list of filter need to apply
-     */
-    private byte[][] filterValues;
+  /**
+   * list of filter need to apply
+   */
+  private byte[][] filterValues;
 
-    /**
-     * slice
-     */
-    private List<InMemoryTable> slices;
+  /**
+   * slice
+   */
+  private List<InMemoryTable> slices;
 
-    /**
-     * currentSliceIndex
-     */
-    private int currentSliceIndex;
+  /**
+   * currentSliceIndex
+   */
+  private int currentSliceIndex;
 
-    /**
-     * dims
-     */
-    private Dimension dims;
+  /**
+   * dims
+   */
+  private Dimension dims;
 
-    private Dimension[] dimensions;
+  private Dimension[] dimensions;
 
-    /**
-     * rowIndex
-     */
-    private int rowIndex = -1;
+  /**
+   * rowIndex
+   */
+  private int rowIndex = -1;
 
-    private boolean isDimensionExistsInCurrentSilce = true;
+  private boolean isDimensionExistsInCurrentSilce = true;
 
-    private int rsSurrogates;
+  private int rsSurrogates;
 
-    private String defaultValue;
+  private String defaultValue;
 
-    private Map<Integer, GenericQueryType> complexTypesWithBlockStartIndex;
+  private Map<Integer, GenericQueryType> complexTypesWithBlockStartIndex;
 
-    public Map<Integer, GenericQueryType> getComplexTypesWithBlockStartIndex() {
-        return complexTypesWithBlockStartIndex;
-    }
+  public Map<Integer, GenericQueryType> getComplexTypesWithBlockStartIndex() {
+    return complexTypesWithBlockStartIndex;
+  }
 
-    public void setComplexTypesWithBlockStartIndex(
-            Map<Integer, GenericQueryType> complexTypesWithBlockStartIndex) {
-        this.complexTypesWithBlockStartIndex = complexTypesWithBlockStartIndex;
-    }
+  public void setComplexTypesWithBlockStartIndex(
+      Map<Integer, GenericQueryType> complexTypesWithBlockStartIndex) {
+    this.complexTypesWithBlockStartIndex = complexTypesWithBlockStartIndex;
+  }
 
-    public Dimension[] getDimensions() {
-        return dimensions;
-    }
+  public Dimension[] getDimensions() {
+    return dimensions;
+  }
 
-    public void setDimensions(Dimension[] dimensions) {
-        this.dimensions = dimensions;
-    }
+  public void setDimensions(Dimension[] dimensions) {
+    this.dimensions = dimensions;
+  }
 
-    public int getColumnIndex() {
-        return columnIndex;
-    }
+  public int getColumnIndex() {
+    return columnIndex;
+  }
 
-    public void setColumnIndex(int columnIndex) {
-        this.columnIndex = columnIndex;
-    }
+  public void setColumnIndex(int columnIndex) {
+    this.columnIndex = columnIndex;
+  }
 
-    public boolean isNeedCompressedData() {
-        return needCompressedData;
-    }
+  public boolean isNeedCompressedData() {
+    return needCompressedData;
+  }
 
-    public void setNeedCompressedData(boolean needCompressedData) {
-        this.needCompressedData = needCompressedData;
-    }
+  public void setNeedCompressedData(boolean needCompressedData) {
+    this.needCompressedData = needCompressedData;
+  }
 
-    public byte[][] getFilterValues() {
-        return filterValues;
-    }
+  public byte[][] getFilterValues() {
+    return filterValues;
+  }
 
-    public void setFilterValues(final byte[][] filterValues) {
-        this.filterValues = filterValues;
-    }
+  public void setFilterValues(final byte[][] filterValues) {
+    this.filterValues = filterValues;
+  }
 
-    public int getRowIndex() {
-        return rowIndex;
-    }
+  public int getRowIndex() {
+    return rowIndex;
+  }
 
-    public void setRowIndex(int rowIndex) {
-        this.rowIndex = rowIndex;
-    }
+  public void setRowIndex(int rowIndex) {
+    this.rowIndex = rowIndex;
+  }
 
-    public Dimension getDims() {
-        return dims;
-    }
+  public Dimension getDims() {
+    return dims;
+  }
 
-    public void setDims(Dimension dims) {
-        this.dims = dims;
-    }
+  public void setDims(Dimension dims) {
+    this.dims = dims;
+  }
 
-    public List<InMemoryTable> getSlices() {
-        return slices;
-    }
+  public List<InMemoryTable> getSlices() {
+    return slices;
+  }
 
-    public void setSlices(List<InMemoryTable> slices) {
-        this.slices = slices;
-    }
+  public void setSlices(List<InMemoryTable> slices) {
+    this.slices = slices;
+  }
 
-    public int getCurrentSliceIndex() {
-        return currentSliceIndex;
-    }
+  public int getCurrentSliceIndex() {
+    return currentSliceIndex;
+  }
 
-    public void setCurrentSliceIndex(int currentSliceIndex) {
-        this.currentSliceIndex = currentSliceIndex;
-    }
+  public void setCurrentSliceIndex(int currentSliceIndex) {
+    this.currentSliceIndex = currentSliceIndex;
+  }
 
-    public boolean isDimensionExistsInCurrentSilce() {
-        return isDimensionExistsInCurrentSilce;
-    }
+  public boolean isDimensionExistsInCurrentSilce() {
+    return isDimensionExistsInCurrentSilce;
+  }
 
-    public void setDimensionExistsInCurrentSilce(boolean isDimensionExistsInCurrentSilce) {
-        this.isDimensionExistsInCurrentSilce = isDimensionExistsInCurrentSilce;
-    }
+  public void setDimensionExistsInCurrentSilce(boolean isDimensionExistsInCurrentSilce) {
+    this.isDimensionExistsInCurrentSilce = isDimensionExistsInCurrentSilce;
+  }
 
-    public int getRsSurrogates() {
-        return rsSurrogates;
-    }
+  public int getRsSurrogates() {
+    return rsSurrogates;
+  }
 
-    public void setRsSurrogates(int rsSurrogates) {
-        this.rsSurrogates = rsSurrogates;
-    }
+  public void setRsSurrogates(int rsSurrogates) {
+    this.rsSurrogates = rsSurrogates;
+  }
 
-    public String getDefaultValue() {
-        return defaultValue;
-    }
+  public String getDefaultValue() {
+    return defaultValue;
+  }
 
-    public void setDefaultValue(String defaultValue) {
-        this.defaultValue = defaultValue;
-    }
+  public void setDefaultValue(String defaultValue) {
+    this.defaultValue = defaultValue;
+  }
 }

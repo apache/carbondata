@@ -24,5 +24,5 @@
    description="Carbon Sort"
    tooltip="Carbon Sort"
    category="Carbon"
-   classname="org.carbondata.processing.sortandgroupby.sortDataStep.SortKeyStepMeta">
+   classname="org.carbondata.processing.sortandgroupby.sortdatastep.SortKeyStepMeta">
 </plugin>

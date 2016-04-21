@@ -34,31 +34,30 @@ import org.carbondata.integration.spark.query.CarbonQueryPlan;
 
 import org.apache.spark.sql.cubemodel.Partitioner;
 
-
 public interface DataPartitioner {
-    /**
-     * Initialise the partitioner based on the given columns
-     */
-    void initialize(String basePath, String[] columns, Partitioner partitioner);
+  /**
+   * Initialise the partitioner based on the given columns
+   */
+  void initialize(String basePath, String[] columns, Partitioner partitioner);
 
-    /**
-     * All the partitions built by the Partitioner
-     */
-    List<Partition> getAllPartitions();
+  /**
+   * All the partitions built by the Partitioner
+   */
+  List<Partition> getAllPartitions();
 
-    /**
-     * Partition where the tuple should be present. (API used for data loading purpose)
-     */
-    Partition getPartionForTuple(Object[] tuple, long rowCounter);
+  /**
+   * Partition where the tuple should be present. (API used for data loading purpose)
+   */
+  Partition getPartionForTuple(Object[] tuple, long rowCounter);
 
-    /**
-     * Identifies the partitions applicable for the given filter (API used for For query)
-     */
-    List<Partition> getPartitions(CarbonQueryPlan queryPlan);
+  /**
+   * Identifies the partitions applicable for the given filter (API used for For query)
+   */
+  List<Partition> getPartitions(CarbonQueryPlan queryPlan);
 
-    String[] getPartitionedColumns();
+  String[] getPartitionedColumns();
 
-    Partitioner getPartitioner();
+  Partitioner getPartitioner();
 
 }
 

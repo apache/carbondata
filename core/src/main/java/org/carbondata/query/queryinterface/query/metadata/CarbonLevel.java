@@ -26,58 +26,58 @@ import java.io.Serializable;
  */
 public interface CarbonLevel extends Serializable {
 
+  /**
+   * Type of level, either dimension level or measure.
+   *
+   * @return CarbonLevelType
+   */
+  CarbonLevelType getType();
+
+  /**
+   * Dimension name of the level it belonged to.
+   *
+   * @return the dimensionName
+   */
+  String getDimensionName();
+
+  /**
+   * Hierarchy name of the level it belonged to.
+   *
+   * @return the hierarchyName
+   */
+  String getHierarchyName();
+
+  /**
+   * Name of dimension level or measure
+   *
+   * @return the levelName
+   */
+  String getName();
+
+  /**
+   * Type of dimension level, either level or measure
+   *
+   * @author R00900208
+   */
+  public enum CarbonLevelType {
     /**
-     * Type of level, either dimension level or measure.
-     *
-     * @return CarbonLevelType
+     * DIMENSION
      */
-    CarbonLevelType getType();
+    DIMENSION,
 
     /**
-     * Dimension name of the level it belonged to.
-     *
-     * @return the dimensionName
+     * MEASURE
      */
-    String getDimensionName();
+    MEASURE,
 
     /**
-     * Hierarchy name of the level it belonged to.
-     *
-     * @return the hierarchyName
+     * MEASURE
      */
-    String getHierarchyName();
+    CALCULATED_MEASURE,
 
     /**
-     * Name of dimension level or measure
-     *
-     * @return the levelName
+     * DYNAMIC LEVEL
      */
-    String getName();
-
-    /**
-     * Type of dimension level, either level or measure
-     *
-     * @author R00900208
-     */
-    public enum CarbonLevelType {
-        /**
-         * DIMENSION
-         */
-        DIMENSION,
-
-        /**
-         * MEASURE
-         */
-        MEASURE,
-
-        /**
-         * MEASURE
-         */
-        CALCULATED_MEASURE,
-
-        /**
-         * DYNAMIC LEVEL
-         */
-        DYNAMIC_DIMENSION;
-    }
+    DYNAMIC_DIMENSION;
+  }
 }

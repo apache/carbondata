@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.carbondata.core.constants.CarbonCommonConstants;
+
 import org.pentaho.di.core.CheckResult;
 import org.pentaho.di.core.CheckResultInterface;
 import org.pentaho.di.core.Counter;
@@ -36,503 +37,502 @@ import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
-import org.pentaho.di.trans.step.*;
+import org.pentaho.di.trans.step.BaseStepMeta;
+import org.pentaho.di.trans.step.StepDataInterface;
+import org.pentaho.di.trans.step.StepInterface;
+import org.pentaho.di.trans.step.StepMeta;
+import org.pentaho.di.trans.step.StepMetaInterface;
 import org.w3c.dom.Node;
 
-public class CarbonSliceMergerStepMeta extends BaseStepMeta implements StepMetaInterface, Cloneable {
+public class CarbonSliceMergerStepMeta extends BaseStepMeta
+    implements StepMetaInterface, Cloneable {
 
-    /**
-     * for i18n purposes
-     */
-    private static final Class<?> PKG = CarbonSliceMergerStepMeta.class;
+  /**
+   * for i18n purposes
+   */
+  private static final Class<?> PKG = CarbonSliceMergerStepMeta.class;
 
-    /**
-     * table name
-     */
-    private String tabelName;
+  /**
+   * table name
+   */
+  private String tabelName;
 
-    /**
-     * mdkey size
-     */
-    private String mdkeySize;
+  /**
+   * mdkey size
+   */
+  private String mdkeySize;
 
-    /**
-     * measureCount
-     */
-    private String measureCount;
+  /**
+   * measureCount
+   */
+  private String measureCount;
 
-    /**
-     * heirAndKeySize
-     */
-    private String heirAndKeySize;
+  /**
+   * heirAndKeySize
+   */
+  private String heirAndKeySize;
 
-    /**
-     * schemaName
-     */
-    private String schemaName;
+  /**
+   * schemaName
+   */
+  private String schemaName;
 
-    /**
-     * cubeName
-     */
-    private String cubeName;
+  /**
+   * cubeName
+   */
+  private String cubeName;
 
-    /**
-     * isGroupByEnabled
-     */
-    private String groupByEnabled;
+  /**
+   * isGroupByEnabled
+   */
+  private String groupByEnabled;
 
-    /**
-     * aggregatorString
-     */
-    private String aggregatorString;
+  /**
+   * aggregatorString
+   */
+  private String aggregatorString;
 
-    /**
-     * aggregatorClassString
-     */
-    private String aggregatorClassString;
+  /**
+   * aggregatorClassString
+   */
+  private String aggregatorClassString;
 
-    /**
-     * factDimLensString
-     */
-    private String factDimLensString;
+  /**
+   * factDimLensString
+   */
+  private String factDimLensString;
 
-    private int currentRestructNumber = -1;
+  private int currentRestructNumber = -1;
 
-    private String levelAnddataTypeString;
-    /**
-     * partitionID
-     */
-    private String partitionID;
+  private String levelAnddataTypeString;
+  /**
+   * partitionID
+   */
+  private String partitionID;
 
-    /**
-     * CarbonDataWriterStepMeta constructor to initialize this class
-     */
-    public CarbonSliceMergerStepMeta() {
-        super();
+  /**
+   * CarbonDataWriterStepMeta constructor to initialize this class
+   */
+  public CarbonSliceMergerStepMeta() {
+    super();
+  }
+
+  /**
+   * set the default value for all the properties
+   */
+  @Override public void setDefault() {
+    tabelName = "";
+    mdkeySize = "";
+    measureCount = "";
+    heirAndKeySize = "";
+    cubeName = "";
+    schemaName = "";
+    groupByEnabled = "";
+    aggregatorClassString = "";
+    aggregatorString = "";
+    factDimLensString = "";
+    currentRestructNumber = -1;
+    levelAnddataTypeString = "";
+    partitionID = "";
+  }
+
+  /**
+   * Get the XML that represents the values in this step
+   *
+   * @return the XML that represents the metadata in this step
+   * @throws KettleException in case there is a conversion or XML encoding error
+   */
+  public String getXML() {
+    StringBuffer retval = new StringBuffer(150);
+    retval.append("    ").append(XMLHandler.addTagValue("TableName", tabelName));
+    retval.append("    ").append(XMLHandler.addTagValue("MDKeySize", mdkeySize));
+    retval.append("    ").append(XMLHandler.addTagValue("Measurecount", measureCount));
+    retval.append("    ").append(XMLHandler.addTagValue("HeirAndKeySize", heirAndKeySize));
+    retval.append("    ").append(XMLHandler.addTagValue("cubeName", cubeName));
+    retval.append("    ").append(XMLHandler.addTagValue("schemaName", schemaName));
+    retval.append("    ").append(XMLHandler.addTagValue("isGroupByEnabled", groupByEnabled));
+    retval.append("    ")
+        .append(XMLHandler.addTagValue("aggregatorClassString", aggregatorClassString));
+    retval.append("    ").append(XMLHandler.addTagValue("aggregatorString", aggregatorString));
+    retval.append("    ").append(XMLHandler.addTagValue("factDimLensString", factDimLensString));
+    retval.append("    ")
+        .append(XMLHandler.addTagValue("currentRestructNumber", currentRestructNumber));
+    retval.append("    ")
+        .append(XMLHandler.addTagValue("levelAnddataTypeString", levelAnddataTypeString));
+    retval.append("    ").append(XMLHandler.addTagValue("partitionID", partitionID));
+    return retval.toString();
+  }
+
+  /**
+   * Load the values for this step from an XML Node
+   *
+   * @param stepnode  the Node to get the info from
+   * @param databases The available list of databases to reference to
+   * @param counters  Counters to reference.
+   * @throws KettleXMLException When an unexpected XML error occurred. (malformed etc.)
+   */
+  @Override public void loadXML(Node stepnode, List<DatabaseMeta> databases,
+      Map<String, Counter> counters) throws KettleXMLException {
+    try {
+      schemaName = XMLHandler.getTagValue(stepnode, "schemaName");
+      tabelName = XMLHandler.getTagValue(stepnode, "TableName");
+      mdkeySize = XMLHandler.getTagValue(stepnode, "MDKeySize");
+      measureCount = XMLHandler.getTagValue(stepnode, "Measurecount");
+      heirAndKeySize = XMLHandler.getTagValue(stepnode, "HeirAndKeySize");
+      cubeName = XMLHandler.getTagValue(stepnode, "cubeName");
+      groupByEnabled = XMLHandler.getTagValue(stepnode, "isGroupByEnabled");
+      aggregatorClassString = XMLHandler.getTagValue(stepnode, "aggregatorClassString");
+      aggregatorString = XMLHandler.getTagValue(stepnode, "aggregatorString");
+      factDimLensString = XMLHandler.getTagValue(stepnode, "factDimLensString");
+      levelAnddataTypeString = XMLHandler.getTagValue(stepnode, "levelAnddataTypeString");
+      currentRestructNumber =
+          Integer.parseInt(XMLHandler.getTagValue(stepnode, "currentRestructNumber"));
+      partitionID = XMLHandler.getTagValue(stepnode, "partitionID");
+    } catch (Exception e) {
+      throw new KettleXMLException("Unable to read step info from XML node", e);
+    }
+  }
+
+  /**
+   * Save the steps data into a Kettle repository
+   *
+   * @param rep              The Kettle repository to save to
+   * @param idTransformation The transformation ID
+   * @param idStep           The step ID
+   * @throws KettleException When an unexpected error occurred (database, network, etc)
+   */
+  @Override public void saveRep(Repository rep, ObjectId idTransformation, ObjectId idStep)
+      throws KettleException {
+    try {
+      rep.saveStepAttribute(idTransformation, idStep, "TableName", tabelName); //$NON-NLS-1$
+      rep.saveStepAttribute(idTransformation, idStep, "MDKeySize", mdkeySize); //$NON-NLS-1$
+      rep.saveStepAttribute(idTransformation, idStep, "Measurecount", measureCount);
+      rep.saveStepAttribute(idTransformation, idStep, "HeirAndKeySize",
+          heirAndKeySize); //$NON-NLS-1$
+      rep.saveStepAttribute(idTransformation, idStep, "cubeName", cubeName); //$NON-NLS-1$
+      rep.saveStepAttribute(idTransformation, idStep, "schemaName", schemaName); //$NON-NLS-1$
+      rep.saveStepAttribute(idTransformation, idStep, "isGroupByEnabled", groupByEnabled);
+      rep.saveStepAttribute(idTransformation, idStep, "aggregatorClassString",
+          aggregatorClassString);
+      rep.saveStepAttribute(idTransformation, idStep, "aggregatorString", aggregatorString);
+      rep.saveStepAttribute(idTransformation, idStep, "factDimLensString", factDimLensString);
+      rep.saveStepAttribute(idTransformation, idStep, "levelAnddataTypeString",
+          levelAnddataTypeString);
+      rep.saveStepAttribute(idTransformation, idStep, "currentRestructNumber",
+          currentRestructNumber);
+      rep.saveStepAttribute(idTransformation, idStep, "partitionID", partitionID);
+    } catch (Exception e) {
+      throw new KettleException(
+          BaseMessages.getString(PKG, "TemplateStep.Exception.UnableToSaveStepInfoToRepository")
+              + idStep, e);
+    }
+  }
+
+  /**
+   * Make an exact copy of this step, make sure to explicitly copy Collections
+   * etc.
+   *
+   * @return an exact copy of this step
+   */
+  public Object clone() {
+    Object retval = super.clone();
+    return retval;
+  }
+
+  /**
+   * Read the steps information from a Kettle repository
+   *
+   * @param rep       The repository to read from
+   * @param idStep    The step ID
+   * @param databases The databases to reference
+   * @param counters  The counters to reference
+   * @throws KettleException When an unexpected error occurred (database, network, etc)
+   */
+  @Override public void readRep(Repository rep, ObjectId idStep, List<DatabaseMeta> databases,
+      Map<String, Counter> counters) throws KettleException {
+    try {
+      tabelName = rep.getStepAttributeString(idStep, "TableName");
+      mdkeySize = rep.getStepAttributeString(idStep, "MDKeySize");
+      measureCount = rep.getStepAttributeString(idStep, "Measurecount");
+      heirAndKeySize = rep.getStepAttributeString(idStep, "HeirAndKeySize");
+      schemaName = rep.getStepAttributeString(idStep, "schemaName");
+      cubeName = rep.getStepAttributeString(idStep, "cubeName");
+      groupByEnabled = rep.getStepAttributeString(idStep, "isGroupByEnabled");
+      aggregatorClassString = rep.getStepAttributeString(idStep, "aggregatorClassString");
+      aggregatorString = rep.getStepAttributeString(idStep, "aggregatorString");
+      factDimLensString = rep.getStepAttributeString(idStep, "factDimLensString");
+      levelAnddataTypeString = rep.getStepAttributeString(idStep, "levelAnddataTypeString");
+      currentRestructNumber = (int) rep.getStepAttributeInteger(idStep, "currentRestructNumber");
+      partitionID = rep.getStepAttributeString(idStep, "partitionID");
+    } catch (Exception exception) {
+      throw new KettleException(BaseMessages
+          .getString(PKG, "CarbonDataWriterStepMeta.Exception.UnexpectedErrorInReadingStepInfo"),
+          exception);
     }
 
-    /**
-     * set the default value for all the properties
-     */
-    @Override
-    public void setDefault() {
-        tabelName = "";
-        mdkeySize = "";
-        measureCount = "";
-        heirAndKeySize = "";
-        cubeName = "";
-        schemaName = "";
-        groupByEnabled = "";
-        aggregatorClassString = "";
-        aggregatorString = "";
-        factDimLensString = "";
-        currentRestructNumber = -1;
-        levelAnddataTypeString = "";
-        partitionID = "";
+  }
+
+  /**
+   * Get the executing step, needed by Trans to launch a step.
+   *
+   * @param stepMeta          The step info
+   * @param stepDataInterface the step data interface linked to this step. Here the step can
+   *                          store temporary data, database connections, etc.
+   * @param copyNr            The copy nr to get
+   * @param transMeta         The transformation info
+   * @param trans             The launching transformation
+   */
+  @Override public StepInterface getStep(StepMeta stepMeta, StepDataInterface stepDataInterface,
+      int copyNr, TransMeta transMeta, Trans trans) {
+    return new CarbonSliceMergerStep(stepMeta, stepDataInterface, copyNr, transMeta, trans);
+  }
+
+  /**
+   * Checks the settings of this step and puts the findings in a remarks List.
+   *
+   * @param remarks  The list to put the remarks in @see
+   *                 org.pentaho.di.core.CheckResult
+   * @param stepMeta The stepMeta to help checking
+   * @param prev     The fields coming from the previous step
+   * @param input    The input step names
+   * @param output   The output step names
+   * @param info     The fields that are used as information by the step
+   */
+  @Override public void check(List<CheckResultInterface> remarks, TransMeta transMeta,
+      StepMeta stepMeta, RowMetaInterface prev, String[] input, String[] output,
+      RowMetaInterface info) {
+
+    CheckResult checkResVal;
+
+    // See if we have input streams leading to this step!
+    if (input.length > 0) {
+      checkResVal =
+          new CheckResult(CheckResult.TYPE_RESULT_OK, "Step is receiving info from other steps.",
+              stepMeta);
+      remarks.add(checkResVal);
+    } else {
+      checkResVal =
+          new CheckResult(CheckResult.TYPE_RESULT_ERROR, "No input received from other steps!",
+              stepMeta);
+      remarks.add(checkResVal);
     }
 
-    /**
-     * Get the XML that represents the values in this step
-     *
-     * @return the XML that represents the metadata in this step
-     * @throws KettleException in case there is a conversion or XML encoding error
-     */
-    public String getXML() {
-        StringBuffer retval = new StringBuffer(150);
-        retval.append("    ").append(XMLHandler.addTagValue("TableName", tabelName));
-        retval.append("    ").append(XMLHandler.addTagValue("MDKeySize", mdkeySize));
-        retval.append("    ").append(XMLHandler.addTagValue("Measurecount", measureCount));
-        retval.append("    ").append(XMLHandler.addTagValue("HeirAndKeySize", heirAndKeySize));
-        retval.append("    ").append(XMLHandler.addTagValue("cubeName", cubeName));
-        retval.append("    ").append(XMLHandler.addTagValue("schemaName", schemaName));
-        retval.append("    ").append(XMLHandler.addTagValue("isGroupByEnabled", groupByEnabled));
-        retval.append("    ")
-                .append(XMLHandler.addTagValue("aggregatorClassString", aggregatorClassString));
-        retval.append("    ").append(XMLHandler.addTagValue("aggregatorString", aggregatorString));
-        retval.append("    ")
-                .append(XMLHandler.addTagValue("factDimLensString", factDimLensString));
-        retval.append("    ")
-                .append(XMLHandler.addTagValue("currentRestructNumber", currentRestructNumber));
-        retval.append("    ")
-                .append(XMLHandler.addTagValue("levelAnddataTypeString", levelAnddataTypeString));
-        retval.append("    ").append(XMLHandler.addTagValue("partitionID", partitionID));
-        return retval.toString();
-    }
+  }
 
-    /**
-     * Load the values for this step from an XML Node
-     *
-     * @param stepnode  the Node to get the info from
-     * @param databases The available list of databases to reference to
-     * @param counters  Counters to reference.
-     * @throws KettleXMLException When an unexpected XML error occurred. (malformed etc.)
-     */
-    @Override
-    public void loadXML(Node stepnode, List<DatabaseMeta> databases, Map<String, Counter> counters)
-            throws KettleXMLException {
-        try {
-            schemaName = XMLHandler.getTagValue(stepnode, "schemaName");
-            tabelName = XMLHandler.getTagValue(stepnode, "TableName");
-            mdkeySize = XMLHandler.getTagValue(stepnode, "MDKeySize");
-            measureCount = XMLHandler.getTagValue(stepnode, "Measurecount");
-            heirAndKeySize = XMLHandler.getTagValue(stepnode, "HeirAndKeySize");
-            cubeName = XMLHandler.getTagValue(stepnode, "cubeName");
-            groupByEnabled = XMLHandler.getTagValue(stepnode, "isGroupByEnabled");
-            aggregatorClassString = XMLHandler.getTagValue(stepnode, "aggregatorClassString");
-            aggregatorString = XMLHandler.getTagValue(stepnode, "aggregatorString");
-            factDimLensString = XMLHandler.getTagValue(stepnode, "factDimLensString");
-            levelAnddataTypeString = XMLHandler.getTagValue(stepnode, "levelAnddataTypeString");
-            currentRestructNumber =
-                    Integer.parseInt(XMLHandler.getTagValue(stepnode, "currentRestructNumber"));
-            partitionID = XMLHandler.getTagValue(stepnode, "partitionID");
-        } catch (Exception e) {
-            throw new KettleXMLException("Unable to read step info from XML node", e);
-        }
-    }
+  /**
+   * Get a new instance of the appropriate data class. This data class
+   * implements the StepDataInterface. It basically contains the persisting
+   * data that needs to live on, even if a worker thread is terminated.
+   *
+   * @return The appropriate StepDataInterface class.
+   */
+  @Override public StepDataInterface getStepData() {
+    return new CarbonSliceMergerStepData();
+  }
 
-    /**
-     * Save the steps data into a Kettle repository
-     *
-     * @param rep              The Kettle repository to save to
-     * @param idTransformation The transformation ID
-     * @param idStep           The step ID
-     * @throws KettleException When an unexpected error occurred (database, network, etc)
-     */
-    @Override
-    public void saveRep(Repository rep, ObjectId idTransformation, ObjectId idStep)
-            throws KettleException {
-        try {
-            rep.saveStepAttribute(idTransformation, idStep, "TableName", tabelName); //$NON-NLS-1$
-            rep.saveStepAttribute(idTransformation, idStep, "MDKeySize", mdkeySize); //$NON-NLS-1$
-            rep.saveStepAttribute(idTransformation, idStep, "Measurecount", measureCount);
-            rep.saveStepAttribute(idTransformation, idStep, "HeirAndKeySize",
-                    heirAndKeySize); //$NON-NLS-1$
-            rep.saveStepAttribute(idTransformation, idStep, "cubeName", cubeName); //$NON-NLS-1$
-            rep.saveStepAttribute(idTransformation, idStep, "schemaName", schemaName); //$NON-NLS-1$
-            rep.saveStepAttribute(idTransformation, idStep, "isGroupByEnabled", groupByEnabled);
-            rep.saveStepAttribute(idTransformation, idStep, "aggregatorClassString",
-                    aggregatorClassString);
-            rep.saveStepAttribute(idTransformation, idStep, "aggregatorString", aggregatorString);
-            rep.saveStepAttribute(idTransformation, idStep, "factDimLensString", factDimLensString);
-            rep.saveStepAttribute(idTransformation, idStep, "levelAnddataTypeString",
-                    levelAnddataTypeString);
-            rep.saveStepAttribute(idTransformation, idStep, "currentRestructNumber",
-                    currentRestructNumber);
-            rep.saveStepAttribute(idTransformation, idStep, "partitionID", partitionID);
-        } catch (Exception e) {
-            throw new KettleException(BaseMessages
-                    .getString(PKG, "TemplateStep.Exception.UnableToSaveStepInfoToRepository")
-                    + idStep, e);
-        }
-    }
+  /**
+   * This method will return the table name
+   *
+   * @return tabelName
+   */
+  public String getTabelName() {
+    return tabelName;
+  }
 
-    /**
-     * Make an exact copy of this step, make sure to explicitly copy Collections
-     * etc.
-     *
-     * @return an exact copy of this step
-     */
-    public Object clone() {
-        Object retval = super.clone();
-        return retval;
-    }
+  /**
+   * This method will set the table name
+   *
+   * @param tabelName
+   */
+  public void setTabelName(String tabelName) {
+    this.tabelName = tabelName;
+  }
 
-    /**
-     * Read the steps information from a Kettle repository
-     *
-     * @param rep       The repository to read from
-     * @param idStep    The step ID
-     * @param databases The databases to reference
-     * @param counters  The counters to reference
-     * @throws KettleException When an unexpected error occurred (database, network, etc)
-     */
-    @Override
-    public void readRep(Repository rep, ObjectId idStep, List<DatabaseMeta> databases,
-            Map<String, Counter> counters) throws KettleException {
-        try {
-            tabelName = rep.getStepAttributeString(idStep, "TableName");
-            mdkeySize = rep.getStepAttributeString(idStep, "MDKeySize");
-            measureCount = rep.getStepAttributeString(idStep, "Measurecount");
-            heirAndKeySize = rep.getStepAttributeString(idStep, "HeirAndKeySize");
-            schemaName = rep.getStepAttributeString(idStep, "schemaName");
-            cubeName = rep.getStepAttributeString(idStep, "cubeName");
-            groupByEnabled = rep.getStepAttributeString(idStep, "isGroupByEnabled");
-            aggregatorClassString = rep.getStepAttributeString(idStep, "aggregatorClassString");
-            aggregatorString = rep.getStepAttributeString(idStep, "aggregatorString");
-            factDimLensString = rep.getStepAttributeString(idStep, "factDimLensString");
-            levelAnddataTypeString = rep.getStepAttributeString(idStep, "levelAnddataTypeString");
-            currentRestructNumber =
-                    (int) rep.getStepAttributeInteger(idStep, "currentRestructNumber");
-            partitionID = rep.getStepAttributeString(idStep, "partitionID");
-        } catch (Exception exception) {
-            throw new KettleException(BaseMessages.getString(PKG,
-                    "CarbonDataWriterStepMeta.Exception.UnexpectedErrorInReadingStepInfo"),
-                    exception);
-        }
+  /**
+   * This method will return mdkey size
+   *
+   * @return mdkey size
+   */
+  public String getMdkeySize() {
+    return mdkeySize;
+  }
 
-    }
+  /**
+   * This method will be used to set the mdkey
+   *
+   * @param mdkeySize
+   */
+  public void setMdkeySize(String mdkeySize) {
+    this.mdkeySize = mdkeySize;
+  }
 
-    /**
-     * Get the executing step, needed by Trans to launch a step.
-     *
-     * @param stepMeta          The step info
-     * @param stepDataInterface the step data interface linked to this step. Here the step can
-     *                          store temporary data, database connections, etc.
-     * @param copyNr            The copy nr to get
-     * @param transMeta         The transformation info
-     * @param trans             The launching transformation
-     */
-    @Override
-    public StepInterface getStep(StepMeta stepMeta, StepDataInterface stepDataInterface, int copyNr,
-            TransMeta transMeta, Trans trans) {
-        return new CarbonSliceMergerStep(stepMeta, stepDataInterface, copyNr, transMeta, trans);
-    }
+  /**
+   * This method will be used to get the measure count
+   *
+   * @return measure count
+   */
+  public String getMeasureCount() {
+    return measureCount;
+  }
 
-    /**
-     * Checks the settings of this step and puts the findings in a remarks List.
-     *
-     * @param remarks  The list to put the remarks in @see
-     *                 org.pentaho.di.core.CheckResult
-     * @param stepMeta The stepMeta to help checking
-     * @param prev     The fields coming from the previous step
-     * @param input    The input step names
-     * @param output   The output step names
-     * @param info     The fields that are used as information by the step
-     */
-    @Override
-    public void check(List<CheckResultInterface> remarks, TransMeta transMeta, StepMeta stepMeta,
-            RowMetaInterface prev, String[] input, String[] output, RowMetaInterface info) {
+  /**
+   * This method will be used to set the measure count
+   *
+   * @param measureCount
+   */
+  public void setMeasureCount(String measureCount) {
+    this.measureCount = measureCount;
+  }
 
-        CheckResult checkResVal;
+  /**
+   * This method will be used to get the heir and its key suze string
+   *
+   * @return heirAndKeySize
+   */
+  public String getHeirAndKeySize() {
+    return heirAndKeySize;
+  }
 
-        // See if we have input streams leading to this step!
-        if (input.length > 0) {
-            checkResVal = new CheckResult(CheckResult.TYPE_RESULT_OK,
-                    "Step is receiving info from other steps.", stepMeta);
-            remarks.add(checkResVal);
-        } else {
-            checkResVal = new CheckResult(CheckResult.TYPE_RESULT_ERROR,
-                    "No input received from other steps!", stepMeta);
-            remarks.add(checkResVal);
-        }
+  /**
+   * This method will be used to set the heir and key size string
+   *
+   * @param heirAndKeySize
+   */
+  public void setHeirAndKeySize(String heirAndKeySize) {
+    this.heirAndKeySize = heirAndKeySize;
+  }
 
-    }
+  /**
+   * @return the schemaName
+   */
+  public String getSchemaName() {
+    return schemaName;
+  }
 
-    /**
-     * Get a new instance of the appropriate data class. This data class
-     * implements the StepDataInterface. It basically contains the persisting
-     * data that needs to live on, even if a worker thread is terminated.
-     *
-     * @return The appropriate StepDataInterface class.
-     */
-    @Override
-    public StepDataInterface getStepData() {
-        return new CarbonSliceMergerStepData();
-    }
+  /**
+   * @param schemaName the schemaName to set
+   */
+  public void setSchemaName(String schemaName) {
+    this.schemaName = schemaName;
+  }
 
-    /**
-     * This method will return the table name
-     *
-     * @return tabelName
-     */
-    public String getTabelName() {
-        return tabelName;
-    }
+  /**
+   * @return the cubeName
+   */
+  public String getCubeName() {
+    return cubeName;
+  }
 
-    /**
-     * This method will set the table name
-     *
-     * @param tabelName
-     */
-    public void setTabelName(String tabelName) {
-        this.tabelName = tabelName;
-    }
+  /**
+   * @param cubeName the cubeName to set
+   */
+  public void setCubeName(String cubeName) {
+    this.cubeName = cubeName;
+  }
 
-    /**
-     * This method will return mdkey size
-     *
-     * @return mdkey size
-     */
-    public String getMdkeySize() {
-        return mdkeySize;
-    }
+  /**
+   * @return the isGroupByEnabled
+   */
+  public boolean isGroupByEnabled() {
+    return Boolean.parseBoolean(groupByEnabled);
+  }
 
-    /**
-     * This method will be used to set the mdkey
-     *
-     * @param mdkeySize
-     */
-    public void setMdkeySize(String mdkeySize) {
-        this.mdkeySize = mdkeySize;
-    }
+  /**
+   * @param isGroupByEnabled the isGroupByEnabled to set
+   */
+  public void setGroupByEnabled(String isGroupByEnabled) {
+    this.groupByEnabled = isGroupByEnabled;
+  }
 
-    /**
-     * This method will be used to get the measure count
-     *
-     * @return measure count
-     */
-    public String getMeasureCount() {
-        return measureCount;
-    }
+  /**
+   * @return the aggregators
+   */
+  public String[] getAggregators() {
+    return aggregatorString.split(CarbonCommonConstants.HASH_SPC_CHARACTER);
+  }
 
-    /**
-     * This method will be used to set the measure count
-     *
-     * @param measureCount
-     */
-    public void setMeasureCount(String measureCount) {
-        this.measureCount = measureCount;
-    }
+  /**
+   * @return the aggregatorClass
+   */
+  public String[] getAggregatorClass() {
+    return aggregatorClassString.split(CarbonCommonConstants.HASH_SPC_CHARACTER);
+  }
 
-    /**
-     * This method will be used to get the heir and its key suze string
-     *
-     * @return heirAndKeySize
-     */
-    public String getHeirAndKeySize() {
-        return heirAndKeySize;
-    }
+  /**
+   * @return the aggregatorString
+   */
+  public String getAggregatorString() {
+    return aggregatorString;
+  }
 
-    /**
-     * This method will be used to set the heir and key size string
-     *
-     * @param heirAndKeySize
-     */
-    public void setHeirAndKeySize(String heirAndKeySize) {
-        this.heirAndKeySize = heirAndKeySize;
-    }
+  /**
+   * @param aggregatorString the aggregatorString to set
+   */
+  public void setAggregatorString(String aggregatorString) {
+    this.aggregatorString = aggregatorString;
+  }
 
-    /**
-     * @return the schemaName
-     */
-    public String getSchemaName() {
-        return schemaName;
-    }
+  /**
+   * @return the aggregatorClassString
+   */
+  public String getAggregatorClassString() {
+    return aggregatorClassString;
+  }
 
-    /**
-     * @param schemaName the schemaName to set
-     */
-    public void setSchemaName(String schemaName) {
-        this.schemaName = schemaName;
-    }
+  /**
+   * @param aggregatorClassString the aggregatorClassString to set
+   */
+  public void setAggregatorClassString(String aggregatorClassString) {
+    this.aggregatorClassString = aggregatorClassString;
+  }
 
-    /**
-     * @return the cubeName
-     */
-    public String getCubeName() {
-        return cubeName;
-    }
+  /**
+   * @return the factDimLensString
+   */
+  public String getFactDimLensString() {
+    return factDimLensString;
+  }
 
-    /**
-     * @param cubeName the cubeName to set
-     */
-    public void setCubeName(String cubeName) {
-        this.cubeName = cubeName;
-    }
+  /**
+   * @param factDimLensString1 the factDimLensString to set
+   */
+  public void setFactDimLensString(String factDimLensString1) {
+    this.factDimLensString = factDimLensString1;
+  }
 
-    /**
-     * @return the isGroupByEnabled
-     */
-    public boolean isGroupByEnabled() {
-        return Boolean.parseBoolean(groupByEnabled);
-    }
+  /**
+   * @return the currentRestructNumber
+   */
+  public int getCurrentRestructNumber() {
+    return currentRestructNumber;
+  }
 
-    /**
-     * @param isGroupByEnabled the isGroupByEnabled to set
-     */
-    public void setGroupByEnabled(String isGroupByEnabled) {
-        this.groupByEnabled = isGroupByEnabled;
-    }
+  /**
+   * @param currentRestructNum the currentRestructNumber to set
+   */
+  public void setCurrentRestructNumber(int currentRestructNum) {
+    this.currentRestructNumber = currentRestructNum;
+  }
 
-    /**
-     * @return the aggregators
-     */
-    public String[] getAggregators() {
-        return aggregatorString.split(CarbonCommonConstants.HASH_SPC_CHARACTER);
-    }
+  public String getLevelAnddataTypeString() {
+    return levelAnddataTypeString;
+  }
 
-    /**
-     * @return the aggregatorClass
-     */
-    public String[] getAggregatorClass() {
-        return aggregatorClassString.split(CarbonCommonConstants.HASH_SPC_CHARACTER);
-    }
+  public void setLevelAnddataTypeString(String levelAnddataTypeString) {
+    this.levelAnddataTypeString = levelAnddataTypeString;
+  }
 
-    /**
-     * @return the aggregatorString
-     */
-    public String getAggregatorString() {
-        return aggregatorString;
-    }
+  /**
+   * @return partitionId
+   */
+  public String getPartitionID() {
+    return partitionID;
+  }
 
-    /**
-     * @param aggregatorString the aggregatorString to set
-     */
-    public void setAggregatorString(String aggregatorString) {
-        this.aggregatorString = aggregatorString;
-    }
-
-    /**
-     * @return the aggregatorClassString
-     */
-    public String getAggregatorClassString() {
-        return aggregatorClassString;
-    }
-
-    /**
-     * @param aggregatorClassString the aggregatorClassString to set
-     */
-    public void setAggregatorClassString(String aggregatorClassString) {
-        this.aggregatorClassString = aggregatorClassString;
-    }
-
-    /**
-     * @return the factDimLensString
-     */
-    public String getFactDimLensString() {
-        return factDimLensString;
-    }
-
-    /**
-     * @param factDimLensString1 the factDimLensString to set
-     */
-    public void setFactDimLensString(String factDimLensString1) {
-        this.factDimLensString = factDimLensString1;
-    }
-
-    /**
-     * @return the currentRestructNumber
-     */
-    public int getCurrentRestructNumber() {
-        return currentRestructNumber;
-    }
-
-    /**
-     * @param currentRestructNum the currentRestructNumber to set
-     */
-    public void setCurrentRestructNumber(int currentRestructNum) {
-        this.currentRestructNumber = currentRestructNum;
-    }
-
-    public String getLevelAnddataTypeString() {
-        return levelAnddataTypeString;
-    }
-
-    public void setLevelAnddataTypeString(String levelAnddataTypeString) {
-        this.levelAnddataTypeString = levelAnddataTypeString;
-    }
-
-    /**
-     * @return partitionId
-     */
-    public String getPartitionID() {
-        return partitionID;
-    }
-
-    /**
-     * @param partitionID
-     */
-    public void setPartitionID(String partitionID) {
-        this.partitionID = partitionID;
-    }
+  /**
+   * @param partitionID
+   */
+  public void setPartitionID(String partitionID) {
+    this.partitionID = partitionID;
+  }
 }

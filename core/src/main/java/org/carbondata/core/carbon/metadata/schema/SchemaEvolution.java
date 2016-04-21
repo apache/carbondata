@@ -26,27 +26,27 @@ import java.util.List;
  */
 public class SchemaEvolution implements Serializable {
 
-    /**
-     * serialization version
-     */
-    private static final long serialVersionUID = 8186224567517679868L;
+  /**
+   * serialization version
+   */
+  private static final long serialVersionUID = 8186224567517679868L;
 
-    /**
-     * list of schema evolution entry
-     */
-    private List<SchemaEvolutionEntry> schemaEvolutionEntryList;
+  /**
+   * list of schema evolution entry
+   */
+  private List<SchemaEvolutionEntry> schemaEvolutionEntryList;
 
-    /**
-     * @return the schemaEvolutionEntryList
-     */
-    public List<SchemaEvolutionEntry> getSchemaEvolutionEntryList() {
-        return schemaEvolutionEntryList;
-    }
+  /**
+   * @return the schemaEvolutionEntryList
+   */
+  public List<SchemaEvolutionEntry> getSchemaEvolutionEntryList() {
+    return schemaEvolutionEntryList;
+  }
 
-    /**
-     * @param schemaEvolutionEntryList the schemaEvolutionEntryList to set
-     */
-    public void setSchemaEvolutionEntryList(List<SchemaEvolutionEntry> schemaEvolutionEntryList) {
-        this.schemaEvolutionEntryList = schemaEvolutionEntryList;
-    }
+  /**
+   * @param schemaEvolutionEntryList the schemaEvolutionEntryList to set
+   */
+  public void setSchemaEvolutionEntryList(List<SchemaEvolutionEntry> schemaEvolutionEntryList) {
+    this.schemaEvolutionEntryList = schemaEvolutionEntryList;
+  }
 }

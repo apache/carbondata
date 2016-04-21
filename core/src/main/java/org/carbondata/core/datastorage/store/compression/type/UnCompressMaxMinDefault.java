@@ -33,85 +33,77 @@ import org.carbondata.core.util.ValueCompressionUtil.DataType;
 
 public class UnCompressMaxMinDefault implements ValueCompressonHolder.UnCompressValue<double[]> {
 
-    /**
-     * Attribute for Carbon LOGGER
-     */
-    private static final LogService LOGGER =
-            LogServiceFactory.getLogService(UnCompressMaxMinDefault.class.getName());
+  /**
+   * Attribute for Carbon LOGGER
+   */
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(UnCompressMaxMinDefault.class.getName());
 
-    /**
-     * doubleCompressor.
-     */
-    private static Compressor<double[]> doubleCompressor =
-            SnappyCompression.SnappyDoubleCompression.INSTANCE;
-    /**
-     * value.
-     */
-    private double[] value;
+  /**
+   * doubleCompressor.
+   */
+  private static Compressor<double[]> doubleCompressor =
+      SnappyCompression.SnappyDoubleCompression.INSTANCE;
+  /**
+   * value.
+   */
+  private double[] value;
 
-    @Override
-    public void setValue(double[] value) {
-        this.value = (double[]) value;
+  @Override public void setValue(double[] value) {
+    this.value = (double[]) value;
+
+  }
+
+  @Override public ValueCompressonHolder.UnCompressValue getNew() {
+    try {
+      return (ValueCompressonHolder.UnCompressValue) clone();
+    } catch (CloneNotSupportedException ex5) {
+      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, ex5, ex5.getMessage());
+    }
+    return null;
+  }
+
+  @Override public ValueCompressonHolder.UnCompressValue compress() {
+    UnCompressMaxMinByte byte1 = new UnCompressMaxMinByte();
+    byte1.setValue(doubleCompressor.compress(value));
+    return byte1;
+  }
+
+  @Override public ValueCompressonHolder.UnCompressValue uncompress(DataType dataType) {
+    return null;
+  }
+
+  @Override public byte[] getBackArrayData() {
+    return ValueCompressionUtil.convertToBytes(value);
+  }
+
+  @Override public void setValueInBytes(byte[] value) {
+    ByteBuffer buffer = ByteBuffer.wrap(value);
+    this.value = ValueCompressionUtil.convertToDoubleArray(buffer, value.length);
+  }
+
+  /**
+   * @see ValueCompressonHolder.UnCompressValue#getCompressorObject()
+   */
+  @Override public ValueCompressonHolder.UnCompressValue getCompressorObject() {
+    return new UnCompressMaxMinByte();
+  }
+
+  //TODO SIMIAN
+  @Override public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {
+    double maxValue = (double) maxValueObject;
+    double[] vals = new double[value.length];
+    CarbonReadDataHolder dataHolderInfoObj = new CarbonReadDataHolder();
+    for (int i = 0; i < vals.length; i++) {
+      if (value[i] == 0) {
+        vals[i] = maxValue;
+      } else {
+        vals[i] = maxValue - value[i];
+      }
 
     }
-
-    @Override
-    public ValueCompressonHolder.UnCompressValue getNew() {
-        try {
-            return (ValueCompressonHolder.UnCompressValue) clone();
-        } catch (CloneNotSupportedException ex5) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, ex5, ex5.getMessage());
-        }
-        return null;
-    }
-
-    @Override
-    public ValueCompressonHolder.UnCompressValue compress() {
-        UnCompressMaxMinByte byte1 = new UnCompressMaxMinByte();
-        byte1.setValue(doubleCompressor.compress(value));
-        return byte1;
-    }
-
-    @Override
-    public ValueCompressonHolder.UnCompressValue uncompress(DataType dataType) {
-        return null;
-    }
-
-    @Override
-    public byte[] getBackArrayData() {
-        return ValueCompressionUtil.convertToBytes(value);
-    }
-
-    @Override
-    public void setValueInBytes(byte[] value) {
-        ByteBuffer buffer = ByteBuffer.wrap(value);
-        this.value = ValueCompressionUtil.convertToDoubleArray(buffer, value.length);
-    }
-
-    /**
-     * @see ValueCompressonHolder.UnCompressValue#getCompressorObject()
-     */
-    @Override
-    public ValueCompressonHolder.UnCompressValue getCompressorObject() {
-        return new UnCompressMaxMinByte();
-    }
-
-    //TODO SIMIAN
-    @Override
-    public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {
-        double maxValue = (double) maxValueObject;
-        double[] vals = new double[value.length];
-        CarbonReadDataHolder dataHolderInfoObj = new CarbonReadDataHolder();
-        for (int i = 0; i < vals.length; i++) {
-            if (value[i] == 0) {
-                vals[i] = maxValue;
-            } else {
-                vals[i] = maxValue - value[i];
-            }
-
-        }
-        dataHolderInfoObj.setReadableDoubleValues(vals);
-        return dataHolderInfoObj;
-    }
+    dataHolderInfoObj.setReadableDoubleValues(vals);
+    return dataHolderInfoObj;
+  }
 
 }

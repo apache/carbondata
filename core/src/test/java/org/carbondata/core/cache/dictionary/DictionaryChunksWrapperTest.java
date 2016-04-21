@@ -31,80 +31,80 @@ import org.junit.Test;
  */
 public class DictionaryChunksWrapperTest {
 
-    private List<List<byte[]>> dictionaryChuncks;
-    private DictionaryChunksWrapper dictionaryChunksWrapper;
-    private List<byte[]> expectedData;
+  private List<List<byte[]>> dictionaryChuncks;
+  private DictionaryChunksWrapper dictionaryChunksWrapper;
+  private List<byte[]> expectedData;
 
-    /**
-     * init resources
-     *
-     * @throws Exception
-     */
-    @Before public void setUp() throws Exception {
-        dictionaryChuncks = prepareData();
-        expectedData = prepareExpectedData();
-        dictionaryChunksWrapper = new DictionaryChunksWrapper(dictionaryChuncks);
-    }
+  /**
+   * init resources
+   *
+   * @throws Exception
+   */
+  @Before public void setUp() throws Exception {
+    dictionaryChuncks = prepareData();
+    expectedData = prepareExpectedData();
+    dictionaryChunksWrapper = new DictionaryChunksWrapper(dictionaryChuncks);
+  }
 
-    /**
-     * The method returns the list<List<byte[]>>
-     *
-     * @return
-     */
-    private List<List<byte[]>> prepareData() {
-        List<List<byte[]>> dictionaryChunks = new ArrayList<>();
-        List<byte[]> chunks = new ArrayList<>();
-        chunks.add("d".getBytes());
-        chunks.add("b".getBytes());
-        chunks.add("c".getBytes());
-        chunks.add("a".getBytes());
-        dictionaryChunks.add(chunks);
-        return dictionaryChunks;
-    }
+  /**
+   * The method returns the list<List<byte[]>>
+   *
+   * @return
+   */
+  private List<List<byte[]>> prepareData() {
+    List<List<byte[]>> dictionaryChunks = new ArrayList<>();
+    List<byte[]> chunks = new ArrayList<>();
+    chunks.add("d".getBytes());
+    chunks.add("b".getBytes());
+    chunks.add("c".getBytes());
+    chunks.add("a".getBytes());
+    dictionaryChunks.add(chunks);
+    return dictionaryChunks;
+  }
 
-    private List<byte[]> prepareExpectedData() {
-        List<byte[]> chunks = new ArrayList<>();
-        chunks.add("d".getBytes());
-        chunks.add("b".getBytes());
-        chunks.add("c".getBytes());
-        chunks.add("a".getBytes());
-        return chunks;
-    }
+  private List<byte[]> prepareExpectedData() {
+    List<byte[]> chunks = new ArrayList<>();
+    chunks.add("d".getBytes());
+    chunks.add("b".getBytes());
+    chunks.add("c".getBytes());
+    chunks.add("a".getBytes());
+    return chunks;
+  }
 
-    /**
-     * release resources
-     *
-     * @throws Exception
-     */
-    @After public void tearDown() throws Exception {
-        dictionaryChunksWrapper = null;
-        expectedData = null;
-        dictionaryChuncks = null;
-    }
+  /**
+   * release resources
+   *
+   * @throws Exception
+   */
+  @After public void tearDown() throws Exception {
+    dictionaryChunksWrapper = null;
+    expectedData = null;
+    dictionaryChuncks = null;
+  }
 
-    /**
-     * The test the next method
-     *
-     * @throws Exception
-     */
-    @Test public void testNext() throws Exception {
-        List<byte[]> actual = new ArrayList<>();
-        while (dictionaryChunksWrapper.hasNext()) {
-            actual.add(dictionaryChunksWrapper.next());
-        }
-        Assert.assertEquals(expectedData.size(), actual.size());
-        for (int i = 0; i < expectedData.size(); i++) {
-            Assert.assertArrayEquals(actual.get(i), expectedData.get(i));
-        }
+  /**
+   * The test the next method
+   *
+   * @throws Exception
+   */
+  @Test public void testNext() throws Exception {
+    List<byte[]> actual = new ArrayList<>();
+    while (dictionaryChunksWrapper.hasNext()) {
+      actual.add(dictionaryChunksWrapper.next());
     }
+    Assert.assertEquals(expectedData.size(), actual.size());
+    for (int i = 0; i < expectedData.size(); i++) {
+      Assert.assertArrayEquals(actual.get(i), expectedData.get(i));
+    }
+  }
 
-    /**
-     * The method validate the size
-     *
-     * @throws Exception
-     */
-    @Test public void getSize() throws Exception {
-        int size = dictionaryChunksWrapper.getSize();
-        Assert.assertEquals("", 4, size);
-    }
+  /**
+   * The method validate the size
+   *
+   * @throws Exception
+   */
+  @Test public void getSize() throws Exception {
+    int size = dictionaryChunksWrapper.getSize();
+    Assert.assertEquals("", 4, size);
+  }
 }

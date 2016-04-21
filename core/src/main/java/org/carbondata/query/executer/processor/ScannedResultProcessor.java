@@ -25,23 +25,23 @@ import org.carbondata.query.executer.pagination.impl.QueryResult;
 import org.carbondata.query.result.Result;
 
 public interface ScannedResultProcessor {
-    /**
-     * Below method will be used to add the scanned result
-     *
-     * @param scannedResult     scanned result
-     * @param restructureHolder restructure holder will have the information about the slice
-     * @throws QueryExecutionException
-     */
-    void addScannedResult(Result scannedResult) throws QueryExecutionException;
+  /**
+   * Below method will be used to add the scanned result
+   *
+   * @param scannedResult     scanned result
+   * @param restructureHolder restructure holder will have the information about the slice
+   * @throws QueryExecutionException
+   */
+  void addScannedResult(Result scannedResult) throws QueryExecutionException;
 
-    /**
-     * Below method will be used to process the scanned result
-     * processing type:
-     * 1. TopN
-     * 2. Dim Column Sorting
-     * 3. Measure column Sorting
-     *
-     * @throws QueryExecutionException
-     */
-    CarbonIterator<QueryResult> getQueryResultIterator() throws QueryExecutionException;
+  /**
+   * Below method will be used to process the scanned result
+   * processing type:
+   * 1. TopN
+   * 2. Dim Column Sorting
+   * 3. Measure column Sorting
+   *
+   * @throws QueryExecutionException
+   */
+  CarbonIterator<QueryResult> getQueryResultIterator() throws QueryExecutionException;
 }

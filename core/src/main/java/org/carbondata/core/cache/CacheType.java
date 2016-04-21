@@ -29,34 +29,34 @@ import org.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
  */
 public class CacheType<K, V> {
 
-    /**
-     * Forward dictionary cache which maintains surrogate key to byte array mapping
-     */
-    public static final CacheType<DictionaryColumnUniqueIdentifier, Dictionary> FORWARD_DICTIONARY =
-            new CacheType("forward_dictionary");
+  /**
+   * Forward dictionary cache which maintains surrogate key to byte array mapping
+   */
+  public static final CacheType<DictionaryColumnUniqueIdentifier, Dictionary> FORWARD_DICTIONARY =
+      new CacheType("forward_dictionary");
 
-    /**
-     * Reverse dictionary cache which maintains byte array to surrogate key mapping
-     */
-    public static final CacheType<DictionaryColumnUniqueIdentifier, Dictionary> REVERSE_DICTIONARY =
-            new CacheType("reverse_dictionary");
+  /**
+   * Reverse dictionary cache which maintains byte array to surrogate key mapping
+   */
+  public static final CacheType<DictionaryColumnUniqueIdentifier, Dictionary> REVERSE_DICTIONARY =
+      new CacheType("reverse_dictionary");
 
-    /**
-     * cacheName which is unique name for a cache
-     */
-    private String cacheName;
+  /**
+   * cacheName which is unique name for a cache
+   */
+  private String cacheName;
 
-    /**
-     * @param cacheName
-     */
-    private CacheType(String cacheName) {
-        this.cacheName = cacheName;
-    }
+  /**
+   * @param cacheName
+   */
+  private CacheType(String cacheName) {
+    this.cacheName = cacheName;
+  }
 
-    /**
-     * @return cache unique name
-     */
-    public String getCacheName() {
-        return cacheName;
-    }
+  /**
+   * @return cache unique name
+   */
+  public String getCacheName() {
+    return cacheName;
+  }
 }

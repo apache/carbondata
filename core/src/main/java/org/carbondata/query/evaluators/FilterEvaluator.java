@@ -24,20 +24,21 @@ import java.util.BitSet;
 import org.carbondata.query.schema.metadata.FilterEvaluatorInfo;
 
 public interface FilterEvaluator {
-    void resolve(FilterEvaluatorInfo info);
+  void resolve(FilterEvaluatorInfo info);
 
-    BitSet applyFilter(BlockDataHolder blockDataHolder, FilterProcessorPlaceHolder placeHolder,int[] noDictionaryColIndexes);
+  BitSet applyFilter(BlockDataHolder blockDataHolder, FilterProcessorPlaceHolder placeHolder,
+      int[] noDictionaryColIndexes);
 
-    FilterEvaluator getLeft();
+  FilterEvaluator getLeft();
 
-    FilterEvaluator getRight();
+  FilterEvaluator getRight();
 
-    /**
-     * This methods checks if filter has to be applied
-     *
-     * @param blockMaxValue
-     * @param blockMinValue
-     * @return
-     */
-    BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue);
+  /**
+   * This methods checks if filter has to be applied
+   *
+   * @param blockMaxValue
+   * @param blockMinValue
+   * @return
+   */
+  BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue);
 }

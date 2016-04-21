@@ -30,76 +30,75 @@ import org.carbondata.query.executer.pagination.impl.DataFileWriter;
  * Version 1.0
  */
 public class MaksedByteComparatorBAW implements Comparator<DataFileWriter.KeyValueHolder> {
-    /**
-     * compareRange
-     */
-    private int[] index;
+  /**
+   * compareRange
+   */
+  private int[] index;
 
-    /**
-     * sortOrder
-     */
-    private byte sortOrder;
+  /**
+   * sortOrder
+   */
+  private byte sortOrder;
 
-    /**
-     * maskedKey
-     */
-    private byte[] maskedKey;
+  /**
+   * maskedKey
+   */
+  private byte[] maskedKey;
 
-    /**
-     * MaksedByteResultComparator Constructor
-     */
-    public MaksedByteComparatorBAW(int[] compareRange, byte sortOrder, byte[] maskedKey) {
-        this.index = compareRange;
-        this.sortOrder = sortOrder;
-        this.maskedKey = maskedKey;
-    }
+  /**
+   * MaksedByteResultComparator Constructor
+   */
+  public MaksedByteComparatorBAW(int[] compareRange, byte sortOrder, byte[] maskedKey) {
+    this.index = compareRange;
+    this.sortOrder = sortOrder;
+    this.maskedKey = maskedKey;
+  }
 
-    public MaksedByteComparatorBAW(byte sortOrder) {
-        this.sortOrder = sortOrder;
-    }
+  public MaksedByteComparatorBAW(byte sortOrder) {
+    this.sortOrder = sortOrder;
+  }
 
-    /**
-     * This method will be used to compare two byte array
-     *
-     * @param o1
-     * @param o2
-     */
-    @Override
-    public int compare(DataFileWriter.KeyValueHolder byteArrayWrapper1,
-            DataFileWriter.KeyValueHolder byteArrayWrapper2) {
-        int cmp = 0;
-        byte[] o1 = byteArrayWrapper1.key.getMaskedKey();
-        byte[] o2 = byteArrayWrapper2.key.getMaskedKey();
-        if (null != index) {
-            for (int i = 0; i < index.length; i++) {
-                int a = (o1[index[i]] & this.maskedKey[i]) & 0xff;
-                int b = (o2[index[i]] & this.maskedKey[i]) & 0xff;
-                cmp = a - b;
-                if (cmp != 0) {
+  /**
+   * This method will be used to compare two byte array
+   *
+   * @param o1
+   * @param o2
+   */
+  @Override public int compare(DataFileWriter.KeyValueHolder byteArrayWrapper1,
+      DataFileWriter.KeyValueHolder byteArrayWrapper2) {
+    int cmp = 0;
+    byte[] o1 = byteArrayWrapper1.key.getMaskedKey();
+    byte[] o2 = byteArrayWrapper2.key.getMaskedKey();
+    if (null != index) {
+      for (int i = 0; i < index.length; i++) {
+        int a = (o1[index[i]] & this.maskedKey[i]) & 0xff;
+        int b = (o2[index[i]] & this.maskedKey[i]) & 0xff;
+        cmp = a - b;
+        if (cmp != 0) {
 
-                    if (sortOrder == 1) {
-                        return cmp = cmp * -1;
-                    }
-                }
-            }
+          if (sortOrder == 1) {
+            return cmp = cmp * -1;
+          }
         }
-        List<byte[]> listOfNoDictionaryValVal1 = byteArrayWrapper1.key.getNoDictionaryValKeyList();
-        List<byte[]> listOfNoDictionaryValVal2 = byteArrayWrapper2.key.getNoDictionaryValKeyList();
-        if (cmp == 0) {
-            if (null != listOfNoDictionaryValVal1 && null != listOfNoDictionaryValVal2) {
-                for (int i = 0; i < listOfNoDictionaryValVal1.size(); i++) {
-                    cmp = UnsafeComparer.INSTANCE.compareTo(listOfNoDictionaryValVal1.get(i),
-                            listOfNoDictionaryValVal2.get(i));
-                    if (cmp != 0) {
-
-                        if (sortOrder == 1) {
-                            cmp = cmp * -1;
-                        }
-                        return cmp;
-                    }
-                }
-            }
-        }
-        return cmp;
+      }
     }
+    List<byte[]> listOfNoDictionaryValVal1 = byteArrayWrapper1.key.getNoDictionaryValKeyList();
+    List<byte[]> listOfNoDictionaryValVal2 = byteArrayWrapper2.key.getNoDictionaryValKeyList();
+    if (cmp == 0) {
+      if (null != listOfNoDictionaryValVal1 && null != listOfNoDictionaryValVal2) {
+        for (int i = 0; i < listOfNoDictionaryValVal1.size(); i++) {
+          cmp = UnsafeComparer.INSTANCE
+              .compareTo(listOfNoDictionaryValVal1.get(i), listOfNoDictionaryValVal2.get(i));
+          if (cmp != 0) {
+
+            if (sortOrder == 1) {
+              cmp = cmp * -1;
+            }
+            return cmp;
+          }
+        }
+      }
+    }
+    return cmp;
+  }
 }

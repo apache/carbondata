@@ -21,10 +21,10 @@ package org.carbondata.query.aggregator;
 
 public interface CalculatedMeasureAggregator extends MeasureAggregator {
 
-    /**
-     * Calculate calculated measures
-     *
-     * @param aggregators
-     */
-    void calculateCalcMeasure(MeasureAggregator[] aggregators);
+  /**
+   * Calculate calculated measures
+   *
+   * @param aggregators
+   */
+  void calculateCalcMeasure(MeasureAggregator[] aggregators);
 }

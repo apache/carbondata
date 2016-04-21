@@ -24,6 +24,7 @@ import java.util.Map;
 
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.keygenerator.KeyGenerator;
+
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.trans.step.BaseStepData;
@@ -31,198 +32,197 @@ import org.pentaho.di.trans.step.StepDataInterface;
 
 public class CarbonCSVBasedSeqGenData extends BaseStepData implements StepDataInterface {
 
-    /**
-     * outputRowMeta
-     */
-    private RowMetaInterface outputRowMeta;
+  /**
+   * outputRowMeta
+   */
+  private RowMetaInterface outputRowMeta;
 
-    /**
-     * surrogateKeyGen
-     */
-    private CarbonCSVBasedDimSurrogateKeyGen surrogateKeyGen;
+  /**
+   * surrogateKeyGen
+   */
+  private CarbonCSVBasedDimSurrogateKeyGen surrogateKeyGen;
 
-    /**
-     * keyGenerators
-     */
-    private Map<String, KeyGenerator> keyGenerators =
-            new HashMap<String, KeyGenerator>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+  /**
+   * keyGenerators
+   */
+  private Map<String, KeyGenerator> keyGenerators =
+      new HashMap<String, KeyGenerator>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-    /**
-     * columnIndex
-     */
-    private Map<String, int[]> columnIndex =
-            new HashMap<String, int[]>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+  /**
+   * columnIndex
+   */
+  private Map<String, int[]> columnIndex =
+      new HashMap<String, int[]>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-    /**
-     * precomputed default objects
-     */
-    private Object[] defaultObjects;
+  /**
+   * precomputed default objects
+   */
+  private Object[] defaultObjects;
 
-    /**
-     * generator
-     */
-    private KeyGenerator generator;
+  /**
+   * generator
+   */
+  private KeyGenerator generator;
 
-    /**
-     * the size of the input rows
-     */
-    private int inputSize;
+  /**
+   * the size of the input rows
+   */
+  private int inputSize;
 
-    /**
-     * where the key field indexes are
-     */
-    private int[] keyFieldIndex;
+  /**
+   * where the key field indexes are
+   */
+  private int[] keyFieldIndex;
 
-    /**
-     * meta info for a string conversion
-     */
-    private ValueMetaInterface[] conversionMeta;
+  /**
+   * meta info for a string conversion
+   */
+  private ValueMetaInterface[] conversionMeta;
 
-    public CarbonCSVBasedSeqGenData() {
-        super();
-    }
+  public CarbonCSVBasedSeqGenData() {
+    super();
+  }
 
-    /**
-     * @return Returns the surrogateKeyGen.
-     */
-    public CarbonCSVBasedDimSurrogateKeyGen getSurrogateKeyGen() {
-        return surrogateKeyGen;
-    }
+  /**
+   * @return Returns the surrogateKeyGen.
+   */
+  public CarbonCSVBasedDimSurrogateKeyGen getSurrogateKeyGen() {
+    return surrogateKeyGen;
+  }
 
-    /**
-     * @param surrogateKeyGen The surrogateKeyGen to set.
-     */
-    public void setSurrogateKeyGen(CarbonCSVBasedDimSurrogateKeyGen surrogateKeyGen) {
-        this.surrogateKeyGen = surrogateKeyGen;
-    }
+  /**
+   * @param surrogateKeyGen The surrogateKeyGen to set.
+   */
+  public void setSurrogateKeyGen(CarbonCSVBasedDimSurrogateKeyGen surrogateKeyGen) {
+    this.surrogateKeyGen = surrogateKeyGen;
+  }
 
-    /**
-     * @return Returns the defaultObjects.
-     */
-    public Object[] getDefaultObjects() {
-        return defaultObjects;
-    }
+  /**
+   * @return Returns the defaultObjects.
+   */
+  public Object[] getDefaultObjects() {
+    return defaultObjects;
+  }
 
-    /**
-     * @param defaultObjects The defaultObjects to set.
-     */
-    public void setDefaultObjects(Object[] defaultObjects) {
-        this.defaultObjects = defaultObjects;
-    }
+  /**
+   * @param defaultObjects The defaultObjects to set.
+   */
+  public void setDefaultObjects(Object[] defaultObjects) {
+    this.defaultObjects = defaultObjects;
+  }
 
-    /**
-     * @return Returns the inputSize.
-     */
-    public int getInputSize() {
-        return inputSize;
-    }
+  /**
+   * @return Returns the inputSize.
+   */
+  public int getInputSize() {
+    return inputSize;
+  }
 
-    /**
-     * @param inputSize The inputSize to set.
-     */
-    public void setInputSize(int inputSize) {
-        this.inputSize = inputSize;
-    }
+  /**
+   * @param inputSize The inputSize to set.
+   */
+  public void setInputSize(int inputSize) {
+    this.inputSize = inputSize;
+  }
 
-    /**
-     * @return Returns the columnIndex.
-     */
-    public Map<String, int[]> getColumnIndex() {
-        return columnIndex;
-    }
+  /**
+   * @return Returns the columnIndex.
+   */
+  public Map<String, int[]> getColumnIndex() {
+    return columnIndex;
+  }
 
-    /**
-     * @param columnIndex The columnIndex to set.
-     */
-    public void setColumnIndex(Map<String, int[]> columnIndex) {
-        this.columnIndex = columnIndex;
-    }
+  /**
+   * @param columnIndex The columnIndex to set.
+   */
+  public void setColumnIndex(Map<String, int[]> columnIndex) {
+    this.columnIndex = columnIndex;
+  }
 
-    /**
-     * @return Returns the keyFieldIndex.
-     */
-    public int[] getKeyFieldIndex() {
-        return keyFieldIndex;
-    }
+  /**
+   * @return Returns the keyFieldIndex.
+   */
+  public int[] getKeyFieldIndex() {
+    return keyFieldIndex;
+  }
 
-    /**
-     * @param keyFieldIndex The keyFieldIndex to set.
-     */
-    public void setKeyFieldIndex(int[] keyFieldIndex) {
-        this.keyFieldIndex = keyFieldIndex;
-    }
+  /**
+   * @param keyFieldIndex The keyFieldIndex to set.
+   */
+  public void setKeyFieldIndex(int[] keyFieldIndex) {
+    this.keyFieldIndex = keyFieldIndex;
+  }
 
-    /**
-     * @return Returns the conversionMeta.
-     */
-    public ValueMetaInterface[] getConversionMeta() {
-        return conversionMeta;
-    }
+  /**
+   * @return Returns the conversionMeta.
+   */
+  public ValueMetaInterface[] getConversionMeta() {
+    return conversionMeta;
+  }
 
-    /**
-     * @param conversionMeta The conversionMeta to set.
-     */
-    public void setConversionMeta(ValueMetaInterface[] conversionMeta) {
-        this.conversionMeta = conversionMeta;
-    }
+  /**
+   * @param conversionMeta The conversionMeta to set.
+   */
+  public void setConversionMeta(ValueMetaInterface[] conversionMeta) {
+    this.conversionMeta = conversionMeta;
+  }
 
-    /**
-     * @return Returns the generator.
-     */
-    public KeyGenerator getGenerator() {
-        return generator;
-    }
+  /**
+   * @return Returns the generator.
+   */
+  public KeyGenerator getGenerator() {
+    return generator;
+  }
 
-    /**
-     * @param generator The generator to set.
-     */
-    public void setGenerator(KeyGenerator generator) {
-        this.generator = generator;
-    }
+  /**
+   * @param generator The generator to set.
+   */
+  public void setGenerator(KeyGenerator generator) {
+    this.generator = generator;
+  }
 
-    /**
-     * @return Returns the keyGenerators.
-     */
-    public Map<String, KeyGenerator> getKeyGenerators() {
-        return keyGenerators;
-    }
+  /**
+   * @return Returns the keyGenerators.
+   */
+  public Map<String, KeyGenerator> getKeyGenerators() {
+    return keyGenerators;
+  }
 
-    /**
-     * @param keyGenerators The keyGenerators to set.
-     */
-    public void setKeyGenerators(Map<String, KeyGenerator> keyGenerators) {
-        this.keyGenerators = keyGenerators;
-    }
+  /**
+   * @param keyGenerators The keyGenerators to set.
+   */
+  public void setKeyGenerators(Map<String, KeyGenerator> keyGenerators) {
+    this.keyGenerators = keyGenerators;
+  }
 
-    /**
-     * @return Returns the outputRowMeta.
-     */
-    public RowMetaInterface getOutputRowMeta() {
-        return outputRowMeta;
-    }
+  /**
+   * @return Returns the outputRowMeta.
+   */
+  public RowMetaInterface getOutputRowMeta() {
+    return outputRowMeta;
+  }
 
-    /**
-     * @param outputRowMeta The outputRowMeta to set.
-     */
-    public void setOutputRowMeta(RowMetaInterface outputRowMeta) {
-        this.outputRowMeta = outputRowMeta;
-    }
+  /**
+   * @param outputRowMeta The outputRowMeta to set.
+   */
+  public void setOutputRowMeta(RowMetaInterface outputRowMeta) {
+    this.outputRowMeta = outputRowMeta;
+  }
 
-    public void clean() {
-        outputRowMeta = null;
+  public void clean() {
+    outputRowMeta = null;
 
-        surrogateKeyGen = null;
+    surrogateKeyGen = null;
 
-        generator = null;
-        keyGenerators = null;
+    generator = null;
+    keyGenerators = null;
 
-        columnIndex = null;
+    columnIndex = null;
 
-        defaultObjects = null;
+    defaultObjects = null;
 
-        keyFieldIndex = null;
+    keyFieldIndex = null;
 
-        conversionMeta = null;
-    }
+    conversionMeta = null;
+  }
 }
-    

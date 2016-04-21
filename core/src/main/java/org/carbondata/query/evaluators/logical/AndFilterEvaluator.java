@@ -27,37 +27,38 @@ import org.carbondata.query.evaluators.FilterProcessorPlaceHolder;
 
 public class AndFilterEvaluator extends AbstractLogicalFilterEvaluator {
 
-    public AndFilterEvaluator(FilterEvaluator leftEvalutor, FilterEvaluator rightEvalutor) {
-        super(leftEvalutor, rightEvalutor);
-    }
+  public AndFilterEvaluator(FilterEvaluator leftEvalutor, FilterEvaluator rightEvalutor) {
+    super(leftEvalutor, rightEvalutor);
+  }
 
-    @Override
-    public BitSet applyFilter(BlockDataHolder blockDataHolder,
-            FilterProcessorPlaceHolder placeHolder,int[] noDictionaryColIndexes) {
-        BitSet leftFilters = leftEvalutor.applyFilter(blockDataHolder, placeHolder,noDictionaryColIndexes);
-        if (leftFilters.isEmpty()) {
-            return leftFilters;
-        }
-        BitSet rightFilter = rightEvalutor.applyFilter(blockDataHolder, placeHolder,noDictionaryColIndexes);
-        if (rightFilter.isEmpty()) {
-            return rightFilter;
-        }
-        leftFilters.and(rightFilter);
-        return leftFilters;
+  @Override
+  public BitSet applyFilter(BlockDataHolder blockDataHolder, FilterProcessorPlaceHolder placeHolder,
+      int[] noDictionaryColIndexes) {
+    BitSet leftFilters =
+        leftEvalutor.applyFilter(blockDataHolder, placeHolder, noDictionaryColIndexes);
+    if (leftFilters.isEmpty()) {
+      return leftFilters;
     }
+    BitSet rightFilter =
+        rightEvalutor.applyFilter(blockDataHolder, placeHolder, noDictionaryColIndexes);
+    if (rightFilter.isEmpty()) {
+      return rightFilter;
+    }
+    leftFilters.and(rightFilter);
+    return leftFilters;
+  }
 
-    @Override
-    public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
-        BitSet leftFilters = leftEvalutor.isScanRequired(blockMaxValue, blockMinValue);
-        if (leftFilters.isEmpty()) {
-            return leftFilters;
-        }
-        BitSet rightFilter = rightEvalutor.isScanRequired(blockMaxValue, blockMinValue);
-        if (rightFilter.isEmpty()) {
-            return rightFilter;
-        }
-        leftFilters.and(rightFilter);
-        return leftFilters;
+  @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
+    BitSet leftFilters = leftEvalutor.isScanRequired(blockMaxValue, blockMinValue);
+    if (leftFilters.isEmpty()) {
+      return leftFilters;
     }
+    BitSet rightFilter = rightEvalutor.isScanRequired(blockMaxValue, blockMinValue);
+    if (rightFilter.isEmpty()) {
+      return rightFilter;
+    }
+    leftFilters.and(rightFilter);
+    return leftFilters;
+  }
 
 }

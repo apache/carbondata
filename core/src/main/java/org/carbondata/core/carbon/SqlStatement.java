@@ -20,16 +20,16 @@
 package org.carbondata.core.carbon;
 
 public class SqlStatement {
-    public enum Type {
-        OBJECT,
-        TIMESTAMP,
-        DOUBLE,
-        INT,
-        LONG,
-        STRING,
-        BOOLEAN,
-        ARRAY,
-        STRUCT,
-        DECIMAL
-    }
+  public enum Type {
+    OBJECT,
+    TIMESTAMP,
+    DOUBLE,
+    INT,
+    LONG,
+    STRING,
+    BOOLEAN,
+    ARRAY,
+    STRUCT,
+    DECIMAL
+  }
 }

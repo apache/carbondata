@@ -21,77 +21,76 @@ package org.carbondata.processing.globalsurrogategenerator;
 
 import org.carbondata.core.carbon.CarbonDef.CubeDimension;
 import org.carbondata.core.carbon.CarbonDef.Schema;
-import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 
 public class GlobalSurrogateGeneratorInfo {
 
-    private String cubeName;
+  private String cubeName;
 
-    private String tableName;
+  private String tableName;
 
-    private int numberOfPartition;
+  private int numberOfPartition;
 
-    private Schema schema;
+  private Schema schema;
 
-    private String storeLocation;
+  private String storeLocation;
 
-    private CubeDimension[] cubeDimensions;
+  private CubeDimension[] cubeDimensions;
 
-    private String partiontionColumnName;
+  private String partiontionColumnName;
 
-    public String getCubeName() {
-        return cubeName;
-    }
+  public String getCubeName() {
+    return cubeName;
+  }
 
-    public void setCubeName(String cubeName) {
-        this.cubeName = cubeName;
-    }
+  public void setCubeName(String cubeName) {
+    this.cubeName = cubeName;
+  }
 
-    public String getTableName() {
-        return tableName;
-    }
+  public String getTableName() {
+    return tableName;
+  }
 
-    public void setTableName(String tableName) {
-        this.tableName = tableName;
-    }
+  public void setTableName(String tableName) {
+    this.tableName = tableName;
+  }
 
-    public int getNumberOfPartition() {
-        return numberOfPartition;
-    }
+  public int getNumberOfPartition() {
+    return numberOfPartition;
+  }
 
-    public void setNumberOfPartition(int numberOfPartition) {
-        this.numberOfPartition = numberOfPartition;
-    }
+  public void setNumberOfPartition(int numberOfPartition) {
+    this.numberOfPartition = numberOfPartition;
+  }
 
-    public Schema getSchema() {
-        return schema;
-    }
+  public Schema getSchema() {
+    return schema;
+  }
 
-    public void setSchema(Schema schema) {
-        this.schema = schema;
-    }
+  public void setSchema(Schema schema) {
+    this.schema = schema;
+  }
 
-    public String getStoreLocation() {
-        return storeLocation;
-    }
+  public String getStoreLocation() {
+    return storeLocation;
+  }
 
-    public void setStoreLocation(String storeLocation) {
-        this.storeLocation = storeLocation;
-    }
+  public void setStoreLocation(String storeLocation) {
+    this.storeLocation = storeLocation;
+  }
 
-    public String getPartiontionColumnName() {
-        return partiontionColumnName;
-    }
+  public String getPartiontionColumnName() {
+    return partiontionColumnName;
+  }
 
-    public void setPartiontionColumnName(String partiontionColumnName) {
-        this.partiontionColumnName = partiontionColumnName;
-    }
+  public void setPartiontionColumnName(String partiontionColumnName) {
+    this.partiontionColumnName = partiontionColumnName;
+  }
 
-    public CubeDimension[] getCubeDimensions() {
-        return cubeDimensions;
-    }
+  public CubeDimension[] getCubeDimensions() {
+    return cubeDimensions;
+  }
 
-    public void setCubeDimensions(CubeDimension[] cubeDimensions) {
-        this.cubeDimensions = cubeDimensions;
-    }
+  public void setCubeDimensions(CubeDimension[] cubeDimensions) {
+    this.cubeDimensions = cubeDimensions;
+  }
 }

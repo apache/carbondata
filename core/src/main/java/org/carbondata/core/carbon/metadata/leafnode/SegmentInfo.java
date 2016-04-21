@@ -25,48 +25,48 @@ import java.io.Serializable;
  */
 public class SegmentInfo implements Serializable {
 
-    /**
-     * serialization version
-     */
-    private static final long serialVersionUID = -1749874611112709431L;
+  /**
+   * serialization version
+   */
+  private static final long serialVersionUID = -1749874611112709431L;
 
-    /**
-     * number of column in the segment
-     */
-    private int numberOfColumns;
+  /**
+   * number of column in the segment
+   */
+  private int numberOfColumns;
 
-    /**
-     * cardinality of each columns
-     * column which is not participating in the multidimensional key cardinality will be -1;
-     */
-    private int[] columnCardinality;
+  /**
+   * cardinality of each columns
+   * column which is not participating in the multidimensional key cardinality will be -1;
+   */
+  private int[] columnCardinality;
 
-    /**
-     * @return the numberOfColumns
-     */
-    public int getNumberOfColumns() {
-        return numberOfColumns;
-    }
+  /**
+   * @return the numberOfColumns
+   */
+  public int getNumberOfColumns() {
+    return numberOfColumns;
+  }
 
-    /**
-     * @param numberOfColumns the numberOfColumns to set
-     */
-    public void setNumberOfColumns(int numberOfColumns) {
-        this.numberOfColumns = numberOfColumns;
-    }
+  /**
+   * @param numberOfColumns the numberOfColumns to set
+   */
+  public void setNumberOfColumns(int numberOfColumns) {
+    this.numberOfColumns = numberOfColumns;
+  }
 
-    /**
-     * @return the columnCardinality
-     */
-    public int[] getColumnCardinality() {
-        return columnCardinality;
-    }
+  /**
+   * @return the columnCardinality
+   */
+  public int[] getColumnCardinality() {
+    return columnCardinality;
+  }
 
-    /**
-     * @param columnCardinality the columnCardinality to set
-     */
-    public void setColumnCardinality(int[] columnCardinality) {
-        this.columnCardinality = columnCardinality;
-    }
+  /**
+   * @param columnCardinality the columnCardinality to set
+   */
+  public void setColumnCardinality(int[] columnCardinality) {
+    this.columnCardinality = columnCardinality;
+  }
 
 }

@@ -24,15 +24,14 @@ import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 
 public class CompressedDataMeasureDataWrapper implements MeasureDataWrapper {
 
-    private final CarbonReadDataHolder[] values;
+  private final CarbonReadDataHolder[] values;
 
-    public CompressedDataMeasureDataWrapper(final CarbonReadDataHolder[] values) {
-        this.values = values;
-    }
+  public CompressedDataMeasureDataWrapper(final CarbonReadDataHolder[] values) {
+    this.values = values;
+  }
 
-    @Override
-    public CarbonReadDataHolder[] getValues() {
-        return values;
-    }
+  @Override public CarbonReadDataHolder[] getValues() {
+    return values;
+  }
 
 }

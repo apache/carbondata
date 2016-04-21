@@ -44,260 +44,249 @@ import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.load.LoadMetadataDetails;
 import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonProperties;
-import org.carbondata.integration.spark.util.LoadMetadataUtil;
 import org.carbondata.integration.spark.util.CarbonSparkInterFaceLogEvent;
+import org.carbondata.integration.spark.util.LoadMetadataUtil;
 
 public final class DeleteLoadFolders {
 
-    private static final LogService LOGGER =
-            LogServiceFactory.getLogService(DeleteLoadFolders.class.getName());
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(DeleteLoadFolders.class.getName());
 
-    private DeleteLoadFolders() {
+  private DeleteLoadFolders() {
 
-    }
+  }
 
-    public static boolean deleteLoadFoldersFromFileSystem(CarbonLoadModel loadModel,
-            int partitionCount, String storeLocation, boolean isForceDelete,
-            int currentRestructNumber, LoadMetadataDetails[] details) {
-        String path = null;
-        List<LoadMetadataDetails> deletedLoads =
-                new ArrayList<LoadMetadataDetails>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+  public static boolean deleteLoadFoldersFromFileSystem(CarbonLoadModel loadModel,
+      int partitionCount, String storeLocation, boolean isForceDelete, int currentRestructNumber,
+      LoadMetadataDetails[] details) {
+    String path = null;
+    List<LoadMetadataDetails> deletedLoads =
+        new ArrayList<LoadMetadataDetails>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-        boolean isDeleted = false;
+    boolean isDeleted = false;
 
-        if (details != null && details.length != 0) {
-            for (LoadMetadataDetails oneLoad : details) {
-                if (checkIfLoadCanBeDeleted(oneLoad, isForceDelete)) {
-                    boolean deletionStatus = false;
+    if (details != null && details.length != 0) {
+      for (LoadMetadataDetails oneLoad : details) {
+        if (checkIfLoadCanBeDeleted(oneLoad, isForceDelete)) {
+          boolean deletionStatus = false;
 
-                    for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-                        // check load folder in each restructure folder
-                        for (int restructureFolderNum = 0; restructureFolderNum
-                                <= currentRestructNumber; restructureFolderNum++) {
-                            CarbonFile[] aggFiles = LoadMetadataUtil
-                                    .getAggregateTableList(loadModel, storeLocation, partitionId,
-                                            restructureFolderNum);
-                            deleteAggLoadFolders(aggFiles,
-                                    CarbonCommonConstants.LOAD_FOLDER + oneLoad.getLoadName());
-                            path = LoadMetadataUtil
-                                    .createLoadFolderPath(loadModel, storeLocation, partitionId,
-                                            restructureFolderNum);
-                            String loadFolderPath = "";
-                            // deleting merged load folder
-                            if (oneLoad.getMergedLoadName() != null) {
-                                loadFolderPath = path + CarbonCommonConstants.FILE_SEPARATOR
-                                        + CarbonCommonConstants.LOAD_FOLDER + oneLoad
-                                        .getMergedLoadName();
-                                deletionStatus =
-                                        physicalFactAndMeasureMetadataDeletion(loadFolderPath);
-                            } else {
-                                loadFolderPath = path + CarbonCommonConstants.FILE_SEPARATOR
-                                        + CarbonCommonConstants.LOAD_FOLDER + oneLoad.getLoadName();
-                                deletionStatus =
-                                        physicalFactAndMeasureMetadataDeletion(loadFolderPath);
-                            }
-                            if (deletionStatus) {
-                                cleanDeletedFactFile(loadFolderPath);
-                                factFileRenaming(loadFolderPath);
-                                // if deletion status is True then there is no
-                                // need to traverse all the RS folders.
-                                break;
-                            }
-                        }
-
-                    }
-                    if (deletionStatus) {
-                        isDeleted = true;
-                        oneLoad.setVisibility("false");
-                        deletedLoads.add(oneLoad);
-                        LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-                                " Deleted the load " + oneLoad.getLoadName());
-                    }
-                }
+          for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
+            // check load folder in each restructure folder
+            for (int restructureFolderNum = 0;
+                 restructureFolderNum <= currentRestructNumber; restructureFolderNum++) {
+              CarbonFile[] aggFiles = LoadMetadataUtil
+                  .getAggregateTableList(loadModel, storeLocation, partitionId,
+                      restructureFolderNum);
+              deleteAggLoadFolders(aggFiles,
+                  CarbonCommonConstants.LOAD_FOLDER + oneLoad.getLoadName());
+              path = LoadMetadataUtil.createLoadFolderPath(loadModel, storeLocation, partitionId,
+                  restructureFolderNum);
+              String loadFolderPath = "";
+              // deleting merged load folder
+              if (oneLoad.getMergedLoadName() != null) {
+                loadFolderPath =
+                    path + CarbonCommonConstants.FILE_SEPARATOR + CarbonCommonConstants.LOAD_FOLDER
+                        + oneLoad.getMergedLoadName();
+                deletionStatus = physicalFactAndMeasureMetadataDeletion(loadFolderPath);
+              } else {
+                loadFolderPath =
+                    path + CarbonCommonConstants.FILE_SEPARATOR + CarbonCommonConstants.LOAD_FOLDER
+                        + oneLoad.getLoadName();
+                deletionStatus = physicalFactAndMeasureMetadataDeletion(loadFolderPath);
+              }
+              if (deletionStatus) {
+                cleanDeletedFactFile(loadFolderPath);
+                factFileRenaming(loadFolderPath);
+                // if deletion status is True then there is no
+                // need to traverse all the RS folders.
+                break;
+              }
             }
-        }
 
-        return isDeleted;
+          }
+          if (deletionStatus) {
+            isDeleted = true;
+            oneLoad.setVisibility("false");
+            deletedLoads.add(oneLoad);
+            LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
+                " Deleted the load " + oneLoad.getLoadName());
+          }
+        }
+      }
     }
 
-    public static void deleteAggLoadFolders(CarbonFile[] aggFiles, String loadName) {
-        for (CarbonFile file : aggFiles) {
-            deleteLoadFolderFromEachAgg(file, loadName);
+    return isDeleted;
+  }
+
+  public static void deleteAggLoadFolders(CarbonFile[] aggFiles, String loadName) {
+    for (CarbonFile file : aggFiles) {
+      deleteLoadFolderFromEachAgg(file, loadName);
+    }
+
+  }
+
+  private static void deleteLoadFolderFromEachAgg(CarbonFile file, final String loadName) {
+    CarbonFile[] loadFolders = file.listFiles(new CarbonFileFilter() {
+
+      @Override public boolean accept(CarbonFile file) {
+        if (file.getName().equalsIgnoreCase(loadName)) {
+          return true;
         }
+        return false;
+      }
+    });
+
+    for (CarbonFile loadFolder : loadFolders) {
+      CarbonFile[] files = loadFolder.listFiles();
+      // deleting individual files
+      if (files != null) {
+        for (CarbonFile eachFile : files) {
+          if (!eachFile.delete()) {
+            LOGGER.warn(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
+                "Unable to delete the file as per delete command " + loadFolder.getAbsolutePath());
+          }
+        }
+      }
 
     }
 
-    private static void deleteLoadFolderFromEachAgg(CarbonFile file, final String loadName) {
-        CarbonFile[] loadFolders = file.listFiles(new CarbonFileFilter() {
+  }
 
-            @Override
-            public boolean accept(CarbonFile file) {
-                if (file.getName().equalsIgnoreCase(loadName)) {
-                    return true;
-                }
-                return false;
-            }
+  private static boolean physicalFactAndMeasureMetadataDeletion(String path) {
+
+    boolean status = false;
+    try {
+      if (FileFactory.isFileExist(path, FileFactory.getFileType(path))) {
+        CarbonFile file = FileFactory.getCarbonFile(path, FileFactory.getFileType(path));
+        CarbonFile[] filesToBeDeleted = file.listFiles(new CarbonFileFilter() {
+
+          @Override public boolean accept(CarbonFile file) {
+            return (file.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT) || file.getName()
+                .endsWith(CarbonCommonConstants.MEASUREMETADATA_FILE_EXT));
+          }
         });
 
-        for (CarbonFile loadFolder : loadFolders) {
-            CarbonFile[] files = loadFolder.listFiles();
-            // deleting individual files
-            if (files != null) {
-                for (CarbonFile eachFile : files) {
-                    if (!eachFile.delete()) {
-                        LOGGER.warn(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-                                "Unable to delete the file as per delete command " + loadFolder
-                                        .getAbsolutePath());
-                    }
-                }
-            }
+        //if there are no fact and msr metadata files present then no need to keep
+        //entry in metadata.
+        if (filesToBeDeleted.length == 0) {
+          status = true;
+        } else {
 
-        }
-
-    }
-
-    private static boolean physicalFactAndMeasureMetadataDeletion(String path) {
-
-        boolean status = false;
-        try {
-            if (FileFactory.isFileExist(path, FileFactory.getFileType(path))) {
-                CarbonFile file = FileFactory.getCarbonFile(path, FileFactory.getFileType(path));
-                CarbonFile[] filesToBeDeleted = file.listFiles(new CarbonFileFilter() {
-
-                    @Override
-                    public boolean accept(CarbonFile file) {
-                        return (file.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT) || file
-                                .getName().endsWith(CarbonCommonConstants.MEASUREMETADATA_FILE_EXT));
-                    }
-                });
-
-                //if there are no fact and msr metadata files present then no need to keep
-                //entry in metadata.
-                if (filesToBeDeleted.length == 0) {
-                    status = true;
-                } else {
-
-                    for (CarbonFile eachFile : filesToBeDeleted) {
-                        if (!eachFile.delete()) {
-                            LOGGER.warn(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-                                    "Unable to delete the file as per delete command " + eachFile
-                                            .getAbsolutePath());
-                            status = false;
-                        } else {
-                            status = true;
-                        }
-                    }
-                }
+          for (CarbonFile eachFile : filesToBeDeleted) {
+            if (!eachFile.delete()) {
+              LOGGER.warn(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
+                  "Unable to delete the file as per delete command " + eachFile.getAbsolutePath());
+              status = false;
             } else {
-                status = false;
+              status = true;
             }
-        } catch (IOException e) {
-            LOGGER.warn(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-                    "Unable to delete the file as per delete command " + path);
+          }
         }
-
-        return status;
-
+      } else {
+        status = false;
+      }
+    } catch (IOException e) {
+      LOGGER.warn(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
+          "Unable to delete the file as per delete command " + path);
     }
 
-    private static boolean checkIfLoadCanBeDeleted(LoadMetadataDetails oneLoad,
-            boolean isForceDelete) {
-        if (CarbonCommonConstants.MARKED_FOR_DELETE.equalsIgnoreCase(oneLoad.getLoadStatus())
-                && oneLoad.getVisibility().equalsIgnoreCase("true")) {
-            if (isForceDelete) {
-                return true;
-            }
-            String deletionTime = oneLoad.getModificationOrdeletionTimesStamp();
-            SimpleDateFormat parser = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP);
-            Date deletionDate = null;
-            String date = null;
-            Date currentTimeStamp = null;
-            try {
-                deletionDate = parser.parse(deletionTime);
-                date = CarbonLoaderUtil.readCurrentTime();
-                currentTimeStamp = parser.parse(date);
-            } catch (ParseException e) {
-                return false;
-            }
+    return status;
 
-            long difference = currentTimeStamp.getTime() - deletionDate.getTime();
+  }
 
-            long minutesElapsed = (difference / (1000 * 60));
-
-            int maxTime;
-            try {
-                maxTime = Integer.parseInt(CarbonProperties.getInstance()
-                        .getProperty(CarbonCommonConstants.MAX_QUERY_EXECUTION_TIME));
-            } catch (NumberFormatException e) {
-                maxTime = CarbonCommonConstants.DEFAULT_MAX_QUERY_EXECUTION_TIME;
-            }
-            if (minutesElapsed > maxTime) {
-                return true;
-            }
-
-        }
-
+  private static boolean checkIfLoadCanBeDeleted(LoadMetadataDetails oneLoad,
+      boolean isForceDelete) {
+    if (CarbonCommonConstants.MARKED_FOR_DELETE.equalsIgnoreCase(oneLoad.getLoadStatus()) && oneLoad
+        .getVisibility().equalsIgnoreCase("true")) {
+      if (isForceDelete) {
+        return true;
+      }
+      String deletionTime = oneLoad.getModificationOrdeletionTimesStamp();
+      SimpleDateFormat parser = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP);
+      Date deletionDate = null;
+      String date = null;
+      Date currentTimeStamp = null;
+      try {
+        deletionDate = parser.parse(deletionTime);
+        date = CarbonLoaderUtil.readCurrentTime();
+        currentTimeStamp = parser.parse(date);
+      } catch (ParseException e) {
         return false;
+      }
+
+      long difference = currentTimeStamp.getTime() - deletionDate.getTime();
+
+      long minutesElapsed = (difference / (1000 * 60));
+
+      int maxTime;
+      try {
+        maxTime = Integer.parseInt(CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.MAX_QUERY_EXECUTION_TIME));
+      } catch (NumberFormatException e) {
+        maxTime = CarbonCommonConstants.DEFAULT_MAX_QUERY_EXECUTION_TIME;
+      }
+      if (minutesElapsed > maxTime) {
+        return true;
+      }
+
     }
 
-    private static void factFileRenaming(String loadFolderPath) {
+    return false;
+  }
 
-        FileFactory.FileType fileType = FileFactory.getFileType(loadFolderPath);
-        try {
-            if (FileFactory.isFileExist(loadFolderPath, fileType)) {
-                CarbonFile loadFolder = FileFactory.getCarbonFile(loadFolderPath, fileType);
+  private static void factFileRenaming(String loadFolderPath) {
 
-                CarbonFile[] listFiles = loadFolder.listFiles(new CarbonFileFilter() {
+    FileFactory.FileType fileType = FileFactory.getFileType(loadFolderPath);
+    try {
+      if (FileFactory.isFileExist(loadFolderPath, fileType)) {
+        CarbonFile loadFolder = FileFactory.getCarbonFile(loadFolderPath, fileType);
 
-                    @Override
-                    public boolean accept(CarbonFile file) {
-                        return (file.getName()
-                                .endsWith('_' + CarbonCommonConstants.FACT_FILE_UPDATED));
-                    }
-                });
+        CarbonFile[] listFiles = loadFolder.listFiles(new CarbonFileFilter() {
 
-                for (CarbonFile file : listFiles) {
-                    if (!file.renameTo(file.getName().substring(0,
-                            file.getName().length() - CarbonCommonConstants.FACT_FILE_UPDATED
-                                    .length()))) {
-                        LOGGER.warn(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-                                "could not rename the updated fact file.");
-                    }
-                }
+          @Override public boolean accept(CarbonFile file) {
+            return (file.getName().endsWith('_' + CarbonCommonConstants.FACT_FILE_UPDATED));
+          }
+        });
 
-            }
-        } catch (IOException e) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "exception" + e.getMessage());
+        for (CarbonFile file : listFiles) {
+          if (!file.renameTo(file.getName().substring(0,
+              file.getName().length() - CarbonCommonConstants.FACT_FILE_UPDATED.length()))) {
+            LOGGER.warn(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
+                "could not rename the updated fact file.");
+          }
         }
 
+      }
+    } catch (IOException e) {
+      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "exception" + e.getMessage());
     }
 
-    private static void cleanDeletedFactFile(String loadFolderPath) {
-        FileFactory.FileType fileType = FileFactory.getFileType(loadFolderPath);
-        try {
-            if (FileFactory.isFileExist(loadFolderPath, fileType)) {
-                CarbonFile loadFolder = FileFactory.getCarbonFile(loadFolderPath, fileType);
+  }
 
-                CarbonFile[] listFiles = loadFolder.listFiles(new CarbonFileFilter() {
+  private static void cleanDeletedFactFile(String loadFolderPath) {
+    FileFactory.FileType fileType = FileFactory.getFileType(loadFolderPath);
+    try {
+      if (FileFactory.isFileExist(loadFolderPath, fileType)) {
+        CarbonFile loadFolder = FileFactory.getCarbonFile(loadFolderPath, fileType);
 
-                    @Override
-                    public boolean accept(CarbonFile file) {
-                        return (file.getName()
-                                .endsWith(CarbonCommonConstants.FACT_DELETE_EXTENSION));
-                    }
-                });
+        CarbonFile[] listFiles = loadFolder.listFiles(new CarbonFileFilter() {
 
-                for (CarbonFile file : listFiles) {
-                    if (!file.delete()) {
-                        LOGGER.warn(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-                                "could not delete the marked fact file.");
-                    }
-                }
+          @Override public boolean accept(CarbonFile file) {
+            return (file.getName().endsWith(CarbonCommonConstants.FACT_DELETE_EXTENSION));
+          }
+        });
 
-            }
-        } catch (IOException e) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "exception" + e.getMessage());
+        for (CarbonFile file : listFiles) {
+          if (!file.delete()) {
+            LOGGER.warn(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
+                "could not delete the marked fact file.");
+          }
         }
+
+      }
+    } catch (IOException e) {
+      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "exception" + e.getMessage());
     }
+  }
 
 }

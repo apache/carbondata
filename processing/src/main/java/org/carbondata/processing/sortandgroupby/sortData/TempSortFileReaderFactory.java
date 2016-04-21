@@ -17,30 +17,29 @@
  * under the License.
  */
 
-package org.carbondata.processing.sortandgroupby.sortData;
+package org.carbondata.processing.sortandgroupby.sortdata;
 
 import java.io.File;
 
 public final class TempSortFileReaderFactory {
-    private static final TempSortFileReaderFactory READERFACTORY = new TempSortFileReaderFactory();
+  private static final TempSortFileReaderFactory READERFACTORY = new TempSortFileReaderFactory();
 
-    private TempSortFileReaderFactory() {
+  private TempSortFileReaderFactory() {
 
+  }
+
+  public static TempSortFileReaderFactory getInstance() {
+    return READERFACTORY;
+  }
+
+  public TempSortFileReader getTempSortFileReader(boolean isCompressionEnabled, int dimensionCount,
+      int complexDimensionCount, int measureCount, File tempFile, int noDictionaryCount) {
+    if (isCompressionEnabled) {
+      return new CompressedTempSortFileReader(dimensionCount, complexDimensionCount, measureCount,
+          tempFile, noDictionaryCount);
+    } else {
+      return new UnCompressedTempSortFileReader(dimensionCount, complexDimensionCount, measureCount,
+          tempFile, noDictionaryCount);
     }
-
-    public static TempSortFileReaderFactory getInstance() {
-        return READERFACTORY;
-    }
-
-    public TempSortFileReader getTempSortFileReader(boolean isCompressionEnabled,
-            int dimensionCount, int complexDimensionCount, int measureCount, File tempFile,
-            int noDictionaryCount) {
-        if (isCompressionEnabled) {
-            return new CompressedTempSortFileReader(dimensionCount, complexDimensionCount,
-                    measureCount, tempFile, noDictionaryCount);
-        } else {
-            return new UnCompressedTempSortFileReader(dimensionCount, complexDimensionCount,
-                    measureCount, tempFile, noDictionaryCount);
-        }
-    }
+  }
 }

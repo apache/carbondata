@@ -28,86 +28,86 @@ import org.carbondata.query.queryinterface.query.CarbonQuery;
  * It is holder class for a level
  */
 public class CarbonLevelHolder implements Serializable {
-    private static final long serialVersionUID = -6328136034161360231L;
+  private static final long serialVersionUID = -6328136034161360231L;
 
-    /**
-     * Level
-     */
-    private CarbonLevel level;
+  /**
+   * Level
+   */
+  private CarbonLevel level;
 
-    /**
-     * sortType
-     */
-    private CarbonQuery.SortType sortType;
+  /**
+   * sortType
+   */
+  private CarbonQuery.SortType sortType;
 
-    /**
-     * msrFilters
-     */
-    private List<CarbonMeasureFilter> msrFilters;
+  /**
+   * msrFilters
+   */
+  private List<CarbonMeasureFilter> msrFilters;
 
-    /**
-     * dimLevelFilter
-     */
-    private CarbonDimensionLevelFilter dimLevelFilter;
+  /**
+   * dimLevelFilter
+   */
+  private CarbonDimensionLevelFilter dimLevelFilter;
 
-    /**
-     * Constructor
-     *
-     * @param level
-     * @param sortType
-     */
-    public CarbonLevelHolder(CarbonLevel level, CarbonQuery.SortType sortType) {
-        super();
-        this.level = level;
-        this.sortType = sortType;
-    }
+  /**
+   * Constructor
+   *
+   * @param level
+   * @param sortType
+   */
+  public CarbonLevelHolder(CarbonLevel level, CarbonQuery.SortType sortType) {
+    super();
+    this.level = level;
+    this.sortType = sortType;
+  }
 
-    /**
-     * @return the level
-     */
-    public CarbonLevel getLevel() {
-        return level;
-    }
+  /**
+   * @return the level
+   */
+  public CarbonLevel getLevel() {
+    return level;
+  }
 
-    /**
-     * @return the sortType
-     */
-    public CarbonQuery.SortType getSortType() {
-        return sortType;
-    }
+  /**
+   * @return the sortType
+   */
+  public CarbonQuery.SortType getSortType() {
+    return sortType;
+  }
 
-    /**
-     * @param sortType the sortType to set
-     */
-    public void setSortType(CarbonQuery.SortType sortType) {
-        this.sortType = sortType;
-    }
+  /**
+   * @param sortType the sortType to set
+   */
+  public void setSortType(CarbonQuery.SortType sortType) {
+    this.sortType = sortType;
+  }
 
-    /**
-     * @return the msrFilter
-     */
-    public List<CarbonMeasureFilter> getMsrFilters() {
-        return msrFilters;
-    }
+  /**
+   * @return the msrFilter
+   */
+  public List<CarbonMeasureFilter> getMsrFilters() {
+    return msrFilters;
+  }
 
-    /**
-     * @param msrFilter the msrFilter to set
-     */
-    public void setMsrFilters(List<CarbonMeasureFilter> msrFilters) {
-        this.msrFilters = msrFilters;
-    }
+  /**
+   * @param msrFilter the msrFilter to set
+   */
+  public void setMsrFilters(List<CarbonMeasureFilter> msrFilters) {
+    this.msrFilters = msrFilters;
+  }
 
-    /**
-     * @return the dimLevelFilter
-     */
-    public CarbonDimensionLevelFilter getDimLevelFilter() {
-        return dimLevelFilter;
-    }
+  /**
+   * @return the dimLevelFilter
+   */
+  public CarbonDimensionLevelFilter getDimLevelFilter() {
+    return dimLevelFilter;
+  }
 
-    /**
-     * @param dimLevelFilter the dimLevelFilter to set
-     */
-    public void setDimLevelFilter(CarbonDimensionLevelFilter dimLevelFilter) {
-        this.dimLevelFilter = dimLevelFilter;
-    }
+  /**
+   * @param dimLevelFilter the dimLevelFilter to set
+   */
+  public void setDimLevelFilter(CarbonDimensionLevelFilter dimLevelFilter) {
+    this.dimLevelFilter = dimLevelFilter;
+  }
 }

@@ -28,54 +28,54 @@ import org.carbondata.query.executer.pagination.impl.DataFileWriter.KeyValueHold
 import org.carbondata.query.wrappers.ByteArrayWrapper;
 
 public class QueryResult {
-    private List<ByteArrayWrapper> keys;
+  private List<ByteArrayWrapper> keys;
 
-    private List<MeasureAggregator[]> values;
+  private List<MeasureAggregator[]> values;
 
-    private int rsize;
+  private int rsize;
 
-    public QueryResult() {
-        keys = new ArrayList<ByteArrayWrapper>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-        values = new ArrayList<MeasureAggregator[]>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+  public QueryResult() {
+    keys = new ArrayList<ByteArrayWrapper>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+    values = new ArrayList<MeasureAggregator[]>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+  }
+
+  public void add(ByteArrayWrapper key, MeasureAggregator[] value) {
+    keys.add(key);
+    values.add(value);
+    rsize++;
+  }
+
+  public int size() {
+    return rsize;
+  }
+
+  public QueryResultIterator iterator() {
+    return new QueryResultIterator();
+  }
+
+  public void prepareResult(KeyValueHolder[] data) {
+    for (int i = 0; i < data.length; i++) {
+      keys.add(data[i].key);
+      values.add(data[i].value);
+    }
+    rsize = keys.size();
+  }
+
+  public class QueryResultIterator {
+    private int counter = -1;
+
+    public boolean hasNext() {
+      ++counter;
+      return counter < rsize;
     }
 
-    public void add(ByteArrayWrapper key, MeasureAggregator[] value) {
-        keys.add(key);
-        values.add(value);
-        rsize++;
+    public ByteArrayWrapper getKey() {
+      return keys.get(counter);
     }
 
-    public int size() {
-        return rsize;
+    public MeasureAggregator[] getValue() {
+      return values.get(counter);
     }
-
-    public QueryResultIterator iterator() {
-        return new QueryResultIterator();
-    }
-
-    public void prepareResult(KeyValueHolder[] data) {
-        for (int i = 0; i < data.length; i++) {
-            keys.add(data[i].key);
-            values.add(data[i].value);
-        }
-        rsize = keys.size();
-    }
-
-    public class QueryResultIterator {
-        private int counter = -1;
-
-        public boolean hasNext() {
-            ++counter;
-            return counter < rsize;
-        }
-
-        public ByteArrayWrapper getKey() {
-            return keys.get(counter);
-        }
-
-        public MeasureAggregator[] getValue() {
-            return values.get(counter);
-        }
-    }
+  }
 
 }

@@ -21,12 +21,11 @@ package org.carbondata.query.datastorage;
 
 /**
  * For Locking Purpose while loading Btree.
- *
  */
 public class TableLockInstance {
 
-    public TableLockInstance() {
+  public TableLockInstance() {
 
-    }
+  }
 
 }

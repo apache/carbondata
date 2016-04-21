@@ -30,135 +30,135 @@ import org.carbondata.query.datastorage.InMemoryTable;
 import org.carbondata.query.executer.impl.QueryFilterInfo;
 
 public class FilterEvaluatorInfo {
-    private List<InMemoryTable> slices;
+  private List<InMemoryTable> slices;
 
-    private KeyGenerator keyGenerator;
+  private KeyGenerator keyGenerator;
 
-    private int currentSliceIndex;
+  private int currentSliceIndex;
 
-    private String factTableName;
+  private String factTableName;
 
-    private QueryFilterInfo info;
+  private QueryFilterInfo info;
 
-    private String[] newDimension;
+  private String[] newDimension;
 
-    private Dimension[] dimensions;
+  private Dimension[] dimensions;
 
-    private String[] newMeasures;
+  private String[] newMeasures;
 
-    private double[] newDefaultValues;
+  private double[] newDefaultValues;
 
-    private int[] newDimensionSurrogates;
+  private int[] newDimensionSurrogates;
 
-    private String[] newDimensionDefaultValue;
+  private String[] newDimensionDefaultValue;
 
-    private Map<Integer, GenericQueryType> complexTypesWithBlockStartIndex;
+  private Map<Integer, GenericQueryType> complexTypesWithBlockStartIndex;
 
-    private HybridStoreModel hybridStoreModel;
+  private HybridStoreModel hybridStoreModel;
 
-    public Dimension[] getDimensions() {
-        return dimensions;
-    }
+  public Dimension[] getDimensions() {
+    return dimensions;
+  }
 
-    public void setDimensions(Dimension[] dimensions) {
-        this.dimensions = dimensions;
-    }
+  public void setDimensions(Dimension[] dimensions) {
+    this.dimensions = dimensions;
+  }
 
-    public Map<Integer, GenericQueryType> getComplexTypesWithBlockStartIndex() {
-        return complexTypesWithBlockStartIndex;
-    }
+  public Map<Integer, GenericQueryType> getComplexTypesWithBlockStartIndex() {
+    return complexTypesWithBlockStartIndex;
+  }
 
-    public void setComplexTypesWithBlockStartIndex(
-            Map<Integer, GenericQueryType> complexTypesWithBlockStartIndex) {
-        this.complexTypesWithBlockStartIndex = complexTypesWithBlockStartIndex;
-    }
+  public void setComplexTypesWithBlockStartIndex(
+      Map<Integer, GenericQueryType> complexTypesWithBlockStartIndex) {
+    this.complexTypesWithBlockStartIndex = complexTypesWithBlockStartIndex;
+  }
 
-    public List<InMemoryTable> getSlices() {
-        return slices;
-    }
+  public List<InMemoryTable> getSlices() {
+    return slices;
+  }
 
-    public void setSlices(List<InMemoryTable> slices) {
-        this.slices = slices;
-    }
+  public void setSlices(List<InMemoryTable> slices) {
+    this.slices = slices;
+  }
 
-    public KeyGenerator getKeyGenerator() {
-        return keyGenerator;
-    }
+  public KeyGenerator getKeyGenerator() {
+    return keyGenerator;
+  }
 
-    public void setKeyGenerator(KeyGenerator keyGenerator) {
-        this.keyGenerator = keyGenerator;
-    }
+  public void setKeyGenerator(KeyGenerator keyGenerator) {
+    this.keyGenerator = keyGenerator;
+  }
 
-    public int getCurrentSliceIndex() {
-        return currentSliceIndex;
-    }
+  public int getCurrentSliceIndex() {
+    return currentSliceIndex;
+  }
 
-    public void setCurrentSliceIndex(int currentSliceIndex) {
-        this.currentSliceIndex = currentSliceIndex;
-    }
+  public void setCurrentSliceIndex(int currentSliceIndex) {
+    this.currentSliceIndex = currentSliceIndex;
+  }
 
-    public String getFactTableName() {
-        return factTableName;
-    }
+  public String getFactTableName() {
+    return factTableName;
+  }
 
-    public void setFactTableName(String factTableName) {
-        this.factTableName = factTableName;
-    }
+  public void setFactTableName(String factTableName) {
+    this.factTableName = factTableName;
+  }
 
-    public QueryFilterInfo getInfo() {
-        return info;
-    }
+  public QueryFilterInfo getInfo() {
+    return info;
+  }
 
-    public void setInfo(QueryFilterInfo info) {
-        this.info = info;
-    }
+  public void setInfo(QueryFilterInfo info) {
+    this.info = info;
+  }
 
-    public double[] getNewDefaultValues() {
-        return newDefaultValues;
-    }
+  public double[] getNewDefaultValues() {
+    return newDefaultValues;
+  }
 
-    public void setNewDefaultValues(double[] newDefaultValues) {
-        this.newDefaultValues = newDefaultValues;
-    }
+  public void setNewDefaultValues(double[] newDefaultValues) {
+    this.newDefaultValues = newDefaultValues;
+  }
 
-    public String[] getNewDimension() {
-        return newDimension;
-    }
+  public String[] getNewDimension() {
+    return newDimension;
+  }
 
-    public void setNewDimension(String[] newDimension) {
-        this.newDimension = newDimension;
-    }
+  public void setNewDimension(String[] newDimension) {
+    this.newDimension = newDimension;
+  }
 
-    public String[] getNewMeasures() {
-        return newMeasures;
-    }
+  public String[] getNewMeasures() {
+    return newMeasures;
+  }
 
-    public void setNewMeasures(String[] newMeasures) {
-        this.newMeasures = newMeasures;
-    }
+  public void setNewMeasures(String[] newMeasures) {
+    this.newMeasures = newMeasures;
+  }
 
-    public int[] getNewDimensionSurrogates() {
-        return newDimensionSurrogates;
-    }
+  public int[] getNewDimensionSurrogates() {
+    return newDimensionSurrogates;
+  }
 
-    public void setNewDimensionSurrogates(int[] newDimensionSurrogates) {
-        this.newDimensionSurrogates = newDimensionSurrogates;
-    }
+  public void setNewDimensionSurrogates(int[] newDimensionSurrogates) {
+    this.newDimensionSurrogates = newDimensionSurrogates;
+  }
 
-    public String[] getNewDimensionDefaultValue() {
-        return newDimensionDefaultValue;
-    }
+  public String[] getNewDimensionDefaultValue() {
+    return newDimensionDefaultValue;
+  }
 
-    public void setNewDimensionDefaultValue(String[] newDimensionDefaultValue) {
-        this.newDimensionDefaultValue = newDimensionDefaultValue;
-    }
+  public void setNewDimensionDefaultValue(String[] newDimensionDefaultValue) {
+    this.newDimensionDefaultValue = newDimensionDefaultValue;
+  }
 
-    public HybridStoreModel getHybridStoreModel() {
-        return this.hybridStoreModel;
-    }
+  public HybridStoreModel getHybridStoreModel() {
+    return this.hybridStoreModel;
+  }
 
-    public void setHybridStoreModel(HybridStoreModel hybridStoreModel) {
-        this.hybridStoreModel = hybridStoreModel;
+  public void setHybridStoreModel(HybridStoreModel hybridStoreModel) {
+    this.hybridStoreModel = hybridStoreModel;
 
-    }
+  }
 }

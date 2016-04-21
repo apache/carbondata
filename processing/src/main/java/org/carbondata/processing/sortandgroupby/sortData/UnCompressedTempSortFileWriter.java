@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.carbondata.processing.sortandgroupby.sortData;
+package org.carbondata.processing.sortandgroupby.sortdata;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -30,88 +30,85 @@ import org.carbondata.processing.util.RemoveDictionaryUtil;
 
 public class UnCompressedTempSortFileWriter extends AbstractTempSortFileWriter {
 
-    /**
-     * UnCompressedTempSortFileWriter
-     *
-     * @param writeBufferSize
-     * @param dimensionCount
-     * @param measureCount
-     */
-    public UnCompressedTempSortFileWriter(int dimensionCount, int complexDimensionCount,
-            int measureCount, int noDictionaryCount, int writeBufferSize) {
-        super(dimensionCount, complexDimensionCount, measureCount, noDictionaryCount,
-                writeBufferSize);
-    }
+  /**
+   * UnCompressedTempSortFileWriter
+   *
+   * @param writeBufferSize
+   * @param dimensionCount
+   * @param measureCount
+   */
+  public UnCompressedTempSortFileWriter(int dimensionCount, int complexDimensionCount,
+      int measureCount, int noDictionaryCount, int writeBufferSize) {
+    super(dimensionCount, complexDimensionCount, measureCount, noDictionaryCount, writeBufferSize);
+  }
 
-    public static void writeDataOutputStream(Object[][] records, DataOutputStream dataOutputStream,
-            int measureCount, int dimensionCount, int noDictionaryCount,
-            int complexDimensionCount) throws IOException {
-        Object[] row;
-        for (int recordIndex = 0; recordIndex < records.length; recordIndex++) {
-            row = records[recordIndex];
-            int fieldIndex = 0;
+  public static void writeDataOutputStream(Object[][] records, DataOutputStream dataOutputStream,
+      int measureCount, int dimensionCount, int noDictionaryCount, int complexDimensionCount)
+      throws IOException {
+    Object[] row;
+    for (int recordIndex = 0; recordIndex < records.length; recordIndex++) {
+      row = records[recordIndex];
+      int fieldIndex = 0;
 
-            for (int counter = 0; counter < dimensionCount; counter++) {
-                dataOutputStream
-                        .writeInt((Integer) RemoveDictionaryUtil.getDimension(fieldIndex++, row));
-            }
+      for (int counter = 0; counter < dimensionCount; counter++) {
+        dataOutputStream.writeInt((Integer) RemoveDictionaryUtil.getDimension(fieldIndex++, row));
+      }
 
-            //write byte[] of high card dims
-            if (noDictionaryCount > 0) {
-                dataOutputStream.write(RemoveDictionaryUtil.getByteArrayForNoDictionaryCols(row));
-            }
-            fieldIndex = 0;
-            for (int counter = 0; counter < complexDimensionCount; counter++) {
-                int complexByteArrayLength = ((byte[]) row[fieldIndex]).length;
-                dataOutputStream.writeInt(complexByteArrayLength);
-                dataOutputStream.write(((byte[]) row[fieldIndex++]));
-            }
+      //write byte[] of high card dims
+      if (noDictionaryCount > 0) {
+        dataOutputStream.write(RemoveDictionaryUtil.getByteArrayForNoDictionaryCols(row));
+      }
+      fieldIndex = 0;
+      for (int counter = 0; counter < complexDimensionCount; counter++) {
+        int complexByteArrayLength = ((byte[]) row[fieldIndex]).length;
+        dataOutputStream.writeInt(complexByteArrayLength);
+        dataOutputStream.write(((byte[]) row[fieldIndex++]));
+      }
 
-            for (int counter = 0; counter < measureCount; counter++) {
-                if (null != row[fieldIndex]) {
-                    dataOutputStream.write((byte) 1);
-                    dataOutputStream
-                            .writeDouble((Double) RemoveDictionaryUtil.getMeasure(fieldIndex, row));
-                } else {
-                    dataOutputStream.write((byte) 0);
-                }
-
-                fieldIndex++;
-            }
-
+      for (int counter = 0; counter < measureCount; counter++) {
+        if (null != row[fieldIndex]) {
+          dataOutputStream.write((byte) 1);
+          dataOutputStream.writeDouble((Double) RemoveDictionaryUtil.getMeasure(fieldIndex, row));
+        } else {
+          dataOutputStream.write((byte) 0);
         }
+
+        fieldIndex++;
+      }
+
     }
+  }
 
-    /**
-     * Below method will be used to write the sort temp file
-     *
-     * @param records
-     */
-    public void writeSortTempFile(Object[][] records) throws CarbonSortKeyAndGroupByException {
-        ByteArrayOutputStream blockDataArray = null;
-        DataOutputStream dataOutputStream = null;
-        int totalSize = 0;
-        int recordSize = 0;
-        try {
-            recordSize = (measureCount * CarbonCommonConstants.DOUBLE_SIZE_IN_BYTE) + (dimensionCount
-                    * CarbonCommonConstants.INT_SIZE_IN_BYTE);
-            totalSize = records.length * recordSize;
+  /**
+   * Below method will be used to write the sort temp file
+   *
+   * @param records
+   */
+  public void writeSortTempFile(Object[][] records) throws CarbonSortKeyAndGroupByException {
+    ByteArrayOutputStream blockDataArray = null;
+    DataOutputStream dataOutputStream = null;
+    int totalSize = 0;
+    int recordSize = 0;
+    try {
+      recordSize = (measureCount * CarbonCommonConstants.DOUBLE_SIZE_IN_BYTE) + (dimensionCount
+          * CarbonCommonConstants.INT_SIZE_IN_BYTE);
+      totalSize = records.length * recordSize;
 
-            blockDataArray = new ByteArrayOutputStream(totalSize);
-            dataOutputStream = new DataOutputStream(blockDataArray);
+      blockDataArray = new ByteArrayOutputStream(totalSize);
+      dataOutputStream = new DataOutputStream(blockDataArray);
 
-            writeDataOutputStream(records, dataOutputStream, measureCount, dimensionCount,
-                    noDictionaryCount, complexDimensionCount);
-            stream.writeInt(records.length);
-            byte[] byteArray = blockDataArray.toByteArray();
-            stream.writeInt(byteArray.length);
-            stream.write(byteArray);
+      writeDataOutputStream(records, dataOutputStream, measureCount, dimensionCount,
+          noDictionaryCount, complexDimensionCount);
+      stream.writeInt(records.length);
+      byte[] byteArray = blockDataArray.toByteArray();
+      stream.writeInt(byteArray.length);
+      stream.write(byteArray);
 
-        } catch (IOException e) {
-            throw new CarbonSortKeyAndGroupByException(e);
-        } finally {
-            CarbonUtil.closeStreams(blockDataArray);
-            CarbonUtil.closeStreams(dataOutputStream);
-        }
+    } catch (IOException e) {
+      throw new CarbonSortKeyAndGroupByException(e);
+    } finally {
+      CarbonUtil.closeStreams(blockDataArray);
+      CarbonUtil.closeStreams(dataOutputStream);
     }
+  }
 }

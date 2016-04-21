@@ -26,106 +26,104 @@ import java.util.List;
 import org.carbondata.core.metadata.CarbonMetadata.Dimension;
 
 public class DimensionAggregatorInfo implements Serializable {
-    /**
-     *
-     */
-    private static final long serialVersionUID = 1L;
+  /**
+   *
+   */
+  private static final long serialVersionUID = 1L;
 
-    private String columnName;
+  private String columnName;
 
-    private Dimension dim;
+  private Dimension dim;
 
-    private List<String> aggList;
+  private List<String> aggList;
 
-    private List<Integer> orderList;
+  private List<Integer> orderList;
 
-    private byte[] nullValueMdkey;
+  private byte[] nullValueMdkey;
 
-    /**
-     * isDimensionPresentInCurrentSlice
-     */
-    private boolean isDimensionPresentInCurrentSlice = true;
+  /**
+   * isDimensionPresentInCurrentSlice
+   */
+  private boolean isDimensionPresentInCurrentSlice = true;
 
-    public DimensionAggregatorInfo() {
-        aggList = new ArrayList<String>(10);
-        orderList = new ArrayList<Integer>(10);
+  public DimensionAggregatorInfo() {
+    aggList = new ArrayList<String>(10);
+    orderList = new ArrayList<Integer>(10);
+  }
+
+  public String getColumnName() {
+    return columnName;
+  }
+
+  public void setColumnName(String columnName) {
+    this.columnName = columnName;
+  }
+
+  public Dimension getDim() {
+    return dim;
+  }
+
+  public void setDim(Dimension dim) {
+    this.dim = dim;
+  }
+
+  public List<String> getAggList() {
+    return aggList;
+  }
+
+  public void setAggList(List<String> aggList) {
+    this.aggList = aggList;
+  }
+
+  public void addAgg(String agg) {
+    aggList.add(agg);
+  }
+
+  public void setOrder(int index) {
+    orderList.add(index);
+  }
+
+  public void setNullValueMdkey(byte[] nullValueMdkey) {
+    this.nullValueMdkey = nullValueMdkey;
+  }
+
+  @Override public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + ((columnName == null) ? 0 : columnName.hashCode());
+    return result;
+  }
+
+  @Override public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
     }
-
-    public String getColumnName() {
-        return columnName;
+    if (obj == null) {
+      return false;
     }
-
-    public void setColumnName(String columnName) {
-        this.columnName = columnName;
+    if (getClass() != obj.getClass()) {
+      return false;
     }
-
-    public Dimension getDim() {
-        return dim;
+    DimensionAggregatorInfo other = (DimensionAggregatorInfo) obj;
+    if (columnName == null) {
+      if (other.columnName != null) {
+        return false;
+      }
+    } else if (!columnName.equals(other.columnName)) {
+      return false;
     }
+    return true;
+  }
 
-    public void setDim(Dimension dim) {
-        this.dim = dim;
-    }
+  public List<Integer> getOrderList() {
+    return orderList;
+  }
 
-    public List<String> getAggList() {
-        return aggList;
-    }
+  public boolean isDimensionPresentInCurrentSlice() {
+    return isDimensionPresentInCurrentSlice;
+  }
 
-    public void setAggList(List<String> aggList) {
-        this.aggList = aggList;
-    }
-
-    public void addAgg(String agg) {
-        aggList.add(agg);
-    }
-
-    public void setOrder(int index) {
-        orderList.add(index);
-    }
-
-    public void setNullValueMdkey(byte[] nullValueMdkey) {
-        this.nullValueMdkey = nullValueMdkey;
-    }
-
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((columnName == null) ? 0 : columnName.hashCode());
-        return result;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        DimensionAggregatorInfo other = (DimensionAggregatorInfo) obj;
-        if (columnName == null) {
-            if (other.columnName != null) {
-                return false;
-            }
-        } else if (!columnName.equals(other.columnName)) {
-            return false;
-        }
-        return true;
-    }
-
-    public List<Integer> getOrderList() {
-        return orderList;
-    }
-
-    public boolean isDimensionPresentInCurrentSlice() {
-        return isDimensionPresentInCurrentSlice;
-    }
-
-    public void setDimensionPresentInCurrentSlice(boolean isDimensionPresentInCurrentSlice) {
-        this.isDimensionPresentInCurrentSlice = isDimensionPresentInCurrentSlice;
-    }
+  public void setDimensionPresentInCurrentSlice(boolean isDimensionPresentInCurrentSlice) {
+    this.isDimensionPresentInCurrentSlice = isDimensionPresentInCurrentSlice;
+  }
 }

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.carbondata.processing.sortandgroupby.sortData;
+package org.carbondata.processing.sortandgroupby.sortdata;
 
 import java.io.File;
 import java.nio.ByteBuffer;
@@ -26,119 +26,119 @@ import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.core.datastorage.store.impl.FileHolderImpl;
 
 public abstract class AbstractTempSortFileReader implements TempSortFileReader {
-    /**
-     * measure count
-     */
-    protected int measureCount;
+  /**
+   * measure count
+   */
+  protected int measureCount;
 
-    /**
-     * Measure count
-     */
-    protected int dimensionCount;
+  /**
+   * Measure count
+   */
+  protected int dimensionCount;
 
-    /**
-     * complexDimension count
-     */
-    protected int complexDimensionCount;
+  /**
+   * complexDimension count
+   */
+  protected int complexDimensionCount;
 
-    /**
-     * entryCount
-     */
-    protected int entryCount;
+  /**
+   * entryCount
+   */
+  protected int entryCount;
 
-    /**
-     * fileHolder
-     */
-    protected FileHolder fileHolder;
+  /**
+   * fileHolder
+   */
+  protected FileHolder fileHolder;
 
-    /**
-     * Temp file path
-     */
-    protected String filePath;
+  /**
+   * Temp file path
+   */
+  protected String filePath;
 
-    /**
-     * eachRecordSize
-     */
-    protected int eachRecordSize;
+  /**
+   * eachRecordSize
+   */
+  protected int eachRecordSize;
 
-    protected int noDictionaryCount;
+  protected int noDictionaryCount;
 
-    /**
-     * AbstractTempSortFileReader
-     *
-     * @param measureCount
-     * @param dimensionCount
-     * @param tempFile
-     */
-    public AbstractTempSortFileReader(int dimensionCount, int complexDimensionCount,
-            int measureCount, File tempFile, int noDictionaryCount) {
-        this.measureCount = measureCount;
-        this.dimensionCount = dimensionCount;
-        this.noDictionaryCount = noDictionaryCount;
-        this.complexDimensionCount = complexDimensionCount;
-        this.fileHolder = new FileHolderImpl(1);
-        this.filePath = tempFile.getAbsolutePath();
-        entryCount = fileHolder.readInt(filePath);
-        eachRecordSize = dimensionCount + complexDimensionCount + measureCount;
-    }
+  /**
+   * AbstractTempSortFileReader
+   *
+   * @param measureCount
+   * @param dimensionCount
+   * @param tempFile
+   */
+  public AbstractTempSortFileReader(int dimensionCount, int complexDimensionCount, int measureCount,
+      File tempFile, int noDictionaryCount) {
+    this.measureCount = measureCount;
+    this.dimensionCount = dimensionCount;
+    this.noDictionaryCount = noDictionaryCount;
+    this.complexDimensionCount = complexDimensionCount;
+    this.fileHolder = new FileHolderImpl(1);
+    this.filePath = tempFile.getAbsolutePath();
+    entryCount = fileHolder.readInt(filePath);
+    eachRecordSize = dimensionCount + complexDimensionCount + measureCount;
+  }
 
-    /**
-     * below method will be used to close the file holder
-     */
-    public void finish() {
-        this.fileHolder.finish();
-    }
+  /**
+   * below method will be used to close the file holder
+   */
+  public void finish() {
+    this.fileHolder.finish();
+  }
 
-    /**
-     * Below method will be used to get the total row count in temp file
-     *
-     * @return
-     */
-    public int getEntryCount() {
-        return entryCount;
-    }
+  /**
+   * Below method will be used to get the total row count in temp file
+   *
+   * @return
+   */
+  public int getEntryCount() {
+    return entryCount;
+  }
 
-    /**
-     * Below method will be used to get the row
-     */
-    public abstract Object[][] getRow();
+  /**
+   * Below method will be used to get the row
+   */
+  public abstract Object[][] getRow();
 
-    protected Object[][] prepareRecordFromByteBuffer(int recordLength, byte[] byteArrayFromFile) {
-        Object[][] records = new Object[recordLength][];
-        Object[] record = null;
-        ByteBuffer buffer = ByteBuffer.allocate(byteArrayFromFile.length);
+  protected Object[][] prepareRecordFromByteBuffer(int recordLength, byte[] byteArrayFromFile) {
+    Object[][] records = new Object[recordLength][];
+    Object[] record = null;
+    ByteBuffer buffer = ByteBuffer.allocate(byteArrayFromFile.length);
 
-        buffer.put(byteArrayFromFile);
-        buffer.rewind();
+    buffer.put(byteArrayFromFile);
+    buffer.rewind();
 
-        int index = 0;
-        byte b = 0;
+    int index = 0;
+    byte b = 0;
 
-        for (int i = 0; i < recordLength; i++) {
-            record = new Object[eachRecordSize];
-            index = 0;
+    for (int i = 0; i < recordLength; i++) {
+      record = new Object[eachRecordSize];
+      index = 0;
 
-            for (int j = 0; j < dimensionCount; j++) {
-                record[index++] = buffer.getInt();
-            }
+      for (int j = 0; j < dimensionCount; j++) {
+        record[index++] = buffer.getInt();
+      }
 
-            for (int j = 0; j < complexDimensionCount; j++) {
-                byte[] complexByteArray = new byte[buffer.getInt()];
-                buffer.get(complexByteArray);
-                record[index++] = complexByteArray;
-            }
+      for (int j = 0; j < complexDimensionCount; j++) {
+        byte[] complexByteArray = new byte[buffer.getInt()];
+        buffer.get(complexByteArray);
+        record[index++] = complexByteArray;
+      }
 
-            for (int j = 0; j < measureCount; j++) {
-                b = buffer.get();
-                if (b == 1) {
-                    record[index++] = buffer.getDouble();
-                } else {
-                    record[index++] = null;
-                }
-            }
-
-            records[i] = record;
+      for (int j = 0; j < measureCount; j++) {
+        b = buffer.get();
+        if (b == 1) {
+          record[index++] = buffer.getDouble();
+        } else {
+          record[index++] = null;
         }
-        return records;
+      }
+
+      records[i] = record;
     }
+    return records;
+  }
 }

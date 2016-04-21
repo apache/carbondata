@@ -24,54 +24,52 @@ import org.carbondata.query.executer.calcexp.CarbonCalcFunction;
 
 public class GreaterThanMeaureFilterImpl implements MeasureFilter {
 
-    private double filterValue;
+  private double filterValue;
 
-    private int index;
+  private int index;
 
-    /**
-     * Calc function
-     */
-    private CarbonCalcFunction calcFunction;
+  /**
+   * Calc function
+   */
+  private CarbonCalcFunction calcFunction;
 
-    /**
-     * Constructor that takes filter value
-     *
-     * @param filterValue
-     */
-    public GreaterThanMeaureFilterImpl(double filterValue, int index,
-            CarbonCalcFunction calcFunction) {
-        this.filterValue = filterValue;
-        this.index = index;
-        this.calcFunction = calcFunction;
+  /**
+   * Constructor that takes filter value
+   *
+   * @param filterValue
+   */
+  public GreaterThanMeaureFilterImpl(double filterValue, int index,
+      CarbonCalcFunction calcFunction) {
+    this.filterValue = filterValue;
+    this.index = index;
+    this.calcFunction = calcFunction;
+  }
+
+  /**
+   * See interface commnets.
+   *
+   * @param filterValue
+   */
+  @Override public boolean filter(MeasureAggregator[] msrValue) {
+    if (calcFunction != null) {
+      return calcFunction.calculate(msrValue) > filterValue;
     }
-
-    /**
-     * See interface commnets.
-     *
-     * @param filterValue
-     */
-    @Override
-    public boolean filter(MeasureAggregator[] msrValue) {
-        if (calcFunction != null) {
-            return calcFunction.calculate(msrValue) > filterValue;
-        }
-        if (msrValue[index].toString().contains("Long")) {
-            return msrValue[index].getLongValue() > filterValue;
-        } else if (msrValue[index].toString().contains("Decimal")) {
-            return msrValue[index].getBigDecimalValue().doubleValue() > filterValue;
-        } else {
-            return msrValue[index].getDoubleValue() > filterValue;
-        }
+    if (msrValue[index].toString().contains("Long")) {
+      return msrValue[index].getLongValue() > filterValue;
+    } else if (msrValue[index].toString().contains("Decimal")) {
+      return msrValue[index].getBigDecimalValue().doubleValue() > filterValue;
+    } else {
+      return msrValue[index].getDoubleValue() > filterValue;
     }
+  }
 
-    /**
-     * See interface commnets.
-     *
-     * @param filterValue
-     */
-    @Override
-    public boolean filter(double[] msrValue, int msrStartIndex) {
-        return msrValue[index + msrStartIndex] > filterValue;
-    }
+  /**
+   * See interface commnets.
+   *
+   * @param filterValue
+   */
+  @Override public boolean filter(double[] msrValue, int msrStartIndex) {
+    return msrValue[index + msrStartIndex] > filterValue;
+  }
 
 }

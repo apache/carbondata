@@ -26,35 +26,33 @@ import org.carbondata.core.datastorage.store.impl.FileFactory;
  * Class that deduces the info from Load path supplied
  */
 public class TableSlicePathInfo {
-    /**
-     *
-     */
-    private String loadPath;
+  /**
+   *
+   */
+  private String loadPath;
 
+  /**
+   * @param loadPath
+   */
+  public TableSlicePathInfo(String loadPath) {
+    formInfo(loadPath);
+  }
 
-    /**
-     * @param loadPath
-     */
-    public TableSlicePathInfo(String loadPath) {
-        formInfo(loadPath);
-    }
+  /**
+   * @param loadFolderPath
+   */
+  private void formInfo(String loadFolderPath) {
+    //
+    CarbonFile loadPathFolder =
+        FileFactory.getCarbonFile(loadFolderPath, FileFactory.getFileType(loadFolderPath));
+    loadPath = loadPathFolder.getCanonicalPath();
+  }
 
-    /**
-     * @param loadFolderPath
-     */
-    private void formInfo(String loadFolderPath) {
-        //
-        CarbonFile loadPathFolder =
-                FileFactory.getCarbonFile(loadFolderPath, FileFactory.getFileType(loadFolderPath));
-        loadPath = loadPathFolder.getCanonicalPath();
-    }
-
-    /**
-     * @return
-     */
-    public String getLoadPath() {
-        return loadPath;
-    }
-
+  /**
+   * @return
+   */
+  public String getLoadPath() {
+    return loadPath;
+  }
 
 }

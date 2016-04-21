@@ -33,71 +33,71 @@ import org.carbondata.query.util.CarbonEngineLogEvent;
  * the slice.
  */
 public class SliceListener {
-    /**
-     * Attribute for Carbon LOGGER
-     */
-    private static final LogService LOGGER =
-            LogServiceFactory.getLogService(SliceListener.class.getName());
-    /**
-     * On which slice this is working on
-     */
-    private InMemoryTable slice;
-    /**
-     * Queries executing currently on this slice
-     */
-    private Set<Long> queries = new HashSet<Long>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+  /**
+   * Attribute for Carbon LOGGER
+   */
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(SliceListener.class.getName());
+  /**
+   * On which slice this is working on
+   */
+  private InMemoryTable slice;
+  /**
+   * Queries executing currently on this slice
+   */
+  private Set<Long> queries = new HashSet<Long>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-    /**
-     * @param slice
-     */
-    public SliceListener(InMemoryTable slice) {
-        this.slice = slice;
+  /**
+   * @param slice
+   */
+  public SliceListener(InMemoryTable slice) {
+    this.slice = slice;
+  }
+
+  /**
+   * Add the given query to dependents.
+   *
+   * @param queryID
+   */
+  public void registerQuery(Long queryID) {
+    queries.add(queryID);
+  }
+
+  /**
+   * @return
+   */
+  public String getCubeUniqueName() {
+    return slice.getCubeUniqueName();
+  }
+
+  public void fireQueryFinish(Long queryId) {
+    LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
+        "SliceListener: query finished " + queryId);
+    //System.out.println("SliceListener: query finished " + queryId);
+    //Don't remove till some one makes it as in active
+    if (!slice.isActive()) {
+      queries.remove(queryId);
     }
 
-    /**
-     * Add the given query to dependents.
-     *
-     * @param queryID
-     */
-    public void registerQuery(Long queryID) {
-        queries.add(queryID);
+    if (queries.size() == 0) {
+
+      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
+          "SliceListener: Unregistering slice " + slice.getID());
+
+      //Yes this slice is ready to clear
+      InMemoryTableStore.getInstance().unRegisterSlice(slice.getCubeUniqueName(), slice);
+      slice.clean();
+
+      // if the query is in waiting and old execution
+      // finished, change QUERY_EXECUTE_STATUS and deal with cache
+      InMemoryTableStore.getInstance().afterClearQueriesAndCubes(slice.getCubeUniqueName());
     }
+  }
 
-    /**
-     * @return
-     */
-    public String getCubeUniqueName() {
-        return slice.getCubeUniqueName();
-    }
-
-    public void fireQueryFinish(Long queryId) {
-        LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-                "SliceListener: query finished " + queryId);
-        //System.out.println("SliceListener: query finished " + queryId);
-        //Don't remove till some one makes it as in active
-        if (!slice.isActive()) {
-            queries.remove(queryId);
-        }
-
-        if (queries.size() == 0) {
-
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-                    "SliceListener: Unregistering slice " + slice.getID());
-
-            //Yes this slice is ready to clear
-            InMemoryTableStore.getInstance().unRegisterSlice(slice.getCubeUniqueName(), slice);
-            slice.clean();
-
-            // if the query is in waiting and old execution
-            // finished, change QUERY_EXECUTE_STATUS and deal with cache
-            InMemoryTableStore.getInstance().afterClearQueriesAndCubes(slice.getCubeUniqueName());
-        }
-    }
-
-    /**
-     * Is there any more queries pending to notify?
-     */
-    public boolean stillListening() {
-        return queries.size() != 0;
-    }
+  /**
+   * Is there any more queries pending to notify?
+   */
+  public boolean stillListening() {
+    return queries.size() != 0;
+  }
 }

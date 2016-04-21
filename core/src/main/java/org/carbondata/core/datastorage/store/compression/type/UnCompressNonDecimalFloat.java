@@ -31,79 +31,72 @@ import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.ValueCompressionUtil;
 
 public class UnCompressNonDecimalFloat implements ValueCompressonHolder.UnCompressValue<float[]> {
-    /**
-     * Attribute for Carbon LOGGER
-     */
-    private static final LogService LOGGER =
-            LogServiceFactory.getLogService(UnCompressNonDecimalFloat.class.getName());
-    /**
-     * floatCompressor
-     */
-    private static Compressor<float[]> floatCompressor =
-            SnappyCompression.SnappyFloatCompression.INSTANCE;
-    /**
-     * value.
-     */
+  /**
+   * Attribute for Carbon LOGGER
+   */
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(UnCompressNonDecimalFloat.class.getName());
+  /**
+   * floatCompressor
+   */
+  private static Compressor<float[]> floatCompressor =
+      SnappyCompression.SnappyFloatCompression.INSTANCE;
+  /**
+   * value.
+   */
 
-    private float[] value;
+  private float[] value;
 
-    @Override
-    public void setValue(float[] value) {
-        this.value = value;
+  @Override public void setValue(float[] value) {
+    this.value = value;
 
+  }
+
+  @Override public ValueCompressonHolder.UnCompressValue getNew() {
+    try {
+      return (ValueCompressonHolder.UnCompressValue) clone();
+    } catch (CloneNotSupportedException cnsexception) {
+      LOGGER
+          .error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, cnsexception, cnsexception.getMessage());
     }
+    return null;
+  }
 
-    @Override
-    public ValueCompressonHolder.UnCompressValue getNew() {
-        try {
-            return (ValueCompressonHolder.UnCompressValue) clone();
-        } catch (CloneNotSupportedException cnsexception) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, cnsexception,
-                    cnsexception.getMessage());
-        }
-        return null;
-    }
+  public byte[] getBackArrayData() {
+    return ValueCompressionUtil.convertToBytes(value);
+  }
 
-    public byte[] getBackArrayData() {
-        return ValueCompressionUtil.convertToBytes(value);
-    }
+  @Override public ValueCompressonHolder.UnCompressValue compress() {
+    UnCompressNonDecimalByte byte1 = new UnCompressNonDecimalByte();
+    byte1.setValue(floatCompressor.compress(value));
+    return byte1;
+  }
 
-    @Override
-    public ValueCompressonHolder.UnCompressValue compress() {
-        UnCompressNonDecimalByte byte1 = new UnCompressNonDecimalByte();
-        byte1.setValue(floatCompressor.compress(value));
-        return byte1;
-    }
+  @Override
+  public ValueCompressonHolder.UnCompressValue uncompress(ValueCompressionUtil.DataType dataType) {
+    return null;
+  }
 
-    @Override
-    public ValueCompressonHolder.UnCompressValue uncompress(
-            ValueCompressionUtil.DataType dataType) {
-        return null;
-    }
+  @Override public void setValueInBytes(byte[] value) {
+    ByteBuffer buffer = ByteBuffer.wrap(value);
+    this.value = ValueCompressionUtil.convertToFloatArray(buffer, value.length);
+  }
 
-    @Override
-    public void setValueInBytes(byte[] value) {
-        ByteBuffer buffer = ByteBuffer.wrap(value);
-        this.value = ValueCompressionUtil.convertToFloatArray(buffer, value.length);
-    }
+  /**
+   * @see ValueCompressonHolder.UnCompressValue#getCompressorObject()
+   */
+  @Override public ValueCompressonHolder.UnCompressValue getCompressorObject() {
+    return new UnCompressNonDecimalByte();
+  }
 
-    /**
-     * @see ValueCompressonHolder.UnCompressValue#getCompressorObject()
-     */
-    @Override
-    public ValueCompressonHolder.UnCompressValue getCompressorObject() {
-        return new UnCompressNonDecimalByte();
+  @Override public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {
+    double[] vals = new double[value.length];
+    for (int m = 0; m < vals.length; m++) {
+      vals[m] = value[m] / Math.pow(10, decimal);
     }
-
-    @Override
-    public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {
-        double[] vals = new double[value.length];
-        for (int m = 0; m < vals.length; m++) {
-            vals[m] = value[m] / Math.pow(10, decimal);
-        }
-        CarbonReadDataHolder dataHolder = new CarbonReadDataHolder();
-        dataHolder.setReadableDoubleValues(vals);
-        return dataHolder;
-    }
+    CarbonReadDataHolder dataHolder = new CarbonReadDataHolder();
+    dataHolder.setReadableDoubleValues(vals);
+    return dataHolder;
+  }
 
 }

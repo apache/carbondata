@@ -40,131 +40,122 @@ import org.carbondata.query.util.QueryExecutorUtility;
 import org.carbondata.query.wrappers.ByteArrayWrapper;
 
 public class ListBasedResultAggregatorImpl implements ColumnarScannedResultAggregator {
-    /**
-     * LOGGER.
-     */
-    private static final LogService LOGGER =
-            LogServiceFactory.getLogService(ListBasedResultAggregatorImpl.class.getName());
+  /**
+   * LOGGER.
+   */
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(ListBasedResultAggregatorImpl.class.getName());
 
-    private List<ByteArrayWrapper> keys;
+  private List<ByteArrayWrapper> keys;
 
-    private List<MeasureAggregator[]> values;
+  private List<MeasureAggregator[]> values;
 
-    private ColumnarAggregatorInfo columnaraggreagtorInfo;
+  private ColumnarAggregatorInfo columnaraggreagtorInfo;
 
-    private DataAggregator dataAggregator;
+  private DataAggregator dataAggregator;
 
-    private boolean isAggTable;
+  private boolean isAggTable;
 
-    private int rowCounter;
+  private int rowCounter;
 
-    private int limit;
+  private int limit;
 
-    public ListBasedResultAggregatorImpl(ColumnarAggregatorInfo columnaraggreagtorInfo,
-            DataAggregator dataAggregator) {
-        this.columnaraggreagtorInfo = columnaraggreagtorInfo;
-        this.dataAggregator = dataAggregator;
-        isAggTable = columnaraggreagtorInfo.getCountMsrIndex() > -1;
-        limit = columnaraggreagtorInfo.getLimit();
+  public ListBasedResultAggregatorImpl(ColumnarAggregatorInfo columnaraggreagtorInfo,
+      DataAggregator dataAggregator) {
+    this.columnaraggreagtorInfo = columnaraggreagtorInfo;
+    this.dataAggregator = dataAggregator;
+    isAggTable = columnaraggreagtorInfo.getCountMsrIndex() > -1;
+    limit = columnaraggreagtorInfo.getLimit();
+  }
+
+  @Override public int aggregateData(AbstractColumnarScanResult keyValue) {
+    this.keys = new ArrayList<ByteArrayWrapper>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    this.values = new ArrayList<MeasureAggregator[]>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    ByteArrayWrapper key = null;
+    MeasureAggregator[] value = null;
+    while (keyValue.hasNext() && (limit == -1 || rowCounter < limit)) {
+      key = new ByteArrayWrapper();
+      //Primitives types selected
+      if (columnaraggreagtorInfo.getQueryDimensionsLength() == keyValue.getKeyBlockLength()) {
+        key.setMaskedKey(keyValue.getKeyArray(key));
+      } else {
+        //Complex columns selected.
+        List<byte[]> complexKeyArray = keyValue
+            .getKeyArrayWithComplexTypes(this.columnaraggreagtorInfo.getComplexQueryDims(), key);
+        key.setMaskedKey(complexKeyArray.remove(complexKeyArray.size() - 1));
+        for (byte[] complexKey : complexKeyArray) {
+          key.addComplexTypeData(complexKey);
+        }
+      }
+      value = AggUtil.getAggregators(columnaraggreagtorInfo.getAggType(), isAggTable, null,
+          columnaraggreagtorInfo.getCubeUniqueName(), columnaraggreagtorInfo.getMsrMinValue(),
+          columnaraggreagtorInfo.getNoDictionaryTypes(), columnaraggreagtorInfo.getDataTypes());
+      dataAggregator.aggregateData(keyValue, value, key);
+      keys.add(key);
+      values.add(value);
+      rowCounter++;
+    }
+    return rowCounter;
+  }
+
+  @Override public Result getResult(RestructureHolder restructureHolder) {
+    List<ByteArrayWrapper> finalKeys =
+        new ArrayList<ByteArrayWrapper>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    List<MeasureAggregator[]> finalValues =
+        new ArrayList<MeasureAggregator[]>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    Result<List<ByteArrayWrapper>, List<MeasureAggregator[]>> result = new ListBasedResult();
+
+    if (!restructureHolder.updateRequired) {
+      result.addScannedResult(keys, values);
+    } else {
+      updateScannedResult(restructureHolder, finalKeys, finalValues);
+      result.addScannedResult(finalKeys, finalValues);
+    }
+    return result;
+  }
+
+  private void updateScannedResult(RestructureHolder restructureHolder,
+      List<ByteArrayWrapper> finalKeys, List<MeasureAggregator[]> finalValues) {
+    if (!restructureHolder.updateRequired) {
+      return;
     }
 
-    @Override
-    public int aggregateData(AbstractColumnarScanResult keyValue) {
-        this.keys = new ArrayList<ByteArrayWrapper>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-        this.values =
-                new ArrayList<MeasureAggregator[]>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-        ByteArrayWrapper key = null;
-        MeasureAggregator[] value = null;
-        while (keyValue.hasNext() && (limit == -1 || rowCounter < limit)) {
-            key = new ByteArrayWrapper();
-            //Primitives types selected
-            if (columnaraggreagtorInfo.getQueryDimensionsLength() == keyValue.getKeyBlockLength()) {
-                key.setMaskedKey(keyValue.getKeyArray(key));
+    try {
+      long[] data = null;
+      long[] updatedData = null;
+      ByteArrayWrapper key = null;
+      for (int i = 0; i < keys.size(); i++) {
+        key = keys.get(i);
+        data = restructureHolder.getKeyGenerator()
+            .getKeyArray(key.getMaskedKey(), restructureHolder.maskedByteRanges);
+        updatedData = new long[columnaraggreagtorInfo.getLatestKeyGenerator().getDimCount()];
+        Arrays.fill(updatedData, 1);
+        System.arraycopy(data, 0, updatedData, 0, data.length);
+        if (restructureHolder.metaData.getNewDimsDefVals() != null
+            && restructureHolder.metaData.getNewDimsDefVals().length > 0) {
+          for (int k = 0; k < restructureHolder.metaData.getNewDimsDefVals().length; k++) {
+            if (restructureHolder.getIsNoDictionaryNewDims()[k]) {
+              key.addToNoDictionaryValKeyList(
+                  restructureHolder.metaData.getNewDimsDefVals()[k].getBytes());
             } else {
-                //Complex columns selected.
-                List<byte[]> complexKeyArray = keyValue.getKeyArrayWithComplexTypes(
-                        this.columnaraggreagtorInfo.getComplexQueryDims(), key);
-                key.setMaskedKey(complexKeyArray.remove(complexKeyArray.size() - 1));
-                for (byte[] complexKey : complexKeyArray) {
-                    key.addComplexTypeData(complexKey);
-                }
+              updatedData[data.length + k] =
+                  restructureHolder.metaData.getNewDimsSurrogateKeys()[k];
             }
-            value = AggUtil.getAggregators(columnaraggreagtorInfo.getAggType(), isAggTable, null,
-                    columnaraggreagtorInfo.getCubeUniqueName(),
-                    columnaraggreagtorInfo.getMsrMinValue(),
-                    columnaraggreagtorInfo.getNoDictionaryTypes(),
-                    columnaraggreagtorInfo.getDataTypes());
-            dataAggregator.aggregateData(keyValue, value, key);
-            keys.add(key);
-            values.add(value);
-            rowCounter++;
+          }
         }
-        return rowCounter;
+        if (restructureHolder.getQueryDimsCount() == columnaraggreagtorInfo.getLatestKeyGenerator()
+            .getDimCount()) {
+          key.setMaskedKey(QueryExecutorUtility
+              .getMaskedKey(columnaraggreagtorInfo.getLatestKeyGenerator().generateKey(updatedData),
+                  columnaraggreagtorInfo.getActualMaxKeyBasedOnDimensions(),
+                  columnaraggreagtorInfo.getActalMaskedByteRanges(),
+                  columnaraggreagtorInfo.getActualMaskedKeyByteSize()));
+        }
+        finalKeys.add(key);
+        finalValues.add(values.get(i));
+      }
+    } catch (KeyGenException e) {
+      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
     }
-
-    @Override
-    public Result getResult(RestructureHolder restructureHolder) {
-        List<ByteArrayWrapper> finalKeys =
-                new ArrayList<ByteArrayWrapper>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-        List<MeasureAggregator[]> finalValues =
-                new ArrayList<MeasureAggregator[]>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-        Result<List<ByteArrayWrapper>, List<MeasureAggregator[]>> result = new ListBasedResult();
-
-        if (!restructureHolder.updateRequired) {
-            result.addScannedResult(keys, values);
-        } else {
-            updateScannedResult(restructureHolder, finalKeys, finalValues);
-            result.addScannedResult(finalKeys, finalValues);
-        }
-        return result;
-    }
-
-    private void updateScannedResult(RestructureHolder restructureHolder,
-            List<ByteArrayWrapper> finalKeys, List<MeasureAggregator[]> finalValues) {
-        if (!restructureHolder.updateRequired) {
-            return;
-        }
-
-        try {
-            long[] data = null;
-            long[] updatedData = null;
-            ByteArrayWrapper key = null;
-            for (int i = 0; i < keys.size(); i++) {
-                key = keys.get(i);
-                data = restructureHolder.getKeyGenerator()
-                        .getKeyArray(key.getMaskedKey(), restructureHolder.maskedByteRanges);
-                updatedData =
-                        new long[columnaraggreagtorInfo.getLatestKeyGenerator().getDimCount()];
-                Arrays.fill(updatedData, 1);
-                System.arraycopy(data, 0, updatedData, 0, data.length);
-                if (restructureHolder.metaData.getNewDimsDefVals() != null
-                        && restructureHolder.metaData.getNewDimsDefVals().length > 0) {
-                    for (int k = 0;
-                         k < restructureHolder.metaData.getNewDimsDefVals().length; k++) {
-                      if(restructureHolder.getIsNoDictionaryNewDims()[k])
-                      {
-                        key.addToNoDictionaryValKeyList(restructureHolder.metaData.getNewDimsDefVals()[k].getBytes());
-                      }
-                      else
-                      {
-                        updatedData[data.length + k] =
-                                restructureHolder.metaData.getNewDimsSurrogateKeys()[k];
-                      }
-                    }
-                }
-                if (restructureHolder.getQueryDimsCount() == columnaraggreagtorInfo
-                        .getLatestKeyGenerator().getDimCount()) {
-                    key.setMaskedKey(QueryExecutorUtility.getMaskedKey(
-                            columnaraggreagtorInfo.getLatestKeyGenerator().generateKey(updatedData),
-                            columnaraggreagtorInfo.getActualMaxKeyBasedOnDimensions(),
-                            columnaraggreagtorInfo.getActalMaskedByteRanges(),
-                            columnaraggreagtorInfo.getActualMaskedKeyByteSize()));
-                }
-                finalKeys.add(key);
-                finalValues.add(values.get(i));
-            }
-        } catch (KeyGenException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
-        }
-    }
+  }
 }

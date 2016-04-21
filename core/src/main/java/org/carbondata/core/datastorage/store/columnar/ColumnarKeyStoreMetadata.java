@@ -23,128 +23,128 @@ import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 
 public class ColumnarKeyStoreMetadata {
-    private boolean isSorted;
+  private boolean isSorted;
 
-    private int[] columnIndex;
+  private int[] columnIndex;
 
-    private int[] columnReverseIndex;
+  private int[] columnReverseIndex;
 
-    private int eachRowSize;
+  private int eachRowSize;
 
-    private int[] dataIndex;
+  private int[] dataIndex;
 
-    private boolean isUnCompressed;
+  private boolean isUnCompressed;
 
-    private KeyGenerator keyGenerator;
+  private KeyGenerator keyGenerator;
 
-    /**
-     * isNoDictionaryValColumn.
-     */
-    private boolean isNoDictionaryValColumn;
-    private boolean isRowStore;
+  /**
+   * isNoDictionaryValColumn.
+   */
+  private boolean isNoDictionaryValColumn;
+  private boolean isRowStore;
 
-    public ColumnarKeyStoreMetadata(int eachRowSize) {
-        this.eachRowSize = eachRowSize;
-        keyGenerator = KeyGeneratorFactory.getKeyGenerator(new int[] { eachRowSize });
-    }
+  public ColumnarKeyStoreMetadata(int eachRowSize) {
+    this.eachRowSize = eachRowSize;
+    keyGenerator = KeyGeneratorFactory.getKeyGenerator(new int[] { eachRowSize });
+  }
 
-    /**
-     * @return the isSorted
-     */
-    public boolean isSorted() {
-        return isSorted;
-    }
+  /**
+   * @return the isSorted
+   */
+  public boolean isSorted() {
+    return isSorted;
+  }
 
-    /**
-     * @param isSorted the isSorted to set
-     */
-    public void setSorted(boolean isSorted) {
-        this.isSorted = isSorted;
-    }
+  /**
+   * @param isSorted the isSorted to set
+   */
+  public void setSorted(boolean isSorted) {
+    this.isSorted = isSorted;
+  }
 
-    /**
-     * @return the columnIndex
-     */
-    public int[] getColumnIndex() {
-        return columnIndex;
-    }
+  /**
+   * @return the columnIndex
+   */
+  public int[] getColumnIndex() {
+    return columnIndex;
+  }
 
-    /**
-     * @param columnIndex the columnIndex to set
-     */
-    public void setColumnIndex(int[] columnIndex) {
-        this.columnIndex = columnIndex;
-    }
+  /**
+   * @param columnIndex the columnIndex to set
+   */
+  public void setColumnIndex(int[] columnIndex) {
+    this.columnIndex = columnIndex;
+  }
 
-    /**
-     * @return the eachRowSize
-     */
-    public int getEachRowSize() {
-        return eachRowSize;
-    }
+  /**
+   * @return the eachRowSize
+   */
+  public int getEachRowSize() {
+    return eachRowSize;
+  }
 
-    /**
-     * @return the dataIndex
-     */
-    public int[] getDataIndex() {
-        return dataIndex;
-    }
+  /**
+   * @return the dataIndex
+   */
+  public int[] getDataIndex() {
+    return dataIndex;
+  }
 
-    /**
-     * @param dataIndex the dataIndex to set
-     */
-    public void setDataIndex(int[] dataIndex) {
-        this.dataIndex = dataIndex;
-    }
+  /**
+   * @param dataIndex the dataIndex to set
+   */
+  public void setDataIndex(int[] dataIndex) {
+    this.dataIndex = dataIndex;
+  }
 
-    /**
-     * @return the columnReverseIndex
-     */
-    public int[] getColumnReverseIndex() {
-        return columnReverseIndex;
-    }
+  /**
+   * @return the columnReverseIndex
+   */
+  public int[] getColumnReverseIndex() {
+    return columnReverseIndex;
+  }
 
-    /**
-     * @param columnReverseIndex the columnReverseIndex to set
-     */
-    public void setColumnReverseIndex(int[] columnReverseIndex) {
-        this.columnReverseIndex = columnReverseIndex;
-    }
+  /**
+   * @param columnReverseIndex the columnReverseIndex to set
+   */
+  public void setColumnReverseIndex(int[] columnReverseIndex) {
+    this.columnReverseIndex = columnReverseIndex;
+  }
 
-    public boolean isUnCompressed() {
-        return isUnCompressed;
-    }
+  public boolean isUnCompressed() {
+    return isUnCompressed;
+  }
 
-    public void setUnCompressed(boolean isUnCompressed) {
-        this.isUnCompressed = isUnCompressed;
-    }
+  public void setUnCompressed(boolean isUnCompressed) {
+    this.isUnCompressed = isUnCompressed;
+  }
 
-    public KeyGenerator getKeyGenerator() {
-        return keyGenerator;
-    }
+  public KeyGenerator getKeyGenerator() {
+    return keyGenerator;
+  }
 
-    public boolean isRowStore() {
-        return isRowStore;
-    }
+  public boolean isRowStore() {
+    return isRowStore;
+  }
 
-    public void setRowStore(boolean isRowStore) {
-        this.isRowStore = isRowStore;
-    }
+  public void setRowStore(boolean isRowStore) {
+    this.isRowStore = isRowStore;
+  }
 
-    /**
-     * @return
-     */
-    public boolean isNoDictionaryValColumn() {
-        return isNoDictionaryValColumn;
-        
-    }
+  /**
+   * @return
+   */
+  public boolean isNoDictionaryValColumn() {
+    return isNoDictionaryValColumn;
 
-    /**
-     * @param isNoDictionaryValColumn
-     */
-    public void setNoDictionaryValColumn(boolean isNoDictionaryValColumn) {
-        this.isNoDictionaryValColumn = isNoDictionaryValColumn;
+  }
 
-    }
+  /**
+   * @param isNoDictionaryValColumn
+   */
+  public void setNoDictionaryValColumn(boolean isNoDictionaryValColumn) {
+    this.isNoDictionaryValColumn = isNoDictionaryValColumn;
+
+  }
 
 }

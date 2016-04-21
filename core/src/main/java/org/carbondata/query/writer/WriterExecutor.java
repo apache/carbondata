@@ -44,53 +44,54 @@ import org.carbondata.query.writer.exception.ResultWriterException;
  * Class Version  : 1.0
  */
 public class WriterExecutor {
-    private ExecutorService execService;
+  private ExecutorService execService;
 
-    /**
-     * Constructor.
-     */
-    public WriterExecutor() {
-        execService = Executors.newFixedThreadPool(2);
-    }
+  /**
+   * Constructor.
+   */
+  public WriterExecutor() {
+    execService = Executors.newFixedThreadPool(2);
+  }
 
-    /**
-     * This method is used to invoke the writer based on the scanned result.
-     *
-     * @param scannedResult
-     * @param comparator
-     * @param writerVo
-     * @param outLocation
-     */
-    public void writeResult(Result scannedResult, Comparator comparator,
-            DataProcessorInfo dataProcessorInfo, String outLocation) {
-        execService.submit(new ScannedResultDataFileWriterThread(scannedResult, dataProcessorInfo,
-                comparator, outLocation));
-    }
+  /**
+   * This method is used to invoke the writer based on the scanned result.
+   *
+   * @param scannedResult
+   * @param comparator
+   * @param writerVo
+   * @param outLocation
+   */
+  public void writeResult(Result scannedResult, Comparator comparator,
+      DataProcessorInfo dataProcessorInfo, String outLocation) {
+    execService.submit(
+        new ScannedResultDataFileWriterThread(scannedResult, dataProcessorInfo, comparator,
+            outLocation));
+  }
 
-    /**
-     * This method is used to invoke the writer based on the data heap.
-     *
-     * @param dataHeap
-     * @param writerVo
-     * @param outLocation
-     */
-    public void writeResult(AbstractQueue<Tuple> dataHeap, DataProcessorInfo writerVo,
-            String outLocation) {
-        execService.submit(new HeapBasedDataFileWriterThread(dataHeap, writerVo, outLocation));
-    }
+  /**
+   * This method is used to invoke the writer based on the data heap.
+   *
+   * @param dataHeap
+   * @param writerVo
+   * @param outLocation
+   */
+  public void writeResult(AbstractQueue<Tuple> dataHeap, DataProcessorInfo writerVo,
+      String outLocation) {
+    execService.submit(new HeapBasedDataFileWriterThread(dataHeap, writerVo, outLocation));
+  }
 
-    /**
-     * This method will wait till the writer threads are finished.
-     *
-     * @throws ResultWriterException
-     */
-    public void closeWriter() throws ResultWriterException {
-        execService.shutdown();
-        try {
-            execService.awaitTermination(2, TimeUnit.DAYS);
-        } catch (InterruptedException e) {
-            throw new ResultWriterException(e);
-        }
+  /**
+   * This method will wait till the writer threads are finished.
+   *
+   * @throws ResultWriterException
+   */
+  public void closeWriter() throws ResultWriterException {
+    execService.shutdown();
+    try {
+      execService.awaitTermination(2, TimeUnit.DAYS);
+    } catch (InterruptedException e) {
+      throw new ResultWriterException(e);
     }
+  }
 
 }

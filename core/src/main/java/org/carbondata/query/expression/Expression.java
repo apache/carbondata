@@ -24,28 +24,28 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.query.expression.exception.FilterUnsupportedException;
 import org.carbondata.query.carbonfilterinterface.ExpressionType;
 import org.carbondata.query.carbonfilterinterface.RowIntf;
+import org.carbondata.query.expression.exception.FilterUnsupportedException;
 
 public abstract class Expression implements Serializable {
 
-    /**
-     *
-     */
-    private static final long serialVersionUID = -7568676723039530713L;
-    protected List<Expression> children =
-            new ArrayList<Expression>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+  /**
+   *
+   */
+  private static final long serialVersionUID = -7568676723039530713L;
+  protected List<Expression> children =
+      new ArrayList<Expression>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-    public abstract ExpressionResult evaluate(RowIntf value) throws FilterUnsupportedException;
+  public abstract ExpressionResult evaluate(RowIntf value) throws FilterUnsupportedException;
 
-    public abstract ExpressionType getFilterExpressionType();
+  public abstract ExpressionType getFilterExpressionType();
 
-    public List<Expression> getChildren() {
-        return children;
-    }
+  public List<Expression> getChildren() {
+    return children;
+  }
 
-    public abstract String getString();
+  public abstract String getString();
 
-    // public abstract void  accept(ExpressionVisitor visitor);
+  // public abstract void  accept(ExpressionVisitor visitor);
 }

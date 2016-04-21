@@ -17,28 +17,27 @@
  * under the License.
  */
 
-package org.carbondata.processing.sortandgroupby.sortData;
+package org.carbondata.processing.sortandgroupby.sortdata;
 
 public final class TempSortFileWriterFactory {
-    private static final TempSortFileWriterFactory WRITERFACTORY = new TempSortFileWriterFactory();
+  private static final TempSortFileWriterFactory WRITERFACTORY = new TempSortFileWriterFactory();
 
-    private TempSortFileWriterFactory() {
+  private TempSortFileWriterFactory() {
 
+  }
+
+  public static TempSortFileWriterFactory getInstance() {
+    return WRITERFACTORY;
+  }
+
+  public TempSortFileWriter getTempSortFileWriter(boolean isCompressionEnabled, int dimensionCount,
+      int complexDimensionCount, int measureCount, int noDictionaryCount, int writeBufferSize) {
+    if (isCompressionEnabled) {
+      return new CompressedTempSortFileWriter(dimensionCount, complexDimensionCount, measureCount,
+          noDictionaryCount, writeBufferSize);
+    } else {
+      return new UnCompressedTempSortFileWriter(dimensionCount, complexDimensionCount, measureCount,
+          noDictionaryCount, writeBufferSize);
     }
-
-    public static TempSortFileWriterFactory getInstance() {
-        return WRITERFACTORY;
-    }
-
-    public TempSortFileWriter getTempSortFileWriter(boolean isCompressionEnabled,
-            int dimensionCount, int complexDimensionCount, int measureCount,
-            int noDictionaryCount, int writeBufferSize) {
-        if (isCompressionEnabled) {
-            return new CompressedTempSortFileWriter(dimensionCount, complexDimensionCount,
-                    measureCount, noDictionaryCount, writeBufferSize);
-        } else {
-            return new UnCompressedTempSortFileWriter(dimensionCount, complexDimensionCount,
-                    measureCount, noDictionaryCount, writeBufferSize);
-        }
-    }
+  }
 }

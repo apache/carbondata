@@ -32,201 +32,161 @@ import org.carbondata.query.evaluators.FilterProcessorPlaceHolder;
 import org.carbondata.query.expression.Expression;
 
 public class NonUniqueBlockNotEqualsEvaluator extends AbstractConditionalEvalutor {
-    public NonUniqueBlockNotEqualsEvaluator(Expression exp, boolean isExpressionResolve,
-            boolean isIncludeFilter) {
-        super(exp, isExpressionResolve, isIncludeFilter);
+  public NonUniqueBlockNotEqualsEvaluator(Expression exp, boolean isExpressionResolve,
+      boolean isIncludeFilter) {
+    super(exp, isExpressionResolve, isIncludeFilter);
+  }
+
+  @Override public BitSet applyFilter(BlockDataHolder blockDataHolderArray,
+      FilterProcessorPlaceHolder placeHolder, int[] noDictionaryColIndexes) {
+    if (null == blockDataHolderArray.getColumnarKeyStore()[dimColEvaluatorInfoList.get(0)
+        .getColumnIndex()]) {
+      blockDataHolderArray.getColumnarKeyStore()[dimColEvaluatorInfoList.get(0).getColumnIndex()] =
+          blockDataHolderArray.getLeafDataBlock()
+              .getColumnarKeyStore(blockDataHolderArray.getFileHolder(),
+                  dimColEvaluatorInfoList.get(0).getColumnIndex(),
+                  dimColEvaluatorInfoList.get(0).isNeedCompressedData(), noDictionaryColIndexes);
     }
+    return getFilteredIndexes(
+        blockDataHolderArray.getColumnarKeyStore()[dimColEvaluatorInfoList.get(0).getColumnIndex()],
+        blockDataHolderArray.getLeafDataBlock().getnKeys());
+  }
 
-    @Override
-    public BitSet applyFilter(BlockDataHolder blockDataHolderArray,
-            FilterProcessorPlaceHolder placeHolder,int[] noDictionaryColIndexes) {
-        if (null == blockDataHolderArray.getColumnarKeyStore()[dimColEvaluatorInfoList.get(0)
-                .getColumnIndex()]) {
-            blockDataHolderArray.getColumnarKeyStore()[dimColEvaluatorInfoList.get(0)
-                    .getColumnIndex()] = blockDataHolderArray.getLeafDataBlock()
-                    .getColumnarKeyStore(blockDataHolderArray.getFileHolder(),
-                            dimColEvaluatorInfoList.get(0).getColumnIndex(),
-                            dimColEvaluatorInfoList.get(0).isNeedCompressedData(),noDictionaryColIndexes);
-        }
-        return getFilteredIndexes(
-                blockDataHolderArray.getColumnarKeyStore()[dimColEvaluatorInfoList.get(0)
-                        .getColumnIndex()], blockDataHolderArray.getLeafDataBlock().getnKeys());
+  private BitSet getFilteredIndexes(ColumnarKeyStoreDataHolder keyStoreArray, int numerOfRows) {
+    //For high cardinality dimensions.
+    if (keyStoreArray.getColumnarKeyStoreMetadata().isNoDictionaryValColumn()) {
+      return setDirectKeyFilterIndexToBitSet(keyStoreArray, numerOfRows);
     }
-
-    private BitSet getFilteredIndexes(ColumnarKeyStoreDataHolder keyStoreArray, int numerOfRows) {
-        //For high cardinality dimensions.
-        if (keyStoreArray.getColumnarKeyStoreMetadata().isNoDictionaryValColumn()) {
-            return setDirectKeyFilterIndexToBitSet(keyStoreArray, numerOfRows);
-        }
-        if (null != keyStoreArray.getColumnarKeyStoreMetadata().getColumnIndex()) {
-            return setFilterdIndexToBitSetWithColumnIndex(keyStoreArray, numerOfRows);
-        }
-        return setFilterdIndexToBitSet(keyStoreArray, numerOfRows);
+    if (null != keyStoreArray.getColumnarKeyStoreMetadata().getColumnIndex()) {
+      return setFilterdIndexToBitSetWithColumnIndex(keyStoreArray, numerOfRows);
     }
+    return setFilterdIndexToBitSet(keyStoreArray, numerOfRows);
+  }
 
-    private BitSet setDirectKeyFilterIndexToBitSet(ColumnarKeyStoreDataHolder keyBlockArray,
-            int numerOfRows) {
-        BitSet bitSet = new BitSet(numerOfRows);
-        bitSet.flip(0, numerOfRows);
-        List<byte[]> listOfColumnarKeyBlockDataForNoDictionaryVals =
-                keyBlockArray.getNoDictionaryValBasedKeyBlockData();
-        byte[][] filterValues = dimColEvaluatorInfoList.get(0).getFilterValues();
-        int[] columnIndexArray = keyBlockArray.getColumnarKeyStoreMetadata().getColumnIndex();
-        int[] columnReverseIndexArray =
-                keyBlockArray.getColumnarKeyStoreMetadata().getColumnReverseIndex();
-        for (int i = 0; i < filterValues.length; i++) {
-            byte[] filterVal = filterValues[i];
-            if (null != listOfColumnarKeyBlockDataForNoDictionaryVals) {
+  private BitSet setDirectKeyFilterIndexToBitSet(ColumnarKeyStoreDataHolder keyBlockArray,
+      int numerOfRows) {
+    BitSet bitSet = new BitSet(numerOfRows);
+    bitSet.flip(0, numerOfRows);
+    List<byte[]> listOfColumnarKeyBlockDataForNoDictionaryVals =
+        keyBlockArray.getNoDictionaryValBasedKeyBlockData();
+    byte[][] filterValues = dimColEvaluatorInfoList.get(0).getFilterValues();
+    int[] columnIndexArray = keyBlockArray.getColumnarKeyStoreMetadata().getColumnIndex();
+    int[] columnReverseIndexArray =
+        keyBlockArray.getColumnarKeyStoreMetadata().getColumnReverseIndex();
+    for (int i = 0; i < filterValues.length; i++) {
+      byte[] filterVal = filterValues[i];
+      if (null != listOfColumnarKeyBlockDataForNoDictionaryVals) {
 
-                if (null != columnReverseIndexArray) {
-                    for (int index : columnIndexArray) {
-                        byte[] noDictionaryVal = listOfColumnarKeyBlockDataForNoDictionaryVals
-                                .get(columnReverseIndexArray[index]);
-                        if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterVal, noDictionaryVal)
-                                == 0) {
-                            bitSet.flip(index);
-                        }
-                    }
-                } else if (null != columnIndexArray) {
-
-                    for (int index : columnIndexArray) {
-                        byte[] noDictionaryVal = listOfColumnarKeyBlockDataForNoDictionaryVals
-                                .get(columnIndexArray[index]);
-                        if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterVal, noDictionaryVal)
-                                == 0) {
-                            bitSet.flip(index);
-                        }
-                    }
-                    
-                }
-                else
-                {
-                	Iterator<byte[]> itr=listOfColumnarKeyBlockDataForNoDictionaryVals.iterator();
-                	int index=0;
-                	while(itr.hasNext())
-                	{
-                		 if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterVal, itr.next())
-                                 == 0) {
-                             bitSet.flip(index++);
-                         }
-                		
-                	}
-                	
-                }
-
+        if (null != columnReverseIndexArray) {
+          for (int index : columnIndexArray) {
+            byte[] noDictionaryVal =
+                listOfColumnarKeyBlockDataForNoDictionaryVals.get(columnReverseIndexArray[index]);
+            if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterVal, noDictionaryVal) == 0) {
+              bitSet.flip(index);
             }
-        }
-        return bitSet;
+          }
+        } else if (null != columnIndexArray) {
 
+          for (int index : columnIndexArray) {
+            byte[] noDictionaryVal =
+                listOfColumnarKeyBlockDataForNoDictionaryVals.get(columnIndexArray[index]);
+            if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterVal, noDictionaryVal) == 0) {
+              bitSet.flip(index);
+            }
+          }
+
+        } else {
+          Iterator<byte[]> itr = listOfColumnarKeyBlockDataForNoDictionaryVals.iterator();
+          int index = 0;
+          while (itr.hasNext()) {
+            if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterVal, itr.next()) == 0) {
+              bitSet.flip(index++);
+            }
+
+          }
+
+        }
+
+      }
     }
+    return bitSet;
 
-    private BitSet setFilterdIndexToBitSetWithColumnIndex(ColumnarKeyStoreDataHolder keyBlockArray,
-            int numerOfRows) {
-        int[] columnIndex = keyBlockArray.getColumnarKeyStoreMetadata().getColumnIndex();
-        int startKey = 0;
-        int last = 0;
-        int startIndex = 0;
-        BitSet bitSet = new BitSet(numerOfRows);
-        bitSet.flip(0, numerOfRows);
-        byte[][] filterValues = dimColEvaluatorInfoList.get(0).getFilterValues();
-        for (int i = 0; i < filterValues.length; i++) {
-            startKey = CarbonUtil
-                    .getFirstIndexUsingBinarySearch(keyBlockArray, startIndex, numerOfRows - 1,
-                            filterValues[i]);
-            if (startKey == -1) {
-                continue;
-            }
-            bitSet.flip(columnIndex[startKey]);
-            last = startKey;
-            for (int j = startKey + 1; j < numerOfRows; j++) {
-                if (ByteUtil.UnsafeComparer.INSTANCE
-                        .compareTo(keyBlockArray.getKeyBlockData(), j * filterValues[i].length,
-                                filterValues[i].length, filterValues[i], 0, filterValues[i].length)
-                        == 0) {
-                    bitSet.flip(columnIndex[j]);
-                    last++;
-                } else {
-                    break;
-                }
-            }
-            startIndex = last;
-            if (startIndex >= numerOfRows) {
-                break;
-            }
-        }
-        return bitSet;
-    }
+  }
 
-    private BitSet setFilterdIndexToBitSet(ColumnarKeyStoreDataHolder keyBlockArray,
-            int numerOfRows) {
-        int startKey = 0;
-        int last = 0;
-        BitSet bitSet = new BitSet(numerOfRows);
-        bitSet.flip(0, numerOfRows);
-        int startIndex = 0;
-        byte[][] filterValues = dimColEvaluatorInfoList.get(0).getFilterValues();
-        for (int k = 0; k < filterValues.length; k++) {
-            startKey = CarbonUtil
-                    .getFirstIndexUsingBinarySearch(keyBlockArray, startIndex, numerOfRows - 1,
-                            filterValues[k]);
-            if (startKey == -1) {
-                continue;
-            }
-            bitSet.flip(startKey);
-            last = startKey;
-            for (int j = startKey + 1; j < numerOfRows; j++) {
-                if (ByteUtil.UnsafeComparer.INSTANCE
-                        .compareTo(keyBlockArray.getKeyBlockData(), j * filterValues[k].length,
-                                filterValues[k].length, filterValues[k], 0, filterValues[k].length)
-                        == 0) {
-                    bitSet.flip(j);
-                    last++;
-                } else {
-                    break;
-                }
-            }
-            startIndex = last;
-            if (startIndex >= numerOfRows) {
-                break;
-            }
+  private BitSet setFilterdIndexToBitSetWithColumnIndex(ColumnarKeyStoreDataHolder keyBlockArray,
+      int numerOfRows) {
+    int[] columnIndex = keyBlockArray.getColumnarKeyStoreMetadata().getColumnIndex();
+    int startKey = 0;
+    int last = 0;
+    int startIndex = 0;
+    BitSet bitSet = new BitSet(numerOfRows);
+    bitSet.flip(0, numerOfRows);
+    byte[][] filterValues = dimColEvaluatorInfoList.get(0).getFilterValues();
+    for (int i = 0; i < filterValues.length; i++) {
+      startKey = CarbonUtil
+          .getFirstIndexUsingBinarySearch(keyBlockArray, startIndex, numerOfRows - 1,
+              filterValues[i]);
+      if (startKey == -1) {
+        continue;
+      }
+      bitSet.flip(columnIndex[startKey]);
+      last = startKey;
+      for (int j = startKey + 1; j < numerOfRows; j++) {
+        if (ByteUtil.UnsafeComparer.INSTANCE
+            .compareTo(keyBlockArray.getKeyBlockData(), j * filterValues[i].length,
+                filterValues[i].length, filterValues[i], 0, filterValues[i].length) == 0) {
+          bitSet.flip(columnIndex[j]);
+          last++;
+        } else {
+          break;
         }
-        return bitSet;
+      }
+      startIndex = last;
+      if (startIndex >= numerOfRows) {
+        break;
+      }
     }
-    
-/* For Not equals, range check is not valid.
- *    @Override
-    public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue)
-    {
-        BitSet bitSet = new BitSet(1);
-     
-        byte[][] fltrValues = dimColEvaluatorInfoList.get(0).getFilterValues(); 
-        int columnIndex = dimColEvaluatorInfoList.get(0).getColumnIndex();
-        boolean isScanRequired=false;
-        for(int k = 0;k < fltrValues.length;k++)
-        {
-            //filter value should not be in range of max and min value i.e max<filtervalue>min
-           
-            // filter-max should be positive
-            int maxCompare=ByteUtil.UnsafeComparer.INSTANCE.compareTo(fltrValues[k],blockMaxValue[columnIndex]);
-            //filter-min should be positive
-            int minCompare=ByteUtil.UnsafeComparer.INSTANCE.compareTo(fltrValues[k],blockMinValue[columnIndex]);
-            //if any filter meets this criteria
-            if(maxCompare!=0 || minCompare!=0)
-            {
-                isScanRequired=true;
-            }
-        }
-        if(isScanRequired)
-        {
-            bitSet.flip(0); 
-        }
-        return bitSet;
-    }*/
+    return bitSet;
+  }
 
-    @Override
-    public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
-        BitSet bitSet = new BitSet(1);
-        bitSet.flip(0, 1);
-        return bitSet;
+  private BitSet setFilterdIndexToBitSet(ColumnarKeyStoreDataHolder keyBlockArray,
+      int numerOfRows) {
+    int startKey = 0;
+    int last = 0;
+    BitSet bitSet = new BitSet(numerOfRows);
+    bitSet.flip(0, numerOfRows);
+    int startIndex = 0;
+    byte[][] filterValues = dimColEvaluatorInfoList.get(0).getFilterValues();
+    for (int k = 0; k < filterValues.length; k++) {
+      startKey = CarbonUtil
+          .getFirstIndexUsingBinarySearch(keyBlockArray, startIndex, numerOfRows - 1,
+              filterValues[k]);
+      if (startKey == -1) {
+        continue;
+      }
+      bitSet.flip(startKey);
+      last = startKey;
+      for (int j = startKey + 1; j < numerOfRows; j++) {
+        if (ByteUtil.UnsafeComparer.INSTANCE
+            .compareTo(keyBlockArray.getKeyBlockData(), j * filterValues[k].length,
+                filterValues[k].length, filterValues[k], 0, filterValues[k].length) == 0) {
+          bitSet.flip(j);
+          last++;
+        } else {
+          break;
+        }
+      }
+      startIndex = last;
+      if (startIndex >= numerOfRows) {
+        break;
+      }
     }
+    return bitSet;
+  }
+
+  @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
+    BitSet bitSet = new BitSet(1);
+    bitSet.flip(0, 1);
+    return bitSet;
+  }
 }

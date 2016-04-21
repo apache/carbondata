@@ -37,102 +37,98 @@ import org.carbondata.query.util.CarbonEngineLogEvent;
 
 public class HeapBasedDataFileWriterThread extends ResultWriter {
 
-    /**
-     * LOGGER
-     */
-    private static final LogService LOGGER =
-            LogServiceFactory.getLogService(HeapBasedDataFileWriterThread.class.getName());
-    /**
-     * dataHeap
-     */
-    private AbstractQueue<Tuple> dataHeap;
+  /**
+   * LOGGER
+   */
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(HeapBasedDataFileWriterThread.class.getName());
+  /**
+   * dataHeap
+   */
+  private AbstractQueue<Tuple> dataHeap;
 
-    /***
-     * comparator
-     */
-    // private Comparator comparator;
-    /**
-     * outLocation
-     */
-    private String outLocation;
+  /***
+   * comparator
+   */
+  // private Comparator comparator;
+  /**
+   * outLocation
+   */
+  private String outLocation;
 
-    /**
-     * DataFileWriter {refer Constructor}
-     *
-     * @param dataMap     data
-     * @param outLocation out location
-     * @param queryId     query id
-     */
-    public HeapBasedDataFileWriterThread(AbstractQueue<Tuple> dataHeap, DataProcessorInfo writerVo,
-            String outLocation) {
-        this.outLocation = outLocation;
+  /**
+   * DataFileWriter {refer Constructor}
+   *
+   * @param dataMap     data
+   * @param outLocation out location
+   * @param queryId     query id
+   */
+  public HeapBasedDataFileWriterThread(AbstractQueue<Tuple> dataHeap, DataProcessorInfo writerVo,
+      String outLocation) {
+    this.outLocation = outLocation;
 
-        this.dataProcessorInfo = writerVo;
+    this.dataProcessorInfo = writerVo;
 
-        this.dataHeap = dataHeap;
+    this.dataHeap = dataHeap;
 
-        //        updateDuplicateDimensions();
+    //        updateDuplicateDimensions();
 
+  }
+
+  /**
+   * @see java.util.concurrent.Callable#call()
+   */
+  @Override public Void call() throws Exception {
+    DataOutputStream dataOutput = null;
+    try {
+      if (!new File(this.outLocation).mkdirs()) {
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
+            "Problem while creating the pagination directory");
+      }
+
+      File tempFile = new File(this.outLocation + File.separator + System.nanoTime() + ".tmp");
+
+      dataOutput = FileFactory.getDataOutputStream(tempFile.getAbsolutePath(),
+          FileFactory.getFileType(tempFile.getAbsolutePath()),
+          CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
+              * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR);
+
+      int size = this.dataHeap.size();
+
+      dataOutput.writeInt(size);
+
+      writeDataFromHeap(dataOutput);
+
+      File dest = new File(this.outLocation + File.separator + System.nanoTime()
+          + CarbonCommonConstants.QUERY_OUT_FILE_EXT);
+      if (!tempFile.renameTo(dest)) {
+        LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "Problem while renaming the file");
+      }
+    } finally {
+      CarbonUtil.closeStreams(dataOutput);
     }
+    this.dataHeap = null;
+    return null;
+  }
 
-    /**
-     * @see java.util.concurrent.Callable#call()
-     */
-    @Override
-    public Void call() throws Exception {
-        DataOutputStream dataOutput = null;
-        try {
-            if (!new File(this.outLocation).mkdirs()) {
-                LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-                        "Problem while creating the pagination directory");
-            }
-
-            File tempFile =
-                    new File(this.outLocation + File.separator + System.nanoTime() + ".tmp");
-
-            dataOutput = FileFactory.getDataOutputStream(tempFile.getAbsolutePath(),
-                    FileFactory.getFileType(tempFile.getAbsolutePath()),
-                    CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
-                            * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR);
-
-            int size = this.dataHeap.size();
-
-            dataOutput.writeInt(size);
-
-            writeDataFromHeap(dataOutput);
-
-            File dest = new File(this.outLocation + File.separator + System.nanoTime()
-                    + CarbonCommonConstants.QUERY_OUT_FILE_EXT);
-            if (!tempFile.renameTo(dest)) {
-                LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-                        "Problem while renaming the file");
-            }
-        } finally {
-            CarbonUtil.closeStreams(dataOutput);
-        }
-        this.dataHeap = null;
-        return null;
+  /**
+   * Below method will be used to write data from heap to file
+   *
+   * @param dataOutput
+   * @throws IOException
+   * @throws KeyGenException
+   */
+  private void writeDataFromHeap(DataOutputStream dataOutput) throws IOException, KeyGenException {
+    int size = dataHeap.size();
+    for (int i = 0; i < size; i++) {
+      Tuple poll = dataHeap.poll();
+      byte[] key = poll.getKey();
+      dataOutput.write(key);
+      MeasureAggregator[] value = poll.getMeasures();
+      for (int j = 0; j < value.length; j++) {
+        value[j].writeData(dataOutput);
+      }
     }
-
-    /**
-     * Below method will be used to write data from heap to file
-     *
-     * @param dataOutput
-     * @throws IOException
-     * @throws KeyGenException
-     */
-    private void writeDataFromHeap(DataOutputStream dataOutput)
-            throws IOException, KeyGenException {
-        int size = dataHeap.size();
-        for (int i = 0; i < size; i++) {
-            Tuple poll = dataHeap.poll();
-            byte[] key = poll.getKey();
-            dataOutput.write(key);
-            MeasureAggregator[] value = poll.getMeasures();
-            for (int j = 0; j < value.length; j++) {
-                value[j].writeData(dataOutput);
-            }
-        }
-    }
+  }
 
 }

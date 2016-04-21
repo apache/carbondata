@@ -28,317 +28,315 @@ import org.carbondata.core.keygenerator.KeyGenerator;
 
 public class SliceMetaData implements Serializable {
 
-    /**
-     * serialVersionUID
-     */
-    private static final long serialVersionUID = 3046237866264840878L;
+  /**
+   * serialVersionUID
+   */
+  private static final long serialVersionUID = 3046237866264840878L;
 
-    /**
-     * Array of dimensions declared.
-     */
-    private String[] dimensions;
+  /**
+   * Array of dimensions declared.
+   */
+  private String[] dimensions;
 
-    private String complexTypeString;
-    /**
-     * actualDimensions
-     */
-    private String[] actualDimensions;
-    /**
-     * Array of measures declared.
-     */
-    private String[] measures;
-    /**
-     * measuresAggregator
-     */
-    private String[] measuresAggregator;
-    /**
-     * Array of newDimensions declared.
-     */
-    private String[] newDimensions;
-    /**
-     * actualNewDimensions
-     */
-    private String[] newActualDimensions;
-    /**
-     * tableNamesToLoadMandatory
-     */
-    private HashSet<String> tableNamesToLoadMandatory;
-    /**
-     * Array of newMeasures declared.
-     */
-    private String[] newMeasures;
-    /**
-     * Array of newMsrDfts declared.
-     */
-    private double[] newMsrDfts;
-    /**
-     * newMeasuresAggregator
-     */
-    private String[] newMeasuresAggregator;
-    /**
-     * heirAnKeySize
-     */
-    private String heirAnKeySize;
-    /**
-     * KeyGenerator declared.
-     */
-    private KeyGenerator keyGenerator;
-    /**
-     * dimLens
-     */
-    private int[] dimLens;
-    /**
-     * actualDimLens
-     */
-    private int[] actualDimLens;
-    /**
-     * newDimLens
-     */
-    private int[] newDimLens;
-    /**
-     * newActualDimLens
-     */
-    private int[] newActualDimLens;
-    /**
-     * oldDimsNewCardinality
-     */
-    private int[] oldDimsNewCardinality;
-    /**
-     * isDimCarinalityChanged
-     */
-    private boolean isDimCarinalityChanged;
-    private String[] newDimsDefVals;
-    private int[] newDimsSurrogateKeys;
-    /**
-     * new keygenerator
-     */
-    private KeyGenerator newKeyGenerator;
+  private String complexTypeString;
+  /**
+   * actualDimensions
+   */
+  private String[] actualDimensions;
+  /**
+   * Array of measures declared.
+   */
+  private String[] measures;
+  /**
+   * measuresAggregator
+   */
+  private String[] measuresAggregator;
+  /**
+   * Array of newDimensions declared.
+   */
+  private String[] newDimensions;
+  /**
+   * actualNewDimensions
+   */
+  private String[] newActualDimensions;
+  /**
+   * tableNamesToLoadMandatory
+   */
+  private HashSet<String> tableNamesToLoadMandatory;
+  /**
+   * Array of newMeasures declared.
+   */
+  private String[] newMeasures;
+  /**
+   * Array of newMsrDfts declared.
+   */
+  private double[] newMsrDfts;
+  /**
+   * newMeasuresAggregator
+   */
+  private String[] newMeasuresAggregator;
+  /**
+   * heirAnKeySize
+   */
+  private String heirAnKeySize;
+  /**
+   * KeyGenerator declared.
+   */
+  private KeyGenerator keyGenerator;
+  /**
+   * dimLens
+   */
+  private int[] dimLens;
+  /**
+   * actualDimLens
+   */
+  private int[] actualDimLens;
+  /**
+   * newDimLens
+   */
+  private int[] newDimLens;
+  /**
+   * newActualDimLens
+   */
+  private int[] newActualDimLens;
+  /**
+   * oldDimsNewCardinality
+   */
+  private int[] oldDimsNewCardinality;
+  /**
+   * isDimCarinalityChanged
+   */
+  private boolean isDimCarinalityChanged;
+  private String[] newDimsDefVals;
+  private int[] newDimsSurrogateKeys;
+  /**
+   * new keygenerator
+   */
+  private KeyGenerator newKeyGenerator;
 
-    public String getComplexTypeString() {
-        return complexTypeString;
+  public String getComplexTypeString() {
+    return complexTypeString;
+  }
+
+  public void setComplexTypeString(String complexTypeString) {
+    this.complexTypeString = complexTypeString;
+  }
+
+  public int[] getNewDimLens() {
+    return newDimLens;
+  }
+
+  public void setNewDimLens(int[] newDimLens) {
+    this.newDimLens = newDimLens;
+  }
+
+  public int[] getDimLens() {
+    return dimLens;
+  }
+
+  public void setDimLens(int[] dimLens) {
+    this.dimLens = dimLens;
+  }
+
+  public KeyGenerator getNewKeyGenerator() {
+    return newKeyGenerator;
+  }
+
+  public void setNewKeyGenerator(KeyGenerator newKeyGenerator) {
+    this.newKeyGenerator = newKeyGenerator;
+  }
+
+  public String[] getDimensions() {
+    return dimensions;
+  }
+
+  public void setDimensions(String[] dimensions) {
+    this.dimensions = dimensions;
+  }
+
+  public String[] getMeasures() {
+    return measures;
+  }
+
+  public void setMeasures(String[] measures) {
+    this.measures = measures;
+  }
+
+  public String[] getNewDimensions() {
+    return newDimensions;
+  }
+
+  public void setNewDimensions(String[] newDimensions) {
+    this.newDimensions = newDimensions;
+  }
+
+  public String[] getNewMeasures() {
+    return newMeasures;
+  }
+
+  public void setNewMeasures(String[] newMeasures) {
+    this.newMeasures = newMeasures;
+  }
+
+  public double[] getNewMsrDfts() {
+    return newMsrDfts;
+  }
+
+  public void setNewMsrDfts(double[] newMsrDfts) {
+    this.newMsrDfts = newMsrDfts;
+  }
+
+  public KeyGenerator getKeyGenerator() {
+    return keyGenerator;
+  }
+
+  public void setKeyGenerator(KeyGenerator keyGenerator) {
+    this.keyGenerator = keyGenerator;
+  }
+
+  @Override public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + Arrays.hashCode(dimensions);
+    result = prime * result + ((keyGenerator == null) ? 0 : keyGenerator.hashCode());
+    result = prime * result + Arrays.hashCode(measures);
+    result = prime * result + Arrays.hashCode(newDimensions);
+    result = prime * result + Arrays.hashCode(newMeasures);
+    result = prime * result + Arrays.hashCode(newMsrDfts);
+    result = prime * result + Arrays.hashCode(dimLens);
+    return result;
+  }
+
+  @Override public boolean equals(Object obj) {
+    if (obj instanceof SliceMetaData) {
+      SliceMetaData other = (SliceMetaData) obj;
+      if (Arrays.equals(dimensions, other.dimensions) && Arrays
+          .equals(measuresAggregator, other.measuresAggregator) && Arrays
+          .equals(dimLens, other.dimLens)) {
+        return true;
+      }
     }
+    return false;
+  }
 
-    public void setComplexTypeString(String complexTypeString) {
-        this.complexTypeString = complexTypeString;
-    }
+  public boolean isSameAs(SliceMetaData other) {
+    return (Arrays.equals(newDimensions, other.newDimensions) && Arrays
+        .equals(newMeasures, other.newMeasures));
+  }
 
-    public int[] getNewDimLens() {
-        return newDimLens;
-    }
+  public String[] getMeasuresAggregator() {
+    return measuresAggregator;
+  }
 
-    public void setNewDimLens(int[] newDimLens) {
-        this.newDimLens = newDimLens;
-    }
+  public void setMeasuresAggregator(String[] measuresAggregator) {
+    this.measuresAggregator = measuresAggregator;
+  }
 
-    public int[] getDimLens() {
-        return dimLens;
-    }
+  public String[] getNewMeasuresAggregator() {
+    return newMeasuresAggregator;
+  }
 
-    public void setDimLens(int[] dimLens) {
-        this.dimLens = dimLens;
-    }
+  public void setNewMeasuresAggregator(String[] newMeasuresAggregator) {
+    this.newMeasuresAggregator = newMeasuresAggregator;
+  }
 
-    public KeyGenerator getNewKeyGenerator() {
-        return newKeyGenerator;
-    }
+  public String getHeirAnKeySize() {
+    return heirAnKeySize;
+  }
 
-    public void setNewKeyGenerator(KeyGenerator newKeyGenerator) {
-        this.newKeyGenerator = newKeyGenerator;
-    }
+  public void setHeirAnKeySize(String heirAnKeySize) {
+    this.heirAnKeySize = heirAnKeySize;
+  }
 
-    public String[] getDimensions() {
-        return dimensions;
-    }
+  public boolean isDimCarinalityChanged() {
+    return isDimCarinalityChanged;
+  }
 
-    public void setDimensions(String[] dimensions) {
-        this.dimensions = dimensions;
-    }
+  public void setDimCarinalityChanged(boolean isDimCarinalityChanged) {
+    this.isDimCarinalityChanged = isDimCarinalityChanged;
+  }
 
-    public String[] getMeasures() {
-        return measures;
-    }
+  public int[] getOldDimsNewCardinality() {
+    return oldDimsNewCardinality;
+  }
 
-    public void setMeasures(String[] measures) {
-        this.measures = measures;
-    }
+  public void setOldDimsNewCardinality(int[] oldDimsNewCardinality) {
+    this.oldDimsNewCardinality = oldDimsNewCardinality;
+  }
 
-    public String[] getNewDimensions() {
-        return newDimensions;
-    }
+  public String[] getNewActualDimensions() {
+    return newActualDimensions;
+  }
 
-    public void setNewDimensions(String[] newDimensions) {
-        this.newDimensions = newDimensions;
-    }
+  public void setNewActualDimensions(String[] newActualDimensions) {
+    this.newActualDimensions = newActualDimensions;
+  }
 
-    public String[] getNewMeasures() {
-        return newMeasures;
-    }
+  public int[] getNewActualDimLens() {
+    return newActualDimLens;
+  }
 
-    public void setNewMeasures(String[] newMeasures) {
-        this.newMeasures = newMeasures;
-    }
+  public void setNewActualDimLens(int[] newActualDimLens) {
+    this.newActualDimLens = newActualDimLens;
+  }
 
-    public double[] getNewMsrDfts() {
-        return newMsrDfts;
-    }
+  public String[] getActualDimensions() {
+    return actualDimensions;
+  }
 
-    public void setNewMsrDfts(double[] newMsrDfts) {
-        this.newMsrDfts = newMsrDfts;
-    }
+  public void setActualDimensions(String[] actualDimensions) {
+    this.actualDimensions = actualDimensions;
+  }
 
-    public KeyGenerator getKeyGenerator() {
-        return keyGenerator;
-    }
+  public int[] getActualDimLens() {
+    return actualDimLens;
+  }
 
-    public void setKeyGenerator(KeyGenerator keyGenerator) {
-        this.keyGenerator = keyGenerator;
-    }
+  public void setActualDimLens(int[] actualDimLens) {
+    this.actualDimLens = actualDimLens;
+  }
 
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + Arrays.hashCode(dimensions);
-        result = prime * result + ((keyGenerator == null) ? 0 : keyGenerator.hashCode());
-        result = prime * result + Arrays.hashCode(measures);
-        result = prime * result + Arrays.hashCode(newDimensions);
-        result = prime * result + Arrays.hashCode(newMeasures);
-        result = prime * result + Arrays.hashCode(newMsrDfts);
-        result = prime * result + Arrays.hashCode(dimLens);
-        return result;
-    }
+  public HashSet<String> getTableNamesToLoadMandatory() {
+    return tableNamesToLoadMandatory;
+  }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof SliceMetaData) {
-            SliceMetaData other = (SliceMetaData) obj;
-            if (Arrays.equals(dimensions, other.dimensions) && Arrays
-                    .equals(measuresAggregator, other.measuresAggregator) && Arrays
-                    .equals(dimLens, other.dimLens)) {
-                return true;
-            }
-        }
-        return false;
-    }
+  public void setTableNamesToLoadMandatory(HashSet<String> tableNamesToLoadMandatory) {
+    this.tableNamesToLoadMandatory = tableNamesToLoadMandatory;
+  }
 
-    public boolean isSameAs(SliceMetaData other) {
-        return (Arrays.equals(newDimensions, other.newDimensions) && Arrays
-                .equals(newMeasures, other.newMeasures));
+  public void addTableNamesToLoadMandatory(String tableNamesToLoadMandatory) {
+    if (null == this.tableNamesToLoadMandatory) {
+      this.tableNamesToLoadMandatory =
+          new HashSet<String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     }
+    this.tableNamesToLoadMandatory.add(tableNamesToLoadMandatory);
+  }
 
-    public String[] getMeasuresAggregator() {
-        return measuresAggregator;
-    }
+  /**
+   * return the new dimensions default values
+   */
+  public String[] getNewDimsDefVals() {
+    return newDimsDefVals;
+  }
 
-    public void setMeasuresAggregator(String[] measuresAggregator) {
-        this.measuresAggregator = measuresAggregator;
-    }
+  /**
+   * set the default values of new dimensions added
+   */
+  public void setNewDimsDefVals(String[] newDimsDefVals) {
+    this.newDimsDefVals = newDimsDefVals;
+  }
 
-    public String[] getNewMeasuresAggregator() {
-        return newMeasuresAggregator;
-    }
+  /**
+   * return the surrogate keys of new dimension values
+   */
+  public int[] getNewDimsSurrogateKeys() {
+    return newDimsSurrogateKeys;
+  }
 
-    public void setNewMeasuresAggregator(String[] newMeasuresAggregator) {
-        this.newMeasuresAggregator = newMeasuresAggregator;
-    }
-
-    public String getHeirAnKeySize() {
-        return heirAnKeySize;
-    }
-
-    public void setHeirAnKeySize(String heirAnKeySize) {
-        this.heirAnKeySize = heirAnKeySize;
-    }
-
-    public boolean isDimCarinalityChanged() {
-        return isDimCarinalityChanged;
-    }
-
-    public void setDimCarinalityChanged(boolean isDimCarinalityChanged) {
-        this.isDimCarinalityChanged = isDimCarinalityChanged;
-    }
-
-    public int[] getOldDimsNewCardinality() {
-        return oldDimsNewCardinality;
-    }
-
-    public void setOldDimsNewCardinality(int[] oldDimsNewCardinality) {
-        this.oldDimsNewCardinality = oldDimsNewCardinality;
-    }
-
-    public String[] getNewActualDimensions() {
-        return newActualDimensions;
-    }
-
-    public void setNewActualDimensions(String[] newActualDimensions) {
-        this.newActualDimensions = newActualDimensions;
-    }
-
-    public int[] getNewActualDimLens() {
-        return newActualDimLens;
-    }
-
-    public void setNewActualDimLens(int[] newActualDimLens) {
-        this.newActualDimLens = newActualDimLens;
-    }
-
-    public String[] getActualDimensions() {
-        return actualDimensions;
-    }
-
-    public void setActualDimensions(String[] actualDimensions) {
-        this.actualDimensions = actualDimensions;
-    }
-
-    public int[] getActualDimLens() {
-        return actualDimLens;
-    }
-
-    public void setActualDimLens(int[] actualDimLens) {
-        this.actualDimLens = actualDimLens;
-    }
-
-    public HashSet<String> getTableNamesToLoadMandatory() {
-        return tableNamesToLoadMandatory;
-    }
-
-    public void setTableNamesToLoadMandatory(HashSet<String> tableNamesToLoadMandatory) {
-        this.tableNamesToLoadMandatory = tableNamesToLoadMandatory;
-    }
-
-    public void addTableNamesToLoadMandatory(String tableNamesToLoadMandatory) {
-        if (null == this.tableNamesToLoadMandatory) {
-            this.tableNamesToLoadMandatory =
-                    new HashSet<String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-        }
-        this.tableNamesToLoadMandatory.add(tableNamesToLoadMandatory);
-    }
-
-    /**
-     * return the new dimensions default values
-     */
-    public String[] getNewDimsDefVals() {
-        return newDimsDefVals;
-    }
-
-    /**
-     * set the default values of new dimensions added
-     */
-    public void setNewDimsDefVals(String[] newDimsDefVals) {
-        this.newDimsDefVals = newDimsDefVals;
-    }
-
-    /**
-     * return the surrogate keys of new dimension values
-     */
-    public int[] getNewDimsSurrogateKeys() {
-        return newDimsSurrogateKeys;
-    }
-
-    /**
-     * set the surrogate keys for the new dimension values
-     */
-    public void setNewDimsSurrogateKeys(int[] newDimsSurrogateKeys) {
-        this.newDimsSurrogateKeys = newDimsSurrogateKeys;
-    }
+  /**
+   * set the surrogate keys for the new dimension values
+   */
+  public void setNewDimsSurrogateKeys(int[] newDimsSurrogateKeys) {
+    this.newDimsSurrogateKeys = newDimsSurrogateKeys;
+  }
 }

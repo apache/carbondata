@@ -24,8 +24,8 @@ import java.util.List;
 import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.aggregator.impl.CountAggregator;
-import org.carbondata.query.datastorage.TableDataStore;
 import org.carbondata.query.datastorage.InMemoryTable;
+import org.carbondata.query.datastorage.TableDataStore;
 import org.carbondata.query.executer.SliceExecuter;
 import org.carbondata.query.executer.exception.QueryExecutionException;
 import org.carbondata.query.executer.pagination.impl.QueryResult;
@@ -34,33 +34,33 @@ import org.carbondata.query.schema.metadata.SliceExecutionInfo;
 import org.carbondata.query.wrappers.ByteArrayWrapper;
 
 public class ColumnarCountStartExecuter implements SliceExecuter {
-    private List<InMemoryTable> slices;
+  private List<InMemoryTable> slices;
 
-    private String tableName;
+  private String tableName;
 
-    public ColumnarCountStartExecuter(List<InMemoryTable> slices, String tableName) {
-        this.slices = slices;
-        this.tableName = tableName;
+  public ColumnarCountStartExecuter(List<InMemoryTable> slices, String tableName) {
+    this.slices = slices;
+    this.tableName = tableName;
+  }
+
+  @Override
+  public CarbonIterator<QueryResult> executeSlices(List<SliceExecutionInfo> infos, int[] sliceIndex)
+      throws QueryExecutionException {
+    long count = 0;
+    for (InMemoryTable slice : slices) {
+      TableDataStore dataCache = slice.getDataCache(this.tableName);
+      if (null != dataCache) {
+        count += dataCache.getData().size();
+      }
     }
-
-    @Override
-    public CarbonIterator<QueryResult> executeSlices(List<SliceExecutionInfo> infos,
-            int[] sliceIndex) throws QueryExecutionException {
-        long count = 0;
-        for (InMemoryTable slice : slices) {
-            TableDataStore dataCache = slice.getDataCache(this.tableName);
-            if (null != dataCache) {
-                count += dataCache.getData().size();
-            }
-        }
-        MeasureAggregator[] countAgg = new MeasureAggregator[1];
-        countAgg[0] = new CountAggregator();
-        countAgg[0].setNewValue(count);
-        QueryResult result = new QueryResult();
-        ByteArrayWrapper wrapper = new ByteArrayWrapper();
-        wrapper.setMaskedKey(new byte[0]);
-        result.add(wrapper, countAgg);
-        return new MemoryBasedResultIterator(result);
-    }
+    MeasureAggregator[] countAgg = new MeasureAggregator[1];
+    countAgg[0] = new CountAggregator();
+    countAgg[0].setNewValue(count);
+    QueryResult result = new QueryResult();
+    ByteArrayWrapper wrapper = new ByteArrayWrapper();
+    wrapper.setMaskedKey(new byte[0]);
+    result.add(wrapper, countAgg);
+    return new MemoryBasedResultIterator(result);
+  }
 
 }

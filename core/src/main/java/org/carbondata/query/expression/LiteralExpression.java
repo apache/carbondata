@@ -24,51 +24,31 @@ import org.carbondata.query.carbonfilterinterface.RowIntf;
 
 public class LiteralExpression extends LeafExpression {
 
-    /**
-     *
-     */
-    private static final long serialVersionUID = 1L;
-    private Object value;
-    private DataType dataType;
+  /**
+   *
+   */
+  private static final long serialVersionUID = 1L;
+  private Object value;
+  private DataType dataType;
 
-    public LiteralExpression(Object value, DataType dataType) {
-        this.value = value;
-        this.dataType = dataType;
-        
-        
-        /*switch(dataType)
-        {
-        case StringType:
-            this.value = value;
-            break;
-        case IntegerType:
-            this.value = Integer.parseInt(value);
-            break;
-        case DoubleType:
-            this.value = Double.parseDouble(value);
-            break;
-        default:
-            break;
-        }*/
+  public LiteralExpression(Object value, DataType dataType) {
+    this.value = value;
+    this.dataType = dataType;
+  }
 
-    }
+  @Override public ExpressionResult evaluate(RowIntf value) {
+    ExpressionResult expressionResult = new ExpressionResult(dataType, this.value);
+    return expressionResult;
+  }
 
-    @Override
-    public ExpressionResult evaluate(RowIntf value) {
-        ExpressionResult expressionResult = new ExpressionResult(dataType, this.value);
-        return expressionResult;
-    }
+  @Override public ExpressionType getFilterExpressionType() {
+    // TODO Auto-generated method stub
+    return ExpressionType.LITERAL;
+  }
 
-    @Override
-    public ExpressionType getFilterExpressionType() {
-        // TODO Auto-generated method stub
-        return ExpressionType.LITERAL;
-    }
-
-    @Override
-    public String getString() {
-        // TODO Auto-generated method stub
-        return "LiteralExpression(" + value + ')';
-    }
+  @Override public String getString() {
+    // TODO Auto-generated method stub
+    return "LiteralExpression(" + value + ')';
+  }
 
 }

@@ -26,38 +26,35 @@ import org.carbondata.query.aggregator.MeasureAggregator;
  */
 public class OrMeasureGroupFilterImpl implements MeasureFilter, MeasureGroupFilter {
 
-    private MeasureFilter[][] measureFilters;
+  private MeasureFilter[][] measureFilters;
 
-    private int[] msrFilterIndices;
+  private int[] msrFilterIndices;
 
-    public OrMeasureGroupFilterImpl(MeasureFilter[][] measureFilters) {
-        msrFilterIndices = MeasureFilterUtil.getMsrFilterIndexes(measureFilters);
-        this.measureFilters = measureFilters;
+  public OrMeasureGroupFilterImpl(MeasureFilter[][] measureFilters) {
+    msrFilterIndices = MeasureFilterUtil.getMsrFilterIndexes(measureFilters);
+    this.measureFilters = measureFilters;
+  }
+
+  @Override public boolean filter(MeasureAggregator[] msrValue) {
+    for (int i = 0; i < msrFilterIndices.length; i++) {
+      if (measureFilters[msrFilterIndices[i]][0].filter(msrValue)) {
+        return true;
+      }
     }
+    return false;
+  }
 
-    @Override
-    public boolean filter(MeasureAggregator[] msrValue) {
-        for (int i = 0; i < msrFilterIndices.length; i++) {
-            if (measureFilters[msrFilterIndices[i]][0].filter(msrValue)) {
-                return true;
-            }
-        }
-        return false;
+  @Override public boolean filter(double[] msrValue, int msrStartIndex) {
+    for (int i = 0; i < msrFilterIndices.length; i++) {
+      if (measureFilters[msrFilterIndices[i]][0].filter(msrValue, msrStartIndex)) {
+        return true;
+      }
     }
+    return false;
+  }
 
-    @Override
-    public boolean filter(double[] msrValue, int msrStartIndex) {
-        for (int i = 0; i < msrFilterIndices.length; i++) {
-            if (measureFilters[msrFilterIndices[i]][0].filter(msrValue, msrStartIndex)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    @Override
-    public boolean isMsrFilterEnabled() {
-        return msrFilterIndices.length > 0;
-    }
+  @Override public boolean isMsrFilterEnabled() {
+    return msrFilterIndices.length > 0;
+  }
 
 }

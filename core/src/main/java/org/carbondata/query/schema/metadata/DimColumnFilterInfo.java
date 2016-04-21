@@ -22,23 +22,23 @@ package org.carbondata.query.schema.metadata;
 import java.util.List;
 
 public class DimColumnFilterInfo {
-    private boolean isIncludeFilter;
+  private boolean isIncludeFilter;
 
-    private List<Integer> filterList;
+  private List<Integer> filterList;
 
-    public boolean isIncludeFilter() {
-        return isIncludeFilter;
-    }
+  public boolean isIncludeFilter() {
+    return isIncludeFilter;
+  }
 
-    public void setIncludeFilter(boolean isIncludeFilter) {
-        this.isIncludeFilter = isIncludeFilter;
-    }
+  public void setIncludeFilter(boolean isIncludeFilter) {
+    this.isIncludeFilter = isIncludeFilter;
+  }
 
-    public List<Integer> getFilterList() {
-        return filterList;
-    }
+  public List<Integer> getFilterList() {
+    return filterList;
+  }
 
-    public void setFilterList(List<Integer> filterList) {
-        this.filterList = filterList;
-    }
+  public void setFilterList(List<Integer> filterList) {
+    this.filterList = filterList;
+  }
 }

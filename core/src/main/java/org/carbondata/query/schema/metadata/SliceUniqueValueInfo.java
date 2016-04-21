@@ -20,43 +20,43 @@
 package org.carbondata.query.schema.metadata;
 
 public class SliceUniqueValueInfo {
-    private Object[] uniqueValue;
+  private Object[] uniqueValue;
 
-    private String[] cols;
+  private String[] cols;
 
-    /**
-     * getLength
-     *
-     * @return int
-     */
-    public int getLength() {
-        return uniqueValue.length;
-    }
+  /**
+   * getLength
+   *
+   * @return int
+   */
+  public int getLength() {
+    return uniqueValue.length;
+  }
 
-    /**
-     * getUniqueValue
-     *
-     * @return double[]
-     */
-    public Object[] getUniqueValue() {
-        return uniqueValue;
-    }
+  /**
+   * getUniqueValue
+   *
+   * @return double[]
+   */
+  public Object[] getUniqueValue() {
+    return uniqueValue;
+  }
 
-    /**
-     * setUniqueValue
-     *
-     * @param uniqueValue1 void
-     */
-    public void setUniqueValue(Object[] uniqueValue1) {
-        this.uniqueValue = uniqueValue1;
-    }
+  /**
+   * setUniqueValue
+   *
+   * @param uniqueValue1 void
+   */
+  public void setUniqueValue(Object[] uniqueValue1) {
+    this.uniqueValue = uniqueValue1;
+  }
 
-    public String[] getCols() {
-        return cols;
-    }
+  public String[] getCols() {
+    return cols;
+  }
 
-    public void setCols(String[] cols1) {
-        this.cols = cols1;
-    }
+  public void setCols(String[] cols1) {
+    this.cols = cols1;
+  }
 
 }

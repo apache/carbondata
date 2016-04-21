@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.carbondata.processing.sortandgroupby.sortKey;
+package org.carbondata.processing.sortandgroupby.sortkey;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -29,70 +29,70 @@ import org.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupB
 
 public class CarbonUnCompressedSortTempFileWriter extends AbstractCarbonSortTempFileWriter {
 
-    /**
-     * CarbonCompressedSortTempFileWriter
-     *
-     * @param measureCount
-     * @param mdkeyIndex
-     * @param mdKeyLength
-     * @param isFactMdkeyInSort
-     * @param factMdkeyLength
-     * @param writeFileBufferSize
-     */
-    public CarbonUnCompressedSortTempFileWriter(int measureCount, int mdkeyIndex, int mdKeyLength,
-            boolean isFactMdkeyInSort, int factMdkeyLength, int writeFileBufferSize, char[] type) {
-        super(measureCount, mdkeyIndex, mdKeyLength, isFactMdkeyInSort, factMdkeyLength,
-                writeFileBufferSize, type);
-    }
+  /**
+   * CarbonCompressedSortTempFileWriter
+   *
+   * @param measureCount
+   * @param mdkeyIndex
+   * @param mdKeyLength
+   * @param isFactMdkeyInSort
+   * @param factMdkeyLength
+   * @param writeFileBufferSize
+   */
+  public CarbonUnCompressedSortTempFileWriter(int measureCount, int mdkeyIndex, int mdKeyLength,
+      boolean isFactMdkeyInSort, int factMdkeyLength, int writeFileBufferSize, char[] type) {
+    super(measureCount, mdkeyIndex, mdKeyLength, isFactMdkeyInSort, factMdkeyLength,
+        writeFileBufferSize, type);
+  }
 
-    /**
-     * Below method will be used to write the sort temp file
-     *
-     * @param records
-     */
-    public void writeSortTempFile(Object[][] records) throws CarbonSortKeyAndGroupByException {
-        ByteArrayOutputStream blockDataArray = null;
-        DataOutputStream dataOutputStream = null;
-        Object[] row = null;
-        int totalSize = 0;
-        try {
-            totalSize = records.length * CarbonCommonConstants.INT_SIZE_IN_BYTE
-                    + this.mdKeyLength * records.length;
-            if (isFactMdkeyInSort) {
-                totalSize += this.factMdkeyLength * records.length;
+  /**
+   * Below method will be used to write the sort temp file
+   *
+   * @param records
+   */
+  public void writeSortTempFile(Object[][] records) throws CarbonSortKeyAndGroupByException {
+    ByteArrayOutputStream blockDataArray = null;
+    DataOutputStream dataOutputStream = null;
+    Object[] row = null;
+    int totalSize = 0;
+    try {
+      totalSize = records.length * CarbonCommonConstants.INT_SIZE_IN_BYTE
+          + this.mdKeyLength * records.length;
+      if (isFactMdkeyInSort) {
+        totalSize += this.factMdkeyLength * records.length;
+      }
+      blockDataArray = new ByteArrayOutputStream(totalSize);
+      dataOutputStream = new DataOutputStream(blockDataArray);
+      for (int i = 0; i < records.length; i++) {
+        row = records[i];
+        for (int j = 0; j < measureCount; j++) {
+          if (type[j] != 'c') {
+            if (null != row[j]) {
+              dataOutputStream.write((byte) 1);
+              dataOutputStream.writeDouble((Double) row[j]);
+            } else {
+              dataOutputStream.write((byte) 0);
             }
-            blockDataArray = new ByteArrayOutputStream(totalSize);
-            dataOutputStream = new DataOutputStream(blockDataArray);
-            for (int i = 0; i < records.length; i++) {
-                row = records[i];
-                for (int j = 0; j < measureCount; j++) {
-                    if (type[j] != 'c') {
-                        if (null != row[j]) {
-                            dataOutputStream.write((byte) 1);
-                            dataOutputStream.writeDouble((Double) row[j]);
-                        } else {
-                            dataOutputStream.write((byte) 0);
-                        }
-                    } else {
-                        dataOutputStream.writeInt(((byte[]) row[j]).length);
-                        dataOutputStream.write((byte[]) row[j]);
-                    }
-                }
-                dataOutputStream.write((byte[]) row[mdkeyIndex]);
-                if (isFactMdkeyInSort) {
-                    dataOutputStream.write((byte[]) row[row.length - 1]);
-                }
-            }
-            stream.writeInt(records.length);
-            byte[] byteArray = blockDataArray.toByteArray();
-            stream.writeInt(byteArray.length);
-            stream.write(byteArray);
-
-        } catch (IOException e) {
-            throw new CarbonSortKeyAndGroupByException(e);
-        } finally {
-            CarbonUtil.closeStreams(blockDataArray);
-            CarbonUtil.closeStreams(dataOutputStream);
+          } else {
+            dataOutputStream.writeInt(((byte[]) row[j]).length);
+            dataOutputStream.write((byte[]) row[j]);
+          }
         }
+        dataOutputStream.write((byte[]) row[mdkeyIndex]);
+        if (isFactMdkeyInSort) {
+          dataOutputStream.write((byte[]) row[row.length - 1]);
+        }
+      }
+      stream.writeInt(records.length);
+      byte[] byteArray = blockDataArray.toByteArray();
+      stream.writeInt(byteArray.length);
+      stream.write(byteArray);
+
+    } catch (IOException e) {
+      throw new CarbonSortKeyAndGroupByException(e);
+    } finally {
+      CarbonUtil.closeStreams(blockDataArray);
+      CarbonUtil.closeStreams(dataOutputStream);
     }
+  }
 }

@@ -31,80 +31,72 @@ import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.ValueCompressionUtil;
 
 public class UnCompressNoneFloat implements ValueCompressonHolder.UnCompressValue<float[]> {
-    /**
-     * Attribute for Carbon LOGGER
-     */
-    private static final LogService LOGGER =
-            LogServiceFactory.getLogService(UnCompressNoneFloat.class.getName());
-    /**
-     * floatCompressor
-     */
-    private static Compressor<float[]> floatCompressor =
-            SnappyCompression.SnappyFloatCompression.INSTANCE;
-    /**
-     * value.
-     */
-    private float[] value;
+  /**
+   * Attribute for Carbon LOGGER
+   */
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(UnCompressNoneFloat.class.getName());
+  /**
+   * floatCompressor
+   */
+  private static Compressor<float[]> floatCompressor =
+      SnappyCompression.SnappyFloatCompression.INSTANCE;
+  /**
+   * value.
+   */
+  private float[] value;
 
-    @Override
-    public void setValue(float[] value) {
-        this.value = value;
+  @Override public void setValue(float[] value) {
+    this.value = value;
 
+  }
+
+  @Override public ValueCompressonHolder.UnCompressValue getNew() {
+    try {
+      return (ValueCompressonHolder.UnCompressValue) clone();
+    } catch (CloneNotSupportedException ex5) {
+      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, ex5, ex5.getMessage());
     }
+    return null;
+  }
 
-    @Override
-    public ValueCompressonHolder.UnCompressValue getNew() {
-        try {
-            return (ValueCompressonHolder.UnCompressValue) clone();
-        } catch (CloneNotSupportedException ex5) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, ex5, ex5.getMessage());
-        }
-        return null;
+  @Override public ValueCompressonHolder.UnCompressValue compress() {
+    UnCompressNoneByte byte1 = new UnCompressNoneByte();
+    byte1.setValue(floatCompressor.compress(value));
+
+    return byte1;
+
+  }
+
+  @Override public void setValueInBytes(byte[] value) {
+    ByteBuffer buffer = ByteBuffer.wrap(value);
+    this.value = ValueCompressionUtil.convertToFloatArray(buffer, value.length);
+  }
+
+  /**
+   * @see ValueCompressonHolder.UnCompressValue#getCompressorObject()
+   */
+  @Override public ValueCompressonHolder.UnCompressValue getCompressorObject() {
+    return new UnCompressNoneByte();
+  }
+
+  @Override public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {
+    double[] vals = new double[value.length];
+    CarbonReadDataHolder dataHolder = new CarbonReadDataHolder();
+    for (int i = 0; i < vals.length; i++) {
+      vals[i] = value[i];
     }
+    dataHolder.setReadableDoubleValues(vals);
+    return dataHolder;
+  }
 
-    @Override
-    public ValueCompressonHolder.UnCompressValue compress() {
-        UnCompressNoneByte byte1 = new UnCompressNoneByte();
-        byte1.setValue(floatCompressor.compress(value));
+  @Override
+  public ValueCompressonHolder.UnCompressValue uncompress(ValueCompressionUtil.DataType dataType) {
+    return null;
+  }
 
-        return byte1;
-
-    }
-
-    @Override
-    public void setValueInBytes(byte[] value) {
-        ByteBuffer buffer = ByteBuffer.wrap(value);
-        this.value = ValueCompressionUtil.convertToFloatArray(buffer, value.length);
-    }
-
-    /**
-     * @see ValueCompressonHolder.UnCompressValue#getCompressorObject()
-     */
-    @Override
-    public ValueCompressonHolder.UnCompressValue getCompressorObject() {
-        return new UnCompressNoneByte();
-    }
-
-    @Override
-    public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {
-        double[] vals = new double[value.length];
-        CarbonReadDataHolder dataHolder = new CarbonReadDataHolder();
-        for (int i = 0; i < vals.length; i++) {
-            vals[i] = value[i];
-        }
-        dataHolder.setReadableDoubleValues(vals);
-        return dataHolder;
-    }
-
-    @Override
-    public ValueCompressonHolder.UnCompressValue uncompress(
-            ValueCompressionUtil.DataType dataType) {
-        return null;
-    }
-
-    @Override
-    public byte[] getBackArrayData() {
-        return ValueCompressionUtil.convertToBytes(value);
-    }
+  @Override public byte[] getBackArrayData() {
+    return ValueCompressionUtil.convertToBytes(value);
+  }
 
 }

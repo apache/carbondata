@@ -21,59 +21,58 @@ package org.carbondata.core.reader;
 
 import java.io.IOException;
 
-import org.apache.thrift.TBase;
 import org.carbondata.format.FileMeta;
+
+import org.apache.thrift.TBase;
 
 /**
  * Reads the metadata from fact file in org.carbondata.format.FileMeta thrift object
  */
 public class CarbonMetaDataReader {
 
-    //Fact file path
-    private String filePath;
+  //Fact file path
+  private String filePath;
 
-    //From which offset of file this metadata should be read
-    private long offset;
+  //From which offset of file this metadata should be read
+  private long offset;
 
-    public CarbonMetaDataReader(String filePath, long offset) {
+  public CarbonMetaDataReader(String filePath, long offset) {
 
-        this.filePath = filePath;
-        this.offset = offset;
-    }
+    this.filePath = filePath;
+    this.offset = offset;
+  }
 
-    /**
-     * It reads the metadata in FileMeta thrift object format.
-     *
-     * @return
-     * @throws IOException
-     */
-    public FileMeta readMetaData() throws IOException {
-        ThriftReader thriftReader = openThriftReader(filePath);
-        thriftReader.open();
-        //Set the offset from where it should read
-        thriftReader.setReadOffset(offset);
-        FileMeta fileMeta = (FileMeta) thriftReader.read();
-        thriftReader.close();
-        return fileMeta;
-    }
+  /**
+   * It reads the metadata in FileMeta thrift object format.
+   *
+   * @return
+   * @throws IOException
+   */
+  public FileMeta readMetaData() throws IOException {
+    ThriftReader thriftReader = openThriftReader(filePath);
+    thriftReader.open();
+    //Set the offset from where it should read
+    thriftReader.setReadOffset(offset);
+    FileMeta fileMeta = (FileMeta) thriftReader.read();
+    thriftReader.close();
+    return fileMeta;
+  }
 
+  /**
+   * Open the thrift reader
+   *
+   * @param filePath
+   * @return
+   * @throws IOException
+   */
+  private ThriftReader openThriftReader(String filePath) throws IOException {
 
-    /**
-     * Open the thrift reader
-     *
-     * @param filePath
-     * @return
-     * @throws IOException
-     */
-    private ThriftReader openThriftReader(String filePath) throws IOException {
-
-        ThriftReader thriftReader = new ThriftReader(filePath, new ThriftReader.TBaseCreator() {
-            @Override
-            public TBase create() {
-                return new FileMeta();
-            }
-        });
-        return thriftReader;
-    }
+    ThriftReader thriftReader = new ThriftReader(filePath, new ThriftReader.TBaseCreator() {
+      @Override public TBase create() {
+        return new FileMeta();
+      }
+    });
+    return thriftReader;
+  }
 
 }

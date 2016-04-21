@@ -27,109 +27,108 @@ import org.carbondata.core.util.ValueCompressionUtil.DataType;
  */
 public final class ValueCompressonHolder {
 
-    /**
-     * byteCompressor.
-     */
-    private static Compressor<byte[]> byteCompressor =
-            SnappyCompression.SnappyByteCompression.INSTANCE;
+  /**
+   * byteCompressor.
+   */
+  private static Compressor<byte[]> byteCompressor =
+      SnappyCompression.SnappyByteCompression.INSTANCE;
 
-    /**
-     * shortCompressor.
-     */
-    private static Compressor<short[]> shortCompressor =
-            SnappyCompression.SnappyShortCompression.INSTANCE;
+  /**
+   * shortCompressor.
+   */
+  private static Compressor<short[]> shortCompressor =
+      SnappyCompression.SnappyShortCompression.INSTANCE;
 
-    /**
-     * intCompressor.
-     */
-    private static Compressor<int[]> intCompressor =
-            SnappyCompression.SnappyIntCompression.INSTANCE;
+  /**
+   * intCompressor.
+   */
+  private static Compressor<int[]> intCompressor = SnappyCompression.SnappyIntCompression.INSTANCE;
 
-    /**
-     * longCompressor.
-     */
-    private static Compressor<long[]> longCompressor =
-            SnappyCompression.SnappyLongCompression.INSTANCE;
+  /**
+   * longCompressor.
+   */
+  private static Compressor<long[]> longCompressor =
+      SnappyCompression.SnappyLongCompression.INSTANCE;
 
-    /**
-     * floatCompressor
-     */
-    private static Compressor<float[]> floatCompressor =
-            SnappyCompression.SnappyFloatCompression.INSTANCE;
-    /**
-     * doubleCompressor.
-     */
-    private static Compressor<double[]> doubleCompressor =
-            SnappyCompression.SnappyDoubleCompression.INSTANCE;
+  /**
+   * floatCompressor
+   */
+  private static Compressor<float[]> floatCompressor =
+      SnappyCompression.SnappyFloatCompression.INSTANCE;
+  /**
+   * doubleCompressor.
+   */
+  private static Compressor<double[]> doubleCompressor =
+      SnappyCompression.SnappyDoubleCompression.INSTANCE;
 
-    private ValueCompressonHolder() {
+  private ValueCompressonHolder() {
 
-    }
+  }
 
-    /**
-     * @param dataType
-     * @param value
-     * @param data
-     */
-    public static void unCompress(DataType dataType, UnCompressValue value, byte[] data) {
-        switch (dataType) {
-        case DATA_BYTE:
+  /**
+   * @param dataType
+   * @param value
+   * @param data
+   */
+  public static void unCompress(DataType dataType, UnCompressValue value, byte[] data) {
+    switch (dataType) {
+      case DATA_BYTE:
 
-            value.setValue(byteCompressor.unCompress(data));
-            break;
+        value.setValue(byteCompressor.unCompress(data));
+        break;
 
-        case DATA_SHORT:
+      case DATA_SHORT:
 
-            value.setValue(shortCompressor.unCompress(data));
-            break;
+        value.setValue(shortCompressor.unCompress(data));
+        break;
 
-        case DATA_INT:
+      case DATA_INT:
 
-            value.setValue(intCompressor.unCompress(data));
-            break;
+        value.setValue(intCompressor.unCompress(data));
+        break;
 
-        case DATA_LONG:
+      case DATA_LONG:
 
-            value.setValue(longCompressor.unCompress(data));
-            break;
+        value.setValue(longCompressor.unCompress(data));
+        break;
 
-        case DATA_FLOAT:
+      case DATA_FLOAT:
 
-            value.setValue(floatCompressor.unCompress(data));
-            break;
-        default:
+        value.setValue(floatCompressor.unCompress(data));
+        break;
+      default:
 
-            value.setValue(doubleCompressor.unCompress(data));
-            break;
-
-        }
-    }
-
-    /**
-     * interface for  UnCompressValue<T>.
-     *
-     * @param <T>
-     */
-
-    public interface UnCompressValue<T> extends Cloneable {
-        //        Object getValue(int index, int decimal, double maxValue);
-
-        void setValue(T value);
-
-        void setValueInBytes(byte[] value);
-
-        UnCompressValue<T> getNew();
-
-        UnCompressValue compress();
-
-        UnCompressValue uncompress(DataType dataType);
-
-        byte[] getBackArrayData();
-
-        UnCompressValue getCompressorObject();
-
-        CarbonReadDataHolder getValues(int decimal, Object maxValue);
+        value.setValue(doubleCompressor.unCompress(data));
+        break;
 
     }
+  }
+
+  /**
+   * interface for  UnCompressValue<T>.
+   *
+   * @param <T>
+   */
+
+  public interface UnCompressValue<T> extends Cloneable {
+    //        Object getValue(int index, int decimal, double maxValue);
+
+    void setValue(T value);
+
+    void setValueInBytes(byte[] value);
+
+    UnCompressValue<T> getNew();
+
+    UnCompressValue compress();
+
+    UnCompressValue uncompress(DataType dataType);
+
+    byte[] getBackArrayData();
+
+    UnCompressValue getCompressorObject();
+
+    CarbonReadDataHolder getValues(int decimal, Object maxValue);
+
+  }
 
 }

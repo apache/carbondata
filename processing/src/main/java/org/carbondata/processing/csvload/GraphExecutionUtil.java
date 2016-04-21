@@ -38,9 +38,7 @@ import org.carbondata.core.carbon.CarbonDef.Cube;
 import org.carbondata.core.carbon.CarbonDef.CubeDimension;
 import org.carbondata.core.carbon.CarbonDef.Hierarchy;
 import org.carbondata.core.carbon.CarbonDef.Level;
-import org.carbondata.core.carbon.CarbonDef.RelationOrJoin;
 import org.carbondata.core.carbon.CarbonDef.Schema;
-import org.carbondata.core.carbon.CarbonDef.Table;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.carbondata.core.constants.CarbonCommonConstants;
@@ -50,355 +48,343 @@ import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.processing.etl.DataLoadingException;
-import org.carbondata.processing.schema.metadata.AggregateTable;
 import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.carbondata.processing.util.CarbonSchemaParser;
+
 import org.pentaho.di.trans.steps.textfileinput.TextFileInputField;
 
 public final class GraphExecutionUtil {
-    /**
-     * Comment for <code>LOGGER</code>
-     */
-    private static final LogService LOGGER =
-            LogServiceFactory.getLogService(GraphExecutionUtil.class.getName());
+  /**
+   * Comment for <code>LOGGER</code>
+   */
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(GraphExecutionUtil.class.getName());
 
-    private GraphExecutionUtil() {
+  private GraphExecutionUtil() {
+
+  }
+
+  /**
+   * getCsvFileToRead
+   *
+   * @param csvFilePath
+   * @return File
+   */
+  public static CarbonFile getCsvFileToRead(String csvFilePath) {
+    CarbonFile csvFile =
+        FileFactory.getCarbonFile(csvFilePath, FileFactory.getFileType(csvFilePath));
+
+    CarbonFile[] listFiles = null;
+    if (csvFile.isDirectory()) {
+      listFiles = csvFile.listFiles(new CarbonFileFilter() {
+        @Override public boolean accept(CarbonFile pathname) {
+          if (!pathname.isDirectory()) {
+            if (pathname.getName().endsWith(CarbonCommonConstants.CSV_FILE_EXTENSION) || pathname
+                .getName().endsWith(CarbonCommonConstants.CSV_FILE_EXTENSION
+                    + CarbonCommonConstants.FILE_INPROGRESS_STATUS)) {
+              return true;
+            }
+          }
+
+          return false;
+        }
+      });
+    } else {
+      listFiles = new CarbonFile[1];
+      listFiles[0] = csvFile;
 
     }
 
-    /**
-     * getCsvFileToRead
-     *
-     * @param csvFilePath
-     * @return File
-     */
-    public static CarbonFile getCsvFileToRead(String csvFilePath) {
-        CarbonFile csvFile =
-                FileFactory.getCarbonFile(csvFilePath, FileFactory.getFileType(csvFilePath));
+    return listFiles[0];
+  }
 
-        CarbonFile[] listFiles = null;
-        if (csvFile.isDirectory()) {
-            listFiles = csvFile.listFiles(new CarbonFileFilter() {
-                @Override
-                public boolean accept(CarbonFile pathname) {
-                    if (!pathname.isDirectory()) {
-                        if (pathname.getName().endsWith(CarbonCommonConstants.CSV_FILE_EXTENSION)
-                                || pathname.getName().endsWith(
-                                CarbonCommonConstants.CSV_FILE_EXTENSION
-                                        + CarbonCommonConstants.FILE_INPROGRESS_STATUS)) {
-                            return true;
-                        }
-                    }
+  /**
+   * @param measuresInCSVFile
+   * @throws DataLoadingException
+   */
+  public static TextFileInputField[] getTextInputFiles(CarbonFile csvFile,
+      List<String> measureColumns, StringBuilder builder, StringBuilder measuresInCSVFile,
+      String delimiter) throws DataLoadingException {
+    DataInputStream fileReader = null;
+    BufferedReader bufferedReader = null;
+    String readLine = null;
 
-                    return false;
-                }
-            });
+    FileType fileType = FileFactory.getFileType(csvFile.getAbsolutePath());
+
+    if (!csvFile.exists()) {
+      csvFile = FileFactory
+          .getCarbonFile(csvFile.getAbsolutePath() + CarbonCommonConstants.FILE_INPROGRESS_STATUS,
+              fileType);
+    }
+
+    try {
+      fileReader = FileFactory.getDataInputStream(csvFile.getAbsolutePath(), fileType);
+      bufferedReader =
+          new BufferedReader(new InputStreamReader(fileReader, Charset.defaultCharset()));
+      readLine = bufferedReader.readLine();
+    } catch (FileNotFoundException e) {
+      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
+          "CSV Input File not found  " + e.getMessage());
+      throw new DataLoadingException("CSV Input File not found ", e);
+    } catch (IOException e) {
+      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
+          "Not able to read CSV input File  " + e.getMessage());
+      throw new DataLoadingException("Not able to read CSV input File ", e);
+    } finally {
+      CarbonUtil.closeStreams(fileReader, bufferedReader);
+    }
+
+    if (null != readLine) {
+      String[] columnNames = readLine.split(delimiter);
+      TextFileInputField[] textFileInputFields = new TextFileInputField[columnNames.length];
+
+      int i = 0;
+      String tmpCol;
+      for (String column : columnNames) {
+        tmpCol = column.replaceAll("\"", "");
+        builder.append(tmpCol);
+        builder.append(";");
+        textFileInputFields[i] = new TextFileInputField();
+        textFileInputFields[i].setName(tmpCol.trim());
+        textFileInputFields[i].setType(2);
+        measuresInCSVFile.append(tmpCol);
+        measuresInCSVFile.append(";");
+        i++;
+      }
+
+      return textFileInputFields;
+    }
+
+    return null;
+  }
+
+  /**
+   * @param measuresInCSVFile
+   * @throws DataLoadingException
+   */
+  public static TextFileInputField[] getTextInputFiles(String header, StringBuilder builder,
+      StringBuilder measuresInCSVFile, String delimiter) throws DataLoadingException {
+
+    String[] columnNames = header.split(delimiter);
+    TextFileInputField[] textFileInputFields = new TextFileInputField[columnNames.length];
+
+    int i = 0;
+    String tmpCol;
+    for (String columnName : columnNames) {
+      tmpCol = columnName.replaceAll("\"", "");
+      builder.append(tmpCol);
+      builder.append(";");
+      textFileInputFields[i] = new TextFileInputField();
+      textFileInputFields[i].setName(tmpCol.trim());
+      textFileInputFields[i].setType(2);
+      measuresInCSVFile.append(tmpCol);
+      measuresInCSVFile.append(";");
+      i++;
+    }
+
+    return textFileInputFields;
+
+  }
+
+  public static boolean checkIsFolder(String csvFilePath) {
+    try {
+      if (FileFactory.isFileExist(csvFilePath, FileFactory.getFileType(csvFilePath), false)) {
+        CarbonFile carbonFile =
+            FileFactory.getCarbonFile(csvFilePath, FileFactory.getFileType(csvFilePath));
+        return carbonFile.isDirectory();
+      }
+    } catch (IOException e) {
+      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
+          "Not able check path exists or not  " + e.getMessage() + "path: " + csvFilePath);
+    }
+
+    return false;
+  }
+
+  /**
+   * This method update the column Name
+   *
+   * @param cube
+   * @param tableName
+   * @param schema
+   */
+  public static Set<String> getSchemaColumnNames(CarbonDataLoadSchema schema, String tableName) {
+    Set<String> columnNames = new HashSet<String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+
+    String factTableName = schema.getCarbonTable().getFactTableName();
+    if (tableName.equals(factTableName)) {
+
+      List<CarbonDimension> dimensions =
+          schema.getCarbonTable().getDimensionByTableName(factTableName);
+
+      for (CarbonDimension dimension : dimensions) {
+
+        String foreignKey = null;
+        for (DimensionRelation dimRel : schema.getDimensionRelationList()) {
+          for (String field : dimRel.getColumns()) {
+            if (dimension.equals(field)) {
+              foreignKey = dimRel.getRelation().getFactForeignKeyColumn();
+              break;
+            }
+          }
+          if (null != foreignKey) {
+            break;
+          }
+        }
+        if (null == foreignKey) {
+          columnNames.add(dimension.getColName());
         } else {
-            listFiles = new CarbonFile[1];
-            listFiles[0] = csvFile;
-
+          columnNames.add(foreignKey);
         }
+      }
 
-        return listFiles[0];
+      List<CarbonMeasure> measures = schema.getCarbonTable().getMeasureByTableName(factTableName);
+      for (CarbonMeasure msr : measures) {
+        columnNames.add(msr.getColName());
+      }
+    } else {
+      List<CarbonDimension> dimensions = schema.getCarbonTable().getDimensionByTableName(tableName);
+      for (CarbonDimension dimension : dimensions) {
+        columnNames.add(dimension.getColName());
+      }
+
+      List<CarbonMeasure> measures = schema.getCarbonTable().getMeasureByTableName(tableName);
+      for (CarbonMeasure msr : measures) {
+        columnNames.add(msr.getColName());
+      }
     }
 
-    /**
-     * @param measuresInCSVFile
-     * @throws DataLoadingException
-     */
-    public static TextFileInputField[] getTextInputFiles(CarbonFile csvFile,
-            List<String> measureColumns, StringBuilder builder, StringBuilder measuresInCSVFile,
-            String delimiter) throws DataLoadingException {
-        DataInputStream fileReader = null;
-        BufferedReader bufferedReader = null;
-        String readLine = null;
+    return columnNames;
 
-        FileType fileType = FileFactory.getFileType(csvFile.getAbsolutePath());
+  }
 
-        if (!csvFile.exists()) {
-            csvFile = FileFactory.getCarbonFile(
-                    csvFile.getAbsolutePath() + CarbonCommonConstants.FILE_INPROGRESS_STATUS,
-                    fileType);
+  /**
+   * @param csvFilePath
+   * @param columnNames
+   */
+  public static boolean checkHeaderExist(String csvFilePath, String[] columnNames,
+      String delimiter) {
+
+    String readLine = readCSVFile(csvFilePath);
+
+    if (null != readLine) {
+      String[] columnFromCSV = readLine.split(delimiter);
+
+      List<String> csvColumnsList = new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+
+      for (String column : columnFromCSV) {
+        csvColumnsList.add(column.replaceAll("\"", ""));
+      }
+
+      for (String columns : columnNames) {
+        if (csvColumnsList.contains(columns)) {
+          return true;
         }
-
-        try {
-            fileReader = FileFactory.getDataInputStream(csvFile.getAbsolutePath(), fileType);
-            bufferedReader =
-                    new BufferedReader(new InputStreamReader(fileReader, Charset.defaultCharset()));
-            readLine = bufferedReader.readLine();
-        } catch (FileNotFoundException e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
-                    "CSV Input File not found  " + e.getMessage());
-            throw new DataLoadingException("CSV Input File not found ", e);
-        } catch (IOException e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
-                    "Not able to read CSV input File  " + e.getMessage());
-            throw new DataLoadingException("Not able to read CSV input File ", e);
-        } finally {
-            CarbonUtil.closeStreams(fileReader, bufferedReader);
-        }
-
-        if (null != readLine) {
-            String[] columnNames = readLine.split(delimiter);
-            TextFileInputField[] textFileInputFields = new TextFileInputField[columnNames.length];
-
-            int i = 0;
-            String tmpCol;
-            for (String column : columnNames) {
-                tmpCol = column.replaceAll("\"", "");
-                builder.append(tmpCol);
-                builder.append(";");
-                textFileInputFields[i] = new TextFileInputField();
-                textFileInputFields[i].setName(tmpCol.trim());
-                textFileInputFields[i].setType(2);
-                measuresInCSVFile.append(tmpCol);
-                measuresInCSVFile.append(";");
-                i++;
-            }
-
-            return textFileInputFields;
-        }
-
-        return null;
+      }
     }
 
-    /**
-     * @param measuresInCSVFile
-     * @throws DataLoadingException
-     */
-    public static TextFileInputField[] getTextInputFiles(String header, StringBuilder builder,
-            StringBuilder measuresInCSVFile, String delimiter) throws DataLoadingException {
+    return false;
+  }
 
-        String[] columnNames = header.split(delimiter);
-        TextFileInputField[] textFileInputFields = new TextFileInputField[columnNames.length];
+  /**
+   * @param csvFilePath
+   * @return
+   */
+  private static String readCSVFile(String csvFilePath) {
 
-        int i = 0;
-        String tmpCol;
-        for (String columnName : columnNames) {
-            tmpCol = columnName.replaceAll("\"", "");
-            builder.append(tmpCol);
-            builder.append(";");
-            textFileInputFields[i] = new TextFileInputField();
-            textFileInputFields[i].setName(tmpCol.trim());
-            textFileInputFields[i].setType(2);
-            measuresInCSVFile.append(tmpCol);
-            measuresInCSVFile.append(";");
-            i++;
+    DataInputStream fileReader = null;
+    BufferedReader bufferedReader = null;
+    String readLine = null;
+
+    try {
+      fileReader =
+          FileFactory.getDataInputStream(csvFilePath, FileFactory.getFileType(csvFilePath));
+      bufferedReader =
+          new BufferedReader(new InputStreamReader(fileReader, Charset.defaultCharset()));
+      readLine = bufferedReader.readLine();
+
+    } catch (FileNotFoundException e) {
+      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
+          "CSV Input File not found  " + e.getMessage());
+    } catch (IOException e) {
+      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
+          "Not able to read CSV input File  " + e.getMessage());
+    } finally {
+      CarbonUtil.closeStreams(fileReader, bufferedReader);
+    }
+    return readLine;
+  }
+
+  /**
+   * @param csvFilePath
+   * @param columnNames
+   * @return
+   */
+  public static boolean checkCSVAndRequestedTableColumns(String csvFilePath, String[] columnNames,
+      String delimiter) {
+
+    String readLine = readCSVFile(csvFilePath);
+
+    if (null != readLine) {
+      String[] columnFromCSV = readLine.split(delimiter);
+
+      List<String> csvColumnsList = new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+
+      for (String column : columnFromCSV) {
+        csvColumnsList.add(column.replaceAll("\"", "").trim());
+      }
+
+      int count = 0;
+
+      for (String columns : columnNames) {
+        if (csvColumnsList.contains(columns)) {
+          count++;
         }
+      }
 
-        return textFileInputFields;
-
+      return (count == columnNames.length);
     }
 
-    public static boolean checkIsFolder(String csvFilePath) {
-        try {
-            if (FileFactory.isFileExist(csvFilePath, FileFactory.getFileType(csvFilePath), false)) {
-                CarbonFile carbonFile =
-                        FileFactory.getCarbonFile(csvFilePath, FileFactory.getFileType(csvFilePath));
-                return carbonFile.isDirectory();
-            }
-        } catch (IOException e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
-                    "Not able check path exists or not  " + e.getMessage() + "path: "
-                            + csvFilePath);
-        }
+    return false;
+  }
 
-        return false;
+  /**
+   * @param cube
+   * @param schema
+   * @return
+   */
+  public static boolean checkLevelCardinalityExists(Cube cube, Schema schema) {
+    CubeDimension[] dimensions = cube.dimensions;
+
+    for (CubeDimension dimension : dimensions) {
+      Hierarchy[] extractHierarchies = CarbonSchemaParser.extractHierarchies(schema, dimension);
+
+      for (Hierarchy hier : extractHierarchies) {
+        Level[] levels = hier.levels;
+
+        for (Level level : levels) {
+          if (-1 == level.levelCardinality) {
+            return false;
+          }
+        }
+      }
     }
 
-    /**
-     * This method update the column Name
-     *
-     * @param cube
-     * @param tableName
-     * @param schema
-     */
-    public static Set<String> getSchemaColumnNames(CarbonDataLoadSchema schema, String tableName) {
-        Set<String> columnNames = new HashSet<String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    return true;
+  }
 
-        String factTableName = schema.getCarbonTable().getFactTableName();
-        if (tableName.equals(factTableName)) {
-        	
-        	List<CarbonDimension> dimensions = schema.getCarbonTable().getDimensionByTableName(factTableName);
+  public static Set<String> getDimensionColumnNames(String dimTableName,
+      CarbonDataLoadSchema schema) {
+    Set<String> columnNames = new HashSet<String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-            for (CarbonDimension dimension : dimensions) {
-            	
-            	String foreignKey = null;
-            	for(DimensionRelation dimRel : schema.getDimensionRelationList())
-            	{
-            		for(String field : dimRel.getColumns())
-            		{
-            			if(dimension.equals(field))
-            			{
-            				foreignKey = dimRel.getRelation().getFactForeignKeyColumn();
-            				break;
-            			}
-            		}
-            		if(null != foreignKey)
-            		{
-            			break;
-            		}
-            	}
-                if (null == foreignKey) {
-                	columnNames.add(dimension.getColName());
-                	} else {
-                        columnNames.add(foreignKey);
-                }
-            }
-
-            List<CarbonMeasure> measures = schema.getCarbonTable().getMeasureByTableName(factTableName);
-            for (CarbonMeasure msr : measures) {
-                columnNames.add(msr.getColName());
-            }
-        } else {
-        	List<CarbonDimension> dimensions = schema.getCarbonTable().getDimensionByTableName(tableName);
-            for (CarbonDimension dimension : dimensions) {
-            	columnNames.add(dimension.getColName());
-            }
-            
-            List<CarbonMeasure> measures = schema.getCarbonTable().getMeasureByTableName(tableName);
-            for (CarbonMeasure msr : measures) {
-                columnNames.add(msr.getColName());
-            }
+    for (DimensionRelation dimRel : schema.getDimensionRelationList()) {
+      if (dimRel.getTableName().equals(dimTableName)) {
+        for (String field : dimRel.getColumns()) {
+          columnNames.add(field);
         }
-
-        return columnNames;
-
+        break;
+      }
     }
-
-    /**
-     * @param csvFilePath
-     * @param columnNames
-     */
-    public static boolean checkHeaderExist(String csvFilePath, String[] columnNames,
-            String delimiter) {
-
-        String readLine = readCSVFile(csvFilePath);
-
-        if (null != readLine) {
-            String[] columnFromCSV = readLine.split(delimiter);
-
-            List<String> csvColumnsList =
-                    new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-
-            for (String column : columnFromCSV) {
-                csvColumnsList.add(column.replaceAll("\"", ""));
-            }
-
-            for (String columns : columnNames) {
-                if (csvColumnsList.contains(columns)) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * @param csvFilePath
-     * @return
-     */
-    private static String readCSVFile(String csvFilePath) {
-
-        DataInputStream fileReader = null;
-        BufferedReader bufferedReader = null;
-        String readLine = null;
-
-        try {
-            fileReader = FileFactory
-                    .getDataInputStream(csvFilePath, FileFactory.getFileType(csvFilePath));
-            bufferedReader =
-                    new BufferedReader(new InputStreamReader(fileReader, Charset.defaultCharset()));
-            readLine = bufferedReader.readLine();
-
-        } catch (FileNotFoundException e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
-                    "CSV Input File not found  " + e.getMessage());
-        } catch (IOException e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
-                    "Not able to read CSV input File  " + e.getMessage());
-        } finally {
-            CarbonUtil.closeStreams(fileReader, bufferedReader);
-        }
-        return readLine;
-    }
-
-    /**
-     * @param csvFilePath
-     * @param columnNames
-     * @return
-     */
-    public static boolean checkCSVAndRequestedTableColumns(String csvFilePath, String[] columnNames,
-            String delimiter) {
-
-        String readLine = readCSVFile(csvFilePath);
-
-        if (null != readLine) {
-            String[] columnFromCSV = readLine.split(delimiter);
-
-            List<String> csvColumnsList =
-                    new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-
-            for (String column : columnFromCSV) {
-                csvColumnsList.add(column.replaceAll("\"", "").trim());
-            }
-
-            int count = 0;
-
-            for (String columns : columnNames) {
-                if (csvColumnsList.contains(columns)) {
-                    count++;
-                }
-            }
-
-            return (count == columnNames.length);
-        }
-
-        return false;
-    }
-
-    /**
-     * @param cube
-     * @param schema
-     * @return
-     */
-    public static boolean checkLevelCardinalityExists(Cube cube, Schema schema) {
-        CubeDimension[] dimensions = cube.dimensions;
-
-        for (CubeDimension dimension : dimensions) {
-            Hierarchy[] extractHierarchies =
-                    CarbonSchemaParser.extractHierarchies(schema, dimension);
-
-            for (Hierarchy hier : extractHierarchies) {
-                Level[] levels = hier.levels;
-
-                for (Level level : levels) {
-                    if (-1 == level.levelCardinality) {
-                        return false;
-                    }
-                }
-            }
-        }
-
-        return true;
-    }
-
-    public static Set<String> getDimensionColumnNames(String dimTableName, 
-    		CarbonDataLoadSchema schema) {
-        Set<String> columnNames = new HashSet<String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-
-        for(DimensionRelation dimRel : schema.getDimensionRelationList())
-        {
-        	if(dimRel.getTableName().equals(dimTableName))
-        	{
-        		for(String field : dimRel.getColumns())
-        		{
-        			columnNames.add(field);
-        		}
-        		break;
-        	}
-        }
-        return columnNames;
-    }
+    return columnNames;
+  }
 }

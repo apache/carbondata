@@ -27,21 +27,21 @@ import java.util.List;
  */
 public interface CarbonDictionarySortIndexReader extends Closeable {
 
-    /**
-     * method for reading the carbon dictionary sort index data
-     * from columns sortIndex file.
-     *
-     * @return The method return's the list of dictionary sort Index and sort Index reverse
-     * @throws IOException In case any I/O error occurs
-     */
-    public List<Integer> readSortIndex() throws IOException;
+  /**
+   * method for reading the carbon dictionary sort index data
+   * from columns sortIndex file.
+   *
+   * @return The method return's the list of dictionary sort Index and sort Index reverse
+   * @throws IOException In case any I/O error occurs
+   */
+  public List<Integer> readSortIndex() throws IOException;
 
-    /**
-     * method for reading the carbon dictionary inverted sort index data
-     * from columns sortIndex file.
-     *
-     * @return The method return's the list of dictionary inverted sort Index
-     * @throws IOException In case any I/O error occurs
-     */
-    public List<Integer> readInvertedSortIndex() throws IOException;
+  /**
+   * method for reading the carbon dictionary inverted sort index data
+   * from columns sortIndex file.
+   *
+   * @return The method return's the list of dictionary inverted sort Index
+   * @throws IOException In case any I/O error occurs
+   */
+  public List<Integer> readInvertedSortIndex() throws IOException;
 }

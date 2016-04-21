@@ -48,46 +48,46 @@ import org.pentaho.di.trans.step.RowListener;
  * @author Sven Boden
  */
 public class RowStepCollector implements RowListener {
-    private List<RowMetaAndData> rowsRead;
-    private List<RowMetaAndData> rowsWritten;
-    private List<RowMetaAndData> rowsError;
+  private List<RowMetaAndData> rowsRead;
+  private List<RowMetaAndData> rowsWritten;
+  private List<RowMetaAndData> rowsError;
 
-    public RowStepCollector() {
-        rowsRead = new ArrayList<RowMetaAndData>();
-        rowsWritten = new ArrayList<RowMetaAndData>();
-        rowsError = new ArrayList<RowMetaAndData>();
-    }
+  public RowStepCollector() {
+    rowsRead = new ArrayList<RowMetaAndData>();
+    rowsWritten = new ArrayList<RowMetaAndData>();
+    rowsError = new ArrayList<RowMetaAndData>();
+  }
 
-    public void rowReadEvent(RowMetaInterface rowMeta, Object[] row) {
-        rowsRead.add(new RowMetaAndData(rowMeta, row));
-    }
+  public void rowReadEvent(RowMetaInterface rowMeta, Object[] row) {
+    rowsRead.add(new RowMetaAndData(rowMeta, row));
+  }
 
-    public void rowWrittenEvent(RowMetaInterface rowMeta, Object[] row) {
-        rowsWritten.add(new RowMetaAndData(rowMeta, row));
-    }
+  public void rowWrittenEvent(RowMetaInterface rowMeta, Object[] row) {
+    rowsWritten.add(new RowMetaAndData(rowMeta, row));
+  }
 
-    public void errorRowWrittenEvent(RowMetaInterface rowMeta, Object[] row) {
-        rowsError.add(new RowMetaAndData(rowMeta, row));
-    }
+  public void errorRowWrittenEvent(RowMetaInterface rowMeta, Object[] row) {
+    rowsError.add(new RowMetaAndData(rowMeta, row));
+  }
 
-    /**
-     * Clear the rows read and rows written.
-     */
-    public void clear() {
-        rowsRead.clear();
-        rowsWritten.clear();
-        rowsError.clear();
-    }
+  /**
+   * Clear the rows read and rows written.
+   */
+  public void clear() {
+    rowsRead.clear();
+    rowsWritten.clear();
+    rowsError.clear();
+  }
 
-    public List<RowMetaAndData> getRowsRead() {
-        return rowsRead;
-    }
+  public List<RowMetaAndData> getRowsRead() {
+    return rowsRead;
+  }
 
-    public List<RowMetaAndData> getRowsWritten() {
-        return rowsWritten;
-    }
+  public List<RowMetaAndData> getRowsWritten() {
+    return rowsWritten;
+  }
 
-    public List<RowMetaAndData> getRowsError() {
-        return rowsError;
-    }
+  public List<RowMetaAndData> getRowsError() {
+    return rowsError;
+  }
 }

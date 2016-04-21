@@ -26,51 +26,48 @@ import org.carbondata.processing.schema.metadata.AggregateTable;
 
 public class AggregateTableDerivativeComposite implements AggregateTableDerivative {
 
-    private String evaluatorTableName;
-    private AggregateTable aggregateTable;
+  private String evaluatorTableName;
+  private AggregateTable aggregateTable;
 
-    private List<AggregateTableDerivative> childrens = new ArrayList<AggregateTableDerivative>(20);
+  private List<AggregateTableDerivative> childrens = new ArrayList<AggregateTableDerivative>(20);
 
-    public AggregateTableDerivativeComposite() {
+  public AggregateTableDerivativeComposite() {
 
-    }
+  }
 
-    public AggregateTableDerivativeComposite(String name, AggregateTable aggregateTable) {
-        this.evaluatorTableName = name;
-        this.aggregateTable = aggregateTable;
-    }
+  public AggregateTableDerivativeComposite(String name, AggregateTable aggregateTable) {
+    this.evaluatorTableName = name;
+    this.aggregateTable = aggregateTable;
+  }
 
-    @Override
-    public void add(AggregateTableDerivative aggregateTableDerivative) {
-        childrens.add(aggregateTableDerivative);
+  @Override public void add(AggregateTableDerivative aggregateTableDerivative) {
+    childrens.add(aggregateTableDerivative);
 
-    }
+  }
 
-    @Override
-    public AggregateTableDerivative get(int i) {
-        return childrens.get(i);
-    }
+  @Override public AggregateTableDerivative get(int i) {
+    return childrens.get(i);
+  }
 
-    public List<AggregateTableDerivative> getChildrens() {
-        return childrens;
-    }
+  public List<AggregateTableDerivative> getChildrens() {
+    return childrens;
+  }
 
-    public int length() {
-        return childrens.size();
-    }
+  public int length() {
+    return childrens.size();
+  }
 
-    @Override
-    public void remove(AggregateTableDerivative aggregateTableDerivative) {
-        childrens.remove(aggregateTableDerivative);
+  @Override public void remove(AggregateTableDerivative aggregateTableDerivative) {
+    childrens.remove(aggregateTableDerivative);
 
-    }
+  }
 
-    public String getEvaluatorTableName() {
-        return evaluatorTableName;
-    }
+  public String getEvaluatorTableName() {
+    return evaluatorTableName;
+  }
 
-    public AggregateTable getAggregateTable() {
-        return aggregateTable;
-    }
+  public AggregateTable getAggregateTable() {
+    return aggregateTable;
+  }
 
 }

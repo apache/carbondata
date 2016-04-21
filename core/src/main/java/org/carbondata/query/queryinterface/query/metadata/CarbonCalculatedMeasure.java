@@ -23,78 +23,77 @@ package org.carbondata.query.queryinterface.query.metadata;
  * Calculated measures can be created by using this class
  */
 public class CarbonCalculatedMeasure extends CarbonMeasure {
-    private static final long serialVersionUID = 4176313704077360543L;
-    private String expression;
-    private boolean groupCount;
-    private String groupDimensionFormula;
-    private CarbonDimensionLevel groupDimensionLevel;
+  private static final long serialVersionUID = 4176313704077360543L;
+  private String expression;
+  private boolean groupCount;
+  private String groupDimensionFormula;
+  private CarbonDimensionLevel groupDimensionLevel;
 
-    public CarbonCalculatedMeasure(String measureName, String expr) {
-        super(measureName);
-    }
+  public CarbonCalculatedMeasure(String measureName, String expr) {
+    super(measureName);
+  }
 
-    /**
-     * @return the expression
-     */
-    public String getExpression() {
-        return expression;
-    }
+  /**
+   * @return the expression
+   */
+  public String getExpression() {
+    return expression;
+  }
 
-    /**
-     * @param expression the expression to set
-     */
-    public void setExpression(String expression) {
-        this.expression = expression;
-    }
+  /**
+   * @param expression the expression to set
+   */
+  public void setExpression(String expression) {
+    this.expression = expression;
+  }
 
-    /**
-     * @return Returns the groupCount.
-     */
-    public boolean isGroupCount() {
-        return groupCount;
-    }
+  /**
+   * @return Returns the groupCount.
+   */
+  public boolean isGroupCount() {
+    return groupCount;
+  }
 
-    /**
-     * @param groupCount The groupCount to set.
-     */
-    public void setGroupCount(boolean groupCount) {
-        this.groupCount = groupCount;
-    }
+  /**
+   * @param groupCount The groupCount to set.
+   */
+  public void setGroupCount(boolean groupCount) {
+    this.groupCount = groupCount;
+  }
 
-    /**
-     * @return Returns the groupDimensionFormula.
-     */
-    public String getGroupDimensionFormula() {
-        return groupDimensionFormula;
-    }
+  /**
+   * @return Returns the groupDimensionFormula.
+   */
+  public String getGroupDimensionFormula() {
+    return groupDimensionFormula;
+  }
 
-    /**
-     * @param groupDimensionFormula The groupDimensionFormula to set.
-     */
-    public void setGroupDimensionFormula(String groupDimensionFormula) {
-        this.groupDimensionFormula = groupDimensionFormula;
-    }
+  /**
+   * @param groupDimensionFormula The groupDimensionFormula to set.
+   */
+  public void setGroupDimensionFormula(String groupDimensionFormula) {
+    this.groupDimensionFormula = groupDimensionFormula;
+  }
 
-    /**
-     * @return Returns the groupDimensionLevel.
-     */
-    public CarbonDimensionLevel getGroupDimensionLevel() {
-        return groupDimensionLevel;
-    }
+  /**
+   * @return Returns the groupDimensionLevel.
+   */
+  public CarbonDimensionLevel getGroupDimensionLevel() {
+    return groupDimensionLevel;
+  }
 
-    /**
-     * @param groupDimensionLevel The groupDimensionLevel to set.
-     */
-    public void setGroupDimensionLevel(CarbonDimensionLevel groupDimensionLevel) {
-        this.groupDimensionLevel = groupDimensionLevel;
-    }
+  /**
+   * @param groupDimensionLevel The groupDimensionLevel to set.
+   */
+  public void setGroupDimensionLevel(CarbonDimensionLevel groupDimensionLevel) {
+    this.groupDimensionLevel = groupDimensionLevel;
+  }
 
-    /**
-     * See interface comments
-     */
-    @Override
-    public CarbonLevelType getType() {
-        return CarbonLevelType.CALCULATED_MEASURE;
-    }
+  /**
+   * See interface comments
+   */
+  @Override public CarbonLevelType getType() {
+    return CarbonLevelType.CALCULATED_MEASURE;
+  }
 
 }

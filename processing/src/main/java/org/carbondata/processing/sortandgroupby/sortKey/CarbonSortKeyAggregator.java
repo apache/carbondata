@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.carbondata.processing.sortandgroupby.sortKey;
+package org.carbondata.processing.sortandgroupby.sortkey;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,176 +32,176 @@ import org.carbondata.query.aggregator.util.AggUtil;
 
 public class CarbonSortKeyAggregator {
 
-    private int keyIndex;
+  private int keyIndex;
 
-    private String[] aggType;
+  private String[] aggType;
 
-    private String[] aggClassName;
+  private String[] aggClassName;
 
-    private boolean isFirst = true;
+  private boolean isFirst = true;
 
-    private byte[] prvKey;
+  private byte[] prvKey;
 
-    private KeyGenerator factKeyGenerator;
+  private KeyGenerator factKeyGenerator;
 
-    private List<Object[]> result = new ArrayList<Object[]>(20);
+  private List<Object[]> result = new ArrayList<Object[]>(20);
 
-    /**
-     * max value for each measure
-     */
-    private char[] type;
+  /**
+   * max value for each measure
+   */
+  private char[] type;
 
-    /**
-     * aggregators
-     */
-    private MeasureAggregator[] aggregators;
+  /**
+   * aggregators
+   */
+  private MeasureAggregator[] aggregators;
 
-    /**
-     * isNotNullValue
-     */
-    private boolean[] isNotNullValue;
+  /**
+   * isNotNullValue
+   */
+  private boolean[] isNotNullValue;
 
-    private int resultSize;
+  private int resultSize;
 
-    private Object[] mergedMinValue;
+  private Object[] mergedMinValue;
 
-    /**
-     * constructer.
-     *
-     * @param aggType
-     * @param aggClassName
-     * @param factKeyGenerator
-     * @param type
-     */
-    public CarbonSortKeyAggregator(String[] aggType, String[] aggClassName,
-            KeyGenerator factKeyGenerator, char[] type, Object[] mergedMinValue) {
-        this.keyIndex = aggType.length;
-        this.aggType = aggType;
-        this.aggClassName = aggClassName;
-        this.factKeyGenerator = factKeyGenerator;
-        resultSize = aggType.length + 1;
-        this.type = type;
-        this.mergedMinValue = mergedMinValue;
+  /**
+   * constructer.
+   *
+   * @param aggType
+   * @param aggClassName
+   * @param factKeyGenerator
+   * @param type
+   */
+  public CarbonSortKeyAggregator(String[] aggType, String[] aggClassName,
+      KeyGenerator factKeyGenerator, char[] type, Object[] mergedMinValue) {
+    this.keyIndex = aggType.length;
+    this.aggType = aggType;
+    this.aggClassName = aggClassName;
+    this.factKeyGenerator = factKeyGenerator;
+    resultSize = aggType.length + 1;
+    this.type = type;
+    this.mergedMinValue = mergedMinValue;
+  }
+
+  /**
+   * getAggregatedData.
+   *
+   * @param rows
+   * @return
+   * @throws CarbonGroupByException
+   * @Description : getAggregatedData
+   */
+  public Object[][] getAggregatedData(Object[][] rows) throws CarbonGroupByException {
+    for (int i = 0; i < rows.length; i++) {
+      add(rows[i]);
     }
 
-    /**
-     * getAggregatedData.
-     *
-     * @param rows
-     * @return
-     * @throws CarbonGroupByException
-     * @Description : getAggregatedData
-     */
-    public Object[][] getAggregatedData(Object[][] rows) throws CarbonGroupByException {
-        for (int i = 0; i < rows.length; i++) {
-            add(rows[i]);
-        }
+    result.add(prepareResult());
+    return result.toArray(new Object[result.size()][]);
+  }
 
-        result.add(prepareResult());
-        return result.toArray(new Object[result.size()][]);
+  /**
+   * This method will be used to add new row it will check if new row and
+   * previous row key is same then it will merger the measure values, else it
+   * return the previous row
+   *
+   * @param row new row
+   * @return previous row
+   * @throws CarbonGroupByException
+   */
+  private void add(Object[] row) throws CarbonGroupByException {
+    if (isFirst) {
+
+      isFirst = false;
+      initialiseAggegators();
+      addNewRow(row);
+
+      return;
     }
+    if (CarbonDataProcessorUtil.compare(prvKey, (byte[]) row[this.keyIndex]) == 0) {
+      updateMeasureValue(row);
+    } else {
+      result.add(prepareResult());
+      initialiseAggegators();
+      addNewRow(row);
+    }
+  }
 
-    /**
-     * This method will be used to add new row it will check if new row and
-     * previous row key is same then it will merger the measure values, else it
-     * return the previous row
-     *
-     * @param row new row
-     * @return previous row
-     * @throws CarbonGroupByException
-     */
-    private void add(Object[] row) throws CarbonGroupByException {
-        if (isFirst) {
+  private Object[] prepareResult() {
+    Object[] out = new Object[resultSize];
+    for (int i = 0; i < aggregators.length; i++) {
+      if (type[i] != 'c') {
+        if (isNotNullValue[i]) {
+          switch (type[i]) {
+            case 'l':
 
-            isFirst = false;
-            initialiseAggegators();
-            addNewRow(row);
+              out[i] = aggregators[i].getLongValue();
+              break;
+            case 'b':
 
-            return;
-        }
-        if (CarbonDataProcessorUtil.compare(prvKey, (byte[]) row[this.keyIndex]) == 0) {
-            updateMeasureValue(row);
+              out[i] = aggregators[i].getBigDecimalValue();
+              break;
+            default:
+
+              out[i] = aggregators[i].getDoubleValue();
+          }
         } else {
-            result.add(prepareResult());
-            initialiseAggegators();
-            addNewRow(row);
+          out[i] = null;
         }
+      } else {
+        out[i] = aggregators[i].getByteArray();
+      }
     }
 
-    private Object[] prepareResult() {
-        Object[] out = new Object[resultSize];
-        for (int i = 0; i < aggregators.length; i++) {
-            if (type[i] != 'c') {
-                if (isNotNullValue[i]) {
-                    switch (type[i]) {
-                    case 'l':
+    out[out.length - 1] = prvKey;
+    return out;
+  }
 
-                        out[i] = aggregators[i].getLongValue();
-                        break;
-                    case 'b':
-
-                        out[i] = aggregators[i].getBigDecimalValue();
-                        break;
-                    default:
-
-                        out[i] = aggregators[i].getDoubleValue();
-                    }
-                } else {
-                    out[i] = null;
-                }
-            } else {
-                out[i] = aggregators[i].getByteArray();
-            }
-        }
-
-        out[out.length - 1] = prvKey;
-        return out;
-    }
-
-    private void initialiseAggegators() {
-        aggregators = AggUtil.getAggregators(Arrays.asList(this.aggType),
-                Arrays.asList(this.aggClassName), false, factKeyGenerator, null, mergedMinValue,
-                this.type);
-        isNotNullValue = new boolean[this.aggType.length];
-        for (int i = 0; i < aggType.length; i++) {
-            if (aggType[i].equals(CarbonCommonConstants.DISTINCT_COUNT)) {
-                isNotNullValue[i] = true;
-            }
-
-        }
-    }
-
-    /**
-     * This method will be used to update the measure value based on aggregator
-     * type
-     *
-     * @param row row
-     */
-    private void updateMeasureValue(Object[] row) {
-        for (int i = 0; i < aggregators.length; i++) {
-            if (null != row[i]) {
-                double value = (Double) row[i];
-                aggregators[i].agg(value);
-            }
-        }
+  private void initialiseAggegators() {
+    aggregators = AggUtil
+        .getAggregators(Arrays.asList(this.aggType), Arrays.asList(this.aggClassName), false,
+            factKeyGenerator, null, mergedMinValue, this.type);
+    isNotNullValue = new boolean[this.aggType.length];
+    for (int i = 0; i < aggType.length; i++) {
+      if (aggType[i].equals(CarbonCommonConstants.DISTINCT_COUNT)) {
+        isNotNullValue[i] = true;
+      }
 
     }
+  }
 
-    /**
-     * Below method will be used to add new row
-     *
-     * @param row
-     */
-    private void addNewRow(Object[] row) {
-        for (int i = 0; i < aggregators.length; i++) {
-            if (null != row[i]) {
-                this.isNotNullValue[i] = true;
-                double value = (Double) row[i];
-                aggregators[i].agg(value);
-            }
-        }
-        prvKey = (byte[]) row[this.keyIndex];
-
+  /**
+   * This method will be used to update the measure value based on aggregator
+   * type
+   *
+   * @param row row
+   */
+  private void updateMeasureValue(Object[] row) {
+    for (int i = 0; i < aggregators.length; i++) {
+      if (null != row[i]) {
+        double value = (Double) row[i];
+        aggregators[i].agg(value);
+      }
     }
+
+  }
+
+  /**
+   * Below method will be used to add new row
+   *
+   * @param row
+   */
+  private void addNewRow(Object[] row) {
+    for (int i = 0; i < aggregators.length; i++) {
+      if (null != row[i]) {
+        this.isNotNullValue[i] = true;
+        double value = (Double) row[i];
+        aggregators[i].agg(value);
+      }
+    }
+    prvKey = (byte[]) row[this.keyIndex];
+
+  }
 
 }

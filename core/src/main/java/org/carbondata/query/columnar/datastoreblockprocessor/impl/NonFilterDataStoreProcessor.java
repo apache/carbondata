@@ -24,11 +24,11 @@ import org.carbondata.query.columnar.keyvalue.NonFilterScanResult;
 
 public class NonFilterDataStoreProcessor extends AbstractColumnarDataStoreProcessor {
 
-    public NonFilterDataStoreProcessor(
-            ColumnarDataStoreBlockProcessorInfo columnarDataStoreBlockInfo) {
-        super(columnarDataStoreBlockInfo);
-        this.keyValue = new NonFilterScanResult(this.columnarDataStoreBlockInfo.getKeySize(),
-                columnarDataStoreBlockInfo.getDimensionIndexes());
-    }
+  public NonFilterDataStoreProcessor(
+      ColumnarDataStoreBlockProcessorInfo columnarDataStoreBlockInfo) {
+    super(columnarDataStoreBlockInfo);
+    this.keyValue = new NonFilterScanResult(this.columnarDataStoreBlockInfo.getKeySize(),
+        columnarDataStoreBlockInfo.getDimensionIndexes());
+  }
 
 }

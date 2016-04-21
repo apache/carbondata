@@ -30,19 +30,19 @@ import org.carbondata.processing.suggest.querystats.QSAutoAggSuggestionService;
  * @author A00902717
  */
 public final class AutoAggSuggestionFactory {
-    private AutoAggSuggestionFactory() {
+  private AutoAggSuggestionFactory() {
 
-    }
+  }
 
-    public static AutoAggSuggestionService getAggregateService(Request requestType) {
-        switch (requestType) {
-        case DATA_STATS:
-            return new DSAutoAggSuggestionService();
-        case QUERY_STATS:
-            return new QSAutoAggSuggestionService();
-        default:
-            return new DSAutoAggSuggestionService();
-        }
+  public static AutoAggSuggestionService getAggregateService(Request requestType) {
+    switch (requestType) {
+      case DATA_STATS:
+        return new DSAutoAggSuggestionService();
+      case QUERY_STATS:
+        return new QSAutoAggSuggestionService();
+      default:
+        return new DSAutoAggSuggestionService();
     }
+  }
 
 }

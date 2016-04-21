@@ -26,84 +26,81 @@ import org.carbondata.processing.dataprocessor.queue.Queue;
 import org.carbondata.processing.dataprocessor.record.holder.DataProcessorRecordHolder;
 
 public class DataProcessorQueue implements Queue<DataProcessorRecordHolder> {
-    /**
-     * Size of the queue
-     */
-    private int qSize;
+  /**
+   * Size of the queue
+   */
+  private int qSize;
 
-    /**
-     * Counter to maintain state of the queue.
-     */
-    private AtomicInteger counter;
+  /**
+   * Counter to maintain state of the queue.
+   */
+  private AtomicInteger counter;
 
-    /**
-     * Queue that holds the data.
-     */
-    private PriorityBlockingQueue<DataProcessorRecordHolder> priorityQueue;
+  /**
+   * Queue that holds the data.
+   */
+  private PriorityBlockingQueue<DataProcessorRecordHolder> priorityQueue;
 
-    public DataProcessorQueue(int size) {
-        this.counter = new AtomicInteger();
-        this.qSize = size;
-        this.priorityQueue =
-                new PriorityBlockingQueue<DataProcessorRecordHolder>(size, new RecordComparator());
+  public DataProcessorQueue(int size) {
+    this.counter = new AtomicInteger();
+    this.qSize = size;
+    this.priorityQueue =
+        new PriorityBlockingQueue<DataProcessorRecordHolder>(size, new RecordComparator());
 
+  }
+
+  @Override public boolean offer(DataProcessorRecordHolder obj) {
+    if (counter.get() == qSize) {
+      return false;
+    } else {
+
+      priorityQueue.offer(obj);
+      counter.getAndIncrement();
+      return true;
     }
+  }
 
-    @Override
-    public boolean offer(DataProcessorRecordHolder obj) {
-        if (counter.get() == qSize) {
-            return false;
-        } else {
-
-            priorityQueue.offer(obj);
-            counter.getAndIncrement();
-            return true;
-        }
+  @SuppressWarnings("unchecked")
+  @Override public DataProcessorRecordHolder poll() {
+    if (priorityQueue.isEmpty()) {
+      return null;
+    } else {
+      counter.getAndDecrement();
+      return (DataProcessorRecordHolder) priorityQueue.poll();
     }
+  }
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public DataProcessorRecordHolder poll() {
-        if (priorityQueue.isEmpty()) {
-            return null;
-        } else {
-            counter.getAndDecrement();
-            return (DataProcessorRecordHolder) priorityQueue.poll();
-        }
+  @SuppressWarnings("unchecked")
+  @Override public DataProcessorRecordHolder peek() {
+    if (priorityQueue.isEmpty()) {
+      return null;
+    } else {
+      return priorityQueue.peek();
     }
+  }
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public DataProcessorRecordHolder peek() {
-        if (priorityQueue.isEmpty()) {
-            return null;
-        } else {
-            return priorityQueue.peek();
-        }
-    }
+  /**
+   * Is Queue is Full.
+   *
+   * @return
+   */
+  public boolean isFull() {
+    return counter.get() == qSize;
+  }
 
-    /**
-     * Is Queue is Full.
-     *
-     * @return
-     */
-    public boolean isFull() {
-        return counter.get() == qSize;
-    }
+  /**
+   * Is queue is Empty
+   *
+   * @return
+   */
+  public boolean isEmpty() {
+    return priorityQueue.isEmpty();
+  }
 
-    /**
-     * Is queue is Empty
-     *
-     * @return
-     */
-    public boolean isEmpty() {
-        return priorityQueue.isEmpty();
-    }
-
-    /**
-     * return the size (i.e. Elements present in the Queue)
-     */
-    public int size() {
-        return counter.get();
-    }
+  /**
+   * return the size (i.e. Elements present in the Queue)
+   */
+  public int size() {
+    return counter.get();
+  }
 }

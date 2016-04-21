@@ -29,27 +29,25 @@
 package org.carbondata.processing.engine.datastorage;
 
 /**
- *
  * @author K00900841
- *
  */
 public class CubeSliceLoader {
 
-    private static CubeSliceLoader instance = new CubeSliceLoader();
+  private static CubeSliceLoader instance = new CubeSliceLoader();
 
-    /**
-     * Create instance for calling of action sequence.
-     *
-     * @return added by liupeng 00204190
-     */
-    public static CubeSliceLoader getInstance() {
-        return instance;
-    }
+  /**
+   * Create instance for calling of action sequence.
+   *
+   * @return added by liupeng 00204190
+   */
+  public static CubeSliceLoader getInstance() {
+    return instance;
+  }
 
-    public void loadSliceFromFiles(String filesLocaton) {
-    }
+  public void loadSliceFromFiles(String filesLocaton) {
+  }
 
-    public void updateSlices(String newSlicePath, String[] slicePathsToDelete) {
+  public void updateSlices(String newSlicePath, String[] slicePathsToDelete) {
 
-    }
+  }
 }

@@ -24,30 +24,30 @@ import org.carbondata.query.columnar.aggregator.ColumnarAggregatorInfo;
 import org.carbondata.query.columnar.keyvalue.AbstractColumnarScanResult;
 
 public abstract class MeasureDataAggregator {
-    /**
-     * columnarScannerVo
-     */
-    protected ColumnarAggregatorInfo columnaraggreagtorInfo;
+  /**
+   * columnarScannerVo
+   */
+  protected ColumnarAggregatorInfo columnaraggreagtorInfo;
 
-    protected int noOfMeasuresInQuery;
+  protected int noOfMeasuresInQuery;
 
-    protected Object[] uniqueValues;
+  protected Object[] uniqueValues;
 
-    protected int[] measureOrdinal;
+  protected int[] measureOrdinal;
 
-    public MeasureDataAggregator(ColumnarAggregatorInfo columnaraggreagtorInfo) {
-        this.columnaraggreagtorInfo = columnaraggreagtorInfo;
-        this.noOfMeasuresInQuery = columnaraggreagtorInfo.getMeasureOrdinal().length;
-        this.measureOrdinal = columnaraggreagtorInfo.getMeasureOrdinal();
-        this.uniqueValues = columnaraggreagtorInfo.getUniqueValue();
-    }
+  public MeasureDataAggregator(ColumnarAggregatorInfo columnaraggreagtorInfo) {
+    this.columnaraggreagtorInfo = columnaraggreagtorInfo;
+    this.noOfMeasuresInQuery = columnaraggreagtorInfo.getMeasureOrdinal().length;
+    this.measureOrdinal = columnaraggreagtorInfo.getMeasureOrdinal();
+    this.uniqueValues = columnaraggreagtorInfo.getUniqueValue();
+  }
 
-    /**
-     * aggregateMsrs
-     *
-     * @param available
-     * @param currentMsrRowData
-     */
-    public abstract void aggregateMeasure(AbstractColumnarScanResult keyValue,
-            MeasureAggregator[] currentMsrRowData);
+  /**
+   * aggregateMsrs
+   *
+   * @param available
+   * @param currentMsrRowData
+   */
+  public abstract void aggregateMeasure(AbstractColumnarScanResult keyValue,
+      MeasureAggregator[] currentMsrRowData);
 }

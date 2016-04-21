@@ -32,53 +32,51 @@ import org.carbondata.query.aggregator.MeasureAggregator;
  */
 public class CarbonValue implements Serializable, Comparable<CarbonValue> {
 
-    /**
-     *
-     */
-    private static final long serialVersionUID = 8034398963696130423L;
+  /**
+   *
+   */
+  private static final long serialVersionUID = 8034398963696130423L;
 
-    private MeasureAggregator[] values;
+  private MeasureAggregator[] values;
 
-    private int topNIndex;
+  private int topNIndex;
 
-    public CarbonValue(MeasureAggregator[] values) {
-        this.values = values;
+  public CarbonValue(MeasureAggregator[] values) {
+    this.values = values;
+  }
+
+  /**
+   * @return the values
+   */
+  public MeasureAggregator[] getValues() {
+    return values;
+  }
+
+  public CarbonValue merge(CarbonValue another) {
+    for (int i = 0; i < values.length; i++) {
+      values[i].merge(another.values[i]);
     }
+    return this;
+  }
 
-    /**
-     * @return the values
-     */
-    public MeasureAggregator[] getValues() {
-        return values;
-    }
+  public void setTopNIndex(int index) {
+    this.topNIndex = index;
+  }
 
-    public CarbonValue merge(CarbonValue another) {
-        for (int i = 0; i < values.length; i++) {
-            values[i].merge(another.values[i]);
-        }
-        return this;
-    }
+  public void addGroup(CarbonKey key, CarbonValue value) {
 
-    public void setTopNIndex(int index) {
-        this.topNIndex = index;
-    }
+  }
 
-    public void addGroup(CarbonKey key, CarbonValue value) {
+  public CarbonValue mergeKeyVal(CarbonValue another) {
+    return another;
+  }
 
-    }
+  @Override public String toString() {
+    return Arrays.toString(values);
+  }
 
-    public CarbonValue mergeKeyVal(CarbonValue another) {
-        return another;
-    }
-
-    @Override
-    public String toString() {
-        return Arrays.toString(values);
-    }
-
-    @Override
-    public int compareTo(CarbonValue o) {
-        return values[topNIndex].compareTo(o.values[topNIndex]);
-    }
+  @Override public int compareTo(CarbonValue o) {
+    return values[topNIndex].compareTo(o.values[topNIndex]);
+  }
 
 }

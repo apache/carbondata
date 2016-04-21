@@ -25,15 +25,15 @@ import org.carbondata.processing.schema.metadata.AggregateTable;
 
 public interface AggregateTableDerivative {
 
-    void add(AggregateTableDerivative aggregateTableDerivative);
+  void add(AggregateTableDerivative aggregateTableDerivative);
 
-    AggregateTableDerivative get(int i);
+  AggregateTableDerivative get(int i);
 
-    void remove(AggregateTableDerivative aggregateTableDerivative);
+  void remove(AggregateTableDerivative aggregateTableDerivative);
 
-    int length();
+  int length();
 
-    List<AggregateTableDerivative> getChildrens();
+  List<AggregateTableDerivative> getChildrens();
 
-    AggregateTable getAggregateTable();
+  AggregateTable getAggregateTable();
 }

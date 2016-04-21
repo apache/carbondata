@@ -27,36 +27,36 @@ import org.carbondata.core.carbon.CarbonTableIdentifier;
  */
 public class CarbonStorePath {
 
-    private String storePath;
+  private String storePath;
 
-    public CarbonStorePath(String storePath) {
-        this.storePath = storePath;
-    }
+  public CarbonStorePath(String storePath) {
+    this.storePath = storePath;
+  }
 
-    /**
-     * gets CarbonTablePath object to manage table paths
-     */
-    public static CarbonTablePath getCarbonTablePath(String storePath,
-            CarbonTableIdentifier tableIdentifier) {
-        CarbonTablePath carbonTablePath = new CarbonTablePath(
-                storePath + File.separator + tableIdentifier.getDatabaseName() + File.separator
-                        + tableIdentifier.getTableName());
+  /**
+   * gets CarbonTablePath object to manage table paths
+   */
+  public static CarbonTablePath getCarbonTablePath(String storePath,
+      CarbonTableIdentifier tableIdentifier) {
+    CarbonTablePath carbonTablePath = new CarbonTablePath(
+        storePath + File.separator + tableIdentifier.getDatabaseName() + File.separator
+            + tableIdentifier.getTableName());
 
-        return carbonTablePath;
-    }
+    return carbonTablePath;
+  }
 
-    /**
-     * gets store path
-     */
-    public String getPath() {
-        return storePath;
-    }
+  /**
+   * gets store path
+   */
+  public String getPath() {
+    return storePath;
+  }
 
-    /**
-     * gets CarbonTablePath object to manage table paths
-     */
-    public CarbonTablePath getCarbonTablePath(CarbonTableIdentifier tableIdentifier) {
-        return CarbonStorePath.getCarbonTablePath(storePath, tableIdentifier);
-    }
+  /**
+   * gets CarbonTablePath object to manage table paths
+   */
+  public CarbonTablePath getCarbonTablePath(CarbonTableIdentifier tableIdentifier) {
+    return CarbonStorePath.getCarbonTablePath(storePath, tableIdentifier);
+  }
 
 }

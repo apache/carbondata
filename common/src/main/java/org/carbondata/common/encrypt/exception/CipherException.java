@@ -21,14 +21,14 @@ package org.carbondata.common.encrypt.exception;
 
 public class CipherException extends Exception {
 
-    private static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 1L;
 
-    /**
-     * The constructor for Exception Class
-     *
-     * @param message the message to be provided for exception
-     */
-    public CipherException(String message) {
-        super(message);
-    }
+  /**
+   * The constructor for Exception Class
+   *
+   * @param message the message to be provided for exception
+   */
+  public CipherException(String message) {
+    super(message);
+  }
 }

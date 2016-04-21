@@ -17,62 +17,62 @@
  * under the License.
  */
 
-package org.carbondata.processing.sortandgroupby.sortKey;
+package org.carbondata.processing.sortandgroupby.sortkey;
 
 import java.io.File;
 
 import org.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 
 public class CarbonSortTempFileChunkWriter implements CarbonSortTempFileWriter {
-    /**
-     * writer
-     */
-    private CarbonSortTempFileWriter writer;
+  /**
+   * writer
+   */
+  private CarbonSortTempFileWriter writer;
 
-    /**
-     * recordPerLeaf
-     */
-    private int recordPerLeaf;
+  /**
+   * recordPerLeaf
+   */
+  private int recordPerLeaf;
 
-    /**
-     * CarbonCompressedSortTempFileChunkWriter
-     *
-     * @param writer
-     */
-    public CarbonSortTempFileChunkWriter(CarbonSortTempFileWriter writer, int recordPerLeaf) {
-        this.writer = writer;
-        this.recordPerLeaf = recordPerLeaf;
+  /**
+   * CarbonCompressedSortTempFileChunkWriter
+   *
+   * @param writer
+   */
+  public CarbonSortTempFileChunkWriter(CarbonSortTempFileWriter writer, int recordPerLeaf) {
+    this.writer = writer;
+    this.recordPerLeaf = recordPerLeaf;
+  }
+
+  /**
+   * finish
+   */
+  public void finish() {
+    this.writer.finish();
+  }
+
+  /**
+   * initialise
+   */
+  public void initiaize(File file, int entryCount) throws CarbonSortKeyAndGroupByException {
+    this.writer.initiaize(file, entryCount);
+  }
+
+  /**
+   * Below method will be used to write the sort temp file chunk by chunk
+   */
+  public void writeSortTempFile(Object[][] records) throws CarbonSortKeyAndGroupByException {
+    int recordCount = 0;
+    Object[][] tempRecords = null;
+    while (recordCount < records.length) {
+      if (records.length - recordCount < recordPerLeaf) {
+        recordPerLeaf = records.length - recordCount;
+      }
+      tempRecords = new Object[recordPerLeaf][];
+      System.arraycopy(records, recordCount, tempRecords, 0, recordPerLeaf);
+      recordCount += recordPerLeaf;
+      this.writer.writeSortTempFile(tempRecords);
     }
 
-    /**
-     * finish
-     */
-    public void finish() {
-        this.writer.finish();
-    }
-
-    /**
-     * initialise
-     */
-    public void initiaize(File file, int entryCount) throws CarbonSortKeyAndGroupByException {
-        this.writer.initiaize(file, entryCount);
-    }
-
-    /**
-     * Below method will be used to write the sort temp file chunk by chunk
-     */
-    public void writeSortTempFile(Object[][] records) throws CarbonSortKeyAndGroupByException {
-        int recordCount = 0;
-        Object[][] tempRecords = null;
-        while (recordCount < records.length) {
-            if (records.length - recordCount < recordPerLeaf) {
-                recordPerLeaf = records.length - recordCount;
-            }
-            tempRecords = new Object[recordPerLeaf][];
-            System.arraycopy(records, recordCount, tempRecords, 0, recordPerLeaf);
-            recordCount += recordPerLeaf;
-            this.writer.writeSortTempFile(tempRecords);
-        }
-
-    }
+  }
 }

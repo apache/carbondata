@@ -43,103 +43,100 @@ import org.carbondata.query.util.ScannedResultProcessorUtil;
  */
 public class ScannedResultDataFileWriterThread extends ResultWriter {
 
-    /**
-     * LOGGER
-     */
-    private static final LogService LOGGER =
-            LogServiceFactory.getLogService(ScannedResultDataFileWriterThread.class.getName());
-    /**
-     * ScannedResult
-     */
-    private Result scannedResult;
-    /**
-     * outLocation
-     */
-    private String outLocation;
-    /***
-     * comparator
-     */
-    private Comparator comparator;
+  /**
+   * LOGGER
+   */
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(ScannedResultDataFileWriterThread.class.getName());
+  /**
+   * ScannedResult
+   */
+  private Result scannedResult;
+  /**
+   * outLocation
+   */
+  private String outLocation;
+  /***
+   * comparator
+   */
+  private Comparator comparator;
 
-    /**
-     * DataFileWriter Constructor
-     *
-     * @param dataMap
-     * @param model
-     */
-    public ScannedResultDataFileWriterThread(Result scannedResult,
-            DataProcessorInfo dataProcessorInfo, Comparator comparator, String outLocation) {
-        this.outLocation = outLocation;
-        this.dataProcessorInfo = dataProcessorInfo;
-        this.scannedResult = scannedResult;
-        this.comparator = comparator;
-        //        updateDuplicateDimensions();
-    }
+  /**
+   * DataFileWriter Constructor
+   *
+   * @param dataMap
+   * @param model
+   */
+  public ScannedResultDataFileWriterThread(Result scannedResult,
+      DataProcessorInfo dataProcessorInfo, Comparator comparator, String outLocation) {
+    this.outLocation = outLocation;
+    this.dataProcessorInfo = dataProcessorInfo;
+    this.scannedResult = scannedResult;
+    this.comparator = comparator;
+    //        updateDuplicateDimensions();
+  }
 
-    /**
-     * @see java.util.concurrent.Callable#call()
-     */
-    @Override
-    public Void call() throws Exception {
-        DataOutputStream dataOutput = null;
-        CarbonFile carbonFile = null;
-        String destPath = null;
-        try {
-            String path = this.outLocation + '/' + System.nanoTime() + ".tmp";
-            dataOutput =
-                    FileFactory.getDataOutputStream(path, FileFactory.getFileType(path), (short) 1);
-            carbonFile = FileFactory.getCarbonFile(path, FileFactory.getFileType(path));
-            dataOutput.writeInt(scannedResult.size());
-            /*int writenDataSize = */
-            writeScannedResult(dataOutput);
-            destPath = this.outLocation + '/' + System.nanoTime()
-                    + CarbonCommonConstants.QUERY_OUT_FILE_EXT;
-        } catch (IOException e) {
-            throw new QueryExecutionException(e);
-        } finally {
-            CarbonUtil.closeStreams(dataOutput);
-            try {
-                if (null != carbonFile && !carbonFile.renameTo(destPath)) {
-                    LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-                            "Problem while renaming the file");
-                }
-            } catch (Exception e) {
-                LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e,
-                        "Problem while renaming the file");
-            }
+  /**
+   * @see java.util.concurrent.Callable#call()
+   */
+  @Override public Void call() throws Exception {
+    DataOutputStream dataOutput = null;
+    CarbonFile carbonFile = null;
+    String destPath = null;
+    try {
+      String path = this.outLocation + '/' + System.nanoTime() + ".tmp";
+      dataOutput = FileFactory.getDataOutputStream(path, FileFactory.getFileType(path), (short) 1);
+      carbonFile = FileFactory.getCarbonFile(path, FileFactory.getFileType(path));
+      dataOutput.writeInt(scannedResult.size());
+      writeScannedResult(dataOutput);
+      destPath =
+          this.outLocation + '/' + System.nanoTime() + CarbonCommonConstants.QUERY_OUT_FILE_EXT;
+    } catch (IOException e) {
+      throw new QueryExecutionException(e);
+    } finally {
+      CarbonUtil.closeStreams(dataOutput);
+      try {
+        if (null != carbonFile && !carbonFile.renameTo(destPath)) {
+          LOGGER
+              .info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "Problem while renaming the file");
         }
-        return null;
+      } catch (Exception e) {
+        LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e,
+            "Problem while renaming the file");
+      }
     }
+    return null;
+  }
 
-    /**
-     * This will write the scannedResult into the data stream.
-     *
-     * @param dataOutput
-     * @return
-     * @throws KeyGenException
-     * @throws IOException
-     */
-    private void writeScannedResult(DataOutputStream dataOutput) throws QueryExecutionException {
-        DataFileWriter.KeyValueHolder[] holderArray;
-        try {
-            holderArray = ScannedResultProcessorUtil
-                    .getSortedResult(dataProcessorInfo, scannedResult, comparator);
-        } catch (QueryExecutionException e) {
-            throw e;
-        }
-        //int counter = 0;
-        try {
-            for (DataFileWriter.KeyValueHolder holder : holderArray) {
-                dataOutput.write(holder.key.getMaskedKey());
-                MeasureAggregator[] value = holder.value;
-                for (int i = 0; i < value.length; i++) {
-                    value[i].writeData(dataOutput);
-                }
-                // counter++;
-            }
-        } catch (IOException e) {
-            throw new QueryExecutionException(e);
-        }
-        //return counter;
+  /**
+   * This will write the scannedResult into the data stream.
+   *
+   * @param dataOutput
+   * @return
+   * @throws KeyGenException
+   * @throws IOException
+   */
+  private void writeScannedResult(DataOutputStream dataOutput) throws QueryExecutionException {
+    DataFileWriter.KeyValueHolder[] holderArray;
+    try {
+      holderArray =
+          ScannedResultProcessorUtil.getSortedResult(dataProcessorInfo, scannedResult, comparator);
+    } catch (QueryExecutionException e) {
+      throw e;
     }
+    //int counter = 0;
+    try {
+      for (DataFileWriter.KeyValueHolder holder : holderArray) {
+        dataOutput.write(holder.key.getMaskedKey());
+        MeasureAggregator[] value = holder.value;
+        for (int i = 0; i < value.length; i++) {
+          value[i].writeData(dataOutput);
+        }
+        // counter++;
+      }
+    } catch (IOException e) {
+      throw new QueryExecutionException(e);
+    }
+    //return counter;
+  }
 }

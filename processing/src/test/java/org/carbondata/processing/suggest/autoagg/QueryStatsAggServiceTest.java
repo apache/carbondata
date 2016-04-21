@@ -22,10 +22,6 @@ package org.carbondata.processing.suggest.autoagg;
 import java.io.File;
 import java.util.List;
 
-import junit.framework.Assert;
-import mockit.Mock;
-import mockit.MockUp;
-
 import org.carbondata.core.carbon.CarbonDef;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.processing.store.StoreCreator;
@@ -36,372 +32,341 @@ import org.carbondata.processing.suggest.datastats.model.Level;
 import org.carbondata.processing.suggest.datastats.model.LoadModel;
 import org.carbondata.processing.suggest.datastats.util.DataStatsUtil;
 import org.carbondata.processing.suggest.util.TestUtil;
+
+import junit.framework.Assert;
+import mockit.Mock;
+import mockit.MockUp;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class QueryStatsAggServiceTest {
-    static CarbonDef.Schema schema;
-    static CarbonDef.Cube cube;
+  static CarbonDef.Schema schema;
+  static CarbonDef.Cube cube;
 
-    static String schemaName;
-    static String cubeName;
-    static String factTable;
-    static String dataPath;
-    static String baseMetaPath;
+  static String schemaName;
+  static String cubeName;
+  static String factTable;
+  static String dataPath;
+  static String baseMetaPath;
 
-    @BeforeClass
-    public static void setUpBeforeClass() throws Exception {
-        try {
-            StoreCreator.createCarbonStore();
-            File file = new File("src/test/resources");
-          
-            String basePath = file.getCanonicalPath() + "/";
-            String metaPath = basePath + "schemas/default/carbon/metadata";
+  @BeforeClass public static void setUpBeforeClass() throws Exception {
+    try {
+      StoreCreator.createCarbonStore();
+      File file = new File("src/test/resources");
 
-            CarbonProperties.getInstance().addProperty("carbon.storelocation", basePath + "store");
-            CarbonProperties.getInstance().addProperty("carbon.number.of.cores", "4");
-            CarbonProperties.getInstance().addProperty("carbon.smartJump.avoid.percent", "70");
-            schema = CommonUtil.readMetaData(metaPath).get(0);
-            cube = schema.cubes[0];
-            schemaName = schema.name;
-            cubeName = cube.name;
-            factTable = "carbon";
-            dataPath = basePath + "store";
-            baseMetaPath = basePath + "schemas/default/carbon";
-        } catch (Exception e) {
+      String basePath = file.getCanonicalPath() + "/";
+      String metaPath = basePath + "schemas/default/carbon/metadata";
 
-        }
-
+      CarbonProperties.getInstance().addProperty("carbon.storelocation", basePath + "store");
+      CarbonProperties.getInstance().addProperty("carbon.number.of.cores", "4");
+      CarbonProperties.getInstance().addProperty("carbon.smartJump.avoid.percent", "70");
+      schema = CommonUtil.readMetaData(metaPath).get(0);
+      cube = schema.cubes[0];
+      schemaName = schema.name;
+      cubeName = cube.name;
+      factTable = "carbon";
+      dataPath = basePath + "store";
+      baseMetaPath = basePath + "schemas/default/carbon";
+    } catch (Exception e) {
+      throw new RuntimeException(e);
     }
 
-    @Test
-    public void testDataStats_configuredBenefitRatio_getDimensions() {
-        try {
+  }
 
-            CarbonProperties.getInstance().addProperty("carbon.agg.benefit.ratio", "2");
+  @Test public void testDataStats_configuredBenefitRatio_getDimensions() {
+    try {
 
-            AutoAggSuggestionService aggService =
-                    AutoAggSuggestionFactory.getAggregateService(Request.QUERY_STATS);
-            LoadModel loadModel =
-                    TestUtil.createLoadModel(schemaName, cubeName, schema, cube, dataPath,
-                            baseMetaPath);
-            List<String> aggCombinations = aggService.getAggregateDimensions(loadModel);
-            Assert.assertNotNull(aggCombinations);
-        } catch (Exception e) {
+      CarbonProperties.getInstance().addProperty("carbon.agg.benefit.ratio", "2");
 
-        }
+      AutoAggSuggestionService aggService =
+          AutoAggSuggestionFactory.getAggregateService(Request.QUERY_STATS);
+      LoadModel loadModel =
+          TestUtil.createLoadModel(schemaName, cubeName, schema, cube, dataPath, baseMetaPath);
+      List<String> aggCombinations = aggService.getAggregateDimensions(loadModel);
+      Assert.assertNotNull(aggCombinations);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Test public void testDataStats_distinctRelIsSerialized_getDimensions() {
+
+    try {
+      AutoAggSuggestionService aggService =
+          AutoAggSuggestionFactory.getAggregateService(Request.QUERY_STATS);
+      LoadModel loadModel =
+          TestUtil.createLoadModel(schemaName, cubeName, schema, cube, dataPath, baseMetaPath);
+      List<String> aggCombinations = aggService.getAggregateDimensions(loadModel);
+      Assert.assertNotNull(aggCombinations);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
     }
 
-    @Test
-    public void testDataStats_distinctRelIsSerialized_getDimensions() {
+  }
 
-        try {
-            AutoAggSuggestionService aggService =
-                    AutoAggSuggestionFactory.getAggregateService(Request.QUERY_STATS);
-            LoadModel loadModel =
-                    TestUtil.createLoadModel(schemaName, cubeName, schema, cube, dataPath,
-                            baseMetaPath);
-            List<String> aggCombinations = aggService.getAggregateDimensions(loadModel);
-            Assert.assertNotNull(aggCombinations);
-        } catch (Exception e) {
+  @Test public void testDataStats_distinctRelIsNotSerialized_getDimensions() {
 
-        }
-
+    try {
+      File file = new File(baseMetaPath + "/aggsuggestion/distinctData");
+      if (file.exists()) {
+        file.delete();
+      }
+      AutoAggSuggestionService aggService =
+          AutoAggSuggestionFactory.getAggregateService(Request.QUERY_STATS);
+      LoadModel loadModel =
+          TestUtil.createLoadModel(schemaName, cubeName, schema, cube, dataPath, baseMetaPath);
+      List<String> aggCombinations = aggService.getAggregateDimensions(loadModel);
+      Assert.assertNotNull(aggCombinations);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
     }
 
-    @Test
-    public void testDataStats_distinctRelIsNotSerialized_getDimensions() {
+  }
 
-        try {
-            File file = new File(baseMetaPath + "/aggsuggestion/distinctData");
-            if (file.exists()) {
-                file.delete();
-            }
-            AutoAggSuggestionService aggService =
-                    AutoAggSuggestionFactory.getAggregateService(Request.QUERY_STATS);
-            LoadModel loadModel =
-                    TestUtil.createLoadModel(schemaName, cubeName, schema, cube, dataPath,
-                            baseMetaPath);
-            List<String> aggCombinations = aggService.getAggregateDimensions(loadModel);
-            Assert.assertNotNull(aggCombinations);
-        } catch (Exception e) {
+  @Test public void testDataStats_configuredBenefitRatio_getScript() {
 
-        }
-
+    try {
+      //delete if serialized file exist
+      CarbonProperties.getInstance().addProperty("carbon.agg.benefit.ratio", "2");
+      LoadModel loadModel =
+          TestUtil.createLoadModel(schemaName, cubeName, schema, cube, dataPath, baseMetaPath);
+      AutoAggSuggestionService aggService =
+          AutoAggSuggestionFactory.getAggregateService(Request.QUERY_STATS);
+      List<String> aggCombinations = aggService.getAggregateScripts(loadModel);
+      Assert.assertNotNull(aggCombinations);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
     }
 
-    @Test
-    public void testDataStats_configuredBenefitRatio_getScript() {
+  }
 
-        try {
-            //delete if serialized file exist
-            CarbonProperties.getInstance().addProperty("carbon.agg.benefit.ratio", "2");
-            LoadModel loadModel =
-                    TestUtil.createLoadModel(schemaName, cubeName, schema, cube, dataPath,
-                            baseMetaPath);
-            AutoAggSuggestionService aggService =
-                    AutoAggSuggestionFactory.getAggregateService(Request.QUERY_STATS);
-            List<String> aggCombinations = aggService.getAggregateScripts(loadModel);
-            Assert.assertNotNull(aggCombinations);
-        } catch (Exception e) {
+  @Test public void testDataStats_distinctRelIsSerialized_getScript() {
+    try {
+      AutoAggSuggestionService aggService =
+          AutoAggSuggestionFactory.getAggregateService(Request.QUERY_STATS);
+      LoadModel loadModel =
+          TestUtil.createLoadModel(schemaName, cubeName, schema, cube, dataPath, baseMetaPath);
+      List<String> aggCombinations = aggService.getAggregateScripts(loadModel);
+      Assert.assertNotNull(aggCombinations);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
 
+  @Test public void testGetAggregateDimensions_throwsException_Exception() {
+
+    try {
+      new MockUp<DataStatsUtil>() {
+
+        @Mock public Level[] getDistinctDataFromDataStats(LoadModel loadModel)
+            throws AggSuggestException {
+          throw new NullPointerException();
         }
 
+      };
+
+      CarbonProperties.getInstance().addProperty("carbon.agg.benefit.ratio", "2");
+
+      AutoAggSuggestionService aggService =
+          AutoAggSuggestionFactory.getAggregateService(Request.QUERY_STATS);
+      LoadModel loadModel =
+          TestUtil.createLoadModel(schemaName, cubeName, schema, cube, dataPath, baseMetaPath);
+
+      List<String> aggCombinations = aggService.getAggregateDimensions(loadModel);
+      Assert.assertTrue(false);
+    } catch (AggSuggestException e) {
+      Assert.assertTrue(true);
     }
 
-    @Test
-    public void testDataStats_distinctRelIsSerialized_getScript() {
-        try {
-            AutoAggSuggestionService aggService =
-                    AutoAggSuggestionFactory.getAggregateService(Request.QUERY_STATS);
-            LoadModel loadModel =
-                    TestUtil.createLoadModel(schemaName, cubeName, schema, cube, dataPath,
-                            baseMetaPath);
-            List<String> aggCombinations = aggService.getAggregateScripts(loadModel);
-            Assert.assertNotNull(aggCombinations);
-        } catch (Exception e) {
+  }
 
-        }
-    }
+  @Test public void testGetAggregateDimensions_throwsException() {
 
-    @Test
-    public void testGetAggregateDimensions_throwsException_Exception() {
+    try {
+      new MockUp<DataStatsUtil>() {
 
-        try {
-            new MockUp<DataStatsUtil>() {
-
-                @Mock
-                public Level[] getDistinctDataFromDataStats(LoadModel loadModel)
-                        throws AggSuggestException {
-                    throw new NullPointerException();
-                }
-
-            };
-
-            CarbonProperties.getInstance().addProperty("carbon.agg.benefit.ratio", "2");
-
-            AutoAggSuggestionService aggService =
-                    AutoAggSuggestionFactory.getAggregateService(Request.QUERY_STATS);
-            LoadModel loadModel =
-                    TestUtil.createLoadModel(schemaName, cubeName, schema, cube, dataPath,
-                            baseMetaPath);
-
-            List<String> aggCombinations = aggService.getAggregateDimensions(loadModel);
-            Assert.assertTrue(false);
-        } catch (AggSuggestException e) {
-            Assert.assertTrue(true);
+        @Mock public Level[] getDistinctDataFromDataStats(LoadModel loadModel)
+            throws AggSuggestException {
+          throw new NullPointerException();
         }
 
+      };
+
+      CarbonProperties.getInstance().addProperty("carbon.agg.benefit.ratio", "2");
+
+      AutoAggSuggestionService aggService =
+          AutoAggSuggestionFactory.getAggregateService(Request.QUERY_STATS);
+      LoadModel loadModel =
+          TestUtil.createLoadModel(schemaName, cubeName, schema, cube, dataPath, baseMetaPath);
+
+      List<String> aggCombinations = aggService.getAggregateDimensions(loadModel);
+      Assert.assertTrue(false);
+    } catch (AggSuggestException e) {
+      Assert.assertTrue(true);
     }
 
-    @Test
-    public void testGetAggregateDimensions_throwsException() {
+  }
 
-        try {
-            new MockUp<DataStatsUtil>() {
+  @Test public void testGetAggregateScript_throwsException_WithException() {
 
-                @Mock
-                public Level[] getDistinctDataFromDataStats(LoadModel loadModel)
-                        throws AggSuggestException {
-                    throw new NullPointerException();
-                }
+    try {
+      new MockUp<DataStatsUtil>() {
 
-            };
-
-            CarbonProperties.getInstance().addProperty("carbon.agg.benefit.ratio", "2");
-
-            AutoAggSuggestionService aggService =
-                    AutoAggSuggestionFactory.getAggregateService(Request.QUERY_STATS);
-            LoadModel loadModel =
-                    TestUtil.createLoadModel(schemaName, cubeName, schema, cube, dataPath,
-                            baseMetaPath);
-
-            List<String> aggCombinations = aggService.getAggregateDimensions(loadModel);
-            Assert.assertTrue(false);
-        } catch (AggSuggestException e) {
-            Assert.assertTrue(true);
+        @Mock public Level[] getDistinctDataFromDataStats(LoadModel loadModel)
+            throws AggSuggestException {
+          throw new NullPointerException();
         }
 
+      };
+
+      CarbonProperties.getInstance().addProperty("carbon.agg.benefit.ratio", "2");
+
+      AutoAggSuggestionService aggService =
+          AutoAggSuggestionFactory.getAggregateService(Request.QUERY_STATS);
+      LoadModel loadModel =
+          TestUtil.createLoadModel(schemaName, cubeName, schema, cube, dataPath, baseMetaPath);
+
+      List<String> aggCombinations = aggService.getAggregateScripts(loadModel);
+      Assert.assertTrue(false);
+    } catch (AggSuggestException e) {
+      Assert.assertTrue(true);
     }
 
-    @Test
-    public void testGetAggregateScript_throwsException_WithException() {
+  }
 
-        try {
-            new MockUp<DataStatsUtil>() {
+  @Test public void testGetAggregateScript_throwsException() {
 
-                @Mock
-                public Level[] getDistinctDataFromDataStats(LoadModel loadModel)
-                        throws AggSuggestException {
-                    throw new NullPointerException();
-                }
+    try {
+      new MockUp<DataStatsUtil>() {
 
-            };
-
-            CarbonProperties.getInstance().addProperty("carbon.agg.benefit.ratio", "2");
-
-            AutoAggSuggestionService aggService =
-                    AutoAggSuggestionFactory.getAggregateService(Request.QUERY_STATS);
-            LoadModel loadModel =
-                    TestUtil.createLoadModel(schemaName, cubeName, schema, cube, dataPath,
-                            baseMetaPath);
-
-            List<String> aggCombinations = aggService.getAggregateScripts(loadModel);
-            Assert.assertTrue(false);
-        } catch (AggSuggestException e) {
-            Assert.assertTrue(true);
+        @Mock public Level[] getDistinctDataFromDataStats(LoadModel loadModel)
+            throws AggSuggestException {
+          throw new NullPointerException();
         }
 
+      };
+
+      CarbonProperties.getInstance().addProperty("carbon.agg.benefit.ratio", "2");
+
+      AutoAggSuggestionService aggService =
+          AutoAggSuggestionFactory.getAggregateService(Request.QUERY_STATS);
+      LoadModel loadModel =
+          TestUtil.createLoadModel(schemaName, cubeName, schema, cube, dataPath, baseMetaPath);
+
+      List<String> aggCombinations = aggService.getAggregateScripts(loadModel);
+      Assert.assertTrue(false);
+    } catch (AggSuggestException e) {
+      Assert.assertTrue(true);
     }
 
-    @Test
-    public void testGetAggregateScript_throwsException() {
+  }
 
-        try {
-            new MockUp<DataStatsUtil>() {
+  @Test public void testGetAggregateDimensions_throwsAggException_Exception() {
 
-                @Mock
-                public Level[] getDistinctDataFromDataStats(LoadModel loadModel)
-                        throws AggSuggestException {
-                    throw new NullPointerException();
-                }
+    try {
+      new MockUp<DataStatsUtil>() {
 
-            };
-
-            CarbonProperties.getInstance().addProperty("carbon.agg.benefit.ratio", "2");
-
-            AutoAggSuggestionService aggService =
-                    AutoAggSuggestionFactory.getAggregateService(Request.QUERY_STATS);
-            LoadModel loadModel =
-                    TestUtil.createLoadModel(schemaName, cubeName, schema, cube, dataPath,
-                            baseMetaPath);
-
-            List<String> aggCombinations = aggService.getAggregateScripts(loadModel);
-            Assert.assertTrue(false);
-        } catch (AggSuggestException e) {
-            Assert.assertTrue(true);
+        @Mock public Level[] getDistinctDataFromDataStats(LoadModel loadModel)
+            throws AggSuggestException {
+          throw new NullPointerException();
         }
 
+      };
+
+      CarbonProperties.getInstance().addProperty("carbon.agg.benefit.ratio", "2");
+
+      AutoAggSuggestionService aggService =
+          AutoAggSuggestionFactory.getAggregateService(Request.QUERY_STATS);
+      LoadModel loadModel =
+          TestUtil.createLoadModel(schemaName, cubeName, schema, cube, dataPath, baseMetaPath);
+
+      List<String> aggCombinations = aggService.getAggregateDimensions(loadModel);
+      Assert.assertTrue(false);
+    } catch (AggSuggestException e) {
+      Assert.assertTrue(true);
     }
 
-    @Test
-    public void testGetAggregateDimensions_throwsAggException_Exception() {
+  }
 
-        try {
-            new MockUp<DataStatsUtil>() {
+  @Test public void testGetAggregateDimensions_throwsAggException() {
 
-                @Mock
-                public Level[] getDistinctDataFromDataStats(LoadModel loadModel)
-                        throws AggSuggestException {
-                    throw new NullPointerException();
-                }
+    try {
+      new MockUp<DataStatsUtil>() {
 
-            };
-
-            CarbonProperties.getInstance().addProperty("carbon.agg.benefit.ratio", "2");
-
-            AutoAggSuggestionService aggService =
-                    AutoAggSuggestionFactory.getAggregateService(Request.QUERY_STATS);
-            LoadModel loadModel =
-                    TestUtil.createLoadModel(schemaName, cubeName, schema, cube, dataPath,
-                            baseMetaPath);
-
-            List<String> aggCombinations = aggService.getAggregateDimensions(loadModel);
-            Assert.assertTrue(false);
-        } catch (AggSuggestException e) {
-            Assert.assertTrue(true);
+        @Mock public Level[] getDistinctDataFromDataStats(LoadModel loadModel)
+            throws AggSuggestException {
+          throw new AggSuggestException("error");
         }
 
+      };
+
+      CarbonProperties.getInstance().addProperty("carbon.agg.benefit.ratio", "2");
+
+      AutoAggSuggestionService aggService =
+          AutoAggSuggestionFactory.getAggregateService(Request.QUERY_STATS);
+      LoadModel loadModel =
+          TestUtil.createLoadModel(schemaName, cubeName, schema, cube, dataPath, baseMetaPath);
+
+      List<String> aggCombinations = aggService.getAggregateDimensions(loadModel);
+      Assert.assertTrue(false);
+    } catch (AggSuggestException e) {
+      Assert.assertTrue(true);
     }
 
-    @Test
-    public void testGetAggregateDimensions_throwsAggException() {
+  }
 
-        try {
-            new MockUp<DataStatsUtil>() {
+  @Test public void testGetAggregateScript_throwsAggException_WithException() {
 
-                @Mock
-                public Level[] getDistinctDataFromDataStats(LoadModel loadModel)
-                        throws AggSuggestException {
-                    throw new AggSuggestException("error");
-                }
+    try {
+      new MockUp<DataStatsUtil>() {
 
-            };
-
-            CarbonProperties.getInstance().addProperty("carbon.agg.benefit.ratio", "2");
-
-            AutoAggSuggestionService aggService =
-                    AutoAggSuggestionFactory.getAggregateService(Request.QUERY_STATS);
-            LoadModel loadModel =
-                    TestUtil.createLoadModel(schemaName, cubeName, schema, cube, dataPath,
-                            baseMetaPath);
-
-            List<String> aggCombinations = aggService.getAggregateDimensions(loadModel);
-            Assert.assertTrue(false);
-        } catch (AggSuggestException e) {
-            Assert.assertTrue(true);
+        @Mock public Level[] getDistinctDataFromDataStats(LoadModel loadModel)
+            throws AggSuggestException {
+          throw new AggSuggestException("error", new NullPointerException());
         }
 
+      };
+
+      CarbonProperties.getInstance().addProperty("carbon.agg.benefit.ratio", "2");
+
+      AutoAggSuggestionService aggService =
+          AutoAggSuggestionFactory.getAggregateService(Request.QUERY_STATS);
+      LoadModel loadModel =
+          TestUtil.createLoadModel(schemaName, cubeName, schema, cube, dataPath, baseMetaPath);
+
+      List<String> aggCombinations = aggService.getAggregateScripts(loadModel);
+      Assert.assertTrue(false);
+    } catch (AggSuggestException e) {
+      Assert.assertTrue(true);
     }
 
-    @Test
-    public void testGetAggregateScript_throwsAggException_WithException() {
+  }
 
-        try {
-            new MockUp<DataStatsUtil>() {
+  @Test public void testGetAggregateScript_throwsAggException() {
 
-                @Mock
-                public Level[] getDistinctDataFromDataStats(LoadModel loadModel)
-                        throws AggSuggestException {
-                    throw new AggSuggestException("error", new NullPointerException());
-                }
+    try {
+      new MockUp<DataStatsUtil>() {
 
-            };
-
-            CarbonProperties.getInstance().addProperty("carbon.agg.benefit.ratio", "2");
-
-            AutoAggSuggestionService aggService =
-                    AutoAggSuggestionFactory.getAggregateService(Request.QUERY_STATS);
-            LoadModel loadModel =
-                    TestUtil.createLoadModel(schemaName, cubeName, schema, cube, dataPath,
-                            baseMetaPath);
-
-            List<String> aggCombinations = aggService.getAggregateScripts(loadModel);
-            Assert.assertTrue(false);
-        } catch (AggSuggestException e) {
-            Assert.assertTrue(true);
+        @Mock public Level[] getDistinctDataFromDataStats(LoadModel loadModel)
+            throws AggSuggestException {
+          throw new AggSuggestException("error");
         }
 
+      };
+
+      CarbonProperties.getInstance().addProperty("carbon.agg.benefit.ratio", "2");
+
+      AutoAggSuggestionService aggService =
+          AutoAggSuggestionFactory.getAggregateService(Request.QUERY_STATS);
+      LoadModel loadModel =
+          TestUtil.createLoadModel(schemaName, cubeName, schema, cube, dataPath, baseMetaPath);
+
+      List<String> aggCombinations = aggService.getAggregateScripts(loadModel);
+      Assert.assertTrue(false);
+    } catch (AggSuggestException e) {
+      Assert.assertTrue(true);
     }
 
-    @Test
-    public void testGetAggregateScript_throwsAggException() {
-
-        try {
-            new MockUp<DataStatsUtil>() {
-
-                @Mock
-                public Level[] getDistinctDataFromDataStats(LoadModel loadModel)
-                        throws AggSuggestException {
-                    throw new AggSuggestException("error");
-                }
-
-            };
-
-            CarbonProperties.getInstance().addProperty("carbon.agg.benefit.ratio", "2");
-
-            AutoAggSuggestionService aggService =
-                    AutoAggSuggestionFactory.getAggregateService(Request.QUERY_STATS);
-            LoadModel loadModel =
-                    TestUtil.createLoadModel(schemaName, cubeName, schema, cube, dataPath,
-                            baseMetaPath);
-
-            List<String> aggCombinations = aggService.getAggregateScripts(loadModel);
-            Assert.assertTrue(false);
-        } catch (AggSuggestException e) {
-            Assert.assertTrue(true);
-        }
-
-    }
+  }
 
 }

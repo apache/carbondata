@@ -20,51 +20,50 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- *Persist Index of all leaf nodes in one file
- *
+ * Persist Index of all leaf nodes in one file
  */
 public class LeafNodeIndex implements Serializable {
 
-    /**
-     * serialization version
-     */
-    private static final long serialVersionUID = 1L;
+  /**
+   * serialization version
+   */
+  private static final long serialVersionUID = 1L;
 
-    /**
-     * list of btree index for all the leaf
-     */
-    private List<LeafNodeBtreeIndex> btreeIndexList;
+  /**
+   * list of btree index for all the leaf
+   */
+  private List<LeafNodeBtreeIndex> btreeIndexList;
 
-    /**
-     * list of max and min key of all leaf
-     */
-    private List<LeafNodeMinMaxIndex> minMaxIndexList;
+  /**
+   * list of max and min key of all leaf
+   */
+  private List<LeafNodeMinMaxIndex> minMaxIndexList;
 
-    /**
-     * @return the btreeIndexList
-     */
-    public List<LeafNodeBtreeIndex> getBtreeIndexList() {
-        return btreeIndexList;
-    }
+  /**
+   * @return the btreeIndexList
+   */
+  public List<LeafNodeBtreeIndex> getBtreeIndexList() {
+    return btreeIndexList;
+  }
 
-    /**
-     * @param btreeIndexList the btreeIndexList to set
-     */
-    public void setBtreeIndexList(List<LeafNodeBtreeIndex> btreeIndexList) {
-        this.btreeIndexList = btreeIndexList;
-    }
+  /**
+   * @param btreeIndexList the btreeIndexList to set
+   */
+  public void setBtreeIndexList(List<LeafNodeBtreeIndex> btreeIndexList) {
+    this.btreeIndexList = btreeIndexList;
+  }
 
-    /**
-     * @return the minMaxIndexList
-     */
-    public List<LeafNodeMinMaxIndex> getMinMaxIndexList() {
-        return minMaxIndexList;
-    }
+  /**
+   * @return the minMaxIndexList
+   */
+  public List<LeafNodeMinMaxIndex> getMinMaxIndexList() {
+    return minMaxIndexList;
+  }
 
-    /**
-     * @param minMaxIndexList the minMaxIndexList to set
-     */
-    public void setMinMaxIndexList(List<LeafNodeMinMaxIndex> minMaxIndexList) {
-        this.minMaxIndexList = minMaxIndexList;
-    }
+  /**
+   * @param minMaxIndexList the minMaxIndexList to set
+   */
+  public void setMinMaxIndexList(List<LeafNodeMinMaxIndex> minMaxIndexList) {
+    this.minMaxIndexList = minMaxIndexList;
+  }
 }

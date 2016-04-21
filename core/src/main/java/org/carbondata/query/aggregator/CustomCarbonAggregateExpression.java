@@ -27,118 +27,116 @@ import org.carbondata.core.metadata.CarbonMetadata.Dimension;
 
 public class CustomCarbonAggregateExpression implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 1L;
 
-    /**
-     * Identified and delegated from Spark Layer for UDAF in Carbon
-     */
-    private CustomMeasureAggregator aggregator;
+  /**
+   * Identified and delegated from Spark Layer for UDAF in Carbon
+   */
+  private CustomMeasureAggregator aggregator;
 
-    /**
-     * Aggregate column name may not be a measure or dimension. Can be a column
-     * name given in query
-     */
-    private String name;
+  /**
+   * Aggregate column name may not be a measure or dimension. Can be a column
+   * name given in query
+   */
+  private String name;
 
-    /**
-     * Columns used in the expression where column can be a dimension or a
-     * measure.
-     */
-    private List<Dimension> referredColumns;
+  /**
+   * Columns used in the expression where column can be a dimension or a
+   * measure.
+   */
+  private List<Dimension> referredColumns;
 
-    /**
-     * Actual expression in query to use in the comparison with other Aggregate
-     * expressions.
-     */
-    private String expression;
+  /**
+   * Actual expression in query to use in the comparison with other Aggregate
+   * expressions.
+   */
+  private String expression;
 
-    /**
-     * Position in the query
-     */
-    private int queryOrder;
+  /**
+   * Position in the query
+   */
+  private int queryOrder;
 
-    public CustomCarbonAggregateExpression() {
-        referredColumns = new ArrayList<Dimension>(10);
+  public CustomCarbonAggregateExpression() {
+    referredColumns = new ArrayList<Dimension>(10);
+  }
+
+  public String getExpression() {
+    return expression;
+  }
+
+  public void setExpression(String expression) {
+    this.expression = expression;
+  }
+
+  public List<Dimension> getReferredColumns() {
+    return referredColumns;
+  }
+
+  public void setReferredColumns(List<Dimension> referredColumns) {
+    this.referredColumns = referredColumns;
+  }
+
+  public int getQueryOrder() {
+    return queryOrder;
+  }
+
+  public void setQueryOrder(int queryOrder) {
+    this.queryOrder = queryOrder;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public void setName(String name) {
+    this.name = name;
+  }
+
+  /**
+   * @return MeasureAggregator
+   */
+  public CustomMeasureAggregator getAggregator() {
+    return aggregator;
+  }
+
+  /**
+   * @param aggregator
+   */
+  public void setAggregator(CustomMeasureAggregator aggregator) {
+    this.aggregator = aggregator;
+  }
+
+  @Override public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + ((expression == null) ? 0 : expression.hashCode());
+    return result;
+  }
+
+  @Override public boolean equals(Object obj) {
+    if (obj == this) {
+      return true;
     }
 
-    public String getExpression() {
-        return expression;
+    if (!(obj instanceof CustomCarbonAggregateExpression)) {
+      return false;
     }
 
-    public void setExpression(String expression) {
-        this.expression = expression;
+    CustomCarbonAggregateExpression other = ((CustomCarbonAggregateExpression) obj);
+
+    if ((expression != null) && (expression.equals(other.expression))) {
+      return true;
     }
 
-    public List<Dimension> getReferredColumns() {
-        return referredColumns;
+    if (expression != null) {
+      return expression.equalsIgnoreCase(other.expression);
     }
 
-    public void setReferredColumns(List<Dimension> referredColumns) {
-        this.referredColumns = referredColumns;
+    if (other.expression != null) {
+      return other.expression.equalsIgnoreCase(expression);
     }
 
-    public int getQueryOrder() {
-        return queryOrder;
-    }
-
-    public void setQueryOrder(int queryOrder) {
-        this.queryOrder = queryOrder;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    /**
-     * @return MeasureAggregator
-     */
-    public CustomMeasureAggregator getAggregator() {
-        return aggregator;
-    }
-
-    /**
-     * @param aggregator
-     */
-    public void setAggregator(CustomMeasureAggregator aggregator) {
-        this.aggregator = aggregator;
-    }
-
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((expression == null) ? 0 : expression.hashCode());
-        return result;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == this) {
-            return true;
-        }
-
-        if (!(obj instanceof CustomCarbonAggregateExpression)) {
-            return false;
-        }
-
-        CustomCarbonAggregateExpression other = ((CustomCarbonAggregateExpression) obj);
-
-        if ((expression != null) && (expression.equals(other.expression))) {
-            return true;
-        }
-
-        if (expression != null) {
-            return expression.equalsIgnoreCase(other.expression);
-        }
-
-        if (other.expression != null) {
-            return other.expression.equalsIgnoreCase(expression);
-        }
-
-        return true;
-    }
+    return true;
+  }
 }

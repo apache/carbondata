@@ -24,8 +24,8 @@ import org.carbondata.query.executer.impl.RestructureHolder;
 import org.carbondata.query.result.Result;
 
 public interface ColumnarScannedResultAggregator {
-    int aggregateData(AbstractColumnarScanResult keyValue);
+  int aggregateData(AbstractColumnarScanResult keyValue);
 
-    Result getResult(RestructureHolder restructureHolder);
+  Result getResult(RestructureHolder restructureHolder);
 
 }

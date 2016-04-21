@@ -20,13 +20,13 @@ package org.carbondata.core.carbon.metadata.datatype;
 
 public enum DataType {
 
-    STRING,
-    INT,
-    LONG,
-    DOUBLE,
-    DECIMAL,
-    TIMESTAMP,
-    ARRAY,
-    STRUCT,
-    MAP;
+  STRING,
+  INT,
+  LONG,
+  DOUBLE,
+  DECIMAL,
+  TIMESTAMP,
+  ARRAY,
+  STRUCT,
+  MAP;
 }

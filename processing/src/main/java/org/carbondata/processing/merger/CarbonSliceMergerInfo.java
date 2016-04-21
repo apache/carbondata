@@ -24,148 +24,148 @@ import java.util.List;
 import org.carbondata.core.carbon.CarbonDef.Schema;
 
 public class CarbonSliceMergerInfo {
-    private String schemaName;
+  private String schemaName;
 
-    private String cubeName;
+  private String cubeName;
 
-    private String tableName;
+  private String tableName;
 
-    private String partitionID;
+  private String partitionID;
 
-    private Schema schema;
+  private Schema schema;
 
-    private String schemaPath;
+  private String schemaPath;
 
-    private String metadataPath;
+  private String metadataPath;
 
-    private List<String> loadsToBeMerged;
+  private List<String> loadsToBeMerged;
 
-    private String mergedLoadName;
+  private String mergedLoadName;
 
-    /**
-     * @return the schemaName
-     */
-    public String getSchemaName() {
-        return schemaName;
-    }
+  /**
+   * @return the schemaName
+   */
+  public String getSchemaName() {
+    return schemaName;
+  }
 
-    /**
-     * @param schemaName the schemaName to set
-     */
-    public void setSchemaName(String schemaName) {
-        this.schemaName = schemaName;
-    }
+  /**
+   * @param schemaName the schemaName to set
+   */
+  public void setSchemaName(String schemaName) {
+    this.schemaName = schemaName;
+  }
 
-    /**
-     * @return the cubeName
-     */
-    public String getCubeName() {
-        return cubeName;
-    }
+  /**
+   * @return the cubeName
+   */
+  public String getCubeName() {
+    return cubeName;
+  }
 
-    /**
-     * @param cubeName the cubeName to set
-     */
-    public void setCubeName(String cubeName) {
-        this.cubeName = cubeName;
-    }
+  /**
+   * @param cubeName the cubeName to set
+   */
+  public void setCubeName(String cubeName) {
+    this.cubeName = cubeName;
+  }
 
-    /**
-     * @return the tableName
-     */
-    public String getTableName() {
-        return tableName;
-    }
+  /**
+   * @return the tableName
+   */
+  public String getTableName() {
+    return tableName;
+  }
 
-    /**
-     * @param tableName the tableName to set
-     */
-    public void setTableName(String tableName) {
-        this.tableName = tableName;
-    }
+  /**
+   * @param tableName the tableName to set
+   */
+  public void setTableName(String tableName) {
+    this.tableName = tableName;
+  }
 
-    /**
-     * @return the partitionID
-     */
-    public String getPartitionID() {
-        return partitionID;
-    }
+  /**
+   * @return the partitionID
+   */
+  public String getPartitionID() {
+    return partitionID;
+  }
 
-    /**
-     * @param partitionID the partitionID to set
-     */
-    public void setPartitionID(String partitionID) {
-        this.partitionID = partitionID;
-    }
+  /**
+   * @param partitionID the partitionID to set
+   */
+  public void setPartitionID(String partitionID) {
+    this.partitionID = partitionID;
+  }
 
-    /**
-     * @return the schema
-     */
-    public Schema getSchema() {
-        return schema;
-    }
+  /**
+   * @return the schema
+   */
+  public Schema getSchema() {
+    return schema;
+  }
 
-    /**
-     * @param schema the schema to set
-     */
-    public void setSchema(Schema schema) {
-        this.schema = schema;
-    }
+  /**
+   * @param schema the schema to set
+   */
+  public void setSchema(Schema schema) {
+    this.schema = schema;
+  }
 
-    /**
-     * @return the schemaPath
-     */
-    public String getSchemaPath() {
-        return schemaPath;
-    }
+  /**
+   * @return the schemaPath
+   */
+  public String getSchemaPath() {
+    return schemaPath;
+  }
 
-    /**
-     * @param schemaPath the schemaPath to set
-     */
-    public void setSchemaPath(String schemaPath) {
-        this.schemaPath = schemaPath;
-    }
+  /**
+   * @param schemaPath the schemaPath to set
+   */
+  public void setSchemaPath(String schemaPath) {
+    this.schemaPath = schemaPath;
+  }
 
-    /**
-     * @return the metadataPath
-     */
-    public String getMetadataPath() {
-        return metadataPath;
-    }
+  /**
+   * @return the metadataPath
+   */
+  public String getMetadataPath() {
+    return metadataPath;
+  }
 
-    /**
-     * @param metadataPath the metadataPath to set
-     */
-    public void setMetadataPath(String metadataPath) {
-        this.metadataPath = metadataPath;
-    }
+  /**
+   * @param metadataPath the metadataPath to set
+   */
+  public void setMetadataPath(String metadataPath) {
+    this.metadataPath = metadataPath;
+  }
 
-    /**
-     * @return the loadsToBeMerged
-     */
-    public List<String> getLoadsToBeMerged() {
-        return loadsToBeMerged;
-    }
+  /**
+   * @return the loadsToBeMerged
+   */
+  public List<String> getLoadsToBeMerged() {
+    return loadsToBeMerged;
+  }
 
-    /**
-     * @param loadsToMerge the loadsToBeMerged to set
-     */
-    public void setLoadsToBeMerged(List<String> loadsToMerge) {
-        this.loadsToBeMerged = loadsToMerge;
-    }
+  /**
+   * @param loadsToMerge the loadsToBeMerged to set
+   */
+  public void setLoadsToBeMerged(List<String> loadsToMerge) {
+    this.loadsToBeMerged = loadsToMerge;
+  }
 
-    /**
-     * @return the mergedLoadName
-     */
-    public String getMergedLoadName() {
-        return mergedLoadName;
-    }
+  /**
+   * @return the mergedLoadName
+   */
+  public String getMergedLoadName() {
+    return mergedLoadName;
+  }
 
-    /**
-     * @param mergedLoadName the mergedLoadName to set
-     */
-    public void setMergedLoadName(String mergedLoadName) {
-        this.mergedLoadName = mergedLoadName;
-    }
+  /**
+   * @param mergedLoadName the mergedLoadName to set
+   */
+  public void setMergedLoadName(String mergedLoadName) {
+    this.mergedLoadName = mergedLoadName;
+  }
 
 }

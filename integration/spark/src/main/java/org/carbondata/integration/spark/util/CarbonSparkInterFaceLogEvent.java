@@ -23,22 +23,20 @@ import org.carbondata.common.logging.LogEvent;
 
 public enum CarbonSparkInterFaceLogEvent implements LogEvent {
 
-    UNIBI_CARBON_SPARK_INTERFACE_MSG("carbon.spark.interface");
+  UNIBI_CARBON_SPARK_INTERFACE_MSG("carbon.spark.interface");
 
-    private String eventCode;
+  private String eventCode;
 
-    private CarbonSparkInterFaceLogEvent(final String eventCode) {
-        this.eventCode = eventCode;
-    }
+  private CarbonSparkInterFaceLogEvent(final String eventCode) {
+    this.eventCode = eventCode;
+  }
 
-    @Override
-    public String getEventCode() {
-        return eventCode;
-    }
+  @Override public String getEventCode() {
+    return eventCode;
+  }
 
-    @Override
-    public String getModuleName() {
-        return "CARBON_SPARK_INTERFACE";
-    }
+  @Override public String getModuleName() {
+    return "CARBON_SPARK_INTERFACE";
+  }
 
 }

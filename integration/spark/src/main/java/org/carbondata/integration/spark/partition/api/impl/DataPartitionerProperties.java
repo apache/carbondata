@@ -32,60 +32,60 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.integration.spark.util.CarbonSparkInterFaceLogEvent;
 
 public final class DataPartitionerProperties {
-    private static final LogService LOGGER =
-            LogServiceFactory.getLogService(DataPartitionerProperties.class.getName());
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(DataPartitionerProperties.class.getName());
 
-    private static DataPartitionerProperties instance;
+  private static DataPartitionerProperties instance;
 
-    private Properties properties;
+  private Properties properties;
 
-    private DataPartitionerProperties() {
-        properties = loadProperties();
+  private DataPartitionerProperties() {
+    properties = loadProperties();
+  }
+
+  public static DataPartitionerProperties getInstance() {
+    if (instance == null) {
+      instance = new DataPartitionerProperties();
     }
+    return instance;
+  }
 
-    public static DataPartitionerProperties getInstance() {
-        if (instance == null) {
-            instance = new DataPartitionerProperties();
-        }
-        return instance;
-    }
+  public String getValue(String key, String defaultVal) {
+    return properties.getProperty(key, defaultVal);
+  }
 
-    public String getValue(String key, String defaultVal) {
-        return properties.getProperty(key, defaultVal);
-    }
+  public String getValue(String key) {
+    return properties.getProperty(key);
+  }
 
-    public String getValue(String key) {
-        return properties.getProperty(key);
-    }
+  /**
+   * Read the properties from CSVFilePartitioner.properties
+   */
+  private Properties loadProperties() {
+    Properties props = new Properties();
 
-    /**
-     * Read the properties from CSVFilePartitioner.properties
-     */
-    private Properties loadProperties() {
-        Properties props = new Properties();
+    File file = new File("DataPartitioner.properties");
+    FileInputStream fis = null;
+    try {
+      if (file.exists()) {
+        fis = new FileInputStream(file);
 
-        File file = new File("DataPartitioner.properties");
-        FileInputStream fis = null;
+        props.load(fis);
+      }
+    } catch (Exception e) {
+      LOGGER
+          .error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, e, e.getMessage());
+    } finally {
+      if (null != fis) {
         try {
-            if (file.exists()) {
-                fis = new FileInputStream(file);
-
-                props.load(fis);
-            }
-        } catch (Exception e) {
-            LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, e,
-                    e.getMessage());
-        } finally {
-            if (null != fis) {
-                try {
-                    fis.close();
-                } catch (IOException e) {
-                    LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, e,
-                            e.getMessage());
-                }
-            }
+          fis.close();
+        } catch (IOException e) {
+          LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, e,
+              e.getMessage());
         }
-
-        return props;
+      }
     }
+
+    return props;
+  }
 }

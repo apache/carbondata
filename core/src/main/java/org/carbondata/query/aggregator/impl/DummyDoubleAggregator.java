@@ -21,40 +21,34 @@ package org.carbondata.query.aggregator.impl;
 import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 
 public class DummyDoubleAggregator extends AbstractMeasureAggregatorDummy {
-    private static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 1L;
 
-    /**
-     * aggregate value
-     */
-    private double aggVal;
+  /**
+   * aggregate value
+   */
+  private double aggVal;
 
-    @Override
-    public void agg(double newVal) {
-        aggVal = newVal;
-    }
+  @Override public void agg(double newVal) {
+    aggVal = newVal;
+  }
 
-    @Override
-    public void agg(Object newVal) {
-        aggVal = (Double) newVal;
-    }
+  @Override public void agg(Object newVal) {
+    aggVal = (Double) newVal;
+  }
 
-    @Override
-    public void agg(CarbonReadDataHolder newVal, int index) {
-        aggVal = newVal.getReadableDoubleValueByIndex(index);
-    }
+  @Override public void agg(CarbonReadDataHolder newVal, int index) {
+    aggVal = newVal.getReadableDoubleValueByIndex(index);
+  }
 
-    @Override
-    public Double getDoubleValue() {
-        return aggVal;
-    }
+  @Override public Double getDoubleValue() {
+    return aggVal;
+  }
 
-    @Override
-    public Object getValueObject() {
-        return aggVal;
-    }
+  @Override public Object getValueObject() {
+    return aggVal;
+  }
 
-    @Override
-    public void setNewValue(Object newValue) {
-        aggVal = (Double) newValue;
-    }
+  @Override public void setNewValue(Object newValue) {
+    aggVal = (Double) newValue;
+  }
 }

@@ -20,7 +20,7 @@
 package org.carbondata.query.datastorage;
 
 public enum DataType {
-    NUMBER,
-    TIMESTAMP,
-    STRING
+  NUMBER,
+  TIMESTAMP,
+  STRING
 }

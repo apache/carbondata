@@ -37,56 +37,51 @@ import org.carbondata.integration.spark.partition.api.Partition;
 import org.carbondata.query.queryinterface.query.metadata.CarbonDimensionLevelFilter;
 
 public class PartitionImpl implements Partition {
-    private static final long serialVersionUID = 3020172346383028547L;
-    private String uniqueID;
-    private String folderPath;
+  private static final long serialVersionUID = 3020172346383028547L;
+  private String uniqueID;
+  private String folderPath;
 
-    private Map<String, CarbonDimensionLevelFilter> filterMap =
-            new HashMap<String, CarbonDimensionLevelFilter>(
-                    CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+  private Map<String, CarbonDimensionLevelFilter> filterMap =
+      new HashMap<String, CarbonDimensionLevelFilter>(
+          CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-    public PartitionImpl(String uniqueID, String folderPath) {
-        this.uniqueID = uniqueID;
-        this.folderPath = folderPath;
-    }
+  public PartitionImpl(String uniqueID, String folderPath) {
+    this.uniqueID = uniqueID;
+    this.folderPath = folderPath;
+  }
 
-    /**
-     * @see com.huawei.datasight.carbon.partiion.api.Partition#getUniqueID()
-     */
-    @Override
-    public String getUniqueID() {
-        return uniqueID;
-    }
+  /**
+   * @see com.huawei.datasight.carbon.partiion.api.Partition#getUniqueID()
+   */
+  @Override public String getUniqueID() {
+    return uniqueID;
+  }
 
-    /**
-     * @see com.huawei.datasight.carbon.partiion.api.Partition#getFilePath()
-     */
-    @Override
-    public String getFilePath() {
-        return folderPath;
-    }
+  /**
+   * @see com.huawei.datasight.carbon.partiion.api.Partition#getFilePath()
+   */
+  @Override public String getFilePath() {
+    return folderPath;
+  }
 
-    /**
-     * @see com.huawei.datasight.carbon.partiion.api.Partition#getPartitionDetails()
-     */
-    @Override
-    public Map<String, CarbonDimensionLevelFilter> getPartitionDetails() {
-        return filterMap;
-    }
+  /**
+   * @see com.huawei.datasight.carbon.partiion.api.Partition#getPartitionDetails()
+   */
+  @Override public Map<String, CarbonDimensionLevelFilter> getPartitionDetails() {
+    return filterMap;
+  }
 
-    public void setPartitionDetails(String columnName, CarbonDimensionLevelFilter filter) {
-        filterMap.put(columnName, filter);
-    }
+  public void setPartitionDetails(String columnName, CarbonDimensionLevelFilter filter) {
+    filterMap.put(columnName, filter);
+  }
 
-    @Override
-    public String toString() {
-        return "{PartitionID -> " + uniqueID + " Path: " + folderPath + '}';
-    }
+  @Override public String toString() {
+    return "{PartitionID -> " + uniqueID + " Path: " + folderPath + '}';
+  }
 
-    @Override
-    public List<String> getFilesPath() {
-        // TODO Auto-generated method stub
-        return null;
-    }
+  @Override public List<String> getFilesPath() {
+    // TODO Auto-generated method stub
+    return null;
+  }
 
 }

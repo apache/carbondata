@@ -31,23 +31,23 @@ import org.carbondata.query.datastorage.streams.impl.HDFSFileDataInputStream;
  * @author R00900208
  */
 public final class CarbonDataInputStreamFactory {
-    private CarbonDataInputStreamFactory() {
+  private CarbonDataInputStreamFactory() {
 
-    }
+  }
 
-    public static DataInputStream getDataInputStream(String filesLocation, int mdkeysize,
-            int msrCount, boolean hasFactCount, String persistenceFileLocation, String tableName,
-            FileType fileType) {
-        switch (fileType) {
-        case LOCAL:
-            return new FileDataInputStream(filesLocation, mdkeysize, msrCount, hasFactCount,
-                    persistenceFileLocation, tableName);
-        case HDFS:
-            return new HDFSFileDataInputStream(filesLocation, mdkeysize, msrCount, hasFactCount,
-                    persistenceFileLocation, tableName);
-        default:
-            return new FileDataInputStream(filesLocation, mdkeysize, msrCount, hasFactCount,
-                    persistenceFileLocation, tableName);
-        }
+  public static DataInputStream getDataInputStream(String filesLocation, int mdkeysize,
+      int msrCount, boolean hasFactCount, String persistenceFileLocation, String tableName,
+      FileType fileType) {
+    switch (fileType) {
+      case LOCAL:
+        return new FileDataInputStream(filesLocation, mdkeysize, msrCount, hasFactCount,
+            persistenceFileLocation, tableName);
+      case HDFS:
+        return new HDFSFileDataInputStream(filesLocation, mdkeysize, msrCount, hasFactCount,
+            persistenceFileLocation, tableName);
+      default:
+        return new FileDataInputStream(filesLocation, mdkeysize, msrCount, hasFactCount,
+            persistenceFileLocation, tableName);
     }
+  }
 }

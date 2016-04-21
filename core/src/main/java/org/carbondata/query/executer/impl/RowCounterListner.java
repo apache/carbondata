@@ -23,8 +23,8 @@ package org.carbondata.query.executer.impl;
  * Classes which wants to listens the row count exceed even can implement this interface
  */
 public interface RowCounterListner {
-    /**
-     * This method is called when row limit exceeds.
-     */
-    void rowLimitExceeded() throws Exception;
+  /**
+   * This method is called when row limit exceeds.
+   */
+  void rowLimitExceeded() throws Exception;
 }

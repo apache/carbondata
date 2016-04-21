@@ -22,26 +22,26 @@ package org.carbondata.core.datastorage.store.columnar;
 import org.carbondata.core.datastorage.store.FileHolder;
 
 public interface ColumnarKeyStore {
-    /**
-     * This method will be used to get the actual mdkeys array present in the
-     * carbon store, it will read and uncomnpress the key
-     *
-     * @param fileHolder
-     * @return mdkey
-     * @noDictionaryValKeyIndexes, directkey indexes for determining the NO_DICTIONARY
-     * Col inorder to process the direct surrogates data.
-     */
-    ColumnarKeyStoreDataHolder[] getUnCompressedKeyArray(FileHolder fileHolder, int[] blockIndex,
-            boolean[] needCompressedData,int[] noDictionaryValKeyIndexes);
+  /**
+   * This method will be used to get the actual mdkeys array present in the
+   * carbon store, it will read and uncomnpress the key
+   *
+   * @param fileHolder
+   * @return mdkey
+   * @noDictionaryValKeyIndexes, directkey indexes for determining the NO_DICTIONARY
+   * Col inorder to process the direct surrogates data.
+   */
+  ColumnarKeyStoreDataHolder[] getUnCompressedKeyArray(FileHolder fileHolder, int[] blockIndex,
+      boolean[] needCompressedData, int[] noDictionaryValKeyIndexes);
 
-    /**
-     * This method will be used to get the actual mdkeys array present in the
-     * carbon store, it will read and uncomnpress the key
-     *
-     * @param fileHolder
-     * @return mdkey
-     */
-    ColumnarKeyStoreDataHolder getUnCompressedKeyArray(FileHolder fileHolder, int blockIndex,
-            boolean needCompressedData,int[] noDictionaryValKeyIndexes);
+  /**
+   * This method will be used to get the actual mdkeys array present in the
+   * carbon store, it will read and uncomnpress the key
+   *
+   * @param fileHolder
+   * @return mdkey
+   */
+  ColumnarKeyStoreDataHolder getUnCompressedKeyArray(FileHolder fileHolder, int blockIndex,
+      boolean needCompressedData, int[] noDictionaryValKeyIndexes);
 
 }

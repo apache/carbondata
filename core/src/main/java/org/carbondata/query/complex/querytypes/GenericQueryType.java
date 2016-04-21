@@ -24,54 +24,55 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
 
-import org.apache.spark.sql.types.DataType;
 import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreDataHolder;
 import org.carbondata.core.metadata.CarbonMetadata.Dimension;
 import org.carbondata.query.datastorage.InMemoryTable;
 import org.carbondata.query.evaluators.BlockDataHolder;
 
+import org.apache.spark.sql.types.DataType;
+
 public interface GenericQueryType {
 
-    String getName();
+  String getName();
 
-    void setName(String name);
+  void setName(String name);
 
-    String getParentname();
+  String getParentname();
 
-    void setParentname(String parentname);
+  void setParentname(String parentname);
 
-    int getBlockIndex();
+  int getBlockIndex();
 
-    void setBlockIndex(int blockIndex);
+  void setBlockIndex(int blockIndex);
 
-    void addChildren(GenericQueryType children);
+  void addChildren(GenericQueryType children);
 
-    void getAllPrimitiveChildren(List<GenericQueryType> primitiveChild);
+  void getAllPrimitiveChildren(List<GenericQueryType> primitiveChild);
 
-    int getSurrogateIndex();
+  int getSurrogateIndex();
 
-    void setSurrogateIndex(int surrIndex);
+  void setSurrogateIndex(int surrIndex);
 
-    int getColsCount();
+  int getColsCount();
 
-    void setKeySize(int[] keyBlockSize);
+  void setKeySize(int[] keyBlockSize);
 
-    int getKeyOrdinalForQuery();
+  int getKeyOrdinalForQuery();
 
-    void setKeyOrdinalForQuery(int keyOrdinalForQuery);
+  void setKeyOrdinalForQuery(int keyOrdinalForQuery);
 
-    void parseBlocksAndReturnComplexColumnByteArray(
-            ColumnarKeyStoreDataHolder[] columnarKeyStoreDataHolder, int rowNumber,
-            DataOutputStream dataOutputStream) throws IOException;
+  void parseBlocksAndReturnComplexColumnByteArray(
+      ColumnarKeyStoreDataHolder[] columnarKeyStoreDataHolder, int rowNumber,
+      DataOutputStream dataOutputStream) throws IOException;
 
-    DataType getSchemaType();
+  DataType getSchemaType();
 
-    Object getDataBasedOnDataTypeFromSurrogates(List<InMemoryTable> slices, ByteBuffer surrogateData,
-            Dimension[] dimensions);
+  Object getDataBasedOnDataTypeFromSurrogates(List<InMemoryTable> slices, ByteBuffer surrogateData,
+      Dimension[] dimensions);
 
-    void parseAndGetResultBytes(ByteBuffer complexData, DataOutputStream dataOutput)
-            throws IOException;
+  void parseAndGetResultBytes(ByteBuffer complexData, DataOutputStream dataOutput)
+      throws IOException;
 
-    void fillRequiredBlockData(BlockDataHolder blockDataHolder);
+  void fillRequiredBlockData(BlockDataHolder blockDataHolder);
 
 }

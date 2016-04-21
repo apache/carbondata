@@ -8,28 +8,27 @@ import org.carbondata.core.util.CarbonCoreLogEvent;
 
 public class UnCompressDefaultLong extends UnCompressNoneLong {
 
-    private static final LogService LOGGER =
-            LogServiceFactory.getLogService(UnCompressDefaultLong.class.getName());
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(UnCompressDefaultLong.class.getName());
 
-    public ValueCompressonHolder.UnCompressValue getNew() {
-        try {
-            return (ValueCompressonHolder.UnCompressValue) clone();
-        } catch (CloneNotSupportedException clnNotSupportedExc) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, clnNotSupportedExc,
-                    clnNotSupportedExc.getMessage());
-        }
-        return null;
+  public ValueCompressonHolder.UnCompressValue getNew() {
+    try {
+      return (ValueCompressonHolder.UnCompressValue) clone();
+    } catch (CloneNotSupportedException clnNotSupportedExc) {
+      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, clnNotSupportedExc,
+          clnNotSupportedExc.getMessage());
     }
+    return null;
+  }
 
-    @Override
-    public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {
-        CarbonReadDataHolder dataHolder = new CarbonReadDataHolder();
-        long[] vals = new long[value.length];
-        for (int i = 0; i < vals.length; i++) {
-            vals[i] = value[i];
-        }
-        dataHolder.setReadableLongValues(vals);
-        return dataHolder;
+  @Override public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {
+    CarbonReadDataHolder dataHolder = new CarbonReadDataHolder();
+    long[] vals = new long[value.length];
+    for (int i = 0; i < vals.length; i++) {
+      vals[i] = value[i];
     }
+    dataHolder.setReadableLongValues(vals);
+    return dataHolder;
+  }
 
 }

@@ -33,42 +33,42 @@ import org.carbondata.processing.suggest.datastats.util.AggCombinationGeneratorU
  */
 public class AggSuggestion implements Serializable {
 
-    /**
-     *
-     */
-    private static final long serialVersionUID = 1L;
-    private BigInteger possibleRows = BigInteger.valueOf(1);
+  /**
+   *
+   */
+  private static final long serialVersionUID = 1L;
+  private BigInteger possibleRows = BigInteger.valueOf(1);
 
-    private Level[] aggCombinationLevels;
+  private Level[] aggCombinationLevels;
 
-    public AggSuggestion(Level[] levelDetails, Request requestType) {
-        this.aggCombinationLevels = levelDetails;
-        if (requestType == Request.DATA_STATS) {
-            initCalculatedInfo();
-        }
-
+  public AggSuggestion(Level[] levelDetails, Request requestType) {
+    this.aggCombinationLevels = levelDetails;
+    if (requestType == Request.DATA_STATS) {
+      initCalculatedInfo();
     }
 
-    private void initCalculatedInfo() {
+  }
 
-        this.possibleRows = AggCombinationGeneratorUtil.getMaxPossibleRows(aggCombinationLevels);
+  private void initCalculatedInfo() {
 
-    }
+    this.possibleRows = AggCombinationGeneratorUtil.getMaxPossibleRows(aggCombinationLevels);
 
-    /**************
-     * GETTers and SETTers
-     ***************************************/
+  }
 
-    public Level[] getAggLevels() {
-        return aggCombinationLevels;
-    }
+  /**************
+   * GETTers and SETTers
+   ***************************************/
 
-    public BigInteger getPossibleRows() {
-        return possibleRows;
-    }
+  public Level[] getAggLevels() {
+    return aggCombinationLevels;
+  }
 
-    public String toString() {
-        return Arrays.toString(aggCombinationLevels) + ':' + getPossibleRows();
-    }
+  public BigInteger getPossibleRows() {
+    return possibleRows;
+  }
+
+  public String toString() {
+    return Arrays.toString(aggCombinationLevels) + ':' + getPossibleRows();
+  }
 
 }

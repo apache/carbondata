@@ -27,50 +27,46 @@ import org.carbondata.query.schema.metadata.DataProcessorInfo;
 import org.carbondata.query.wrappers.ByteArrayWrapper;
 
 public class FileBasedLimitProcessor implements DataProcessorExt {
-    private DataProcessorExt processor;
+  private DataProcessorExt processor;
 
-    private int limit;
+  private int limit;
 
-    private int counter;
+  private int counter;
 
-    public FileBasedLimitProcessor(DataProcessorExt processor) {
-        this.processor = processor;
+  public FileBasedLimitProcessor(DataProcessorExt processor) {
+    this.processor = processor;
+  }
+
+  @Override public void initialise(DataProcessorInfo model) throws DataProcessorException {
+    this.processor.initialise(model);
+    this.limit = model.getLimit();
+  }
+
+  @Override public void processRow(byte[] key, MeasureAggregator[] value)
+      throws DataProcessorException {
+    if (limit == -1 || counter < limit) {
+      processor.processRow(key, value);
+      counter++;
+    }
+  }
+
+  @Override public void finish() throws DataProcessorException {
+    processor.finish();
+
+  }
+
+  @Override public CarbonIterator<QueryResult> getQueryResultIterator() {
+    // TODO Auto-generated method stub
+    return processor.getQueryResultIterator();
+  }
+
+  @Override public void processRow(ByteArrayWrapper key, MeasureAggregator[] value)
+      throws DataProcessorException {
+    if (limit == -1 || counter < limit) {
+      processor.processRow(key, value);
+      counter++;
     }
 
-    @Override
-    public void initialise(DataProcessorInfo model) throws DataProcessorException {
-        this.processor.initialise(model);
-        this.limit = model.getLimit();
-    }
-
-    @Override
-    public void processRow(byte[] key, MeasureAggregator[] value) throws DataProcessorException {
-        if (limit == -1 || counter < limit) {
-            processor.processRow(key, value);
-            counter++;
-        }
-    }
-
-    @Override
-    public void finish() throws DataProcessorException {
-        processor.finish();
-
-    }
-
-    @Override
-    public CarbonIterator<QueryResult> getQueryResultIterator() {
-        // TODO Auto-generated method stub
-        return processor.getQueryResultIterator();
-    }
-
-    @Override
-    public void processRow(ByteArrayWrapper key, MeasureAggregator[] value)
-            throws DataProcessorException {
-        if (limit == -1 || counter < limit) {
-            processor.processRow(key, value);
-            counter++;
-        }
-
-    }
+  }
 
 }

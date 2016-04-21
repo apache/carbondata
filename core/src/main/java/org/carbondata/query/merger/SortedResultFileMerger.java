@@ -47,134 +47,131 @@ import org.carbondata.query.util.CarbonEngineLogEvent;
  * Class Version  : 1.0
  */
 public class SortedResultFileMerger implements Callable<Void> {
-    /**
-     * LOGGER
-     */
-    private static final LogService LOGGER =
-            LogServiceFactory.getLogService(SortedResultFileMerger.class.getName());
+  /**
+   * LOGGER
+   */
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(SortedResultFileMerger.class.getName());
 
-    /**
-     * dataProcessorInfo holds all the metadata related to query execution.
-     */
-    private DataProcessorInfo dataProcessorInfo;
+  /**
+   * dataProcessorInfo holds all the metadata related to query execution.
+   */
+  private DataProcessorInfo dataProcessorInfo;
 
-    /**
-     * recordHolderHeap
-     */
-    private AbstractQueue<ResultTempFileReader> recordHolderHeap;
+  /**
+   * recordHolderHeap
+   */
+  private AbstractQueue<ResultTempFileReader> recordHolderHeap;
 
-    /**
-     * fileCounter
-     */
-    private int fileCounter;
+  /**
+   * fileCounter
+   */
+  private int fileCounter;
 
-    /**
-     * dataProcessor This is the data processor object which will process the data.
-     */
-    private DataProcessor dataProcessor;
+  /**
+   * dataProcessor This is the data processor object which will process the data.
+   */
+  private DataProcessor dataProcessor;
 
-    /**
-     * files all the intermediate files.
-     */
-    private CarbonFile[] files;
+  /**
+   * files all the intermediate files.
+   */
+  private CarbonFile[] files;
 
-    public SortedResultFileMerger(final DataProcessor dataProcessor,
-            final DataProcessorInfo dataProcessorInfo, final CarbonFile[] files) {
-        this.dataProcessorInfo = dataProcessorInfo;
-        this.files = files;
-        fileCounter = files.length;
-        this.recordHolderHeap = new PriorityQueue<ResultTempFileReader>(this.fileCounter,
-                dataProcessorInfo.getHeapComparator());
-        this.dataProcessor = dataProcessor;
+  public SortedResultFileMerger(final DataProcessor dataProcessor,
+      final DataProcessorInfo dataProcessorInfo, final CarbonFile[] files) {
+    this.dataProcessorInfo = dataProcessorInfo;
+    this.files = files;
+    fileCounter = files.length;
+    this.recordHolderHeap = new PriorityQueue<ResultTempFileReader>(this.fileCounter,
+        dataProcessorInfo.getHeapComparator());
+    this.dataProcessor = dataProcessor;
+  }
+
+  /**
+   * @see Callable#call()
+   */
+  @Override public Void call() throws Exception {
+    try {
+      dataProcessor.initialise(dataProcessorInfo);
+      // For each intermediate result file.
+      for (CarbonFile file : this.files) {
+        // reads the temp files and creates ResultTempFileReader object.
+        ResultTempFileReader carbonSortTempFileChunkHolder =
+            new ResultTempFileReader(file.getAbsolutePath(), dataProcessorInfo.getKeySize(), AggUtil
+                .getAggregators(dataProcessorInfo.getAggType(), false,
+                    dataProcessorInfo.getKeyGenerator(), dataProcessorInfo.getCubeUniqueName(),
+                    dataProcessorInfo.getMsrMinValue(), null, dataProcessorInfo.getDataTypes()),
+                dataProcessorInfo.getFileBufferSize());
+        // initialize
+        carbonSortTempFileChunkHolder.initialize();
+        carbonSortTempFileChunkHolder.readRow();
+        // add ResultTempFileReader object to heap
+        this.recordHolderHeap.add(carbonSortTempFileChunkHolder);
+      }
+      while (hasNext()) {
+        writeSortedRecordToFile();
+      }
+    } catch (ResultReaderException e) {
+      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
+      throw e;
+    } finally {
+      dataProcessor.finish();
+      //delete the temp files.
+      CarbonUtil.deleteFoldersAndFiles(this.files);
+    }
+    return null;
+  }
+
+  /**
+   * This method will be used to check whether any more files are present or
+   * not.
+   *
+   * @return more element is present
+   */
+  private boolean hasNext() {
+    return this.fileCounter > 0;
+  }
+
+  /**
+   * This method will be used to write the sorted record from file
+   *
+   * @return sorted record sorted record
+   * @throws CarbonSortKeyAndGroupByException
+   */
+  private void writeSortedRecordToFile() throws ResultMergerException {
+    // poll the top object from heap
+    // heap maintains binary tree which is based on heap condition that will
+    // be based on comparator we are passing the heap
+    // when will call poll it will always delete root of the tree and then
+    // it does trickle down operation. complexity is log(n)
+    ResultTempFileReader dataFile = this.recordHolderHeap.poll();
+    // check if there no entry present.
+    if (!dataFile.hasNext()) {
+      // if chunk is empty then close the stream
+      dataFile.closeStream();
+      // change the file counter
+      --this.fileCounter;
+      return;
+    }
+    try {
+      // process the row based on the dataprocessor type.
+      dataProcessor.processRow(dataFile.getKey(), dataFile.getMeasures());
+    } catch (DataProcessorException e) {
+      throw new ResultMergerException(e);
     }
 
-    /**
-     * @see Callable#call()
-     */
-    @Override
-    public Void call() throws Exception {
-        try {
-            dataProcessor.initialise(dataProcessorInfo);
-            // For each intermediate result file.
-            for (CarbonFile file : this.files) {
-                // reads the temp files and creates ResultTempFileReader object.
-                ResultTempFileReader carbonSortTempFileChunkHolder =
-                        new ResultTempFileReader(file.getAbsolutePath(),
-                                dataProcessorInfo.getKeySize(),
-                                AggUtil.getAggregators(dataProcessorInfo.getAggType(), false,
-                                        dataProcessorInfo.getKeyGenerator(),
-                                        dataProcessorInfo.getCubeUniqueName(),
-                                        dataProcessorInfo.getMsrMinValue(), null,
-                                        dataProcessorInfo.getDataTypes()),
-                                dataProcessorInfo.getFileBufferSize());
-                // initialize
-                carbonSortTempFileChunkHolder.initialize();
-                carbonSortTempFileChunkHolder.readRow();
-                // add ResultTempFileReader object to heap
-                this.recordHolderHeap.add(carbonSortTempFileChunkHolder);
-            }
-            while (hasNext()) {
-                writeSortedRecordToFile();
-            }
-        } catch (ResultReaderException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
-            throw e;
-        } finally {
-            dataProcessor.finish();
-            //delete the temp files.
-            CarbonUtil.deleteFoldersAndFiles(this.files);
-        }
-        return null;
+    dataFile.setMeasureAggs(AggUtil
+        .getAggregators(dataProcessorInfo.getAggType(), false, dataProcessorInfo.getKeyGenerator(),
+            dataProcessorInfo.getCubeUniqueName(), dataProcessorInfo.getMsrMinValue(), null,
+            dataProcessorInfo.getDataTypes()));
+    try {
+      // read the next row to process and add to the heap.
+      dataFile.readRow();
+    } catch (ResultReaderException e) {
+      throw new ResultMergerException(e);
     }
-
-    /**
-     * This method will be used to check whether any more files are present or
-     * not.
-     *
-     * @return more element is present
-     */
-    private boolean hasNext() {
-        return this.fileCounter > 0;
-    }
-
-    /**
-     * This method will be used to write the sorted record from file
-     *
-     * @return sorted record sorted record
-     * @throws CarbonSortKeyAndGroupByException
-     */
-    private void writeSortedRecordToFile() throws ResultMergerException {
-        // poll the top object from heap
-        // heap maintains binary tree which is based on heap condition that will
-        // be based on comparator we are passing the heap
-        // when will call poll it will always delete root of the tree and then
-        // it does trickle down operation. complexity is log(n)
-        ResultTempFileReader dataFile = this.recordHolderHeap.poll();
-        // check if there no entry present.
-        if (!dataFile.hasNext()) {
-            // if chunk is empty then close the stream
-            dataFile.closeStream();
-            // change the file counter
-            --this.fileCounter;
-            return;
-        }
-        try {
-            // process the row based on the dataprocessor type.
-            dataProcessor.processRow(dataFile.getKey(), dataFile.getMeasures());
-        } catch (DataProcessorException e) {
-            throw new ResultMergerException(e);
-        }
-
-        dataFile.setMeasureAggs(AggUtil.getAggregators(dataProcessorInfo.getAggType(), false,
-                dataProcessorInfo.getKeyGenerator(), dataProcessorInfo.getCubeUniqueName(),
-                dataProcessorInfo.getMsrMinValue(), null, dataProcessorInfo.getDataTypes()));
-        try {
-            // read the next row to process and add to the heap.
-            dataFile.readRow();
-        } catch (ResultReaderException e) {
-            throw new ResultMergerException(e);
-        }
-        // add to heap
-        this.recordHolderHeap.add(dataFile);
-    }
+    // add to heap
+    this.recordHolderHeap.add(dataFile);
+  }
 }

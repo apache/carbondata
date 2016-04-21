@@ -36,42 +36,42 @@ import org.carbondata.query.schema.metadata.DataProcessorInfo;
  * Class Version  : 1.0
  */
 public abstract class ResultWriter implements Callable<Void> {
-    /**
-     * Pagination model
-     */
-    protected DataProcessorInfo dataProcessorInfo;
+  /**
+   * Pagination model
+   */
+  protected DataProcessorInfo dataProcessorInfo;
 
-    //    /**
-    //     * uniqueDimension
-    //     */
-    //    private Dimension[] uniqueDimension;
-    //
-    //    /**
-    //     * This method removes the duplicate dimensions.
-    //     */
-    //    protected void updateDuplicateDimensions()
-    //    {
-    //        List<Dimension> dimensions = new ArrayList<Dimension>(20);
-    //
-    //        Dimension[] queryDimension = dataProcessorInfo.getQueryDims();
-    //
-    //        for(int i = 0;i < queryDimension.length;i++)
-    //        {
-    //            boolean found = false;
-    //            // for each dimension check against the queryDimension.
-    //            for(Dimension dimension : dimensions)
-    //            {
-    //                if(dimension.getOrdinal() == queryDimension[i].getOrdinal())
-    //                {
-    //                    found = true;
-    //                }
-    //            }
-    //            if(!found)
-    //            {
-    //                dimensions.add(queryDimension[i]);
-    //            }
-    //        }
-    //        this.uniqueDimension = dimensions.toArray(new Dimension[dimensions.size()]);
-    //    }
+  //    /**
+  //     * uniqueDimension
+  //     */
+  //    private Dimension[] uniqueDimension;
+  //
+  //    /**
+  //     * This method removes the duplicate dimensions.
+  //     */
+  //    protected void updateDuplicateDimensions()
+  //    {
+  //        List<Dimension> dimensions = new ArrayList<Dimension>(20);
+  //
+  //        Dimension[] queryDimension = dataProcessorInfo.getQueryDims();
+  //
+  //        for(int i = 0;i < queryDimension.length;i++)
+  //        {
+  //            boolean found = false;
+  //            // for each dimension check against the queryDimension.
+  //            for(Dimension dimension : dimensions)
+  //            {
+  //                if(dimension.getOrdinal() == queryDimension[i].getOrdinal())
+  //                {
+  //                    found = true;
+  //                }
+  //            }
+  //            if(!found)
+  //            {
+  //                dimensions.add(queryDimension[i]);
+  //            }
+  //        }
+  //        this.uniqueDimension = dimensions.toArray(new Dimension[dimensions.size()]);
+  //    }
 
 }

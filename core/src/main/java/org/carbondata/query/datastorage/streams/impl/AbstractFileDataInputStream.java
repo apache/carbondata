@@ -30,98 +30,98 @@ import org.carbondata.query.datastorage.streams.DataInputStream;
 
 public abstract class AbstractFileDataInputStream implements DataInputStream {
 
-    /**
-     *
-     */
-    protected FileHolder fileHolder;
+  /**
+   *
+   */
+  protected FileHolder fileHolder;
 
-    /**
-     *
-     */
-    protected String filesLocation;
+  /**
+   *
+   */
+  protected String filesLocation;
 
-    /**
-     *
-     */
-    protected int mdkeysize;
+  /**
+   *
+   */
+  protected int mdkeysize;
 
-    /**
-     *
-     */
-    protected int msrCount;
+  /**
+   *
+   */
+  protected int msrCount;
 
-    /**
-     *
-     */
-    protected long offSet;
+  /**
+   *
+   */
+  protected long offSet;
 
-    /**
-     *
-     */
-    protected int totalMetaDataLength;
+  /**
+   *
+   */
+  protected int totalMetaDataLength;
 
-    /**
-     * start key
-     */
-    protected byte[] startKey;
+  /**
+   * start key
+   */
+  protected byte[] startKey;
 
-    /**
-     * @param filesLocation
-     * @param mdkeysize
-     * @param msrCount
-     */
-    public AbstractFileDataInputStream(String filesLocation, int mdkeysize, int msrCount) {
-        super();
-        this.filesLocation = filesLocation;
-        this.mdkeysize = mdkeysize;
-        this.msrCount = msrCount;
-        //        this.lastKey = null;
-        fileHolder = FileFactory.getFileHolder(FileFactory.getFileType(filesLocation));
+  /**
+   * @param filesLocation
+   * @param mdkeysize
+   * @param msrCount
+   */
+  public AbstractFileDataInputStream(String filesLocation, int mdkeysize, int msrCount) {
+    super();
+    this.filesLocation = filesLocation;
+    this.mdkeysize = mdkeysize;
+    this.msrCount = msrCount;
+    //        this.lastKey = null;
+    fileHolder = FileFactory.getFileHolder(FileFactory.getFileType(filesLocation));
+  }
+
+  /**
+   * This method will be used to read leaf meta data format of meta data will be
+   * <entrycount><keylength><keyoffset><measure1length><measure1offset>
+   *
+   * @return will return leaf node info which will have all the meta data
+   * related to leaf file
+   */
+  public List<LeafNodeInfo> getLeafNodeInfo() {
+    //
+    List<LeafNodeInfo> listOfNodeInfo = new ArrayList<LeafNodeInfo>(20);
+    ByteBuffer buffer =
+        ByteBuffer.wrap(this.fileHolder.readByteArray(filesLocation, offSet, totalMetaDataLength));
+    buffer.rewind();
+    while (buffer.hasRemaining()) {
+      //
+      int[] msrLength = new int[msrCount];
+      long[] msrOffset = new long[msrCount];
+      LeafNodeInfo info = new LeafNodeInfo();
+      byte[] startKey = new byte[this.mdkeysize];
+      byte[] endKey = new byte[this.mdkeysize];
+      info.setFileName(this.filesLocation);
+      info.setNumberOfKeys(buffer.getInt());
+      info.setKeyLength(buffer.getInt());
+      info.setKeyOffset(buffer.getLong());
+      buffer.get(startKey);
+      //
+      buffer.get(endKey);
+      info.setStartKey(startKey);
+      for (int i = 0; i < this.msrCount; i++) {
+        msrLength[i] = buffer.getInt();
+        msrOffset[i] = buffer.getLong();
+      }
+      info.setMeasureLength(msrLength);
+      info.setMeasureOffset(msrOffset);
+      listOfNodeInfo.add(info);
     }
-
-    /**
-     * This method will be used to read leaf meta data format of meta data will be
-     * <entrycount><keylength><keyoffset><measure1length><measure1offset>
-     *
-     * @return will return leaf node info which will have all the meta data
-     * related to leaf file
-     */
-    public List<LeafNodeInfo> getLeafNodeInfo() {
-        //
-        List<LeafNodeInfo> listOfNodeInfo = new ArrayList<LeafNodeInfo>(20);
-        ByteBuffer buffer = ByteBuffer
-                .wrap(this.fileHolder.readByteArray(filesLocation, offSet, totalMetaDataLength));
-        buffer.rewind();
-        while (buffer.hasRemaining()) {
-            //
-            int[] msrLength = new int[msrCount];
-            long[] msrOffset = new long[msrCount];
-            LeafNodeInfo info = new LeafNodeInfo();
-            byte[] startKey = new byte[this.mdkeysize];
-            byte[] endKey = new byte[this.mdkeysize];
-            info.setFileName(this.filesLocation);
-            info.setNumberOfKeys(buffer.getInt());
-            info.setKeyLength(buffer.getInt());
-            info.setKeyOffset(buffer.getLong());
-            buffer.get(startKey);
-            //
-            buffer.get(endKey);
-            info.setStartKey(startKey);
-            for (int i = 0; i < this.msrCount; i++) {
-                msrLength[i] = buffer.getInt();
-                msrOffset[i] = buffer.getLong();
-            }
-            info.setMeasureLength(msrLength);
-            info.setMeasureOffset(msrOffset);
-            listOfNodeInfo.add(info);
-        }
-        // if fact file empty then list size will 0 then it will throw index out of bound exception
-        // if memory is less and cube loading failed that time list will be empty so it will throw
-        // out of bound exception
-        if (listOfNodeInfo.size() > 0) {
-            startKey = listOfNodeInfo.get(0).getStartKey();
-        }
-        return listOfNodeInfo;
+    // if fact file empty then list size will 0 then it will throw index out of bound exception
+    // if memory is less and cube loading failed that time list will be empty so it will throw
+    // out of bound exception
+    if (listOfNodeInfo.size() > 0) {
+      startKey = listOfNodeInfo.get(0).getStartKey();
     }
+    return listOfNodeInfo;
+  }
 
 }

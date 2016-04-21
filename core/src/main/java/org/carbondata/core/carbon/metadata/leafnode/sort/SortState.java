@@ -18,22 +18,21 @@ package org.carbondata.core.carbon.metadata.leafnode.sort;
 
 /**
  * Enum for sort type information
- *
  */
 public enum SortState {
 
-    /**
-     * column is not sorted
-     */
-    SORT_NONE,
+  /**
+   * column is not sorted
+   */
+  SORT_NONE,
 
-    /**
-     * data from source was already in sorted order
-     */
-    SORT_NATIVE,
+  /**
+   * data from source was already in sorted order
+   */
+  SORT_NATIVE,
 
-    /**
-     * data from source was not sorted,so data is explicitly sorted
-     */
-    SORT_EXPLICT;
+  /**
+   * data from source was not sorted,so data is explicitly sorted
+   */
+  SORT_EXPLICT;
 }

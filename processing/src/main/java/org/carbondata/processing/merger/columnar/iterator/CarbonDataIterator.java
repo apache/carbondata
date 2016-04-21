@@ -20,9 +20,9 @@
 package org.carbondata.processing.merger.columnar.iterator;
 
 public interface CarbonDataIterator<E> {
-    boolean hasNext();
+  boolean hasNext();
 
-    void fetchNextData();
+  void fetchNextData();
 
-    E getNextData();
+  E getNextData();
 }

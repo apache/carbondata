@@ -18,12 +18,6 @@
  */
 package org.carbondata.core.locks;
 
-import org.carbondata.common.logging.LogService;
-import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.datastorage.store.impl.FileFactory;
-import org.carbondata.core.util.CarbonCoreLogEvent;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -31,135 +25,142 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
 
+import org.carbondata.common.logging.LogService;
+import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.datastorage.store.impl.FileFactory;
+import org.carbondata.core.util.CarbonCoreLogEvent;
+
 /**
  * This class handles the file locking in the local file system.
  * This will be handled using the file channel lock API.
  */
 public class LocalFileLock extends AbstractCarbonLock {
-    /**
-     * location is the location of the lock file.
-     */
-    private String location;
+  /**
+   * location is the location of the lock file.
+   */
+  private String location;
 
-    /**
-     * lockUsage will determine the lock folder. so that similar locks will try to acquire same lock file.
-     */
-    private LockUsage lockUsage;
+  /**
+   * lockUsage will determine the lock folder. so that similar locks will try to acquire
+   * same lock file.
+   */
+  private LockUsage lockUsage;
 
-    /**
-     * fileOutputStream of the local lock file
-     */
-    private FileOutputStream fileOutputStream;
+  /**
+   * fileOutputStream of the local lock file
+   */
+  private FileOutputStream fileOutputStream;
 
-    /**
-     * channel is the FileChannel of the lock file.
-     */
-    private FileChannel channel;
+  /**
+   * channel is the FileChannel of the lock file.
+   */
+  private FileChannel channel;
 
-    /**
-     * fileLock NIO FileLock Object
-     */
-    private FileLock fileLock;
+  /**
+   * fileLock NIO FileLock Object
+   */
+  private FileLock fileLock;
 
-    public static String tmpPath;
+  public static String tmpPath;
 
-    private String cubeName;
+  private String cubeName;
 
-    private String schemaName;
+  private String schemaName;
 
-    /**
-     * LOGGER for  logging the messages.
-     */
-    private static final LogService LOGGER =
-            LogServiceFactory.getLogService(LocalFileLock.class.getName());
+  /**
+   * LOGGER for  logging the messages.
+   */
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(LocalFileLock.class.getName());
 
-    static {
-        tmpPath = System.getProperty("java.io.tmpdir");
+  static {
+    tmpPath = System.getProperty("java.io.tmpdir");
+  }
+
+  /**
+   * @param location
+   * @param lockUsage
+   */
+  public LocalFileLock(String location, LockUsage lockUsage) {
+    this.lockUsage = lockUsage;
+    location = location.replace("\\", "/");
+    String tempStr = location.substring(0, location.lastIndexOf('/'));
+    schemaName = tempStr.substring(tempStr.lastIndexOf('/') + 1, tempStr.length());
+
+    cubeName = location.substring(location.lastIndexOf('/') + 1, location.length());
+    if (this.lockUsage == LockUsage.METADATA_LOCK) {
+      this.location =
+          tmpPath + File.separator + schemaName + File.separator + cubeName + File.separator
+              + CarbonCommonConstants.METADATA_LOCK;
+    }
+    initRetry();
+  }
+
+  /**
+   * Lock API for locking of the file channel of the lock file.
+   *
+   * @return
+   */
+  @Override public boolean lock() {
+    try {
+      String schemaFolderPath = tmpPath + File.separator + schemaName;
+      String cubeFolderPath = schemaFolderPath + File.separator + cubeName;
+      // create dir with schema name in tmp location.
+      if (!FileFactory.isFileExist(schemaFolderPath, FileFactory.getFileType(tmpPath))) {
+        FileFactory.mkdirs(schemaFolderPath, FileFactory.getFileType(tmpPath));
+      }
+
+      // create dir with cube name in tmp location.
+      if (!FileFactory.isFileExist(cubeFolderPath, FileFactory.getFileType(tmpPath))) {
+        FileFactory.mkdirs(cubeFolderPath, FileFactory.getFileType(tmpPath));
+      }
+      if (!FileFactory.isFileExist(location, FileFactory.getFileType(location))) {
+        FileFactory.createNewLockFile(location, FileFactory.getFileType(location));
+      }
+
+      fileOutputStream = new FileOutputStream(location);
+      channel = fileOutputStream.getChannel();
+      try {
+        fileLock = channel.tryLock();
+      } catch (OverlappingFileLockException e) {
+        return false;
+      }
+      if (null != fileLock) {
+        return true;
+      } else {
+        return false;
+      }
+    } catch (IOException e) {
+      return false;
     }
 
-    /**
-     * @param location
-     * @param lockUsage
-     */
-    public LocalFileLock(String location, LockUsage lockUsage) {
-        this.lockUsage = lockUsage;
-        location = location.replace("\\", "/");
-        String tempStr = location.substring(0, location.lastIndexOf('/'));
-        schemaName = tempStr.substring(tempStr.lastIndexOf('/') + 1, tempStr.length());
+  }
 
-        cubeName = location.substring(location.lastIndexOf('/') + 1, location.length());
-        if (this.lockUsage == LockUsage.METADATA_LOCK) {
-            this.location = tmpPath + File.separator + schemaName + File.separator + cubeName + File.separator + CarbonCommonConstants.METADATA_LOCK;
-        }
-        initRetry();
-    }
-
-    /**
-     * Lock API for locking of the file channel of the lock file.
-     *
-     * @return
-     */
-    @Override
-    public boolean lock() {
+  /**
+   * Unlock API for unlocking of the acquired lock.
+   *
+   * @return
+   */
+  @Override public boolean unlock() {
+    boolean status;
+    try {
+      if (null != fileLock) {
+        fileLock.release();
+      }
+      status = true;
+    } catch (IOException e) {
+      status = false;
+    } finally {
+      if (null != fileOutputStream) {
         try {
-            String schemaFolderPath = tmpPath + File.separator + schemaName;
-            String cubeFolderPath = schemaFolderPath + File.separator + cubeName;
-            // create dir with schema name in tmp location.
-            if (!FileFactory.isFileExist(schemaFolderPath, FileFactory.getFileType(tmpPath))) {
-                FileFactory.mkdirs(schemaFolderPath, FileFactory.getFileType(tmpPath));
-            }
-
-            // create dir with cube name in tmp location.
-            if (!FileFactory.isFileExist(cubeFolderPath, FileFactory.getFileType(tmpPath))) {
-                FileFactory.mkdirs(cubeFolderPath, FileFactory.getFileType(tmpPath));
-            }
-            if (!FileFactory.isFileExist(location, FileFactory.getFileType(location))) {
-                FileFactory.createNewLockFile(location, FileFactory.getFileType(location));
-            }
-
-            fileOutputStream = new FileOutputStream(location);
-            channel = fileOutputStream.getChannel();
-            try {
-                fileLock = channel.tryLock();
-            } catch (OverlappingFileLockException e) {
-                return false;
-            }
-            if (null != fileLock) {
-                return true;
-            } else {
-                return false;
-            }
+          fileOutputStream.close();
         } catch (IOException e) {
-            return false;
+          LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e.getMessage());
         }
-
+      }
     }
-
-    /**
-     * Unlock API for unlocking of the acquired lock.
-     *
-     * @return
-     */
-    @Override
-    public boolean unlock() {
-        boolean status;
-        try {
-            if (null != fileLock) {
-                fileLock.release();
-            }
-            status = true;
-        } catch (IOException e) {
-            status = false;
-        } finally {
-            if (null != fileOutputStream) {
-                try {
-                    fileOutputStream.close();
-                } catch (IOException e) {
-                    LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e.getMessage());
-                }
-            }
-        }
-        return status;
-    }
+    return status;
+  }
 
 }

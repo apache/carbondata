@@ -31,42 +31,39 @@ import org.apache.spark.AccumulatorParam;
  */
 public class PartitionAccumulator implements AccumulatorParam<PartitionDetail>, Serializable {
 
-    /**
-     *
-     */
-    private static final long serialVersionUID = 1L;
+  /**
+   *
+   */
+  private static final long serialVersionUID = 1L;
 
-    @Override
-    public PartitionDetail addInPlace(PartitionDetail part1, PartitionDetail part2) {
+  @Override public PartitionDetail addInPlace(PartitionDetail part1, PartitionDetail part2) {
 
-        return mergePartitions(part1, part2);
+    return mergePartitions(part1, part2);
+  }
+
+  @Override public PartitionDetail zero(PartitionDetail part) {
+    return part;
+  }
+
+  @Override public PartitionDetail addAccumulator(PartitionDetail part1, PartitionDetail part2) {
+    return mergePartitions(part1, part2);
+  }
+
+  private PartitionDetail mergePartitions(PartitionDetail part1, PartitionDetail part2) {
+    if (null == part1) {
+      return part2;
     }
-
-    @Override
-    public PartitionDetail zero(PartitionDetail part) {
-        return part;
+    if (null == part2) {
+      return part1;
     }
+    PartitionDetail merged = new PartitionDetail();
+    merged.addNumberOfNodesScanned(part1.getNumberOfNodesScanned());
+    merged.addNumberOfNodesScanned(part2.getNumberOfNodesScanned());
 
-    @Override
-    public PartitionDetail addAccumulator(PartitionDetail part1, PartitionDetail part2) {
-        return mergePartitions(part1, part2);
-    }
+    merged.addNumberOfRowsScanned(part1.getNoOfRowsScanned());
+    merged.addNumberOfRowsScanned(part2.getNoOfRowsScanned());
 
-    private PartitionDetail mergePartitions(PartitionDetail part1, PartitionDetail part2) {
-        if (null == part1) {
-            return part2;
-        }
-        if (null == part2) {
-            return part1;
-        }
-        PartitionDetail merged = new PartitionDetail();
-        merged.addNumberOfNodesScanned(part1.getNumberOfNodesScanned());
-        merged.addNumberOfNodesScanned(part2.getNumberOfNodesScanned());
-
-        merged.addNumberOfRowsScanned(part1.getNoOfRowsScanned());
-        merged.addNumberOfRowsScanned(part2.getNoOfRowsScanned());
-
-        return merged;
-    }
+    return merged;
+  }
 
 }

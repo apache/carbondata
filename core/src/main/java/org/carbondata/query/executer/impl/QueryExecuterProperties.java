@@ -23,142 +23,142 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.carbondata.core.carbon.SqlStatement;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.metadata.CarbonMetadata.Dimension;
 import org.carbondata.core.metadata.CarbonMetadata.Measure;
-import org.carbondata.core.carbon.SqlStatement;
 import org.carbondata.core.vo.HybridStoreModel;
 import org.carbondata.query.complex.querytypes.GenericQueryType;
 import org.carbondata.query.datastorage.InMemoryTable;
 
 public class QueryExecuterProperties {
-    /**
-     * schemaName
-     */
-    protected String schemaName;
+  /**
+   * schemaName
+   */
+  protected String schemaName;
 
-    /**
-     * cubeName
-     */
-    protected String cubeName;
+  /**
+   * cubeName
+   */
+  protected String cubeName;
 
-    /**
-     * dimension table array
-     */
-    protected Dimension[] dimTables;
+  /**
+   * dimension table array
+   */
+  protected Dimension[] dimTables;
 
-    /**
-     * dimension table array
-     */
-    protected Map<String, GenericQueryType> complexDimensionsMap;
+  /**
+   * dimension table array
+   */
+  protected Map<String, GenericQueryType> complexDimensionsMap;
 
-    /**
-     * list of active slices present for execution
-     */
-    protected List<InMemoryTable> slices;
+  /**
+   * list of active slices present for execution
+   */
+  protected List<InMemoryTable> slices;
 
-    /**
-     * global key generator basically it is the last slice updated keygenerator
-     */
-    protected KeyGenerator globalKeyGenerator;
+  /**
+   * global key generator basically it is the last slice updated keygenerator
+   */
+  protected KeyGenerator globalKeyGenerator;
 
-    /**
-     * uniqueValue
-     */
-    protected Object[] uniqueValue;
+  /**
+   * uniqueValue
+   */
+  protected Object[] uniqueValue;
 
-    /**
-     * mask bytes ranges
-     */
-    protected int[] maskByteRanges;
+  /**
+   * mask bytes ranges
+   */
+  protected int[] maskByteRanges;
 
-    /**
-     * masked bytes
-     */
-    protected int[] maskedBytes;
+  /**
+   * masked bytes
+   */
+  protected int[] maskedBytes;
 
-    /**
-     * max key for query execution
-     */
-    protected byte[] maxKey;
+  /**
+   * max key for query execution
+   */
+  protected byte[] maxKey;
 
-    /**
-     * byteCount
-     */
-    protected int byteCount;
+  /**
+   * byteCount
+   */
+  protected int byteCount;
 
-    /**
-     * isCountMsrExistInCurrTable
-     */
-    protected boolean isCountMsrExistInCurrTable;
+  /**
+   * isCountMsrExistInCurrTable
+   */
+  protected boolean isCountMsrExistInCurrTable;
 
-    /**
-     * count msr index in current table
-     */
-    protected int countMsrIndex = -1;
+  /**
+   * count msr index in current table
+   */
+  protected int countMsrIndex = -1;
 
-    /**
-     * average msr indexes
-     */
-    protected List<Integer> avgIndexes;
+  /**
+   * average msr indexes
+   */
+  protected List<Integer> avgIndexes;
 
-    /**
-     * sort order of dimension
-     */
-    protected byte[] dimSortOrder;
+  /**
+   * sort order of dimension
+   */
+  protected byte[] dimSortOrder;
 
-    /**
-     * measureStartIndex
-     */
-    protected int measureStartIndex;
+  /**
+   * measureStartIndex
+   */
+  protected int measureStartIndex;
 
-    /**
-     * aggTypes
-     */
-    protected String[] aggTypes;
+  /**
+   * aggTypes
+   */
+  protected String[] aggTypes;
 
-    /**
-     * msrMinValue
-     */
-    protected Object[] msrMinValue;
+  /**
+   * msrMinValue
+   */
+  protected Object[] msrMinValue;
 
-    /**
-     * isFunctionQuery
-     */
-    protected boolean isFunctionQuery;
+  /**
+   * isFunctionQuery
+   */
+  protected boolean isFunctionQuery;
 
-    /**
-     * aggExpDimension
-     */
-    protected List<Dimension> aggExpDimensions;
+  /**
+   * aggExpDimension
+   */
+  protected List<Dimension> aggExpDimensions;
 
-    /**
-     * aggExpMeasure
-     */
-    protected List<Measure> aggExpMeasures;
+  /**
+   * aggExpMeasure
+   */
+  protected List<Measure> aggExpMeasures;
 
-    /**
-     * aggExpressionStartIndex
-     */
-    protected int aggExpressionStartIndex;
+  /**
+   * aggExpressionStartIndex
+   */
+  protected int aggExpressionStartIndex;
 
-    /**
-     * sortDimIndexex
-     */
-    protected byte[] sortDimIndexes;
+  /**
+   * sortDimIndexex
+   */
+  protected byte[] sortDimIndexes;
 
-    protected boolean[] isNoDictionary;
+  protected boolean[] isNoDictionary;
 
-    /**
-     * Hybrid store model, it will have detail about columnar and row stores
-     */
-    protected HybridStoreModel hybridStoreModel;
+  /**
+   * Hybrid store model, it will have detail about columnar and row stores
+   */
+  protected HybridStoreModel hybridStoreModel;
 
-    /**
-     * array of sql datatypes of mesaures and dimensions
-     */
-    protected SqlStatement.Type[] dataTypes;
+  /**
+   * array of sql datatypes of mesaures and dimensions
+   */
+  protected SqlStatement.Type[] dataTypes;
 
-    protected HashMap<Integer, Integer> measureOrdinalMap = new HashMap<>();
+  protected HashMap<Integer, Integer> measureOrdinalMap = new HashMap<>();
 
 }

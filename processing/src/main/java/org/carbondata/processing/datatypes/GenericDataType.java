@@ -28,44 +28,45 @@ import java.util.List;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.processing.surrogatekeysgenerator.csvbased.CarbonCSVBasedDimSurrogateKeyGen;
+
 import org.pentaho.di.core.exception.KettleException;
 
 public interface GenericDataType {
 
-    String getName();
+  String getName();
 
-    void setName(String name);
+  void setName(String name);
 
-    String getParentname();
+  String getParentname();
 
-    void addChildren(GenericDataType children);
+  void addChildren(GenericDataType children);
 
-    void getAllPrimitiveChildren(List<GenericDataType> primitiveChild);
+  void getAllPrimitiveChildren(List<GenericDataType> primitiveChild);
 
-    void parseStringAndWriteByteArray(String tableName, String inputString, String[] delimiter,
-            int delimiterIndex, DataOutputStream dataOutputStream,
-            CarbonCSVBasedDimSurrogateKeyGen surrogateKeyGen) throws KettleException, IOException;
+  void parseStringAndWriteByteArray(String tableName, String inputString, String[] delimiter,
+      int delimiterIndex, DataOutputStream dataOutputStream,
+      CarbonCSVBasedDimSurrogateKeyGen surrogateKeyGen) throws KettleException, IOException;
 
-    int getSurrogateIndex();
+  int getSurrogateIndex();
 
-    void setSurrogateIndex(int surrIndex);
+  void setSurrogateIndex(int surrIndex);
 
-    void parseAndBitPack(ByteBuffer byteArrayInput, DataOutputStream dataOutputStream,
-            KeyGenerator[] generator) throws IOException, KeyGenException;
+  void parseAndBitPack(ByteBuffer byteArrayInput, DataOutputStream dataOutputStream,
+      KeyGenerator[] generator) throws IOException, KeyGenException;
 
-    int getColsCount();
+  int getColsCount();
 
-    void setOutputArrayIndex(int outputArrayIndex);
+  void setOutputArrayIndex(int outputArrayIndex);
 
-    int getMaxOutputArrayIndex();
+  int getMaxOutputArrayIndex();
 
-    void getColumnarDataForComplexType(List<ArrayList<byte[]>> columnsArray, ByteBuffer inputArray);
+  void getColumnarDataForComplexType(List<ArrayList<byte[]>> columnsArray, ByteBuffer inputArray);
 
-    int getDataCounter();
+  int getDataCounter();
 
-    void fillAggKeyBlock(List<Boolean> aggKeyBlockWithComplex, boolean[] aggKeyBlock);
+  void fillAggKeyBlock(List<Boolean> aggKeyBlockWithComplex, boolean[] aggKeyBlock);
 
-    void fillBlockKeySize(List<Integer> blockKeySizeWithComplex, int[] primitiveBlockKeySize);
+  void fillBlockKeySize(List<Integer> blockKeySizeWithComplex, int[] primitiveBlockKeySize);
 
-    void fillCardinalityAfterDataLoad(List<Integer> dimCardWithComplex, int[] maxSurrogateKeyArray);
+  void fillCardinalityAfterDataLoad(List<Integer> dimCardWithComplex, int[] maxSurrogateKeyArray);
 }

@@ -24,78 +24,77 @@ import java.io.Serializable;
 /**
  * Identifier class which will hold the table qualified name
  */
-public class CarbonTableIdentifier implements Serializable{
+public class CarbonTableIdentifier implements Serializable {
 
-    /**
-     * database name
-     */
-    private String databaseName;
+  /**
+   * database name
+   */
+  private String databaseName;
 
-    /**
-     * table name
-     */
-    private String tableName;
+  /**
+   * table name
+   */
+  private String tableName;
 
-    /**
-     * constructor
-     */
-    public CarbonTableIdentifier(String databaseName, String tableName) {
-        this.databaseName = databaseName;
-        this.tableName = tableName;
-    }
+  /**
+   * constructor
+   */
+  public CarbonTableIdentifier(String databaseName, String tableName) {
+    this.databaseName = databaseName;
+    this.tableName = tableName;
+  }
 
-    /**
-     * return database name
-     */
-    public String getDatabaseName() {
-        return databaseName;
-    }
+  /**
+   * return database name
+   */
+  public String getDatabaseName() {
+    return databaseName;
+  }
 
-    /**
-     * return table name
-     */
-    public String getTableName() {
-        return tableName;
-    }
-    
-    /**
-     * @return table unique name 
-     */
-    public String getTableUniqueName() {
-      return databaseName + '_' + tableName;
-    }
+  /**
+   * return table name
+   */
+  public String getTableName() {
+    return tableName;
+  }
 
-    /**
-     * overridden equals method
-     *
-     * @param other
-     * @return
-     */
-    @Override public boolean equals(Object other) {
-        if (this == other) return true;
-        if (other == null || getClass() != other.getClass()) return false;
-        CarbonTableIdentifier that = (CarbonTableIdentifier) other;
-        if (!databaseName.equals(that.databaseName)) return false;
-        return tableName.equals(that.tableName);
+  /**
+   * @return table unique name
+   */
+  public String getTableUniqueName() {
+    return databaseName + '_' + tableName;
+  }
 
-    }
+  /**
+   * overridden equals method
+   *
+   * @param other
+   * @return
+   */
+  @Override public boolean equals(Object other) {
+    if (this == other) return true;
+    if (other == null || getClass() != other.getClass()) return false;
+    CarbonTableIdentifier that = (CarbonTableIdentifier) other;
+    if (!databaseName.equals(that.databaseName)) return false;
+    return tableName.equals(that.tableName);
 
-    /**
-     * overridden hashcode method
-     *
-     * @return
-     */
-    @Override public int hashCode() {
-        int result = databaseName.hashCode();
-        result = 31 * result + tableName.hashCode();
-        return result;
-    }
+  }
 
-    /* 
-     * @return table unidque name 
-     */
-    @Override
-    public String toString() {
-      return databaseName + '_' + tableName;
-    }
+  /**
+   * overridden hashcode method
+   *
+   * @return
+   */
+  @Override public int hashCode() {
+    int result = databaseName.hashCode();
+    result = 31 * result + tableName.hashCode();
+    return result;
+  }
+
+  /*
+   * @return table unidque name
+   */
+  @Override public String toString() {
+    return databaseName + '_' + tableName;
+  }
 }

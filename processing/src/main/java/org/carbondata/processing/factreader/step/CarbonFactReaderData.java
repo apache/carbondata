@@ -24,16 +24,16 @@ import org.pentaho.di.trans.step.BaseStepData;
 import org.pentaho.di.trans.step.StepDataInterface;
 
 public class CarbonFactReaderData extends BaseStepData implements StepDataInterface {
-    /**
-     * outputRowMeta
-     */
-    protected RowMetaInterface outputRowMeta;
+  /**
+   * outputRowMeta
+   */
+  protected RowMetaInterface outputRowMeta;
 
-    /**
-     * constructor
-     */
-    public CarbonFactReaderData() {
-        super();
-    }
+  /**
+   * constructor
+   */
+  public CarbonFactReaderData() {
+    super();
+  }
 
 }

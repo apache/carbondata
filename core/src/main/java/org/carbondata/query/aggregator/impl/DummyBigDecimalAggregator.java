@@ -24,35 +24,30 @@ import java.math.BigDecimal;
 import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 
 public class DummyBigDecimalAggregator extends AbstractMeasureAggregatorDummy {
-    private static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 1L;
 
-    /**
-     * aggregate value
-     */
-    private BigDecimal aggVal;
+  /**
+   * aggregate value
+   */
+  private BigDecimal aggVal;
 
-    @Override
-    public void agg(Object newVal) {
-        aggVal = (BigDecimal) newVal;
-    }
+  @Override public void agg(Object newVal) {
+    aggVal = (BigDecimal) newVal;
+  }
 
-    @Override
-    public void agg(CarbonReadDataHolder newVal, int index) {
-        aggVal = newVal.getReadableBigDecimalValueByIndex(index);
-    }
+  @Override public void agg(CarbonReadDataHolder newVal, int index) {
+    aggVal = newVal.getReadableBigDecimalValueByIndex(index);
+  }
 
-    @Override
-    public BigDecimal getBigDecimalValue() {
-        return aggVal;
-    }
+  @Override public BigDecimal getBigDecimalValue() {
+    return aggVal;
+  }
 
-    @Override
-    public Object getValueObject() {
-        return aggVal;
-    }
+  @Override public Object getValueObject() {
+    return aggVal;
+  }
 
-    @Override
-    public void setNewValue(Object newValue) {
-        aggVal = (BigDecimal) newValue;
-    }
+  @Override public void setNewValue(Object newValue) {
+    aggVal = (BigDecimal) newValue;
+  }
 }

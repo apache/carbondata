@@ -30,41 +30,41 @@ import org.carbondata.query.schema.metadata.DimColumnFilterInfo;
 
 public class QueryFilterInfo {
 
-    private Map<Dimension, List<DimColumnFilterInfo>> dimensionFilter;
+  private Map<Dimension, List<DimColumnFilterInfo>> dimensionFilter;
 
-    private Map<Measure, List<Double>> measureFilter;
+  private Map<Measure, List<Double>> measureFilter;
 
-    public QueryFilterInfo() {
-        dimensionFilter = new HashMap<Dimension, List<DimColumnFilterInfo>>(20);
-        measureFilter = new HashMap<Measure, List<Double>>(20);
+  public QueryFilterInfo() {
+    dimensionFilter = new HashMap<Dimension, List<DimColumnFilterInfo>>(20);
+    measureFilter = new HashMap<Measure, List<Double>>(20);
+  }
+
+  public Map<Dimension, List<DimColumnFilterInfo>> getDimensionFilter() {
+    return dimensionFilter;
+  }
+
+  public void addDimensionFilter(Dimension dim, DimColumnFilterInfo filterValues) {
+    List<DimColumnFilterInfo> currentFilterValues = dimensionFilter.get(dim);
+    if (null == currentFilterValues) {
+      currentFilterValues = new ArrayList<DimColumnFilterInfo>(20);
+      currentFilterValues.add(filterValues);
+      dimensionFilter.put(dim, currentFilterValues);
+    } else {
+      currentFilterValues.add(filterValues);
     }
+  }
 
-    public Map<Dimension, List<DimColumnFilterInfo>> getDimensionFilter() {
-        return dimensionFilter;
+  public void addMeasureFilter(Measure msr, List<Double> filterValues) {
+    List<Double> list = measureFilter.get(msr);
+    if (null == list) {
+      measureFilter.put(msr, filterValues);
+    } else {
+      list.addAll(filterValues);
     }
+  }
 
-    public void addDimensionFilter(Dimension dim, DimColumnFilterInfo filterValues) {
-        List<DimColumnFilterInfo> currentFilterValues = dimensionFilter.get(dim);
-        if (null == currentFilterValues) {
-            currentFilterValues = new ArrayList<DimColumnFilterInfo>(20);
-            currentFilterValues.add(filterValues);
-            dimensionFilter.put(dim, currentFilterValues);
-        } else {
-            currentFilterValues.add(filterValues);
-        }
-    }
-
-    public void addMeasureFilter(Measure msr, List<Double> filterValues) {
-        List<Double> list = measureFilter.get(msr);
-        if (null == list) {
-            measureFilter.put(msr, filterValues);
-        } else {
-            list.addAll(filterValues);
-        }
-    }
-
-    public Map<Measure, List<Double>> getMeasureFilter() {
-        return measureFilter;
-    }
+  public Map<Measure, List<Double>> getMeasureFilter() {
+    return measureFilter;
+  }
 
 }

@@ -25,9 +25,9 @@ import org.carbondata.query.expression.ColumnExpression;
 
 public interface ConditionalExpression {
 
-    // Will get the column informations involved in the expressions by
-    // traversing the tree
-    List<ColumnExpression> getColumnList();
+  // Will get the column informations involved in the expressions by
+  // traversing the tree
+  List<ColumnExpression> getColumnList();
 
-    boolean isSingleDimension();
+  boolean isSingleDimension();
 }

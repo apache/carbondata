@@ -24,19 +24,18 @@ import org.apache.log4j.spi.LoggingEvent;
 /**
  * Copied form log4j and modified for renaming files and restriction only for
  * audit logging
- *
  */
 public class AuditExtendedRollingFileAppender extends ExtendedRollingFileAppender {
 
-    /**
-     * Call RollingFileAppender method to append the log...
-     *
-     * @see org.apache.log4j.RollingFileAppender#subAppend(LoggingEvent)
-     */
-    protected void subAppend(LoggingEvent event) {
-        if (event.getLevel().toInt() == AuditLevel.AUDIT.toInt()) {
-            currentLevel = AuditLevel.AUDIT.toInt();
-            super.subAppend(event);
-        }
+  /**
+   * Call RollingFileAppender method to append the log...
+   *
+   * @see org.apache.log4j.RollingFileAppender#subAppend(LoggingEvent)
+   */
+  protected void subAppend(LoggingEvent event) {
+    if (event.getLevel().toInt() == AuditLevel.AUDIT.toInt()) {
+      currentLevel = AuditLevel.AUDIT.toInt();
+      super.subAppend(event);
     }
+  }
 }

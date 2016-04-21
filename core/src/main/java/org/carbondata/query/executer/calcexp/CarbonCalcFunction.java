@@ -32,18 +32,18 @@ import org.carbondata.query.executer.calcexp.impl.CalcExpressionModel;
  */
 public interface CarbonCalcFunction extends Serializable {
 
-    /**
-     * Calculate the function by using aggregates
-     *
-     * @param msrAggs
-     * @return
-     */
-    double calculate(MeasureAggregator[] msrAggs);
+  /**
+   * Calculate the function by using aggregates
+   *
+   * @param msrAggs
+   * @return
+   */
+  double calculate(MeasureAggregator[] msrAggs);
 
-    /**
-     * @param model
-     * @param exp
-     */
-    void compile(CalcExpressionModel model, Exp exp);
+  /**
+   * @param model
+   * @param exp
+   */
+  void compile(CalcExpressionModel model, Exp exp);
 
 }

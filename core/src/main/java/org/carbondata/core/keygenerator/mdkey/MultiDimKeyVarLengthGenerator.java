@@ -23,101 +23,90 @@ import org.carbondata.core.keygenerator.KeyGenException;
 
 public class MultiDimKeyVarLengthGenerator extends AbstractKeyGenerator {
 
-    private static final long serialVersionUID = 9134778127271586515L;
-    /**
-     *
-     */
-    protected int[][] byteRangesForKeys;
-    private Bits bits;
-    private int startAndEndKeySizeWithPrimitives;
+  private static final long serialVersionUID = 9134778127271586515L;
+  /**
+   *
+   */
+  protected int[][] byteRangesForKeys;
+  private Bits bits;
+  private int startAndEndKeySizeWithPrimitives;
 
-    public MultiDimKeyVarLengthGenerator(int[] lens) {
-        bits = new Bits(lens);
-        byteRangesForKeys = new int[lens.length][];
-        int keys = lens.length;
-        for (int i = 0; i < keys; i++) {
-            byteRangesForKeys[i] = bits.getKeyByteOffsets(i);
-        }
+  public MultiDimKeyVarLengthGenerator(int[] lens) {
+    bits = new Bits(lens);
+    byteRangesForKeys = new int[lens.length][];
+    int keys = lens.length;
+    for (int i = 0; i < keys; i++) {
+      byteRangesForKeys[i] = bits.getKeyByteOffsets(i);
+    }
+  }
+
+  @Override public byte[] generateKey(long[] keys) throws KeyGenException {
+
+    return bits.getBytes(keys);
+  }
+
+  @Override public byte[] generateKey(int[] keys) throws KeyGenException {
+
+    return bits.getBytes(keys);
+  }
+
+  @Override public long[] getKeyArray(byte[] key) {
+
+    return bits.getKeyArray(key);
+  }
+
+  @Override public long getKey(byte[] key, int index) {
+
+    return bits.getKeyArray(key)[index];
+  }
+
+  public int getKeySizeInBytes() {
+    return bits.getByteSize();
+  }
+
+  @Override public long[] getSubKeyArray(byte[] key, int index, int size) {
+    if (index < 0 || size == 0) {
+      return null;
+    }
+    long[] keys = bits.getKeyArray(key);
+    long[] rtn = new long[size];
+    System.arraycopy(keys, index, rtn, 0, size);
+    return rtn;
+  }
+
+  @Override public int[] getKeyByteOffsets(int index) {
+    return byteRangesForKeys[index];
+  }
+
+  @Override public int getDimCount() {
+
+    return bits.getDimCount();
+  }
+
+  @Override public boolean equals(Object obj) {
+    if (obj instanceof MultiDimKeyVarLengthGenerator) {
+      MultiDimKeyVarLengthGenerator other = (MultiDimKeyVarLengthGenerator) obj;
+      return bits.equals(other.bits);
     }
 
-    @Override
-    public byte[] generateKey(long[] keys) throws KeyGenException {
+    return false;
+  }
 
-        return bits.getBytes(keys);
-    }
+  @Override public int hashCode() {
+    return bits.hashCode();
+  }
 
-    @Override
-    public byte[] generateKey(int[] keys) throws KeyGenException {
+  @Override public long[] getKeyArray(byte[] key, int[] maskedByteRanges) {
+    return bits.getKeyArray(key, maskedByteRanges);
+  }
 
-        return bits.getBytes(keys);
-    }
+  @Override public int getStartAndEndKeySizeWithOnlyPrimitives() {
+    return startAndEndKeySizeWithPrimitives;
+  }
 
-    @Override
-    public long[] getKeyArray(byte[] key) {
-
-        return bits.getKeyArray(key);
-    }
-
-    @Override
-    public long getKey(byte[] key, int index) {
-
-        return bits.getKeyArray(key)[index];
-    }
-
-    public int getKeySizeInBytes() {
-        return bits.getByteSize();
-    }
-
-    @Override
-    public long[] getSubKeyArray(byte[] key, int index, int size) {
-        if (index < 0 || size == 0) {
-            return null;
-        }
-        long[] keys = bits.getKeyArray(key);
-        long[] rtn = new long[size];
-        System.arraycopy(keys, index, rtn, 0, size);
-        return rtn;
-    }
-
-    @Override
-    public int[] getKeyByteOffsets(int index) {
-        return byteRangesForKeys[index];
-    }
-
-    @Override
-    public int getDimCount() {
-
-        return bits.getDimCount();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof MultiDimKeyVarLengthGenerator) {
-            MultiDimKeyVarLengthGenerator other = (MultiDimKeyVarLengthGenerator) obj;
-            return bits.equals(other.bits);
-        }
-
-        return false;
-    }
-
-    @Override
-    public int hashCode() {
-        return bits.hashCode();
-    }
-
-    @Override
-    public long[] getKeyArray(byte[] key, int[] maskedByteRanges) {
-        return bits.getKeyArray(key, maskedByteRanges);
-    }
-
-    @Override
-    public int getStartAndEndKeySizeWithOnlyPrimitives() {
-        return startAndEndKeySizeWithPrimitives;
-    }
-
-    @Override
-    public void setStartAndEndKeySizeWithOnlyPrimitives(int startAndEndKeySizeWithPrimitives) {
-        this.startAndEndKeySizeWithPrimitives = startAndEndKeySizeWithPrimitives;
-    }
+  @Override
+  public void setStartAndEndKeySizeWithOnlyPrimitives(int startAndEndKeySizeWithPrimitives) {
+    this.startAndEndKeySizeWithPrimitives = startAndEndKeySizeWithPrimitives;
+  }
 
 }

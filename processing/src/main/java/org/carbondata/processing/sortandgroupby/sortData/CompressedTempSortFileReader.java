@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.carbondata.processing.sortandgroupby.sortData;
+package org.carbondata.processing.sortandgroupby.sortdata;
 
 import java.io.File;
 
@@ -25,29 +25,28 @@ import org.carbondata.core.datastorage.store.compression.SnappyCompression.Snapp
 
 public class CompressedTempSortFileReader extends AbstractTempSortFileReader {
 
-    /**
-     * CompressedTempSortFileReader
-     *
-     * @param measureCount
-     * @param dimensionCount
-     * @param tempFile
-     */
-    public CompressedTempSortFileReader(int dimensionCount, int complexDimensionCount,
-            int measureCount, File tempFile, int noDictionaryCount) {
-        super(dimensionCount, complexDimensionCount, measureCount, tempFile, noDictionaryCount);
-    }
+  /**
+   * CompressedTempSortFileReader
+   *
+   * @param measureCount
+   * @param dimensionCount
+   * @param tempFile
+   */
+  public CompressedTempSortFileReader(int dimensionCount, int complexDimensionCount,
+      int measureCount, File tempFile, int noDictionaryCount) {
+    super(dimensionCount, complexDimensionCount, measureCount, tempFile, noDictionaryCount);
+  }
 
-    /**
-     * below method will be used to get chunk of rows
-     *
-     * @return row
-     */
-    @Override
-    public Object[][] getRow() {
-        int recordLength = fileHolder.readInt(filePath);
-        int byteArrayLength = fileHolder.readInt(filePath);
-        byte[] byteArrayFromFile = SnappyByteCompression.INSTANCE
-                .unCompress(fileHolder.readByteArray(filePath, byteArrayLength));
-        return prepareRecordFromByteBuffer(recordLength, byteArrayFromFile);
-    }
+  /**
+   * below method will be used to get chunk of rows
+   *
+   * @return row
+   */
+  @Override public Object[][] getRow() {
+    int recordLength = fileHolder.readInt(filePath);
+    int byteArrayLength = fileHolder.readInt(filePath);
+    byte[] byteArrayFromFile = SnappyByteCompression.INSTANCE
+        .unCompress(fileHolder.readByteArray(filePath, byteArrayLength));
+    return prepareRecordFromByteBuffer(recordLength, byteArrayFromFile);
+  }
 }

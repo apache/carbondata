@@ -23,60 +23,59 @@ package org.carbondata.query.queryinterface.query.metadata;
  * Carbon dimension level;
  */
 public class CarbonDimensionLevel extends AbstractCarbonLevel {
-    private static final long serialVersionUID = 4012085091766940643L;
+  private static final long serialVersionUID = 4012085091766940643L;
 
-    /**
-     * Dimension name
-     */
-    private String dimensionName;
+  /**
+   * Dimension name
+   */
+  private String dimensionName;
 
-    /**
-     * Hierarchy name
-     */
-    private String hierarchyName;
+  /**
+   * Hierarchy name
+   */
+  private String hierarchyName;
 
-    /**
-     * level name
-     */
-    private String levelName;
+  /**
+   * level name
+   */
+  private String levelName;
 
-    /**
-     * Constructor
-     *
-     * @param dimensionName
-     * @param hierarchyName
-     * @param levelName
-     */
-    public CarbonDimensionLevel(String dimensionName, String hierarchyName, String levelName) {
-        this.dimensionName = dimensionName;
-        this.hierarchyName = hierarchyName;
-        this.levelName = levelName;
-    }
+  /**
+   * Constructor
+   *
+   * @param dimensionName
+   * @param hierarchyName
+   * @param levelName
+   */
+  public CarbonDimensionLevel(String dimensionName, String hierarchyName, String levelName) {
+    this.dimensionName = dimensionName;
+    this.hierarchyName = hierarchyName;
+    this.levelName = levelName;
+  }
 
-    /**
-     * @return the dimensionName
-     */
-    public String getDimensionName() {
-        return dimensionName;
-    }
+  /**
+   * @return the dimensionName
+   */
+  public String getDimensionName() {
+    return dimensionName;
+  }
 
-    /**
-     * @return the hierarchyName
-     */
-    public String getHierarchyName() {
-        return hierarchyName;
-    }
+  /**
+   * @return the hierarchyName
+   */
+  public String getHierarchyName() {
+    return hierarchyName;
+  }
 
-    /**
-     * @return the levelName
-     */
-    public String getName() {
-        return levelName;
-    }
+  /**
+   * @return the levelName
+   */
+  public String getName() {
+    return levelName;
+  }
 
-    @Override
-    public CarbonLevelType getType() {
+  @Override public CarbonLevelType getType() {
 
-        return CarbonLevelType.DIMENSION;
-    }
+    return CarbonLevelType.DIMENSION;
+  }
 }

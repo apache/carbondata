@@ -25,9 +25,8 @@ import java.util.List;
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 
 /**
- * Wrapper Data Load Schema object which will be used to 
+ * Wrapper Data Load Schema object which will be used to
  * support relation while data loading
- *
  */
 public class CarbonDataLoadSchema implements Serializable {
 
@@ -48,7 +47,7 @@ public class CarbonDataLoadSchema implements Serializable {
 
   /**
    * CarbonDataLoadSchema constructor which takes CarbonTable
-   * 
+   *
    * @param carbonTable
    */
   public CarbonDataLoadSchema(CarbonTable carbonTable) {
@@ -58,6 +57,7 @@ public class CarbonDataLoadSchema implements Serializable {
 
   /**
    * get dimension relation list
+   *
    * @return dimensionRelationList
    */
   public List<DimensionRelation> getDimensionRelationList() {
@@ -66,6 +66,7 @@ public class CarbonDataLoadSchema implements Serializable {
 
   /**
    * set dimensionrelation list
+   *
    * @param dimensionRelationList
    */
   public void setDimensionRelationList(List<DimensionRelation> dimensionRelationList) {
@@ -74,6 +75,7 @@ public class CarbonDataLoadSchema implements Serializable {
 
   /**
    * get carbontable
+   *
    * @return carbonTable
    */
   public CarbonTable getCarbonTable() {
@@ -81,9 +83,8 @@ public class CarbonDataLoadSchema implements Serializable {
   }
 
   /**
-   * Dimension Relation object which will be filled from 
+   * Dimension Relation object which will be filled from
    * Load DML Command to support normalized cube data load
-   *
    */
   public static class DimensionRelation implements Serializable {
     /**
@@ -108,18 +109,18 @@ public class CarbonDataLoadSchema implements Serializable {
 
     /**
      * Columns to selected from dimension table.
-     * Hierarchy in-memory table should be prepared 
+     * Hierarchy in-memory table should be prepared
      * based on selected columns
      */
     private List<String> columns;
 
     /**
      * constructor
-     * 
-     * @param tableName - dimension table name
+     *
+     * @param tableName       - dimension table name
      * @param dimensionSource - source file path
-     * @param relation - fact foreign key with dimension primary key mapping
-     * @param columns - list of columns to be used from this dimension table
+     * @param relation        - fact foreign key with dimension primary key mapping
+     * @param columns         - list of columns to be used from this dimension table
      */
     public DimensionRelation(String tableName, String dimensionSource, Relation relation,
         List<String> columns) {
@@ -159,9 +160,8 @@ public class CarbonDataLoadSchema implements Serializable {
   }
 
   /**
-   * Relation class to specify fact foreignkey column with 
+   * Relation class to specify fact foreignkey column with
    * dimension primary key column
-   *
    */
   public static class Relation implements Serializable {
     /**
@@ -181,8 +181,8 @@ public class CarbonDataLoadSchema implements Serializable {
 
     /**
      * constructor
-     * 
-     * @param factForeignKeyColumn - Fact Table Foreign key
+     *
+     * @param factForeignKeyColumn      - Fact Table Foreign key
      * @param dimensionPrimaryKeyColumn - Dimension Table primary key
      */
     public Relation(String factForeignKeyColumn, String dimensionPrimaryKeyColumn) {

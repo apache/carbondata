@@ -19,26 +19,26 @@
 
 package org.carbondata.query.filters;
 
-import org.carbondata.query.datastorage.storeInterfaces.KeyValue;
+import org.carbondata.query.datastorage.storeinterface.KeyValue;
 
 /**
  * Interface provided the methods to used in the scanning of the data store.
  */
 public interface InMemoryFilter {
-    /**
-     * Return true if key is present or not in datastore.
-     *
-     * @param key
-     * @return Return true if key is present or not in datastore, false otherwise.
-     */
-    boolean filterKey(KeyValue key);
+  /**
+   * Return true if key is present or not in datastore.
+   *
+   * @param key
+   * @return Return true if key is present or not in datastore, false otherwise.
+   */
+  boolean filterKey(KeyValue key);
 
-    /**
-     * Find the next node to scan the datastore.
-     *
-     * @param key
-     * @return
-     */
-    byte[] getNextJump(KeyValue key);
+  /**
+   * Find the next node to scan the datastore.
+   *
+   * @param key
+   * @return
+   */
+  byte[] getNextJump(KeyValue key);
 
 }

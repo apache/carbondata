@@ -26,34 +26,34 @@ package org.carbondata.integration.spark.query.metadata;
  * Type of sort order like asc,dsc or none
  */
 public enum SortOrderType {
-    /**
-     * Ascending order
-     */
-    ASC(0),
-    /**
-     * Descending order.
-     */
-    DSC(1),
-    /**
-     * No order mentioned
-     */
-    NONE(-1);
+  /**
+   * Ascending order
+   */
+  ASC(0),
+  /**
+   * Descending order.
+   */
+  DSC(1),
+  /**
+   * No order mentioned
+   */
+  NONE(-1);
 
-    /**
-     * Order type in numeric
-     */
-    private int orderType;
+  /**
+   * Order type in numeric
+   */
+  private int orderType;
 
-    SortOrderType(int orderType) {
-        this.orderType = orderType;
-    }
+  SortOrderType(int orderType) {
+    this.orderType = orderType;
+  }
 
-    /**
-     * Order type in number
-     *
-     * @return orderType int
-     */
-    public int getOrderType() {
-        return orderType;
-    }
+  /**
+   * Order type in number
+   *
+   * @return orderType int
+   */
+  public int getOrderType() {
+    return orderType;
+  }
 }

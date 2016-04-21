@@ -22,27 +22,27 @@ package org.carbondata.processing.dimension.load.command.invoker;
 import org.carbondata.processing.dimension.load.command.DimensionLoadCommand;
 
 public class DimensionLoadActionInvoker {
-    /**
-     * Dimension Load
-     */
-    private DimensionLoadCommand dimensionLoadCommand;
+  /**
+   * Dimension Load
+   */
+  private DimensionLoadCommand dimensionLoadCommand;
 
-    /**
-     *
-     *
-     */
-    public DimensionLoadActionInvoker(DimensionLoadCommand loadCommand) {
-        this.dimensionLoadCommand = loadCommand;
-    }
+  /**
+   *
+   *
+   */
+  public DimensionLoadActionInvoker(DimensionLoadCommand loadCommand) {
+    this.dimensionLoadCommand = loadCommand;
+  }
 
-    /**
-     * Executes the command
-     *
-     * @throws Exception
-     */
-    public void execute() throws Exception {
-        dimensionLoadCommand.execute();
-    }
+  /**
+   * Executes the command
+   *
+   * @throws Exception
+   */
+  public void execute() throws Exception {
+    dimensionLoadCommand.execute();
+  }
 
 }
 

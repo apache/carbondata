@@ -26,10 +26,9 @@ import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
  */
 public class SingleMeasureDataWrapper implements MeasureDataWrapper {
 
-    @Override
-    public CarbonReadDataHolder[] getValues() {
-        // TODO Auto-generated method stub
-        return null;
-    }
+  @Override public CarbonReadDataHolder[] getValues() {
+    // TODO Auto-generated method stub
+    return null;
+  }
 
 }

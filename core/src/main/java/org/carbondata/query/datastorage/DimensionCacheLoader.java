@@ -25,136 +25,132 @@ import java.util.List;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.carbon.CarbonDef;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
-import org.carbondata.core.carbon.CarbonDef;
 import org.carbondata.query.datastorage.streams.DataInputStream;
 import org.carbondata.query.util.CacheUtil;
 import org.carbondata.query.util.CarbonDataInputStreamFactory;
 import org.carbondata.query.util.CarbonEngineLogEvent;
 
 public final class DimensionCacheLoader {
-    /**
-     * Attribute for Carbon LOGGER
-     */
-    private static final LogService LOGGER =
-            LogServiceFactory.getLogService(DimensionCacheLoader.class.getName());
+  /**
+   * Attribute for Carbon LOGGER
+   */
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(DimensionCacheLoader.class.getName());
 
-    private DimensionCacheLoader() {
+  private DimensionCacheLoader() {
 
-    }
+  }
 
-    /**
-     * @param hierC
-     * @param fileStore
-     * @throws IOException
-     */
-    public static void loadHierarichyFromFileStore(HierarchyStore hierC, String fileStore)
-            throws IOException {
-        loadBTreeHierarchyFileStore(hierC, fileStore);
-    }
+  /**
+   * @param hierC
+   * @param fileStore
+   * @throws IOException
+   */
+  public static void loadHierarichyFromFileStore(HierarchyStore hierC, String fileStore)
+      throws IOException {
+    loadBTreeHierarchyFileStore(hierC, fileStore);
+  }
 
-    /**
-     * @param hierC
-     * @param fileStore
-     * @throws IOException
-     */
-    private static void loadBTreeHierarchyFileStore(HierarchyStore hierC, String fileStore)
-            throws IOException {
-        KeyGenerator keyGen = getKeyGenerator(hierC.getCarbonHierarchy());
+  /**
+   * @param hierC
+   * @param fileStore
+   * @throws IOException
+   */
+  private static void loadBTreeHierarchyFileStore(HierarchyStore hierC, String fileStore)
+      throws IOException {
+    KeyGenerator keyGen = getKeyGenerator(hierC.getCarbonHierarchy());
 
-        String fileName =
-                hierC.getDimensionName().replaceAll(" ", "_") + '_' + hierC.getTableName();
+    String fileName = hierC.getDimensionName().replaceAll(" ", "_") + '_' + hierC.getTableName();
+    //
+    CarbonFile file = FileFactory.getCarbonFile(fileStore, FileFactory.getFileType(fileStore));
+    if (file.isDirectory()) {
+      // Read from the base location.
+      String baseLocation = fileStore + File.separator + fileName;
+      if (FileFactory.isFileExist(baseLocation, FileFactory.getFileType(baseLocation))) {
         //
-        CarbonFile file = FileFactory.getCarbonFile(fileStore, FileFactory.getFileType(fileStore));
-        if (file.isDirectory()) {
-            // Read from the base location.
-            String baseLocation = fileStore + File.separator + fileName;
-            //            CarbonFile baseFile = FileFactory.getCarbonFile(baseLocation, FileFactory.getFileType());
-            if (FileFactory.isFileExist(baseLocation, FileFactory.getFileType(baseLocation))) {
-                //
-                DataInputStream factStream = CarbonDataInputStreamFactory
-                        .getDataInputStream(baseLocation, keyGen.getKeySizeInBytes(), 0, false,
-                                fileStore, fileName, FileFactory.getFileType(fileStore));
-                factStream.initInput();
-                hierC.build(keyGen, factStream);
+        DataInputStream factStream = CarbonDataInputStreamFactory
+            .getDataInputStream(baseLocation, keyGen.getKeySizeInBytes(), 0, false, fileStore,
+                fileName, FileFactory.getFileType(fileStore));
+        factStream.initInput();
+        hierC.build(keyGen, factStream);
 
-                factStream.closeInput();
-            }
-        }
+        factStream.closeInput();
+      }
+    }
+  }
+
+  private static KeyGenerator getKeyGenerator(CarbonDef.Hierarchy carbonHierarchy) {
+    CarbonDef.Level[] levels = carbonHierarchy.levels;
+    int levelSize = levels.length;
+    int[] lens = new int[levelSize];
+    int i = 0;
+    for (CarbonDef.Level level : levels) {
+      lens[i++] = level.levelCardinality;
     }
 
-    private static KeyGenerator getKeyGenerator(CarbonDef.Hierarchy carbonHierarchy) {
-        CarbonDef.Level[] levels = carbonHierarchy.levels;
-        int levelSize = levels.length;
-        int[] lens = new int[levelSize];
-        int i = 0;
-        for (CarbonDef.Level level : levels) {
-            lens[i++] = level.levelCardinality;
-        }
+    return KeyGeneratorFactory.getKeyGenerator(lens);
+  }
 
-        return KeyGeneratorFactory.getKeyGenerator(lens);
+  /**
+   * Loads members from file store.
+   *
+   * @param levelCache
+   * @param fileStore
+   * @param factTablename
+   */
+  public static void loadMemberFromFileStore(MemberStore levelCache, String fileStore,
+      String dataType, String factTablename, String tableName) {
+    //
+    Member[][] members = null;
+
+    int[] globalSurrogateMapping = null;
+    int minValue = 0;
+    int minValueForLevelFile = 0;
+    int maxValueFOrLevelFile = 0;
+    List<int[][]> sortOrderAndReverseOrderIndex = null;
+
+    if (tableName.contains(".")) {
+      tableName = tableName.split("\\.")[1];
+    }
+    if (factTablename.equals(tableName)) {
+      tableName = factTablename;
     }
 
-    /**
-     * Loads members from file store.
-     *
-     * @param levelCache
-     * @param fileStore
-     * @param factTablename
-     */
-    public static void loadMemberFromFileStore(MemberStore levelCache, String fileStore,
-            String dataType, String factTablename, String tableName) {
-        //
-        Member[][] members = null;
+    String fileName = tableName + '_' + levelCache.getColumnName();
+    CarbonFile file = FileFactory.getCarbonFile(fileStore, FileFactory.getFileType(fileStore));
+    if (file.isDirectory()) {
+      // Read from the base location.
+      String baseLocation =
+          fileStore + File.separator + fileName + CarbonCommonConstants.LEVEL_FILE_EXTENSION;
+      String baseLocationForGlobalKeys = fileStore + File.separator + fileName + ".globallevel";
+      String baseLocationForsortIndex = fileStore + File.separator + fileName;
+      try {
+        if (FileFactory.isFileExist(baseLocation, FileFactory.getFileType(baseLocation))) {
+          members = CacheUtil.getMembersList(baseLocation, (byte) -1, dataType);
+          minValueForLevelFile = CacheUtil.getMinValueFromLevelFile(baseLocation);
+          maxValueFOrLevelFile = CacheUtil.getMaxValueFromLevelFile(baseLocation);
+          minValue = CacheUtil.getMinValue(baseLocationForGlobalKeys);
 
-        int[] globalSurrogateMapping = null;
-        int minValue = 0;
-        int minValueForLevelFile = 0;
-        int maxValueFOrLevelFile = 0;
-        List<int[][]> sortOrderAndReverseOrderIndex = null;
-
-        if (tableName.contains(".")) {
-            tableName = tableName.split("\\.")[1];
+          globalSurrogateMapping = CacheUtil.getGlobalSurrogateMapping(baseLocationForGlobalKeys);
+          if (null != members) {
+            sortOrderAndReverseOrderIndex =
+                CacheUtil.getLevelSortOrderAndReverseIndex(baseLocationForsortIndex);
+          }
         }
-        if (factTablename.equals(tableName)) {
-            tableName = factTablename;
-        }
-
-        String fileName = tableName + '_' + levelCache.getColumnName();
-        CarbonFile file = FileFactory.getCarbonFile(fileStore, FileFactory.getFileType(fileStore));
-        if (file.isDirectory()) {
-            // Read from the base location.
-            String baseLocation = fileStore + File.separator + fileName
-                    + CarbonCommonConstants.LEVEL_FILE_EXTENSION;
-            String baseLocationForGlobalKeys =
-                    fileStore + File.separator + fileName + ".globallevel";
-            String baseLocationForsortIndex = fileStore + File.separator + fileName;
-            try {
-                if (FileFactory.isFileExist(baseLocation, FileFactory.getFileType(baseLocation))) {
-                    members = CacheUtil.getMembersList(baseLocation, (byte) -1, dataType);
-                    minValueForLevelFile = CacheUtil.getMinValueFromLevelFile(baseLocation);
-                    maxValueFOrLevelFile = CacheUtil.getMaxValueFromLevelFile(baseLocation);
-                    minValue = CacheUtil.getMinValue(baseLocationForGlobalKeys);
-
-                    globalSurrogateMapping =
-                            CacheUtil.getGlobalSurrogateMapping(baseLocationForGlobalKeys);
-                    if (null != members) {
-                        sortOrderAndReverseOrderIndex = CacheUtil
-                                .getLevelSortOrderAndReverseIndex(baseLocationForsortIndex);
-                    }
-                }
-            } catch (IOException e) {
-                LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
-            }
-        }
-
-        levelCache.addAll(members, minValueForLevelFile, maxValueFOrLevelFile,
-                sortOrderAndReverseOrderIndex);
-        levelCache.addGlobalKey(globalSurrogateMapping, minValue);
+      } catch (IOException e) {
+        LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
+      }
     }
+
+    levelCache
+        .addAll(members, minValueForLevelFile, maxValueFOrLevelFile, sortOrderAndReverseOrderIndex);
+    levelCache.addGlobalKey(globalSurrogateMapping, minValue);
+  }
 
 }

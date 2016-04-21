@@ -27,94 +27,88 @@ import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.carbondata.core.datastorage.store.impl.CompressedDataMeasureDataWrapper;
 
 public class HeavyCompressedDoubleArrayDataFileStore
-        extends AbstractHeavyCompressedDoubleArrayDataStore {
-    /**
-     * measuresOffsetsArray.
-     */
-    private long[] measuresOffsetsArray;
+    extends AbstractHeavyCompressedDoubleArrayDataStore {
+  /**
+   * measuresOffsetsArray.
+   */
+  private long[] measuresOffsetsArray;
 
-    /**
-     * measuresLengthArray.
-     */
-    private int[] measuresLengthArray;
+  /**
+   * measuresLengthArray.
+   */
+  private int[] measuresLengthArray;
 
-    /**
-     * fileName.
-     */
-    private String fileName;
+  /**
+   * fileName.
+   */
+  private String fileName;
 
-    /**
-     * HeavyCompressedDoubleArrayDataFileStore.
-     *
-     * @param compressionModel
-     * @param measuresOffsetsArray
-     * @param measuresLengthArray
-     * @param fileName
-     */
-    public HeavyCompressedDoubleArrayDataFileStore(ValueCompressionModel compressionModel,
-            long[] measuresOffsetsArray, int[] measuresLengthArray, String fileName) {
-        super(compressionModel);
-        if (null != compressionModel) {
-            this.fileName = fileName;
-            this.measuresLengthArray = measuresLengthArray;
-            this.measuresOffsetsArray = measuresOffsetsArray;
-            for (int i = 0; i < values.length; i++) {
-                values[i] =
-                        compressionModel.getUnCompressValues()[i].getNew().getCompressorObject();
-            }
-        }
+  /**
+   * HeavyCompressedDoubleArrayDataFileStore.
+   *
+   * @param compressionModel
+   * @param measuresOffsetsArray
+   * @param measuresLengthArray
+   * @param fileName
+   */
+  public HeavyCompressedDoubleArrayDataFileStore(ValueCompressionModel compressionModel,
+      long[] measuresOffsetsArray, int[] measuresLengthArray, String fileName) {
+    super(compressionModel);
+    if (null != compressionModel) {
+      this.fileName = fileName;
+      this.measuresLengthArray = measuresLengthArray;
+      this.measuresOffsetsArray = measuresOffsetsArray;
+      for (int i = 0; i < values.length; i++) {
+        values[i] = compressionModel.getUnCompressValues()[i].getNew().getCompressorObject();
+      }
     }
+  }
 
-    public HeavyCompressedDoubleArrayDataFileStore(ValueCompressionModel compressionModel) {
-        super(compressionModel);
+  public HeavyCompressedDoubleArrayDataFileStore(ValueCompressionModel compressionModel) {
+    super(compressionModel);
+  }
+
+  @Override public MeasureDataWrapper getBackData(int[] cols, FileHolder fileHolder) {
+    if (null == compressionModel) {
+      return null;
     }
+    CarbonReadDataHolder[] vals = new CarbonReadDataHolder[values.length];
 
-    @Override
-    public MeasureDataWrapper getBackData(int[] cols, FileHolder fileHolder) {
-        if (null == compressionModel) {
-            return null;
-        }
-        CarbonReadDataHolder[] vals = new CarbonReadDataHolder[values.length];
-
-        if (cols != null) {
-            for (int i = 0; i < cols.length; i++) {
-                ValueCompressonHolder.UnCompressValue copy = values[cols[i]].getNew();
-                copy.setValue(fileHolder.readByteArray(fileName, measuresOffsetsArray[cols[i]],
-                        measuresLengthArray[cols[i]]));
-                vals[cols[i]] = copy.
-                        uncompress(compressionModel.getChangedDataType()[cols[i]])
-                        .getValues(compressionModel.getDecimal()[cols[i]],
-                                compressionModel.getMaxValue()[cols[i]]);
-                copy = null;
-            }
-        } else {
-            for (int j = 0; j < vals.length; j++) {
-                ValueCompressonHolder.UnCompressValue copy = values[j].getNew();
-                copy.setValue(fileHolder
-                        .readByteArray(fileName, measuresOffsetsArray[j], measuresLengthArray[j]));
-                vals[j] = copy.uncompress(compressionModel.getChangedDataType()[j])
-                        .getValues(compressionModel.getDecimal()[j],
-                                compressionModel.getMaxValue()[j]);
-                copy = null;
-            }
-        }
-        return new CompressedDataMeasureDataWrapper(vals);
-
-    }
-
-    @Override
-    public MeasureDataWrapper getBackData(int cols, FileHolder fileHolder) {
-        if (null == compressionModel) {
-            return null;
-        }
-        CarbonReadDataHolder[] vals = new CarbonReadDataHolder[values.length];
-        ValueCompressonHolder.UnCompressValue copy = values[cols].getNew();
+    if (cols != null) {
+      for (int i = 0; i < cols.length; i++) {
+        ValueCompressonHolder.UnCompressValue copy = values[cols[i]].getNew();
         copy.setValue(fileHolder
-                .readByteArray(fileName, measuresOffsetsArray[cols], measuresLengthArray[cols]));
-        vals[cols] = copy.uncompress(compressionModel.getChangedDataType()[cols])
-                .getValues(compressionModel.getDecimal()[cols],
-                        compressionModel.getMaxValue()[cols]);
-        return new CompressedDataMeasureDataWrapper(vals);
+            .readByteArray(fileName, measuresOffsetsArray[cols[i]], measuresLengthArray[cols[i]]));
+        vals[cols[i]] = copy.uncompress(compressionModel.getChangedDataType()[cols[i]])
+            .getValues(compressionModel.getDecimal()[cols[i]],
+                compressionModel.getMaxValue()[cols[i]]);
+        copy = null;
+      }
+    } else {
+      for (int j = 0; j < vals.length; j++) {
+        ValueCompressonHolder.UnCompressValue copy = values[j].getNew();
+        copy.setValue(
+            fileHolder.readByteArray(fileName, measuresOffsetsArray[j], measuresLengthArray[j]));
+        vals[j] = copy.uncompress(compressionModel.getChangedDataType()[j])
+            .getValues(compressionModel.getDecimal()[j], compressionModel.getMaxValue()[j]);
+        copy = null;
+      }
     }
+    return new CompressedDataMeasureDataWrapper(vals);
+
+  }
+
+  @Override public MeasureDataWrapper getBackData(int cols, FileHolder fileHolder) {
+    if (null == compressionModel) {
+      return null;
+    }
+    CarbonReadDataHolder[] vals = new CarbonReadDataHolder[values.length];
+    ValueCompressonHolder.UnCompressValue copy = values[cols].getNew();
+    copy.setValue(
+        fileHolder.readByteArray(fileName, measuresOffsetsArray[cols], measuresLengthArray[cols]));
+    vals[cols] = copy.uncompress(compressionModel.getChangedDataType()[cols])
+        .getValues(compressionModel.getDecimal()[cols], compressionModel.getMaxValue()[cols]);
+    return new CompressedDataMeasureDataWrapper(vals);
+  }
 
 }

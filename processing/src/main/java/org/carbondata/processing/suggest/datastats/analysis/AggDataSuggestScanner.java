@@ -36,139 +36,126 @@ import org.carbondata.query.wrappers.ByteArrayWrapper;
 
 /**
  * This is store scanner, it returns given no of rows of records
- *
  */
 public class AggDataSuggestScanner extends AbstractColumnarScanResult {
-    protected int[] dataBlockSize;
-    private byte[][] dataBlock;
+  protected int[] dataBlockSize;
+  private byte[][] dataBlock;
 
-    public AggDataSuggestScanner(int keySize, int[] selectedDimensionIndex) {
-        super(keySize, selectedDimensionIndex);
+  public AggDataSuggestScanner(int keySize, int[] selectedDimensionIndex) {
+    super(keySize, selectedDimensionIndex);
+  }
+
+  public void setKeyBlock(ColumnarKeyStoreDataHolder[] columnarKeyStoreDataHolder) {
+    super.setKeyBlock(columnarKeyStoreDataHolder);
+    dataBlock = new byte[columnarKeyStoreDataHolder.length][];
+    dataBlockSize = new int[columnarKeyStoreDataHolder.length];
+    for (int i = 0; i < columnarKeyStoreDataHolder.length; i++) {
+      dataBlock[i] = columnarKeyStoreDataHolder[i].getKeyBlockData();
+      dataBlockSize[i] =
+          columnarKeyStoreDataHolder[i].getColumnarKeyStoreMetadata().getEachRowSize();
     }
 
-    public void setKeyBlock(ColumnarKeyStoreDataHolder[] columnarKeyStoreDataHolder) {
-        super.setKeyBlock(columnarKeyStoreDataHolder);
-        dataBlock = new byte[columnarKeyStoreDataHolder.length][];
-        dataBlockSize = new int[columnarKeyStoreDataHolder.length];
-        for (int i = 0; i < columnarKeyStoreDataHolder.length; i++) {
-            dataBlock[i] = columnarKeyStoreDataHolder[i].getKeyBlockData();
-            dataBlockSize[i] =
-                    columnarKeyStoreDataHolder[i].getColumnarKeyStoreMetadata().getEachRowSize();
-        }
+  }
 
-    }
+  public HashSet<Integer> getLimitedDataBlock(int noOfRows) {
 
-    public HashSet<Integer> getLimitedDataBlock(int noOfRows) {
+    byte[] completeKeyArray = null;
 
-        byte[] completeKeyArray = null;
+    HashSet<Integer> uniqueData = new HashSet<Integer>(noOfRows);
+    int maxRows = dataBlock[0].length / dataBlockSize[0];
+    for (int j = 0; j < maxRows; j++) {
+      completeKeyArray = new byte[dataBlockSize[0]];
 
-        HashSet<Integer> uniqueData = new HashSet<Integer>(noOfRows);
-        int maxRows = dataBlock[0].length / dataBlockSize[0];
-        for (int j = 0; j < maxRows; j++) {
-            completeKeyArray = new byte[dataBlockSize[0]];
+      System.arraycopy(dataBlock[0], j * dataBlockSize[0], completeKeyArray, 0, dataBlockSize[0]);
 
-            System.arraycopy(dataBlock[0], j * dataBlockSize[0], completeKeyArray, 0,
-                    dataBlockSize[0]);
-
-            byte[] actual = new byte[4];
-            int destPos = 4 - dataBlockSize[0];
-            System.arraycopy(completeKeyArray, 0, actual, destPos, dataBlockSize[0]);
-            int valueInInt = ByteBuffer.wrap(actual).getInt();
-            uniqueData.add(valueInInt);
-            if (uniqueData.size() >= noOfRows) {
-                return uniqueData;
-            }
-        }
+      byte[] actual = new byte[4];
+      int destPos = 4 - dataBlockSize[0];
+      System.arraycopy(completeKeyArray, 0, actual, destPos, dataBlockSize[0]);
+      int valueInInt = ByteBuffer.wrap(actual).getInt();
+      uniqueData.add(valueInInt);
+      if (uniqueData.size() >= noOfRows) {
         return uniqueData;
-
+      }
     }
+    return uniqueData;
 
-    public double getDoubleValue(int measureOrdinal) {
-        return 0.0;
-    }
+  }
 
-    public BigDecimal getBigDecimalValue(int measureOrdinal) {
-        return new BigDecimal(0);
-    }
+  public double getDoubleValue(int measureOrdinal) {
+    return 0.0;
+  }
 
-    public long getLongValue(int measureOrdinal) {
-        return (long) (0);
-    }
+  public BigDecimal getBigDecimalValue(int measureOrdinal) {
+    return new BigDecimal(0);
+  }
 
-    public byte[] getByteArrayValue(int measureOrdinal) {
-        return null;
-    }
+  public long getLongValue(int measureOrdinal) {
+    return (long) (0);
+  }
 
-    public List<byte[]> getKeyArrayWithComplexTypes(
-            Map<Integer, GenericQueryType> complexQueryDims) {
-        return null;
-    }
+  public byte[] getByteArrayValue(int measureOrdinal) {
+    return null;
+  }
 
-    @Override
-    public int getDimDataForAgg(int dimOrdinal) {
-        // TODO Auto-generated method stub
-        return 0;
-    }
+  public List<byte[]> getKeyArrayWithComplexTypes(Map<Integer, GenericQueryType> complexQueryDims) {
+    return null;
+  }
 
-    @Override
-    public void getComplexDimDataForAgg(GenericQueryType complexType,
-            DataOutputStream dataOutputStream) throws IOException {
-        // TODO Auto-generated method stub
+  @Override public int getDimDataForAgg(int dimOrdinal) {
+    // TODO Auto-generated method stub
+    return 0;
+  }
 
-    }
+  @Override public void getComplexDimDataForAgg(GenericQueryType complexType,
+      DataOutputStream dataOutputStream) throws IOException {
+    // TODO Auto-generated method stub
 
-    @Override
-    public byte[] getKeyArray(ByteArrayWrapper key) {
-        // TODO Auto-generated method stub
-        return null;
-    }
+  }
 
-    @Override
-    public byte[] getKeyArray() {
-        // TODO Auto-generated method stub
-        return null;
-    }
+  @Override public byte[] getKeyArray(ByteArrayWrapper key) {
+    // TODO Auto-generated method stub
+    return null;
+  }
 
-    @Override
-    public byte[] getNo_DictionayDimDataForAgg(int dimOrdinal) {
-        // TODO Auto-generated method stub
-        return null;
-    }
+  @Override public byte[] getKeyArray() {
+    // TODO Auto-generated method stub
+    return null;
+  }
 
-    @Override
-    public List<byte[]> getKeyArrayWithComplexTypes(Map<Integer, GenericQueryType> complexQueryDims,
-            ByteArrayWrapper keyVal) {
-        // TODO Auto-generated method stub
-        return null;
+  @Override public byte[] getNo_DictionayDimDataForAgg(int dimOrdinal) {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  @Override
+  public List<byte[]> getKeyArrayWithComplexTypes(Map<Integer, GenericQueryType> complexQueryDims,
+      ByteArrayWrapper keyVal) {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  /**
+   * Read the columnar data blocks from columnar data holder instance.
+   *
+   * @param noOfRows
+   * @param mergedData
+   * @param dataHolder
+   */
+  public void getLimitedDataBlockForNoDictionaryVals(int noOfRows, Set<byte[]> mergedData,
+      ColumnarKeyStoreDataHolder dataHolder) {
+    if (null != dataHolder) {
+      ColumnarKeyStoreMetadata keyStoreMetadata = dataHolder.getColumnarKeyStoreMetadata();
+      if (null != dataHolder.getNoDictionaryValBasedKeyBlockData()) {
+        List<byte[]> listOfNoDictionaryVals = dataHolder.getNoDictionaryValBasedKeyBlockData();
+        for (int i = 0; i < noOfRows; i++) {
+          if (null == keyStoreMetadata.getColumnReverseIndex()) {
+            mergedData.add(listOfNoDictionaryVals.get(i));
+          } else {
+            mergedData.add(listOfNoDictionaryVals.get(keyStoreMetadata.getColumnReverseIndex()[i]));
+          }
+        }
+      }
     }
-    
-    /**
-     * Read the columnar data blocks from columnar data holder instance.
-     * @param noOfRows
-     * @param mergedData
-     * @param dataHolder
-     */
-    public void getLimitedDataBlockForNoDictionaryVals(int noOfRows,Set<byte[]> mergedData,ColumnarKeyStoreDataHolder dataHolder)
-    {
-    	if(null!=dataHolder)
-    	{
-    		ColumnarKeyStoreMetadata keyStoreMetadata=dataHolder.getColumnarKeyStoreMetadata();
-			if (null != dataHolder.getNoDictionaryValBasedKeyBlockData()) {
-				List<byte[]> listOfNoDictionaryVals = dataHolder
-						.getNoDictionaryValBasedKeyBlockData();
-				for(int i=0;i<noOfRows;i++)
-				{
-					if(null==keyStoreMetadata.getColumnReverseIndex())
-					{
-						mergedData.add(listOfNoDictionaryVals.get(i));
-					}
-					else
-					{
-						mergedData.add(listOfNoDictionaryVals.get(keyStoreMetadata.getColumnReverseIndex()[i]));	
-					}
-				}
-			}
-    	}
-    }
+  }
 
 }

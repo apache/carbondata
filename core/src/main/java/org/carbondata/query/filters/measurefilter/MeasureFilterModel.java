@@ -21,154 +21,154 @@ package org.carbondata.query.filters.measurefilter;
 
 import java.io.Serializable;
 
-import org.carbondata.core.metadata.CarbonMetadata.Dimension;
 import org.carbondata.core.carbon.Exp;
+import org.carbondata.core.metadata.CarbonMetadata.Dimension;
 import org.carbondata.query.queryinterface.query.CarbonQuery.AxisType;
 
 public class MeasureFilterModel implements Serializable {
-    /**
-     *
-     */
-    private static final long serialVersionUID = -1959494583324268999L;
+  /**
+   *
+   */
+  private static final long serialVersionUID = -1959494583324268999L;
 
-    /**
-     * filterValue
-     */
-    private double filterValue;
+  /**
+   * filterValue
+   */
+  private double filterValue;
 
+  /**
+   * filterType
+   */
+  private MeasureFilterType filterType;
+
+  /**
+   * Dimension
+   */
+  private Dimension dimension;
+
+  /**
+   * AxisType
+   */
+  private AxisType axisType;
+
+  /**
+   * Calc expression
+   */
+  private transient Exp exp;
+
+  public MeasureFilterModel(double filterValue, MeasureFilterType filterType) {
+    this.filterValue = filterValue;
+    this.filterType = filterType;
+  }
+
+  public MeasureFilterModel() {
+
+  }
+
+  /**
+   * @return the filterValue
+   */
+  public double getFilterValue() {
+    return filterValue;
+  }
+
+  /**
+   * @param filterValue the filterValue to set
+   */
+  public void setFilterValue(double filterValue) {
+    this.filterValue = filterValue;
+  }
+
+  /**
+   * @return the filterType
+   */
+  public MeasureFilterType getFilterType() {
+    return filterType;
+  }
+
+  /**
+   * @param filterType the filterType to set
+   */
+  public void setFilterType(MeasureFilterType filterType) {
+    this.filterType = filterType;
+  }
+
+  /**
+   * @return the dimension
+   */
+  public Dimension getDimension() {
+    return dimension;
+  }
+
+  /**
+   * @param dimension the dimension to set
+   */
+  public void setDimension(Dimension dimension) {
+    this.dimension = dimension;
+  }
+
+  /**
+   * @return the axisType
+   */
+  public AxisType getAxisType() {
+    return axisType;
+  }
+
+  /**
+   * @param axisType the axisType to set
+   */
+  public void setAxisType(AxisType axisType) {
+    this.axisType = axisType;
+  }
+
+  /**
+   * @return the exp
+   */
+  public Exp getExp() {
+    return exp;
+  }
+
+  /**
+   * @param exp the exp to set
+   */
+  public void setExp(Exp exp) {
+    this.exp = exp;
+  }
+
+  /**
+   * It is enum class for measure filter types.
+   *
+   * @author R00900208
+   */
+  public enum MeasureFilterType {
     /**
      * filterType
      */
-    private MeasureFilterType filterType;
-
+    EQUAL_TO,
     /**
-     * Dimension
+     * NOT_EQUAL_TO
      */
-    private Dimension dimension;
-
+    NOT_EQUAL_TO,
     /**
-     * AxisType
+     * GREATER_THAN
      */
-    private AxisType axisType;
-
+    GREATER_THAN,
     /**
-     * Calc expression
+     * LESS_THAN
      */
-    private transient Exp exp;
-
-    public MeasureFilterModel(double filterValue, MeasureFilterType filterType) {
-        this.filterValue = filterValue;
-        this.filterType = filterType;
-    }
-
-    public MeasureFilterModel() {
-
-    }
-
+    LESS_THAN,
     /**
-     * @return the filterValue
+     * LESS_THAN_EQUAL
      */
-    public double getFilterValue() {
-        return filterValue;
-    }
-
+    LESS_THAN_EQUAL,
     /**
-     * @param filterValue the filterValue to set
+     * GREATER_THAN_EQUAL
      */
-    public void setFilterValue(double filterValue) {
-        this.filterValue = filterValue;
-    }
-
+    GREATER_THAN_EQUAL,
     /**
-     * @return the filterType
+     * NOT_EMPTY
      */
-    public MeasureFilterType getFilterType() {
-        return filterType;
-    }
-
-    /**
-     * @param filterType the filterType to set
-     */
-    public void setFilterType(MeasureFilterType filterType) {
-        this.filterType = filterType;
-    }
-
-    /**
-     * @return the dimension
-     */
-    public Dimension getDimension() {
-        return dimension;
-    }
-
-    /**
-     * @param dimension the dimension to set
-     */
-    public void setDimension(Dimension dimension) {
-        this.dimension = dimension;
-    }
-
-    /**
-     * @return the axisType
-     */
-    public AxisType getAxisType() {
-        return axisType;
-    }
-
-    /**
-     * @param axisType the axisType to set
-     */
-    public void setAxisType(AxisType axisType) {
-        this.axisType = axisType;
-    }
-
-    /**
-     * @return the exp
-     */
-    public Exp getExp() {
-        return exp;
-    }
-
-    /**
-     * @param exp the exp to set
-     */
-    public void setExp(Exp exp) {
-        this.exp = exp;
-    }
-
-    /**
-     * It is enum class for measure filter types.
-     *
-     * @author R00900208
-     */
-    public enum MeasureFilterType {
-        /**
-         * filterType
-         */
-        EQUAL_TO,
-        /**
-         * NOT_EQUAL_TO
-         */
-        NOT_EQUAL_TO,
-        /**
-         * GREATER_THAN
-         */
-        GREATER_THAN,
-        /**
-         * LESS_THAN
-         */
-        LESS_THAN,
-        /**
-         * LESS_THAN_EQUAL
-         */
-        LESS_THAN_EQUAL,
-        /**
-         * GREATER_THAN_EQUAL
-         */
-        GREATER_THAN_EQUAL,
-        /**
-         * NOT_EMPTY
-         */
-        NOT_EMPTY;
-    }
+    NOT_EMPTY;
+  }
 
 }

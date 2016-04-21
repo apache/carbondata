@@ -24,23 +24,23 @@ import org.pentaho.di.trans.step.BaseStepData;
 import org.pentaho.di.trans.step.StepDataInterface;
 
 public class CarbonAutoAggregateSliceMergerData extends BaseStepData implements StepDataInterface {
-    /**
-     * outputRowMeta
-     */
-    private RowMetaInterface outputRowMeta;
+  /**
+   * outputRowMeta
+   */
+  private RowMetaInterface outputRowMeta;
 
-    /**
-     * CarbonSliceMergerStepData
-     */
-    public CarbonAutoAggregateSliceMergerData() {
-        super();
-    }
+  /**
+   * CarbonSliceMergerStepData
+   */
+  public CarbonAutoAggregateSliceMergerData() {
+    super();
+  }
 
-    public RowMetaInterface getOutputRowMeta() {
-        return outputRowMeta;
-    }
+  public RowMetaInterface getOutputRowMeta() {
+    return outputRowMeta;
+  }
 
-    public void setOutputRowMeta(RowMetaInterface outputRowMeta) {
-        this.outputRowMeta = outputRowMeta;
-    }
+  public void setOutputRowMeta(RowMetaInterface outputRowMeta) {
+    this.outputRowMeta = outputRowMeta;
+  }
 }

@@ -22,32 +22,31 @@ package org.carbondata.core.datastorage.store.columnar;
 import org.carbondata.core.util.ByteUtil;
 
 public class ColumnWithIndex implements Comparable<ColumnWithIndex> {
-    private byte[] column;
+  private byte[] column;
 
-    private short index;
+  private short index;
 
-    public ColumnWithIndex(byte[] column, short index) {
-        this.column = column;
-        this.index = index;
-    }
+  public ColumnWithIndex(byte[] column, short index) {
+    this.column = column;
+    this.index = index;
+  }
 
-    /**
-     * @return the column
-     */
-    public byte[] getColumn() {
-        return column;
-    }
+  /**
+   * @return the column
+   */
+  public byte[] getColumn() {
+    return column;
+  }
 
-    /**
-     * @return the index
-     */
-    public short getIndex() {
-        return index;
-    }
+  /**
+   * @return the index
+   */
+  public short getIndex() {
+    return index;
+  }
 
-    @Override
-    public int compareTo(ColumnWithIndex o) {
-        return ByteUtil.UnsafeComparer.INSTANCE.compareTo(column, o.column);
-    }
+  @Override public int compareTo(ColumnWithIndex o) {
+    return ByteUtil.UnsafeComparer.INSTANCE.compareTo(column, o.column);
+  }
 
 }

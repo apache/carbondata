@@ -30,12 +30,12 @@ import org.carbondata.query.queryinterface.filter.CarbonFilterInfo;
 
 public interface FilterLikeExpressionIntf {
 
-    LikeExpression getLikeExpression();
+  LikeExpression getLikeExpression();
 
-    void setLikeExpression(LikeExpression expression);
+  void setLikeExpression(LikeExpression expression);
 
-    void processLikeExpressionFilters(List<String> listFilterExpression, List<InMemoryTable> slices,
-            Entry<Dimension, CarbonFilterInfo> entry, ContentMatchFilterInfo matchFilterInfo,
-            boolean hasNameColumn, Locale locale);
+  void processLikeExpressionFilters(List<String> listFilterExpression, List<InMemoryTable> slices,
+      Entry<Dimension, CarbonFilterInfo> entry, ContentMatchFilterInfo matchFilterInfo,
+      boolean hasNameColumn, Locale locale);
 
 }

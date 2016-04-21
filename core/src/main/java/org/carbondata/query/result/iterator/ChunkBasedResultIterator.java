@@ -27,25 +27,23 @@ import org.carbondata.query.executer.pagination.impl.QueryResult;
 import org.carbondata.query.result.ChunkResult;
 
 public class ChunkBasedResultIterator implements CarbonIterator<ChunkResult> {
-    private CarbonIterator<QueryResult> queryResultIterator;
+  private CarbonIterator<QueryResult> queryResultIterator;
 
-    private QueryResultPreparator queryResultPreparator;
+  private QueryResultPreparator queryResultPreparator;
 
-    public ChunkBasedResultIterator(CarbonIterator<QueryResult> queryResultIterator,
-            QueryExecuterProperties executerProperties, CarbonQueryExecutorModel queryModel) {
-        this.queryResultIterator = queryResultIterator;
-        this.queryResultPreparator = new QueryResultPreparator(executerProperties, queryModel);
+  public ChunkBasedResultIterator(CarbonIterator<QueryResult> queryResultIterator,
+      QueryExecuterProperties executerProperties, CarbonQueryExecutorModel queryModel) {
+    this.queryResultIterator = queryResultIterator;
+    this.queryResultPreparator = new QueryResultPreparator(executerProperties, queryModel);
 
-    }
+  }
 
-    @Override
-    public boolean hasNext() {
-        return queryResultIterator.hasNext();
-    }
+  @Override public boolean hasNext() {
+    return queryResultIterator.hasNext();
+  }
 
-    @Override
-    public ChunkResult next() {
-        return queryResultPreparator.prepareQueryOutputResult(queryResultIterator.next());
-    }
+  @Override public ChunkResult next() {
+    return queryResultPreparator.prepareQueryOutputResult(queryResultIterator.next());
+  }
 
 }

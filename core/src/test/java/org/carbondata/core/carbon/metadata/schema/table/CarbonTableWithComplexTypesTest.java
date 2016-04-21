@@ -18,138 +18,142 @@
  */
 package org.carbondata.core.carbon.metadata.schema.table;
 
-import junit.framework.TestCase;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.carbondata.core.constants.CarbonCommonConstants;
+
+import junit.framework.TestCase;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.util.*;
-
 public class CarbonTableWithComplexTypesTest extends TestCase {
 
-    private CarbonTable carbonTable;
+  private CarbonTable carbonTable;
 
-    @BeforeClass public void setUp() {
-        carbonTable = new CarbonTable();
-        carbonTable.loadCarbonTable(getTableInfo(1000l));
-    }
+  @BeforeClass public void setUp() {
+    carbonTable = new CarbonTable();
+    carbonTable.loadCarbonTable(getTableInfo(1000L));
+  }
 
-    @AfterClass public void tearDown() {
-        carbonTable = null;
-    }
+  @AfterClass public void tearDown() {
+    carbonTable = null;
+  }
 
-    @Test public void testNumberOfDimensionReturnsProperCount() {
-        assertEquals(2, carbonTable.getNumberOfDimensions("carbonTestTable"));
-    }
+  @Test public void testNumberOfDimensionReturnsProperCount() {
+    assertEquals(2, carbonTable.getNumberOfDimensions("carbonTestTable"));
+  }
 
-    @Test public void testNumberOfMeasureReturnsProperCount() {
-        assertEquals(1, carbonTable.getNumberOfMeasures("carbonTestTable"));
-    }
+  @Test public void testNumberOfMeasureReturnsProperCount() {
+    assertEquals(1, carbonTable.getNumberOfMeasures("carbonTestTable"));
+  }
 
-    @Test public void testGetDatabaseNameResturnsDatabaseName() {
-        assertEquals("carbonTestDatabase", carbonTable.getDatabaseName());
-    }
+  @Test public void testGetDatabaseNameResturnsDatabaseName() {
+    assertEquals("carbonTestDatabase", carbonTable.getDatabaseName());
+  }
 
-    @Test public void testFactTableNameReturnsProperFactTableName() {
-        assertEquals("carbonTestTable", carbonTable.getFactTableName());
-    }
+  @Test public void testFactTableNameReturnsProperFactTableName() {
+    assertEquals("carbonTestTable", carbonTable.getFactTableName());
+  }
 
-    @Test public void testTableUniqueNameIsProper() {
-        assertEquals("carbonTestDatabase_carbonTestTable", carbonTable.getTableUniqueName());
-    }
+  @Test public void testTableUniqueNameIsProper() {
+    assertEquals("carbonTestDatabase_carbonTestTable", carbonTable.getTableUniqueName());
+  }
 
-    private List<ColumnSchema> getColumnarDimensionColumn() {
-      
-        List<ColumnSchema> cols = new ArrayList<ColumnSchema>();
-        
-        ColumnSchema dimColumn = new ColumnSchema();
-        dimColumn.setColumnar(true);
-        dimColumn.setColumnName("IMEI");
-        dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
-        dimColumn.setDataType(DataType.STRING);
-        dimColumn.setDimensionColumn(true);
-        Set<Encoding> encodeList =
-                new HashSet<Encoding>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-        encodeList.add(Encoding.DICTIONARY);
-        dimColumn.setEncodintList(encodeList);
-        dimColumn.setNumberOfChild(0);
-        cols.add(dimColumn);
-        
-        ColumnSchema structColumn = new ColumnSchema();
-        structColumn.setColumnar(true);
-        structColumn.setColumnName("mobile");
-        structColumn.setColumnUniqueId(UUID.randomUUID().toString());
-        structColumn.setDataType(DataType.STRUCT);
-        structColumn.setDimensionColumn(true);
-        structColumn.setEncodintList(encodeList);
-        structColumn.setNumberOfChild(2);
-        cols.add(structColumn);
-        
-        ColumnSchema primitiveColumn = new ColumnSchema();
-        primitiveColumn.setColumnar(true);
-        primitiveColumn.setColumnName("mobile.stdcode");
-        primitiveColumn.setColumnUniqueId(UUID.randomUUID().toString());
-        primitiveColumn.setDataType(DataType.STRING);
-        primitiveColumn.setDimensionColumn(true);
-        primitiveColumn.setEncodintList(encodeList);
-        primitiveColumn.setNumberOfChild(0);
-        cols.add(primitiveColumn);
-        
-        ColumnSchema arrayColumn = new ColumnSchema();
-        arrayColumn.setColumnar(true);
-        arrayColumn.setColumnName("mobile.val");
-        arrayColumn.setColumnUniqueId(UUID.randomUUID().toString());
-        arrayColumn.setDataType(DataType.ARRAY);
-        arrayColumn.setDimensionColumn(true);
-        arrayColumn.setEncodintList(encodeList);
-        arrayColumn.setNumberOfChild(1);
-        cols.add(arrayColumn);
-        
-        ColumnSchema primitiveColumn1 = new ColumnSchema();
-        primitiveColumn1.setColumnar(true);
-        primitiveColumn1.setColumnName("mobile.val.phoneno");
-        primitiveColumn1.setColumnUniqueId(UUID.randomUUID().toString());
-        primitiveColumn1.setDataType(DataType.STRING);
-        primitiveColumn1.setDimensionColumn(true);
-        primitiveColumn1.setEncodintList(encodeList);
-        primitiveColumn1.setNumberOfChild(0);
-        cols.add(primitiveColumn1);
-        
-        return cols;
-    }
+  private List<ColumnSchema> getColumnarDimensionColumn() {
 
-    private ColumnSchema getColumnarMeasureColumn() {
-        ColumnSchema dimColumn = new ColumnSchema();
-        dimColumn.setAggregateFunction("SUM");
-        dimColumn.setColumnName("IMEI_COUNT");
-        dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
-        dimColumn.setDataType(DataType.STRING);
-        dimColumn.setDimensionColumn(false);
-        return dimColumn;
-    }
+    List<ColumnSchema> cols = new ArrayList<ColumnSchema>();
 
-    private TableSchema getTableSchema() {
-        TableSchema tableSchema = new TableSchema();
-        List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
-        columnSchemaList.addAll(getColumnarDimensionColumn());
-        columnSchemaList.add(getColumnarMeasureColumn());
-        tableSchema.setListOfColumns(columnSchemaList);
-        tableSchema.setTableId(1);
-        tableSchema.setTableName("carbonTestTable");
-        return tableSchema;
-    }
+    ColumnSchema dimColumn = new ColumnSchema();
+    dimColumn.setColumnar(true);
+    dimColumn.setColumnName("IMEI");
+    dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
+    dimColumn.setDataType(DataType.STRING);
+    dimColumn.setDimensionColumn(true);
+    Set<Encoding> encodeList = new HashSet<Encoding>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    encodeList.add(Encoding.DICTIONARY);
+    dimColumn.setEncodintList(encodeList);
+    dimColumn.setNumberOfChild(0);
+    cols.add(dimColumn);
 
-    private TableInfo getTableInfo(long timeStamp) {
-        TableInfo info = new TableInfo();
-        info.setDatabaseName("carbonTestDatabase");
-        info.setLastUpdatedTime(timeStamp);
-        info.setTableUniqueName("carbonTestDatabase_carbonTestTable");
-        info.setFactTable(getTableSchema());
-        return info;
-    }
+    ColumnSchema structColumn = new ColumnSchema();
+    structColumn.setColumnar(true);
+    structColumn.setColumnName("mobile");
+    structColumn.setColumnUniqueId(UUID.randomUUID().toString());
+    structColumn.setDataType(DataType.STRUCT);
+    structColumn.setDimensionColumn(true);
+    structColumn.setEncodintList(encodeList);
+    structColumn.setNumberOfChild(2);
+    cols.add(structColumn);
+
+    ColumnSchema primitiveColumn = new ColumnSchema();
+    primitiveColumn.setColumnar(true);
+    primitiveColumn.setColumnName("mobile.stdcode");
+    primitiveColumn.setColumnUniqueId(UUID.randomUUID().toString());
+    primitiveColumn.setDataType(DataType.STRING);
+    primitiveColumn.setDimensionColumn(true);
+    primitiveColumn.setEncodintList(encodeList);
+    primitiveColumn.setNumberOfChild(0);
+    cols.add(primitiveColumn);
+
+    ColumnSchema arrayColumn = new ColumnSchema();
+    arrayColumn.setColumnar(true);
+    arrayColumn.setColumnName("mobile.val");
+    arrayColumn.setColumnUniqueId(UUID.randomUUID().toString());
+    arrayColumn.setDataType(DataType.ARRAY);
+    arrayColumn.setDimensionColumn(true);
+    arrayColumn.setEncodintList(encodeList);
+    arrayColumn.setNumberOfChild(1);
+    cols.add(arrayColumn);
+
+    ColumnSchema primitiveColumn1 = new ColumnSchema();
+    primitiveColumn1.setColumnar(true);
+    primitiveColumn1.setColumnName("mobile.val.phoneno");
+    primitiveColumn1.setColumnUniqueId(UUID.randomUUID().toString());
+    primitiveColumn1.setDataType(DataType.STRING);
+    primitiveColumn1.setDimensionColumn(true);
+    primitiveColumn1.setEncodintList(encodeList);
+    primitiveColumn1.setNumberOfChild(0);
+    cols.add(primitiveColumn1);
+
+    return cols;
+  }
+
+  private ColumnSchema getColumnarMeasureColumn() {
+    ColumnSchema dimColumn = new ColumnSchema();
+    dimColumn.setAggregateFunction("SUM");
+    dimColumn.setColumnName("IMEI_COUNT");
+    dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
+    dimColumn.setDataType(DataType.STRING);
+    dimColumn.setDimensionColumn(false);
+    return dimColumn;
+  }
+
+  private TableSchema getTableSchema() {
+    TableSchema tableSchema = new TableSchema();
+    List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
+    columnSchemaList.addAll(getColumnarDimensionColumn());
+    columnSchemaList.add(getColumnarMeasureColumn());
+    tableSchema.setListOfColumns(columnSchemaList);
+    tableSchema.setTableId(1);
+    tableSchema.setTableName("carbonTestTable");
+    return tableSchema;
+  }
+
+  private TableInfo getTableInfo(long timeStamp) {
+    TableInfo info = new TableInfo();
+    info.setDatabaseName("carbonTestDatabase");
+    info.setLastUpdatedTime(timeStamp);
+    info.setTableUniqueName("carbonTestDatabase_carbonTestTable");
+    info.setFactTable(getTableSchema());
+    return info;
+  }
 
 }

@@ -30,60 +30,57 @@ import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
 
 public class AtomicFileOperationsImpl implements AtomicFileOperations {
 
-    private String filePath;
+  private String filePath;
 
-    private FileType fileType;
+  private FileType fileType;
 
-    private String tempWriteFilePath;
+  private String tempWriteFilePath;
 
-    private DataOutputStream dataOutStream;
+  private DataOutputStream dataOutStream;
 
-    public AtomicFileOperationsImpl(String filePath, FileType fileType) {
-        this.filePath = filePath;
+  public AtomicFileOperationsImpl(String filePath, FileType fileType) {
+    this.filePath = filePath;
 
-        this.fileType = fileType;
+    this.fileType = fileType;
+  }
+
+  @Override public DataInputStream openForRead() throws IOException {
+    return FileFactory.getDataInputStream(filePath, fileType);
+  }
+
+  @Override public DataOutputStream openForWrite(FileWriteOperation operation) throws IOException {
+
+    filePath = filePath.replace("\\", "/");
+
+    tempWriteFilePath = filePath + CarbonCommonConstants.TEMPWRITEFILEEXTENSION;
+
+    if (FileFactory.isFileExist(tempWriteFilePath, fileType)) {
+      FileFactory.getCarbonFile(tempWriteFilePath, fileType).delete();
     }
 
-    @Override
-    public DataInputStream openForRead() throws IOException {
-        return FileFactory.getDataInputStream(filePath, fileType);
+    FileFactory.createNewFile(tempWriteFilePath, fileType);
+
+    dataOutStream = FileFactory.getDataOutputStream(tempWriteFilePath, fileType);
+
+    return dataOutStream;
+
+  }
+
+  /* (non-Javadoc)
+   * @see com.huawei.unibi.carbon.datastorage.store.fileperations.AtomicFileOperations#close()
+   */
+  @Override public void close() throws IOException {
+
+    if (null != dataOutStream) {
+      dataOutStream.close();
+
+      CarbonFile tempFile = FileFactory.getCarbonFile(tempWriteFilePath, fileType);
+
+      if (!tempFile.renameForce(filePath)) {
+        throw new IOException("temporary file renaming failed");
+      }
     }
 
-    @Override
-    public DataOutputStream openForWrite(FileWriteOperation operation) throws IOException {
-
-        filePath = filePath.replace("\\", "/");
-
-        tempWriteFilePath = filePath + CarbonCommonConstants.TEMPWRITEFILEEXTENSION;
-
-        if (FileFactory.isFileExist(tempWriteFilePath, fileType)) {
-            FileFactory.getCarbonFile(tempWriteFilePath, fileType).delete();
-        }
-
-        FileFactory.createNewFile(tempWriteFilePath, fileType);
-
-        dataOutStream = FileFactory.getDataOutputStream(tempWriteFilePath, fileType);
-
-        return dataOutStream;
-
-    }
-
-    /* (non-Javadoc)
-     * @see com.huawei.unibi.carbon.datastorage.store.fileperations.AtomicFileOperations#close()
-     */
-    @Override
-    public void close() throws IOException {
-
-        if (null != dataOutStream) {
-            dataOutStream.close();
-
-            CarbonFile tempFile = FileFactory.getCarbonFile(tempWriteFilePath, fileType);
-
-            if (!tempFile.renameForce(filePath)) {
-                throw new IOException("temporary file renaming failed");
-            }
-        }
-
-    }
+  }
 
 }

@@ -25,26 +25,26 @@ package org.carbondata.core.cache;
  */
 public interface Cacheable {
 
-    /**
-     * This method will return the timestamp of file based on which decision
-     * the decision will be taken whether to read that file or not
-     *
-     * @return
-     */
-    long getFileTimeStamp();
+  /**
+   * This method will return the timestamp of file based on which decision
+   * the decision will be taken whether to read that file or not
+   *
+   * @return
+   */
+  long getFileTimeStamp();
 
-    /**
-     * This method will return the access count for a column based on which decision will be taken
-     * whether to keep the object in memory
-     *
-     * @return
-     */
-    int getAccessCount();
+  /**
+   * This method will return the access count for a column based on which decision will be taken
+   * whether to keep the object in memory
+   *
+   * @return
+   */
+  int getAccessCount();
 
-    /**
-     * This method will return the memory size of a column
-     *
-     * @return
-     */
-    long getMemorySize();
+  /**
+   * This method will return the memory size of a column
+   *
+   * @return
+   */
+  long getMemorySize();
 }

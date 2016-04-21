@@ -25,22 +25,21 @@ import org.carbondata.processing.dataprocessor.record.holder.DataProcessorRecord
 
 public class RecordComparator implements Comparator<DataProcessorRecordHolder> {
 
-    @Override
-    public int compare(DataProcessorRecordHolder o1, DataProcessorRecordHolder o2) {
+  @Override public int compare(DataProcessorRecordHolder o1, DataProcessorRecordHolder o2) {
 
-        if (o1 == null) {
-            return -1;
-        }
-        if (o2 == null) {
-            return 1;
-        }
-
-        if (o1.getSeqNumber() < o2.getSeqNumber()) {
-            return -1;
-        } else if (o1.getSeqNumber() > o2.getSeqNumber()) {
-            return 1;
-        }
-        return 0;
+    if (o1 == null) {
+      return -1;
     }
+    if (o2 == null) {
+      return 1;
+    }
+
+    if (o1.getSeqNumber() < o2.getSeqNumber()) {
+      return -1;
+    } else if (o1.getSeqNumber() > o2.getSeqNumber()) {
+      return 1;
+    }
+    return 0;
+  }
 
 }

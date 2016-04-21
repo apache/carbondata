@@ -24,17 +24,17 @@ import org.pentaho.di.trans.step.BaseStepData;
 import org.pentaho.di.trans.step.StepDataInterface;
 
 public class CarbonAggregateSurrogateGeneratorData extends BaseStepData
-        implements StepDataInterface {
-    /**
-     * outputRowMeta
-     */
-    protected RowMetaInterface outputRowMeta;
+    implements StepDataInterface {
+  /**
+   * outputRowMeta
+   */
+  protected RowMetaInterface outputRowMeta;
 
-    /**
-     * constructor
-     */
-    public CarbonAggregateSurrogateGeneratorData() {
-        super();
-    }
+  /**
+   * constructor
+   */
+  public CarbonAggregateSurrogateGeneratorData() {
+    super();
+  }
 
 }

@@ -23,18 +23,18 @@ package org.carbondata.core.locks;
  */
 public interface ICarbonLock {
 
-    /**
-     * Does the unlocking of the acquired lock.
-     *
-     * @return
-     */
-    boolean unlock();
+  /**
+   * Does the unlocking of the acquired lock.
+   *
+   * @return
+   */
+  boolean unlock();
 
-    /**
-     * This will acquire the lock and if it doesnt get then it will retry after the confiured time.
-     *
-     * @return
-     */
-    boolean lockWithRetries();
+  /**
+   * This will acquire the lock and if it doesnt get then it will retry after the confiured time.
+   *
+   * @return
+   */
+  boolean lockWithRetries();
 
 }

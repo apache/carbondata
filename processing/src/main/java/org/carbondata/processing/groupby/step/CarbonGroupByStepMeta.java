@@ -35,248 +35,247 @@ import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
-import org.pentaho.di.trans.step.*;
+import org.pentaho.di.trans.step.BaseStepMeta;
+import org.pentaho.di.trans.step.StepDataInterface;
+import org.pentaho.di.trans.step.StepInterface;
+import org.pentaho.di.trans.step.StepMeta;
+import org.pentaho.di.trans.step.StepMetaInterface;
 import org.w3c.dom.Node;
 
 public class CarbonGroupByStepMeta extends BaseStepMeta implements StepMetaInterface, Cloneable {
 
-    /**
-     * for i18n purposes
-     */
-    private static final Class<?> PKG = CarbonGroupByStepMeta.class;
+  /**
+   * for i18n purposes
+   */
+  private static final Class<?> PKG = CarbonGroupByStepMeta.class;
 
-    private String aggTypeString;
+  private String aggTypeString;
 
-    private String actualColumnName;
+  private String actualColumnName;
 
-    private String columnName;
+  private String columnName;
 
-    private String outputRowSize;
+  private String outputRowSize;
 
-    /**
-     * CarbonDataWriterStepMeta constructor to initialize this class
-     */
-    public CarbonGroupByStepMeta() {
-        super();
+  /**
+   * CarbonDataWriterStepMeta constructor to initialize this class
+   */
+  public CarbonGroupByStepMeta() {
+    super();
+  }
+
+  /**
+   * set the default value for all the properties
+   */
+  @Override public void setDefault() {
+    aggTypeString = "";
+    actualColumnName = "";
+    columnName = "";
+    outputRowSize = "";
+  }
+
+  /**
+   * Get the XML that represents the values in this step
+   *
+   * @return the XML that represents the metadata in this step
+   * @throws KettleException in case there is a conversion or XML encoding error
+   */
+  public String getXML() {
+    StringBuffer retval = new StringBuffer(150);
+    retval.append("    ").append(XMLHandler.addTagValue("aggTypeString", aggTypeString));
+    retval.append("    ").append(XMLHandler.addTagValue("actualColumnName", actualColumnName));
+    retval.append("    ").append(XMLHandler.addTagValue("columnName", columnName));
+    retval.append("    ").append(XMLHandler.addTagValue("outputRowSize", outputRowSize));
+
+    return retval.toString();
+  }
+
+  //TODO SIMIAN
+
+  /**
+   * Make an exact copy of this step, make sure to explicitly copy Collections
+   * etc.
+   *
+   * @return an exact copy of this step
+   */
+  public Object clone() {
+    Object retval = super.clone();
+    return retval;
+  }
+
+  /**
+   * Load the values for this step from an XML Node
+   *
+   * @param stepnode  the Node to get the info from
+   * @param databases The available list of databases to reference to
+   * @param counters  Counters to reference.
+   * @throws KettleXMLException When an unexpected XML error occurred. (malformed etc.)
+   */
+  @Override public void loadXML(Node stepnode, List<DatabaseMeta> databases,
+      Map<String, Counter> counters) throws KettleXMLException {
+    try {
+      aggTypeString = XMLHandler.getTagValue(stepnode, "aggTypeString");
+
+      actualColumnName = XMLHandler.getTagValue(stepnode, "actualColumnName");
+
+      columnName = XMLHandler.getTagValue(stepnode, "columnName");
+
+      outputRowSize = XMLHandler.getTagValue(stepnode, "outputRowSize");
+    } catch (Exception e) {
+      throw new KettleXMLException("Unable to read step info from XML node", e);
+    }
+  }
+
+  /**
+   * Save the steps data into a Kettle repository
+   *
+   * @param rep              The Kettle repository to save to
+   * @param idTransformation The transformation ID
+   * @param idStep           The step ID
+   * @throws KettleException When an unexpected error occurred (database, network, etc)
+   */
+  @Override public void saveRep(Repository rep, ObjectId idTransformation, ObjectId idStep)
+      throws KettleException {
+    try {
+      rep.saveStepAttribute(idTransformation, idStep, "aggTypeString", aggTypeString); //$NON-NLS-1$
+
+      rep.saveStepAttribute(idTransformation, idStep, "actualColumnName",
+          actualColumnName); //$NON-NLS-1$
+
+      rep.saveStepAttribute(idTransformation, idStep, "columnName", columnName); //$NON-NLS-1$
+
+      rep.saveStepAttribute(idTransformation, idStep, "outputRowSize", outputRowSize); //$NON-NLS-1$
+
+    } catch (Exception e) {
+      throw new KettleException(
+          BaseMessages.getString(PKG, "TemplateStep.Exception.UnableToSaveStepInfoToRepository")
+              + idStep, e);
+    }
+  }
+
+  /**
+   * Read the steps information from a Kettle repository
+   *
+   * @param rep       The repository to read from
+   * @param idStep    The step ID
+   * @param databases The databases to reference
+   * @param counters  The counters to reference
+   * @throws KettleException When an unexpected error occurred (database, network, etc)
+   */
+  @Override public void readRep(Repository rep, ObjectId idStep, List<DatabaseMeta> databases,
+      Map<String, Counter> counters) throws KettleException {
+    // TODO Auto-generated method stub
+    try {
+      aggTypeString = rep.getStepAttributeString(idStep, "aggTypeString");
+      columnName = rep.getStepAttributeString(idStep, "columnName");
+      actualColumnName = rep.getStepAttributeString(idStep, "actualColumnName");
+      outputRowSize = rep.getStepAttributeString(idStep, "outputRowSize");
+
+    } catch (Exception ex) {
+      // TODO Auto-generated catch block
+      throw new KettleException(BaseMessages
+          .getString(PKG, "CarbonDataWriterStepMeta.Exception.UnexpectedErrorInReadingStepInfo"),
+          ex);
     }
 
-    /**
-     * set the default value for all the properties
-     */
-    @Override
-    public void setDefault() {
-        aggTypeString = "";
-        actualColumnName = "";
-        columnName = "";
-        outputRowSize = "";
+  }
+
+  /**
+   * Checks the settings of this step and puts the findings in a remarks List.
+   *
+   * @param remarks  The list to put the remarks in @see
+   *                 org.pentaho.di.core.CheckResult
+   * @param stepMeta The stepMeta to help checking
+   * @param prev     The fields coming from the previous step
+   * @param input    The input step names
+   * @param output   The output step names
+   * @param info     The fields that are used as information by the step
+   */
+  @Override public void check(List<CheckResultInterface> remarks, TransMeta transMeta,
+      StepMeta stepMeta, RowMetaInterface prev, String[] input, String[] output,
+      RowMetaInterface info) {
+    CheckResult checkResultInfo;
+
+    // See if we have input streams leading to this step!
+    if (input.length > 0) {
+      checkResultInfo =
+          new CheckResult(CheckResult.TYPE_RESULT_OK, "Step is receiving info from other steps.",
+              stepMeta);
+      remarks.add(checkResultInfo);
+    } else {
+      checkResultInfo =
+          new CheckResult(CheckResult.TYPE_RESULT_ERROR, "No input received from other steps!",
+              stepMeta);
+      remarks.add(checkResultInfo);
     }
 
-    /**
-     * Get the XML that represents the values in this step
-     *
-     * @return the XML that represents the metadata in this step
-     * @throws KettleException in case there is a conversion or XML encoding error
-     */
-    public String getXML() {
-        StringBuffer retval = new StringBuffer(150);
-        retval.append("    ").append(XMLHandler.addTagValue("aggTypeString", aggTypeString));
-        retval.append("    ").append(XMLHandler.addTagValue("actualColumnName", actualColumnName));
-        retval.append("    ").append(XMLHandler.addTagValue("columnName", columnName));
-        retval.append("    ").append(XMLHandler.addTagValue("outputRowSize", outputRowSize));
+  }
 
-        return retval.toString();
-    }
+  /**
+   * Get the executing step, needed by Trans to launch a step.
+   *
+   * @param stepMeta          The step info
+   * @param stepDataInterface the step data interface linked to this step. Here the step can
+   *                          store temporary data, database connections, etc.
+   * @param copyNr            The copy nr to get
+   * @param transMeta         The transformation info
+   * @param trans             The launching transformation
+   */
+  @Override public StepInterface getStep(StepMeta stepMeta, StepDataInterface stepDataInterface,
+      int copyNr, TransMeta transMeta, Trans trans) {
+    return new CarbonGroupByStep(stepMeta, stepDataInterface, copyNr, transMeta, trans);
+  }
 
-    //TODO SIMIAN
+  /**
+   * Get a new instance of the appropriate data class. This data class
+   * implements the StepDataInterface. It basically contains the persisting
+   * data that needs to live on, even if a worker thread is terminated.
+   *
+   * @return The appropriate StepDataInterface class.
+   */
+  @Override public StepDataInterface getStepData() {
+    return new CarbonGroupByStepData();
+  }
 
-    /**
-     * Make an exact copy of this step, make sure to explicitly copy Collections
-     * etc.
-     *
-     * @return an exact copy of this step
-     */
-    public Object clone() {
-        Object retval = super.clone();
-        return retval;
-    }
+  /**
+   * Method will return agg type string
+   *
+   * @return aggTypeString
+   */
+  public String getAggTypeString() {
+    return aggTypeString;
+  }
 
-    /**
-     * Load the values for this step from an XML Node
-     *
-     * @param stepnode  the Node to get the info from
-     * @param databases The available list of databases to reference to
-     * @param counters  Counters to reference.
-     * @throws KettleXMLException When an unexpected XML error occurred. (malformed etc.)
-     */
-    @Override
-    public void loadXML(Node stepnode, List<DatabaseMeta> databases, Map<String, Counter> counters)
-            throws KettleXMLException {
-        try {
-            aggTypeString = XMLHandler.getTagValue(stepnode, "aggTypeString");
+  /**
+   * This method will be used to set the agg type string
+   *
+   * @param aggTypeString
+   */
+  public void setAggTypeString(String aggTypeString) {
+    this.aggTypeString = aggTypeString;
+  }
 
-            actualColumnName = XMLHandler.getTagValue(stepnode, "actualColumnName");
+  public String getActualColumnName() {
+    return actualColumnName;
+  }
 
-            columnName = XMLHandler.getTagValue(stepnode, "columnName");
+  public void setActualColumnName(String actualColumnName) {
+    this.actualColumnName = actualColumnName;
+  }
 
-            outputRowSize = XMLHandler.getTagValue(stepnode, "outputRowSize");
-        } catch (Exception e) {
-            throw new KettleXMLException("Unable to read step info from XML node", e);
-        }
-    }
+  public String getColumnName() {
+    return columnName;
+  }
 
-    /**
-     * Save the steps data into a Kettle repository
-     *
-     * @param rep              The Kettle repository to save to
-     * @param idTransformation The transformation ID
-     * @param idStep           The step ID
-     * @throws KettleException When an unexpected error occurred (database, network, etc)
-     */
-    @Override
-    public void saveRep(Repository rep, ObjectId idTransformation, ObjectId idStep)
-            throws KettleException {
-        try {
-            rep.saveStepAttribute(idTransformation, idStep, "aggTypeString",
-                    aggTypeString); //$NON-NLS-1$
+  public void setColumnName(String columnName) {
+    this.columnName = columnName;
+  }
 
-            rep.saveStepAttribute(idTransformation, idStep, "actualColumnName",
-                    actualColumnName); //$NON-NLS-1$
+  public String getOutputRowSize() {
+    return outputRowSize;
+  }
 
-            rep.saveStepAttribute(idTransformation, idStep, "columnName", columnName); //$NON-NLS-1$
-
-            rep.saveStepAttribute(idTransformation, idStep, "outputRowSize",
-                    outputRowSize); //$NON-NLS-1$
-
-        } catch (Exception e) {
-            throw new KettleException(BaseMessages
-                    .getString(PKG, "TemplateStep.Exception.UnableToSaveStepInfoToRepository")
-                    + idStep, e);
-        }
-    }
-
-    /**
-     * Read the steps information from a Kettle repository
-     *
-     * @param rep       The repository to read from
-     * @param idStep    The step ID
-     * @param databases The databases to reference
-     * @param counters  The counters to reference
-     * @throws KettleException When an unexpected error occurred (database, network, etc)
-     */
-    @Override
-    public void readRep(Repository rep, ObjectId idStep, List<DatabaseMeta> databases,
-            Map<String, Counter> counters) throws KettleException {
-        // TODO Auto-generated method stub
-        try {
-            aggTypeString = rep.getStepAttributeString(idStep, "aggTypeString");
-            columnName = rep.getStepAttributeString(idStep, "columnName");
-            actualColumnName = rep.getStepAttributeString(idStep, "actualColumnName");
-            outputRowSize = rep.getStepAttributeString(idStep, "outputRowSize");
-
-        } catch (Exception ex) {
-            // TODO Auto-generated catch block
-            throw new KettleException(BaseMessages.getString(PKG,
-                    "CarbonDataWriterStepMeta.Exception.UnexpectedErrorInReadingStepInfo"), ex);
-        }
-
-    }
-
-    /**
-     * Checks the settings of this step and puts the findings in a remarks List.
-     *
-     * @param remarks  The list to put the remarks in @see
-     *                 org.pentaho.di.core.CheckResult
-     * @param stepMeta The stepMeta to help checking
-     * @param prev     The fields coming from the previous step
-     * @param input    The input step names
-     * @param output   The output step names
-     * @param info     The fields that are used as information by the step
-     */
-    @Override
-    public void check(List<CheckResultInterface> remarks, TransMeta transMeta, StepMeta stepMeta,
-            RowMetaInterface prev, String[] input, String[] output, RowMetaInterface info) {
-        CheckResult checkResultInfo;
-
-        // See if we have input streams leading to this step!
-        if (input.length > 0) {
-            checkResultInfo = new CheckResult(CheckResult.TYPE_RESULT_OK,
-                    "Step is receiving info from other steps.", stepMeta);
-            remarks.add(checkResultInfo);
-        } else {
-            checkResultInfo = new CheckResult(CheckResult.TYPE_RESULT_ERROR,
-                    "No input received from other steps!", stepMeta);
-            remarks.add(checkResultInfo);
-        }
-
-    }
-
-    /**
-     * Get the executing step, needed by Trans to launch a step.
-     *
-     * @param stepMeta          The step info
-     * @param stepDataInterface the step data interface linked to this step. Here the step can
-     *                          store temporary data, database connections, etc.
-     * @param copyNr            The copy nr to get
-     * @param transMeta         The transformation info
-     * @param trans             The launching transformation
-     */
-    @Override
-    public StepInterface getStep(StepMeta stepMeta, StepDataInterface stepDataInterface, int copyNr,
-            TransMeta transMeta, Trans trans) {
-        return new CarbonGroupByStep(stepMeta, stepDataInterface, copyNr, transMeta, trans);
-    }
-
-    /**
-     * Get a new instance of the appropriate data class. This data class
-     * implements the StepDataInterface. It basically contains the persisting
-     * data that needs to live on, even if a worker thread is terminated.
-     *
-     * @return The appropriate StepDataInterface class.
-     */
-    @Override
-    public StepDataInterface getStepData() {
-        return new CarbonGroupByStepData();
-    }
-
-    /**
-     * Method will return agg type string
-     *
-     * @return aggTypeString
-     */
-    public String getAggTypeString() {
-        return aggTypeString;
-    }
-
-    /**
-     * This method will be used to set the agg type string
-     *
-     * @param aggTypeString
-     */
-    public void setAggTypeString(String aggTypeString) {
-        this.aggTypeString = aggTypeString;
-    }
-
-    public String getActualColumnName() {
-        return actualColumnName;
-    }
-
-    public void setActualColumnName(String actualColumnName) {
-        this.actualColumnName = actualColumnName;
-    }
-
-    public String getColumnName() {
-        return columnName;
-    }
-
-    public void setColumnName(String columnName) {
-        this.columnName = columnName;
-    }
-
-    public String getOutputRowSize() {
-        return outputRowSize;
-    }
-
-    public void setOutputRowSize(String outputRowSize) {
-        this.outputRowSize = outputRowSize;
-    }
+  public void setOutputRowSize(String outputRowSize) {
+    this.outputRowSize = outputRowSize;
+  }
 }

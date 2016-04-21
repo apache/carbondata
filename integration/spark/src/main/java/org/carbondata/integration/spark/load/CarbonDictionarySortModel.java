@@ -25,82 +25,81 @@ import org.carbondata.core.util.ByteUtil;
  */
 public class CarbonDictionarySortModel implements Comparable<CarbonDictionarySortModel> {
 
-    /**
-     * Surrogate key
-     */
-    private int key;
+  /**
+   * Surrogate key
+   */
+  private int key;
 
-    /**
-     * member value in bytes
-     */
-    private byte[] memberBytes;
+  /**
+   * member value in bytes
+   */
+  private byte[] memberBytes;
 
-    /**
-     * CarbonDictionarySortModel
-     *
-     * @param key
-     * @param memberBytes
-     */
-    public CarbonDictionarySortModel(int key, byte[] memberBytes) {
-        this.key = key;
-        this.memberBytes = memberBytes;
-    }
+  /**
+   * CarbonDictionarySortModel
+   *
+   * @param key
+   * @param memberBytes
+   */
+  public CarbonDictionarySortModel(int key, byte[] memberBytes) {
+    this.key = key;
+    this.memberBytes = memberBytes;
+  }
 
-    /**
-     * Compare
-     */
-    @Override public int compareTo(CarbonDictionarySortModel o) {
+  /**
+   * Compare
+   */
+  @Override public int compareTo(CarbonDictionarySortModel o) {
 
-        return ByteUtil.UnsafeComparer.INSTANCE.compareTo(this.memberBytes, o.memberBytes);
-    }
+    return ByteUtil.UnsafeComparer.INSTANCE.compareTo(this.memberBytes, o.memberBytes);
+  }
 
-    /**
-     * @see Object#hashCode()
-     */
-    @Override public int hashCode() {
-        int result = 1;
-        result = result + ((memberBytes == null) ? 0 : memberBytes.hashCode());
-        return result;
-    }
+  /**
+   * @see Object#hashCode()
+   */
+  @Override public int hashCode() {
+    int result = 1;
+    result = result + ((memberBytes == null) ? 0 : memberBytes.hashCode());
+    return result;
+  }
 
-    /**
-     * @see Object#equals(Object)
-     */
-    @Override public boolean equals(Object obj) {
-        if (obj instanceof CarbonDictionarySortModel) {
-            if (this == obj) {
-                return true;
-            }
-            CarbonDictionarySortModel other = (CarbonDictionarySortModel) obj;
-            if (memberBytes == null) {
-                if (other.memberBytes != null) {
-                    return false;
-                }
-            } else if (!ByteUtil.UnsafeComparer.INSTANCE
-                    .equals(this.memberBytes, other.memberBytes)) {
-                return false;
-            }
-            return true;
-        } else {
-            return false;
+  /**
+   * @see Object#equals(Object)
+   */
+  @Override public boolean equals(Object obj) {
+    if (obj instanceof CarbonDictionarySortModel) {
+      if (this == obj) {
+        return true;
+      }
+      CarbonDictionarySortModel other = (CarbonDictionarySortModel) obj;
+      if (memberBytes == null) {
+        if (other.memberBytes != null) {
+          return false;
         }
+      } else if (!ByteUtil.UnsafeComparer.INSTANCE.equals(this.memberBytes, other.memberBytes)) {
+        return false;
+      }
+      return true;
+    } else {
+      return false;
     }
+  }
 
-    /**
-     * return the surrogate of the member
-     *
-     * @return
-     */
-    public int getKey() {
-        return key;
-    }
+  /**
+   * return the surrogate of the member
+   *
+   * @return
+   */
+  public int getKey() {
+    return key;
+  }
 
-    /**
-     * Returns member buye
-     *
-     * @return
-     */
-    public byte[] getMemberBytes() {
-        return memberBytes;
-    }
+  /**
+   * Returns member buye
+   *
+   * @return
+   */
+  public byte[] getMemberBytes() {
+    return memberBytes;
+  }
 }

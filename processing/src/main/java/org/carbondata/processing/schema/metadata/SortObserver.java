@@ -20,23 +20,23 @@
 package org.carbondata.processing.schema.metadata;
 
 public class SortObserver {
-    /**
-     * is failed
-     */
-    private boolean isFailed;
+  /**
+   * is failed
+   */
+  private boolean isFailed;
 
-    /**
-     * @return the isFailed
-     */
-    public boolean isFailed() {
-        return isFailed;
-    }
+  /**
+   * @return the isFailed
+   */
+  public boolean isFailed() {
+    return isFailed;
+  }
 
-    /**
-     * @param isFailed the isFailed to set
-     */
-    public void setFailed(boolean isFailed) {
-        this.isFailed = isFailed;
-    }
+  /**
+   * @param isFailed the isFailed to set
+   */
+  public void setFailed(boolean isFailed) {
+    this.isFailed = isFailed;
+  }
 
 }
