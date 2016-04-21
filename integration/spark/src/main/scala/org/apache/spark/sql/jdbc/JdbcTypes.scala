@@ -23,13 +23,13 @@ import org.apache.spark.sql.types._
 private[sql] object JdbcTypes extends Logging {
 
   /**
-    * More about JDBC types mapped to Java types:
-    * http://docs.oracle.com/javase/6/docs/technotes/guides/jdbc/getstart/mapping.html#1051555
-    *
-    * Compatibility of ResultSet getter Methods defined in JDBC spec:
-    * http://download.oracle.com/otn-pub/jcp/jdbc-4_1-mrel-spec/jdbc4.1-fr-spec.pdf
-    * page 211
-    */
+   * More about JDBC types mapped to Java types:
+   * http://docs.oracle.com/javase/6/docs/technotes/guides/jdbc/getstart/mapping.html#1051555
+   *
+   * Compatibility of ResultSet getter Methods defined in JDBC spec:
+   * http://download.oracle.com/otn-pub/jcp/jdbc-4_1-mrel-spec/jdbc4.1-fr-spec.pdf
+   * page 211
+   */
   def toPrimitiveDataType(jdbcType: Int): DataType =
     jdbcType match {
       case java.sql.Types.LONGVARCHAR
@@ -57,19 +57,19 @@ private[sql] object JdbcTypes extends Logging {
       // case java.sql.Types.CLOB
 
       // TODO: BLOB only works with getBlob or getBinaryStream
-      //case java.sql.Types.BLOB
+      // case java.sql.Types.BLOB
 
       // TODO: nested types
-      //case java.sql.Types.ARRAY     => ArrayType
-      //case java.sql.Types.STRUCT    => StructType
+      // case java.sql.Types.ARRAY     => ArrayType
+      // case java.sql.Types.STRUCT    => StructType
 
       // TODO: unsupported types
-      //case java.sql.Types.DISTINCT
-      //case java.sql.Types.REF
+      // case java.sql.Types.DISTINCT
+      // case java.sql.Types.REF
 
       // TODO: more about JAVA_OBJECT:
       //   http://docs.oracle.com/javase/6/docs/technotes/guides/jdbc/getstart/mapping.html#1038181
-      //case java.sql.Types.JAVA_OBJECT => BinaryType
+      // case java.sql.Types.JAVA_OBJECT => BinaryType
 
       case _ => sys.error(
         s"Unsupported jdbc datatype")

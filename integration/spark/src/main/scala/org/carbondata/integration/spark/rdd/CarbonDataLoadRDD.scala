@@ -1,20 +1,18 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 
@@ -22,15 +20,17 @@ package org.carbondata.integration.spark.rdd
 
 import java.util.UUID
 
+import scala.collection.JavaConverters._
+
+import org.apache.spark.{Logging, Partition, SparkContext, TaskContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.cubemodel.Partitioner
-import org.apache.spark.{Logging, Partition, SparkContext, TaskContext}
+
 import org.carbondata.common.logging.LogServiceFactory
 import org.carbondata.common.logging.impl.StandardLogService
 import org.carbondata.core.constants.CarbonCommonConstants
-import org.carbondata.core.load.{BlockDetails, LoadMetadataDetails}
-import org.carbondata.core.carbon.CarbonDef
 import org.carbondata.core.datastorage.store.impl.FileFactory
+import org.carbondata.core.load.{BlockDetails, LoadMetadataDetails}
 import org.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.carbondata.integration.spark.Result
 import org.carbondata.integration.spark.load.{CarbonLoadModel, CarbonLoaderUtil}
@@ -40,16 +40,15 @@ import org.carbondata.processing.etl.DataLoadingException
 import org.carbondata.processing.graphgenerator.GraphGenerator
 import org.carbondata.query.datastorage.InMemoryTableStore
 
-import scala.collection.JavaConversions._
-
 /**
-  * this class is use for this rdd to partitioin
-  * @param rddId
-  * @param idx
-  * @param host
-  * @param nodeBlocksDetails
-  */
-class CarbonNodeLoadPartition(rddId: Int, val idx: Int, host:String, val nodeBlocksDetails: Array[BlockDetails])
+ * this class is use for this rdd to partitioin
+ * @param rddId
+ * @param idx
+ * @param host
+ * @param nodeBlocksDetails
+ */
+class CarbonNodeLoadPartition(rddId: Int, val idx: Int, host: String,
+                              val nodeBlocksDetails: Array[BlockDetails])
   extends Partition {
 
   override val index: Int = idx
@@ -60,37 +59,37 @@ class CarbonNodeLoadPartition(rddId: Int, val idx: Int, host:String, val nodeBlo
 }
 
 /**
-  *  Use this RDD class to load data
-  * @param sc
-  * @param result
-  * @param carbonLoadModel
-  * @param storeLocation
-  * @param hdfsStoreLocation
-  * @param kettleHomePath
-  * @param partitioner
-  * @param columinar
-  * @param currentRestructNumber
-  * @param loadCount
-  * @param cubeCreationTime
-  * @param schemaLastUpdatedTime
-  * @param part
-  * @tparam K
-  * @tparam V
-  */
+ * Use this RDD class to load data
+ * @param sc
+ * @param result
+ * @param carbonLoadModel
+ * @param storeLocation
+ * @param hdfsStoreLocation
+ * @param kettleHomePath
+ * @param partitioner
+ * @param columinar
+ * @param currentRestructNumber
+ * @param loadCount
+ * @param cubeCreationTime
+ * @param schemaLastUpdatedTime
+ * @param part
+ * @tparam K
+ * @tparam V
+ */
 class CarbonDataLoadRDD[K, V](
-                           sc: SparkContext,
-                           result: Result[K, V], carbonLoadModel: CarbonLoadModel,
-                           var storeLocation: String,
-                           hdfsStoreLocation: String,
-                           kettleHomePath: String,
-                           partitioner: Partitioner,
-                           columinar: Boolean,
-                           currentRestructNumber: Integer,
-                           loadCount: Integer,
-                           cubeCreationTime: Long,
-                           schemaLastUpdatedTime: Long,
-                           part:Array[(String,Array[BlockDetails])]
-                         )
+                               sc: SparkContext,
+                               result: Result[K, V], carbonLoadModel: CarbonLoadModel,
+                               var storeLocation: String,
+                               hdfsStoreLocation: String,
+                               kettleHomePath: String,
+                               partitioner: Partitioner,
+                               columinar: Boolean,
+                               currentRestructNumber: Integer,
+                               loadCount: Integer,
+                               cubeCreationTime: Long,
+                               schemaLastUpdatedTime: Long,
+                               part: Array[(String, Array[BlockDetails])]
+                               )
   extends RDD[(K, V)](sc, Nil) with Logging {
 
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
@@ -98,7 +97,7 @@ class CarbonDataLoadRDD[K, V](
   override def getPartitions: Array[Partition] = {
     val result = new Array[Partition](part.length)
     for (i <- 0 until result.length) {
-      result(i) = new CarbonNodeLoadPartition(id, i,part(i)._1,part(i)._2)
+      result(i) = new CarbonNodeLoadPartition(id, i, part(i)._1, part(i)._2)
     }
     result
   }
@@ -107,18 +106,18 @@ class CarbonDataLoadRDD[K, V](
     // Do nothing. Hadoop RDD should not be checkpointed.
   }
 
-  override def compute(theSplit: Partition, context: TaskContext) = {
+  override def compute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass().getName());
     val iter = new Iterator[(K, V)] {
       var dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
-      //var loadCount = 0
       var partitionID = "0"
       var model: CarbonLoadModel = _
 
       try {
         val carbonPropertiesFilePath = System.getProperty("carbon.properties.filepath", null)
         if (null == carbonPropertiesFilePath) {
-          System.setProperty("carbon.properties.filepath", System.getProperty("user.dir") + '/' + "conf" + '/' + "carbon.properties");
+          System.setProperty("carbon.properties.filepath",
+            System.getProperty("user.dir") + '/' + "conf" + '/' + "carbon.properties");
         }
         val split = theSplit.asInstanceOf[CarbonNodeLoadPartition]
         logInfo("Input split: " + split.serializableHadoopSplit)
@@ -136,13 +135,18 @@ class CarbonDataLoadRDD[K, V](
           storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()
         }
 
-        val blocksID = carbonLoadModel.getDatabaseName + "_" + carbonLoadModel.getTableName + "_" + UUID.randomUUID()
+        val blocksID = carbonLoadModel.getDatabaseName + "_" + carbonLoadModel.getTableName + "_" +
+          UUID.randomUUID()
         GraphGenerator.blockInfo.put(blocksID, split.nodeBlockDetail)
         carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
         if (carbonLoadModel.isDirectLoad()) {
-          val filelist: java.util.List[String] = new java.util.ArrayList[String](CarbonCommonConstants.CONSTANT_SIZE_TEN)
-          CarbonQueryUtil.getAllFiles(carbonLoadModel.getFactFilePath, filelist, FileFactory.getFileType(carbonLoadModel.getFactFilePath))
-          model = carbonLoadModel.getCopyWithPartition(partitionID, filelist, carbonLoadModel.getCsvHeader(), carbonLoadModel.getCsvDelimiter(), blocksID)
+          val filelist: java.util.List[String] = new
+              java.util.ArrayList[String](CarbonCommonConstants.CONSTANT_SIZE_TEN)
+          CarbonQueryUtil.getAllFiles(carbonLoadModel.getFactFilePath, filelist,
+            FileFactory.getFileType(carbonLoadModel.getFactFilePath))
+          model = carbonLoadModel
+            .getCopyWithPartition(partitionID, filelist, carbonLoadModel.getCsvHeader(),
+              carbonLoadModel.getCsvDelimiter(), blocksID)
         }
         else {
           model = carbonLoadModel.getCopyWithPartition(partitionID, blocksID)
@@ -159,11 +163,11 @@ class CarbonDataLoadRDD[K, V](
         }
         else {
           try {
-            CarbonLoaderUtil.executeGraph(model, storeLocation, hdfsStoreLocation, kettleHomePath, currentRestructNumber);
-            //loadCount = CarbonLoaderUtil.getLoadCount(model, currentRestructNumber);
+            CarbonLoaderUtil.executeGraph(model, storeLocation, hdfsStoreLocation, kettleHomePath,
+              currentRestructNumber);
           } catch {
-            case e: DataLoadingException => if (e.getErrorCode == DataProcessorConstants.BAD_REC_FOUND) {
-              //loadCount = CarbonLoaderUtil.getLoadCount(model, currentRestructNumber);
+            case e: DataLoadingException => if (e.getErrorCode ==
+              DataProcessorConstants.BAD_REC_FOUND) {
               dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS
               logInfo("Bad Record Found")
             } else {
@@ -185,8 +189,9 @@ class CarbonDataLoadRDD[K, V](
                   dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
                   LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, e)
               }
-              if (!isCopyFailed)
+              if (!isCopyFailed) {
                 dataloadStatus = checkAndLoadAggregationTable
+              }
               if (CarbonCommonConstants.STORE_LOADSTATUS_FAILURE.equals(dataloadStatus)) {
                 logInfo("DataLoad failure")
               } else {
@@ -207,27 +212,32 @@ class CarbonDataLoadRDD[K, V](
 
       def checkAndLoadAggregationTable(): String = {
         val schema = model.getCarbonDataLoadSchema
-        val aggTables =schema.getCarbonTable.getAggregateTablesName
+        val aggTables = schema.getCarbonTable.getAggregateTablesName
         if (null != aggTables && !aggTables.isEmpty) {
-          val details = model.getLoadMetadataDetails.toSeq.toArray
+          val details = model.getLoadMetadataDetails.asScala.toSeq.toArray
           val newSlice = CarbonCommonConstants.LOAD_FOLDER + loadCount
           var listOfLoadFolders = CarbonLoaderUtil.getListOfValidSlices(details)
           listOfLoadFolders = CarbonLoaderUtil.addNewSliceNameToList(newSlice, listOfLoadFolders);
           val listOfUpdatedLoadFolders = CarbonLoaderUtil.getListOfUpdatedSlices(details)
           var listOfAllLoadFolders = CarbonQueryUtil.getListOfSlices(details)
-          listOfAllLoadFolders = CarbonLoaderUtil.addNewSliceNameToList(newSlice, listOfAllLoadFolders)
-          val copyListOfLoadFolders = listOfLoadFolders.toList
-          val copyListOfUpdatedLoadFolders = listOfUpdatedLoadFolders.toList
+          listOfAllLoadFolders = CarbonLoaderUtil
+            .addNewSliceNameToList(newSlice, listOfAllLoadFolders)
+          val copyListOfLoadFolders = listOfLoadFolders.asScala.toList
+          val copyListOfUpdatedLoadFolders = listOfUpdatedLoadFolders.asScala.toList
           loadCubeSlices(listOfAllLoadFolders, details)
           var loadFolders = Array[String]()
-          val loadFolder = CarbonLoaderUtil.getAggLoadFolderLocation(newSlice, model.getDatabaseName, model.getTableName, model.getTableName, hdfsStoreLocation, currentRestructNumber)
+          val loadFolder = CarbonLoaderUtil
+            .getAggLoadFolderLocation(newSlice, model.getDatabaseName, model.getTableName,
+              model.getTableName, hdfsStoreLocation, currentRestructNumber)
           if (null != loadFolder) {
             loadFolders :+= loadFolder
           }
-          dataloadStatus = iterateOverAggTables(aggTables, copyListOfLoadFolders, copyListOfUpdatedLoadFolders, loadFolders)
+          dataloadStatus = iterateOverAggTables(aggTables, copyListOfLoadFolders.asJava,
+            copyListOfUpdatedLoadFolders.asJava, loadFolders)
           if (CarbonCommonConstants.STORE_LOADSTATUS_FAILURE.equals(dataloadStatus)) {
             // remove the current slice from memory not the cube
-            CarbonLoaderUtil.removeSliceFromMemory(model.getDatabaseName, model.getTableName, newSlice)
+            CarbonLoaderUtil
+              .removeSliceFromMemory(model.getDatabaseName, model.getTableName, newSlice)
             logInfo(s"Aggregate table creation failed")
           }
           else {
@@ -237,14 +247,19 @@ class CarbonDataLoadRDD[K, V](
         return dataloadStatus
       }
 
-      def loadCubeSlices(listOfAllLoadFolders: java.util.List[String], loadMetadataDetails: Array[LoadMetadataDetails]) = {
+      def loadCubeSlices(listOfAllLoadFolders: java.util.List[String],
+                         loadMetadataDetails: Array[LoadMetadataDetails]) = {
         CarbonProperties.getInstance().addProperty("carbon.cache.used", "false");
-        val cube = InMemoryTableStore.getInstance.loadCubeMetadataIfRequired(model.getSchema, model.getSchema.cubes(0), null, schemaLastUpdatedTime)
-        CarbonQueryUtil.createDataSource(currentRestructNumber, model.getSchema, cube, null, listOfAllLoadFolders, model.getTableName, hdfsStoreLocation, cubeCreationTime, loadMetadataDetails)
+        val cube = InMemoryTableStore.getInstance
+          .loadCubeMetadataIfRequired(model.getSchema, model.getSchema.cubes(0), null,
+            schemaLastUpdatedTime)
+        CarbonQueryUtil.createDataSource(currentRestructNumber, model.getSchema, cube, null,
+          listOfAllLoadFolders, model.getTableName, hdfsStoreLocation, cubeCreationTime,
+          loadMetadataDetails)
       }
 
       def createManualAggregateTable(): String = {
-        val details = model.getLoadMetadataDetails.toSeq.toArray
+        val details = model.getLoadMetadataDetails.asScala.toSeq.toArray
         val listOfAllLoadFolders = CarbonQueryUtil.getListOfSlices(details)
         val listOfLoadFolders = CarbonLoaderUtil.getListOfValidSlices(details)
         val listOfUpdatedLoadFolders = CarbonLoaderUtil.getListOfUpdatedSlices(details)
@@ -252,11 +267,14 @@ class CarbonDataLoadRDD[K, V](
         var loadFolders = Array[String]()
         var restructFolders = Array[String]()
         for (number <- 0 to currentRestructNumber) {
-          restructFolders = CarbonLoaderUtil.getStorelocs(model.getDatabaseName, model.getTableName, model.getTableName, hdfsStoreLocation, number)
+          restructFolders = CarbonLoaderUtil
+            .getStorelocs(model.getDatabaseName, model.getTableName, model.getTableName,
+              hdfsStoreLocation, number)
           loadFolders = loadFolders ++ restructFolders
         }
         val aggTable = model.getAggTableName
-        dataloadStatus = loadAggregationTable(listOfLoadFolders, listOfUpdatedLoadFolders, loadFolders)
+        dataloadStatus = loadAggregationTable(listOfLoadFolders, listOfUpdatedLoadFolders,
+          loadFolders)
         if (CarbonCommonConstants.STORE_LOADSTATUS_FAILURE.equals(dataloadStatus)) {
           logInfo(s"Aggregate table creation failed :: $aggTable")
         } else {
@@ -269,15 +287,17 @@ class CarbonDataLoadRDD[K, V](
         val schema = model.getCarbonDataLoadSchema
         val aggTables = schema.getCarbonTable.getAggregateTablesName
         if (null != aggTables && !aggTables.isEmpty) {
-          val details = model.getLoadMetadataDetails.toSeq.toArray
+          val details = model.getLoadMetadataDetails.asScala.toSeq.toArray
           val listOfLoadFolders = CarbonLoaderUtil.getListOfValidSlices(details)
           val listOfUpdatedLoadFolders = CarbonLoaderUtil.getListOfUpdatedSlices(details)
           val listOfAllLoadFolder = CarbonQueryUtil.getListOfSlices(details)
           loadCubeSlices(listOfAllLoadFolder, details)
           var loadFolders = Array[String]()
-          listOfUpdatedLoadFolders.foreach { sliceNum =>
+          listOfUpdatedLoadFolders.asScala.foreach { sliceNum =>
             val newSlice = CarbonCommonConstants.LOAD_FOLDER + sliceNum
-            val loadFolder = CarbonLoaderUtil.getAggLoadFolderLocation(newSlice, model.getDatabaseName, model.getTableName, model.getTableName, hdfsStoreLocation, currentRestructNumber)
+            val loadFolder = CarbonLoaderUtil
+              .getAggLoadFolderLocation(newSlice, model.getDatabaseName, model.getTableName,
+                model.getTableName, hdfsStoreLocation, currentRestructNumber)
             if (null != loadFolder) {
               loadFolders :+= loadFolder
             }
@@ -285,12 +305,17 @@ class CarbonDataLoadRDD[K, V](
           iterateOverAggTables(aggTables, listOfLoadFolders, listOfUpdatedLoadFolders, loadFolders)
         }
       }
-      //TO-DO Aggregate table needs to be handled
-      def iterateOverAggTables(aggTables: java.util.List[String], listOfLoadFolders: java.util.List[String], listOfUpdatedLoadFolders: java.util.List[String], loadFolders: Array[String]): String = {
+
+      // TODO Aggregate table needs to be handled
+      def iterateOverAggTables(aggTables: java.util.List[String],
+                               listOfLoadFolders: java.util.List[String],
+                               listOfUpdatedLoadFolders: java.util.List[String],
+                               loadFolders: Array[String]): String = {
         model.setAggLoadRequest(true)
-        aggTables.foreach { aggTable =>
+        aggTables.asScala.foreach { aggTable =>
           model.setAggTableName(aggTable)
-          dataloadStatus = loadAggregationTable(listOfLoadFolders, listOfUpdatedLoadFolders, loadFolders)
+          dataloadStatus = loadAggregationTable(listOfLoadFolders, listOfUpdatedLoadFolders,
+            loadFolders)
           if (CarbonCommonConstants.STORE_LOADSTATUS_FAILURE.equals(dataloadStatus)) {
             logInfo(s"Aggregate table creation failed :: aggTable")
             return dataloadStatus
@@ -299,30 +324,40 @@ class CarbonDataLoadRDD[K, V](
         return dataloadStatus
       }
 
-      def loadAggregationTable(listOfLoadFolders: java.util.List[String], listOfUpdatedLoadFolders: java.util.List[String], loadFolders: Array[String]): String = {
+      def loadAggregationTable(listOfLoadFolders: java.util.List[String],
+                               listOfUpdatedLoadFolders: java.util.List[String],
+                               loadFolders: Array[String]): String = {
         var levelCacheKeys: scala.collection.immutable.List[String] = Nil
         if (InMemoryTableStore.getInstance.isLevelCacheEnabled()) {
           val columnList = CarbonLoaderUtil.getColumnListFromAggTable(model)
-          val details = model.getLoadMetadataDetails.toSeq.toArray
-          levelCacheKeys = CarbonQueryUtil.loadRequiredLevels(CarbonQueryUtil.getListOfSlices(details), model.getDatabaseName + '_' + model.getTableName, columnList).toList
+          val details = model.getLoadMetadataDetails.asScala.toSeq.toArray
+          levelCacheKeys = CarbonQueryUtil
+            .loadRequiredLevels(CarbonQueryUtil.getListOfSlices(details),
+              model.getDatabaseName + '_' + model.getTableName, columnList).asScala.toList
         }
         loadFolders.foreach { loadFolder =>
           val restructNumber = CarbonUtil.getRestructureNumber(loadFolder, model.getTableName)
           try {
-            if (CarbonLoaderUtil.isSliceValid(loadFolder, listOfLoadFolders, listOfUpdatedLoadFolders, model.getTableName)) {
+            if (CarbonLoaderUtil
+              .isSliceValid(loadFolder, listOfLoadFolders, listOfUpdatedLoadFolders,
+                model.getTableName)) {
               model.setFactStoreLocation(loadFolder)
-              CarbonLoaderUtil.executeGraph(model, storeLocation, hdfsStoreLocation, kettleHomePath, currentRestructNumber)
+              CarbonLoaderUtil.executeGraph(model, storeLocation, hdfsStoreLocation, kettleHomePath,
+                currentRestructNumber)
             } else {
-              CarbonLoaderUtil.createEmptyLoadFolder(model, loadFolder, hdfsStoreLocation, restructNumber)
+              CarbonLoaderUtil
+                .createEmptyLoadFolder(model, loadFolder, hdfsStoreLocation, restructNumber)
             }
           } catch {
             case e: Exception =>
-              LogServiceFactory.getLogService.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, e)
+              LogServiceFactory.getLogService
+                .error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, e)
               dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
           } finally {
             updateLevelCacheStatus(levelCacheKeys)
             if (!CarbonCommonConstants.STORE_LOADSTATUS_FAILURE.equals(dataloadStatus)) {
-              val loadName = loadFolder.substring(loadFolder.indexOf(CarbonCommonConstants.LOAD_FOLDER))
+              val loadName = loadFolder
+                .substring(loadFolder.indexOf(CarbonCommonConstants.LOAD_FOLDER))
               try {
                 CarbonLoaderUtil.copyCurrentLoadToHDFS(model, loadName, listOfUpdatedLoadFolders)
               }

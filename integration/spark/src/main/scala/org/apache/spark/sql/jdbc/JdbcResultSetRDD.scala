@@ -18,16 +18,12 @@
 package org.apache.spark.sql.jdbc
 
 import java.sql.ResultSet
-import org.apache.spark.sql.catalyst.expressions._
-import org.apache.spark.sql.catalyst.plans.logical._
-import org.apache.spark.sql.types._
-import org.apache.spark.sql.execution.LogicalRDD
-import org.apache.spark.Logging
-import org.apache.spark.rdd.JdbcRDDExt
-import org.apache.spark.rdd.RDD
 
-//import org.apache.spark.sql.Row
+import org.apache.spark.Logging
+import org.apache.spark.rdd.{JdbcRDDExt, RDD}
 import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.expressions._
+import org.apache.spark.sql.types._
 
 private[sql] object JdbcResultSetRDD extends Logging {
 
@@ -47,9 +43,11 @@ private[sql] object JdbcResultSetRDD extends Logging {
     jdbcResultSet.map(asRow(_, row, schema.fields))
   }
 
-  private def asRow(rs: ResultSet, row: GenericMutableRow, schema: Seq[StructField]): InternalRow = {
+  private def asRow(rs: ResultSet,
+                    row: GenericMutableRow,
+                    schema: Seq[StructField]): InternalRow = {
     schema.zipWithIndex.foreach {
-      case (StructField(name, dataType, nullable, _), i) => {
+      case (StructField(name, dataType, nullable, _), i) =>
         dataType match {
           case StringType => row.update(i, rs.getString(i + 1))
           case DecimalType() => row.update(i, rs.getBigDecimal(i + 1))
@@ -66,7 +64,6 @@ private[sql] object JdbcResultSetRDD extends Logging {
             s"Unsupported jdbc datatype")
         }
         if (rs.wasNull) row.update(i, null)
-      }
     }
 
     row

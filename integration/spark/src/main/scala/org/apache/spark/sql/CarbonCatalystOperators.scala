@@ -1,53 +1,41 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package org.apache.spark.sql
 
-import org.apache.spark.sql.catalyst.plans.logical.UnaryNode
-import org.apache.spark.sql.catalyst.expressions.NamedExpression
-import org.apache.spark.sql.catalyst.expressions.AttributeSet
-import org.apache.spark.sql.catalyst.expressions.PredicateHelper
-import org.apache.spark.sql.catalyst.expressions.SplitEvaluation
-import org.apache.spark.sql.catalyst.trees.TreeNodeRef
-import org.apache.spark.sql.catalyst.expressions.Alias
-import org.apache.spark.sql.catalyst.expressions.Expression
-import org.apache.spark.sql.catalyst.expressions.Attribute
-import org.apache.spark.sql.catalyst.expressions.AttributeReference
-import org.apache.spark.sql.catalyst.expressions.AggregateExpression1
-import org.apache.spark.sql.types.{StringType, TimestampType}
-import org.apache.spark.sql.catalyst.plans.logical._
-import org.apache.spark.sql.catalyst.expressions.SortOrder
-import org.apache.spark.sql.types.BooleanType
-import org.apache.spark.sql.catalyst.expressions._
-import org.apache.spark.sql.catalyst.expressions.PartialAggregate1
-import org.carbondata.integration.spark.agg._
 import scala.collection.mutable.MutableList
+
+import org.apache.spark.sql.catalyst.expressions._
+import org.apache.spark.sql.catalyst.plans.logical.{UnaryNode, _}
+import org.apache.spark.sql.catalyst.trees.TreeNodeRef
 import org.apache.spark.sql.cubemodel.tableModel
 import org.apache.spark.sql.hive.HiveContext
+import org.apache.spark.sql.types.{BooleanType, StringType, TimestampType}
+
+import org.carbondata.integration.spark.agg._
 
 /**
-  * Top command
-  */
-case class Top(count: Int, topOrBottom: Int, dim: NamedExpression, msr: NamedExpression, child: LogicalPlan) extends UnaryNode {
-  def output = child.output
+ * Top command
+ */
+case class Top(count: Int, topOrBottom: Int, dim: NamedExpression, msr: NamedExpression,
+               child: LogicalPlan) extends UnaryNode {
+  def output: Seq[Attribute] = child.output
 
-  override def references = {
+  override def references: AttributeSet = {
     val list = List(dim, msr)
     AttributeSet(list.flatMap(_.references))
   }
@@ -61,54 +49,55 @@ object getDB {
 }
 
 /**
-  * Shows schemas
-  */
+ * Shows schemas
+ */
 case class ShowSchemaCommand(cmd: Option[String]) extends LogicalPlan with Command {
   override def children: Seq[LogicalPlan] = Seq.empty
 
-  override def output =
+  override def output: Seq[Attribute] =
     Seq(AttributeReference("result", StringType, nullable = false)())
 }
 
 /**
-  * Shows AggregateTables of a schema
-  */
+ * Shows AggregateTables of a schema
+ */
 case class ShowCreateCubeCommand(cm: tableModel) extends LogicalPlan with Command {
   override def children: Seq[LogicalPlan] = Seq.empty
 
-  override def output =
+  override def output: Seq[Attribute] =
     Seq(AttributeReference("createCubeCmd", StringType, nullable = false)())
 }
 
 /**
-  * Shows AggregateTables of a schema
-  */
-case class ShowAggregateTablesCommand(schemaNameOp: Option[String]) extends LogicalPlan with Command {
+ * Shows AggregateTables of a schema
+ */
+case class ShowAggregateTablesCommand(schemaNameOp: Option[String])
+  extends LogicalPlan with Command {
   override def children: Seq[LogicalPlan] = Seq.empty
 
-  override def output =
+  override def output: Seq[Attribute] =
     Seq(AttributeReference("tableName", StringType, nullable = false)())
 }
 
 /**
-  * Shows cubes in schema
-  */
+ * Shows cubes in schema
+ */
 case class ShowCubeCommand(schemaNameOp: Option[String]) extends LogicalPlan with Command {
   override def children: Seq[LogicalPlan] = Seq.empty
 
-  override def output =
+  override def output: Seq[Attribute] =
     Seq(AttributeReference("cubeName", StringType, nullable = false)(),
       AttributeReference("isRegisteredWithSpark", BooleanType, nullable = false)())
 }
 
 
 /**
-  * Shows cubes in schema
-  */
-case class ShowAllCubeCommand() extends LogicalPlan with Command /*with ControlCommand*/ {
+ * Shows cubes in schema
+ */
+case class ShowAllCubeCommand() extends LogicalPlan with Command {
   override def children: Seq[LogicalPlan] = Seq.empty
 
-  override def output =
+  override def output: Seq[Attribute] =
     Seq(AttributeReference("schemaName", StringType, nullable = false)(),
       AttributeReference("cubeName", StringType, nullable = false)(),
       AttributeReference("isRegisteredWithSpark", BooleanType, nullable = false)())
@@ -121,18 +110,19 @@ case class SuggestAggregateCommand(
                                     cubeName: String) extends LogicalPlan with Command {
   override def children: Seq[LogicalPlan] = Seq.empty
 
-  override def output =
+  override def output: Seq[Attribute] =
     Seq(AttributeReference("SuggestionType", StringType, nullable = false)(),
       AttributeReference("Suggestion", StringType, nullable = false)())
 }
 
 /**
-  * Shows cubes in schema
-  */
-case class ShowTablesDetailedCommand(schemaNameOp: Option[String]) extends LogicalPlan with Command {
+ * Shows cubes in schema
+ */
+case class ShowTablesDetailedCommand(schemaNameOp: Option[String])
+  extends LogicalPlan with Command {
   override def children: Seq[LogicalPlan] = Seq.empty
 
-  override def output =
+  override def output: Seq[Attribute] =
     Seq(AttributeReference("TABLE_CAT", StringType, nullable = true)(),
       AttributeReference("TABLE_SCHEM", StringType, nullable = false)(),
       AttributeReference("TABLE_NAME", StringType, nullable = false)(),
@@ -141,14 +131,14 @@ case class ShowTablesDetailedCommand(schemaNameOp: Option[String]) extends Logic
 }
 
 /**
-  * Shows Loads in a cube
-  */
+ * Shows Loads in a cube
+ */
 case class ShowLoadsCommand(schemaNameOp: Option[String], cube: String, limit: Option[String])
   extends LogicalPlan with Command {
 
   override def children: Seq[LogicalPlan] = Seq.empty
 
-  override def output =
+  override def output: Seq[Attribute] =
     Seq(AttributeReference("LoadSequenceId", StringType, nullable = false)(),
       AttributeReference("Status", StringType, nullable = false)(),
       AttributeReference("Load Start Time", TimestampType, nullable = false)(),
@@ -156,9 +146,10 @@ case class ShowLoadsCommand(schemaNameOp: Option[String], cube: String, limit: O
 }
 
 /**
-  * Describe formatted for hive table
-  */
-case class DescribeFormattedCommand(sql: String, tblIdentifier: Seq[String]) extends LogicalPlan with Command {
+ * Describe formatted for hive table
+ */
+case class DescribeFormattedCommand(sql: String, tblIdentifier: Seq[String])
+  extends LogicalPlan with Command {
   override def children: Seq[LogicalPlan] = Seq.empty
 
   override def output: Seq[AttributeReference] =
@@ -168,49 +159,58 @@ case class DescribeFormattedCommand(sql: String, tblIdentifier: Seq[String]) ext
 }
 
 /**
-  * A pattern that matches any number of project or filter operations on top of another relational
-  * operator.  All filter operators are collected and their conditions are broken up and returned
-  * together with the top project operator.
-  * [[org.apache.spark.sql.catalyst.expressions.Alias Aliases]] are in-lined/substituted if
-  * necessary.
-  */
+ * A pattern that matches any number of project or filter operations on top of another relational
+ * operator.  All filter operators are collected and their conditions are broken up and returned
+ * together with the top project operator.
+ * [[org.apache.spark.sql.catalyst.expressions.Alias Aliases]] are in-lined/substituted if
+ * necessary.
+ */
 object PhysicalOperation1 extends PredicateHelper {
-  type ReturnType = (Seq[NamedExpression], Seq[Expression], Option[Seq[Expression]], Option[Seq[SortOrder]], Option[Expression], LogicalPlan)
+  type ReturnType = (Seq[NamedExpression], Seq[Expression], Option[Seq[Expression]],
+    Option[Seq[SortOrder]], Option[Expression], LogicalPlan)
 
   def apply(plan: LogicalPlan): Option[ReturnType] = {
-    val (fields, filters, child, aliases, groupby, sortOrder, limit) = collectProjectsAndFilters(plan)
+    val (fields, filters, child, aliases, groupby, sortOrder, limit) =
+      collectProjectsAndFilters(plan)
 
     Some((fields.getOrElse(child.output), filters, groupby, sortOrder, limit, child))
   }
 
   /**
-    * Collects projects and filters, in-lining/substituting aliases if necessary.  Here are two
-    * examples for alias in-lining/substitution.  Before:
-    * {{{
-    *   SELECT c1 FROM (SELECT key AS c1 FROM t1) t2 WHERE c1 > 10
-    *   SELECT c1 AS c2 FROM (SELECT key AS c1 FROM t1) t2 WHERE c1 > 10
-    * }}}
-    * After:
-    * {{{
-    *   SELECT key AS c1 FROM t1 WHERE key > 10
-    *   SELECT key AS c2 FROM t1 WHERE key > 10
-    * }}}
-    */
+   * Collects projects and filters, in-lining/substituting aliases if necessary.  Here are two
+   * examples for alias in-lining/substitution.  Before:
+   * {{{
+   *   SELECT c1 FROM (SELECT key AS c1 FROM t1) t2 WHERE c1 > 10
+   *   SELECT c1 AS c2 FROM (SELECT key AS c1 FROM t1) t2 WHERE c1 > 10
+   * }}}
+   * After:
+   * {{{
+   *   SELECT key AS c1 FROM t1 WHERE key > 10
+   *   SELECT key AS c2 FROM t1 WHERE key > 10
+   * }}}
+   */
   def collectProjectsAndFilters(plan: LogicalPlan):
-  (Option[Seq[NamedExpression]], Seq[Expression], LogicalPlan, Map[Attribute, Expression], Option[Seq[Expression]], Option[Seq[SortOrder]], Option[Expression]) =
+  (Option[Seq[NamedExpression]], Seq[Expression], LogicalPlan,
+    Map[Attribute, Expression], Option[Seq[Expression]],
+    Option[Seq[SortOrder]], Option[Expression]) =
     plan match {
       case Project(fields, child) =>
-        val (_, filters, other, aliases, groupby, sortOrder, limit) = collectProjectsAndFilters(child)
+        val (_, filters, other, aliases, groupby, sortOrder, limit) = collectProjectsAndFilters(
+          child)
         val substitutedFields = fields.map(substitute(aliases)).asInstanceOf[Seq[NamedExpression]]
-        (Some(substitutedFields), filters, other, collectAliases(substitutedFields), groupby, sortOrder, limit)
+        (Some(substitutedFields), filters, other, collectAliases(
+          substitutedFields), groupby, sortOrder, limit)
 
       case Filter(condition, child) =>
-        val (fields, filters, other, aliases, groupby, sortOrder, limit) = collectProjectsAndFilters(child)
+        val (fields, filters, other, aliases, groupby, sortOrder, limit) =
+          collectProjectsAndFilters(child)
         val substitutedCondition = substitute(aliases)(condition)
-        (fields, filters ++ splitConjunctivePredicates(substitutedCondition), other, aliases, groupby, sortOrder, limit)
+        (fields, filters ++ splitConjunctivePredicates(
+          substitutedCondition), other, aliases, groupby, sortOrder, limit)
 
       case Aggregate(groupingExpressions, aggregateExpressions, child) =>
-        val (fields, filters, other, aliases, _, sortOrder, limit) = collectProjectsAndFilters(child)
+        val (fields, filters, other, aliases, _, sortOrder, limit) = collectProjectsAndFilters(
+          child)
 
         var aggExps: Seq[AggregateExpression1] = Nil
         aggregateExpressions.foreach(v => {
@@ -218,13 +218,15 @@ object PhysicalOperation1 extends PredicateHelper {
           aggExps = aggExps ++ list
         })
 
-        (fields, filters, other, aliases ++ collectAliases(aggregateExpressions), Some(aggregateExpressions), sortOrder, limit)
+        (fields, filters, other, aliases ++ collectAliases(aggregateExpressions), Some(
+          aggregateExpressions), sortOrder, limit)
       case Sort(order, _, child) =>
         val (fields, filters, other, aliases, groupby, _, limit) = collectProjectsAndFilters(child)
         val substitutedOrder = order.map(s => SortOrder(substitute(aliases)(s.child), s.direction))
         (fields, filters, other, aliases, groupby, Some(substitutedOrder), limit)
       case Limit(limitExpr, child) =>
-        val (fields, filters, other, aliases, groupby, sortOrder, _) = collectProjectsAndFilters(child)
+        val (fields, filters, other, aliases, groupby, sortOrder, _) = collectProjectsAndFilters(
+          child)
         (fields, filters, other, aliases, groupby, sortOrder, Some(limitExpr))
       case other =>
         (None, Nil, other, Map.empty, None, None, None)
@@ -234,7 +236,7 @@ object PhysicalOperation1 extends PredicateHelper {
     val exprList = expr match {
       case d: AggregateExpression1 => d :: Nil
       case Alias(ref, name) => findAggreagateExpression(ref)
-      case other => {
+      case other =>
         var listout: Seq[AggregateExpression1] = Nil
 
         other.children.foreach(v => {
@@ -242,26 +244,31 @@ object PhysicalOperation1 extends PredicateHelper {
           listout = listout ++ list
         })
         listout
-      }
     }
     exprList
   }
 
   def collectProjectsAndFilters1(plan: LogicalPlan):
-  (Option[Seq[NamedExpression]], Seq[Expression], LogicalPlan, Map[Attribute, Expression], Option[Seq[Expression]], Option[Seq[SortOrder]], Option[Expression]) =
+  (Option[Seq[NamedExpression]], Seq[Expression], LogicalPlan, Map[Attribute, Expression],
+    Option[Seq[Expression]], Option[Seq[SortOrder]], Option[Expression]) =
     plan match {
       case Project(fields, child) =>
-        val (_, filters, other, aliases, groupby, sortOrder, limit) = collectProjectsAndFilters(child)
+        val (_, filters, other, aliases, groupby, sortOrder, limit) = collectProjectsAndFilters(
+          child)
         val substitutedFields = fields.map(substitute(aliases)).asInstanceOf[Seq[NamedExpression]]
-        (Some(substitutedFields), filters, other, collectAliases(substitutedFields), groupby, sortOrder, limit)
+        (Some(substitutedFields), filters, other, collectAliases(
+          substitutedFields), groupby, sortOrder, limit)
 
       case Filter(condition, child) =>
-        val (fields, filters, other, aliases, groupby, sortOrder, limit) = collectProjectsAndFilters(child)
+        val (fields, filters, other, aliases, groupby, sortOrder, limit) =
+          collectProjectsAndFilters(child)
         val substitutedCondition = substitute(aliases)(condition)
-        (fields, filters ++ splitConjunctivePredicates(substitutedCondition), other, aliases, groupby, sortOrder, limit)
+        (fields, filters ++ splitConjunctivePredicates(
+          substitutedCondition), other, aliases, groupby, sortOrder, limit)
 
       case Aggregate(groupingExpressions, aggregateExpressions, child) =>
-        val (fields, filters, other, aliases, _, sortOrder, limit) = collectProjectsAndFilters(child)
+        val (fields, filters, other, aliases, _, sortOrder, limit) = collectProjectsAndFilters(
+          child)
         val aggExps = aggregateExpressions.map {
           case Alias(ref, name) => ref
           case other => other
@@ -269,23 +276,25 @@ object PhysicalOperation1 extends PredicateHelper {
           case d: AggregateExpression1 => true
           case _ => false
         }
-        (fields, filters, other, aliases ++ collectAliases(aggregateExpressions), Some(aggExps), sortOrder, limit)
+        (fields, filters, other, aliases ++ collectAliases(aggregateExpressions), Some(
+          aggExps), sortOrder, limit)
       case Sort(order, _, child) =>
         val (fields, filters, other, aliases, groupby, _, limit) = collectProjectsAndFilters(child)
         val substitutedOrder = order.map(s => SortOrder(substitute(aliases)(s.child), s.direction))
         (fields, filters, other, aliases, groupby, Some(substitutedOrder), limit)
       case Limit(limitExpr, child) =>
-        val (fields, filters, other, aliases, groupby, sortOrder, _) = collectProjectsAndFilters(child)
+        val (fields, filters, other, aliases, groupby, sortOrder, _) = collectProjectsAndFilters(
+          child)
         (fields, filters, other, aliases, groupby, sortOrder, Some(limitExpr))
       case other =>
         (None, Nil, other, Map.empty, None, None, None)
     }
 
-  def collectAliases(fields: Seq[Expression]) = fields.collect {
+  private def collectAliases(fields: Seq[Expression]) = fields.collect {
     case a@Alias(child, _) => a.toAttribute.asInstanceOf[Attribute] -> child
   }.toMap
 
-  def substitute(aliases: Map[Attribute, Expression])(expr: Expression) = expr.transform {
+  private def substitute(aliases: Map[Attribute, Expression])(expr: Expression) = expr.transform {
     case a@Alias(ref: AttributeReference, name) =>
       aliases.get(ref).map(Alias(_, name)(a.exprId, a.qualifiers)).getOrElse(a)
 
@@ -295,25 +304,26 @@ object PhysicalOperation1 extends PredicateHelper {
 }
 
 /**
-  * Matches a logical aggregation that can be performed on distributed data in two steps.  The first
-  * operates on the data in each partition performing partial aggregation for each group.  The second
-  * occurs after the shuffle and completes the aggregation.
-  *
-  * This pattern will only match if all aggregate expressions can be computed partially and will
-  * return the rewritten aggregation expressions for both phases.
-  *
-  * The returned values for this match are as follows:
-  * - Grouping attributes for the final aggregation.
-  * - Aggregates for the final aggregation.
-  * - Grouping expressions for the partial aggregation.
-  * - Partial aggregate expressions.
-  * - Input to the aggregation.
-  */
+ * Matches a logical aggregation that can be performed on distributed data in two steps.  The first
+ * operates on the data in each partition performing partial aggregation for each group.  The second
+ * occurs after the shuffle and completes the aggregation.
+ *
+ * This pattern will only match if all aggregate expressions can be computed partially and will
+ * return the rewritten aggregation expressions for both phases.
+ *
+ * The returned values for this match are as follows:
+ * - Grouping attributes for the final aggregation.
+ * - Aggregates for the final aggregation.
+ * - Grouping expressions for the partial aggregation.
+ * - Partial aggregate expressions.
+ * - Input to the aggregation.
+ */
 object PartialAggregation {
   type ReturnType =
   (Seq[Attribute], Seq[NamedExpression], Seq[Expression], Seq[NamedExpression], LogicalPlan)
 
-  def convertAggregatesForPushdown(convertUnknown: Boolean, rewrittenAggregateExpressions: Seq[Expression]) = {
+  private def convertAggregatesForPushdown(convertUnknown: Boolean,
+                                   rewrittenAggregateExpressions: Seq[Expression]) = {
     var counter: Int = 0
     var updatedExpressions = MutableList[Expression]()
     rewrittenAggregateExpressions.foreach(v => {
@@ -345,16 +355,23 @@ object PartialAggregation {
     } else {
       current.transform {
         case a@Sum(attr: AttributeReference) => SumCarbon(makePositionLiteral(attr, index))
-        case a@Sum(cast@Cast(attr: AttributeReference, _)) => SumCarbon(makePositionLiteral(attr, index), cast.dataType)
+        case a@Sum(cast@Cast(attr: AttributeReference, _)) => SumCarbon(
+          makePositionLiteral(attr, index), cast.dataType)
         case a@Average(attr: AttributeReference) => AverageCarbon(makePositionLiteral(attr, index))
-        case a@Average(cast@Cast(attr: AttributeReference, _)) => AverageCarbon(makePositionLiteral(attr, index), cast.dataType)
+        case a@Average(cast@Cast(attr: AttributeReference, _)) => AverageCarbon(
+          makePositionLiteral(attr, index), cast.dataType)
         case a@Min(attr: AttributeReference) => MinCarbon(makePositionLiteral(attr, index))
-        case a@Min(cast@Cast(attr: AttributeReference, _)) => MinCarbon(makePositionLiteral(attr, index), cast.dataType)
+        case a@Min(cast@Cast(attr: AttributeReference, _)) => MinCarbon(
+          makePositionLiteral(attr, index), cast.dataType)
         case a@Max(attr: AttributeReference) => MaxCarbon(makePositionLiteral(attr, index))
-        case a@Max(cast@Cast(attr: AttributeReference, _)) => MaxCarbon(makePositionLiteral(attr, index), cast.dataType)
-        case a@SumDistinct(attr: AttributeReference) => SumDistinctCarbon(makePositionLiteral(attr, index))
-        case a@SumDistinct(cast@Cast(attr: AttributeReference, _)) => SumDistinctCarbon(makePositionLiteral(attr, index), cast.dataType)
-        case a@CountDistinct(attr: AttributeReference) => CountDistinctCarbon(makePositionLiteral(attr, index))
+        case a@Max(cast@Cast(attr: AttributeReference, _)) => MaxCarbon(
+          makePositionLiteral(attr, index), cast.dataType)
+        case a@SumDistinct(attr: AttributeReference) => SumDistinctCarbon(
+          makePositionLiteral(attr, index))
+        case a@SumDistinct(cast@Cast(attr: AttributeReference, _)) => SumDistinctCarbon(
+          makePositionLiteral(attr, index), cast.dataType)
+        case a@CountDistinct(attr: AttributeReference) => CountDistinctCarbon(
+          makePositionLiteral(attr, index))
         case a@CountDistinct(childSeq) if (childSeq.size == 1) =>
           childSeq(0) match {
             case attr: AttributeReference => CountDistinctCarbon(makePositionLiteral(attr, index))
@@ -376,7 +393,7 @@ object PartialAggregation {
   def unapply(combinedPlan: (LogicalPlan, Boolean)): Option[ReturnType] = combinedPlan._1 match {
     case Aggregate(groupingExpressions, aggregateExpressionsOrig, child) =>
 
-      //if detailed query dont convert aggregate expressions to Carbon Aggregate expressions
+      // if detailed query dont convert aggregate expressions to Carbon Aggregate expressions
       val aggregateExpressions =
         if (combinedPlan._2) aggregateExpressionsOrig
         else convertAggregatesForPushdown(false, aggregateExpressionsOrig)
@@ -420,10 +437,12 @@ object PartialAggregation {
           (namedGroupingExpressions.values ++
             partialEvaluations.values.flatMap(_.partialEvaluations)).toSeq
 
-        // Convert the other aggregations for push down to Carbon layer. Here don't touch earlier converted native carbon aggregators.
+        // Convert the other aggregations for push down to Carbon layer. Here don't touch earlier
+        // converted native carbon aggregators.
         val convertedPartialComputation =
           if (combinedPlan._2) partialComputation
-          else convertAggregatesForPushdown(true, partialComputation).asInstanceOf[Seq[NamedExpression]]
+          else convertAggregatesForPushdown(true, partialComputation)
+            .asInstanceOf[Seq[NamedExpression]]
 
         val namedGroupingAttributes = namedGroupingExpressions.values.map(_.toAttribute).toSeq
 

@@ -1,68 +1,61 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package org.apache.spark.sql
 
 import java.io.{DataInput, DataOutput}
 
-import org.apache.spark.sql.catalyst.expressions.{AggregateExpression1, AggregateFunction1, GenericMutableRow}
-import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder
-import org.carbondata.query.aggregator.{MeasureAggregator, CustomMeasureAggregator}
-import org.carbondata.query.expression.ColumnExpression
-import org.carbondata.query.carbonfilterinterface.RowIntf
-
 import scala.collection.JavaConverters._
 
+import org.apache.spark.sql.catalyst.expressions.{AggregateExpression1, AggregateFunction1, GenericMutableRow}
+
+import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder
+import org.carbondata.query.aggregator.{CustomMeasureAggregator, MeasureAggregator}
+import org.carbondata.query.carbonfilterinterface.RowIntf
+import org.carbondata.query.expression.ColumnExpression
+
 /**
-  * Custom Aggregator serialized and used to pushdown all aggregate functions from spark layer with expressions to Carbon layer
-  */
-@SerialVersionUID(-3787749110799088697l)
-class SparkUnknownCarbonAggregator(partialAggregate: AggregateExpression1) extends CustomMeasureAggregator {
+ * Custom Aggregator serialized and used to pushdown all aggregate functions from spark layer with
+ * expressions to Carbon layer
+ */
+@SerialVersionUID(-3787749110799088697L)
+class SparkUnknownCarbonAggregator(partialAggregate: AggregateExpression1)
+  extends CustomMeasureAggregator {
 
-  def this() = this(null) //For serializattion
-
+  val result = scala.collection.mutable.MutableList[GenericMutableRow]()
   @transient var partialFunction: AggregateFunction1 = null
 
   @transient var allColumns: java.util.List[ColumnExpression] = null
-
-  val result = scala.collection.mutable.MutableList[GenericMutableRow]()
-
-  def getPartialFunction = {
-    if (partialFunction == null) {
-      partialFunction = partialAggregate.newInstance
-    }
-    partialFunction
-  }
-
   var isRowsAggregated: Boolean = false
 
-  override def agg(newVal: Double) = {
+  def this() = this(null) // For serializattion
+
+  override def agg(newVal: Double): Unit = {
 
     throw new UnsupportedOperationException("agg(double) is not a valid method for aggregation");
   }
 
-  override def agg(newVal: Any) = {
+  override def agg(newVal: Any): Unit = {
     throw new UnsupportedOperationException("agg(Object) is not a valid method for aggregation");
   }
 
-  override def agg(newVal: CarbonReadDataHolder, index: Int) = {
-    throw new UnsupportedOperationException("agg(CarbonReadDataHolder, int) is not a valid method for aggregation");
+  override def agg(newVal: CarbonReadDataHolder, index: Int): Unit = {
+    throw new UnsupportedOperationException(
+      "agg(CarbonReadDataHolder, int) is not a valid method for aggregation");
   }
 
   override def getByteArray(): Array[Byte] = {
@@ -78,7 +71,8 @@ class SparkUnknownCarbonAggregator(partialAggregate: AggregateExpression1) exten
   }
 
   override def getBigDecimalValue(): java.math.BigDecimal = {
-    throw new UnsupportedOperationException("getBigDecimalValue() is not a valid method for result");
+    throw new
+        UnsupportedOperationException("getBigDecimalValue() is not a valid method for result");
   }
 
   override def getValueObject(): Object = {
@@ -90,13 +84,13 @@ class SparkUnknownCarbonAggregator(partialAggregate: AggregateExpression1) exten
     output.asInstanceOf[Object];
   }
 
-  override def merge(aggregator: MeasureAggregator) = {
+  override def merge(aggregator: MeasureAggregator): Unit = {
     if (result.size > 0) {
       result.iterator.foreach(v => {
         getPartialFunction.update(v)
       })
 
-      //clear result after submitting to partial function
+      // clear result after submitting to partial function
       result.clear
     }
 
@@ -111,28 +105,34 @@ class SparkUnknownCarbonAggregator(partialAggregate: AggregateExpression1) exten
     }
   }
 
+  private def getPartialFunction = {
+    if (partialFunction == null) {
+      partialFunction = partialAggregate.newInstance
+    }
+    partialFunction
+  }
+
   override def isFirstTime(): Boolean = {
     isRowsAggregated
   }
 
-  override def writeData(output: DataOutput) = {
+  override def writeData(output: DataOutput): Unit = {
     throw new UnsupportedOperationException();
   }
 
-  override def readData(inPut: DataInput) = {
+  override def readData(inPut: DataInput): Unit = {
     throw new UnsupportedOperationException();
   }
 
-  override def merge(value: Array[Byte]) {
+  override def merge(value: Array[Byte]): Unit = {
 
     throw new UnsupportedOperationException();
   }
 
   override def get(): MeasureAggregator = {
-    //Get means, Partition level aggregation is done and pending for merge with other or getValue
+    // Get means, Partition level aggregation is done and pending for merge with other or getValue
     // So evaluate and store the temporary result here
 
-    //    result += getPartialFunction.eval(null);
     this
   }
 
@@ -144,30 +144,30 @@ class SparkUnknownCarbonAggregator(partialAggregate: AggregateExpression1) exten
     return new SparkUnknownCarbonAggregator(partialAggregate)
   }
 
-  override def setNewValue(newVal: Object) = {
+  override def setNewValue(newVal: Object): Unit = {
 
   }
 
-  override def getColumns() = {
+  override def getColumns(): java.util.List[ColumnExpression] = {
     if (allColumns == null) {
-      allColumns = partialAggregate.flatMap(_ collect { case a: CarbonBoundReference => a.colExp }).asJava
+      allColumns = partialAggregate.flatMap(_ collect { case a: CarbonBoundReference => a.colExp })
+        .asJava
     }
     allColumns
   }
 
-  override def agg(row: RowIntf) = {
+  override def agg(row: RowIntf): Unit = {
     isRowsAggregated = true
     val values = row.getValues().toSeq.map { value =>
       value match {
         case s: String => org.apache.spark.unsafe.types.UTF8String.fromString(s)
         // solve: java.math.BigDecimal cannot be cast to org.apache.spark.sql.types.Decimal
-        case d: java.math.BigDecimal =>      {
-            val javaDecVal = new java.math.BigDecimal(d.toString())
-            val scalaDecVal = new scala.math.BigDecimal(javaDecVal)
-            val decConverter = new org.apache.spark.sql.types.Decimal()
+        case d: java.math.BigDecimal =>
+          val javaDecVal = new java.math.BigDecimal(d.toString())
+          val scalaDecVal = new scala.math.BigDecimal(javaDecVal)
+          val decConverter = new org.apache.spark.sql.types.Decimal()
 
-            decConverter.set(scalaDecVal)
-        }
+          decConverter.set(scalaDecVal)
         case _ => value
       }
     }

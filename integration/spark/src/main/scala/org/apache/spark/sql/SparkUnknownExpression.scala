@@ -1,34 +1,36 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package org.apache.spark.sql
 
-import org.apache.spark.sql.catalyst.expressions.{Expression => SparkExpression, GenericMutableRow}
-import org.carbondata.integration.spark.util.CarbonScalaUtil
-import org.carbondata.query.expression.exception.FilterUnsupportedException
-import org.carbondata.query.expression.{ColumnExpression, ExpressionResult, Expression}
-import org.carbondata.query.expression.conditional.ConditionalExpression
-import org.carbondata.query.carbonfilterinterface.{ExpressionType, RowIntf}
+import java.util.List
 
 import scala.collection.JavaConverters._
 
-class SparkUnknownExpression(sparkExp: SparkExpression) extends Expression with ConditionalExpression {
+import org.apache.spark.sql.catalyst.expressions.{Expression => SparkExpression, GenericMutableRow}
+
+import org.carbondata.integration.spark.util.CarbonScalaUtil
+import org.carbondata.query.carbonfilterinterface.{ExpressionType, RowIntf}
+import org.carbondata.query.expression.{ColumnExpression, Expression, ExpressionResult}
+import org.carbondata.query.expression.conditional.ConditionalExpression
+import org.carbondata.query.expression.exception.FilterUnsupportedException
+
+class SparkUnknownExpression(sparkExp: SparkExpression)
+  extends Expression with ConditionalExpression {
 
   children.addAll(getColumnList())
 
@@ -37,12 +39,11 @@ class SparkUnknownExpression(sparkExp: SparkExpression) extends Expression with 
     val values = carbonRowInstance.getValues().toSeq.map { value =>
       value match {
         case s: String => org.apache.spark.unsafe.types.UTF8String.fromString(s)
-        case d: java.math.BigDecimal =>      {
+        case d: java.math.BigDecimal =>
           val javaDecVal = new java.math.BigDecimal(d.toString())
           val scalaDecVal = new scala.math.BigDecimal(javaDecVal)
           val decConverter = new org.apache.spark.sql.types.Decimal()
           decConverter.set(scalaDecVal)
-        }
         case _ => value
       }
     }
@@ -51,7 +52,8 @@ class SparkUnknownExpression(sparkExp: SparkExpression) extends Expression with 
         new GenericMutableRow(values.map(a => a.asInstanceOf[Any]).toArray)
       )
 
-      new ExpressionResult(CarbonScalaUtil.convertSparkToCarbonDataType(sparkExp.dataType), sparkRes);
+      new ExpressionResult(CarbonScalaUtil.convertSparkToCarbonDataType(sparkExp.dataType),
+        sparkRes);
     }
     catch {
       case e: Exception => throw new FilterUnsupportedException(e.getMessage());
@@ -63,7 +65,7 @@ class SparkUnknownExpression(sparkExp: SparkExpression) extends Expression with 
   }
 
   override def getString(): String = {
-    ???
+    sparkExp.toString()
   }
 
 
@@ -94,22 +96,22 @@ class SparkUnknownExpression(sparkExp: SparkExpression) extends Expression with 
   def getColumnListFromExpressionTree(sparkCurrentExp: SparkExpression,
                                       list: java.util.List[ColumnExpression]): Unit = {
     sparkCurrentExp match {
-      case carbonBoundRef: CarbonBoundReference => {
-        val foundExp = list.asScala.find(p => p.getColumnName() == carbonBoundRef.colExp.getColumnName())
+      case carbonBoundRef: CarbonBoundReference =>
+        val foundExp = list.asScala
+          .find(p => p.getColumnName() == carbonBoundRef.colExp.getColumnName())
         if (foundExp.isEmpty) {
           carbonBoundRef.colExp.setColIndex(list.size)
           list.add(carbonBoundRef.colExp)
         } else {
           carbonBoundRef.colExp.setColIndex(foundExp.get.getColIndex())
         }
-      }
       case _ => sparkCurrentExp.children.foreach(getColumnListFromExpressionTree(_, list))
     }
   }
 
 
   def getAllColumnListFromExpressionTree(sparkCurrentExp: SparkExpression,
-                                         list: java.util.List[ColumnExpression]): java.util.List[ColumnExpression] = {
+                                         list: List[ColumnExpression]): List[ColumnExpression] = {
     sparkCurrentExp match {
       case carbonBoundRef: CarbonBoundReference => list.add(carbonBoundRef.colExp)
       case _ => sparkCurrentExp.children.foreach(getColumnListFromExpressionTree(_, list))

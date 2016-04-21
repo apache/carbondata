@@ -1,61 +1,55 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
-/**
-  *
-  */
 package org.apache.spark.sql
 
 import java.util.HashMap
-import scala.Array.canBuildFrom
-import scala.Array.fallbackCanBuildFrom
+
+import scala.Array.{canBuildFrom, fallbackCanBuildFrom}
+
 import org.apache.spark.annotation.DeveloperApi
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.errors.attachTree
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.plans.physical._
-import org.apache.spark.sql.execution.SparkPlan
-import org.apache.spark.sql.execution.UnaryNode
-import scala.collection.mutable.MutableList
-
-//import org.apache.calcite.schema.AggregateFunction
 import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.execution.{SparkPlan, UnaryNode}
 
 /**
-  * :: DeveloperApi ::
-  * Groups input data by `groupingExpressions` and computes the `aggregateExpressions` for each
-  * group.
-  *
-  * @param partial              if true then aggregation is done partially on local data without shuffling to
-  *                             ensure all values where `groupingExpressions` are equal are present.
-  * @param groupingExpressions  expressions that are evaluated to determine grouping.
-  * @param aggregateExpressions expressions that are computed for each group.
-  * @param child                the input data source.
-  */
+ * :: DeveloperApi ::
+ * Groups input data by `groupingExpressions` and computes the `aggregateExpressions` for each
+ * group.
+ *
+ * @param partial              if true then aggregation is done partially on local data without
+ *                             shuffling to
+ *                             ensure all values where `groupingExpressions` are equal are present.
+ * @param groupingExpressions  expressions that are evaluated to determine grouping.
+ * @param aggregateExpressions expressions that are computed for each group.
+ * @param child                the input data source.
+ */
 @DeveloperApi
 case class CarbonAggregate(
-                           partial: Boolean,
-                           groupingExpressions: Seq[Expression],
-                           aggregateExpressions: Seq[NamedExpression],
-                           child: SparkPlan)(@transient sqlContext: SQLContext)
+                            partial: Boolean,
+                            groupingExpressions: Seq[Expression],
+                            aggregateExpressions: Seq[NamedExpression],
+                            child: SparkPlan)(@transient sqlContext: SQLContext)
   extends UnaryNode {
 
-  override def requiredChildDistribution =
+  override def requiredChildDistribution: Seq[Distribution] =
     if (partial) {
       UnspecifiedDistribution :: Nil
     } else {
@@ -66,24 +60,23 @@ case class CarbonAggregate(
       }
     }
 
-  override def otherCopyArgs = sqlContext :: Nil
+  override def otherCopyArgs: Seq[AnyRef] = sqlContext :: Nil
 
   // HACK: Generators don't correctly preserve their output through serializations so we grab
   // out child's output attributes statically here.
   private[this] val childOutput = child.output
 
-  override def output = aggregateExpressions.map(_.toAttribute)
+  override def output: Seq[Attribute] = aggregateExpressions.map(_.toAttribute)
 
   /**
-    * An aggregate that needs to be computed for each row in a group.
-    *
-    * @param unbound         Unbound version of this aggregate, used for result substitution.
-    * @param aggregate       A bound copy of this aggregate used to create a new aggregation buffer.
-    * @param resultAttribute An attribute used to refer to the result of this aggregate in the final
-    *                        output.
-    */
-  case class ComputedAggregate(
-                                unbound: AggregateExpression1,
+   * An aggregate that needs to be computed for each row in a group.
+   *
+   * @param unbound         Unbound version of this aggregate, used for result substitution.
+   * @param aggregate       A bound copy of this aggregate used to create a new aggregation buffer.
+   * @param resultAttribute An attribute used to refer to the result of this aggregate in the final
+   *                        output.
+   */
+  case class ComputedAggregate(unbound: AggregateExpression1,
                                 aggregate: AggregateExpression1,
                                 resultAttribute: AttributeReference)
 
@@ -119,23 +112,23 @@ case class CarbonAggregate(
   }
 
   /**
-    * A map of substitutions that are used to insert the aggregate expressions and grouping
-    * expression into the final result expression.
-    */
+   * A map of substitutions that are used to insert the aggregate expressions and grouping
+   * expression into the final result expression.
+   */
   private[this] val resultMap =
     (computedAggregates.map { agg => agg.unbound -> agg.resultAttribute } ++ namedGroups).toMap
 
   /**
-    * Substituted version of aggregateExpressions expressions which are used to compute final
-    * output rows given a group and the result of all aggregate computations.
-    */
+   * Substituted version of aggregateExpressions expressions which are used to compute final
+   * output rows given a group and the result of all aggregate computations.
+   */
   private[this] val resultExpressions = aggregateExpressions.map { agg =>
     agg.transform {
       case e: Expression if resultMap.contains(e) => resultMap(e)
     }
   }
 
-  override def doExecute() = attachTree(this, "execute") {
+  override def doExecute(): RDD[InternalRow] = attachTree(this, "execute") {
     if (groupingExpressions.isEmpty) {
       child.execute().mapPartitions { iter =>
         val buffer = newAggregateBuffer()
@@ -185,7 +178,8 @@ case class CarbonAggregate(
           private[this] val hashTableIter = hashTable.entrySet().iterator()
           private[this] val aggregateResults = new GenericMutableRow(computedAggregates.length)
           private[this] val resultProjection =
-            new InterpretedMutableProjection(resultExpressions, computedSchema ++ namedGroups.map(_._2))
+            new InterpretedMutableProjection(resultExpressions,
+              computedSchema ++ namedGroups.map(_._2))
           private[this] val joinedRow = new JoinedRow
 
           override final def hasNext: Boolean = hashTableIter.hasNext
@@ -208,40 +202,4 @@ case class CarbonAggregate(
       }
     }
   }
-}
-
-case class MultiProjection(expressions: Seq[Expression], childProjection: MultiProjection) extends (InternalRow => InternalRow) {
-  def this(expressions: Seq[Expression], inputSchema: Seq[Attribute], childProjection: MultiProjection) =
-    this(expressions.map(BindReferences.bindReference(_, inputSchema)), childProjection)
-
-  private[this] val exprArray = expressions.toArray
-  private[this] val mutableRow = new GenericMultiRow(exprArray.size)
-
-  def currentValue: InternalRow = mutableRow
-
-  def apply(input: InternalRow): InternalRow = {
-    var i = 0
-    while (i < exprArray.length) {
-      mutableRow(i) = exprArray(i).eval(input)
-      i += 1
-    }
-    if (childProjection != null)
-      mutableRow.setChildRow(childProjection(input))
-    mutableRow
-  }
-}
-
-class GenericMultiRow(size: Int) extends GenericMutableRow(size) {
-  /** No-arg constructor for serialization. */
-  def this() = this(0)
-
-  def getStringBuilder(ordinal: Int): StringBuilder = ???
-
-  var childRowList = new MutableList[InternalRow]
-
-  def setChildRow(row: InternalRow) = {
-    childRowList += row
-  }
-
-  def getChildRows() = childRowList
 }

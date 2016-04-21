@@ -19,18 +19,18 @@ package org.carbondata.examples
 
 import java.io.File
 
-import org.apache.spark.sql.CarbonContext
 import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.sql.CarbonContext
 
 object CarbonExample {
 
   def main(args: Array[String]) {
 
-    //get current directory:/examples
+    // get current directory:/examples
     val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
       .getCanonicalPath
 
-    //specify parameters
+    // specify parameters
     val storeLocation = currentDirectory + "/target/store"
     val kettleHome = new File(currentDirectory + "/../processing/carbonplugins").getCanonicalPath
     val hiveMetaPath = currentDirectory + "/target/hivemetadata"
@@ -38,33 +38,29 @@ object CarbonExample {
 
     val sc = new SparkContext(new SparkConf()
       .setAppName("CarbonExample")
-      .setMaster("local[2]")
-    )
+      .setMaster("local[2]"))
 
     val cc = new CarbonContext(sc, storeLocation)
 
-    //As Carbon using kettle, so need to set kettle configuration
+    // As Carbon using kettle, so need to set kettle configuration
     cc.setConf("carbon.kettle.home", kettleHome)
     cc.setConf("hive.metastore.warehouse.dir", hiveMetaPath)
 
-    //When you excute the second time, need to enable it
+    // When you excute the second time, need to enable it
     // cc.sql("drop cube testTable")
 
     cc.sql("CREATE CUBE testTable DIMENSIONS (ID Integer, Date Timestamp, " +
       "Country String, Name String, Phonetype String, Serialname String" +
 
       ") MEASURES (Salary Integer) " +
-      "OPTIONS (PARTITIONER [PARTITION_COUNT=1])"
-    )
+      "OPTIONS (PARTITIONER [PARTITION_COUNT=1])")
 
-    cc
-      .sql(s"LOAD DATA FACT FROM '$testData' INTO CUBE testTable OPTIONS(DELIMITER ',', " +
-        s"FILEHEADER '')")
+    cc.sql(
+      s"LOAD DATA FACT FROM '$testData' INTO CUBE testTable OPTIONS(DELIMITER ',', FILEHEADER '')")
 
-    cc
-      .sql(
-        "select Country,count(salary) from testTable where Country in ('china','france') group by Country"
-      ).show()
+    cc.sql("select Country,count(salary) from testTable " +
+      "where Country in ('china','france') group by Country")
+      .show()
 
   }
 

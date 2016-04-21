@@ -1,47 +1,42 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
-/**
-  *
-  */
 package org.apache.spark.sql
 
 import java.util.regex.{Matcher, Pattern}
 
+import scala.collection.JavaConverters._
+import scala.language.implicitConversions
+
 import org.apache.hadoop.hive.ql.lib.Node
 import org.apache.hadoop.hive.ql.parse._
 import org.apache.spark.Logging
+import org.apache.spark.sql.catalyst.{SqlLexical, _}
 import org.apache.spark.sql.catalyst.analysis._
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.trees.CurrentOrigin
-import org.apache.spark.sql.catalyst.{SqlLexical, _}
 import org.apache.spark.sql.cubemodel.{DimensionRelation, _}
 import org.apache.spark.sql.execution.datasources.DescribeCommand
 import org.apache.spark.sql.hive.HiveQlWrapper
 
-import scala.collection.JavaConversions._
-import scala.language.implicitConversions
-
 
 /**
-  * Parser for All Carbon DDL, DML cases in Unified context
-  */
+ * Parser for All Carbon DDL, DML cases in Unified context
+ */
 class CarbonSqlDDLParser()
   extends AbstractSparkSQLParser with Logging {
 
@@ -133,7 +128,7 @@ class CarbonSqlDDLParser()
   protected val SUM_DISTINCT = Keyword("sum-distinct")
   protected val ABS = Keyword("abs")
 
-  //added for suggest aggregate table command
+  // added for suggest aggregate table command
   protected val SUGGEST = Keyword("SUGGEST")
   protected val FOR = Keyword("FOR")
   protected val QUERY_STATS = Keyword("QUERY_STATS")
@@ -174,14 +169,14 @@ class CarbonSqlDDLParser()
     deleteLoadsByID | deleteLoadsByDate | cleanFiles
 
   protected lazy val suggestAggregates: Parser[LogicalPlan] =
-  //SUGGEST AGGREGATES WITH SCRIPTS USING (DATA_STATS,QUERY STATS) FOR SCHEMA_NAME.CUBE_NAME
-    SUGGEST ~> AGGREGATE ~> (WITH ~> SCRIPTS).? ~ (USING ~> (DATA_STATS | QUERY_STATS)).? ~ (FOR ~> CUBE ~> (ident <~ ".").? ~ ident) <~ opt(";") ^^ {
-      case scriptsKey ~ usingStats ~ schemaDef => {
+  // SUGGEST AGGREGATES WITH SCRIPTS USING (DATA_STATS,QUERY STATS) FOR SCHEMA_NAME.CUBE_NAME
+    SUGGEST ~> AGGREGATE ~> (WITH ~> SCRIPTS).? ~ (USING ~> (DATA_STATS | QUERY_STATS)).? ~
+      (FOR ~> CUBE ~> (ident <~ ".").? ~ ident) <~ opt(";") ^^ {
+      case scriptsKey ~ usingStats ~ schemaDef =>
         val (schemaname, cubename) = schemaDef match {
           case schemaName ~ cubeName => (schemaName, cubeName)
         }
         SuggestAggregateCommand(scriptsKey, usingStats, schemaname, cubename)
-      }
     }
   protected lazy val createAggregateTable: Parser[LogicalPlan] =
     CREATE ~> AGGREGATETABLE ~>
@@ -203,27 +198,34 @@ class CarbonSqlDDLParser()
     }
 
   protected lazy val aggregateExpression: Parser[AggregateTableAttributes] =
-    (SUM ~> "(" ~> (ident | stringLit) <~ ")" ^^ { case e1 => AggregateTableAttributes(e1, SUM.str) } |
-      COUNT ~> "(" ~> (ident | stringLit) <~ ")" ^^ { case e1 => AggregateTableAttributes(e1, COUNT.str) } |
-      MAX ~> "(" ~> (ident | stringLit) <~ ")" ^^ { case e1 => AggregateTableAttributes(e1, MAX.str) } |
-      MIN ~> "(" ~> (ident | stringLit) <~ ")" ^^ { case e1 => AggregateTableAttributes(e1, MIN.str) } |
-      COUNT ~> "(" ~> DISTINCT ~> (ident | stringLit) <~ ")" ^^ { case e1 => AggregateTableAttributes(e1,
-        DISTINCT_COUNT.str)
-      } |
-      DISTINCT ~> COUNT ~> "(" ~> (ident | stringLit) <~ ")" ^^ { case e1 => AggregateTableAttributes(e1,
-        COUNT.str)
-      } |
-      SUM ~> "(" ~> DISTINCT ~> (ident | stringLit) <~ ")" ^^ { case e1 => AggregateTableAttributes(e1,
-        SUM_DISTINCT.str)
-      } |
-      AVG ~> "(" ~> (ident | stringLit) <~ ")" ^^ { case e1 => AggregateTableAttributes(e1, AVG.str) }
+    (SUM ~> "(" ~> (ident | stringLit) <~ ")" ^^
+      { case e1 => AggregateTableAttributes(e1, SUM.str) } |
+      COUNT ~> "(" ~> (ident | stringLit) <~ ")" ^^
+        { case e1 => AggregateTableAttributes(e1, COUNT.str) } |
+      MAX ~> "(" ~> (ident | stringLit) <~ ")" ^^
+        { case e1 => AggregateTableAttributes(e1, MAX.str) } |
+      MIN ~> "(" ~> (ident | stringLit) <~ ")" ^^
+        { case e1 => AggregateTableAttributes(e1, MIN.str) } |
+      COUNT ~> "(" ~> DISTINCT ~> (ident | stringLit) <~ ")" ^^
+        { case e1 => AggregateTableAttributes(e1,
+          DISTINCT_COUNT.str)
+        } |
+      DISTINCT ~> COUNT ~> "(" ~> (ident | stringLit) <~ ")" ^^
+        { case e1 => AggregateTableAttributes(e1,
+          COUNT.str)
+        } |
+      SUM ~> "(" ~> DISTINCT ~> (ident | stringLit) <~ ")" ^^
+        { case e1 => AggregateTableAttributes(e1,
+          SUM_DISTINCT.str)
+        } |
+      AVG ~> "(" ~> (ident | stringLit) <~ ")" ^^
+        { case e1 => AggregateTableAttributes(e1, AVG.str) }
       )
 
   protected lazy val defaultExpr =
     (ident | stringLit) ~ ("=" ~> (ident | stringLit | numericLit)) ^^ {
-      case e1 ~ e2 => {
+      case e1 ~ e2 =>
         Default(e1, e2.toString())
-      }
     }
 
   protected lazy val defaultVals =
@@ -249,7 +251,8 @@ class CarbonSqlDDLParser()
   protected lazy val showCubeDefinition =
     ((DIMENSIONS ~> "(" ~> dimCols <~ ")").? ~
       (MEASURES ~> "(" ~> measureCols <~ ")").? ~
-      ((FACT ~> FROM ~ (dbTableIdentifier | stringLit) ~ (colsFilter).? ~ ("," ~> DIMENSION ~> FROM ~> dimRelations).?).?) ~
+      ((FACT ~> FROM ~ (dbTableIdentifier | stringLit) ~ (colsFilter).? ~
+        ("," ~> DIMENSION ~> FROM ~> dimRelations).?).?) ~
       (WITH ~ (simpleDimRelations)).?)
 
   protected lazy val aggOptionsForShowCreate =
@@ -269,28 +272,30 @@ class CarbonSqlDDLParser()
     SHOW ~> CREATE ~> CUBE ~> (IF ~> NOT ~> EXISTS).? ~ (ident <~ ".").? ~ ident ~
       showCubeDefinition ~
       (OPTIONS ~> showcreateCubeOptionDef).? <~ (";").? ^^ {
-      case exists ~ schemaName ~ cubeName ~ cubeDefinition ~ options => {
-        val (dimCols, msrCols, fromKeyword, withKeyword, source, factFieldsList, dimRelations, simpleDimRelations) =
+      case exists ~ schemaName ~ cubeName ~ cubeDefinition ~ options =>
+        val (dimCols, msrCols, fromKeyword, withKeyword, source,
+        factFieldsList, dimRelations, simpleDimRelations) =
           cubeDefinition match {
-          case _ ~ _ ~ Some(_) ~ Some(_) => sys.error("FROM and WITH keywords can not be used together")
+            case _ ~ _ ~ Some(_) ~ Some(_) => sys
+              .error("FROM and WITH keywords can not be used together")
 
-          case dimCols ~ msrCols ~ fromBody ~ withBody => {
-            val (fromKeyword, source, factFieldsList, dimRelations) = fromBody match {
-              case Some(fromKeyword ~ source ~ factFieldsList ~ dimRelations) =>
-                (fromKeyword, source, factFieldsList, dimRelations)
+            case dimCols ~ msrCols ~ fromBody ~ withBody =>
+              val (fromKeyword, source, factFieldsList, dimRelations) = fromBody match {
+                case Some(fromKeyword ~ source ~ factFieldsList ~ dimRelations) =>
+                  (fromKeyword, source, factFieldsList, dimRelations)
 
-              case _ => ("", "", None, None)
-            }
+                case _ => ("", "", None, None)
+              }
 
-            val (withKeyword, simpleDimRelations) = withBody match {
-              case Some(withKeyword ~ simpleDimRelations) => (withKeyword, simpleDimRelations)
-              case _ => ("", Seq())
-            }
+              val (withKeyword, simpleDimRelations) = withBody match {
+                case Some(withKeyword ~ simpleDimRelations) => (withKeyword, simpleDimRelations)
+                case _ => ("", Seq())
+              }
 
-            (dimCols.getOrElse(Seq()), msrCols.getOrElse(Seq()), fromKeyword, withKeyword, source, factFieldsList,
-              dimRelations.getOrElse(Seq()), simpleDimRelations)
+              (dimCols.getOrElse(Seq()), msrCols
+                .getOrElse(Seq()), fromKeyword, withKeyword, source, factFieldsList,
+                dimRelations.getOrElse(Seq()), simpleDimRelations)
           }
-        }
 
         val (aggregation, partitioner) = options match {
           case Some(aggregation ~ partitioner) => (aggregation.getOrElse(Seq()), partitioner)
@@ -298,36 +303,35 @@ class CarbonSqlDDLParser()
         }
 
         ShowCreateCubeCommand(tableModel(exists.isDefined,
-          schemaName.getOrElse("default"), schemaName, cubeName, dimCols.map(f => normalizeType(f)).map(f => addParent(f)),
+          schemaName.getOrElse("default"), schemaName, cubeName,
+          dimCols.map(f => normalizeType(f)).map(f => addParent(f)),
           msrCols.map(f => normalizeType(f)), fromKeyword, withKeyword, source,
           factFieldsList, dimRelations, simpleDimRelations, None, aggregation, partitioner, null))
-      }
     }
 
   /**
-    * For handling the create table DDl systax compatible to Hive syntax
-    */
+   * For handling the create table DDl systax compatible to Hive syntax
+   */
   protected lazy val createTable: Parser[LogicalPlan] =
     restInput ^^ {
 
-      case statement => {
+      case statement =>
         try {
-          //DDl will be parsed and we get the AST tree from the HiveQl
+          // DDl will be parsed and we get the AST tree from the HiveQl
           val node = HiveQlWrapper.getAst(statement)
           // processing the AST tree
           nodeToPlan(node)
         } catch {
           case e: Exception => sys.error("Parsing error") // no need to do anything.
         }
-      }
     }
 
   /**
-    * This function will traverse the tree and logical plan will be formed using that.
-    *
-    * @param node
-    * @return LogicalPlan
-    */
+   * This function will traverse the tree and logical plan will be formed using that.
+   *
+   * @param node
+   * @return LogicalPlan
+   */
   protected def nodeToPlan(node: Node): LogicalPlan = node match {
     // if create table taken is found then only we will handle.
     case Token("TOK_CREATETABLE", children) =>
@@ -348,7 +352,7 @@ class CarbonSqlDDLParser()
           val cols = BaseSemanticAnalyzer.getColumns(list, true)
           if (cols != null) {
 
-            cols.map { col =>
+            cols.asScala.map { col =>
               val columnName = col.getName()
               val dataType = Option(col.getType)
               val comment = col.getComment
@@ -372,11 +376,10 @@ class CarbonSqlDDLParser()
         case Token("TOK_TABLEPARTCOLS", list@Token("TOK_TABCOLLIST", _) :: Nil) =>
           val cols = BaseSemanticAnalyzer.getColumns(list(0), false)
           if (cols != null) {
-            cols.map { col =>
+            cols.asScala.map { col =>
               val columnName = col.getName()
               val dataType = Option(col.getType)
               val comment = col.getComment
-              //  HiveColumn(field.getName, field.getType, field.getComment)
               val partitionCol = new PartitionerField(columnName, dataType, comment)
               partitionCols ++= Seq(partitionCol)
             }
@@ -398,7 +401,8 @@ class CarbonSqlDDLParser()
       }
 
       // prepare table model of the collected tokens
-      val tableModel: tableModel = prepareTableModel(ifNotExistPresent, dbName, tableName, fields, partitionCols,
+      val tableModel: tableModel = prepareTableModel(ifNotExistPresent, dbName, tableName, fields,
+        partitionCols,
         tableProperties)
 
       // get logical plan.
@@ -407,25 +411,27 @@ class CarbonSqlDDLParser()
   }
 
   /**
-    *  This will prepate the Model from the Tree details.
-    *
-    * @param ifNotExistPresent
-    * @param dbName
-    * @param tableName
-    * @param fields
-    * @param partitionCols
-    * @param tableProperties
-    * @return
-    */
+   * This will prepate the Model from the Tree details.
+   *
+   * @param ifNotExistPresent
+   * @param dbName
+   * @param tableName
+   * @param fields
+   * @param partitionCols
+   * @param tableProperties
+   * @return
+   */
   protected def prepareTableModel(ifNotExistPresent: Boolean, dbName: Option[String]
-                                  , tableName: String, fields: Seq[Field], partitionCols: Seq[PartitionerField],
+                                  , tableName: String, fields: Seq[Field],
+                                  partitionCols: Seq[PartitionerField],
                                   tableProperties: Map[String, String]): tableModel
   = {
 
     // get column groups configuration from table properties.
     val groupCols: Seq[String] = updateColumnGroupsInField(tableProperties)
 
-    var (dims: Seq[Field], noDictionaryDims: Seq[String]) = extractDimColsAndNoDictionaryFields(fields, tableProperties)
+    var (dims: Seq[Field], noDictionaryDims: Seq[String]) = extractDimColsAndNoDictionaryFields(
+      fields, tableProperties)
     val msrs: Seq[Field] = extractMsrColsFromFields(fields, tableProperties)
 
 
@@ -438,13 +444,12 @@ class CarbonSqlDDLParser()
   }
 
   /**
-    * Extract the column groups configuration from table properties.
-    * Based on this Row groups of fields will be determined.
-    *
-    * @param tableProperties
-    * @param fields
-    * @return
-    */
+   * Extract the column groups configuration from table properties.
+   * Based on this Row groups of fields will be determined.
+   *
+   * @param tableProperties
+   * @return
+   */
   protected def updateColumnGroupsInField(tableProperties: Map[String, String]): Seq[String] = {
     if (None != tableProperties.get("COLUMN_GROUPS")) {
 
@@ -469,16 +474,18 @@ class CarbonSqlDDLParser()
   }
 
   /**
-    * For getting the partitioner Object
-    *
-    * @param partitionCols
-    * @param tableProperties
-    * @return
-    */
-  protected def getPartitionerObject(partitionCols: Seq[PartitionerField], tableProperties: Map[String, String]):
+   * For getting the partitioner Object
+   *
+   * @param partitionCols
+   * @param tableProperties
+   * @return
+   */
+  protected def getPartitionerObject(partitionCols: Seq[PartitionerField],
+                                     tableProperties: Map[String, String]):
   Option[Partitioner] = {
 
-    // by default setting partition class empty. later in cube schema it is setting to default value.
+    // by default setting partition class empty.
+    // later in cube schema it is setting to default value.
     var partitionClass: String = ""
     var partitionCount: Int = 1
     var partitionColNames: Array[String] = Array[String]()
@@ -507,15 +514,16 @@ class CarbonSqlDDLParser()
   }
 
   /**
-    * This will extract the Dimensions and NoDictionary Dimensions fields.
-    * By default all string cols are dimensions.
-    *
-    * @param fields
-    * @param tableProperties
-    * @return
-    */
+   * This will extract the Dimensions and NoDictionary Dimensions fields.
+   * By default all string cols are dimensions.
+   *
+   * @param fields
+   * @param tableProperties
+   * @return
+   */
   protected def extractDimColsAndNoDictionaryFields(fields: Seq[Field],
-                                                    tableProperties: Map[String, String]): (Seq[Field], Seq[String]) = {
+                                                    tableProperties: Map[String, String]):
+                                                    (Seq[Field], Seq[String]) = {
     var dimFields: Set[Field] = Set[Field]()
     var splittedCols: Array[String] = Array[String]()
     var noDictionaryDims: Seq[String] = Seq[String]()
@@ -564,13 +572,14 @@ class CarbonSqlDDLParser()
 
 
   /**
-    * Extract the Measure Cols fields. By default all non string cols will be measures.
-    *
-    * @param fields
-    * @param tableProperties
-    * @return
-    */
-  protected def extractMsrColsFromFields(fields: Seq[Field], tableProperties: Map[String, String]): Seq[Field] = {
+   * Extract the Measure Cols fields. By default all non string cols will be measures.
+   *
+   * @param fields
+   * @param tableProperties
+   * @return
+   */
+  protected def extractMsrColsFromFields(fields: Seq[Field],
+                                         tableProperties: Map[String, String]): Seq[Field] = {
     var msrFields: Seq[Field] = Seq[Field]()
     var splittedCols: Array[String] = Array[String]()
 
@@ -600,14 +609,16 @@ class CarbonSqlDDLParser()
   }
 
   /**
-    * Extract the DbName and table name.
-    *
-    * @param tableNameParts
-    * @return
-    */
+   * Extract the DbName and table name.
+   *
+   * @param tableNameParts
+   * @return
+   */
   protected def extractDbNameTableName(tableNameParts: Node): (Option[String], String) = {
     val (db, tableName) =
-      tableNameParts.getChildren.map { case Token(part, Nil) => cleanIdentifier(part) } match {
+      tableNameParts.getChildren.asScala.map {
+        case Token(part, Nil) => cleanIdentifier(part)
+      } match {
         case Seq(tableOnly) => (None, tableOnly)
         case Seq(databaseName, table) => (Some(databaseName), table)
       }
@@ -631,7 +642,7 @@ class CarbonSqlDDLParser()
     if (remainingNodes.nonEmpty) {
       sys.error(
         s"""Unhandled clauses:
-            |You are likely trying to use an unsupported carbon feature."""".stripMargin)
+           |You are likely trying to use an unsupported carbon feature."""".stripMargin)
     }
     clauses
   }
@@ -642,17 +653,17 @@ class CarbonSqlDDLParser()
       case t: ASTNode =>
         CurrentOrigin.setPosition(t.getLine, t.getCharPositionInLine)
         Some((t.getText,
-          Option(t.getChildren).map(_.toList).getOrElse(Nil).asInstanceOf[Seq[ASTNode]]))
+          Option(t.getChildren).map(_.asScala.toList).getOrElse(Nil).asInstanceOf[Seq[ASTNode]]))
       case _ => None
     }
   }
 
   /**
-    * Extract the table properties token
-    *
-    * @param node
-    * @return
-    */
+   * Extract the table properties token
+   *
+   * @param node
+   * @return
+   */
   protected def getProperties(node: Node): Seq[(String, String)] = node match {
     case Token("TOK_TABLEPROPLIST", list) =>
       list.map {
@@ -671,17 +682,16 @@ class CarbonSqlDDLParser()
     CREATE ~> CUBE ~> (IF ~> NOT ~> EXISTS).? ~ (ident <~ ".").? ~ ident ~
       cubeDefinition ~
       (OPTIONS ~> createCubeOptionDef).? <~ (";").? ^^ {
-      case exists ~ schemaName ~ cubeName ~ cubeDefinition ~ options => {
+      case exists ~ schemaName ~ cubeName ~ cubeDefinition ~ options =>
         val (dimCols, msrCols, withKeyword, simpleDimRelations) = cubeDefinition match {
 
-          case dimCols ~ msrCols ~ withBody => {
+          case dimCols ~ msrCols ~ withBody =>
             val (withKeyword, simpleDimRelations) = withBody match {
               case Some(withKeyword ~ simpleDimRelations) => (withKeyword, simpleDimRelations)
               case _ => ("", Seq())
             }
 
             (dimCols.getOrElse(Seq()), msrCols.getOrElse(Seq()), withKeyword, simpleDimRelations)
-          }
         }
 
         val (highCard, aggregation, partitioner) = options match {
@@ -694,7 +704,6 @@ class CarbonSqlDDLParser()
           dimCols.map(f => normalizeType(f)).map(f => addParent(f)),
           msrCols.map(f => normalizeType(f)), "", withKeyword, "",
           None, Seq(), simpleDimRelations, highCard, aggregation, partitioner, null))
-      }
     }
 
   protected lazy val alterCube: Parser[LogicalPlan] =
@@ -702,29 +711,29 @@ class CarbonSqlDDLParser()
       (dropDefinition).? ~
       (addDefinition).? ~
       (OPTIONS ~> defaultOptions).? <~ opt(";") ^^ {
-      case schemaName ~ cubeName ~ dropDefinition ~ addDefinition ~ options => {
+      case schemaName ~ cubeName ~ dropDefinition ~ addDefinition ~ options =>
         val (dimCols, msrCols, withKeyword, simpleDimRelations) = addDefinition match {
 
-          case Some(dimCols ~ msrCols ~ withBody) => {
+          case Some(dimCols ~ msrCols ~ withBody) =>
             val (withKeyword, simpleDimRelations) = withBody match {
               case Some(withKeyword ~ simpleDimRelations) => (withKeyword, simpleDimRelations)
               case _ => ("", Seq())
             }
 
             if (dimCols.isEmpty && msrCols.isEmpty) {
-              sys.error("empty ADD definition found.Please provide the dimensions/measures to be added.")
+              sys.error(
+                "empty ADD definition found.Please provide the dimensions/measures to be added.")
             } else {
               (dimCols.getOrElse(Seq()), msrCols.getOrElse(Seq()), withKeyword, simpleDimRelations)
             }
-          }
 
-          case _ => {
+          case _ =>
             (Seq(), Seq(), "", Seq())
-          }
         }
 
         val (noDictionary, aggregation, defaultVals) = options match {
-          case Some(noDictionary ~ aggregation ~ defaultVals) => (noDictionary.getOrElse(Some(Seq())),
+          case Some(noDictionary ~ aggregation ~ defaultVals) => (noDictionary
+            .getOrElse(Some(Seq())),
             aggregation.getOrElse(Seq()), defaultVals.getOrElse(Seq()))
           case _ => (Some(Seq()), Seq(), Seq())
         }
@@ -739,11 +748,9 @@ class CarbonSqlDDLParser()
           msrCols.map(f => normalizeType(f)), "", withKeyword, "",
           None, Seq(), simpleDimRelations, noDictionary, aggregation, None, null),
           dropCols, defaultVals)
-      }
 
-      case _ => {
+      case _ =>
         sys.error("Parsing error")
-      }
     }
 
 
@@ -753,23 +760,23 @@ class CarbonSqlDDLParser()
       (opt(OVERWRITE) ~> INTO ~> CUBE ~> (ident <~ ".").? ~ ident) ~
       ((PARTITIONDATA | OPTIONS) ~> "(" ~> repsep(partitionOptions, ",") <~ ")") ~
       (FIELDS ~> TERMINATED ~> BY ~> stringLit).? <~ opt(";") ^^ {
-      case filePath ~ dimFolderPath ~ cube ~ partionDataOptions ~ delimiter => {
+      case filePath ~ dimFolderPath ~ cube ~ partionDataOptions ~ delimiter =>
         val (schema, cubename) = cube match {
           case schemaName ~ cubeName => (schemaName, cubeName)
 
         }
         val patitionOptionsMap = partionDataOptions.toMap
-        //patitionOptionsMap.toList.foreach(a => println("Key="+a._1+"  value="+a._2))
         LoadCube(schema, cubename, filePath, dimFolderPath.getOrElse(Seq()), patitionOptionsMap)
-      }
     }
 
   protected lazy val dbTableIdentifier: Parser[Seq[String]] =
     (ident <~ ".").? ~ (ident) ^^ {
       case databaseName ~ tableName =>
-        if (databaseName.isDefined)
+        if (databaseName.isDefined) {
           Seq(databaseName.get, tableName)
-        else Seq(tableName)
+        } else {
+          Seq(tableName)
+        }
     }
 
   protected lazy val tableFileMapping: Parser[DataLoadTableFileMapping] =
@@ -806,7 +813,8 @@ class CarbonSqlDDLParser()
     }
 
   protected lazy val dropCubeOrTable: Parser[LogicalPlan] =
-    DROP ~> (CUBE | (AGGREGATE ~ TABLE)) ~ (IF ~> EXISTS).? ~ (ident <~ ".").? ~ ident <~ opt(";") ^^ {
+    DROP ~> (CUBE | (AGGREGATE ~ TABLE)) ~ (IF ~> EXISTS).? ~ (ident <~ ".").? ~ ident <~
+      opt(";") ^^ {
       case tabletype ~ exists ~ schemaName ~ resourceName =>
         tabletype match {
           case agg ~ table => DropAggregateTableCommand(exists.isDefined, schemaName, resourceName)
@@ -832,58 +840,55 @@ class CarbonSqlDDLParser()
   protected lazy val dimRelation: Parser[DimensionRelation] =
     (ident <~ ":") ~ (dbTableIdentifier | stringLit) ~ cubeRelation ~ ((INCLUDE | EXCLUDE) ~ ("(" ~>
       repsep(ident | stringLit, ",") <~ ")")).? ^^ {
-      case tableName ~ dimSource ~ relation ~ filterCols => {
+      case tableName ~ dimSource ~ relation ~ filterCols =>
         val (includeKey, fieldList) = filterCols match {
           case Some(includeKey ~ fieldList) => (includeKey, fieldList)
           case others => ("", Seq())
         }
         DimensionRelation(tableName, dimSource, relation, Some(includeKey), Some(fieldList))
-      }
     }
 
   protected lazy val dimRelations: Parser[Seq[DimensionRelation]] = repsep(dimRelation, ",")
 
   protected lazy val simpleDimRelation: Parser[DimensionRelation] =
     ident ~ simpleCubeRelation ~ (INCLUDE ~> ("(" ~> repsep(ident | stringLit, ",") <~ ")")) ^^ {
-      case tableName ~ relation ~ colList => {
+      case tableName ~ relation ~ colList =>
         DimensionRelation(tableName, "", relation, Some("INCLUDE"), Some(colList))
-      }
     }
 
-  protected lazy val simpleDimRelations: Parser[Seq[DimensionRelation]] = repsep(simpleDimRelation, ",")
+  protected lazy val simpleDimRelations: Parser[Seq[DimensionRelation]] = repsep(simpleDimRelation,
+    ",")
 
   protected lazy val dimCol: Parser[Field] = anyFieldDef
 
   protected lazy val primitiveTypes = STRING | INTEGER | TIMESTAMP | NUMERIC | BIGINT | DECIMAL
-  protected lazy val nestedType: Parser[Field] = structFieldType | arrayFieldType | primitiveFieldType
+  protected lazy val nestedType: Parser[Field] = structFieldType | arrayFieldType |
+    primitiveFieldType
 
   protected lazy val anyFieldDef: Parser[Field] =
     (ident | stringLit) ~ ((":").? ~> nestedType) ~ (IN ~> (ident | stringLit)).? ^^ {
-      case e1 ~ e2 ~ e3 => {
+      case e1 ~ e2 ~ e3 =>
         Field(e1, e2.dataType, Some(e1), e2.children, null, e3)
-      }
     }
 
   protected lazy val primitiveFieldType: Parser[Field] =
     (primitiveTypes) ^^ {
-      case e1 => {
+      case e1 =>
         Field("unknown", Some(e1), Some("unknown"), Some(null))
-      }
     }
 
   protected lazy val arrayFieldType: Parser[Field] =
     (ARRAY ~> "<" ~> nestedType <~ ">") ^^ {
-      case e1 => {
-        Field("unknown", Some("array"), Some("unknown"), Some(List(Field("val", e1.dataType, Some("val"),
-          e1.children))))
-      }
+      case e1 =>
+        Field("unknown", Some("array"), Some("unknown"),
+          Some(List(Field("val", e1.dataType, Some("val"),
+            e1.children))))
     }
 
   protected lazy val structFieldType: Parser[Field] =
     (STRUCT ~> "<" ~> repsep(anyFieldDef, ",") <~ ">") ^^ {
-      case e1 => {
+      case e1 =>
         Field("unknown", Some("struct"), Some("unknown"), Some(e1))
-      }
     }
 
   protected lazy val measureCol: Parser[Field] =
@@ -928,9 +933,8 @@ class CarbonSqlDDLParser()
     AGGREGATION ~> ("[" ~> aggExpressions <~ "]")
   protected lazy val noDictionaryDims: Parser[Option[Seq[String]]] =
     HIGH_CARDINALITY_DIMS ~> ("(" ~> repsep((ident | stringLit), ",") <~ ")") ^^ {
-      case hc => {
+      case hc =>
         Some(hc)
-      }
       case _ => None
 
     }
@@ -952,8 +956,9 @@ class CarbonSqlDDLParser()
       (LEVELS ~> "{" ~> repsep((ident | stringLit), ",") <~ "}") ^^ {
       case hierName ~ hierType ~ levels =>
         var dimType = "StandardDimension"
-        if (hierType.getOrElse(dimType).equalsIgnoreCase("time"))
+        if (hierType.getOrElse(dimType).equalsIgnoreCase("time")) {
           dimType = "TimeDimension"
+        }
         HierarchyMapping(hierName, dimType, levels)
     }
 
@@ -967,7 +972,8 @@ class CarbonSqlDDLParser()
             Seq(tbl)
         }
         if (ef.isDefined && "FORMATTED".equalsIgnoreCase(ef.get)) {
-          new DescribeFormattedCommand("describe formatted " + tblIdentifier.mkString("."), tblIdentifier)
+          new DescribeFormattedCommand("describe formatted " + tblIdentifier.mkString("."),
+            tblIdentifier)
         }
         else {
           new DescribeCommand(UnresolvedRelation(tblIdentifier, None), ef.isDefined)
@@ -976,70 +982,98 @@ class CarbonSqlDDLParser()
 
   private def normalizeType(field: Field): Field = {
     field.dataType.getOrElse("NIL") match {
-      case "string" => Field(field.column, Some("String"), field.name, Some(null), field.parent, field.storeType)
-      case "integer" => Field(field.column, Some("Integer"), field.name, Some(null), field.parent, field.storeType)
-      case "long" => Field(field.column, Some("Long"), field.name, Some(null), field.parent, field.storeType)
-      case "double" => Field(field.column, Some("Double"), field.name, Some(null), field.parent, field.storeType)
-      case "timestamp" => Field(field.column, Some("Timestamp"), field.name, Some(null), field.parent, field.storeType)
-      case "numeric" => Field(field.column, Some("Numeric"), field.name, Some(null), field.parent, field.storeType)
-      case "array" => Field(field.column, Some("Array"), field.name, field.children.map(f => f.map(normalizeType(_))),
+      case "string" => Field(field.column, Some("String"), field.name, Some(null), field.parent,
+        field.storeType)
+      case "integer" => Field(field.column, Some("Integer"), field.name, Some(null), field.parent,
+        field.storeType)
+      case "long" => Field(field.column, Some("Long"), field.name, Some(null), field.parent,
+        field.storeType)
+      case "double" => Field(field.column, Some("Double"), field.name, Some(null), field.parent,
+        field.storeType)
+      case "timestamp" => Field(field.column, Some("Timestamp"), field.name, Some(null),
         field.parent, field.storeType)
-      case "struct" => Field(field.column, Some("Struct"), field.name, field.children.map(f => f.map(normalizeType(_))),
+      case "numeric" => Field(field.column, Some("Numeric"), field.name, Some(null), field.parent,
+        field.storeType)
+      case "array" => Field(field.column, Some("Array"), field.name,
+        field.children.map(f => f.map(normalizeType(_))),
         field.parent, field.storeType)
-      case "bigint" => Field(field.column, Some("BigInt"), field.name, Some(null), field.parent, field.storeType)
-      case "decimal" => Field(field.column, Some("Decimal"), field.name, Some(null), field.parent, field.storeType)
+      case "struct" => Field(field.column, Some("Struct"), field.name,
+        field.children.map(f => f.map(normalizeType(_))),
+        field.parent, field.storeType)
+      case "bigint" => Field(field.column, Some("BigInt"), field.name, Some(null), field.parent,
+        field.storeType)
+      case "decimal" => Field(field.column, Some("Decimal"), field.name, Some(null), field.parent,
+        field.storeType)
       case _ => field
     }
   }
 
   private def addParent(field: Field): Field = {
     field.dataType.getOrElse("NIL") match {
-      case "Array" => Field(field.column, Some("Array"), field.name, field.children.map(f => f.map(appendParentForEachChild(_, field.column))), field.parent, field.storeType)
-      case "Struct" => Field(field.column, Some("Struct"), field.name, field.children.map(f => f.map(appendParentForEachChild(_, field.column))), field.parent, field.storeType)
+      case "Array" => Field(field.column, Some("Array"), field.name,
+        field.children.map(f => f.map(appendParentForEachChild(_, field.column))), field.parent,
+        field.storeType)
+      case "Struct" => Field(field.column, Some("Struct"), field.name,
+        field.children.map(f => f.map(appendParentForEachChild(_, field.column))), field.parent,
+        field.storeType)
       case _ => field
     }
   }
 
   private def appendParentForEachChild(field: Field, parentName: String): Field = {
     field.dataType.getOrElse("NIL") match {
-      case "String" => Field(parentName + "." + field.column, Some("String"), Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
-      case "Integer" => Field(parentName + "." + field.column, Some("Integer"), Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
-      case "Long" => Field(parentName + "." + field.column, Some("Long"), Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
-      case "Double" => Field(parentName + "." + field.column, Some("Double"), Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
-      case "Timestamp" => Field(parentName + "." + field.column, Some("Timestamp"), Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
-      case "Numeric" => Field(parentName + "." + field.column, Some("Numeric"), Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
-      case "Array" => Field(parentName + "." + field.column, Some("Array"), Some(parentName + "." + field.name.getOrElse(None)),
-        field.children.map(f => f.map(appendParentForEachChild(_, parentName + "." + field.column))), parentName)
-      case "Struct" => Field(parentName + "." + field.column, Some("Struct"), Some(parentName + "." + field.name.getOrElse(None)),
-        field.children.map(f => f.map(appendParentForEachChild(_, parentName + "." + field.column))), parentName)
-      case "BigInt" => Field(parentName + "." + field.column, Some("BigInt"), Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
-      case "Decimal" => Field(parentName + "." + field.column, Some("Decimal"), Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
+      case "String" => Field(parentName + "." + field.column, Some("String"),
+        Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
+      case "Integer" => Field(parentName + "." + field.column, Some("Integer"),
+        Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
+      case "Long" => Field(parentName + "." + field.column, Some("Long"),
+        Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
+      case "Double" => Field(parentName + "." + field.column, Some("Double"),
+        Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
+      case "Timestamp" => Field(parentName + "." + field.column, Some("Timestamp"),
+        Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
+      case "Numeric" => Field(parentName + "." + field.column, Some("Numeric"),
+        Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
+      case "Array" => Field(parentName + "." + field.column, Some("Array"),
+        Some(parentName + "." + field.name.getOrElse(None)),
+        field.children
+          .map(f => f.map(appendParentForEachChild(_, parentName + "." + field.column))),
+        parentName)
+      case "Struct" => Field(parentName + "." + field.column, Some("Struct"),
+        Some(parentName + "." + field.name.getOrElse(None)),
+        field.children
+          .map(f => f.map(appendParentForEachChild(_, parentName + "." + field.column))),
+        parentName)
+      case "BigInt" => Field(parentName + "." + field.column, Some("BigInt"),
+        Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
+      case "Decimal" => Field(parentName + "." + field.column, Some("Decimal"),
+        Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
       case _ => field
     }
   }
 
   protected lazy val showLoads: Parser[LogicalPlan] =
-    SHOW ~> LOADS ~> FOR ~> CUBE ~> (ident <~ ".").? ~ ident ~ (LIMIT ~> numericLit).? <~ opt(";") ^^ {
+    SHOW ~> LOADS ~> FOR ~> CUBE ~> (ident <~ ".").? ~ ident ~ (LIMIT ~> numericLit).? <~
+      opt(";") ^^ {
       case schemaName ~ cubeName ~ limit => ShowLoadsCommand(schemaName, cubeName, limit)
     }
 
   protected lazy val deleteLoadsByID: Parser[LogicalPlan] =
-    DELETE ~> LOAD ~> repsep(numericLit, ",") ~ (FROM ~> CUBE ~> (ident <~ ".").? ~ ident) <~ opt(";") ^^ {
+    DELETE ~> LOAD ~> repsep(numericLit, ",") ~ (FROM ~> CUBE ~> (ident <~ ".").? ~ ident) <~
+      opt(";") ^^ {
       case loadids ~ cube => cube match {
         case schemaName ~ cubeName => DeleteLoadsById(loadids, schemaName, cubeName)
       }
     }
 
   protected lazy val deleteLoadsByDate: Parser[LogicalPlan] =
-    DELETE ~> FROM ~> CUBE ~> (ident <~ ".").? ~ ident ~ (WHERE ~> (ident <~ BEFORE) ~ stringLit) <~ opt(";") ^^ {
-      case schema ~ cube ~ condition => {
+    DELETE ~> FROM ~> CUBE ~> (ident <~ ".").? ~ ident ~ (WHERE ~> (ident <~ BEFORE) ~ stringLit) <~
+      opt(";") ^^ {
+      case schema ~ cube ~ condition =>
         condition match {
-          case dateField ~ dateValue => {
-            println(schema, cube, dateField, dateValue)
+          case dateField ~ dateValue =>
             DeleteLoadByDate(schema, cube, dateField, dateValue)
-          }
         }
-      }
     }
 
   protected lazy val cleanFiles: Parser[LogicalPlan] =
