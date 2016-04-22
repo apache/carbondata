@@ -25,7 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.carbondata.core.carbon.metadata.schema.table.column.CarbonComplexDimension;
+import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
@@ -115,21 +115,36 @@ public class CarbonTable implements Serializable {
     this.tableMeasuresMap.put(tableSchema.getTableName(), measures);
     int dimensionOrdinal = 0;
     int measureOrdinal = 0;
+    int keyOrdinal = 0;
+    int columnGroupOrdinal = -1;
+    int previousColumnGroupId = -1;
     List<ColumnSchema> listOfColumns = tableSchema.getListOfColumns();
     for (int i = 0; i < listOfColumns.size(); i++) {
       ColumnSchema columnSchema = listOfColumns.get(i);
       if (columnSchema.isDimensionColumn()) {
         if (columnSchema.getNumberOfChild() > 0) {
-          CarbonComplexDimension complexDimension =
-              new CarbonComplexDimension(columnSchema, dimensionOrdinal++,
-                  columnSchema.getNumberOfChild());
+          CarbonDimension complexDimension =
+              new CarbonDimension(columnSchema, dimensionOrdinal++, -1, -1);
+          complexDimension.initializeChildDimensionsList(columnSchema.getNumberOfChild());
           dimensions.add(complexDimension);
           dimensionOrdinal =
               readAllComplexTypeChildrens(dimensionOrdinal, columnSchema.getNumberOfChild(),
                   listOfColumns, complexDimension);
           i = dimensionOrdinal - 1;
         } else {
-          dimensions.add(new CarbonDimension(columnSchema, dimensionOrdinal++));
+          if (!columnSchema.getEncodingList().contains(Encoding.DICTIONARY)) {
+            dimensions.add(new CarbonDimension(columnSchema, dimensionOrdinal++, -1, -1));
+          } else if (columnSchema.getEncodingList().contains(Encoding.DICTIONARY)
+              && columnSchema.getColumnGroupId() == -1) {
+            dimensions.add(new CarbonDimension(columnSchema, dimensionOrdinal++, keyOrdinal++, -1));
+          } else {
+            columnGroupOrdinal =
+                previousColumnGroupId == columnSchema.getColumnGroupId() ? ++columnGroupOrdinal : 0;
+            previousColumnGroupId = columnSchema.getColumnGroupId();
+            dimensions.add(new CarbonDimension(columnSchema, dimensionOrdinal++, keyOrdinal++,
+                columnGroupOrdinal));
+
+          }
         }
       } else {
         measures.add(new CarbonMeasure(columnSchema, measureOrdinal++));
@@ -148,21 +163,21 @@ public class CarbonTable implements Serializable {
    * @return
    */
   private int readAllComplexTypeChildrens(int dimensionOrdinal, int childCount,
-      List<ColumnSchema> listOfColumns, CarbonComplexDimension parentDimension) {
+      List<ColumnSchema> listOfColumns, CarbonDimension parentDimension) {
     for (int i = 0; i < childCount; i++) {
       ColumnSchema columnSchema = listOfColumns.get(dimensionOrdinal);
       if (columnSchema.isDimensionColumn()) {
         if (columnSchema.getNumberOfChild() > 0) {
-          CarbonComplexDimension complexDimension =
-              new CarbonComplexDimension(columnSchema, dimensionOrdinal++,
-                  columnSchema.getNumberOfChild());
+          CarbonDimension complexDimension =
+              new CarbonDimension(columnSchema, dimensionOrdinal++, -1, -1);
+          complexDimension.initializeChildDimensionsList(columnSchema.getNumberOfChild());
           parentDimension.getListOfChildDimensions().add(complexDimension);
           dimensionOrdinal =
               readAllComplexTypeChildrens(dimensionOrdinal, columnSchema.getNumberOfChild(),
                   listOfColumns, complexDimension);
         } else {
           parentDimension.getListOfChildDimensions()
-              .add(new CarbonDimension(columnSchema, dimensionOrdinal++));
+              .add(new CarbonDimension(columnSchema, dimensionOrdinal++, -1, -1));
         }
       }
     }

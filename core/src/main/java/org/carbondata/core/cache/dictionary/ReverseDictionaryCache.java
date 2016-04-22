@@ -35,8 +35,9 @@ import org.carbondata.core.util.CarbonCoreLogEvent;
  * This class implements methods to create dictionary cache which will hold
  * dictionary chunks for look up of surrogate keys and values
  */
-public class ReverseDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
-    V extends Dictionary> extends AbstractDictionaryCache<K, V> {
+public class ReverseDictionaryCache<K extends
+    DictionaryColumnUniqueIdentifier, V extends Dictionary>
+    extends AbstractDictionaryCache<K, V> {
 
   /**
    * Attribute for Carbon LOGGER
@@ -78,11 +79,10 @@ public class ReverseDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
     final List<Dictionary> reverseDictionaryObjectList =
         new ArrayList<Dictionary>(dictionaryColumnUniqueIdentifiers.size());
     ExecutorService executorService = Executors.newFixedThreadPool(FIXED_THREAD_POOL_SIZE);
-    for (final DictionaryColumnUniqueIdentifier oneUniqueIdentifier :
-        dictionaryColumnUniqueIdentifiers) {
+    for (final DictionaryColumnUniqueIdentifier uniqueIdent : dictionaryColumnUniqueIdentifiers) {
       executorService.submit(new Runnable() {
         @Override public void run() {
-          reverseDictionaryObjectList.add(getDictionary(oneUniqueIdentifier));
+          reverseDictionaryObjectList.add(getDictionary(uniqueIdent));
         }
       });
     }

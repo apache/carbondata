@@ -51,11 +51,17 @@ import java.util.concurrent.Executors;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.carbon.metadata.datatype.DataType;
+import org.carbondata.core.carbon.metadata.encoder.Encoding;
+import org.carbondata.core.carbon.metadata.leafnode.DataFileMetadata;
+import org.carbondata.core.carbon.metadata.leafnode.datachunk.DataChunk;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreDataHolder;
 import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreInfo;
 import org.carbondata.core.datastorage.store.columnar.UnBlockIndexer;
+import org.carbondata.core.datastorage.store.compression.MeasureMetaDataModel;
+import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.datastorage.store.fileperations.AtomicFileOperations;
 import org.carbondata.core.datastorage.store.fileperations.AtomicFileOperationsImpl;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
@@ -67,8 +73,10 @@ import org.carbondata.core.metadata.CarbonMetadata.Dimension;
 import org.carbondata.core.metadata.LeafNodeInfo;
 import org.carbondata.core.metadata.LeafNodeInfoColumnar;
 import org.carbondata.core.metadata.SliceMetaData;
+import org.carbondata.core.metadata.ValueEncoderMeta;
 import org.carbondata.core.reader.CarbonMetaDataReader;
 import org.carbondata.core.vo.HybridStoreModel;
+import org.carbondata.query.util.DataFileMetadataConverter;
 
 import com.google.gson.Gson;
 import org.apache.commons.lang.ArrayUtils;
@@ -582,7 +590,7 @@ public final class CarbonUtil {
         // for row store
         int totalSize = 0;
         for (int j = 0; j < dimPartitioner[i].length; j++) {
-          newdims[dimCounter] = CarbonUtil.getIncrementedCardinality(dimCardinality[dimCounter]);
+          newdims[dimCounter] = getIncrementedCardinality(dimCardinality[dimCounter]);
           totalSize += newdims[dimCounter];
           dimCounter++;
         }
@@ -1011,7 +1019,7 @@ public final class CarbonUtil {
     catch (IOException e) {
       throw new CarbonUtilException("Problem while reading the slicemeta data file ", e);
     } finally {
-      CarbonUtil.closeStreams(objectInputStream, stream);
+      closeStreams(objectInputStream, stream);
     }
     return readObject;
   }
@@ -1024,15 +1032,15 @@ public final class CarbonUtil {
       LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
           "Slice Metadata file Path: " + path + '/' + CarbonUtil
               .getSliceMetaDataFileName(nextRestructFolder));
-      stream = FileFactory.getDataOutputStream(
-          path + File.separator + CarbonUtil.getSliceMetaDataFileName(nextRestructFolder),
-          FileFactory.getFileType(path));
+      stream = FileFactory
+          .getDataOutputStream(path + File.separator + getSliceMetaDataFileName(nextRestructFolder),
+              FileFactory.getFileType(path));
       objectOutputStream = new ObjectOutputStream(stream);
       objectOutputStream.writeObject(sliceMetaData);
     } catch (IOException e) {
       LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e.getMessage());
     } finally {
-      CarbonUtil.closeStreams(objectOutputStream, stream);
+      closeStreams(objectOutputStream, stream);
     }
   }
 
@@ -1076,37 +1084,6 @@ public final class CarbonUtil {
       });
     }
     return files;
-  }
-
-  /**
-   * This method will be used to for sending the new slice signal to engine
-   */
-  public static void flushSEQGenLruCache() {
-    try {
-      // inform engine to load new slice
-      Class<?> c = Class.forName("com.huawei.unibi.carbon.surrogatekeysgenerator.lru.LRUCache");
-      Class[] argTypes = new Class[] {};
-      // get the instance of CubeSliceLoader
-      Method main = c.getDeclaredMethod("getIntance", argTypes);
-      Object invoke = main.invoke(null, null);
-
-      // ionvoke loadSliceFromFile
-      Method declaredMethod = c.getDeclaredMethod("flush");
-      // pass cube name and store location
-      declaredMethod.invoke(invoke);
-    } catch (ClassNotFoundException classNotFoundException) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-          "Error while clearing the cache " + classNotFoundException);
-    } catch (NoSuchMethodException noSuchMethodException) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-          "Error while clearing the cache " + noSuchMethodException);
-    } catch (IllegalAccessException illegalAccessException) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-          "Error while clearing the cache " + illegalAccessException);
-    } catch (InvocationTargetException invocationTargetException) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-          "Error while clearing the cache " + invocationTargetException);
-    }
   }
 
   /**
@@ -1533,7 +1510,7 @@ public final class CarbonUtil {
     } catch (IOException e) {
       throw new CarbonUtilException("Problem while reading the file", e);
     } finally {
-      CarbonUtil.closeStreams(dataInputStream);
+      closeStreams(dataInputStream);
     }
 
     return cardinality;
@@ -1610,7 +1587,7 @@ public final class CarbonUtil {
     } catch (IOException e) {
       return new LoadMetadataDetails[0];
     } finally {
-      CarbonUtil.closeStreams(buffReader, inStream, dataInputStream);
+      closeStreams(buffReader, inStream, dataInputStream);
     }
 
     return listOfLoadFolderDetailsArray;
@@ -1667,7 +1644,7 @@ public final class CarbonUtil {
               .getMessage());
       throw new KettleException("Not able to write level cardinality file", e);
     } finally {
-      CarbonUtil.closeStreams(channel, fileOutputStream);
+      closeStreams(channel, fileOutputStream);
     }
   }
 
@@ -1689,13 +1666,13 @@ public final class CarbonUtil {
       LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
           "@@@@@ Error while reading SliceMetaData File @@@@@ :" + path);
     } finally {
-      CarbonUtil.closeStreams(objectInputStream, stream);
+      closeStreams(objectInputStream, stream);
     }
     return readObject;
   }
 
   public static SliceMetaData readSliceMetaDataFile(String folderPath, int currentRestructNumber) {
-    String path = folderPath + '/' + CarbonUtil.getSliceMetaDataFileName(currentRestructNumber);
+    String path = folderPath + '/' + getSliceMetaDataFileName(currentRestructNumber);
     return readSliceMetaDataFile(path);
   }
 
@@ -1984,5 +1961,162 @@ public final class CarbonUtil {
         ArrayUtils.toPrimitive(dirSurrogateList.toArray(new Integer[dirSurrogateList.size()]));
     return noDictionaryValIndex;
   }
+
+  /**
+   * This method will be used to get bit length of the dimensions based on the
+   * dimension partitioner. If partitioner is value is 1 the column
+   * cardinality will be incremented in such a way it will fit in byte level.
+   * for example if number of bits required to store one column value is 3
+   * bits the 8 bit will be assigned to each value of that column.In this way
+   * we may waste some bits(maximum 7 bits) If partitioner value is more than
+   * 1 then few column are stored together. so cardinality of that group will
+   * be incremented to fit in byte level For example: if cardinality for 3
+   * columns stored together is [1,1,1] then number of bits required will be
+   * [1,1,1] then last value will be incremented and it will become[1,1,6]
+   *
+   * @param dimCardinality cardinality of each column
+   * @param dimPartitioner Partitioner is how column is stored if value is 1 then column
+   *                       wise if value is more than 1 then it is in group with other
+   *                       column
+   * @return number of bits for each column
+   * @TODO for row group only last value is incremented problem in this cases
+   * in if last column in that group is selected most of the time in
+   * filter query Comparison will be more if it incremented uniformly
+   * then comparison will be distributed
+   */
+  public static int[] getDimensionBitLength(int[] dimCardinality, int[] dimPartitioner) {
+    int[] bitLength = new int[dimCardinality.length];
+    int dimCounter = 0;
+    for (int i = 0; i < dimPartitioner.length; i++) {
+      if (dimPartitioner[i] == 1) {
+        // for columnar store
+        // fully filled bits means complete byte or number of bits
+        // assigned will be in
+        // multiplication of 8
+        bitLength[dimCounter] = getBitLengthFullyFilled(dimCardinality[dimCounter]);
+        dimCounter++;
+      } else {
+        // for row store
+        int totalSize = 0;
+        for (int j = 0; j < dimPartitioner[i]; j++) {
+          bitLength[dimCounter] = getIncrementedCardinality(dimCardinality[dimCounter]);
+          totalSize += bitLength[dimCounter];
+          dimCounter++;
+        }
+        // below code is to increment in such a way that row group will
+        // be stored
+        // as byte level
+        int mod = totalSize % 8;
+        if (mod > 0) {
+          bitLength[dimCounter - 1] = bitLength[dimCounter - 1] + (8 - mod);
+        }
+      }
+    }
+    return bitLength;
+  }
+
+  /**
+   * Below method will be used to get the value compression model of the
+   * measure data chunk
+   *
+   * @param measureDataChunkList
+   * @return value compression model
+   */
+  public static ValueCompressionModel getValueCompressionModel(
+      List<DataChunk> measureDataChunkList) {
+    Object[] maxValue = new Object[measureDataChunkList.size()];
+    Object[] minValue = new Object[measureDataChunkList.size()];
+    Object[] uniqueValue = new Object[measureDataChunkList.size()];
+    int[] decimal = new int[measureDataChunkList.size()];
+    char[] type = new char[measureDataChunkList.size()];
+    byte[] dataTypeSelected = new byte[measureDataChunkList.size()];
+
+    /**
+     * to fill the meta data required for value compression model
+     */
+    for (int i = 0; i < dataTypeSelected.length; i++) {
+      int indexOf = measureDataChunkList.get(i).getEncodingList().indexOf(Encoding.DELTA);
+      if (indexOf > -1) {
+        ValueEncoderMeta valueEncoderMeta =
+            measureDataChunkList.get(i).getValueEncoderMeta().get(indexOf);
+        maxValue[i] = valueEncoderMeta.getMaxValue();
+        minValue[i] = valueEncoderMeta.getMinValue();
+        uniqueValue[i] = valueEncoderMeta.getUniqueValue();
+        decimal[i] = valueEncoderMeta.getDecimal();
+        type[i] = valueEncoderMeta.getType();
+        dataTypeSelected[i] = valueEncoderMeta.getDataTypeSelected();
+      }
+    }
+    MeasureMetaDataModel measureMetadataModel =
+        new MeasureMetaDataModel(minValue, maxValue, decimal, dataTypeSelected.length, uniqueValue,
+            type, dataTypeSelected);
+    return ValueCompressionUtil.getValueCompressionModel(measureMetadataModel);
+  }
+
+  /**
+   * Below method will be used to check whether particular encoding is present
+   * in the dimension or not
+   *
+   * @param dimension
+   * @param encoding  encoding to search
+   * @return if encoding is present in dimension
+   */
+  public static boolean hasEncoding(List<Encoding> encodings, Encoding encoding) {
+    return encodings.contains(encoding);
+  }
+
+  /**
+   * below method is to check whether data type is present in the data type array
+   *
+   * @param dataType  data type to be searched
+   * @param dataTypes all data types
+   * @return if data type is present
+   */
+  public static boolean hasDataType(DataType dataType, DataType[] dataTypes) {
+    for (int i = 0; i < dataTypes.length; i++) {
+      if (dataType.equals(dataTypes[i])) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Below method will be used to read the data file matadata
+   *
+   * @param filePath file path
+   * @param offset   offset in the file
+   * @return Data file metadata instance
+   * @throws CarbonUtilException
+   */
+  public static DataFileMetadata readMetadatFile(String filePath, long offset)
+      throws CarbonUtilException {
+    DataFileMetadataConverter fileMetadataConverter = new DataFileMetadataConverter();
+    try {
+      return fileMetadataConverter.readDataFileMetadata(filePath, offset);
+    } catch (IOException e) {
+      throw new CarbonUtilException("Problem while reading the file metadata", e);
+    }
+  }
+
+  /**
+   * Below method will be used to get the surrogate key
+   *
+   * @param data   actual data
+   * @param buffer byte buffer which will be used to convert the data to integer value
+   * @return surrogate key
+   */
+  public static int getSurrogateKey(byte[] data, ByteBuffer buffer) {
+    int lenght = 4 - data.length;
+    for (int i = 0; i < lenght; i++) {
+      buffer.put((byte) 0);
+    }
+    buffer.put(data);
+    buffer.rewind();
+    int surrogate = buffer.getInt();
+    buffer.clear();
+    return surrogate;
+  }
+
 }
 

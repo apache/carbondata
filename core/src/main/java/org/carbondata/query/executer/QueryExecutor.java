@@ -30,7 +30,7 @@ public interface QueryExecutor {
    *
    * @param queryModel query model, properties which will be required to execute the query
    * @throws QueryExecutionException will throw query execution exception in case of any
-   * abnormal scenario
+   *                                 abnormal scenario
    */
   CarbonIterator<RowResult> execute(CarbonQueryExecutorModel queryModel)
       throws QueryExecutionException;
@@ -40,7 +40,7 @@ public interface QueryExecutor {
    *
    * @param queryModel , properties which will be required to execute the query
    * @throws QueryExecutionException will throw query execution exception in case of any
-   * abnormal scenario
+   *                                 abnormal scenario
    */
   CarbonIterator<RowResult> executeDimension(CarbonQueryExecutorModel queryModel)
       throws QueryExecutionException;

@@ -198,7 +198,6 @@ public final class InMemoryTableStore {
     queryExecuteStatusMap.clear();
     cubeNameAndCubeMap.clear();
     mapCubeToSchema.clear();
-    CarbonUtil.flushSEQGenLruCache();
   }
 
   /**

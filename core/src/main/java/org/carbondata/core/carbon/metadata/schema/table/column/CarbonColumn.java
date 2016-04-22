@@ -20,7 +20,7 @@
 package org.carbondata.core.carbon.metadata.schema.table.column;
 
 import java.io.Serializable;
-import java.util.Set;
+import java.util.List;
 
 import org.carbondata.core.carbon.metadata.datatype.ConvertedType;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
@@ -106,7 +106,7 @@ public class CarbonColumn implements Serializable {
   /**
    * @return the list of encoder used in dimension
    */
-  public Set<Encoding> getEncoder() {
+  public List<Encoding> getEncoder() {
     return columnSchema.getEncodingList();
   }
 
@@ -141,7 +141,7 @@ public class CarbonColumn implements Serializable {
 
   /**
    * @return if DataType is ARRAY or STRUCT, this method return true, else
-   *         false.
+   * false.
    */
   public Boolean isComplex() {
     return columnSchema.isComplex();

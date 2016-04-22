@@ -71,7 +71,7 @@ public final class CarbonMetadata {
    */
   public void loadTableMetadata(TableInfo tableInfo) {
     CarbonTable carbonTable = tableInfoMap.get(tableInfo.getTableUniqueName());
-    if (null == carbonTable || carbonTable.getTableLastUpdatedTime() != tableInfo
+    if (null == carbonTable || carbonTable.getTableLastUpdatedTime() < tableInfo
         .getLastUpdatedTime()) {
       carbonTable = new CarbonTable();
       carbonTable.loadCarbonTable(tableInfo);

@@ -38,7 +38,7 @@ public class CarbonComplexDimension extends CarbonDimension implements Serializa
   private List<CarbonDimension> listOfChildDimensions;
 
   public CarbonComplexDimension(ColumnSchema columnSchema, int ordinal, int childDimensions) {
-    super(columnSchema, ordinal);
+    super(columnSchema, ordinal, -1, -1);
     listOfChildDimensions = new ArrayList<CarbonDimension>(childDimensions);
   }
 

@@ -378,7 +378,7 @@ public class CarbonDataWriter {
    * @param measureArray measure array
    * @return file offset offset is the current position of the file
    * @throws CarbonDataWriterException if will throw CarbonDataWriterException when any thing
-   * goes wrong while while writing the leaf file
+   *                                   goes wrong while while writing the leaf file
    */
   private long writeDataToFile(byte[] keyArray, byte[] measureArray)
       throws CarbonDataWriterException {
@@ -404,7 +404,7 @@ public class CarbonDataWriter {
    * ><measure2offset>
    *
    * @throws CarbonDataWriterException throw CarbonDataWriterException when problem in
-   * writing the meta data to file
+   *                                   writing the meta data to file
    */
   public void writeleafMetaDataToFile() throws CarbonDataWriterException {
     ByteBuffer buffer = null;

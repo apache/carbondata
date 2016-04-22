@@ -111,7 +111,8 @@ public class MinAggregator extends AbstractMeasureAggregatorMaxMin {
   }
 
   @SuppressWarnings("unchecked")
-  @Override public void readData(DataInput inPut) throws IOException {
+  @Override public void readData(DataInput inPut)
+      throws IOException {
     ByteArrayInputStream bis = null;
     ObjectInput in = null;
     try {

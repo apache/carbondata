@@ -291,11 +291,10 @@ public class InMemoryLoadTableUtilTest {
         + "\t\t\t\t<Level name=\"empno\" visible=\"true\" columnIndex=\"-1\" keyOrdinal=\"-1\" "
         + "levelCardinality=\"-1\" ordinalColumnIndex=\"-1\" nameColumnIndex=\"-1\" "
         + "column=\"empno\" type=\"Integer\" uniqueMembers=\"false\" columnar=\"true\" "
-        + "levelType=\"Regular\" hideMemberIf=\"Never\" isParent=\"true\">\n"
-        + "\t\t\t\t</Level>\n" + "\t\t\t</Hierarchy>\n" + "\t\t</Dimension>\n"
+        + "levelType=\"Regular\" hideMemberIf=\"Never\" isParent=\"true\">\n" + "\t\t\t\t</Level>\n"
+        + "\t\t\t</Hierarchy>\n" + "\t\t</Dimension>\n"
         + "\t\t<Measure name=\"salary\" column=\"salary\" datatype=\"Integer\" aggregator=\"sum\""
-        + " visible=\"true\">\n"
-        + "\t\t</Measure>\n" + "\t</Cube>\n" + "</Schema>";
+        + " visible=\"true\">\n" + "\t\t</Measure>\n" + "\t</Cube>\n" + "</Schema>";
     Parser xmlParser = null;
     CarbonDef.Schema schema = null;
     try {

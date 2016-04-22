@@ -21,13 +21,13 @@ package org.carbondata.core.carbon.metadata.leafnode;
 import java.io.Serializable;
 import java.util.List;
 
-import org.carbondata.core.carbon.metadata.index.LeafNodeIndex;
+import org.carbondata.core.carbon.metadata.leafnode.indexes.LeafNodeIndex;
 import org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 
 /**
  * Information of one data file
  */
-public class BlockMetadata implements Serializable {
+public class DataFileMetadata implements Serializable {
 
   /**
    * serialization id
@@ -63,6 +63,16 @@ public class BlockMetadata implements Serializable {
    * Description of columns in this file
    */
   private List<ColumnSchema> columnInTable;
+
+  /**
+   * full qualified path of the data file
+   */
+  private String filePath;
+
+  /**
+   * offset of the meta data
+   */
+  private long offset;
 
   /**
    * @return the versionId
@@ -148,4 +158,31 @@ public class BlockMetadata implements Serializable {
     this.columnInTable = columnInTable;
   }
 
+  /**
+   * @return the filePath
+   */
+  public String getFilePath() {
+    return filePath;
+  }
+
+  /**
+   * @param filePath the filePath to set
+   */
+  public void setFilePath(String filePath) {
+    this.filePath = filePath;
+  }
+
+  /**
+   * @return the offset
+   */
+  public long getOffset() {
+    return offset;
+  }
+
+  /**
+   * @param offset the offset to set
+   */
+  public void setOffset(long offset) {
+    this.offset = offset;
+  }
 }

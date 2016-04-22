@@ -19,9 +19,7 @@
 package org.carbondata.core.carbon.metadata.schema.table;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 import org.carbondata.core.carbon.metadata.datatype.DataType;
@@ -69,7 +67,7 @@ public class CarbonTableTest extends TestCase {
   }
 
   @Test public void testDimensionPresentInTableIsProper() {
-    CarbonDimension dimension = new CarbonDimension(getColumnarDimensionColumn(), 0);
+    CarbonDimension dimension = new CarbonDimension(getColumnarDimensionColumn(), 0, -1, -1);
     assertTrue(carbonTable.getDimensionByName("carbonTestTable", "IMEI").equals(dimension));
   }
 
@@ -80,9 +78,10 @@ public class CarbonTableTest extends TestCase {
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
     dimColumn.setDataType(DataType.STRING);
     dimColumn.setDimensionColumn(true);
-    Set<Encoding> encodeList = new HashSet<Encoding>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    List<Encoding> encodeList =
+        new ArrayList<Encoding>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     encodeList.add(Encoding.DICTIONARY);
-    dimColumn.setEncodintList(encodeList);
+    dimColumn.setEncodingList(encodeList);
     dimColumn.setNumberOfChild(0);
     return dimColumn;
   }

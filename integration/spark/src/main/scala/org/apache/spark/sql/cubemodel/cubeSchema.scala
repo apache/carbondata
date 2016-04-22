@@ -53,6 +53,8 @@ import org.carbondata.processing.suggest.autoagg.model.Request
 import org.carbondata.processing.suggest.autoagg.util.CommonUtil
 import org.carbondata.processing.suggest.datastats.model.LoadModel
 
+
+
 case class tableModel(
                        ifNotExistsSet: Boolean,
                        var schemaName: String,
@@ -130,10 +132,6 @@ case class Default(key: String, value: String)
 
 case class DataLoadTableFileMapping(table: String, loadPath: String)
 
-/**
- * New Cube processor which will create wrapper TableInfo object
- *
- */
 object CubeNewProcessor {
   def apply(cm: tableModel, sqlContext: SQLContext): TableInfo = {
     new CubeNewProcessor(cm, sqlContext).process
@@ -174,8 +172,8 @@ class CubeNewProcessor(cm: tableModel, sqlContext: SQLContext) {
     columnSchema.setColumnName(colName)
     columnSchema.setColumnUniqueId(UUID.randomUUID().toString())
     columnSchema.setColumnar(isCol)
-    val encoderSet = new java.util.HashSet(encoders.asJava)
-    columnSchema.setEncodintList(encoderSet)
+    import collection.convert.wrapAll._
+    columnSchema.setEncodingList(encoders)
     columnSchema.setDimensionColumn(isDimensionCol)
     columnSchema.setColumnGroup(colGroup)
     // TODO: Need to fill RowGroupID, Precision, Scala, converted type
@@ -183,9 +181,7 @@ class CubeNewProcessor(cm: tableModel, sqlContext: SQLContext) {
     columnSchema
   }
 
-  /**
-   * process create dml fields and create wrapper TableInfo object
-   */
+  // process create dml fields and create wrapper TableInfo object
   def process(): TableInfo = {
     val LOGGER = LogServiceFactory.getLogService(CubeNewProcessor.getClass().getName())
     var allColumns = Seq[ColumnSchema]()
@@ -319,7 +315,7 @@ class CubeNewProcessor(cm: tableModel, sqlContext: SQLContext) {
                 s"Validation failed for Create/Alter Cube Operation - " +
                   s"partition class specified can not be found or loaded : $cl")
               sys.error(s"partition class specified can not be found or loaded : $cl")
-          }
+            }
 
           Partitioner(part.partitionClass, columnBuffer.toArray, part.partitionCount, null)
         }
@@ -358,12 +354,7 @@ class CubeNewProcessor(cm: tableModel, sqlContext: SQLContext) {
     }
   }
 
-  /**
-   * For checking if the specified col group columns are specified in fields list.
-   *
-   * @param colGrps
-   * @param allCols
-   */
+  //  For checking if the specified col group columns are specified in fields list.
   protected def checkColGroupsValidity(colGrps: Seq[String],
                                        allCols: Seq[ColumnSchema],
                                        highCardCols: Seq[String]): Unit = {
@@ -394,12 +385,7 @@ class CubeNewProcessor(cm: tableModel, sqlContext: SQLContext) {
     }
   }
 
-  /**
-   * For updating the col group details for fields.
-   *
-   * @param colGrps
-   * @param allCols
-   */
+  // For updating the col group details for fields.
   private def updateColumnGroupsInFields(colGrps: Seq[String], allCols: Seq[ColumnSchema]): Unit = {
     if (null != colGrps) {
       colGrps.foreach(columngroup => {
@@ -677,7 +663,7 @@ class CubeProcessor(cm: tableModel, sqlContext: SQLContext) {
                 s"Validation failed for Create/Alter Cube Operation - " +
                   s"partition class specified can not be found or loaded : $cl")
               sys.error(s"partition class specified can not be found or loaded : $cl")
-          }
+            }
 
           Partitioner(part.partitionClass, columnBuffer.toArray, part.partitionCount, null)
         }
@@ -808,7 +794,7 @@ private[sql] case class ShowCreateCube(cm: tableModel, override val output: Seq[
           numericColArray.filterNot(filterDefinedCols(_, cm.dimCols))
         } else {
           numericColArray
-        }
+      }
       }
 
       measures = measureColArray.map(field => {
@@ -1055,7 +1041,7 @@ private[sql] case class ShowCreateCube(cm: tableModel, override val output: Seq[
           case e: Exception =>
             val cl = part.partitionClass
             sys.error(s"partition class specified can not be found or loaded : $cl")
-        }
+          }
 
         if (definedpartCols.size > 0) {
           val msg = definedpartCols.mkString(", ")
@@ -1135,13 +1121,12 @@ private[sql] case class ShowCreateCube(cm: tableModel, override val output: Seq[
 }
 
 
-/**
- * These are the assumptions made
- * 1.We have a single hierarchy under a dimension tag and a single level under a hierarchy tag
- * 2.The names of dimensions and measures are case insensitive
- * 3.CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE is always added as a measure.
- * So we need to ignore this to check duplicates
- */
+
+// These are the assumptions made
+// 1.We have a single hierarchy under a dimension tag and a single level under a hierarchy tag
+// 2.The names of dimensions and measures are case insensitive
+// 3.CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE is always added as a measure.
+// So we need to ignore this to check duplicates
 private[sql] case class AlterCube(
                                    cm: tableModel,
                                    dropCols: Seq[String],
@@ -1705,9 +1690,9 @@ private[sql] case class CreateCube(cm: tableModel) extends RunnableCommand {
               .audit(s"Deleting cube [$cubeName] under schema [$schemaName] as create TABLE failed")
             CarbonEnv.getInstance(sqlContext).carbonCatalog
               .dropCube(relation.cubeMeta.partitioner.partitionCount,
-                relation.cubeMeta.dataPath,
-                schemaName,
-                cubeName)(sqlContext)
+              relation.cubeMeta.dataPath,
+              schemaName,
+              cubeName)(sqlContext)
           }
 
 
@@ -1950,7 +1935,7 @@ private[sql] case class LoadCube(
           relation.cubeMeta.partitioner.partitionColumn(0).isEmpty) {
           LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
             "Initiating Direct Load for the Cube : (" +
-              schemaName + "." + cubeName + ")")
+            schemaName + "." + cubeName + ")")
           carbonLoadModel.setFactFilePath(factPath)
           carbonLoadModel.setCsvDelimiter(CarbonUtil.unescapeChar(delimiter))
           carbonLoadModel.setCsvHeader(fileHeader)
@@ -1959,7 +1944,7 @@ private[sql] case class LoadCube(
         else {
           LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
             "Initiating Data Partitioning for the Cube : (" +
-              schemaName + "." + cubeName + ")")
+            schemaName + "." + cubeName + ")")
           carbonLoadModel.setFactFilePath(partitionLocation)
           partitionStatus = CarbonContext.partitionData(
             schemaName,
@@ -1976,10 +1961,10 @@ private[sql] case class LoadCube(
         CarbonDataRDDFactory
           .loadCarbonData(sqlContext, carbonLoadModel, storeLocation, relation.cubeMeta.dataPath,
             kettleHomePath,
-            relation.cubeMeta.partitioner, columinar, false, partitionStatus);
-      }
-      catch {
-        case ex: Exception =>
+          relation.cubeMeta.partitioner, columinar, false, partitionStatus);
+            }
+        catch {
+          case ex: Exception =>
           LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, ex)
           LOGGER.audit("Dataload failure. Please check the logs")
           sys.error("Dataload failure. Please check the logs")
@@ -2136,7 +2121,7 @@ private[sql] case class LoadAggregationTable(
 private[sql] case class ShowAllCubesInSchema(
                                               schemaNameOp: Option[String],
                                               override val output: Seq[Attribute]
-                                              ) extends RunnableCommand {
+                                            ) extends RunnableCommand {
 
   override def run(sqlContext: SQLContext): Seq[Row] = {
     val schemaName = getDB.getDatabaseName(schemaNameOp, sqlContext)
@@ -2270,7 +2255,7 @@ private[sql] case class SuggestAggregates(
 private[sql] case class ShowAllTablesDetail(
                                              schemaNameOp: Option[String],
                                              override val output: Seq[Attribute]
-                                             ) extends RunnableCommand {
+                                           ) extends RunnableCommand {
 
   override def run(sqlContext: SQLContext): Seq[Row] = {
     val dSchemaName = getDB.getDatabaseName(schemaNameOp, sqlContext)
@@ -2358,9 +2343,9 @@ private[sql] case class DropCubeCommand(ifExistsSet: Boolean, schemaNameOp: Opti
 
           CarbonEnv.getInstance(sqlContext).carbonCatalog
             .dropCube(relation.cubeMeta.partitioner.partitionCount,
-              relation.cubeMeta.dataPath,
-              relation.cubeMeta.carbonTableIdentifier.getDatabaseName,
-              relation.cubeMeta.carbonTableIdentifier.getTableName)(sqlContext)
+            relation.cubeMeta.dataPath,
+            relation.cubeMeta.carbonTableIdentifier.getDatabaseName,
+            relation.cubeMeta.carbonTableIdentifier.getTableName)(sqlContext)
           CarbonDataRDDFactory
             .dropCube(sqlContext.sparkContext, schemaName, cubeName, relation.cubeMeta.partitioner)
           QueryPartitionHelper.getInstance().removePartition(schemaName, cubeName);
@@ -2451,11 +2436,11 @@ private[sql] case class ShowLoads(
 
       loadMetadataDetailsSortedArray.filter(load => load.getVisibility().equalsIgnoreCase("true"))
         .map(load =>
-          Row(
-            load.getLoadName(),
-            load.getLoadStatus(),
-            new java.sql.Timestamp(parser.parse(load.getLoadStartTime()).getTime()),
-            new java.sql.Timestamp(parser.parse(load.getTimestamp()).getTime()))).toSeq
+        Row(
+          load.getLoadName(),
+          load.getLoadStatus(),
+          new java.sql.Timestamp(parser.parse(load.getLoadStartTime()).getTime()),
+          new java.sql.Timestamp(parser.parse(load.getTimestamp()).getTime()))).toSeq
     } else {
       Seq.empty
 
@@ -2534,7 +2519,7 @@ private[sql] case class DeleteLoadByDate(
                                           cubeName: String,
                                           dateField: String,
                                           dateValue: String
-                                          ) extends RunnableCommand {
+                                        ) extends RunnableCommand {
 
   val LOGGER = LogServiceFactory.getLogService("org.apache.spark.sql.cubemodel.cubeSchema");
 

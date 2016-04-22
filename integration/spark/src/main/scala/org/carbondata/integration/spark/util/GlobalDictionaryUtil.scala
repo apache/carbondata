@@ -257,7 +257,7 @@ object GlobalDictionaryUtil extends Logging {
     if (ArrayUtils.isNotEmpty(delimiters)) {
       val patterns = new Array[Pattern](delimiters.length)
       for (i <- 0 until patterns.length) {
-        patterns(i) = Pattern.compile(if(delimiters(i)== null) "" else delimiters(i))
+        patterns(i) = Pattern.compile(if (delimiters(i)== null) "" else delimiters(i))
       }
       DataFormat(delimiters, 0, patterns)
     } else {

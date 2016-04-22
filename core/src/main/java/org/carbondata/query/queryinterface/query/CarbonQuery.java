@@ -141,7 +141,6 @@ public interface CarbonQuery extends Serializable {
    * When this property sets, it converts the data to the target time zone.
    * By default there is no time zone set. When this property sets, even the time filters
    * passed through this interface will be converted from this timezone.
-   *
    * For example : timezone sets UTC-12 and filters passed are Jan 1 23:00 then it
    * converts filter to Jan 2 11:00.
    *

@@ -23,6 +23,7 @@ import java.io.Serializable;
 import java.util.List;
 
 import org.carbondata.core.carbon.metadata.leafnode.datachunk.DataChunk;
+import org.carbondata.core.carbon.metadata.leafnode.indexes.LeafNodeIndex;
 
 /**
  * Leaf node info class to store the information about the Btree leaf
@@ -48,6 +49,12 @@ public class LeafNodeInfo implements Serializable {
    * Information about measure chunk of all measures in this leaf node
    */
   private List<DataChunk> measureColumnChunk;
+
+  /**
+   * to store the index like min max and start and end key of each column
+   * of the leaf node
+   */
+  private LeafNodeIndex leafNodeIndex;
 
   /**
    * @return the numberOfRows
@@ -90,4 +97,19 @@ public class LeafNodeInfo implements Serializable {
   public void setMeasureColumnChunk(List<DataChunk> measureColumnChunk) {
     this.measureColumnChunk = measureColumnChunk;
   }
+
+  /**
+   * @return the leafNodeIndex
+   */
+  public LeafNodeIndex getLeafNodeIndex() {
+    return leafNodeIndex;
+  }
+
+  /**
+   * @param leafNodeIndex the leafNodeIndex to set
+   */
+  public void setLeafNodeIndex(LeafNodeIndex leafNodeIndex) {
+    this.leafNodeIndex = leafNodeIndex;
+  }
+
 }

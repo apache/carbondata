@@ -119,9 +119,8 @@ public class PrimitiveQueryType implements GenericQueryType {
       System.arraycopy(columnarKeyStoreDataHolder[blockIndex].getKeyBlockData(),
           columnarKeyStoreDataHolder[blockIndex].getColumnarKeyStoreMetadata()
               .getColumnReverseIndex()[rowNumber] * columnarKeyStoreDataHolder[blockIndex]
-              .getColumnarKeyStoreMetadata()
-              .getEachRowSize(), currentVal, 0, columnarKeyStoreDataHolder[blockIndex]
-              .getColumnarKeyStoreMetadata().getEachRowSize());
+              .getColumnarKeyStoreMetadata().getEachRowSize(), currentVal, 0,
+          columnarKeyStoreDataHolder[blockIndex].getColumnarKeyStoreMetadata().getEachRowSize());
     } else {
       System.arraycopy(columnarKeyStoreDataHolder[blockIndex].getKeyBlockData(),
           rowNumber * columnarKeyStoreDataHolder[blockIndex].getColumnarKeyStoreMetadata()

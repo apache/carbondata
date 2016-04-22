@@ -19,9 +19,7 @@
 package org.carbondata.core.carbon.metadata.schema.table;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 import org.carbondata.core.carbon.metadata.datatype.DataType;
@@ -77,9 +75,10 @@ public class CarbonTableWithComplexTypesTest extends TestCase {
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
     dimColumn.setDataType(DataType.STRING);
     dimColumn.setDimensionColumn(true);
-    Set<Encoding> encodeList = new HashSet<Encoding>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    List<Encoding> encodeList =
+        new ArrayList<Encoding>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     encodeList.add(Encoding.DICTIONARY);
-    dimColumn.setEncodintList(encodeList);
+    dimColumn.setEncodingList(encodeList);
     dimColumn.setNumberOfChild(0);
     cols.add(dimColumn);
 
@@ -89,7 +88,7 @@ public class CarbonTableWithComplexTypesTest extends TestCase {
     structColumn.setColumnUniqueId(UUID.randomUUID().toString());
     structColumn.setDataType(DataType.STRUCT);
     structColumn.setDimensionColumn(true);
-    structColumn.setEncodintList(encodeList);
+    structColumn.setEncodingList(encodeList);
     structColumn.setNumberOfChild(2);
     cols.add(structColumn);
 
@@ -99,7 +98,7 @@ public class CarbonTableWithComplexTypesTest extends TestCase {
     primitiveColumn.setColumnUniqueId(UUID.randomUUID().toString());
     primitiveColumn.setDataType(DataType.STRING);
     primitiveColumn.setDimensionColumn(true);
-    primitiveColumn.setEncodintList(encodeList);
+    primitiveColumn.setEncodingList(encodeList);
     primitiveColumn.setNumberOfChild(0);
     cols.add(primitiveColumn);
 
@@ -109,7 +108,7 @@ public class CarbonTableWithComplexTypesTest extends TestCase {
     arrayColumn.setColumnUniqueId(UUID.randomUUID().toString());
     arrayColumn.setDataType(DataType.ARRAY);
     arrayColumn.setDimensionColumn(true);
-    arrayColumn.setEncodintList(encodeList);
+    arrayColumn.setEncodingList(encodeList);
     arrayColumn.setNumberOfChild(1);
     cols.add(arrayColumn);
 
@@ -119,7 +118,7 @@ public class CarbonTableWithComplexTypesTest extends TestCase {
     primitiveColumn1.setColumnUniqueId(UUID.randomUUID().toString());
     primitiveColumn1.setDataType(DataType.STRING);
     primitiveColumn1.setDimensionColumn(true);
-    primitiveColumn1.setEncodintList(encodeList);
+    primitiveColumn1.setEncodingList(encodeList);
     primitiveColumn1.setNumberOfChild(0);
     cols.add(primitiveColumn1);
 

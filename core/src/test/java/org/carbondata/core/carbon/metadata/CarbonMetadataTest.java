@@ -19,9 +19,7 @@
 package org.carbondata.core.carbon.metadata;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 import org.carbondata.core.carbon.metadata.datatype.DataType;
@@ -98,8 +96,8 @@ public class CarbonMetadataTest extends TestCase {
   @Test public void testloadMetadataTableWhenTableIsAlreadyExistsAndTimeStampIsChanged() {
     assertEquals(10000, carbonMetadata.getCarbonTable(tableUniqueName).getTableLastUpdatedTime());
     CarbonMetadata carbonMetadata1 = CarbonMetadata.getInstance();
-    carbonMetadata1.loadTableMetadata(getTableInfo(1001));
-    assertEquals(1001, carbonMetadata.getCarbonTable(tableUniqueName).getTableLastUpdatedTime());
+    carbonMetadata1.loadTableMetadata(getTableInfo(100001));
+    assertEquals(100001, carbonMetadata.getCarbonTable(tableUniqueName).getTableLastUpdatedTime());
     assertEquals(1, carbonMetadata.getNumberOfTables());
   }
 
@@ -110,9 +108,10 @@ public class CarbonMetadataTest extends TestCase {
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
     dimColumn.setDataType(DataType.STRING);
     dimColumn.setDimensionColumn(true);
-    Set<Encoding> encodeList = new HashSet<Encoding>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    List<Encoding> encodeList =
+        new ArrayList<Encoding>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     encodeList.add(Encoding.DICTIONARY);
-    dimColumn.setEncodintList(encodeList);
+    dimColumn.setEncodingList(encodeList);
     dimColumn.setNumberOfChild(0);
     return dimColumn;
   }

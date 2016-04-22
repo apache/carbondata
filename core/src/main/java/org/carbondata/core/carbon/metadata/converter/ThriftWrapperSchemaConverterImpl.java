@@ -19,9 +19,7 @@
 package org.carbondata.core.carbon.metadata.converter;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import org.carbondata.core.carbon.metadata.datatype.ConvertedType;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
@@ -431,11 +429,11 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     wrapperColumnSchema.setColumnar(externalColumnSchema.isColumnar());
     wrapperColumnSchema.setDataType(fromExternalToWrapperDataType(externalColumnSchema.data_type));
     wrapperColumnSchema.setDimensionColumn(externalColumnSchema.isDimension());
-    Set<Encoding> encoders = new HashSet<Encoding>();
+    List<Encoding> encoders = new ArrayList<Encoding>();
     for (org.carbondata.format.Encoding encoder : externalColumnSchema.getEncoders()) {
       encoders.add(fromExternalToWrapperEncoding(encoder));
     }
-    wrapperColumnSchema.setEncodintList(encoders);
+    wrapperColumnSchema.setEncodingList(encoders);
     wrapperColumnSchema.setConvertedType(
         fromExternalToWrapperConvertedType(externalColumnSchema.getConverted_type()));
     wrapperColumnSchema.setNumberOfChild(externalColumnSchema.getNum_child());

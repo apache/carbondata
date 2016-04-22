@@ -19,7 +19,7 @@
 package org.carbondata.core.carbon.metadata.schema.table.column;
 
 import java.io.Serializable;
-import java.util.Set;
+import java.util.List;
 
 import org.carbondata.core.carbon.metadata.datatype.ConvertedType;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
@@ -62,7 +62,7 @@ public class ColumnSchema implements Serializable {
   /**
    * List of encoding that are chained to encode the data for this column
    */
-  private Set<Encoding> encodingList;
+  private List<Encoding> encodingList;
 
   /**
    * Whether the column is a dimension or measure
@@ -312,14 +312,14 @@ public class ColumnSchema implements Serializable {
   /**
    * @return the encoderList
    */
-  public Set<Encoding> getEncodingList() {
+  public List<Encoding> getEncodingList() {
     return encodingList;
   }
 
   /**
    * @param encoderList the encoderList to set
    */
-  public void setEncodintList(Set<Encoding> encodingList) {
+  public void setEncodingList(List<Encoding> encodingList) {
     this.encodingList = encodingList;
   }
 
@@ -337,11 +337,10 @@ public class ColumnSchema implements Serializable {
 
   /**
    * @return if DataType is ARRAY or STRUCT, this method return true, else
-   *         false.
+   * false.
    */
   public Boolean isComplex() {
-    if (DataType.ARRAY.equals(this.getDataType())
-        || DataType.STRUCT.equals(this.getDataType())) {
+    if (DataType.ARRAY.equals(this.getDataType()) || DataType.STRUCT.equals(this.getDataType())) {
       return true;
     } else {
       return false;
