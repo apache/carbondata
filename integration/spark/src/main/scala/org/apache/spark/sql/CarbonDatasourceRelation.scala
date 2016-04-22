@@ -168,8 +168,7 @@ case class CarbonRelation(schemaName: String,
           metaData.carbonTable.getMeasureByName(factTable, x.getColName).getDataType.toString
             .toLowerCase match {
             case "int" => "double"
-            case _ => metaData.carbonTable.getMeasureByName(factTable, x.getColName).getDataType
-              .toString.toLowerCase
+            case x => x
           }),
         nullable = true)(qualifiers = tableName +: alias.toSeq))
   }

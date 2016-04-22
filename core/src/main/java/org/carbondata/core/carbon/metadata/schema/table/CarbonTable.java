@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonComplexDimension;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
@@ -119,11 +120,13 @@ public class CarbonTable implements Serializable {
       ColumnSchema columnSchema = listOfColumns.get(i);
       if (columnSchema.isDimensionColumn()) {
         if (columnSchema.getNumberOfChild() > 0) {
-          CarbonDimension complexDimension = new CarbonDimension(columnSchema, dimensionOrdinal++);
-          complexDimension.initializeChildDimensionsList(columnSchema.getNumberOfChild());
+          CarbonComplexDimension complexDimension =
+              new CarbonComplexDimension(columnSchema, dimensionOrdinal++,
+                  columnSchema.getNumberOfChild());
           dimensions.add(complexDimension);
-          dimensionOrdinal = readAllComplexTypeChildrens(dimensionOrdinal,
-              columnSchema.getNumberOfChild(), listOfColumns, complexDimension);
+          dimensionOrdinal =
+              readAllComplexTypeChildrens(dimensionOrdinal, columnSchema.getNumberOfChild(),
+                  listOfColumns, complexDimension);
           i = dimensionOrdinal - 1;
         } else {
           dimensions.add(new CarbonDimension(columnSchema, dimensionOrdinal++));
@@ -145,16 +148,18 @@ public class CarbonTable implements Serializable {
    * @return
    */
   private int readAllComplexTypeChildrens(int dimensionOrdinal, int childCount,
-      List<ColumnSchema> listOfColumns, CarbonDimension parentDimension) {
+      List<ColumnSchema> listOfColumns, CarbonComplexDimension parentDimension) {
     for (int i = 0; i < childCount; i++) {
       ColumnSchema columnSchema = listOfColumns.get(dimensionOrdinal);
       if (columnSchema.isDimensionColumn()) {
         if (columnSchema.getNumberOfChild() > 0) {
-          CarbonDimension complexDimension = new CarbonDimension(columnSchema, dimensionOrdinal++);
-          complexDimension.initializeChildDimensionsList(columnSchema.getNumberOfChild());
+          CarbonComplexDimension complexDimension =
+              new CarbonComplexDimension(columnSchema, dimensionOrdinal++,
+                  columnSchema.getNumberOfChild());
           parentDimension.getListOfChildDimensions().add(complexDimension);
-          dimensionOrdinal = readAllComplexTypeChildrens(dimensionOrdinal,
-              columnSchema.getNumberOfChild(), listOfColumns, complexDimension);
+          dimensionOrdinal =
+              readAllComplexTypeChildrens(dimensionOrdinal, columnSchema.getNumberOfChild(),
+                  listOfColumns, complexDimension);
         } else {
           parentDimension.getListOfChildDimensions()
               .add(new CarbonDimension(columnSchema, dimensionOrdinal++));
@@ -247,24 +252,7 @@ public class CarbonTable implements Serializable {
   }
 
   /**
-   * to get particular dimension from a table
-   *
-   * @param tableName
-   * @param columnName
-   * @return
-   */
-  public CarbonDimension getDimensionByName(String tableName, String columnName) {
-    List<CarbonDimension> dimensionList = tableDimensionsMap.get(tableName);
-    for (CarbonDimension dims : dimensionList) {
-      if (dims.getColName().equalsIgnoreCase(columnName)) {
-        return dims;
-      }
-    }
-    return null;
-  }
-
-  /**
-   * to get particular measure from table
+   * to get particular measure from a table
    *
    * @param tableName
    * @param columnName
@@ -272,10 +260,26 @@ public class CarbonTable implements Serializable {
    */
   public CarbonMeasure getMeasureByName(String tableName, String columnName) {
     List<CarbonMeasure> measureList = tableMeasuresMap.get(tableName);
-    for (CarbonMeasure msr : measureList) {
-      if (msr.getColName().equalsIgnoreCase(columnName)) ;
-      {
-        return msr;
+    for (CarbonMeasure measure : measureList) {
+      if (measure.getColName().equalsIgnoreCase(columnName)) {
+        return measure;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * to get particular dimension from a table
+   *
+   * @param tableName
+   * @param columnName
+   * @return
+   */
+  public CarbonDimension getDimensionByName(String tableName, String columnName) {
+    List<CarbonDimension> dimList = tableDimensionsMap.get(tableName);
+    for (CarbonDimension dim : dimList) {
+      if (dim.getColName().equalsIgnoreCase(columnName)) {
+        return dim;
       }
     }
     return null;

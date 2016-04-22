@@ -16,80 +16,54 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.carbondata.core.carbon.metadata.schema.table.column;
 
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- * class represent column(measure) in table
+ * class to represent column(dimension) in table
  */
-public class CarbonMeasure extends CarbonColumn {
+public class CarbonComplexDimension extends CarbonDimension implements Serializable {
 
   /**
    * serialization version
    */
-  private static final long serialVersionUID = 354341488059013977L;
+  private static final long serialVersionUID = 3648269871656322681L;
 
   /**
-   * aggregator chosen for measure
+   * List of child dimension for complex type
    */
-  private String aggregateFunction;
+  private List<CarbonDimension> listOfChildDimensions;
 
-  /**
-   * minValue for this measure this is required to support distinct count query when
-   * data type of is integer, and this is object as we are supporting different type of
-   * data type like BigDecimal,long,double,etc.
-   */
-  private Object minValue;
-
-  /**
-   * Used when this column contains decimal data.
-   */
-  private int scale;
-
-  /**
-   * precision in decimal data
-   */
-  private int precision;
-
-  /**
-   * @param minValue the minValue to set
-   */
-  public void setMinValue(Object minValue) {
-    this.minValue = minValue;
-  }
-
-  public CarbonMeasure(ColumnSchema columnSchema, int ordinal) {
+  public CarbonComplexDimension(ColumnSchema columnSchema, int ordinal, int childDimensions) {
     super(columnSchema, ordinal);
-    this.scale = columnSchema.getScale();
-    this.precision = columnSchema.getPrecision();
+    listOfChildDimensions = new ArrayList<CarbonDimension>(childDimensions);
   }
 
   /**
-   * @return the scale
+   * @return number of children for complex type
    */
-  public int getScale() {
-    return scale;
+  @Override public int getNumberOfChild() {
+    return columnSchema.getNumberOfChild();
   }
 
   /**
-   * @return the precision
+   * @return list of children dims for complex type
    */
-  public int getPrecision() {
-    return precision;
+  @Override public List<CarbonDimension> getListOfChildDimensions() {
+    return listOfChildDimensions;
   }
 
   /**
-   * @return the aggregator
+   * to generate the hash code for this class
    */
-  public String getAggregateFunction() {
-    return aggregateFunction;
-  }
-
-  /**
-   * @return the minValue
-   */
-  public Object getMinValue() {
-    return minValue;
+  @Override public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + ((columnSchema == null) ? 0 : columnSchema.hashCode());
+    return result;
   }
 
   /**
@@ -102,10 +76,10 @@ public class CarbonMeasure extends CarbonColumn {
     if (obj == null) {
       return false;
     }
-    if (!(obj instanceof CarbonDimension)) {
+    if (!(obj instanceof CarbonComplexDimension)) {
       return false;
     }
-    CarbonDimension other = (CarbonDimension) obj;
+    CarbonComplexDimension other = (CarbonComplexDimension) obj;
     if (columnSchema == null) {
       if (other.columnSchema != null) {
         return false;
