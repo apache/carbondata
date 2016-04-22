@@ -191,6 +191,11 @@ public class GraphConfigurationInfo {
   private int currentRestructNumber;
   private String levelAnddataType;
 
+  /**
+   * String of direct dictionary columns and index separated by COLON_SPC_CHARACTER
+   */
+  private String directDictionaryColumnString;
+
   public String getDimensionStoreTypeString() {
     return dimensionStoreType;
   }
@@ -956,5 +961,24 @@ public class GraphConfigurationInfo {
    */
   public void setNoDictionaryDims(String noDictionaryDims) {
     this.noDictionaryDims = noDictionaryDims;
+  }
+
+  /**
+   * Set String of direct dictionary columns index/ordinal and column DataType separated by
+   * COLON_SPC_CHARACTER
+   *
+   * @param directDictionaryColumnString
+   */
+  public void setDirectDictionaryColumnString(String directDictionaryColumnString) {
+    this.directDictionaryColumnString = directDictionaryColumnString;
+  }
+
+  /**
+   * String of direct dictionary columns index and DataType separated by COLON_SPC_CHARACTER
+   *
+   * @return
+   */
+  public String getDirectDictionaryColumnString() {
+    return directDictionaryColumnString;
   }
 }

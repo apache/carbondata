@@ -30,6 +30,8 @@ import java.util.Map;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
+import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.carbondata.core.metadata.CarbonMetadata.Dimension;
 import org.carbondata.core.metadata.CarbonMetadata.Measure;
 import org.carbondata.query.aggregator.MeasureAggregator;
@@ -250,10 +252,18 @@ public class QueryResultPreparator {
         }
 
         if (!isComplexType) {
-          memString = member.toString();
-          row[queryModel.getDims()[i].getQueryOrder()] = DataTypeConverter.getDataBasedOnDataType(
-              memString.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL) ? null : memString,
-              queryModel.getDims()[i].getDataType());
+          if (queryModel.getDims()[i].isDirectDictionary()) {
+            DirectDictionaryGenerator directDictionaryGenerator =
+                DirectDictionaryKeyGeneratorFactory
+                    .getDirectDictionaryGenerator(queryModel.getDims()[i].getDataType());
+            row[queryModel.getDims()[i].getQueryOrder()] = directDictionaryGenerator
+                .getValueFromSurrogate((int) surrogateResult[i][columnIndex]);
+          } else {
+            memString = member.toString();
+            row[queryModel.getDims()[i].getQueryOrder()] = DataTypeConverter.getDataBasedOnDataType(
+                memString.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL) ? null : memString,
+                queryModel.getDims()[i].getDataType());
+          }
         } else {
           row[queryModel.getDims()[i].getQueryOrder()] = complexData;
         }

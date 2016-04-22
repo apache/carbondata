@@ -28,11 +28,14 @@ import java.util.Map;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.carbon.SqlStatement;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.keygenerator.KeyGenerator;
+import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
+import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.carbondata.core.load.LoadMetadataDetails;
 import org.carbondata.core.metadata.LeafNodeInfoColumnar;
@@ -85,6 +88,10 @@ public class DataRetentionHandler {
   private String columnActualName;
   private List<LoadMetadataDetails> listOfLoadMetadataDetails;
   private String dimensionTableName;
+  /**
+   * dictionary key of columnValue (DateStringFormat)
+   */
+  private int retentionTimestamp;
 
   public DataRetentionHandler(String schemaName, String cubeName, String tableName,
       String dimensionTableName, String hdsfStoreLocation, String columnName,
@@ -102,6 +109,13 @@ public class DataRetentionHandler {
     this.currentRestructNumber = currentRestructNum;
     this.listOfLoadMetadataDetails = listOfLoadMetadataDetails;
     this.dimensionTableName = dimensionTableName;
+    this.loadFiles = CarbonDataRetentionUtil
+        .getAllLoadFolderSlices(schemaName, cubeName, tableName, this.hdsfStoreLocation,
+            currentRestructNum);
+    //get the dictionary value of the columnValue
+    DirectDictionaryGenerator directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
+        .getDirectDictionaryGenerator(SqlStatement.Type.TIMESTAMP);
+    retentionTimestamp = directDictionaryGenerator.generateDirectSurrogateKey(columnValue);
   }
 
   /**
@@ -368,7 +382,10 @@ public class DataRetentionHandler {
           int surrKey = -1;
           try {
             surrKey = (int) storeTupleSurrogates[surrogateKeyIndex];
-            res = retentionSurrogateKeyMap.get(surrKey);
+            //res = retentionSurrogateKeyMap.get(surrKey);
+            if (surrKey < retentionTimestamp) {
+              res = 0;
+            }
           } catch (Exception e) {
             LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                 "Member needs to be added in updated fact file surrogate key is : " + surrKey);

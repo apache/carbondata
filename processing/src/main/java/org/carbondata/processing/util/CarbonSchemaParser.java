@@ -199,16 +199,14 @@ public final class CarbonSchemaParser {
               || aggregateTable[i].getAggLevels().length < 1) {
             LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                 "Invalid Schema: Invalid aggreagte table as levels are not present in aggregate "
-                    + "table: "
-                    + aggregateTable[i].getAggregateTableName());
+                    + "table: " + aggregateTable[i].getAggregateTableName());
             return false;
           }
           if (null == aggregateTable[i].getAggMeasure()
               || aggregateTable[i].getAggMeasure().length < 1) {
             LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
                 "Invalid Schema: Invalid aggreagte table as measure are present in aggregate "
-                    + "table: "
-                    + aggregateTable[i].getAggregateTableName());
+                    + "table: " + aggregateTable[i].getAggregateTableName());
             return false;
           }
         }
@@ -2315,6 +2313,29 @@ public final class CarbonSchemaParser {
       }
     }
     return null;
+  }
+
+  /**
+   * the method returns the String of direct dictionary column index and column DataType
+   * separated by COLON_SPC_CHARACTER
+   *
+   * @param dimensions
+   * @return
+   */
+  public static String getDirectDictionaryColumnString(List<CarbonDimension> dimensions,
+      CarbonDataLoadSchema carbonDataLoadSchema) {
+    StringBuffer buff = new StringBuffer();
+    int counter = 0;
+    for (CarbonDimension cDimension : dimensions) {
+      if (cDimension.getDataType().equals(DataType.TIMESTAMP)) {
+        buff.append(cDimension.getOrdinal());
+        buff.append(CarbonCommonConstants.COLON_SPC_CHARACTER);
+        buff.append(cDimension.getDataType());
+        buff.append(CarbonCommonConstants.COLON_SPC_CHARACTER);
+        counter++;
+      }
+    }
+    return buff.toString();
   }
 
   /**

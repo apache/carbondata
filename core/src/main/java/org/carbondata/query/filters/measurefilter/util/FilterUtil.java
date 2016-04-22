@@ -138,8 +138,11 @@ public final class FilterUtil {
     ConditionalExpression condExpression = null;
     switch (filterExpressionType) {
       case EQUALS:
+        //TODO DirectDictionary flow to be checked with filter not sure about the below condition
+        //will check once the query flow will complete
         currentCondExpression = (BinaryConditionalExpression) expression;
-        if (currentCondExpression.isSingleDimension() &&
+        if (currentCondExpression.isSingleDimension() && !currentCondExpression
+            .isDirectDictionaryColumns() &&
             currentCondExpression.getColumnList().get(0).getDim().getDataType() != Type.ARRAY &&
             currentCondExpression.getColumnList().get(0).getDim().getDataType() != Type.STRUCT) {
 
@@ -177,7 +180,8 @@ public final class FilterUtil {
         break;
       case NOT_EQUALS:
         currentCondExpression = (BinaryConditionalExpression) expression;
-        if (currentCondExpression.isSingleDimension() &&
+        if (currentCondExpression.isSingleDimension() && !currentCondExpression
+            .isDirectDictionaryColumns() &&
             currentCondExpression.getColumnList().get(0).getDim().getDataType() != Type.ARRAY &&
             currentCondExpression.getColumnList().get(0).getDim().getDataType() != Type.STRUCT) {
           int newDimensionIndex = QueryExecutorUtility.isNewDimension(info.getNewDimension(),
@@ -213,8 +217,8 @@ public final class FilterUtil {
         break;
       default:
         condExpression = (ConditionalExpression) expression;
-        if (condExpression.isSingleDimension() &&
-            condExpression.getColumnList().get(0).getDim().getDataType() != Type.ARRAY &&
+        if (condExpression.isSingleDimension() && !currentCondExpression.isDirectDictionaryColumns()
+            && condExpression.getColumnList().get(0).getDim().getDataType() != Type.ARRAY &&
             condExpression.getColumnList().get(0).getDim().getDataType() != Type.STRUCT) {
           condExpression = (ConditionalExpression) expression;
           if (condExpression.isSingleDimension()) {

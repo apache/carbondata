@@ -69,4 +69,43 @@ public final class DataTypeUtil {
     return new BigDecimal(sig, scale);
   }
 
+  /**
+   * returns the SqlStatement.Type of corresponding string value
+   *
+   * @param dataTypeStr
+   * @return return the SqlStatement.Type
+   */
+  public static SqlStatement.Type getDataType(String dataTypeStr) {
+    SqlStatement.Type dataType = null;
+    switch (dataTypeStr) {
+      case "TIMESTAMP":
+        dataType = SqlStatement.Type.TIMESTAMP;
+        break;
+      case "STRING":
+        dataType = SqlStatement.Type.STRING;
+        break;
+      case "INT":
+        dataType = SqlStatement.Type.INT;
+        break;
+      case "LONG":
+        dataType = SqlStatement.Type.LONG;
+        break;
+      case "DOUBLE":
+        dataType = SqlStatement.Type.DOUBLE;
+        break;
+      case "DECIMAL":
+        dataType = SqlStatement.Type.DECIMAL;
+        break;
+      case "ARRAY":
+        dataType = SqlStatement.Type.ARRAY;
+        break;
+      case "STRUCT":
+        dataType = SqlStatement.Type.STRUCT;
+        break;
+      case "MAP":
+      default:
+        dataType = SqlStatement.Type.STRING;
+    }
+    return dataType;
+  }
 }

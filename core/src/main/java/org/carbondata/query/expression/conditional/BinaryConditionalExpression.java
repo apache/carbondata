@@ -83,4 +83,22 @@ public abstract class BinaryConditionalExpression extends BinaryLogicalExpressio
 
   }
 
+  /**
+   * the method will return flag (true or false) depending on the existence of the
+   * direct dictionary columns in conditional expression
+   *
+   * @return the method will return flag (true or false)
+   */
+  @Override public boolean isDirectDictionaryColumns() {
+    List<ColumnExpression> listOfExp =
+        new ArrayList<ColumnExpression>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    getColumnList(this, listOfExp);
+    for (ColumnExpression ce : listOfExp) {
+      if (ce.getDim().isDirectDictionary()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
 }

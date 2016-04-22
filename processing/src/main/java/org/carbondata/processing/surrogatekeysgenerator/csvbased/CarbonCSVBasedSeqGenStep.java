@@ -57,6 +57,8 @@ import org.carbondata.core.file.manager.composite.FileData;
 import org.carbondata.core.file.manager.composite.IFileManagerComposite;
 import org.carbondata.core.file.manager.composite.LoadFolderData;
 import org.carbondata.core.keygenerator.KeyGenerator;
+import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
+import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
@@ -619,7 +621,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
 
     setOutputDone();
     LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-        "Record Procerssed For table: " + meta.getTableName());
+        "Record Processed For table: " + meta.getTableName());
     String logMessage =
         "Summary: Carbon CSV Based Seq Gen Step:  Read: " + readCounter + ": Write: "
             + writeCounter;
@@ -1381,8 +1383,16 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
               isGenerated = false;
               generatedSurrogate = -1;
             } else {
-              surrogateKeyForHrrchy[0] =
-                  surrogateKeyGen.generateSurrogateKeys(((String) r[j]), foreignKeyColumnName);
+              if (meta.isDirectDictionary(j)) {
+                DirectDictionaryGenerator directDictionaryGenerator1 =
+                    DirectDictionaryKeyGeneratorFactory
+                        .getDirectDictionaryGenerator(meta.getColumnDataType()[j]);
+                surrogateKeyForHrrchy[0] =
+                    directDictionaryGenerator1.generateDirectSurrogateKey(((String) r[j]));
+              } else {
+                surrogateKeyForHrrchy[0] =
+                    surrogateKeyGen.generateSurrogateKeys(((String) r[j]), foreignKeyColumnName);
+              }
             }
             if (surrogateKeyForHrrchy[0] == -1) {
               addCardinalityExcededEntry(r, inputColumnsSize, j, columnName);

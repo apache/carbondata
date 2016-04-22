@@ -30,7 +30,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.carbondata.core.carbon.SqlStatement;
 import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.util.DataTypeUtil;
 import org.carbondata.processing.datatypes.ArrayDataType;
 import org.carbondata.processing.datatypes.GenericDataType;
 import org.carbondata.processing.datatypes.PrimitiveDataType;
@@ -337,6 +339,20 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
    */
   private String partitionID;
 
+  /***
+   * String of columns ordinal and column datatype separated by COLON_SPC_CHARACTER
+   */
+  private String directDictionaryColumns;
+  /**
+   * Flag to specify the direct dictionary
+   */
+  private boolean[] isDirectDictionary;
+  /**
+   * maintains the array of columns datatype
+   * only fill direct columns remaining fill with null
+   */
+  private SqlStatement.Type[] columnDataType;
+
   public CarbonCSVBasedSeqGenMeta() {
     super();
   }
@@ -585,6 +601,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     denormColumNames = "";
     currentRestructNumber = -1;
     partitionID = "";
+    directDictionaryColumns = "";
   }
 
   // helper method to allocate the arrays
@@ -645,6 +662,8 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     retval.append("    ")
         .append(XMLHandler.addTagValue("currentRestructNumber", currentRestructNumber));
     retval.append("    ").append(XMLHandler.addTagValue("partitionID", partitionID));
+    retval.append("    ")
+        .append(XMLHandler.addTagValue("directDictionaryColumns", directDictionaryColumns));
     return retval.toString();
   }
 
@@ -690,6 +709,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
       currentRestructNumber =
           Integer.parseInt(XMLHandler.getTagValue(stepnode, "currentRestructNumber"));
       partitionID = XMLHandler.getTagValue(stepnode, "partitionID");
+      directDictionaryColumns = XMLHandler.getTagValue(stepnode, "directDictionaryColumns");
       String batchConfig = XMLHandler.getTagValue(stepnode, "batchSize");
 
       if (batchConfig != null) {
@@ -761,7 +781,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     }
 
     updateDenormColunList(denormColumNames);
-
+    updateDirectDictionaryColumnsInfo();
   }
 
   private void updateDenormColunList(String denormColumNames) {
@@ -1250,6 +1270,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
       denormColumNames = rep.getStepAttributeString(idStep, "denormColumNames");
       currentRestructNumber = (int) rep.getStepAttributeInteger(idStep, "currentRestructNumber");
       partitionID = rep.getStepAttributeString(idStep, "partitionID");
+      directDictionaryColumns = rep.getStepAttributeString(idStep, "directDictionaryColumns");
       int nrKeys = rep.countNrStepAttributes(idStep, "lookup_keyfield");
       allocate(nrKeys);
     } catch (Exception e) {
@@ -1301,6 +1322,8 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
       rep.saveStepAttribute(idTransformation, idStep, "currentRestructNumber",
           currentRestructNumber);
       rep.saveStepAttribute(idTransformation, idStep, "partitionID", partitionID);
+      rep.saveStepAttribute(idTransformation, idStep, "directDictionaryColumns",
+          directDictionaryColumns);
     } catch (Exception e) {
       throw new KettleException(
           BaseMessages.getString(pkg, "CarbonStep.Exception.UnableToSaveStepInfoToRepository")
@@ -1537,6 +1560,61 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
    */
   public void setPartitionID(String partitionID) {
     this.partitionID = partitionID;
+  }
+
+  /**
+   * returns the String of DirectDictionary columns separated by COLON_SPC_CHARACTER
+   * "factTableName+'_'+columnName+COLON_SPC_CHARACTER+ columnIndex+COLON_SPC_CHARACTER"
+   *
+   * @return
+   */
+  public String getDirectDictionaryColumns() {
+    return directDictionaryColumns;
+  }
+
+  /**
+   * set the the String of DirectDictionary columns separated by COLON_SPC_CHARACTER
+   *
+   * @param directDictionaryColumns
+   */
+  public void setDirectDictionaryColumns(String directDictionaryColumns) {
+    this.directDictionaryColumns = directDictionaryColumns;
+  }
+
+  /**
+   * Method populates the isDirectDictionary and columnDataType array
+   * to be used while generating the surrogate key of the direct dictionary columns
+   */
+  private void updateDirectDictionaryColumnsInfo() {
+    isDirectDictionary = new boolean[dimColNames.length];
+    columnDataType = new SqlStatement.Type[dimColNames.length];
+    if (null != directDictionaryColumns) {
+      String[] str = directDictionaryColumns.split(CarbonCommonConstants.COLON_SPC_CHARACTER);
+      for (int i = 0; i < str.length - 1; i++) {
+        int colIndex = Integer.valueOf(str[i]);
+        SqlStatement.Type dataType = DataTypeUtil.getDataType(str[++i]);
+        isDirectDictionary[colIndex] = true;
+        columnDataType[colIndex] = dataType;
+      }
+    }
+  }
+
+  /**
+   * returns the column datatype array of the direct dictionary columns
+   *
+   * @return
+   */
+  public SqlStatement.Type[] getColumnDataType() {
+    return columnDataType;
+  }
+
+  /**
+   * returns the array of flag to identify the direct dictionary column
+   *
+   * @return
+   */
+  public boolean isDirectDictionary(int index) {
+    return isDirectDictionary[index];
   }
 }
 

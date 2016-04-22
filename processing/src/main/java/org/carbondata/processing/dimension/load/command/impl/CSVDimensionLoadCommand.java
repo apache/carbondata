@@ -33,11 +33,14 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
+import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
+import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.processing.dimension.load.command.DimensionLoadCommand;
 import org.carbondata.processing.dimension.load.info.DimensionLoadInfo;
 import org.carbondata.processing.schema.metadata.HierarchiesInfo;
 import org.carbondata.processing.surrogatekeysgenerator.csvbased.CarbonCSVBasedDimSurrogateKeyGen;
+import org.carbondata.processing.surrogatekeysgenerator.csvbased.CarbonCSVBasedSeqGenMeta;
 import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 
 import org.pentaho.di.core.exception.KettleException;
@@ -335,7 +338,14 @@ public class CSVDimensionLoadCommand implements DimensionLoadCommand {
         output[i] = surrogateKeyGen
             .generateSurrogateKeysForTimeDims(tuple, columnName, columnIndex[i], propertyvalue);
       } else {
-        output[i] = surrogateKeyGen.generateSurrogateKeys(tuple, columnName);
+        CarbonCSVBasedSeqGenMeta meta = dimensionLoadInfo.getMeta();
+        if (meta.isDirectDictionary(i)) {
+          DirectDictionaryGenerator directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
+              .getDirectDictionaryGenerator(meta.getColumnDataType()[i]);
+          output[i] = directDictionaryGenerator.generateDirectSurrogateKey(tuple);
+        } else {
+          output[i] = surrogateKeyGen.generateSurrogateKeys(tuple, columnName);
+        }
 
       }
       if (output[i] == -1) {

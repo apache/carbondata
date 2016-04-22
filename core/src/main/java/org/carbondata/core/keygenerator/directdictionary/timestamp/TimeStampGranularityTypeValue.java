@@ -16,25 +16,48 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package org.carbondata.core.keygenerator.directdictionary.timestamp;
 
-package org.carbondata.query.expression.conditional;
-
-import java.util.List;
-
-import org.carbondata.query.expression.ColumnExpression;
-
-public interface ConditionalExpression {
-
-  // Will get the column informations involved in the expressions by
-  // traversing the tree
-  List<ColumnExpression> getColumnList();
-
-  boolean isSingleDimension();
+/**
+ * Enum constant having the milli second for second, minute, hour, day
+ */
+public enum TimeStampGranularityTypeValue {
+  /**
+   * 1 second value in ms
+   */
+  MILLIS_SECONDS(1000),
+  /**
+   * 1 minute value in ms
+   */
+  MILLIS_MINUTE(1000 * 60),
+  /**
+   * 1 hour value in ms
+   */
+  MILLIS_HOUR(1000 * 60 * 60),
+  /**
+   * 1 day value in ms
+   */
+  MILLIS_DAY(1000 * 60 * 60 * 24);
 
   /**
-   * will return the flag of direct dictionary column
-   *
-   * @return
+   * enum constant value
    */
-  boolean isDirectDictionaryColumns();
+  private final long value;
+
+  /**
+   * constructor of enum constant
+   *
+   * @param value
+   */
+  private TimeStampGranularityTypeValue(long value) {
+    this.value = value;
+  }
+
+  /**
+   * @return return the value of enum constant
+   */
+  public long getValue() {
+    return this.value;
+  }
+
 }

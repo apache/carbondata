@@ -17,7 +17,7 @@
 
 package org.apache.spark.sql
 
-import java.util.List
+import java.util.{ArrayList, List}
 
 import scala.collection.JavaConverters._
 
@@ -28,6 +28,8 @@ import org.carbondata.query.carbonfilterinterface.{ExpressionType, RowIntf}
 import org.carbondata.query.expression.{ColumnExpression, Expression, ExpressionResult}
 import org.carbondata.query.expression.conditional.ConditionalExpression
 import org.carbondata.query.expression.exception.FilterUnsupportedException
+
+
 
 class SparkUnknownExpression(sparkExp: SparkExpression)
   extends Expression with ConditionalExpression {
@@ -53,7 +55,8 @@ class SparkUnknownExpression(sparkExp: SparkExpression)
       )
 
       new ExpressionResult(CarbonScalaUtil.convertSparkToCarbonDataType(sparkExp.dataType),
-        sparkRes);
+        sparkRes
+      );
     }
     catch {
       case e: Exception => throw new FilterUnsupportedException(e.getMessage());
@@ -94,7 +97,7 @@ class SparkUnknownExpression(sparkExp: SparkExpression)
   }
 
   def getColumnListFromExpressionTree(sparkCurrentExp: SparkExpression,
-                                      list: java.util.List[ColumnExpression]): Unit = {
+    list: java.util.List[ColumnExpression]): Unit = {
     sparkCurrentExp match {
       case carbonBoundRef: CarbonBoundReference =>
         val foundExp = list.asScala
@@ -111,7 +114,7 @@ class SparkUnknownExpression(sparkExp: SparkExpression)
 
 
   def getAllColumnListFromExpressionTree(sparkCurrentExp: SparkExpression,
-                                         list: List[ColumnExpression]): List[ColumnExpression] = {
+    list: List[ColumnExpression]): List[ColumnExpression] = {
     sparkCurrentExp match {
       case carbonBoundRef: CarbonBoundReference => list.add(carbonBoundRef.colExp)
       case _ => sparkCurrentExp.children.foreach(getColumnListFromExpressionTree(_, list))
@@ -119,4 +122,14 @@ class SparkUnknownExpression(sparkExp: SparkExpression)
     list
   }
 
+  def isDirectDictionaryColumns(): Boolean = {
+    var lst = new ArrayList[ColumnExpression]()
+    getAllColumnListFromExpressionTree(sparkExp, lst)
+    if (lst.get(0).getDim.isDirectDictionary()) {
+      true
+    }
+    else {
+      false
+    }
+  }
 }

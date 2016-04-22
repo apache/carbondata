@@ -535,6 +535,7 @@ public final class CarbonMetadata {
 
       dimension.setNameColumnIndex(getNameColumnIndexInSchemaOrder(levHolder, levelList));
       dimension.setPropertyIndexes(getPropertyColumnIndexes(levHolder, levelList));
+      dimension.setDirectDictionary(lev.isDirectDictionary);
       updateDimensionWithNoDictionaryVal(dimension, schema.cubes[0].dimensions);
 
       // Update properties and its data types in dimension
@@ -1311,6 +1312,11 @@ public final class CarbonMetadata {
     private int[] allApplicableDataBlockIndexs;
 
     /**
+     * flag to set the direct dictionary
+     */
+    private boolean isDirectDictionary;
+
+    /**
      * constrcutor for dimension.
      */
     private Dimension() {
@@ -1492,6 +1498,7 @@ public final class CarbonMetadata {
       copy.isQueryForDistinctCount = this.isQueryForDistinctCount;
       copy.queryOrder = queryOrder;
       copy.isColumnar = isColumnar;
+      copy.isDirectDictionary = isDirectDictionary;
       return copy;
     }
 
@@ -1729,6 +1736,15 @@ public final class CarbonMetadata {
       this.actualTableName = actualTableName;
     }
 
+    /**
+     * return flag to identify direct dictionary.
+     *
+     * @return
+     */
+    public boolean isDirectDictionary() {
+      return isDirectDictionary;
+    }
+
     public boolean isQueryForDistinctCount() {
       return isQueryForDistinctCount;
     }
@@ -1747,6 +1763,15 @@ public final class CarbonMetadata {
 
     public void getParent() {
 
+    }
+
+    /**
+     * set flag of direct dictionary
+     *
+     * @param isDirectDictionary
+     */
+    public void setDirectDictionary(boolean isDirectDictionary) {
+      this.isDirectDictionary = isDirectDictionary;
     }
   }
 

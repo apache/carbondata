@@ -1110,6 +1110,7 @@ public class GraphGenerator {
     seqMeta.setActualDimNames(graphConfiguration.getActualDimensionColumns());
     seqMeta.setNormHiers(graphConfiguration.getNormHiers());
     seqMeta.setHeirKeySize(graphConfiguration.getHeirAndKeySizeString());
+    seqMeta.setDirectDictionaryColumns(graphConfiguration.getDirectDictionaryColumnString());
     String[] aggType = graphConfiguration.getAggType();
     StringBuilder builder = new StringBuilder();
     for (int i = 0; i < aggType.length; i++) {
@@ -1626,6 +1627,8 @@ public class GraphGenerator {
         .setActualDims(CarbonSchemaParser.getCubeDimensions(dimensions, carbonDataLoadSchema));
     graphConfiguration
         .setComplexTypeString(CarbonSchemaParser.getLevelDataTypeAndParentMapString(dimensions));
+    graphConfiguration.setDirectDictionaryColumnString(
+        CarbonSchemaParser.getDirectDictionaryColumnString(dimensions, carbonDataLoadSchema));
     String factTableName = carbonDataLoadSchema.getCarbonTable().getFactTableName();
     graphConfiguration.setTableName(factTableName);
     StringBuilder dimString = new StringBuilder();

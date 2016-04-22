@@ -16,25 +16,28 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package org.carbondata.core.keygenerator.directdictionary;
 
-package org.carbondata.query.expression.conditional;
-
-import java.util.List;
-
-import org.carbondata.query.expression.ColumnExpression;
-
-public interface ConditionalExpression {
-
-  // Will get the column informations involved in the expressions by
-  // traversing the tree
-  List<ColumnExpression> getColumnList();
-
-  boolean isSingleDimension();
+/**
+ * The interface provides the method to generate dictionary key
+ * and getting the actual value from the dictionaryKey for direct dictionary column.
+ */
+public interface DirectDictionaryGenerator {
 
   /**
-   * will return the flag of direct dictionary column
+   * The method generate and returns the dictionary / surrogate key for direct dictionary column
    *
-   * @return
+   * @param member The member string value
+   * @return returns dictionary/ surrogate value
    */
-  boolean isDirectDictionaryColumns();
+  int generateDirectSurrogateKey(String member);
+
+  /**
+   * The method returns the actual value of the requested dictionary / surrogate
+   *
+   * @param key
+   * @return dictionary actual member
+   */
+  Object getValueFromSurrogate(int key);
+
 }

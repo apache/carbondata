@@ -1352,6 +1352,10 @@ public class CarbonDef {
     public String description;  // optional attribute
     public String captionColumn;  // optional attribute
     /**
+     * flag to identify the direct dictionary type column
+     */
+    public boolean isDirectDictionary; //optional attribute
+    /**
      * Contains values of user-defined properties.
      */
     public Annotations annotations;  //optional element
@@ -1428,6 +1432,8 @@ public class CarbonDef {
         caption = (String) _parser.getAttribute("caption", "String", null, null, false);
         description = (String) _parser.getAttribute("description", "String", null, null, false);
         captionColumn = (String) _parser.getAttribute("captionColumn", "String", null, null, false);
+        isDirectDictionary =
+            (Boolean) _parser.getAttribute("isDirectDictionary", "Boolean", "false", null, false);
         annotations = (Annotations) _parser.getElement(Annotations.class, false);
         keyExp = (KeyExpression) _parser.getElement(KeyExpression.class, false);
         nameExp = (NameExpression) _parser.getElement(NameExpression.class, false);
@@ -1478,6 +1484,7 @@ public class CarbonDef {
       displayAttribute(_out, "caption", caption, _indent + 1);
       displayAttribute(_out, "description", description, _indent + 1);
       displayAttribute(_out, "captionColumn", captionColumn, _indent + 1);
+      displayAttribute(_out, "isDirectDictionary", isDirectDictionary, _indent + 1);
       displayElement(_out, "annotations", (org.eigenbase.xom.ElementDef) annotations, _indent + 1);
       displayElement(_out, "keyExp", (org.eigenbase.xom.ElementDef) keyExp, _indent + 1);
       displayElement(_out, "nameExp", (org.eigenbase.xom.ElementDef) nameExp, _indent + 1);
@@ -1504,7 +1511,8 @@ public class CarbonDef {
               .add("columnar", columnar).add("levelType", levelType)
               .add("hideMemberIf", hideMemberIf).add("formatter", formatter)
               .add("isParent", isParent).add("caption", caption).add("description", description)
-              .add("captionColumn", captionColumn));
+              .add("captionColumn", captionColumn).add("isDirectDictionary", isDirectDictionary));
+
       displayXMLElement(_out, (org.eigenbase.xom.ElementDef) annotations);
       displayXMLElement(_out, (org.eigenbase.xom.ElementDef) keyExp);
       displayXMLElement(_out, (org.eigenbase.xom.ElementDef) nameExp);
@@ -1575,6 +1583,8 @@ public class CarbonDef {
       _diff =
           _diff && displayAttributeDiff("captionColumn", captionColumn, _cother.captionColumn, _out,
               _indent + 1);
+      _diff = _diff && displayAttributeDiff("isDirectDictionary", isDirectDictionary,
+          _cother.isDirectDictionary, _out, _indent + 1);
       _diff = _diff && displayElementDiff("annotations", annotations, _cother.annotations, _out,
           _indent + 1);
       _diff = _diff && displayElementDiff("keyExp", keyExp, _cother.keyExp, _out, _indent + 1);

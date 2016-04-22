@@ -252,7 +252,6 @@ public final class ScannedResultProcessorUtil {
   }
 
   /**
-   * @param model
    * @return
    */
   public static ComparatorChain getResultTempFileReaderComprator(int[][] maskedByteRangeForSorting,
