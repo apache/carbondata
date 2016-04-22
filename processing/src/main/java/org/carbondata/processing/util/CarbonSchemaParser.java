@@ -48,6 +48,7 @@ import org.carbondata.core.carbon.CarbonDef.RelationOrJoin;
 import org.carbondata.core.carbon.CarbonDef.Schema;
 import org.carbondata.core.carbon.CarbonDef.Table;
 import org.carbondata.core.carbon.Util;
+import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonComplexDimension;
