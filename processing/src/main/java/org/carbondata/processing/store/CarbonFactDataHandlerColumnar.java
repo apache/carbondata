@@ -594,7 +594,8 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     // this to leaf node file and update the intermediate files
     if (this.entryCount == this.leafNodeSize) {
       byte[][] byteArrayValues = keyDataHolder.getByteArrayValues().clone();
-      byte[][][] columnByteArrayValues = keyDataHolder.getColumnByteArrayValues().clone();
+      byte[][] noDictionaryValueHolder =
+          NoDictionarykeyDataHolder.getByteArrayValues();
       //TODO need to handle high card also here
 
       ValueCompressionModel compressionModel = ValueCompressionUtil
@@ -609,8 +610,8 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       startKey = new byte[mdkeyLength];
       endKey = new byte[mdkeyLength];
       writerExecutorService.submit(
-          new DataWriterThread(byteArrayValues, writableMeasureDataArray, columnByteArrayValues,
-              entryCountLocal, startKeyLocal, endKeyLocal, compressionModel));
+          new DataWriterThread(writableMeasureDataArray, byteArrayValues, entryCountLocal,
+              startKeyLocal, endKeyLocal, compressionModel, noDictionaryValueHolder));
       // set the entry count to zero
       processedDataCount += entryCount;
       LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
@@ -623,65 +624,109 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     }
   }
 
-  private void writeDataToFile(byte[][] data, byte[][] dataHolderLocal, byte[][][] columnData,
+  private void writeDataToFile(byte[][] dataHolderLocal, byte[][] byteArrayValues,
       int entryCountLocal, byte[] startkeyLocal, byte[] endKeyLocal,
-      ValueCompressionModel compressionModel) throws CarbonDataWriterException {
-    int allColsCount = getColsCount(hybridStoreModel.getColumnSplit().length);
+      ValueCompressionModel compressionModel, byte[][] noDictionaryData)
+      throws CarbonDataWriterException {
+    byte[][][] noDictionaryColumnsData = null;
     List<ArrayList<byte[]>> colsAndValues = new ArrayList<ArrayList<byte[]>>();
-    for (int i = 0; i < allColsCount; i++) {
+    int complexColCount = getComplexColsCount();
+
+    for (int i = 0; i < complexColCount; i++) {
       colsAndValues.add(new ArrayList<byte[]>());
     }
+    byte[][][] columnData =
+        new byte[hybridStoreModel.getNoOfColumnStore()][byteArrayValues.length][];
+    for (int i = 0; i < byteArrayValues.length; i++) {
+      byte[][] splitKey = columnarSplitter.splitKey(byteArrayValues[i]);
+      for (int j = 0; j < splitKey.length; j++) {
+        columnData[j][i] = splitKey[j];
+      }
+    }
+    if (NoDictionaryCount > 0 || complexIndexMap.size() > 0) {
+      noDictionaryColumnsData = new byte[NoDictionaryCount][noDictionaryData.length][];
+      for (int i = 0; i < noDictionaryData.length; i++) {
+        int complexColumnIndex = primitiveDimLens.length + NoDictionaryCount;
+        byte[][] splitKey = RemoveDictionaryUtil
+            .splitNoDictionaryKey(noDictionaryData[i], NoDictionaryCount + complexIndexMap.size());
 
-    for (int i = 0; i < columnData.length; i++) {
-      int l = 0;
-      for (int j = 0; j < dimensionCount; j++) {
-        GenericDataType complexDataType = complexIndexMap.get(j);
-        if (complexDataType != null) {
-          List<ArrayList<byte[]>> columnsArray = new ArrayList<ArrayList<byte[]>>();
-          for (int k = 0; k < complexDataType.getColsCount(); k++) {
-            columnsArray.add(new ArrayList<byte[]>());
+        int complexTypeIndex = 0;
+        for (int j = 0; j < splitKey.length; j++) {
+          //nodictionary Columns
+          if (j < NoDictionaryCount) {
+            noDictionaryColumnsData[j][i] = splitKey[j];
           }
-          complexDataType
-              .getColumnarDataForComplexType(columnsArray, ByteBuffer.wrap(columnData[i][j]));
-          for (ArrayList<byte[]> eachColumn : columnsArray) {
-            colsAndValues.get(l++).addAll(eachColumn);
+          //complex types
+          else {
+            //Need to write columnar block from complex byte array
+            GenericDataType complexDataType = complexIndexMap.get(complexColumnIndex++);
+            if (complexDataType != null) {
+              List<ArrayList<byte[]>> columnsArray = new ArrayList<ArrayList<byte[]>>();
+              for (int k = 0; k < complexDataType.getColsCount(); k++) {
+                columnsArray.add(new ArrayList<byte[]>());
+              }
+
+              try {
+                ByteBuffer complexDataWithoutBitPacking = ByteBuffer.wrap(splitKey[j]);
+                byte[] complexTypeData = new byte[complexDataWithoutBitPacking.getShort()];
+                complexDataWithoutBitPacking.get(complexTypeData);
+
+                ByteBuffer byteArrayInput = ByteBuffer.wrap(complexTypeData);
+                ByteArrayOutputStream byteArrayOutput = new ByteArrayOutputStream();
+                DataOutputStream dataOutputStream = new DataOutputStream(byteArrayOutput);
+                complexDataType
+                    .parseAndBitPack(byteArrayInput, dataOutputStream, this.complexKeyGenerator);
+                complexDataType.getColumnarDataForComplexType(columnsArray,
+                    ByteBuffer.wrap(byteArrayOutput.toByteArray()));
+                byteArrayOutput.close();
+              } catch (IOException e) {
+                throw new CarbonDataWriterException(
+                    "Problem while bit packing and writing complex datatype", e);
+              } catch (KeyGenException e) {
+                throw new CarbonDataWriterException(
+                    "Problem while bit packing and writing complex datatype", e);
+              }
+
+              for (ArrayList<byte[]> eachColumn : columnsArray) {
+                colsAndValues.get(complexTypeIndex++).addAll(eachColumn);
+              }
+            } else {
+              // This case not possible as ComplexType is the last columns
+            }
           }
-        } else {
-          colsAndValues.get(l++).add(columnData[i][j]);
         }
       }
     }
-
-    ExecutorService executorService = Executors.newFixedThreadPool(5);
-    List<Future<IndexStorage>> submit = new ArrayList<Future<IndexStorage>>(allColsCount);
-    int l = 0;
-    for (int j = 0; j < dimensionCount; j++) {
-      GenericDataType complexDataType = complexIndexMap.get(j);
-      if (complexDataType != null) {
-        for (int k = 0; k < complexDataType.getColsCount(); k++) {
-          submit.add(executorService.submit(new BlockSortThread(l,
-              colsAndValues.get(l).toArray(new byte[colsAndValues.get(l++).size()][]), false)));
-        }
-      } else {
-        submit.add(executorService.submit(new BlockSortThread(l,
-            colsAndValues.get(l).toArray(new byte[colsAndValues.get(l++).size()][]), true)));
-      }
+    ExecutorService executorService = Executors.newFixedThreadPool(7);
+    List<Future<IndexStorage>> submit = new ArrayList<Future<IndexStorage>>(
+        primitiveDimLens.length + NoDictionaryCount + complexColCount);
+    int i = 0;
+    for (i = 0; i < hybridStoreModel.getNoOfColumnStore(); i++) {
+      submit.add(executorService.submit(new BlockSortThread(i, columnData[i], true)));
     }
-
+    for (int j = 0; j < NoDictionaryCount; j++) {
+      submit.add(executorService
+          .submit(new BlockSortThread(i++, noDictionaryColumnsData[j], false, true, true)));
+    }
+    for (int k = 0; k < complexColCount; k++) {
+      submit.add(executorService.submit(new BlockSortThread(i++,
+          colsAndValues.get(k).toArray(new byte[colsAndValues.get(k).size()][]), false)));
+    }
     executorService.shutdown();
     try {
       executorService.awaitTermination(1, TimeUnit.DAYS);
-    } catch (InterruptedException ex) {
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, ex, ex.getMessage());
+    } catch (InterruptedException e) {
+      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e, e.getMessage());
     }
-    IndexStorage[] blockStorage = new IndexStorage[numberOfColumns];
+    IndexStorage[] blockStorage =
+        new IndexStorage[hybridStoreModel.getNoOfColumnStore() + NoDictionaryCount
+            + complexColCount];
     try {
-      for (int i = 0; i < blockStorage.length; i++) {
-        blockStorage[i] = submit.get(i).get();
+      for (int k = 0; k < blockStorage.length; k++) {
+        blockStorage[k] = submit.get(k).get();
       }
-    } catch (Exception exception) {
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, exception,
-          exception.getMessage());
+    } catch (Exception e) {
+      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e, e.getMessage());
     }
     synchronized (lock) {
       this.dataWriter.writeDataToFile(blockStorage, dataHolderLocal, entryCountLocal, startkeyLocal,
@@ -698,133 +743,35 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     // / still some data is present in stores if entryCount is more
     // than 0
     if (this.entryCount > 0) {
-      int noOfColumn = hybridStoreModel.getNoOfColumnStore();
       byte[][] data = keyDataHolder.getByteArrayValues();
-
-      byte[][][] columnsData = new byte[noOfColumn][data.length][];
-      for (int i = 0; i < data.length; i++) {
-        byte[][] splitKey = columnarSplitter.splitKey(data[i]);
-        for (int j = 0; j < splitKey.length; j++) {
-          columnsData[j][i] = splitKey[j];
-        }
-      }
-
-      byte[][][] NoDictionaryColumnsData = null;
-      List<ArrayList<byte[]>> colsAndValues = new ArrayList<ArrayList<byte[]>>();
-      int complexColCount = getComplexColsCount();
-
-      for (int i = 0; i < complexColCount; i++) {
-        colsAndValues.add(new ArrayList<byte[]>());
-      }
-
-      if (NoDictionaryCount > 0 || complexIndexMap.size() > 0) {
-        byte[][] NoDictionaryData = NoDictionarykeyDataHolder.getByteArrayValues();
-
-        NoDictionaryColumnsData = new byte[NoDictionaryCount][NoDictionaryData.length][];
-
-        for (int i = 0; i < NoDictionaryData.length; i++) {
-          int complexColumnIndex = primitiveDimLens.length + NoDictionaryCount;
-          byte[][] splitKey = RemoveDictionaryUtil.splitNoDictionaryKey(NoDictionaryData[i],
-              NoDictionaryCount + complexIndexMap.size());
-
-          int complexTypeIndex = 0;
-          for (int j = 0; j < splitKey.length; j++) {
-            //nodictionary Columns
-            if (j < NoDictionaryCount) {
-              NoDictionaryColumnsData[j][i] = splitKey[j];
-            }
-            //complex types
-            else {
-              //Need to write columnar block from complex byte array
-              GenericDataType complexDataType = complexIndexMap.get(complexColumnIndex++);
-              if (complexDataType != null) {
-                List<ArrayList<byte[]>> columnsArray = new ArrayList<ArrayList<byte[]>>();
-                for (int k = 0; k < complexDataType.getColsCount(); k++) {
-                  columnsArray.add(new ArrayList<byte[]>());
-                }
-
-                try {
-                  ByteBuffer complexDataWithoutBitPacking = ByteBuffer.wrap(splitKey[j]);
-                  byte[] complexTypeData = new byte[complexDataWithoutBitPacking.getShort()];
-                  complexDataWithoutBitPacking.get(complexTypeData);
-
-                  ByteBuffer byteArrayInput = ByteBuffer.wrap(complexTypeData);
-                  ByteArrayOutputStream byteArrayOutput = new ByteArrayOutputStream();
-                  DataOutputStream dataOutputStream = new DataOutputStream(byteArrayOutput);
-                  complexDataType
-                      .parseAndBitPack(byteArrayInput, dataOutputStream, this.complexKeyGenerator);
-                  complexDataType.getColumnarDataForComplexType(columnsArray,
-                      ByteBuffer.wrap(byteArrayOutput.toByteArray()));
-                  byteArrayOutput.close();
-                } catch (IOException e) {
-                  throw new CarbonDataWriterException(
-                      "Problem while bit packing and writing complex datatype", e);
-                } catch (KeyGenException e) {
-                  throw new CarbonDataWriterException(
-                      "Problem while bit packing and writing complex datatype", e);
-                }
-
-                for (ArrayList<byte[]> eachColumn : columnsArray) {
-                  colsAndValues.get(complexTypeIndex++).addAll(eachColumn);
-                }
-              } else {
-                // This case not possible as ComplexType is the last columns
-              }
-            }
-          }
-        }
-      }
-      ExecutorService executorService = Executors.newFixedThreadPool(7);
-      List<Future<IndexStorage>> submit = new ArrayList<Future<IndexStorage>>(
-          primitiveDimLens.length + NoDictionaryCount + complexColCount);
-      int i = 0;
-      for (i = 0; i < noOfColumn; i++) {
-        submit.add(executorService.submit(new BlockSortThread(i, columnsData[i], true)));
-      }
-      for (int j = 0; j < NoDictionaryCount; j++) {
-        submit.add(executorService
-            .submit(new BlockSortThread(i++, NoDictionaryColumnsData[j], false, true, true)));
-      }
-      for (int k = 0; k < complexColCount; k++) {
-        submit.add(executorService.submit(new BlockSortThread(i++,
-            colsAndValues.get(k).toArray(new byte[colsAndValues.get(k).size()][]), false)));
-      }
-
-      executorService.shutdown();
-      try {
-        executorService.awaitTermination(1, TimeUnit.DAYS);
-      } catch (InterruptedException e) {
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e, e.getMessage());
-      }
-      IndexStorage[] blockStorage =
-          new IndexStorage[noOfColumn + NoDictionaryCount + complexColCount];
-      try {
-        for (int k = 0; k < blockStorage.length; k++) {
-          blockStorage[k] = submit.get(k).get();
-        }
-      } catch (Exception e) {
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e, e.getMessage());
-      }
-
-      writerExecutorService.shutdown();
-      try {
-        writerExecutorService.awaitTermination(1, TimeUnit.DAYS);
-      } catch (InterruptedException e) {
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e, e.getMessage());
-      }
       ValueCompressionModel compressionModel = ValueCompressionUtil
           .getValueCompressionModel(max, min, decimal, uniqueValue, type, new byte[max.length]);
-      this.dataWriter.writeDataToFile(blockStorage,
-          StoreFactory.createDataStore(compressionModel).getWritableMeasureDataArray(dataHolder),
-          this.entryCount, this.startKey, this.endKey, compressionModel);
-
+      byte[][] writableMeasureDataArray =
+          StoreFactory.createDataStore(compressionModel).getWritableMeasureDataArray(dataHolder);
+      writeDataToFile(writableMeasureDataArray, data, entryCount, this.startKey,
+          this.endKey, compressionModel, NoDictionarykeyDataHolder.getByteArrayValues());
       processedDataCount += entryCount;
       LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
           "*******************************************Number Of records processed: "
               + processedDataCount);
+      closeWriterExecutionServiceService();
       this.dataWriter.writeleafMetaDataToFile();
-    } else if (null != this.dataWriter && this.dataWriter.getLeafMetadataSize() > 0) {
+    } else if (null != this.dataWriter) {
+      closeWriterExecutionServiceService();
       this.dataWriter.writeleafMetaDataToFile();
+    }
+    closeWriterExecutionServiceService();
+  }
+
+  /**
+   * This method will close writer execution service
+   */
+  private void closeWriterExecutionServiceService() {
+    writerExecutorService.shutdown();
+    try {
+      writerExecutorService.awaitTermination(1, TimeUnit.DAYS);
+    } catch (InterruptedException e) {
+      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e, e.getMessage());
     }
   }
 
@@ -1147,9 +1094,9 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   }
 
   private final class DataWriterThread implements Callable<IndexStorage> {
-    private byte[][] data;
+    private byte[][] noDictionaryValueHolder;
 
-    private byte[][][] columnData;
+    private byte[][] keyByteArrayValues;
 
     private byte[][] dataHolderLocal;
 
@@ -1161,33 +1108,21 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
 
     private ValueCompressionModel compressionModel;
 
-    private DataWriterThread(byte[][] data, byte[][] dataHolderLocal, int entryCountLocal,
-        byte[] startKey, byte[] endKey, ValueCompressionModel compressionModel) {
-      this.data = data;
-      this.entryCountLocal = entryCountLocal;
-      this.startkeyLocal = startKey;
-      this.endKeyLocal = endKey;
-      this.dataHolderLocal = dataHolderLocal;
-      this.compressionModel = compressionModel;
-    }
-
-    private DataWriterThread(byte[][] data, byte[][] dataHolderLocal, byte[][][] columnData,
+    private DataWriterThread(byte[][] dataHolderLocal, byte[][] keyByteArrayValues,
         int entryCountLocal, byte[] startKey, byte[] endKey,
-        ValueCompressionModel compressionModel) {
-      this.data = data;
-      this.columnData = columnData;
+        ValueCompressionModel compressionModel, byte[][] noDictionaryValueHolder) {
+      this.keyByteArrayValues = keyByteArrayValues;
       this.entryCountLocal = entryCountLocal;
       this.startkeyLocal = startKey;
       this.endKeyLocal = endKey;
       this.dataHolderLocal = dataHolderLocal;
       this.compressionModel = compressionModel;
+      this.noDictionaryValueHolder = noDictionaryValueHolder;
     }
 
     @Override public IndexStorage call() throws Exception {
-      //            writeDataToFile(this.data,dataHolderLocal, entryCountLocal,startkeyLocal,
-      // endKeyLocal);
-      writeDataToFile(this.data, dataHolderLocal, columnData, entryCountLocal, startkeyLocal,
-          endKeyLocal, compressionModel);
+      writeDataToFile(dataHolderLocal, keyByteArrayValues, entryCountLocal, startkeyLocal,
+          endKeyLocal, compressionModel, noDictionaryValueHolder);
       return null;
     }
 
