@@ -18,14 +18,13 @@
  */
 package org.carbondata.integration.spark.util
 
-
 import java.io.File
-
-import org.apache.spark.sql.common.util.CarbonHiveContext._
-import org.apache.spark.sql.common.util.{CarbonHiveContext, QueryTest}
-import org.apache.spark.sql.{CarbonEnv, CarbonRelation}
 import org.carbondata.core.carbon.CarbonDataLoadSchema
 import org.carbondata.integration.spark.load.CarbonLoadModel
+import org.apache.spark.sql.{ CarbonEnv, CarbonRelation }
+import org.apache.spark.sql.common.util.CarbonHiveContext
+import org.apache.spark.sql.common.util.CarbonHiveContext.sql
+import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 /**
@@ -34,69 +33,92 @@ import org.scalatest.BeforeAndAfterAll
  * @date: Apr 10, 2016 10:34:58 PM
  * @See org.carbondata.integration.spark.util.GlobalDictionaryUtil
  */
-class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll  {
-  
+class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
+
   var sampleRelation: CarbonRelation = _
   var dimSampleRelation: CarbonRelation = _
+  var complexRelation: CarbonRelation = _
   var filePath: String = _
   var pwd: String = _
   var dimFilePath: String = _
-  
+  var complexfilePath1: String = _
+  var complexfilePath2: String = _
+
   def buildTestData() = {
-    pwd = new File(this.getClass.getResource("/").getPath+"/../../").getCanonicalPath
+    pwd = new File(this.getClass.getResource("/").getPath + "/../../").getCanonicalPath
     filePath = pwd + "/src/test/resources/sample.csv"
     dimFilePath = "dimTableSample:" + pwd + "/src/test/resources/dimTableSample.csv"
-  }
-  
-  def buildTestContext() = {
-    try{
-      sql("CREATE CUBE IF NOT EXISTS sample DIMENSIONS (id STRING, name STRING, city STRING) MEASURES (age INTEGER) OPTIONS(PARTITIONER[CLASS='org.carbondata.integration.spark.partition.api.impl.SampleDataPartitionerImpl',COLUMNS=(id),PARTITION_COUNT=1])")
-    }catch{
-      case ex: Throwable => logError(ex.getMessage +"\r\n" + ex.getStackTraceString)    
-    }
-    try{
-      sql("CREATE CUBE IF NOT EXISTS sample1 DIMENSIONS (id STRING, name STRING, city STRING) MEASURES (age INTEGER) OPTIONS(PARTITIONER[CLASS='org.carbondata.integration.spark.partition.api.impl.SampleDataPartitionerImpl',COLUMNS=(id),PARTITION_COUNT=1])")
-    }catch{
-      case ex: Throwable => logError(ex.getMessage +"\r\n" + ex.getStackTraceString)    
-    }
-    try{
-      sql("CREATE CUBE IF NOT EXISTS dimSample DIMENSIONS (id STRING, name STRING, city STRING) MEASURES (age INTEGER) WITH dimTableSample RELATION(Fact.id=id) INCLUDE(id,name) OPTIONS(PARTITIONER[CLASS='org.carbondata.integration.spark.partition.api.impl.SampleDataPartitionerImpl',COLUMNS=(id),PARTITION_COUNT=1])")
-    }catch{
-      case ex: Throwable => logError(ex.getMessage +"\r\n" + ex.getStackTraceString)    
-    }
-    sampleRelation = CarbonEnv.getInstance(CarbonHiveContext).carbonCatalog.lookupRelation1(Option("default"), "sample", None)(CarbonHiveContext).asInstanceOf[CarbonRelation]
-    dimSampleRelation = CarbonEnv.getInstance(CarbonHiveContext).carbonCatalog.lookupRelation1(Option("default"), "dimSample", None)(CarbonHiveContext).asInstanceOf[CarbonRelation]
+    complexfilePath1 = pwd + "/src/test/resources/complexdata1.csv"
+    complexfilePath2 = pwd + "/src/test/resources/complexdata2.csv"
   }
 
-  def buildCarbonLoadModel(relation: CarbonRelation, dimensionFilePath: String): CarbonLoadModel = {
+  def buildTable() = {
+    try {
+      sql("CREATE CUBE IF NOT EXISTS sample DIMENSIONS (id STRING, name STRING, city STRING) MEASURES (age INTEGER) OPTIONS(PARTITIONER[CLASS='org.carbondata.integration.spark.partition.api.impl.SampleDataPartitionerImpl',COLUMNS=(id),PARTITION_COUNT=1])")
+    } catch {
+      case ex: Throwable => logError(ex.getMessage + "\r\n" + ex.getStackTraceString)
+    }
+    try {
+      sql("CREATE CUBE IF NOT EXISTS dimSample DIMENSIONS (id STRING, name STRING, city STRING) MEASURES (age INTEGER) WITH dimTableSample RELATION(Fact.id=id) INCLUDE(id,name) OPTIONS(PARTITIONER[CLASS='org.carbondata.integration.spark.partition.api.impl.SampleDataPartitionerImpl',COLUMNS=(id),PARTITION_COUNT=1])")
+    } catch {
+      case ex: Throwable => logError(ex.getMessage + "\r\n" + ex.getStackTraceString)
+    }
+    try {
+      sql("create cube complextypes dimensions(deviceInformationId integer, channelsId string, ROMSize string, purchasedate string, mobile struct<imei string, imsi string>, MAC array<string>, locationinfo array<struct<ActiveAreaId integer, ActiveCountry string, ActiveProvince string, Activecity string, ActiveDistrict string, ActiveStreet string>>, proddate struct<productionDate string,activeDeactivedate array<string>>) measures(gamePointId numeric,contractNumber numeric) OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration.spark.partition.api.impl.SampleDataPartitionerImpl' ,COLUMNS= (deviceInformationId) , PARTITION_COUNT=1] )")
+    } catch {
+      case ex: Throwable => logError(ex.getMessage + "\r\n" + ex.getStackTraceString)
+    }
+  }
+
+  def buildRelation() = {
+    val catalog = CarbonEnv.getInstance(CarbonHiveContext).carbonCatalog
+    sampleRelation = catalog.lookupRelation1(Option("default"), "sample", None)(CarbonHiveContext).asInstanceOf[CarbonRelation]
+    dimSampleRelation = catalog.lookupRelation1(Option("default"), "dimSample", None)(CarbonHiveContext).asInstanceOf[CarbonRelation]
+    complexRelation = catalog.lookupRelation1(Option("default"), "complextypes", None)(CarbonHiveContext).asInstanceOf[CarbonRelation]
+  }
+
+  def buildCarbonLoadModel(relation: CarbonRelation,
+          filePath:String,
+          dimensionFilePath: String,
+          header: String): CarbonLoadModel = {
     val carbonLoadModel = new CarbonLoadModel
     carbonLoadModel.setTableName(relation.cubeMeta.carbonTableIdentifier.getDatabaseName)
     carbonLoadModel.setDatabaseName(relation.cubeMeta.carbonTableIdentifier.getTableName)
-    //carbonLoadModel.setSchema(relation.cubeMeta.schema)
-    val carbonSchema = new CarbonDataLoadSchema(relation.cubeMeta.carbonTable)
+    // carbonLoadModel.setSchema(relation.cubeMeta.schema)
+    val table = relation.cubeMeta.carbonTable
+    val carbonSchema = new CarbonDataLoadSchema(table)
+    carbonLoadModel.setDatabaseName(table.getDatabaseName)
+    carbonLoadModel.setTableName(table.getFactTableName)
     carbonLoadModel.setCarbonDataLoadSchema(carbonSchema)
     carbonLoadModel.setFactFilePath(filePath)
     carbonLoadModel.setDimFolderPath(dimensionFilePath)
+    carbonLoadModel.setCsvHeader(header)
+    carbonLoadModel.setCsvDelimiter(",")
+    carbonLoadModel.setComplexDelimiterLevel1("$")
+    carbonLoadModel.setComplexDelimiterLevel2(":")
     carbonLoadModel
   }
 
   override def beforeAll {
     buildTestData
-    buildTestContext
+    // second time comment this line
+    buildTable
+    buildRelation
   }
-  
-  test("[issue-80]Global Dictionary Generation"){
 
-    sql("LOAD DATA fact from '" + filePath + "' INTO CUBE sample1 PARTITIONDATA(DELIMITER ',', QUOTECHAR '')")
-    
-    var carbonLoadModel = buildCarbonLoadModel(sampleRelation, null)
+  test("[issue-80]Global Dictionary Generation") {
+
+    var carbonLoadModel = buildCarbonLoadModel(sampleRelation, filePath, null, null)
     GlobalDictionaryUtil.generateGlobalDictionary(CarbonHiveContext, carbonLoadModel, sampleRelation.cubeMeta.dataPath, false)
-    // TODO : Supposed to be verified by checking the dictionary files existence.
-    assert(true)
-    //test for dimension table
-    //TODO - Need to fill and send the dimension table data as per new DimensionRelation in CarbonDataLoadModel
-    //carbonLoadModel = buildCarbonLoadModel(dimSampleRelation, dimFilePath)
-    //rtn = GlobalDictionaryUtil.generateGlobalDictionary(CarbonHiveContext, carbonLoadModel, dimSampleRelation.cubeMeta.dataPath, false)
-    //assert( rtn === 1)
+    // test for dimension table
+    // TODO - Need to fill and send the dimension table data as per new DimensionRelation in CarbonDataLoadModel
+    // carbonLoadModel = buildCarbonLoadModel(dimSampleRelation, filePath, dimFilePath, null)
+    // GlobalDictionaryUtil.generateGlobalDictionary(CarbonHiveContext, carbonLoadModel, dimSampleRelation.cubeMeta.dataPath, false)
   }
+
+  test("[Issue-190]load csv file without header And support complex type") {
+    val header = "deviceInformationId,channelsId,ROMSize,purchasedate,mobile,MAC,locationinfo,proddate,gamePointId,contractNumber"
+    var carbonLoadModel = buildCarbonLoadModel(complexRelation, complexfilePath2, null, header)
+    GlobalDictionaryUtil.generateGlobalDictionary(CarbonHiveContext, carbonLoadModel, sampleRelation.cubeMeta.dataPath, false)
+   }
 }

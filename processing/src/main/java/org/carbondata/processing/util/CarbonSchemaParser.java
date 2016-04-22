@@ -48,7 +48,6 @@ import org.carbondata.core.carbon.CarbonDef.RelationOrJoin;
 import org.carbondata.core.carbon.CarbonDef.Schema;
 import org.carbondata.core.carbon.CarbonDef.Table;
 import org.carbondata.core.carbon.Util;
-import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonComplexDimension;
@@ -2287,8 +2286,7 @@ public final class CarbonSchemaParser {
     StringBuilder dimString = new StringBuilder();
     for (int i = 0; i < dimensions.size(); i++) {
       CarbonDimension dimension = dimensions.get(i);
-      if (dimension.getDataType().equals(DataType.ARRAY) || dimension.getDataType()
-          .equals(DataType.STRUCT)) {
+      if (dimension.isComplex()) {
         assert(dimension.getClass().equals(CarbonComplexDimension.class));
         for (int j = 0; j < ((CarbonComplexDimension)dimension).getNumberOfChild(); j++, i++) {
           dimension = dimensions.get(i);

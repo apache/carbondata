@@ -41,6 +41,11 @@ import java.util.Set;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.cache.Cache;
+import org.carbondata.core.cache.CacheProvider;
+import org.carbondata.core.cache.CacheType;
+import org.carbondata.core.cache.dictionary.Dictionary;
+import org.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.carbondata.core.carbon.CarbonDataLoadSchema;
 import org.carbondata.core.carbon.CarbonDef;
 import org.carbondata.core.carbon.CarbonDef.AggLevel;
@@ -87,6 +92,7 @@ import org.carbondata.query.datastorage.InMemoryTableStore;
 import org.carbondata.query.directinterface.impl.CarbonQueryParseUtil;
 
 import com.google.gson.Gson;
+
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
@@ -94,6 +100,10 @@ public final class CarbonLoaderUtil {
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(CarbonLoaderUtil.class.getName());
+
+  private static Cache<DictionaryColumnUniqueIdentifier, Dictionary> dictCache = null;
+  private static volatile boolean cacheStatus = false;
+  private static Object lock = new Object();
 
   private CarbonLoaderUtil() {
 
@@ -1057,4 +1067,27 @@ public final class CarbonLoaderUtil {
       LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e.getMessage());
     }
   }
+
+  public static Dictionary getDictionary(
+          DictionaryColumnUniqueIdentifier columnIdentifier, String carbonStorePath) {
+    synchronized (lock) {
+      if (!cacheStatus) {
+        CarbonProperties.getInstance().addProperty(
+                CarbonCommonConstants.CARBON_MAX_LEVEL_CACHE_SIZE, "10");
+        dictCache = CacheProvider.getInstance().createCache(CacheType.REVERSE_DICTIONARY,
+                carbonStorePath);
+        cacheStatus = true;
+      }
+    }
+
+    return dictCache.get(columnIdentifier);
+  }
+
+  public static Dictionary getDictionary(CarbonTableIdentifier tableIdentifier,
+          String columnIdentifier, String carbonStorePath) {
+
+    return getDictionary(new DictionaryColumnUniqueIdentifier(tableIdentifier,
+            columnIdentifier), carbonStorePath);
+  }
+
 }

@@ -518,4 +518,9 @@ public class CarbonLoadModel implements Serializable {
   public void setFactTimeStamp(String factTimeStamp) {
     this.factTimeStamp = factTimeStamp;
   }
+
+  public String[] getDelimiters(){
+    return new String[]{complexDelimiterLevel1, complexDelimiterLevel2};
+  }
+
 }

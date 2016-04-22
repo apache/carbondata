@@ -248,8 +248,7 @@ class CubeNewProcessor(cm: tableModel, sqlContext: SQLContext) {
       if (highCardinalityDims.contains(column.getColumnName)) {
         highCardDims += (column)
       }
-      else if (column.getDataType == DataType.ARRAY || column.getDataType == DataType.STRUCT
-        || column.getColumnName.contains(".")) {
+      else if (column.isComplex) {
         complexDims += (column)
       }
       else if (column.isDimensionColumn) {

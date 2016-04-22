@@ -136,6 +136,15 @@ public class CarbonColumn implements Serializable {
    * @return true if contains the passing encoding
    */
   public boolean hasEncoding(Encoding encoding) {
-    return getEncoder().contains(encoding);
+    return columnSchema.hasEncoding(encoding);
   }
+
+  /**
+   * @return if DataType is ARRAY or STRUCT, this method return true, else
+   *         false.
+   */
+  public Boolean isComplex() {
+    return columnSchema.isComplex();
+  }
+
 }

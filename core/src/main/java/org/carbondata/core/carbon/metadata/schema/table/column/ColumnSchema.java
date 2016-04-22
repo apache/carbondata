@@ -322,4 +322,30 @@ public class ColumnSchema implements Serializable {
   public void setEncodintList(Set<Encoding> encodingList) {
     this.encodingList = encodingList;
   }
+
+  /**
+   * @param encoding
+   * @return true if contains the passing encoding
+   */
+  public boolean hasEncoding(Encoding encoding) {
+    if (encodingList == null || encodingList.isEmpty()) {
+      return false;
+    } else {
+      return encodingList.contains(encoding);
+    }
+  }
+
+  /**
+   * @return if DataType is ARRAY or STRUCT, this method return true, else
+   *         false.
+   */
+  public Boolean isComplex() {
+    if (DataType.ARRAY.equals(this.getDataType())
+        || DataType.STRUCT.equals(this.getDataType())) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
 }
