@@ -526,9 +526,9 @@ public class BlockDataHandler {
 
       // See if we reached the end of the line.
       // If not, we need to skip the remaining items on the line until the next newline...
-      //
       if (!newLineFound && !checkBufferSize()) {
-        do {
+        while (!data.crLfMatcher.isReturn(this.byteBuffer, this.endBuffer)
+                && !data.crLfMatcher.isLineFeed(this.byteBuffer, this.endBuffer)){
           this.endBuffer++;
           this.currentOffset++;
           this.totalBytesRead++;
@@ -542,8 +542,7 @@ public class BlockDataHandler {
           // In that particular case we want to use the same logic we use above
           // (refactored a bit) to skip these fields.
 
-        } while (!data.crLfMatcher.isReturn(this.byteBuffer, this.endBuffer)
-            && !data.crLfMatcher.isLineFeed(this.byteBuffer, this.endBuffer));
+        }
 
         if (!checkBufferSize()) {
           while (data.crLfMatcher.isReturn(this.byteBuffer, this.endBuffer)
