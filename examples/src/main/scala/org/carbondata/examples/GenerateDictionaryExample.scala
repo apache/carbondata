@@ -19,10 +19,8 @@ package org.carbondata.examples
 
 import java.io.File
 
+import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.CarbonContext
-import org.apache.spark.{ SparkConf, SparkContext }
-import org.carbondata.core.constants.CarbonCommonConstants
-import org.carbondata.core.util.CarbonProperties
 
 /**
  * example for global dictionary generation
@@ -36,7 +34,7 @@ object GenerateDictionaryExample {
       .setAppName("GenerateDictionaryExample")
       .setMaster("local[2]"))
 
-    val pwd = new File(this.getClass.getResource("/").getPath+"/../../").getCanonicalPath
+    val pwd = new File(this.getClass.getResource("/").getPath + "/../../").getCanonicalPath
       .replace('\\', '/')
     val storeLocation = pwd + "/target/store"
     val factFilePath = pwd + "/src/main/resources/factSample.csv"
@@ -48,7 +46,7 @@ object GenerateDictionaryExample {
     val cc = new CarbonContext(sc, storeLocation)
     cc.setConf("carbon.kettle.home", kettleHome)
     cc.setConf("hive.metastore.warehouse.dir", hiveMetaPath)
-    cc.setConf("javax.jdo.option.ConnectionURL",s"jdbc:derby:;" +
+    cc.setConf("javax.jdo.option.ConnectionURL", s"jdbc:derby:;" +
       s"databaseName=$hiveMetaStoreDB;create=true")
 
     // When you execute the second time, need to enable it
