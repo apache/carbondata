@@ -21,6 +21,7 @@ import java.io.File
 
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.CarbonContext
+
 import org.carbondata.core.util.CarbonProperties
 
 object CarbonExample {
@@ -54,10 +55,9 @@ object CarbonExample {
 
     cc.sql("drop cube if exists testTable")
 
-    cc.sql("CREATE CUBE testTable DIMENSIONS (ID Integer, Date Timestamp, " +
-      "Country String, Name String, Phonetype String, Serialname String" +
-
-      ") MEASURES (Salary Integer) " +
+    cc.sql("CREATE CUBE testTable DIMENSIONS (ID Integer, Date Timestamp, Country String, " +
+      "Name String, Phonetype String, Serialname String) " +
+      "MEASURES (Salary Integer) " +
       "OPTIONS (PARTITIONER [PARTITION_COUNT=1])")
 
     cc.sql(
