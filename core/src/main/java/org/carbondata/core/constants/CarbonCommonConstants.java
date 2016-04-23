@@ -1452,6 +1452,17 @@ public final class CarbonCommonConstants {
    */
   public static final int SEGMENT_ID_FOR_LOCAL_STORE_FOLDER_CREATION = 0;
 
+  /**
+   * table split partition
+   *
+   */
+  public static final String TABLE_SPLIT_PARTITION = "carbon.table.split.partition.enable";
+
+  /**
+   * table split partition default value
+   */
+  public static final String TABLE_SPLIT_PARTITION_DEFAULT_VALUE = "true";
+
   private CarbonCommonConstants() {
 
   }

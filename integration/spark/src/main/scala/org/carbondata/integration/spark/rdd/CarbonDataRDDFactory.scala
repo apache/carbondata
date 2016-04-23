@@ -28,20 +28,22 @@ import org.apache.spark.rdd.{DummyLoadRDD, NewHadoopRDD}
 import org.apache.spark.sql.{CarbonEnv, CarbonRelation, SQLContext}
 import org.apache.spark.sql.cubemodel.Partitioner
 import org.apache.spark.sql.hive.HiveContext
+import org.apache.spark.util.{FileUtils, SplitUtils}
 
 import org.carbondata.common.logging.LogServiceFactory
 import org.carbondata.core.carbon.{CarbonDataLoadSchema, CarbonDef}
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.datastorage.store.impl.FileFactory
-import org.carbondata.core.load.LoadMetadataDetails
+import org.carbondata.core.load.{BlockDetails, LoadMetadataDetails}
 import org.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.carbondata.core.metadata.CarbonMetadata
 import org.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.carbondata.integration.spark._
 import org.carbondata.integration.spark.load._
 import org.carbondata.integration.spark.merger.CarbonDataMergerUtil
-import org.carbondata.integration.spark.util.LoadMetadataUtil
+import org.carbondata.integration.spark.splits.TableSplit
+import org.carbondata.integration.spark.util.{CarbonQueryUtil, LoadMetadataUtil}
 import org.carbondata.processing.util.CarbonDataProcessorUtil
 import org.carbondata.query.scanner.impl.{CarbonKey, CarbonValue}
 
@@ -312,26 +314,85 @@ object CarbonDataRDDFactory extends Logging {
       val schemaLastUpdatedTime = CarbonEnv.getInstance(sc).carbonCatalog
         .getSchemaLastUpdatedTime(carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName)
 
-      /**
-       * 1)clone the hadoop configuration,and set the file path to the configuration
-       * 2)use NewHadoopRDD to get split,splitsize:Math.max(minSize, Math.min(maxSize, blockSize))
-       * 3)use DummyLoadRDD to group blocks by host,and let spark to balance the block location
-       * 4)DummyLoadRDD output (host,Array[BlockDetails]) as the parameter to CarbonDataLoadRDD
-       * which parititon by host
-       */
-      val hadoopConfiguration = new Configuration(sc.sparkContext.hadoopConfiguration)
-      hadoopConfiguration
-        .set("mapreduce.input.fileinputformat.inputdir", carbonLoadModel.getFactFilePath)
-      hadoopConfiguration.set("mapreduce.input.fileinputformat.input.dir.recursive", "true")
-      val newHadoopRDD = new NewHadoopRDD[LongWritable, Text](sc.sparkContext,
-        classOf[org.apache.hadoop.mapreduce.lib.input.TextInputFormat], classOf[LongWritable],
-        classOf[Text], hadoopConfiguration)
-      val part = new DummyLoadRDD(newHadoopRDD).collect().groupBy[String](_._1)
-        .map { iter => (iter._1, iter._2.map(_._2)) }.toArray
+      // get partition way from configuration
+      val isTableSplitPartition = CarbonProperties.getInstance().getProperty(
+        CarbonCommonConstants.TABLE_SPLIT_PARTITION,
+        CarbonCommonConstants.TABLE_SPLIT_PARTITION_DEFAULT_VALUE).toBoolean
+      var blocksGroupBy: Array[(String, Array[BlockDetails])] = null
+      isTableSplitPartition match {
+        case true =>
+          /*
+           * when data handle by table split partition
+           * 1) get partition files, direct load or not will get the different files path
+           * 2) get files blocks by using SplitUtils
+           * 3) output Array[(partitionID,Array[BlockDetails])] to blocksGroupBy
+           */
+          var splits = Array[TableSplit]()
+          if (carbonLoadModel.isDirectLoad()) {
+            // get all table Splits, this part means files were divide to different partitions
+            splits = CarbonQueryUtil.getTableSplitsForDirectLoad(carbonLoadModel.getFactFilePath(),
+              partitioner.nodeList, partitioner.partitionCount)
+            // get all partition blocks from file list
+            blocksGroupBy = splits.map {
+              split =>
+                val pathBuilder = new StringBuilder()
+                for (path <- split.getPartition.getFilesPath.asScala) {
+                  pathBuilder.append(path).append(",")
+                }
+                if (pathBuilder.size > 0) {
+                  pathBuilder.substring(0, pathBuilder.size - 1)
+                }
+                (split.getPartition.getUniqueID, SplitUtils.getSplits(pathBuilder.toString(),
+                  sc.sparkContext))
+            }
+          } else {
+            // get all table Splits,when come to this, means data have been partition
+            splits = CarbonQueryUtil.getTableSplits(carbonLoadModel.getDatabaseName,
+              carbonLoadModel.getTableName, null, partitioner)
+            // get all partition blocks from factFilePath/uniqueID/
+            blocksGroupBy = splits.map {
+              split =>
+                val pathBuilder = new StringBuilder()
+                pathBuilder.append(carbonLoadModel.getFactFilePath)
+                if (!carbonLoadModel.getFactFilePath.endsWith("/")
+                  && !carbonLoadModel.getFactFilePath.endsWith("\\")) {
+                  pathBuilder.append("/")
+                }
+                pathBuilder.append(split.getPartition.getUniqueID).append("/")
+                (split.getPartition.getUniqueID,
+                  SplitUtils.getSplits(pathBuilder.toString, sc.sparkContext))
+            }
+          }
+
+        case false =>
+          /*
+           * when data load handle by node partition
+           * 1)clone the hadoop configuration,and set the file path to the configuration
+           * 2)use NewHadoopRDD to get split,size:Math.max(minSize, Math.min(maxSize, blockSize))
+           * 3)use DummyLoadRDD to group blocks by host,and let spark balance the block location
+           * 4)DummyLoadRDD output (host,Array[BlockDetails])as the parameter to CarbonDataLoadRDD
+           *   which parititon by host
+           */
+          val hadoopConfiguration = new Configuration(sc.sparkContext.hadoopConfiguration)
+          // FileUtils will skip file which is no csv, and return all file path which split by ','
+          val filePaths = FileUtils.getPaths(carbonLoadModel.getFactFilePath())
+          hadoopConfiguration.set("mapreduce.input.fileinputformat.inputdir", filePaths)
+          hadoopConfiguration.set("mapreduce.input.fileinputformat.input.dir.recursive", "true")
+          val newHadoopRDD = new NewHadoopRDD[LongWritable, Text](
+            sc.sparkContext,
+            classOf[org.apache.hadoop.mapreduce.lib.input.TextInputFormat],
+            classOf[LongWritable],
+            classOf[Text],
+            hadoopConfiguration)
+          blocksGroupBy = new DummyLoadRDD(newHadoopRDD).collect().groupBy[String](_._1)
+            .map { iter => (iter._1, iter._2.map(_._2)) }.toArray
+      }
+
       val status = new
           CarbonDataLoadRDD(sc.sparkContext, new ResultImpl(), carbonLoadModel, storeLocation,
             hdfsStoreLocation, kettleHomePath, partitioner, columinar, currentRestructNumber,
-            currentLoadCount, cubeCreationTime, schemaLastUpdatedTime, part).collect()
+            currentLoadCount, cubeCreationTime, schemaLastUpdatedTime, blocksGroupBy,
+            isTableSplitPartition).collect()
       val newStatusMap = scala.collection.mutable.Map.empty[String, String]
       status.foreach { eachLoadStatus =>
         val state = newStatusMap.get(eachLoadStatus._2.getPartitionCount)

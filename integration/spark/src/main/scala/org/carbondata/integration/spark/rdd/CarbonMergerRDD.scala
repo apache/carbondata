@@ -65,8 +65,7 @@ class CarbonMergerRDD[K, V](
       logInfo("Input split: " + split.serializableHadoopSplit.value)
       val partitionId = split.serializableHadoopSplit.value.getPartition().getUniqueID()
       val model = carbonLoadModel
-        .getCopyWithPartition(split.serializableHadoopSplit.value.getPartition().getUniqueID(),
-          null)
+        .getCopyWithPartition(split.serializableHadoopSplit.value.getPartition().getUniqueID())
 
       val mergedLoadMetadataDetails = CarbonDataMergerUtil
         .executeMerging(model, storeLocation, hdfsStoreLocation, currentRestructNumber,

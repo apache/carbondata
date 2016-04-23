@@ -21,6 +21,7 @@ import java.io.File
 
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.CarbonContext
+import org.carbondata.core.util.CarbonProperties
 
 object CarbonExample {
 
@@ -46,8 +47,12 @@ object CarbonExample {
     cc.setConf("carbon.kettle.home", kettleHome)
     cc.setConf("hive.metastore.warehouse.dir", hiveMetaPath)
 
-    // When you excute the second time, need to enable it
-    // cc.sql("drop cube testTable")
+    // whether use table split partition
+    // true -> use table split partition, support multiple partition loading
+    // false -> use node split partition, support data load by host partition
+    CarbonProperties.getInstance().addProperty("carbon.table.split.partition.enable", "false")
+
+    cc.sql("drop cube if exists testTable")
 
     cc.sql("CREATE CUBE testTable DIMENSIONS (ID Integer, Date Timestamp, " +
       "Country String, Name String, Phonetype String, Serialname String" +
@@ -61,7 +66,5 @@ object CarbonExample {
     cc.sql("select Country,count(salary) from testTable " +
       "where Country in ('china','france') group by Country")
       .show()
-
   }
-
 }

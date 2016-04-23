@@ -101,9 +101,9 @@ public class CarbonLoadModel implements Serializable {
   /**
    * set block id for carbon load model
    *
-   * @param blocksDetailID
+   * @param blocksID
    */
-  public void setBlocksID(String blocksDetailID) {
+  public void setBlocksID(String blocksID) {
     this.blocksID = blocksID;
   }
 
@@ -312,13 +312,12 @@ public class CarbonLoadModel implements Serializable {
   }
 
   /**
-   * get copy with parition and blocks id
+   * get copy with parition
    *
    * @param uniqueId
-   * @param blocksID
    * @return
    */
-  public CarbonLoadModel getCopyWithPartition(String uniqueId, String blocksID) {
+  public CarbonLoadModel getCopyWithPartition(String uniqueId) {
     CarbonLoadModel copy = new CarbonLoadModel();
     copy.tableName = tableName;
     copy.dbPwd = dbPwd;
@@ -352,11 +351,10 @@ public class CarbonLoadModel implements Serializable {
    * @param filesForPartition
    * @param header
    * @param delimiter
-   * @param blocksID
    * @return
    */
   public CarbonLoadModel getCopyWithPartition(String uniqueId, List<String> filesForPartition,
-      String header, String delimiter, String blocksID) {
+      String header, String delimiter) {
     CarbonLoadModel copyObj = new CarbonLoadModel();
     copyObj.tableName = tableName;
     copyObj.dbPwd = dbPwd;

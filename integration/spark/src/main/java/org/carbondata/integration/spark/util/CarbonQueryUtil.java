@@ -40,8 +40,8 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.CarbonDef;
 import org.carbondata.core.carbon.CarbonDef.CubeDimension;
 import org.carbondata.core.carbon.CarbonDef.Schema;
-import org.carbondata.core.carbon.CarbonDef.Table;
 import org.carbondata.core.carbon.SqlStatement.Type;
+import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.fileperations.AtomicFileOperations;
 import org.carbondata.core.datastorage.store.fileperations.AtomicFileOperationsImpl;
@@ -771,7 +771,9 @@ public final class CarbonQueryUtil {
         getAllFiles(fileNames[i].getPath(), partitionsFiles, fileType);
       }
     } else {
-      partitionsFiles.add(file.getPath());
+      if (file.getPath().endsWith(".csv")) {
+        partitionsFiles.add(file.getPath());
+      }
     }
   }
 
@@ -883,14 +885,23 @@ public final class CarbonQueryUtil {
         .isDetailQuery());
   }
 
-  public static String[] getAllColumns(Schema schema) {
-    String cubeUniqueName = schema.name + '_' + schema.cubes[0].name;
-    CarbonMetadata.getInstance().removeCube(cubeUniqueName);
-    CarbonMetadata.getInstance().loadSchema(schema);
-    Cube cube = CarbonMetadata.getInstance().getCube(cubeUniqueName);
-    Set<String> metaTableColumns =
-        cube.getMetaTableColumns(((Table) schema.cubes[0].fact).name);
-    return metaTableColumns.toArray(new String[metaTableColumns.size()]);
+  public static String[] getAllColumns(CarbonTable carbonTable) {
+    List<org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension>
+            carbonDimensionList = carbonTable.getDimensionByTableName(carbonTable
+            .getFactTableName());
+    List<org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure>
+            carbonMeasureList = carbonTable.getMeasureByTableName(carbonTable.getFactTableName());
+    String[] columns = new String[carbonDimensionList.size() + carbonMeasureList.size()];
+
+    for(int i=0;i<columns.length;i++){
+      if(i<carbonDimensionList.size()){
+        columns[i] = carbonDimensionList.get(i).getColName();
+      }else{
+        columns[i] = carbonMeasureList.get(i-carbonDimensionList.size()).getColName();
+      }
+    }
+
+    return columns;
   }
 
   public static QueryExecutor getQueryExecuter(Cube cube, String factTable,

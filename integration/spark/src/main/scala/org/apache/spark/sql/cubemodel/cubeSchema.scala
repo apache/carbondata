@@ -47,7 +47,7 @@ import org.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.carbondata.integration.spark.load._
 import org.carbondata.integration.spark.partition.api.impl.QueryPartitionHelper
 import org.carbondata.integration.spark.rdd.CarbonDataRDDFactory
-import org.carbondata.integration.spark.util.{CarbonScalaUtil, CarbonSparkInterFaceLogEvent, GlobalDictionaryUtil}
+import org.carbondata.integration.spark.util.{CarbonQueryUtil, CarbonScalaUtil, CarbonSparkInterFaceLogEvent, GlobalDictionaryUtil}
 import org.carbondata.processing.suggest.autoagg.{AutoAggSuggestionFactory, AutoAggSuggestionService}
 import org.carbondata.processing.suggest.autoagg.model.Request
 import org.carbondata.processing.suggest.autoagg.util.CommonUtil
@@ -2068,6 +2068,10 @@ private[sql] case class PartitionData(schemaName: String, cubeName: String, fact
     val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog
       .lookupRelation1(Option(schemaName), cubeName, None)(sqlContext).asInstanceOf[CarbonRelation]
     val targetFolder = targetPath
+    partitionStatus = CarbonDataRDDFactory.partitionCarbonData(sqlContext.sparkContext, schemaName,
+      cubeName, factPath, targetFolder,
+      CarbonQueryUtil.getAllColumns(relation.cubeMeta.carbonTable), fileHeader, delimiter,
+      quoteChar, escapeChar, multiLine, relation.cubeMeta.partitioner)
     if (partitionStatus == CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS) {
       logInfo("Bad Record Found while partitioning data")
     }
