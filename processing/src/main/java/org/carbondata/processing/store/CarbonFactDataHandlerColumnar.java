@@ -597,7 +597,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       byte[][] noDictionaryValueHolder =
           NoDictionarykeyDataHolder.getByteArrayValues();
       //TODO need to handle high card also here
-
+      calculateUniqueValue(min, uniqueValue);
       ValueCompressionModel compressionModel = ValueCompressionUtil
           .getValueCompressionModel(max, min, decimal, uniqueValue, type, new byte[max.length]);
       byte[][] writableMeasureDataArray =
@@ -744,6 +744,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     // than 0
     if (this.entryCount > 0) {
       byte[][] data = keyDataHolder.getByteArrayValues();
+      calculateUniqueValue(min, uniqueValue);
       ValueCompressionModel compressionModel = ValueCompressionUtil
           .getValueCompressionModel(max, min, decimal, uniqueValue, type, new byte[max.length]);
       byte[][] writableMeasureDataArray =
@@ -888,6 +889,26 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   }
 
   /**
+   * This method will calculate the unique value which will be used as storage
+   * key for null values of measures
+   *
+   * @param minValue
+   * @param uniqueValue
+   */
+  private void calculateUniqueValue(Object[] minValue, Object[] uniqueValue) {
+    for (int i = 0; i < measureCount; i++) {
+      if (type[i] == CarbonCommonConstants.BIG_INT_MEASURE) {
+        uniqueValue[i] = (long) minValue[i] - 1;
+      } else if (type[i] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
+        BigDecimal val = (BigDecimal) minValue[i];
+        uniqueValue[i] = (val.subtract(new BigDecimal(1.0)));
+      } else {
+        uniqueValue[i] = (double) minValue[i] - 1;
+      }
+    }
+  }
+
+  /**
    * Below method will be to configure fact file writing configuration
    *
    * @throws CarbonDataWriterException
@@ -1000,6 +1021,8 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         max[i] = Long.MIN_VALUE;
       } else if (type[i] == CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE) {
         max[i] = -Double.MAX_VALUE;
+      } else if (type[i] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
+        max[i] = new BigDecimal(0.0);
       } else {
         max[i] = 0.0;
       }
@@ -1017,7 +1040,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         uniqueValue[i] = new BigDecimal(Double.MIN_VALUE);
       } else {
         min[i] = 0.0;
-        uniqueValue[i] = Long.MIN_VALUE;
+        uniqueValue[i] = 0.0;
       }
     }
 
