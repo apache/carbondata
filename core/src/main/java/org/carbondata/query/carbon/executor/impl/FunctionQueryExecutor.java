@@ -18,19 +18,20 @@
  */
 package org.carbondata.query.carbon.executor.impl;
 
-import java.util.List;
-
-import org.carbondata.core.carbon.datastore.block.AbstractIndex;
+import org.carbondata.core.iterator.CarbonIterator;
+import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
+import org.carbondata.query.carbon.model.QueryModel;
+import org.carbondata.query.carbon.result.RowResult;
 
 /**
- * This is to handle function query like
- * count(1), as function query will be executed like
- * count start query so it is extending the count star executor
+ * Below class will be used execute the function query
+ * for example:count(1)
  */
-public class FunctionQueryExecutor extends CountStartExecutor {
+public class FunctionQueryExecutor extends CountStarQueryExecutor {
 
-  public FunctionQueryExecutor(List<AbstractIndex> blockList) {
-    super(blockList);
+  @Override public CarbonIterator<RowResult> execute(QueryModel queryModel)
+      throws QueryExecutionException {
+    queryProperties.isFunctionQuery = true;
+    return super.execute(queryModel);
   }
-
 }
