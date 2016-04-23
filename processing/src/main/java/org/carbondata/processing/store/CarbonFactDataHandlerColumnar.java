@@ -58,6 +58,7 @@ import org.carbondata.core.file.manager.composite.LoadFolderData;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.keygenerator.columnar.ColumnarSplitter;
+import org.carbondata.core.keygenerator.columnar.impl.MultiDimKeyVarLengthEquiSplitGenerator;
 import org.carbondata.core.keygenerator.columnar.impl.MultiDimKeyVarLengthVariableSplitGenerator;
 import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.carbondata.core.util.CarbonProperties;
@@ -461,7 +462,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
 
   private void setComplexMapSurrogateIndex(int dimensionCount) {
     int surrIndex = 0;
-    for (int i = 0; i < complexIndexMap.size(); i++) {
+    for (int i = 0; i < dimensionCount; i++) {
       GenericDataType complexDataType = complexIndexMap.get(i);
       if (complexDataType != null) {
         List<GenericDataType> primitiveTypes = new ArrayList<GenericDataType>();
@@ -999,14 +1000,44 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
 
     initialisedataHolder();
     setComplexMapSurrogateIndex(this.dimensionCount);
+    int[] blockKeySize =
+        getBlockKeySizeWithComplexTypes(new MultiDimKeyVarLengthEquiSplitGenerator(
+            CarbonUtil.getIncrementedCardinalityFullyFilled(completeDimLens.clone()), (byte) dimSet)
+            .getBlockKeySize());
     this.dataWriter =
         getFactDataWriter(this.storeLocation, this.measureCount, this.mdkeyLength, this.tableName,
-            true, fileManager, keyBlockSize);
+            true, fileManager, blockKeySize);
     this.dataWriter.setIsNoDictionary(isNoDictionary);
     // initialize the channel;
     this.dataWriter.initializeWriter();
 
     initializeMinMax();
+  }
+  /**
+   * This method combines primitive dimensions with complex metadata columns
+   * @param primitiveBlockKeySize
+   * @return all dimensions cardinality including complex dimension metadata column
+   */
+  private int[] getBlockKeySizeWithComplexTypes(int[] primitiveBlockKeySize) {
+    int allColsCount = getComplexColsCount();
+    int[] blockKeySizeWithComplexTypes =
+        new int[this.hybridStoreModel.getNoOfColumnStore() + allColsCount];
+
+    List<Integer> blockKeySizeWithComplex =
+        new ArrayList<Integer>(blockKeySizeWithComplexTypes.length);
+    for (int i = 0; i < this.dimensionCount; i++) {
+      GenericDataType complexDataType = complexIndexMap.get(i);
+      if (complexDataType != null) {
+        complexDataType.fillBlockKeySize(blockKeySizeWithComplex, primitiveBlockKeySize);
+      } else {
+        blockKeySizeWithComplex.add(primitiveBlockKeySize[i]);
+      }
+    }
+    for (int i = 0; i < blockKeySizeWithComplexTypes.length; i++) {
+      blockKeySizeWithComplexTypes[i] = blockKeySizeWithComplex.get(i);
+    }
+
+    return blockKeySizeWithComplexTypes;
   }
 
   //TODO: Need to move Abstract class

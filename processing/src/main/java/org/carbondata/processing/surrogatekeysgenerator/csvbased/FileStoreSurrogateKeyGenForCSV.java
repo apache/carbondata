@@ -50,6 +50,7 @@ import org.carbondata.core.reader.CarbonDictionaryMetadataReaderImpl;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.writer.ByteArrayHolder;
 import org.carbondata.core.writer.HierarchyValueWriterForCSV;
+import org.carbondata.processing.datatypes.GenericDataType;
 import org.carbondata.processing.schema.metadata.ColumnsInfo;
 import org.carbondata.processing.surrogatekeysgenerator.dbbased.FileStoreSurrogateKeyGen;
 import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
@@ -244,19 +245,48 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
     CacheProvider cacheProvider = CacheProvider.getInstance();
     Cache reverseDictionaryCache =
         cacheProvider.createCache(CacheType.REVERSE_DICTIONARY, carbonStorePath);
-    //update the member cache for dimension
+    // update the member cache for dimension
     for (int i = 0; i < dimColumnNames.length; i++) {
       String dimColName = dimColumnNames[i].substring(tableName.length() + 1);
-      initDictionaryCacheInfo(carbonTableIdentifier, dimColumnIds[i], dimColumnNames[i],
-          reverseDictionaryCache);
-      try {
-        updateMaxKeyInfo(carbonStorePath, carbonTableIdentifier, dimColumnIds[i], dimColumnNames[i],
-            false);
-      } catch (IOException e) {
-        LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-            "Can not read metadata file" +
-                "of this column: " + dimColName);
+      GenericDataType complexType = columnsInfo.getComplexTypesMap().get(dimColName);
+      if (complexType != null) {
+        List<GenericDataType> primitiveChild = new ArrayList<GenericDataType>();
+        complexType.getAllPrimitiveChildren(primitiveChild);
+        for (GenericDataType eachPrimitive : primitiveChild) {
+          String dimColumnName =
+              tableName + CarbonCommonConstants.UNDERSCORE + eachPrimitive.getName();
+          initDictionaryAndUpdateKeyInfo(carbonStorePath, dimColumnName,
+              eachPrimitive.getColumnId(), carbonTableIdentifier, reverseDictionaryCache,
+              eachPrimitive.getName());
+        }
+      } else {
+        initDictionaryAndUpdateKeyInfo(carbonStorePath, dimColumnNames[i], dimColumnIds[i],
+            carbonTableIdentifier, reverseDictionaryCache, dimColName);
       }
+    }
+  }
+
+  /**
+   * Initalize the dictionary with provided column and updates key information.
+   * @param carbonStorePath
+   * @param dimColumnName
+   * @param dimColumnId
+   * @param carbonTableIdentifier
+   * @param reverseDictionaryCache
+   * @param dimColName
+   */
+  private void initDictionaryAndUpdateKeyInfo(String carbonStorePath, String dimColumnName,
+      String dimColumnId, CarbonTableIdentifier carbonTableIdentifier,
+      Cache reverseDictionaryCache, String dimColName) {
+    initDictionaryCacheInfo(carbonTableIdentifier, dimColumnId, dimColumnName,
+        reverseDictionaryCache);
+    try {
+      updateMaxKeyInfo(carbonStorePath, carbonTableIdentifier, dimColumnId, dimColumnName,
+          false);
+    } catch (IOException e) {
+      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
+          "Can not read metadata file" +
+              "of this column: " + dimColName);
     }
   }
 

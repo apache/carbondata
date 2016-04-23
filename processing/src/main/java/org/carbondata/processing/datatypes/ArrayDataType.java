@@ -32,24 +32,58 @@ import org.carbondata.processing.surrogatekeysgenerator.csvbased.CarbonCSVBasedD
 
 import org.pentaho.di.core.exception.KettleException;
 
+/**
+ * Array DataType stateless object used in data loading
+ */
 public class ArrayDataType implements GenericDataType {
 
+  /**
+   * child columns
+   */
   private GenericDataType children;
 
+  /**
+   * name of the column
+   */
   private String name;
 
+  /**
+   * column unique id
+   */
+  private String columnId;
+
+  /**
+   * parent column name
+   */
   private String parentname;
 
+  /**
+   * output array index
+   */
   private int outputArrayIndex;
 
+  /**
+   * current data counter
+   */
   private int dataCounter;
 
-  public ArrayDataType(String name, String parentname) {
+  /**
+   * constructor
+   * @param name
+   * @param parentname
+   * @param columnId
+   */
+  public ArrayDataType(String name, String parentname, String columnId) {
     this.name = name;
     this.parentname = parentname;
+    this.columnId = columnId;
   }
 
-  @Override public void addChildren(GenericDataType children) {
+  /*
+   * to add child dimensions
+   */
+  @Override
+  public void addChildren(GenericDataType children) {
     if (this.getName().equals(children.getParentname())) {
       this.children = children;
     } else {
@@ -57,19 +91,43 @@ public class ArrayDataType implements GenericDataType {
     }
   }
 
-  @Override public String getName() {
+  /*
+   * return column name
+   */
+  @Override
+  public String getName() {
     return name;
   }
 
-  @Override public void setName(String name) {
+  /*
+   * return column unique id
+   */
+  @Override
+  public String getColumnId() {
+    return columnId;
+  }
+
+  /*
+   * set column name
+   */
+  @Override
+  public void setName(String name) {
     this.name = name;
   }
 
-  @Override public String getParentname() {
+  /*
+   * set parent name
+   */
+  @Override
+  public String getParentname() {
     return parentname;
   }
 
-  @Override public void getAllPrimitiveChildren(List<GenericDataType> primitiveChild) {
+  /*
+   * returns all primitive type child columns
+   */
+  @Override
+  public void getAllPrimitiveChildren(List<GenericDataType> primitiveChild) {
     if (children instanceof PrimitiveDataType) {
       primitiveChild.add(children);
     } else {
@@ -77,21 +135,32 @@ public class ArrayDataType implements GenericDataType {
     }
   }
 
-  @Override public int getSurrogateIndex() {
+  /*
+   * return surrogate index
+   */
+  @Override
+  public int getSurrogateIndex() {
     return 0;
   }
 
-  @Override public void setSurrogateIndex(int surrIndex) {
+  /*
+   * set surrogate index
+   */
+  @Override
+  public void setSurrogateIndex(int surrIndex) {
 
   }
 
+  /*
+   * parse string and generate surrogate
+   */
   @Override
-  public void parseStringAndWriteByteArray(String tableName, String inputString, String[] delimiter,
-      int delimiterIndex, DataOutputStream dataOutputStream,
+  public void parseStringAndWriteByteArray(String tableName, String inputString,
+      String[] delimiter, int delimiterIndex, DataOutputStream dataOutputStream,
       CarbonCSVBasedDimSurrogateKeyGen surrogateKeyGen) throws KettleException, IOException {
 
     if (inputString == null || "null".equals(inputString) || "".equals(inputString)) {
-      //Indicates null array
+      // Indicates null array
       dataOutputStream.writeInt(0);
     } else if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(inputString)) {
       dataOutputStream.writeInt(-1);
@@ -107,6 +176,9 @@ public class ArrayDataType implements GenericDataType {
     }
   }
 
+  /*
+   * parse byte array and bit pack
+   */
   @Override
   public void parseAndBitPack(ByteBuffer byteArrayInput, DataOutputStream dataOutputStream,
       KeyGenerator[] generator) throws IOException, KeyGenException {
@@ -122,16 +194,28 @@ public class ArrayDataType implements GenericDataType {
 
   }
 
-  @Override public int getColsCount() {
+  /*
+   * get children column count
+   */
+  @Override
+  public int getColsCount() {
     return children.getColsCount() + 1;
   }
 
-  @Override public void setOutputArrayIndex(int outputArrayIndex) {
+  /*
+   * set array index
+   */
+  @Override
+  public void setOutputArrayIndex(int outputArrayIndex) {
     this.outputArrayIndex = outputArrayIndex;
     children.setOutputArrayIndex(outputArrayIndex + 1);
   }
 
-  @Override public int getMaxOutputArrayIndex() {
+  /*
+   * get current max array index
+   */
+  @Override
+  public int getMaxOutputArrayIndex() {
     int currentMax = outputArrayIndex;
     int childMax = children.getMaxOutputArrayIndex();
     if (childMax > currentMax) {
@@ -140,7 +224,11 @@ public class ArrayDataType implements GenericDataType {
     return currentMax;
   }
 
-  @Override public void getColumnarDataForComplexType(List<ArrayList<byte[]>> columnsArray,
+  /*
+   * split byte array and return metadata and primitive column data
+   */
+  @Override
+  public void getColumnarDataForComplexType(List<ArrayList<byte[]>> columnsArray,
       ByteBuffer inputArray) {
     ByteBuffer b = ByteBuffer.allocate(8);
     int dataLength = inputArray.getInt();
@@ -161,23 +249,37 @@ public class ArrayDataType implements GenericDataType {
     this.dataCounter++;
   }
 
-  @Override public int getDataCounter() {
+  /*
+   * return data counter
+   */
+  @Override
+  public int getDataCounter() {
     return this.dataCounter;
   }
 
+  /*
+   * fill agg key blocks
+   */
   @Override
   public void fillAggKeyBlock(List<Boolean> aggKeyBlockWithComplex, boolean[] aggKeyBlock) {
     aggKeyBlockWithComplex.add(false);
     children.fillAggKeyBlock(aggKeyBlockWithComplex, aggKeyBlock);
   }
 
+  /*
+   * fill key size
+   */
   @Override
   public void fillBlockKeySize(List<Integer> blockKeySizeWithComplex, int[] primitiveBlockKeySize) {
     blockKeySizeWithComplex.add(8);
     children.fillBlockKeySize(blockKeySizeWithComplex, primitiveBlockKeySize);
   }
 
-  @Override public void fillCardinalityAfterDataLoad(List<Integer> dimCardWithComplex,
+  /*
+   * fill cardinality
+   */
+  @Override
+  public void fillCardinalityAfterDataLoad(List<Integer> dimCardWithComplex,
       int[] maxSurrogateKeyArray) {
     dimCardWithComplex.add(0);
     children.fillCardinalityAfterDataLoad(dimCardWithComplex, maxSurrogateKeyArray);

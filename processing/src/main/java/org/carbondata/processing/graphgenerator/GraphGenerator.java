@@ -1626,7 +1626,7 @@ public class GraphGenerator {
     graphConfiguration
         .setActualDims(CarbonSchemaParser.getCubeDimensions(dimensions, carbonDataLoadSchema));
     graphConfiguration
-        .setComplexTypeString(CarbonSchemaParser.getLevelDataTypeAndParentMapString(dimensions));
+        .setComplexTypeString(CarbonSchemaParser.getComplexTypeString(dimensions));
     graphConfiguration.setDirectDictionaryColumnString(
         CarbonSchemaParser.getDirectDictionaryColumnString(dimensions, carbonDataLoadSchema));
     String factTableName = carbonDataLoadSchema.getCarbonTable().getFactTableName();

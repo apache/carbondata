@@ -51,7 +51,6 @@ import org.carbondata.core.carbon.Util;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
-import org.carbondata.core.carbon.metadata.schema.table.column.CarbonComplexDimension;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.carbondata.core.constants.CarbonCommonConstants;
@@ -59,10 +58,6 @@ import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.carbondata.core.metadata.CarbonMetadata;
-import org.carbondata.processing.datatypes.ArrayDataType;
-import org.carbondata.processing.datatypes.GenericDataType;
-import org.carbondata.processing.datatypes.PrimitiveDataType;
-import org.carbondata.processing.datatypes.StructDataType;
 import org.carbondata.processing.graphgenerator.GraphGenerator;
 import org.carbondata.processing.schema.metadata.AggregateTable;
 
@@ -880,14 +875,16 @@ public final class CarbonSchemaParser {
   }
 
   /**
-   * @param cube
+   * this method will return table columns
+   * @param dimensions
+   * @param carbonDataLoadSchema
    * @return
    */
   public static String[] getCubeDimensions(List<CarbonDimension> dimensions,
       CarbonDataLoadSchema carbonDataLoadSchema) {
     List<String> list = new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
     for (CarbonDimension cDimension : dimensions) {
-      //Ignoring the dimensions which are high cardinality dimension
+      // Ignoring the dimensions which are high cardinality dimension
       if (!cDimension.getEncoder().contains(Encoding.DICTIONARY)) {
         continue;
       }
@@ -898,7 +895,13 @@ public final class CarbonSchemaParser {
     fields = list.toArray(fields);
     return fields;
   }
-
+  /**
+   * This method will extract dimension table name,
+   * By default, fact table name will be returned.
+   * @param dimensionColName
+   * @param carbonDataLoadSchema
+   * @return
+   */
   private static String extractDimensionTableName(String dimensionColName,
       CarbonDataLoadSchema carbonDataLoadSchema) {
     List<DimensionRelation> dimensionRelationList = carbonDataLoadSchema.getDimensionRelationList();
@@ -1121,56 +1124,18 @@ public final class CarbonSchemaParser {
     StringBuffer buffer = new StringBuffer();
     int dimCounter = 0;
     for (CarbonDimension cDimension : dimensions) {
-      buffer.append(cDimension.isColumnar());
+      if(cDimension.getNumberOfChild() > 0) {
+        buffer.append(getDimensionsStoreType(cDimension.getListOfChildDimensions()));
+      }
+      else {
+        buffer.append(cDimension.isColumnar());
+      }
       if (dimCounter < dimensions.size() - 1) {
         buffer.append(",");
       }
       dimCounter++;
     }
     return buffer.toString();
-  }
-
-  /**
-   * @param cube
-   * @return
-   */
-  public static Map<String, GenericDataType> getComplexDimensions(Cube cube, Schema schema) {
-    CarbonDef.CubeDimension[] dimensions = cube.dimensions;
-    Map<String, GenericDataType> complexTypeMap = new HashMap<String, GenericDataType>();
-    for (CubeDimension cDimension : dimensions) {
-      //
-      Hierarchy[] hierarchies = null;
-      hierarchies = extractHierarchies(schema, cDimension);
-      for (Hierarchy hierarchy : hierarchies) {
-        if (hierarchy.levels.length > 1 && (hierarchy.levels[0].type.equals("Array")
-            || hierarchy.levels[0].type.equals("Struct"))) {
-          Level levelZero = hierarchy.levels[0];
-          GenericDataType g = levelZero.type.equals("Array") ?
-              new ArrayDataType(levelZero.name, "") :
-              new StructDataType(levelZero.name, "");
-          complexTypeMap.put(levelZero.name, g);
-          boolean isFirst = true;
-          for (Level level : hierarchy.levels) {
-            if (isFirst) {
-              isFirst = false;
-              continue;
-            } else {
-              switch (level.type) {
-                case "Array":
-                  g.addChildren(new ArrayDataType(level.name, level.parentname));
-                  break;
-                case "Struct":
-                  g.addChildren(new StructDataType(level.name, level.parentname));
-                  break;
-                default:
-                  g.addChildren(new PrimitiveDataType(level.name, level.parentname));
-              }
-            }
-          }
-        }
-      }
-    }
-    return complexTypeMap;
   }
 
   /**
@@ -2274,30 +2239,48 @@ public final class CarbonSchemaParser {
   }
 
   /**
-   * Below method will be used to get the level and its data type string
+   * Below method will be used to get the complex dimension string
    *
    * @param dimensions
    * @param schema
    * @param cube
    * @return String
    */
-  public static String getLevelDataTypeAndParentMapString(List<CarbonDimension> dimensions) {
+  public static String getComplexTypeString(List<CarbonDimension> dimensions) {
     StringBuilder dimString = new StringBuilder();
     for (int i = 0; i < dimensions.size(); i++) {
       CarbonDimension dimension = dimensions.get(i);
-      if (dimension.isComplex()) {
-        assert(dimension.getClass().equals(CarbonComplexDimension.class));
-        for (int j = 0; j < ((CarbonComplexDimension)dimension).getNumberOfChild(); j++, i++) {
-          dimension = dimensions.get(i);
-          dimString.append(
-              dimension.getColName() + CarbonCommonConstants.COLON_SPC_CHARACTER + dimension
-                  .getDataType() + CarbonCommonConstants.COLON_SPC_CHARACTER + ""
-                  + CarbonCommonConstants.HASH_SPC_CHARACTER);
-        }
+      if (dimension.getDataType().equals(DataType.ARRAY) || dimension.getDataType()
+          .equals(DataType.STRUCT)) {
+        addAllComplexTypeChildren(dimension, dimString, "");
         dimString.append(CarbonCommonConstants.SEMICOLON_SPC_CHARACTER);
       }
     }
     return dimString.toString();
+  }
+  /**
+   * This method will return all the child dimensions under complex dimension
+   * @param dimension
+   * @param dimString
+   * @param parent
+   */
+  private static void addAllComplexTypeChildren(CarbonDimension dimension, StringBuilder dimString,
+      String parent) {
+    dimString.append(dimension.getColName() + CarbonCommonConstants.COLON_SPC_CHARACTER
+        + dimension.getDataType() + CarbonCommonConstants.COLON_SPC_CHARACTER + parent
+        + CarbonCommonConstants.COLON_SPC_CHARACTER + dimension.getColumnId()
+        + CarbonCommonConstants.HASH_SPC_CHARACTER);
+    for (int i = 0; i < dimension.getNumberOfChild(); i++) {
+      CarbonDimension childDim = dimension.getListOfChildDimensions().get(i);
+      if (childDim.getNumberOfChild() > 0) {
+        addAllComplexTypeChildren(childDim, dimString, dimension.getColName());
+      } else {
+        dimString.append(childDim.getColName() + CarbonCommonConstants.COLON_SPC_CHARACTER
+            + childDim.getDataType() + CarbonCommonConstants.COLON_SPC_CHARACTER
+            + dimension.getColName() + CarbonCommonConstants.COLON_SPC_CHARACTER
+            + childDim.getColumnId() + CarbonCommonConstants.HASH_SPC_CHARACTER);
+      }
+    }
   }
 
   /**

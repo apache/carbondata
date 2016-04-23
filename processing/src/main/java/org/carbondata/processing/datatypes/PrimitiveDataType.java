@@ -32,60 +32,136 @@ import org.carbondata.processing.surrogatekeysgenerator.csvbased.CarbonCSVBasedD
 
 import org.pentaho.di.core.exception.KettleException;
 
+/**
+ * Primitive DataType stateless object used in data loading
+ */
 public class PrimitiveDataType implements GenericDataType {
 
+  /**
+   * surrogate index
+   */
   private int index;
 
+  /**
+   * column name
+   */
   private String name;
+
+  /**
+   * column parent name
+   */
   private String parentname;
 
+  /**
+   * column unique id
+   */
+  private String columnId;
+
+  /**
+   * key size
+   */
   private int keySize;
 
+  /**
+   * array index
+   */
   private int outputArrayIndex;
 
+  /**
+   * data counter
+   */
   private int dataCounter;
 
-  public PrimitiveDataType(String name, String parentname) {
+  /**
+   * constructor
+   * @param name
+   * @param parentname
+   * @param columnId
+   */
+  public PrimitiveDataType(String name, String parentname, String columnId) {
     this.name = name;
     this.parentname = parentname;
+    this.columnId = columnId;
   }
 
-  @Override public void addChildren(GenericDataType children) {
+  /*
+   * primitive column will not have any child column
+   */
+  @Override
+  public void addChildren(GenericDataType children) {
 
   }
 
-  @Override public String getName() {
+  /*
+   * get column name
+   */
+  @Override
+  public String getName() {
     return name;
   }
 
-  @Override public void setName(String name) {
+  /*
+   * set column name
+   */
+  @Override
+  public void setName(String name) {
     this.name = name;
   }
 
-  @Override public String getParentname() {
+  /*
+   * get column parent name
+   */
+  @Override
+  public String getParentname() {
     return parentname;
   }
 
-  @Override public void getAllPrimitiveChildren(List<GenericDataType> primitiveChild) {
+  /*
+   * get column unique id
+   */
+  @Override
+  public String getColumnId() {
+    return columnId;
+  }
+
+  /*
+   * primitive column will not have any children
+   */
+  @Override
+  public void getAllPrimitiveChildren(List<GenericDataType> primitiveChild) {
 
   }
 
-  @Override public int getSurrogateIndex() {
+  /*
+   * get surrogate index
+   */
+  @Override
+  public int getSurrogateIndex() {
     return index;
   }
 
-  @Override public void setSurrogateIndex(int surrIndex) {
+  /*
+   * set surrogate index
+   */
+  @Override
+  public void setSurrogateIndex(int surrIndex) {
     index = surrIndex;
   }
 
+  /*
+   * parse string and generate surrogate
+   */
   @Override
-  public void parseStringAndWriteByteArray(String tableName, String inputString, String[] delimiter,
-      int delimiterIndex, DataOutputStream dataOutputStream,
+  public void parseStringAndWriteByteArray(String tableName, String inputString,
+      String[] delimiter, int delimiterIndex, DataOutputStream dataOutputStream,
       CarbonCSVBasedDimSurrogateKeyGen surrogateKeyGen) throws KettleException, IOException {
-    dataOutputStream.writeInt(surrogateKeyGen
-        .generateSurrogateKeys(inputString, tableName + CarbonCommonConstants.UNDERSCORE + name));
+    dataOutputStream.writeInt(surrogateKeyGen.generateSurrogateKeys(inputString, tableName
+        + CarbonCommonConstants.UNDERSCORE + name));
   }
 
+  /*
+   * parse bytearray and bit pack
+   */
   @Override
   public void parseAndBitPack(ByteBuffer byteArrayInput, DataOutputStream dataOutputStream,
       KeyGenerator[] generator) throws IOException, KeyGenException {
@@ -93,19 +169,35 @@ public class PrimitiveDataType implements GenericDataType {
     dataOutputStream.write(generator[index].generateKey(new int[] { data }));
   }
 
-  @Override public int getColsCount() {
+  /*
+   * get all columns count
+   */
+  @Override
+  public int getColsCount() {
     return 1;
   }
 
-  @Override public void setOutputArrayIndex(int outputArrayIndex) {
+  /*
+   * set outputarray
+   */
+  @Override
+  public void setOutputArrayIndex(int outputArrayIndex) {
     this.outputArrayIndex = outputArrayIndex;
   }
 
-  @Override public int getMaxOutputArrayIndex() {
+  /*
+   * get output array
+   */
+  @Override
+  public int getMaxOutputArrayIndex() {
     return outputArrayIndex;
   }
 
-  @Override public void getColumnarDataForComplexType(List<ArrayList<byte[]>> columnsArray,
+  /*
+   * split column and return metadata and primitive column
+   */
+  @Override
+  public void getColumnarDataForComplexType(List<ArrayList<byte[]>> columnsArray,
       ByteBuffer inputArray) {
     byte[] key = new byte[keySize];
     inputArray.get(key);
@@ -113,26 +205,44 @@ public class PrimitiveDataType implements GenericDataType {
     dataCounter++;
   }
 
-  @Override public int getDataCounter() {
+  /*
+   * return datacounter
+   */
+  @Override
+  public int getDataCounter() {
     return this.dataCounter;
   }
 
+  /**
+   * set key size
+   * @param keySize
+   */
   public void setKeySize(int keySize) {
     this.keySize = keySize;
   }
 
+  /*
+   * fill agg key block
+   */
   @Override
   public void fillAggKeyBlock(List<Boolean> aggKeyBlockWithComplex, boolean[] aggKeyBlock) {
     aggKeyBlockWithComplex.add(aggKeyBlock[index]);
   }
 
+  /*
+   * fill block key size
+   */
   @Override
   public void fillBlockKeySize(List<Integer> blockKeySizeWithComplex, int[] primitiveBlockKeySize) {
     blockKeySizeWithComplex.add(primitiveBlockKeySize[index]);
     this.keySize = primitiveBlockKeySize[index];
   }
 
-  @Override public void fillCardinalityAfterDataLoad(List<Integer> dimCardWithComplex,
+  /*
+   * fill cardinality
+   */
+  @Override
+  public void fillCardinalityAfterDataLoad(List<Integer> dimCardWithComplex,
       int[] maxSurrogateKeyArray) {
     dimCardWithComplex.add(maxSurrogateKeyArray[index]);
   }

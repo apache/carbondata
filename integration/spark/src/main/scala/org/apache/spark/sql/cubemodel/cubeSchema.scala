@@ -1887,13 +1887,6 @@ private[sql] case class LoadCube(
       var partitionLocation = relation.cubeMeta.dataPath + "/partition/" +
         relation.cubeMeta.carbonTableIdentifier.getDatabaseName + "/" +
         relation.cubeMeta.carbonTableIdentifier.getTableName + "/"
-      val fileType = FileFactory.getFileType(partitionLocation)
-      if (FileFactory.isFileExist(partitionLocation, fileType)) {
-        val file = FileFactory.getCarbonFile(partitionLocation, fileType)
-        CarbonUtil.deleteFoldersAndFiles(file)
-      }
-      partitionLocation += System.currentTimeMillis()
-      FileFactory.mkdirs(partitionLocation, fileType)
 
       storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()
 
@@ -1942,6 +1935,13 @@ private[sql] case class LoadCube(
           carbonLoadModel.setDirectLoad(true)
         }
         else {
+          val fileType = FileFactory.getFileType(partitionLocation)
+          if (FileFactory.isFileExist(partitionLocation, fileType)) {
+            val file = FileFactory.getCarbonFile(partitionLocation, fileType)
+            CarbonUtil.deleteFoldersAndFiles(file)
+          }
+          partitionLocation += System.currentTimeMillis()
+          FileFactory.mkdirs(partitionLocation, fileType)
           LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
             "Initiating Data Partitioning for the Cube : (" +
             schemaName + "." + cubeName + ")")

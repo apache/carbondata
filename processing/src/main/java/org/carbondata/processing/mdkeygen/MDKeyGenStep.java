@@ -39,7 +39,6 @@ import org.carbondata.core.file.manager.composite.FileData;
 import org.carbondata.core.file.manager.composite.IFileManagerComposite;
 import org.carbondata.core.file.manager.composite.LoadFolderData;
 import org.carbondata.core.keygenerator.KeyGenException;
-import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
@@ -274,18 +273,6 @@ public class MDKeyGenStep extends BaseStep {
       dimLens[i] = dimsLenList.get(i);
     }
 
-    String[] dimStoreType = meta.getDimensionsStoreType().split(",");
-    boolean[] dimensionStoreType = new boolean[dimLens.length];
-    for (int i = 0; i < dimensionStoreType.length; i++) {
-      dimensionStoreType[i] = Boolean.parseBoolean(dimStoreType[i]);
-    }
-    this.hybridStoreModel = CarbonUtil.getHybridStoreMeta(dimLens, dimensionStoreType, null);
-    dimLens = hybridStoreModel.getHybridCardinality();
-    data.generator = new KeyGenerator[dimLens.length + 1];
-    for (int i = 0; i < dimLens.length; i++) {
-      data.generator[i] = KeyGeneratorFactory.getKeyGenerator(new int[] { dimLens[i] });
-    }
-
     //      this.dimensionCount = dimLens.length;
     this.dimensionCount = meta.getDimensionCount();
 
@@ -296,10 +283,16 @@ public class MDKeyGenStep extends BaseStep {
       simpleDimsLen[i] = dimLens[i];
     }
 
+    String[] dimStoreType = meta.getDimensionsStoreType().split(",");
+    boolean[] dimensionStoreType = new boolean[simpleDimsLen.length];
+    for (int i = 0; i < dimensionStoreType.length; i++) {
+      dimensionStoreType[i] = Boolean.parseBoolean(dimStoreType[i]);
+    }
     //Actual primitive dimension used to generate start & end key
 
     //data.generator[dimLens.length] = KeyGeneratorFactory.getKeyGenerator(simpleDimsLen);
-    data.generator[dimLens.length] = KeyGeneratorFactory
+    this.hybridStoreModel = CarbonUtil.getHybridStoreMeta(simpleDimsLen, dimensionStoreType, null);
+    data.generator = KeyGeneratorFactory
         .getKeyGenerator(hybridStoreModel.getHybridCardinality(),
             hybridStoreModel.getDimensionPartitioner());
 
@@ -357,15 +350,15 @@ public class MDKeyGenStep extends BaseStep {
     finalMerger = new SingleThreadFinalSortFilesMerger(dataFolderLocation, tableName,
         dimensionCount - meta.getComplexDimsCount(), meta.getComplexDimsCount(), measureCount,
         meta.getNoDictionaryCount(), aggType);
-    if (meta.getNoDictionaryCount() > 0) {
+    if (meta.getNoDictionaryCount() > 0 || meta.getComplexDimsCount() > 0) {
       dataHandler = new CarbonFactDataHandlerColumnar(meta.getSchemaName(), meta.getCubeName(),
-          this.tableName, false, measureCount, data.generator[dimLens.length].getKeySizeInBytes(),
+          this.tableName, false, measureCount, data.generator.getKeySizeInBytes(),
           measureCount + 1, null, null, storeLocation, dimLens, false, false, dimLens, null, null,
           true, meta.getCurrentRestructNumber(), meta.getNoDictionaryCount(), dimensionCount,
           complexIndexMap, simpleDimsLen, this.hybridStoreModel, aggType, carbonDataFileAttributes);
     } else {
       dataHandler = new CarbonFactDataHandlerColumnar(meta.getSchemaName(), meta.getCubeName(),
-          this.tableName, false, measureCount, data.generator[dimLens.length].getKeySizeInBytes(),
+          this.tableName, false, measureCount, data.generator.getKeySizeInBytes(),
           measureCount, null, null, storeLocation, dimLens, false, false, dimLens, null, null, true,
           meta.getCurrentRestructNumber(), meta.getNoDictionaryCount(), dimensionCount,
           complexIndexMap, simpleDimsLen, this.hybridStoreModel, aggType, carbonDataFileAttributes);
@@ -420,7 +413,6 @@ public class MDKeyGenStep extends BaseStep {
     } else {
       outputRow = new Object[measureCount + 1];
     }
-    int[] keys = new int[this.dimensionCount];
 
     int l = 0;
     int index = 0;
@@ -455,7 +447,7 @@ public class MDKeyGenStep extends BaseStep {
       System.arraycopy(columnarDataKeys, 0, completeKeys, rowDataKeys.length,
           columnarDataKeys.length);
       outputRow[outputRow.length - 1] =
-          data.generator[data.generator.length - 1].generateKey(completeKeys);
+          data.generator.generateKey(completeKeys);
     } catch (KeyGenException e) {
       throw new KettleException("Unbale to generate the mdkey", e);
     }

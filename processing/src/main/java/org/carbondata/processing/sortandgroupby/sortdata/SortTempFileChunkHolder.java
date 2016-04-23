@@ -323,7 +323,7 @@ public class SortTempFileChunkHolder {
         dim[index++] = stream.readInt();
       }
 
-      if (this.noDictionaryCount > 0) {
+      if ((this.noDictionaryCount + this.complexDimensionCount) > 0) {
         short lengthOfByteArray = stream.readShort();
         ByteBuffer buff = ByteBuffer.allocate(lengthOfByteArray + 2);
         buff.putShort(lengthOfByteArray);

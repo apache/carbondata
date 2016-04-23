@@ -32,20 +32,53 @@ import org.carbondata.processing.surrogatekeysgenerator.csvbased.CarbonCSVBasedD
 
 import org.pentaho.di.core.exception.KettleException;
 
+/**
+ * Struct DataType stateless object used in data loading
+ */
 public class StructDataType implements GenericDataType {
 
+  /**
+   * children columns
+   */
   private List<GenericDataType> children = new ArrayList<GenericDataType>();
+  /**
+   * name of the column
+   */
   private String name;
+  /**
+   * parent column name
+   */
   private String parentname;
+  /**
+   * column unique id
+   */
+  private String columnId;
+  /**
+   * output array index
+   */
   private int outputArrayIndex;
+  /**
+   * data counter
+   */
   private int dataCounter;
 
-  public StructDataType(String name, String parentname) {
+  /**
+   * constructor
+   * @param name
+   * @param parentname
+   * @param columnId
+   */
+  public StructDataType(String name, String parentname, String columnId) {
     this.name = name;
     this.parentname = parentname;
+    this.columnId = columnId;
   }
 
-  @Override public void addChildren(GenericDataType newChild) {
+  /*
+   * add child dimensions
+   */
+  @Override
+  public void addChildren(GenericDataType newChild) {
     if (this.getName().equals(newChild.getParentname())) {
       this.children.add(newChild);
     } else {
@@ -56,19 +89,43 @@ public class StructDataType implements GenericDataType {
 
   }
 
-  @Override public String getName() {
+  /*
+   * get column name
+   */
+  @Override
+  public String getName() {
     return name;
   }
 
-  @Override public void setName(String name) {
+  /*
+   * set column name
+   */
+  @Override
+  public void setName(String name) {
     this.name = name;
   }
 
-  @Override public String getParentname() {
+  /*
+   * get parent column name
+   */
+  @Override
+  public String getParentname() {
     return parentname;
   }
 
-  @Override public void getAllPrimitiveChildren(List<GenericDataType> primitiveChild) {
+  /*
+   * get column unique id
+   */
+  @Override
+  public String getColumnId() {
+    return columnId;
+  }
+
+  /*
+   * get all primitive columns from complex column
+   */
+  @Override
+  public void getAllPrimitiveChildren(List<GenericDataType> primitiveChild) {
     for (int i = 0; i < children.size(); i++) {
       GenericDataType child = children.get(i);
       if (child instanceof PrimitiveDataType) {
@@ -79,26 +136,37 @@ public class StructDataType implements GenericDataType {
     }
   }
 
-  @Override public int getSurrogateIndex() {
+  /*
+   * get surrogate index
+   */
+  @Override
+  public int getSurrogateIndex() {
     return 0;
   }
 
-  @Override public void setSurrogateIndex(int surrIndex) {
+  /*
+   * set surrogate index
+   */
+  @Override
+  public void setSurrogateIndex(int surrIndex) {
 
   }
 
+  /*
+   * parse string and generate surrogate
+   */
   @Override
-  public void parseStringAndWriteByteArray(String tableName, String inputString, String[] delimiter,
-      int delimiterIndex, DataOutputStream dataOutputStream,
+  public void parseStringAndWriteByteArray(String tableName, String inputString,
+      String[] delimiter, int delimiterIndex, DataOutputStream dataOutputStream,
       CarbonCSVBasedDimSurrogateKeyGen surrogateKeyGen) throws KettleException, IOException {
     if (inputString == null || "null".equals(inputString)) {
-      //Indicates null array
+      // Indicates null array
       dataOutputStream.writeInt(children.size());
-      //For other children elements which dont have data, write empty
+      // For other children elements which dont have data, write empty
       for (int i = 0; i < children.size(); i++) {
-        children.get(i)
-            .parseStringAndWriteByteArray(tableName, CarbonCommonConstants.MEMBER_DEFAULT_VAL,
-                delimiter, delimiterIndex, dataOutputStream, surrogateKeyGen);
+        children.get(i).parseStringAndWriteByteArray(tableName,
+            CarbonCommonConstants.MEMBER_DEFAULT_VAL, delimiter, delimiterIndex, dataOutputStream,
+            surrogateKeyGen);
       }
     } else {
       String[] splitInput = inputString.split(delimiter[delimiterIndex], -1);
@@ -106,19 +174,21 @@ public class StructDataType implements GenericDataType {
       delimiterIndex =
           (delimiter.length - 1) == delimiterIndex ? delimiterIndex : delimiterIndex + 1;
       for (int i = 0; i < splitInput.length; i++) {
-        children.get(i)
-            .parseStringAndWriteByteArray(tableName, splitInput[i], delimiter, delimiterIndex,
-                dataOutputStream, surrogateKeyGen);
+        children.get(i).parseStringAndWriteByteArray(tableName, splitInput[i], delimiter,
+            delimiterIndex, dataOutputStream, surrogateKeyGen);
       }
-      //For other children elements which dont have data, write empty
+      // For other children elements which dont have data, write empty
       for (int i = splitInput.length; i < children.size(); i++) {
-        children.get(i)
-            .parseStringAndWriteByteArray(tableName, CarbonCommonConstants.MEMBER_DEFAULT_VAL,
-                delimiter, delimiterIndex, dataOutputStream, surrogateKeyGen);
+        children.get(i).parseStringAndWriteByteArray(tableName,
+            CarbonCommonConstants.MEMBER_DEFAULT_VAL, delimiter, delimiterIndex, dataOutputStream,
+            surrogateKeyGen);
       }
     }
   }
 
+  /*
+   * parse bytearray and bit pack
+   */
   @Override
   public void parseAndBitPack(ByteBuffer byteArrayInput, DataOutputStream dataOutputStream,
       KeyGenerator[] generator) throws IOException, KeyGenException {
@@ -126,14 +196,18 @@ public class StructDataType implements GenericDataType {
     dataOutputStream.writeInt(childElement);
     for (int i = 0; i < childElement; i++) {
       if (children.get(i) instanceof PrimitiveDataType) {
-        dataOutputStream
-            .writeInt(generator[children.get(i).getSurrogateIndex()].getKeySizeInBytes());
+        dataOutputStream.writeInt(generator[children.get(i).getSurrogateIndex()]
+            .getKeySizeInBytes());
       }
       children.get(i).parseAndBitPack(byteArrayInput, dataOutputStream, generator);
     }
   }
 
-  @Override public int getColsCount() {
+  /*
+   * return all columns count
+   */
+  @Override
+  public int getColsCount() {
     int colsCount = 1;
     for (int i = 0; i < children.size(); i++) {
       colsCount += children.get(i).getColsCount();
@@ -141,7 +215,11 @@ public class StructDataType implements GenericDataType {
     return colsCount;
   }
 
-  @Override public void setOutputArrayIndex(int outputArrayIndex) {
+  /*
+   * set output array index
+   */
+  @Override
+  public void setOutputArrayIndex(int outputArrayIndex) {
     this.outputArrayIndex = outputArrayIndex++;
     for (int i = 0; i < children.size(); i++) {
       if (children.get(i) instanceof PrimitiveDataType) {
@@ -153,7 +231,11 @@ public class StructDataType implements GenericDataType {
     }
   }
 
-  @Override public int getMaxOutputArrayIndex() {
+  /*
+   * get max array index
+   */
+  @Override
+  public int getMaxOutputArrayIndex() {
     int currentMax = outputArrayIndex;
     for (int i = 0; i < children.size(); i++) {
       int childMax = children.get(i).getMaxOutputArrayIndex();
@@ -164,7 +246,11 @@ public class StructDataType implements GenericDataType {
     return currentMax;
   }
 
-  @Override public void getColumnarDataForComplexType(List<ArrayList<byte[]>> columnsArray,
+  /*
+   * split byte array and return metadata and primitive columns
+   */
+  @Override
+  public void getColumnarDataForComplexType(List<ArrayList<byte[]>> columnsArray,
       ByteBuffer inputArray) {
 
     ByteBuffer b = ByteBuffer.allocate(8);
@@ -186,10 +272,17 @@ public class StructDataType implements GenericDataType {
     this.dataCounter++;
   }
 
-  @Override public int getDataCounter() {
+  /*
+   * return data counter
+   */
+  @Override
+  public int getDataCounter() {
     return this.dataCounter;
   }
 
+  /*
+   * fill agg block
+   */
   @Override
   public void fillAggKeyBlock(List<Boolean> aggKeyBlockWithComplex, boolean[] aggKeyBlock) {
     aggKeyBlockWithComplex.add(false);
@@ -198,6 +291,9 @@ public class StructDataType implements GenericDataType {
     }
   }
 
+  /*
+   * fill keysize
+   */
   @Override
   public void fillBlockKeySize(List<Integer> blockKeySizeWithComplex, int[] primitiveBlockKeySize) {
     blockKeySizeWithComplex.add(8);
@@ -206,7 +302,11 @@ public class StructDataType implements GenericDataType {
     }
   }
 
-  @Override public void fillCardinalityAfterDataLoad(List<Integer> dimCardWithComplex,
+  /*
+   * fill cardinality
+   */
+  @Override
+  public void fillCardinalityAfterDataLoad(List<Integer> dimCardWithComplex,
       int[] maxSurrogateKeyArray) {
     dimCardWithComplex.add(0);
     for (int i = 0; i < children.size(); i++) {

@@ -489,7 +489,6 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
           if (null != r) {
             CarbonCSVBasedDimSurrogateKeyGen surrogateKeyGenObj = data.getSurrogateKeyGen();
             if (null != surrogateKeyGenObj) {
-              int index = 0;
               for (int j = 0; j < meta.dimColNames.length; j++) {
                 GenericDataType complexType = columnsInfo.getComplexTypesMap()
                     .get(meta.dimColNames[j].substring(meta.getTableName().length() + 1));
@@ -501,12 +500,11 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
                         .generateSurrogateKeys(CarbonCommonConstants.MEMBER_DEFAULT_VAL,
                             meta.getTableName() + CarbonCommonConstants.UNDERSCORE + eachPrimitive
                                 .getName());
-                    index++;
                   }
+                  j += (complexType.getColsCount() - 1);
                 } else {
                   surrogateKeyGenObj.generateSurrogateKeys(CarbonCommonConstants.MEMBER_DEFAULT_VAL,
                       meta.dimColNames[j]);
-                  index++;
                 }
               }
             }
@@ -1102,7 +1100,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
           }
         }
 
-        for (int i = 0; i < meta.normLength; i++) {
+        for (int i = 0; i < meta.normLength - meta.complexTypes.size(); i++) {
           if (null == RemoveDictionaryUtil.getDimension(i, out)) {
             RemoveDictionaryUtil.setDimension(i, 1, out);
           }
@@ -1154,7 +1152,8 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
 
     Map<String, Dictionary> dictionaryCaches = surrogateKeyGen.getDictionaryCaches();
     Object[] out =
-        new Object[meta.normLength + meta.msrs.length + checkPoint.getCheckPointInfoFieldCount()];
+        new Object[meta.normLength + meta.msrs.length - meta.complexTypes.size()
+            + checkPoint.getCheckPointInfoFieldCount()];
     int dimLen = meta.dims.length;
 
     Object[] newArray = new Object[CarbonCommonConstants.ARRAYSIZE];
@@ -1210,11 +1209,9 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
 
           out[memberMapping[dimLen + index]] = surrogate.doubleValue();
         } else {
-
           try {
-            out[memberMapping[dimLen + index]] = (isNull || msr == null || msr.length() == 0) ?
-                null :
-                DataTypeUtil
+            out[memberMapping[dimLen - meta.complexTypes.size() + index]] =
+                (isNull || msr == null || msr.length() == 0) ? null : DataTypeUtil
                     .getMeasureValueBasedOnDataType(msr, msrDataType[meta.msrMapping[msrCount]]);
           } catch (NumberFormatException e) {
             try {
@@ -1418,8 +1415,8 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
     }
 
     insertHierIfRequired(out);
-
-    RemoveDictionaryUtil.prepareOut(newArray, byteBufferArr, out, dimLen);
+    RemoveDictionaryUtil
+        .prepareOut(newArray, byteBufferArr, out, dimLen - meta.complexTypes.size());
 
     return newArray;
   }

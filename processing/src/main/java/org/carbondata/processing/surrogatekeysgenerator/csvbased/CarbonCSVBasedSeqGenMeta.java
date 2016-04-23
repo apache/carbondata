@@ -921,21 +921,21 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     for (int i = 0; i < hierarchies.length; i++) {
       String[] levels = hierarchies[i].split(CarbonCommonConstants.HASH_SPC_CHARACTER);
       String[] levelInfo = levels[0].split(CarbonCommonConstants.COLON_SPC_CHARACTER);
-      GenericDataType g = levelInfo[1].equals("Array") ?
-          new ArrayDataType(levelInfo[0], "") :
-          new StructDataType(levelInfo[0], "");
+      GenericDataType g = levelInfo[1].equals(CarbonCommonConstants.ARRAY) ?
+          new ArrayDataType(levelInfo[0], "", levelInfo[3]) :
+          new StructDataType(levelInfo[0], "", levelInfo[3]);
       complexTypesMap.put(levelInfo[0], g);
       for (int j = 1; j < levels.length; j++) {
         levelInfo = levels[j].split(CarbonCommonConstants.COLON_SPC_CHARACTER);
         switch (levelInfo[1]) {
-          case "Array":
-            g.addChildren(new ArrayDataType(levelInfo[0], levelInfo[2]));
+          case CarbonCommonConstants.ARRAY:
+            g.addChildren(new ArrayDataType(levelInfo[0], levelInfo[2], levelInfo[3]));
             break;
-          case "Struct":
-            g.addChildren(new StructDataType(levelInfo[0], levelInfo[2]));
+          case CarbonCommonConstants.STRUCT:
+            g.addChildren(new StructDataType(levelInfo[0], levelInfo[2], levelInfo[3]));
             break;
           default:
-            g.addChildren(new PrimitiveDataType(levelInfo[0], levelInfo[2]));
+            g.addChildren(new PrimitiveDataType(levelInfo[0], levelInfo[2], levelInfo[3]));
         }
       }
     }

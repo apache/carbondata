@@ -520,7 +520,7 @@ public class SortDataRows {
         }
 
         // if any high cardinality dims are present then write it to the file.
-        if (this.noDictionaryCount > 0) {
+        if ((this.noDictionaryCount + this.complexDimColCount) > 0) {
           stream.write(RemoveDictionaryUtil.getByteArrayForNoDictionaryCols(row));
         }
 

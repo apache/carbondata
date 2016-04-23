@@ -122,7 +122,7 @@ case class DataFormat(delimiters: Array[String],
                       patterns: Array[Pattern]) extends Serializable {
   self =>
   def getSplits(input: String): Array[String] = {
-    patterns(delimiterIndex).split(input)
+    patterns(delimiterIndex).split(input, -1)
   }
 
   def cloneAndIncreaseIndex: DataFormat = {
