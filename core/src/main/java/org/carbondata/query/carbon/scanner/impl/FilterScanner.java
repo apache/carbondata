@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.carbondata.query.carbon.processor.impl;
+package org.carbondata.query.carbon.scanner.impl;
 
 import java.util.BitSet;
 
@@ -25,10 +25,10 @@ import org.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
 import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.query.carbon.executor.infos.BlockExecutionInfo;
-import org.carbondata.query.carbon.processor.AbstractDataBlocksProcessor;
+import org.carbondata.query.carbon.processor.BlocksChunkHolder;
 import org.carbondata.query.carbon.result.AbstractScannedResult;
 import org.carbondata.query.carbon.result.impl.FilterQueryScannedResult;
-import org.carbondata.query.carbon.scanner.BlocksChunkHolder;
+import org.carbondata.query.carbon.scanner.AbstractBlockletScanner;
 import org.carbondata.query.evaluators.FilterEvaluator;
 
 /**
@@ -36,7 +36,7 @@ import org.carbondata.query.evaluators.FilterEvaluator;
  * this class will be first apply the filter then it will read the block if
  * required and return the scanned result
  */
-public class FilterScanner extends AbstractDataBlocksProcessor {
+public class FilterScanner extends AbstractBlockletScanner {
 
   /**
    * filter tree
@@ -122,9 +122,9 @@ public class FilterScanner extends AbstractDataBlocksProcessor {
 
     FileHolder fileReader = blocksChunkHolder.getFileReader();
     int[] allSelectedDimensionBlocksIndexes =
-        tableBlockExecutionInfos.getAllSelectedDimensionBlocksIndexes();
+        blockExecutionInfo.getAllSelectedDimensionBlocksIndexes();
     DimensionColumnDataChunk[] dimensionColumnDataChunk =
-        new DimensionColumnDataChunk[tableBlockExecutionInfos.getTotalNumberDimensionBlock()];
+        new DimensionColumnDataChunk[blockExecutionInfo.getTotalNumberDimensionBlock()];
     // read dimension chunk blocks from file which is not present
     for (int i = 0; i < allSelectedDimensionBlocksIndexes.length; i++) {
       if (null == blocksChunkHolder.getDimensionDataChunk()[allSelectedDimensionBlocksIndexes[i]]) {
@@ -137,9 +137,8 @@ public class FilterScanner extends AbstractDataBlocksProcessor {
       }
     }
     MeasureColumnDataChunk[] measureColumnDataChunk =
-        new MeasureColumnDataChunk[tableBlockExecutionInfos.getTotalNumberOfMeasureBlock()];
-    int[] allSelectedMeasureBlocksIndexes =
-        tableBlockExecutionInfos.getAllSelectedMeasureBlocksIndexes();
+        new MeasureColumnDataChunk[blockExecutionInfo.getTotalNumberOfMeasureBlock()];
+    int[] allSelectedMeasureBlocksIndexes = blockExecutionInfo.getAllSelectedMeasureBlocksIndexes();
 
     // read the measure chunk blocks which is not present
     for (int i = 0; i < allSelectedMeasureBlocksIndexes.length; i++) {

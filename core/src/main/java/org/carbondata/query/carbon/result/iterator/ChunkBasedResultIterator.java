@@ -50,8 +50,7 @@ public class ChunkBasedResultIterator implements CarbonIterator<ChunkResult> {
 
   /**
    * Returns {@code true} if the iteration has more elements. (In other words,
-   * returns {@code true} if {@link #next} would return an element rather than
-   * throwing an exception.)
+   * returns {@code true}
    *
    * @return {@code true} if the iteration has more elements
    */

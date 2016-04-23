@@ -26,6 +26,9 @@ import org.carbondata.core.carbon.datastore.block.AbstractIndex;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.carbon.executor.infos.KeyStructureInfo;
 
+/**
+ * Holds all the properties required for query execution
+ */
 public class QueryExecutorProperties {
 
   /**

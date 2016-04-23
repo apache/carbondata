@@ -16,16 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.carbondata.query.carbon.executor.impl;
+package org.carbondata.query.carbon.executor.internal.impl;
 
 import java.util.concurrent.Callable;
 
 import org.carbondata.common.logging.impl.StandardLogService;
 import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.query.carbon.executor.infos.BlockExecutionInfo;
-import org.carbondata.query.carbon.scanner.BlockProcessor;
-import org.carbondata.query.carbon.scanner.impl.AggregateQueryBlockProcessor;
-import org.carbondata.query.carbon.scanner.impl.DetailQueryBlockProcessor;
+import org.carbondata.query.carbon.processor.BlockProcessor;
+import org.carbondata.query.carbon.processor.impl.AggregateQueryBlockProcessor;
+import org.carbondata.query.carbon.processor.impl.DetailQueryBlockProcessor;
 
 /**
  * Class which will execute the query

@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.carbondata.query.carbon.scanner;
+package org.carbondata.query.carbon.processor;
 
 import org.carbondata.core.carbon.datastore.DataRefNode;
 import org.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;

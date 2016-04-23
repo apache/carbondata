@@ -16,23 +16,30 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.carbondata.query.carbon.processor;
+package org.carbondata.query.carbon.merger;
 
-import org.carbondata.query.carbon.result.AbstractScannedResult;
-import org.carbondata.query.carbon.scanner.BlocksChunkHolder;
+import org.carbondata.core.iterator.CarbonIterator;
+import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
+import org.carbondata.query.carbon.result.Result;
 
 /**
- * Interface for processing the block
- * Processing can be filter based processing or non filter based processing
+ * Interface for merging the scanned result
  */
-public interface BlockletScanner {
+public interface ScannedResultMerger {
 
   /**
-   * Below method will used to process the block data and get the scanned result
+   * Below method will be used to add the scanned result
    *
-   * @param blocksChunkHolder block chunk which holds the block data
-   * @return scannerResult
-   * result after processing
+   * @param scannedResult scanned result
+   * @throws QueryExecutionException throw exception in case of failure
    */
-  AbstractScannedResult processBlockData(BlocksChunkHolder blocksChunkHolder);
+  void addScannedResult(Result scannedResult) throws QueryExecutionException;
+
+  /**
+   * Below method will be used to get the query result
+   *
+   * @return query result
+   * @throws QueryExecutionException throw exception in case of any failure
+   */
+  CarbonIterator<Result> getQueryResultIterator() throws QueryExecutionException;
 }

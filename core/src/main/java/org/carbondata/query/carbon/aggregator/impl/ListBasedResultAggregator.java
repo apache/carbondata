@@ -98,7 +98,8 @@ public class ListBasedResultAggregator implements ScannedResultAggregator {
   /**
    * This method will add a record both key and value to list object
    * it will keep track of how many record is processed, to handle limit scenario
-   * @param scanned result which will be aggregated
+   * @param scanned result
+   *
    */
   public int aggregateData(AbstractScannedResult scannedResult) {
     this.listBasedResult = new ArrayList<ListBasedResultWrapper>(

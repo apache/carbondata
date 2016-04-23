@@ -1,3 +1,21 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package org.carbondata.query.carbon.executor.util;
 
 import java.util.ArrayList;
@@ -17,10 +35,6 @@ import org.junit.Test;
 public class QueryUtilTest extends TestCase {
 
   private SegmentProperties segmentProperties;
-
-  public static void main(String[] args) {
-
-  }
 
   @BeforeClass public void setUp() {
     segmentProperties = SegmentPropertiesTestUtil.getSegmentProperties();
@@ -72,12 +86,38 @@ public class QueryUtilTest extends TestCase {
     } catch (KeyGenException e) {
       assertTrue(false);
     }
-    System.out.println(Arrays.toString(maxKeyBasedOnDimensions));
-    System.out.println(Arrays.toString(
-        segmentProperties.getDimensionKeyGenerator().getKeyArray(maxKeyBasedOnDimensions)));
+    byte[] expectedMaxKeyBasedOnDimensions = { -1, 0, 0, 0, 0, 0 };
+    for (int i = 0; i < expectedMaxKeyBasedOnDimensions.length; i++) {
+      if (expectedMaxKeyBasedOnDimensions[i] != maxKeyBasedOnDimensions[i]) {
+        assertTrue(false);
+      }
+    }
+    long[] expectedKeyArray = { 255, 0, 0, 0, 0, 0 };
+    long[] keyArray =
+        segmentProperties.getDimensionKeyGenerator().getKeyArray(maxKeyBasedOnDimensions);
+    for (int i = 0; i < keyArray.length; i++) {
+      if (expectedKeyArray[i] != keyArray[i]) {
+        assertTrue(false);
+      }
+    }
+  }
+
+  @Test public void testGetMaksedByte() {
+    int[] maskedByteRange = QueryUtil
+        .getMaskedByteRange(Arrays.asList(segmentProperties.getDimensions().get(0)),
+            segmentProperties.getDimensionKeyGenerator());
+    int[] maskedByte = QueryUtil
+        .getMaskedByte(segmentProperties.getDimensionKeyGenerator().getDimCount(), maskedByteRange);
+    int[] expectedMaskedByte = { 0, -1, -1, -1, -1, -1 };
+
+    for (int i = 0; i < expectedMaskedByte.length; i++) {
+      if (expectedMaskedByte[i] != maskedByte[i]) {
+        assertTrue(false);
+      }
+    }
   }
 
   @AfterClass public void tearDown() {
-
+    segmentProperties = null;
   }
 }

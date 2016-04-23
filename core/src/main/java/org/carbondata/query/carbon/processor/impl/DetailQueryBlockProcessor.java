@@ -16,11 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.carbondata.query.carbon.scanner.impl;
+package org.carbondata.query.carbon.processor.impl;
 
 import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.query.carbon.executor.infos.BlockExecutionInfo;
-import org.carbondata.query.carbon.scanner.AbstractDataBlockProcessor;
+import org.carbondata.query.carbon.processor.AbstractDataBlockProcessor;
 
 /**
  * Below class will be used to process the block for detail query

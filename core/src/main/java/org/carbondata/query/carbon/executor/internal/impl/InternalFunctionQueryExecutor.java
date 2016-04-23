@@ -16,17 +16,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package org.carbondata.query.carbon.executor.internal.impl;
 
-package org.carbondata.query.carbon.scanner;
+import java.util.List;
+
+import org.carbondata.core.carbon.datastore.block.AbstractIndex;
 
 /**
- * Scanner interface which will be used
- * to scan the blocks.
+ * This is to handle function query like
+ * count(1), as function query will be executed like
+ * count start query so it is extending the count star executor
  */
-public interface BlockProcessor {
+public class InternalFunctionQueryExecutor extends InternalCountStartQueryExecutor {
 
-  /**
-   * Below method can be used to scan the block based on the query execution infos
-   */
-  void processBlock();
+  public InternalFunctionQueryExecutor(List<AbstractIndex> blockList) {
+    super(blockList);
+  }
+
 }

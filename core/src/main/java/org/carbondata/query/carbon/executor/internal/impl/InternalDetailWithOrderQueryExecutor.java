@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.carbondata.query.carbon.executor.impl;
+package org.carbondata.query.carbon.executor.internal.impl;
 
 import java.util.concurrent.Executors;
 
@@ -29,15 +29,15 @@ import org.carbondata.query.util.CarbonEngineLogEvent;
 /**
  * Below class will be used to execute the detail query with order by
  */
-public class DetailWithOrderQueryExecutor extends AbstractInternalQueryExecutor {
+public class InternalDetailWithOrderQueryExecutor extends InternalAbstractQueryExecutor {
 
   /**
    * LOGGER.
    */
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(DetailWithOrderQueryExecutor.class.getName());
+      LogServiceFactory.getLogService(InternalDetailWithOrderQueryExecutor.class.getName());
 
-  public DetailWithOrderQueryExecutor() {
+  public InternalDetailWithOrderQueryExecutor() {
     // numer of cores
     try {
       numberOfCores = Integer.parseInt(CarbonProperties.getInstance()

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.carbondata.query.carbon.scanner;
+package org.carbondata.query.carbon.processor;
 
 import org.carbondata.core.carbon.datastore.DataRefNode;
 import org.carbondata.core.iterator.CarbonIterator;
@@ -25,7 +25,7 @@ import org.carbondata.core.iterator.CarbonIterator;
 /**
  * Below class will be used to iterate over data block
  */
-public class DataBlocksIterator implements CarbonIterator<DataRefNode> {
+public class BlockletIterator implements CarbonIterator<DataRefNode> {
   /**
    * data store block
    */
@@ -51,7 +51,7 @@ public class DataBlocksIterator implements CarbonIterator<DataRefNode> {
    * @param datablock                 first data block
    * @param totalNumberOfBlocksToScan total number of blocks to be scanned
    */
-  public DataBlocksIterator(DataRefNode datablock, long totalNumberOfBlocksToScan) {
+  public BlockletIterator(DataRefNode datablock, long totalNumberOfBlocksToScan) {
     this.datablock = datablock;
     this.totalNumberOfBlocksToScan = totalNumberOfBlocksToScan;
   }
@@ -67,6 +67,7 @@ public class DataBlocksIterator implements CarbonIterator<DataRefNode> {
   /**
    * To get the next block
    * @return next data block
+   *
    */
   public DataRefNode next() {
     // get the current blocks

@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.carbondata.query.carbon.processor;
+package org.carbondata.query.carbon.merger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,13 +41,13 @@ import org.carbondata.query.util.CarbonEngineLogEvent;
  * Class which processed the scanned result
  * Processing can be merging sorting
  */
-public abstract class AbstractScannedResultProcessor implements ScannedResultMerger {
+public abstract class AbstractScannedResultMerger implements ScannedResultMerger {
 
   /**
    * LOGGER
    */
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(AbstractScannedResultProcessor.class.getName());
+      LogServiceFactory.getLogService(AbstractScannedResultMerger.class.getName());
   /**
    * merging will done using thread
    */
@@ -79,7 +79,7 @@ public abstract class AbstractScannedResultProcessor implements ScannedResultMer
    */
   private Object lockObject;
 
-  public AbstractScannedResultProcessor(BlockExecutionInfo blockExecutionInfo,
+  public AbstractScannedResultMerger(BlockExecutionInfo blockExecutionInfo,
       int maxNumberOfScannedresultList) {
 
     this.lockObject = new Object();

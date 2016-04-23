@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.carbondata.query.carbon.processor.impl;
+package org.carbondata.query.carbon.merger.impl;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,7 +35,7 @@ import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.carbon.executor.infos.BlockExecutionInfo;
 import org.carbondata.query.carbon.executor.infos.KeyStructureInfo;
 import org.carbondata.query.carbon.executor.infos.SortInfo;
-import org.carbondata.query.carbon.processor.AbstractScannedResultProcessor;
+import org.carbondata.query.carbon.merger.AbstractScannedResultMerger;
 import org.carbondata.query.carbon.result.ListBasedResultWrapper;
 import org.carbondata.query.carbon.result.Result;
 import org.carbondata.query.carbon.result.comparator.FixedLengthKeyResultComparator;
@@ -48,7 +48,7 @@ import org.apache.commons.collections.comparators.ComparatorChain;
 /**
  * Below class will be used to sort and merge the scanned result
  */
-public class SortedScannedResultMerger extends AbstractScannedResultProcessor {
+public class SortedScannedResultMerger extends AbstractScannedResultMerger {
 
   /**
    * LOGGER

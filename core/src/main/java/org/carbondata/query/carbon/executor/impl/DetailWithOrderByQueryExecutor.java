@@ -24,7 +24,7 @@ import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.carbon.executor.infos.BlockExecutionInfo;
 import org.carbondata.query.carbon.executor.internal.InternalQueryExecutor;
-import org.carbondata.query.carbon.executor.internal.impl.InternalAggregationQueryExecutor;
+import org.carbondata.query.carbon.executor.internal.impl.InternalDetailWithOrderQueryExecutor;
 import org.carbondata.query.carbon.model.QueryModel;
 import org.carbondata.query.carbon.result.RowResult;
 import org.carbondata.query.carbon.result.impl.ListBasedResult;
@@ -33,9 +33,9 @@ import org.carbondata.query.carbon.result.iterator.ChunkRowIterator;
 import org.carbondata.query.carbon.result.iterator.MemoryBasedResultIterator;
 
 /**
- * Below class will be used to execute the aggregation query
+ * Below method will be used to execute the detail query with order by
  */
-public class AggregationQueryExecutor extends AbstractQueryExecutor {
+public class DetailWithOrderByQueryExecutor extends AbstractQueryExecutor {
 
   @Override public CarbonIterator<RowResult> execute(QueryModel queryModel)
       throws QueryExecutionException {
@@ -46,8 +46,14 @@ public class AggregationQueryExecutor extends AbstractQueryExecutor {
           new ChunkBasedResultIterator(new MemoryBasedResultIterator(new ListBasedResult()),
               queryProperties, queryModel));
     }
+    // get the execution info
     List<BlockExecutionInfo> blockExecutionInfoList = getBlockExecutionInfos(queryModel);
-    InternalQueryExecutor internalQueryExecutor = new InternalAggregationQueryExecutor();
+    // in case of sorting we need to add sort information only for last block as
+    // all the previous block data will be updated based last block and after
+    // processing of all the block sorting will be applied
+    blockExecutionInfoList.get(blockExecutionInfoList.size() - 1)
+        .setSortInfo(getSortInfos(queryModel.getQueryDimension(), queryModel));
+    InternalQueryExecutor internalQueryExecutor = new InternalDetailWithOrderQueryExecutor();
     return new ChunkRowIterator(new ChunkBasedResultIterator(
         internalQueryExecutor.executeQuery(blockExecutionInfoList, null), queryProperties,
         queryModel));

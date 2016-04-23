@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.carbondata.query.carbon.scanner;
+package org.carbondata.query.carbon.processor;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
@@ -30,9 +30,9 @@ import org.carbondata.query.carbon.aggregator.impl.ListBasedResultAggregator;
 import org.carbondata.query.carbon.aggregator.impl.MapBasedResultAggregator;
 import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.carbon.executor.infos.BlockExecutionInfo;
-import org.carbondata.query.carbon.processor.BlockletScanner;
-import org.carbondata.query.carbon.processor.impl.FilterScanner;
-import org.carbondata.query.carbon.processor.impl.NonFilterScanner;
+import org.carbondata.query.carbon.scanner.BlockletScanner;
+import org.carbondata.query.carbon.scanner.impl.FilterScanner;
+import org.carbondata.query.carbon.scanner.impl.NonFilterScanner;
 
 /**
  * This class provides a skeletal implementation of the
@@ -71,7 +71,7 @@ public abstract class AbstractDataBlockProcessor implements BlockProcessor {
 
   public AbstractDataBlockProcessor(BlockExecutionInfo blockExecutionInfo, FileHolder fileReader) {
     this.blockExecutionInfo = blockExecutionInfo;
-    dataBlockIterator = new DataBlocksIterator(blockExecutionInfo.getFirstDataBlock(),
+    dataBlockIterator = new BlockletIterator(blockExecutionInfo.getFirstDataBlock(),
         blockExecutionInfo.getNumberOfBlockToScan());
     blocksChunkHolder = new BlocksChunkHolder(blockExecutionInfo.getTotalNumberDimensionBlock(),
         blockExecutionInfo.getTotalNumberOfMeasureBlock());

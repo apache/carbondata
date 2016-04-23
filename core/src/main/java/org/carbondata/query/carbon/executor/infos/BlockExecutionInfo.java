@@ -27,8 +27,8 @@ import org.carbondata.core.carbon.datastore.IndexKey;
 import org.carbondata.core.carbon.datastore.block.AbstractIndex;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.query.carbon.aggregator.dimension.DimensionDataAggregator;
+import org.carbondata.query.carbon.merger.ScannedResultMerger;
 import org.carbondata.query.carbon.model.CustomAggregateExpression;
-import org.carbondata.query.carbon.processor.ScannedResultMerger;
 import org.carbondata.query.evaluators.FilterEvaluator;
 
 /**

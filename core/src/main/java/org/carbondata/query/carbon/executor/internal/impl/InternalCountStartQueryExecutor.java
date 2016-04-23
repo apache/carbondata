@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.carbondata.query.carbon.executor.impl;
+package org.carbondata.query.carbon.executor.internal.impl;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,9 +25,9 @@ import org.carbondata.core.carbon.datastore.block.AbstractIndex;
 import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.aggregator.impl.CountAggregator;
-import org.carbondata.query.carbon.executor.InternalQueryExecutor;
 import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.carbon.executor.infos.BlockExecutionInfo;
+import org.carbondata.query.carbon.executor.internal.InternalQueryExecutor;
 import org.carbondata.query.carbon.result.ListBasedResultWrapper;
 import org.carbondata.query.carbon.result.Result;
 import org.carbondata.query.carbon.result.impl.ListBasedResult;
@@ -38,14 +38,14 @@ import org.carbondata.query.carbon.wrappers.ByteArrayWrapper;
  * Below class will be used to execute the count star query or any function query
  * like count(1) , in this case block scanning is not required.
  */
-public class CountStartExecutor implements InternalQueryExecutor {
+public class InternalCountStartQueryExecutor implements InternalQueryExecutor {
 
   /**
    * data block available for query execution
    */
   private List<AbstractIndex> blockList;
 
-  public CountStartExecutor(List<AbstractIndex> blockList) {
+  public InternalCountStartQueryExecutor(List<AbstractIndex> blockList) {
     this.blockList = blockList;
   }
 

@@ -16,20 +16,29 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.carbondata.query.carbon.processor;
+package org.carbondata.query.carbon.scanner;
 
 import org.carbondata.query.carbon.executor.infos.BlockExecutionInfo;
+import org.carbondata.query.carbon.processor.BlocksChunkHolder;
 import org.carbondata.query.carbon.result.AbstractScannedResult;
-import org.carbondata.query.carbon.scanner.BlocksChunkHolder;
 
-public abstract class AbstractDataBlocksProcessor implements BlockletScanner {
+/**
+ * Blocklet scanner class to process the block
+ */
+public abstract class AbstractBlockletScanner implements BlockletScanner {
 
+  /**
+   * scanner result
+   */
   protected AbstractScannedResult scannedResult;
 
-  protected BlockExecutionInfo tableBlockExecutionInfos;
+  /**
+   * block execution info
+   */
+  protected BlockExecutionInfo blockExecutionInfo;
 
-  public AbstractDataBlocksProcessor(BlockExecutionInfo tableBlockExecutionInfos) {
-    this.tableBlockExecutionInfos = tableBlockExecutionInfos;
+  public AbstractBlockletScanner(BlockExecutionInfo tableBlockExecutionInfos) {
+    this.blockExecutionInfo = tableBlockExecutionInfos;
   }
 
   @Override public AbstractScannedResult processBlockData(BlocksChunkHolder blocksChunkHolder) {
@@ -41,11 +50,11 @@ public abstract class AbstractDataBlocksProcessor implements BlockletScanner {
     scannedResult.reset();
     scannedResult.setMeasureChunks(blocksChunkHolder.getDataBlock()
         .getMeasureChunks(blocksChunkHolder.getFileReader(),
-            tableBlockExecutionInfos.getAllSelectedMeasureBlocksIndexes()));
+            blockExecutionInfo.getAllSelectedMeasureBlocksIndexes()));
     scannedResult.setNumberOfRows(blocksChunkHolder.getDataBlock().nodeSize());
 
     scannedResult.setDimensionChunks(blocksChunkHolder.getDataBlock()
         .getDimensionChunks(blocksChunkHolder.getFileReader(),
-            tableBlockExecutionInfos.getAllSelectedDimensionBlocksIndexes()));
+            blockExecutionInfo.getAllSelectedDimensionBlocksIndexes()));
   }
 }

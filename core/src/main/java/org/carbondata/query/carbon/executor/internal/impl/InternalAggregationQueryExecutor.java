@@ -16,19 +16,29 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.carbondata.query.carbon.processor.impl;
+package org.carbondata.query.carbon.executor.internal.impl;
 
-import org.carbondata.query.carbon.executor.infos.BlockExecutionInfo;
-import org.carbondata.query.carbon.processor.AbstractScannedResultProcessor;
+import java.util.concurrent.Executors;
+
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.util.CarbonProperties;
 
 /**
- * Below class will be used merge the unsorted result
+ * Below class will be used to execute the aggregated query
  */
-public class UnSortedScannedResultMerger extends AbstractScannedResultProcessor {
+public class InternalAggregationQueryExecutor extends InternalAbstractQueryExecutor {
 
-  public UnSortedScannedResultMerger(BlockExecutionInfo blockExecutionInfo,
-      int maxNumberOfScannedresultList) {
-    super(blockExecutionInfo, maxNumberOfScannedresultList);
+  public InternalAggregationQueryExecutor() {
+
+    // get the number of core can be used to execute the query
+    try {
+      numberOfCores = Integer.parseInt(CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.NUM_CORES,
+              CarbonCommonConstants.NUM_CORES_DEFAULT_VAL));
+    } catch (NumberFormatException e) {
+      numberOfCores = 1;
+    }
+    // create thread pool
+    execService = Executors.newFixedThreadPool(numberOfCores);
   }
-
 }

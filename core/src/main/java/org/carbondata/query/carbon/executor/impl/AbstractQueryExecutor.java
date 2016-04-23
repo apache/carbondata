@@ -18,26 +18,41 @@
  */
 package org.carbondata.query.carbon.executor.impl;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.common.logging.impl.StandardLogService;
 import org.carbondata.core.carbon.datastore.BlockIndexStore;
+import org.carbondata.core.carbon.datastore.block.AbstractIndex;
+import org.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.carbondata.core.carbon.datastore.exception.IndexBuilderException;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
+import org.carbondata.core.carbon.metadata.encoder.Encoding;
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.util.CarbonCoreLogEvent;
+import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.aggregator.util.MeasureAggregatorFactory;
 import org.carbondata.query.carbon.executor.QueryExecutor;
 import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
+import org.carbondata.query.carbon.executor.infos.AggregatorInfo;
+import org.carbondata.query.carbon.executor.infos.BlockExecutionInfo;
 import org.carbondata.query.carbon.executor.infos.KeyStructureInfo;
+import org.carbondata.query.carbon.executor.infos.SortInfo;
 import org.carbondata.query.carbon.executor.util.QueryUtil;
+import org.carbondata.query.carbon.executor.util.RestructureUtil;
 import org.carbondata.query.carbon.model.DimensionAggregatorInfo;
 import org.carbondata.query.carbon.model.QueryModel;
+import org.carbondata.query.util.CarbonEngineLogEvent;
+
+import org.apache.commons.lang3.ArrayUtils;
 
 /**
  * This class provides a skeletal implementation of the {@link QueryExecutor}
@@ -65,6 +80,12 @@ public abstract class AbstractQueryExecutor implements QueryExecutor {
    * @param queryModel
    */
   protected void initQuery(QueryModel queryModel) throws QueryExecutionException {
+    StandardLogService.setThreadName(StandardLogService.getPartitionID(
+        queryModel.getAbsoluteTableIdentifier().getCarbonTableIdentifier().getTableName()),
+        queryModel.getQueryId());
+    LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
+        "Query will be executed on table: " + queryModel.getAbsoluteTableIdentifier()
+            .getCarbonTableIdentifier().getTableName());
     /**
      * setting the table unique name
      */
@@ -160,7 +181,7 @@ public abstract class AbstractQueryExecutor implements QueryExecutor {
         QueryUtil.getMaskedByteRange(queryModel.getQueryDimension(), keyGenerator);
 
     // getting the masked bytes for query dimension dictionary column
-    int[] maskedBytes = QueryUtil.getMaksedByte(keyGenerator.getKeySizeInBytes(), maskByteRanges);
+    int[] maskedBytes = QueryUtil.getMaskedByte(keyGenerator.getKeySizeInBytes(), maskByteRanges);
 
     // max key for the dictionary dimension present in the query
     byte[] maxKey = null;
@@ -178,6 +199,224 @@ public abstract class AbstractQueryExecutor implements QueryExecutor {
     restructureInfos.setMaskedBytes(maskedBytes);
     restructureInfos.setMaxKey(maxKey);
     return restructureInfos;
+  }
+
+  protected List<BlockExecutionInfo> getBlockExecutionInfos(QueryModel queryModel)
+      throws QueryExecutionException {
+    initQuery(queryModel);
+    List<BlockExecutionInfo> blockExecutionInfoList = new ArrayList<BlockExecutionInfo>();
+    // fill all the block execution infos for all the blocks selected in
+    // query
+    // and query will be executed based on that infos
+    for (int i = 0; i < queryProperties.dataBlocks.size(); i++) {
+      blockExecutionInfoList
+          .add(getBlockExecutionInfoForBlock(queryModel, queryProperties.dataBlocks.get(i)));
+    }
+    return blockExecutionInfoList;
+  }
+
+  /**
+   * Below method will be used to get the block execution info which is
+   * required to execute any block  based on query model
+   *
+   * @param queryModel query model from user query
+   * @param blockIndex block index
+   * @return block execution info
+   * @throws QueryExecutionException any failure during block info creation
+   */
+  protected BlockExecutionInfo getBlockExecutionInfoForBlock(QueryModel queryModel,
+      AbstractIndex blockIndex) throws QueryExecutionException {
+    BlockExecutionInfo blockExecutionInfo = new BlockExecutionInfo();
+    SegmentProperties segmentProperties = blockIndex.getSegmentProperties();
+    List<CarbonDimension> tableBlockDimensions = segmentProperties.getDimensions();
+    KeyGenerator blockKeyGenerator = segmentProperties.getDimensionKeyGenerator();
+
+    // below is to get only those dimension in query which is present in the
+    // table block
+    List<CarbonDimension> updatedQueryDimension = RestructureUtil
+        .getUpdatedQueryDimension(queryModel.getQueryDimension(), tableBlockDimensions);
+    // add complex dimension children
+    updatedQueryDimension = RestructureUtil
+        .addChildrenForComplexTypeDimension(updatedQueryDimension, tableBlockDimensions);
+    int[] maskByteRangesForBlock =
+        QueryUtil.getMaskedByteRange(updatedQueryDimension, blockKeyGenerator);
+    int[] maksedByte =
+        QueryUtil.getMaskedByte(blockKeyGenerator.getKeySizeInBytes(), maskByteRangesForBlock);
+    blockExecutionInfo.setDataBlock(blockIndex);
+    blockExecutionInfo.setDataBlockKeygenerator(blockKeyGenerator);
+    // adding aggregation info for query
+    blockExecutionInfo.setAggregatorInfo(getAggregatorInfoForBlock(queryModel, blockIndex));
+    // adding custom aggregate expression of query
+    blockExecutionInfo.setCustomAggregateExpressions(queryModel.getExpressions());
+
+    // setting the limit
+    blockExecutionInfo.setLimit(queryModel.getLimit());
+    // setting whether detail query or not
+    blockExecutionInfo.setDetailQuery(queryModel.isDetailQuery());
+    // setting the masked byte of the block which will be
+    // used to update the unpack the older block keys
+    blockExecutionInfo.setMaskedByteForBlock(maksedByte);
+    // total number dimension
+    blockExecutionInfo
+        .setTotalNumberDimensionBlock(segmentProperties.getDimensionOrdinalToBlockMapping().size());
+    blockExecutionInfo
+        .setTotalNumberOfMeasureBlock(segmentProperties.getMeasuresOrdinalToBlockMapping().size());
+    // to check whether older block key update is required or not
+    blockExecutionInfo.setFixedKeyUpdateRequired(
+        blockKeyGenerator.equals(queryProperties.keyStructureInfo.getKeyGenerator()));
+
+    // expression dimensions
+    List<CarbonDimension> expressionDimensions =
+        new ArrayList<CarbonDimension>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    // expression measure
+    List<CarbonMeasure> expressionMeasures =
+        new ArrayList<CarbonMeasure>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    // to get all the dimension and measure which required to get the chunk
+    // indexes to be read from file
+    QueryUtil.extractDimensionsAndMeasuresFromExpression(queryModel.getExpressions(),
+        expressionDimensions, expressionMeasures);
+    // setting all the dimension chunk indexes to be read from file
+    blockExecutionInfo.setAllSelectedDimensionBlocksIndexes(QueryUtil
+        .getDimensionsBlockIndexes(updatedQueryDimension,
+            segmentProperties.getDimensionOrdinalToBlockMapping(),
+            queryModel.getDimAggregationInfo(), expressionDimensions));
+    // setting all the measure chunk indexes to be read from file
+    blockExecutionInfo.setAllSelectedMeasureBlocksIndexes(QueryUtil
+        .getMeasureBlockIndexes(queryModel.getQueryMeasures(), expressionMeasures,
+            segmentProperties.getMeasuresOrdinalToBlockMapping()));
+    // setting the key structure info which will be required
+    // ot update the older block key with new key generator
+    blockExecutionInfo.setKeyStructureInfo(queryProperties.keyStructureInfo);
+    // settingthe size of fixed key column (dictionary column)
+    blockExecutionInfo.setFixedLengthKeySize(getKeySize(updatedQueryDimension, segmentProperties));
+    List<Integer> dictionaryColumnBlockIndex = new ArrayList<Integer>();
+    List<Integer> noDictionaryColumnBlockIndex = new ArrayList<Integer>();
+
+    // get the block index to be read from file for query dimension
+    // for both dictionary columns and no dictionary columns
+    QueryUtil.fillQueryDimensionsBlockIndexes(updatedQueryDimension,
+        segmentProperties.getDimensionOrdinalToBlockMapping(), dictionaryColumnBlockIndex,
+        noDictionaryColumnBlockIndex);
+    int[] queryDictionaruColumnBlockIndexes = ArrayUtils.toPrimitive(
+        dictionaryColumnBlockIndex.toArray(new Integer[dictionaryColumnBlockIndex.size()]));
+    // need to sort the dictionary column as for all dimension
+    // column key will be filled based on key order
+    Arrays.sort(queryDictionaruColumnBlockIndexes);
+    blockExecutionInfo.setDictionaryColumnBlockIndex(queryDictionaruColumnBlockIndexes);
+    // setting the no dictionary column block indexes
+    blockExecutionInfo.setNoDictionaryBlockIndexes(ArrayUtils.toPrimitive(
+        noDictionaryColumnBlockIndex.toArray(new Integer[noDictionaryColumnBlockIndex.size()])));
+    blockExecutionInfo.setColumnIdToDcitionaryMapping(queryProperties.columnToDictionayMapping);
+    // to set the sort info for the block which will be
+    // required to sort the data, this will be set only for
+    // last block as it will be done after all the blocks
+    // processing in done and final merger will handle sorting
+    // so all the block fixed key will be updated based on new key generator
+    // so no need to set for all the block execution info
+    if (true) {
+      blockExecutionInfo.setSortInfo(getSortInfos(queryModel.getQueryDimension(), queryModel));
+    }
+
+    blockExecutionInfo.setEachColumnValueSize(segmentProperties.getEachDimColumnValueSize());
+    try {
+      // to set column group and its key structure info which will be used
+      // to
+      // for getting the column group column data in case of final row
+      // and in case of dimension aggregation
+      blockExecutionInfo.setColumnGroupToKeyStructureInfo(
+          QueryUtil.getColumnGroupKeyStructureInfo(updatedQueryDimension, segmentProperties));
+    } catch (KeyGenException e) {
+      throw new QueryExecutionException(e);
+    }
+    return blockExecutionInfo;
+  }
+
+  /**
+   * This method will be used to get fixed key length size this will be used
+   * to create a row from column chunk
+   *
+   * @param queryDimension    query dimension
+   * @param blockMetadataInfo block metadata info
+   * @return key size
+   */
+  private int getKeySize(List<CarbonDimension> queryDimension,
+      SegmentProperties blockMetadataInfo) {
+    List<Integer> fixedLengthDimensionOrdinal =
+        new ArrayList<Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    int counter = 0;
+    while (counter < queryDimension.size()) {
+      if (queryDimension.get(counter).numberOfChild() > 0) {
+        counter += queryDimension.get(counter).numberOfChild();
+        continue;
+      } else if (!CarbonUtil
+          .hasEncoding(queryDimension.get(counter).getEncoder(), Encoding.DICTIONARY)) {
+        counter++;
+      } else {
+        fixedLengthDimensionOrdinal.add(queryDimension.get(counter).getKeyOrdinal());
+        counter++;
+      }
+    }
+    int[] dictioanryColumnOrdinal = ArrayUtils.toPrimitive(
+        fixedLengthDimensionOrdinal.toArray(new Integer[fixedLengthDimensionOrdinal.size()]));
+    if (dictioanryColumnOrdinal.length > 0) {
+      return blockMetadataInfo.getFixedLengthKeySplitter()
+          .getKeySizeByBlock(dictioanryColumnOrdinal);
+    }
+    return 0;
+  }
+
+  /**
+   * Below method will be used to get the sort information which will be
+   * required during sorting
+   *
+   * @param orderByDimension order by dimension
+   * @param queryModel       query model
+   * @return Sort infos
+   * @throws QueryExecutionException if problem while
+   */
+  protected SortInfo getSortInfos(List<CarbonDimension> orderByDimension, QueryModel queryModel)
+      throws QueryExecutionException {
+
+    // get the masked by range for order by dimension
+    int[][] maskedByteRangeForSorting = QueryUtil.getMaskedByteRangeForSorting(orderByDimension,
+        queryProperties.keyStructureInfo.getKeyGenerator(),
+        queryProperties.keyStructureInfo.getMaskByteRanges());
+    // get masked key for sorting
+    byte[][] maksedKeyForSorting = QueryUtil.getMaksedKeyForSorting(orderByDimension,
+        queryProperties.keyStructureInfo.getKeyGenerator(), maskedByteRangeForSorting,
+        queryProperties.keyStructureInfo.getMaskByteRanges());
+    // fill sort dimension indexes
+    queryProperties.sortDimIndexes =
+        QueryUtil.getSortDimensionIndexes(orderByDimension, queryModel.getQueryDimension());
+    SortInfo sortInfos = new SortInfo();
+    sortInfos.setDimensionMaskKeyForSorting(maksedKeyForSorting);
+    sortInfos.setDimensionSortOrder(queryModel.getSortOrder());
+    sortInfos.setMaskedByteRangeForSorting(maskedByteRangeForSorting);
+    sortInfos.setSortDimensionIndex(queryProperties.sortDimIndexes);
+    return sortInfos;
+  }
+
+  /**
+   * Below method will be used to get the aggrgator info for the query
+   *
+   * @param queryModel query model
+   * @param tableBlock table block
+   * @return aggregator info
+   */
+  private AggregatorInfo getAggregatorInfoForBlock(QueryModel queryModel,
+      AbstractIndex tableBlock) {
+    // getting the aggregate infos which will be used during aggregation
+    AggregatorInfo aggregatorInfos = RestructureUtil
+        .getAggregatorInfos(queryModel.getQueryMeasures(),
+            tableBlock.getSegmentProperties().getMeasures());
+    // setting the index of expression in measure aggregators
+    aggregatorInfos.setExpressionAggregatorStartIndex(queryProperties.aggExpressionStartIndex);
+    // setting the index of measure columns in measure aggregators
+    aggregatorInfos.setMeasureAggregatorStartIndex(queryProperties.measureStartIndex);
+    // setting the measure aggregator for all aggregation function selected
+    // in query
+    aggregatorInfos.setMeasuresAggreagators(queryProperties.measureAggregators);
+    return aggregatorInfos;
   }
 
 }

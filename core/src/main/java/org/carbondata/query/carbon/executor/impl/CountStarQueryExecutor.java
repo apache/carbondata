@@ -18,13 +18,10 @@
  */
 package org.carbondata.query.carbon.executor.impl;
 
-import java.util.List;
-
 import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
-import org.carbondata.query.carbon.executor.infos.BlockExecutionInfo;
 import org.carbondata.query.carbon.executor.internal.InternalQueryExecutor;
-import org.carbondata.query.carbon.executor.internal.impl.InternalAggregationQueryExecutor;
+import org.carbondata.query.carbon.executor.internal.impl.InternalCountStartQueryExecutor;
 import org.carbondata.query.carbon.model.QueryModel;
 import org.carbondata.query.carbon.result.RowResult;
 import org.carbondata.query.carbon.result.impl.ListBasedResult;
@@ -33,12 +30,13 @@ import org.carbondata.query.carbon.result.iterator.ChunkRowIterator;
 import org.carbondata.query.carbon.result.iterator.MemoryBasedResultIterator;
 
 /**
- * Below class will be used to execute the aggregation query
+ * Below class will be used to execute the count start query
  */
-public class AggregationQueryExecutor extends AbstractQueryExecutor {
+public class CountStarQueryExecutor extends AbstractQueryExecutor {
 
   @Override public CarbonIterator<RowResult> execute(QueryModel queryModel)
       throws QueryExecutionException {
+    initQuery(queryModel);
     if (queryProperties.dataBlocks.size() == 0) {
       // if there are not block present then set empty row
       // and return
@@ -46,11 +44,11 @@ public class AggregationQueryExecutor extends AbstractQueryExecutor {
           new ChunkBasedResultIterator(new MemoryBasedResultIterator(new ListBasedResult()),
               queryProperties, queryModel));
     }
-    List<BlockExecutionInfo> blockExecutionInfoList = getBlockExecutionInfos(queryModel);
-    InternalQueryExecutor internalQueryExecutor = new InternalAggregationQueryExecutor();
-    return new ChunkRowIterator(new ChunkBasedResultIterator(
-        internalQueryExecutor.executeQuery(blockExecutionInfoList, null), queryProperties,
-        queryModel));
+    InternalQueryExecutor queryExecutor =
+        new InternalCountStartQueryExecutor(queryProperties.dataBlocks);
+    return new ChunkRowIterator(
+        new ChunkBasedResultIterator(queryExecutor.executeQuery(null, null), queryProperties,
+            queryModel));
   }
 
 }

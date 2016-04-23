@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.carbondata.query.carbon.executor;
+package org.carbondata.query.carbon.executor.internal;
 
 import java.util.List;
 
