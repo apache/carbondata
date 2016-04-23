@@ -23,15 +23,16 @@ import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.catalyst.expressions.{AggregateExpression1, AggregateFunction1, GenericMutableRow}
 
+import org.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk
 import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder
 import org.carbondata.query.aggregator.{CustomMeasureAggregator, MeasureAggregator}
 import org.carbondata.query.carbonfilterinterface.RowIntf
 import org.carbondata.query.expression.ColumnExpression
 
-/**
- * Custom Aggregator serialized and used to pushdown all aggregate functions from spark layer with
- * expressions to Carbon layer
- */
+  /**
+  * Custom Aggregator serialized and used to pushdown all aggregate functions from spark layer with
+  * expressions to Carbon layer
+  */
 @SerialVersionUID(-3787749110799088697L)
 class SparkUnknownCarbonAggregator(partialAggregate: AggregateExpression1)
   extends CustomMeasureAggregator {
@@ -53,9 +54,10 @@ class SparkUnknownCarbonAggregator(partialAggregate: AggregateExpression1)
     throw new UnsupportedOperationException("agg(Object) is not a valid method for aggregation");
   }
 
-  override def agg(newVal: CarbonReadDataHolder, index: Int): Unit = {
+  override def agg(newVal: MeasureColumnDataChunk, index: Int): Unit = {
     throw new UnsupportedOperationException(
-      "agg(CarbonReadDataHolder, int) is not a valid method for aggregation");
+      "agg(CarbonReadDataHolder, int) is not a valid method for aggregation"
+    );
   }
 
   override def getByteArray(): Array[Byte] = {
@@ -88,7 +90,8 @@ class SparkUnknownCarbonAggregator(partialAggregate: AggregateExpression1)
     if (result.size > 0) {
       result.iterator.foreach(v => {
         getPartialFunction.update(v)
-      })
+      }
+      )
 
       // clear result after submitting to partial function
       result.clear
@@ -97,7 +100,8 @@ class SparkUnknownCarbonAggregator(partialAggregate: AggregateExpression1)
     if (aggregator.isInstanceOf[SparkUnknownCarbonAggregator]) {
       aggregator.asInstanceOf[SparkUnknownCarbonAggregator].result.iterator.foreach(v => {
         getPartialFunction.update(v)
-      })
+      }
+      )
 
       aggregator.asInstanceOf[SparkUnknownCarbonAggregator].result.clear
     } else {
@@ -172,6 +176,10 @@ class SparkUnknownCarbonAggregator(partialAggregate: AggregateExpression1)
       }
     }
     result += new GenericMutableRow(values.map(a => a.asInstanceOf[Any]).toArray)
+  }
+
+  override def getNew: MeasureAggregator = {
+    new SparkUnknownCarbonAggregator()
   }
 
 }
