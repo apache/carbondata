@@ -222,6 +222,10 @@ public class GraphGenerator {
    */
   private String taskNo;
   /**
+   * load Id
+   */
+  private String segmentId;
+  /**
    * new load start time
    */
   private String factTimeStamp;
@@ -229,7 +233,7 @@ public class GraphGenerator {
 
   public GraphGenerator(DataLoadModel dataLoadModel, boolean isHDFSReadMode, String partitionID,
       String factStoreLocation, int currentRestructNum, int allocate,
-      CarbonDataLoadSchema carbonDataLoadSchema) {
+      CarbonDataLoadSchema carbonDataLoadSchema, String segmentId) {
     this.schemaInfo = dataLoadModel.getSchemaInfo();
     this.tableName = dataLoadModel.getTableName();
     this.isCSVLoad = dataLoadModel.isCsvLoad();
@@ -248,6 +252,7 @@ public class GraphGenerator {
     this.blocksID = dataLoadModel.getBlocksID();
     this.taskNo = dataLoadModel.getTaskNo();
     this.factTimeStamp = dataLoadModel.getFactTimeStamp();
+    this.segmentId = segmentId;
     initialise();
     LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
         "************* Is Columnar Storage" + isColumnar);
@@ -777,6 +782,7 @@ public class GraphGenerator {
     CarbonSliceMergerStepMeta sliceMerger = new CarbonSliceMergerStepMeta();
     sliceMerger.setDefault();
     sliceMerger.setPartitionID(partitionID);
+    sliceMerger.setSegmentId(segmentId);
     sliceMerger.setHeirAndKeySize(configurationInfo.getHeirAndKeySizeString());
     sliceMerger.setMdkeySize(configurationInfo.getMdkeySize());
     sliceMerger.setMeasureCount(configurationInfo.getMeasureCount());
@@ -1082,6 +1088,7 @@ public class GraphGenerator {
     //
     CarbonCSVBasedSeqGenMeta seqMeta = new CarbonCSVBasedSeqGenMeta();
     seqMeta.setPartitionID(partitionID);
+    seqMeta.setSegmentId(segmentId);
     seqMeta.setCarbondim(graphConfiguration.getDimensionString());
     seqMeta.setComplexTypeString(graphConfiguration.getComplexTypeString());
     seqMeta.setBatchSize(Integer.parseInt(graphConfiguration.getBatchSize()));
@@ -1152,6 +1159,7 @@ public class GraphGenerator {
   private StepMeta getMDKeyStep(GraphConfigurationInfo graphConfiguration) {
     MDKeyGenStepMeta carbonMdKey = new MDKeyGenStepMeta();
     carbonMdKey.setPartitionID(partitionID);
+    carbonMdKey.setSegmentId(segmentId);
     carbonMdKey.setNumberOfCores(graphConfiguration.getNumberOfCores());
     carbonMdKey.setTableName(graphConfiguration.getTableName());
     carbonMdKey.setSchemaName(schemaInfo.getSchemaName());
@@ -1585,6 +1593,7 @@ public class GraphGenerator {
 
     SortKeyStepMeta sortRowsMeta = new SortKeyStepMeta();
     sortRowsMeta.setPartitionID(partitionID);
+    sortRowsMeta.setSegmentId(segmentId);
     sortRowsMeta.setTabelName(graphConfiguration.getTableName());
     sortRowsMeta.setCubeName(schemaInfo.getCubeName());
     sortRowsMeta.setSchemaName(schemaInfo.getSchemaName());

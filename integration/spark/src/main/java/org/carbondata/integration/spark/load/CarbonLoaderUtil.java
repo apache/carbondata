@@ -92,7 +92,6 @@ import org.carbondata.query.datastorage.InMemoryTableStore;
 import org.carbondata.query.directinterface.impl.CarbonQueryParseUtil;
 
 import com.google.gson.Gson;
-
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
@@ -110,13 +109,12 @@ public final class CarbonLoaderUtil {
   }
 
   private static void generateGraph(IDataProcessStatus schmaModel, SchemaInfo info,
-      String partitionID, String factStoreLocation, int currentRestructNumber,
-      List<LoadMetadataDetails> loadMetadataDetails, CarbonDataLoadSchema carbonDataLoadSchema,
-      String taskNo, String factTimeStamp) throws GraphGeneratorException {
+      int currentRestructNumber, CarbonLoadModel loadModel) throws GraphGeneratorException {
     DataLoadModel model = new DataLoadModel();
     model.setCsvLoad(null != schmaModel.getCsvFilePath() || null != schmaModel.getFilesToProcess());
     model.setSchemaInfo(info);
     model.setTableName(schmaModel.getTableName());
+    List<LoadMetadataDetails> loadMetadataDetails = loadModel.getLoadMetadataDetails();
     if (null != loadMetadataDetails && !loadMetadataDetails.isEmpty()) {
       model.setLoadNames(
           CarbonDataProcessorUtil.getLoadNameFromLoadMetaDataDetails(loadMetadataDetails));
@@ -124,14 +122,14 @@ public final class CarbonLoaderUtil {
           .getModificationOrDeletionTimesFromLoadMetadataDetails(loadMetadataDetails));
     }
     model.setBlocksID(schmaModel.getBlocksID());
-    model.setTaskNo(taskNo);
-    model.setFactTimeStamp(factTimeStamp);
+    model.setTaskNo(loadModel.getTaskNo());
+    model.setFactTimeStamp(loadModel.getFactTimeStamp());
     boolean hdfsReadMode =
         schmaModel.getCsvFilePath() != null && schmaModel.getCsvFilePath().startsWith("hdfs:");
     int allocate = null != schmaModel.getCsvFilePath() ? 1 : schmaModel.getFilesToProcess().size();
-    GraphGenerator generator =
-        new GraphGenerator(model, hdfsReadMode, partitionID, factStoreLocation,
-            currentRestructNumber, allocate, carbonDataLoadSchema);
+    GraphGenerator generator = new GraphGenerator(model, hdfsReadMode, loadModel.getPartitionId(),
+        loadModel.getFactStoreLocation(), currentRestructNumber, allocate,
+        loadModel.getCarbonDataLoadSchema(), loadModel.getSegmentId());
     generator.generateGraph();
   }
 
@@ -190,9 +188,7 @@ public final class CarbonLoaderUtil {
     info.setComplexDelimiterLevel1(loadModel.getComplexDelimiterLevel1());
     info.setComplexDelimiterLevel2(loadModel.getComplexDelimiterLevel2());
 
-    generateGraph(schmaModel, info, loadModel.getPartitionId(), loadModel.getFactStoreLocation(),
-        currentRestructNumber, loadModel.getLoadMetadataDetails(),
-        loadModel.getCarbonDataLoadSchema(), loadModel.getTaskNo(), loadModel.getFactTimeStamp());
+    generateGraph(schmaModel, info, currentRestructNumber, loadModel);
 
     DataGraphExecuter graphExecuter = new DataGraphExecuter(schmaModel);
     graphExecuter

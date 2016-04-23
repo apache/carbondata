@@ -182,13 +182,18 @@ public class SortDataRows {
    * partitionID
    */
   private String partitionID;
+  /**
+   * Id of the load folder
+   */
+  private int segmentId;
 
   public SortDataRows(String tabelName, int dimColCount, int complexDimColCount,
       int measureColCount, SortObserver observer, int currentRestructNum, int noDictionaryCount,
-      String[] measureDatatype, String partitionID) {
+      String[] measureDatatype, String partitionID, int segmentId) {
     // set table name
     this.tableName = tabelName;
     this.partitionID = partitionID;
+    this.segmentId = segmentId;
     // set measure count
     this.measureColCount = measureColCount;
 
@@ -681,7 +686,7 @@ public class SortDataRows {
     // get the temp file location
     this.tempFileLocation =
         baseLocation + File.separator + schemaName + File.separator + cubeName + File.separator
-            + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION + File.separator + this.tableName;
+            + this.segmentId + File.separator + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION;
 
     LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
         "temp file location" + this.tempFileLocation);
@@ -760,8 +765,8 @@ public class SortDataRows {
     CarbonTableIdentifier carbonTableIdentifier = new CarbonTableIdentifier(schemaName, cubeName);
     CarbonTablePath carbonTablePath =
         CarbonStorePath.getCarbonTablePath(baseStoreLocation, carbonTableIdentifier);
-    String carbonDataDirectoryPath = carbonTablePath.getCarbonDataDirectoryPath(this.partitionID,
-        CarbonCommonConstants.SEGMENT_ID_FOR_LOCAL_STORE_FOLDER_CREATION);
+    String carbonDataDirectoryPath =
+        carbonTablePath.getCarbonDataDirectoryPath(this.partitionID, segmentId);
     String storeLocation = carbonDataDirectoryPath + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
 
     String metaDataFileName = CarbonCommonConstants.MEASURE_METADATA_FILE_NAME + this.tableName

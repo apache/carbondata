@@ -223,7 +223,7 @@ public class CarbonSliceMergerStep extends BaseStep {
         CarbonStorePath.getCarbonTablePath(baseStorePath, carbonTableIdentifier);
     String partitionId = meta.getPartitionID();
     String carbonDataDirectoryPath = carbonTablePath.getCarbonDataDirectoryPath(partitionId,
-        CarbonCommonConstants.SEGMENT_ID_FOR_LOCAL_STORE_FOLDER_CREATION);
+        meta.getSegmentId());
     String baseStoreLocation =
         carbonDataDirectoryPath + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
     File currentFolder = new File(baseStoreLocation);

@@ -283,8 +283,8 @@ object CarbonDataRDDFactory extends Logging {
       }
 
       // Check if any load need to be deleted before loading new data
-      deleteLoadsAndUpdateMetadata(carbonLoadModel, cube, partitioner, hdfsStoreLocation, false,
-        currentRestructNumber)
+//      deleteLoadsAndUpdateMetadata(carbonLoadModel, cube, partitioner, hdfsStoreLocation, false,
+//        currentRestructNumber)
       if (null == carbonLoadModel.getLoadMetadataDetails) {
         readLoadMetadataDetails(carbonLoadModel, hdfsStoreLocation)
       }

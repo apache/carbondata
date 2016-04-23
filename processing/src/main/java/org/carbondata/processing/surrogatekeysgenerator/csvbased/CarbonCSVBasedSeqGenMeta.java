@@ -339,6 +339,11 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
    */
   private String partitionID;
 
+  /**
+   * Id of the load folder
+   */
+  private String segmentId;
+
   /***
    * String of columns ordinal and column datatype separated by COLON_SPC_CHARACTER
    */
@@ -601,6 +606,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     denormColumNames = "";
     currentRestructNumber = -1;
     partitionID = "";
+    segmentId = "";
     directDictionaryColumns = "";
   }
 
@@ -662,6 +668,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     retval.append("    ")
         .append(XMLHandler.addTagValue("currentRestructNumber", currentRestructNumber));
     retval.append("    ").append(XMLHandler.addTagValue("partitionID", partitionID));
+    retval.append("    ").append(XMLHandler.addTagValue("segmentId", segmentId));
     retval.append("    ")
         .append(XMLHandler.addTagValue("directDictionaryColumns", directDictionaryColumns));
     return retval.toString();
@@ -709,6 +716,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
       currentRestructNumber =
           Integer.parseInt(XMLHandler.getTagValue(stepnode, "currentRestructNumber"));
       partitionID = XMLHandler.getTagValue(stepnode, "partitionID");
+      segmentId = XMLHandler.getTagValue(stepnode, "segmentId");
       directDictionaryColumns = XMLHandler.getTagValue(stepnode, "directDictionaryColumns");
       String batchConfig = XMLHandler.getTagValue(stepnode, "batchSize");
 
@@ -1270,6 +1278,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
       denormColumNames = rep.getStepAttributeString(idStep, "denormColumNames");
       currentRestructNumber = (int) rep.getStepAttributeInteger(idStep, "currentRestructNumber");
       partitionID = rep.getStepAttributeString(idStep, "partitionID");
+      segmentId = rep.getStepAttributeString(idStep, "segmentId");
       directDictionaryColumns = rep.getStepAttributeString(idStep, "directDictionaryColumns");
       int nrKeys = rep.countNrStepAttributes(idStep, "lookup_keyfield");
       allocate(nrKeys);
@@ -1322,6 +1331,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
       rep.saveStepAttribute(idTransformation, idStep, "currentRestructNumber",
           currentRestructNumber);
       rep.saveStepAttribute(idTransformation, idStep, "partitionID", partitionID);
+      rep.saveStepAttribute(idTransformation, idStep, "segmentId", segmentId);
       rep.saveStepAttribute(idTransformation, idStep, "directDictionaryColumns",
           directDictionaryColumns);
     } catch (Exception e) {
@@ -1615,6 +1625,22 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
    */
   public boolean isDirectDictionary(int index) {
     return isDirectDictionary[index];
+  }
+
+  /**
+   * return segmentId
+   * @return
+   */
+  public int getSegmentId() {
+    return Integer.parseInt(segmentId);
+  }
+
+  /**
+   * set segment Id
+   * @param segmentId
+   */
+  public void setSegmentId(String segmentId) {
+    this.segmentId = segmentId;
   }
 }
 

@@ -69,7 +69,12 @@ public class ColumnReverseDictionaryInfo extends AbstractColumnDictionaryInfo {
   @Override public int getSurrogateKey(byte[] value) {
     DictionaryByteArrayWrapper dictionaryByteArrayWrapper =
         new DictionaryByteArrayWrapper(value, xxHash32);
-    return dictionaryByteArrayToSurrogateKeyMap.get(dictionaryByteArrayWrapper);
+    Integer surrogateKeyInMap =
+        dictionaryByteArrayToSurrogateKeyMap.get(dictionaryByteArrayWrapper);
+    if (null == surrogateKeyInMap) {
+      return CarbonCommonConstants.INVALID_SURROGATE_KEY;
+    }
+    return surrogateKeyInMap;
   }
 
   /**

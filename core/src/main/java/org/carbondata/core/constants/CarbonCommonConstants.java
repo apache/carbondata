@@ -1447,10 +1447,10 @@ public final class CarbonCommonConstants {
   public static final String DEFAULT_CHARSET = "UTF-8";
 
   /**
-   * segment id will be always zero as in local at a time only one
-   * folder will be created for one block processing
+   * surrogate key that will be sent whenever in the dictionary chunks
+   * a valid surrogate key is not found for a given dictionary value
    */
-  public static final int SEGMENT_ID_FOR_LOCAL_STORE_FOLDER_CREATION = 0;
+  public static final int INVALID_SURROGATE_KEY = -1;
 
   /**
    * table split partition

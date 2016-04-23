@@ -88,6 +88,10 @@ public class CarbonLoadModel implements Serializable {
    * new load start time
    */
   private String factTimeStamp;
+  /**
+   * load Id
+   */
+  private String segmentId;
 
   /**
    * get blocck id
@@ -341,6 +345,7 @@ public class CarbonLoadModel implements Serializable {
     copy.blocksID = blocksID;
     copy.taskNo = taskNo;
     copy.factTimeStamp = factTimeStamp;
+    copy.segmentId = segmentId;
     return copy;
   }
 
@@ -382,6 +387,7 @@ public class CarbonLoadModel implements Serializable {
     copyObj.blocksID = blocksID;
     copyObj.taskNo = taskNo;
     copyObj.factTimeStamp = factTimeStamp;
+    copyObj.segmentId = segmentId;
     return copyObj;
   }
 
@@ -521,4 +527,17 @@ public class CarbonLoadModel implements Serializable {
     return new String[]{complexDelimiterLevel1, complexDelimiterLevel2};
   }
 
+  /**
+   * @return load Id
+   */
+  public String getSegmentId() {
+    return segmentId;
+  }
+
+  /**
+   * @param segmentId
+   */
+  public void setSegmentId(String segmentId) {
+    this.segmentId = segmentId;
+  }
 }

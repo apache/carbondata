@@ -130,6 +130,10 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
    * partitionID
    */
   private String partitionID;
+  /**
+   * Id of the load folder
+   */
+  private String segmentId;
 
   /**
    * Constructor
@@ -151,6 +155,7 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
     taskNo = "";
     factTimeStamp = "";
     partitionID = "";
+    segmentId = "";
   }
 
   public String getXML() {
@@ -175,6 +180,7 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
     retval.append("    ").append(XMLHandler.addTagValue("factTimeStamp", factTimeStamp));
     retval.append("    ").append(XMLHandler.addTagValue("factTimeStamp", factTimeStamp));
     retval.append("    ").append(XMLHandler.addTagValue("partitionID", partitionID));
+    retval.append("    ").append(XMLHandler.addTagValue("segmentId", segmentId));
     return retval.toString();
   }
 
@@ -199,6 +205,7 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
       taskNo = XMLHandler.getTagValue(stepnode, "taskNo");
       factTimeStamp = XMLHandler.getTagValue(stepnode, "factTimeStamp");
       partitionID = XMLHandler.getTagValue(stepnode, "partitionID");
+      segmentId = XMLHandler.getTagValue(stepnode, "segmentId");
     } catch (Exception e) {
       throw new KettleXMLException("Unable to read step info from XML node", e);
     }
@@ -224,6 +231,7 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
       rep.saveStepAttribute(idTransformation, idStep, "taskNo", taskNo);
       rep.saveStepAttribute(idTransformation, idStep, "factTimeStamp", factTimeStamp);
       rep.saveStepAttribute(idTransformation, idStep, "partitionID", partitionID);
+      rep.saveStepAttribute(idTransformation, idStep, "segmentId", segmentId);
     } catch (Exception e) {
       throw new KettleException(
           BaseMessages.getString(pkg, "TemplateStep.Exception.UnableToSaveStepInfoToRepository")
@@ -251,6 +259,7 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
       taskNo = rep.getStepAttributeString(idStep, "taskNo");
       factTimeStamp = rep.getStepAttributeString(idStep, "factTimeStamp");
       partitionID = rep.getStepAttributeString(idStep, "partitionID");
+      segmentId = rep.getStepAttributeString(idStep, "segmentId");
     } catch (Exception e) {
       throw new KettleException(BaseMessages
           .getString(pkg, "CarbonMDKeyStepMeta.Exception.UnexpectedErrorInReadingStepInfo"), e);
@@ -522,5 +531,21 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
    */
   public void setPartitionID(String partitionID) {
     this.partitionID = partitionID;
+  }
+
+  /**
+   * return segmentId
+   * @return
+   */
+  public int getSegmentId() {
+    return Integer.parseInt(segmentId);
+  }
+
+  /**
+   * set segment Id
+   * @param segmentId
+   */
+  public void setSegmentId(String segmentId) {
+    this.segmentId = segmentId;
   }
 }

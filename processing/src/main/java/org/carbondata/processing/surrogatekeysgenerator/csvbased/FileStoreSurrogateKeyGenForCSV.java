@@ -98,16 +98,20 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
    * partitionID
    */
   private String partitionID;
-
+  /**
+   * load Id
+   */
+  private int segmentId;
   /**
    * @param columnsInfo
    * @throws KettleException
    */
-  public FileStoreSurrogateKeyGenForCSV(ColumnsInfo columnsInfo, String partitionID)
-      throws KettleException {
+  public FileStoreSurrogateKeyGenForCSV(ColumnsInfo columnsInfo, String partitionID,
+      int segmentId) throws KettleException {
     super(columnsInfo);
     populatePrimaryKeyarray(dimInsertFileNames, columnsInfo.getPrimaryKeyMap());
     this.partitionID = partitionID;
+    this.segmentId = segmentId;
     keyGenerator = new HashMap<String, KeyGenerator>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
     baseStorePath = columnsInfo.getBaseStoreLocation();
@@ -185,8 +189,8 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
         new CarbonTableIdentifier(databaseName, tableName);
     CarbonTablePath carbonTablePath =
         CarbonStorePath.getCarbonTablePath(baseStorePath, carbonTableIdentifier);
-    String carbonDataDirectoryPath = carbonTablePath.getCarbonDataDirectoryPath(this.partitionID,
-        CarbonCommonConstants.SEGMENT_ID_FOR_LOCAL_STORE_FOLDER_CREATION);
+    String carbonDataDirectoryPath =
+        carbonTablePath.getCarbonDataDirectoryPath(this.partitionID, this.segmentId);
     carbonDataDirectoryPath =
         carbonDataDirectoryPath + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
     boolean isDirCreated = new File(carbonDataDirectoryPath).mkdirs();

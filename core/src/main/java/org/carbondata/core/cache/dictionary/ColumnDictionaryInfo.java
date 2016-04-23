@@ -29,11 +29,6 @@ import org.carbondata.core.util.ByteUtil;
 public class ColumnDictionaryInfo extends AbstractColumnDictionaryInfo {
 
   /**
-   * minimum value of surrogate key, dictionary value key will start from count 1
-   */
-  private static final int MINIMUM_SURROGATE_KEY = 1;
-
-  /**
    * index after members are sorted
    */
   private List<Integer> sortOrderIndex;

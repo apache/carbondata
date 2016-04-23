@@ -233,12 +233,12 @@ public class MDKeyGenStep extends BaseStep {
         CarbonStorePath.getCarbonTablePath(baseStorePath, carbonTableIdentifier);
     String partitionId = meta.getPartitionID();
     String carbonDataDirectoryPath = carbonTablePath.getCarbonDataDirectoryPath(partitionId,
-        CarbonCommonConstants.SEGMENT_ID_FOR_LOCAL_STORE_FOLDER_CREATION);
+        meta.getSegmentId());
     storeLocation = carbonDataDirectoryPath + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
 
     fileManager = new LoadFolderData();
     fileManager.setName(CarbonCommonConstants.LOAD_FOLDER
-        + CarbonCommonConstants.SEGMENT_ID_FOR_LOCAL_STORE_FOLDER_CREATION
+        + meta.getSegmentId()
         + CarbonCommonConstants.FILE_INPROGRESS_STATUS);
 
     if (!(new File(storeLocation).exists())) {
@@ -324,8 +324,8 @@ public class MDKeyGenStep extends BaseStep {
     String baseSortTempLocation =
         baseStorePath + File.separator + meta.getSchemaName() + File.separator + meta.getCubeName();
     // Set the data file location
-    this.dataFolderLocation = baseSortTempLocation + File.separator +
-        CarbonCommonConstants.SORT_TEMP_FILE_LOCATION + File.separator + this.tableName;
+    this.dataFolderLocation = baseSortTempLocation + File.separator + meta.getSegmentId() +
+        File.separator + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION;
     return true;
   }
 

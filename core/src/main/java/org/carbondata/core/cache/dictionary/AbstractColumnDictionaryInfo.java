@@ -37,6 +37,11 @@ public abstract class AbstractColumnDictionaryInfo implements DictionaryInfo {
   protected List<List<byte[]>> dictionaryChunks = new CopyOnWriteArrayList<>();
 
   /**
+   * minimum value of surrogate key, dictionary value key will start from count 1
+   */
+  protected static final int MINIMUM_SURROGATE_KEY = 1;
+
+  /**
    * atomic integer to maintain the access count for a column access
    */
   protected AtomicInteger accessCount = new AtomicInteger();
@@ -191,6 +196,9 @@ public abstract class AbstractColumnDictionaryInfo implements DictionaryInfo {
    */
   @Override public String getDictionaryValueForKey(int surrogateKey) {
     String dictionaryValue = null;
+    if(surrogateKey < MINIMUM_SURROGATE_KEY) {
+      return dictionaryValue;
+    }
     byte[] dictionaryValueInBytes = getDictionaryBytesFromSurrogate(surrogateKey);
     if (null != dictionaryValueInBytes) {
       dictionaryValue = new String(dictionaryValueInBytes,

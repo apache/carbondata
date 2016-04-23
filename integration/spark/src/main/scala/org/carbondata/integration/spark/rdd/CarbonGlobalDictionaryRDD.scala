@@ -72,7 +72,7 @@ case class PrimitiveParser(dimension: CarbonDimension,
   def parseString(input: String): Unit = {
     if (hasDictEncoding) {
       if (existsDict) {
-        if (dict.getSurrogateKey(input) == 0) {
+        if (dict.getSurrogateKey(input) == CarbonCommonConstants.INVALID_SURROGATE_KEY) {
           set.add(input)
         }
       } else {
@@ -122,6 +122,8 @@ case class DataFormat(delimiters: Array[String],
                       patterns: Array[Pattern]) extends Serializable {
   self =>
   def getSplits(input: String): Array[String] = {
+    // -1 in case after splitting the last column is empty, the surrogate key ahs to be generated
+    // for empty value too
     patterns(delimiterIndex).split(input, -1)
   }
 

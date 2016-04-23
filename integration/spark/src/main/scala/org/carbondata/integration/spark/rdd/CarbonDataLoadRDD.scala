@@ -167,7 +167,7 @@ class CarbonDataLoadRDD[K, V](
           System.setProperty("carbon.properties.filepath",
             System.getProperty("user.dir") + '/' + "conf" + '/' + "carbon.properties");
         }
-
+        carbonLoadModel.setSegmentId(String.valueOf(loadCount))
         setModelAndBlocksInfo()
         CarbonProperties.getInstance().addProperty("carbon.is.columnar.storage", "true")
         CarbonProperties.getInstance().addProperty("carbon.dimension.split.value.in.columnar", "1")

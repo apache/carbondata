@@ -45,7 +45,7 @@ public interface Dictionary {
    * 2. Filter scenarios where from value surrogate key has to be found.
    *
    * @param value dictionary value as byte array
-   * @return if found returns key else 0
+   * @return if found returns key else -1
    */
   int getSurrogateKey(byte[] value);
 

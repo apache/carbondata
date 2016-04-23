@@ -164,7 +164,7 @@ public class StoreCreator {
     int allocate = null != schmaModel.getCsvFilePath() ? 1 : schmaModel.getFilesToProcess().size();
     GraphGenerator generator =
         new GraphGenerator(model, hdfsReadMode, partitionID, factStoreLocation,
-            currentRestructNumber, allocate, schema);
+            currentRestructNumber, allocate, schema, "0");
     generator.generateGraph();
   }
 

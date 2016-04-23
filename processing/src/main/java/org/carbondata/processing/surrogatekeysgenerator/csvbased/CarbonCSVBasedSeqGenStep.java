@@ -418,7 +418,8 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
               getBadLogStoreLocation(meta.getSchemaName() + '/' + meta.getCubeName()));
 
           columnsInfo.setTimeOrdinalIndices(meta.timeOrdinalIndices);
-          surrogateKeyGen = new FileStoreSurrogateKeyGenForCSV(columnsInfo, meta.getPartitionID());
+          surrogateKeyGen = new FileStoreSurrogateKeyGenForCSV(columnsInfo, meta.getPartitionID(),
+              meta.getSegmentId());
           data.setSurrogateKeyGen(surrogateKeyGen);
 
           updateStoreLocation();
@@ -484,30 +485,6 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
 
             data.getOutputRowMeta().setValueMetaList(Arrays.asList(out));
 
-          }
-
-          if (null != r) {
-            CarbonCSVBasedDimSurrogateKeyGen surrogateKeyGenObj = data.getSurrogateKeyGen();
-            if (null != surrogateKeyGenObj) {
-              for (int j = 0; j < meta.dimColNames.length; j++) {
-                GenericDataType complexType = columnsInfo.getComplexTypesMap()
-                    .get(meta.dimColNames[j].substring(meta.getTableName().length() + 1));
-                if (complexType != null) {
-                  List<GenericDataType> primitiveChild = new ArrayList<GenericDataType>();
-                  complexType.getAllPrimitiveChildren(primitiveChild);
-                  for (GenericDataType eachPrimitive : primitiveChild) {
-                    surrogateKeyGenObj
-                        .generateSurrogateKeys(CarbonCommonConstants.MEMBER_DEFAULT_VAL,
-                            meta.getTableName() + CarbonCommonConstants.UNDERSCORE + eachPrimitive
-                                .getName());
-                  }
-                  j += (complexType.getColsCount() - 1);
-                } else {
-                  surrogateKeyGenObj.generateSurrogateKeys(CarbonCommonConstants.MEMBER_DEFAULT_VAL,
-                      meta.dimColNames[j]);
-                }
-              }
-            }
           }
         }
       }
@@ -789,7 +766,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
         CarbonStorePath.getCarbonTablePath(baseStorePath, carbonTableIdentifier);
     String partitionId = meta.getPartitionID();
     String carbonDataDirectoryPath = carbonTablePath.getCarbonDataDirectoryPath(partitionId,
-        CarbonCommonConstants.SEGMENT_ID_FOR_LOCAL_STORE_FOLDER_CREATION);
+        meta.getSegmentId());
     loadFolderLoc = carbonDataDirectoryPath + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
   }
 
@@ -1391,7 +1368,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
                     surrogateKeyGen.generateSurrogateKeys(((String) r[j]), foreignKeyColumnName);
               }
             }
-            if (surrogateKeyForHrrchy[0] == -1) {
+            if (surrogateKeyForHrrchy[0] == CarbonCommonConstants.INVALID_SURROGATE_KEY) {
               addCardinalityExcededEntry(r, inputColumnsSize, j, columnName);
               return null;
             }

@@ -42,17 +42,17 @@ public class DictionaryChunksWrapper implements Iterator<byte[]> {
   /**
    * Current index of the list
    */
-  private int currentIndex = 0;
+  private int currentIndex;
 
   /**
    * variable holds the count of elements already iterated
    */
-  private int iteratedListSize = 0;
+  private int iteratorIndex;
 
   /**
    * variable holds the current index of List<List<byte[]>> being traversed
    */
-  private int outerIndex = 0;
+  private int outerIndex;
 
   /**
    * Constructor of DictionaryChunksWrapper
@@ -85,15 +85,14 @@ public class DictionaryChunksWrapper implements Iterator<byte[]> {
    * @return the next element in the iteration
    */
   @Override public byte[] next() {
-    int index = currentIndex++;
-    index = index - iteratedListSize;
-    while (index > dictionaryChunks.get(outerIndex).size()) {
-      int innerListSize = dictionaryChunks.get(outerIndex).size();
-      iteratedListSize += innerListSize;
-      index = index - innerListSize;
+    if (iteratorIndex >= dictionaryChunks.get(outerIndex).size()) {
+      iteratorIndex = 0;
       outerIndex++;
     }
-    return dictionaryChunks.get(outerIndex).get(index);
+    byte[] value = dictionaryChunks.get(outerIndex).get(iteratorIndex);
+    currentIndex++;
+    iteratorIndex++;
+    return value;
   }
 
   /**
