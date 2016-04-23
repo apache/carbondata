@@ -52,7 +52,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -193,44 +192,10 @@ public class CarbonDictionaryWriterImplTest {
   /**
    * prepare the dictionary writer object
    */
-  private CarbonDictionaryWriterImpl prepareWriter(boolean isSharedDimension) {
+  private CarbonDictionaryWriterImpl prepareWriter(boolean isSharedDimension) throws IOException {
     initDictionaryDirPaths();
     return new CarbonDictionaryWriterImpl(this.carbonStorePath, carbonTableIdentifier,
         columnIdentifier, isSharedDimension);
-  }
-
-  /**
-   * this method will test the directory creation failure
-   */
-  @Test public void testDirectoryCreationFailure() throws Exception {
-    try {
-      // delete the store
-      deleteStorePath();
-      // mock folder creation method
-      new MockUp<CarbonUtil>() {
-        @Mock public boolean checkAndCreateFolder(String path) {
-          return false;
-        }
-      };
-      // prepare the writer
-      CarbonDictionaryWriterImpl writer = prepareWriter(false);
-      try {
-        for (String value : dataSet1) {
-          // exception should be thrown while writing the column values
-          writer.write(value);
-        }
-      } catch (IOException e) {
-        assertTrue(true);
-      } finally {
-        writer.close();
-      }
-      FileFactory.FileType fileType = FileFactory.getFileType(this.carbonStorePath);
-      // check for file existence and assert
-      boolean fileExist = FileFactory.isFileExist(this.carbonStorePath, fileType);
-      assertFalse(fileExist);
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
   }
 
   /**
@@ -578,9 +543,14 @@ public class CarbonDictionaryWriterImplTest {
   /**
    * this method will form the dictionary directory paths
    */
-  private void initDictionaryDirPaths() {
+  private void initDictionaryDirPaths() throws IOException {
     CarbonTablePath carbonTablePath =
         CarbonStorePath.getCarbonTablePath(this.carbonStorePath, carbonTableIdentifier);
+    String dictionaryLocation = carbonTablePath.getMetadataDirectoryPath();
+    FileFactory.FileType fileType = FileFactory.getFileType(dictionaryLocation);
+    if(!FileFactory.isFileExist(dictionaryLocation, fileType)) {
+      FileFactory.mkdirs(dictionaryLocation, fileType);
+    }
     this.dictionaryFilePath = carbonTablePath.getDictionaryFilePath(columnIdentifier);
     this.dictionaryMetaFilePath = carbonTablePath.getDictionaryMetaFilePath(columnIdentifier);
   }
