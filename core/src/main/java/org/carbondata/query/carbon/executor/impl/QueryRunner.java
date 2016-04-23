@@ -29,48 +29,44 @@ import org.carbondata.query.carbon.scanner.impl.DetailQueryBlockProcessor;
 
 /**
  * Class which will execute the query
- *
  */
 public class QueryRunner implements Callable<Void> {
 
-	/**
-	 * block processor
-	 */
-	private BlockProcessor dataBlockProcessor;
+  /**
+   * block processor
+   */
+  private BlockProcessor dataBlockProcessor;
 
-	/**
-	 * file reader which will be used to execute the query
-	 */
-	private FileHolder fileReader;
+  /**
+   * file reader which will be used to execute the query
+   */
+  private FileHolder fileReader;
 
-	/**
-	 * block execution info which is required to run the query
-	 */
-	private BlockExecutionInfo blockExecutionInfo;
+  /**
+   * block execution info which is required to run the query
+   */
+  private BlockExecutionInfo blockExecutionInfo;
 
-	public QueryRunner(BlockExecutionInfo executionInfos) {
-		this.blockExecutionInfo = executionInfos;
-		// if detail query detail query processor will be used to process the
-		// block
-		if (executionInfos.isDetailQuery()) {
-			dataBlockProcessor = new DetailQueryBlockProcessor(executionInfos,
-					fileReader);
-		} else {
-			dataBlockProcessor = new AggregateQueryBlockProcessor(
-					executionInfos, fileReader);
-		}
-	}
+  public QueryRunner(BlockExecutionInfo executionInfos) {
+    this.blockExecutionInfo = executionInfos;
+    // if detail query detail query processor will be used to process the
+    // block
+    if (executionInfos.isDetailQuery()) {
+      dataBlockProcessor = new DetailQueryBlockProcessor(executionInfos, fileReader);
+    } else {
+      dataBlockProcessor = new AggregateQueryBlockProcessor(executionInfos, fileReader);
+    }
+  }
 
-	@Override
-	public Void call() throws Exception {
-		StandardLogService.setThreadName(blockExecutionInfo.getPartitionId(),
-				blockExecutionInfo.getQueryId());
-		try {
-			this.dataBlockProcessor.processBlock();
-		} finally {
-			this.fileReader.finish();
-		}
-		return null;
-	}
+  @Override public Void call() throws Exception {
+    StandardLogService
+        .setThreadName(blockExecutionInfo.getPartitionId(), blockExecutionInfo.getQueryId());
+    try {
+      this.dataBlockProcessor.processBlock();
+    } finally {
+      this.fileReader.finish();
+    }
+    return null;
+  }
 
 }

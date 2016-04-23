@@ -23,35 +23,34 @@ import org.carbondata.query.carbon.executor.infos.BlockExecutionInfo;
 import org.carbondata.query.carbon.scanner.AbstractDataBlockProcessor;
 
 /**
- * Below class will be used to process the blocks for 
- * aggregated query 
- *
+ * Below class will be used to process the blocks for
+ * aggregated query
  */
-public class AggregateQueryBlockProcessor extends AbstractDataBlockProcessor{
+public class AggregateQueryBlockProcessor extends AbstractDataBlockProcessor {
 
+  /**
+   * AggregateQueryScanner constructor
+   *
+   * @param blockExecutionInfos
+   */
+  public AggregateQueryBlockProcessor(BlockExecutionInfo tableBlockExecutionInfos,
+      FileHolder fileReader) {
+    super(tableBlockExecutionInfos, fileReader);
+  }
 
-	/**
-	 * AggregateQueryScanner constructor
-	 * @param blockExecutionInfos
-	 */
-	public AggregateQueryBlockProcessor(BlockExecutionInfo tableBlockExecutionInfos,FileHolder fileReader) {
-		super(tableBlockExecutionInfos,fileReader);
-	}
-
-	/**
-	 * Below method will be used to scan the block 
-	 * then it will call processor to process the data 
-	 * and the it will call aggregator to aggregate the data
-	 * it will call finish once all the blocks of a table is scanned
-	 *  
-	 */
-	@Override
-	public void processBlock() {
-		while (dataBlockIterator.hasNext()) {
-			blocksChunkHolder.setDataBlock(dataBlockIterator.next());
-			blocksChunkHolder.reset();
-            this.scannerResultAggregator.aggregateData(blockletScanner.processBlockData(blocksChunkHolder));
-        }
-		finishScanning();
-	}
+  /**
+   * Below method will be used to scan the block
+   * then it will call processor to process the data
+   * and the it will call aggregator to aggregate the data
+   * it will call finish once all the blocks of a table is scanned
+   */
+  @Override public void processBlock() {
+    while (dataBlockIterator.hasNext()) {
+      blocksChunkHolder.setDataBlock(dataBlockIterator.next());
+      blocksChunkHolder.reset();
+      this.scannerResultAggregator
+          .aggregateData(blockletScanner.processBlockData(blocksChunkHolder));
+    }
+    finishScanning();
+  }
 }

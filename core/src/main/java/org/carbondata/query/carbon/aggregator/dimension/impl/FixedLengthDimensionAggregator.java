@@ -31,68 +31,61 @@ import org.carbondata.query.carbon.util.DataTypeUtil;
 
 /**
  * Class which will be used to aggregate the fixed length dimension data
- * 
  */
 public class FixedLengthDimensionAggregator implements DimensionDataAggregator {
 
-	/**
-	 * info object which store information about dimension to be aggregated
-	 */
-	protected DimensionAggregatorInfo dimensionAggeragtorInfo;
+  /**
+   * info object which store information about dimension to be aggregated
+   */
+  protected DimensionAggregatorInfo dimensionAggeragtorInfo;
 
-	/**
-	 * default which was added for new dimension after restructuring for the
-	 * older blocks
-	 */
-	protected Object defaultValue;
+  /**
+   * default which was added for new dimension after restructuring for the
+   * older blocks
+   */
+  protected Object defaultValue;
 
-	private int aggregatorStartIndex;
+  private int aggregatorStartIndex;
 
-	private ByteBuffer buffer;
+  private ByteBuffer buffer;
 
-	private Dictionary columnDictionary;
-	
-	private int blockIndex;
+  private Dictionary columnDictionary;
 
-	public FixedLengthDimensionAggregator(
-			DimensionAggregatorInfo dimensionAggeragtorInfo,
-			Object defaultValue, Dictionary columnDictionary,
-			int aggregatorStartIndex, int blockIndex) {
-		this.dimensionAggeragtorInfo = dimensionAggeragtorInfo;
-		this.defaultValue = defaultValue;
-		this.aggregatorStartIndex = aggregatorStartIndex;
-		this.blockIndex=blockIndex;
-		buffer =ByteBuffer.allocate(CarbonCommonConstants.INT_SIZE_IN_BYTE);
-		this.columnDictionary=columnDictionary;
-	}
+  private int blockIndex;
 
-	/**
-	 * Below method will be used to aggregate the dimension data
-	 * 
-	 * @param scannedResult
-	 *            scanned result
-	 * @param aggeragtor
-	 *            aggregator used to aggregate the data
-	 */
-	@Override
-	public void aggregateDimensionData(AbstractScannedResult scannedResult,
-			MeasureAggregator[] aggeragtor) {
-		byte[] dimensionData = scannedResult
-				.getDimensionKey(blockIndex);
-		int surrogateKey = CarbonUtil.getSurrogateKey(dimensionData,buffer);
-		if (surrogateKey == 1) {
-			return;
-		}
-		Object dataBasedOnDataType = DataTypeUtil.getDataBasedOnDataType(
-				columnDictionary.getDictionaryValueForKey(surrogateKey),
-				dimensionAggeragtorInfo.getDim().getDataType());
-		if (null == dataBasedOnDataType) {
-			return;
-		}
+  public FixedLengthDimensionAggregator(DimensionAggregatorInfo dimensionAggeragtorInfo,
+      Object defaultValue, Dictionary columnDictionary, int aggregatorStartIndex, int blockIndex) {
+    this.dimensionAggeragtorInfo = dimensionAggeragtorInfo;
+    this.defaultValue = defaultValue;
+    this.aggregatorStartIndex = aggregatorStartIndex;
+    this.blockIndex = blockIndex;
+    buffer = ByteBuffer.allocate(CarbonCommonConstants.INT_SIZE_IN_BYTE);
+    this.columnDictionary = columnDictionary;
+  }
 
-		for (int j = 0; j < dimensionAggeragtorInfo.getAggList().size(); j++) {
-			aggeragtor[aggregatorStartIndex + j].agg(dataBasedOnDataType);
-		}
-	}
+  /**
+   * Below method will be used to aggregate the dimension data
+   *
+   * @param scannedResult scanned result
+   * @param aggeragtor    aggregator used to aggregate the data
+   */
+  @Override public void aggregateDimensionData(AbstractScannedResult scannedResult,
+      MeasureAggregator[] aggeragtor) {
+    byte[] dimensionData = scannedResult.getDimensionKey(blockIndex);
+    int surrogateKey = CarbonUtil.getSurrogateKey(dimensionData, buffer);
+    if (surrogateKey == 1) {
+      return;
+    }
+    Object dataBasedOnDataType = DataTypeUtil
+        .getDataBasedOnDataType(columnDictionary.getDictionaryValueForKey(surrogateKey),
+            dimensionAggeragtorInfo.getDim().getDataType());
+    if (null == dataBasedOnDataType) {
+      return;
+    }
+
+    for (int j = 0; j < dimensionAggeragtorInfo.getAggList().size(); j++) {
+      aggeragtor[aggregatorStartIndex + j].agg(dataBasedOnDataType);
+    }
+  }
 
 }

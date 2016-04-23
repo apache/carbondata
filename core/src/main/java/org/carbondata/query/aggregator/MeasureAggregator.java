@@ -26,7 +26,6 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 
 import org.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
-import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 
 /**
  * Class Description : MeasureAggregator interface. It will be implemented by
@@ -36,111 +35,110 @@ import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 
 public interface MeasureAggregator extends Serializable, Comparable<MeasureAggregator> {
 
-    /**
-     * Below method will be used to aggregate the Double value
-     *
-     * @param newVal
-     */
-    void agg(double newVal);
+  /**
+   * Below method will be used to aggregate the Double value
+   *
+   * @param newVal
+   */
+  void agg(double newVal);
 
-    /**
-     * Below method will be used to aggregate the object value
-     *
-     * @param newVal
-     */
-    void agg(Object newVal);
+  /**
+   * Below method will be used to aggregate the object value
+   *
+   * @param newVal
+   */
+  void agg(Object newVal);
 
-    /**
-     * Below method will be used to aggregate the value based on index
-     *
-     * @param newVal
-     * @param index
-     */
-    void agg(MeasureColumnDataChunk newVal, int index);
+  /**
+   * Below method will be used to aggregate the value based on index
+   *
+   * @param newVal
+   * @param index
+   */
+  void agg(MeasureColumnDataChunk newVal, int index);
 
-    /**
-     * Get the Serialize byte array
-     *
-     * @return
-     */
-    byte[] getByteArray();
+  /**
+   * Get the Serialize byte array
+   *
+   * @return
+   */
+  byte[] getByteArray();
 
-    /**
-     * This method will be used to set the new value
-     *
-     * @param newValue
-     */
-    void setNewValue(Object newValue);
+  /**
+   * This method will be used to set the new value
+   *
+   * @param newValue
+   */
+  void setNewValue(Object newValue);
 
-    /**
-     * This method return the object value of the MeasureAggregator
-     *
-     * @return aggregated value
-     */
-    Object getValueObject();
+  /**
+   * This method return the object value of the MeasureAggregator
+   *
+   * @return aggregated value
+   */
+  Object getValueObject();
 
-    /**
-     * This method return the object value of the MeasureAggregator
-     *
-     * @return aggregated value
-     */
-    Double getDoubleValue();
+  /**
+   * This method return the object value of the MeasureAggregator
+   *
+   * @return aggregated value
+   */
+  Double getDoubleValue();
 
-    /**
-     * This method return the object value of the MeasureAggregator
-     *
-     * @return aggregated value
-     */
-    Long getLongValue();
+  /**
+   * This method return the object value of the MeasureAggregator
+   *
+   * @return aggregated value
+   */
+  Long getLongValue();
 
-    BigDecimal getBigDecimalValue();
+  BigDecimal getBigDecimalValue();
 
-    /**
-     * This method merge the aggregated value based on aggregator passed
-     *
-     * @param aggregator type of aggregator
-     */
-    void merge(MeasureAggregator aggregator);
+  /**
+   * This method merge the aggregated value based on aggregator passed
+   *
+   * @param aggregator type of aggregator
+   */
+  void merge(MeasureAggregator aggregator);
 
-    /**
-     * Is first time. It means it was never used for aggregating any value.
-     *
-     * @return
-     */
-    boolean isFirstTime();
+  /**
+   * Is first time. It means it was never used for aggregating any value.
+   *
+   * @return
+   */
+  boolean isFirstTime();
 
-    /**
-     * it creates the new copy of MeasureAggregator
-     *
-     * @return MeasureAggregator
-     */
-    MeasureAggregator getCopy();
+  /**
+   * it creates the new copy of MeasureAggregator
+   *
+   * @return MeasureAggregator
+   */
+  MeasureAggregator getCopy();
 
-    /**
-     * Write the state of the class to buffer
-     *
-     */
-    void writeData(DataOutput output) throws IOException;
+  /**
+   * Write the state of the class to buffer
+   */
+  void writeData(DataOutput output) throws IOException;
 
-    /**
-     * Read the state of the class and set to the object
-     *
-     */
-    void readData(DataInput inPut) throws IOException;
+  /**
+   * Read the state of the class and set to the object
+   */
+  void readData(DataInput inPut) throws IOException;
 
-    MeasureAggregator get();
+  MeasureAggregator get();
 
-    /**
-     * Merge the byte arrays
-     *
-     * @param value
-     */
-    void merge(byte[] value);
-    
-    /**
-     * Below method will be used to get the 
-     * new instance
-     * @return new instance
-     */
-    MeasureAggregator getNew();
+  /**
+   * Merge the byte arrays
+   *
+   * @param value
+   */
+  void merge(byte[] value);
+
+  /**
+   * Below method will be used to get the
+   * new instance
+   *
+   * @return new instance
+   */
+  MeasureAggregator getNew();
 }

@@ -27,69 +27,63 @@ import org.carbondata.query.carbon.util.DataTypeUtil;
 
 /**
  * Class which will be used to aggregate the Variable length dimension data
- * 
  */
 public class VariableLengthDimensionAggregator implements DimensionDataAggregator {
 
-	/**
-	 * info object which store information about dimension to be aggregated
-	 */
-	private DimensionAggregatorInfo dimensionAggeragtorInfo;
+  /**
+   * info object which store information about dimension to be aggregated
+   */
+  private DimensionAggregatorInfo dimensionAggeragtorInfo;
 
-	/**
-	 * default which was added for new dimension after restructuring for the
-	 * older blocks
-	 */
-	private Object defaultValue;
+  /**
+   * default which was added for new dimension after restructuring for the
+   * older blocks
+   */
+  private Object defaultValue;
 
-	/**
-	 * index of the aggregator
-	 */
-	private int aggreagtorStartIndex;
-	
-	/**
-	 * index of block in file 
-	 */
-	private int blockIndex;
+  /**
+   * index of the aggregator
+   */
+  private int aggreagtorStartIndex;
 
-	public VariableLengthDimensionAggregator(
-			DimensionAggregatorInfo dimensionAggeragtorInfo,
-			Object defaultValue, int aggregatorStartIndex, int blockIndex) {
-		this.dimensionAggeragtorInfo = dimensionAggeragtorInfo;
-		this.aggreagtorStartIndex = aggregatorStartIndex;
-		this.blockIndex=blockIndex;
-	}
+  /**
+   * index of block in file
+   */
+  private int blockIndex;
 
-	/**
-	 * Below method will be used to aggregate the variable length dimension data
-	 * 
-	 * @param scannedResult
-	 *            scanned result
-	 * @param aggeragtor
-	 *            aggregator used to aggregate the data
-	 */
-	@Override
-	public void aggregateDimensionData(AbstractScannedResult scannedResult,
-			MeasureAggregator[] aggeragtor) {
+  public VariableLengthDimensionAggregator(DimensionAggregatorInfo dimensionAggeragtorInfo,
+      Object defaultValue, int aggregatorStartIndex, int blockIndex) {
+    this.dimensionAggeragtorInfo = dimensionAggeragtorInfo;
+    this.aggreagtorStartIndex = aggregatorStartIndex;
+    this.blockIndex = blockIndex;
+  }
 
-		String data = null;
-		if (defaultValue != null) {
-			data = (String) defaultValue;
-		} else {
-			data = new String(
-					scannedResult.getDimensionKey(blockIndex));
-			if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(data)) {
-			}
-			return;
-		}
-		Object dataBasedOnDataType = DataTypeUtil.getDataBasedOnDataType(data,
-				dimensionAggeragtorInfo.getDim().getDataType());
-		if (null == dataBasedOnDataType) {
-			return;
-		}
-		for (int i = 0; i < dimensionAggeragtorInfo.getAggList().size(); i++) {
-			aggeragtor[aggreagtorStartIndex + i].agg(dataBasedOnDataType);
-		}
-	}
+  /**
+   * Below method will be used to aggregate the variable length dimension data
+   *
+   * @param scannedResult scanned result
+   * @param aggeragtor    aggregator used to aggregate the data
+   */
+  @Override public void aggregateDimensionData(AbstractScannedResult scannedResult,
+      MeasureAggregator[] aggeragtor) {
+
+    String data = null;
+    if (defaultValue != null) {
+      data = (String) defaultValue;
+    } else {
+      data = new String(scannedResult.getDimensionKey(blockIndex));
+      if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(data)) {
+        return;
+      }
+    }
+    Object dataBasedOnDataType =
+        DataTypeUtil.getDataBasedOnDataType(data, dimensionAggeragtorInfo.getDim().getDataType());
+    if (null == dataBasedOnDataType) {
+      return;
+    }
+    for (int i = 0; i < dimensionAggeragtorInfo.getAggList().size(); i++) {
+      aggeragtor[aggreagtorStartIndex + i].agg(dataBasedOnDataType);
+    }
+  }
 
 }

@@ -23,28 +23,26 @@ import org.carbondata.query.carbon.executor.infos.BlockExecutionInfo;
 import org.carbondata.query.carbon.result.AbstractScannedResult;
 
 /**
- * Interface for measure aggregation 
+ * Interface for measure aggregation
  */
 public abstract class MeasureDataAggregator {
 
-	/**
-	 * measure ordinal selected in query 
-	 */
-	protected int[] measuresOrdinal;
+  /**
+   * measure ordinal selected in query
+   */
+  protected int[] measuresOrdinal;
 
-	public MeasureDataAggregator(
-			BlockExecutionInfo tableBlockExecutionInfos) {
-		// get the measure ordinal 
-		measuresOrdinal = tableBlockExecutionInfos.getAggregatorInfo()
-				.getMeasureOrdinals();
-	}
-	
-	/**
-	 * Below method will be used to aggregate the measures 
-	 * @param scannedRsult
-	 * 			scanned result 
-	 * @param aggrgeator
-	 * 			aggregator selected for each measure 
-	 */
-	public abstract void aggregateMeasure(AbstractScannedResult scannedResult,MeasureAggregator[] aggrgeator);
+  public MeasureDataAggregator(BlockExecutionInfo tableBlockExecutionInfos) {
+    // get the measure ordinal
+    measuresOrdinal = tableBlockExecutionInfos.getAggregatorInfo().getMeasureOrdinals();
+  }
+
+  /**
+   * Below method will be used to aggregate the measures
+   *
+   * @param scannedRsult scanned result
+   * @param aggrgeator   aggregator selected for each measure
+   */
+  public abstract void aggregateMeasure(AbstractScannedResult scannedResult,
+      MeasureAggregator[] aggrgeator);
 }

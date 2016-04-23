@@ -22,16 +22,13 @@ import org.carbondata.query.carbon.executor.infos.BlockExecutionInfo;
 import org.carbondata.query.carbon.processor.AbstractScannedResultProcessor;
 
 /**
- * Below class will be used merge the unsorted result 
- *
+ * Below class will be used merge the unsorted result
  */
-public class UnSortedScannedResultMerger extends
-		AbstractScannedResultProcessor {
+public class UnSortedScannedResultMerger extends AbstractScannedResultProcessor {
 
-	public UnSortedScannedResultMerger(
-			BlockExecutionInfo blockExecutionInfo,
-			int maxNumberOfScannedresultList) {
-		super(blockExecutionInfo, maxNumberOfScannedresultList);
-	}
+  public UnSortedScannedResultMerger(BlockExecutionInfo blockExecutionInfo,
+      int maxNumberOfScannedresultList) {
+    super(blockExecutionInfo, maxNumberOfScannedresultList);
+  }
 
 }

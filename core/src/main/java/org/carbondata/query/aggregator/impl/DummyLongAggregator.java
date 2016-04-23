@@ -19,47 +19,39 @@
 package org.carbondata.query.aggregator.impl;
 
 import org.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
-import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.carbondata.query.aggregator.MeasureAggregator;
 
 public class DummyLongAggregator extends AbstractMeasureAggregatorDummy {
-    private static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 1L;
 
-    /**
-     * aggregate value
-     */
-    private long aggVal;
+  /**
+   * aggregate value
+   */
+  private long aggVal;
 
-    @Override
-    public void agg(Object newVal) {
-        aggVal = (Long) newVal;
+  @Override public void agg(Object newVal) {
+    aggVal = (Long) newVal;
+  }
+
+  @Override public void agg(MeasureColumnDataChunk dataChunk, int index) {
+    if (!dataChunk.getNullValueIndexHolder().getBitSet().get(index)) {
+      aggVal = dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(index);
     }
+  }
 
-    @Override
-    public void agg(MeasureColumnDataChunk dataChunk, int index) {
-    	if(!dataChunk.getNullValueIndexHolder().getBitSet().get(index))
-    	{
-    		aggVal = dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(index);
-    	}
-    }
+  @Override public Long getLongValue() {
+    return aggVal;
+  }
 
-    @Override
-    public Long getLongValue() {
-        return aggVal;
-    }
+  @Override public Object getValueObject() {
+    return aggVal;
+  }
 
-    @Override
-    public Object getValueObject() {
-        return aggVal;
-    }
+  @Override public void setNewValue(Object newValue) {
+    aggVal = (Long) newValue;
+  }
 
-    @Override
-    public void setNewValue(Object newValue) {
-        aggVal = (Long) newValue;
-    }
-
-	@Override
-	public MeasureAggregator getNew() {
-		return new DummyLongAggregator();
-	}
+  @Override public MeasureAggregator getNew() {
+    return new DummyLongAggregator();
+  }
 }

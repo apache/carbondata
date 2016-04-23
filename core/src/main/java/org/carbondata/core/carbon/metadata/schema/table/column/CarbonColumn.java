@@ -28,147 +28,145 @@ import org.carbondata.core.carbon.metadata.encoder.Encoding;
 
 public class CarbonColumn implements Serializable {
 
-	/**
-	 * serialization version
-	 */
-	private static final long serialVersionUID = 3648269871256322681L;
+  /**
+   * serialization version
+   */
+  private static final long serialVersionUID = 3648269871256322681L;
 
-	/**
-	 * column schema
-	 */
-	protected ColumnSchema columnSchema;
+  /**
+   * column schema
+   */
+  protected ColumnSchema columnSchema;
 
-	/**
-	 * table ordinal
-	 */
-	protected int ordinal;
+  /**
+   * table ordinal
+   */
+  protected int ordinal;
 
-	/**
-	 * queryOrder
-	 */
-	protected int queryOrder;
+  /**
+   * queryOrder
+   */
+  protected int queryOrder;
 
-	/**
-	 * isQueryForDistinctCount
-	 */
-	protected boolean isDistinctQuery;
-	/**
-	 * default value for in case of restructuring will be used when older
-	 * segment does not have particular column
-	 */
-	protected byte[] defaultValue;
+  /**
+   * isQueryForDistinctCount
+   */
+  protected boolean isDistinctQuery;
+  /**
+   * default value for in case of restructuring will be used when older
+   * segment does not have particular column
+   */
+  protected byte[] defaultValue;
 
-	public CarbonColumn(ColumnSchema columnSchema, int ordinal) {
-		this.columnSchema = columnSchema;
-		this.ordinal = ordinal;
-	}
+  public CarbonColumn(ColumnSchema columnSchema, int ordinal) {
+    this.columnSchema = columnSchema;
+    this.ordinal = ordinal;
+  }
 
-	/**
-	 * @return convertedType
-	 */
-	public ConvertedType getConvertedType() {
-		return columnSchema.getConvertedType();
-	}
+  /**
+   * @return convertedType
+   */
+  public ConvertedType getConvertedType() {
+    return columnSchema.getConvertedType();
+  }
 
-	/**
-	 * @return columnar or row based
-	 */
-	public boolean isColumnar() {
-		return columnSchema.isColumnar();
-	}
+  /**
+   * @return columnar or row based
+   */
+  public boolean isColumnar() {
+    return columnSchema.isColumnar();
+  }
 
-	/**
-	 * @return column unique id
-	 */
-	public String getColumnId() {
-		return columnSchema.getColumnUniqueId();
-	}
+  /**
+   * @return column unique id
+   */
+  public String getColumnId() {
+    return columnSchema.getColumnUniqueId();
+  }
 
-	/**
-	 * @return the dataType
-	 */
-	public DataType getDataType() {
-		return columnSchema.getDataType();
-	}
+  /**
+   * @return the dataType
+   */
+  public DataType getDataType() {
+    return columnSchema.getDataType();
+  }
 
-	/**
-	 * @return the colName
-	 */
-	public String getColName() {
-		return columnSchema.getColumnName();
-	}
+  /**
+   * @return the colName
+   */
+  public String getColName() {
+    return columnSchema.getColumnName();
+  }
 
-	/**
-	 * @return the ordinal
-	 */
-	public int getOrdinal() {
-		return ordinal;
-	}
+  /**
+   * @return the ordinal
+   */
+  public int getOrdinal() {
+    return ordinal;
+  }
 
-	/**
-	 * @return the list of encoder used in dimension
-	 */
-	public List<Encoding> getEncoder() {
-		return columnSchema.getEncodingList();
-	}
+  /**
+   * @return the list of encoder used in dimension
+   */
+  public List<Encoding> getEncoder() {
+    return columnSchema.getEncodingList();
+  }
 
-	/**
-	 * @return row group id if it is row based
-	 */
-	public int columnGroupId() {
-		return columnSchema.getColumnGroupId();
-	}
+  /**
+   * @return row group id if it is row based
+   */
+  public int columnGroupId() {
+    return columnSchema.getColumnGroupId();
+  }
 
-	/**
-	 * @return the defaultValue
-	 */
-	public byte[] getDefaultValue() {
-		return defaultValue;
-	}
+  /**
+   * @return the defaultValue
+   */
+  public byte[] getDefaultValue() {
+    return defaultValue;
+  }
 
-	/**
-	 * @param defaultValue
-	 *            the defaultValue to set
-	 */
-	public void setDefaultValue(byte[] defaultValue) {
-		this.defaultValue = defaultValue;
-	}
+  /**
+   * @param defaultValue the defaultValue to set
+   */
+  public void setDefaultValue(byte[] defaultValue) {
+    this.defaultValue = defaultValue;
+  }
 
-	/**
-	 * @param encoding
-	 * @return true if contains the passing encoding
-	 */
-	public boolean hasEncoding(Encoding encoding) {
-		return columnSchema.hasEncoding(encoding);
-	}
+  /**
+   * @param encoding
+   * @return true if contains the passing encoding
+   */
+  public boolean hasEncoding(Encoding encoding) {
+    return columnSchema.hasEncoding(encoding);
+  }
 
-	/**
-	 * @return if DataType is ARRAY or STRUCT, this method return true, else
-	 *         false.
-	 */
-	public Boolean isComplex() {
-		return columnSchema.isComplex();
-	}
+  /**
+   * @return if DataType is ARRAY or STRUCT, this method return true, else
+   * false.
+   */
+  public Boolean isComplex() {
+    return columnSchema.isComplex();
+  }
 
-	/**
-	 * @return if column is dimension return true, else false.
-	 */
-	public Boolean isDimesion() {
-		return columnSchema.isDimensionColumn();
-	}
+  /**
+   * @return if column is dimension return true, else false.
+   */
+  public Boolean isDimesion() {
+    return columnSchema.isDimensionColumn();
+  }
 
-	/**
-	 * @return the queryOrder
-	 */
-	public int getQueryOrder() {
-		return queryOrder;
-	}
+  /**
+   * @return the queryOrder
+   */
+  public int getQueryOrder() {
+    return queryOrder;
+  }
 
-	/**
-	 * @param queryOrder
-	 *            the queryOrder to set
-	 */
-	public void setQueryOrder(int queryOrder) {
-		this.queryOrder = queryOrder;
-	}
+  /**
+   * @param queryOrder the queryOrder to set
+   */
+  public void setQueryOrder(int queryOrder) {
+    this.queryOrder = queryOrder;
+  }
 }

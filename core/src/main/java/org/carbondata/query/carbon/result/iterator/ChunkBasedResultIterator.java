@@ -28,48 +28,44 @@ import org.carbondata.query.carbon.result.Result;
 
 /**
  * Iterator over chunk result
- *
  */
 public class ChunkBasedResultIterator implements CarbonIterator<ChunkResult> {
 
-	/**
-	 * query result prepartor which will be used to create a query result
-	 */
-	private QueryResultPreparator queryResultPreparator;
+  /**
+   * query result prepartor which will be used to create a query result
+   */
+  private QueryResultPreparator queryResultPreparator;
 
-	/**
-	 * iterator over result
-	 */
-	private CarbonIterator<Result> queryResultIterator;
+  /**
+   * iterator over result
+   */
+  private CarbonIterator<Result> queryResultIterator;
 
-	public ChunkBasedResultIterator(CarbonIterator<Result> queryResultIterator,
-			QueryExecutorProperties executerProperties, QueryModel queryModel) {
-		this.queryResultIterator = queryResultIterator;
-		this.queryResultPreparator = new QueryResultPreparator(
-				executerProperties, queryModel);
+  public ChunkBasedResultIterator(CarbonIterator<Result> queryResultIterator,
+      QueryExecutorProperties executerProperties, QueryModel queryModel) {
+    this.queryResultIterator = queryResultIterator;
+    this.queryResultPreparator = new QueryResultPreparator(executerProperties, queryModel);
 
-	}
+  }
 
-	/**
-	 * Returns {@code true} if the iteration has more elements. (In other words,
-	 * returns {@code true} if {@link #next} would return an element rather than
-	 * throwing an exception.)
-	 *
-	 * @return {@code true} if the iteration has more elements
-	 */
-	@Override
-	public boolean hasNext() {
-		return queryResultIterator.hasNext();
-	}
+  /**
+   * Returns {@code true} if the iteration has more elements. (In other words,
+   * returns {@code true} if {@link #next} would return an element rather than
+   * throwing an exception.)
+   *
+   * @return {@code true} if the iteration has more elements
+   */
+  @Override public boolean hasNext() {
+    return queryResultIterator.hasNext();
+  }
 
-	/**
-	 * Returns the next element in the iteration.
-	 *
-	 * @return the next element in the iteration
-	 */
-	@Override
-	public ChunkResult next() {
-		return queryResultPreparator.getQueryResult(queryResultIterator.next());
-	}
+  /**
+   * Returns the next element in the iteration.
+   *
+   * @return the next element in the iteration
+   */
+  @Override public ChunkResult next() {
+    return queryResultPreparator.getQueryResult(queryResultIterator.next());
+  }
 
 }

@@ -29,154 +29,134 @@ import java.util.Set;
 
 import org.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.carbondata.query.aggregator.MeasureAggregator;
 
 public class DistinctCountAggregatorObjectSet implements MeasureAggregator {
 
-    private static final long serialVersionUID = 6313463368629960186L;
+  private static final long serialVersionUID = 6313463368629960186L;
 
-    private Set<Object> valueSetForObj;
+  private Set<Object> valueSetForObj;
 
-    public DistinctCountAggregatorObjectSet() {
-        valueSetForObj = new HashSet<Object>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+  public DistinctCountAggregatorObjectSet() {
+    valueSetForObj = new HashSet<Object>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+  }
+
+  /**
+   * just need to add the unique values to agg set
+   */
+  @Override public void agg(double newVal) {
+    valueSetForObj.add(newVal);
+  }
+
+  /**
+   * Distinct count Aggregate function which update the Distinct count
+   *
+   * @param newVal new value
+   */
+  @Override public void agg(Object newVal) {
+    // Object include double
+    if (newVal instanceof Double) {
+      agg((double) newVal);
+      return;
     }
-
-    /**
-     * just need to add the unique values to agg set
-     */
-    @Override
-    public void agg(double newVal) {
-        valueSetForObj.add(newVal);
+    byte[] values = (byte[]) newVal;
+    ByteBuffer buffer = ByteBuffer.wrap(values);
+    buffer.rewind();
+    while (buffer.hasRemaining()) {
+      valueSetForObj.add(buffer.getDouble());
     }
+  }
 
-    /**
-     * Distinct count Aggregate function which update the Distinct count
-     *
-     * @param newVal new value
-     */
-    @Override
-    public void agg(Object newVal) {
-        // Object include double
-        if (newVal instanceof Double) {
-            agg((double) newVal);
-            return;
-        }
-        byte[] values = (byte[]) newVal;
-        ByteBuffer buffer = ByteBuffer.wrap(values);
-        buffer.rewind();
-        while (buffer.hasRemaining()) {
-            valueSetForObj.add(buffer.getDouble());
-        }
+  @Override public void agg(MeasureColumnDataChunk dataChunk, int index) {
+    if (!dataChunk.getNullValueIndexHolder().getBitSet().get(index)) {
+      valueSetForObj.add(dataChunk.getMeasureDataHolder().getReadableDoubleValueByIndex(index));
     }
+  }
 
-    @Override
-    public void agg(MeasureColumnDataChunk dataChunk, int index) {
-    	if(!dataChunk.getNullValueIndexHolder().getBitSet().get(index))
-    	{
-    		valueSetForObj.add(dataChunk.getMeasureDataHolder().getReadableDoubleValueByIndex(index));
-    	}
+  /**
+   * Below method will be used to get the value byte array
+   */
+  @Override public byte[] getByteArray() {
+    return null;
+  }
+
+  private void agg(Set<Object> set2) {
+    valueSetForObj.addAll(set2);
+  }
+
+  /**
+   * merge the valueset so that we get the count of unique values
+   */
+  @Override public void merge(MeasureAggregator aggregator) {
+    DistinctCountAggregatorObjectSet distinctCountAggregator =
+        (DistinctCountAggregatorObjectSet) aggregator;
+    agg(distinctCountAggregator.valueSetForObj);
+  }
+
+  @Override public Double getDoubleValue() {
+    return (double) valueSetForObj.size();
+  }
+
+  @Override public Long getLongValue() {
+    return (long) valueSetForObj.size();
+  }
+
+  @Override public BigDecimal getBigDecimalValue() {
+    return new BigDecimal(valueSetForObj.size());
+  }
+
+  @Override public Object getValueObject() {
+    return valueSetForObj.size();
+  }
+
+  @Override public void setNewValue(Object newValue) {
+    valueSetForObj.add(newValue);
+  }
+
+  @Override public boolean isFirstTime() {
+    return false;
+  }
+
+  @Override public void writeData(DataOutput output) throws IOException {
+
+  }
+
+  @Override public void readData(DataInput inPut) throws IOException {
+
+  }
+
+  @Override public MeasureAggregator getCopy() {
+
+    DistinctCountAggregatorObjectSet aggregator = new DistinctCountAggregatorObjectSet();
+    aggregator.valueSetForObj = new HashSet<Object>(valueSetForObj);
+    return aggregator;
+  }
+
+  @Override public int compareTo(MeasureAggregator measureAggr) {
+    double valueSetForObjSize = getDoubleValue();
+    double otherVal = measureAggr.getDoubleValue();
+    if (valueSetForObjSize > otherVal) {
+      return 1;
     }
-
-    /**
-     * Below method will be used to get the value byte array
-     */
-    @Override
-    public byte[] getByteArray() {
-        return null;
+    if (valueSetForObjSize < otherVal) {
+      return -1;
     }
+    return 0;
+  }
 
-    private void agg(Set<Object> set2) {
-        valueSetForObj.addAll(set2);
-    }
+  @Override public MeasureAggregator get() {
+    return this;
+  }
 
-    /**
-     * merge the valueset so that we get the count of unique values
-     */
-    @Override
-    public void merge(MeasureAggregator aggregator) {
-        DistinctCountAggregatorObjectSet distinctCountAggregator =
-                (DistinctCountAggregatorObjectSet) aggregator;
-        agg(distinctCountAggregator.valueSetForObj);
-    }
+  public String toString() {
+    return valueSetForObj.size() + "";
+  }
 
-    @Override
-    public Double getDoubleValue() {
-        return (double) valueSetForObj.size();
-    }
+  @Override public void merge(byte[] value) {
+  }
 
-    @Override
-    public Long getLongValue() {
-        return (long) valueSetForObj.size();
-    }
-
-    @Override
-    public BigDecimal getBigDecimalValue() {
-        return new BigDecimal(valueSetForObj.size());
-    }
-
-    @Override
-    public Object getValueObject() {
-        return valueSetForObj.size();
-    }
-
-    @Override
-    public void setNewValue(Object newValue) {
-        valueSetForObj.add(newValue);
-    }
-
-    @Override
-    public boolean isFirstTime() {
-        return false;
-    }
-
-    @Override
-    public void writeData(DataOutput output) throws IOException {
-
-    }
-
-    @Override
-    public void readData(DataInput inPut) throws IOException {
-
-    }
-
-    @Override
-    public MeasureAggregator getCopy() {
-
-        DistinctCountAggregatorObjectSet aggregator = new DistinctCountAggregatorObjectSet();
-        aggregator.valueSetForObj = new HashSet<Object>(valueSetForObj);
-        return aggregator;
-    }
-
-    @Override
-    public int compareTo(MeasureAggregator measureAggr) {
-        double valueSetForObjSize = getDoubleValue();
-        double otherVal = measureAggr.getDoubleValue();
-        if (valueSetForObjSize > otherVal) {
-            return 1;
-        }
-        if (valueSetForObjSize < otherVal) {
-            return -1;
-        }
-        return 0;
-    }
-
-    @Override
-    public MeasureAggregator get() {
-        return this;
-    }
-
-    public String toString() {
-        return valueSetForObj.size() + "";
-    }
-
-    @Override
-    public void merge(byte[] value) {
-    }
-
-	@Override
-	public MeasureAggregator getNew() {
-		return new DistinctCountAggregatorObjectSet();
-	}
+  @Override public MeasureAggregator getNew() {
+    return new DistinctCountAggregatorObjectSet();
+  }
 
 }

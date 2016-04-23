@@ -21,7 +21,6 @@ package org.carbondata.query.carbon.result;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
 
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.iterator.CarbonIterator;
@@ -29,87 +28,85 @@ import org.carbondata.query.scanner.impl.CarbonKey;
 import org.carbondata.query.scanner.impl.CarbonValue;
 
 /**
- * Below class holds the query result 
- *
+ * Below class holds the query result
  */
 public class ChunkResult implements CarbonIterator<RowResult> {
-	
-	/**
-	 * list of keys
-	 */
-	private List<CarbonKey> keys;
-	
-	/**
-	 * list of values 
-	 */
-    private List<CarbonValue> values;
 
-    /**
-     * counter to check whether all the records are processed or not 
-     */
-    private int counter;
+  /**
+   * list of keys
+   */
+  private List<CarbonKey> keys;
 
-    public ChunkResult() {
-        keys = new ArrayList<CarbonKey>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-        values = new ArrayList<CarbonValue>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    }
+  /**
+   * list of values
+   */
+  private List<CarbonValue> values;
 
-    /**
-     * Below method will be used to get the key
-     * @return
-     */
-    public List<CarbonKey> getKeys() {
-        return keys;
-    }
+  /**
+   * counter to check whether all the records are processed or not
+   */
+  private int counter;
 
-    /**
-     * below method will be used to set the key 
-     * @param keys
-     */
-    public void setKeys(List<CarbonKey> keys) {
-        this.keys = keys;
-    }
+  public ChunkResult() {
+    keys = new ArrayList<CarbonKey>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    values = new ArrayList<CarbonValue>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+  }
 
-    /**
-     * Below method will be used to get the values
-     * @return
-     */
-    public List<CarbonValue> getValues() {
-        return values;
-    }
+  /**
+   * Below method will be used to get the key
+   *
+   * @return
+   */
+  public List<CarbonKey> getKeys() {
+    return keys;
+  }
 
-    /**
-     * Below method will be used to get the set the values 
-     * @param values
-     */
-    public void setValues(List<CarbonValue> values) {
-        this.values = values;
-    }
+  /**
+   * below method will be used to set the key
+   *
+   * @param keys
+   */
+  public void setKeys(List<CarbonKey> keys) {
+    this.keys = keys;
+  }
 
-    /**
-     * Returns {@code true} if the iteration has more elements.
-     * (In other words, returns {@code true} if {@link #next} would
-     * return an element rather than throwing an exception.)
-     *
-     * @return {@code true} if the iteration has more elements
-     */
-    @Override
-    public boolean hasNext() {
-        return counter < keys.size();
-    }
+  /**
+   * Below method will be used to get the values
+   *
+   * @return
+   */
+  public List<CarbonValue> getValues() {
+    return values;
+  }
 
-    /**
-     * Returns the next element in the iteration.
-     *
-     * @return the next element in the iteration
-     * @throws NoSuchElementException if the iteration has no more elements
-     */
-    @Override
-    public RowResult next() {
-        RowResult rowResult = new RowResult();
-        rowResult.setKey(keys.get(counter));
-        rowResult.setValue(values.get(counter));
-        counter++;
-        return rowResult;
-    }
+  /**
+   * Below method will be used to get the set the values
+   *
+   * @param values
+   */
+  public void setValues(List<CarbonValue> values) {
+    this.values = values;
+  }
+
+  /**
+   * Returns {@code true} if the iteration has more elements.
+   *
+   * @return {@code true} if the iteration has more elements
+   */
+  @Override public boolean hasNext() {
+    return counter < keys.size();
+  }
+
+  /**
+   * Returns the next element in the iteration.
+   *
+   * @return the next element in the iteration
+   */
+  @Override public RowResult next() {
+    RowResult rowResult = new RowResult();
+    rowResult.setKey(keys.get(counter));
+    rowResult.setValue(values.get(counter));
+    counter++;
+    return rowResult;
+  }
 }

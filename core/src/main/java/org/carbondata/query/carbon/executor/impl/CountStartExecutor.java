@@ -35,50 +35,49 @@ import org.carbondata.query.carbon.result.iterator.MemoryBasedResultIterator;
 import org.carbondata.query.carbon.wrappers.ByteArrayWrapper;
 
 /**
- * Below class will be used to execute the count star query or any function query 
+ * Below class will be used to execute the count star query or any function query
  * like count(1) , in this case block scanning is not required.
- *
  */
 public class CountStartExecutor implements InternalQueryExecutor {
-	
-	/**
-	 * data block available for query execution
-	 */
-	private List<AbstractIndex> blockList;
 
-	public CountStartExecutor(List<AbstractIndex> blockList) {
-		this.blockList = blockList;
-	}
+  /**
+   * data block available for query execution
+   */
+  private List<AbstractIndex> blockList;
 
+  public CountStartExecutor(List<AbstractIndex> blockList) {
+    this.blockList = blockList;
+  }
 
-	/**
-	 * Method to execute the count start query 
-	 * @param block execution info
-	 * @param slice indexes
-	 */
-	public CarbonIterator<Result> executeQuery(List<BlockExecutionInfo> infos,
-			int[] sliceIndex) throws QueryExecutionException {
-		long count = 0;
-		// for each block get the total number of rows 
-		for (AbstractIndex tableBlock : this.blockList) {
-			count += tableBlock.getTotalNumberOfRows();
-		}
-		// as this is a count start need to create counter star aggregator
-		MeasureAggregator[] countAgg = new MeasureAggregator[1];
-		countAgg[0] = new CountAggregator();
-		countAgg[0].setNewValue(count);
+  /**
+   * Method to execute the count start query
+   *
+   * @param block execution info
+   * @param slice indexes
+   */
+  public CarbonIterator<Result> executeQuery(List<BlockExecutionInfo> infos, int[] sliceIndex)
+      throws QueryExecutionException {
+    long count = 0;
+    // for each block get the total number of rows
+    for (AbstractIndex tableBlock : this.blockList) {
+      count += tableBlock.getTotalNumberOfRows();
+    }
+    // as this is a count start need to create counter star aggregator
+    MeasureAggregator[] countAgg = new MeasureAggregator[1];
+    countAgg[0] = new CountAggregator();
+    countAgg[0].setNewValue(count);
 
-		ListBasedResultWrapper resultWrapper = new ListBasedResultWrapper();
-		Result<List<ListBasedResultWrapper>> result = new ListBasedResult();
-		ByteArrayWrapper wrapper = new ByteArrayWrapper();
-		wrapper.setDictionaryKey(new byte[0]);
-		resultWrapper.setKey(wrapper);
-		resultWrapper.setValue(countAgg);
-		List<ListBasedResultWrapper> wrapperList = new ArrayList<ListBasedResultWrapper>(1);
-		wrapperList.add(resultWrapper);
-		result.addScannedResult(wrapperList);
-		// returning the iterator over the result
-		return new MemoryBasedResultIterator(result);
-	}
+    ListBasedResultWrapper resultWrapper = new ListBasedResultWrapper();
+    Result<List<ListBasedResultWrapper>> result = new ListBasedResult();
+    ByteArrayWrapper wrapper = new ByteArrayWrapper();
+    wrapper.setDictionaryKey(new byte[0]);
+    resultWrapper.setKey(wrapper);
+    resultWrapper.setValue(countAgg);
+    List<ListBasedResultWrapper> wrapperList = new ArrayList<ListBasedResultWrapper>(1);
+    wrapperList.add(resultWrapper);
+    result.addScannedResult(wrapperList);
+    // returning the iterator over the result
+    return new MemoryBasedResultIterator(result);
+  }
 
 }

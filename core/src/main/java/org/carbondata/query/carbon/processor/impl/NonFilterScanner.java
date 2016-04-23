@@ -23,15 +23,15 @@ import org.carbondata.query.carbon.processor.AbstractDataBlocksProcessor;
 import org.carbondata.query.carbon.result.impl.NonFilterQueryScannedResult;
 
 /**
- * Non filter processor which will be used for non filter query 
- * In case of non filter query we just need to read all the blocks requested in the 
- * query and pass it to scanned result  
+ * Non filter processor which will be used for non filter query
+ * In case of non filter query we just need to read all the blocks requested in the
+ * query and pass it to scanned result
  */
 public class NonFilterScanner extends AbstractDataBlocksProcessor {
 
-	public NonFilterScanner(BlockExecutionInfo blockExecutionInfo) {
-		super(blockExecutionInfo);
-		// as its a non filter query creating a non filter query scanned result object 
-		scannedResult = new NonFilterQueryScannedResult(blockExecutionInfo);
-	}
+  public NonFilterScanner(BlockExecutionInfo blockExecutionInfo) {
+    super(blockExecutionInfo);
+    // as its a non filter query creating a non filter query scanned result object
+    scannedResult = new NonFilterQueryScannedResult(blockExecutionInfo);
+  }
 }

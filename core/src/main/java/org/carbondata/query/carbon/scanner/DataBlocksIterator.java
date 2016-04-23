@@ -24,67 +24,64 @@ import org.carbondata.core.iterator.CarbonIterator;
 
 /**
  * Below class will be used to iterate over data block
- * 
  */
 public class DataBlocksIterator implements CarbonIterator<DataRefNode> {
-	/**
-	 * data store block
-	 */
-	protected DataRefNode datablock;
-	/**
-	 * block counter to keep a track how many block has been processed
-	 */
-	private int blockCounter;
-	
-	/**
-	 * flag to be used to check any more data block is present or not 
-	 */
-	private boolean hasNext = true;
-	
-	/**
-	 * total number blocks assgned to this iterator
-	 */
-	private long totalNumberOfBlocksToScan;
+  /**
+   * data store block
+   */
+  protected DataRefNode datablock;
+  /**
+   * block counter to keep a track how many block has been processed
+   */
+  private int blockCounter;
 
-	/**
-	 * Constructor
-	 * @param datablock
-	 * 			first data block
-	 * @param totalNumberOfBlocksToScan
-	 * 			total number of blocks to be scanned
-	 */
-	public DataBlocksIterator(DataRefNode datablock, long totalNumberOfBlocksToScan) {
-		this.datablock = datablock;
-		this.totalNumberOfBlocksToScan = totalNumberOfBlocksToScan;
-	}
+  /**
+   * flag to be used to check any more data block is present or not
+   */
+  private boolean hasNext = true;
 
-	/**
-	 * is all the blocks assigned to this iterator has been processed
-	 */
-	@Override
-	public boolean hasNext() {
-		return hasNext;
-	}
+  /**
+   * total number blocks assgned to this iterator
+   */
+  private long totalNumberOfBlocksToScan;
 
-	@Override
-	/**
-	 * To get the next block
-	 * @return next data block
-	 */
-	public DataRefNode next() {
-		// get the current blocks
-		DataRefNode datablockTemp = datablock;
-		// store the next data block 
-		datablock = datablock.getNextDataRefNode();
-		// increment the counter 
-		blockCounter++;
-		// if all the data block is processed then 
-		// set the has next flag to false
-		// or if number of blocks assigned to this iterator is processed 
-		// then also set the hasnext flag to false
-		if (null == datablock || blockCounter >= this.totalNumberOfBlocksToScan) {
-			hasNext = false;
-		}
-		return datablockTemp;
-	}
+  /**
+   * Constructor
+   *
+   * @param datablock                 first data block
+   * @param totalNumberOfBlocksToScan total number of blocks to be scanned
+   */
+  public DataBlocksIterator(DataRefNode datablock, long totalNumberOfBlocksToScan) {
+    this.datablock = datablock;
+    this.totalNumberOfBlocksToScan = totalNumberOfBlocksToScan;
+  }
+
+  /**
+   * is all the blocks assigned to this iterator has been processed
+   */
+  @Override public boolean hasNext() {
+    return hasNext;
+  }
+
+  @Override
+  /**
+   * To get the next block
+   * @return next data block
+   */
+  public DataRefNode next() {
+    // get the current blocks
+    DataRefNode datablockTemp = datablock;
+    // store the next data block
+    datablock = datablock.getNextDataRefNode();
+    // increment the counter
+    blockCounter++;
+    // if all the data block is processed then
+    // set the has next flag to false
+    // or if number of blocks assigned to this iterator is processed
+    // then also set the hasnext flag to false
+    if (null == datablock || blockCounter >= this.totalNumberOfBlocksToScan) {
+      hasNext = false;
+    }
+    return datablockTemp;
+  }
 }

@@ -45,124 +45,117 @@ import org.carbondata.query.carbon.model.CustomAggregateExpression;
 
 /**
  * Factory class to get the measure aggregator
- *
  */
 public class MeasureAggregatorFactory {
 
-	/**
-	 * Below method will be used to get the measure aggregator based on type and 
-	 * and data type 
-	 * @param aggTypes
-	 * 			Aggregation for the column
-	 * @param dataTypes
-	 * 			data type for the column
-	 * @param customAggregateExpressionList
-	 * 			custom aggregation list to get the custom aggregation aggregator
-	 * @return measure agregator for all the column
-	 */
-	public static MeasureAggregator[] getMeassureAggregator(String[] aggTypes,
-			DataType[] dataTypes,
-			List<CustomAggregateExpression> customAggregateExpressionList) {
-		MeasureAggregator[] measureAggregator = new MeasureAggregator[aggTypes.length];
-		int customAggregationCounter = 0;
-		for (int i = 0; i < measureAggregator.length; i++) {
+  /**
+   * Below method will be used to get the measure aggregator based on type and
+   * and data type
+   *
+   * @param aggTypes                      Aggregation for the column
+   * @param dataTypes                     data type for the column
+   * @param customAggregateExpressionList custom aggregation list to get the
+   * custom aggregation aggregator
+   * @return measure agregator for all the column
+   */
+  public static MeasureAggregator[] getMeassureAggregator(String[] aggTypes, DataType[] dataTypes,
+      List<CustomAggregateExpression> customAggregateExpressionList) {
+    MeasureAggregator[] measureAggregator = new MeasureAggregator[aggTypes.length];
+    int customAggregationCounter = 0;
+    for (int i = 0; i < measureAggregator.length; i++) {
 
-			if (aggTypes[i].equalsIgnoreCase(CarbonCommonConstants.CUSTOM)) {
-				measureAggregator[i] = (CustomMeasureAggregator) customAggregateExpressionList
-						.get(customAggregationCounter++).getAggregator()
-						.getCopy();
-			} else {
-				measureAggregator[i] = getAggregator(aggTypes[i], dataTypes[i]);
-			}
-		}
-		return measureAggregator;
-	}
+      if (aggTypes[i].equalsIgnoreCase(CarbonCommonConstants.CUSTOM)) {
+        measureAggregator[i] =
+            (CustomMeasureAggregator) customAggregateExpressionList.get(customAggregationCounter++)
+                .getAggregator().getCopy();
+      } else {
+        measureAggregator[i] = getAggregator(aggTypes[i], dataTypes[i]);
+      }
+    }
+    return measureAggregator;
+  }
 
-	/**
-	 * Below method will be used to get the aggregate based on aggregator type
-	 * and aggregator data type
-	 * @param aggregatorType
-	 * 			aggregattor type
-	 * @param dataType
-	 * 			data type
-	 * @return aggregator
-	 */
-	private static MeasureAggregator getAggregator(String aggregatorType,
-			DataType dataType) {
+  /**
+   * Below method will be used to get the aggregate based on aggregator type
+   * and aggregator data type
+   *
+   * @param aggregatorType aggregattor type
+   * @param dataType       data type
+   * @return aggregator
+   */
+  private static MeasureAggregator getAggregator(String aggregatorType, DataType dataType) {
 
-		// get the MeasureAggregator based on aggregate type
-		if (CarbonCommonConstants.MIN.equalsIgnoreCase(aggregatorType)) {
-			return new MinAggregator();
-		} else if (CarbonCommonConstants.COUNT.equalsIgnoreCase(aggregatorType)) {
-			return new CountAggregator();
-		}
-		//
-		else if (CarbonCommonConstants.MAX.equalsIgnoreCase(aggregatorType)) {
-			return new MaxAggregator();
-		}
-		//
-		else if (CarbonCommonConstants.AVERAGE.equalsIgnoreCase(aggregatorType)) {
-			switch (dataType) {
-			case LONG:
+    // get the MeasureAggregator based on aggregate type
+    if (CarbonCommonConstants.MIN.equalsIgnoreCase(aggregatorType)) {
+      return new MinAggregator();
+    } else if (CarbonCommonConstants.COUNT.equalsIgnoreCase(aggregatorType)) {
+      return new CountAggregator();
+    }
+    //
+    else if (CarbonCommonConstants.MAX.equalsIgnoreCase(aggregatorType)) {
+      return new MaxAggregator();
+    }
+    //
+    else if (CarbonCommonConstants.AVERAGE.equalsIgnoreCase(aggregatorType)) {
+      switch (dataType) {
+        case LONG:
 
-				return new AvgLongAggregator();
-			case DECIMAL:
+          return new AvgLongAggregator();
+        case DECIMAL:
 
-				return new AvgBigDecimalAggregator();
-			default:
+          return new AvgBigDecimalAggregator();
+        default:
 
-				return new AvgDoubleAggregator();
-			}
-		}
-		//
-		else if (CarbonCommonConstants.DISTINCT_COUNT
-				.equalsIgnoreCase(aggregatorType)) {
-			switch (dataType) {
-			case INT:
-				return new DistinctCountAggregator();
-			default:
-				return new DistinctStringCountAggregator();
-			}
+          return new AvgDoubleAggregator();
+      }
+    }
+    //
+    else if (CarbonCommonConstants.DISTINCT_COUNT.equalsIgnoreCase(aggregatorType)) {
+      switch (dataType) {
+        case INT:
+          return new DistinctCountAggregator();
+        default:
+          return new DistinctStringCountAggregator();
+      }
 
-		} else if (CarbonCommonConstants.SUM.equalsIgnoreCase(aggregatorType)) {
-			switch (dataType) {
-			case LONG:
+    } else if (CarbonCommonConstants.SUM.equalsIgnoreCase(aggregatorType)) {
+      switch (dataType) {
+        case LONG:
 
-				return new SumLongAggregator();
-			case DECIMAL:
+          return new SumLongAggregator();
+        case DECIMAL:
 
-				return new SumBigDecimalAggregator();
-			default:
+          return new SumBigDecimalAggregator();
+        default:
 
-				return new SumDoubleAggregator();
-			}
-		} else if (CarbonCommonConstants.SUM_DISTINCT
-				.equalsIgnoreCase(aggregatorType)) {
-			switch (dataType) {
-			case LONG:
+          return new SumDoubleAggregator();
+      }
+    } else if (CarbonCommonConstants.SUM_DISTINCT.equalsIgnoreCase(aggregatorType)) {
+      switch (dataType) {
+        case LONG:
 
-				return new SumDistinctLongAggregator();
-			case DECIMAL:
+          return new SumDistinctLongAggregator();
+        case DECIMAL:
 
-				return new SumDistinctBigDecimalAggregator();
-			default:
+          return new SumDistinctBigDecimalAggregator();
+        default:
 
-				return new SumDistinctDoubleAggregator();
-			}
-		} else if (CarbonCommonConstants.DUMMY.equalsIgnoreCase(aggregatorType)) {
-			switch (dataType) {
-			case LONG:
+          return new SumDistinctDoubleAggregator();
+      }
+    } else if (CarbonCommonConstants.DUMMY.equalsIgnoreCase(aggregatorType)) {
+      switch (dataType) {
+        case LONG:
 
-				return new DummyLongAggregator();
-			case DECIMAL:
+          return new DummyLongAggregator();
+        case DECIMAL:
 
-				return new DummyBigDecimalAggregator();
-			default:
+          return new DummyBigDecimalAggregator();
+        default:
 
-				return new DummyDoubleAggregator();
-			}
-		} else {
-			return null;
-		}
-	}
+          return new DummyDoubleAggregator();
+      }
+    } else {
+      return null;
+    }
+  }
 }

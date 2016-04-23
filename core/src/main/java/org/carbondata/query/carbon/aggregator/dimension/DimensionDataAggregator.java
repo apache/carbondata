@@ -29,14 +29,12 @@ import org.carbondata.query.carbon.result.AbstractScannedResult;
  */
 public interface DimensionDataAggregator {
 
-	/**
-	 * Below method will be used to aggregate the dimension data
-	 * 
-	 * @param scannedResult
-	 *            scanned result
-	 * @param aggeragtor
-	 *            aggregator used to aggregate the data
-	 */
-	public abstract void aggregateDimensionData(
-			AbstractScannedResult scannedResult, MeasureAggregator[] aggeragtor);
+  /**
+   * Below method will be used to aggregate the dimension data
+   *
+   * @param scannedResult scanned result
+   * @param aggeragtor    aggregator used to aggregate the data
+   */
+  public abstract void aggregateDimensionData(AbstractScannedResult scannedResult,
+      MeasureAggregator[] aggeragtor);
 }

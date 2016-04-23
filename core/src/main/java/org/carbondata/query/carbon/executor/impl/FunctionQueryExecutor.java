@@ -23,15 +23,14 @@ import java.util.List;
 import org.carbondata.core.carbon.datastore.block.AbstractIndex;
 
 /**
- * This is to handle function query like 
- * count(1), as function query will be executed like 
+ * This is to handle function query like
+ * count(1), as function query will be executed like
  * count start query so it is extending the count star executor
- *
  */
-public class FunctionQueryExecutor extends CountStartExecutor{
+public class FunctionQueryExecutor extends CountStartExecutor {
 
-	public FunctionQueryExecutor(List<AbstractIndex> blockList) {
-		super(blockList);
-	}
+  public FunctionQueryExecutor(List<AbstractIndex> blockList) {
+    super(blockList);
+  }
 
 }

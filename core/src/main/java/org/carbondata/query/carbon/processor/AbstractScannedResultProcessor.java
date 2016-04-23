@@ -39,154 +39,140 @@ import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
  * Class which processed the scanned result
- * Processing can be merging sorting 
- *
+ * Processing can be merging sorting
  */
-public abstract class AbstractScannedResultProcessor implements
-		ScannedResultMerger {
+public abstract class AbstractScannedResultProcessor implements ScannedResultMerger {
 
-	/**
-	 * LOGGER
-	 */
-	private static final LogService LOGGER = LogServiceFactory
-			.getLogService(AbstractScannedResultProcessor.class.getName());
-	/**
-	 * merging will done using thread
-	 */
-	protected ExecutorService execService;
+  /**
+   * LOGGER
+   */
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(AbstractScannedResultProcessor.class.getName());
+  /**
+   * merging will done using thread
+   */
+  protected ExecutorService execService;
 
-	/**
-	 * Merged scanned result which will merge all the result from all the blocks
-	 * executor
-	 */
-	protected Result mergedScannedResult;
+  /**
+   * Merged scanned result which will merge all the result from all the blocks
+   * executor
+   */
+  protected Result mergedScannedResult;
 
-	/**
-	 * scanned result list
-	 */
-	protected List<Result> scannedResultList;
+  /**
+   * scanned result list
+   */
+  protected List<Result> scannedResultList;
 
-	/**
-	 * tableBlockExecutionInfo
-	 */
-	protected BlockExecutionInfo blockExecutionInfo;
+  /**
+   * tableBlockExecutionInfo
+   */
+  protected BlockExecutionInfo blockExecutionInfo;
 
-	/**
-	 * max number of scanned result can keep in memory
-	 */
-	private int maxNumberOfScannedResultList;
+  /**
+   * max number of scanned result can keep in memory
+   */
+  private int maxNumberOfScannedResultList;
 
-	/**
-	 * lockObject
-	 */
-	private Object lockObject;
+  /**
+   * lockObject
+   */
+  private Object lockObject;
 
-	public AbstractScannedResultProcessor(
-			BlockExecutionInfo blockExecutionInfo,
-			int maxNumberOfScannedresultList) {
+  public AbstractScannedResultProcessor(BlockExecutionInfo blockExecutionInfo,
+      int maxNumberOfScannedresultList) {
 
-		this.lockObject = new Object();
-		this.maxNumberOfScannedResultList = maxNumberOfScannedresultList;
-		initialiseResult();
-		execService = Executors.newFixedThreadPool(1);
-		scannedResultList = new ArrayList<Result>(
-				CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-		this.blockExecutionInfo=blockExecutionInfo;
-	}
+    this.lockObject = new Object();
+    this.maxNumberOfScannedResultList = maxNumberOfScannedresultList;
+    initialiseResult();
+    execService = Executors.newFixedThreadPool(1);
+    scannedResultList = new ArrayList<Result>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    this.blockExecutionInfo = blockExecutionInfo;
+  }
 
-	/**
-	 * for initializing the map based or list based result.
-	 */
-	protected void initialiseResult() {
-		if (!blockExecutionInfo.isDetailQuery()) {
-			mergedScannedResult = new MapBasedResult();
-		} else {
-			mergedScannedResult = new ListBasedResult();
-		}
-	}
+  /**
+   * for initializing the map based or list based result.
+   */
+  protected void initialiseResult() {
+    if (!blockExecutionInfo.isDetailQuery()) {
+      mergedScannedResult = new MapBasedResult();
+    } else {
+      mergedScannedResult = new ListBasedResult();
+    }
+  }
 
-	/**
-	 * Below method will be used to add the scanned result 
-	 * If number of scanned result in the list of more than
-	 * the maxNumberOfScannedResultList than results present in the 
-	 * list will be merged to merged scanned result 
-	 * 
-	 * @param scannedResult
-	 */
-	@Override
-	public void addScannedResult(Result scannedResult)
-			throws QueryExecutionException {
-		synchronized (this.lockObject) {
-			scannedResultList.add(scannedResult);
-			if ((scannedResultList.size() > maxNumberOfScannedResultList)) {
-				List<Result> localResult = scannedResultList;
-				scannedResultList = new ArrayList<Result>(
-						CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-				execService.submit(new MergerThread(localResult));
-			}
-		}
-	}
+  /**
+   * Below method will be used to add the scanned result
+   * If number of scanned result in the list of more than
+   * the maxNumberOfScannedResultList than results present in the
+   * list will be merged to merged scanned result
+   *
+   * @param scannedResult
+   */
+  @Override public void addScannedResult(Result scannedResult) throws QueryExecutionException {
+    synchronized (this.lockObject) {
+      scannedResultList.add(scannedResult);
+      if ((scannedResultList.size() > maxNumberOfScannedResultList)) {
+        List<Result> localResult = scannedResultList;
+        scannedResultList = new ArrayList<Result>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+        execService.submit(new MergerThread(localResult));
+      }
+    }
+  }
 
-	/**
-	 * Below method will be used to merge the scanned result
-	 * 
-	 * @param scannedResultList
-	 *            scanned result list
-	 */
-	protected void mergeScannedResults(List<Result> scannedResultList) {
-		long start = System.currentTimeMillis();
-		LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-				"Started a slice result merging");
+  /**
+   * Below method will be used to merge the scanned result
+   *
+   * @param scannedResultList scanned result list
+   */
+  protected void mergeScannedResults(List<Result> scannedResultList) {
+    long start = System.currentTimeMillis();
+    LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "Started a slice result merging");
 
-		for (int i = 0; i < scannedResultList.size(); i++) {
-			mergedScannedResult.merge(scannedResultList.get(i));
-		}
-		LOGGER.debug(
-				CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-				"Finished current slice result merging in time (MS) "
-						+ (System.currentTimeMillis() - start));
-	}
+    for (int i = 0; i < scannedResultList.size(); i++) {
+      mergedScannedResult.merge(scannedResultList.get(i));
+    }
+    LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
+        "Finished current slice result merging in time (MS) " + (System.currentTimeMillis()
+            - start));
+  }
 
-	/**
-	 * Thread class to merge the scanned result
-	 *
-	 */
-	private final class MergerThread implements Callable<Void> {
-		private List<Result> scannedResult;
+  /**
+   * Below method will be used to get the final query
+   * return
+   *
+   * @return iterator over result
+   */
+  @Override public CarbonIterator<Result> getQueryResultIterator() throws QueryExecutionException {
+    execService.shutdown();
+    try {
+      execService.awaitTermination(1, TimeUnit.DAYS);
+    } catch (InterruptedException e1) {
+      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
+          "Problem in thread termination" + e1.getMessage());
+    }
+    if (scannedResultList.size() > 0) {
+      mergeScannedResults(scannedResultList);
+      scannedResultList = null;
+    }
+    LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
+        "Finished result merging from all slices");
+    return new MemoryBasedResultIterator(mergedScannedResult);
+  }
 
-		private MergerThread(List<Result> scannedResult) {
-			this.scannedResult = scannedResult;
-		}
+  /**
+   * Thread class to merge the scanned result
+   */
+  private final class MergerThread implements Callable<Void> {
+    private List<Result> scannedResult;
 
-		@Override
-		public Void call() throws Exception {
-			mergeScannedResults(scannedResult);
-			return null;
-		}
-	}
-	
-	/**
-	 * Below method will be used to get the final query 
-	 * return 
-	 * @return iterator over result 
-	 * 
-	 */
-	@Override
-	public CarbonIterator<Result> getQueryResultIterator()
-			throws QueryExecutionException {
-		execService.shutdown();
-		try {
-			execService.awaitTermination(1, TimeUnit.DAYS);
-		} catch (InterruptedException e1) {
-			LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-					"Problem in thread termination" + e1.getMessage());
-		}
-		if (scannedResultList.size() > 0) {
-			mergeScannedResults(scannedResultList);
-			scannedResultList = null;
-		}
-		LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-				"Finished result merging from all slices");
-		return new MemoryBasedResultIterator(mergedScannedResult);
-	}
+    private MergerThread(List<Result> scannedResult) {
+      this.scannedResult = scannedResult;
+    }
+
+    @Override public Void call() throws Exception {
+      mergeScannedResults(scannedResult);
+      return null;
+    }
+  }
 }

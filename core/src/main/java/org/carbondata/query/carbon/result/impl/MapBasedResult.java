@@ -30,126 +30,112 @@ import org.carbondata.query.carbon.result.Result;
 import org.carbondata.query.carbon.wrappers.ByteArrayWrapper;
 
 /**
- * To store aggregated result 
- *
+ * To store aggregated result
  */
-public class MapBasedResult implements
-		Result<Map<ByteArrayWrapper, MeasureAggregator[]>> {
-	/**
-	 * iterator over result
-	 */
-	private Iterator<Entry<ByteArrayWrapper, MeasureAggregator[]>> resultIterator;
+public class MapBasedResult implements Result<Map<ByteArrayWrapper, MeasureAggregator[]>> {
+  /**
+   * iterator over result
+   */
+  private Iterator<Entry<ByteArrayWrapper, MeasureAggregator[]>> resultIterator;
 
-	/**
-	 * result entry
-	 */
-	private Entry<ByteArrayWrapper, MeasureAggregator[]> resultEntry;
+  /**
+   * result entry
+   */
+  private Entry<ByteArrayWrapper, MeasureAggregator[]> resultEntry;
 
-	/**
-	 * scanned result 
-	 */
-	private Map<ByteArrayWrapper, MeasureAggregator[]> scannerResult;
+  /**
+   * scanned result
+   */
+  private Map<ByteArrayWrapper, MeasureAggregator[]> scannerResult;
 
-	/**
-	 * total number of result 
-	 */
-	private int resulSize;
+  /**
+   * total number of result
+   */
+  private int resulSize;
 
-	public MapBasedResult() {
-		scannerResult = new HashMap<ByteArrayWrapper, MeasureAggregator[]>(
-				CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-		this.resultIterator = scannerResult.entrySet().iterator();
-	}
+  public MapBasedResult() {
+    scannerResult = new HashMap<ByteArrayWrapper, MeasureAggregator[]>(
+        CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    this.resultIterator = scannerResult.entrySet().iterator();
+  }
 
-	/**
-	 * @return the key 
-	 * 
-	 */
-	@Override
-	public ByteArrayWrapper getKey() {
-		resultEntry = this.resultIterator.next();
-		return resultEntry.getKey();
-	}
+  /**
+   * @return the key
+   */
+  @Override public ByteArrayWrapper getKey() {
+    resultEntry = this.resultIterator.next();
+    return resultEntry.getKey();
+  }
 
-	/**
-	 * return the value 
-	 */
-	@Override
-	public MeasureAggregator[] getValue() {
-		return resultEntry.getValue();
-	}
+  /**
+   * return the value
+   */
+  @Override public MeasureAggregator[] getValue() {
+    return resultEntry.getValue();
+  }
 
-	/**
-	 * Method to check more result is present 
-	 * or not  
-	 * 
-	 */
-	@Override
-	public boolean hasNext() {
-		return this.resultIterator.hasNext();
-	}
+  /**
+   * Method to check more result is present
+   * or not
+   */
+  @Override public boolean hasNext() {
+    return this.resultIterator.hasNext();
+  }
 
-	/***
-	 * below method will be used to merge the 
-	 * scanned result
-	 * @param otherResult
-	 * 			return to be merged 
-	 */
-	@Override
-	public void addScannedResult(
-			Map<ByteArrayWrapper, MeasureAggregator[]> scannerResult) {
-		this.scannerResult = scannerResult;
-		resulSize = scannerResult.size();
-		this.resultIterator = scannerResult.entrySet().iterator();
-	}
+  /***
+   * below method will be used to merge the
+   * scanned result
+   *
+   * @param otherResult return to be merged
+   */
+  @Override public void addScannedResult(Map<ByteArrayWrapper, MeasureAggregator[]> scannerResult) {
+    this.scannerResult = scannerResult;
+    resulSize = scannerResult.size();
+    this.resultIterator = scannerResult.entrySet().iterator();
+  }
 
-	/***
-	 * below method will be used to merge the 
-	 * scanned result, in case of map based the 
-	 * result we need to aggregate the result 
-	 * @param otherResult
-	 * 			return to be merged 
-	 */
-	@Override
-	public void merge(Result<Map<ByteArrayWrapper, MeasureAggregator[]>> result) {
-		ByteArrayWrapper key = null;
-		MeasureAggregator[] value = null;
-		Map<ByteArrayWrapper, MeasureAggregator[]> otherResult = result
-				.getResult();
-		if (otherResult != null) {
-			while (resultIterator.hasNext()) {
-				Entry<ByteArrayWrapper, MeasureAggregator[]> entry = resultIterator
-						.next();
-				key = entry.getKey();
-				value = entry.getValue();
-				MeasureAggregator[] agg = otherResult.get(key);
-				if (agg != null) {
-					for (int j = 0; j < agg.length; j++) {
-						agg[j].merge(value[j]);
-					}
-				} else {
-					otherResult.put(key, value);
-				}
-			}
-			resulSize = otherResult.size();
-			this.resultIterator = otherResult.entrySet().iterator();
-			this.scannerResult = otherResult;
-		}
-	}
+  /***
+   * below method will be used to merge the
+   * scanned result, in case of map based the
+   * result we need to aggregate the result
+   *
+   * @param otherResult return to be merged
+   */
+  @Override public void merge(Result<Map<ByteArrayWrapper, MeasureAggregator[]>> result) {
+    ByteArrayWrapper key = null;
+    MeasureAggregator[] value = null;
+    Map<ByteArrayWrapper, MeasureAggregator[]> otherResult = result.getResult();
+    if (otherResult != null) {
+      while (resultIterator.hasNext()) {
+        Entry<ByteArrayWrapper, MeasureAggregator[]> entry = resultIterator.next();
+        key = entry.getKey();
+        value = entry.getValue();
+        MeasureAggregator[] agg = otherResult.get(key);
+        if (agg != null) {
+          for (int j = 0; j < agg.length; j++) {
+            agg[j].merge(value[j]);
+          }
+        } else {
+          otherResult.put(key, value);
+        }
+      }
+      resulSize = otherResult.size();
+      this.resultIterator = otherResult.entrySet().iterator();
+      this.scannerResult = otherResult;
+    }
+  }
 
-	/**
-	 * Return the size of the result
-	 */
-	@Override
-	public int size() {
-		return resulSize;
-	}
+  /**
+   * Return the size of the result
+   */
+  @Override public int size() {
+    return resulSize;
+  }
 
-	/**
-	 * @return the complete result
-	 */
-	@Override
-	public Map<ByteArrayWrapper, MeasureAggregator[]> getResult() {
-		return this.scannerResult;
-	}
+  /**
+   * @return the complete result
+   */
+  @Override public Map<ByteArrayWrapper, MeasureAggregator[]> getResult() {
+    return this.scannerResult;
+  }
 }

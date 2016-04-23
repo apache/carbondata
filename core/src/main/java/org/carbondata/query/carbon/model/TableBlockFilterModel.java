@@ -25,69 +25,69 @@ import org.carbondata.core.carbon.datastore.IndexKey;
 import org.carbondata.query.evaluators.FilterEvaluator;
 
 /**
- * Table filter model which will be used to apply filter 
+ * Table filter model which will be used to apply filter
  */
-public class TableBlockFilterModel implements Serializable{
+public class TableBlockFilterModel implements Serializable {
 
-	/**
-	 * serialVersionUID
-	 */
-	private static final long serialVersionUID = 1L;
+  /**
+   * serialVersionUID
+   */
+  private static final long serialVersionUID = 1L;
 
-	/**
-	 * filter evaluator tree
-	 */
-	private FilterEvaluator filterEvaluatorTree;
-	
-	/**
-	 * start key for the filter 
-	 */
-	private IndexKey startKey;
-	
-	/**
-	 * end key for the filter
-	 */
-	private IndexKey endKey;
+  /**
+   * filter evaluator tree
+   */
+  private FilterEvaluator filterEvaluatorTree;
 
-	/**
-	 * @return the filterEvaluatorTree
-	 */
-	public FilterEvaluator getFilterEvaluatorTree() {
-		return filterEvaluatorTree;
-	}
+  /**
+   * start key for the filter
+   */
+  private IndexKey startKey;
 
-	/**
-	 * @param filterEvaluatorTree the filterEvaluatorTree to set
-	 */
-	public void setFilterEvaluatorTree(FilterEvaluator filterEvaluatorTree) {
-		this.filterEvaluatorTree = filterEvaluatorTree;
-	}
+  /**
+   * end key for the filter
+   */
+  private IndexKey endKey;
 
-	/**
-	 * @return the startKey
-	 */
-	public IndexKey getStartKey() {
-		return startKey;
-	}
+  /**
+   * @return the filterEvaluatorTree
+   */
+  public FilterEvaluator getFilterEvaluatorTree() {
+    return filterEvaluatorTree;
+  }
 
-	/**
-	 * @param startKey the startKey to set
-	 */
-	public void setStartKey(IndexKey startKey) {
-		this.startKey = startKey;
-	}
+  /**
+   * @param filterEvaluatorTree the filterEvaluatorTree to set
+   */
+  public void setFilterEvaluatorTree(FilterEvaluator filterEvaluatorTree) {
+    this.filterEvaluatorTree = filterEvaluatorTree;
+  }
 
-	/**
-	 * @return the endKey
-	 */
-	public IndexKey getEndKey() {
-		return endKey;
-	}
+  /**
+   * @return the startKey
+   */
+  public IndexKey getStartKey() {
+    return startKey;
+  }
 
-	/**
-	 * @param endKey the endKey to set
-	 */
-	public void setEndKey(IndexKey endKey) {
-		this.endKey = endKey;
-	}
+  /**
+   * @param startKey the startKey to set
+   */
+  public void setStartKey(IndexKey startKey) {
+    this.startKey = startKey;
+  }
+
+  /**
+   * @return the endKey
+   */
+  public IndexKey getEndKey() {
+    return endKey;
+  }
+
+  /**
+   * @param endKey the endKey to set
+   */
+  public void setEndKey(IndexKey endKey) {
+    this.endKey = endKey;
+  }
 }

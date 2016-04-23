@@ -9,20 +9,19 @@ import org.carbondata.query.carbon.result.Result;
  */
 public interface ScannedResultMerger {
 
-	/**
-     * Below method will be used to add the scanned result
-     *
-     * @param scannedResult     scanned result
-     * @throws QueryExecutionException
-     * 			throw exception in case of failure 
-     */
-    void addScannedResult(Result scannedResult) throws QueryExecutionException;
+  /**
+   * Below method will be used to add the scanned result
+   *
+   * @param scannedResult scanned result
+   * @throws QueryExecutionException throw exception in case of failure
+   */
+  void addScannedResult(Result scannedResult) throws QueryExecutionException;
 
-    /**
-     * Below method will be used to get the query result 
-     * @return query result
-     * @throws QueryExecutionException
-     * 			throw exception in case of any failure 
-     */
-    CarbonIterator<Result> getQueryResultIterator() throws QueryExecutionException;
+  /**
+   * Below method will be used to get the query result
+   *
+   * @return query result
+   * @throws QueryExecutionException throw exception in case of any failure
+   */
+  CarbonIterator<Result> getQueryResultIterator() throws QueryExecutionException;
 }

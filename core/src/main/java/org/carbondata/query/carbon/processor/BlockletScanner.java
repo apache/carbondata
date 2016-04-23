@@ -21,19 +21,18 @@ package org.carbondata.query.carbon.processor;
 import org.carbondata.query.carbon.result.AbstractScannedResult;
 import org.carbondata.query.carbon.scanner.BlocksChunkHolder;
 
-
 /**
  * Interface for processing the block
- * Processing can be filter based processing or non filter based processing  
+ * Processing can be filter based processing or non filter based processing
  */
 public interface BlockletScanner {
 
-	/**
-	 * Below method will used to process the block data and get the scanned result
-	 * @param blocksChunkHolder
-	 * 			block chunk which holds the block data 
-	 * @return scannerResult 
-	 * 			result after processing 
-	 */
-	AbstractScannedResult processBlockData(BlocksChunkHolder blocksChunkHolder);
+  /**
+   * Below method will used to process the block data and get the scanned result
+   *
+   * @param blocksChunkHolder block chunk which holds the block data
+   * @return scannerResult
+   * result after processing
+   */
+  AbstractScannedResult processBlockData(BlocksChunkHolder blocksChunkHolder);
 }

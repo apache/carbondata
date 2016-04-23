@@ -26,23 +26,21 @@ import org.carbondata.query.carbon.executor.infos.BlockExecutionInfo;
 import org.carbondata.query.carbon.result.Result;
 
 /**
- * Query executor interface which will be used to execute the 
- * query  
- *
+ * Query executor interface which will be used to execute the
+ * query
  */
 public interface InternalQueryExecutor {
 
-	/**
-	 * Method will be used to execute the query 
-	 * @param blockExecutionInfos
-	 * 			list of block execution info. 
-	 * 			execution info will have all the parameters required for
-	 * 			query execution
-	 * @param blockIndexToBeExecuted
-	 * 				index of the block to be executed
-	 * @return result iterator
-	 * @throws QueryExecutionException
-	 */
-	CarbonIterator<Result> executeQuery(List<BlockExecutionInfo> blockExecutionInfos, int[] blockIndexToBeExecuted)
-            throws QueryExecutionException;
+  /**
+   * Method will be used to execute the query
+   *
+   * @param blockExecutionInfos    list of block execution info.
+   *                               execution info will have all the parameters required for
+   *                               query execution
+   * @param blockIndexToBeExecuted index of the block to be executed
+   * @return result iterator
+   * @throws QueryExecutionException
+   */
+  CarbonIterator<Result> executeQuery(List<BlockExecutionInfo> blockExecutionInfos,
+      int[] blockIndexToBeExecuted) throws QueryExecutionException;
 }

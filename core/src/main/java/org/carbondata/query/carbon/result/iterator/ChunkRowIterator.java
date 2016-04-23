@@ -25,59 +25,56 @@ import org.carbondata.query.carbon.result.RowResult;
 
 /**
  * Iterator over row result
- *
  */
 public class ChunkRowIterator implements CarbonIterator<RowResult> {
 
-	/**
-	 * iterator over chunk result
-	 */
-	private CarbonIterator<ChunkResult> iterator;
+  /**
+   * iterator over chunk result
+   */
+  private CarbonIterator<ChunkResult> iterator;
 
-	/**
-	 * currect chunk
-	 */
-	private ChunkResult currentchunk;
+  /**
+   * currect chunk
+   */
+  private ChunkResult currentchunk;
 
-	public ChunkRowIterator(CarbonIterator<ChunkResult> iterator) {
-		this.iterator = iterator;
-		if (iterator.hasNext()) {
-			currentchunk = iterator.next();
-		}
-	}
+  public ChunkRowIterator(CarbonIterator<ChunkResult> iterator) {
+    this.iterator = iterator;
+    if (iterator.hasNext()) {
+      currentchunk = iterator.next();
+    }
+  }
 
-	/**
-	 * Returns {@code true} if the iteration has more elements. (In other words,
-	 * returns {@code true} if {@link #next} would return an element rather than
-	 * throwing an exception.)
-	 *
-	 * @return {@code true} if the iteration has more elements
-	 */
-	@Override
-	public boolean hasNext() {
-		if (null != currentchunk) {
-			if ((currentchunk.hasNext())) {
-				return true;
-			} else if (!currentchunk.hasNext()) {
-				while (iterator.hasNext()) {
-					currentchunk = iterator.next();
-					if (currentchunk != null && currentchunk.hasNext()) {
-						return true;
-					}
-				}
-			}
-		}
-		return false;
-	}
+  /**
+   * Returns {@code true} if the iteration has more elements. (In other words,
+   * returns {@code true} if {@link #next} would return an element rather than
+   * throwing an exception.)
+   *
+   * @return {@code true} if the iteration has more elements
+   */
+  @Override public boolean hasNext() {
+    if (null != currentchunk) {
+      if ((currentchunk.hasNext())) {
+        return true;
+      } else if (!currentchunk.hasNext()) {
+        while (iterator.hasNext()) {
+          currentchunk = iterator.next();
+          if (currentchunk != null && currentchunk.hasNext()) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
 
-	/**
-	 * Returns the next element in the iteration.
-	 *
-	 * @return the next element in the iteration
-	 */
-	@Override
-	public RowResult next() {
-		return currentchunk.next();
-	}
+  /**
+   * Returns the next element in the iteration.
+   *
+   * @return the next element in the iteration
+   */
+  @Override public RowResult next() {
+    return currentchunk.next();
+  }
 
 }

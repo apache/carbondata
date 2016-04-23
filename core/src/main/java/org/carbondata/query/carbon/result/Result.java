@@ -23,45 +23,49 @@ import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.carbon.wrappers.ByteArrayWrapper;
 
 /**
- * Result interface for storing the result 
+ * Result interface for storing the result
  */
 public interface Result<K> {
-	/**
-	 * Below method will be used to 
-	 * add the sccaed result
-	 * @param result
-	 */
-    void addScannedResult(K result);
+  /**
+   * Below method will be used to
+   * add the sccaed result
+   *
+   * @param result
+   */
+  void addScannedResult(K result);
 
-    /**
-     * Returns {@code true} if the iteration has more elements.
-     * @return {@code true} if the iteration has more elements
-     */
-    boolean hasNext();
+  /**
+   * Returns {@code true} if the iteration has more elements.
+   *
+   * @return {@code true} if the iteration has more elements
+   */
+  boolean hasNext();
 
-    /**
-     * Below method will return the result key 
-     * @return key 
-     */
-    ByteArrayWrapper getKey();
+  /**
+   * Below method will return the result key
+   *
+   * @return key
+   */
+  ByteArrayWrapper getKey();
 
-    /**
-     * Below code will return the result value
-     * @return value
-     */ 
-    MeasureAggregator[] getValue();
+  /**
+   * Below code will return the result value
+   *
+   * @return value
+   */
+  MeasureAggregator[] getValue();
 
-    void merge(Result<K> otherResult);
+  void merge(Result<K> otherResult);
 
-    /**
-     * Below method will be used to get the result 
-     * @return
-     */
-    K getResult();
-    
-    /**
-     * 
-     * @return size of the result 
-     */
-    int size();
+  /**
+   * Below method will be used to get the result
+   *
+   * @return
+   */
+  K getResult();
+
+  /**
+   * @return size of the result
+   */
+  int size();
 }

@@ -35,90 +35,83 @@ import org.carbondata.query.carbon.util.DataTypeUtil;
  * group is selected in query, This will be useful when multiple columns of same
  * row group is selected, so unpacking the row group tuple of for the column
  * will be done only once
- *
  */
 public class ColumnGroupDimensionsAggregator implements DimensionDataAggregator {
 
-	/**
-	 * info object which store information about dimension to be aggregated
-	 */
-	protected List<DimensionAggregatorInfo> dimensionAggeragtorInfo;
+  /**
+   * info object which store information about dimension to be aggregated
+   */
+  protected List<DimensionAggregatorInfo> dimensionAggeragtorInfo;
 
-	/**
-	 * this will be used to check whether dimension is present in current block
-	 * or not this will be useful in case of restructuring when new dimension
-	 * has been added so in older table block it will not present, so default
-	 * value will be used to aggregate the data.
-	 */
-	protected boolean isDimenionPresentInOldBlock;
+  /**
+   * this will be used to check whether dimension is present in current block
+   * or not this will be useful in case of restructuring when new dimension
+   * has been added so in older table block it will not present, so default
+   * value will be used to aggregate the data.
+   */
+  protected boolean isDimenionPresentInOldBlock;
 
-	/**
-	 * row group key generator which will be used to unpack the row group column
-	 * values
-	 */
-	private KeyGenerator columnGroupKeyGenerator;
+  /**
+   * row group key generator which will be used to unpack the row group column
+   * values
+   */
+  private KeyGenerator columnGroupKeyGenerator;
 
-	/**
-	 * index of the block in the file for this column group
-	 */
-	private int blockIndex;
+  /**
+   * index of the block in the file for this column group
+   */
+  private int blockIndex;
 
-	/**
-	 * dictinoanryInfo;
-	 */
-	private List<Dictionary> columnDictionary;
+  /**
+   * dictinoanryInfo;
+   */
+  private List<Dictionary> columnDictionary;
 
-	private int aggregatorStartIndexes;
+  private int aggregatorStartIndexes;
 
-	public ColumnGroupDimensionsAggregator(
-			List<DimensionAggregatorInfo> dimensionAggeragtorInfo,
-			KeyGenerator columnGroupKeyGenerator, int blockIndex,
-			List<Dictionary> columnDictionary, int aggregatorStartIndexes) {
+  public ColumnGroupDimensionsAggregator(List<DimensionAggregatorInfo> dimensionAggeragtorInfo,
+      KeyGenerator columnGroupKeyGenerator, int blockIndex, List<Dictionary> columnDictionary,
+      int aggregatorStartIndexes) {
 
-		this.dimensionAggeragtorInfo = dimensionAggeragtorInfo;
-		this.columnDictionary = columnDictionary;
-		this.columnGroupKeyGenerator = columnGroupKeyGenerator;
-		this.blockIndex=blockIndex;
-		this.aggregatorStartIndexes=aggregatorStartIndexes;
-	}
+    this.dimensionAggeragtorInfo = dimensionAggeragtorInfo;
+    this.columnDictionary = columnDictionary;
+    this.columnGroupKeyGenerator = columnGroupKeyGenerator;
+    this.blockIndex = blockIndex;
+    this.aggregatorStartIndexes = aggregatorStartIndexes;
+  }
 
-	/**
-	 * Below method will be used to aggregate the dimension data
-	 * 
-	 * @param scannedResult
-	 *            scanned result
-	 * @param aggeragtor
-	 *            aggregator used to aggregate the data
-	 */
-	@Override
-	public void aggregateDimensionData(AbstractScannedResult scannedResult,
-			MeasureAggregator[] aggeragtor) {
-		long[] surrogateKeyOfColumnGroup = null;
-		surrogateKeyOfColumnGroup = columnGroupKeyGenerator
-				.getKeyArray(scannedResult.getDimensionKey(blockIndex));
-		Object actualData = null;
-		int surrogate = 0;
-		int aggStartIndex=aggregatorStartIndexes;
-		for (int i = 0; i < dimensionAggeragtorInfo.size(); i++) {
-			surrogate = (int) surrogateKeyOfColumnGroup[dimensionAggeragtorInfo
-					.get(i).getDim().getColumnGroupOrdinal()];
+  /**
+   * Below method will be used to aggregate the dimension data
+   *
+   * @param scannedResult scanned result
+   * @param aggeragtor    aggregator used to aggregate the data
+   */
+  @Override public void aggregateDimensionData(AbstractScannedResult scannedResult,
+      MeasureAggregator[] aggeragtor) {
+    long[] surrogateKeyOfColumnGroup = null;
+    surrogateKeyOfColumnGroup =
+        columnGroupKeyGenerator.getKeyArray(scannedResult.getDimensionKey(blockIndex));
+    Object actualData = null;
+    int surrogate = 0;
+    int aggStartIndex = aggregatorStartIndexes;
+    for (int i = 0; i < dimensionAggeragtorInfo.size(); i++) {
+      surrogate = (int) surrogateKeyOfColumnGroup[dimensionAggeragtorInfo.get(i).getDim()
+          .getColumnGroupOrdinal()];
 
-			if (1 == surrogate) {
-				continue;
-			}
+      if (1 == surrogate) {
+        continue;
+      }
 
-			actualData = DataTypeUtil.getDataBasedOnDataType(
-					columnDictionary.get(i).getDictionaryValueForKey(
-							surrogate), dimensionAggeragtorInfo.get(i).getDim()
-							.getDataType());
-			if (null != actualData) {
-				continue;
-			}
-			for (int j = 0; j < dimensionAggeragtorInfo.get(i).getAggList()
-					.size(); j++) {
-				aggeragtor[aggStartIndex++].agg(actualData);
-			}
-		}
+      actualData = DataTypeUtil
+          .getDataBasedOnDataType(columnDictionary.get(i).getDictionaryValueForKey(surrogate),
+              dimensionAggeragtorInfo.get(i).getDim().getDataType());
+      if (null != actualData) {
+        continue;
+      }
+      for (int j = 0; j < dimensionAggeragtorInfo.get(i).getAggList().size(); j++) {
+        aggeragtor[aggStartIndex++].agg(actualData);
+      }
+    }
 
-	}
+  }
 }

@@ -28,52 +28,48 @@ import org.carbondata.query.carbon.result.AbstractScannedResult;
 
 /**
  * Class to aggregation the complex type of dimension
+ *
  * @TODO need to implement this class
  */
 public class ComplexDimensionAggregator implements DimensionDataAggregator {
 
-	/**
-	 * info object which store information about dimension to be aggregated
-	 */
-	protected DimensionAggregatorInfo dimensionAggeragtorInfo;
+  /**
+   * info object which store information about dimension to be aggregated
+   */
+  protected DimensionAggregatorInfo dimensionAggeragtorInfo;
 
-	/**
-	 * default which was added for new dimension after restructuring for the
-	 * older blocks
-	 */
-	protected Object defaultValue;
+  /**
+   * default which was added for new dimension after restructuring for the
+   * older blocks
+   */
+  protected Object defaultValue;
 
-	/**
-	 * dictinoanryInfo;
-	 */
-	private List<Dictionary> columnDictionary;
+  /**
+   * dictinoanryInfo;
+   */
+  private List<Dictionary> columnDictionary;
 
-	/**
-	 * parent block index 
-	 */
-	private int parentBlockIndex;
+  /**
+   * parent block index
+   */
+  private int parentBlockIndex;
 
-	public ComplexDimensionAggregator(
-			DimensionAggregatorInfo dimensionAggeragtorInfo,
-			Object defaultValue, List<Dictionary> columnDictionary,
-			int parentBlockIndex) {
-		this.dimensionAggeragtorInfo = dimensionAggeragtorInfo;
-		this.defaultValue = defaultValue;
-		this.parentBlockIndex = parentBlockIndex;
-		this.columnDictionary=columnDictionary;
-	}
+  public ComplexDimensionAggregator(DimensionAggregatorInfo dimensionAggeragtorInfo,
+      Object defaultValue, List<Dictionary> columnDictionary, int parentBlockIndex) {
+    this.dimensionAggeragtorInfo = dimensionAggeragtorInfo;
+    this.defaultValue = defaultValue;
+    this.parentBlockIndex = parentBlockIndex;
+    this.columnDictionary = columnDictionary;
+  }
 
-	/**
-	 * Below method will be used to aggregate the complex dimension data
-	 * 
-	 * @param scannedResult
-	 *            scanned result
-	 * @param aggeragtor
-	 *            aggregator used to aggregate the data
-	 */
-	@Override
-	public void aggregateDimensionData(AbstractScannedResult scannedResult,
-			MeasureAggregator[] aggeragtor) {
+  /**
+   * Below method will be used to aggregate the complex dimension data
+   *
+   * @param scannedResult scanned result
+   * @param aggeragtor    aggregator used to aggregate the data
+   */
+  @Override public void aggregateDimensionData(AbstractScannedResult scannedResult,
+      MeasureAggregator[] aggeragtor) {
 
-	}
+  }
 }

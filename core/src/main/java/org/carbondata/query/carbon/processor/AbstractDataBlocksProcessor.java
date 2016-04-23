@@ -22,40 +22,30 @@ import org.carbondata.query.carbon.executor.infos.BlockExecutionInfo;
 import org.carbondata.query.carbon.result.AbstractScannedResult;
 import org.carbondata.query.carbon.scanner.BlocksChunkHolder;
 
-public abstract class AbstractDataBlocksProcessor implements
-		BlockletScanner {
+public abstract class AbstractDataBlocksProcessor implements BlockletScanner {
 
-	protected AbstractScannedResult scannedResult;
+  protected AbstractScannedResult scannedResult;
 
-	protected BlockExecutionInfo tableBlockExecutionInfos;
+  protected BlockExecutionInfo tableBlockExecutionInfos;
 
-	public AbstractDataBlocksProcessor(
-			BlockExecutionInfo tableBlockExecutionInfos) {
-		this.tableBlockExecutionInfos = tableBlockExecutionInfos;
-	}
+  public AbstractDataBlocksProcessor(BlockExecutionInfo tableBlockExecutionInfos) {
+    this.tableBlockExecutionInfos = tableBlockExecutionInfos;
+  }
 
+  @Override public AbstractScannedResult processBlockData(BlocksChunkHolder blocksChunkHolder) {
+    fillKeyValue(blocksChunkHolder);
+    return scannedResult;
+  }
 
-	@Override
-	public AbstractScannedResult processBlockData(
-			BlocksChunkHolder blocksChunkHolder) {
-		fillKeyValue(blocksChunkHolder);
-		return scannedResult;
-	}
+  protected void fillKeyValue(BlocksChunkHolder blocksChunkHolder) {
+    scannedResult.reset();
+    scannedResult.setMeasureChunks(blocksChunkHolder.getDataBlock()
+        .getMeasureChunks(blocksChunkHolder.getFileReader(),
+            tableBlockExecutionInfos.getAllSelectedMeasureBlocksIndexes()));
+    scannedResult.setNumberOfRows(blocksChunkHolder.getDataBlock().nodeSize());
 
-	protected void fillKeyValue(BlocksChunkHolder blocksChunkHolder) {
-		scannedResult.reset();
-		scannedResult.setMeasureChunks(blocksChunkHolder.getDataBlock()
-				.getMeasureChunks(
-						blocksChunkHolder.getFileReader(),
-						tableBlockExecutionInfos
-								.getAllSelectedMeasureBlocksIndexes()));
-		scannedResult.setNumberOfRows(blocksChunkHolder.getDataBlock()
-				.nodeSize());
-
-		scannedResult.setDimensionChunks(blocksChunkHolder.getDataBlock()
-				.getDimensionChunks(
-						blocksChunkHolder.getFileReader(),
-						tableBlockExecutionInfos
-								.getAllSelectedDimensionBlocksIndexes()));
-	}
+    scannedResult.setDimensionChunks(blocksChunkHolder.getDataBlock()
+        .getDimensionChunks(blocksChunkHolder.getFileReader(),
+            tableBlockExecutionInfos.getAllSelectedDimensionBlocksIndexes()));
+  }
 }

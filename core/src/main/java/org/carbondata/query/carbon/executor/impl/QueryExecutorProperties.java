@@ -28,53 +28,53 @@ import org.carbondata.query.carbon.executor.infos.KeyStructureInfo;
 
 public class QueryExecutorProperties {
 
-	/**
-	 * table unique name
-	 */
-	protected String tableUniqueName;
-	
-	/**
-	 * list of blocks in which query will be executed
-	 */
-	protected List<AbstractIndex> dataBlocks;
+  /**
+   * table unique name
+   */
+  protected String tableUniqueName;
 
-	/**
-	 * holds the information required for updating the order block 
-	 * dictionary key  
-	 */
-	protected KeyStructureInfo keyStructureInfo;
+  /**
+   * list of blocks in which query will be executed
+   */
+  protected List<AbstractIndex> dataBlocks;
 
-	/**
-	 * as we have multiple type of column aggregation like
-	 * dimension,expression,measure so this will be used to for getting the
-	 * measure aggregation start index
-	 */
-    protected int measureStartIndex;
-    
-    /**
-     * query like count(1),count(*) ,etc will used this parameter 
-     */
-    protected boolean isFunctionQuery;
-    
-    /**
-     * aggExpressionStartIndex
-     */
-    protected int aggExpressionStartIndex;
+  /**
+   * holds the information required for updating the order block
+   * dictionary key
+   */
+  protected KeyStructureInfo keyStructureInfo;
 
-    /**
-     * index of the dimension which is present in the order by 
-     * in a query  
-     */
-    protected byte[] sortDimIndexes;
-    
-    /**
-     * aggregator class selected for all aggregation function selected in query
-     */
-    protected MeasureAggregator[] measureAggregators;
-    
-    /**
-     * this will hold the information about the dictionary dimension 
-     * which to 
-     */
-    protected Map<String,Dictionary> columnToDictionayMapping;
+  /**
+   * as we have multiple type of column aggregation like
+   * dimension,expression,measure so this will be used to for getting the
+   * measure aggregation start index
+   */
+  protected int measureStartIndex;
+
+  /**
+   * query like count(1),count(*) ,etc will used this parameter
+   */
+  protected boolean isFunctionQuery;
+
+  /**
+   * aggExpressionStartIndex
+   */
+  protected int aggExpressionStartIndex;
+
+  /**
+   * index of the dimension which is present in the order by
+   * in a query
+   */
+  protected byte[] sortDimIndexes;
+
+  /**
+   * aggregator class selected for all aggregation function selected in query
+   */
+  protected MeasureAggregator[] measureAggregators;
+
+  /**
+   * this will hold the information about the dictionary dimension
+   * which to
+   */
+  protected Map<String, Dictionary> columnToDictionayMapping;
 }

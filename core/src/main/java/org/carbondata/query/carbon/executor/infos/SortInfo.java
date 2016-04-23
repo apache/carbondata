@@ -6,99 +6,99 @@ import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 
 public class SortInfo {
 
-	/**
-	 * sorting order of a dimension 
-	 */
-	private byte[] dimensionSortOrder;
-	
-	/**
-	 * byte range of each dimension present in the order by
-	 */
-	private int[][] maskedByteRangeForSorting;
-	
-	/**
-	 * dimension indexes which is used in order bye
-	 */
-	private byte[] sortDimensionIndex;
-	
-	/**
-	 * mask key of each dimension 
-	 * this will be used to sort the dimension
-	 */
-	private byte[][] dimensionMaskKeyForSorting;
-	
-	/**
-	 * sortDimension
-	 */
-	private List<CarbonDimension> sortDimension;
+  /**
+   * sorting order of a dimension
+   */
+  private byte[] dimensionSortOrder;
 
-	/**
-	 * @return the dimensionSortOrder
-	 */
-	public byte[] getDimensionSortOrder() {
-		return dimensionSortOrder;
-	}
+  /**
+   * byte range of each dimension present in the order by
+   */
+  private int[][] maskedByteRangeForSorting;
 
-	/**
-	 * @param dimensionSortOrder the dimensionSortOrder to set
-	 */
-	public void setDimensionSortOrder(byte[] dimensionSortOrder) {
-		this.dimensionSortOrder = dimensionSortOrder;
-	}
+  /**
+   * dimension indexes which is used in order bye
+   */
+  private byte[] sortDimensionIndex;
 
-	/**
-	 * @return the maskedByteRangeForSorting
-	 */
-	public int[][] getMaskedByteRangeForSorting() {
-		return maskedByteRangeForSorting;
-	}
+  /**
+   * mask key of each dimension
+   * this will be used to sort the dimension
+   */
+  private byte[][] dimensionMaskKeyForSorting;
 
-	/**
-	 * @param maskedByteRangeForSorting the maskedByteRangeForSorting to set
-	 */
-	public void setMaskedByteRangeForSorting(int[][] maskedByteRangeForSorting) {
-		this.maskedByteRangeForSorting = maskedByteRangeForSorting;
-	}
+  /**
+   * sortDimension
+   */
+  private List<CarbonDimension> sortDimension;
 
-	/**
-	 * @return the sortDimensionIndex
-	 */
-	public byte[] getSortDimensionIndex() {
-		return sortDimensionIndex;
-	}
+  /**
+   * @return the dimensionSortOrder
+   */
+  public byte[] getDimensionSortOrder() {
+    return dimensionSortOrder;
+  }
 
-	/**
-	 * @param sortDimensionIndex the sortDimensionIndex to set
-	 */
-	public void setSortDimensionIndex(byte[] sortDimensionIndex) {
-		this.sortDimensionIndex = sortDimensionIndex;
-	}
+  /**
+   * @param dimensionSortOrder the dimensionSortOrder to set
+   */
+  public void setDimensionSortOrder(byte[] dimensionSortOrder) {
+    this.dimensionSortOrder = dimensionSortOrder;
+  }
 
-	/**
-	 * @return the dimensionMaskKeyForSorting
-	 */
-	public byte[][] getDimensionMaskKeyForSorting() {
-		return dimensionMaskKeyForSorting;
-	}
+  /**
+   * @return the maskedByteRangeForSorting
+   */
+  public int[][] getMaskedByteRangeForSorting() {
+    return maskedByteRangeForSorting;
+  }
 
-	/**
-	 * @param dimensionMaskKeyForSorting the dimensionMaskKeyForSorting to set
-	 */
-	public void setDimensionMaskKeyForSorting(byte[][] dimensionMaskKeyForSorting) {
-		this.dimensionMaskKeyForSorting = dimensionMaskKeyForSorting;
-	}
+  /**
+   * @param maskedByteRangeForSorting the maskedByteRangeForSorting to set
+   */
+  public void setMaskedByteRangeForSorting(int[][] maskedByteRangeForSorting) {
+    this.maskedByteRangeForSorting = maskedByteRangeForSorting;
+  }
 
-	/**
-	 * @return the sortDimension
-	 */
-	public List<CarbonDimension> getSortDimension() {
-		return sortDimension;
-	}
+  /**
+   * @return the sortDimensionIndex
+   */
+  public byte[] getSortDimensionIndex() {
+    return sortDimensionIndex;
+  }
 
-	/**
-	 * @param sortDimension the sortDimension to set
-	 */
-	public void setSortDimension(List<CarbonDimension> sortDimension) {
-		this.sortDimension = sortDimension;
-	}
+  /**
+   * @param sortDimensionIndex the sortDimensionIndex to set
+   */
+  public void setSortDimensionIndex(byte[] sortDimensionIndex) {
+    this.sortDimensionIndex = sortDimensionIndex;
+  }
+
+  /**
+   * @return the dimensionMaskKeyForSorting
+   */
+  public byte[][] getDimensionMaskKeyForSorting() {
+    return dimensionMaskKeyForSorting;
+  }
+
+  /**
+   * @param dimensionMaskKeyForSorting the dimensionMaskKeyForSorting to set
+   */
+  public void setDimensionMaskKeyForSorting(byte[][] dimensionMaskKeyForSorting) {
+    this.dimensionMaskKeyForSorting = dimensionMaskKeyForSorting;
+  }
+
+  /**
+   * @return the sortDimension
+   */
+  public List<CarbonDimension> getSortDimension() {
+    return sortDimension;
+  }
+
+  /**
+   * @param sortDimension the sortDimension to set
+   */
+  public void setSortDimension(List<CarbonDimension> sortDimension) {
+    this.sortDimension = sortDimension;
+  }
 }

@@ -22,22 +22,22 @@ import org.carbondata.query.carbon.result.AbstractScannedResult;
 import org.carbondata.query.carbon.result.Result;
 
 /**
- * Interface which will be used to aggregate the scan result 
- *
+ * Interface which will be used to aggregate the scan result
  */
 public interface ScannedResultAggregator {
-	
-	/**
-	 * Below method will be used to aggregate the scanned result 
-	 * @param scannedResult
-	 * 			scanned result
-	 * @return how many records was aggregated
-	 */
-	 int aggregateData(AbstractScannedResult scannedResult);
 
-	 /**
-	  * Below method will be used to get the aggregated result
-	  * @return
-	  */
-	 Result getAggregatedResult();
+  /**
+   * Below method will be used to aggregate the scanned result
+   *
+   * @param scannedResult scanned result
+   * @return how many records was aggregated
+   */
+  int aggregateData(AbstractScannedResult scannedResult);
+
+  /**
+   * Below method will be used to get the aggregated result
+   *
+   * @return
+   */
+  Result getAggregatedResult();
 }

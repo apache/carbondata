@@ -20,14 +20,13 @@
 package org.carbondata.query.carbon.scanner;
 
 /**
- * Scanner interface which will be used 
+ * Scanner interface which will be used
  * to scan the blocks.
- *
  */
 public interface BlockProcessor {
 
-	/**
-	 * Below method can be used to scan the block based on the query execution infos
-	 */
-	void processBlock();
+  /**
+   * Below method can be used to scan the block based on the query execution infos
+   */
+  void processBlock();
 }

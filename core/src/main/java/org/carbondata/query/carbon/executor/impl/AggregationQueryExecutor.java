@@ -24,22 +24,21 @@ import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.CarbonProperties;
 
 /**
- * Below class will be used to execute the aggregated query 
- *
+ * Below class will be used to execute the aggregated query
  */
 public class AggregationQueryExecutor extends AbstractInternalQueryExecutor {
 
-	public AggregationQueryExecutor() {
+  public AggregationQueryExecutor() {
 
-		// get the number of core can be used to execute the query 
-		try {
-			numberOfCores = Integer.parseInt(CarbonProperties.getInstance()
-					.getProperty(CarbonCommonConstants.NUM_CORES,
-							CarbonCommonConstants.NUM_CORES_DEFAULT_VAL));
-		} catch (NumberFormatException e) {
-			numberOfCores = 1;
-		}
-		// create thread pool
-		execService = Executors.newFixedThreadPool(numberOfCores);
-	}
+    // get the number of core can be used to execute the query
+    try {
+      numberOfCores = Integer.parseInt(CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.NUM_CORES,
+              CarbonCommonConstants.NUM_CORES_DEFAULT_VAL));
+    } catch (NumberFormatException e) {
+      numberOfCores = 1;
+    }
+    // create thread pool
+    execService = Executors.newFixedThreadPool(numberOfCores);
+  }
 }

@@ -41,75 +41,68 @@ import org.carbondata.query.carbon.processor.impl.NonFilterScanner;
  */
 public abstract class AbstractDataBlockProcessor implements BlockProcessor {
 
-	private static final LogService LOGGER = LogServiceFactory
-			.getLogService(AbstractDataBlockProcessor.class.getName());
-	/**
-	 * iterator which will be used to iterate over data blocks
-	 */
-	protected CarbonIterator<DataRefNode> dataBlockIterator;
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(AbstractDataBlockProcessor.class.getName());
+  /**
+   * iterator which will be used to iterate over data blocks
+   */
+  protected CarbonIterator<DataRefNode> dataBlockIterator;
 
-	/**
-	 * execution details
-	 */
-	protected BlockExecutionInfo blockExecutionInfo;
+  /**
+   * execution details
+   */
+  protected BlockExecutionInfo blockExecutionInfo;
 
-	/**
-	 * result aggregator which will be used to aggregate the scanned result
-	 */
-	protected ScannedResultAggregator scannerResultAggregator;
+  /**
+   * result aggregator which will be used to aggregate the scanned result
+   */
+  protected ScannedResultAggregator scannerResultAggregator;
 
-	/**
-	 * processor which will be used to process the block processing can be
-	 * filter processing or non filter processing
-	 */
-	protected BlockletScanner blockletScanner;
+  /**
+   * processor which will be used to process the block processing can be
+   * filter processing or non filter processing
+   */
+  protected BlockletScanner blockletScanner;
 
-	/**
-	 * to hold the data block
-	 */
-	protected BlocksChunkHolder blocksChunkHolder;
+  /**
+   * to hold the data block
+   */
+  protected BlocksChunkHolder blocksChunkHolder;
 
-	public AbstractDataBlockProcessor(
-			BlockExecutionInfo blockExecutionInfo, FileHolder fileReader) {
-		this.blockExecutionInfo = blockExecutionInfo;
-		dataBlockIterator = new DataBlocksIterator(
-				blockExecutionInfo.getFirstDataBlock(),
-				blockExecutionInfo.getNumberOfBlockToScan());
-		blocksChunkHolder = new BlocksChunkHolder(
-				blockExecutionInfo.getTotalNumberDimensionBlock(),
-				blockExecutionInfo.getTotalNumberOfMeasureBlock());
-		blocksChunkHolder.setFileReader(fileReader);
+  public AbstractDataBlockProcessor(BlockExecutionInfo blockExecutionInfo, FileHolder fileReader) {
+    this.blockExecutionInfo = blockExecutionInfo;
+    dataBlockIterator = new DataBlocksIterator(blockExecutionInfo.getFirstDataBlock(),
+        blockExecutionInfo.getNumberOfBlockToScan());
+    blocksChunkHolder = new BlocksChunkHolder(blockExecutionInfo.getTotalNumberDimensionBlock(),
+        blockExecutionInfo.getTotalNumberOfMeasureBlock());
+    blocksChunkHolder.setFileReader(fileReader);
 
-		if (blockExecutionInfo.getFilterEvaluatorTree() != null) {
-			blockletScanner = new FilterScanner(blockExecutionInfo);
-		} else {
-			blockletScanner = new NonFilterScanner(
-					blockExecutionInfo);
-		}
+    if (blockExecutionInfo.getFilterEvaluatorTree() != null) {
+      blockletScanner = new FilterScanner(blockExecutionInfo);
+    } else {
+      blockletScanner = new NonFilterScanner(blockExecutionInfo);
+    }
 
-		if (blockExecutionInfo.isDetailQuery()) {
-			this.scannerResultAggregator = new ListBasedResultAggregator(
-					blockExecutionInfo, new DataAggregator(
-							blockExecutionInfo));
-		} else {
-			this.scannerResultAggregator = new MapBasedResultAggregator(
-					blockExecutionInfo, new DataAggregator(
-							blockExecutionInfo));
-		}
-	}
+    if (blockExecutionInfo.isDetailQuery()) {
+      this.scannerResultAggregator =
+          new ListBasedResultAggregator(blockExecutionInfo, new DataAggregator(blockExecutionInfo));
+    } else {
+      this.scannerResultAggregator =
+          new MapBasedResultAggregator(blockExecutionInfo, new DataAggregator(blockExecutionInfo));
+    }
+  }
 
-	/**
-	 * Below method will be used to add the scanned result to scanned result
-	 * processor
-	 */
-	protected void finishScanning() {
-		try {
-			this.blockExecutionInfo.getScannedResultProcessor()
-					.addScannedResult(
-							scannerResultAggregator.getAggregatedResult());
-		} catch (QueryExecutionException e) {
-			LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e,
-					"Problem while adding the result to Scanned Result Processor");
-		}
-	}
+  /**
+   * Below method will be used to add the scanned result to scanned result
+   * processor
+   */
+  protected void finishScanning() {
+    try {
+      this.blockExecutionInfo.getScannedResultProcessor()
+          .addScannedResult(scannerResultAggregator.getAggregatedResult());
+    } catch (QueryExecutionException e) {
+      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e,
+          "Problem while adding the result to Scanned Result Processor");
+    }
+  }
 }

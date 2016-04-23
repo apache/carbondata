@@ -30,54 +30,44 @@ import org.carbondata.query.aggregator.MeasureAggregator;
  * Used for custom Carbon Aggregator dummy
  */
 public abstract class AbstractMeasureAggregatorDummy extends AbstractMeasureAggregatorBasic {
-    private static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 1L;
 
-    @Override
-    public int compareTo(MeasureAggregator o) {
-        if (equals(o)) {
-            return 0;
-        }
-        return -1;
+  @Override public int compareTo(MeasureAggregator o) {
+    if (equals(o)) {
+      return 0;
     }
+    return -1;
+  }
 
-    @Override
-    public boolean equals(Object arg0) {
-        return super.equals(arg0);
-    }
+  @Override public boolean equals(Object arg0) {
+    return super.equals(arg0);
+  }
 
-    @Override
-    public int hashCode() {
-        return super.hashCode();
-    }
+  @Override public int hashCode() {
+    return super.hashCode();
+  }
 
-    @Override
-    public byte[] getByteArray() {
-        return null;
-    }
+  @Override public byte[] getByteArray() {
+    return null;
+  }
 
-    @Override
-    public void merge(MeasureAggregator aggregator) {
-    }
+  @Override public void merge(MeasureAggregator aggregator) {
+  }
 
-    @Override
-    public boolean isFirstTime() {
-        return false;
-    }
+  @Override public boolean isFirstTime() {
+    return false;
+  }
 
-    @Override
-    public MeasureAggregator getCopy() {
-        return null;
-    }
+  @Override public MeasureAggregator getCopy() {
+    return null;
+  }
 
-    @Override
-    public void writeData(DataOutput output) throws IOException {
-    }
+  @Override public void writeData(DataOutput output) throws IOException {
+  }
 
-    @Override
-    public void readData(DataInput inPut) throws IOException {
-    }
+  @Override public void readData(DataInput inPut) throws IOException {
+  }
 
-    @Override
-    public void merge(byte[] value) {
-    }
+  @Override public void merge(byte[] value) {
+  }
 }
