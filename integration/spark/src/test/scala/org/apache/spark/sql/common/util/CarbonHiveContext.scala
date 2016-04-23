@@ -29,7 +29,7 @@ import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.util.CarbonProperties
 import org.carbondata.integration.spark.load.CarbonLoaderUtil
 
-class LocalSQLContext(hdfsCarbonBasePath: String)
+class LocalSQLContext(val hdfsCarbonBasePath: String)
   extends CarbonContext(new SparkContext(new SparkConf()
     .setAppName("CarbonSpark")
     .setMaster("local[2]")), hdfsCarbonBasePath) {
