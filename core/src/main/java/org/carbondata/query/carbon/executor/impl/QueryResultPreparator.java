@@ -1,0 +1,374 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+package org.carbondata.query.carbon.executor.impl;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
+import org.carbondata.common.logging.LogService;
+import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.carbon.metadata.encoder.Encoding;
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.query.aggregator.MeasureAggregator;
+import org.carbondata.query.aggregator.impl.CountAggregator;
+import org.carbondata.query.aggregator.impl.DistinctCountAggregator;
+import org.carbondata.query.aggregator.impl.DistinctStringCountAggregator;
+import org.carbondata.query.carbon.model.DimensionAggregatorInfo;
+import org.carbondata.query.carbon.model.QueryModel;
+import org.carbondata.query.carbon.result.ChunkResult;
+import org.carbondata.query.carbon.result.Result;
+import org.carbondata.query.carbon.util.DataTypeUtil;
+import org.carbondata.query.carbon.wrappers.ByteArrayWrapper;
+import org.carbondata.query.scanner.impl.CarbonKey;
+import org.carbondata.query.scanner.impl.CarbonValue;
+import org.carbondata.query.util.CarbonEngineLogEvent;
+
+/**
+ * Below class will be used to get the result by converting to actual data
+ * Actual data conversion can be converting the surrogate key to actual data
+ * 
+ * @TODO there are many things in class which is very confusing, need to check
+ *       why it was handled like that and how we can handle that in a better
+ *       way.Need to revisit this class. IF aggregation is push down to spark
+ *       layer and if we can process the data in byte array format then this
+ *       class wont be useful so in future we can delete this class.
+ * @TODO need to expose one interface which will return the result based on required type 
+ * 		 for example its implementation case return converted result or directly result with out 
+ * 		converting to actual value 
+ * 
+ *
+ */
+public class QueryResultPreparator {
+
+	private static final LogService LOGGER = LogServiceFactory
+			.getLogService(QueryResultPreparator.class.getName());
+
+	/**
+	 * query properties
+	 */
+	private QueryExecutorProperties queryExecuterProperties;
+
+	/**
+	 * query model
+	 */
+	private QueryModel queryModel;
+
+	public QueryResultPreparator(QueryExecutorProperties executerProperties,
+			QueryModel queryModel) {
+		this.queryExecuterProperties = executerProperties;
+		this.queryModel = queryModel;
+	}
+
+	/**
+	 * this is to avoid the enum comparison , as every time we need to check
+	 * whether its a no dictionary column or dictionary column
+	 * 
+	 * @param queryDimension
+	 * @return byte array specify 0- dictionary column, 1 no dictionary column
+	 */
+	private byte[] getDimensionType(List<CarbonDimension> queryDimension) {
+		byte[] type = new byte[queryDimension.size()];
+		for (int i = 0; i < queryDimension.size(); i++) {
+			if (!queryDimension.get(i).getEncoder()
+					.contains(Encoding.DICTIONARY)) {
+				type[i] = 1;
+			}
+		}
+		return type;
+	}
+
+	public ChunkResult getQueryResult(Result scannedResult) {
+		if ((null == scannedResult || scannedResult.size() < 1)) {
+			return new ChunkResult();
+		}
+		List<CarbonDimension> queryDimension = queryModel.getQueryDimension();
+		int dimensionCount = queryDimension.size();
+		int totalNumberOfColumn = dimensionCount
+				+ queryExecuterProperties.measureAggregators.length;
+		Object[][] resultData = new Object[scannedResult.size()][totalNumberOfColumn];
+		if (!queryExecuterProperties.isFunctionQuery
+				&& totalNumberOfColumn == 0 && scannedResult.size() > 0) {
+			return getEmptyChunkResult(scannedResult.size());
+		}
+		int currentRow = 0;
+		long[] surrogateResult = null;
+		int noDictionaryColumnIndex = 0;
+		ByteArrayWrapper key = null;
+		MeasureAggregator[] value = null;
+		byte[] dimensionType = getDimensionType(queryDimension);
+		while (scannedResult.hasNext()) {
+			key = scannedResult.getKey();
+			value = scannedResult.getValue();
+			surrogateResult = queryExecuterProperties.keyStructureInfo
+					.getKeyGenerator().getKeyArray(key.getDictionaryKey());
+			for (int i = 0; i < dimensionCount; i++) {
+				if (dimensionType[i] == 1) {
+					resultData[currentRow][i] = DataTypeUtil
+							.getDataBasedOnDataType(
+									new String(
+											key.getNoDictionaryKeyByIndex(noDictionaryColumnIndex++)),
+									queryDimension.get(i).getDataType());
+				}
+				resultData[currentRow][i] = (int) surrogateResult[queryDimension
+						.get(i).getKeyOrdinal()];
+			}
+
+			// @TODO need to check why it was handled like this
+			if (queryExecuterProperties.isFunctionQuery) {
+				switch (queryModel.getQueryDimension().get(0).getDataType()) {
+				case LONG:
+					return getEmptyChunkResult(value[0].getLongValue()
+							.intValue());
+				case DECIMAL:
+					return getEmptyChunkResult(value[0].getBigDecimalValue()
+							.intValue());
+				default:
+					return getEmptyChunkResult(value[0].getDoubleValue()
+							.intValue());
+				}
+			}
+			for (int i = 0; i < queryExecuterProperties.measureAggregators.length; i++) {
+				resultData[currentRow][dimensionCount + i] = value[i];
+			}
+		}
+		if (resultData.length > 0) {
+			resultData = encodeToRows(resultData);
+		}
+		return getResult(queryModel, resultData, dimensionType);
+	}
+
+	private ChunkResult getResult(QueryModel queryModel,
+			Object[][] convertedResult, byte[] dimensionType) {
+
+		List<CarbonKey> keys = new ArrayList<CarbonKey>(
+				CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+		List<CarbonValue> values = new ArrayList<CarbonValue>(
+				CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+		List<CarbonDimension> queryDimensions = queryModel.getQueryDimension();
+		int dimensionCount = queryDimensions.size();
+		int msrCount = queryExecuterProperties.measureAggregators.length;
+		Object[][] resultDataA = null;
+		// @TODO no sure why this check is here as in the caller of this method
+		// is returning in case of
+		// function query. Need to confirm with other developer who handled this
+		// scneario
+		if (queryExecuterProperties.isFunctionQuery) {
+			msrCount = 1;
+			resultDataA = new Object[dimensionCount + msrCount][msrCount];
+		} else {
+			resultDataA = new Object[dimensionCount + msrCount][convertedResult[0].length];
+		}
+		Object[] row = null;
+		CarbonDimension queryDimension = null;
+		for (int columnIndex = 0; columnIndex < resultDataA[0].length; columnIndex++) {
+			row = new Object[dimensionCount + msrCount];
+			for (int i = 0; i < dimensionCount; i++) {
+				queryDimension = queryDimensions.get(i);
+				if (dimensionType[i] == 1) {
+					row[queryDimension.getQueryOrder()] = convertedResult[i][columnIndex];
+				} else {
+					if (queryExecuterProperties.sortDimIndexes[i] == 1) {
+						row[queryDimension.getQueryOrder()] = queryExecuterProperties.columnToDictionayMapping
+								.get(queryDimension.getColumnId())
+								.getDictionaryValueFromSortedIndex(
+										(Integer) convertedResult[i][columnIndex]);
+					} else {
+						row[queryDimension.getQueryOrder()] = queryExecuterProperties.columnToDictionayMapping
+								.get(queryDimension.getColumnId())
+								.getDictionaryValueForKey(
+										(Integer) convertedResult[i][columnIndex]);
+					}
+
+				}
+			}
+			MeasureAggregator[] msrAgg = new MeasureAggregator[queryExecuterProperties.measureAggregators.length];
+
+			fillMeasureValueForAggGroupByQuery(queryModel, convertedResult,
+					dimensionCount, columnIndex, msrAgg);
+			fillDimensionAggValue(queryModel, convertedResult, dimensionCount,
+					columnIndex, msrAgg);
+
+			if (!queryModel.isDetailQuery()) {
+				for (int i = 0; i < queryModel.getQueryMeasures().size(); i++) {
+					row[queryModel.getQueryMeasures().get(i).getQueryOrder()] = msrAgg[queryExecuterProperties.measureStartIndex
+							+ i].get();
+				}
+				int index = 0;
+				for (int i = 0; i < queryModel.getDimAggregationInfo().size(); i++) {
+					DimensionAggregatorInfo dimensionAggregatorInfo = queryModel
+							.getDimAggregationInfo().get(i);
+					for (int j = 0; j < dimensionAggregatorInfo.getOrderList()
+							.size(); j++) {
+						row[dimensionAggregatorInfo.getOrderList().get(j)] = msrAgg[index++]
+								.get();
+					}
+				}
+				for (int i = 0; i < queryModel.getExpressions().size(); i++) {
+					row[queryModel.getExpressions().get(i).getQueryOrder()] = ((MeasureAggregator) convertedResult[dimensionCount
+							+ queryExecuterProperties.aggExpressionStartIndex
+							+ i][columnIndex]).get();
+				}
+			}
+
+			CarbonMeasure msr = null;
+			for (int i = 0; i < queryModel.getQueryMeasures().size(); i++) {
+				msr = queryModel.getQueryMeasures().get(i);
+				if (msrAgg[queryExecuterProperties.measureStartIndex + i]
+						.isFirstTime()
+						&& (msr.getAggregateFunction().equals(
+								CarbonCommonConstants.COUNT) || msr
+								.getAggregateFunction().equals(
+										CarbonCommonConstants.DISTINCT_COUNT))) {
+					row[msr.getQueryOrder()] = 0.0;
+				} else if (msrAgg[queryExecuterProperties.measureStartIndex + i]
+						.isFirstTime()) {
+					row[msr.getQueryOrder()] = null;
+				} else {
+					Object msrVal;
+					switch (msr.getDataType()) {
+					case LONG:
+						msrVal = msrAgg[queryExecuterProperties.measureStartIndex
+								+ i].getLongValue();
+						break;
+					case DECIMAL:
+						msrVal = msrAgg[queryExecuterProperties.measureStartIndex
+								+ i].getBigDecimalValue();
+						break;
+					default:
+						msrVal = msrAgg[queryExecuterProperties.measureStartIndex
+								+ i].getDoubleValue();
+					}
+					row[msr.getQueryOrder()] = DataTypeUtil
+							.getMeasureDataBasedOnDataType(
+									msrVal == null ? null : msrVal,
+									msr.getDataType());
+				}
+			}
+			values.add(new CarbonValue(new MeasureAggregator[0]));
+			keys.add(new CarbonKey(row));
+		}
+		LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
+				"###########################################------ Total Number of records"
+						+ resultDataA[0].length);
+		ChunkResult chunkResult = new ChunkResult();
+		chunkResult.setKeys(keys);
+		chunkResult.setValues(values);
+		return chunkResult;
+	}
+
+	private void fillMeasureValueForAggGroupByQuery(QueryModel queryModel,
+			Object[][] surrogateResult, int dimensionCount, int columnIndex,
+			MeasureAggregator[] v) {
+		int msrCount = queryModel.getQueryMeasures().size();
+		for (int i = 0; i < msrCount; i++) {
+			v[queryExecuterProperties.measureStartIndex + i] = ((MeasureAggregator) surrogateResult[dimensionCount
+					+ queryExecuterProperties.measureStartIndex + i][columnIndex]);
+		}
+	}
+
+	private Object[][] encodeToRows(Object[][] data) {
+		if (data.length == 0) {
+			return data;
+		}
+		Object[][] rData = new Object[data[0].length][data.length];
+		int len = data.length;
+		for (int i = 0; i < rData.length; i++) {
+			for (int j = 0; j < len; j++) {
+				rData[i][j] = data[j][i];
+			}
+		}
+		return rData;
+	}
+
+	private ChunkResult getEmptyChunkResult(int size) {
+		List<CarbonKey> keys = new ArrayList<CarbonKey>(size);
+		List<CarbonValue> values = new ArrayList<CarbonValue>(size);
+		Object[] row = new Object[1];
+		for (int i = 0; i < size; i++)
+
+		{
+			values.add(new CarbonValue(new MeasureAggregator[0]));
+			keys.add(new CarbonKey(row));
+		}
+		ChunkResult chunkResult = new ChunkResult();
+		chunkResult.setKeys(keys);
+		chunkResult.setValues(values);
+		return chunkResult;
+	}
+
+	private void fillDimensionAggValue(QueryModel queryModel,
+			Object[][] surrogateResult, int dimensionCount, int columnIndex,
+			MeasureAggregator[] v) {
+		Iterator<DimensionAggregatorInfo> dimAggInfoIterator = queryModel
+				.getDimAggregationInfo().iterator();
+		DimensionAggregatorInfo dimensionAggregatorInfo = null;
+		List<String> partitionColumns = queryModel.getParitionColumns();
+		int rowIndex = -1;
+		int index = 0;
+		while (dimAggInfoIterator.hasNext()) {
+			dimensionAggregatorInfo = dimAggInfoIterator.next();
+			for (int j = 0; j < dimensionAggregatorInfo.getAggList().size(); j++) {
+				++rowIndex;
+				if (!dimensionAggregatorInfo.getAggList().get(j)
+						.equals(CarbonCommonConstants.DISTINCT_COUNT)) {
+					v[index++] = ((MeasureAggregator) surrogateResult[dimensionCount
+							+ rowIndex][columnIndex]);
+				} else if (partitionColumns.size() == 1
+						&& partitionColumns.contains(dimensionAggregatorInfo
+								.getColumnName())
+						&& dimensionAggregatorInfo.getAggList().get(j)
+								.equals(CarbonCommonConstants.DISTINCT_COUNT)) {
+					double value = ((MeasureAggregator) surrogateResult[dimensionCount
+							+ rowIndex][columnIndex]).getDoubleValue();
+
+					MeasureAggregator countAggregator = new CountAggregator();
+					countAggregator.setNewValue(value);
+					v[index++] = countAggregator;
+				} else {
+					if (surrogateResult[dimensionCount + rowIndex][columnIndex] instanceof DistinctCountAggregator) {
+
+						Iterator<Integer> iterator = ((DistinctCountAggregator) surrogateResult[dimensionCount
+								+ rowIndex][columnIndex]).getBitMap()
+								.iterator();
+
+						MeasureAggregator distinctCountAggregatorObjct = new DistinctStringCountAggregator();
+						while (iterator.hasNext()) {
+							String member = queryExecuterProperties.columnToDictionayMapping
+									.get(dimensionAggregatorInfo.getDim()
+											.getColumnId())
+									.getDictionaryValueForKey(iterator.next());
+							if (!member
+									.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
+								distinctCountAggregatorObjct.agg(member);
+							}
+						}
+						v[index++] = distinctCountAggregatorObjct;
+					} else {
+						v[index++] = ((MeasureAggregator) surrogateResult[dimensionCount
+								+ rowIndex][columnIndex]);
+					}
+				}
+			}
+		}
+	}
+
+}

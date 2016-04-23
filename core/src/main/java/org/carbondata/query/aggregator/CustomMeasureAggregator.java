@@ -21,19 +21,19 @@ package org.carbondata.query.aggregator;
 
 import java.util.List;
 
-import org.carbondata.query.carbonfilterinterface.RowIntf;
 import org.carbondata.query.expression.ColumnExpression;
+import org.carbondata.query.carbonfilterinterface.RowIntf;
 
 public interface CustomMeasureAggregator extends MeasureAggregator {
-  /**
-   * Aggregate method with generic row interface where RowIntf holds value for
-   * each column given in MeasureAggregator@getColumns()
-   */
-  void agg(RowIntf row);
+    /**
+     * Aggregate method with generic row interface where RowIntf holds value for
+     * each column given in MeasureAggregator@getColumns()
+     */
+    void agg(RowIntf row);
 
-  /**
-   * @return List of columns required for the aggregator
-   */
-  List<ColumnExpression> getColumns();
+    /**
+     * @return List of columns required for the aggregator
+     */
+    List<ColumnExpression> getColumns();
 
 }

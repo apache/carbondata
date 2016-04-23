@@ -28,33 +28,39 @@ import org.carbondata.query.aggregator.MeasureAggregator;
  * Used for custom Carbon Aggregator sum
  */
 public abstract class AbstractMeasureAggregatorBasic implements MeasureAggregator {
-  /**
-   * serialVersionUID
-   */
-  private static final long serialVersionUID = 1L;
+    /**
+     * serialVersionUID
+     */
+    private static final long serialVersionUID = 1L;
 
-  protected boolean firstTime = true;
+    protected boolean firstTime = true;
 
-  @Override public void agg(double newVal) {
-  }
+    @Override
+    public void agg(double newVal) {
+    }
 
-  @Override public Double getDoubleValue() {
-    return null;
-  }
+    @Override
+    public Double getDoubleValue() {
+        return null;
+    }
 
-  @Override public Long getLongValue() {
-    return null;
-  }
+    @Override
+    public Long getLongValue() {
+        return null;
+    }
 
-  @Override public BigDecimal getBigDecimalValue() {
-    return null;
-  }
+    @Override
+    public BigDecimal getBigDecimalValue() {
+        return null;
+    }
 
-  @Override public boolean isFirstTime() {
-    return firstTime;
-  }
+    @Override
+    public boolean isFirstTime() {
+        return firstTime;
+    }
 
-  @Override public MeasureAggregator get() {
-    return this;
-  }
+    @Override
+    public MeasureAggregator get() {
+        return this;
+    }
 }
