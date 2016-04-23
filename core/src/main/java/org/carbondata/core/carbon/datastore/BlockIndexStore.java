@@ -95,7 +95,9 @@ public class BlockIndexStore {
     List<AbstractIndex> loadedBlocksList =
         new ArrayList<AbstractIndex>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     // add the instance to lock map if it is not present
-    tableLockMap.putIfAbsent(absoluteTableIdentifier, new Object());
+    if (null == tableLockMap.get(absoluteTableIdentifier)) {
+      tableLockMap.put(absoluteTableIdentifier, new Object());
+    }
     // sort the block infos
     // so block will be loaded in sorted order this will be required for
     // query execution

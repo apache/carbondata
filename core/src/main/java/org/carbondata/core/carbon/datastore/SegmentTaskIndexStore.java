@@ -101,7 +101,9 @@ public class SegmentTaskIndexStore {
     Map<String, AbstractIndex> taskIdToTableSegmentMap =
         new HashMap<String, AbstractIndex>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     // add the instance to lock map if it is not present
-    tableLockMap.putIfAbsent(absoluteTableIdentifier, new Object());
+    if (null == tableLockMap.get(absoluteTableIdentifier)) {
+      tableLockMap.put(absoluteTableIdentifier, new Object());
+    }
     Iterator<Entry<Integer, List<TableBlockInfo>>> iteratorOverSegmentBlocksInfos =
         segmentToTableBlocksInfos.entrySet().iterator();
     // get the instance of lock object
