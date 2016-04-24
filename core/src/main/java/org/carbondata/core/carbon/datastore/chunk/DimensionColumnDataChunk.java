@@ -23,7 +23,7 @@ import org.carbondata.query.carbon.executor.infos.KeyStructureInfo;
 /**
  * Interface for dimension column chunk.
  */
-public interface DimensionColumnDataChunk {
+public interface DimensionColumnDataChunk<T> {
 
   /**
    * Below method will be used to fill the data based on offset and row id
@@ -50,4 +50,12 @@ public interface DimensionColumnDataChunk {
    * @return chunk attributes
    */
   DimensionChunkAttributes getAttributes();
+
+  /**
+   * Below method will be used to return the complete data chunk
+   * This will be required during filter query
+   *
+   * @return complete chunk
+   */
+  T getCompleteDataChunk();
 }

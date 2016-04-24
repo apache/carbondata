@@ -10,7 +10,7 @@ import org.carbondata.query.carbon.executor.infos.KeyStructureInfo;
  * This class is holder of the dimension column chunk data of the variable
  * length key size
  */
-public class VariableLengthDimensionDataChunk implements DimensionColumnDataChunk {
+public class VariableLengthDimensionDataChunk implements DimensionColumnDataChunk<List<byte[]>> {
 
   /**
    * dimension chunk attributes
@@ -70,5 +70,15 @@ public class VariableLengthDimensionDataChunk implements DimensionColumnDataChun
    */
   @Override public DimensionChunkAttributes getAttributes() {
     return chunkAttributes;
+  }
+
+  /**
+   * Below method will be used to return the complete data chunk
+   * This will be required during filter query
+   *
+   * @return complete chunk
+   */
+  @Override public List<byte[]> getCompleteDataChunk() {
+    return dataChunk;
   }
 }
