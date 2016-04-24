@@ -30,11 +30,11 @@ import java.util.List;
 import java.util.Map;
 
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.integration.spark.query.metadata.CarbonDimension;
-import org.carbondata.integration.spark.query.metadata.CarbonDimensionFilter;
+import org.carbondata.integration.spark.query.metadata.CarbonPlanDimension;
+import org.carbondata.integration.spark.query.metadata.CarbonPlanDimensionFilter;
 import org.carbondata.integration.spark.query.metadata.CarbonLikeFilter;
-import org.carbondata.integration.spark.query.metadata.CarbonMeasure;
-import org.carbondata.integration.spark.query.metadata.CarbonMeasureFilter;
+import org.carbondata.integration.spark.query.metadata.CarbonPlanMeasure;
+import org.carbondata.integration.spark.query.metadata.CarbonPlanMeasureFilter;
 import org.carbondata.integration.spark.query.metadata.CarbonQueryExpression;
 import org.carbondata.integration.spark.query.metadata.TopOrBottomFilter;
 import org.carbondata.query.aggregator.dimension.DimensionAggregatorInfo;
@@ -70,8 +70,8 @@ public class CarbonQueryPlan implements Serializable {
    * and department_name are dimensions
    * If there is no dimensions asked in query then it would be remained as empty.
    */
-  private List<CarbonDimension> dimensions =
-      new ArrayList<CarbonDimension>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+  private List<CarbonPlanDimension> dimensions =
+      new ArrayList<CarbonPlanDimension>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
 
   /**
    * List of measures.
@@ -79,8 +79,8 @@ public class CarbonQueryPlan implements Serializable {
    * would be measure.
    * If there is no dimensions asked in query then it would be remained as empty.
    */
-  private List<CarbonMeasure> measures =
-      new ArrayList<CarbonMeasure>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+  private List<CarbonPlanMeasure> measures =
+      new ArrayList<CarbonPlanMeasure>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
 
   /**
    * List of expressions. Sum(m1+10), Sum(m1)
@@ -91,19 +91,19 @@ public class CarbonQueryPlan implements Serializable {
   /**
    * Map of dimension and corresponding dimension filter.
    */
-  private Map<CarbonDimension, CarbonDimensionFilter> dimensionFilters =
-      new HashMap<CarbonDimension, CarbonDimensionFilter>(
+  private Map<CarbonPlanDimension, CarbonPlanDimensionFilter> dimensionFilters =
+      new HashMap<CarbonPlanDimension, CarbonPlanDimensionFilter>(
           CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-  private Map<CarbonDimension, List<CarbonLikeFilter>> dimensionLikeFilters =
-      new HashMap<CarbonDimension, List<CarbonLikeFilter>>(
+  private Map<CarbonPlanDimension, List<CarbonLikeFilter>> dimensionLikeFilters =
+      new HashMap<CarbonPlanDimension, List<CarbonLikeFilter>>(
           CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
   /**
    * Map of measures and corresponding measure filter.
    */
-  private Map<CarbonMeasure, List<CarbonMeasureFilter>> measureFilters =
-      new HashMap<CarbonMeasure, List<CarbonMeasureFilter>>(
+  private Map<CarbonPlanMeasure, List<CarbonPlanMeasureFilter>> measureFilters =
+      new HashMap<CarbonPlanMeasure, List<CarbonPlanMeasureFilter>>(
           CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
   /**
@@ -147,7 +147,7 @@ public class CarbonQueryPlan implements Serializable {
    */
   private boolean isCountStartQuery;
 
-  private List<CarbonDimension> sortedDimensions;
+  private List<CarbonPlanDimension> sortedDimensions;
 
   /**
    * Constructor created with cube name.
@@ -172,33 +172,33 @@ public class CarbonQueryPlan implements Serializable {
   /**
    * @return the dimensions
    */
-  public List<CarbonDimension> getDimensions() {
+  public List<CarbonPlanDimension> getDimensions() {
     return dimensions;
   }
 
-  public void addDimension(CarbonDimension dimension) {
+  public void addDimension(CarbonPlanDimension dimension) {
     this.dimensions.add(dimension);
   }
 
   /**
    * @return the measures
    */
-  public List<CarbonMeasure> getMeasures() {
+  public List<CarbonPlanMeasure> getMeasures() {
     return measures;
   }
 
-  public void addMeasure(CarbonMeasure measure) {
+  public void addMeasure(CarbonPlanMeasure measure) {
     this.measures.add(measure);
   }
 
   /**
    * @return the dimensionFilters
    */
-  public Map<CarbonDimension, CarbonDimensionFilter> getDimensionFilters() {
+  public Map<CarbonPlanDimension, CarbonPlanDimensionFilter> getDimensionFilters() {
     return dimensionFilters;
   }
 
-  public void setDimensionFilter(CarbonDimension dimension, CarbonDimensionFilter dimFilter) {
+  public void setDimensionFilter(CarbonPlanDimension dimension, CarbonPlanDimensionFilter dimFilter) {
     this.dimensionFilters.put(dimension, dimFilter);
   }
 
@@ -213,14 +213,14 @@ public class CarbonQueryPlan implements Serializable {
   /**
    * @return the measureFilters
    */
-  public Map<CarbonMeasure, List<CarbonMeasureFilter>> getMeasureFilters() {
+  public Map<CarbonPlanMeasure, List<CarbonPlanMeasureFilter>> getMeasureFilters() {
     return measureFilters;
   }
 
-  public void setMeasureFilter(CarbonMeasure measure, CarbonMeasureFilter measureFilter) {
-    List<CarbonMeasureFilter> list = measureFilters.get(measure);
+  public void setMeasureFilter(CarbonPlanMeasure measure, CarbonPlanMeasureFilter measureFilter) {
+    List<CarbonPlanMeasureFilter> list = measureFilters.get(measure);
     if (list == null) {
-      list = new ArrayList<CarbonMeasureFilter>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+      list = new ArrayList<CarbonPlanMeasureFilter>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
       this.measureFilters.put(measure, list);
     }
     list.add(measureFilter);
@@ -298,11 +298,11 @@ public class CarbonQueryPlan implements Serializable {
     this.outLocationPath = outLocationPath;
   }
 
-  public Map<CarbonDimension, List<CarbonLikeFilter>> getDimensionLikeFilters() {
+  public Map<CarbonPlanDimension, List<CarbonLikeFilter>> getDimensionLikeFilters() {
     return dimensionLikeFilters;
   }
 
-  public void setDimensionLikeFilters(CarbonDimension dimension, List<CarbonLikeFilter> dimFilter) {
+  public void setDimensionLikeFilters(CarbonPlanDimension dimension, List<CarbonLikeFilter> dimFilter) {
     dimensionLikeFilters.put(dimension, dimFilter);
   }
 
@@ -332,7 +332,7 @@ public class CarbonQueryPlan implements Serializable {
     return dimAggregatorInfos;
   }
 
-  public void removeDimensionFromDimList(CarbonDimension dim) {
+  public void removeDimensionFromDimList(CarbonPlanDimension dim) {
     dimensions.remove(dim);
   }
 
@@ -344,11 +344,11 @@ public class CarbonQueryPlan implements Serializable {
     return expressions;
   }
 
-  public List<CarbonDimension> getSortedDimemsions() {
+  public List<CarbonPlanDimension> getSortedDimemsions() {
     return sortedDimensions;
   }
 
-  public void setSortedDimemsions(List<CarbonDimension> dims) {
+  public void setSortedDimemsions(List<CarbonPlanDimension> dims) {
     this.sortedDimensions = dims;
   }
 }

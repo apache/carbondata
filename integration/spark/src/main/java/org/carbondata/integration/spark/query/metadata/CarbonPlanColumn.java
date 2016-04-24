@@ -19,6 +19,6 @@
 
 package org.carbondata.integration.spark.query.metadata;
 
-public interface CarbonColumn {
+public interface CarbonPlanColumn {
 
 }

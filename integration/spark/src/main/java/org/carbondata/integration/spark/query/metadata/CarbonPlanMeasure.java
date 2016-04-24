@@ -24,7 +24,7 @@ package org.carbondata.integration.spark.query.metadata;
 
 import java.io.Serializable;
 
-public class CarbonMeasure implements CarbonColumn, Serializable {
+public class CarbonPlanMeasure implements CarbonPlanColumn, Serializable {
 
   private static final long serialVersionUID = -2944975816723740737L;
 
@@ -58,7 +58,7 @@ public class CarbonMeasure implements CarbonColumn, Serializable {
    *
    * @param measure
    */
-  public CarbonMeasure(String measure) {
+  public CarbonPlanMeasure(String measure) {
     String aggName = null;
     String msrName = measure;
     //we assume the format is like sum(colName). need to handle in proper way.
@@ -117,7 +117,7 @@ public class CarbonMeasure implements CarbonColumn, Serializable {
     if (getClass() != obj.getClass()) {
       return false;
     }
-    CarbonMeasure other = (CarbonMeasure) obj;
+    CarbonPlanMeasure other = (CarbonPlanMeasure) obj;
     if (measure == null) {
       if (other.measure != null) {
         return false;

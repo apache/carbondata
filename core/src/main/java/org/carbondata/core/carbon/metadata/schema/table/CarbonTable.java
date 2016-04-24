@@ -353,4 +353,7 @@ public class CarbonTable implements Serializable {
     this.factTableName = factTableName;
   }
 
+    public int getPartitionCount() {
+        return 0;
+    }
 }

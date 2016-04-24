@@ -133,14 +133,14 @@ public class SampleDataPartitionerImpl implements DataPartitioner {
   public List<Partition> getPartitions(CarbonQueryPlan queryPlan) {
     CarbonDimensionFilter msisdnFilter = null;
 
-    Map<CarbonDimension, CarbonDimensionFilter> filterMap = queryPlan.getDimensionFilters();
-    for (Map.Entry<CarbonDimension, CarbonDimensionFilter> entry : filterMap.entrySet()) {
-      CarbonDimension carbonDimension = entry.getKey();
-      if (partitionColumn.equalsIgnoreCase(carbonDimension.getDimensionUniqueName())) {
-        msisdnFilter = entry.getValue();
-        break;
-      }
-    }
+        Map<CarbonPlanDimension, CarbonDimensionFilter> filterMap = queryPlan.getDimensionFilters();
+        for (Map.Entry<CarbonPlanDimension, CarbonDimensionFilter> entry : filterMap.entrySet()) {
+            CarbonPlanDimension carbonPlanDimension = entry.getKey();
+            if (partitionColumn.equalsIgnoreCase(carbonPlanDimension.getDimensionUniqueName())) {
+                msisdnFilter = entry.getValue();
+                break;
+            }
+        }
 
     if (msisdnFilter == null || msisdnFilter.getIncludeFilters().size() == 0) {
       return allPartitions;

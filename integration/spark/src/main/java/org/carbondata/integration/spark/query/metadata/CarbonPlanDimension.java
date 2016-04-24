@@ -27,7 +27,7 @@ import java.io.Serializable;
 /**
  * Dimension class
  */
-public class CarbonDimension implements CarbonColumn, Serializable {
+public class CarbonPlanDimension implements CarbonPlanColumn, Serializable {
   /**
    *
    */
@@ -55,7 +55,7 @@ public class CarbonDimension implements CarbonColumn, Serializable {
    *
    * @param dimensionUniqueName
    */
-  public CarbonDimension(String dimensionUniqueName) {
+  public CarbonPlanDimension(String dimensionUniqueName) {
     this.dimensionUniqueName = dimensionUniqueName;
   }
 

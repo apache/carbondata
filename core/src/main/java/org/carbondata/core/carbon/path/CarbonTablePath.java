@@ -20,10 +20,12 @@ package org.carbondata.core.carbon.path;
 
 import java.io.File;
 
+import org.apache.hadoop.fs.Path;
+
 /**
  * Helps to get Table content paths.
  */
-public class CarbonTablePath {
+public class CarbonTablePath extends Path {
 
   private static final String METADATA_DIR = "Metadata";
   private static final String DICTIONARY_EXT = ".dict";
@@ -40,9 +42,10 @@ public class CarbonTablePath {
 
   private String tablePath;
 
-  public CarbonTablePath(String tablePath) {
-    this.tablePath = tablePath;
-  }
+    public CarbonTablePath(String tablePathString) {
+        super(tablePathString);
+        this.tablePath = tablePathString;
+    }
 
   /**
    * gets table path

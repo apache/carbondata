@@ -1,50 +1,61 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
  *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 
 package org.carbondata.integration.spark.rdd
 
 import java.text.SimpleDateFormat
-import java.util.Date
-
-import scala.collection.JavaConverters._
+import java.util
+import java.util.{Arrays, Date}
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.spark.{Logging, Partition, SerializableWritable, SparkContext, TaskContext}
+import org.apache.hadoop.fs.Path
+import org.apache.hadoop.mapred.JobConf
+import org.apache.hadoop.mapreduce.Job
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
+import org.apache.log4j.filter.ExpressionFilter
 import org.apache.spark.rdd.RDD
-
+import org.apache.spark.{Logging, Partition, SerializableWritable, SparkContext, TaskContext}
 import org.carbondata.common.logging.LogServiceFactory
-import org.carbondata.core.carbon.CarbonDef
+import org.carbondata.core.carbon.datastore.block.TableBlockInfo
 import org.carbondata.core.iterator.CarbonIterator
-import org.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.carbondata.core.carbon.{AbsoluteTableIdentifier, CarbonDef, CarbonTableIdentifier}
+import org.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit}
 import org.carbondata.integration.spark.KeyVal
 import org.carbondata.integration.spark.splits.TableSplit
 import org.carbondata.integration.spark.util.{CarbonQueryUtil, CarbonSparkInterFaceLogEvent}
-import org.carbondata.query.datastorage.InMemoryTableStore
-import org.carbondata.query.executer.CarbonQueryExecutorModel
-import org.carbondata.query.querystats.{PartitionDetail, PartitionStatsCollector}
+import org.carbondata.lcm.status.SegmentStatusManager
+import org.carbondata.query.carbon.model.QueryModel
+import org.carbondata.query.expression.conditional.EqualToExpression
+import org.carbondata.query.expression.{ColumnExpression, DataType, Expression, LiteralExpression}
 import org.carbondata.query.result.RowResult
 
-class CarbonPartition(rddId: Int, val index: Int, @transient val tableSplit: TableSplit)
+import scala.collection.JavaConversions._
+
+class CarbonSparkPartition(rddId: Int, val idx: Int,
+                           @transient val carbonInputSplit: CarbonInputSplit)
   extends Partition {
 
-  val serializableHadoopSplit = new SerializableWritable[TableSplit](tableSplit)
+  override val index: Int = idx
+  val serializableHadoopSplit = new SerializableWritable[CarbonInputSplit](carbonInputSplit)
 
-  override def hashCode(): Int = 41 * (41 + rddId) + index
+  override def hashCode(): Int = 41 * (41 + rddId) + idx
 }
 
 /**
@@ -52,13 +63,11 @@ class CarbonPartition(rddId: Int, val index: Int, @transient val tableSplit: Tab
  */
 class CarbonDataRDD[K, V](
                            sc: SparkContext,
-                           carbonQueryModel: CarbonQueryExecutorModel,
-                           schema: CarbonDef.Schema,
-                           dataPath: String,
+                           queryModel: QueryModel,
+                           filterExpression: Expression,
                            keyClass: KeyVal[K, V],
                            @transient conf: Configuration,
                            splits: Array[TableSplit],
-                           columinar: Boolean,
                            cubeCreationTime: Long,
                            schemaLastUpdatedTime: Long,
                            baseStoreLocation: String)
@@ -70,105 +79,70 @@ class CarbonDataRDD[K, V](
   }
 
   override def getPartitions: Array[Partition] = {
+    val carbonInputFormat: CarbonInputFormat = new CarbonInputFormat();
+    val jobConf: JobConf = new JobConf(new Configuration)
+    val job: Job = new Job(jobConf)
+    val absoluteTableIdentifier: AbsoluteTableIdentifier = queryModel.getAbsoluteTableIdentifier()
+    FileInputFormat.addInputPath(job, new Path(absoluteTableIdentifier.getStorePath))
+    CarbonInputFormat.setTableToAccess(job, absoluteTableIdentifier.getCarbonTableIdentifier)
+
+    val validSegments = new SegmentStatusManager(absoluteTableIdentifier).getValidSegments;
+    val validSegmentNos = validSegments.listOfValidSegments.map(x => new Integer(Integer.parseInt(x)))
+    CarbonInputFormat.setSegmentsToAccess(job, validSegmentNos.toList)
+
+    // set filter resolver tree
+    val filterResolver = carbonInputFormat.getResolvedFilter(job, filterExpression)
+    queryModel.setFilterEvaluatorTree(filterResolver)
+    // get splits
+    val splits = carbonInputFormat.getSplits(job, filterResolver)
+    val carbonInputSplits = splits.map(_.asInstanceOf[CarbonInputSplit])
+
     val result = new Array[Partition](splits.length)
     for (i <- 0 until result.length) {
-      result(i) = new CarbonPartition(id, i, splits(i))
+      result(i) = new CarbonSparkPartition(id, i, carbonInputSplits(i))
     }
     result
   }
 
-  override def compute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
+  override def compute(thepartition: Partition, context: TaskContext) = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass().getName());
     var cubeUniqueName: String = ""
     var levelCacheKeys: scala.collection.immutable.List[String] = Nil
     val iter = new Iterator[(K, V)] {
       var rowIterator: CarbonIterator[RowResult] = _
-      var partitionDetail: PartitionDetail = _
-      var partitionStatsCollector: PartitionStatsCollector = _
       var queryStartTime: Long = 0
       try {
-        // Below code is To collect statistics for partition
-        val split = theSplit.asInstanceOf[CarbonPartition]
-        val part = split.serializableHadoopSplit.value.getPartition().getUniqueID()
-        partitionStatsCollector = PartitionStatsCollector.getInstance
-        partitionDetail = new PartitionDetail(part)
-        partitionStatsCollector.addPartitionDetail(carbonQueryModel.getQueryId, partitionDetail)
-        cubeUniqueName = carbonQueryModel.getCube().getSchemaName() + '_' + part + '_' +
-          carbonQueryModel.getCube().getOnlyCubeName() + '_' + part
-        val metaDataPath: String = carbonQueryModel.getCube().getMetaDataFilepath()
-        var currentRestructNumber = CarbonUtil
-          .checkAndReturnCurrentRestructFolderNumber(metaDataPath, "RS_", false)
-        if (-1 == currentRestructNumber) {
-          currentRestructNumber = 0
-        }
+        val carbonSparkPartition = thepartition.asInstanceOf[CarbonSparkPartition]
+        val carbonInputSplit = carbonSparkPartition.carbonInputSplit
+
+        val tableBlockInfos = new util.ArrayList[TableBlockInfo]();
+        tableBlockInfos.add(new TableBlockInfo(carbonInputSplit.getPath,carbonInputSplit.getStart,carbonInputSplit.))
+        queryModel.setTableBlockInfos(tableBlockInfos)
         queryStartTime = System.currentTimeMillis
-        carbonQueryModel.setPartitionId(part)
 
-        logInfo("Input split: " + split.serializableHadoopSplit.value)
+        //fill
 
-        if (part != null) {
           val carbonPropertiesFilePath = System.getProperty("carbon.properties.filepath", null)
           logInfo("*************************" + carbonPropertiesFilePath)
           if (null == carbonPropertiesFilePath) {
-            System.setProperty("carbon.properties.filepath",
-              System.getProperty("user.dir") + '/' + "conf" + '/' + "carbon.properties");
-          }
-          val listOfAllLoadFolders = carbonQueryModel.getListOfAllLoadFolder
-          CarbonProperties.getInstance().addProperty("carbon.storelocation", baseStoreLocation);
-          CarbonProperties.getInstance().addProperty("carbon.cache.used", "false");
-          val cube = InMemoryTableStore.getInstance
-            .loadCubeMetadataIfRequired(schema, schema.cubes(0), part, schemaLastUpdatedTime)
-          val queryScopeObject = CarbonQueryUtil
-            .createDataSource(currentRestructNumber, schema, cube, part, listOfAllLoadFolders,
-              carbonQueryModel.getFactTable(), dataPath, cubeCreationTime,
-              carbonQueryModel.getLoadMetadataDetails)
-          carbonQueryModel.setQueryScopeObject(queryScopeObject)
-          if (InMemoryTableStore.getInstance.isLevelCacheEnabled()) {
-            levelCacheKeys = CarbonQueryUtil
-              .validateAndLoadRequiredSlicesInMemory(carbonQueryModel, listOfAllLoadFolders,
-                cubeUniqueName).asScala.toList
+            System.setProperty("carbon.properties.filepath", System.getProperty("user.dir") + '/' + "conf" + '/' + "carbon.properties");
           }
 
-          logInfo("IF Columnar: " + columinar)
-          CarbonProperties.getInstance().addProperty("carbon.is.columnar.storage", "true");
-          CarbonProperties.getInstance()
-            .addProperty("carbon.dimension.split.value.in.columnar", "1");
-          CarbonProperties.getInstance().addProperty("carbon.is.fullyfilled.bits", "true");
-          CarbonProperties.getInstance().addProperty("is.int.based.indexer", "true");
-          CarbonProperties.getInstance().addProperty("aggregate.columnar.keyblock", "true");
-          CarbonProperties.getInstance().addProperty("high.cardinality.value", "100000");
-          CarbonProperties.getInstance().addProperty("is.compressed.keyblock", "false");
-          CarbonProperties.getInstance().addProperty("carbon.leaf.node.size", "120000");
 
-          carbonQueryModel.setCube(cube)
-          carbonQueryModel.setOutLocation(dataPath)
-        }
-        CarbonQueryUtil.updateDimensionWithNoDictionaryVal(schema, carbonQueryModel)
-
-        if (CarbonQueryUtil.isQuickFilter(carbonQueryModel)) {
-          rowIterator = CarbonQueryUtil
-            .getQueryExecuter(carbonQueryModel.getCube(), carbonQueryModel.getFactTable(),
-              carbonQueryModel.getQueryScopeObject).executeDimension(carbonQueryModel);
+        if (CarbonQueryUtil.isQuickFilter(queryModel)) {
+          rowIterator = CarbonQueryUtil.getQueryExecuter().executeDimension(queryModel);
         } else {
-          rowIterator = CarbonQueryUtil
-            .getQueryExecuter(carbonQueryModel.getCube(), carbonQueryModel.getFactTable(),
-              carbonQueryModel.getQueryScopeObject).execute(carbonQueryModel);
+          rowIterator = CarbonQueryUtil.getQueryExecuter().execute(queryModel);
         }
       } catch {
         case e: Exception =>
           LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, e)
-          updateCubeAndLevelCacheStatus(levelCacheKeys)
+          //updateCubeAndLevelCacheStatus(levelCacheKeys)
           if (null != e.getMessage) {
             sys.error("Exception occurred in query execution :: " + e.getMessage)
           } else {
             sys.error("Exception occurred in query execution.Please check logs.")
           }
-      }
-
-      def updateCubeAndLevelCacheStatus(levelCacheKeys: scala.collection.immutable.List[String]) = {
-        levelCacheKeys.foreach { key =>
-          InMemoryTableStore.getInstance.updateLevelAccessCountInLRUCache(key)
-        }
       }
 
       var havePair = false
@@ -181,7 +155,7 @@ class CarbonDataRDD[K, V](
           havePair = !finished
         }
         if (finished) {
-          updateCubeAndLevelCacheStatus(levelCacheKeys)
+          //updateCubeAndLevelCacheStatus(levelCacheKeys)
         }
         !finished
       }
@@ -197,11 +171,7 @@ class CarbonDataRDD[K, V](
         keyClass.getKey(key, value)
       }
 
-      // merging partition stats to accumulator
-      val partAcc = carbonQueryModel.getPartitionAccumulator
-      partAcc.add(partitionDetail)
-      partitionStatsCollector.removePartitionDetail(carbonQueryModel.getQueryId)
-      logInfo("*************************** Total Time Taken to execute the query in Carbon Side: " +
+      loginfo("*************************** Total Time Taken to execute the query in Carbon Side: " +
         (System.currentTimeMillis - queryStartTime))
     }
     iter
@@ -212,7 +182,7 @@ class CarbonDataRDD[K, V](
    * Get the preferred locations where to launch this task.
    */
   override def getPreferredLocations(split: Partition): Seq[String] = {
-    val theSplit = split.asInstanceOf[CarbonPartition]
-    theSplit.serializableHadoopSplit.value.getLocations.asScala.filter(_ != "localhost")
+    val theSplit = split.asInstanceOf[CarbonSparkPartition]
+    theSplit.serializableHadoopSplit.value.getLocations.filter(_ != "localhost")
   }
 }

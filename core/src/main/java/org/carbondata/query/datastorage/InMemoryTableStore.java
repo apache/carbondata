@@ -60,6 +60,7 @@ import org.carbondata.query.datastorage.cache.LevelInfo;
 import org.carbondata.query.scope.QueryScopeObject;
 import org.carbondata.query.util.CarbonEngineLogEvent;
 
+@Deprecated
 public final class InMemoryTableStore {
 
   /**

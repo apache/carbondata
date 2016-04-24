@@ -51,9 +51,4 @@ public interface Partition extends Serializable {
    * @return
    */
   List<String> getFilesPath();
-
-  /**
-   * Column name and constraints used to distribute the data
-   */
-  Map<String, CarbonDimensionLevelFilter> getPartitionDetails();
 }
