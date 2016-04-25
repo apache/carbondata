@@ -39,8 +39,8 @@ import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.integration.spark.partition.api.DataPartitioner;
 import org.carbondata.integration.spark.partition.api.Partition;
 import org.carbondata.integration.spark.query.CarbonQueryPlan;
-import org.carbondata.integration.spark.query.metadata.CarbonDimension;
 import org.carbondata.integration.spark.query.metadata.CarbonDimensionFilter;
+import org.carbondata.integration.spark.query.metadata.CarbonPlanDimension;
 import org.carbondata.integration.spark.util.CarbonSparkInterFaceLogEvent;
 import org.carbondata.query.queryinterface.query.metadata.CarbonDimensionLevelFilter;
 
@@ -133,35 +133,36 @@ public class SampleDataPartitionerImpl implements DataPartitioner {
   public List<Partition> getPartitions(CarbonQueryPlan queryPlan) {
     CarbonDimensionFilter msisdnFilter = null;
 
-        Map<CarbonPlanDimension, CarbonDimensionFilter> filterMap = queryPlan.getDimensionFilters();
-        for (Map.Entry<CarbonPlanDimension, CarbonDimensionFilter> entry : filterMap.entrySet()) {
-            CarbonPlanDimension carbonPlanDimension = entry.getKey();
-            if (partitionColumn.equalsIgnoreCase(carbonPlanDimension.getDimensionUniqueName())) {
-                msisdnFilter = entry.getValue();
-                break;
-            }
-        }
+    Map<CarbonPlanDimension, CarbonDimensionFilter> filterMap = queryPlan.getDimensionFilters();
+    for (Map.Entry<CarbonPlanDimension, CarbonDimensionFilter> entry : filterMap.entrySet()) {
+      CarbonPlanDimension carbonPlanDimension = entry.getKey();
+      if (partitionColumn.equalsIgnoreCase(carbonPlanDimension.getDimensionUniqueName())) {
+        msisdnFilter = entry.getValue();
+        break;
+      }
+    }
 
     if (msisdnFilter == null || msisdnFilter.getIncludeFilters().size() == 0) {
       return allPartitions;
     }
 
+    // TODO: this has to be redone during partitioning implmentatation
     List<Partition> allowedPartitions =
         new ArrayList<Partition>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-    for (Partition aPartition : allPartitions) {
-      CarbonDimensionLevelFilter partitionFilterDetails =
-          aPartition.getPartitionDetails().get(partitionColumn);
-
-      //Check if the partition is serving any of the hash code generated for include
-      //filter of query
-      for (String includeFilter : msisdnFilter.getIncludeFilters()) {
-        int hashCode = hashCode(includeFilter.hashCode());
-        if (partitionFilterDetails.getIncludeFilter().contains(hashCode)) {
-          allowedPartitions.add(aPartition);
-          break;
-        }
-      }
-    }
+    //    for (Partition aPartition : allPartitions) {
+    //      CarbonDimensionLevelFilter partitionFilterDetails =
+    //          aPartition.getPartitionDetails().get(partitionColumn);
+    //
+    //      //Check if the partition is serving any of the hash code generated for include
+    //      //filter of query
+    //      for (String includeFilter : msisdnFilter.getIncludeFilters()) {
+    //        int hashCode = hashCode(includeFilter.hashCode());
+    //        if (partitionFilterDetails.getIncludeFilter().contains(hashCode)) {
+    //          allowedPartitions.add(aPartition);
+    //          break;
+    //        }
+    //      }
+    //    }
 
     return allowedPartitions;
   }
@@ -183,21 +184,21 @@ public class SampleDataPartitionerImpl implements DataPartitioner {
       // If the filter is of other type,return all the partitions list
       return allPartitions;
     }
-
-    for (Partition aPartition : allPartitions) {
-      CarbonDimensionLevelFilter partitionFilterDetails =
-          aPartition.getPartitionDetails().get(partitionColumn);
-
-      //Check if the partition is serving any of the
-      //hash code generated for include filter of query
-      for (Object includeFilter : msisdnFilter.getIncludeFilter()) {
-        int hashCode = hashCode(((String) includeFilter).hashCode());
-        if (partitionFilterDetails.getIncludeFilter().contains(hashCode)) {
-          allowedPartitions.add(aPartition);
-          break;
-        }
-      }
-    }
+    // TODO: this has to be redone during partitioning implementation
+    //    for (Partition aPartition : allPartitions) {
+    //      CarbonDimensionLevelFilter partitionFilterDetails =
+    //          aPartition.getPartitionDetails().get(partitionColumn);
+    //
+    //      //Check if the partition is serving any of the
+    //      //hash code generated for include filter of query
+    //      for (Object includeFilter : msisdnFilter.getIncludeFilter()) {
+    //        int hashCode = hashCode(((String) includeFilter).hashCode());
+    //        if (partitionFilterDetails.getIncludeFilter().contains(hashCode)) {
+    //          allowedPartitions.add(aPartition);
+    //          break;
+    //        }
+    //      }
+    //    }
 
     return allowedPartitions;
   }

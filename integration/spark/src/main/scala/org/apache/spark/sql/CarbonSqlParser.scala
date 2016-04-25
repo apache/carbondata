@@ -128,11 +128,7 @@ class CarbonSqlDDLParser()
   protected val SUM_DISTINCT = Keyword("sum-distinct")
   protected val ABS = Keyword("abs")
 
-  // added for suggest aggregate table command
-  protected val SUGGEST = Keyword("SUGGEST")
   protected val FOR = Keyword("FOR")
-  protected val QUERY_STATS = Keyword("QUERY_STATS")
-  protected val DATA_STATS = Keyword("DATA_STATS")
   protected val SCRIPTS = Keyword("SCRIPTS")
   protected val USING = Keyword("USING")
   protected val LIMIT = Keyword("LIMIT")
@@ -163,21 +159,11 @@ class CarbonSqlDDLParser()
 
   override protected lazy val start: Parser[LogicalPlan] =
     createCube | showCreateCube | loadManagement | createAggregateTable | describeTable |
-      suggestAggregates | showCube | showLoads | alterCube | showAllCubes | createTable
+      showCube | showLoads | alterCube | showAllCubes | createTable
 
   protected lazy val loadManagement: Parser[LogicalPlan] = loadData | dropCubeOrTable |
     deleteLoadsByID | deleteLoadsByDate | cleanFiles
 
-  protected lazy val suggestAggregates: Parser[LogicalPlan] =
-  // SUGGEST AGGREGATES WITH SCRIPTS USING (DATA_STATS,QUERY STATS) FOR SCHEMA_NAME.CUBE_NAME
-    SUGGEST ~> AGGREGATE ~> (WITH ~> SCRIPTS).? ~ (USING ~> (DATA_STATS | QUERY_STATS)).? ~
-      (FOR ~> CUBE ~> (ident <~ ".").? ~ ident) <~ opt(";") ^^ {
-      case scriptsKey ~ usingStats ~ schemaDef =>
-        val (schemaname, cubename) = schemaDef match {
-          case schemaName ~ cubeName => (schemaName, cubeName)
-        }
-        SuggestAggregateCommand(scriptsKey, usingStats, schemaname, cubename)
-    }
   protected lazy val createAggregateTable: Parser[LogicalPlan] =
     CREATE ~> AGGREGATETABLE ~>
       (aggregates) ~

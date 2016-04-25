@@ -20,8 +20,9 @@ package org.carbondata.core.carbon.path;
 
 import java.io.File;
 
-import org.apache.hadoop.fs.Path;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
+
+import org.apache.hadoop.fs.Path;
 
 /**
  * Helps to get Store content paths.
@@ -30,10 +31,10 @@ public class CarbonStorePath extends Path {
 
   private String storePath;
 
-    public CarbonStorePath(String storePathString) {
-        super(storePathString);
-        this.storePath = storePathString;
-    }
+  public CarbonStorePath(String storePathString) {
+    super(storePathString);
+    this.storePath = storePathString;
+  }
 
   /**
    * gets CarbonTablePath object to manage table paths

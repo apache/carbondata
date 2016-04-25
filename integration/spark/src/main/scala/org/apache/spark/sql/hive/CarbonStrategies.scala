@@ -154,8 +154,6 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
           condition)
         condition.map(Filter(_, pushedDownJoin)).getOrElse(pushedDownJoin) :: Nil
 
-      case QueryStatsLogicalPlan(child) =>
-        QueryStatsSparkPlan(planLater(child)) :: Nil
       case ShowCubeCommand(schemaName) =>
         ExecutedCommand(ShowAllCubesInSchema(schemaName, plan.output)) :: Nil
       case c@ShowAllCubeCommand() =>
@@ -164,9 +162,6 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
         ExecutedCommand(ShowCreateCube(cm, plan.output)) :: Nil
       case ShowTablesDetailedCommand(schemaName) =>
         ExecutedCommand(ShowAllTablesDetail(schemaName, plan.output)) :: Nil
-      case SuggestAggregateCommand(script, sugType, schemaName, cubeName) =>
-        ExecutedCommand(SuggestAggregates(script, sugType, schemaName, cubeName, plan.output)) ::
-          Nil
       case ShowAggregateTablesCommand(schemaName) =>
         ExecutedCommand(ShowAggregateTables(schemaName, plan.output)) :: Nil
       case ShowLoadsCommand(schemaName, cube, limit) =>

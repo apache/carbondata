@@ -16,10 +16,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
-/**
- *
- */
 package org.carbondata.integration.spark.load;
 
 import java.io.BufferedReader;
@@ -55,6 +51,7 @@ import org.carbondata.core.carbon.CarbonDef.AggTable;
 import org.carbondata.core.carbon.CarbonDef.CubeDimension;
 import org.carbondata.core.carbon.CarbonDef.Schema;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
+import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.carbondata.core.carbon.path.CarbonStorePath;
@@ -70,7 +67,6 @@ import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
 import org.carbondata.core.load.LoadMetadataDetails;
 import org.carbondata.core.metadata.CarbonMetadata;
 import org.carbondata.core.metadata.CarbonMetadata.Cube;
-import org.carbondata.core.metadata.CarbonMetadata.Dimension;
 import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
@@ -89,7 +85,6 @@ import org.carbondata.processing.util.CarbonDataProcessorUtil;
 import org.carbondata.processing.util.CarbonSchemaParser;
 import org.carbondata.query.datastorage.InMemoryTable;
 import org.carbondata.query.datastorage.InMemoryTableStore;
-import org.carbondata.query.directinterface.impl.CarbonQueryParseUtil;
 
 import com.google.gson.Gson;
 import org.apache.hadoop.fs.FileSystem;
@@ -910,34 +905,15 @@ public final class CarbonLoaderUtil {
    */
   public static Set<String> getColumnListFromAggTable(CarbonLoadModel model) {
     Set<String> columnList = new HashSet<String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    Cube metadataCube =
-        CarbonMetadata.getInstance().getCube(model.getDatabaseName() + '_' + model.getTableName());
-    CarbonDef.Cube cube = model.getSchema().cubes[0];
-    CarbonDef.Table factTable = (CarbonDef.Table) cube.fact;
-    List<Dimension> dimensions = metadataCube.getDimensions(factTable.name);
-    CarbonDef.AggTable[] aggTables = factTable.getAggTables();
-    String aggTableName = null;
-    AggLevel[] aggLevels = null;
-    AggMeasure[] aggMeasures = null;
-    for (int i = 0; i < aggTables.length; i++) {
-      aggTableName = ((CarbonDef.AggName) aggTables[i]).getNameAttribute();
-      if (model.getAggTableName().equals(aggTableName)) {
-        aggLevels = aggTables[i].levels;
-        aggMeasures = aggTables[i].measures;
-        for (AggLevel aggDim : aggLevels) {
-          Dimension dim = CarbonQueryParseUtil.findDimension(dimensions, aggDim.column);
-          if (null != dim) {
-            columnList.add(dim.getColName());
-          }
-        }
-        for (AggMeasure aggMsr : aggMeasures) {
-          Dimension dim = CarbonQueryParseUtil.findDimension(dimensions, aggMsr.column);
-          if (null != dim) {
-            columnList.add(dim.getColName());
-          }
-        }
-        break;
-      }
+    CarbonTable carbonTable = org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
+        .getCarbonTable(model.getDatabaseName() + '_' + model.getTableName());
+    List<CarbonDimension> dimensions = carbonTable.getDimensionByTableName(model.getAggTableName());
+    List<CarbonMeasure> measures = carbonTable.getMeasureByTableName(model.getAggTableName());
+    for(CarbonDimension carbonDimension : dimensions){
+      columnList.add(carbonDimension.getColName());
+    }
+    for(CarbonMeasure carbonMeasure : measures){
+      columnList.add(carbonMeasure.getColName());
     }
     return columnList;
   }

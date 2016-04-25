@@ -22,12 +22,6 @@ package org.carbondata.hadoop.ft;
 import java.util.Arrays;
 import java.util.List;
 
-import junit.framework.TestCase;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapreduce.Job;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.hadoop.CarbonInputFormat;
 import org.carbondata.query.expression.ColumnExpression;
@@ -35,45 +29,51 @@ import org.carbondata.query.expression.DataType;
 import org.carbondata.query.expression.Expression;
 import org.carbondata.query.expression.LiteralExpression;
 import org.carbondata.query.expression.conditional.EqualToExpression;
+
+import junit.framework.TestCase;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 public class CarbonInputFormat_FT extends TestCase {
 
-    @Before public void setUp() throws Exception {
-        //create a table with column c1 string type
-        //Insert data with column c1 has "a", "b", "c"
-    }
+  @Before public void setUp() throws Exception {
+    //create a table with column c1 string type
+    //Insert data with column c1 has "a", "b", "c"
+  }
 
-    @Test public void testGetSplits() throws Exception {
-        CarbonInputFormat carbonInputFormat = new CarbonInputFormat();
-        JobConf jobConf = new JobConf(new Configuration());
-        Job job = new Job(jobConf);
-        CarbonTableIdentifier tableIdentifier = new CarbonTableIdentifier("db", "table1");
-        FileInputFormat.addInputPath(job, new Path("/opt/carbonstore/"));
-        CarbonInputFormat.setTableToAccess(job, tableIdentifier);
-        CarbonInputFormat.setSegmentsToAccess(job, Arrays.asList(1, 2));
-        List splits = carbonInputFormat.getSplits(job);
+  @Test public void testGetSplits() throws Exception {
+    CarbonInputFormat carbonInputFormat = new CarbonInputFormat();
+    JobConf jobConf = new JobConf(new Configuration());
+    Job job = new Job(jobConf);
+    CarbonTableIdentifier tableIdentifier = new CarbonTableIdentifier("db", "table1");
+    FileInputFormat.addInputPath(job, new Path("/opt/carbonstore/"));
+    CarbonInputFormat.setTableToAccess(job, tableIdentifier);
+    CarbonInputFormat.setSegmentsToAccess(job, Arrays.asList(1, 2));
+    List splits = carbonInputFormat.getSplits(job);
 
-        Assert.assertTrue(splits != null);
-        Assert.assertTrue(!splits.isEmpty());
-    }
+    Assert.assertTrue(splits != null);
+    Assert.assertTrue(!splits.isEmpty());
+  }
 
-    @Test public void testGetFilteredSplits() throws Exception {
-        CarbonInputFormat carbonInputFormat = new CarbonInputFormat();
-        JobConf jobConf = new JobConf(new Configuration());
-        Job job = new Job(jobConf);
-        CarbonTableIdentifier tableIdentifier = new CarbonTableIdentifier("db", "table1");
-        FileInputFormat.addInputPath(job, new Path("/opt/carbonstore/"));
-        CarbonInputFormat.setTableToAccess(job, tableIdentifier);
-        CarbonInputFormat.setSegmentsToAccess(job, Arrays.asList(1, 2));
-        Expression expression = new EqualToExpression(
-                new ColumnExpression("c1", DataType.StringType),
-                new LiteralExpression("a",DataType.StringType));
-        List splits = carbonInputFormat.getSplits(job, expression);
+  @Test public void testGetFilteredSplits() throws Exception {
+    CarbonInputFormat carbonInputFormat = new CarbonInputFormat();
+    JobConf jobConf = new JobConf(new Configuration());
+    Job job = new Job(jobConf);
+    CarbonTableIdentifier tableIdentifier = new CarbonTableIdentifier("db", "table1");
+    FileInputFormat.addInputPath(job, new Path("/opt/carbonstore/"));
+    CarbonInputFormat.setTableToAccess(job, tableIdentifier);
+    CarbonInputFormat.setSegmentsToAccess(job, Arrays.asList(1, 2));
+    Expression expression = new EqualToExpression(new ColumnExpression("c1", DataType.StringType),
+        new LiteralExpression("a", DataType.StringType));
+    List splits = carbonInputFormat.getSplits(job, expression);
 
-        Assert.assertTrue(splits != null);
-        Assert.assertTrue(!splits.isEmpty());
-    }
+    Assert.assertTrue(splits != null);
+    Assert.assertTrue(!splits.isEmpty());
+  }
 }

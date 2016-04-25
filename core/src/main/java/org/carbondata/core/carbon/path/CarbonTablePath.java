@@ -42,10 +42,10 @@ public class CarbonTablePath extends Path {
 
   private String tablePath;
 
-    public CarbonTablePath(String tablePathString) {
-        super(tablePathString);
-        this.tablePath = tablePathString;
-    }
+  public CarbonTablePath(String tablePathString) {
+    super(tablePathString);
+    this.tablePath = tablePathString;
+  }
 
   /**
    * gets table path

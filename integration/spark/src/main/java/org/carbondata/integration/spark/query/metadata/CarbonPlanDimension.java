@@ -103,7 +103,7 @@ public class CarbonPlanDimension implements CarbonPlanColumn, Serializable {
     if (getClass() != obj.getClass()) {
       return false;
     }
-    CarbonDimension other = (CarbonDimension) obj;
+    CarbonPlanDimension other = (CarbonPlanDimension) obj;
     if (dimensionUniqueName == null) {
       if (other.dimensionUniqueName != null) {
         return false;

@@ -48,10 +48,6 @@ import org.carbondata.integration.spark.load._
 import org.carbondata.integration.spark.partition.api.impl.QueryPartitionHelper
 import org.carbondata.integration.spark.rdd.CarbonDataRDDFactory
 import org.carbondata.integration.spark.util.{CarbonQueryUtil, CarbonScalaUtil, CarbonSparkInterFaceLogEvent, GlobalDictionaryUtil}
-import org.carbondata.processing.suggest.autoagg.{AutoAggSuggestionFactory, AutoAggSuggestionService}
-import org.carbondata.processing.suggest.autoagg.model.Request
-import org.carbondata.processing.suggest.autoagg.util.CommonUtil
-import org.carbondata.processing.suggest.datastats.model.LoadModel
 
 
 
@@ -2058,7 +2054,7 @@ private[sql] case class AddAggregatesToCube(
   }
 }
 
-private[sql] case class PartitionData(schemaName: String, cubeName: String, factPath: String,
+private[sql] case class PartitionData(databaseName: String, tableName: String, factPath: String,
                                       targetPath: String, delimiter: String, quoteChar: String,
                                       fileHeader: String, escapeChar: String, multiLine: Boolean)
   extends RunnableCommand {
@@ -2066,12 +2062,17 @@ private[sql] case class PartitionData(schemaName: String, cubeName: String, fact
   var partitionStatus = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
 
   def run(sqlContext: SQLContext): Seq[Row] = {
-    val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog
-      .lookupRelation1(Option(schemaName), cubeName, None)(sqlContext).asInstanceOf[CarbonRelation]
+    val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog.lookupRelation1(
+      Option(databaseName), tableName, None)(sqlContext).asInstanceOf[CarbonRelation]
+    val dimNames = relation.cubeMeta.carbonTable
+      .getDimensionByTableName(tableName).asScala.map(_.getColName)
+    val msrNames = relation.cubeMeta.carbonTable
+      .getDimensionByTableName(tableName).asScala.map(_.getColName)
     val targetFolder = targetPath
-    partitionStatus = CarbonDataRDDFactory.partitionCarbonData(sqlContext.sparkContext, schemaName,
-      cubeName, factPath, targetFolder,
-      CarbonQueryUtil.getAllColumns(relation.cubeMeta.carbonTable), fileHeader, delimiter,
+    partitionStatus = CarbonDataRDDFactory.partitionCarbonData(
+      sqlContext.sparkContext, databaseName,
+      tableName, factPath, targetFolder, (dimNames++msrNames).toArray
+      , fileHeader, delimiter,
       quoteChar, escapeChar, multiLine, relation.cubeMeta.partitioner)
     if (partitionStatus == CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS) {
       logInfo("Bad Record Found while partitioning data")
@@ -2145,116 +2146,7 @@ private[sql] case class ShowAllCubes(override val output: Seq[Attribute])
         Row(x._1, x._2, sqlContext.asInstanceOf[HiveContext].catalog.tableExists(Seq(x._1, x._2)))
       }.toSeq
   }
-}
 
-private[sql] case class SuggestAggregates(
-                                           script: Option[String],
-                                           sugType: Option[String],
-                                           schemaNameOp: Option[String],
-                                           cubeName: String,
-                                           override val output: Seq[Attribute])
-  extends RunnableCommand {
-
-  override def run(sqlContext: SQLContext): Seq[Row] = {
-    val LOGGER = LogServiceFactory.getLogService("org.apache.spark.sql.cubemodel.cubeSchema");
-    val schemaName = getDB.getDatabaseName(schemaNameOp, sqlContext)
-    val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog
-      .lookupRelation1(Some(schemaName), cubeName, None)(sqlContext).asInstanceOf[CarbonRelation]
-    try {
-      val loadModel: LoadModel = new LoadModel
-      loadModel.setSchemaName(relation.cubeMeta.carbonTableIdentifier.getDatabaseName)
-      loadModel.setCubeName(relation.cubeMeta.carbonTableIdentifier.getTableName)
-      val table = relation.metaData.carbonTable
-      loadModel.setTableName(table.getFactTableName)
-      loadModel.setDataPath(relation.cubeMeta.dataPath)
-      loadModel.setMetaDataPath(relation.metaData.carbonTable.getMetaDataFilepath)
-      // check if there is any valid loads.if there is no valid load means,
-      // there is no data loadeded and hence return empty suggestion
-      CommonUtil.setListOfValidSlices(relation.metaData.carbonTable.getMetaDataFilepath, loadModel)
-      CommonUtil.fillSchemaAndCubeDetail(loadModel)
-      if (loadModel.getValidSlices.size() == 0) {
-        return Seq(Row("Data Not loaded", "No Suggestion"))
-      }
-      val cubeCreationTime = CarbonEnv.getInstance(sqlContext).carbonCatalog
-        .getCubeCreationTime(schemaName, cubeName)
-      val schemaLastUpdatedTime = CarbonEnv.getInstance(sqlContext).carbonCatalog
-        .getSchemaLastUpdatedTime(schemaName, cubeName)
-      loadModel.setCubeCreationtime(cubeCreationTime)
-      loadModel.setSchemaLastUpdatedTime(schemaLastUpdatedTime)
-      val aggSuggestion = getAggSuggestion(script, loadModel)
-      aggSuggestion
-    }
-    catch {
-      case e: Exception =>
-        LOGGER.audit(
-          s"Error while querying for aggregate table suggestion for [$schemaName] and " +
-            s"cube name [$cubeName] failed :" +
-            e)
-        if (null != e.getMessage) {
-          sys.error(
-            s"Aggregate table suggestion request for [$schemaName] and " +
-              s"cube [$cubeName] is failed." +
-              e.getMessage)
-        }
-        else {
-          sys.error(
-            s"Aggregate table suggestion request for [$schemaName] and cube [$cubeName] is failed.")
-        }
-    }
-
-  }
-
-  def getAggSuggestion(script: Option[String], loadModel: LoadModel): Seq[Row] = {
-    if (!script.isEmpty) {
-      if (!sugType.isEmpty) {
-        val aggSuggReqType: Request = Request.getRequest(sugType.get)
-        val aggService: AutoAggSuggestionService = AutoAggSuggestionFactory
-          .getAggregateService(aggSuggReqType)
-        val aggCombs = aggService.getAggregateScripts(loadModel)
-        aggCombs.asScala.map { x => Row(aggSuggReqType.getAggSuggestionType, x) }
-
-      }
-      else {
-        val dataAggService: AutoAggSuggestionService = AutoAggSuggestionFactory
-          .getAggregateService(Request.DATA_STATS)
-        val queryAggService: AutoAggSuggestionService = AutoAggSuggestionFactory
-          .getAggregateService(Request.QUERY_STATS)
-        val dataAggCombs = dataAggService.getAggregateScripts(loadModel)
-        val queryAggCombs = queryAggService.getAggregateScripts(loadModel)
-        val agg_suggestion = new scala.collection.mutable.ListBuffer[Row]()
-        dataAggCombs
-          .asScala.map { x => agg_suggestion += (Row(Request.DATA_STATS.getAggSuggestionType, x)) }
-        queryAggCombs
-          .asScala.map { x => agg_suggestion += (Row(Request.QUERY_STATS.getAggSuggestionType, x)) }
-        agg_suggestion.toSeq
-      }
-    }
-    else {
-      if (!sugType.isEmpty) {
-        val aggSuggType: Request = Request.getRequest(sugType.get)
-        val aggService: AutoAggSuggestionService = AutoAggSuggestionFactory
-          .getAggregateService(aggSuggType)
-        val aggCombs = aggService.getAggregateDimensions(loadModel)
-        aggCombs.asScala.map { x => Row(aggSuggType.getAggSuggestionType, x) }
-
-      }
-      else {
-        val dataAggService: AutoAggSuggestionService = AutoAggSuggestionFactory
-          .getAggregateService(Request.DATA_STATS)
-        val queryAggService: AutoAggSuggestionService = AutoAggSuggestionFactory
-          .getAggregateService(Request.QUERY_STATS)
-        val dataAggCombs = dataAggService.getAggregateDimensions(loadModel)
-        val queryAggCombs = queryAggService.getAggregateDimensions(loadModel)
-        val agg_suggestion = new scala.collection.mutable.ListBuffer[Row]()
-        dataAggCombs
-          .asScala.map { x => agg_suggestion += (Row(Request.DATA_STATS.getAggSuggestionType, x)) }
-        queryAggCombs
-          .asScala.map { x => agg_suggestion += (Row(Request.QUERY_STATS.getAggSuggestionType, x)) }
-        agg_suggestion.toSeq
-
-      }
-    }
-  }
 }
 
 private[sql] case class ShowAllTablesDetail(

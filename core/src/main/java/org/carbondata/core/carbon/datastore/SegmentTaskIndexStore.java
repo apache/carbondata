@@ -204,8 +204,8 @@ public class SegmentTaskIndexStore {
     }
   }
 
-  public Map<String,AbstractIndex> getSegmentBTreeIfExists(AbsoluteTableIdentifier absoluteTableIdentifier,
-          int segmentId) {
+  public Map<String, AbstractIndex> getSegmentBTreeIfExists(
+      AbsoluteTableIdentifier absoluteTableIdentifier, int segmentId) {
     return null;
   }
 }

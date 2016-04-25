@@ -40,7 +40,6 @@ import org.carbondata.integration.spark.agg.FlattenExpr
 import org.carbondata.integration.spark.rdd.CarbonDataFrameRDD
 import org.carbondata.integration.spark.util.CarbonSparkInterFaceLogEvent
 import org.carbondata.query.aggregator.MeasureAggregator
-import org.carbondata.query.querystats.{QueryDetail, QueryStatsCollector}
 
 class CarbonContext(val sc: SparkContext, metadataPath: String) extends HiveContext(sc) {
   self =>
@@ -94,10 +93,7 @@ class CarbonContext(val sc: SparkContext, metadataPath: String) extends HiveCont
 
   override def sql(sql: String): SchemaRDD = {
     // queryId will be unique for each query, creting query detail holder
-    val queryStatsCollector: QueryStatsCollector = QueryStatsCollector.getInstance
     val queryId: String = System.nanoTime() + ""
-    val queryDetail: QueryDetail = new QueryDetail(queryId)
-    queryStatsCollector.addQueryStats(queryId, queryDetail)
     this.setConf("queryId", queryId)
 
     CarbonContext.updateCarbonPorpertiesPath(this)
