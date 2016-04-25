@@ -357,6 +357,10 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
    * only fill direct columns remaining fill with null
    */
   private SqlStatement.Type[] columnDataType;
+  /**
+   * task id, each spark task has a unique id
+   */
+  private String taskNo;
 
   public CarbonCSVBasedSeqGenMeta() {
     super();
@@ -607,6 +611,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     currentRestructNumber = -1;
     partitionID = "";
     segmentId = "";
+    taskNo = "";
     directDictionaryColumns = "";
   }
 
@@ -669,6 +674,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
         .append(XMLHandler.addTagValue("currentRestructNumber", currentRestructNumber));
     retval.append("    ").append(XMLHandler.addTagValue("partitionID", partitionID));
     retval.append("    ").append(XMLHandler.addTagValue("segmentId", segmentId));
+    retval.append("    ").append(XMLHandler.addTagValue("taskNo", taskNo));
     retval.append("    ")
         .append(XMLHandler.addTagValue("directDictionaryColumns", directDictionaryColumns));
     return retval.toString();
@@ -717,6 +723,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
           Integer.parseInt(XMLHandler.getTagValue(stepnode, "currentRestructNumber"));
       partitionID = XMLHandler.getTagValue(stepnode, "partitionID");
       segmentId = XMLHandler.getTagValue(stepnode, "segmentId");
+      taskNo = XMLHandler.getTagValue(stepnode, "taskNo");
       directDictionaryColumns = XMLHandler.getTagValue(stepnode, "directDictionaryColumns");
       String batchConfig = XMLHandler.getTagValue(stepnode, "batchSize");
 
@@ -1279,6 +1286,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
       currentRestructNumber = (int) rep.getStepAttributeInteger(idStep, "currentRestructNumber");
       partitionID = rep.getStepAttributeString(idStep, "partitionID");
       segmentId = rep.getStepAttributeString(idStep, "segmentId");
+      taskNo = rep.getStepAttributeString(idStep, "taskNo");
       directDictionaryColumns = rep.getStepAttributeString(idStep, "directDictionaryColumns");
       int nrKeys = rep.countNrStepAttributes(idStep, "lookup_keyfield");
       allocate(nrKeys);
@@ -1332,6 +1340,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
           currentRestructNumber);
       rep.saveStepAttribute(idTransformation, idStep, "partitionID", partitionID);
       rep.saveStepAttribute(idTransformation, idStep, "segmentId", segmentId);
+      rep.saveStepAttribute(idTransformation, idStep, "taskNo", taskNo);
       rep.saveStepAttribute(idTransformation, idStep, "directDictionaryColumns",
           directDictionaryColumns);
     } catch (Exception e) {
@@ -1641,6 +1650,20 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
    */
   public void setSegmentId(String segmentId) {
     this.segmentId = segmentId;
+  }
+
+  /**
+   * @param taskNo
+   */
+  public void setTaskNo(String taskNo) {
+    this.taskNo = taskNo;
+  }
+
+  /**
+   * @return
+   */
+  public String getTaskNo() {
+    return taskNo;
   }
 }
 

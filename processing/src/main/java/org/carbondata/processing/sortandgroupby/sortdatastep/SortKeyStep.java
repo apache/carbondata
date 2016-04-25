@@ -174,7 +174,7 @@ public class SortKeyStep extends BaseStep {
           meta.getDimensionCount() - meta.getComplexDimensionCount(),
           meta.getComplexDimensionCount(), meta.getMeasureCount(), this.observer,
           meta.getCurrentRestructNumber(), meta.getNoDictionaryCount(), msrdataTypes,
-          meta.getPartitionID(), meta.getSegmentId());
+          meta.getPartitionID(), meta.getSegmentId(), meta.getTaskNo());
       try {
         // initialize sort
         this.sortDataRows.initialize(meta.getSchemaName(), meta.getCubeName());

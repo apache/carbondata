@@ -419,7 +419,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
 
           columnsInfo.setTimeOrdinalIndices(meta.timeOrdinalIndices);
           surrogateKeyGen = new FileStoreSurrogateKeyGenForCSV(columnsInfo, meta.getPartitionID(),
-              meta.getSegmentId());
+              meta.getSegmentId(), meta.getTaskNo());
           data.setSurrogateKeyGen(surrogateKeyGen);
 
           updateStoreLocation();
@@ -767,6 +767,8 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
     String partitionId = meta.getPartitionID();
     String carbonDataDirectoryPath = carbonTablePath.getCarbonDataDirectoryPath(partitionId,
         meta.getSegmentId());
+    carbonDataDirectoryPath =
+        carbonDataDirectoryPath + File.separator+ meta.getTaskNo();
     loadFolderLoc = carbonDataDirectoryPath + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
   }
 

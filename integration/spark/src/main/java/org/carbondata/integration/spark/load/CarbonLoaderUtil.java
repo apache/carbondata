@@ -156,7 +156,8 @@ public final class CarbonLoaderUtil {
     }
     String graphPath =
         outPutLoc + File.separator + databaseName + File.separator + tableName + File.separator
-            + loadModel.getPartitionId() + File.separator + tableName +
+            + loadModel.getSegmentId() + File.separator + loadModel.getTaskNo() + File.separator
+            + tableName +
             fileNamePrefix + ".ktr";
     File path = new File(graphPath);
     if (path.exists()) {
@@ -533,6 +534,7 @@ public final class CarbonLoaderUtil {
       String localStoreLocation = getStoreLocation(CarbonProperties.getInstance()
               .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL),
           carbonTableIdentifier, Integer.parseInt(segmentId), loadModel.getPartitionId());
+      localStoreLocation = localStoreLocation + File.separator + loadModel.getTaskNo();
       boolean isUpdate = false;
       if (loadModel.isAggLoadRequest() && null != aggTableName) {
         if (updatedSlices.contains(segmentId)) {

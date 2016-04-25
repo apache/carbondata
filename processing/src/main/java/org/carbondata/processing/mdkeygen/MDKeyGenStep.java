@@ -234,6 +234,7 @@ public class MDKeyGenStep extends BaseStep {
     String partitionId = meta.getPartitionID();
     String carbonDataDirectoryPath = carbonTablePath.getCarbonDataDirectoryPath(partitionId,
         meta.getSegmentId());
+    carbonDataDirectoryPath = carbonDataDirectoryPath + File.separator + meta.getTaskNo();
     storeLocation = carbonDataDirectoryPath + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
 
     fileManager = new LoadFolderData();
@@ -324,8 +325,8 @@ public class MDKeyGenStep extends BaseStep {
     String baseSortTempLocation =
         baseStorePath + File.separator + meta.getSchemaName() + File.separator + meta.getCubeName();
     // Set the data file location
-    this.dataFolderLocation = baseSortTempLocation + File.separator + meta.getSegmentId() +
-        File.separator + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION;
+    this.dataFolderLocation =
+        storeLocation + File.separator + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION;
     return true;
   }
 

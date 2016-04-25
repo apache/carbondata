@@ -103,15 +103,20 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
    */
   private int segmentId;
   /**
+   * task id, each spark task has a unique id
+   */
+  private String taskNo;
+  /**
    * @param columnsInfo
    * @throws KettleException
    */
   public FileStoreSurrogateKeyGenForCSV(ColumnsInfo columnsInfo, String partitionID,
-      int segmentId) throws KettleException {
+      int segmentId, String taskNo) throws KettleException {
     super(columnsInfo);
     populatePrimaryKeyarray(dimInsertFileNames, columnsInfo.getPrimaryKeyMap());
     this.partitionID = partitionID;
     this.segmentId = segmentId;
+    this.taskNo = taskNo;
     keyGenerator = new HashMap<String, KeyGenerator>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
     baseStorePath = columnsInfo.getBaseStoreLocation();
@@ -191,6 +196,8 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
         CarbonStorePath.getCarbonTablePath(baseStorePath, carbonTableIdentifier);
     String carbonDataDirectoryPath =
         carbonTablePath.getCarbonDataDirectoryPath(this.partitionID, this.segmentId);
+    carbonDataDirectoryPath =
+        carbonDataDirectoryPath + File.separator + taskNo;
     carbonDataDirectoryPath =
         carbonDataDirectoryPath + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
     boolean isDirCreated = new File(carbonDataDirectoryPath).mkdirs();

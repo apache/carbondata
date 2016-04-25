@@ -186,14 +186,19 @@ public class SortDataRows {
    * Id of the load folder
    */
   private int segmentId;
+  /**
+   * task id, each spark task has a unique id
+   */
+  private String taskNo;
 
   public SortDataRows(String tabelName, int dimColCount, int complexDimColCount,
       int measureColCount, SortObserver observer, int currentRestructNum, int noDictionaryCount,
-      String[] measureDatatype, String partitionID, int segmentId) {
+      String[] measureDatatype, String partitionID, int segmentId, String taskNo) {
     // set table name
     this.tableName = tabelName;
     this.partitionID = partitionID;
     this.segmentId = segmentId;
+    this.taskNo = taskNo;
     // set measure count
     this.measureColCount = measureColCount;
 
@@ -680,14 +685,17 @@ public class SortDataRows {
   private void updateSortTempFileLocation(CarbonProperties instance) {
     // get the base location
     String tempLocationKey = schemaName + '_' + cubeName;
-    String baseLocation =
-        instance.getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
-
-    // get the temp file location
-    this.tempFileLocation =
-        baseLocation + File.separator + schemaName + File.separator + cubeName + File.separator
-            + this.segmentId + File.separator + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION;
-
+    String baseStorePath = CarbonProperties.getInstance()
+        .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
+    CarbonTableIdentifier carbonTableIdentifier =
+        new CarbonTableIdentifier(schemaName, cubeName);
+    CarbonTablePath carbonTablePath =
+        CarbonStorePath.getCarbonTablePath(baseStorePath, carbonTableIdentifier);
+    String carbonDataDirectoryPath = carbonTablePath.getCarbonDataDirectoryPath(partitionID,
+        segmentId);
+    this.tempFileLocation = carbonDataDirectoryPath + File.separator + taskNo
+        + CarbonCommonConstants.FILE_INPROGRESS_STATUS + File.separator
+        + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION;
     LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
         "temp file location" + this.tempFileLocation);
   }

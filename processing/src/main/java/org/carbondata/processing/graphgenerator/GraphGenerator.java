@@ -352,7 +352,8 @@ public class GraphGenerator {
   private void validateAndInitialiseKettelEngine() throws GraphGeneratorException {
     File file = new File(
         outputLocation + File.separator + schemaInfo.getSchemaName() + File.separator
-            + this.tableName + File.separator + this.partitionID + File.separator);
+            + this.tableName + File.separator + this.segmentId + File.separator + this.taskNo
+            + File.separator);
     boolean isDirCreated = false;
     if (!file.exists()) {
       isDirCreated = file.mkdirs();
@@ -659,8 +660,8 @@ public class GraphGenerator {
 
     String graphFilePath =
         outputLocation + File.separator + schemaInfo.getSchemaName() + File.separator
-            + this.tableName + File.separator + partitionID + File.separator + this.tableName
-            + ".ktr";
+            + this.tableName + File.separator + segmentId + File.separator + this.taskNo
+            + File.separator + this.tableName + ".ktr";
     generateGraphFile(trans, graphFilePath);
   }
 
@@ -783,6 +784,7 @@ public class GraphGenerator {
     sliceMerger.setDefault();
     sliceMerger.setPartitionID(partitionID);
     sliceMerger.setSegmentId(segmentId);
+    sliceMerger.setTaskNo(taskNo);
     sliceMerger.setHeirAndKeySize(configurationInfo.getHeirAndKeySizeString());
     sliceMerger.setMdkeySize(configurationInfo.getMdkeySize());
     sliceMerger.setMeasureCount(configurationInfo.getMeasureCount());
@@ -1089,6 +1091,7 @@ public class GraphGenerator {
     CarbonCSVBasedSeqGenMeta seqMeta = new CarbonCSVBasedSeqGenMeta();
     seqMeta.setPartitionID(partitionID);
     seqMeta.setSegmentId(segmentId);
+    seqMeta.setTaskNo(taskNo);
     seqMeta.setCarbondim(graphConfiguration.getDimensionString());
     seqMeta.setComplexTypeString(graphConfiguration.getComplexTypeString());
     seqMeta.setBatchSize(Integer.parseInt(graphConfiguration.getBatchSize()));
@@ -1594,6 +1597,7 @@ public class GraphGenerator {
     SortKeyStepMeta sortRowsMeta = new SortKeyStepMeta();
     sortRowsMeta.setPartitionID(partitionID);
     sortRowsMeta.setSegmentId(segmentId);
+    sortRowsMeta.setTaskNo(taskNo);
     sortRowsMeta.setTabelName(graphConfiguration.getTableName());
     sortRowsMeta.setCubeName(schemaInfo.getCubeName());
     sortRowsMeta.setSchemaName(schemaInfo.getSchemaName());
