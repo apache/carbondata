@@ -27,10 +27,6 @@ public class AndFilterExecuterImpl implements FilterExecuter {
   private FilterExecuter leftExecuter;
   private FilterExecuter rightExecuter;
 
-  public AndFilterExecuterImpl() {
-
-  }
-
   public AndFilterExecuterImpl(FilterExecuter leftExecuter, FilterExecuter rightExecuter) {
     this.leftExecuter = leftExecuter;
     this.rightExecuter = rightExecuter;

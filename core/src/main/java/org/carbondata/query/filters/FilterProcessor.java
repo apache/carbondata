@@ -43,14 +43,13 @@ public interface FilterProcessor {
 
   /**
    * This API is exposed inorder to get the required block reference node
-   * based on the filter.The list will be send to the executer tasks inorder
-   * to apply filters with respect to the shortlisted data reference node.
+   * based on the filter.The block list will be send to the executer tasks inorder
+   * to apply filters.
    *
    * @param filterResolver DataBlock list with resolved filters
    * @return list of DataRefNode.
    */
-  List<DataRefNode> getFilterredBlocks(List<BTreeNode> listOfTree,
-      FilterResolverIntf filterResolver, AbstractIndex segmentIndexBuilder,
-      AbsoluteTableIdentifier tableIdentifier);
+  List<DataRefNode> getFilterredBlocks(BTreeNode listOfTree, FilterResolverIntf filterResolver,
+      AbstractIndex segmentIndexBuilder, AbsoluteTableIdentifier tableIdentifier);
 
 }

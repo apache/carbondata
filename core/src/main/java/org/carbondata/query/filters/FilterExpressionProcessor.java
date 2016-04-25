@@ -32,11 +32,13 @@ import org.carbondata.core.carbon.datastore.IndexKey;
 import org.carbondata.core.carbon.datastore.block.AbstractIndex;
 import org.carbondata.core.carbon.datastore.impl.btree.BTreeNode;
 import org.carbondata.core.carbon.datastore.impl.btree.BtreeDataRefNodeFinder;
+import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.query.carbonfilterinterface.ExpressionType;
 import org.carbondata.query.expression.BinaryExpression;
 import org.carbondata.query.expression.Expression;
 import org.carbondata.query.expression.conditional.BinaryConditionalExpression;
 import org.carbondata.query.expression.conditional.ConditionalExpression;
+import org.carbondata.query.filter.executer.FilterExecuter;
 import org.carbondata.query.filter.resolver.ConditionalFilterResolverImpl;
 import org.carbondata.query.filter.resolver.FilterResolverIntf;
 import org.carbondata.query.filter.resolver.LogicalFilterResolverImpl;
@@ -79,7 +81,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
    * Step:4 The selected blocks will be send to executers for applying the filters with the help
    * of Filter executers.
    */
-  public List<DataRefNode> getFilterredBlocks(List<BTreeNode> listOfTree,
+  public List<DataRefNode> getFilterredBlocks(BTreeNode btreeNode,
       FilterResolverIntf filterResolver, AbstractIndex tableSegment,
       AbsoluteTableIdentifier tableIdentifier) {
     // Need to get the current dimension tables
@@ -95,20 +97,19 @@ public class FilterExpressionProcessor implements FilterProcessor {
     LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
         "Successfully retrieved the start and end key");
     long startTimeInMillis = System.currentTimeMillis();
-    for (BTreeNode btreeNode : listOfTree) {
-      DataRefNodeFinder blockFinder = new BtreeDataRefNodeFinder(
-          tableSegment.getSegmentProperties().getDimensionColumnsValueSize());
-      DataRefNode startBlock =
-          blockFinder.findFirstDataBlock(btreeNode.getNextDataRefNode(), searchStartKey);
-      DataRefNode endBlock =
-          blockFinder.findLastDataBlock(btreeNode.getNextDataRefNode(), searchEndKey);
-      while (startBlock != endBlock) {
-        startBlock = startBlock.getNextDataRefNode();
-        addBlockBasedOnMinMaxValue(filterResolver, listOfDataBlocksToScan, startBlock);
-      }
-      addBlockBasedOnMinMaxValue(filterResolver, listOfDataBlocksToScan, endBlock);
-
+    DataRefNodeFinder blockFinder = new BtreeDataRefNodeFinder(
+        tableSegment.getSegmentProperties().getDimensionColumnsValueSize());
+    DataRefNode startBlock =
+        blockFinder.findFirstDataBlock(btreeNode.getNextDataRefNode(), searchStartKey);
+    DataRefNode endBlock =
+        blockFinder.findLastDataBlock(btreeNode.getNextDataRefNode(), searchEndKey);
+    while (startBlock != endBlock) {
+      startBlock = startBlock.getNextDataRefNode();
+      addBlockBasedOnMinMaxValue(filterResolver, listOfDataBlocksToScan, startBlock,
+          tableSegment.getSegmentProperties().getDimensionKeyGenerator());
     }
+    addBlockBasedOnMinMaxValue(filterResolver, listOfDataBlocksToScan, endBlock,
+        tableSegment.getSegmentProperties().getDimensionKeyGenerator());
     LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
         "Total Time in retrieving the data reference node" + "after scanning the btree " + (
             System.currentTimeMillis() - startTimeInMillis)
@@ -123,10 +124,13 @@ public class FilterExpressionProcessor implements FilterProcessor {
    * @param filterResolver
    * @param listOfDataBlocksToScan
    * @param dataRefNode
+   * @param keyGenerator
    */
   private void addBlockBasedOnMinMaxValue(FilterResolverIntf filterResolver,
-      List<DataRefNode> listOfDataBlocksToScan, DataRefNode dataRefNode) {
-    BitSet bitSet = filterResolver.getFilterExecuterInstance()
+      List<DataRefNode> listOfDataBlocksToScan, DataRefNode dataRefNode,
+      KeyGenerator keyGenerator) {
+    FilterExecuter filterExecuter = FilterUtil.getFilterExecuterTree(filterResolver, keyGenerator);
+    BitSet bitSet = filterExecuter
         .isScanRequired(dataRefNode.getColumnsMaxValue(), dataRefNode.getColumnsMinValue());
     if (!bitSet.isEmpty()) {
       listOfDataBlocksToScan.add(dataRefNode);

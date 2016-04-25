@@ -31,8 +31,6 @@ import org.carbondata.query.expression.DataType;
 import org.carbondata.query.expression.Expression;
 import org.carbondata.query.expression.conditional.BinaryConditionalExpression;
 import org.carbondata.query.expression.conditional.ConditionalExpression;
-import org.carbondata.query.filter.executer.FilterExecuter;
-import org.carbondata.query.filter.executer.RestructureFilterExecuterImpl;
 import org.carbondata.query.filters.measurefilter.util.FilterUtil;
 
 public class RestructureFilterResolverImpl implements FilterResolverIntf {
@@ -128,7 +126,6 @@ public class RestructureFilterResolverImpl implements FilterResolverIntf {
   /**
    * This method will check if a given expression contains a column expression recursively.
    *
-   * @param right
    * @return
    */
   private boolean checkIfExpressionContainsColumn(Expression expression) {
@@ -152,11 +149,6 @@ public class RestructureFilterResolverImpl implements FilterResolverIntf {
   @Override public FilterResolverIntf getRight() {
     // TODO Auto-generated method stub
     return null;
-  }
-
-  @Override public FilterExecuter getFilterExecuterInstance() {
-    // TODO Auto-generated method stub
-    return new RestructureFilterExecuterImpl();
   }
 
   public DimColumnResolvedFilterInfo getDimColResolvedFilterInfo() {

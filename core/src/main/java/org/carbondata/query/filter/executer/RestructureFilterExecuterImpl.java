@@ -30,10 +30,6 @@ public class RestructureFilterExecuterImpl implements FilterExecuter {
 
   DimColumnExecuterFilterInfo dimColumnExecuterInfo;
 
-  public RestructureFilterExecuterImpl() {
-
-  }
-
   public RestructureFilterExecuterImpl(DimColumnResolvedFilterInfo dimColumnResolvedFilterInfo,
       KeyGenerator blockKeyGenerator) {
     FilterUtil

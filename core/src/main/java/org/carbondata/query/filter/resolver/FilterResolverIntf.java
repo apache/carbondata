@@ -24,7 +24,6 @@ import org.carbondata.core.carbon.datastore.block.AbstractIndex;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.query.carbonfilterinterface.FilterExecuterType;
 import org.carbondata.query.evaluators.DimColumnResolvedFilterInfo;
-import org.carbondata.query.filter.executer.FilterExecuter;
 
 public interface FilterResolverIntf {
 
@@ -33,7 +32,7 @@ public interface FilterResolverIntf {
    * dictionaries for executing/evaluating the filter expressions in the
    * executer layer.
    *
-   * @param info
+   *
    */
   void resolve(AbsoluteTableIdentifier absoluteTableIdentifier);
 
@@ -52,15 +51,6 @@ public interface FilterResolverIntf {
    * @return FilterResolverIntf
    */
   FilterResolverIntf getRight();
-
-  /**
-   * This API will get the filter executer instance which is required to
-   * evaluate/execute the resolved filter expressions in the executer layer.
-   * This executer instance will be identified based on the resolver instance
-   *
-   * @return FilterExecuter instance.
-   */
-  FilterExecuter getFilterExecuterInstance();
 
   /**
    * API will return the resolved filter instance, this instance will provide

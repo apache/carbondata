@@ -25,9 +25,6 @@ import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.query.carbonfilterinterface.ExpressionType;
 import org.carbondata.query.carbonfilterinterface.FilterExecuterType;
 import org.carbondata.query.evaluators.DimColumnResolvedFilterInfo;
-import org.carbondata.query.filter.executer.AndFilterExecuterImpl;
-import org.carbondata.query.filter.executer.FilterExecuter;
-import org.carbondata.query.filter.executer.OrFilterExecuterImpl;
 
 public class LogicalFilterResolverImpl implements FilterResolverIntf {
   protected FilterResolverIntf leftEvalutor;
@@ -53,18 +50,6 @@ public class LogicalFilterResolverImpl implements FilterResolverIntf {
 
   public FilterResolverIntf getRight() {
     return rightEvalutor;
-  }
-
-  @Override public FilterExecuter getFilterExecuterInstance() {
-    switch (filterExpressionType) {
-      case OR:
-        return new OrFilterExecuterImpl();
-      case AND:
-        return new AndFilterExecuterImpl();
-
-      default:
-        return null;
-    }
   }
 
   @Override public DimColumnResolvedFilterInfo getDimColResolvedFilterInfo() {
@@ -94,5 +79,4 @@ public class LogicalFilterResolverImpl implements FilterResolverIntf {
         return null;
     }
   }
-
 }

@@ -20,7 +20,7 @@
 package org.carbondata.query.evaluators;
 
 
-public class MsrColumnEvalutorInfo {
+public class MeasureColumnResolvedFilterInfo {
   private int columnIndex = -1;
 
   private int rowIndex = -1;

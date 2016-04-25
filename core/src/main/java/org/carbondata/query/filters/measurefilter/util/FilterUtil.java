@@ -60,7 +60,9 @@ import org.carbondata.query.filter.executer.FilterExecuter;
 import org.carbondata.query.filter.executer.IncludeFilterExecuterImpl;
 import org.carbondata.query.filter.executer.OrFilterExecuterImpl;
 import org.carbondata.query.filter.executer.RestructureFilterExecuterImpl;
+import org.carbondata.query.filter.executer.RowLevelFilterExecuterImpl;
 import org.carbondata.query.filter.resolver.FilterResolverIntf;
+import org.carbondata.query.filter.resolver.RowLevelFilterResolverImpl;
 import org.carbondata.query.schema.metadata.DimColumnFilterInfo;
 import org.carbondata.query.util.CarbonEngineLogEvent;
 import org.carbondata.query.util.DataTypeConverter;
@@ -95,8 +97,16 @@ public final class FilterUtil {
         return new RestructureFilterExecuterImpl(
             filterExpressionResolverTree.getDimColResolvedFilterInfo(), blockKeyGenerator);
       case ROWLEVEL:
+        if (filterExpressionResolverTree instanceof RowLevelFilterResolverImpl) {
+          return new RowLevelFilterExecuterImpl(
+              ((RowLevelFilterResolverImpl) filterExpressionResolverTree)
+                  .getDimColEvaluatorInfoList(),
+              ((RowLevelFilterResolverImpl) filterExpressionResolverTree)
+                  .getMsrColEvalutorInfoList(),
+              ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getFilterExpresion(),
+              ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getTableIdentifier());
+        }
 
-        return filterExpressionResolverTree.getFilterExecuterInstance();
     }
     return null;
 

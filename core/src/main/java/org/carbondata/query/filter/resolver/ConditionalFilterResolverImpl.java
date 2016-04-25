@@ -31,9 +31,6 @@ import org.carbondata.query.expression.DataType;
 import org.carbondata.query.expression.Expression;
 import org.carbondata.query.expression.conditional.BinaryConditionalExpression;
 import org.carbondata.query.expression.conditional.ConditionalExpression;
-import org.carbondata.query.filter.executer.ExcludeFilterExecuterImpl;
-import org.carbondata.query.filter.executer.FilterExecuter;
-import org.carbondata.query.filter.executer.IncludeFilterExecuterImpl;
 import org.carbondata.query.filters.measurefilter.util.FilterUtil;
 
 public class ConditionalFilterResolverImpl implements FilterResolverIntf {
@@ -133,18 +130,6 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
     return null;
   }
 
-  @Override public FilterExecuter getFilterExecuterInstance() {
-    // TODO Auto-generated method stub
-    switch (exp.getFilterExpressionType()) {
-      case NOT_EQUALS:
-      case NOT_IN:
-        return new ExcludeFilterExecuterImpl(dimColResolvedFilterInfo);
-
-      default:
-        return new IncludeFilterExecuterImpl(dimColResolvedFilterInfo);
-    }
-  }
-
   public DimColumnResolvedFilterInfo getDimColResolvedFilterInfo() {
     return dimColResolvedFilterInfo;
   }
@@ -190,4 +175,6 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
     }
 
   }
+
+
 }

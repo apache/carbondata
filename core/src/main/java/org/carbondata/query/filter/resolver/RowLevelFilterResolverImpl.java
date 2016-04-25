@@ -24,20 +24,19 @@ import org.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.carbondata.core.metadata.CarbonMetadata.Measure;
 import org.carbondata.query.carbonfilterinterface.FilterExecuterType;
 import org.carbondata.query.evaluators.DimColumnResolvedFilterInfo;
-import org.carbondata.query.evaluators.MsrColumnEvalutorInfo;
+import org.carbondata.query.evaluators.MeasureColumnResolvedFilterInfo;
 import org.carbondata.query.expression.ColumnExpression;
 import org.carbondata.query.expression.Expression;
 import org.carbondata.query.expression.conditional.ConditionalExpression;
-import org.carbondata.query.filter.executer.FilterExecuter;
-import org.carbondata.query.filter.executer.RowLevelFilterExecuterImpl;
 
 public class RowLevelFilterResolverImpl extends ConditionalFilterResolverImpl {
 
   protected Expression exp;
   protected boolean isExpressionResolve;
   protected boolean isIncludeFilter;
+
   private List<DimColumnResolvedFilterInfo> dimColEvaluatorInfoList;
-  private List<MsrColumnEvalutorInfo> msrColEvalutorInfoList;
+  private List<MeasureColumnResolvedFilterInfo> msrColEvalutorInfoList;
   private AbsoluteTableIdentifier tableIdentifier;
 
   public RowLevelFilterResolverImpl(Expression exp, boolean isExpressionResolve,
@@ -48,7 +47,7 @@ public class RowLevelFilterResolverImpl extends ConditionalFilterResolverImpl {
 
   @Override public void resolve(AbsoluteTableIdentifier absoluteTableIdentifier) {
     DimColumnResolvedFilterInfo dimColumnEvaluatorInfo = null;
-    MsrColumnEvalutorInfo msrColumnEvalutorInfo = null;
+    MeasureColumnResolvedFilterInfo msrColumnEvalutorInfo = null;
     int index = 0;
     if (exp instanceof ConditionalExpression) {
       ConditionalExpression conditionalExpression = (ConditionalExpression) exp;
@@ -61,7 +60,7 @@ public class RowLevelFilterResolverImpl extends ConditionalFilterResolverImpl {
           dimColumnEvaluatorInfo.setDimensionExistsInCurrentSilce(false);
           dimColEvaluatorInfoList.add(dimColumnEvaluatorInfo);
         } else {
-          msrColumnEvalutorInfo = new MsrColumnEvalutorInfo();
+          msrColumnEvalutorInfo = new MeasureColumnResolvedFilterInfo();
           msrColumnEvalutorInfo.setRowIndex(index++);
           msrColumnEvalutorInfo.setAggregator(((Measure) columnExpression.getDim()).getAggName());
           // int measureIndex = QueryExecutorUtility
@@ -78,13 +77,24 @@ public class RowLevelFilterResolverImpl extends ConditionalFilterResolverImpl {
     }
   }
 
-  @Override public FilterExecuter getFilterExecuterInstance() {
-    // TODO Auto-generated method stub
-    return new RowLevelFilterExecuterImpl(dimColEvaluatorInfoList, msrColEvalutorInfoList, exp,
-        tableIdentifier);
-  }
-
   @Override public FilterExecuterType getFilterExecuterType() {
     return FilterExecuterType.ROWLEVEL;
   }
+
+  public Expression getFilterExpresion() {
+    return exp;
+  }
+
+  public List<DimColumnResolvedFilterInfo> getDimColEvaluatorInfoList() {
+    return dimColEvaluatorInfoList;
+  }
+
+  public List<MeasureColumnResolvedFilterInfo> getMsrColEvalutorInfoList() {
+    return msrColEvalutorInfoList;
+  }
+
+  public AbsoluteTableIdentifier getTableIdentifier() {
+    return tableIdentifier;
+  }
+
 }

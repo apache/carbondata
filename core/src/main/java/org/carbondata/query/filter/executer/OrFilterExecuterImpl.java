@@ -27,10 +27,6 @@ public class OrFilterExecuterImpl implements FilterExecuter {
   private FilterExecuter leftExecuter;
   private FilterExecuter rightExecuter;
 
-  public OrFilterExecuterImpl() {
-
-  }
-
   public OrFilterExecuterImpl(FilterExecuter leftExecuter, FilterExecuter rightExecuter) {
     this.leftExecuter = leftExecuter;
     this.rightExecuter = rightExecuter;

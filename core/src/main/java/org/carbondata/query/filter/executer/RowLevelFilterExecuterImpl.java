@@ -38,7 +38,7 @@ import org.carbondata.query.carbonfilterinterface.RowImpl;
 import org.carbondata.query.carbonfilterinterface.RowIntf;
 import org.carbondata.query.complex.querytypes.GenericQueryType;
 import org.carbondata.query.evaluators.DimColumnResolvedFilterInfo;
-import org.carbondata.query.evaluators.MsrColumnEvalutorInfo;
+import org.carbondata.query.evaluators.MeasureColumnResolvedFilterInfo;
 import org.carbondata.query.expression.Expression;
 import org.carbondata.query.expression.exception.FilterUnsupportedException;
 import org.carbondata.query.filters.measurefilter.util.FilterUtil;
@@ -50,12 +50,12 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(RowLevelFilterExecuterImpl.class.getName());
   private List<DimColumnResolvedFilterInfo> dimColEvaluatorInfoList;
-  private List<MsrColumnEvalutorInfo> msrColEvalutorInfoList;
+  private List<MeasureColumnResolvedFilterInfo> msrColEvalutorInfoList;
   private Expression exp;
   private AbsoluteTableIdentifier tableIdentifier;
 
   public RowLevelFilterExecuterImpl(List<DimColumnResolvedFilterInfo> dimColEvaluatorInfoList,
-      List<MsrColumnEvalutorInfo> msrColEvalutorInfoList, Expression exp,
+      List<MeasureColumnResolvedFilterInfo> msrColEvalutorInfoList, Expression exp,
       AbsoluteTableIdentifier tableIdentifier) {
     this.dimColEvaluatorInfoList = dimColEvaluatorInfoList;
     this.msrColEvalutorInfoList = msrColEvalutorInfoList;
@@ -82,7 +82,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
     }
 
     // CHECKSTYLE:OFF Approval No:Approval-V1R2C10_001
-    for (MsrColumnEvalutorInfo msrColumnEvalutorInfo : msrColEvalutorInfoList) {
+    for (MeasureColumnResolvedFilterInfo msrColumnEvalutorInfo : msrColEvalutorInfoList) {
       if (msrColumnEvalutorInfo.isMeasureExistsInCurrentSlice() && null == blockChunkHolder
           .getMeasureDataChunk()[msrColumnEvalutorInfo.getColumnIndex()]) {
         blockChunkHolder.getMeasureDataChunk()[msrColumnEvalutorInfo.getColumnIndex()] =
@@ -169,7 +169,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
 
     SqlStatement.Type msrType;
 
-    for (MsrColumnEvalutorInfo msrColumnEvalutorInfo : msrColEvalutorInfoList) {
+    for (MeasureColumnResolvedFilterInfo msrColumnEvalutorInfo : msrColEvalutorInfoList) {
       switch (msrColumnEvalutorInfo.getType()) {
         case LONG:
           msrType = SqlStatement.Type.LONG;
