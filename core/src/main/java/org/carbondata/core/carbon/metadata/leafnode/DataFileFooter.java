@@ -27,7 +27,7 @@ import org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 /**
  * Information of one data file
  */
-public class DataFileMetadata implements Serializable {
+public class DataFileFooter implements Serializable {
 
   /**
    * serialization id

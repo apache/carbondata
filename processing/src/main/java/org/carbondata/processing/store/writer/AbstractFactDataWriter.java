@@ -47,7 +47,7 @@ import org.carbondata.core.util.CarbonMergerUtil;
 import org.carbondata.core.util.CarbonMetadataUtil;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
-import org.carbondata.core.writer.CarbonMetaDataWriter;
+import org.carbondata.core.writer.CarbonFooterWriter;
 import org.carbondata.processing.store.CarbonDataFileAttributes;
 import org.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
@@ -303,9 +303,9 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
       throws CarbonDataWriterException {
     try {
       long currentPosition = channel.size();
-      CarbonMetaDataWriter writer = new CarbonMetaDataWriter(this.fileName);
-      writer.writeMetaData(
-          CarbonMetadataUtil.convertFileMeta(infoList, localCardinality.length, localCardinality),
+      CarbonFooterWriter writer = new CarbonFooterWriter(this.fileName);
+      writer.writeFooter(
+          CarbonMetadataUtil.convertFileFooter(infoList, localCardinality.length, localCardinality),
           currentPosition);
 
     } catch (IOException e) {

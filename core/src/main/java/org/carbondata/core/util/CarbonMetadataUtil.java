@@ -29,30 +29,30 @@ public class CarbonMetadataUtil {
       LogServiceFactory.getLogService(CarbonMetadataUtil.class.getName());
 
   /**
-   * It converts list of LeafNodeInfoColumnar to FileMeta thrift objects
+   * It converts list of LeafNodeInfoColumnar to FileFooter thrift objects
    *
    * @param infoList
    * @param numCols
    * @param cardinalities
-   * @return FileMeta
+   * @return FileFooter
    */
-  public static FileMeta convertFileMeta(List<LeafNodeInfoColumnar> infoList, int numCols,
+  public static FileFooter convertFileFooter(List<LeafNodeInfoColumnar> infoList, int numCols,
       int[] cardinalities) throws IOException {
 
     SegmentInfo segmentInfo = new SegmentInfo();
     segmentInfo.setNum_cols(numCols);
     segmentInfo.setColumn_cardinalities(CarbonUtil.convertToIntegerList(cardinalities));
 
-    FileMeta fileMeta = new FileMeta();
-    fileMeta.setNum_rows(getTotalNumberOfRows(infoList));
-    fileMeta.setSegment_info(segmentInfo);
-    fileMeta.setIndex(getLeafNodeIndex(infoList));
+    FileFooter footer = new FileFooter();
+    footer.setNum_rows(getTotalNumberOfRows(infoList));
+    footer.setSegment_info(segmentInfo);
+    footer.setIndex(getLeafNodeIndex(infoList));
     //TODO: Need to set the schema here.
-    fileMeta.setTable_columns(new ArrayList<ColumnSchema>());
+    footer.setTable_columns(new ArrayList<ColumnSchema>());
     for (LeafNodeInfoColumnar info : infoList) {
-      fileMeta.addToLeaf_node_info(getLeafNodeInfo(info));
+      footer.addToLeaf_node_info(getLeafNodeInfo(info));
     }
-    return fileMeta;
+    return footer;
   }
 
   /**
@@ -197,16 +197,16 @@ public class CarbonMetadataUtil {
   }
 
   /**
-   * It converts FileMeta thrift object to list of LeafNodeInfoColumnar objects
+   * It converts FileFooter thrift object to list of LeafNodeInfoColumnar objects
    *
-   * @param fileMeta
+   * @param footer
    * @return
    */
-  public static List<LeafNodeInfoColumnar> convertLeafNodeInfo(FileMeta fileMeta)
+  public static List<LeafNodeInfoColumnar> convertLeafNodeInfo(FileFooter footer)
       throws IOException {
     List<LeafNodeInfoColumnar> listOfNodeInfo =
         new ArrayList<LeafNodeInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-    for (BlockletInfo leafNodeInfo : fileMeta.getLeaf_node_info()) {
+    for (BlockletInfo leafNodeInfo : footer.getLeaf_node_info()) {
       LeafNodeInfoColumnar leafNodeInfoColumnar = new LeafNodeInfoColumnar();
       leafNodeInfoColumnar.setNumberOfKeys(leafNodeInfo.getNum_rows());
       List<DataChunk> columnChunks = leafNodeInfo.getColumn_data_chunks();
@@ -261,7 +261,7 @@ public class CarbonMetadataUtil {
       listOfNodeInfo.add(leafNodeInfoColumnar);
     }
 
-    setLeafNodeIndex(fileMeta, listOfNodeInfo);
+    setLeafNodeIndex(footer, listOfNodeInfo);
     return listOfNodeInfo;
   }
 
@@ -300,9 +300,9 @@ public class CarbonMetadataUtil {
             dataTypeSelected);
   }
 
-  private static void setLeafNodeIndex(FileMeta fileMeta,
+  private static void setLeafNodeIndex(FileFooter footer,
       List<LeafNodeInfoColumnar> listOfNodeInfo) {
-    BlockletIndex leafNodeIndex = fileMeta.getIndex();
+    BlockletIndex leafNodeIndex = footer.getIndex();
     List<BlockletBTreeIndex> bTreeIndexes = leafNodeIndex.getB_tree_index();
     List<BlockletMinMaxIndex> min_max_indexes = leafNodeIndex.getMin_max_index();
     int i = 0;

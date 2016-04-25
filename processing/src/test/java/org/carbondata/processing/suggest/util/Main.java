@@ -49,7 +49,7 @@ public class Main {
     LoadSampler loadSampler = new LoadSampler();
     LoadModel loadModel = new LoadModel();
 
-    // Schema schema = AggregateUtil.readMetaData(schemaPath).get(0);
+    // Schema schema = AggregateUtil.readFooter(schemaPath).get(0);
     loadModel.setTableName(cube.fact.getAlias());
     loadModel.setSchema(schema);
     loadModel.setCube(cube);

@@ -33,7 +33,7 @@ import org.carbondata.core.carbon.datastore.block.AbstractIndex;
 import org.carbondata.core.carbon.datastore.block.BlockIndex;
 import org.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.carbondata.core.carbon.datastore.exception.IndexBuilderException;
-import org.carbondata.core.carbon.metadata.leafnode.DataFileMetadata;
+import org.carbondata.core.carbon.metadata.leafnode.DataFileFooter;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonUtil;
@@ -115,7 +115,7 @@ public class BlockIndexStore {
         tableBlocksMap.put(absoluteTableIdentifier, tableBlockMapTemp);
       }
       AbstractIndex tableBlock = null;
-      DataFileMetadata dataFileMatadata = null;
+      DataFileFooter footer = null;
       try {
         for (TableBlockInfo blockInfo : tableBlocksInfos) {
           // if table block is already loaded then do not load
@@ -123,12 +123,12 @@ public class BlockIndexStore {
           tableBlock = tableBlockMapTemp.get(blockInfo);
           if (null == tableBlock) {
             // getting the data file metadata of the block
-            dataFileMatadata =
+            footer =
                 CarbonUtil.readMetadatFile(blockInfo.getFilePath(), blockInfo.getBlockOffset());
             tableBlock = new BlockIndex();
-            dataFileMatadata.setFilePath(blockInfo.getFilePath());
+            footer.setFilePath(blockInfo.getFilePath());
             // building the block
-            tableBlock.buildIndex(Arrays.asList(dataFileMatadata));
+            tableBlock.buildIndex(Arrays.asList(footer));
             tableBlockMapTemp.put(blockInfo, tableBlock);
           }
           loadedBlocksList.add(tableBlock);

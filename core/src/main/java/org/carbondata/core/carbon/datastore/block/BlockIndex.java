@@ -23,7 +23,7 @@ import java.util.List;
 import org.carbondata.core.carbon.datastore.BTreeBuilderInfo;
 import org.carbondata.core.carbon.datastore.BtreeBuilder;
 import org.carbondata.core.carbon.datastore.impl.btree.BlockletBtreeBuilder;
-import org.carbondata.core.carbon.metadata.leafnode.DataFileMetadata;
+import org.carbondata.core.carbon.metadata.leafnode.DataFileFooter;
 
 /**
  * Class which is responsible for loading the b+ tree block. This class will
@@ -36,18 +36,18 @@ public class BlockIndex extends AbstractIndex {
    *
    * @param blockInfo block detail
    */
-  public void buildIndex(List<DataFileMetadata> datFileMetadataList) {
+  public void buildIndex(List<DataFileFooter> footerList) {
     // create a metadata details
     // this will be useful in query handling
-    segmentProperties = new SegmentProperties(datFileMetadataList.get(0).getColumnInTable(),
-        datFileMetadataList.get(0).getSegmentInfo().getColumnCardinality());
+    segmentProperties = new SegmentProperties(footerList.get(0).getColumnInTable(),
+        footerList.get(0).getSegmentInfo().getColumnCardinality());
     // create a segment builder info
     BTreeBuilderInfo indexBuilderInfo =
-        new BTreeBuilderInfo(datFileMetadataList, segmentProperties.getDimensionColumnsValueSize());
+        new BTreeBuilderInfo(footerList, segmentProperties.getDimensionColumnsValueSize());
     BtreeBuilder blocksBuilder = new BlockletBtreeBuilder();
     // load the metadata
     blocksBuilder.build(indexBuilderInfo);
     dataRefNode = blocksBuilder.get();
-    totalNumberOfRows = datFileMetadataList.get(0).getNumberOfRows();
+    totalNumberOfRows = footerList.get(0).getNumberOfRows();
   }
 }

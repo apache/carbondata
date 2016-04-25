@@ -19,7 +19,7 @@
 package org.carbondata.core.carbon.datastore.impl.btree;
 
 import org.carbondata.core.carbon.datastore.BTreeBuilderInfo;
-import org.carbondata.core.carbon.metadata.leafnode.DataFileMetadata;
+import org.carbondata.core.carbon.metadata.leafnode.DataFileFooter;
 import org.carbondata.core.carbon.metadata.leafnode.indexes.LeafNodeMinMaxIndex;
 
 /**
@@ -42,14 +42,14 @@ public class BlockBtreeLeafNode extends AbstractBtreeLeafNode {
    * @param metadataIndex metadata index
    */
   public BlockBtreeLeafNode(BTreeBuilderInfo builderInfos, int metadataIndex, long nodeNumber) {
-    DataFileMetadata dataFileMetadata = builderInfos.getDataFileMetadataList().get(metadataIndex);
-    LeafNodeMinMaxIndex minMaxIndex = dataFileMetadata.getLeafNodeIndex().getMinMaxIndex();
+    DataFileFooter footer = builderInfos.getFooterList().get(metadataIndex);
+    LeafNodeMinMaxIndex minMaxIndex = footer.getLeafNodeIndex().getMinMaxIndex();
     maxKeyOfColumns = minMaxIndex.getMaxValues();
     minKeyOfColumns = minMaxIndex.getMinValues();
     numberOfKeys = 1;
     this.nodeNumber = nodeNumber;
-    this.filePath = dataFileMetadata.getFilePath();
-    this.offset = dataFileMetadata.getOffset();
+    this.filePath = footer.getFilePath();
+    this.offset = footer.getOffset();
   }
 
   /**

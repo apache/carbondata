@@ -33,7 +33,7 @@ import org.carbondata.core.carbon.datastore.block.AbstractIndex;
 import org.carbondata.core.carbon.datastore.block.SegmentTaskIndex;
 import org.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.carbondata.core.carbon.datastore.exception.IndexBuilderException;
-import org.carbondata.core.carbon.metadata.leafnode.DataFileMetadata;
+import org.carbondata.core.carbon.metadata.leafnode.DataFileFooter;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonUtil;
@@ -118,7 +118,7 @@ public class SegmentTaskIndexStore {
         tableSegmentMap.put(absoluteTableIdentifier, tableSegmentMapTemp);
       }
       Map<String, AbstractIndex> map = null;
-      DataFileMetadata dataFileMatadata = null;
+      DataFileFooter footer = null;
       try {
         while (iteratorOverSegmentBlocksInfos.hasNext()) {
           // segment id to table block mapping
@@ -138,19 +138,19 @@ public class SegmentTaskIndexStore {
               Entry<String, List<TableBlockInfo>> taskIdToBlockInfoIterator = iterator.next();
               // all the block of one task id will be loaded together
               // so creating a list which will have all the data file metadata to of one task
-              List<DataFileMetadata> taskDataFileMetadata = new ArrayList<DataFileMetadata>();
+              List<DataFileFooter> footerList = new ArrayList<DataFileFooter>();
 
               for (TableBlockInfo tableBlockInfo : taskIdToBlockInfoIterator.getValue()) {
-                dataFileMatadata = CarbonUtil
+                footer = CarbonUtil
                     .readMetadatFile(tableBlockInfo.getFilePath(), tableBlockInfo.getBlockOffset());
-                dataFileMatadata.setFilePath(tableBlockInfo.getFilePath());
-                dataFileMatadata.setOffset(tableBlockInfo.getBlockOffset());
-                taskDataFileMetadata.add(dataFileMatadata);
+                footer.setFilePath(tableBlockInfo.getFilePath());
+                footer.setOffset(tableBlockInfo.getBlockOffset());
+                footerList.add(footer);
               }
               AbstractIndex segment = new SegmentTaskIndex();
               // file path of only first block is passed as it all table block info path of
               // same task id will be same
-              segment.buildIndex(taskDataFileMetadata);
+              segment.buildIndex(footerList);
               map.put(taskIdToBlockInfoIterator.getKey(), segment);
             }
 

@@ -20,12 +20,12 @@ package org.carbondata.core.writer;
 
 import java.io.IOException;
 
-import org.carbondata.format.FileMeta;
+import org.carbondata.format.FileFooter;
 
 /**
- * Writes metadata block to the fact table file in thrift format org.carbondata.format.FileMeta
+ * Writes metadata block to the fact table file in thrift format org.carbondata.format.FileFooter
  */
-public class CarbonMetaDataWriter {
+public class CarbonFooterWriter {
 
   // It is version number of this format class.
   private static int VERSION_NUMBER = 1;
@@ -33,22 +33,22 @@ public class CarbonMetaDataWriter {
   // Fact file path
   private String filePath;
 
-  public CarbonMetaDataWriter(String filePath) {
+  public CarbonFooterWriter(String filePath) {
     this.filePath = filePath;
   }
 
   /**
-   * It writes FileMeta thrift format object to file.
+   * It writes FileFooter thrift format object to file.
    *
-   * @param fileMeta
+   * @param footer
    * @param currentPosition At where this metadata is going to be written.
    * @throws IOException
    */
-  public void writeMetaData(FileMeta fileMeta, long currentPosition) throws IOException {
+  public void writeFooter(FileFooter footer, long currentPosition) throws IOException {
 
     ThriftWriter thriftWriter = openThriftWriter(filePath);
-    fileMeta.setVersion(VERSION_NUMBER);
-    thriftWriter.write(fileMeta);
+    footer.setVersion(VERSION_NUMBER);
+    thriftWriter.write(footer);
     thriftWriter.writeOffset(currentPosition);
     thriftWriter.close();
   }

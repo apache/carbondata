@@ -124,7 +124,7 @@ struct BlockletInfo{
 /**
 * Description of one data file
 */
-struct FileMeta{
+struct FileFooter{
 	1: required i32 version; // version used for data compatibility
 	2: required i64 num_rows; // Total number of rows in this file
 	3: required SegmentInfo segment_info;	// Segment info (will be same/repeated for all files in this segment)

@@ -59,12 +59,12 @@ public class BlockletBtreeBuilder extends AbstractBtreeBuilder {
     List<IndexKey> leafNSKeyList = null;
     long nodeNumber = 0;
     for (int index = 0;
-         index < segmentBuilderInfos.getDataFileMetadataList().get(0).getLeafNodeList()
+         index < segmentBuilderInfos.getFooterList().get(0).getLeafNodeList()
              .size(); index++) {
       // creating a leaf node
       curNode = new BlockletBTreeLeafNode(segmentBuilderInfos, index, nodeNumber++);
       totalNumberOfTuple +=
-          segmentBuilderInfos.getDataFileMetadataList().get(0).getLeafNodeList().get(index)
+          segmentBuilderInfos.getFooterList().get(0).getLeafNodeList().get(index)
               .getNumberOfRows();
       nLeaf++;
       // setting a next node as its a b+tree
@@ -87,7 +87,7 @@ public class BlockletBtreeBuilder extends AbstractBtreeBuilder {
       }
       if (null != leafNSKeyList) {
         leafNSKeyList.add(convertStartKeyToNodeEntry(
-            segmentBuilderInfos.getDataFileMetadataList().get(0).getLeafNodeList().get(index)
+            segmentBuilderInfos.getFooterList().get(0).getLeafNodeList().get(index)
                 .getLeafNodeIndex().getBtreeIndex().getStartKey()));
       }
       if (null != currentGroup) {

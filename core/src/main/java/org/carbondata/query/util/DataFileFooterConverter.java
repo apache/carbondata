@@ -32,7 +32,7 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.metadata.datatype.ConvertedType;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
-import org.carbondata.core.carbon.metadata.leafnode.DataFileMetadata;
+import org.carbondata.core.carbon.metadata.leafnode.DataFileFooter;
 import org.carbondata.core.carbon.metadata.leafnode.LeafNodeInfo;
 import org.carbondata.core.carbon.metadata.leafnode.SegmentInfo;
 import org.carbondata.core.carbon.metadata.leafnode.compressor.ChunkCompressorMeta;
@@ -45,21 +45,21 @@ import org.carbondata.core.carbon.metadata.leafnode.indexes.LeafNodeMinMaxIndex;
 import org.carbondata.core.carbon.metadata.leafnode.sort.SortState;
 import org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.carbondata.core.metadata.ValueEncoderMeta;
-import org.carbondata.core.reader.CarbonMetaDataReader;
+import org.carbondata.core.reader.CarbonFooterReader;
 import org.carbondata.core.util.ByteUtil;
 import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.format.BlockletBTreeIndex;
-import org.carbondata.format.FileMeta;
+import org.carbondata.format.FileFooter;
 
 /**
  * Below class will be used to convert the thrift object of data file
  * meta data to wrapper object
  */
-public class DataFileMetadataConverter {
+public class DataFileFooterConverter {
 
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(DataFileMetadataConverter.class.getName());
+      LogServiceFactory.getLogService(DataFileFooterConverter.class.getName());
 
   /**
    * Below method will be used to get thrift file meta to wrapper file meta
@@ -69,30 +69,30 @@ public class DataFileMetadataConverter {
    * @return wrapper file meta
    * @throws IOException throw exception if any problem in reading
    */
-  public DataFileMetadata readDataFileMetadata(String matadataFilePath, long offset)
+  public DataFileFooter readDataFileFooter(String filePath, long offset)
       throws IOException {
-    CarbonMetaDataReader reader = new CarbonMetaDataReader(matadataFilePath, offset);
-    FileMeta fileMeta = reader.readMetaData();
-    DataFileMetadata dataFileMetadata = new DataFileMetadata();
-    dataFileMetadata.setVersionId(fileMeta.getVersion());
-    dataFileMetadata.setNumberOfRows(fileMeta.getNum_rows());
-    dataFileMetadata.setSegmentInfo(getSegmentInfo(fileMeta.getSegment_info()));
+    CarbonFooterReader reader = new CarbonFooterReader(filePath, offset);
+    FileFooter footer = reader.readFooter();
+    DataFileFooter dataFileFooter = new DataFileFooter();
+    dataFileFooter.setVersionId(footer.getVersion());
+    dataFileFooter.setNumberOfRows(footer.getNum_rows());
+    dataFileFooter.setSegmentInfo(getSegmentInfo(footer.getSegment_info()));
     List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
     for (int i = 0; i < columnSchemaList.size(); i++) {
       columnSchemaList
-          .add(thriftColumnSchmeaToWrapperColumnSchema(fileMeta.getTable_columns().get(i)));
+          .add(thriftColumnSchmeaToWrapperColumnSchema(footer.getTable_columns().get(i)));
     }
-    dataFileMetadata.setColumnInTable(columnSchemaList);
-    List<LeafNodeIndex> leafNodeIndexList = getLeafNodeIndexList(fileMeta.getIndex());
-    List<org.carbondata.format.BlockletInfo> leaf_node_infos_Thrift = fileMeta.getLeaf_node_info();
+    dataFileFooter.setColumnInTable(columnSchemaList);
+    List<LeafNodeIndex> leafNodeIndexList = getLeafNodeIndexList(footer.getIndex());
+    List<org.carbondata.format.BlockletInfo> leaf_node_infos_Thrift = footer.getLeaf_node_info();
     List<LeafNodeInfo> leafNodeInfoList = new ArrayList<LeafNodeInfo>();
     for (int i = 0; i < leaf_node_infos_Thrift.size(); i++) {
       LeafNodeInfo leafNodeInfo = getLeafNodeInfo(leaf_node_infos_Thrift.get(i));
       leafNodeInfo.setLeafNodeIndex(leafNodeIndexList.get(i));
       leafNodeInfoList.add(leafNodeInfo);
     }
-    dataFileMetadata.setLeafNodeIndex(getLeafNodeIndexForDataFileMetadata(leafNodeIndexList));
-    return dataFileMetadata;
+    dataFileFooter.setLeafNodeIndex(getLeafNodeIndexForDataFileFooter(leafNodeIndexList));
+    return dataFileFooter;
   }
 
   /**
@@ -101,7 +101,7 @@ public class DataFileMetadataConverter {
    * @param leafNodeIndexList
    * @return leaf node index
    */
-  private LeafNodeIndex getLeafNodeIndexForDataFileMetadata(List<LeafNodeIndex> leafNodeIndexList) {
+  private LeafNodeIndex getLeafNodeIndexForDataFileFooter(List<LeafNodeIndex> leafNodeIndexList) {
     LeafNodeIndex leafNodeIndex = new LeafNodeIndex();
     org.carbondata.core.carbon.metadata.leafnode.indexes.LeafNodeBtreeIndex leafNodeBTreeIndex =
         new LeafNodeBtreeIndex();

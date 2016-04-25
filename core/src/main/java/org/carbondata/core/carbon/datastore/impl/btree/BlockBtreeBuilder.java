@@ -78,7 +78,7 @@ public class BlockBtreeBuilder extends AbstractBtreeBuilder {
     List<IndexKey> leafNSKeyList = null;
     long nodeNumber = 0;
     for (int metadataIndex = 0;
-         metadataIndex < btreeBuilderInfo.getDataFileMetadataList().size(); metadataIndex++) {
+         metadataIndex < btreeBuilderInfo.getFooterList().size(); metadataIndex++) {
       // creating a leaf node
       curNode = new BlockBtreeLeafNode(btreeBuilderInfo, metadataIndex, nodeNumber++);
       nLeaf++;
@@ -102,7 +102,7 @@ public class BlockBtreeBuilder extends AbstractBtreeBuilder {
       }
       if (null != leafNSKeyList) {
         leafNSKeyList.add(convertStartKeyToNodeEntry(
-            btreeBuilderInfo.getDataFileMetadataList().get(metadataIndex).getLeafNodeIndex()
+            btreeBuilderInfo.getFooterList().get(metadataIndex).getLeafNodeIndex()
                 .getBtreeIndex().getStartKey()));
       }
       if (null != currentGroup) {

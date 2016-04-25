@@ -3,7 +3,7 @@ package org.carbondata.core.carbon.datastore.block;
 import java.util.List;
 
 import org.carbondata.core.carbon.datastore.DataRefNode;
-import org.carbondata.core.carbon.metadata.leafnode.DataFileMetadata;
+import org.carbondata.core.carbon.metadata.leafnode.DataFileFooter;
 
 public abstract class AbstractIndex {
 
@@ -48,5 +48,5 @@ public abstract class AbstractIndex {
    *
    * @param blockInfo block detail
    */
-  public abstract void buildIndex(List<DataFileMetadata> datFileMetadataList);
+  public abstract void buildIndex(List<DataFileFooter> footerList);
 }

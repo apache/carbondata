@@ -11,7 +11,7 @@ import org.carbondata.core.carbon.datastore.BtreeBuilder;
 import org.carbondata.core.carbon.datastore.DataRefNode;
 import org.carbondata.core.carbon.datastore.DataRefNodeFinder;
 import org.carbondata.core.carbon.datastore.IndexKey;
-import org.carbondata.core.carbon.metadata.leafnode.DataFileMetadata;
+import org.carbondata.core.carbon.metadata.leafnode.DataFileFooter;
 import org.carbondata.core.carbon.metadata.leafnode.indexes.LeafNodeBtreeIndex;
 import org.carbondata.core.carbon.metadata.leafnode.indexes.LeafNodeIndex;
 import org.carbondata.core.carbon.metadata.leafnode.indexes.LeafNodeMinMaxIndex;
@@ -31,16 +31,16 @@ public class BtreeBlockFinderTest extends TestCase {
 
   @Test public void testBtreeBuldingIsPorper() {
     BtreeBuilder builder = new BlockBtreeBuilder();
-    List<DataFileMetadata> dataFileMetadataList = getDataFileMetadataList();
-    BTreeBuilderInfo infos = new BTreeBuilderInfo(dataFileMetadataList, null);
+    List<DataFileFooter> footerList = getDataFileFooterList();
+    BTreeBuilderInfo infos = new BTreeBuilderInfo(footerList, null);
     builder.build(infos);
 
   }
 
   @Test public void testBtreeBuilderGetMethodIsGivingNotNullRootNode() {
     BtreeBuilder builder = new BlockBtreeBuilder();
-    List<DataFileMetadata> dataFileMetadataList = getDataFileMetadataList();
-    BTreeBuilderInfo infos = new BTreeBuilderInfo(dataFileMetadataList, null);
+    List<DataFileFooter> footerList = getDataFileFooterList();
+    BTreeBuilderInfo infos = new BTreeBuilderInfo(footerList, null);
     builder.build(infos);
     DataRefNode dataBlock = builder.get();
     assertTrue(dataBlock != null);
@@ -48,8 +48,8 @@ public class BtreeBlockFinderTest extends TestCase {
 
   @Test public void testBtreeSerachIsWorkingAndGivingPorperLeafNodeWithNoDictionary1() {
     BtreeBuilder builder = new BlockBtreeBuilder();
-    List<DataFileMetadata> dataFileMetadataList = getFileMetadataListWithOnlyNoDictionaryKey();
-    BTreeBuilderInfo infos = new BTreeBuilderInfo(dataFileMetadataList, null);
+    List<DataFileFooter> footerList = getFileFooterListWithOnlyNoDictionaryKey();
+    BTreeBuilderInfo infos = new BTreeBuilderInfo(footerList, null);
     builder.build(infos);
     DataRefNode dataBlock = builder.get();
     assertTrue(dataBlock != null);
@@ -68,8 +68,8 @@ public class BtreeBlockFinderTest extends TestCase {
 
   @Test public void testBtreeSerachIsWorkingAndGivingPorperLeafNodeWithNoDictionary() {
     BtreeBuilder builder = new BlockBtreeBuilder();
-    List<DataFileMetadata> dataFileMetadataList = getFileMetadataListWithOnlyNoDictionaryKey();
-    BTreeBuilderInfo infos = new BTreeBuilderInfo(dataFileMetadataList, null);
+    List<DataFileFooter> footerList = getFileFooterListWithOnlyNoDictionaryKey();
+    BTreeBuilderInfo infos = new BTreeBuilderInfo(footerList, null);
     builder.build(infos);
     DataRefNode dataBlock = builder.get();
     assertTrue(dataBlock != null);
@@ -89,8 +89,8 @@ public class BtreeBlockFinderTest extends TestCase {
   @Test public void testBtreeSerachIsWorkingAndGivingPorperLeafNodeWithDictionaryKey1()
       throws KeyGenException {
     BtreeBuilder builder = new BlockBtreeBuilder();
-    List<DataFileMetadata> dataFileMetadataList = getFileMetadataListWithOnlyDictionaryKey();
-    BTreeBuilderInfo infos = new BTreeBuilderInfo(dataFileMetadataList, null);
+    List<DataFileFooter> footerList = getFileFooterListWithOnlyDictionaryKey();
+    BTreeBuilderInfo infos = new BTreeBuilderInfo(footerList, null);
     builder.build(infos);
     DataRefNode dataBlock = builder.get();
     assertTrue(dataBlock != null);
@@ -111,8 +111,8 @@ public class BtreeBlockFinderTest extends TestCase {
   @Test public void testBtreeSerachIsWorkingAndGivingPorperLeafNodeWithDictionaryKey2()
       throws KeyGenException {
     BtreeBuilder builder = new BlockBtreeBuilder();
-    List<DataFileMetadata> dataFileMetadataList = getFileMetadataListWithOnlyDictionaryKey();
-    BTreeBuilderInfo infos = new BTreeBuilderInfo(dataFileMetadataList, null);
+    List<DataFileFooter> footerList = getFileFooterListWithOnlyDictionaryKey();
+    BTreeBuilderInfo infos = new BTreeBuilderInfo(footerList, null);
     builder.build(infos);
     DataRefNode dataBlock = builder.get();
     assertTrue(dataBlock != null);
@@ -140,8 +140,8 @@ public class BtreeBlockFinderTest extends TestCase {
   public void testBtreeSerachIsWorkingAndGivingPorperLeafNodeWithDictionaryKey()
       throws KeyGenException {
     BtreeBuilder builder = new BlockBtreeBuilder();
-    List<DataFileMetadata> dataFileMetadataList = getFileMetadataListWithOnlyDictionaryKey();
-    BTreeBuilderInfo infos = new BTreeBuilderInfo(dataFileMetadataList, null);
+    List<DataFileFooter> footerList = getFileFooterListWithOnlyDictionaryKey();
+    BTreeBuilderInfo infos = new BTreeBuilderInfo(footerList, null);
     builder.build(infos);
     DataRefNode dataBlock = builder.get();
     assertTrue(dataBlock != null);
@@ -160,8 +160,8 @@ public class BtreeBlockFinderTest extends TestCase {
     assertEquals(99, findLastBlock.nodeNumber());
   }
 
-  private List<DataFileMetadata> getDataFileMetadataList() {
-    List<DataFileMetadata> list = new ArrayList<DataFileMetadata>();
+  private List<DataFileFooter> getDataFileFooterList() {
+    List<DataFileFooter> list = new ArrayList<DataFileFooter>();
     try {
       int[] dimensionBitLength =
           CarbonUtil.getDimensionBitLength(new int[] { 10000, 10000 }, new int[] { 1, 1 });
@@ -184,9 +184,9 @@ public class BtreeBlockFinderTest extends TestCase {
         buffer1.putInt(i + 10);
         buffer1.array();
         byte[] noDictionaryEndKey = buffer.array();
-        DataFileMetadata fileMetadata =
-            getFileMetadata(startKey, endKey, noDictionaryStartKey, noDictionaryEndKey);
-        list.add(fileMetadata);
+        DataFileFooter footer =
+            getFileFooter(startKey, endKey, noDictionaryStartKey, noDictionaryEndKey);
+        list.add(footer);
         i = i + 10;
       }
     } catch (Exception e) {
@@ -195,8 +195,8 @@ public class BtreeBlockFinderTest extends TestCase {
     return list;
   }
 
-  private List<DataFileMetadata> getFileMetadataListWithOnlyNoDictionaryKey() {
-    List<DataFileMetadata> list = new ArrayList<DataFileMetadata>();
+  private List<DataFileFooter> getFileFooterListWithOnlyNoDictionaryKey() {
+    List<DataFileFooter> list = new ArrayList<DataFileFooter>();
     try {
       int[] dimensionBitLength =
           CarbonUtil.getDimensionBitLength(new int[] { 10000, 10000 }, new int[] { 1, 1 });
@@ -219,10 +219,10 @@ public class BtreeBlockFinderTest extends TestCase {
         buffer1.putInt(i + 10);
         buffer1.array();
         byte[] noDictionaryEndKey = buffer.array();
-        DataFileMetadata fileMetadata =
+        DataFileFooter footer =
             getFileMatadataWithOnlyNoDictionaryKey(startKey, endKey, noDictionaryStartKey,
                 noDictionaryEndKey);
-        list.add(fileMetadata);
+        list.add(footer);
         i = i + 10;
       }
     } catch (Exception e) {
@@ -231,8 +231,8 @@ public class BtreeBlockFinderTest extends TestCase {
     return list;
   }
 
-  private List<DataFileMetadata> getFileMetadataListWithOnlyDictionaryKey() {
-    List<DataFileMetadata> list = new ArrayList<DataFileMetadata>();
+  private List<DataFileFooter> getFileFooterListWithOnlyDictionaryKey() {
+    List<DataFileFooter> list = new ArrayList<DataFileFooter>();
     try {
       int[] dimensionBitLength =
           CarbonUtil.getDimensionBitLength(new int[] { 10000, 10000 }, new int[] { 1, 1 });
@@ -255,10 +255,10 @@ public class BtreeBlockFinderTest extends TestCase {
         buffer1.putInt(i + 10);
         buffer1.array();
         byte[] noDictionaryEndKey = buffer.array();
-        DataFileMetadata fileMetadata =
-            getFileMatadataWithOnlyDictionaryKey(startKey, endKey, noDictionaryStartKey,
+        DataFileFooter footer =
+            getFileFooterWithOnlyDictionaryKey(startKey, endKey, noDictionaryStartKey,
                 noDictionaryEndKey);
-        list.add(fileMetadata);
+        list.add(footer);
         i = i + 10;
       }
     } catch (Exception e) {
@@ -267,9 +267,9 @@ public class BtreeBlockFinderTest extends TestCase {
     return list;
   }
 
-  private DataFileMetadata getFileMetadata(byte[] startKey, byte[] endKey,
+  private DataFileFooter getFileFooter(byte[] startKey, byte[] endKey,
       byte[] noDictionaryStartKey, byte[] noDictionaryEndKey) {
-    DataFileMetadata dataFileMetadata = new DataFileMetadata();
+    DataFileFooter footer = new DataFileFooter();
     LeafNodeIndex index = new LeafNodeIndex();
     LeafNodeBtreeIndex btreeIndex = new LeafNodeBtreeIndex();
     ByteBuffer buffer = ByteBuffer.allocate(4 + startKey.length + 4 + noDictionaryStartKey.length);
@@ -291,13 +291,13 @@ public class BtreeBlockFinderTest extends TestCase {
     minMax.setMinValues(new byte[][] { startKey, noDictionaryStartKey });
     index.setBtreeIndex(btreeIndex);
     index.setMinMaxIndex(minMax);
-    dataFileMetadata.setLeafNodeIndex(index);
-    return dataFileMetadata;
+    footer.setLeafNodeIndex(index);
+    return footer;
   }
 
-  private DataFileMetadata getFileMatadataWithOnlyNoDictionaryKey(byte[] startKey, byte[] endKey,
+  private DataFileFooter getFileMatadataWithOnlyNoDictionaryKey(byte[] startKey, byte[] endKey,
       byte[] noDictionaryStartKey, byte[] noDictionaryEndKey) {
-    DataFileMetadata dataFileMetadata = new DataFileMetadata();
+    DataFileFooter footer = new DataFileFooter();
     LeafNodeIndex index = new LeafNodeIndex();
     LeafNodeBtreeIndex btreeIndex = new LeafNodeBtreeIndex();
     ByteBuffer buffer = ByteBuffer.allocate(4 + 0 + 4 + noDictionaryStartKey.length);
@@ -317,13 +317,13 @@ public class BtreeBlockFinderTest extends TestCase {
     minMax.setMinValues(new byte[][] { startKey, noDictionaryStartKey });
     index.setBtreeIndex(btreeIndex);
     index.setMinMaxIndex(minMax);
-    dataFileMetadata.setLeafNodeIndex(index);
-    return dataFileMetadata;
+    footer.setLeafNodeIndex(index);
+    return footer;
   }
 
-  private DataFileMetadata getFileMatadataWithOnlyDictionaryKey(byte[] startKey, byte[] endKey,
+  private DataFileFooter getFileFooterWithOnlyDictionaryKey(byte[] startKey, byte[] endKey,
       byte[] noDictionaryStartKey, byte[] noDictionaryEndKey) {
-    DataFileMetadata dataFileMetadata = new DataFileMetadata();
+    DataFileFooter footer = new DataFileFooter();
     LeafNodeIndex index = new LeafNodeIndex();
     LeafNodeBtreeIndex btreeIndex = new LeafNodeBtreeIndex();
     ByteBuffer buffer = ByteBuffer.allocate(4 + startKey.length + 4 + 0);
@@ -343,8 +343,8 @@ public class BtreeBlockFinderTest extends TestCase {
     minMax.setMinValues(new byte[][] { startKey });
     index.setBtreeIndex(btreeIndex);
     index.setMinMaxIndex(minMax);
-    dataFileMetadata.setLeafNodeIndex(index);
-    return dataFileMetadata;
+    footer.setLeafNodeIndex(index);
+    return footer;
   }
 
 }

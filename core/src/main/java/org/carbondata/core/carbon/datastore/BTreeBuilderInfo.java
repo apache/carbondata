@@ -20,7 +20,7 @@ package org.carbondata.core.carbon.datastore;
 
 import java.util.List;
 
-import org.carbondata.core.carbon.metadata.leafnode.DataFileMetadata;
+import org.carbondata.core.carbon.metadata.leafnode.DataFileFooter;
 
 /**
  * below class holds the meta data requires to build the blocks
@@ -31,7 +31,7 @@ public class BTreeBuilderInfo {
    * holds all the information about data
    * file meta data
    */
-  private List<DataFileMetadata> dataFileMetadataList;
+  private List<DataFileFooter> footerList;
 
   /**
    * size of the each column value size
@@ -39,10 +39,10 @@ public class BTreeBuilderInfo {
    */
   private int[] dimensionColumnValueSize;
 
-  public BTreeBuilderInfo(List<DataFileMetadata> dataFileMetadataList,
+  public BTreeBuilderInfo(List<DataFileFooter> footerList,
       int[] dimensionColumnValueSize) {
     this.dimensionColumnValueSize = dimensionColumnValueSize;
-    this.dataFileMetadataList = dataFileMetadataList;
+    this.footerList = footerList;
   }
 
   /**
@@ -53,9 +53,9 @@ public class BTreeBuilderInfo {
   }
 
   /**
-   * @return the dataFileMetadataList
+   * @return the footerList
    */
-  public List<DataFileMetadata> getDataFileMetadataList() {
-    return dataFileMetadataList;
+  public List<DataFileFooter> getFooterList() {
+    return footerList;
   }
 }

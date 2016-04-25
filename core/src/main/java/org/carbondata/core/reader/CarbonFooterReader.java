@@ -21,14 +21,14 @@ package org.carbondata.core.reader;
 
 import java.io.IOException;
 
-import org.carbondata.format.FileMeta;
+import org.carbondata.format.FileFooter;
 
 import org.apache.thrift.TBase;
 
 /**
- * Reads the metadata from fact file in org.carbondata.format.FileMeta thrift object
+ * Reads the metadata from fact file in org.carbondata.format.FileFooter thrift object
  */
-public class CarbonMetaDataReader {
+public class CarbonFooterReader {
 
   //Fact file path
   private String filePath;
@@ -36,26 +36,26 @@ public class CarbonMetaDataReader {
   //From which offset of file this metadata should be read
   private long offset;
 
-  public CarbonMetaDataReader(String filePath, long offset) {
+  public CarbonFooterReader(String filePath, long offset) {
 
     this.filePath = filePath;
     this.offset = offset;
   }
 
   /**
-   * It reads the metadata in FileMeta thrift object format.
+   * It reads the metadata in FileFooter thrift object format.
    *
    * @return
    * @throws IOException
    */
-  public FileMeta readMetaData() throws IOException {
+  public FileFooter readFooter() throws IOException {
     ThriftReader thriftReader = openThriftReader(filePath);
     thriftReader.open();
     //Set the offset from where it should read
     thriftReader.setReadOffset(offset);
-    FileMeta fileMeta = (FileMeta) thriftReader.read();
+    FileFooter footer = (FileFooter) thriftReader.read();
     thriftReader.close();
-    return fileMeta;
+    return footer;
   }
 
   /**
@@ -69,7 +69,7 @@ public class CarbonMetaDataReader {
 
     ThriftReader thriftReader = new ThriftReader(filePath, new ThriftReader.TBaseCreator() {
       @Override public TBase create() {
-        return new FileMeta();
+        return new FileFooter();
       }
     });
     return thriftReader;

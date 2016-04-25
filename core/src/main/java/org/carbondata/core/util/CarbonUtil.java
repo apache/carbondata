@@ -53,7 +53,7 @@ import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
-import org.carbondata.core.carbon.metadata.leafnode.DataFileMetadata;
+import org.carbondata.core.carbon.metadata.leafnode.DataFileFooter;
 import org.carbondata.core.carbon.metadata.leafnode.datachunk.DataChunk;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.FileHolder;
@@ -74,9 +74,9 @@ import org.carbondata.core.metadata.LeafNodeInfo;
 import org.carbondata.core.metadata.LeafNodeInfoColumnar;
 import org.carbondata.core.metadata.SliceMetaData;
 import org.carbondata.core.metadata.ValueEncoderMeta;
-import org.carbondata.core.reader.CarbonMetaDataReader;
+import org.carbondata.core.reader.CarbonFooterReader;
 import org.carbondata.core.vo.HybridStoreModel;
-import org.carbondata.query.util.DataFileMetadataConverter;
+import org.carbondata.query.util.DataFileFooterConverter;
 
 import com.google.gson.Gson;
 import org.apache.commons.lang.ArrayUtils;
@@ -945,9 +945,9 @@ public final class CarbonUtil {
     long offset = fileSize - CarbonCommonConstants.LONG_SIZE_IN_BYTE;
     FileHolder fileHolder = FileFactory.getFileHolder(FileFactory.getFileType(filesLocation));
     offset = fileHolder.readDouble(filesLocation, offset);
-    CarbonMetaDataReader metaDataReader = new CarbonMetaDataReader(filesLocation, offset);
+    CarbonFooterReader metaDataReader = new CarbonFooterReader(filesLocation, offset);
     try {
-      listOfNodeInfo = CarbonMetadataUtil.convertLeafNodeInfo(metaDataReader.readMetaData());
+      listOfNodeInfo = CarbonMetadataUtil.convertLeafNodeInfo(metaDataReader.readFooter());
     } catch (IOException e) {
       LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
           "Problem while reading metadata :: " + filesLocation, e);
@@ -2089,11 +2089,11 @@ public final class CarbonUtil {
    * @return Data file metadata instance
    * @throws CarbonUtilException
    */
-  public static DataFileMetadata readMetadatFile(String filePath, long offset)
+  public static DataFileFooter readMetadatFile(String filePath, long offset)
       throws CarbonUtilException {
-    DataFileMetadataConverter fileMetadataConverter = new DataFileMetadataConverter();
+    DataFileFooterConverter fileFooterConverter = new DataFileFooterConverter();
     try {
-      return fileMetadataConverter.readDataFileMetadata(filePath, offset);
+      return fileFooterConverter.readDataFileFooter(filePath, offset);
     } catch (IOException e) {
       throw new CarbonUtilException("Problem while reading the file metadata", e);
     }

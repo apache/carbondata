@@ -57,29 +57,29 @@ public class BlockletBTreeLeafNode extends AbstractBtreeLeafNode {
   public BlockletBTreeLeafNode(BTreeBuilderInfo builderInfos, int leafIndex, long nodeNumber) {
     // get a lead node min max
     LeafNodeMinMaxIndex minMaxIndex =
-        builderInfos.getDataFileMetadataList().get(0).getLeafNodeList().get(leafIndex)
+        builderInfos.getFooterList().get(0).getLeafNodeList().get(leafIndex)
             .getLeafNodeIndex().getMinMaxIndex();
     // max key of the columns
     maxKeyOfColumns = minMaxIndex.getMaxValues();
     // min keys of the columns
     minKeyOfColumns = minMaxIndex.getMinValues();
     // number of keys present in the leaf
-    numberOfKeys = builderInfos.getDataFileMetadataList().get(0).getLeafNodeList().get(leafIndex)
+    numberOfKeys = builderInfos.getFooterList().get(0).getLeafNodeList().get(leafIndex)
         .getNumberOfRows();
     // create a instance of dimension chunk
     dimensionChunksReader = new CompressedDimensionChunkFileBasedReader(
-        builderInfos.getDataFileMetadataList().get(0).getLeafNodeList().get(leafIndex)
+        builderInfos.getFooterList().get(0).getLeafNodeList().get(leafIndex)
             .getDimensionColumnChunk(), builderInfos.getDimensionColumnValueSize(),
-        builderInfos.getDataFileMetadataList().get(0).getFilePath());
+        builderInfos.getFooterList().get(0).getFilePath());
     // get the value compression model which was used to compress the measure values
     ValueCompressionModel valueCompressionModel = CarbonUtil.getValueCompressionModel(
-        builderInfos.getDataFileMetadataList().get(0).getLeafNodeList().get(leafIndex)
+        builderInfos.getFooterList().get(0).getLeafNodeList().get(leafIndex)
             .getMeasureColumnChunk());
     // create a instance of measure column chunk reader
     measureColumnChunkReader = new CompressedMeasureChunkFileBasedReader(
-        builderInfos.getDataFileMetadataList().get(0).getLeafNodeList().get(leafIndex)
+        builderInfos.getFooterList().get(0).getLeafNodeList().get(leafIndex)
             .getMeasureColumnChunk(), valueCompressionModel,
-        builderInfos.getDataFileMetadataList().get(0).getFilePath());
+        builderInfos.getFooterList().get(0).getFilePath());
     this.nodeNumber = nodeNumber;
   }
 
