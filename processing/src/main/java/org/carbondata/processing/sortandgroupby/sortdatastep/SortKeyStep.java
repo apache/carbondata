@@ -173,8 +173,8 @@ public class SortKeyStep extends BaseStep {
       this.sortDataRows = new SortDataRows(meta.getTabelName(),
           meta.getDimensionCount() - meta.getComplexDimensionCount(),
           meta.getComplexDimensionCount(), meta.getMeasureCount(), this.observer,
-          meta.getCurrentRestructNumber(), meta.getNoDictionaryCount(), msrdataTypes,
-          meta.getPartitionID(), meta.getSegmentId(), meta.getTaskNo());
+          meta.getNoDictionaryCount(), msrdataTypes, meta.getPartitionID(), meta.getSegmentId(),
+          meta.getTaskNo());
       try {
         // initialize sort
         this.sortDataRows.initialize(meta.getSchemaName(), meta.getCubeName());
@@ -197,6 +197,7 @@ public class SortKeyStep extends BaseStep {
     try {
       // add row
       this.sortDataRows.addRow(row);
+      writeCounter++;
     } catch (Throwable e) {
       LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
       throw new KettleException(e);
@@ -214,7 +215,7 @@ public class SortKeyStep extends BaseStep {
   private boolean processRowToNextStep() throws KettleException {
     if (null == this.sortDataRows) {
       LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Record Procerssed For table: " + meta.getTabelName());
+          "Record Processed For table: " + meta.getTabelName());
       LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
           "Number of Records was Zero");
       String logMessage = "Summary: Carbon Sort Key Step: Read: " + 0 + ": Write: " + 0;
@@ -230,11 +231,10 @@ public class SortKeyStep extends BaseStep {
 
       // check any more rows are present
       LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Record Procerssed For table: " + meta.getTabelName());
+          "Record Processed For table: " + meta.getTabelName());
       String logMessage =
           "Summary: Carbon Sort Key Step: Read: " + readCounter + ": Write: " + writeCounter;
       LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, logMessage);
-      this.sortDataRows.writeMeasureMetadataFile();
       putRow(data.getOutputRowMeta(), new Object[0]);
       setOutputDone();
       return false;

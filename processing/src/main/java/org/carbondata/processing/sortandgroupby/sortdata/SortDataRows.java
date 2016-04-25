@@ -42,7 +42,6 @@ import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.DataTypeUtil;
-import org.carbondata.processing.exception.CarbonDataProcessorException;
 import org.carbondata.processing.schema.metadata.SortObserver;
 import org.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
@@ -151,24 +150,6 @@ public class SortDataRows {
   private int bufferSize;
   private String schemaName;
   private String cubeName;
-  /**
-   * max value for each measure
-   */
-  private Object[] maxValue;
-
-  /**
-   * min value for each measure
-   */
-  private Object[] minValue;
-
-  /**
-   * decimal length of each measure
-   */
-  private int[] decimalLength;
-  /**
-   * uniqueValue
-   */
-  private Object[] uniqueValue;
 
   private String[] measureDatatype;
 
@@ -191,11 +172,11 @@ public class SortDataRows {
    */
   private String taskNo;
 
-  public SortDataRows(String tabelName, int dimColCount, int complexDimColCount,
-      int measureColCount, SortObserver observer, int currentRestructNum, int noDictionaryCount,
-      String[] measureDatatype, String partitionID, int segmentId, String taskNo) {
+  public SortDataRows(String tableName, int dimColCount, int complexDimColCount,
+      int measureColCount, SortObserver observer, int noDictionaryCount, String[] measureDatatype,
+      String partitionID, int segmentId, String taskNo) {
     // set table name
-    this.tableName = tabelName;
+    this.tableName = tableName;
     this.partitionID = partitionID;
     this.segmentId = segmentId;
     this.taskNo = taskNo;
@@ -289,38 +270,6 @@ public class SortDataRows {
     bufferSize = CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE;
 
     initAggType();
-    maxValue = new Object[measureColCount];
-    minValue = new Object[measureColCount];
-    decimalLength = new int[measureColCount];
-    uniqueValue = new Object[measureColCount];
-
-    for (int i = 0; i < maxValue.length; i++) {
-      if (aggType[i] == CarbonCommonConstants.BIG_INT_MEASURE) {
-        maxValue[i] = Long.MIN_VALUE;
-      } else if (aggType[i] == CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE) {
-        maxValue[i] = -Double.MAX_VALUE;
-      } else if (aggType[i] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
-        maxValue[i] = new BigDecimal(0.0);
-      } else {
-        maxValue[i] = 0.0;
-      }
-    }
-
-    for (int i = 0; i < minValue.length; i++) {
-      if (aggType[i] == CarbonCommonConstants.BIG_INT_MEASURE) {
-        minValue[i] = Long.MAX_VALUE;
-      } else if (aggType[i] == CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE) {
-        minValue[i] = Double.MAX_VALUE;
-      } else if (aggType[i] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
-        minValue[i] = new BigDecimal(Double.MAX_VALUE);
-      } else {
-        minValue[i] = 0.0;
-      }
-    }
-
-    for (int i = 0; i < decimalLength.length; i++) {
-      decimalLength[i] = 0;
-    }
   }
 
   private void initAggType() {
@@ -486,38 +435,6 @@ public class SortDataRows {
       stream.writeInt(entryCountLocal);
       Object[] row = null;
       Object[] measures = null;
-
-      // Row level min max
-      Object[] max = new Object[measureColCount];
-      Object[] min = new Object[measureColCount];
-      int[] decimal = new int[measureColCount];
-
-      for (int i = 0; i < max.length; i++) {
-        if (aggType[i] == CarbonCommonConstants.BIG_INT_MEASURE) {
-          max[i] = Long.MIN_VALUE;
-        } else if (aggType[i] == CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE) {
-          max[i] = -Double.MAX_VALUE;
-        } else {
-          max[i] = 0.0;
-        }
-      }
-
-      for (int i = 0; i < min.length; i++) {
-        if (aggType[i] == CarbonCommonConstants.BIG_INT_MEASURE) {
-          min[i] = Long.MAX_VALUE;
-        } else if (aggType[i] == CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE) {
-          min[i] = Double.MAX_VALUE;
-        } else if (aggType[i] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
-          min[i] = new BigDecimal(Double.MAX_VALUE);
-        } else {
-          min[i] = 0.0;
-        }
-      }
-
-      for (int i = 0; i < decimal.length; i++) {
-        decimal[i] = 0;
-      }
-
       for (int i = 0; i < entryCountLocal; i++) {
         // get row from record holder list
         row = recordHolderList[i];
@@ -566,35 +483,7 @@ public class SortDataRows {
           }
           fieldIndex++;
         }
-
-        // Update row level min max
-        for (int count = 0; count < measures.length; count++) {
-          if (aggType[count] == CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE) {
-            double value = (double) measures[count];
-            double maxVal = (double) max[count];
-            double minVal = (double) min[count];
-            max[count] = (maxVal > value ? max[count] : value);
-            min[count] = (minVal < value ? min[count] : value);
-            int num = (value % 1 == 0) ? 0 : decimalPointers;
-            decimal[count] = (decimal[count] > num ? decimal[count] : num);
-          } else if (aggType[count] == CarbonCommonConstants.BIG_INT_MEASURE) {
-            long value = (long) measures[count];
-            long maxVal = (long) max[count];
-            long minVal = (long) min[count];
-            max[count] = (maxVal > value ? max[count] : value);
-            min[count] = (minVal < value ? min[count] : value);
-            int num = (value % 1 == 0) ? 0 : decimalPointers;
-            decimal[count] = (decimal[count] > num ? decimal[count] : num);
-          } else if (aggType[count] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
-            BigDecimal value = (BigDecimal) measures[count];
-            BigDecimal minVal = (BigDecimal) min[count];
-            min[count] = minVal.min(value);
-          }
-        }
       }
-
-      // Update file level min max
-      calculateMaxMinUnique(max, min, decimal, measures.length);
     } catch (IOException e) {
       throw new CarbonSortKeyAndGroupByException("Problem while writing the file", e);
     } finally {
@@ -687,12 +576,11 @@ public class SortDataRows {
     String tempLocationKey = schemaName + '_' + cubeName;
     String baseStorePath = CarbonProperties.getInstance()
         .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
-    CarbonTableIdentifier carbonTableIdentifier =
-        new CarbonTableIdentifier(schemaName, cubeName);
+    CarbonTableIdentifier carbonTableIdentifier = new CarbonTableIdentifier(schemaName, cubeName);
     CarbonTablePath carbonTablePath =
         CarbonStorePath.getCarbonTablePath(baseStorePath, carbonTableIdentifier);
-    String carbonDataDirectoryPath = carbonTablePath.getCarbonDataDirectoryPath(partitionID,
-        segmentId);
+    String carbonDataDirectoryPath =
+        carbonTablePath.getCarbonDataDirectoryPath(partitionID, segmentId);
     this.tempFileLocation = carbonDataDirectoryPath + File.separator + taskNo
         + CarbonCommonConstants.FILE_INPROGRESS_STATUS + File.separator
         + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION;
@@ -723,116 +611,6 @@ public class SortDataRows {
     } catch (InterruptedException e) {
       throw new CarbonSortKeyAndGroupByException("Problem while shutdown the server ", e);
     }
-  }
-
-  /**
-   * This method will be used to update the max value for each measure
-   */
-  private void calculateMaxMinUnique(Object[] max, Object[] min, int[] decimal, int length) {
-    synchronized (maxMinLock) {
-      for (int i = 0; i < length; i++) {
-        if (aggType[i] == CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE) {
-          double prevMaxVal = (double) maxValue[i];
-          double prevMinVal = (double) minValue[i];
-          double curMaxVal = (double) max[i];
-          double curMinVal = (double) min[i];
-          maxValue[i] = (prevMaxVal > curMaxVal ? maxValue[i] : max[i]);
-          minValue[i] = (prevMinVal < curMinVal ? minValue[i] : min[i]);
-          uniqueValue[i] = (double) minValue[i] - 1;
-          decimalLength[i] = (decimalLength[i] > decimal[i] ? decimalLength[i] : decimal[i]);
-        } else if (aggType[i] == CarbonCommonConstants.BIG_INT_MEASURE) {
-          long prevMaxVal = (long) maxValue[i];
-          long prevMinVal = (long) minValue[i];
-          long curMaxVal = (long) max[i];
-          long curMinVal = (long) min[i];
-          maxValue[i] = (prevMaxVal > curMaxVal ? maxValue[i] : max[i]);
-          minValue[i] = (prevMinVal < curMinVal ? minValue[i] : min[i]);
-          uniqueValue[i] = (long) minValue[i] - 1;
-          decimalLength[i] = (decimalLength[i] > decimal[i] ? decimalLength[i] : decimal[i]);
-        } else if (aggType[i] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
-          BigDecimal val = (BigDecimal) minValue[i];
-          BigDecimal newVal = (BigDecimal) min[i];
-          val = val.min(newVal);
-          minValue[i] = val;
-          uniqueValue[i] = (val.subtract(new BigDecimal(1.0)));
-        }
-      }
-    }
-  }
-
-  /**
-   * Writes the measure metadata to a file
-   */
-  public void writeMeasureMetadataFile() {
-    CarbonProperties instance = CarbonProperties.getInstance();
-
-    // get the base store location
-    String tempLocationKey = schemaName + '_' + cubeName;
-    String baseStoreLocation =
-        instance.getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
-    CarbonTableIdentifier carbonTableIdentifier = new CarbonTableIdentifier(schemaName, cubeName);
-    CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(baseStoreLocation, carbonTableIdentifier);
-    String carbonDataDirectoryPath =
-        carbonTablePath.getCarbonDataDirectoryPath(this.partitionID, segmentId);
-    String storeLocation = carbonDataDirectoryPath + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
-
-    String metaDataFileName = CarbonCommonConstants.MEASURE_METADATA_FILE_NAME + this.tableName
-        + CarbonCommonConstants.MEASUREMETADATA_FILE_EXT
-        + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
-
-    String measuremetaDataFilepath = storeLocation + File.separator + metaDataFileName;
-
-    try {
-      CarbonDataProcessorUtil
-          .writeMeasureMetaDataToFile(this.maxValue, this.minValue, this.decimalLength,
-              this.uniqueValue, aggType, new byte[this.maxValue.length], measuremetaDataFilepath);
-    } catch (CarbonDataProcessorException e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Not able to write temp measure metadatafile.");
-    }
-
-    // first check if the metadata file already present the take backup and
-    // rename inprofress file to
-    // measure metadata and delete the bak file. else rename bak bak to
-    // original file.
-
-    File inprogress = new File(measuremetaDataFilepath);
-    String inprogressFileName = inprogress.getName();
-    String originalFileName = inprogressFileName.substring(0, inprogressFileName.lastIndexOf('.'));
-
-    File originalFile = new File(storeLocation + File.separator + originalFileName);
-    File bakFile = new File(storeLocation + File.separator + originalFileName + ".bak");
-
-    if (originalFile.exists()) {
-      if (!originalFile.renameTo(bakFile)) {
-        LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-            "not able to rename original measure metadata file to bak fiel");
-      }
-
-    }
-
-    if (!inprogress.renameTo(originalFile)) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Not able to rename inprogress File to original file in the sort temp folder.");
-    } else {
-      //delete the bak file.
-      if (bakFile.exists()) {
-        if (!bakFile.delete()) {
-          LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-              "Not able to delete backup file " + bakFile.getName());
-        }
-      }
-    }
-  }
-
-  /**
-   * Below method will be used to get the sort buffer size
-   *
-   * @return
-   */
-  public int getSortBufferSize() {
-    return sortBufferSize;
   }
 
   /**
