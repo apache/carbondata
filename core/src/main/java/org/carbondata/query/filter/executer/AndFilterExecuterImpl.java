@@ -24,48 +24,41 @@ import org.carbondata.query.carbon.processor.BlocksChunkHolder;
 
 public class AndFilterExecuterImpl implements FilterExecuter {
 
-	private FilterExecuter leftExecuter;
-	private FilterExecuter rightExecuter;
+  private FilterExecuter leftExecuter;
+  private FilterExecuter rightExecuter;
 
-	public AndFilterExecuterImpl()
-	{
-		
-	}
-	public AndFilterExecuterImpl(FilterExecuter leftExecuter,
-			FilterExecuter rightExecuter) {
-		this.leftExecuter = leftExecuter;
-		this.rightExecuter = rightExecuter;
-	}
+  public AndFilterExecuterImpl() {
 
-	@Override
-	public BitSet applyFilter(BlocksChunkHolder blockChunkHolder) {
-		BitSet leftFilters = leftExecuter
-				.applyFilter(blockChunkHolder);
-		if (leftFilters.isEmpty()) {
-			return leftFilters;
-		}
-		BitSet rightFilter = rightExecuter
-				.applyFilter(blockChunkHolder);
-		if (rightFilter.isEmpty()) {
-			return rightFilter;
-		}
-		leftFilters.and(rightFilter);
-		return leftFilters;
-	}
+  }
 
-	@Override
-	public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
-		BitSet leftFilters = leftExecuter
-				.isScanRequired(blockMaxValue, blockMinValue);
-		if (leftFilters.isEmpty()) {
-			return leftFilters;
-		}
-		BitSet rightFilter = rightExecuter
-				.isScanRequired(blockMaxValue, blockMinValue);
-		if (rightFilter.isEmpty()) {
-			return rightFilter;
-		}
-		leftFilters.and(rightFilter);
-		return leftFilters;
-	}
+  public AndFilterExecuterImpl(FilterExecuter leftExecuter, FilterExecuter rightExecuter) {
+    this.leftExecuter = leftExecuter;
+    this.rightExecuter = rightExecuter;
+  }
+
+  @Override public BitSet applyFilter(BlocksChunkHolder blockChunkHolder) {
+    BitSet leftFilters = leftExecuter.applyFilter(blockChunkHolder);
+    if (leftFilters.isEmpty()) {
+      return leftFilters;
+    }
+    BitSet rightFilter = rightExecuter.applyFilter(blockChunkHolder);
+    if (rightFilter.isEmpty()) {
+      return rightFilter;
+    }
+    leftFilters.and(rightFilter);
+    return leftFilters;
+  }
+
+  @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
+    BitSet leftFilters = leftExecuter.isScanRequired(blockMaxValue, blockMinValue);
+    if (leftFilters.isEmpty()) {
+      return leftFilters;
+    }
+    BitSet rightFilter = rightExecuter.isScanRequired(blockMaxValue, blockMinValue);
+    if (rightFilter.isEmpty()) {
+      return rightFilter;
+    }
+    leftFilters.and(rightFilter);
+    return leftFilters;
+  }
 }

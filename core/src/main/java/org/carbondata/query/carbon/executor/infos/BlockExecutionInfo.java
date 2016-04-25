@@ -29,9 +29,7 @@ import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.query.carbon.aggregator.dimension.DimensionDataAggregator;
 import org.carbondata.query.carbon.merger.ScannedResultMerger;
 import org.carbondata.query.carbon.model.CustomAggregateExpression;
-import org.carbondata.query.evaluators.FilterEvaluator;
 import org.carbondata.query.filter.executer.FilterExecuter;
-import org.carbondata.query.filter.resolver.FilterResolverIntf;
 
 /**
  * Below class will have all the properties which needed during query execution
@@ -170,15 +168,15 @@ public class BlockExecutionInfo {
    */
   private ScannedResultMerger scannedResultProcessor;
 
-	/**
-	 * key generator used for generating the table block fixed length key
-	 */
-	private KeyGenerator tableBlockKeyGenerator;
-	/**
-	 * dimension aggregator list which will be used to aggregate the dimension
-	 * data
-	 */
-	private List<DimensionDataAggregator> dimensionAggregator;
+  /**
+   * key generator used for generating the table block fixed length key
+   */
+  private KeyGenerator tableBlockKeyGenerator;
+  /**
+   * dimension aggregator list which will be used to aggregate the dimension
+   * data
+   */
+  private List<DimensionDataAggregator> dimensionAggregator;
 
   /**
    * each column value size
@@ -211,14 +209,14 @@ public class BlockExecutionInfo {
    */
   private Map<String, Dictionary> columnIdToDcitionaryMapping;
 
-	private FilterExecuter filterExecuterTree;
+  private FilterExecuter filterExecuterTree;
 
-	/**
-	 * @return the tableBlock
-	 */
-	public AbstractIndex getDataBlock() {
-		return blockIndex;
-	}
+  /**
+   * @return the tableBlock
+   */
+  public AbstractIndex getDataBlock() {
+    return blockIndex;
+  }
 
   /**
    * @param tableBlock the tableBlock to set
@@ -508,20 +506,19 @@ public class BlockExecutionInfo {
     this.scannedResultProcessor = scannedResultProcessor;
   }
 
-	/**
-	 * @return the filterEvaluatorTree
-	 */
-	public FilterExecuter getFilterExecuterTree() {
-		return filterExecuterTree;
-	}
+  /**
+   * @return the filterEvaluatorTree
+   */
+  public FilterExecuter getFilterExecuterTree() {
+    return filterExecuterTree;
+  }
 
-	/**
-	 * @param filterEvaluatorTree
-	 *            the filterEvaluatorTree to set
-	 */
-	public void setFilterExecuterTree(FilterExecuter filterExecuterTree) {
-		this.filterExecuterTree = filterExecuterTree;
-	}
+  /**
+   * @param filterEvaluatorTree the filterEvaluatorTree to set
+   */
+  public void setFilterExecuterTree(FilterExecuter filterExecuterTree) {
+    this.filterExecuterTree = filterExecuterTree;
+  }
 
   /**
    * @return the tableBlockKeyGenerator

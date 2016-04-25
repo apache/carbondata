@@ -20,6 +20,6 @@ package org.carbondata.query.carbonfilterinterface;
 
 public enum FilterExecuterType {
 
-	INCLUDE, EXCLUDE, OR, AND, RESTRUCTURE, ROWLEVEL
+  INCLUDE, EXCLUDE, OR, AND, RESTRUCTURE, ROWLEVEL
 
 }

@@ -22,22 +22,24 @@ import java.util.BitSet;
 
 import org.carbondata.query.carbon.processor.BlocksChunkHolder;
 
-
 public interface FilterExecuter {
 
-	/**
-	 * API will apply filter based on resolver instance
-	 * @param blocksChunkHolder
-	 * @param placeHolder
-	 * @return
-	 */
-    BitSet applyFilter(BlocksChunkHolder blocksChunkHolder);
-    /**
-     * API will verify whether the block can be shortlisted based on block
-     * max and min key.
-     * @param blockMaxValue, maximum value of the 
-     * @param blockMinValue
-     * @return BitSet
-     */
-    BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue);
+  /**
+   * API will apply filter based on resolver instance
+   *
+   * @param blocksChunkHolder
+   * @param placeHolder
+   * @return
+   */
+  BitSet applyFilter(BlocksChunkHolder blocksChunkHolder);
+
+  /**
+   * API will verify whether the block can be shortlisted based on block
+   * max and min key.
+   *
+   * @param blockMaxValue, maximum value of the
+   * @param blockMinValue
+   * @return BitSet
+   */
+  BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue);
 }

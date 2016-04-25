@@ -22,37 +22,36 @@ package org.carbondata.query.schema.metadata;
 import java.util.List;
 
 public class DimColumnFilterInfo {
-    private boolean isIncludeFilter;
+  private boolean isIncludeFilter;
 
-    private List<Integer> filterList;
-    
+  private List<Integer> filterList;
 
-    /**
-     * maintain the no dictionary filter values list.
-     */
-	private List<byte[]> noDictionaryFilterValuesList;
+  /**
+   * maintain the no dictionary filter values list.
+   */
+  private List<byte[]> noDictionaryFilterValuesList;
 
-    public List<byte[]> getNoDictionaryFilterValuesList() {
-		return noDictionaryFilterValuesList;
-	}
+  public List<byte[]> getNoDictionaryFilterValuesList() {
+    return noDictionaryFilterValuesList;
+  }
 
-	public boolean isIncludeFilter() {
-        return isIncludeFilter;
-    }
+  public boolean isIncludeFilter() {
+    return isIncludeFilter;
+  }
 
-    public void setIncludeFilter(boolean isIncludeFilter) {
-        this.isIncludeFilter = isIncludeFilter;
-    }
+  public void setIncludeFilter(boolean isIncludeFilter) {
+    this.isIncludeFilter = isIncludeFilter;
+  }
 
-    public List<Integer> getFilterList() {
-        return filterList;
-    }
+  public List<Integer> getFilterList() {
+    return filterList;
+  }
 
-    public void setFilterList(List<Integer> filterList) {
-        this.filterList = filterList;
-    }
+  public void setFilterList(List<Integer> filterList) {
+    this.filterList = filterList;
+  }
 
-	public void setFilterListForNoDictionaryCols(List<byte[]> noDictionaryFilterValuesList) {
-		this.noDictionaryFilterValuesList=noDictionaryFilterValuesList;	
-	}
+  public void setFilterListForNoDictionaryCols(List<byte[]> noDictionaryFilterValuesList) {
+    this.noDictionaryFilterValuesList = noDictionaryFilterValuesList;
+  }
 }

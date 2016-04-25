@@ -25,93 +25,90 @@ import org.carbondata.query.carbonfilterinterface.ExpressionType;
 import org.carbondata.query.carbonfilterinterface.RowIntf;
 
 public class ColumnExpression extends LeafExpression {
-    /**
-     *
-     */
-    private static final long serialVersionUID = 1L;
+  /**
+   *
+   */
+  private static final long serialVersionUID = 1L;
 
-    private String columnName;
+  private String columnName;
 
-    private boolean isDimension;
+  private boolean isDimension;
 
-    private int colIndex = -1;
+  private int colIndex = -1;
 
-    private DataType dataType;
+  private DataType dataType;
 
-    private Dimension dim;
-    
-    private CarbonDimension dimension;
+  private Dimension dim;
 
-    public CarbonDimension getDimension() {
-		return dimension;
-	}
+  private CarbonDimension dimension;
 
-	public void setDimension(CarbonDimension dimension) {
-		this.dimension = dimension;
-	}
+  public ColumnExpression(String columnName, DataType dataType) {
+    this.columnName = columnName;
+    this.dataType = dataType;
 
-	public ColumnExpression(String columnName, DataType dataType) {
-        this.columnName = columnName;
-        this.dataType = dataType;
+  }
 
-    }
+  public CarbonDimension getDimension() {
+    return dimension;
+  }
 
-    public String getColumnName() {
-        return columnName;
-    }
+  public void setDimension(CarbonDimension dimension) {
+    this.dimension = dimension;
+  }
 
-    public void setColumnName(String columnName) {
-        this.columnName = columnName;
-    }
+  public String getColumnName() {
+    return columnName;
+  }
 
-    public boolean isDimension() {
-        return isDimension;
-    }
+  public void setColumnName(String columnName) {
+    this.columnName = columnName;
+  }
 
-    public void setDimension(boolean isDimension) {
-        this.isDimension = isDimension;
-    }
+  public boolean isDimension() {
+    return isDimension;
+  }
 
-    public int getColIndex() {
-        return colIndex;
-    }
+  public void setDimension(boolean isDimension) {
+    this.isDimension = isDimension;
+  }
 
-    public void setColIndex(int colIndex) {
-        this.colIndex = colIndex;
-    }
+  public int getColIndex() {
+    return colIndex;
+  }
 
-    public DataType getDataType() {
-        return dataType;
-    }
+  public void setColIndex(int colIndex) {
+    this.colIndex = colIndex;
+  }
 
-    public void setDataType(DataType dataType) {
-        this.dataType = dataType;
-    }
+  public DataType getDataType() {
+    return dataType;
+  }
 
-    @Override
-    public ExpressionResult evaluate(RowIntf value) {
-        ExpressionResult expressionResult = new ExpressionResult(dataType, value.getVal(colIndex));
-        return expressionResult;
-    }
+  public void setDataType(DataType dataType) {
+    this.dataType = dataType;
+  }
 
-    @Override
-    public ExpressionType getFilterExpressionType() {
-        // TODO Auto-generated method stub
-        return null;
-    }
+  @Override public ExpressionResult evaluate(RowIntf value) {
+    ExpressionResult expressionResult = new ExpressionResult(dataType, value.getVal(colIndex));
+    return expressionResult;
+  }
 
-    @Override
-    public String getString() {
-        // TODO Auto-generated method stub
-        return "ColumnExpression(" + columnName + ')';
-    }
+  @Override public ExpressionType getFilterExpressionType() {
+    // TODO Auto-generated method stub
+    return null;
+  }
 
-    public Dimension getDim() {
-        return dim;
-    }
+  @Override public String getString() {
+    // TODO Auto-generated method stub
+    return "ColumnExpression(" + columnName + ')';
+  }
 
-    public void setDim(Dimension dim) {
-        this.dim = dim;
-    }
+  public Dimension getDim() {
+    return dim;
+  }
+
+  public void setDim(Dimension dim) {
+    this.dim = dim;
+  }
 
 }

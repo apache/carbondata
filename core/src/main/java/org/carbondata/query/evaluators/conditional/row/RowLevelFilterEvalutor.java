@@ -33,8 +33,6 @@ import org.carbondata.core.carbon.SqlStatement.Type;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreDataHolder;
 import org.carbondata.core.metadata.CarbonMetadata.Measure;
-import org.carbondata.query.aggregator.MeasureAggregator;
-import org.carbondata.query.aggregator.util.AggUtil;
 import org.carbondata.query.carbonfilterinterface.RowImpl;
 import org.carbondata.query.carbonfilterinterface.RowIntf;
 import org.carbondata.query.complex.querytypes.GenericQueryType;
@@ -52,8 +50,8 @@ import org.carbondata.query.schema.metadata.FilterEvaluatorInfo;
 import org.carbondata.query.util.CarbonEngineLogEvent;
 import org.carbondata.query.util.DataTypeConverter;
 import org.carbondata.query.util.QueryExecutorUtility;
-@Deprecated
-public class RowLevelFilterEvalutor extends AbstractConditionalEvalutor {
+
+@Deprecated public class RowLevelFilterEvalutor extends AbstractConditionalEvalutor {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(RowLevelFilterEvalutor.class.getName());
 
@@ -116,9 +114,9 @@ public class RowLevelFilterEvalutor extends AbstractConditionalEvalutor {
                 info.getSlices().get(info.getCurrentSliceIndex())
                     .getDataCache(info.getFactTableName()).getType()[((Measure) columnExpression
                     .getDim()).getOrdinal()] == 'c' ? true : false);
-          //  msrColumnEvalutorInfo.setType(info.getSlices().get(info.getCurrentSliceIndex())
-              //  .getDataCache(info.getFactTableName()).getType()[((Measure) columnExpression
-              //  .getDim()).getOrdinal()]);
+            //  msrColumnEvalutorInfo.setType(info.getSlices().get(info.getCurrentSliceIndex())
+            //  .getDataCache(info.getFactTableName()).getType()[((Measure) columnExpression
+            //  .getDim()).getOrdinal()]);
           } else {
             msrColumnEvalutorInfo.setMeasureExistsInCurrentSlice(false);
             msrColumnEvalutorInfo.setDefaultValue(info.getNewDefaultValues()[measureIndex]);
@@ -256,61 +254,6 @@ public class RowLevelFilterEvalutor extends AbstractConditionalEvalutor {
 
     SqlStatement.Type msrType;
 
-  /*  for (MsrColumnEvalutorInfo msrColumnEvalutorInfo : msrColEvalutorInfoList) {
-      switch (msrColumnEvalutorInfo.getType()) {
-        case 'l':
-          msrType = SqlStatement.Type.LONG;
-          break;
-        case 'b':
-          msrType = SqlStatement.Type.DECIMAL;
-          break;
-        default:
-          msrType = SqlStatement.Type.DOUBLE;
-      }
-      // if measure doesnt exist then set the default value.
-      if (!msrColumnEvalutorInfo.isMeasureExistsInCurrentSlice()) {
-        record[msrColumnEvalutorInfo.getRowIndex()] = msrColumnEvalutorInfo.getDefaultValue();
-      } else {
-        if (msrColumnEvalutorInfo.isCustomMeasureValue()) {
-          MeasureAggregator aggregator = AggUtil
-              .getAggregator(msrColumnEvalutorInfo.getAggregator(), false, false, null, false, 0,
-                  msrType);
-          aggregator.merge(
-              blockDataHolder.getMeasureBlocks()[msrColumnEvalutorInfo.getColumnIndex()]
-                  .getReadableByteArrayValueByIndex(index));
-          switch (msrType) {
-            case LONG:
-              record[msrColumnEvalutorInfo.getRowIndex()] = aggregator.getLongValue();
-              break;
-            case DECIMAL:
-              record[msrColumnEvalutorInfo.getRowIndex()] = aggregator.getBigDecimalValue();
-              break;
-            default:
-              record[msrColumnEvalutorInfo.getRowIndex()] = aggregator.getDoubleValue();
-          }
-        } else {
-          Object msrValue;
-          switch (msrType) {
-            case LONG:
-              msrValue = blockDataHolder.getMeasureBlocks()[msrColumnEvalutorInfo.getColumnIndex()]
-                  .getReadableLongValueByIndex(index);
-              break;
-            case DECIMAL:
-              msrValue = blockDataHolder.getMeasureBlocks()[msrColumnEvalutorInfo.getColumnIndex()]
-                  .getReadableBigDecimalValueByIndex(index);
-              break;
-            default:
-              msrValue = blockDataHolder.getMeasureBlocks()[msrColumnEvalutorInfo.getColumnIndex()]
-                  .getReadableDoubleValueByIndex(index);
-          }
-          if (msrColumnEvalutorInfo.getUniqueValue().equals(msrValue)) {
-            record[msrColumnEvalutorInfo.getRowIndex()] = null;
-          } else {
-            record[msrColumnEvalutorInfo.getRowIndex()] = msrValue;
-          }
-        }
-      }
-    }*/
     row.setValues(record);
   }
 

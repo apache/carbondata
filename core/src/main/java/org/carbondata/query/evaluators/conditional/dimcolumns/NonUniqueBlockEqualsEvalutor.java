@@ -25,13 +25,12 @@ import java.util.List;
 
 import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreDataHolder;
 import org.carbondata.core.util.ByteUtil;
-import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.evaluators.AbstractConditionalEvalutor;
 import org.carbondata.query.evaluators.BlockDataHolder;
 import org.carbondata.query.evaluators.FilterProcessorPlaceHolder;
 import org.carbondata.query.expression.Expression;
-@Deprecated
-public class NonUniqueBlockEqualsEvalutor extends AbstractConditionalEvalutor {
+
+@Deprecated public class NonUniqueBlockEqualsEvalutor extends AbstractConditionalEvalutor {
 
   public NonUniqueBlockEqualsEvalutor(Expression exp, boolean isExpressionResolve,
       boolean isExcludeFilter) {
@@ -103,11 +102,9 @@ public class NonUniqueBlockEqualsEvalutor extends AbstractConditionalEvalutor {
 
           }
         }
-
       }
     }
     return bitSet;
-
   }
 
   private BitSet setFilterdIndexToBitSetWithColumnIndex(ColumnarKeyStoreDataHolder keyBlockArray,
@@ -117,30 +114,7 @@ public class NonUniqueBlockEqualsEvalutor extends AbstractConditionalEvalutor {
     int last = 0;
     int startIndex = 0;
     BitSet bitSet = new BitSet(numerOfRows);
-  /*  byte[][] filterValues = dimColEvaluatorInfoList.get(0).getFilterValues();
-    for (int i = 0; i < filterValues.length; i++) {
-      start = CarbonUtil.getFirstIndexUsingBinarySearch(keyBlockArray, startIndex, numerOfRows - 1,
-          filterValues[i]);
-      if (start == -1) {
-        continue;
-      }
-      bitSet.set(columnIndex[start]);
-      last = start;
-      for (int j = start + 1; j < numerOfRows; j++) {
-        if (ByteUtil.UnsafeComparer.INSTANCE
-            .compareTo(keyBlockArray.getKeyBlockData(), j * filterValues[i].length,
-                filterValues[i].length, filterValues[i], 0, filterValues[i].length) == 0) {
-          bitSet.set(columnIndex[j]);
-          last++;
-        } else {
-          break;
-        }
-      }
-      startIndex = last;
-      if (startIndex >= numerOfRows) {
-        break;
-      }*/
-    
+
     return bitSet;
   }
 
@@ -150,30 +124,6 @@ public class NonUniqueBlockEqualsEvalutor extends AbstractConditionalEvalutor {
     int last = 0;
     BitSet bitSet = new BitSet(numerOfRows);
     int startIndex = 0;
-   /* byte[][] filterValues = dimColEvaluatorInfoList.get(0).getFilterValues();
-    for (int k = 0; k < filterValues.length; k++) {
-      start = CarbonUtil.getFirstIndexUsingBinarySearch(keyBlockArray, startIndex, numerOfRows - 1,
-          filterValues[k]);
-      if (start == -1) {
-        continue;
-      }
-      bitSet.set(start);
-      last = start;
-      for (int j = start + 1; j < numerOfRows; j++) {
-        if (ByteUtil.UnsafeComparer.INSTANCE
-            .compareTo(keyBlockArray.getKeyBlockData(), j * filterValues[k].length,
-                filterValues[k].length, filterValues[k], 0, filterValues[k].length) == 0) {
-          bitSet.set(j);
-          last++;
-        } else {
-          break;
-        }
-      }
-      startIndex = last;
-      if (startIndex >= numerOfRows) {
-        break;
-      }
-    }*/
     return bitSet;
   }
 

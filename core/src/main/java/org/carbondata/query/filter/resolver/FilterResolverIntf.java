@@ -28,69 +28,70 @@ import org.carbondata.query.filter.executer.FilterExecuter;
 
 public interface FilterResolverIntf {
 
-	/**
-	 * This API will resolve the filter expression and generates the
-	 * dictionaries for executing/evaluating the filter expressions in the
-	 * executer layer.
-	 * 
-	 * @param info
-	 */
-	void resolve(AbsoluteTableIdentifier absoluteTableIdentifier);
+  /**
+   * This API will resolve the filter expression and generates the
+   * dictionaries for executing/evaluating the filter expressions in the
+   * executer layer.
+   *
+   * @param info
+   */
+  void resolve(AbsoluteTableIdentifier absoluteTableIdentifier);
 
-	/**
-	 * This API will provide the left column filter expression
-	 * inorder to resolve the left expression filter.
-	 * @return FilterResolverIntf
-	 */
-	FilterResolverIntf getLeft();
+  /**
+   * This API will provide the left column filter expression
+   * inorder to resolve the left expression filter.
+   *
+   * @return FilterResolverIntf
+   */
+  FilterResolverIntf getLeft();
 
-	/**
-	 * API will provide the right column filter expression inorder to resolve
-	 * the right expression filter.
-	 * 
-	 * @return FilterResolverIntf
-	 */
-	FilterResolverIntf getRight();
+  /**
+   * API will provide the right column filter expression inorder to resolve
+   * the right expression filter.
+   *
+   * @return FilterResolverIntf
+   */
+  FilterResolverIntf getRight();
 
-	/**
-	 * This API will get the filter executer instance which is required to
-	 * evaluate/execute the resolved filter expressions in the executer layer.
-	 * This executer instance will be identified based on the resolver instance
-	 * 
-	 * @return FilterExecuter instance.
-	 */
-	FilterExecuter getFilterExecuterInstance();
+  /**
+   * This API will get the filter executer instance which is required to
+   * evaluate/execute the resolved filter expressions in the executer layer.
+   * This executer instance will be identified based on the resolver instance
+   *
+   * @return FilterExecuter instance.
+   */
+  FilterExecuter getFilterExecuterInstance();
 
-	/**
-	 * API will return the resolved filter instance, this instance will provide
-	 * the resolved surrogates based on the applied filter
-	 * 
-	 * @return DimColumnResolvedFilterInfo object
-	 */
-	DimColumnResolvedFilterInfo getDimColResolvedFilterInfo();
+  /**
+   * API will return the resolved filter instance, this instance will provide
+   * the resolved surrogates based on the applied filter
+   *
+   * @return DimColumnResolvedFilterInfo object
+   */
+  DimColumnResolvedFilterInfo getDimColResolvedFilterInfo();
 
-	/**
-	 * API will get the start key based on the filter applied
-	 * based on the key generator
-	 * @return long[], array of start keys.
-	 */
-	IndexKey getstartKey(KeyGenerator keyGenerator);
+  /**
+   * API will get the start key based on the filter applied
+   * based on the key generator
+   *
+   * @return long[], array of start keys.
+   */
+  IndexKey getstartKey(KeyGenerator keyGenerator);
 
-	/**
-	 * API will read the end key based on the max surrogate of
-	 * particular dimension column
-	 * 
-	 * @return
-	 */
-	IndexKey getEndKey(AbstractIndex segmentIndexBuilder,
-			AbsoluteTableIdentifier tableIdentifier);
-	
-	/**
-	 * API will return the filter executer type which will be used to evaluate
-	 * the resolved filter while query execution
-	 * 
-	 * @return FilterExecuterType.
-	 */
-	FilterExecuterType getFilterExecuterType();
+  /**
+   * API will read the end key based on the max surrogate of
+   * particular dimension column
+   *
+   * @return
+   */
+  IndexKey getEndKey(AbstractIndex segmentIndexBuilder, AbsoluteTableIdentifier tableIdentifier);
+
+  /**
+   * API will return the filter executer type which will be used to evaluate
+   * the resolved filter while query execution
+   *
+   * @return FilterExecuterType.
+   */
+  FilterExecuterType getFilterExecuterType();
 
 }

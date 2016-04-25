@@ -30,78 +30,69 @@ import org.carbondata.query.filter.executer.FilterExecuter;
 import org.carbondata.query.filter.executer.OrFilterExecuterImpl;
 
 public class LogicalFilterResolverImpl implements FilterResolverIntf {
-	protected FilterResolverIntf leftEvalutor;
+  protected FilterResolverIntf leftEvalutor;
 
-	protected FilterResolverIntf rightEvalutor;
+  protected FilterResolverIntf rightEvalutor;
 
-	private ExpressionType filterExpressionType;
+  private ExpressionType filterExpressionType;
 
-	public LogicalFilterResolverImpl(FilterResolverIntf leftEvalutor,
-			FilterResolverIntf rightEvalutor,ExpressionType filterExpressionType) {
-		this.leftEvalutor = leftEvalutor;
-		this.rightEvalutor = rightEvalutor;
-		this.filterExpressionType=filterExpressionType;
-	}
+  public LogicalFilterResolverImpl(FilterResolverIntf leftEvalutor,
+      FilterResolverIntf rightEvalutor, ExpressionType filterExpressionType) {
+    this.leftEvalutor = leftEvalutor;
+    this.rightEvalutor = rightEvalutor;
+    this.filterExpressionType = filterExpressionType;
+  }
 
-	@Override
-	public void resolve(AbsoluteTableIdentifier absoluteTableIdentifier) {
+  @Override public void resolve(AbsoluteTableIdentifier absoluteTableIdentifier) {
 
-	}
+  }
 
-	public FilterResolverIntf getLeft() {
-		return leftEvalutor;
-	}
+  public FilterResolverIntf getLeft() {
+    return leftEvalutor;
+  }
 
-	public FilterResolverIntf getRight() {
-		return rightEvalutor;
-	}
+  public FilterResolverIntf getRight() {
+    return rightEvalutor;
+  }
 
-	@Override
-	public FilterExecuter getFilterExecuterInstance() {
-		// TODO Auto-generated method stub
-		switch (filterExpressionType) {
-		case OR:
-			new OrFilterExecuterImpl();
-		case AND:
-			return new AndFilterExecuterImpl();
+  @Override public FilterExecuter getFilterExecuterInstance() {
+    switch (filterExpressionType) {
+      case OR:
+        return new OrFilterExecuterImpl();
+      case AND:
+        return new AndFilterExecuterImpl();
 
-		default:
-			return null;
-		}
-	}
+      default:
+        return null;
+    }
+  }
 
-	@Override
-	public DimColumnResolvedFilterInfo getDimColResolvedFilterInfo() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+  @Override public DimColumnResolvedFilterInfo getDimColResolvedFilterInfo() {
+    // TODO Auto-generated method stub
+    return null;
+  }
 
-	@Override
-	public IndexKey getstartKey(KeyGenerator keyGenerator) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+  @Override public IndexKey getstartKey(KeyGenerator keyGenerator) {
+    // TODO Auto-generated method stub
+    return null;
+  }
 
-	@Override
-	public IndexKey getEndKey(AbstractIndex tableSegment,
-			AbsoluteTableIdentifier tableIdentifier) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+  @Override
+  public IndexKey getEndKey(AbstractIndex tableSegment, AbsoluteTableIdentifier tableIdentifier) {
+    // TODO Auto-generated method stub
+    return null;
+  }
 
-	@Override
-	public FilterExecuterType getFilterExecuterType() {
-		switch (filterExpressionType) {
-		case OR:
-			return FilterExecuterType.OR;
-		case AND:
-			return FilterExecuterType.AND;
+  @Override public FilterExecuterType getFilterExecuterType() {
+    switch (filterExpressionType) {
+      case OR:
+        return FilterExecuterType.OR;
+      case AND:
+        return FilterExecuterType.AND;
 
-		default:
-			return null;
-		}
-	}
-
-	
+      default:
+        return null;
+    }
+  }
 
 }

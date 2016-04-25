@@ -52,7 +52,6 @@ import org.carbondata.query.executer.CarbonQueryExecutorModel;
 import org.carbondata.query.executer.SliceExecuter;
 import org.carbondata.query.executer.exception.QueryExecutionException;
 import org.carbondata.query.executer.pagination.impl.QueryResult;
-import org.carbondata.query.filters.measurefilter.util.FilterUtil;
 import org.carbondata.query.result.ChunkResult;
 import org.carbondata.query.result.RowResult;
 import org.carbondata.query.result.iterator.ChunkBasedResultIterator;
@@ -68,8 +67,8 @@ import org.carbondata.query.scope.QueryScopeObject;
 import org.carbondata.query.util.CarbonEngineLogEvent;
 import org.carbondata.query.util.DataTypeConverter;
 import org.carbondata.query.util.QueryExecutorUtility;
-@Deprecated
-public class QueryExecutorImpl extends AbstractQueryExecutor {
+
+@Deprecated public class QueryExecutorImpl extends AbstractQueryExecutor {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(QueryExecutorImpl.class.getName());
 
@@ -336,8 +335,8 @@ public class QueryExecutorImpl extends AbstractQueryExecutor {
     filterInfo.setDimensions(executerProperties.dimTables);
     if (null != queryModel.getFilterExpression() && null != slice
         .getDataCache(queryModel.getFactTable())) {
-//      info.setFilterEvaluatorTree(
-//          //FilterUtil.getFilterEvaluator(queryModel.getFilterExpression(), filterInfo));
+      //      info.setFilterEvaluatorTree(
+      //          //FilterUtil.getFilterEvaluator(queryModel.getFilterExpression(), filterInfo));
     }
     info.setFileBasedQuery(queryModel.isDetailQuery());
     info.setHybridStoreMeta(slice.getHybridStoreModel());

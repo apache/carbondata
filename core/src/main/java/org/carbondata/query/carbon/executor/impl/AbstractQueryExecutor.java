@@ -52,6 +52,7 @@ import org.carbondata.query.carbon.model.DimensionAggregatorInfo;
 import org.carbondata.query.carbon.model.QueryModel;
 import org.carbondata.query.filters.measurefilter.util.FilterUtil;
 import org.carbondata.query.util.CarbonEngineLogEvent;
+
 import org.apache.commons.lang3.ArrayUtils;
 
 /**
@@ -262,20 +263,16 @@ public abstract class AbstractQueryExecutor implements QueryExecutor {
     blockExecutionInfo
         .setTotalNumberOfMeasureBlock(segmentProperties.getMeasuresOrdinalToBlockMapping().size());
     // to check whether older block key update is required or not
-		blockExecutionInfo.setFixedKeyUpdateRequired(blockKeyGenerator
-				.equals(queryProperties.keyStructureInfo.getKeyGenerator()));
-		// loading the filter executer tree for filter evaluation
-		blockExecutionInfo.setFilterExecuterTree(FilterUtil
-				.getFilterExecuterTree(
-						queryModel.getFilterExpressionResolverTree(),
-						blockKeyGenerator));
-		FilterUtil
-				.getFilterExecuterTree(
-						queryModel.getFilterExpressionResolverTree(),
-						blockKeyGenerator);
-		// expression dimensions
-		List<CarbonDimension> expressionDimensions = new ArrayList<CarbonDimension>(
-				CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    blockExecutionInfo.setFixedKeyUpdateRequired(
+        blockKeyGenerator.equals(queryProperties.keyStructureInfo.getKeyGenerator()));
+    // loading the filter executer tree for filter evaluation
+    blockExecutionInfo.setFilterExecuterTree(FilterUtil
+        .getFilterExecuterTree(queryModel.getFilterExpressionResolverTree(), blockKeyGenerator));
+    FilterUtil
+        .getFilterExecuterTree(queryModel.getFilterExpressionResolverTree(), blockKeyGenerator);
+    // expression dimensions
+    List<CarbonDimension> expressionDimensions =
+        new ArrayList<CarbonDimension>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     // expression measure
     List<CarbonMeasure> expressionMeasures =
         new ArrayList<CarbonMeasure>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);

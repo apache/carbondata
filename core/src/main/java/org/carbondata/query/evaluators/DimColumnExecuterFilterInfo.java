@@ -20,13 +20,13 @@ package org.carbondata.query.evaluators;
 
 public class DimColumnExecuterFilterInfo {
 
-	byte[][] filterKeys;
+  byte[][] filterKeys;
 
-	public DimColumnExecuterFilterInfo(byte[][] filterKeys) {
-		this.filterKeys = filterKeys;
-	}
+  public DimColumnExecuterFilterInfo(byte[][] filterKeys) {
+    this.filterKeys = filterKeys;
+  }
 
-	public byte[][] getFilterKeys() {
-		return filterKeys;
-	}
+  public byte[][] getFilterKeys() {
+    return filterKeys;
+  }
 }

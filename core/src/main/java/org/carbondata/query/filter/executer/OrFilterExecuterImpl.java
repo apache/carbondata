@@ -24,38 +24,31 @@ import org.carbondata.query.carbon.processor.BlocksChunkHolder;
 
 public class OrFilterExecuterImpl implements FilterExecuter {
 
-	private FilterExecuter leftExecuter;
-	private FilterExecuter rightExecuter;
+  private FilterExecuter leftExecuter;
+  private FilterExecuter rightExecuter;
 
-	public OrFilterExecuterImpl()
-	{
-		
-	}
-	public OrFilterExecuterImpl(FilterExecuter leftExecuter,
-			FilterExecuter rightExecuter) {
-		this.leftExecuter = leftExecuter;
-		this.rightExecuter = rightExecuter;
-	}
+  public OrFilterExecuterImpl() {
 
-	@Override
-	public BitSet applyFilter(BlocksChunkHolder blockChunkHolder) {
-		BitSet leftFilters = leftExecuter
-				.applyFilter(blockChunkHolder);
-		BitSet rightFilters =rightExecuter
-				.applyFilter(blockChunkHolder);
-		leftFilters.or(rightFilters);
+  }
 
-		return leftFilters;
-	}
+  public OrFilterExecuterImpl(FilterExecuter leftExecuter, FilterExecuter rightExecuter) {
+    this.leftExecuter = leftExecuter;
+    this.rightExecuter = rightExecuter;
+  }
 
-	@Override
-	public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
-		BitSet leftFilters = leftExecuter
-				.isScanRequired(blockMaxValue, blockMinValue);
-		BitSet rightFilters = rightExecuter
-				.isScanRequired(blockMaxValue, blockMinValue);
-		leftFilters.or(rightFilters);
-		return leftFilters;
-	}
+  @Override public BitSet applyFilter(BlocksChunkHolder blockChunkHolder) {
+    BitSet leftFilters = leftExecuter.applyFilter(blockChunkHolder);
+    BitSet rightFilters = rightExecuter.applyFilter(blockChunkHolder);
+    leftFilters.or(rightFilters);
+
+    return leftFilters;
+  }
+
+  @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
+    BitSet leftFilters = leftExecuter.isScanRequired(blockMaxValue, blockMinValue);
+    BitSet rightFilters = rightExecuter.isScanRequired(blockMaxValue, blockMinValue);
+    leftFilters.or(rightFilters);
+    return leftFilters;
+  }
 
 }

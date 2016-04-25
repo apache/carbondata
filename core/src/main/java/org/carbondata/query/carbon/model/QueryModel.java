@@ -28,7 +28,6 @@ import org.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.query.evaluators.FilterEvaluator;
 import org.carbondata.query.filter.resolver.FilterResolverIntf;
 
 /**

@@ -28,32 +28,31 @@ import org.carbondata.query.filters.measurefilter.util.FilterUtil;
 
 public class RestructureFilterExecuterImpl implements FilterExecuter {
 
-	DimColumnExecuterFilterInfo dimColumnExecuterInfo;
-	public RestructureFilterExecuterImpl()
-	{
-		
-	}
-	public RestructureFilterExecuterImpl(
-		DimColumnResolvedFilterInfo dimColumnResolvedFilterInfo, KeyGenerator blockKeyGenerator) {
-		FilterUtil.prepareKeysFromSurrogates(
-				dimColumnResolvedFilterInfo.getFilterValues(), blockKeyGenerator,
-				dimColumnResolvedFilterInfo.getDimension(), dimColumnExecuterInfo);
-	}
+  DimColumnExecuterFilterInfo dimColumnExecuterInfo;
 
-	@Override
-	public BitSet applyFilter(BlocksChunkHolder blocksChunkHolder) {
-		BitSet bitSet = new BitSet(blocksChunkHolder.getDataBlock().nodeSize());
-		byte[][] filterValues =dimColumnExecuterInfo.getFilterKeys();
-		if (null != filterValues && filterValues.length > 0) {
-			bitSet.set(0, blocksChunkHolder.getDataBlock().nodeSize());
-		}
-		return bitSet;
-	}
+  public RestructureFilterExecuterImpl() {
 
-	@Override
-	public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
-		BitSet bitSet = new BitSet(1);
-		bitSet.set(0);
-		return bitSet;
-	}
+  }
+
+  public RestructureFilterExecuterImpl(DimColumnResolvedFilterInfo dimColumnResolvedFilterInfo,
+      KeyGenerator blockKeyGenerator) {
+    FilterUtil
+        .prepareKeysFromSurrogates(dimColumnResolvedFilterInfo.getFilterValues(), blockKeyGenerator,
+            dimColumnResolvedFilterInfo.getDimension(), dimColumnExecuterInfo);
+  }
+
+  @Override public BitSet applyFilter(BlocksChunkHolder blocksChunkHolder) {
+    BitSet bitSet = new BitSet(blocksChunkHolder.getDataBlock().nodeSize());
+    byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
+    if (null != filterValues && filterValues.length > 0) {
+      bitSet.set(0, blocksChunkHolder.getDataBlock().nodeSize());
+    }
+    return bitSet;
+  }
+
+  @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
+    BitSet bitSet = new BitSet(1);
+    bitSet.set(0);
+    return bitSet;
+  }
 }

@@ -18,6 +18,7 @@ package org.carbondata.query.filters;
  * specific language governing permissions and limitations
  * under the License.
  */
+
 import java.util.List;
 
 import org.carbondata.core.carbon.AbsoluteTableIdentifier;
@@ -29,30 +30,27 @@ import org.carbondata.query.filter.resolver.FilterResolverIntf;
 
 public interface FilterProcessor {
 
-	/**
-	 * API will provide the resolved form of filters based on the filter
-	 * expression tree which is been passed.
-	 * 
-	 * @param expressionTree
-	 *            , filter expression tree
-	 * @param tableIdentifier
-	 *            ,contains carbon store informations.
-	 * @return
-	 */
-	FilterResolverIntf getFilterResolver(Expression expressionTree,
-			AbsoluteTableIdentifier tableIdentifier);
+  /**
+   * API will provide the resolved form of filters based on the filter
+   * expression tree which is been passed.
+   *
+   * @param expressionTree  , filter expression tree
+   * @param tableIdentifier ,contains carbon store informations.
+   * @return
+   */
+  FilterResolverIntf getFilterResolver(Expression expressionTree,
+      AbsoluteTableIdentifier tableIdentifier);
 
-	/**
-	 * This API is exposed inorder to get the required block reference node
-	 * based on the filter.The list will be send to the executer tasks inorder
-	 * to apply filters with respect to the shortlisted data reference node.
-	 * 
-	 * @param filterResolver
-	 *            DataBlock list with resolved filters
-	 * @return list of DataRefNode.
-	 */
-	List<DataRefNode> getFilterredBlocks(List<BTreeNode> listOfTree,
-			FilterResolverIntf filterResolver, AbstractIndex segmentIndexBuilder,
-			AbsoluteTableIdentifier tableIdentifier);
+  /**
+   * This API is exposed inorder to get the required block reference node
+   * based on the filter.The list will be send to the executer tasks inorder
+   * to apply filters with respect to the shortlisted data reference node.
+   *
+   * @param filterResolver DataBlock list with resolved filters
+   * @return list of DataRefNode.
+   */
+  List<DataRefNode> getFilterredBlocks(List<BTreeNode> listOfTree,
+      FilterResolverIntf filterResolver, AbstractIndex segmentIndexBuilder,
+      AbsoluteTableIdentifier tableIdentifier);
 
 }

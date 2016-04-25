@@ -32,184 +32,178 @@ import org.carbondata.query.complex.querytypes.GenericQueryType;
 import org.carbondata.query.schema.metadata.DimColumnFilterInfo;
 
 public class DimColumnResolvedFilterInfo {
-    /**
-     * column index in file
-     */
-    private int columnIndex = -1;
+  /**
+   * column index in file
+   */
+  private int columnIndex = -1;
 
-    /**
-     * need compressed data from file
-     */
-    private boolean needCompressedData;
+  /**
+   * need compressed data from file
+   */
+  private boolean needCompressedData;
 
+  private Dimension dims;
 
-    private Dimension dims;
+  private Dimension[] dimensions;
 
-    private Dimension[] dimensions;
+  /**
+   * rowIndex
+   */
+  private int rowIndex = -1;
 
-    /**
-     * rowIndex
-     */
-    private int rowIndex = -1;
+  private boolean isDimensionExistsInCurrentSilce = true;
 
-    private boolean isDimensionExistsInCurrentSilce = true;
+  private int rsSurrogates;
 
-    private int rsSurrogates;
+  private String defaultValue;
 
-    private String defaultValue;
+  private Map<Integer, GenericQueryType> complexTypesWithBlockStartIndex;
 
-    private Map<Integer, GenericQueryType> complexTypesWithBlockStartIndex;
-    
-	private CarbonDimension dimension;
-	
-	/**
-	 * start index key of the block based on the keygenerator
-	 */
-	private IndexKey starIndexKey;
-	
-	/**
-	 * end index key  which is been formed considering the max surrogate values
-	 * from dictionary cache
-	 */
-	private IndexKey endIndexKey;
+  private CarbonDimension dimension;
 
-	/**
-	 * reolved filter object of a particlar filter Expression.
-	 */
-	private DimColumnFilterInfo resolvedFilterValueObj;
+  /**
+   * start index key of the block based on the keygenerator
+   */
+  private IndexKey starIndexKey;
 
-	private Map<CarbonDimension, List<DimColumnFilterInfo>> dimensionResolvedFilter;
+  /**
+   * end index key  which is been formed considering the max surrogate values
+   * from dictionary cache
+   */
+  private IndexKey endIndexKey;
 
-	private Map<CarbonMeasure, List<DimColumnFilterInfo>> measureResolvedFilter;
-	
-	public DimColumnResolvedFilterInfo()
-	{
-		dimensionResolvedFilter=new HashMap<CarbonDimension,List<DimColumnFilterInfo>>(20);
-		measureResolvedFilter=new HashMap<CarbonMeasure,List<DimColumnFilterInfo>>(20);
-	}
+  /**
+   * reolved filter object of a particlar filter Expression.
+   */
+  private DimColumnFilterInfo resolvedFilterValueObj;
 
-	public IndexKey getStarIndexKey() {
-		return starIndexKey;
-	}
+  private Map<CarbonDimension, List<DimColumnFilterInfo>> dimensionResolvedFilter;
 
-	public void setStarIndexKey(IndexKey starIndexKey) {
-		this.starIndexKey = starIndexKey;
-	}
+  private Map<CarbonMeasure, List<DimColumnFilterInfo>> measureResolvedFilter;
 
-	public IndexKey getEndIndexKey() {
-		return endIndexKey;
-	}
+  public DimColumnResolvedFilterInfo() {
+    dimensionResolvedFilter = new HashMap<CarbonDimension, List<DimColumnFilterInfo>>(20);
+    measureResolvedFilter = new HashMap<CarbonMeasure, List<DimColumnFilterInfo>>(20);
+  }
 
-	public void setEndIndexKey(IndexKey endIndexKey) {
-		this.endIndexKey = endIndexKey;
-	}
+  public IndexKey getStarIndexKey() {
+    return starIndexKey;
+  }
 
-	public void addDimensionResolvedFilterInstance(CarbonDimension dimension,DimColumnFilterInfo filterResolvedObj)
-	{
-		List<DimColumnFilterInfo> currentVals=dimensionResolvedFilter.get(dimension);
-		if(null==currentVals)
-		{
-			currentVals=new ArrayList<DimColumnFilterInfo>(20);
-			currentVals.add(filterResolvedObj);
-			dimensionResolvedFilter.put(dimension, currentVals);
-		}
-		else
-		{
-			currentVals.add(filterResolvedObj);
-		}
-	}
-	
-	public Map<CarbonDimension, List<DimColumnFilterInfo>> getDimensionResolvedFilterInstance()
-	{
-		return dimensionResolvedFilter;
-	}
-    public Map<Integer, GenericQueryType> getComplexTypesWithBlockStartIndex() {
-        return complexTypesWithBlockStartIndex;
+  public void setStarIndexKey(IndexKey starIndexKey) {
+    this.starIndexKey = starIndexKey;
+  }
+
+  public IndexKey getEndIndexKey() {
+    return endIndexKey;
+  }
+
+  public void setEndIndexKey(IndexKey endIndexKey) {
+    this.endIndexKey = endIndexKey;
+  }
+
+  public void addDimensionResolvedFilterInstance(CarbonDimension dimension,
+      DimColumnFilterInfo filterResolvedObj) {
+    List<DimColumnFilterInfo> currentVals = dimensionResolvedFilter.get(dimension);
+    if (null == currentVals) {
+      currentVals = new ArrayList<DimColumnFilterInfo>(20);
+      currentVals.add(filterResolvedObj);
+      dimensionResolvedFilter.put(dimension, currentVals);
+    } else {
+      currentVals.add(filterResolvedObj);
     }
+  }
 
-    public void setComplexTypesWithBlockStartIndex(
-            Map<Integer, GenericQueryType> complexTypesWithBlockStartIndex) {
-        this.complexTypesWithBlockStartIndex = complexTypesWithBlockStartIndex;
-    }
-    
-    public CarbonDimension getDimension() {
-		return dimension;
-	}
+  public Map<CarbonDimension, List<DimColumnFilterInfo>> getDimensionResolvedFilterInstance() {
+    return dimensionResolvedFilter;
+  }
 
-	public void setDimension(CarbonDimension dimension) {
-		this.dimension = dimension;
-	}
+  public Map<Integer, GenericQueryType> getComplexTypesWithBlockStartIndex() {
+    return complexTypesWithBlockStartIndex;
+  }
 
-    public Dimension[] getDimensions() {
-        return dimensions;
-    }
+  public void setComplexTypesWithBlockStartIndex(
+      Map<Integer, GenericQueryType> complexTypesWithBlockStartIndex) {
+    this.complexTypesWithBlockStartIndex = complexTypesWithBlockStartIndex;
+  }
 
-    public void setDimensions(Dimension[] dimensions) {
-        this.dimensions = dimensions;
-    }
+  public CarbonDimension getDimension() {
+    return dimension;
+  }
 
-    public int getColumnIndex() {
-        return columnIndex;
-    }
+  public void setDimension(CarbonDimension dimension) {
+    this.dimension = dimension;
+  }
 
-    public void setColumnIndex(int columnIndex) {
-        this.columnIndex = columnIndex;
-    }
+  public Dimension[] getDimensions() {
+    return dimensions;
+  }
 
-    public boolean isNeedCompressedData() {
-        return needCompressedData;
-    }
+  public void setDimensions(Dimension[] dimensions) {
+    this.dimensions = dimensions;
+  }
 
-    public void setNeedCompressedData(boolean needCompressedData) {
-        this.needCompressedData = needCompressedData;
-    }
+  public int getColumnIndex() {
+    return columnIndex;
+  }
 
-    public DimColumnFilterInfo getFilterValues() {
-        return resolvedFilterValueObj;
-    }
+  public void setColumnIndex(int columnIndex) {
+    this.columnIndex = columnIndex;
+  }
 
-    public void setFilterValues(final DimColumnFilterInfo resolvedFilterValueObj) {
-        this.resolvedFilterValueObj = resolvedFilterValueObj;
-    }
+  public boolean isNeedCompressedData() {
+    return needCompressedData;
+  }
 
-    public int getRowIndex() {
-        return rowIndex;
-    }
+  public void setNeedCompressedData(boolean needCompressedData) {
+    this.needCompressedData = needCompressedData;
+  }
 
-    public void setRowIndex(int rowIndex) {
-        this.rowIndex = rowIndex;
-    }
+  public DimColumnFilterInfo getFilterValues() {
+    return resolvedFilterValueObj;
+  }
 
-    public Dimension getDims() {
-        return dims;
-    }
+  public void setFilterValues(final DimColumnFilterInfo resolvedFilterValueObj) {
+    this.resolvedFilterValueObj = resolvedFilterValueObj;
+  }
 
-    public void setDims(Dimension dims) {
-        this.dims = dims;
-    }
+  public int getRowIndex() {
+    return rowIndex;
+  }
 
+  public void setRowIndex(int rowIndex) {
+    this.rowIndex = rowIndex;
+  }
 
-    public boolean isDimensionExistsInCurrentSilce() {
-        return isDimensionExistsInCurrentSilce;
-    }
+  public Dimension getDims() {
+    return dims;
+  }
 
-    public void setDimensionExistsInCurrentSilce(boolean isDimensionExistsInCurrentSilce) {
-        this.isDimensionExistsInCurrentSilce = isDimensionExistsInCurrentSilce;
-    }
+  public void setDims(Dimension dims) {
+    this.dims = dims;
+  }
 
-    public int getRsSurrogates() {
-        return rsSurrogates;
-    }
+  public boolean isDimensionExistsInCurrentSilce() {
+    return isDimensionExistsInCurrentSilce;
+  }
 
-    public void setRsSurrogates(int rsSurrogates) {
-        this.rsSurrogates = rsSurrogates;
-    }
+  public void setDimensionExistsInCurrentSilce(boolean isDimensionExistsInCurrentSilce) {
+    this.isDimensionExistsInCurrentSilce = isDimensionExistsInCurrentSilce;
+  }
 
-    public String getDefaultValue() {
-        return defaultValue;
-    }
+  public int getRsSurrogates() {
+    return rsSurrogates;
+  }
 
-    public void setDefaultValue(String defaultValue) {
-        this.defaultValue = defaultValue;
-    }
+  public void setRsSurrogates(int rsSurrogates) {
+    this.rsSurrogates = rsSurrogates;
+  }
+
+  public String getDefaultValue() {
+    return defaultValue;
+  }
+
+  public void setDefaultValue(String defaultValue) {
+    this.defaultValue = defaultValue;
+  }
 }

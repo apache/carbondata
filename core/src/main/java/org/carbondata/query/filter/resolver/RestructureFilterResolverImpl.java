@@ -36,165 +36,146 @@ import org.carbondata.query.filter.executer.RestructureFilterExecuterImpl;
 import org.carbondata.query.filters.measurefilter.util.FilterUtil;
 
 public class RestructureFilterResolverImpl implements FilterResolverIntf {
-	protected DimColumnResolvedFilterInfo dimColumnResolvedFilterInfo;
+  protected DimColumnResolvedFilterInfo dimColumnResolvedFilterInfo;
 
-	private Expression exp;
+  private Expression exp;
 
-	private String defaultValue;
+  private String defaultValue;
 
-	private int surrogate;
+  private int surrogate;
 
-	private boolean isExpressionResolve;
+  private boolean isExpressionResolve;
 
-	private boolean isIncludeFilter;
+  private boolean isIncludeFilter;
 
-	public RestructureFilterResolverImpl(Expression exp, String defaultValue, int surrogate,
-            boolean isExpressionResolve, boolean isIncludeFilter) {
-		dimColumnResolvedFilterInfo = new DimColumnResolvedFilterInfo();
-		this.exp = exp;
-		this.defaultValue = defaultValue;
-		this.surrogate = surrogate;
-		this.isExpressionResolve = isExpressionResolve;
-		this.isIncludeFilter = isIncludeFilter;
-	}
+  public RestructureFilterResolverImpl(Expression exp, String defaultValue, int surrogate,
+      boolean isExpressionResolve, boolean isIncludeFilter) {
+    dimColumnResolvedFilterInfo = new DimColumnResolvedFilterInfo();
+    this.exp = exp;
+    this.defaultValue = defaultValue;
+    this.surrogate = surrogate;
+    this.isExpressionResolve = isExpressionResolve;
+    this.isIncludeFilter = isIncludeFilter;
+  }
 
-	@Override
-	public void resolve(AbsoluteTableIdentifier absoluteTableIdentifier) {
+  @Override public void resolve(AbsoluteTableIdentifier absoluteTableIdentifier) {
 
-		DimColumnResolvedFilterInfo dimColumnResolvedFilterInfo = new DimColumnResolvedFilterInfo();
-		if (!this.isExpressionResolve
-				&& exp instanceof BinaryConditionalExpression) {
-			BinaryConditionalExpression binaryConditionalExpression = (BinaryConditionalExpression) exp;
-			Expression left = binaryConditionalExpression.getLeft();
-			Expression right = binaryConditionalExpression.getRight();
-			if (left instanceof ColumnExpression) {
-				ColumnExpression columnExpression = (ColumnExpression) left;
-				if (columnExpression.getDataType().equals(
-						DataType.TimestampType)) {
-					isExpressionResolve = true;
-				} else {
-					// If imei=imei comes in filter condition then we need to
-					// skip processing of right expression.
-					// This flow has reached here assuming that this is a single
-					// column expression.
-					// we need to check if the other expression contains column
-					// expression or not in depth.
-					if (FilterUtil.checkIfExpressionContainsColumn(right)) {
-						isExpressionResolve = true;
-					} else {
-						dimColumnResolvedFilterInfo.setColumnIndex(columnExpression
-								.getDim().getOrdinal());
-						// dimColumnResolvedFilterInfo
-						// .setNeedCompressedData(info.getSlices().get(info.getCurrentSliceIndex())
-						// .getDataCache(info.getFactTableName()).getAggKeyBlock()[columnExpression.getDim()
-						// .getOrdinal()]);
-						dimColumnResolvedFilterInfo.setFilterValues(FilterUtil
-								.getFilterListForRS(right, columnExpression,
-										defaultValue, surrogate));
-					}
-				}
-			} else if (right instanceof ColumnExpression) {
-				ColumnExpression columnExpression = (ColumnExpression) right;
-				if (columnExpression.getDataType().equals(
-						DataType.TimestampType)) {
-					isExpressionResolve = true;
-				} else { 
-
-					// If imei=imei comes in filter condition then we need to
-					// skip processing of right expression.
-					// This flow has reached here assuming that this is a single
-					// column expression.
-					// we need to check if the other expression contains column
-					// expression or not in depth.
-					if (checkIfExpressionContainsColumn(left)) {
-						isExpressionResolve = true;
-					} else {
-						dimColumnResolvedFilterInfo.setColumnIndex(columnExpression
-								.getDim().getOrdinal());
-						// dimColumnResolvedFilterInfo
-						// .setNeedCompressedData(info.getSlices().get(info.getCurrentSliceIndex())
-						// .getDataCache(info.getFactTableName()).getAggKeyBlock()[columnExpression.getDim()
-						// .getOrdinal()]);
-						dimColumnResolvedFilterInfo.setFilterValues(FilterUtil
-								.getFilterListForRS(left, columnExpression,
-										defaultValue, surrogate));
-					}
-				}
-			}
-		}
-		if (this.isExpressionResolve && exp instanceof ConditionalExpression) {
-			ConditionalExpression conditionalExpression = (ConditionalExpression) exp;
-			List<ColumnExpression> columnList = conditionalExpression
-					.getColumnList();
-			dimColumnResolvedFilterInfo.setColumnIndex(columnList.get(0).getDim()
-					.getOrdinal());
-			// dimColumnResolvedFilterInfo.setNeedCompressedData(info.getSlices().get(info.getCurrentSliceIndex())
-			// .getDataCache(info.getFactTableName()).getAggKeyBlock()[columnList.get(0).getDim().getOrdinal()]);
-			dimColumnResolvedFilterInfo.setFilterValues(FilterUtil
-					.getFilterListForAllMembersRS(exp, columnList.get(0),
-							defaultValue, surrogate, isIncludeFilter));
-		}
-
-	}
-	
-	 /**
-     * This method will check if a given expression contains a column expression recursively.
-     *
-     * @param right
-     * @return
-     */
-    private boolean checkIfExpressionContainsColumn(Expression expression) {
-        if (expression instanceof ColumnExpression) {
-            return true;
+    DimColumnResolvedFilterInfo dimColumnResolvedFilterInfo = new DimColumnResolvedFilterInfo();
+    if (!this.isExpressionResolve && exp instanceof BinaryConditionalExpression) {
+      BinaryConditionalExpression binaryConditionalExpression = (BinaryConditionalExpression) exp;
+      Expression left = binaryConditionalExpression.getLeft();
+      Expression right = binaryConditionalExpression.getRight();
+      if (left instanceof ColumnExpression) {
+        ColumnExpression columnExpression = (ColumnExpression) left;
+        if (columnExpression.getDataType().equals(DataType.TimestampType)) {
+          isExpressionResolve = true;
+        } else {
+          // If imei=imei comes in filter condition then we need to
+          // skip processing of right expression.
+          // This flow has reached here assuming that this is a single
+          // column expression.
+          // we need to check if the other expression contains column
+          // expression or not in depth.
+          if (FilterUtil.checkIfExpressionContainsColumn(right)) {
+            isExpressionResolve = true;
+          } else {
+            dimColumnResolvedFilterInfo.setColumnIndex(columnExpression.getDim().getOrdinal());
+            // dimColumnResolvedFilterInfo
+            // .setNeedCompressedData(info.getSlices().get(info.getCurrentSliceIndex())
+            // .getDataCache(info.getFactTableName()).getAggKeyBlock()[columnExpression.getDim()
+            // .getOrdinal()]);
+            dimColumnResolvedFilterInfo.setFilterValues(
+                FilterUtil.getFilterListForRS(right, columnExpression, defaultValue, surrogate));
+          }
         }
-        for (Expression child : expression.getChildren()) {
-            if (checkIfExpressionContainsColumn(child)) {
-                return true;
-            }
-        }
+      } else if (right instanceof ColumnExpression) {
+        ColumnExpression columnExpression = (ColumnExpression) right;
+        if (columnExpression.getDataType().equals(DataType.TimestampType)) {
+          isExpressionResolve = true;
+        } else {
 
-        return false;
+          // If imei=imei comes in filter condition then we need to
+          // skip processing of right expression.
+          // This flow has reached here assuming that this is a single
+          // column expression.
+          // we need to check if the other expression contains column
+          // expression or not in depth.
+          if (checkIfExpressionContainsColumn(left)) {
+            isExpressionResolve = true;
+          } else {
+            dimColumnResolvedFilterInfo.setColumnIndex(columnExpression.getDim().getOrdinal());
+            // dimColumnResolvedFilterInfo
+            // .setNeedCompressedData(info.getSlices().get(info.getCurrentSliceIndex())
+            // .getDataCache(info.getFactTableName()).getAggKeyBlock()[columnExpression.getDim()
+            // .getOrdinal()]);
+            dimColumnResolvedFilterInfo.setFilterValues(
+                FilterUtil.getFilterListForRS(left, columnExpression, defaultValue, surrogate));
+          }
+        }
+      }
+    }
+    if (this.isExpressionResolve && exp instanceof ConditionalExpression) {
+      ConditionalExpression conditionalExpression = (ConditionalExpression) exp;
+      List<ColumnExpression> columnList = conditionalExpression.getColumnList();
+      dimColumnResolvedFilterInfo.setColumnIndex(columnList.get(0).getDim().getOrdinal());
+      dimColumnResolvedFilterInfo.setFilterValues(FilterUtil
+          .getFilterListForAllMembersRS(exp, columnList.get(0), defaultValue, surrogate,
+              isIncludeFilter));
     }
 
-	@Override
-	public FilterResolverIntf getLeft() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+  }
 
-	@Override
-	public FilterResolverIntf getRight() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+  /**
+   * This method will check if a given expression contains a column expression recursively.
+   *
+   * @param right
+   * @return
+   */
+  private boolean checkIfExpressionContainsColumn(Expression expression) {
+    if (expression instanceof ColumnExpression) {
+      return true;
+    }
+    for (Expression child : expression.getChildren()) {
+      if (checkIfExpressionContainsColumn(child)) {
+        return true;
+      }
+    }
 
-	@Override
-	public FilterExecuter getFilterExecuterInstance() {
-		// TODO Auto-generated method stub
-		return new RestructureFilterExecuterImpl();
-	}
+    return false;
+  }
 
-	
-	public DimColumnResolvedFilterInfo getDimColResolvedFilterInfo() {
-		// TODO Auto-generated method stub
-		return dimColumnResolvedFilterInfo;
-	}
+  @Override public FilterResolverIntf getLeft() {
+    // TODO Auto-generated method stub
+    return null;
+  }
 
-	@Override
-	public IndexKey getstartKey(KeyGenerator keyGenerator) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+  @Override public FilterResolverIntf getRight() {
+    // TODO Auto-generated method stub
+    return null;
+  }
 
-	@Override
-	public IndexKey getEndKey(AbstractIndex segmentIndexBuilder,
-			AbsoluteTableIdentifier tableIdentifier) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+  @Override public FilterExecuter getFilterExecuterInstance() {
+    // TODO Auto-generated method stub
+    return new RestructureFilterExecuterImpl();
+  }
 
-	@Override
-	public FilterExecuterType getFilterExecuterType() {
-		return FilterExecuterType.RESTRUCTURE;
-		}
+  public DimColumnResolvedFilterInfo getDimColResolvedFilterInfo() {
+    // TODO Auto-generated method stub
+    return dimColumnResolvedFilterInfo;
+  }
+
+  @Override public IndexKey getstartKey(KeyGenerator keyGenerator) {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  @Override public IndexKey getEndKey(AbstractIndex segmentIndexBuilder,
+      AbsoluteTableIdentifier tableIdentifier) {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  @Override public FilterExecuterType getFilterExecuterType() {
+    return FilterExecuterType.RESTRUCTURE;
+  }
 }
