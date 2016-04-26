@@ -147,8 +147,8 @@ class CubeNewProcessor(cm: tableModel, sqlContext: SQLContext) {
     var allColumns: Seq[ColumnSchema] = Seq[ColumnSchema]()
     fieldChildren.map(fields => {
       fields.map(field => {
-        var encoders = Seq[Encoding]();
-        encoders ++= Seq(Encoding.DICTIONARY)
+        var encoders = new java.util.ArrayList[Encoding]();
+        encoders.add(Encoding.DICTIONARY)
         val coloumnSchema: ColumnSchema = getColumnSchema(
           normalizeType(field.dataType.getOrElse("")), field.name.getOrElse(field.column), index,
           true, encoders, true, rowGroup)
@@ -165,7 +165,7 @@ class CubeNewProcessor(cm: tableModel, sqlContext: SQLContext) {
   }
 
   def getColumnSchema(dataType: DataType, colName: String, index: Integer, isCol: Boolean,
-                      encoders: Seq[Encoding], isDimensionCol: Boolean,
+                      encoders: java.util.List[Encoding], isDimensionCol: Boolean,
                       colGroup: Integer): ColumnSchema = {
     val columnSchema = new ColumnSchema()
     columnSchema.setDataType(dataType)
@@ -188,8 +188,8 @@ class CubeNewProcessor(cm: tableModel, sqlContext: SQLContext) {
     var rowGrp = 0
     var index = 0
     cm.dimCols.map(field => {
-      var encoders = Seq[Encoding]();
-      encoders ++= Seq(Encoding.DICTIONARY)
+      var encoders = new java.util.ArrayList[Encoding]();
+      encoders.add(Encoding.DICTIONARY)
       val columnSchema: ColumnSchema = getColumnSchema(normalizeType(field.dataType.getOrElse("")),
         field.name.getOrElse(field.column), index, true, encoders, true, rowGrp)
       allColumns ++= Seq(columnSchema)
@@ -202,7 +202,7 @@ class CubeNewProcessor(cm: tableModel, sqlContext: SQLContext) {
     })
 
     cm.msrCols.map(field => {
-      var encoders = Seq[Encoding]();
+      var encoders = new java.util.ArrayList[Encoding]();
       val coloumnSchema: ColumnSchema = getColumnSchema(normalizeType(field.dataType.getOrElse("")),
         field.name.getOrElse(field.column), index, true, encoders, false, rowGrp)
       val measureCol = coloumnSchema
@@ -258,7 +258,8 @@ class CubeNewProcessor(cm: tableModel, sqlContext: SQLContext) {
 
     // Adding dummy measure if no measure is provided
     if (measures.size < 1) {
-      val encoders = Seq[Encoding](Encoding.DICTIONARY);
+      val encoders = new java.util.ArrayList[Encoding]()
+      encoders.add(Encoding.DICTIONARY)
       val coloumnSchema: ColumnSchema = getColumnSchema(DataType.DOUBLE,
         CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE, index, true, encoders, false, rowGrp)
       val measureColumn = coloumnSchema
