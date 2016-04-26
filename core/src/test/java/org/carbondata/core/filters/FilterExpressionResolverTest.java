@@ -1,15 +1,18 @@
 package org.carbondata.core.filters;
 
-import static org.junit.Assert.fail;
-
+import org.carbondata.core.carbon.AbsoluteTableIdentifier;
+import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.query.expression.ColumnExpression;
 import org.carbondata.query.expression.DataType;
 import org.carbondata.query.expression.LiteralExpression;
 import org.carbondata.query.expression.conditional.EqualToExpression;
 import org.carbondata.query.filter.resolver.ConditionalFilterResolverImpl;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.junit.Assert.fail;
 
 public class FilterExpressionResolverTest {
 
@@ -22,17 +25,24 @@ public class FilterExpressionResolverTest {
     LiteralExpression literalExpression = new LiteralExpression("1A001", DataType.StringType);
     EqualToExpression equalsToExpression =
         new EqualToExpression(columnExpression, literalExpression);
-    try
-    {
-    ConditionalFilterResolverImpl condResolverImpl =
-        new ConditionalFilterResolverImpl(equalsToExpression, false, true);
-    assert(true);
+    try {
+      ConditionalFilterResolverImpl condResolverImpl =
+          new ConditionalFilterResolverImpl(equalsToExpression, false, true);
+      AbsoluteTableIdentifier absoluteTableIdentifier = new AbsoluteTableIdentifier();
+      CarbonTableIdentifier carbonTableIdentifier =
+          new CarbonTableIdentifier("database", "testSchema");
+      absoluteTableIdentifier.setCarbonTableIdentifier(carbonTableIdentifier);
+      absoluteTableIdentifier.setStorePath("storePath");
+      condResolverImpl.resolve(absoluteTableIdentifier);
+      if (null != condResolverImpl.getDimColResolvedFilterInfo()) {
+        assert (true);
+      } else {
+        assert (false);
+      }
+    } catch (Exception e) {
+      assert (false);
     }
-    catch(Exception e)
-    {
-    	assert(false);
-    }
-   
+
     //TableSegment tableSegment =new TableSegment();
     //tableSegment.loadSegmentBlock(getDataFileMetadataList(), null);
     //info.setTableSegment(tableSegment);
