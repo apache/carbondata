@@ -180,8 +180,8 @@ object GlobalDictionaryUtil extends Logging {
     for (i <- 0 until model.primDimensions.length) {
       if (model.dictFileExists(i)) {
         val dict = CarbonLoaderUtil.getDictionary(model.table,
-          model.primDimensions(i).getColumnId, model.hdfsLocation)
-        if(dict != null) dictMap.put(model.primDimensions(i).getColumnId, dict)
+            model.primDimensions(i).getColumnId, model.hdfsLocation)
+        dictMap.put(model.primDimensions(i).getColumnId, dict)
       }
     }
     dictMap

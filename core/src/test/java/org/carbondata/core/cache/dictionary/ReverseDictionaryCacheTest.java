@@ -29,6 +29,7 @@ import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.reader.CarbonDictionaryColumnMetaChunk;
 import org.carbondata.core.util.CarbonProperties;
+import org.carbondata.core.util.CarbonUtilException;
 
 import mockit.Mock;
 import mockit.MockUp;
@@ -170,9 +171,12 @@ public class ReverseDictionaryCacheTest extends AbstractDictionaryCacheTest {
     DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
         createDictionaryColumnUniqueIdentifier(columnIdentifier);
     // get the reverse dictionary object
-    Dictionary reverseDictionary =
-        (Dictionary) reverseDictionaryCache.get(dictionaryColumnUniqueIdentifier);
-    // reverse dictionary object should not be null
+    Dictionary reverseDictionary = null;
+    try {
+      reverseDictionary = (Dictionary) reverseDictionaryCache.get(dictionaryColumnUniqueIdentifier);
+    } catch (Exception e) {
+      assertTrue(e instanceof CarbonUtilException);
+    }
     assertTrue(null == reverseDictionary);
   }
 

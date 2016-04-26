@@ -14,8 +14,8 @@ import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.reader.CarbonDictionaryColumnMetaChunk;
 import org.carbondata.core.reader.CarbonDictionaryMetadataReaderImpl;
-import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonUtil;
+import org.carbondata.core.util.CarbonUtilException;
 
 /**
  * Abstract class which implements methods common to reverse and forward dictionary cache
@@ -124,13 +124,12 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
    * @param dictionaryInfo
    * @param lruCacheKey
    * @param loadSortIndex                    read and load sort index file in memory
-   * @return true if key added to lru cache and dictionary data loaded successfully,
-   * false otherwise
+   * @throws CarbonUtilException in case memory is not sufficient to load dictionary into memory
    */
-  protected boolean checkAndLoadDictionaryData(
+  protected void checkAndLoadDictionaryData(
       DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier,
-      DictionaryInfo dictionaryInfo, String lruCacheKey, boolean loadSortIndex) {
-    boolean dictionaryLoadSuccessfull = false;
+      DictionaryInfo dictionaryInfo, String lruCacheKey, boolean loadSortIndex)
+      throws CarbonUtilException {
     try {
       // read last segment dictionary meta chunk entry to get the end offset of file
       CarbonDictionaryColumnMetaChunk carbonDictionaryColumnMetaChunk =
@@ -169,24 +168,16 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
               // set the end offset till where file is read
               dictionaryInfo
                   .setOffsetTillFileIsRead(carbonDictionaryColumnMetaChunk.getEnd_offset());
-              dictionaryLoadSuccessfull = true;
+            } else {
+              throw new CarbonUtilException(
+                  "Cannot load dictionary into memory. Not enough memory available");
             }
-          } else {
-            // if timestamp and end offset is unchanged then dictionary
-            // load should be marked success
-            dictionaryLoadSuccessfull = true;
           }
         }
-      } else {
-        // if timestamp and end offset is unchanged then dictionary
-        // load should be marked success
-        dictionaryLoadSuccessfull = true;
       }
     } catch (IOException e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-          "Error loading the dictionary data: " + e.getMessage());
+      throw new CarbonUtilException(e.getMessage());
     }
-    return dictionaryLoadSuccessfull;
   }
 
   /**

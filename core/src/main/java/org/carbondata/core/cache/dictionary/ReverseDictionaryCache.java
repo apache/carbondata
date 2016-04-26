@@ -21,8 +21,11 @@ package org.carbondata.core.cache.dictionary;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.carbondata.common.logging.LogService;
@@ -30,13 +33,14 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.cache.CacheType;
 import org.carbondata.core.cache.CarbonLRUCache;
 import org.carbondata.core.util.CarbonCoreLogEvent;
+import org.carbondata.core.util.CarbonUtilException;
 
 /**
  * This class implements methods to create dictionary cache which will hold
  * dictionary chunks for look up of surrogate keys and values
  */
-public class ReverseDictionaryCache<K extends
-    DictionaryColumnUniqueIdentifier, V extends Dictionary>
+public class ReverseDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
+    V extends Dictionary>
     extends AbstractDictionaryCache<K, V> {
 
   /**
@@ -59,10 +63,11 @@ public class ReverseDictionaryCache<K extends
    *
    * @param dictionaryColumnUniqueIdentifier unique identifier which contains dbName,
    *                                         tableName and columnIdentifier
-   * @return
+   * @return dictionary
+   * @throws CarbonUtilException in case memory is not sufficient to load dictionary into memory
    */
-  @Override public Dictionary get(
-      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
+  @Override public Dictionary get(DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier)
+      throws CarbonUtilException {
     return getDictionary(dictionaryColumnUniqueIdentifier);
   }
 
@@ -72,19 +77,24 @@ public class ReverseDictionaryCache<K extends
    *
    * @param dictionaryColumnUniqueIdentifiers unique identifier which contains dbName,
    *                                          tableName and columnIdentifier
-   * @return
+   * @return list of dictionary
+   * @throws CarbonUtilException in case memory is not sufficient to load dictionary into memory
    */
   @Override public List<Dictionary> getAll(
-      List<DictionaryColumnUniqueIdentifier> dictionaryColumnUniqueIdentifiers) {
-    final List<Dictionary> reverseDictionaryObjectList =
+      List<DictionaryColumnUniqueIdentifier> dictionaryColumnUniqueIdentifiers)
+      throws CarbonUtilException {
+    List<Dictionary> reverseDictionaryObjectList =
         new ArrayList<Dictionary>(dictionaryColumnUniqueIdentifiers.size());
+    List<Future<Dictionary>> taskSubmitList =
+        new ArrayList<>(dictionaryColumnUniqueIdentifiers.size());
     ExecutorService executorService = Executors.newFixedThreadPool(FIXED_THREAD_POOL_SIZE);
     for (final DictionaryColumnUniqueIdentifier uniqueIdent : dictionaryColumnUniqueIdentifiers) {
-      executorService.submit(new Runnable() {
-        @Override public void run() {
-          reverseDictionaryObjectList.add(getDictionary(uniqueIdent));
+      taskSubmitList.add(executorService.submit(new Callable<Dictionary>() {
+        @Override public Dictionary call() throws CarbonUtilException {
+          Dictionary dictionary = getDictionary(uniqueIdent);
+          return dictionary;
         }
-      });
+      }));
     }
     try {
       executorService.shutdown();
@@ -92,6 +102,17 @@ public class ReverseDictionaryCache<K extends
     } catch (InterruptedException e) {
       LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
           "Error loading the dictionary: " + e.getMessage());
+    }
+    for (int i = 0; i < taskSubmitList.size(); i++) {
+      try {
+        reverseDictionaryObjectList.add(taskSubmitList.get(i).get());
+      } catch (InterruptedException e) {
+        LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e.getMessage());
+        throw new CarbonUtilException(e.getMessage());
+      } catch (ExecutionException e) {
+        LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e.getMessage());
+        throw new CarbonUtilException(e.getMessage());
+      }
     }
     return reverseDictionaryObjectList;
   }
@@ -137,23 +158,27 @@ public class ReverseDictionaryCache<K extends
    * @param dictionaryColumnUniqueIdentifier unique identifier which contains dbName,
    *                                         tableName and columnIdentifier
    * @return dictionary
+   * @throws CarbonUtilException in case memory is not sufficient to load dictionary into memory
    */
   private Dictionary getDictionary(
-      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
+      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier)
+      throws CarbonUtilException {
     Dictionary reverseDictionary = null;
     // create column dictionary info object only if dictionary and its
     // metadata file exists for a given column identifier
-    if (isFileExistsForGivenColumn(dictionaryColumnUniqueIdentifier)) {
-      String columnIdentifier = dictionaryColumnUniqueIdentifier.getColumnIdentifier();
-      ColumnReverseDictionaryInfo columnReverseDictionaryInfo =
-          getColumnReverseDictionaryInfo(dictionaryColumnUniqueIdentifier, columnIdentifier);
-      // do not load sort index file for reverse dictionary
-      if (checkAndLoadDictionaryData(dictionaryColumnUniqueIdentifier, columnReverseDictionaryInfo,
-          getLruCacheKey(dictionaryColumnUniqueIdentifier.getColumnIdentifier(),
-              CacheType.REVERSE_DICTIONARY), false)) {
-        reverseDictionary = new ReverseDictionary(columnReverseDictionaryInfo);
-      }
+    if (!isFileExistsForGivenColumn(dictionaryColumnUniqueIdentifier)) {
+      throw new CarbonUtilException(
+          "Either dictionary or its metadata does not exist for column identifier :: "
+              + dictionaryColumnUniqueIdentifier.getColumnIdentifier());
     }
+    String columnIdentifier = dictionaryColumnUniqueIdentifier.getColumnIdentifier();
+    ColumnReverseDictionaryInfo columnReverseDictionaryInfo =
+        getColumnReverseDictionaryInfo(dictionaryColumnUniqueIdentifier, columnIdentifier);
+    // do not load sort index file for reverse dictionary
+    checkAndLoadDictionaryData(dictionaryColumnUniqueIdentifier, columnReverseDictionaryInfo,
+        getLruCacheKey(dictionaryColumnUniqueIdentifier.getColumnIdentifier(),
+            CacheType.REVERSE_DICTIONARY), false);
+    reverseDictionary = new ReverseDictionary(columnReverseDictionaryInfo);
     return reverseDictionary;
   }
 

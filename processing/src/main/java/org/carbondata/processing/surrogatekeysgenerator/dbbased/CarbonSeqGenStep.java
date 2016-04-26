@@ -228,9 +228,6 @@ public class CarbonSeqGenStep extends BaseStep implements StepInterface {
 
         columnsInfo.setTimeOrdinalIndices(meta.timeOrdinalIndices);
 
-        data.setSurrogateKeyGen(
-            new FileStoreSurrogateKeyGen(columnsInfo, meta.getCurrentRestructNumber()));
-
         if (meta.timeIndex >= 0) {
           handleDimWithTime();
 

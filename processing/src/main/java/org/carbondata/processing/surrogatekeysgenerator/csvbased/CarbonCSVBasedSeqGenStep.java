@@ -1993,6 +1993,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
           .getProperty(CarbonCommonConstants.CARBON_SEQ_GEN_INMEMORY_LRU_CACHE_ENABLED,
               CarbonCommonConstants.CARBON_SEQ_GEN_INMEMORY_LRU_CACHE_ENABLED_DEFAULT_VALUE));
       if (null != surKeyGen) {
+        clearDictionaryCache();
         surKeyGen.setDictionaryCaches(null);
         surKeyGen.setHierCache(null);
         surKeyGen.setHierCacheReverse(null);
@@ -2009,6 +2010,19 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
     super.dispose(smi, sdi);
     meta = null;
     data = null;
+  }
+
+  /**
+   * This method will clear the dictionary access count so that any unused
+   * column can be removed from the cache
+   */
+  private void clearDictionaryCache() {
+    Map<String, Dictionary> dictionaryCaches = surrogateKeyGen.getDictionaryCaches();
+    List<Dictionary> reverseDictionaries = new ArrayList<>(dictionaryCaches.values());
+    for (int i = 0; i < reverseDictionaries.size(); i++) {
+      Dictionary dictionary = (Dictionary) reverseDictionaries.get(i);
+      dictionary.clear();
+    }
   }
 
   private void processnoDictionaryDim(int index, String dimension, ByteBuffer[] out) {

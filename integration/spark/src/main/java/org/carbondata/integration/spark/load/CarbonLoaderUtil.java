@@ -100,10 +100,6 @@ public final class CarbonLoaderUtil {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(CarbonLoaderUtil.class.getName());
 
-  private static Cache<DictionaryColumnUniqueIdentifier, Dictionary> dictCache = null;
-  private static volatile boolean cacheStatus = false;
-  private static Object lock = new Object();
-
   private CarbonLoaderUtil() {
 
   }
@@ -1066,24 +1062,15 @@ public final class CarbonLoaderUtil {
     }
   }
 
-  public static Dictionary getDictionary(
-          DictionaryColumnUniqueIdentifier columnIdentifier, String carbonStorePath) {
-    synchronized (lock) {
-      if (!cacheStatus) {
-        CarbonProperties.getInstance().addProperty(
-                CarbonCommonConstants.CARBON_MAX_LEVEL_CACHE_SIZE, "10");
-        dictCache = CacheProvider.getInstance().createCache(CacheType.REVERSE_DICTIONARY,
-                carbonStorePath);
-        cacheStatus = true;
-      }
-    }
-
-    return dictCache.get(columnIdentifier);
+  public static Dictionary getDictionary(DictionaryColumnUniqueIdentifier columnIdentifier,
+      String carbonStorePath) throws CarbonUtilException {
+    Cache dictCache =
+        CacheProvider.getInstance().createCache(CacheType.REVERSE_DICTIONARY, carbonStorePath);
+    return (Dictionary) dictCache.get(columnIdentifier);
   }
 
   public static Dictionary getDictionary(CarbonTableIdentifier tableIdentifier,
-          String columnIdentifier, String carbonStorePath) {
-
+          String columnIdentifier, String carbonStorePath) throws CarbonUtilException {
     return getDictionary(new DictionaryColumnUniqueIdentifier(tableIdentifier,
             columnIdentifier), carbonStorePath);
   }

@@ -28,6 +28,7 @@ import org.carbondata.core.cache.dictionary.Dictionary;
 import org.carbondata.core.cache.dictionary.DictionaryChunksWrapper;
 import org.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
+import org.carbondata.core.util.CarbonUtilException;
 
 import org.apache.commons.lang.ArrayUtils;
 
@@ -57,8 +58,11 @@ public class CarbonDictionarySortInfoPreparator {
    * The method returns the column Sort Info
    *
    * @param columnName column name
+   * @return
+   * @throws CarbonUtilException
    */
-  public CarbonDictionarySortInfo getDictionarySortInfo(String columnName) {
+  public CarbonDictionarySortInfo getDictionarySortInfo(String columnName)
+      throws CarbonUtilException {
     CacheProvider cacheProviderInstance = CacheProvider.getInstance();
     Cache reverseDictionaryCache =
         cacheProviderInstance.createCache(CacheType.REVERSE_DICTIONARY, carbonStorePath);

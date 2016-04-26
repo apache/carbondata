@@ -48,12 +48,11 @@ import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.reader.CarbonDictionaryColumnMetaChunk;
 import org.carbondata.core.reader.CarbonDictionaryMetadataReaderImpl;
 import org.carbondata.core.util.CarbonProperties;
+import org.carbondata.core.util.CarbonUtilException;
 import org.carbondata.core.writer.ByteArrayHolder;
 import org.carbondata.core.writer.HierarchyValueWriterForCSV;
 import org.carbondata.processing.datatypes.GenericDataType;
 import org.carbondata.processing.schema.metadata.ColumnsInfo;
-import org.carbondata.processing.surrogatekeysgenerator.dbbased.FileStoreSurrogateKeyGen;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 
 import org.pentaho.di.core.exception.KettleException;
 
@@ -63,7 +62,7 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
    * LOGGER
    */
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(FileStoreSurrogateKeyGen.class.getName());
+      LogServiceFactory.getLogService(FileStoreSurrogateKeyGenForCSV.class.getName());
 
   /**
    * hierValueWriter
@@ -256,6 +255,9 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
     CacheProvider cacheProvider = CacheProvider.getInstance();
     Cache reverseDictionaryCache =
         cacheProvider.createCache(CacheType.REVERSE_DICTIONARY, carbonStorePath);
+    List<String> dictionaryKeys = new ArrayList<>(dimColumnNames.length);
+    List<DictionaryColumnUniqueIdentifier> dictionaryColumnUniqueIdentifiers =
+        new ArrayList<>(dimColumnNames.length);
     // update the member cache for dimension
     for (int i = 0; i < dimColumnNames.length; i++) {
       String dimColName = dimColumnNames[i].substring(tableName.length() + 1);
@@ -266,57 +268,49 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
         for (GenericDataType eachPrimitive : primitiveChild) {
           String dimColumnName =
               tableName + CarbonCommonConstants.UNDERSCORE + eachPrimitive.getName();
-          initDictionaryAndUpdateKeyInfo(carbonStorePath, dimColumnName,
-              eachPrimitive.getColumnId(), carbonTableIdentifier, reverseDictionaryCache,
-              eachPrimitive.getName());
+          DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
+              new DictionaryColumnUniqueIdentifier(carbonTableIdentifier,
+                  eachPrimitive.getColumnId());
+          dictionaryColumnUniqueIdentifiers.add(dictionaryColumnUniqueIdentifier);
+          dictionaryKeys.add(dimColumnName);
         }
       } else {
-        initDictionaryAndUpdateKeyInfo(carbonStorePath, dimColumnNames[i], dimColumnIds[i],
-            carbonTableIdentifier, reverseDictionaryCache, dimColName);
+        DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
+            new DictionaryColumnUniqueIdentifier(carbonTableIdentifier,
+                dimColumnIds[i]);
+        dictionaryColumnUniqueIdentifiers.add(dictionaryColumnUniqueIdentifier);
+        dictionaryKeys.add(dimColumnNames[i]);
       }
     }
+    initDictionaryCacheInfo(dictionaryKeys, dictionaryColumnUniqueIdentifiers,
+        reverseDictionaryCache, carbonStorePath);
   }
-
-  /**
-   * Initalize the dictionary with provided column and updates key information.
-   * @param carbonStorePath
-   * @param dimColumnName
-   * @param dimColumnId
-   * @param carbonTableIdentifier
-   * @param reverseDictionaryCache
-   * @param dimColName
-   */
-  private void initDictionaryAndUpdateKeyInfo(String carbonStorePath, String dimColumnName,
-      String dimColumnId, CarbonTableIdentifier carbonTableIdentifier,
-      Cache reverseDictionaryCache, String dimColName) {
-    initDictionaryCacheInfo(carbonTableIdentifier, dimColumnId, dimColumnName,
-        reverseDictionaryCache);
-    try {
-      updateMaxKeyInfo(carbonStorePath, carbonTableIdentifier, dimColumnId, dimColumnName,
-          false);
-    } catch (IOException e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Can not read metadata file" +
-              "of this column: " + dimColName);
-    }
-  }
-
   /**
    * This method will initial the needed information for a dictionary of one column.
    *
-   * @param carbonTableIdentifier  table identifier which will give table name and database name
-   * @param columnId               unique column Id for a column
-   * @param tabColumnName          tablename + "_" + columnname, for example table_col
-   * @param reverseDictionaryCache cache object for surrogate key look up for a given value
+   * @param dictionaryKeys
+   * @param dictionaryColumnUniqueIdentifiers
+   * @param reverseDictionaryCache
+   * @param carbonStorePath
+   * @throws KettleException
    */
-  private void initDictionaryCacheInfo(CarbonTableIdentifier carbonTableIdentifier, String columnId,
-      String tabColumnName, Cache reverseDictionaryCache) {
-    DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
-        new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnId);
-    Dictionary reverseDictionary =
-        (Dictionary) reverseDictionaryCache.get(dictionaryColumnUniqueIdentifier);
-    if (null != reverseDictionary) {
-      getDictionaryCaches().put(tabColumnName, reverseDictionary);
+  private void initDictionaryCacheInfo(List<String> dictionaryKeys,
+      List<DictionaryColumnUniqueIdentifier> dictionaryColumnUniqueIdentifiers,
+      Cache reverseDictionaryCache, String carbonStorePath) throws KettleException {
+    try {
+      List reverseDictionaries = reverseDictionaryCache.getAll(dictionaryColumnUniqueIdentifiers);
+      for (int i = 0; i < reverseDictionaries.size(); i++) {
+        Dictionary reverseDictionary = (Dictionary) reverseDictionaries.get(i);
+        getDictionaryCaches().put(dictionaryKeys.get(i), reverseDictionary);
+        updateMaxKeyInfo(carbonStorePath,
+            dictionaryColumnUniqueIdentifiers.get(i).getCarbonTableIdentifier(),
+            dictionaryColumnUniqueIdentifiers.get(i).getColumnIdentifier(), dictionaryKeys.get(i),
+            false);
+      }
+    } catch (IOException e) {
+      throw new KettleException(e.getMessage());
+    } catch (CarbonUtilException e) {
+      throw new KettleException(e.getMessage());
     }
   }
 
