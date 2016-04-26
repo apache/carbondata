@@ -959,40 +959,6 @@ public final class CarbonUtil {
   }
 
   /**
-   * @param buffer
-   * @param info
-   * @param startKey
-   * @param endKey
-   * @param keySplitValue
-   */
-  public static void setInfo(ByteBuffer buffer, LeafNodeInfoColumnar info, byte[] startKey,
-      byte[] endKey, int keySplitValue) {
-    int[] keyLengths = new int[keySplitValue];
-    long[] keyOffset = new long[keySplitValue];
-    boolean[] isAlreadySorted = new boolean[keySplitValue];
-    for (int i = 0; i < keySplitValue; i++) {
-      keyLengths[i] = buffer.getInt();
-      keyOffset[i] = buffer.getLong();
-      isAlreadySorted[i] = buffer.get() == (byte) 0 ? true : false;
-    }
-    //read column min max data
-    byte[][] columnMinMaxData = new byte[buffer.getInt()][];
-    for (int i = 0; i < columnMinMaxData.length; i++) {
-      columnMinMaxData[i] = new byte[buffer.getInt()];
-      buffer.get(columnMinMaxData[i]);
-    }
-    info.setColumnMinMaxData(columnMinMaxData);
-
-    info.setKeyLengths(keyLengths);
-    info.setKeyOffSets(keyOffset);
-    info.setIsSortedKeyColumn(isAlreadySorted);
-    buffer.get(startKey);
-    //
-    buffer.get(endKey);
-    info.setStartKey(startKey);
-  }
-
-  /**
    * This method will be used to read the slice metadata
    *
    * @param rsFiles

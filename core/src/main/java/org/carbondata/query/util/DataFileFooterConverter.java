@@ -21,7 +21,6 @@ package org.carbondata.query.util;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Iterator;
@@ -50,6 +49,7 @@ import org.carbondata.core.util.ByteUtil;
 import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.format.BlockletBTreeIndex;
+import org.carbondata.format.BlockletMinMaxIndex;
 import org.carbondata.format.FileFooter;
 
 /**
@@ -63,11 +63,6 @@ public class DataFileFooterConverter {
 
   /**
    * Below method will be used to get thrift file meta to wrapper file meta
-   *
-   * @param meta data file path
-   *             thrift
-   * @return wrapper file meta
-   * @throws IOException throw exception if any problem in reading
    */
   public DataFileFooter readDataFileFooter(String filePath, long offset)
       throws IOException {
@@ -83,8 +78,17 @@ public class DataFileFooterConverter {
           .add(thriftColumnSchmeaToWrapperColumnSchema(footer.getTable_columns().get(i)));
     }
     dataFileFooter.setColumnInTable(columnSchemaList);
-    List<LeafNodeIndex> leafNodeIndexList = getLeafNodeIndexList(footer.getIndex());
-    List<org.carbondata.format.BlockletInfo> leaf_node_infos_Thrift = footer.getLeaf_node_info();
+
+    List<org.carbondata.format.BlockletIndex> leaf_node_indices_Thrift =
+        footer.getBlocklet_index_list();
+    List<LeafNodeIndex> leafNodeIndexList = new ArrayList<LeafNodeIndex>();
+    for (int i = 0; i < leaf_node_indices_Thrift.size(); i++) {
+      LeafNodeIndex leafNodeIndex = getLeafNodeIndex(leaf_node_indices_Thrift.get(i));
+      leafNodeIndexList.add(leafNodeIndex);
+    }
+
+    List<org.carbondata.format.BlockletInfo> leaf_node_infos_Thrift =
+        footer.getBlocklet_info_list();
     List<LeafNodeInfo> leafNodeInfoList = new ArrayList<LeafNodeInfo>();
     for (int i = 0; i < leaf_node_infos_Thrift.size(); i++) {
       LeafNodeInfo leafNodeInfo = getLeafNodeInfo(leaf_node_infos_Thrift.get(i));
@@ -103,8 +107,7 @@ public class DataFileFooterConverter {
    */
   private LeafNodeIndex getLeafNodeIndexForDataFileFooter(List<LeafNodeIndex> leafNodeIndexList) {
     LeafNodeIndex leafNodeIndex = new LeafNodeIndex();
-    org.carbondata.core.carbon.metadata.leafnode.indexes.LeafNodeBtreeIndex leafNodeBTreeIndex =
-        new LeafNodeBtreeIndex();
+    LeafNodeBtreeIndex leafNodeBTreeIndex = new LeafNodeBtreeIndex();
     leafNodeBTreeIndex.setStartKey(leafNodeIndexList.get(0).getBtreeIndex().getStartKey());
     leafNodeBTreeIndex
         .setEndKey(leafNodeIndexList.get(leafNodeIndexList.size() - 1).getBtreeIndex().getEndKey());
@@ -252,41 +255,13 @@ public class DataFileFooterConverter {
    * @param leafNodeIndexThrift
    * @return leaf node index wrapper
    */
-  private List<LeafNodeIndex> getLeafNodeIndexList(
+  private LeafNodeIndex getLeafNodeIndex(
       org.carbondata.format.BlockletIndex leafNodeIndexThrift) {
-
-    List<BlockletBTreeIndex> thriftBtreeIndexList = leafNodeIndexThrift.getB_tree_index();
-    List<org.carbondata.format.BlockletMinMaxIndex> min_max_index =
-        leafNodeIndexThrift.getMin_max_index();
-    List<LeafNodeIndex> leafNodeIndex = new ArrayList<LeafNodeIndex>(thriftBtreeIndexList.size());
-    LeafNodeBtreeIndex btreeIndex = null;
-    BlockletBTreeIndex leafNodeBTreeIndex = null;
-    LeafNodeIndex indexInfo = null;
-    LeafNodeMinMaxIndex minMaxIndex = null;
-    for (int i = 0; i < thriftBtreeIndexList.size(); i++) {
-      indexInfo = null;
-      btreeIndex = new LeafNodeBtreeIndex();
-      minMaxIndex = new LeafNodeMinMaxIndex();
-      leafNodeBTreeIndex = thriftBtreeIndexList.get(i);
-      List<ByteBuffer> max_values = min_max_index.get(i).getMax_values();
-      List<ByteBuffer> min_values = min_max_index.get(i).getMin_values();
-      byte[][] minValues = new byte[max_values.size()][];
-      byte[][] maxValues = new byte[min_values.size()][];
-      for (int j = 0; j < maxValues.length; j++) {
-        minValues[i] = min_values.get(i).array();
-        maxValues[i] = max_values.get(i).array();
-      }
-      indexInfo = new LeafNodeIndex();
-      btreeIndex.setStartKey(leafNodeBTreeIndex.getStart_key());
-      btreeIndex.setEndKey(leafNodeBTreeIndex.getEnd_key());
-      indexInfo.setBtreeIndex(btreeIndex);
-      minMaxIndex.setMaxValues(maxValues);
-      minMaxIndex.setMinValues(minValues);
-      indexInfo.setBtreeIndex(btreeIndex);
-      indexInfo.setMinMaxIndex(minMaxIndex);
-      leafNodeIndex.add(indexInfo);
-    }
-    return leafNodeIndex;
+    BlockletBTreeIndex btreeIndex = leafNodeIndexThrift.getB_tree_index();
+    BlockletMinMaxIndex minMaxIndex = leafNodeIndexThrift.getMin_max_index();
+    return new LeafNodeIndex(
+        new LeafNodeBtreeIndex(btreeIndex.getStart_key(), btreeIndex.getEnd_key()),
+        new LeafNodeMinMaxIndex(minMaxIndex.getMin_values(), minMaxIndex.getMax_values()));
   }
 
   /**

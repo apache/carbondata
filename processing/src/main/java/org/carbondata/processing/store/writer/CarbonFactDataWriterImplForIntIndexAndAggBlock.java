@@ -208,7 +208,7 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
     holder.setCompressedDataIndex(compressedDataIndex);
     holder.setCompressionModel(compressionModel);
     //setting column min max value
-    holder.setColumnMinMaxData(columnMinMaxData);
+    holder.setColumnMaxData(columnMinMaxData);
     holder.setAggBlocks(aggBlocks);
     if (!this.isNodeHolderRequired) {
       writeDataToFile(holder);
@@ -342,8 +342,8 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
     info.setKeyLengths(nodeHolder.getKeyLengths());
 
     //add column min max length
-    info.setColumnMinMaxData(nodeHolder.getColumnMinMaxData());
-
+    info.setColumnMaxData(nodeHolder.getColumnMaxData());
+    info.setColumnMinData(nodeHolder.getColumnMinData());
     long[] keyOffSets = new long[nodeHolder.getKeyLengths().length];
 
     for (int i = 0; i < keyOffSets.length; i++) {
@@ -417,10 +417,10 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
     //column min max size
     //for length of columnMinMax byte array
     metaSize += CarbonCommonConstants.INT_SIZE_IN_BYTE;
-    for (int i = 0; i < nodeHolderInfo.getColumnMinMaxData().length; i++) {
+    for (int i = 0; i < nodeHolderInfo.getColumnMaxData().length; i++) {
       //length of sub byte array
       metaSize += CarbonCommonConstants.INT_SIZE_IN_BYTE;
-      metaSize += nodeHolderInfo.getColumnMinMaxData()[i].length;
+      metaSize += nodeHolderInfo.getColumnMaxData()[i].length;
     }
 
     // key block index length + key block index offset + number of key block

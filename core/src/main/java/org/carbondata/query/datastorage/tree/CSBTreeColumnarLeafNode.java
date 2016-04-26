@@ -85,13 +85,16 @@ public class CSBTreeColumnarLeafNode extends CSBNode {
         .createDataStore(isFileStore, compressionModel, leafNodeInfo.getMeasureOffset(),
             leafNodeInfo.getMeasureLength(), leafNodeInfo.getFileName(), fileHolder);
     this.nodeNumber = nodeNumber;
-    byte[][] columnMinMaxData = leafNodeInfo.getColumnMinMaxData();
-    this.columnMinData = new byte[columnMinMaxData.length][];
-    this.columnMaxData = new byte[columnMinMaxData.length][];
+    byte[][] columnMaxData = leafNodeInfo.getColumnMaxData();
+    byte[][] columnMinData = leafNodeInfo.getColumnMinData();
+    assert(columnMaxData.length == columnMinData.length);
+
+    this.columnMinData = new byte[columnMinData.length][];
+    this.columnMaxData = new byte[columnMaxData.length][];
     CarbonDef.Cube cubeXml = metaCube.getCube();
     CubeDimension[] cubeDimensions = cubeXml.dimensions;
     int NoDictionaryColsCount = 0;
-    for (int i = 0; i < columnMinMaxData.length; i++) {
+    for (int i = 0; i < columnMaxData.length; i++) {
 
       //For high cardinality dimension engine has to ignore the length and store the min and
       // max value of dimension members.
@@ -99,22 +102,25 @@ public class CSBTreeColumnarLeafNode extends CSBNode {
       // used it to identify complex columns block size.
       if (cubeDimensions[i].noDictionary || i >= eachBlockSize.length) {
         NoDictionaryColsCount++;
-        ByteBuffer byteBuffer = ByteBuffer.allocate(columnMinMaxData[i].length);
-        byteBuffer.put(columnMinMaxData[i]);
-        byteBuffer.flip();
-        short minLength = byteBuffer.getShort();
+        ByteBuffer minBuffer = ByteBuffer.allocate(columnMinData[i].length);
+        minBuffer.put(columnMinData[i]);
+        minBuffer.flip();
+        short minLength = minBuffer.getShort();
         this.columnMinData[i] = new byte[minLength];
-        byteBuffer.get(this.columnMinData[i]);
-        short maxLength = byteBuffer.getShort();
-        this.columnMaxData[i] = new byte[maxLength];
-        byteBuffer.get(this.columnMaxData[i]);
+        minBuffer.get(this.columnMinData[i]);
 
+        ByteBuffer maxBuffer = ByteBuffer.allocate(columnMaxData[i].length);
+        maxBuffer.put(columnMaxData[i]);
+        maxBuffer.flip();
+        short maxLength = maxBuffer.getShort();
+        this.columnMaxData[i] = new byte[maxLength];
+        maxBuffer.get(this.columnMaxData[i]);
       } else {
         this.columnMinData[i] = new byte[eachBlockSize[i]];
-        System.arraycopy(columnMinMaxData[i], 0, this.columnMinData[i], 0, eachBlockSize[i]);
+        System.arraycopy(columnMaxData[i], 0, this.columnMinData[i], 0, eachBlockSize[i]);
 
         this.columnMaxData[i] = new byte[eachBlockSize[i]];
-        System.arraycopy(columnMinMaxData[i], eachBlockSize[i], this.columnMaxData[i], 0,
+        System.arraycopy(columnMaxData[i], eachBlockSize[i], this.columnMaxData[i], 0,
             eachBlockSize[i]);
       }
     }

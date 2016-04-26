@@ -17,6 +17,8 @@
 package org.carbondata.core.carbon.metadata.leafnode.indexes;
 
 import java.io.Serializable;
+import java.nio.ByteBuffer;
+import java.util.List;
 
 /**
  * Below class holds the information of max and min value of all the column in a leaf node
@@ -37,6 +39,18 @@ public class LeafNodeMinMaxIndex implements Serializable {
    * Max value of all columns of one leaf node Bit-Packed
    */
   private byte[][] maxValues;
+
+  public LeafNodeMinMaxIndex() {
+  }
+
+  public LeafNodeMinMaxIndex(List<ByteBuffer> minValues, List<ByteBuffer> maxValues) {
+    this.minValues = new byte[minValues.size()][];
+    this.maxValues = new byte[maxValues.size()][];
+    for (int i = 0; i < minValues.size(); i++) {
+      this.minValues[i] = minValues.get(i).array();
+      this.maxValues[i] = maxValues.get(i).array();
+    }
+  }
 
   /**
    * @return the minValues

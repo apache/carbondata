@@ -38,6 +38,14 @@ public class LeafNodeBtreeIndex implements Serializable {
    */
   private byte[] endKey;
 
+  public LeafNodeBtreeIndex() {
+  }
+
+  public LeafNodeBtreeIndex(byte[] startKey, byte[] endKey) {
+    this.startKey = startKey;
+    this.endKey = endKey;
+  }
+
   /**
    * @return the startKey
    */

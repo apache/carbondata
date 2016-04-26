@@ -98,7 +98,10 @@ public class CarbonFooterWriterTest {
     infoColumnar.setKeyLengths(new int[] { 1, 2, 3, 4 });
     infoColumnar.setKeyOffSets(new long[] { 22, 44, 55, 77 });
     infoColumnar.setIsSortedKeyColumn(new boolean[] { false, true, false, true });
-    infoColumnar.setColumnMinMaxData(
+    infoColumnar.setColumnMaxData(
+        new byte[][] { new byte[] { 1, 2 }, new byte[] { 3, 4 }, new byte[] { 4, 5 },
+            new byte[] { 5, 6 } });
+    infoColumnar.setColumnMinData(
         new byte[][] { new byte[] { 1, 2 }, new byte[] { 3, 4 }, new byte[] { 4, 5 },
             new byte[] { 5, 6 } });
     infoColumnar.setKeyBlockIndexLength(new int[] { 4, 7 });

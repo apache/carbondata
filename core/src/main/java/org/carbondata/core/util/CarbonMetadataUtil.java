@@ -46,11 +46,13 @@ public class CarbonMetadataUtil {
     FileFooter footer = new FileFooter();
     footer.setNum_rows(getTotalNumberOfRows(infoList));
     footer.setSegment_info(segmentInfo);
-    footer.setIndex(getLeafNodeIndex(infoList));
+    for (LeafNodeInfoColumnar info : infoList) {
+      footer.addToBlocklet_index_list(getLeafNodeIndex(info));
+    }
     //TODO: Need to set the schema here.
     footer.setTable_columns(new ArrayList<ColumnSchema>());
     for (LeafNodeInfoColumnar info : infoList) {
-      footer.addToLeaf_node_info(getLeafNodeInfo(info));
+      footer.addToBlocklet_info_list(getLeafNodeInfo(info));
     }
     return footer;
   }
@@ -69,29 +71,22 @@ public class CarbonMetadataUtil {
     return numberOfRows;
   }
 
-  private static BlockletIndex getLeafNodeIndex(List<LeafNodeInfoColumnar> infoList) {
+  private static BlockletIndex getLeafNodeIndex(LeafNodeInfoColumnar info) {
 
-    List<BlockletMinMaxIndex> leafNodeMinMaxIndexes = new ArrayList<BlockletMinMaxIndex>();
-    List<BlockletBTreeIndex> leafNodeBTreeIndexes = new ArrayList<BlockletBTreeIndex>();
-
-    for (LeafNodeInfoColumnar info : infoList) {
-      BlockletMinMaxIndex leafNodeMinMaxIndex = new BlockletMinMaxIndex();
-      //TODO: Need to seperate minmax and set.
-      for (byte[] minMax : info.getColumnMinMaxData()) {
-        leafNodeMinMaxIndex.addToMax_values(ByteBuffer.wrap(minMax));
-        leafNodeMinMaxIndex.addToMin_values(ByteBuffer.wrap(minMax));
-      }
-      leafNodeMinMaxIndexes.add(leafNodeMinMaxIndex);
-
-      BlockletBTreeIndex leafNodeBTreeIndex = new BlockletBTreeIndex();
-      leafNodeBTreeIndex.setStart_key(info.getStartKey());
-      leafNodeBTreeIndex.setEnd_key(info.getEndKey());
-      leafNodeBTreeIndexes.add(leafNodeBTreeIndex);
+    BlockletMinMaxIndex leafNodeMinMaxIndex = new BlockletMinMaxIndex();
+    for (byte[] max : info.getColumnMaxData()) {
+      leafNodeMinMaxIndex.addToMax_values(ByteBuffer.wrap(max));
     }
+    for (byte[] min : info.getColumnMinData()) {
+      leafNodeMinMaxIndex.addToMin_values(ByteBuffer.wrap(min));
+    }
+    BlockletBTreeIndex leafNodeBTreeIndex = new BlockletBTreeIndex();
+    leafNodeBTreeIndex.setStart_key(info.getStartKey());
+    leafNodeBTreeIndex.setEnd_key(info.getEndKey());
 
     BlockletIndex leafNodeIndex = new BlockletIndex();
-    leafNodeIndex.setMin_max_index(leafNodeMinMaxIndexes);
-    leafNodeIndex.setB_tree_index(leafNodeBTreeIndexes);
+    leafNodeIndex.setMin_max_index(leafNodeMinMaxIndex);
+    leafNodeIndex.setB_tree_index(leafNodeBTreeIndex);
     return leafNodeIndex;
   }
 
@@ -206,7 +201,7 @@ public class CarbonMetadataUtil {
       throws IOException {
     List<LeafNodeInfoColumnar> listOfNodeInfo =
         new ArrayList<LeafNodeInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-    for (BlockletInfo leafNodeInfo : footer.getLeaf_node_info()) {
+    for (BlockletInfo leafNodeInfo : footer.getBlocklet_info_list()) {
       LeafNodeInfoColumnar leafNodeInfoColumnar = new LeafNodeInfoColumnar();
       leafNodeInfoColumnar.setNumberOfKeys(leafNodeInfo.getNum_rows());
       List<DataChunk> columnChunks = leafNodeInfo.getColumn_data_chunks();
@@ -302,27 +297,27 @@ public class CarbonMetadataUtil {
 
   private static void setLeafNodeIndex(FileFooter footer,
       List<LeafNodeInfoColumnar> listOfNodeInfo) {
-    BlockletIndex leafNodeIndex = footer.getIndex();
-    List<BlockletBTreeIndex> bTreeIndexes = leafNodeIndex.getB_tree_index();
-    List<BlockletMinMaxIndex> min_max_indexes = leafNodeIndex.getMin_max_index();
-    int i = 0;
-    for (BlockletBTreeIndex bTreeIndex : bTreeIndexes) {
-      listOfNodeInfo.get(i).setStartKey(bTreeIndex.getStart_key());
-      listOfNodeInfo.get(i).setEndKey(bTreeIndex.getEnd_key());
-      i++;
-    }
+    List<BlockletIndex> blockletIndexList = footer.getBlocklet_index_list();
+    for (int i = 0; i < blockletIndexList.size(); i++) {
+      BlockletBTreeIndex bTreeIndexList = blockletIndexList.get(i).getB_tree_index();
+      BlockletMinMaxIndex minMaxIndexList = blockletIndexList.get(i).getMin_max_index();
 
-    i = 0;
-    for (BlockletMinMaxIndex minMaxIndex : min_max_indexes) {
+      listOfNodeInfo.get(i).setStartKey(bTreeIndexList.getStart_key());
+      listOfNodeInfo.get(i).setEndKey(bTreeIndexList.getEnd_key());
 
-      byte[][] minMax = new byte[minMaxIndex.getMax_values().size()][];
-      int j = 0;
-      for (ByteBuffer byteBuffer : minMaxIndex.getMax_values()) {
-        minMax[j] = byteBuffer.array();
-        j++;
+      byte[][] min = new byte[minMaxIndexList.getMin_values().size()][];
+      List<ByteBuffer> minValues = minMaxIndexList.getMin_values();
+      for (int j = 0; j < minValues.size(); j++) {
+        min[j] = minValues.get(j).array();
       }
-      listOfNodeInfo.get(i).setColumnMinMaxData(minMax);
-      i++;
+      listOfNodeInfo.get(i).setColumnMinData(min);
+
+      byte[][] max = new byte[minMaxIndexList.getMax_values().size()][];
+      List<ByteBuffer> maxValues = minMaxIndexList.getMax_values();
+      for (int j = 0; j < maxValues.size(); j++) {
+        max[j] = maxValues.get(j).array();
+      }
+      listOfNodeInfo.get(i).setColumnMaxData(max);
     }
   }
 

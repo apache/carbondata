@@ -332,10 +332,10 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     //column min max size
     //for length of columnMinMax byte array
     metaSize += CarbonCommonConstants.INT_SIZE_IN_BYTE;
-    for (int i = 0; i < nodeHolder.getColumnMinMaxData().length; i++) {
+    for (int i = 0; i < nodeHolder.getColumnMaxData().length; i++) {
       //length of sub byte array
       metaSize += CarbonCommonConstants.INT_SIZE_IN_BYTE;
-      metaSize += nodeHolder.getColumnMinMaxData()[i].length;
+      metaSize += nodeHolder.getColumnMaxData()[i].length;
     }
 
     // key block index length + key block index offset + number of key block
@@ -360,8 +360,8 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     // add the key array length
     infoObj.setKeyLengths(nodeHolder.getKeyLengths());
     //add column min max data
-    infoObj.setColumnMinMaxData(nodeHolder.getColumnMinMaxData());
-
+    infoObj.setColumnMaxData(nodeHolder.getColumnMaxData());
+    infoObj.setColumnMinData(nodeHolder.getColumnMinData());
     long[] keyOffSets = new long[nodeHolder.getKeyLengths().length];
 
     for (int i = 0; i < keyOffSets.length; i++) {

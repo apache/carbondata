@@ -96,9 +96,14 @@ public class NodeHolder {
   private byte[][] compressedDataIndex;
 
   /**
-   * column min max data
+   * column max data
    */
-  private byte[][] columnMinMaxData;
+  private byte[][] columnMaxData;
+
+  /**
+   * column min data
+   */
+  private byte[][] columnMinData;
 
   /**
    * compression model for numbers data block.
@@ -328,13 +333,20 @@ public class NodeHolder {
     this.dataIndexMapLength = dataIndexMapLength;
   }
 
-  public byte[][] getColumnMinMaxData() {
-    return this.columnMinMaxData;
+  public byte[][] getColumnMaxData() {
+    return this.columnMaxData;
   }
 
-  public void setColumnMinMaxData(byte[][] columnMinMaxData) {
-    this.columnMinMaxData = columnMinMaxData;
+  public void setColumnMaxData(byte[][] columnMaxData) {
+    this.columnMaxData = columnMaxData;
+  }
 
+  public byte[][] getColumnMinData() {
+    return this.columnMinData;
+  }
+
+  public void setColumnMinData(byte[][] columnMinData) {
+    this.columnMinData = columnMinData;
   }
 
   public ValueCompressionModel getCompressionModel() {

@@ -28,48 +28,48 @@ include "schema.thrift"
 * Information about a segment, that represents one data load
 */
 struct SegmentInfo{
-	1: required i32 num_cols; // Number of columns in this load, because schema can evolve . TODO: Check whether this is really required
-	2: required list<i32> column_cardinalities; // Cardinality of columns
+    1: required i32 num_cols; // Number of columns in this load, because schema can evolve . TODO: Check whether this is really required
+    2: required list<i32> column_cardinalities; // Cardinality of columns
 }
 
 /**
-*	Btree index of one node.
+*	Btree index of one blocklet
 */
 struct BlockletBTreeIndex{
-	1: required binary start_key; // Bit-packed start key of one blocklet
-	2: required binary end_key;	// Bit-packed start key of one blocklet
+    1: required binary start_key; // Bit-packed start key of one blocklet
+    2: required binary end_key;	// Bit-packed start key of one blocklet
 }
 
 /**
-*	Min-max index of one complete file
+*	Min-max index of one blocklet
 */
 struct BlockletMinMaxIndex{
-	1: required list<binary> min_values; //Min value of all columns of one blocklet Bit-Packed
-	2: required list<binary> max_values; //Max value of all columns of one blocklet Bit-Packed
+    1: required list<binary> min_values; //Min value of all columns of one blocklet Bit-Packed
+    2: required list<binary> max_values; //Max value of all columns of one blocklet Bit-Packed
 }
 
 /**
-*	Index of all blocklets in one file
-*/
+* Index of one blocklet
+**/
 struct BlockletIndex{
-	1: optional list<BlockletMinMaxIndex> min_max_index;
-	2: optional list<BlockletBTreeIndex> b_tree_index;
+    1: optional BlockletMinMaxIndex min_max_index;
+    2: optional BlockletBTreeIndex b_tree_index;
 }
 
 /**
 * Sort state of one column
 */
 enum SortState{
-	SORT_NONE = 0; // Data is not sorted
-	SORT_NATIVE = 1; //Source data was sorted
-	SORT_EXPLICIT = 2;	// Sorted (ascending) when loading
+    SORT_NONE = 0; // Data is not sorted
+    SORT_NATIVE = 1; //Source data was sorted
+    SORT_EXPLICIT = 2;	// Sorted (ascending) when loading
 }
 
 /**
 *	Compressions supported by Carbon Data.
 */
 enum CompressionCodec{
-	SNAPPY = 0;
+    SNAPPY = 0;
 }
 
 /**
@@ -77,37 +77,37 @@ enum CompressionCodec{
 */
 // add a innger level placeholder for further I/O granulatity
 struct ChunkCompressionMeta{
-	1: required CompressionCodec compression_codec; // the compressor used
-	/** total byte size of all uncompressed pages in this column chunk (including the headers) **/
-	2: required i64 total_uncompressed_size;
-	/** total byte size of all compressed pages in this column chunk (including the headers) **/
-	3: required i64 total_compressed_size;
+    1: required CompressionCodec compression_codec; // the compressor used
+    /** total byte size of all uncompressed pages in this column chunk (including the headers) **/
+    2: required i64 total_uncompressed_size;
+    /** total byte size of all compressed pages in this column chunk (including the headers) **/
+    3: required i64 total_compressed_size;
 }
 
 /**
 * To handle space data with nulls
 */
 struct PresenceMeta{
-	1: required bool represents_presence; // if true, ones in the bit stream reprents presence. otherwise represents absence
-	2: required binary present_bit_stream; // Compressed bit stream representing the presence of null values
+    1: required bool represents_presence; // if true, ones in the bit stream reprents presence. otherwise represents absence
+    2: required binary present_bit_stream; // Compressed bit stream representing the presence of null values
 }
 
 /**
 * Represents a chunk of data. The chunk can be a single column stored in Column Major format or a group of columns stored in Row Major Format.
 **/
 struct DataChunk{
-	1: required ChunkCompressionMeta chunk_meta; // the metadata of a chunk
-	2: required bool row_chunk; // whether this chunk is a row chunk or column chunk ? Decide whether this can be replace with counting od columnIDs
+    1: required ChunkCompressionMeta chunk_meta; // the metadata of a chunk
+    2: required bool row_chunk; // whether this chunk is a row chunk or column chunk ? Decide whether this can be replace with counting od columnIDs
 	/** The column IDs in this chunk, in the order in which the data is physically stored, will have atleast one column ID for columnar format, many column ID for row major format**/
-	3: required list<i32> column_ids;
-	4: required i64 data_page_offset; // Offset of data page
-	5: required i32 data_page_length; // length of data page
-	6: optional i64 rowid_page_offset; //offset of row id page, only if encoded using inverted index
-	7: optional i32 rowid_page_length; //length of row id page, only if encoded using inverted index
-	8: optional i64 rle_page_offset;	// offset of rle page, only if RLE coded.
-	9: optional i32 rle_page_length;	// length of rle page, only if RLE coded.
-	10: optional PresenceMeta presence; // information about presence of values in each row of this column chunk
-	11: optional SortState sort_state;
+    3: required list<i32> column_ids;
+    4: required i64 data_page_offset; // Offset of data page
+    5: required i32 data_page_length; // length of data page
+    6: optional i64 rowid_page_offset; //offset of row id page, only if encoded using inverted index
+    7: optional i32 rowid_page_length; //length of row id page, only if encoded using inverted index
+    8: optional i64 rle_page_offset;	// offset of rle page, only if RLE coded.
+    9: optional i32 rle_page_length;	// length of rle page, only if RLE coded.
+    10: optional PresenceMeta presence; // information about presence of values in each row of this column chunk
+    11: optional SortState sort_state;
     12: optional list<schema.Encoding> encoders; // The List of encoders overriden at node level
     13: optional list<binary> encoder_meta; // extra information required by encoders
 }
@@ -122,13 +122,30 @@ struct BlockletInfo{
 }
 
 /**
-* Description of one data file
+* Footer for indexed carbon file
 */
 struct FileFooter{
+    1: required i32 version; // version used for data compatibility
+    2: required i64 num_rows; // Total number of rows in this file
+    3: required list<schema.ColumnSchema> table_columns;	// Description of columns in this file
+    4: required SegmentInfo segment_info;	// Segment info (will be same/repeated for all files in this segment)
+    5: required list<BlockletIndex> blocklet_index_list;	// blocklet index of all blocklets in this file
+    6: required list<BlockletInfo> blocklet_info_list;	// Information about blocklets of all columns in this file
+}
+
+/**
+ * Header for appendable carbon file
+ */
+struct FileHeader{
 	1: required i32 version; // version used for data compatibility
-	2: required i64 num_rows; // Total number of rows in this file
-	3: required SegmentInfo segment_info;	// Segment info (will be same/repeated for all files in this segment)
-	4: required BlockletIndex index;	// blocklet index of all blocklets in this file
-	5: required list<schema.ColumnSchema> table_columns;	// Description of columns in this file
-	6: required list<BlockletInfo> leaf_node_info;	// Information about blocklets of all columns in this file
+	2: required list<schema.ColumnSchema> table_columns;  // Description of columns in this file
+}
+
+/**
+ * Header for one blocklet in appendable carbon file
+ **/
+struct BlockletHeader{
+	1: required i32 blocklet_length; // length of blocklet data
+	2: required BlockletIndex index;  // index for the following blocklet
+	3: required BlockletInfo blocklet_info;  // blocklet info for the following blocklet
 }

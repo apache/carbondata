@@ -99,9 +99,14 @@ public class LeafNodeInfoColumnar {
   private ValueCompressionModel compressionModel;
 
   /**
-   * column min max array
+   * column min array
    */
-  private byte[][] columnMinMaxData;
+  private byte[][] columnMaxData;
+
+  /**
+   * column max array
+   */
+  private byte[][] columnMinData;
 
   /**
    * getFileName().
@@ -333,20 +338,22 @@ public class LeafNodeInfoColumnar {
     this.keyBlockUnCompressor = keyBlockUnCompressor;
   }
 
-  /**
-   * for each column min max data
-   */
-  public byte[][] getColumnMinMaxData() {
-    return this.columnMinMaxData;
+  public byte[][] getColumnMaxData() {
+    return this.columnMaxData;
   }
 
-  /**
-   * for each column min max data
-   */
-  public void setColumnMinMaxData(byte[][] columnMinMaxData) {
-    this.columnMinMaxData = columnMinMaxData;
-
+  public void setColumnMaxData(byte[][] columnMaxData) {
+    this.columnMaxData = columnMaxData;
   }
+
+  public byte[][] getColumnMinData() {
+    return this.columnMinData;
+  }
+
+  public void setColumnMinData(byte[][] columnMinData) {
+    this.columnMinData = columnMinData;
+  }
+
 
   public ValueCompressionModel getCompressionModel() {
     return compressionModel;

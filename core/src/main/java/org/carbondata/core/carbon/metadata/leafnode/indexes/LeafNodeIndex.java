@@ -38,6 +38,14 @@ public class LeafNodeIndex implements Serializable {
    */
   private LeafNodeMinMaxIndex minMaxIndex;
 
+  public LeafNodeIndex() {
+  }
+
+  public LeafNodeIndex(LeafNodeBtreeIndex btree, LeafNodeMinMaxIndex minmax) {
+    this.btreeIndex = btree;
+    this.minMaxIndex = minmax;
+  }
+
   /**
    * @return the btreeIndex
    */
