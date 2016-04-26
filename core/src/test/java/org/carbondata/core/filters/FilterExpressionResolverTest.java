@@ -1,28 +1,15 @@
 package org.carbondata.core.filters;
 
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
+import static org.junit.Assert.fail;
 
-import org.carbondata.core.carbon.metadata.leafnode.DataFileMetadata;
-import org.carbondata.core.carbon.metadata.leafnode.indexes.LeafNodeBtreeIndex;
-import org.carbondata.core.carbon.metadata.leafnode.indexes.LeafNodeIndex;
-import org.carbondata.core.carbon.metadata.leafnode.indexes.LeafNodeMinMaxIndex;
-import org.carbondata.core.keygenerator.KeyGenerator;
-import org.carbondata.core.keygenerator.mdkey.MultiDimKeyVarLengthGenerator;
-import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.expression.ColumnExpression;
 import org.carbondata.query.expression.DataType;
 import org.carbondata.query.expression.LiteralExpression;
 import org.carbondata.query.expression.conditional.EqualToExpression;
 import org.carbondata.query.filter.resolver.ConditionalFilterResolverImpl;
-import org.carbondata.query.schema.metadata.FilterEvaluatorInfo;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.junit.Assert.fail;
 
 public class FilterExpressionResolverTest {
 
@@ -35,9 +22,17 @@ public class FilterExpressionResolverTest {
     LiteralExpression literalExpression = new LiteralExpression("1A001", DataType.StringType);
     EqualToExpression equalsToExpression =
         new EqualToExpression(columnExpression, literalExpression);
+    try
+    {
     ConditionalFilterResolverImpl condResolverImpl =
         new ConditionalFilterResolverImpl(equalsToExpression, false, true);
-    FilterEvaluatorInfo info = new FilterEvaluatorInfo();
+    assert(true);
+    }
+    catch(Exception e)
+    {
+    	assert(false);
+    }
+   
     //TableSegment tableSegment =new TableSegment();
     //tableSegment.loadSegmentBlock(getDataFileMetadataList(), null);
     //info.setTableSegment(tableSegment);
@@ -46,7 +41,7 @@ public class FilterExpressionResolverTest {
     //condResolverImpl.resolve(info);
   }
 
-  private List<DataFileMetadata> getDataFileMetadataList() {
+/*  private List<DataFileMetadata> getDataFileMetadataList() {
     List<DataFileMetadata> list = new ArrayList<DataFileMetadata>();
     try {
       int[] dimensionBitLength =
@@ -79,9 +74,9 @@ public class FilterExpressionResolverTest {
       return null;
     }
     return list;
-  }
+  }*/
 
-  private DataFileMetadata getFileMetadata(byte[] startKey, byte[] endKey,
+ /* private DataFileMetadata getFileMetadata(byte[] startKey, byte[] endKey,
       byte[] noDictionaryStartKey, byte[] noDictionaryEndKey) {
     DataFileMetadata dataFileMetadata = new DataFileMetadata();
     LeafNodeIndex index = new LeafNodeIndex();
@@ -107,7 +102,7 @@ public class FilterExpressionResolverTest {
     index.setMinMaxIndex(minMax);
     dataFileMetadata.setLeafNodeIndex(index);
     return dataFileMetadata;
-  }
+  }*/
 
   @After public void tearDown() throws Exception {
 
