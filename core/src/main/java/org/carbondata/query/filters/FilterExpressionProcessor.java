@@ -25,13 +25,14 @@ import java.util.List;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.AbsoluteTableIdentifier;
-import org.carbondata.core.carbon.SqlStatement.Type;
 import org.carbondata.core.carbon.datastore.DataRefNode;
 import org.carbondata.core.carbon.datastore.DataRefNodeFinder;
 import org.carbondata.core.carbon.datastore.IndexKey;
 import org.carbondata.core.carbon.datastore.block.AbstractIndex;
 import org.carbondata.core.carbon.datastore.impl.btree.BTreeNode;
 import org.carbondata.core.carbon.datastore.impl.btree.BtreeDataRefNodeFinder;
+import org.carbondata.core.carbon.metadata.datatype.DataType;
+import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.query.carbonfilterinterface.ExpressionType;
 import org.carbondata.query.expression.BinaryExpression;
@@ -156,6 +157,9 @@ public class FilterExpressionProcessor implements FilterProcessor {
 
   /**
    * constructing the filter resolver tree based on filter expression.
+   * this method will visit each node of the filter resolver and prepares
+   * the surrogates of the filter members which are involved filter
+   * expression.
    *
    * @param filterResolverTree
    * @param tableIdentifier
@@ -172,6 +176,15 @@ public class FilterExpressionProcessor implements FilterProcessor {
     traverseAndResolveTree(filterResolverTree.getRight(), tableIdentifier);
   }
 
+  /**
+   * Pattern used : Visitor Pattern
+   * Method will create filter resolver tree based on the filter expression tree,
+   * in this algorithm based on the expression instance the resolvers will created
+   *
+   * @param expressionTree
+   * @param tableIdentifier
+   * @return
+   */
   private FilterResolverIntf createFilterResolverTree(Expression expressionTree,
       AbsoluteTableIdentifier tableIdentifier) {
     ExpressionType filterExpressionType = expressionTree.getFilterExpressionType();
@@ -207,7 +220,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
   }
 
   /**
-   * Factory method which will return the resolver instance based on filter
+   * Factory method which will return the resolver instance based on filter expression
    * expressions.
    */
   private FilterResolverIntf getFilterResolverBasedOnExpressionType(
@@ -219,10 +232,13 @@ public class FilterExpressionProcessor implements FilterProcessor {
       case EQUALS:
         currentCondExpression = (BinaryConditionalExpression) expression;
         if (currentCondExpression.isSingleDimension()
-            && currentCondExpression.getColumnList().get(0).getDim().getDataType() != Type.ARRAY
-            && currentCondExpression.getColumnList().get(0).getDim().getDataType() != Type.STRUCT) {
+            && currentCondExpression.getColumnList().get(0).getCarbonColumn().getDataType()
+            != DataType.ARRAY
+            && currentCondExpression.getColumnList().get(0).getCarbonColumn().getDataType()
+            != DataType.STRUCT) {
           // getting new dim index.
-          if (currentCondExpression.getColumnList().get(0).getDim().isNoDictionaryDim()) {
+          if (!currentCondExpression.getColumnList().get(0).getCarbonColumn()
+              .hasEncoding(Encoding.DICTIONARY)) {
             if (FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getLeft())
                 || FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getRight())) {
               return new RowLevelFilterResolverImpl(expression, isExpressionResolve, true,
@@ -244,9 +260,12 @@ public class FilterExpressionProcessor implements FilterProcessor {
       case NOT_EQUALS:
         currentCondExpression = (BinaryConditionalExpression) expression;
         if (currentCondExpression.isSingleDimension()
-            && currentCondExpression.getColumnList().get(0).getDim().getDataType() != Type.ARRAY
-            && currentCondExpression.getColumnList().get(0).getDim().getDataType() != Type.STRUCT) {
-          if (currentCondExpression.getColumnList().get(0).getDim().isNoDictionaryDim()) {
+            && currentCondExpression.getColumnList().get(0).getCarbonColumn().getDataType()
+            != DataType.ARRAY
+            && currentCondExpression.getColumnList().get(0).getCarbonColumn().getDataType()
+            != DataType.STRUCT) {
+          if (!currentCondExpression.getColumnList().get(0).getCarbonColumn()
+              .hasEncoding(Encoding.DICTIONARY)) {
             if (FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getLeft())
                 || FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getRight())) {
               return new RowLevelFilterResolverImpl(expression, isExpressionResolve, false,
@@ -267,14 +286,15 @@ public class FilterExpressionProcessor implements FilterProcessor {
       default:
         condExpression = (ConditionalExpression) expression;
         if (condExpression.isSingleDimension()
-            && condExpression.getColumnList().get(0).getDim().getDataType() != Type.ARRAY
-            && condExpression.getColumnList().get(0).getDim().getDataType() != Type.STRUCT) {
+            && condExpression.getColumnList().get(0).getCarbonColumn().getDataType()
+            != DataType.ARRAY
+            && condExpression.getColumnList().get(0).getCarbonColumn().getDataType()
+            != DataType.STRUCT) {
           condExpression = (ConditionalExpression) expression;
           if (condExpression.isSingleDimension()) {
-
-            if (condExpression.getColumnList().get(0).getDim().isNoDictionaryDim()) {
-              if (FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getLeft())
-                  || FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getRight())) {
+            if (!condExpression.getColumnList().get(0).getCarbonColumn()
+                .hasEncoding(Encoding.DICTIONARY)) {
+              if (FilterUtil.checkIfExpressionContainsColumn(expression)) {
                 return new RowLevelFilterResolverImpl(expression, isExpressionResolve, false,
                     tableIdentifier);
               } else if (expressionTree.getFilterExpressionType() == ExpressionType.UNKNOWN) {

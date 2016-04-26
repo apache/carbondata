@@ -75,6 +75,16 @@ public final class FilterUtil {
 
   }
 
+  /**
+   * Pattern used : Visitor Pattern
+   * Method will create filter executer tree based on the filter resolved tree,
+   * in this algorithm based on the resolver instance the executers will be visited
+   * and the resolved surrogates will be converted to keys
+   *
+   * @param filterExpressionResolverTree
+   * @param blockKeyGenerator
+   * @return FilterExecuter instance
+   */
   private static FilterExecuter createFilterExecuterTree(
       FilterResolverIntf filterExpressionResolverTree, KeyGenerator blockKeyGenerator) {
     FilterExecuterType filterExecuterType = filterExpressionResolverTree.getFilterExecuterType();
@@ -116,7 +126,6 @@ public final class FilterUtil {
    * This method will check if a given expression contains a column expression
    * recursively.
    *
-   * @param right
    * @return
    */
   public static boolean checkIfExpressionContainsColumn(Expression expression) {
@@ -132,6 +141,13 @@ public final class FilterUtil {
     return false;
   }
 
+  /**
+   * method will get the masked keys based on the keys generated from surrogates.
+   *
+   * @param ranges
+   * @param key
+   * @return byte[]
+   */
   private static byte[] getMaskedKey(int[] ranges, byte[] key) {
     byte[] maskkey = new byte[ranges.length];
 
@@ -147,7 +163,7 @@ public final class FilterUtil {
    * This method will return the ranges for the masked Bytes based on the key
    * Generator.
    *
-   * @param queryDimensions
+   * @param queryDimensionsOrdinal
    * @param generator
    * @return
    */
@@ -167,6 +183,16 @@ public final class FilterUtil {
     return byteIndexs;
   }
 
+  /**
+   * This method will get the no dictionary data based on filters and same
+   * will be in DimColumnFilterInfo
+   *
+   * @param tableIdentifier
+   * @param columnExpression
+   * @param evaluateResultListFinal
+   * @param isIncludeFilter
+   * @return DimColumnFilterInfo
+   */
   private static DimColumnFilterInfo getNoDictionaryValKeyMemberForFilter(
       AbsoluteTableIdentifier tableIdentifier, ColumnExpression columnExpression,
       List<String> evaluateResultListFinal, boolean isIncludeFilter) {
@@ -184,6 +210,16 @@ public final class FilterUtil {
     return columnFilterInfo;
   }
 
+  /**
+   * Method will prepare the  dimfilterinfo instance by resolving the filter
+   * expression value to its respective surrogates.
+   *
+   * @param tableIdentifier
+   * @param columnExpression
+   * @param evaluateResultList
+   * @param isIncludeFilter
+   * @return
+   */
   public static DimColumnFilterInfo getFilterValues(AbsoluteTableIdentifier tableIdentifier,
       ColumnExpression columnExpression, List<String> evaluateResultList, boolean isIncludeFilter)
 
@@ -226,14 +262,14 @@ public final class FilterUtil {
   }
 
   /**
-   * This API will get all the members of column from the forward dictionary
-   * cache
+   * This method will get all the members of column from the forward dictionary
+   * cache, this method will be basically used in row level filter resolver.
    *
-   * @param info
+   * @param tableIdentifier
    * @param expression
    * @param columnExpression
    * @param isIncludeFilter
-   * @return
+   * @return DimColumnFilterInfo
    */
   public static DimColumnFilterInfo getFilterListForAllValues(
       AbsoluteTableIdentifier tableIdentifier, Expression expression,
@@ -251,7 +287,7 @@ public final class FilterUtil {
           stringValue = null;
         }
         row.setValues(new Object[] { DataTypeConverter.getDataBasedOnDataType(stringValue,
-            columnExpression.getDim().getDataType()) });
+            columnExpression.getCarbonColumn().getDataType()) });
         Boolean rslt = expression.evaluate(row).getBoolean();
         if (null != rslt && !(rslt ^ isIncludeFilter)) {
           if (null == stringValue) {
@@ -268,6 +304,16 @@ public final class FilterUtil {
         isIncludeFilter);
   }
 
+  /**
+   * Metahod will resolve the filter member to its respective surrogates by
+   * scanning the dictionary cache.
+   *
+   * @param tableIdentifier
+   * @param expression
+   * @param columnExpression
+   * @param isIncludeFilter
+   * @return
+   */
   public static DimColumnFilterInfo getFilterList(AbsoluteTableIdentifier tableIdentifier,
       Expression expression, ColumnExpression columnExpression, boolean isIncludeFilter) {
     DimColumnFilterInfo resolvedFilterObject = null;
@@ -281,7 +327,8 @@ public final class FilterUtil {
         }
         evaluateResultListFinal.add(result.getString());
       }
-      if (null != columnExpression.getDim() && columnExpression.getDim().isNoDictionaryDim()) {
+      if (null != columnExpression.getCarbonColumn() && !columnExpression.getCarbonColumn()
+          .hasEncoding(Encoding.DICTIONARY)) {
         resolvedFilterObject =
             getNoDictionaryValKeyMemberForFilter(tableIdentifier, columnExpression,
                 evaluateResultListFinal, isIncludeFilter);
@@ -296,6 +343,16 @@ public final class FilterUtil {
     return resolvedFilterObject;
   }
 
+  /**
+   * Method will prepare the  dimfilterinfo instance by resolving the filter
+   * expression value to its respective surrogates in the scenario of restructure.
+   *
+   * @param expression
+   * @param columnExpression
+   * @param defaultValues
+   * @param defaultSurrogate
+   * @return
+   */
   public static DimColumnFilterInfo getFilterListForRS(Expression expression,
       ColumnExpression columnExpression, String defaultValues, int defaultSurrogate) {
     List<Integer> filterValuesList = new ArrayList<Integer>(20);
@@ -330,6 +387,17 @@ public final class FilterUtil {
     return columnFilterInfo;
   }
 
+  /**
+   * This method will get the member based on filter expression evaluation from the
+   * forward dictionary cache, this method will be basically used in restructure.
+   *
+   * @param expression
+   * @param columnExpression
+   * @param defaultValues
+   * @param defaultSurrogate
+   * @param isIncludeFilter
+   * @return
+   */
   public static DimColumnFilterInfo getFilterListForAllMembersRS(Expression expression,
       ColumnExpression columnExpression, String defaultValues, int defaultSurrogate,
       boolean isIncludeFilter) {
@@ -345,7 +413,7 @@ public final class FilterUtil {
         defaultValues = null;
       }
       row.setValues(new Object[] { DataTypeConverter.getDataBasedOnDataType(defaultValues,
-          columnExpression.getDim().getDataType()) });
+          columnExpression.getCarbonColumn().getDataType()) });
       Boolean rslt = expression.evaluate(row).getBoolean();
       if (null != rslt && !(rslt ^ isIncludeFilter)) {
         if (null == defaultValues) {
@@ -393,7 +461,7 @@ public final class FilterUtil {
   }
 
   /**
-   * API will return the start key based on KeyGenerator for the respective
+   * Method will return the start key based on KeyGenerator for the respective
    * filter resolved instance.
    *
    * @param dimColResolvedFilterInfo

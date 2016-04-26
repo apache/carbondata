@@ -24,6 +24,7 @@ public enum DataType {
   INT,
   LONG,
   DOUBLE,
+  BOOLEAN,
   DECIMAL,
   TIMESTAMP,
   ARRAY,

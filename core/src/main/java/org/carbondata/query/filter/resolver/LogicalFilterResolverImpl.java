@@ -40,14 +40,32 @@ public class LogicalFilterResolverImpl implements FilterResolverIntf {
     this.filterExpressionType = filterExpressionType;
   }
 
+  /**
+   * Logical filter resolver will return the left and right filter expresison
+   * node for filter evaluation, so in this instance no implementation is required.
+   *
+   * @param absoluteTableIdentifier
+   */
   @Override public void resolve(AbsoluteTableIdentifier absoluteTableIdentifier) {
 
   }
 
+  /**
+   * Since its a binary condition expresion the getLeft method will get the left
+   * node of filter expression
+   *
+   * @return FilterResolverIntf.
+   */
   public FilterResolverIntf getLeft() {
     return leftEvalutor;
   }
 
+  /**
+   * Since its a binary condition expresion the getRight method will get the left
+   * node of filter expression
+   *
+   * @return FilterResolverIntf.
+   */
   public FilterResolverIntf getRight() {
     return rightEvalutor;
   }

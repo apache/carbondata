@@ -56,6 +56,11 @@ public class RestructureFilterResolverImpl implements FilterResolverIntf {
     this.isIncludeFilter = isIncludeFilter;
   }
 
+  /**
+   * Method will resolve the filters and it will replace the newly added dimension with default
+   * value
+   * @param absoluteTableIdentifier
+   */
   @Override public void resolve(AbsoluteTableIdentifier absoluteTableIdentifier) {
 
     DimColumnResolvedFilterInfo dimColumnResolvedFilterInfo = new DimColumnResolvedFilterInfo();
@@ -77,7 +82,8 @@ public class RestructureFilterResolverImpl implements FilterResolverIntf {
           if (FilterUtil.checkIfExpressionContainsColumn(right)) {
             isExpressionResolve = true;
           } else {
-            dimColumnResolvedFilterInfo.setColumnIndex(columnExpression.getDim().getOrdinal());
+            dimColumnResolvedFilterInfo
+                .setColumnIndex(columnExpression.getCarbonColumn().getOrdinal());
             // dimColumnResolvedFilterInfo
             // .setNeedCompressedData(info.getSlices().get(info.getCurrentSliceIndex())
             // .getDataCache(info.getFactTableName()).getAggKeyBlock()[columnExpression.getDim()
@@ -101,7 +107,8 @@ public class RestructureFilterResolverImpl implements FilterResolverIntf {
           if (checkIfExpressionContainsColumn(left)) {
             isExpressionResolve = true;
           } else {
-            dimColumnResolvedFilterInfo.setColumnIndex(columnExpression.getDim().getOrdinal());
+            dimColumnResolvedFilterInfo
+                .setColumnIndex(columnExpression.getCarbonColumn().getOrdinal());
             // dimColumnResolvedFilterInfo
             // .setNeedCompressedData(info.getSlices().get(info.getCurrentSliceIndex())
             // .getDataCache(info.getFactTableName()).getAggKeyBlock()[columnExpression.getDim()
@@ -126,7 +133,7 @@ public class RestructureFilterResolverImpl implements FilterResolverIntf {
   /**
    * This method will check if a given expression contains a column expression recursively.
    *
-   * @return
+   * @return boolean
    */
   private boolean checkIfExpressionContainsColumn(Expression expression) {
     if (expression instanceof ColumnExpression) {
@@ -150,23 +157,43 @@ public class RestructureFilterResolverImpl implements FilterResolverIntf {
     // TODO Auto-generated method stub
     return null;
   }
-
+  /**
+   * Method will return the DimColumnResolvedFilterInfo instance which consists
+   * the mapping of the respective dimension and its surrogates involved in
+   * filter expression.
+   *
+   * @return DimColumnResolvedFilterInfo
+   */
   public DimColumnResolvedFilterInfo getDimColResolvedFilterInfo() {
-    // TODO Auto-generated method stub
     return dimColumnResolvedFilterInfo;
   }
 
+  /**
+   *
+   * For restructure resolver no implementation is required for getting
+   * the start key since it already has default values
+   * @return IndexKey.
+   */
   @Override public IndexKey getstartKey(KeyGenerator keyGenerator) {
     // TODO Auto-generated method stub
     return null;
   }
-
+  /**
+   *
+   * For restructure resolver no implementation is required for getting
+   * the end  key since it already has default values
+   * @return IndexKey.
+   */
   @Override public IndexKey getEndKey(AbstractIndex segmentIndexBuilder,
       AbsoluteTableIdentifier tableIdentifier) {
     // TODO Auto-generated method stub
     return null;
   }
 
+  /**
+   * Method will get the executer type inorder to create filter executer tree
+   * @return FilterExecuterType
+   */
   @Override public FilterExecuterType getFilterExecuterType() {
     return FilterExecuterType.RESTRUCTURE;
   }

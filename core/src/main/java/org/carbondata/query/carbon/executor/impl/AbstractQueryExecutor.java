@@ -27,6 +27,7 @@ import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.common.logging.impl.StandardLogService;
 import org.carbondata.core.carbon.datastore.BlockIndexStore;
+import org.carbondata.core.carbon.datastore.IndexKey;
 import org.carbondata.core.carbon.datastore.block.AbstractIndex;
 import org.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.carbondata.core.carbon.datastore.exception.IndexBuilderException;
@@ -268,6 +269,14 @@ public abstract class AbstractQueryExecutor implements QueryExecutor {
     // loading the filter executer tree for filter evaluation
     blockExecutionInfo.setFilterExecuterTree(FilterUtil
         .getFilterExecuterTree(queryModel.getFilterExpressionResolverTree(), blockKeyGenerator));
+    IndexKey startIndexKey =
+        queryModel.getFilterExpressionResolverTree().getstartKey(blockKeyGenerator);
+    IndexKey endIndexKey = queryModel.getFilterExpressionResolverTree()
+        .getEndKey(blockIndex, queryModel.getAbsoluteTableIdentifier());
+    //setting the start index key of the block node
+    blockExecutionInfo.setStartKey(startIndexKey);
+    //setting the end index key of the block node
+    blockExecutionInfo.setEndKey(endIndexKey);
     FilterUtil
         .getFilterExecuterTree(queryModel.getFilterExpressionResolverTree(), blockKeyGenerator);
     // expression dimensions

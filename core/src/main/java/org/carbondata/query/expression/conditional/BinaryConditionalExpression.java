@@ -22,6 +22,7 @@ package org.carbondata.query.expression.conditional;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.query.expression.ColumnExpression;
 import org.carbondata.query.expression.Expression;
@@ -94,7 +95,7 @@ public abstract class BinaryConditionalExpression extends BinaryLogicalExpressio
         new ArrayList<ColumnExpression>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     getColumnList(this, listOfExp);
     for (ColumnExpression ce : listOfExp) {
-      if (ce.getDim().isDirectDictionary()) {
+      if (!ce.getCarbonColumn().hasEncoding(Encoding.DICTIONARY)) {
         return true;
       }
     }

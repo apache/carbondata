@@ -113,6 +113,14 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
     return set;
   }
 
+  /**
+   * Method will read the members of particular dimension block and create
+   * a row instance for further processing of the filters
+   *
+   * @param blockChunkHolder
+   * @param row
+   * @param index
+   */
   private void createRow(BlocksChunkHolder blockChunkHolder, RowIntf row, int index) {
     Object[] record = new Object[dimColEvaluatorInfoList.size() + msrColEvalutorInfoList.size()];
     String memberString = null;
@@ -228,7 +236,9 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
   }
 
   /**
-   * Reading the blocks for direct surrogates.
+   * Reading the blocks for no dictionary data, in no dictionary case
+   * directly the filter data will read, no need to scan the dictionary
+   * or read the dictionary value.
    *
    * @param dimColumnEvaluatorInfo
    * @param dimensionColumnDataChunk

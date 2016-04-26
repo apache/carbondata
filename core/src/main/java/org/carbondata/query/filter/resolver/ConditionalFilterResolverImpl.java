@@ -48,6 +48,11 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
     this.dimColResolvedFilterInfo = new DimColumnResolvedFilterInfo();
   }
 
+  /**
+   * This API will resolve the filter expression and generates the
+   * dictionaries for executing/evaluating the filter expressions in the
+   * executer layer.
+   */
   @Override public void resolve(AbsoluteTableIdentifier absoluteTableIdentifier) {
 
     if ((!isExpressionResolve) && exp instanceof BinaryConditionalExpression) {
@@ -120,20 +125,42 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
 
   }
 
+  /**
+   * Left node will not be presentin this scenario
+   *
+   * @return left node of type FilterResolverIntf instance
+   */
   public FilterResolverIntf getLeft() {
     // TODO Auto-generated method stub
     return null;
   }
 
+  /**
+   * Right node will not be presentin this scenario
+   *
+   * @return left node of type FilterResolverIntf instance
+   */
   @Override public FilterResolverIntf getRight() {
     // TODO Auto-generated method stub
     return null;
   }
 
+  /**
+   * Method will return the DimColumnResolvedFilterInfo instance which consists
+   * the mapping of the respective dimension and its surrogates involved in
+   * filter expression.
+   *
+   * @return DimColumnResolvedFilterInfo
+   */
   public DimColumnResolvedFilterInfo getDimColResolvedFilterInfo() {
     return dimColResolvedFilterInfo;
   }
 
+  /**
+   * method will get the start key based on the filter surrogates
+   *
+   * @return start IndexKey
+   */
   @Override public IndexKey getstartKey(KeyGenerator keyGen) {
     IndexKey startIndexKey = null;
     if (null == dimColResolvedFilterInfo.getStarIndexKey()) {
@@ -146,6 +173,11 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
     return startIndexKey;
   }
 
+  /**
+   * method will get the start key based on the filter surrogates
+   *
+   * @return end IndexKey
+   */
   @Override public IndexKey getEndKey(AbstractIndex tableSegment,
       AbsoluteTableIdentifier absoluteTableIdentifier) {
     long[] endKey =
@@ -164,6 +196,12 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
     return endIndexKey;
   }
 
+  /**
+   * Method will return the executer type for particular conditional resolver
+   * basically two types of executers will be formed for the conditional query.
+   *
+   * @return the filter executer type
+   */
   @Override public FilterExecuterType getFilterExecuterType() {
     switch (exp.getFilterExpressionType()) {
       case NOT_EQUALS:
@@ -175,6 +213,4 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
     }
 
   }
-
-
 }
