@@ -42,7 +42,7 @@ import org.carbondata.core.datastorage.store.filesystem.CarbonFile
 import org.carbondata.core.datastorage.store.impl.FileFactory
 import org.carbondata.core.reader.CarbonDictionaryReader
 import org.carbondata.core.reader.CarbonDictionaryReaderImpl
-import org.carbondata.core.util.{ CarbonDictionaryUtil, CarbonUtil }
+import org.carbondata.core.util.CarbonUtil
 import org.carbondata.core.writer.{ CarbonDictionaryWriter, CarbonDictionaryWriterImpl }
 import org.carbondata.core.writer.sortindex.{ CarbonDictionarySortIndexWriter, CarbonDictionarySortIndexWriterImpl }
 import org.carbondata.integration.spark.load.CarbonDictionarySortInfo
@@ -136,7 +136,7 @@ object GlobalDictionaryUtil extends Logging {
                                   iter: Iterator[String]): Unit = {
     val writer: CarbonDictionaryWriter = new CarbonDictionaryWriterImpl(
       model.hdfsLocation, model.table,
-      model.primDimensions(columnIndex).getColumnId, model.isSharedDimension)
+      model.primDimensions(columnIndex).getColumnId)
     try {
       if (!model.dictFileExists(columnIndex)) {
         writer.write(CarbonCommonConstants.MEMBER_DEFAULT_VAL)
@@ -162,7 +162,7 @@ object GlobalDictionaryUtil extends Logging {
       preparator.getDictionarySortInfo(model.primDimensions(index).getColumnId)
     val carbonDictionaryWriter: CarbonDictionarySortIndexWriter =
       new CarbonDictionarySortIndexWriterImpl(model.table,
-        model.primDimensions(index).getColumnId, model.hdfsLocation, false)
+        model.primDimensions(index).getColumnId, model.hdfsLocation)
     try {
       carbonDictionaryWriter.writeSortIndex(dictionarySortInfo.getSortIndex)
       carbonDictionaryWriter.writeInvertedSortIndex(dictionarySortInfo.getSortIndexInverted)
@@ -200,8 +200,7 @@ object GlobalDictionaryUtil extends Logging {
       val set = new HashSet[String]
       if (model.dictFileExists(i)) {
         val reader: CarbonDictionaryReader = new CarbonDictionaryReaderImpl(
-          model.hdfsLocation, model.table, model.primDimensions(i).getColumnId,
-          model.isSharedDimension)
+          model.hdfsLocation, model.table, model.primDimensions(i).getColumnId)
         val values = reader.read
         if (values != null) {
           for (j <- 0 until values.size)
@@ -272,15 +271,13 @@ object GlobalDictionaryUtil extends Logging {
    * @param columnNames column list
    * @param hdfsLocation store location in HDFS
    * @param dictfolderPath path of dictionary folder
-   * @param isSharedDimension a boolean to mark share dimension or non-share dimension
    * @return: org.carbondata.integration.spark.rdd.DictionaryLoadModel
    */
   def createDictionaryLoadModel(carbonLoadModel: CarbonLoadModel,
                                 table: CarbonTableIdentifier,
                                 dimensions: Array[CarbonDimension],
                                 hdfsLocation: String,
-                                dictfolderPath: String,
-                                isSharedDimension: Boolean): DictionaryLoadModel = {
+                                dictfolderPath: String): DictionaryLoadModel = {
     val primDimensionsBuffer = new ArrayBuffer[CarbonDimension]
     for (i <- 0 until dimensions.length) {
       val dims = getPrimDimensionWithDict(dimensions(i))
@@ -301,7 +298,6 @@ object GlobalDictionaryUtil extends Logging {
       dimensions,
       hdfsLocation,
       dictfolderPath,
-      isSharedDimension,
       dictFilePaths,
       dictFileExists,
       dimensions.map(_.isComplex() == true),
@@ -387,8 +383,7 @@ object GlobalDictionaryUtil extends Logging {
    */
   def generateGlobalDictionary(sqlContext: SQLContext,
                                carbonLoadModel: CarbonLoadModel,
-                               hdfsLocation: String,
-                               isSharedDimension: Boolean): Unit = {
+                               hdfsLocation: String): Unit = {
     try {
       val table = new CarbonTableIdentifier(carbonLoadModel.getDatabaseName,
         carbonLoadModel.getTableName)
@@ -415,7 +410,7 @@ object GlobalDictionaryUtil extends Logging {
         // select column to push down pruning
         df = df.select(requireColumnNames.head, requireColumnNames.tail: _*)
         val model = createDictionaryLoadModel(carbonLoadModel, table, requireDimension,
-          hdfsLocation, dictfolderPath, isSharedDimension)
+          hdfsLocation, dictfolderPath)
         // combine distinct value in a block and partition by column
         val inputRDD = new CarbonBlockDistinctValuesCombineRDD(df.rdd, model)
           .partitionBy(new ColumnPartitioner(model.primDimensions.length))
@@ -439,7 +434,7 @@ object GlobalDictionaryUtil extends Logging {
             dimDataframe = dimDataframe.select(requireColumnNamesForDim.head,
               requireColumnNamesForDim.tail: _*)
             val modelforDim = createDictionaryLoadModel(carbonLoadModel, table,
-              requireDimensionForDim, hdfsLocation, dictfolderPath, isSharedDimension)
+              requireDimensionForDim, hdfsLocation, dictfolderPath)
             val inputRDDforDim = new CarbonBlockDistinctValuesCombineRDD(
               dimDataframe.rdd, modelforDim)
               .partitionBy(new ColumnPartitioner(modelforDim.primDimensions.length))

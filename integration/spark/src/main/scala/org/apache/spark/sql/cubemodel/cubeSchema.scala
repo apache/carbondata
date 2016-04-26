@@ -1958,7 +1958,7 @@ private[sql] case class LoadCube(
             escapeChar, booleanValForMultiLine)(sqlContext.asInstanceOf[HiveContext])
         }
         GlobalDictionaryUtil
-          .generateGlobalDictionary(sqlContext, carbonLoadModel, relation.cubeMeta.dataPath, false)
+          .generateGlobalDictionary(sqlContext, carbonLoadModel, relation.cubeMeta.dataPath)
         CarbonDataRDDFactory
           .loadCarbonData(sqlContext, carbonLoadModel, storeLocation, relation.cubeMeta.dataPath,
             kettleHomePath,

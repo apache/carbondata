@@ -133,7 +133,7 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
   test("[issue-80]Global Dictionary Generation") {
 
     var carbonLoadModel = buildCarbonLoadModel(sampleRelation, filePath, null, null)
-    GlobalDictionaryUtil.generateGlobalDictionary(CarbonHiveContext, carbonLoadModel, sampleRelation.cubeMeta.dataPath, false)
+    GlobalDictionaryUtil.generateGlobalDictionary(CarbonHiveContext, carbonLoadModel, sampleRelation.cubeMeta.dataPath)
     
     // test for dimension table
     // TODO - Need to fill and send the dimension table data as per new DimensionRelation in CarbonDataLoadModel
@@ -144,19 +144,19 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
   test("[Issue-190]load csv file without header And support complex type") {
     val header = "deviceInformationId,channelsId,ROMSize,purchasedate,mobile,MAC,locationinfo,proddate,gamePointId,contractNumber"
     var carbonLoadModel = buildCarbonLoadModel(complexRelation, complexfilePath2, null, header)
-    GlobalDictionaryUtil.generateGlobalDictionary(CarbonHiveContext, carbonLoadModel, sampleRelation.cubeMeta.dataPath, false)
+    GlobalDictionaryUtil.generateGlobalDictionary(CarbonHiveContext, carbonLoadModel, sampleRelation.cubeMeta.dataPath)
   }
 
   test("[Issue-232]Issue in incremental data load for dictionary generation"){
     val header = "deviceInformationId,channelsId,ROMSize,purchasedate,mobile,MAC,locationinfo,proddate,gamePointId,contractNumber"
     // load 1
     var carbonLoadModel = buildCarbonLoadModel(incrementalLoadTableRelation, complexfilePath1, null, header)
-    GlobalDictionaryUtil.generateGlobalDictionary(CarbonHiveContext, carbonLoadModel, sampleRelation.cubeMeta.dataPath, false)
+    GlobalDictionaryUtil.generateGlobalDictionary(CarbonHiveContext, carbonLoadModel, sampleRelation.cubeMeta.dataPath)
     checkDictionary(incrementalLoadTableRelation, "deviceInformationId" ,"100010")
     
     // load 2
     carbonLoadModel = buildCarbonLoadModel(incrementalLoadTableRelation, complexfilePath2, null, header)
-    GlobalDictionaryUtil.generateGlobalDictionary(CarbonHiveContext, carbonLoadModel, sampleRelation.cubeMeta.dataPath, false)
+    GlobalDictionaryUtil.generateGlobalDictionary(CarbonHiveContext, carbonLoadModel, sampleRelation.cubeMeta.dataPath)
     checkDictionary(incrementalLoadTableRelation, "deviceInformationId" ,"100077")
   }
 }

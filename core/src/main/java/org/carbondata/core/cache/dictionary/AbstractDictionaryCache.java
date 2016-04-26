@@ -85,7 +85,7 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
     CarbonDictionaryMetadataReaderImpl columnMetadataReaderImpl =
         new CarbonDictionaryMetadataReaderImpl(this.carbonStorePath,
             dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier(),
-            dictionaryColumnUniqueIdentifier.getColumnIdentifier(), false);
+            dictionaryColumnUniqueIdentifier.getColumnIdentifier());
     CarbonDictionaryColumnMetaChunk carbonDictionaryColumnMetaChunk = null;
     // read metadata file
     try {

@@ -125,8 +125,7 @@ public class DictionaryCacheLoaderImpl implements DictionaryCacheLoader {
    */
   private CarbonDictionaryReader getDictionaryReader(String columnIdentifier) {
     CarbonDictionaryReader dictionaryReader =
-        new CarbonDictionaryReaderImpl(carbonStorePath, carbonTableIdentifier, columnIdentifier,
-            false);
+        new CarbonDictionaryReaderImpl(carbonStorePath, carbonTableIdentifier, columnIdentifier);
     return dictionaryReader;
   }
 
@@ -137,7 +136,7 @@ public class DictionaryCacheLoaderImpl implements DictionaryCacheLoader {
   private CarbonDictionarySortIndexReader getSortIndexReader(String columnIdentifier) {
     CarbonDictionarySortIndexReader sortIndexReader =
         new CarbonDictionarySortIndexReaderImpl(carbonTableIdentifier, columnIdentifier,
-            carbonStorePath, false);
+            carbonStorePath);
     return sortIndexReader;
   }
 }

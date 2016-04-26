@@ -85,11 +85,6 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
   private String hdfsStorePath;
 
   /**
-   * shared dimension flag
-   */
-  private boolean isSharedDimension;
-
-  /**
    * dictionary file path
    */
   private String dictionaryFilePath;
@@ -135,15 +130,12 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
    * @param hdfsStorePath         HDFS store path
    * @param carbonTableIdentifier table identifier which will give table name and database name
    * @param columnIdentifier      column unique identifier
-   * @param isSharedDimension     flag for shared dimension
    */
   public CarbonDictionaryWriterImpl(String hdfsStorePath,
-      CarbonTableIdentifier carbonTableIdentifier, String columnIdentifier,
-      boolean isSharedDimension) {
+      CarbonTableIdentifier carbonTableIdentifier, String columnIdentifier) {
     this.carbonTableIdentifier = carbonTableIdentifier;
     this.columnIdentifier = columnIdentifier;
     this.hdfsStorePath = hdfsStorePath;
-    this.isSharedDimension = isSharedDimension;
     this.isFirstTime = true;
   }
 
@@ -383,7 +375,7 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
     CarbonDictionaryColumnMetaChunk carbonDictionaryColumnMetaChunk = null;
     CarbonDictionaryMetadataReaderImpl columnMetadataReaderImpl =
         new CarbonDictionaryMetadataReaderImpl(this.hdfsStorePath, this.carbonTableIdentifier,
-            this.columnIdentifier, this.isSharedDimension);
+            this.columnIdentifier);
     try {
       // read the last segment entry for dictionary metadata
       carbonDictionaryColumnMetaChunk =

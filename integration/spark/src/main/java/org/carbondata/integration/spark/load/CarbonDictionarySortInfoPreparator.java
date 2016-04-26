@@ -57,18 +57,18 @@ public class CarbonDictionarySortInfoPreparator {
   /**
    * The method returns the column Sort Info
    *
-   * @param columnName column name
+   * @param columnId column id
    * @return
    * @throws CarbonUtilException
    */
-  public CarbonDictionarySortInfo getDictionarySortInfo(String columnName)
+  public CarbonDictionarySortInfo getDictionarySortInfo(String columnId)
       throws CarbonUtilException {
     CacheProvider cacheProviderInstance = CacheProvider.getInstance();
     Cache reverseDictionaryCache =
         cacheProviderInstance.createCache(CacheType.REVERSE_DICTIONARY, carbonStorePath);
 
     DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
-        new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnName);
+        new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnId);
     Dictionary dictionary =
         (Dictionary) reverseDictionaryCache.get(dictionaryColumnUniqueIdentifier);
     //TODO null check to be handled on dictionary

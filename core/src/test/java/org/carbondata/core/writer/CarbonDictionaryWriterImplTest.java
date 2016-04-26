@@ -40,7 +40,6 @@ import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.reader.CarbonDictionaryColumnMetaChunk;
 import org.carbondata.core.reader.CarbonDictionaryMetadataReaderImpl;
 import org.carbondata.core.reader.CarbonDictionaryReaderImpl;
-import org.carbondata.core.util.CarbonDictionaryUtil;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.format.ColumnDictionaryChunkMeta;
@@ -120,10 +119,9 @@ public class CarbonDictionaryWriterImplTest {
    * to a table in a database
    */
   @Test public void testWriteForNormalColumn() throws IOException {
-    boolean isSharedDimension = false;
     // second parameter is chunk count which is for the number of
     // thrift objects written for a segment
-    processColumnValuesForOneChunk(isSharedDimension, 1);
+    processColumnValuesForOneChunk(1);
   }
 
   /**
@@ -131,10 +129,9 @@ public class CarbonDictionaryWriterImplTest {
    * in a database
    */
   @Test public void testWriteForSharedColumn() throws IOException {
-    boolean isSharedDimension = true;
     // second parameter is chunk count which is for the number of
     // thrift objects written for a segment
-    processColumnValuesForOneChunk(isSharedDimension, 1);
+    processColumnValuesForOneChunk(1);
   }
 
   /**
@@ -144,15 +141,14 @@ public class CarbonDictionaryWriterImplTest {
     deleteStorePath();
     CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.DICTIONARY_ONE_CHUNK_SIZE, "1");
-    boolean isSharedDimension = false;
     // prepare dictionary writer object
-    CarbonDictionaryWriterImpl writer = prepareWriter(isSharedDimension);
+    CarbonDictionaryWriterImpl writer = prepareWriter();
     writeDictionaryFile(writer, dataSet1);
     // record file size from where data has to be read
     long end_offset = CarbonUtil.getFileSize(this.dictionaryFilePath);
     // read metadata chunks from file
     List<CarbonDictionaryColumnMetaChunk> carbonDictionaryColumnMetaChunks =
-        readDictionaryMetadataFile(isSharedDimension);
+        readDictionaryMetadataFile();
     assertTrue(1 == carbonDictionaryColumnMetaChunks.size());
     // prepare retrieved chunk metadata
     long start_offset = 0L;
@@ -164,7 +160,7 @@ public class CarbonDictionaryWriterImplTest {
       validateDictionaryMetadata(chunk, expected);
     }
     //assert for chunk count
-    List<byte[]> dictionaryValues = readDictionaryFile(isSharedDimension, 0L, 0L);
+    List<byte[]> dictionaryValues = readDictionaryFile(0L, 0L);
     // prepare expected dictionary chunk list
     List<String> actual = convertByteArrayListToStringValueList(dictionaryValues);
     assertTrue(dataSet1.size() == actual.size());
@@ -192,10 +188,10 @@ public class CarbonDictionaryWriterImplTest {
   /**
    * prepare the dictionary writer object
    */
-  private CarbonDictionaryWriterImpl prepareWriter(boolean isSharedDimension) throws IOException {
+  private CarbonDictionaryWriterImpl prepareWriter() throws IOException {
     initDictionaryDirPaths();
     return new CarbonDictionaryWriterImpl(this.carbonStorePath, carbonTableIdentifier,
-        columnIdentifier, isSharedDimension);
+        columnIdentifier);
   }
 
   /**
@@ -210,7 +206,7 @@ public class CarbonDictionaryWriterImplTest {
       }
     };
     // prepare the writer
-    CarbonDictionaryWriterImpl writer = prepareWriter(false);
+    CarbonDictionaryWriterImpl writer = prepareWriter();
     try {
       for (String value : dataSet1) {
         // exception should be thrown when write method is called
@@ -230,24 +226,23 @@ public class CarbonDictionaryWriterImplTest {
     // delete store path
     deleteStorePath();
     // prepare first dictionary chunk
-    boolean isSharedDimension = false;
     // prepare dictionary writer object
-    CarbonDictionaryWriterImpl writer = prepareWriter(isSharedDimension);
+    CarbonDictionaryWriterImpl writer = prepareWriter();
     writeDictionaryFile(writer, dataSet1);
     long endOffsetAfterFirstDictionaryChunk = CarbonUtil.getFileSize(dictionaryFilePath);
     // maintain the offset till end offset of first chunk
-    writer = prepareWriter(isSharedDimension);
+    writer = prepareWriter();
     writeDictionaryFile(writer, dataSet2);
     // prepare first column meta chunk object
     ColumnDictionaryChunkMeta firstDictionaryChunkMeta =
         new ColumnDictionaryChunkMeta(1, 2, 0, endOffsetAfterFirstDictionaryChunk, 1);
     // overwrite the dictionary meta chunk file to test the truncate operation
     overwriteDictionaryMetaFile(firstDictionaryChunkMeta, dictionaryMetaFilePath);
-    writer = prepareWriter(isSharedDimension);
+    writer = prepareWriter();
     // in the next step truncate operation will be tested while writing dictionary file
     writeDictionaryFile(writer, dataSet3);
     // read dictionary file
-    List<byte[]> dictionaryValues = readDictionaryFile(false, 0L, 0L);
+    List<byte[]> dictionaryValues = readDictionaryFile(0L, 0L);
     List<String> actual = convertByteArrayListToStringValueList(dictionaryValues);
     List<String> expected = new ArrayList<>(4);
     expected.addAll(dataSet1);
@@ -270,12 +265,10 @@ public class CarbonDictionaryWriterImplTest {
   /**
    * this method will create the directory path for dictionary file
    */
-  private String createDictionaryDirectory(boolean isSharedDimension) {
-    String directoryPath = CarbonDictionaryUtil
-        .getDirectoryPath(carbonTableIdentifier, carbonStorePath, isSharedDimension);
-    String dictionaryFilePath = CarbonDictionaryUtil
-        .getDictionaryFilePath(carbonTableIdentifier, directoryPath, columnIdentifier,
-            isSharedDimension);
+  private String createDictionaryDirectory() {
+    CarbonTablePath carbonTablePath =
+        CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier);
+    carbonTablePath.getDictionaryFilePath(columnIdentifier);
     String folderToCreate = dictionaryFilePath.substring(0, dictionaryFilePath.lastIndexOf('/'));
     CarbonUtil.checkAndCreateFolder(folderToCreate);
     return dictionaryFilePath;
@@ -287,31 +280,29 @@ public class CarbonDictionaryWriterImplTest {
   @Test public void testReadingOfDictionaryChunkFromAnOffset() throws Exception {
     // delete store path
     deleteStorePath();
-    boolean isSharedDimension = false;
     // prepare the writer to write dataset1
-    CarbonDictionaryWriterImpl writer = prepareWriter(isSharedDimension);
+    CarbonDictionaryWriterImpl writer = prepareWriter();
     // write dataset1 data
     writeDictionaryFile(writer, dataSet1);
     // prepare the writer to write dataset2
-    writer = prepareWriter(isSharedDimension);
+    writer = prepareWriter();
     // write dataset2
     writeDictionaryFile(writer, dataSet2);
     // record the offset from where data has to be read
     long dictionaryFileOffsetToRead = CarbonUtil.getFileSize(this.dictionaryFilePath);
     // prepare writer to write dataset3
-    writer = prepareWriter(isSharedDimension);
+    writer = prepareWriter();
     // write dataset 3
     writeDictionaryFile(writer, dataSet3);
     // read dictionary chunk from dictionary file
-    List<byte[]> dictionaryData =
-        readDictionaryFile(isSharedDimension, dictionaryFileOffsetToRead, 0L);
+    List<byte[]> dictionaryData = readDictionaryFile(dictionaryFileOffsetToRead, 0L);
     // prepare the retrieved data
     List<String> actual = convertByteArrayListToStringValueList(dictionaryData);
     // compare dictionary data set
     compareDictionaryData(actual, dataSet3);
     // read chunk metadata file
     List<CarbonDictionaryColumnMetaChunk> carbonDictionaryColumnMetaChunks =
-        readDictionaryMetadataFile(isSharedDimension);
+        readDictionaryMetadataFile();
     // assert for metadata chunk size
     assertTrue(3 == carbonDictionaryColumnMetaChunks.size());
   }
@@ -322,33 +313,32 @@ public class CarbonDictionaryWriterImplTest {
   @Test public void testReadingOfDictionaryChunkBetweenStartAndEndOffset() throws Exception {
     // delete store path
     deleteStorePath();
-    boolean isSharedDimension = false;
     // prepare the writer to write dataset1
-    CarbonDictionaryWriterImpl writer = prepareWriter(isSharedDimension);
+    CarbonDictionaryWriterImpl writer = prepareWriter();
     // write dataset1 data
     writeDictionaryFile(writer, dataSet1);
     // record dictionary file start offset
     long dictionaryStartOffset = CarbonUtil.getFileSize(this.dictionaryFilePath);
     // prepare the writer to write dataset2
-    writer = prepareWriter(isSharedDimension);
+    writer = prepareWriter();
     // write dataset2
     writeDictionaryFile(writer, dataSet2);
     // record the end offset for dictionary file
     long dictionaryFileEndOffset = CarbonUtil.getFileSize(this.dictionaryFilePath);
     // prepare writer to write dataset3
-    writer = prepareWriter(isSharedDimension);
+    writer = prepareWriter();
     // write dataset 3
     writeDictionaryFile(writer, dataSet3);
     // read dictionary chunk from dictionary file
     List<byte[]> dictionaryData =
-        readDictionaryFile(isSharedDimension, dictionaryStartOffset, dictionaryFileEndOffset);
+        readDictionaryFile(dictionaryStartOffset, dictionaryFileEndOffset);
     // prepare the retrieved data
     List<String> actual = convertByteArrayListToStringValueList(dictionaryData);
     // compare dictionary data set
     compareDictionaryData(actual, dataSet2);
     // read chunk metadata file
     List<CarbonDictionaryColumnMetaChunk> carbonDictionaryColumnMetaChunks =
-        readDictionaryMetadataFile(isSharedDimension);
+        readDictionaryMetadataFile();
     // assert for metadata chunk size
     assertTrue(3 == carbonDictionaryColumnMetaChunks.size());
     CarbonDictionaryColumnMetaChunk expected =
@@ -385,12 +375,11 @@ public class CarbonDictionaryWriterImplTest {
   /**
    * this method will test the functionality of writing and reading one dictionary chunk
    */
-  private void processColumnValuesForOneChunk(boolean isSharedDimension, int chunkCountForSegment)
-      throws IOException {
+  private void processColumnValuesForOneChunk(int chunkCountForSegment) throws IOException {
     // delete store path
     deleteStorePath();
     // prepare writer
-    CarbonDictionaryWriterImpl writer = prepareWriter(isSharedDimension);
+    CarbonDictionaryWriterImpl writer = prepareWriter();
     // write the data into file
     // test write api for passing list of byte array
     writer.write(convertStringListToByteArray(dataSet1));
@@ -399,14 +388,14 @@ public class CarbonDictionaryWriterImplTest {
     // record end offset of file
     long end_offset = CarbonUtil.getFileSize(this.dictionaryFilePath);
     // read dictionary chunk from dictionary file
-    List<byte[]> dictionaryData = readDictionaryFile(isSharedDimension, 0L, 0L);
+    List<byte[]> dictionaryData = readDictionaryFile(0L, 0L);
     // prepare the retrieved data
     List<String> actual = convertByteArrayListToStringValueList(dictionaryData);
     // compare the expected and actual data
     compareDictionaryData(actual, dataSet1);
     // read dictionary metadata chunks
     List<CarbonDictionaryColumnMetaChunk> carbonDictionaryColumnMetaChunks =
-        readDictionaryMetadataFile(isSharedDimension);
+        readDictionaryMetadataFile();
     // assert
     assertTrue(1 == carbonDictionaryColumnMetaChunks.size());
     long start_offset = 0L;
@@ -457,11 +446,10 @@ public class CarbonDictionaryWriterImplTest {
    * @return list of dictionary metadata chunks
    * @throws IOException read and close method throws IO excpetion
    */
-  private List<CarbonDictionaryColumnMetaChunk> readDictionaryMetadataFile(
-      boolean isSharedDimension) throws IOException {
+  private List<CarbonDictionaryColumnMetaChunk> readDictionaryMetadataFile() throws IOException {
     CarbonDictionaryMetadataReaderImpl columnMetadataReaderImpl =
         new CarbonDictionaryMetadataReaderImpl(this.carbonStorePath, this.carbonTableIdentifier,
-            this.columnIdentifier, isSharedDimension);
+            this.columnIdentifier);
     List<CarbonDictionaryColumnMetaChunk> dictionaryMetaChunkList = null;
     // read metadata file
     try {
@@ -476,11 +464,11 @@ public class CarbonDictionaryWriterImplTest {
   /**
    * This method will be used to read the dictionary file from a given offset
    */
-  private List<byte[]> readDictionaryFile(boolean isSharedDimension, long dictionaryStartOffset,
-      long dictionaryEndOffset) throws IOException {
+  private List<byte[]> readDictionaryFile(long dictionaryStartOffset, long dictionaryEndOffset)
+      throws IOException {
     CarbonDictionaryReaderImpl dictionaryReader =
         new CarbonDictionaryReaderImpl(this.carbonStorePath, this.carbonTableIdentifier,
-            this.columnIdentifier, isSharedDimension);
+            this.columnIdentifier);
     List<byte[]> dictionaryValues = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     try {
       if (0 == dictionaryEndOffset) {

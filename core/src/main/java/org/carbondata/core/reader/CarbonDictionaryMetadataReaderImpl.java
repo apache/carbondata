@@ -52,11 +52,6 @@ public class CarbonDictionaryMetadataReaderImpl implements CarbonDictionaryMetad
   private String columnIdentifier;
 
   /**
-   * shared dimension flag
-   */
-  private boolean isSharedDimension;
-
-  /**
    * dictionary metadata file path
    */
   private String columnDictionaryMetadataFilePath;
@@ -72,15 +67,12 @@ public class CarbonDictionaryMetadataReaderImpl implements CarbonDictionaryMetad
    * @param hdfsStorePath         HDFS store path
    * @param carbonTableIdentifier table identifier which will give table name and database name
    * @param columnIdentifier      column unique identifier
-   * @param isSharedDimension     flag for shared dimension
    */
   public CarbonDictionaryMetadataReaderImpl(String hdfsStorePath,
-      CarbonTableIdentifier carbonTableIdentifier, String columnIdentifier,
-      boolean isSharedDimension) {
+      CarbonTableIdentifier carbonTableIdentifier, String columnIdentifier) {
     this.hdfsStorePath = hdfsStorePath;
     this.carbonTableIdentifier = carbonTableIdentifier;
     this.columnIdentifier = columnIdentifier;
-    this.isSharedDimension = isSharedDimension;
     initFileLocation();
   }
 

@@ -229,7 +229,7 @@ public class ForwardDictionaryCacheTest extends AbstractDictionaryCacheTest {
     }
     CarbonDictionarySortIndexWriter dictionarySortIndexWriter =
         new CarbonDictionarySortIndexWriterImpl(carbonTableIdentifier, columnIdentifier,
-            carbonStorePath, false);
+            carbonStorePath);
     try {
       dictionarySortIndexWriter.writeSortIndex(sortedIndexList);
       dictionarySortIndexWriter.writeInvertedSortIndex(invertedIndexList);

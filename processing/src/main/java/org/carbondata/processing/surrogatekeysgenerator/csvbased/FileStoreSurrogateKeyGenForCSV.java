@@ -219,8 +219,7 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
   private void updateMaxKeyInfo(String carbonStorePath, CarbonTableIdentifier carbonTableIdentifier,
       String columnId, String tabColumnName, boolean isMeasure) throws IOException {
     CarbonDictionaryMetadataReaderImpl columnMetadataReaderImpl =
-        new CarbonDictionaryMetadataReaderImpl(carbonStorePath, carbonTableIdentifier, columnId,
-            false);
+        new CarbonDictionaryMetadataReaderImpl(carbonStorePath, carbonTableIdentifier, columnId);
     CarbonDictionaryColumnMetaChunk lastEntryOfDictionaryMetaChunk = null;
     // read metadata file
     try {

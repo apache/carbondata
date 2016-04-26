@@ -24,7 +24,6 @@ import java.util.List;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
-import org.carbondata.core.carbon.path.CarbonSharedDictionaryPath;
 import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.util.CarbonCoreLogEvent;
@@ -62,11 +61,6 @@ public class CarbonDictionarySortIndexWriterImpl implements CarbonDictionarySort
   private ThriftWriter sortIndexThriftWriter;
 
   /**
-   * dimension type identifier <boolean> shared/private to table
-   */
-  private boolean isSharedDimension;
-
-  /**
    * Column sort info thrift instance.
    */
   private ColumnSortInfo columnSortInfo = new ColumnSortInfo();
@@ -81,15 +75,12 @@ public class CarbonDictionarySortIndexWriterImpl implements CarbonDictionarySort
    * @param carbonStorePath       Carbon store path
    * @param carbonTableIdentifier table identifier which will give table name and database name
    * @param columnIdentifier      column unique identifier
-   * @param isSharedDimension     flag for shared dimension
    */
   public CarbonDictionarySortIndexWriterImpl(final CarbonTableIdentifier carbonTableIdentifier,
-      final String columnIdentifier, final String carbonStorePath,
-      final boolean isSharedDimension) {
+      final String columnIdentifier, final String carbonStorePath) {
     this.carbonTableIdentifier = carbonTableIdentifier;
     this.columnIdentifier = columnIdentifier;
     this.carbonStorePath = carbonStorePath;
-    this.isSharedDimension = isSharedDimension;
   }
 
   /**
@@ -127,15 +118,9 @@ public class CarbonDictionarySortIndexWriterImpl implements CarbonDictionarySort
     boolean isNotNull =
         null != columnSortInfo.getSort_index() && null != columnSortInfo.sort_index_inverted;
     if (isNotNull) {
-      if (isSharedDimension) {
-        this.sortIndexFilePath = CarbonSharedDictionaryPath
-            .getSortIndexFilePath(carbonStorePath, carbonTableIdentifier.getDatabaseName(),
-                columnIdentifier);
-      } else {
-        CarbonTablePath carbonTablePath =
-            CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier);
-        this.sortIndexFilePath = carbonTablePath.getSortIndexFilePath(columnIdentifier);
-      }
+      CarbonTablePath carbonTablePath =
+          CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier);
+      this.sortIndexFilePath = carbonTablePath.getSortIndexFilePath(columnIdentifier);
       String folderContainingFile = CarbonTablePath.getFolderContainingFile(this.sortIndexFilePath);
       boolean created = CarbonUtil.checkAndCreateFolder(folderContainingFile);
       if (!created) {

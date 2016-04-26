@@ -60,7 +60,7 @@ public class CarbonDictionarySortIndexWriterImplTest {
     String storePath = hdfsStorePath;
     CarbonTableIdentifier carbonTableIdentifier = new CarbonTableIdentifier("testSchema", "carbon");
     CarbonDictionarySortIndexWriter dictionarySortIndexWriter =
-        new CarbonDictionarySortIndexWriterImpl(carbonTableIdentifier, "Name", storePath, false);
+        new CarbonDictionarySortIndexWriterImpl(carbonTableIdentifier, "Name", storePath);
     List<int[]> indexList = prepareExpectedData();
     List<Integer> sortIndex = Arrays.asList(ArrayUtils.toObject(indexList.get(0)));
     List<Integer> invertedSortIndex = Arrays.asList(ArrayUtils.toObject(indexList.get(1)));
@@ -68,7 +68,7 @@ public class CarbonDictionarySortIndexWriterImplTest {
     dictionarySortIndexWriter.writeInvertedSortIndex(invertedSortIndex);
     dictionarySortIndexWriter.close();
     CarbonDictionarySortIndexReader carbonDictionarySortIndexReader =
-        new CarbonDictionarySortIndexReaderImpl(carbonTableIdentifier, "Name", storePath, false);
+        new CarbonDictionarySortIndexReaderImpl(carbonTableIdentifier, "Name", storePath);
     List<Integer> actualSortIndex = carbonDictionarySortIndexReader.readSortIndex();
     List<Integer> actualInvertedSortIndex = carbonDictionarySortIndexReader.readInvertedSortIndex();
     for (int i = 0; i < actualSortIndex.size(); i++) {
@@ -85,14 +85,14 @@ public class CarbonDictionarySortIndexWriterImplTest {
     String storePath = hdfsStorePath;
     CarbonTableIdentifier carbonTableIdentifier = new CarbonTableIdentifier("testSchema", "carbon");
     CarbonDictionarySortIndexWriter dictionarySortIndexWriter =
-        new CarbonDictionarySortIndexWriterImpl(carbonTableIdentifier, "Name", storePath, false);
+        new CarbonDictionarySortIndexWriterImpl(carbonTableIdentifier, "Name", storePath);
     List<Integer> sortIndex = new ArrayList<>();
     List<Integer> invertedSortIndex = new ArrayList<>();
     dictionarySortIndexWriter.writeSortIndex(sortIndex);
     dictionarySortIndexWriter.writeInvertedSortIndex(invertedSortIndex);
     dictionarySortIndexWriter.close();
     CarbonDictionarySortIndexReader carbonDictionarySortIndexReader =
-        new CarbonDictionarySortIndexReaderImpl(carbonTableIdentifier, "Name", storePath, false);
+        new CarbonDictionarySortIndexReaderImpl(carbonTableIdentifier, "Name", storePath);
     List<Integer> actualSortIndex = carbonDictionarySortIndexReader.readSortIndex();
     List<Integer> actualInvertedSortIndex = carbonDictionarySortIndexReader.readInvertedSortIndex();
     for (int i = 0; i < actualSortIndex.size(); i++) {

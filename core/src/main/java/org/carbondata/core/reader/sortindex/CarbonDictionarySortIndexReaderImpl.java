@@ -24,7 +24,6 @@ import java.util.List;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
-import org.carbondata.core.carbon.path.CarbonSharedDictionaryPath;
 import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.reader.ThriftReader;
@@ -59,10 +58,6 @@ public class CarbonDictionarySortIndexReaderImpl implements CarbonDictionarySort
   private String sortIndexFilePath;
 
   /**
-   * flag to identify the shared dimension
-   */
-  private boolean isSharedDimension;
-  /**
    * Column sort info thrift instance.
    */
   ColumnSortInfo columnSortInfo = null;
@@ -82,15 +77,12 @@ public class CarbonDictionarySortIndexReaderImpl implements CarbonDictionarySort
    * @param carbonTableIdentifier Carbon Table identifier holding the database name and table name
    * @param columnIdentifier      column name
    * @param carbonStorePath       carbon store path
-   * @param isSharedDimension     flag to identify the shared dimension
    */
   public CarbonDictionarySortIndexReaderImpl(final CarbonTableIdentifier carbonTableIdentifier,
-      final String columnIdentifier, final String carbonStorePath,
-      final boolean isSharedDimension) {
+      final String columnIdentifier, final String carbonStorePath) {
     this.carbonTableIdentifier = carbonTableIdentifier;
     this.columnIdentifier = columnIdentifier;
     this.carbonStorePath = carbonStorePath;
-    this.isSharedDimension = isSharedDimension;
   }
 
   /**
@@ -151,16 +143,9 @@ public class CarbonDictionarySortIndexReaderImpl implements CarbonDictionarySort
    * @throws IOException if any I/O errors occurs
    */
   private void init() throws IOException {
-
-    if (isSharedDimension) {
-      this.sortIndexFilePath = CarbonSharedDictionaryPath
-          .getSortIndexFilePath(carbonStorePath, carbonTableIdentifier.getDatabaseName(),
-              columnIdentifier);
-    } else {
-      CarbonTablePath carbonTablePath =
-          CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier);
-      this.sortIndexFilePath = carbonTablePath.getSortIndexFilePath(columnIdentifier);
-    }
+    CarbonTablePath carbonTablePath =
+        CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier);
+    this.sortIndexFilePath = carbonTablePath.getSortIndexFilePath(columnIdentifier);
     openThriftReader();
   }
 

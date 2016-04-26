@@ -107,8 +107,7 @@ public class AbstractDictionaryCacheTest {
   protected void prepareWriterAndWriteData(List<String> data, String columnIdentifier)
       throws IOException {
     CarbonDictionaryWriter carbonDictionaryWriter =
-        new CarbonDictionaryWriterImpl(carbonStorePath, carbonTableIdentifier, columnIdentifier,
-            false);
+        new CarbonDictionaryWriterImpl(carbonStorePath, carbonTableIdentifier, columnIdentifier);
     CarbonTablePath carbonTablePath =
         CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier);
     CarbonUtil.checkAndCreateFolder(carbonTablePath.getMetadataDirectoryPath());

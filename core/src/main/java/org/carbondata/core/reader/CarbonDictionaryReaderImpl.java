@@ -54,11 +54,6 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
   private String columnIdentifier;
 
   /**
-   * shared dimension flag
-   */
-  private boolean isSharedDimension;
-
-  /**
    * dictionary file path
    */
   private String columnDictionaryFilePath;
@@ -74,15 +69,12 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
    * @param hdfsStorePath         HDFS store path
    * @param carbonTableIdentifier table identifier which will give table name and database name
    * @param columnIdentifier      column unique identifier
-   * @param isSharedDimension     flag for shared dimension
    */
   public CarbonDictionaryReaderImpl(String hdfsStorePath,
-      CarbonTableIdentifier carbonTableIdentifier, String columnIdentifier,
-      boolean isSharedDimension) {
+      CarbonTableIdentifier carbonTableIdentifier, String columnIdentifier) {
     this.hdfsStorePath = hdfsStorePath;
     this.carbonTableIdentifier = carbonTableIdentifier;
     this.columnIdentifier = columnIdentifier;
-    this.isSharedDimension = isSharedDimension;
     initFileLocation();
   }
 
@@ -276,7 +268,7 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
   private List<CarbonDictionaryColumnMetaChunk> readDictionaryMetadataFile() throws IOException {
     CarbonDictionaryMetadataReaderImpl columnMetadataReaderImpl =
         new CarbonDictionaryMetadataReaderImpl(this.hdfsStorePath, this.carbonTableIdentifier,
-            this.columnIdentifier, this.isSharedDimension);
+            this.columnIdentifier);
     List<CarbonDictionaryColumnMetaChunk> dictionaryMetaChunkList = null;
     // read metadata file
     try {
