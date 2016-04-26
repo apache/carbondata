@@ -143,8 +143,7 @@ public class SegmentTaskIndexStore {
               for (TableBlockInfo tableBlockInfo : taskIdToBlockInfoIterator.getValue()) {
                 footer = CarbonUtil
                     .readMetadatFile(tableBlockInfo.getFilePath(), tableBlockInfo.getBlockOffset());
-                footer.setFilePath(tableBlockInfo.getFilePath());
-                footer.setOffset(tableBlockInfo.getBlockOffset());
+                footer.setTableBlockInfo(tableBlockInfo);
                 footerList.add(footer);
               }
               AbstractIndex segment = new SegmentTaskIndex();

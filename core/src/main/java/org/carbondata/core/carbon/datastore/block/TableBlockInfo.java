@@ -48,10 +48,16 @@ public class TableBlockInfo implements Serializable, Comparable<TableBlockInfo> 
    */
   private int segmentId;
 
-  public TableBlockInfo(String filePath, long blockOffset, int segmentId) {
-    this.filePath = null;
+  /**
+   * locations to store the host name and other detail
+   */
+  private String[] locations;
+
+  public TableBlockInfo(String filePath, long blockOffset, int segmentId, String[] locations) {
+    this.filePath = filePath;
     this.blockOffset = blockOffset;
     this.segmentId = segmentId;
+    this.locations = locations;
   }
 
   /**
@@ -83,10 +89,17 @@ public class TableBlockInfo implements Serializable, Comparable<TableBlockInfo> 
   }
 
   /**
-   * @param segmentId the segmentId to set
+   * @return the segmentId
    */
-  public void setSegmentId(int segmentId) {
-    this.segmentId = segmentId;
+  public int getSegmentId() {
+    return segmentId;
+  }
+
+  /**
+   * @return the locations
+   */
+  public String[] getLocations() {
+    return locations;
   }
 
   /*
@@ -136,14 +149,10 @@ public class TableBlockInfo implements Serializable, Comparable<TableBlockInfo> 
   }
 
   /**
-   * Below method will used to compare to TableBlockInfos object
-   * this will used for sorting
-   * Comparison logic is:
-   * 1. compare segment id
-   * if segment id is same
-   * 2. compare task id
-   * if task id is same
-   * 3. compare offsets of the block
+   * Below method will used to compare to TableBlockInfos object this will
+   * used for sorting Comparison logic is: 1. compare segment id if segment id
+   * is same 2. compare task id if task id is same 3. compare offsets of the
+   * block
    */
   @Override public int compareTo(TableBlockInfo other) {
 

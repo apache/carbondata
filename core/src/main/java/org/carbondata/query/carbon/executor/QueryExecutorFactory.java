@@ -43,7 +43,7 @@ public class QueryExecutorFactory {
     // with one measure on which counter will be executed
     // then its a counter start query
     if (queryModel.isCountStarQuery() && null == queryModel.getFilterExpressionResolverTree()
-        && queryModel.getQueryDimension().size() < 1 && queryModel.getQueryDimension().size() < 2
+        && queryModel.getQueryDimension().size() < 1 && queryModel.getQueryMeasures().size() < 2
         && queryModel.getDimAggregationInfo().size() < 1
         && queryModel.getExpressions().size() == 0) {
       LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "Count(*) query: ");

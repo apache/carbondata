@@ -82,6 +82,7 @@ public class ListBasedResult implements Result<List<ListBasedResultWrapper>> {
   @Override public void addScannedResult(List<ListBasedResultWrapper> listBasedResult) {
     this.currentRowPointer = listBasedResult;
     totalNumberOfRecords = listBasedResult.size();
+    allRowsResult.add(listBasedResult);
   }
 
   /**

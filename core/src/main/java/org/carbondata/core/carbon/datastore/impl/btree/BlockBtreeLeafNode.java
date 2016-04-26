@@ -19,6 +19,7 @@
 package org.carbondata.core.carbon.datastore.impl.btree;
 
 import org.carbondata.core.carbon.datastore.BTreeBuilderInfo;
+import org.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.carbondata.core.carbon.metadata.leafnode.DataFileFooter;
 import org.carbondata.core.carbon.metadata.leafnode.indexes.LeafNodeMinMaxIndex;
 
@@ -29,9 +30,7 @@ import org.carbondata.core.carbon.metadata.leafnode.indexes.LeafNodeMinMaxIndex;
  */
 public class BlockBtreeLeafNode extends AbstractBtreeLeafNode {
 
-  private String filePath;
-
-  private long offset;
+  private TableBlockInfo blockInfo;
 
   /**
    * Create a leaf node
@@ -48,21 +47,18 @@ public class BlockBtreeLeafNode extends AbstractBtreeLeafNode {
     minKeyOfColumns = minMaxIndex.getMinValues();
     numberOfKeys = 1;
     this.nodeNumber = nodeNumber;
-    this.filePath = footer.getFilePath();
-    this.offset = footer.getOffset();
+    this.blockInfo = footer.getTableBlockInfo();
   }
 
   /**
-   * @return the filePath
+   * Below method is to get the table block info
+   * This will be used only in case of BlockBtree leaf node which will
+   * be used to from driver
+   *
+   * @return TableBlockInfo
    */
-  public String getFilePath() {
-    return filePath;
+  public TableBlockInfo getTableBlockInfo() {
+    return blockInfo;
   }
 
-  /**
-   * @return the offset
-   */
-  public long getOffset() {
-    return offset;
-  }
 }

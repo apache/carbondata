@@ -27,10 +27,8 @@ import org.carbondata.query.carbon.executor.internal.InternalQueryExecutor;
 import org.carbondata.query.carbon.executor.internal.impl.InternalAggregationQueryExecutor;
 import org.carbondata.query.carbon.model.QueryModel;
 import org.carbondata.query.carbon.result.RowResult;
-import org.carbondata.query.carbon.result.impl.ListBasedResult;
 import org.carbondata.query.carbon.result.iterator.ChunkBasedResultIterator;
 import org.carbondata.query.carbon.result.iterator.ChunkRowIterator;
-import org.carbondata.query.carbon.result.iterator.MemoryBasedResultIterator;
 
 /**
  * Below class will be used to execute the aggregation query
@@ -39,13 +37,6 @@ public class AggregationQueryExecutor extends AbstractQueryExecutor {
 
   @Override public CarbonIterator<RowResult> execute(QueryModel queryModel)
       throws QueryExecutionException {
-    if (queryProperties.dataBlocks.size() == 0) {
-      // if there are not block present then set empty row
-      // and return
-      return new ChunkRowIterator(
-          new ChunkBasedResultIterator(new MemoryBasedResultIterator(new ListBasedResult()),
-              queryProperties, queryModel));
-    }
     List<BlockExecutionInfo> blockExecutionInfoList = getBlockExecutionInfos(queryModel);
     InternalQueryExecutor internalQueryExecutor = new InternalAggregationQueryExecutor();
     return new ChunkRowIterator(new ChunkBasedResultIterator(

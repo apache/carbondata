@@ -35,16 +35,16 @@ import org.carbondata.query.carbon.executor.impl.QueryResultPreparator;
 import org.carbondata.query.carbon.executor.infos.BlockExecutionInfo;
 import org.carbondata.query.carbon.executor.internal.InternalQueryExecutor;
 import org.carbondata.query.carbon.model.QueryModel;
-import org.carbondata.query.carbon.result.ChunkResult;
+import org.carbondata.query.carbon.result.BatchResult;
 import org.carbondata.query.carbon.result.Result;
 import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
  * In case of detail query we cannot keep all the records in memory so for
  * executing that query are returning a iterator over block and every time next
- * call will come it will execute the block and return the resutl
+ * call will come it will execute the block and return the result
  */
-public class DetailQueryResultIterator implements CarbonIterator<ChunkResult> {
+public class DetailQueryResultIterator implements CarbonIterator<BatchResult> {
 
   /**
    * LOGGER.
@@ -132,10 +132,10 @@ public class DetailQueryResultIterator implements CarbonIterator<ChunkResult> {
     for (BlockExecutionInfo blockInfo : blockExecutionInfos) {
       ++index;
       DataRefNodeFinder finder = new BtreeDataRefNodeFinder(blockInfo.getEachColumnValueSize());
-      DataRefNode startDataBlock =
-          finder.findFirstDataBlock(blockInfo.getFirstDataBlock(), blockInfo.getStartKey());
-      DataRefNode endDataBlock =
-          finder.findLastDataBlock(blockInfo.getFirstDataBlock(), blockInfo.getEndKey());
+      DataRefNode startDataBlock = finder
+          .findFirstDataBlock(blockInfo.getDataBlock().getDataRefNode(), blockInfo.getStartKey());
+      DataRefNode endDataBlock = finder
+          .findLastDataBlock(blockInfo.getDataBlock().getDataRefNode(), blockInfo.getEndKey());
 
       this.totalNumberBlockletPerSlice[index] =
           startDataBlock.nodeNumber() - endDataBlock.nodeNumber() + 1;
@@ -150,7 +150,7 @@ public class DetailQueryResultIterator implements CarbonIterator<ChunkResult> {
     return currentCounter < totalNumberOfNode;
   }
 
-  @Override public ChunkResult next() {
+  @Override public BatchResult next() {
     updateSliceIndexToBeExecuted();
     CarbonIterator<Result> result = null;
     try {
@@ -170,10 +170,10 @@ public class DetailQueryResultIterator implements CarbonIterator<ChunkResult> {
       if (next.size() > 0) {
         return queryResultPreparator.getQueryResult(next);
       } else {
-        return new ChunkResult();
+        return new BatchResult();
       }
     } else {
-      return new ChunkResult();
+      return new BatchResult();
     }
   }
 

@@ -71,7 +71,7 @@ public class FilterScanner extends AbstractBlockletScanner {
    *
    * @param blocksChunkHolder block chunk holder which holds the data
    */
-  @Override public AbstractScannedResult processBlockData(BlocksChunkHolder blocksChunkHolder) {
+  @Override public AbstractScannedResult scanBlocklet(BlocksChunkHolder blocksChunkHolder) {
     fillScannedResult(blocksChunkHolder);
     return scannedResult;
   }

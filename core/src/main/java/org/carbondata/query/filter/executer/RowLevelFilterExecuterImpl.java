@@ -39,6 +39,7 @@ import org.carbondata.query.carbonfilterinterface.RowIntf;
 import org.carbondata.query.complex.querytypes.GenericQueryType;
 import org.carbondata.query.evaluators.DimColumnResolvedFilterInfo;
 import org.carbondata.query.evaluators.MeasureColumnResolvedFilterInfo;
+import org.carbondata.query.executer.exception.QueryExecutionException;
 import org.carbondata.query.expression.Expression;
 import org.carbondata.query.expression.exception.FilterUnsupportedException;
 import org.carbondata.query.filters.measurefilter.util.FilterUtil;
@@ -98,7 +99,12 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
 
     // CHECKSTYLE:OFF Approval No:Approval-V1R2C10_007
     for (int index = 0; index < numberOfRows; index++) {
-      createRow(blockChunkHolder, row, index);
+      try {
+        createRow(blockChunkHolder, row, index);
+      } catch (QueryExecutionException e1) {
+        // TODO Auto-generated catch block
+        e1.printStackTrace();
+      }
       try {
         Boolean rslt = exp.evaluate(row).getBoolean();
         if (null != rslt && rslt) {
@@ -120,8 +126,10 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
    * @param blockChunkHolder
    * @param row
    * @param index
+   * @throws QueryExecutionException
    */
-  private void createRow(BlocksChunkHolder blockChunkHolder, RowIntf row, int index) {
+  private void createRow(BlocksChunkHolder blockChunkHolder, RowIntf row, int index)
+      throws QueryExecutionException {
     Object[] record = new Object[dimColEvaluatorInfoList.size() + msrColEvalutorInfoList.size()];
     String memberString = null;
     for (DimColumnResolvedFilterInfo dimColumnEvaluatorInfo : dimColEvaluatorInfoList) {
@@ -153,8 +161,13 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
             continue;
           }
         } else {
-          Dictionary forwardDictionary = FilterUtil
-              .getForwardDictionaryCache(tableIdentifier, dimColumnEvaluatorInfo.getDimension());
+          Dictionary forwardDictionary = null;
+          try {
+            forwardDictionary = FilterUtil
+                .getForwardDictionaryCache(tableIdentifier, dimColumnEvaluatorInfo.getDimension());
+          } catch (QueryExecutionException e) {
+            throw new QueryExecutionException(e);
+          }
           byte[] rawData =
               blockChunkHolder.getDimensionDataChunk()[dimColumnEvaluatorInfo.getColumnIndex()]
                   .getChunkData(index);

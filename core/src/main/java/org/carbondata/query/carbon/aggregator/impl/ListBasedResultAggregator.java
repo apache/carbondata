@@ -86,12 +86,13 @@ public class ListBasedResultAggregator implements ScannedResultAggregator {
    */
   private BlockExecutionInfo tableBlockExecutionInfos;
 
-  public ListBasedResultAggregator(BlockExecutionInfo tableBlockExecutionInfos,
+  public ListBasedResultAggregator(BlockExecutionInfo blockExecutionInfos,
       DataAggregator aggregator) {
-    limit = tableBlockExecutionInfos.getLimit();
-    this.tableBlockExecutionInfos = tableBlockExecutionInfos;
-    blockAggregator = tableBlockExecutionInfos.getAggregatorInfo().getMeasuresAggreagators();
-    restructureInfos = tableBlockExecutionInfos.getKeyStructureInfo();
+    limit = blockExecutionInfos.getLimit();
+    this.tableBlockExecutionInfos = blockExecutionInfos;
+    blockAggregator = blockExecutionInfos.getAggregatorInfo().getMeasuresAggreagators();
+    restructureInfos = blockExecutionInfos.getKeyStructureInfo();
+    dataAggregator = new DataAggregator(blockExecutionInfos);
   }
 
   @Override
@@ -103,7 +104,7 @@ public class ListBasedResultAggregator implements ScannedResultAggregator {
    */
   public int aggregateData(AbstractScannedResult scannedResult) {
     this.listBasedResult = new ArrayList<ListBasedResultWrapper>(
-        limit > -1 ? scannedResult.numberOfOutputRows() : limit);
+        limit == -1 ? scannedResult.numberOfOutputRows() : limit);
     ByteArrayWrapper wrapper = null;
     MeasureAggregator[] measureAggregator = null;
     // scan the record and add to list
@@ -116,6 +117,7 @@ public class ListBasedResultAggregator implements ScannedResultAggregator {
       resultWrapper = new ListBasedResultWrapper();
       resultWrapper.setKey(wrapper);
       resultWrapper.setValue(getNewAggregator());
+      listBasedResult.add(resultWrapper);
       rowCounter++;
     }
     // call data aggregator to convert measure value to some aggreagtor

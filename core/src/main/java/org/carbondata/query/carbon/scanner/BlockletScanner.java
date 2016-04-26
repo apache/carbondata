@@ -34,5 +34,5 @@ public interface BlockletScanner {
    * @return scannerResult
    * result after processing
    */
-  AbstractScannedResult processBlockData(BlocksChunkHolder blocksChunkHolder);
+  AbstractScannedResult scanBlocklet(BlocksChunkHolder blocksChunkHolder);
 }

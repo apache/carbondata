@@ -129,6 +129,11 @@ public class QueryModel implements Serializable {
         new ArrayList<DimensionAggregatorInfo>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     expressions =
         new ArrayList<CustomAggregateExpression>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    queryDimension = new ArrayList<CarbonDimension>();
+    queryMeasures = new ArrayList<CarbonMeasure>();
+    sortDimension = new ArrayList<CarbonDimension>();
+    sortOrder = new byte[0];
+    paritionColumns = new ArrayList<String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
   }
 

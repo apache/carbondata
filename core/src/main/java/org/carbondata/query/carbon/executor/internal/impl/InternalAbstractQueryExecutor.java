@@ -78,7 +78,8 @@ public abstract class InternalAbstractQueryExecutor implements InternalQueryExec
         tableBlockExecutionInfosList.get(tableBlockExecutionInfosList.size() - 1);
     execService = Executors.newFixedThreadPool(numberOfCores);
     ScannedResultMerger scannedResultProcessor = null;
-    if (latestInfo.getSortInfo().getSortDimensionIndex().length > 0) {
+    if (null != latestInfo.getSortInfo()
+        && latestInfo.getSortInfo().getSortDimensionIndex().length > 0) {
       scannedResultProcessor = new SortedScannedResultMerger(latestInfo, numberOfCores);
     } else {
       scannedResultProcessor = new UnSortedScannedResultMerger(latestInfo, numberOfCores);
@@ -86,10 +87,10 @@ public abstract class InternalAbstractQueryExecutor implements InternalQueryExec
     try {
       for (BlockExecutionInfo blockInfo : tableBlockExecutionInfosList) {
         DataRefNodeFinder finder = new BtreeDataRefNodeFinder(blockInfo.getEachColumnValueSize());
-        DataRefNode startDataBlock =
-            finder.findFirstDataBlock(blockInfo.getFirstDataBlock(), blockInfo.getStartKey());
-        DataRefNode endDataBlock =
-            finder.findLastDataBlock(blockInfo.getFirstDataBlock(), blockInfo.getEndKey());
+        DataRefNode startDataBlock = finder
+            .findFirstDataBlock(blockInfo.getDataBlock().getDataRefNode(), blockInfo.getStartKey());
+        DataRefNode endDataBlock = finder
+            .findLastDataBlock(blockInfo.getDataBlock().getDataRefNode(), blockInfo.getEndKey());
         long numberOfBlockToScan = endDataBlock.nodeNumber() - startDataBlock.nodeNumber() + 1;
         blockInfo.setFirstDataBlock(startDataBlock);
         blockInfo.setNumberOfBlockToScan(numberOfBlockToScan);

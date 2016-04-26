@@ -37,6 +37,12 @@ import java.util.concurrent.TimeUnit;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
+import org.carbondata.core.carbon.metadata.CarbonMetadata;
+import org.carbondata.core.carbon.metadata.converter.SchemaConverter;
+import org.carbondata.core.carbon.metadata.converter.ThriftWrapperSchemaConverterImpl;
+import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
@@ -48,6 +54,7 @@ import org.carbondata.core.util.CarbonMetadataUtil;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.writer.CarbonFooterWriter;
+import org.carbondata.format.FileFooter;
 import org.carbondata.processing.store.CarbonDataFileAttributes;
 import org.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
@@ -92,6 +99,15 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    */
   protected int mdkeySize;
   /**
+   * leaf node file name
+   */
+  protected String fileName;
+  /**
+   * Local cardinality for the segment
+   */
+  protected int[] localCardinality;
+  protected String databaseName;
+  /**
    * tabel name
    */
   private String tableName;
@@ -108,10 +124,6 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    */
   private String fileNameFormat;
   /**
-   * leaf node file name
-   */
-  protected String fileName;
-  /**
    * File manager
    */
   private IFileManagerComposite fileManager;
@@ -123,13 +135,6 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    * executorService
    */
   private ExecutorService executorService;
-
-  /**
-   * Local cardinality for the segment
-   */
-  protected int[] localCardinality;
-  protected String databaseName;
-
   /**
    * data file attributes which will used for file construction
    */
@@ -304,9 +309,11 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     try {
       long currentPosition = channel.size();
       CarbonFooterWriter writer = new CarbonFooterWriter(this.fileName);
-      writer.writeFooter(
-          CarbonMetadataUtil.convertFileFooter(infoList, localCardinality.length, localCardinality),
-          currentPosition);
+      List<org.carbondata.format.ColumnSchema> fillColumnSchemaToMetadata = getColumnSchemaList();
+      FileFooter convertFileMeta = CarbonMetadataUtil
+          .convertFileFooter(infoList, localCardinality.length, localCardinality,
+              fillColumnSchemaToMetadata);
+      writer.writeFooter(convertFileMeta, currentPosition);
 
     } catch (IOException e) {
       throw new CarbonDataWriterException("Problem while writing the Leaf Node File: ", e);
@@ -314,36 +321,24 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
 
   }
 
-  protected int calculateAndSetLeafNodeMetaSize(NodeHolder nodeHolder) {
-    int metaSize = 0;
-    //measure offset and measure length
-    metaSize += (measureCount * CarbonCommonConstants.INT_SIZE_IN_BYTE) + (measureCount
-        * CarbonCommonConstants.LONG_SIZE_IN_BYTE);
-    //start and end key
-    metaSize += mdkeySize * 2;
-
-    // keyblock length + key offsets + number of tuples+ number of columnar block
-    metaSize += (nodeHolder.getKeyLengths().length * CarbonCommonConstants.INT_SIZE_IN_BYTE) + (
-        nodeHolder.getKeyLengths().length * CarbonCommonConstants.LONG_SIZE_IN_BYTE)
-        + CarbonCommonConstants.INT_SIZE_IN_BYTE + CarbonCommonConstants.INT_SIZE_IN_BYTE;
-    //if sorted or not
-    metaSize += nodeHolder.getIsSortedKeyBlock().length;
-
-    //column min max size
-    //for length of columnMinMax byte array
-    metaSize += CarbonCommonConstants.INT_SIZE_IN_BYTE;
-    for (int i = 0; i < nodeHolder.getColumnMaxData().length; i++) {
-      //length of sub byte array
-      metaSize += CarbonCommonConstants.INT_SIZE_IN_BYTE;
-      metaSize += nodeHolder.getColumnMaxData()[i].length;
+  protected List<org.carbondata.format.ColumnSchema> getColumnSchemaList() {
+    CarbonTable carbonTable =
+        CarbonMetadata.getInstance().getCarbonTable(databaseName + '_' + tableName);
+    List<CarbonDimension> dimensionByTableName = carbonTable.getDimensionByTableName(tableName);
+    List<CarbonMeasure> measureByTableName = carbonTable.getMeasureByTableName(tableName);
+    List<org.carbondata.format.ColumnSchema> columnSchemaList =
+        new ArrayList<org.carbondata.format.ColumnSchema>(
+            CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
+    for (int i = 0; i < dimensionByTableName.size(); i++) {
+      columnSchemaList.add(schemaConverter
+          .fromWrapperToExternalColumnSchema(dimensionByTableName.get(i).getColumnSchema()));
     }
-
-    // key block index length + key block index offset + number of key block
-    metaSize +=
-        (nodeHolder.getKeyBlockIndexLength().length * CarbonCommonConstants.INT_SIZE_IN_BYTE) + (
-            nodeHolder.getKeyBlockIndexLength().length * CarbonCommonConstants.LONG_SIZE_IN_BYTE)
-            + CarbonCommonConstants.INT_SIZE_IN_BYTE;
-    return metaSize;
+    for (int i = 0; i < measureByTableName.size(); i++) {
+      columnSchemaList.add(schemaConverter
+          .fromWrapperToExternalColumnSchema(measureByTableName.get(i).getColumnSchema()));
+    }
+    return columnSchemaList;
   }
 
   /**
@@ -396,7 +391,6 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     infoObj.setStartKey(nodeHolder.getStartKey());
     // set end key
     infoObj.setEndKey(nodeHolder.getEndKey());
-    infoObj.setLeafNodeMetaSize(calculateAndSetLeafNodeMetaSize(nodeHolder));
     infoObj.setCompressionModel(nodeHolder.getCompressionModel());
     // return leaf metadata
     return infoObj;

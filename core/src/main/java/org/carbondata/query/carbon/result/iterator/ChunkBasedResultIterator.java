@@ -23,13 +23,13 @@ import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.query.carbon.executor.impl.QueryExecutorProperties;
 import org.carbondata.query.carbon.executor.impl.QueryResultPreparator;
 import org.carbondata.query.carbon.model.QueryModel;
-import org.carbondata.query.carbon.result.ChunkResult;
+import org.carbondata.query.carbon.result.BatchResult;
 import org.carbondata.query.carbon.result.Result;
 
 /**
  * Iterator over chunk result
  */
-public class ChunkBasedResultIterator implements CarbonIterator<ChunkResult> {
+public class ChunkBasedResultIterator implements CarbonIterator<BatchResult> {
 
   /**
    * query result prepartor which will be used to create a query result
@@ -63,7 +63,7 @@ public class ChunkBasedResultIterator implements CarbonIterator<ChunkResult> {
    *
    * @return the next element in the iteration
    */
-  @Override public ChunkResult next() {
+  @Override public BatchResult next() {
     return queryResultPreparator.getQueryResult(queryResultIterator.next());
   }
 

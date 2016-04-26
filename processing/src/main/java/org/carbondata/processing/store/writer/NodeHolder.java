@@ -116,6 +116,16 @@ public class NodeHolder {
   private boolean[] aggBlocks;
 
   /**
+   * all columns max value
+   */
+  private byte[][] allMaxValue;
+
+  /**
+   * all column max value
+   */
+  private byte[][] allMinValue;
+
+  /**
    * @return the keyArray
    */
   public byte[] getKeyArray() {
@@ -373,5 +383,33 @@ public class NodeHolder {
    */
   public void setAggBlocks(boolean[] aggBlocks) {
     this.aggBlocks = aggBlocks;
+  }
+
+  /**
+   * @return the allMaxValue
+   */
+  public byte[][] getAllMaxValue() {
+    return allMaxValue;
+  }
+
+  /**
+   * @param allMaxValue the allMaxValue to set
+   */
+  public void setAllMaxValue(byte[][] allMaxValue) {
+    this.allMaxValue = allMaxValue;
+  }
+
+  /**
+   * @return the allMinValue
+   */
+  public byte[][] getAllMinValue() {
+    return allMinValue;
+  }
+
+  /**
+   * @param allMinValue the allMinValue to set
+   */
+  public void setAllMinValue(byte[][] allMinValue) {
+    this.allMinValue = allMinValue;
   }
 }

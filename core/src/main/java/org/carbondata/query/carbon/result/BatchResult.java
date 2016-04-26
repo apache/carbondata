@@ -30,7 +30,7 @@ import org.carbondata.query.scanner.impl.CarbonValue;
 /**
  * Below class holds the query result
  */
-public class ChunkResult implements CarbonIterator<RowResult> {
+public class BatchResult implements CarbonIterator<RowResult> {
 
   /**
    * list of keys
@@ -47,7 +47,7 @@ public class ChunkResult implements CarbonIterator<RowResult> {
    */
   private int counter;
 
-  public ChunkResult() {
+  public BatchResult() {
     keys = new ArrayList<CarbonKey>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     values = new ArrayList<CarbonValue>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
   }

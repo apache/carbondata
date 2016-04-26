@@ -169,4 +169,8 @@ public class CarbonColumn implements Serializable {
   public void setQueryOrder(int queryOrder) {
     this.queryOrder = queryOrder;
   }
+
+  public ColumnSchema getColumnSchema() {
+    return this.columnSchema;
+  }
 }

@@ -34,7 +34,7 @@ import org.carbondata.query.aggregator.impl.DistinctCountAggregator;
 import org.carbondata.query.aggregator.impl.DistinctStringCountAggregator;
 import org.carbondata.query.carbon.model.DimensionAggregatorInfo;
 import org.carbondata.query.carbon.model.QueryModel;
-import org.carbondata.query.carbon.result.ChunkResult;
+import org.carbondata.query.carbon.result.BatchResult;
 import org.carbondata.query.carbon.result.Result;
 import org.carbondata.query.carbon.util.DataTypeUtil;
 import org.carbondata.query.carbon.wrappers.ByteArrayWrapper;
@@ -92,9 +92,9 @@ public class QueryResultPreparator {
     return type;
   }
 
-  public ChunkResult getQueryResult(Result scannedResult) {
+  public BatchResult getQueryResult(Result scannedResult) {
     if ((null == scannedResult || scannedResult.size() < 1)) {
-      return new ChunkResult();
+      return new BatchResult();
     }
     List<CarbonDimension> queryDimension = queryModel.getQueryDimension();
     int dimensionCount = queryDimension.size();
@@ -114,7 +114,8 @@ public class QueryResultPreparator {
       key = scannedResult.getKey();
       value = scannedResult.getValue();
       surrogateResult = queryExecuterProperties.keyStructureInfo.getKeyGenerator()
-          .getKeyArray(key.getDictionaryKey());
+          .getKeyArray(key.getDictionaryKey(),
+              queryExecuterProperties.keyStructureInfo.getMaskedBytes());
       for (int i = 0; i < dimensionCount; i++) {
         if (dimensionType[i] == 1) {
           resultData[currentRow][i] = DataTypeUtil.getDataBasedOnDataType(
@@ -138,6 +139,7 @@ public class QueryResultPreparator {
       for (int i = 0; i < queryExecuterProperties.measureAggregators.length; i++) {
         resultData[currentRow][dimensionCount + i] = value[i];
       }
+      currentRow++;
     }
     if (resultData.length > 0) {
       resultData = encodeToRows(resultData);
@@ -145,7 +147,7 @@ public class QueryResultPreparator {
     return getResult(queryModel, resultData, dimensionType);
   }
 
-  private ChunkResult getResult(QueryModel queryModel, Object[][] convertedResult,
+  private BatchResult getResult(QueryModel queryModel, Object[][] convertedResult,
       byte[] dimensionType) {
 
     List<CarbonKey> keys = new ArrayList<CarbonKey>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -244,7 +246,7 @@ public class QueryResultPreparator {
     LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
         "###########################################------ Total Number of records"
             + resultDataA[0].length);
-    ChunkResult chunkResult = new ChunkResult();
+    BatchResult chunkResult = new BatchResult();
     chunkResult.setKeys(keys);
     chunkResult.setValues(values);
     return chunkResult;
@@ -274,7 +276,7 @@ public class QueryResultPreparator {
     return rData;
   }
 
-  private ChunkResult getEmptyChunkResult(int size) {
+  private BatchResult getEmptyChunkResult(int size) {
     List<CarbonKey> keys = new ArrayList<CarbonKey>(size);
     List<CarbonValue> values = new ArrayList<CarbonValue>(size);
     Object[] row = new Object[1];
@@ -284,7 +286,7 @@ public class QueryResultPreparator {
       values.add(new CarbonValue(new MeasureAggregator[0]));
       keys.add(new CarbonKey(row));
     }
-    ChunkResult chunkResult = new ChunkResult();
+    BatchResult chunkResult = new BatchResult();
     chunkResult.setKeys(keys);
     chunkResult.setValues(values);
     return chunkResult;

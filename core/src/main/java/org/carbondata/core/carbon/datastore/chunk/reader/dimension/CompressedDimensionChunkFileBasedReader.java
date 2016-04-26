@@ -60,8 +60,8 @@ public class CompressedDimensionChunkFileBasedReader extends AbstractChunkReader
     // read the column chunk based on block index and add
     DimensionColumnDataChunk[] dataChunks =
         new DimensionColumnDataChunk[dimensionColumnChunk.size()];
-    for (int i = 0; i < dataChunks.length; i++) {
-      dataChunks[i] = readDimensionChunk(fileReader, blockIndexes[i]);
+    for (int i = 0; i < blockIndexes.length; i++) {
+      dataChunks[blockIndexes[i]] = readDimensionChunk(fileReader, blockIndexes[i]);
     }
     return dataChunks;
   }

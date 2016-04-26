@@ -72,6 +72,13 @@ public class CarbonMeasure extends CarbonColumn {
   }
 
   /**
+   * @param aggregateFunction the aggregateFunction to set
+   */
+  public void setAggregateFunction(String aggregateFunction) {
+    this.aggregateFunction = aggregateFunction;
+  }
+
+  /**
    * to check whether to dimension are equal or not
    */
   @Override public boolean equals(Object obj) {

@@ -27,11 +27,8 @@ import org.carbondata.query.carbon.executor.internal.InternalQueryExecutor;
 import org.carbondata.query.carbon.executor.internal.impl.InternalDetailQueryExecutor;
 import org.carbondata.query.carbon.model.QueryModel;
 import org.carbondata.query.carbon.result.RowResult;
-import org.carbondata.query.carbon.result.impl.ListBasedResult;
-import org.carbondata.query.carbon.result.iterator.ChunkBasedResultIterator;
 import org.carbondata.query.carbon.result.iterator.ChunkRowIterator;
 import org.carbondata.query.carbon.result.iterator.DetailQueryResultIterator;
-import org.carbondata.query.carbon.result.iterator.MemoryBasedResultIterator;
 
 /**
  * Below class will be used to execute the detail query
@@ -42,13 +39,6 @@ public class DetailQueryExecutor extends AbstractQueryExecutor {
 
   @Override public CarbonIterator<RowResult> execute(QueryModel queryModel)
       throws QueryExecutionException {
-    if (queryProperties.dataBlocks.size() == 0) {
-      // if there are not block present then set empty row
-      // and return
-      return new ChunkRowIterator(
-          new ChunkBasedResultIterator(new MemoryBasedResultIterator(new ListBasedResult()),
-              queryProperties, queryModel));
-    }
     List<BlockExecutionInfo> blockExecutionInfoList = getBlockExecutionInfos(queryModel);
     InternalQueryExecutor queryExecutor = new InternalDetailQueryExecutor();
     return new ChunkRowIterator(

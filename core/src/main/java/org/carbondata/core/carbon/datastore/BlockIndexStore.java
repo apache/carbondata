@@ -126,7 +126,7 @@ public class BlockIndexStore {
             footer =
                 CarbonUtil.readMetadatFile(blockInfo.getFilePath(), blockInfo.getBlockOffset());
             tableBlock = new BlockIndex();
-            footer.setFilePath(blockInfo.getFilePath());
+            footer.setTableBlockInfo(blockInfo);
             // building the block
             tableBlock.buildIndex(Arrays.asList(footer));
             tableBlockMapTemp.put(blockInfo, tableBlock);

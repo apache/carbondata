@@ -1745,6 +1745,15 @@ public final class CarbonMetadata {
       return isDirectDictionary;
     }
 
+    /**
+     * set flag of direct dictionary
+     *
+     * @param isDirectDictionary
+     */
+    public void setDirectDictionary(boolean isDirectDictionary) {
+      this.isDirectDictionary = isDirectDictionary;
+    }
+
     public boolean isQueryForDistinctCount() {
       return isQueryForDistinctCount;
     }
@@ -1763,15 +1772,6 @@ public final class CarbonMetadata {
 
     public void getParent() {
 
-    }
-
-    /**
-     * set flag of direct dictionary
-     *
-     * @param isDirectDictionary
-     */
-    public void setDirectDictionary(boolean isDirectDictionary) {
-      this.isDirectDictionary = isDirectDictionary;
     }
   }
 

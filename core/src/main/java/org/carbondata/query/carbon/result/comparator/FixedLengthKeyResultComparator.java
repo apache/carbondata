@@ -20,12 +20,12 @@ package org.carbondata.query.carbon.result.comparator;
 
 import java.util.Comparator;
 
-import org.carbondata.query.carbon.wrappers.ByteArrayWrapper;
+import org.carbondata.query.carbon.result.ListBasedResultWrapper;
 
 /**
  * Fixed length key comparator
  */
-public class FixedLengthKeyResultComparator implements Comparator<ByteArrayWrapper> {
+public class FixedLengthKeyResultComparator implements Comparator<ListBasedResultWrapper> {
 
   /**
    * compareRange
@@ -48,11 +48,11 @@ public class FixedLengthKeyResultComparator implements Comparator<ByteArrayWrapp
     this.maskedKey = maskedKey;
   }
 
-  @Override
-  public int compare(ByteArrayWrapper byteArrayWrapper1, ByteArrayWrapper byteArrayWrapper2) {
+  @Override public int compare(ListBasedResultWrapper listBasedResultWrapper1,
+      ListBasedResultWrapper listBasedResultWrapper2) {
     int cmp = 0;
-    byte[] o1 = byteArrayWrapper1.getDictionaryKey();
-    byte[] o2 = byteArrayWrapper2.getDictionaryKey();
+    byte[] o1 = listBasedResultWrapper1.getKey().getDictionaryKey();
+    byte[] o2 = listBasedResultWrapper2.getKey().getDictionaryKey();
     for (int i = 0; i < compareRange.length; i++) {
       int a = (o1[compareRange[i]] & this.maskedKey[i]) & 0xff;
       int b = (o2[compareRange[i]] & this.maskedKey[i]) & 0xff;
@@ -62,6 +62,7 @@ public class FixedLengthKeyResultComparator implements Comparator<ByteArrayWrapp
         if (sortOrder == 1) {
           return cmp = cmp * -1;
         }
+        return cmp;
       }
     }
     return 0;

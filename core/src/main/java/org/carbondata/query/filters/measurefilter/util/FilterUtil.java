@@ -45,11 +45,13 @@ import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.util.CarbonUtil;
+import org.carbondata.core.util.CarbonUtilException;
 import org.carbondata.query.carbonfilterinterface.FilterExecuterType;
 import org.carbondata.query.carbonfilterinterface.RowImpl;
 import org.carbondata.query.carbonfilterinterface.RowIntf;
 import org.carbondata.query.evaluators.DimColumnExecuterFilterInfo;
 import org.carbondata.query.evaluators.DimColumnResolvedFilterInfo;
+import org.carbondata.query.executer.exception.QueryExecutionException;
 import org.carbondata.query.expression.ColumnExpression;
 import org.carbondata.query.expression.Expression;
 import org.carbondata.query.expression.ExpressionResult;
@@ -219,9 +221,11 @@ public final class FilterUtil {
    * @param evaluateResultList
    * @param isIncludeFilter
    * @return
+   * @throws QueryExecutionException
    */
   public static DimColumnFilterInfo getFilterValues(AbsoluteTableIdentifier tableIdentifier,
       ColumnExpression columnExpression, List<String> evaluateResultList, boolean isIncludeFilter)
+      throws QueryExecutionException
 
   {
     List<Integer> surrogates = new ArrayList<Integer>(20);
@@ -251,9 +255,10 @@ public final class FilterUtil {
    * @param tableIdentifier
    * @param dim             , column expression dimension type.
    * @return the dictionary value.
+   * @throws QueryExecutionException
    */
   private static Integer getDictionaryValue(String value, AbsoluteTableIdentifier tableIdentifier,
-      CarbonDimension dim) {
+      CarbonDimension dim) throws QueryExecutionException {
     Dictionary forwardDictionary = getForwardDictionaryCache(tableIdentifier, dim);
     if (null != forwardDictionary) {
       forwardDictionary.getSurrogateKey(value);
@@ -270,10 +275,11 @@ public final class FilterUtil {
    * @param columnExpression
    * @param isIncludeFilter
    * @return DimColumnFilterInfo
+   * @throws QueryExecutionException
    */
   public static DimColumnFilterInfo getFilterListForAllValues(
       AbsoluteTableIdentifier tableIdentifier, Expression expression,
-      ColumnExpression columnExpression, boolean isIncludeFilter) {
+      ColumnExpression columnExpression, boolean isIncludeFilter) throws QueryExecutionException {
     Dictionary forwardDictionary =
         FilterUtil.getForwardDictionaryCache(tableIdentifier, columnExpression.getDimension());
     List<String> evaluateResultListFinal = new ArrayList<String>(20);
@@ -313,9 +319,11 @@ public final class FilterUtil {
    * @param columnExpression
    * @param isIncludeFilter
    * @return
+   * @throws QueryExecutionException
    */
   public static DimColumnFilterInfo getFilterList(AbsoluteTableIdentifier tableIdentifier,
-      Expression expression, ColumnExpression columnExpression, boolean isIncludeFilter) {
+      Expression expression, ColumnExpression columnExpression, boolean isIncludeFilter)
+      throws QueryExecutionException {
     DimColumnFilterInfo resolvedFilterObject = null;
     List<String> evaluateResultListFinal = new ArrayList<String>(20);
     try {
@@ -525,7 +533,7 @@ public final class FilterUtil {
 
   public static long[] getEndKey(Map<CarbonDimension, List<DimColumnFilterInfo>> dimensionFilter,
       AbsoluteTableIdentifier tableIdentifier, long[] endKey,
-      List<CarbonDimension> carbonDimensions) {
+      List<CarbonDimension> carbonDimensions) throws QueryExecutionException {
 
     carbonDimensions = getCarbonDimsMappedToKeyGenerator(carbonDimensions);
     for (int i = 0; i < endKey.length; i++) {
@@ -580,9 +588,11 @@ public final class FilterUtil {
   /**
    * This API will get the max value of surrogate key which will be used for
    * determining the end key of particular btree.
+   *
+   * @throws QueryExecutionException
    */
   private static long getMaxValue(AbsoluteTableIdentifier tableIdentifier,
-      CarbonDimension carbonDimension) {
+      CarbonDimension carbonDimension) throws QueryExecutionException {
     Dictionary forwardDictionary = getForwardDictionaryCache(tableIdentifier, carbonDimension);
     if (null == forwardDictionary) {
       return -1;
@@ -595,9 +605,10 @@ public final class FilterUtil {
    * @param tableIdentifier
    * @param carbonDimension
    * @return
+   * @throws QueryExecutionException
    */
   public static Dictionary getForwardDictionaryCache(AbsoluteTableIdentifier tableIdentifier,
-      CarbonDimension carbonDimension) {
+      CarbonDimension carbonDimension) throws QueryExecutionException {
     DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
         new DictionaryColumnUniqueIdentifier(tableIdentifier.getCarbonTableIdentifier(),
             String.valueOf(carbonDimension.getColumnId()));
@@ -605,9 +616,12 @@ public final class FilterUtil {
     Cache forwardDictionaryCache =
         cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, tableIdentifier.getStorePath());
     // get the forward dictionary object
-    Dictionary forwardDictionary = (Dictionary) forwardDictionaryCache
-
-        .get(dictionaryColumnUniqueIdentifier);
+    Dictionary forwardDictionary = null;
+    try {
+      forwardDictionary = (Dictionary) forwardDictionaryCache.get(dictionaryColumnUniqueIdentifier);
+    } catch (CarbonUtilException e) {
+      throw new QueryExecutionException(e);
+    }
     return forwardDictionary;
   }
 

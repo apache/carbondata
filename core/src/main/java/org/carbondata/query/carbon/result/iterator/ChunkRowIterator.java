@@ -20,7 +20,7 @@
 package org.carbondata.query.carbon.result.iterator;
 
 import org.carbondata.core.iterator.CarbonIterator;
-import org.carbondata.query.carbon.result.ChunkResult;
+import org.carbondata.query.carbon.result.BatchResult;
 import org.carbondata.query.carbon.result.RowResult;
 
 /**
@@ -31,14 +31,14 @@ public class ChunkRowIterator implements CarbonIterator<RowResult> {
   /**
    * iterator over chunk result
    */
-  private CarbonIterator<ChunkResult> iterator;
+  private CarbonIterator<BatchResult> iterator;
 
   /**
    * currect chunk
    */
-  private ChunkResult currentchunk;
+  private BatchResult currentchunk;
 
-  public ChunkRowIterator(CarbonIterator<ChunkResult> iterator) {
+  public ChunkRowIterator(CarbonIterator<BatchResult> iterator) {
     this.iterator = iterator;
     if (iterator.hasNext()) {
       currentchunk = iterator.next();

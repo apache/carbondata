@@ -28,19 +28,18 @@ public class FilterExpressionResolverTest {
     try {
       ConditionalFilterResolverImpl condResolverImpl =
           new ConditionalFilterResolverImpl(equalsToExpression, false, true);
-      AbsoluteTableIdentifier absoluteTableIdentifier = new AbsoluteTableIdentifier();
       CarbonTableIdentifier carbonTableIdentifier =
           new CarbonTableIdentifier("database", "testSchema");
-      absoluteTableIdentifier.setCarbonTableIdentifier(carbonTableIdentifier);
-      absoluteTableIdentifier.setStorePath("storePath");
+      AbsoluteTableIdentifier absoluteTableIdentifier =
+          new AbsoluteTableIdentifier("storePath", carbonTableIdentifier);
       condResolverImpl.resolve(absoluteTableIdentifier);
       if (null != condResolverImpl.getDimColResolvedFilterInfo()) {
-        assert (true);
+        assert(true);
       } else {
-        assert (false);
+        assert(false);
       }
     } catch (Exception e) {
-      assert (false);
+      assert(false);
     }
 
   }

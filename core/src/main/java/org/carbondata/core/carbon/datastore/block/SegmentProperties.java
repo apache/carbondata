@@ -39,6 +39,7 @@ import org.carbondata.core.keygenerator.mdkey.MultiDimKeyVarLengthGenerator;
 import org.carbondata.core.util.CarbonUtil;
 
 import org.apache.commons.lang3.ArrayUtils;
+
 /**
  * This class contains all the details about the restructuring information of
  * the block. This will be used during query execution to handle restructure
@@ -356,18 +357,22 @@ public class SegmentProperties {
       }
       eachDimColumnValueSize[i] = dictionayDimColumnValueSize[++index];
     }
-    int[] complexDimesionParition = new int[complexDimensions.size()];
-    // as complex dimension will be stored in column format add one
-    Arrays.fill(complexDimesionParition, 1);
-    int[] complexDimensionBitLength = new int[complexDimesionParition.length];
-    // number of bits will be 64
-    Arrays.fill(complexDimensionBitLength, 64);
-    this.complexDimensionKeyGenerator =
-        new MultiDimKeyVarLengthGenerator(complexDimensionBitLength);
-    ColumnarSplitter keySplitter =
-        new MultiDimKeyVarLengthVariableSplitGenerator(complexDimensionBitLength,
-            complexDimesionParition);
-    eachComplexDimColumnValueSize = keySplitter.getBlockKeySize();
+    if (complexDimensions.size() > 0) {
+      int[] complexDimesionParition = new int[complexDimensions.size()];
+      // as complex dimension will be stored in column format add one
+      Arrays.fill(complexDimesionParition, 1);
+      int[] complexDimensionBitLength = new int[complexDimesionParition.length];
+      // number of bits will be 64
+      Arrays.fill(complexDimensionBitLength, 64);
+      this.complexDimensionKeyGenerator =
+          new MultiDimKeyVarLengthGenerator(complexDimensionBitLength);
+      ColumnarSplitter keySplitter =
+          new MultiDimKeyVarLengthVariableSplitGenerator(complexDimensionBitLength,
+              complexDimesionParition);
+      eachComplexDimColumnValueSize = keySplitter.getBlockKeySize();
+    } else {
+      eachComplexDimColumnValueSize = new int[0];
+    }
   }
 
   /**

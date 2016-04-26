@@ -47,6 +47,7 @@ import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.util.CarbonUtil;
+import org.carbondata.core.util.CarbonUtilException;
 import org.carbondata.query.carbon.aggregator.dimension.DimensionDataAggregator;
 import org.carbondata.query.carbon.aggregator.dimension.impl.ColumnGroupDimensionsAggregator;
 import org.carbondata.query.carbon.aggregator.dimension.impl.FixedLengthDimensionAggregator;
@@ -126,19 +127,19 @@ public class QueryUtil {
   /**
    * Below method will return the max key based on the dimension ordinal
    *
-   * @param ordinal
+   * @param keyOrdinalList
    * @param generator
    * @return
    * @throws KeyGenException
    */
-  public static byte[] getMaxKeyBasedOnOrinal(List<Integer> ordinal, KeyGenerator generator)
+  public static byte[] getMaxKeyBasedOnOrinal(List<Integer> keyOrdinalList, KeyGenerator generator)
       throws KeyGenException {
     long[] max = new long[generator.getDimCount()];
     Arrays.fill(max, 0L);
 
-    for (int i = 0; i < ordinal.size(); i++) {
+    for (int i = 0; i < keyOrdinalList.size(); i++) {
       // adding for dimension which is selected in query
-      max[ordinal.get(i)] = Long.MAX_VALUE;
+      max[keyOrdinalList.get(i)] = Long.MAX_VALUE;
     }
     return generator.generateKey(max);
   }
@@ -229,7 +230,7 @@ public class QueryUtil {
       List<DimensionAggregatorInfo> dimAggInfo, List<CarbonDimension> customAggregationDimension) {
     // using set as in row group columns will point to same block
     Set<Integer> dimensionBlockIndex = new HashSet<Integer>();
-    for (int i = 0; i < dimensionBlockIndex.size(); i++) {
+    for (int i = 0; i < queryDimensions.size(); i++) {
       dimensionBlockIndex
           .add(dimensionOrdinalToBlockMapping.get(queryDimensions.get(i).getOrdinal()));
     }
@@ -258,11 +259,12 @@ public class QueryUtil {
    *                                   we need dictionary data
    * @param absoluteTableIdentifier    absolute table identifier
    * @return dimension unique id to its dictionary map
+   * @throws QueryExecutionException
    */
   public static Map<String, Dictionary> getDimensionDictionaryDetail(
       List<CarbonDimension> queryDimensions, List<DimensionAggregatorInfo> dimAggInfo,
       List<CustomAggregateExpression> customAggExpression,
-      AbsoluteTableIdentifier absoluteTableIdentifier) {
+      AbsoluteTableIdentifier absoluteTableIdentifier) throws QueryExecutionException {
     // to store dimension unique column id list, this is required as
     // dimension can be present in
     // query dimension, as well as some aggregation function will be applied
@@ -302,9 +304,10 @@ public class QueryUtil {
    * @param dictionaryColumnIdList  dictionary column list
    * @param absoluteTableIdentifier absolute table identifier
    * @return dictionary mapping
+   * @throws QueryExecutionException
    */
   private static Map<String, Dictionary> getDictionaryMap(List<String> dictionaryColumnIdList,
-      AbsoluteTableIdentifier absoluteTableIdentifier) {
+      AbsoluteTableIdentifier absoluteTableIdentifier) throws QueryExecutionException {
     // this for dictionary unique identifier
     List<DictionaryColumnUniqueIdentifier> dictionaryColumnUniqueIdentifiers =
         getDictionaryColumnUniqueIdentifierList(dictionaryColumnIdList,
@@ -312,8 +315,12 @@ public class QueryUtil {
     CacheProvider cacheProvider = CacheProvider.getInstance();
     Cache forwardDictionaryCache = cacheProvider
         .createCache(CacheType.FORWARD_DICTIONARY, absoluteTableIdentifier.getStorePath());
-    List<Dictionary> columnDictionaryList =
-        forwardDictionaryCache.getAll(dictionaryColumnUniqueIdentifiers);
+    List<Dictionary> columnDictionaryList = null;
+    try {
+      columnDictionaryList = forwardDictionaryCache.getAll(dictionaryColumnUniqueIdentifiers);
+    } catch (CarbonUtilException e) {
+      throw new QueryExecutionException(e);
+    }
     Map<String, Dictionary> columnDictionaryMap = new HashMap<>(columnDictionaryList.size());
     for (int i = 0; i < dictionaryColumnUniqueIdentifiers.size(); i++) {
       // TODO: null check for column dictionary, if cache size is less it
@@ -726,9 +733,11 @@ public class QueryUtil {
       List<Integer> dictionaryDimensionBlockIndex, List<Integer> noDictionaryDimensionBlockIndex) {
     for (CarbonDimension queryDimension : queryDimensions) {
       if (CarbonUtil.hasEncoding(queryDimension.getEncoder(), Encoding.DICTIONARY)) {
-        dictionaryDimensionBlockIndex.add(columnOrdinalToBlockIndexMapping.get(queryDimension));
+        dictionaryDimensionBlockIndex
+            .add(columnOrdinalToBlockIndexMapping.get(queryDimension.getOrdinal()));
       } else {
-        noDictionaryDimensionBlockIndex.add(columnOrdinalToBlockIndexMapping.get(queryDimension));
+        noDictionaryDimensionBlockIndex
+            .add(columnOrdinalToBlockIndexMapping.get(queryDimension.getOrdinal()));
       }
     }
   }

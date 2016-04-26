@@ -24,10 +24,8 @@ import org.carbondata.query.carbon.executor.internal.InternalQueryExecutor;
 import org.carbondata.query.carbon.executor.internal.impl.InternalCountStartQueryExecutor;
 import org.carbondata.query.carbon.model.QueryModel;
 import org.carbondata.query.carbon.result.RowResult;
-import org.carbondata.query.carbon.result.impl.ListBasedResult;
 import org.carbondata.query.carbon.result.iterator.ChunkBasedResultIterator;
 import org.carbondata.query.carbon.result.iterator.ChunkRowIterator;
-import org.carbondata.query.carbon.result.iterator.MemoryBasedResultIterator;
 
 /**
  * Below class will be used to execute the count start query
@@ -37,13 +35,6 @@ public class CountStarQueryExecutor extends AbstractQueryExecutor {
   @Override public CarbonIterator<RowResult> execute(QueryModel queryModel)
       throws QueryExecutionException {
     initQuery(queryModel);
-    if (queryProperties.dataBlocks.size() == 0) {
-      // if there are not block present then set empty row
-      // and return
-      return new ChunkRowIterator(
-          new ChunkBasedResultIterator(new MemoryBasedResultIterator(new ListBasedResult()),
-              queryProperties, queryModel));
-    }
     InternalQueryExecutor queryExecutor =
         new InternalCountStartQueryExecutor(queryProperties.dataBlocks);
     return new ChunkRowIterator(

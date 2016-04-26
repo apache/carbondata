@@ -82,6 +82,7 @@ public abstract class AbstractScannedResult {
   public AbstractScannedResult(BlockExecutionInfo blockExecutionInfo) {
     this.fixedLengthKeySize = blockExecutionInfo.getFixedLengthKeySize();
     this.noDictionaryColumnBlockIndexes = blockExecutionInfo.getNoDictionaryBlockIndexes();
+    this.dictionaryColumnBlockIndexes = blockExecutionInfo.getDictionaryColumnBlockIndex();
     this.columnGroupKeyStructureInfo = blockExecutionInfo.getColumnGroupToKeyStructureInfo();
   }
 
@@ -129,6 +130,7 @@ public abstract class AbstractScannedResult {
           .fillChunkData(completeKey, offset, rowId,
               columnGroupKeyStructureInfo.get(dictionaryColumnBlockIndexes[i]));
     }
+    rowCounter++;
     return completeKey;
   }
 
@@ -169,7 +171,7 @@ public abstract class AbstractScannedResult {
    * @return complex type key array for all the complex dimension selected in query
    */
   protected byte[][] getComplexTypeKeyArray(int rowId) {
-    return null;
+    return new byte[0][];
   }
 
   /**

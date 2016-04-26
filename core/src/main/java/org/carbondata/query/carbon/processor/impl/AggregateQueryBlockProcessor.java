@@ -48,8 +48,7 @@ public class AggregateQueryBlockProcessor extends AbstractDataBlockProcessor {
     while (dataBlockIterator.hasNext()) {
       blocksChunkHolder.setDataBlock(dataBlockIterator.next());
       blocksChunkHolder.reset();
-      this.scannerResultAggregator
-          .aggregateData(blockletScanner.processBlockData(blocksChunkHolder));
+      this.scannerResultAggregator.aggregateData(blockletScanner.scanBlocklet(blocksChunkHolder));
     }
     finishScanning();
   }

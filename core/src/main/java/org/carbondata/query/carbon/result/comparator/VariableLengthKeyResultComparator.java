@@ -21,13 +21,13 @@ package org.carbondata.query.carbon.result.comparator;
 import java.util.Comparator;
 
 import org.carbondata.core.carbon.metadata.datatype.DataType;
+import org.carbondata.query.carbon.result.ListBasedResultWrapper;
 import org.carbondata.query.carbon.util.DataTypeUtil;
-import org.carbondata.query.carbon.wrappers.ByteArrayWrapper;
 
 /**
  * Variable length key comparator
  */
-public class VariableLengthKeyResultComparator implements Comparator<ByteArrayWrapper> {
+public class VariableLengthKeyResultComparator implements Comparator<ListBasedResultWrapper> {
 
   /**
    * sort order
@@ -51,19 +51,22 @@ public class VariableLengthKeyResultComparator implements Comparator<ByteArrayWr
     this.dataType = dataType;
   }
 
-  @Override
-  public int compare(ByteArrayWrapper byteArrayWrapper1, ByteArrayWrapper byteArrayWrapper2) {
+  @Override public int compare(ListBasedResultWrapper listBasedResultWrapperFirst,
+      ListBasedResultWrapper listBasedResultWrapperSecond) {
     // get the result
-    byte[] noDictionaryKeys1 = byteArrayWrapper1.getNoDictionaryKeyByIndex(noDictionaryColumnIndex);
+    byte[] noDictionaryKeysFirst =
+        listBasedResultWrapperFirst.getKey().getNoDictionaryKeyByIndex(noDictionaryColumnIndex);
     // convert the result based on actual data type
-    Object dataBasedOnDataType1 =
-        DataTypeUtil.getDataBasedOnDataType(new String(noDictionaryKeys1), dataType);
-    byte[] noDictionaryKeys2 = byteArrayWrapper2.getNoDictionaryKeyByIndex(noDictionaryColumnIndex);
-    Object dataBasedOnDataType2 =
-        DataTypeUtil.getDataBasedOnDataType(new String(noDictionaryKeys2), dataType);
+    Object dataBasedOnDataTypeFirst =
+        DataTypeUtil.getDataBasedOnDataType(new String(noDictionaryKeysFirst), dataType);
+    byte[] noDictionaryKeysSecond =
+        listBasedResultWrapperSecond.getKey().getNoDictionaryKeyByIndex(noDictionaryColumnIndex);
+    Object dataBasedOnDataTypeSecond =
+        DataTypeUtil.getDataBasedOnDataType(new String(noDictionaryKeysSecond), dataType);
     int cmp = 0;
     // compare the result
-    cmp = DataTypeUtil.compareBasedOnDatatYpe(dataBasedOnDataType1, dataBasedOnDataType2, dataType);
+    cmp = DataTypeUtil
+        .compareBasedOnDatatYpe(dataBasedOnDataTypeFirst, dataBasedOnDataTypeSecond, dataType);
     if (sortOrder == 1) {
       cmp = cmp * -1;
     }

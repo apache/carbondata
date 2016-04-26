@@ -41,7 +41,7 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
     this.blockExecutionInfo = tableBlockExecutionInfos;
   }
 
-  @Override public AbstractScannedResult processBlockData(BlocksChunkHolder blocksChunkHolder) {
+  @Override public AbstractScannedResult scanBlocklet(BlocksChunkHolder blocksChunkHolder) {
     fillKeyValue(blocksChunkHolder);
     return scannedResult;
   }

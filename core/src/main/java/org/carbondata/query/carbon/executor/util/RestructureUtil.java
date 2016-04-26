@@ -47,8 +47,10 @@ public class RestructureUtil {
         new ArrayList<CarbonDimension>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     // selecting only those dimension which is present in the query
     for (CarbonDimension queryDimimension : queryDimensions) {
-      if (tableBlockDimensions.equals(queryDimimension)) {
-        presentDimension.add(queryDimimension);
+      for (CarbonDimension tableDimension : tableBlockDimensions) {
+        if (tableDimension.equals(queryDimimension)) {
+          presentDimension.add(queryDimimension);
+        }
       }
     }
     return presentDimension;

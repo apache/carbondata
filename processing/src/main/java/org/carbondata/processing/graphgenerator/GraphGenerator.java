@@ -1,4 +1,5 @@
 /*
+
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -37,6 +38,7 @@ import java.util.Set;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.CarbonDataLoadSchema;
+import org.carbondata.core.carbon.metadata.CarbonMetadata;
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
@@ -85,6 +87,7 @@ import org.pentaho.di.trans.steps.tableinput.TableInputMeta;
 
 public class GraphGenerator {
 
+  public static final HashMap<String, BlockDetails[]> blockInfo = new HashMap<>();
   /**
    * DEFAULE_LEAF_NODE_SIZE
    */
@@ -109,17 +112,6 @@ public class GraphGenerator {
    * drivers
    */
   private static final Map<String, String> DRIVERS;
-
-  /**
-   * Segment names
-   */
-  private String loadNames;
-
-  /**
-   * map having segment name  as key and segment Modification time stamp as value
-   */
-  private String modificationOrDeletionTime;
-
   /**
    * Comment for <code>LOGGER</code>
    */
@@ -147,6 +139,14 @@ public class GraphGenerator {
   private final String outputLocation = CarbonProperties.getInstance()
       .getProperty("store_output_location", "../unibi-solutions/system/carbon/etl");
   /**
+   * Segment names
+   */
+  private String loadNames;
+  /**
+   * map having segment name  as key and segment Modification time stamp as value
+   */
+  private String modificationOrDeletionTime;
+  /**
    * xAxixLocation
    */
   private int xAxixLocation = 50;
@@ -163,13 +163,13 @@ public class GraphGenerator {
    */
   private String cubeName;
   /**
-   * instance
-   */
-  private CarbonProperties instance;
-  /**
    * cube
    */
   //    private Cube cube;
+  /**
+   * instance
+   */
+  private CarbonProperties instance;
   /**
    * schemaInfo
    */
@@ -215,7 +215,6 @@ public class GraphGenerator {
   private String factStoreLocation;
   private int currentRestructNumber;
   private int allocate;
-
   private String blocksID;
   /**
    * task id, each spark task has a unique id
@@ -229,11 +228,11 @@ public class GraphGenerator {
    * new load start time
    */
   private String factTimeStamp;
-  public static final HashMap<String, BlockDetails[]> blockInfo = new HashMap<>();
 
   public GraphGenerator(DataLoadModel dataLoadModel, boolean isHDFSReadMode, String partitionID,
       String factStoreLocation, int currentRestructNum, int allocate,
       CarbonDataLoadSchema carbonDataLoadSchema, String segmentId) {
+    CarbonMetadata.getInstance().addCarbonTable(carbonDataLoadSchema.getCarbonTable());
     this.schemaInfo = dataLoadModel.getSchemaInfo();
     this.tableName = dataLoadModel.getTableName();
     this.isCSVLoad = dataLoadModel.isCsvLoad();
@@ -1638,8 +1637,7 @@ public class GraphGenerator {
         .setDimensions(CarbonSchemaParser.getCubeDimensions(dimensions, carbonDataLoadSchema));
     graphConfiguration
         .setActualDims(CarbonSchemaParser.getCubeDimensions(dimensions, carbonDataLoadSchema));
-    graphConfiguration
-        .setComplexTypeString(CarbonSchemaParser.getComplexTypeString(dimensions));
+    graphConfiguration.setComplexTypeString(CarbonSchemaParser.getComplexTypeString(dimensions));
     graphConfiguration.setDirectDictionaryColumnString(
         CarbonSchemaParser.getDirectDictionaryColumnString(dimensions, carbonDataLoadSchema));
     String factTableName = carbonDataLoadSchema.getCarbonTable().getFactTableName();

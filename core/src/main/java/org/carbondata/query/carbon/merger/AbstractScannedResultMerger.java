@@ -84,10 +84,10 @@ public abstract class AbstractScannedResultMerger implements ScannedResultMerger
 
     this.lockObject = new Object();
     this.maxNumberOfScannedResultList = maxNumberOfScannedresultList;
-    initialiseResult();
     execService = Executors.newFixedThreadPool(1);
     scannedResultList = new ArrayList<Result>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     this.blockExecutionInfo = blockExecutionInfo;
+    initialiseResult();
   }
 
   /**

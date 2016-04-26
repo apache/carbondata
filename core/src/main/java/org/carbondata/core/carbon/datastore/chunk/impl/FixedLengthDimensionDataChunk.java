@@ -63,7 +63,7 @@ public class FixedLengthDimensionDataChunk implements DimensionColumnDataChunk<b
     if (chunkAttributes.getInvertedIndexes() != null) {
       index = chunkAttributes.getInvertedIndexesReverse()[index];
     }
-    System.arraycopy(data, offset, dataChunk, index * chunkAttributes.getColumnValueSize(),
+    System.arraycopy(dataChunk, index * chunkAttributes.getColumnValueSize(), data, offset,
         chunkAttributes.getColumnValueSize());
     return chunkAttributes.getColumnValueSize();
   }

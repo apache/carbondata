@@ -27,10 +27,8 @@ import org.carbondata.query.carbon.executor.internal.InternalQueryExecutor;
 import org.carbondata.query.carbon.executor.internal.impl.InternalDetailWithOrderQueryExecutor;
 import org.carbondata.query.carbon.model.QueryModel;
 import org.carbondata.query.carbon.result.RowResult;
-import org.carbondata.query.carbon.result.impl.ListBasedResult;
 import org.carbondata.query.carbon.result.iterator.ChunkBasedResultIterator;
 import org.carbondata.query.carbon.result.iterator.ChunkRowIterator;
-import org.carbondata.query.carbon.result.iterator.MemoryBasedResultIterator;
 
 /**
  * Below method will be used to execute the detail query with order by
@@ -39,13 +37,6 @@ public class DetailWithOrderByQueryExecutor extends AbstractQueryExecutor {
 
   @Override public CarbonIterator<RowResult> execute(QueryModel queryModel)
       throws QueryExecutionException {
-    if (queryProperties.dataBlocks.size() == 0) {
-      // if there are not block present then set empty row
-      // and return
-      return new ChunkRowIterator(
-          new ChunkBasedResultIterator(new MemoryBasedResultIterator(new ListBasedResult()),
-              queryProperties, queryModel));
-    }
     // get the execution info
     List<BlockExecutionInfo> blockExecutionInfoList = getBlockExecutionInfos(queryModel);
     // in case of sorting we need to add sort information only for last block as

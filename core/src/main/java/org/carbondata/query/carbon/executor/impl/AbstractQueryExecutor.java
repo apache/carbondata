@@ -162,12 +162,13 @@ public abstract class AbstractQueryExecutor implements QueryExecutor {
 
     // dictionary column unique column id to dictionary mapping
     // which will be used to get column actual data
-
     queryProperties.columnToDictionayMapping = QueryUtil
         .getDimensionDictionaryDetail(queryModel.getQueryDimension(),
             queryModel.getDimAggregationInfo(), queryModel.getExpressions(),
             queryModel.getAbsoluteTableIdentifier());
-
+    // setting the sort dimension index. as it will be updated while getting the sort info
+    // so currently setting it to default 0 means sort is not present in any dimension
+    queryProperties.sortDimIndexes = new byte[queryModel.getQueryDimension().size()];
   }
 
   /**
@@ -266,19 +267,39 @@ public abstract class AbstractQueryExecutor implements QueryExecutor {
     // to check whether older block key update is required or not
     blockExecutionInfo.setFixedKeyUpdateRequired(
         blockKeyGenerator.equals(queryProperties.keyStructureInfo.getKeyGenerator()));
-    // loading the filter executer tree for filter evaluation
-    blockExecutionInfo.setFilterExecuterTree(FilterUtil
-        .getFilterExecuterTree(queryModel.getFilterExpressionResolverTree(), blockKeyGenerator));
-    IndexKey startIndexKey =
-        queryModel.getFilterExpressionResolverTree().getstartKey(blockKeyGenerator);
-    IndexKey endIndexKey = queryModel.getFilterExpressionResolverTree()
-        .getEndKey(blockIndex, queryModel.getAbsoluteTableIdentifier());
+    IndexKey startIndexKey = null;
+    IndexKey endIndexKey = null;
+    if (null != queryModel.getFilterExpressionResolverTree()) {
+      // loading the filter executer tree for filter evaluation
+      blockExecutionInfo.setFilterExecuterTree(FilterUtil
+          .getFilterExecuterTree(queryModel.getFilterExpressionResolverTree(), blockKeyGenerator));
+      startIndexKey = queryModel.getFilterExpressionResolverTree().getstartKey(blockKeyGenerator);
+      endIndexKey = queryModel.getFilterExpressionResolverTree()
+          .getEndKey(blockIndex, queryModel.getAbsoluteTableIdentifier());
+      FilterUtil
+          .getFilterExecuterTree(queryModel.getFilterExpressionResolverTree(), blockKeyGenerator);
+    } else {
+      try {
+        long[] dictionarySurrogateKey =
+            new long[segmentProperties.getDimensions().size() - segmentProperties
+                .getNumberOfNoDictionaryDimension()];
+        byte[] dictionaryStartMdkey =
+            segmentProperties.getDimensionKeyGenerator().generateKey(dictionarySurrogateKey);
+        // TODO need to handle for no dictionary dimensions
+        startIndexKey = new IndexKey(dictionaryStartMdkey, null);
+        Arrays.fill(dictionarySurrogateKey, Long.MAX_VALUE);
+        byte[] dictionaryendMdkey =
+            segmentProperties.getDimensionKeyGenerator().generateKey(dictionarySurrogateKey);
+        // TODO need to handle for no dictionary dimensions
+        endIndexKey = new IndexKey(dictionaryendMdkey, null);
+      } catch (KeyGenException e) {
+        throw new QueryExecutionException(e);
+      }
+    }
     //setting the start index key of the block node
     blockExecutionInfo.setStartKey(startIndexKey);
     //setting the end index key of the block node
     blockExecutionInfo.setEndKey(endIndexKey);
-    FilterUtil
-        .getFilterExecuterTree(queryModel.getFilterExpressionResolverTree(), blockKeyGenerator);
     // expression dimensions
     List<CarbonDimension> expressionDimensions =
         new ArrayList<CarbonDimension>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -299,13 +320,12 @@ public abstract class AbstractQueryExecutor implements QueryExecutor {
         .getMeasureBlockIndexes(queryModel.getQueryMeasures(), expressionMeasures,
             segmentProperties.getMeasuresOrdinalToBlockMapping()));
     // setting the key structure info which will be required
-    // ot update the older block key with new key generator
+    // to update the older block key with new key generator
     blockExecutionInfo.setKeyStructureInfo(queryProperties.keyStructureInfo);
-    // settingthe size of fixed key column (dictionary column)
+    // setting the size of fixed key column (dictionary column)
     blockExecutionInfo.setFixedLengthKeySize(getKeySize(updatedQueryDimension, segmentProperties));
     List<Integer> dictionaryColumnBlockIndex = new ArrayList<Integer>();
     List<Integer> noDictionaryColumnBlockIndex = new ArrayList<Integer>();
-
     // get the block index to be read from file for query dimension
     // for both dictionary columns and no dictionary columns
     QueryUtil.fillQueryDimensionsBlockIndexes(updatedQueryDimension,
@@ -320,18 +340,15 @@ public abstract class AbstractQueryExecutor implements QueryExecutor {
     // setting the no dictionary column block indexes
     blockExecutionInfo.setNoDictionaryBlockIndexes(ArrayUtils.toPrimitive(
         noDictionaryColumnBlockIndex.toArray(new Integer[noDictionaryColumnBlockIndex.size()])));
+    // setting column id to dictionary mapping
     blockExecutionInfo.setColumnIdToDcitionaryMapping(queryProperties.columnToDictionayMapping);
-    // to set the sort info for the block which will be
-    // required to sort the data, this will be set only for
-    // last block as it will be done after all the blocks
-    // processing in done and final merger will handle sorting
-    // so all the block fixed key will be updated based on new key generator
-    // so no need to set for all the block execution info
-    if (true) {
-      blockExecutionInfo.setSortInfo(getSortInfos(queryModel.getQueryDimension(), queryModel));
-    }
-
+    // setting each column value size
     blockExecutionInfo.setEachColumnValueSize(segmentProperties.getEachDimColumnValueSize());
+    blockExecutionInfo.setDimensionAggregator(QueryUtil
+        .getDimensionDataAggregatorList1(queryModel.getDimAggregationInfo(),
+            segmentProperties.getDimensionOrdinalToBlockMapping(),
+            segmentProperties.getColumnGroupAndItsKeygenartor(),
+            queryProperties.columnToDictionayMapping));
     try {
       // to set column group and its key structure info which will be used
       // to
@@ -407,6 +424,7 @@ public abstract class AbstractQueryExecutor implements QueryExecutor {
     sortInfos.setDimensionSortOrder(queryModel.getSortOrder());
     sortInfos.setMaskedByteRangeForSorting(maskedByteRangeForSorting);
     sortInfos.setSortDimensionIndex(queryProperties.sortDimIndexes);
+    sortInfos.setSortDimension(orderByDimension);
     return sortInfos;
   }
 

@@ -26,6 +26,7 @@ import org.carbondata.core.carbon.datastore.block.AbstractIndex;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.query.carbonfilterinterface.FilterExecuterType;
 import org.carbondata.query.evaluators.DimColumnResolvedFilterInfo;
+import org.carbondata.query.executer.exception.QueryExecutionException;
 import org.carbondata.query.expression.ColumnExpression;
 import org.carbondata.query.expression.DataType;
 import org.carbondata.query.expression.Expression;
@@ -75,9 +76,14 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
             isExpressionResolve = true;
           } else {
 
-            dimColResolvedFilterInfo.setFilterValues(FilterUtil
-                .getFilterList(absoluteTableIdentifier, rightExp, columnExpression,
-                    this.isIncludeFilter));
+            try {
+              dimColResolvedFilterInfo.setFilterValues(FilterUtil
+                  .getFilterList(absoluteTableIdentifier, rightExp, columnExpression,
+                      this.isIncludeFilter));
+            } catch (QueryExecutionException e) {
+              // TODO Auto-generated catch block
+              e.printStackTrace();
+            }
             dimColResolvedFilterInfo.setDimension(columnExpression.getDimension());
           }
         }
@@ -96,10 +102,15 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
             isExpressionResolve = true;
           } else {
             dimColResolvedFilterInfo.setColumnIndex(columnExpression.getDimension().getOrdinal());
-            dimColResolvedFilterInfo
-                .addDimensionResolvedFilterInstance(columnExpression.getDimension(), FilterUtil
-                    .getFilterList(absoluteTableIdentifier, leftExp, columnExpression,
-                        isIncludeFilter));
+            try {
+              dimColResolvedFilterInfo
+                  .addDimensionResolvedFilterInstance(columnExpression.getDimension(), FilterUtil
+                      .getFilterList(absoluteTableIdentifier, leftExp, columnExpression,
+                          isIncludeFilter));
+            } catch (QueryExecutionException e) {
+              // TODO Auto-generated catch block
+              e.printStackTrace();
+            }
           }
         }
       } else {
@@ -111,15 +122,25 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
       List<ColumnExpression> columnList = conditionalExpression.getColumnList();
       dimColResolvedFilterInfo.setColumnIndex(columnList.get(0).getDimension().getOrdinal());
       if (columnList.get(0).getDimension().getEncoder().isEmpty()) {
-        dimColResolvedFilterInfo.setFilterValues(FilterUtil
-            .getFilterList(absoluteTableIdentifier, exp, columnList.get(0), isIncludeFilter));
+        try {
+          dimColResolvedFilterInfo.setFilterValues(FilterUtil
+              .getFilterList(absoluteTableIdentifier, exp, columnList.get(0), isIncludeFilter));
+        } catch (QueryExecutionException e) {
+          // TODO Auto-generated catch block
+          e.printStackTrace();
+        }
       } else if (!(columnList.get(0).getDimension().getDataType()
           == org.carbondata.core.carbon.metadata.datatype.DataType.STRUCT
           || columnList.get(0).getDimension().getDataType()
           == org.carbondata.core.carbon.metadata.datatype.DataType.STRUCT)) {
-        dimColResolvedFilterInfo.setFilterValues(FilterUtil
-            .getFilterListForAllValues(absoluteTableIdentifier, exp, columnList.get(0),
-                isIncludeFilter));
+        try {
+          dimColResolvedFilterInfo.setFilterValues(FilterUtil
+              .getFilterListForAllValues(absoluteTableIdentifier, exp, columnList.get(0),
+                  isIncludeFilter));
+        } catch (QueryExecutionException e) {
+          // TODO Auto-generated catch block
+          e.printStackTrace();
+        }
       }
     }
 
@@ -186,8 +207,13 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
     if (null == dimColResolvedFilterInfo.getEndIndexKey())
 
     {
-      endKey = FilterUtil.getEndKey(dimColResolvedFilterInfo.getDimensionResolvedFilterInstance(),
-          absoluteTableIdentifier, endKey, tableSegment.getSegmentProperties().getDimensions());
+      try {
+        endKey = FilterUtil.getEndKey(dimColResolvedFilterInfo.getDimensionResolvedFilterInstance(),
+            absoluteTableIdentifier, endKey, tableSegment.getSegmentProperties().getDimensions());
+      } catch (QueryExecutionException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
       endIndexKey = FilterUtil.createIndexKeyFromResolvedFilterVal(endKey,
           tableSegment.getSegmentProperties().getDimensionKeyGenerator());
     } else {

@@ -41,6 +41,11 @@ public class AbsoluteTableIdentifier implements Serializable {
    */
   private CarbonTableIdentifier carbonTableIdentifier;
 
+  public AbsoluteTableIdentifier(String storePath, CarbonTableIdentifier carbonTableIdentifier) {
+    this.storePath = storePath;
+    this.carbonTableIdentifier = carbonTableIdentifier;
+  }
+
   /**
    * @return the storePath
    */
@@ -49,24 +54,10 @@ public class AbsoluteTableIdentifier implements Serializable {
   }
 
   /**
-   * @param storePath the storePath to set
-   */
-  public void setStorePath(String storePath) {
-    this.storePath = storePath;
-  }
-
-  /**
    * @return the carbonTableIdentifier
    */
   public CarbonTableIdentifier getCarbonTableIdentifier() {
     return carbonTableIdentifier;
-  }
-
-  /**
-   * @param carbonTableIdentifier the carbonTableIdentifier to set
-   */
-  public void setCarbonTableIdentifier(CarbonTableIdentifier carbonTableIdentifier) {
-    this.carbonTableIdentifier = carbonTableIdentifier;
   }
 
   /**

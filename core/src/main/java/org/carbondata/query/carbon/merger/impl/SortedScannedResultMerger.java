@@ -41,6 +41,7 @@ import org.carbondata.query.carbon.result.Result;
 import org.carbondata.query.carbon.result.comparator.FixedLengthKeyResultComparator;
 import org.carbondata.query.carbon.result.comparator.VariableLengthKeyResultComparator;
 import org.carbondata.query.carbon.result.iterator.MemoryBasedResultIterator;
+import org.carbondata.query.carbon.wrappers.ByteArrayWrapper;
 import org.carbondata.query.util.CarbonEngineLogEvent;
 
 import org.apache.commons.collections.comparators.ComparatorChain;
@@ -129,22 +130,24 @@ public class SortedScannedResultMerger extends AbstractScannedResultMerger {
     try {
       while (mergedScannedResult.hasNext()) {
         wrapper = new ListBasedResultWrapper();
+        ByteArrayWrapper key = mergedScannedResult.getKey();
         keyArray = keyStructureInfo.getKeyGenerator()
-            .getKeyArray(mergedScannedResult.getKey().getDictionaryKey(),
-                keyStructureInfo.getMaskedBytes());
+            .getKeyArray(key.getDictionaryKey(), keyStructureInfo.getMaskedBytes());
         for (int i = 0; i < sortInfo.getSortDimension().size(); i++) {
           if (CarbonUtil
-              .hasEncoding(sortInfo.getSortDimension().get(i).getEncoder(), Encoding.DICTIONARY)) {
+              .hasEncoding(sortInfo.getSortDimension().get(i).getEncoder(), Encoding.DICTIONARY)
+              && sortInfo.getSortDimensionIndex()[i] == 1) {
             keyArray[sortInfo.getSortDimension().get(i).getKeyOrdinal()] =
                 blockExecutionInfo.getColumnIdToDcitionaryMapping()
                     .get(sortInfo.getSortDimension().get(i).getColumnId()).getSortedIndex(
                     (int) keyArray[sortInfo.getSortDimension().get(i).getKeyOrdinal()]);
           }
         }
-        mergedScannedResult.getKey()
-            .setDictionaryKey(keyStructureInfo.getKeyGenerator().generateKey(keyArray));
-        wrapper.setKey(mergedScannedResult.getKey());
+        key.setDictionaryKey(getMaskedKey(keyStructureInfo.getKeyGenerator().generateKey(keyArray),
+            keyStructureInfo));
+        wrapper.setKey(key);
         wrapper.setValue(mergedScannedResult.getValue());
+        result.add(wrapper);
       }
     } catch (KeyGenException e) {
       throw new QueryExecutionException(e);
@@ -152,5 +155,25 @@ public class SortedScannedResultMerger extends AbstractScannedResultMerger {
     initialiseResult();
     Collections.sort(result, getMergerChainComparator(sortInfo));
     mergedScannedResult.addScannedResult(result);
+  }
+
+  /**
+   * Below method will be used to get the masked key
+   *
+   * @param data
+   * @return keyStructureInfo
+   */
+  private byte[] getMaskedKey(byte[] data, KeyStructureInfo keyStructureInfo) {
+    int keySize = blockExecutionInfo.getFixedLengthKeySize();
+    int[] actualMaskByteRanges = keyStructureInfo.getMaskByteRanges();
+    byte[] maxKey = keyStructureInfo.getMaxKey();
+    byte[] maskedKey = new byte[keySize];
+    int counter = 0;
+    int byteRange = 0;
+    for (int i = 0; i < keySize; i++) {
+      byteRange = actualMaskByteRanges[i];
+      maskedKey[counter++] = (byte) (data[byteRange] & maxKey[byteRange]);
+    }
+    return maskedKey;
   }
 }
