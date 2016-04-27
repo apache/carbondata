@@ -33,9 +33,11 @@ import org.carbondata.query.expression.Expression;
 import org.carbondata.query.expression.conditional.BinaryConditionalExpression;
 import org.carbondata.query.expression.conditional.ConditionalExpression;
 import org.carbondata.query.filters.measurefilter.util.FilterUtil;
+import org.carbondata.query.schema.metadata.DimColumnFilterInfo;
 
 public class ConditionalFilterResolverImpl implements FilterResolverIntf {
 
+  private static final long serialVersionUID = 1838955268462201691L;
   protected Expression exp;
   protected boolean isExpressionResolve;
   protected boolean isIncludeFilter;
@@ -53,8 +55,11 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
    * This API will resolve the filter expression and generates the
    * dictionaries for executing/evaluating the filter expressions in the
    * executer layer.
+   *
+   * @throws QueryExecutionException
    */
-  @Override public void resolve(AbsoluteTableIdentifier absoluteTableIdentifier) {
+  @Override public void resolve(AbsoluteTableIdentifier absoluteTableIdentifier)
+      throws QueryExecutionException {
 
     if ((!isExpressionResolve) && exp instanceof BinaryConditionalExpression) {
       BinaryConditionalExpression binaryConditionalExpression = (BinaryConditionalExpression) exp;
@@ -76,15 +81,14 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
             isExpressionResolve = true;
           } else {
 
-            try {
-              dimColResolvedFilterInfo.setFilterValues(FilterUtil
-                  .getFilterList(absoluteTableIdentifier, rightExp, columnExpression,
-                      this.isIncludeFilter));
-            } catch (QueryExecutionException e) {
-              // TODO Auto-generated catch block
-              e.printStackTrace();
-            }
+            DimColumnFilterInfo filterInfo = FilterUtil
+                .getFilterList(absoluteTableIdentifier, rightExp, columnExpression,
+                    isIncludeFilter);
+            dimColResolvedFilterInfo.setFilterValues(filterInfo);
+            dimColResolvedFilterInfo
+                .addDimensionResolvedFilterInstance(columnExpression.getDimension(), filterInfo);
             dimColResolvedFilterInfo.setDimension(columnExpression.getDimension());
+            dimColResolvedFilterInfo.setColumnIndex(columnExpression.getDimension().getOrdinal());
           }
         }
       } else if (rightExp instanceof ColumnExpression) {
@@ -102,15 +106,13 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
             isExpressionResolve = true;
           } else {
             dimColResolvedFilterInfo.setColumnIndex(columnExpression.getDimension().getOrdinal());
-            try {
-              dimColResolvedFilterInfo
-                  .addDimensionResolvedFilterInstance(columnExpression.getDimension(), FilterUtil
-                      .getFilterList(absoluteTableIdentifier, leftExp, columnExpression,
-                          isIncludeFilter));
-            } catch (QueryExecutionException e) {
-              // TODO Auto-generated catch block
-              e.printStackTrace();
-            }
+            DimColumnFilterInfo filterInfo = FilterUtil
+                .getFilterList(absoluteTableIdentifier, leftExp, columnExpression, isIncludeFilter);
+            dimColResolvedFilterInfo.setFilterValues(filterInfo);
+            dimColResolvedFilterInfo.setDimension(columnExpression.getDimension());
+            dimColResolvedFilterInfo
+                .addDimensionResolvedFilterInstance(columnExpression.getDimension(), filterInfo);
+
           }
         }
       } else {

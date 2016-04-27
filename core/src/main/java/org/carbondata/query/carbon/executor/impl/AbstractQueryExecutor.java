@@ -276,8 +276,6 @@ public abstract class AbstractQueryExecutor implements QueryExecutor {
       startIndexKey = queryModel.getFilterExpressionResolverTree().getstartKey(blockKeyGenerator);
       endIndexKey = queryModel.getFilterExpressionResolverTree()
           .getEndKey(blockIndex, queryModel.getAbsoluteTableIdentifier());
-      FilterUtil
-          .getFilterExecuterTree(queryModel.getFilterExpressionResolverTree(), blockKeyGenerator);
     } else {
       try {
         long[] dictionarySurrogateKey =

@@ -22,7 +22,7 @@ public class DimColumnExecuterFilterInfo {
 
   byte[][] filterKeys;
 
-  public DimColumnExecuterFilterInfo(byte[][] filterKeys) {
+  public void setFilterKeys(byte[][] filterKeys) {
     this.filterKeys = filterKeys;
   }
 

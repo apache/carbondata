@@ -27,6 +27,11 @@ import org.carbondata.query.carbonfilterinterface.FilterExecuterType;
 import org.carbondata.query.evaluators.DimColumnResolvedFilterInfo;
 
 public class LogicalFilterResolverImpl implements FilterResolverIntf {
+  /**
+   *
+   */
+  private static final long serialVersionUID = 5734382980564402914L;
+
   protected FilterResolverIntf leftEvalutor;
 
   protected FilterResolverIntf rightEvalutor;
