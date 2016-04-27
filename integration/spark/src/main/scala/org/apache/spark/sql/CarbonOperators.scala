@@ -67,7 +67,7 @@ case class CarbonCubeScan(
   var extraPreds: Seq[Expression] = Nil
   val allDims = new scala.collection.mutable.HashSet[String]()
   // val carbonTable = CarbonMetadata.getInstance().getCarbonTable(cubeName)
-  val carbonCatalog = sqlContext.catalog.asInstanceOf[CarbonMetastoreCatalog]
+  @transient val carbonCatalog = sqlContext.catalog.asInstanceOf[CarbonMetastoreCatalog]
 
   def processAggregateExpr(plan: CarbonQueryPlan, currentAggregate: AggregateExpression1,
                            queryOrder: Int): Int = {
@@ -475,8 +475,6 @@ case class CarbonCubeScan(
 
     val model = CarbonQueryUtil.createQueryModel(
       absoluteTableIdentifier, buildCarbonPlan, carbonTable)
-    val splits = CarbonQueryUtil.getTableSplits(relation.schemaName, cubeName, buildCarbonPlan,
-      relation.cubeMeta.partitioner)
     val kv: KeyVal[CarbonKey, CarbonValue] = new KeyValImpl()
     // setting queryid
     buildCarbonPlan.setQueryId(oc.getConf("queryId", System.nanoTime() + ""))
@@ -496,7 +494,6 @@ case class CarbonCubeScan(
         buildCarbonPlan.getFilterExpression,
         kv,
         conf,
-        splits,
         cubeCreationTime,
         schemaLastUpdatedTime,
         carbonCatalog.storePath)

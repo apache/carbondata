@@ -130,8 +130,7 @@ public final class CarbonQueryUtil {
 
     List<String> listOfValidSlices = new ArrayList<String>(10);
     String dataPath = executerModel.getCube().getMetaDataFilepath() + File.separator
-        + CarbonCommonConstants.LOADMETADATA_FILENAME
-        + CarbonCommonConstants.CARBON_METADATA_EXTENSION;
+        + CarbonCommonConstants.LOADMETADATA_FILENAME;
     DataInputStream dataInputStream = null;
     Gson gsonObjectToRead = new Gson();
     AtomicFileOperations fileOperation =
@@ -215,6 +214,7 @@ public final class CarbonQueryUtil {
     //TODO : Need to find out right table as per the dims and msrs requested.
 
     String factTableName = carbonTable.getFactTableName();
+    executorModel.setAbsoluteTableIdentifier(absoluteTableIdentifier);
 
     fillExecutorModel(queryPlan, carbonTable, executorModel, factTableName);
     List<CarbonDimension> dims =
@@ -250,7 +250,7 @@ public final class CarbonQueryUtil {
     queryModel.setAbsoluteTableIdentifier(new AbsoluteTableIdentifier(currentTemp.getStorePath(),
         new CarbonTableIdentifier(queryPlan.getSchemaName(), factTableName)));
 
-    //fill dimensions
+    // fill dimensions
     List<CarbonDimension> carbonDimensions = new ArrayList<CarbonDimension>();
     for (CarbonPlanDimension planDimension : queryPlan.getDimensions()) {
       carbonDimensions.add(
@@ -260,9 +260,16 @@ public final class CarbonQueryUtil {
 
     fillSortInfoInModel(queryModel, queryPlan.getSortedDimemsions(), carbonTable);
 
-    List<CarbonMeasure> measures = carbonTable.getMeasureByTableName(factTableName);
+    // fill measures
+    List<CarbonMeasure> carbonMeasures = carbonTable.getMeasureByTableName(factTableName);
     queryModel.setQueryMeasures(
         getMeasures(queryPlan.getMeasures(), carbonTable, queryModel.isDetailQuery(), queryModel));
+
+    // fill filter Column Expression
+    if (null != queryPlan.getFilterExpression()) {
+      traverseAndSetDimensionOrMsrTypeForColumnExpressions(queryPlan.getFilterExpression(),
+          carbonDimensions, carbonMeasures);
+    }
 
     queryModel.setCountStarQuery(queryPlan.isCountStartQuery());
   }
@@ -383,12 +390,12 @@ public final class CarbonQueryUtil {
     String columnName;
     columnName = col.getColumnName();
     dim = CarbonQueryParseUtil.findDimension(dimensions, columnName);
+    col.setCarbonColumn(dim);
     col.setDimension(dim);
     col.setDimension(true);
     if (null == dim) {
       msr = getCarbonMetadataMeasure(columnName, measures);
-      // TODO: measure set as setColumn needs to be handled
-      //col.setDimension(msr);
+      col.setCarbonColumn(msr);
       col.setDimension(false);
     }
   }

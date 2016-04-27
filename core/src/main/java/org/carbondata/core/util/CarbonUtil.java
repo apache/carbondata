@@ -1535,8 +1535,7 @@ public final class CarbonUtil {
     BufferedReader buffReader = null;
     InputStreamReader inStream = null;
     String metadataFileName = cubeFolderPath + CarbonCommonConstants.FILE_SEPARATOR
-        + CarbonCommonConstants.LOADMETADATA_FILENAME
-        + CarbonCommonConstants.CARBON_METADATA_EXTENSION;
+        + CarbonCommonConstants.LOADMETADATA_FILENAME;
     LoadMetadataDetails[] listOfLoadFolderDetailsArray;
 
     AtomicFileOperations fileOperation =

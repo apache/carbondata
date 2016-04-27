@@ -38,7 +38,6 @@ import org.carbondata.core.carbon.datastore.block.TableBlockInfo
 import org.carbondata.core.iterator.CarbonIterator
 import org.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit}
 import org.carbondata.integration.spark.KeyVal
-import org.carbondata.integration.spark.splits.TableSplit
 import org.carbondata.integration.spark.util.CarbonSparkInterFaceLogEvent
 import org.carbondata.lcm.status.SegmentStatusManager
 import org.carbondata.query.carbon.executor.QueryExecutorFactory
@@ -58,16 +57,16 @@ class CarbonSparkPartition(rddId: Int, val idx: Int,
   override def hashCode(): Int = 41 * (41 + rddId) + idx
 }
 
-  /**
+
+ /**
   * This RDD is used to perform query.
   */
-class CarbonQueryRDD[K, V](
+  class CarbonQueryRDD[K, V](
   sc: SparkContext,
   queryModel: QueryModel,
   filterExpression: Expression,
   keyClass: KeyVal[K, V],
   @transient conf: Configuration,
-  splits: Array[TableSplit],
   cubeCreationTime: Long,
   schemaLastUpdatedTime: Long,
   baseStoreLocation: String)
@@ -114,14 +113,12 @@ class CarbonQueryRDD[K, V](
 
   override def compute(thepartition: Partition, context: TaskContext): Iterator[(K, V)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass().getName());
-    var cubeUniqueName: String = ""
-    var levelCacheKeys: scala.collection.immutable.List[String] = Nil
     val iter = new Iterator[(K, V)] {
       var rowIterator: CarbonIterator[RowResult] = _
       var queryStartTime: Long = 0
       try {
         val carbonSparkPartition = thepartition.asInstanceOf[CarbonSparkPartition]
-        val carbonInputSplit = carbonSparkPartition.carbonInputSplit
+        val carbonInputSplit = carbonSparkPartition.serializableHadoopSplit.value
 
         // fill table block info
         val tableBlockInfoList = new util.ArrayList[TableBlockInfo]();
@@ -141,7 +138,7 @@ class CarbonQueryRDD[K, V](
           );
         }
         // execute query
-        QueryExecutorFactory.getQueryExecutor(queryModel).execute(queryModel)
+        rowIterator = QueryExecutorFactory.getQueryExecutor(queryModel).execute(queryModel)
         // TODO: CarbonQueryUtil.isQuickFilter quick filter from dictionary needs to support
       } catch {
         case e: Exception =>
@@ -160,7 +157,6 @@ class CarbonQueryRDD[K, V](
       override def hasNext: Boolean = {
         if (!finished && !havePair) {
           finished = !rowIterator.hasNext()
-          //          finished = !iter2.hasNext()
           havePair = !finished
         }
         if (finished) {
@@ -187,12 +183,11 @@ class CarbonQueryRDD[K, V](
     iter
   }
 
-
-    /**
+   /**
     * Get the preferred locations where to launch this task.
     */
-  override def getPreferredLocations(split: Partition): Seq[String] = {
-    val theSplit = split.asInstanceOf[CarbonSparkPartition]
+  override def getPreferredLocations(partition: Partition): Seq[String] = {
+    val theSplit = partition.asInstanceOf[CarbonSparkPartition]
     theSplit.serializableHadoopSplit.value.getLocations.filter(_ != "localhost")
   }
 }

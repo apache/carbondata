@@ -25,7 +25,7 @@ import org.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.carbondata.core.carbon.datastore.DataRefNode;
 import org.carbondata.core.carbon.datastore.block.AbstractIndex;
 import org.carbondata.core.carbon.datastore.impl.btree.BTreeNode;
-import org.carbondata.query.executer.exception.QueryExecutionException;
+import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.expression.Expression;
 import org.carbondata.query.filter.resolver.FilterResolverIntf;
 

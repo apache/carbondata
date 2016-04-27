@@ -72,8 +72,7 @@ public final class DeleteLoadFromMetadata {
             "Metadata lock has been successfully acquired");
 
         String dataLoadLocation = cubeFolderPath + CarbonCommonConstants.FILE_SEPARATOR
-            + CarbonCommonConstants.LOADMETADATA_FILENAME
-            + CarbonCommonConstants.CARBON_METADATA_EXTENSION;
+            + CarbonCommonConstants.LOADMETADATA_FILENAME;
 
         DataOutputStream dataOutputStream = null;
         Gson gsonObjectToWrite = new Gson();

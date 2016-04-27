@@ -36,9 +36,12 @@ import org.carbondata.core.carbon.datastore.impl.btree.BTreeNode;
 import org.carbondata.core.carbon.datastore.impl.btree.BlockBtreeLeafNode;
 import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
+import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.expression.Expression;
 import org.carbondata.query.filter.resolver.FilterResolverIntf;
 import org.carbondata.query.filters.FilterExpressionProcessor;
+
+import static org.carbondata.core.constants.CarbonCommonConstants.INVALID_SEGMENT_ID;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -60,6 +63,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.security.TokenCache;
 import org.apache.hadoop.mapreduce.task.JobContextImpl;
 import org.apache.hadoop.util.StringUtils;
+
 
 /**
  * Carbon Input format class representing one carbon table
@@ -116,11 +120,22 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
    * are used to get table path to read.
    *
    * @param job
-   * @return
+   * @return List<InputSplit> list of CarbonInputSplit
    * @throws IOException
    */
   @Override public List<InputSplit> getSplits(JobContext job) throws IOException {
-    return super.getSplits(job);
+    List<InputSplit> splits = super.getSplits(job);
+    List<InputSplit> carbonSplits = new ArrayList<InputSplit>(splits.size());
+    // identify table blocks
+    for (InputSplit inputSplit : splits) {
+      FileSplit fileSplit = (FileSplit) inputSplit;
+      int segmentId = CarbonTablePath.DataPathUtil.getSegmentId(fileSplit.getPath().toString());
+      if (INVALID_SEGMENT_ID == segmentId){
+        continue;
+      }
+      carbonSplits.add(CarbonInputSplit.from(segmentId, fileSplit));
+    }
+    return carbonSplits;
   }
 
   /**
@@ -132,7 +147,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
    * @throws IOException
    */
   public List<InputSplit> getSplits(JobContext job, Expression filterExpression)
-      throws IOException, IndexBuilderException {
+      throws IOException, IndexBuilderException, QueryExecutionException {
 
     FilterExpressionProcessor filterExpressionProcessor = new FilterExpressionProcessor();
     AbsoluteTableIdentifier absoluteTableIdentifier =
@@ -188,7 +203,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
    * @throws IOException
    */
   public FilterResolverIntf getResolvedFilter(JobContext job, Expression filterExpression)
-      throws IOException, IndexBuilderException {
+      throws IOException, IndexBuilderException, QueryExecutionException {
 
     FilterExpressionProcessor filterExpressionProcessor = new FilterExpressionProcessor();
     AbsoluteTableIdentifier absoluteTableIdentifier =
@@ -221,8 +236,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
 
       // identify table blocks
       for (InputSplit inputSplit : getSplits(newJob)) {
-        CarbonInputSplit carbonInputSplit =
-            CarbonInputSplit.from(segmentId, (FileSplit) inputSplit);
+        CarbonInputSplit carbonInputSplit = (CarbonInputSplit) inputSplit;
         tableBlockInfoList.add(
             new TableBlockInfo(carbonInputSplit.getPath().toString(), carbonInputSplit.getStart(),
                 segmentId, carbonInputSplit.getLocations(), carbonInputSplit.getLength()));

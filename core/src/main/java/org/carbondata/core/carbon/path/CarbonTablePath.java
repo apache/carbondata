@@ -20,7 +20,10 @@ package org.carbondata.core.carbon.path;
 
 import java.io.File;
 
+import static org.carbondata.core.constants.CarbonCommonConstants.INVALID_SEGMENT_ID;
+
 import org.apache.hadoop.fs.Path;
+
 
 /**
  * Helps to get Table content paths.
@@ -231,6 +234,33 @@ public class CarbonTablePath extends Path {
       int startIndex = carbonDataFileName.indexOf("-", firstDashPos + 1) + 1;
       int endIndex = carbonDataFileName.indexOf("-", startIndex);
       return carbonDataFileName.substring(startIndex, endIndex);
+    }
+  }
+
+  /**
+   * To manage data path and composition
+   */
+  public static class DataPathUtil {
+
+    /**
+     * gets segement id from given absolute data file path
+     */
+    public static int getSegmentId(String dataFileAbsolutePath) {
+      // find segment id from last of data file path
+      int endIndex = dataFileAbsolutePath.lastIndexOf(File.separator);
+      // + 1 for size of "/"
+      int startIndex = dataFileAbsolutePath.lastIndexOf(File.separator, endIndex - 1) + 1;
+      String segmentDirStr = dataFileAbsolutePath.substring(startIndex, endIndex);
+      //identify id in segment_<id>
+      String[] segmentDirSplits = segmentDirStr.split("_");
+      try {
+        if (segmentDirSplits.length == 2) {
+          return Integer.parseInt(segmentDirSplits[1]);
+        }
+      } catch (Exception e){
+        return INVALID_SEGMENT_ID;
+      }
+      return INVALID_SEGMENT_ID;
     }
   }
 }

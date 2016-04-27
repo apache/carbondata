@@ -24,9 +24,10 @@ import org.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.carbondata.core.carbon.datastore.IndexKey;
 import org.carbondata.core.carbon.datastore.block.AbstractIndex;
 import org.carbondata.core.keygenerator.KeyGenerator;
+import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.carbonfilterinterface.FilterExecuterType;
 import org.carbondata.query.evaluators.DimColumnResolvedFilterInfo;
-import org.carbondata.query.executer.exception.QueryExecutionException;
+
 
 public interface FilterResolverIntf extends Serializable {
 

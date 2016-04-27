@@ -10,9 +10,6 @@ import org.carbondata.query.filter.resolver.ConditionalFilterResolverImpl;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Test;
-
-import static org.junit.Assert.fail;
 
 public class FilterExpressionResolverTest {
 
@@ -34,12 +31,12 @@ public class FilterExpressionResolverTest {
           new AbsoluteTableIdentifier("storePath", carbonTableIdentifier);
       condResolverImpl.resolve(absoluteTableIdentifier);
       if (null != condResolverImpl.getDimColResolvedFilterInfo()) {
-        assert(true);
+        assert (true);
       } else {
-        assert(false);
+        assert (false);
       }
     } catch (Exception e) {
-      assert(false);
+      assert (false);
     }
 
   }
@@ -47,9 +44,4 @@ public class FilterExpressionResolverTest {
   @After public void tearDown() throws Exception {
 
   }
-
-  @Test public void test() {
-    fail("Not yet implemented");
-  }
-
 }
