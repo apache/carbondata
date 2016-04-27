@@ -19,6 +19,7 @@
 
 package org.carbondata.query.evaluators;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -31,7 +32,12 @@ import org.carbondata.core.metadata.CarbonMetadata.Dimension;
 import org.carbondata.query.complex.querytypes.GenericQueryType;
 import org.carbondata.query.schema.metadata.DimColumnFilterInfo;
 
-public class DimColumnResolvedFilterInfo {
+public class DimColumnResolvedFilterInfo implements Serializable {
+  /**
+   *
+   */
+  private static final long serialVersionUID = 3428115141211084114L;
+
   /**
    * column index in file
    */

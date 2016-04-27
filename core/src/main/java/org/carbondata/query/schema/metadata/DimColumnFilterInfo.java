@@ -19,9 +19,15 @@
 
 package org.carbondata.query.schema.metadata;
 
+import java.io.Serializable;
 import java.util.List;
 
-public class DimColumnFilterInfo {
+public class DimColumnFilterInfo implements Serializable {
+  /**
+   *
+   */
+  private static final long serialVersionUID = 8181578747306832771L;
+
   private boolean isIncludeFilter;
 
   private List<Integer> filterList;

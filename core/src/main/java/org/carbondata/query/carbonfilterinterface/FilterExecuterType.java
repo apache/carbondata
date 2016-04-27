@@ -18,7 +18,9 @@
  */
 package org.carbondata.query.carbonfilterinterface;
 
-public enum FilterExecuterType {
+import java.io.Serializable;
+
+public enum FilterExecuterType implements Serializable {
 
   INCLUDE, EXCLUDE, OR, AND, RESTRUCTURE, ROWLEVEL
 

@@ -35,6 +35,7 @@ import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.query.carbonfilterinterface.ExpressionType;
+import org.carbondata.query.executer.exception.QueryExecutionException;
 import org.carbondata.query.expression.BinaryExpression;
 import org.carbondata.query.expression.Expression;
 import org.carbondata.query.expression.conditional.BinaryConditionalExpression;
@@ -59,11 +60,12 @@ public class FilterExpressionProcessor implements FilterProcessor {
    * @param expressionTree  , filter expression tree
    * @param tableIdentifier ,contains carbon store informations
    * @return a filter resolver tree
+   * @throws QueryExecutionException
    */
   public FilterResolverIntf getFilterResolver(Expression expressionTree,
-      AbsoluteTableIdentifier tableIdentifier) {
+      AbsoluteTableIdentifier tableIdentifier) throws QueryExecutionException {
     if (null != expressionTree && null != tableIdentifier) {
-      getFilterResolvertree(expressionTree, tableIdentifier);
+      return getFilterResolvertree(expressionTree, tableIdentifier);
 
     }
     return null;
@@ -146,9 +148,10 @@ public class FilterExpressionProcessor implements FilterProcessor {
    * @param expressionTree , resolver tree which will hold the resolver tree based on
    *                       filter expression.
    * @return FilterResolverIntf type.
+   * @throws QueryExecutionException
    */
   private FilterResolverIntf getFilterResolvertree(Expression expressionTree,
-      AbsoluteTableIdentifier tableIdentifier) {
+      AbsoluteTableIdentifier tableIdentifier) throws QueryExecutionException {
     FilterResolverIntf filterEvaluatorTree =
         createFilterResolverTree(expressionTree, tableIdentifier);
     traverseAndResolveTree(filterEvaluatorTree, tableIdentifier);
@@ -163,9 +166,10 @@ public class FilterExpressionProcessor implements FilterProcessor {
    *
    * @param filterResolverTree
    * @param tableIdentifier
+   * @throws QueryExecutionException
    */
   private void traverseAndResolveTree(FilterResolverIntf filterResolverTree,
-      AbsoluteTableIdentifier tableIdentifier) {
+      AbsoluteTableIdentifier tableIdentifier) throws QueryExecutionException {
     if (null == filterResolverTree) {
       return;
     }

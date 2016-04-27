@@ -540,8 +540,7 @@ public final class FilterUtil {
       endKey[i] = getMaxValue(tableIdentifier, carbonDimensions.get(i));
     }
     getEndKeyWithFilter(dimensionFilter, endKey);
-    return null;
-
+    return endKey;
   }
 
   private static List<CarbonDimension> getCarbonDimsMappedToKeyGenerator(
@@ -660,6 +659,6 @@ public final class FilterUtil {
       KeyGenerator blockKeyGenerator, CarbonDimension dimension,
       DimColumnExecuterFilterInfo dimColumnExecuterInfo) {
     byte[][] keysBasedOnFilter = getKeyArray(filterValues, dimension, blockKeyGenerator);
-    dimColumnExecuterInfo = new DimColumnExecuterFilterInfo(keysBasedOnFilter);
+    dimColumnExecuterInfo.setFilterKeys(keysBasedOnFilter);
   }
 }

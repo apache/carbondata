@@ -19,8 +19,14 @@
 
 package org.carbondata.query.evaluators;
 
+import java.io.Serializable;
 
-public class MeasureColumnResolvedFilterInfo {
+public class MeasureColumnResolvedFilterInfo implements Serializable {
+  /**
+   *
+   */
+  private static final long serialVersionUID = 4222568289115151561L;
+
   private int columnIndex = -1;
 
   private int rowIndex = -1;
@@ -35,7 +41,7 @@ public class MeasureColumnResolvedFilterInfo {
 
   private Object defaultValue;
 
-  private org.carbondata.core.carbon.metadata.datatype.DataType  type;
+  private org.carbondata.core.carbon.metadata.datatype.DataType type;
 
   public int getColumnIndex() {
     return columnIndex;

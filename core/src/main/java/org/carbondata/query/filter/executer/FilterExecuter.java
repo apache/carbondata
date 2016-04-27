@@ -27,8 +27,6 @@ public interface FilterExecuter {
   /**
    * API will apply filter based on resolver instance
    *
-   * @param blocksChunkHolder
-   * @param placeHolder
    * @return
    */
   BitSet applyFilter(BlocksChunkHolder blocksChunkHolder);
