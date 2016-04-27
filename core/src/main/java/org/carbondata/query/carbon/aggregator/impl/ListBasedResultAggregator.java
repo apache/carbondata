@@ -111,9 +111,9 @@ public class ListBasedResultAggregator implements ScannedResultAggregator {
     ListBasedResultWrapper resultWrapper;
     while (scannedResult.hasNext() && (limit == -1 || rowCounter < limit)) {
       wrapper = new ByteArrayWrapper();
-      wrapper.setComplexTypesKeys(scannedResult.getComplexTypeKeyArray());
-      wrapper.setNoDictionaryKeys(scannedResult.getNoDictionaryKeyArray());
       wrapper.setDictionaryKey(scannedResult.getDictionaryKeyArray());
+      wrapper.setNoDictionaryKeys(scannedResult.getNoDictionaryKeyArray());
+      wrapper.setComplexTypesKeys(scannedResult.getComplexTypeKeyArray());
       resultWrapper = new ListBasedResultWrapper();
       measureAggregator=getNewAggregator();
       resultWrapper.setKey(wrapper);

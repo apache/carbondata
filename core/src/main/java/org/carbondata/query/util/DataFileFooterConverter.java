@@ -44,6 +44,8 @@ import org.carbondata.core.carbon.metadata.leafnode.indexes.LeafNodeIndex;
 import org.carbondata.core.carbon.metadata.leafnode.indexes.LeafNodeMinMaxIndex;
 import org.carbondata.core.carbon.metadata.leafnode.sort.SortState;
 import org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
+import org.carbondata.core.datastorage.store.FileHolder;
+import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.metadata.ValueEncoderMeta;
 import org.carbondata.core.reader.CarbonFooterReader;
 import org.carbondata.core.util.ByteUtil;
@@ -63,10 +65,15 @@ public class DataFileFooterConverter {
       LogServiceFactory.getLogService(DataFileFooterConverter.class.getName());
 
   /**
-   * Below method will be used to get thrift file meta to wrapper file meta
+   * Below method will be used to convert thrift file meta to wrapper file meta
    */
-  public DataFileFooter readDataFileFooter(String filePath, long offset) throws IOException {
-    CarbonFooterReader reader = new CarbonFooterReader(filePath, offset);
+  public DataFileFooter readDataFileFooter(String filePath, long blockOffset, long blockLength)
+      throws IOException {
+    long completeBlockLength = blockOffset + blockLength;
+    long footerPointer = completeBlockLength - 8;
+    FileHolder fileReader = FileFactory.getFileHolder(FileFactory.getFileType(filePath));
+    long actualFooterOffset = fileReader.readLong(filePath, footerPointer);
+    CarbonFooterReader reader = new CarbonFooterReader(filePath, actualFooterOffset);
     FileFooter footer = reader.readFooter();
     DataFileFooter dataFileFooter = new DataFileFooter();
     dataFileFooter.setVersionId(footer.getVersion());

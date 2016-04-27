@@ -93,9 +93,9 @@ public class MapBasedResultAggregator implements ScannedResultAggregator {
 
     while (scannedResult.hasNext()) {
       // fill the keys
-      wrapper.setComplexTypesKeys(scannedResult.getComplexTypeKeyArray());
-      wrapper.setNoDictionaryKeys(scannedResult.getNoDictionaryKeyArray());
       wrapper.setDictionaryKey(scannedResult.getDictionaryKeyArray());
+      wrapper.setNoDictionaryKeys(scannedResult.getNoDictionaryKeyArray());
+      wrapper.setComplexTypesKeys(scannedResult.getComplexTypeKeyArray());
       MeasureAggregator[] measureAggregators = aggData.get(wrapper);
       // if null then row was not present in the map
       // so we need to create a new measure aggregator and

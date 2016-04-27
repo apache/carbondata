@@ -127,7 +127,7 @@ class CarbonQueryRDD[K, V](
         val tableBlockInfoList = new util.ArrayList[TableBlockInfo]();
         tableBlockInfoList.add(new TableBlockInfo(carbonInputSplit.getPath.getName,
           carbonInputSplit.getStart,
-          carbonInputSplit.getSegmentId, carbonInputSplit.getLocations
+          carbonInputSplit.getSegmentId, carbonInputSplit.getLocations, carbonInputSplit.getLength
         )
         )
         queryModel.setTableBlockInfos(tableBlockInfoList)

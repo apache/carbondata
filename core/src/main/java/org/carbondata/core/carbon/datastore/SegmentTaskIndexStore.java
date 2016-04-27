@@ -62,7 +62,7 @@ public class SegmentTaskIndexStore {
 
   /**
    * table and its lock object to this will be useful in case of concurrent
-   * query scenario when more than one query comes for same table and in that
+   * query scenario when more than one query comes for same table and in  that
    * case it will ensure that only one query will able to load the blocks
    */
   private Map<AbsoluteTableIdentifier, Object> tableLockMap;
@@ -143,7 +143,8 @@ public class SegmentTaskIndexStore {
 
               for (TableBlockInfo tableBlockInfo : taskIdToBlockInfoIterator.getValue()) {
                 footer = CarbonUtil
-                    .readMetadatFile(tableBlockInfo.getFilePath(), tableBlockInfo.getBlockOffset());
+                    .readMetadatFile(tableBlockInfo.getFilePath(), tableBlockInfo.getBlockOffset(),
+                        tableBlockInfo.getBlockLength());
                 footer.setTableBlockInfo(tableBlockInfo);
                 footerList.add(footer);
               }

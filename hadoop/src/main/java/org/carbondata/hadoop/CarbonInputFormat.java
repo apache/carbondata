@@ -167,8 +167,8 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     //for each segment fetch blocks matching filter in Driver BTree
     for (int segmentNo : getValidSegments(job)) {
       List<DataRefNode> dataRefNodes =
-          getDataBlocksOfSegment(job, filterExpressionProcessor,
-              absoluteTableIdentifier, filterResolver, segmentNo);
+          getDataBlocksOfSegment(job, filterExpressionProcessor, absoluteTableIdentifier,
+              filterResolver, segmentNo);
       for (DataRefNode dataRefNode : dataRefNodes) {
         BlockBtreeLeafNode blockletLeafNode = (BlockBtreeLeafNode) dataRefNode;
         TableBlockInfo tableBlockInfo = blockletLeafNode.getTableBlockInfo();
@@ -225,7 +225,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
             CarbonInputSplit.from(segmentId, (FileSplit) inputSplit);
         tableBlockInfoList.add(
             new TableBlockInfo(carbonInputSplit.getPath().toString(), carbonInputSplit.getStart(),
-                segmentId, carbonInputSplit.getLocations()));
+                segmentId, carbonInputSplit.getLocations(), carbonInputSplit.getLength()));
       }
 
       Map<Integer, List<TableBlockInfo>> segmentToTableBlocksInfos = new HashMap<>();
@@ -240,9 +240,9 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     List<DataRefNode> resultFilterredBlocks = new LinkedList<DataRefNode>();
     // build result
     for (AbstractIndex abstractIndex : stringTableSegmentMap.values()) {
-      List<DataRefNode> filterredBlocks = filterExpressionProcessor.getFilterredBlocks(
-          (BTreeNode) abstractIndex.getDataRefNode(),
-          resolver, abstractIndex, absoluteTableIdentifier);
+      List<DataRefNode> filterredBlocks = filterExpressionProcessor
+          .getFilterredBlocks((BTreeNode) abstractIndex.getDataRefNode(), resolver, abstractIndex,
+              absoluteTableIdentifier);
       resultFilterredBlocks.addAll(filterredBlocks);
     }
     return resultFilterredBlocks;
@@ -284,8 +284,8 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     CarbonTablePath tablePath = getTablePath(job);
 
     // get tokens for all the required FileSystem for table path
-    TokenCache.obtainTokensForNamenodes(job.getCredentials(),
-        new Path[] { tablePath }, job.getConfiguration());
+    TokenCache.obtainTokensForNamenodes(job.getCredentials(), new Path[] { tablePath },
+        job.getConfiguration());
 
     //get all data files of valid partitions and segments
     for (int i = 0; i < partitionsToConsider.length; ++i) {
