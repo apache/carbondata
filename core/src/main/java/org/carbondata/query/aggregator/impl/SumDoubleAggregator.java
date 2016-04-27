@@ -62,7 +62,7 @@ public class SumDoubleAggregator extends AbstractMeasureAggregatorBasic {
 
   @Override public void agg(MeasureColumnDataChunk dataChunk, int index) {
     if (!dataChunk.getNullValueIndexHolder().getBitSet().get(index)) {
-      aggVal = dataChunk.getMeasureDataHolder().getReadableDoubleValueByIndex(index);
+      aggVal+= dataChunk.getMeasureDataHolder().getReadableDoubleValueByIndex(index);
       firstTime = false;
     }
   }

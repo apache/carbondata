@@ -115,14 +115,15 @@ public class ListBasedResultAggregator implements ScannedResultAggregator {
       wrapper.setNoDictionaryKeys(scannedResult.getNoDictionaryKeyArray());
       wrapper.setDictionaryKey(scannedResult.getDictionaryKeyArray());
       resultWrapper = new ListBasedResultWrapper();
+      measureAggregator=getNewAggregator();
       resultWrapper.setKey(wrapper);
-      resultWrapper.setValue(getNewAggregator());
+      resultWrapper.setValue(measureAggregator);
       listBasedResult.add(resultWrapper);
       rowCounter++;
+      // call data aggregator to convert measure value to some aggreagtor
+      // object
+      dataAggregator.aggregateData(scannedResult, measureAggregator);
     }
-    // call data aggregator to convert measure value to some aggreagtor
-    // object
-    dataAggregator.aggregateData(scannedResult, measureAggregator);
     return rowCounter;
   }
 

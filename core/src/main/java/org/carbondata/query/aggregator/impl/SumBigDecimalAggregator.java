@@ -57,7 +57,7 @@ public class SumBigDecimalAggregator extends AbstractMeasureAggregatorBasic {
 
   @Override public void agg(MeasureColumnDataChunk dataChunk, int index) {
     if (!dataChunk.getNullValueIndexHolder().getBitSet().get(index)) {
-      aggVal = dataChunk.getMeasureDataHolder().getReadableBigDecimalValueByIndex(index);
+      aggVal.add(dataChunk.getMeasureDataHolder().getReadableBigDecimalValueByIndex(index));
       firstTime = false;
     }
   }

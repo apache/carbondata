@@ -52,7 +52,7 @@ public class SumLongAggregator extends AbstractMeasureAggregatorBasic {
 
   @Override public void agg(MeasureColumnDataChunk dataChunk, int index) {
     if (!dataChunk.getNullValueIndexHolder().getBitSet().get(index)) {
-      aggVal = dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(index);
+      aggVal+= dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(index);
       firstTime = false;
     }
   }
