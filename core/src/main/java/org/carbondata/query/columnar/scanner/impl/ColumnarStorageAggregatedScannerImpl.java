@@ -47,7 +47,6 @@ public class ColumnarStorageAggregatedScannerImpl extends AbstractColumnarStorag
   @Override public void scanStore() {
     while (leafIterator.hasNext()) {
       blockDataHolder.setLeafDataBlock(leafIterator.next());
-      addToQueryStats(blockDataHolder);
       blockDataHolder.reset();
       AbstractColumnarScanResult unProcessData =
           blockProcessor.getScannedData(blockDataHolder, noDictionaryColIndexes);

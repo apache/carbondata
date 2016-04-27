@@ -28,7 +28,7 @@ import org.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.query.evaluators.FilterEvaluator;
+import org.carbondata.query.filter.resolver.FilterResolverIntf;
 
 /**
  * Query model which will have all the detail
@@ -70,7 +70,7 @@ public class QueryModel implements Serializable {
   /**
    * filter tree
    */
-  private FilterEvaluator filterEvaluatorTree;
+  private FilterResolverIntf filterExpressionResolverTree;
 
   /**
    * in case of lime query we need to know how many
@@ -129,6 +129,11 @@ public class QueryModel implements Serializable {
         new ArrayList<DimensionAggregatorInfo>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     expressions =
         new ArrayList<CustomAggregateExpression>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    queryDimension = new ArrayList<CarbonDimension>();
+    queryMeasures = new ArrayList<CarbonMeasure>();
+    sortDimension = new ArrayList<CarbonDimension>();
+    sortOrder = new byte[0];
+    paritionColumns = new ArrayList<String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
   }
 
@@ -317,15 +322,15 @@ public class QueryModel implements Serializable {
   /**
    * @return the filterEvaluatorTree
    */
-  public FilterEvaluator getFilterEvaluatorTree() {
-    return filterEvaluatorTree;
+  public FilterResolverIntf getFilterExpressionResolverTree() {
+    return filterExpressionResolverTree;
   }
 
   /**
    * @param filterEvaluatorTree the filterEvaluatorTree to set
    */
-  public void setFilterEvaluatorTree(FilterEvaluator filterEvaluatorTree) {
-    this.filterEvaluatorTree = filterEvaluatorTree;
+  public void setFilterExpressionResolverTree(FilterResolverIntf filterExpressionResolverTree) {
+    this.filterExpressionResolverTree = filterExpressionResolverTree;
   }
 
   /**

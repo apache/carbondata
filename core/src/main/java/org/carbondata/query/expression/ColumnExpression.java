@@ -19,6 +19,8 @@
 
 package org.carbondata.query.expression;
 
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonColumn;
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.carbondata.core.metadata.CarbonMetadata.Dimension;
 import org.carbondata.query.carbonfilterinterface.ExpressionType;
 import org.carbondata.query.carbonfilterinterface.RowIntf;
@@ -39,10 +41,22 @@ public class ColumnExpression extends LeafExpression {
 
   private Dimension dim;
 
+  private CarbonDimension dimension;
+
+  private CarbonColumn carbonColumn;
+
   public ColumnExpression(String columnName, DataType dataType) {
     this.columnName = columnName;
     this.dataType = dataType;
 
+  }
+
+  public CarbonDimension getDimension() {
+    return dimension;
+  }
+
+  public void setDimension(CarbonDimension dimension) {
+    this.dimension = dimension;
   }
 
   public String getColumnName() {
@@ -98,6 +112,14 @@ public class ColumnExpression extends LeafExpression {
 
   public void setDim(Dimension dim) {
     this.dim = dim;
+  }
+
+  public CarbonColumn getCarbonColumn() {
+    return carbonColumn;
+  }
+
+  public void setCarbonColumn(CarbonColumn carbonColumn) {
+    this.carbonColumn = carbonColumn;
   }
 
 }

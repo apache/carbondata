@@ -33,27 +33,7 @@ import org.carbondata.core.metadata.CarbonMetadata.Measure;
 import org.carbondata.query.aggregator.CustomCarbonAggregateExpression;
 import org.carbondata.query.aggregator.CustomMeasureAggregator;
 import org.carbondata.query.aggregator.MeasureAggregator;
-import org.carbondata.query.aggregator.impl.AvgBigDecimalAggregator;
-import org.carbondata.query.aggregator.impl.AvgDoubleAggregator;
-import org.carbondata.query.aggregator.impl.AvgLongAggregator;
-import org.carbondata.query.aggregator.impl.AvgOfAvgBigDecimalAggregator;
-import org.carbondata.query.aggregator.impl.AvgOfAvgDoubleAggregator;
-import org.carbondata.query.aggregator.impl.AvgOfAvgLongAggregator;
-import org.carbondata.query.aggregator.impl.CalculatedMeasureAggregatorImpl;
-import org.carbondata.query.aggregator.impl.CountAggregator;
-import org.carbondata.query.aggregator.impl.DistinctCountAggregator;
-import org.carbondata.query.aggregator.impl.DistinctStringCountAggregator;
-import org.carbondata.query.aggregator.impl.DummyBigDecimalAggregator;
-import org.carbondata.query.aggregator.impl.DummyDoubleAggregator;
-import org.carbondata.query.aggregator.impl.DummyLongAggregator;
-import org.carbondata.query.aggregator.impl.MaxAggregator;
-import org.carbondata.query.aggregator.impl.MinAggregator;
-import org.carbondata.query.aggregator.impl.SumBigDecimalAggregator;
-import org.carbondata.query.aggregator.impl.SumDistinctBigDecimalAggregator;
-import org.carbondata.query.aggregator.impl.SumDistinctDoubleAggregator;
-import org.carbondata.query.aggregator.impl.SumDistinctLongAggregator;
-import org.carbondata.query.aggregator.impl.SumDoubleAggregator;
-import org.carbondata.query.aggregator.impl.SumLongAggregator;
+import org.carbondata.query.aggregator.impl.*;
 import org.carbondata.query.executer.CarbonQueryExecutorModel;
 import org.carbondata.query.util.CarbonEngineLogEvent;
 
@@ -142,33 +122,21 @@ public final class AggUtil {
       Object minValue, SqlStatement.Type dataType) {
     // this will be used for aggregate table because aggregate tables will
     // have one of the measure as fact count
-    if (hasFactCount && CarbonCommonConstants.AVERAGE.equalsIgnoreCase(aggregatorType)) {
-      switch (dataType) {
-        case LONG:
-
-          return new AvgOfAvgLongAggregator();
-        case DECIMAL:
-
-          return new AvgOfAvgBigDecimalAggregator();
-        default:
-
-          return new AvgOfAvgDoubleAggregator();
-      }
-    } else {
-      return getAggregator(aggregatorType, isNoDictionary, generator,
-          isSurrogateBasedDistinctCountRequired, minValue, dataType);
-    }
+    return getAggregator(aggregatorType, isNoDictionary, generator,
+        isSurrogateBasedDistinctCountRequired, minValue, dataType);
   }
 
   /**
-   * Factory method, this method determines what agg needs to be given based
-   * on MeasureAggregator type
+   * get Aggregator by dataType and aggregatorType
    *
-   * @param aggregatorType aggregate name
-   * @param generator      key generator
-   * @return MeasureAggregator
+   * @param aggregatorType
+   * @param isNoDictionary
+   * @param generator
+   * @param isSurrogateGeneratedDistinctCount
+   * @param minValue
+   * @param dataType
+   * @return
    */
-
   private static MeasureAggregator getAggregator(String aggregatorType, boolean isNoDictionary,
       KeyGenerator generator, boolean isSurrogateGeneratedDistinctCount, Object minValue,
       SqlStatement.Type dataType) {

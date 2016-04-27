@@ -29,9 +29,6 @@ import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.columnar.aggregator.ColumnarAggregatorInfo;
 import org.carbondata.query.columnar.datastoreblockprocessor.ColumnarDataStoreBlockProcessorInfo;
-import org.carbondata.query.columnar.datastoreblockprocessor.DataStoreBlockProcessor;
-import org.carbondata.query.columnar.datastoreblockprocessor.impl.FilterDataStoreProcessor;
-import org.carbondata.query.columnar.datastoreblockprocessor.impl.NonFilterDataStoreProcessor;
 import org.carbondata.query.columnar.scanner.ColumnarStorageScanner;
 import org.carbondata.query.columnar.scanner.impl.ColumnarStorageAggregatedScannerImpl;
 import org.carbondata.query.columnar.scanner.impl.ColumnarStorageScannerImpl;
@@ -83,7 +80,6 @@ public class ColumnarSliceExecuter implements Callable<Void> {
     columnarStorageScannerInfo.setDatablock(dataStoreBlock);
     columnarStorageScannerInfo.setTotalNumberOfBlocksToScan(numberOfNodesToScan);
     columnarStorageScannerInfo.setColumnarAggregatorInfo(getColumnarAggregatorInfo(info));
-    columnarStorageScannerInfo.setBlockProcessor(getDataStoreBlockProcessor(info));
     columnarStorageScannerInfo.setScannedResultProcessor(scannedResultProcessor);
     columnarStorageScannerInfo.setRestructurHolder(info.getRestructureHolder());
     columnarStorageScannerInfo.setAutoAggregateTableRequest(info.isCustomMeasure());
@@ -164,16 +160,4 @@ public class ColumnarSliceExecuter implements Callable<Void> {
     return blockProcessorInfo;
   }
 
-  private DataStoreBlockProcessor getDataStoreBlockProcessor(SliceExecutionInfo sliceInfo) {
-    DataStoreBlockProcessor blockProcessor = null;
-    if (null == sliceInfo.getFilterEvaluatorTree()) {
-      blockProcessor =
-          new NonFilterDataStoreProcessor(getColumnarDataStoreBlockProcessorInfo(sliceInfo));
-    } else {
-      blockProcessor =
-          new FilterDataStoreProcessor(getColumnarDataStoreBlockProcessorInfo(sliceInfo),
-              sliceInfo.getFilterEvaluatorTree());
-    }
-    return blockProcessor;
-  }
 }

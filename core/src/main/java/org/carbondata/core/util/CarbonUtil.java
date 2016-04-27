@@ -51,6 +51,7 @@ import java.util.concurrent.Executors;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.carbon.datastore.chunk.impl.FixedLengthDimensionDataChunk;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.carbon.metadata.leafnode.DataFileFooter;
@@ -1195,13 +1196,13 @@ public final class CarbonUtil {
     return -1;
   }
 
-  public static int getFirstIndexUsingBinarySearch(ColumnarKeyStoreDataHolder keyBlockArray,
+  public static int getFirstIndexUsingBinarySearch(FixedLengthDimensionDataChunk dimColumnDataChunk,
       int low, int high, byte[] compareValue) {
     int cmpResult = 0;
     while (high >= low) {
       int mid = (low + high) / 2;
       cmpResult = ByteUtil.UnsafeComparer.INSTANCE
-          .compareTo(keyBlockArray.getKeyBlockData(), mid * compareValue.length,
+          .compareTo(dimColumnDataChunk.getCompleteDataChunk(), mid * compareValue.length,
               compareValue.length, compareValue, 0, compareValue.length);
       if (cmpResult < 0) {
         low = mid + 1;
@@ -1210,8 +1211,9 @@ public final class CarbonUtil {
       } else {
         int currentIndex = mid;
         while (currentIndex - 1 >= 0 && ByteUtil.UnsafeComparer.INSTANCE
-            .compareTo(keyBlockArray.getKeyBlockData(), (currentIndex - 1) * compareValue.length,
-                compareValue.length, compareValue, 0, compareValue.length) == 0) {
+            .compareTo(dimColumnDataChunk.getCompleteDataChunk(),
+                (currentIndex - 1) * compareValue.length, compareValue.length, compareValue, 0,
+                compareValue.length) == 0) {
           --currentIndex;
         }
         return currentIndex;
@@ -1791,82 +1793,6 @@ public final class CarbonUtil {
   }
 
   /**
-   * Thread to delete the cubes
-   *
-   * @author m00258959
-   */
-  private static final class DeleteCube implements Callable<Void> {
-    private CarbonFile file;
-
-    private DeleteCube(CarbonFile file) {
-      this.file = file;
-    }
-
-    @Override public Void call() throws Exception {
-      deleteFoldersAndFiles(file);
-      return null;
-    }
-
-  }
-
-  private static class CarbonFileComparator implements Comparator<CarbonFile> {
-    /**
-     * File extension
-     */
-    private String fileExt;
-
-    public CarbonFileComparator(String fileExt) {
-      this.fileExt = fileExt;
-    }
-
-    @Override public int compare(CarbonFile file1, CarbonFile file2) {
-      String firstFileName = file1.getName().split(fileExt)[0];
-      String secondFileName = file2.getName().split(fileExt)[0];
-      int lastIndexOfO1 = firstFileName.lastIndexOf('_');
-      int lastIndexOfO2 = secondFileName.lastIndexOf('_');
-      int f1 = 0;
-      int f2 = 0;
-
-      try {
-        f1 = Integer.parseInt(firstFileName.substring(lastIndexOfO1 + 1));
-        f2 = Integer.parseInt(secondFileName.substring(lastIndexOfO2 + 1));
-      } catch (NumberFormatException nfe) {
-        return -1;
-      }
-      return (f1 < f2) ? -1 : (f1 == f2 ? 0 : 1);
-    }
-  }
-
-  /**
-   * class to sort aggregate folder list in descending order
-   */
-  private static class AggTableComparator implements Comparator<String> {
-    public int compare(String aggTable1, String aggTable2) {
-      int index1 = aggTable1.lastIndexOf(CarbonCommonConstants.UNDERSCORE);
-      int index2 = aggTable2.lastIndexOf(CarbonCommonConstants.UNDERSCORE);
-      int n1 = Integer.parseInt(aggTable1.substring(index1 + 1));
-      int n2 = Integer.parseInt(aggTable2.substring(index2 + 1));
-      if (n1 > n2) {
-        return -1;
-      } else if (n1 < n2) {
-        return 1;
-      } else {
-        return 0;
-      }
-    }
-  }
-
-  private static class SliceMetaDataFileComparator implements Comparator<CarbonFile> {
-
-    @Override public int compare(CarbonFile o1, CarbonFile o2) {
-      int firstSliceNumber = Integer.parseInt(o1.getName().split("\\.")[1]);
-      int secondSliceNumber = Integer.parseInt(o2.getName().split("\\.")[1]);
-      return firstSliceNumber - secondSliceNumber;
-    }
-
-  }
-
-  /**
    * This method will check the existence of a file at a given path
    */
   public static boolean isFileExists(String fileName) {
@@ -2082,6 +2008,82 @@ public final class CarbonUtil {
     int surrogate = buffer.getInt();
     buffer.clear();
     return surrogate;
+  }
+
+  /**
+   * Thread to delete the cubes
+   *
+   * @author m00258959
+   */
+  private static final class DeleteCube implements Callable<Void> {
+    private CarbonFile file;
+
+    private DeleteCube(CarbonFile file) {
+      this.file = file;
+    }
+
+    @Override public Void call() throws Exception {
+      deleteFoldersAndFiles(file);
+      return null;
+    }
+
+  }
+
+  private static class CarbonFileComparator implements Comparator<CarbonFile> {
+    /**
+     * File extension
+     */
+    private String fileExt;
+
+    public CarbonFileComparator(String fileExt) {
+      this.fileExt = fileExt;
+    }
+
+    @Override public int compare(CarbonFile file1, CarbonFile file2) {
+      String firstFileName = file1.getName().split(fileExt)[0];
+      String secondFileName = file2.getName().split(fileExt)[0];
+      int lastIndexOfO1 = firstFileName.lastIndexOf('_');
+      int lastIndexOfO2 = secondFileName.lastIndexOf('_');
+      int f1 = 0;
+      int f2 = 0;
+
+      try {
+        f1 = Integer.parseInt(firstFileName.substring(lastIndexOfO1 + 1));
+        f2 = Integer.parseInt(secondFileName.substring(lastIndexOfO2 + 1));
+      } catch (NumberFormatException nfe) {
+        return -1;
+      }
+      return (f1 < f2) ? -1 : (f1 == f2 ? 0 : 1);
+    }
+  }
+
+  /**
+   * class to sort aggregate folder list in descending order
+   */
+  private static class AggTableComparator implements Comparator<String> {
+    public int compare(String aggTable1, String aggTable2) {
+      int index1 = aggTable1.lastIndexOf(CarbonCommonConstants.UNDERSCORE);
+      int index2 = aggTable2.lastIndexOf(CarbonCommonConstants.UNDERSCORE);
+      int n1 = Integer.parseInt(aggTable1.substring(index1 + 1));
+      int n2 = Integer.parseInt(aggTable2.substring(index2 + 1));
+      if (n1 > n2) {
+        return -1;
+      } else if (n1 < n2) {
+        return 1;
+      } else {
+        return 0;
+      }
+    }
+  }
+
+  private static class SliceMetaDataFileComparator implements Comparator<CarbonFile> {
+
+    @Override public int compare(CarbonFile o1, CarbonFile o2) {
+      int firstSliceNumber = Integer.parseInt(o1.getName().split("\\.")[1]);
+      int secondSliceNumber = Integer.parseInt(o2.getName().split("\\.")[1]);
+      return firstSliceNumber - secondSliceNumber;
+    }
+
   }
 
 }

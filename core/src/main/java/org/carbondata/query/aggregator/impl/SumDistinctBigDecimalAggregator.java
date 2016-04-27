@@ -28,8 +28,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
+import org.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.carbondata.core.util.DataTypeUtil;
 import org.carbondata.query.aggregator.MeasureAggregator;
 
@@ -74,9 +74,11 @@ public class SumDistinctBigDecimalAggregator extends AbstractMeasureAggregatorBa
         newVal instanceof BigDecimal ? (BigDecimal) newVal : new BigDecimal(newVal.toString()));
   }
 
-  @Override public void agg(CarbonReadDataHolder newVal, int index) {
-    BigDecimal valueBigDecimal = newVal.getReadableBigDecimalValueByIndex(index);
-    valueSet.add(valueBigDecimal);
+  @Override public void agg(MeasureColumnDataChunk dataChunk, int index) {
+    if (!dataChunk.getNullValueIndexHolder().getBitSet().get(index)) {
+      valueSet.add(dataChunk.getMeasureDataHolder().getReadableBigDecimalValueByIndex(index));
+      firstTime = false;
+    }
   }
 
   /**
@@ -203,5 +205,10 @@ public class SumDistinctBigDecimalAggregator extends AbstractMeasureAggregatorBa
     BigDecimal otherVal = msr.getBigDecimalValue();
 
     return msrValObj.compareTo(otherVal);
+  }
+
+  @Override public MeasureAggregator getNew() {
+    // TODO Auto-generated method stub
+    return new SumDistinctBigDecimalAggregator();
   }
 }

@@ -29,6 +29,7 @@ import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.metadata.LeafNodeInfoColumnar;
 import org.carbondata.core.reader.CarbonFooterReader;
 import org.carbondata.core.util.CarbonMetadataUtil;
+import org.carbondata.format.ColumnSchema;
 
 import org.junit.After;
 import org.junit.Before;
@@ -64,8 +65,9 @@ public class CarbonFooterWriterTest {
 
     List<LeafNodeInfoColumnar> infoColumnars = getLeafNodeInfoColumnars();
 
-    writer.writeFooter(
-        CarbonMetadataUtil.convertFileFooter(infoColumnars, 6, new int[] { 2, 4, 5, 7 }), 0);
+    writer.writeFooter(CarbonMetadataUtil
+        .convertFileFooter(infoColumnars, 6, new int[] { 2, 4, 5, 7 },
+            new ArrayList<ColumnSchema>()), 0);
 
     CarbonFooterReader metaDataReader = new CarbonFooterReader(filePath, 0);
     assertTrue(metaDataReader.readFooter() != null);
@@ -81,8 +83,9 @@ public class CarbonFooterWriterTest {
 
     List<LeafNodeInfoColumnar> infoColumnars = getLeafNodeInfoColumnars();
 
-    writer.writeFooter(
-        CarbonMetadataUtil.convertFileFooter(infoColumnars, 6, new int[] { 2, 4, 5, 7 }), 0);
+    writer.writeFooter(CarbonMetadataUtil
+        .convertFileFooter(infoColumnars, 6, new int[] { 2, 4, 5, 7 },
+            new ArrayList<ColumnSchema>()), 0);
 
     CarbonFooterReader metaDataReader = new CarbonFooterReader(filePath, 0);
     List<LeafNodeInfoColumnar> nodeInfoColumnars =

@@ -7,6 +7,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.List;
 
 import org.carbondata.common.logging.LogService;
@@ -37,7 +38,7 @@ public class CarbonMetadataUtil {
    * @return FileFooter
    */
   public static FileFooter convertFileFooter(List<LeafNodeInfoColumnar> infoList, int numCols,
-      int[] cardinalities) throws IOException {
+      int[] cardinalities, List<ColumnSchema> columnSchemaList) throws IOException {
 
     SegmentInfo segmentInfo = new SegmentInfo();
     segmentInfo.setNum_cols(numCols);
@@ -49,8 +50,7 @@ public class CarbonMetadataUtil {
     for (LeafNodeInfoColumnar info : infoList) {
       footer.addToBlocklet_index_list(getLeafNodeIndex(info));
     }
-    //TODO: Need to set the schema here.
-    footer.setTable_columns(new ArrayList<ColumnSchema>());
+    footer.setTable_columns(columnSchemaList);
     for (LeafNodeInfoColumnar info : infoList) {
       footer.addToBlocklet_info_list(getLeafNodeInfo(info));
     }
@@ -100,11 +100,13 @@ public class CarbonMetadataUtil {
     leafNodeInfoColumnar.getKeyLengths();
     int j = 0;
     int aggregateIndex = 0;
+    boolean[] isSortedKeyColumn = leafNodeInfoColumnar.getIsSortedKeyColumn();
+    boolean[] aggKeyBlock = leafNodeInfoColumnar.getAggKeyBlock();
     for (int i = 0; i < leafNodeInfoColumnar.getKeyLengths().length; i++) {
       DataChunk dataChunk = new DataChunk();
       dataChunk.setChunk_meta(getChunkCompressionMeta());
-      boolean[] isSortedKeyColumn = leafNodeInfoColumnar.getIsSortedKeyColumn();
-      boolean[] aggKeyBlock = leafNodeInfoColumnar.getAggKeyBlock();
+      List<Encoding> encodings = new ArrayList<Encoding>();
+      encodings.add(Encoding.DICTIONARY);
       //TODO : Need to find how to set it.
       dataChunk.setRow_chunk(false);
       //TODO : Once schema PR is merged and information needs to be passed here.
@@ -114,6 +116,7 @@ public class CarbonMetadataUtil {
       if (aggKeyBlock[i]) {
         dataChunk.setRle_page_offset(leafNodeInfoColumnar.getDataIndexMapOffsets()[aggregateIndex]);
         dataChunk.setRle_page_length(leafNodeInfoColumnar.getDataIndexMapLength()[aggregateIndex]);
+        encodings.add(Encoding.RLE);
         aggregateIndex++;
       }
       dataChunk
@@ -122,12 +125,11 @@ public class CarbonMetadataUtil {
       if (!isSortedKeyColumn[i]) {
         dataChunk.setRowid_page_offset(leafNodeInfoColumnar.getKeyBlockIndexOffSets()[j]);
         dataChunk.setRowid_page_length(leafNodeInfoColumnar.getKeyBlockIndexLength()[j]);
+        encodings.add(Encoding.INVERTED_INDEX);
         j++;
       }
 
       //TODO : Right now the encodings are happening at runtime. change as per this encoders.
-      List<Encoding> encodings = new ArrayList<Encoding>();
-      encodings.add(Encoding.DICTIONARY);
       dataChunk.setEncoders(encodings);
 
       colDataChunks.add(dataChunk);
@@ -145,6 +147,12 @@ public class CarbonMetadataUtil {
       List<Encoding> encodings = new ArrayList<Encoding>();
       encodings.add(Encoding.DELTA);
       dataChunk.setEncoders(encodings);
+      //TODO writing dummy presence meta need to set actual presence
+      //meta
+      PresenceMeta presenceMeta = new PresenceMeta();
+      presenceMeta.setPresent_bit_streamIsSet(true);
+      presenceMeta.setPresent_bit_stream(new BitSet().toByteArray());
+      dataChunk.setPresence(presenceMeta);
       //TODO : PresenceMeta needs to be implemented and set here
       // dataChunk.setPresence(new PresenceMeta());
       //TODO : Need to write ValueCompression meta here.
@@ -304,19 +312,25 @@ public class CarbonMetadataUtil {
 
       listOfNodeInfo.get(i).setStartKey(bTreeIndexList.getStart_key());
       listOfNodeInfo.get(i).setEndKey(bTreeIndexList.getEnd_key());
-
       byte[][] min = new byte[minMaxIndexList.getMin_values().size()][];
-      List<ByteBuffer> minValues = minMaxIndexList.getMin_values();
-      for (int j = 0; j < minValues.size(); j++) {
-        min[j] = minValues.get(j).array();
-      }
-      listOfNodeInfo.get(i).setColumnMinData(min);
-
       byte[][] max = new byte[minMaxIndexList.getMax_values().size()][];
-      List<ByteBuffer> maxValues = minMaxIndexList.getMax_values();
-      for (int j = 0; j < maxValues.size(); j++) {
-        max[j] = maxValues.get(j).array();
+      for (int j = 0; j < minMaxIndexList.getMax_valuesSize(); j++) {
+        min[j] = minMaxIndexList.getMin_values().get(j).array();
+        max[j] = minMaxIndexList.getMax_values().get(j).array();
       }
+
+      //      byte[][] min = new byte[minMaxIndexList.getMin_values().size()][];
+      //      List<ByteBuffer> minValues = minMaxIndexList.getMin_values();
+      //      for (int j = 0; j < minValues.size(); j++) {
+      //        min[j] = minValues.get(j).array();
+      //      }
+      //      listOfNodeInfo.get(i).setColumnMinData(min);
+      //
+      //      byte[][] max = new byte[minMaxIndexList.getMax_values().size()][];
+      //      List<ByteBuffer> maxValues = minMaxIndexList.getMax_values();
+      //      for (int j = 0; j < maxValues.size(); j++) {
+      //        max[j] = maxValues.get(j).array();
+      //    }
       listOfNodeInfo.get(i).setColumnMaxData(max);
     }
   }

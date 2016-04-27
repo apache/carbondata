@@ -21,7 +21,7 @@ package org.carbondata.query.aggregator.impl;
 
 import java.math.BigDecimal;
 
-import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
+import org.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
 import org.carbondata.query.aggregator.MeasureAggregator;
 
 /**
@@ -47,9 +47,11 @@ public abstract class AbstractMeasureAggregatorMaxMin implements MeasureAggregat
     firstTime = false;
   }
 
-  @Override public void agg(CarbonReadDataHolder newVal, int index) {
-    internalAgg(newVal.getReadableDoubleValueByIndex(index));
-    firstTime = false;
+  @Override public void agg(MeasureColumnDataChunk dataChunk, int index) {
+    if (!dataChunk.getNullValueIndexHolder().getBitSet().get(index)) {
+      internalAgg(dataChunk.getMeasureDataHolder().getReadableDoubleValueByIndex(index));
+      firstTime = false;
+    }
   }
 
   @Override public Double getDoubleValue() {

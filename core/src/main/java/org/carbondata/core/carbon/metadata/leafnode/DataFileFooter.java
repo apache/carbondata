@@ -21,6 +21,7 @@ package org.carbondata.core.carbon.metadata.leafnode;
 import java.io.Serializable;
 import java.util.List;
 
+import org.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.carbondata.core.carbon.metadata.leafnode.indexes.LeafNodeIndex;
 import org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 
@@ -65,14 +66,9 @@ public class DataFileFooter implements Serializable {
   private List<ColumnSchema> columnInTable;
 
   /**
-   * full qualified path of the data file
+   * to store the block info detail like file name block index and locations
    */
-  private String filePath;
-
-  /**
-   * offset of the meta data
-   */
-  private long offset;
+  private TableBlockInfo tableBlockInfo;
 
   /**
    * @return the versionId
@@ -159,30 +155,16 @@ public class DataFileFooter implements Serializable {
   }
 
   /**
-   * @return the filePath
+   * @return the tableBlockInfo
    */
-  public String getFilePath() {
-    return filePath;
+  public TableBlockInfo getTableBlockInfo() {
+    return tableBlockInfo;
   }
 
   /**
-   * @param filePath the filePath to set
+   * @param tableBlockInfo the tableBlockInfo to set
    */
-  public void setFilePath(String filePath) {
-    this.filePath = filePath;
-  }
-
-  /**
-   * @return the offset
-   */
-  public long getOffset() {
-    return offset;
-  }
-
-  /**
-   * @param offset the offset to set
-   */
-  public void setOffset(long offset) {
-    this.offset = offset;
+  public void setTableBlockInfo(TableBlockInfo tableBlockInfo) {
+    this.tableBlockInfo = tableBlockInfo;
   }
 }

@@ -44,8 +44,25 @@ public class CarbonColumn implements Serializable {
   protected int ordinal;
 
   /**
-   * default value for in case of restructuring will be used
-   * when older segment does not have particular column
+   * queryOrder
+   */
+  protected int queryOrder;
+
+  public boolean isDistinctQuery() {
+    return isDistinctQuery;
+  }
+
+  public void setDistinctQuery(boolean distinctQuery) {
+    isDistinctQuery = distinctQuery;
+  }
+
+  /**
+   * isQueryForDistinctCount
+   */
+  protected boolean isDistinctQuery;
+  /**
+   * default value for in case of restructuring will be used when older
+   * segment does not have particular column
    */
   protected byte[] defaultValue;
 
@@ -97,13 +114,6 @@ public class CarbonColumn implements Serializable {
   }
 
   /**
-   * @param ordinal the ordinal to set
-   */
-  public void setOrdinal(int ordinal) {
-    this.ordinal = ordinal;
-  }
-
-  /**
    * @return the list of encoder used in dimension
    */
   public List<Encoding> getEncoder() {
@@ -147,4 +157,28 @@ public class CarbonColumn implements Serializable {
     return columnSchema.isComplex();
   }
 
+  /**
+   * @return if column is dimension return true, else false.
+   */
+  public Boolean isDimesion() {
+    return columnSchema.isDimensionColumn();
+  }
+
+  /**
+   * @return the queryOrder
+   */
+  public int getQueryOrder() {
+    return queryOrder;
+  }
+
+  /**
+   * @param queryOrder the queryOrder to set
+   */
+  public void setQueryOrder(int queryOrder) {
+    this.queryOrder = queryOrder;
+  }
+
+  public ColumnSchema getColumnSchema() {
+    return this.columnSchema;
+  }
 }

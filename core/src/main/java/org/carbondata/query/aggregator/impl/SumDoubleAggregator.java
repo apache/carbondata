@@ -24,8 +24,8 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import org.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.carbondata.query.aggregator.MeasureAggregator;
 
 public class SumDoubleAggregator extends AbstractMeasureAggregatorBasic {
@@ -60,9 +60,11 @@ public class SumDoubleAggregator extends AbstractMeasureAggregatorBasic {
     firstTime = false;
   }
 
-  public void agg(CarbonReadDataHolder newVal, int index) {
-    aggVal += newVal.getReadableDoubleValueByIndex(index);
-    firstTime = false;
+  @Override public void agg(MeasureColumnDataChunk dataChunk, int index) {
+    if (!dataChunk.getNullValueIndexHolder().getBitSet().get(index)) {
+      aggVal+= dataChunk.getMeasureDataHolder().getReadableDoubleValueByIndex(index);
+      firstTime = false;
+    }
   }
 
   /**
@@ -156,5 +158,9 @@ public class SumDoubleAggregator extends AbstractMeasureAggregatorBasic {
       return -1;
     }
     return 0;
+  }
+
+  @Override public MeasureAggregator getNew() {
+    return new SumDoubleAggregator();
   }
 }

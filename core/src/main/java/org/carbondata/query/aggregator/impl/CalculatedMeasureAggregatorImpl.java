@@ -24,7 +24,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.math.BigDecimal;
 
-import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
+import org.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
 import org.carbondata.query.aggregator.CalculatedMeasureAggregator;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.executer.calcexp.CarbonCalcFunction;
@@ -45,10 +45,6 @@ public class CalculatedMeasureAggregatorImpl implements CalculatedMeasureAggrega
   }
 
   @Override public void agg(double newVal) {
-
-  }
-
-  @Override public void agg(CarbonReadDataHolder newVal, int index) {
 
   }
 
@@ -119,6 +115,16 @@ public class CalculatedMeasureAggregatorImpl implements CalculatedMeasureAggrega
   }
 
   @Override public void merge(byte[] value) {
+  }
+
+  @Override public void agg(MeasureColumnDataChunk newVal, int index) {
+    // TODO Auto-generated method stub
+
+  }
+
+  @Override public MeasureAggregator getNew() {
+    // TODO Auto-generated method stub
+    return null;
   }
 
 }

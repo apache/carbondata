@@ -25,8 +25,8 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 
+import org.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.carbondata.query.aggregator.MeasureAggregator;
 
 /**
@@ -62,8 +62,10 @@ public class CountAggregator implements MeasureAggregator {
     aggVal++;
   }
 
-  @Override public void agg(CarbonReadDataHolder newVal, int index) {
-    aggVal++;
+  @Override public void agg(MeasureColumnDataChunk dataChunk, int index) {
+    if (!dataChunk.getNullValueIndexHolder().getBitSet().get(index)) {
+      aggVal++;
+    }
   }
 
   /**
@@ -181,6 +183,10 @@ public class CountAggregator implements MeasureAggregator {
 
   public String toString() {
     return aggVal + "";
+  }
+
+  @Override public MeasureAggregator getNew() {
+    return new CountAggregator();
   }
 
 }

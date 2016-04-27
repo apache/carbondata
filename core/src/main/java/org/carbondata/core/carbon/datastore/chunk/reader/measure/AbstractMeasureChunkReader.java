@@ -74,5 +74,8 @@ public abstract class AbstractMeasureChunkReader implements MeasureColumnChunkRe
     this.type = compressionModel.getType();
     values =
         new ValueCompressonHolder.UnCompressValue[compressionModel.getUnCompressValues().length];
+    for (int i = 0; i < values.length; i++) {
+      values[i] = compressionModel.getUnCompressValues()[i].getNew().getCompressorObject();
+    }
   }
 }

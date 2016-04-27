@@ -27,8 +27,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
+import org.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.carbondata.query.aggregator.MeasureAggregator;
 
 /**
@@ -69,8 +69,11 @@ public class SumDistinctLongAggregator extends AbstractMeasureAggregatorBasic {
     valueSet.add(newVal instanceof Long ? (Long) newVal : new Long(newVal.toString()));
   }
 
-  @Override public void agg(CarbonReadDataHolder newVal, int index) {
-    valueSet.add(newVal.getReadableLongValueByIndex(index));
+  @Override public void agg(MeasureColumnDataChunk dataChunk, int index) {
+    if (!dataChunk.getNullValueIndexHolder().getBitSet().get(index)) {
+      valueSet.add(dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(index));
+      firstTime = false;
+    }
   }
 
   /**
@@ -192,5 +195,10 @@ public class SumDistinctLongAggregator extends AbstractMeasureAggregatorBasic {
       return -1;
     }
     return 0;
+  }
+
+  @Override public MeasureAggregator getNew() {
+    // TODO Auto-generated method stub
+    return new SumDistinctLongAggregator();
   }
 }

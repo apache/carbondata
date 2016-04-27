@@ -157,9 +157,9 @@ public class BitSet implements java.io.Serializable {
    * Every public method must preserve these invariants.
    */
   private void checkInvariants() {
-    assert (wordsInUse == 0 || words[wordsInUse - 1] != 0);
-    assert (wordsInUse >= 0 && wordsInUse <= words.length);
-    assert (wordsInUse == words.length || words[wordsInUse] == 0);
+    assert(wordsInUse == 0 || words[wordsInUse - 1] != 0);
+    assert(wordsInUse >= 0 && wordsInUse <= words.length);
+    assert(wordsInUse == words.length || words[wordsInUse] == 0);
   }
 
   private void initWords(int nbits) {

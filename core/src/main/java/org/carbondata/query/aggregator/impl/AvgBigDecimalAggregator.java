@@ -25,8 +25,8 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 
+import org.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.carbondata.core.util.DataTypeUtil;
 import org.carbondata.query.aggregator.MeasureAggregator;
 
@@ -78,19 +78,12 @@ public class AvgBigDecimalAggregator extends AbstractMeasureAggregatorBasic {
     count++;
   }
 
-  @Override public void agg(CarbonReadDataHolder newVal, int index) {
-    byte[] value = newVal.getReadableByteArrayValueByIndex(index);
-    ByteBuffer buffer = ByteBuffer.wrap(value);
-    byte[] valueByte = new byte[buffer.getInt()];
-    buffer.get(valueByte);
-    BigDecimal valueBigDecimal = DataTypeUtil.byteToBigDecimal(valueByte);
-    if (firstTime) {
-      aggVal = valueBigDecimal;
+  @Override public void agg(MeasureColumnDataChunk dataChunk, int index) {
+    if (!dataChunk.getNullValueIndexHolder().getBitSet().get(index)) {
+      aggVal.add(dataChunk.getMeasureDataHolder().getReadableBigDecimalValueByIndex(index));
+      count++;
       firstTime = false;
-    } else {
-      aggVal = aggVal.add(valueBigDecimal);
     }
-    count += buffer.getDouble();
   }
 
   /**
@@ -196,5 +189,9 @@ public class AvgBigDecimalAggregator extends AbstractMeasureAggregatorBasic {
 
   public String toString() {
     return (aggVal.divide(new BigDecimal(count))) + "";
+  }
+
+  @Override public MeasureAggregator getNew() {
+    return new AvgBigDecimalAggregator();
   }
 }

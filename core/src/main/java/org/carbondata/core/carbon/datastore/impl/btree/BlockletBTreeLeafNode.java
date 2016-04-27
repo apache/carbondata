@@ -70,7 +70,7 @@ public class BlockletBTreeLeafNode extends AbstractBtreeLeafNode {
     dimensionChunksReader = new CompressedDimensionChunkFileBasedReader(
         builderInfos.getFooterList().get(0).getLeafNodeList().get(leafIndex)
             .getDimensionColumnChunk(), builderInfos.getDimensionColumnValueSize(),
-        builderInfos.getFooterList().get(0).getFilePath());
+        builderInfos.getFooterList().get(0).getTableBlockInfo().getFilePath());
     // get the value compression model which was used to compress the measure values
     ValueCompressionModel valueCompressionModel = CarbonUtil.getValueCompressionModel(
         builderInfos.getFooterList().get(0).getLeafNodeList().get(leafIndex)
@@ -79,7 +79,7 @@ public class BlockletBTreeLeafNode extends AbstractBtreeLeafNode {
     measureColumnChunkReader = new CompressedMeasureChunkFileBasedReader(
         builderInfos.getFooterList().get(0).getLeafNodeList().get(leafIndex)
             .getMeasureColumnChunk(), valueCompressionModel,
-        builderInfos.getFooterList().get(0).getFilePath());
+            builderInfos.getFooterList().get(0).getTableBlockInfo().getFilePath());
     this.nodeNumber = nodeNumber;
   }
 

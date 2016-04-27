@@ -18,7 +18,8 @@
  */
 package org.carbondata.query.aggregator.impl;
 
-import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
+import org.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
+import org.carbondata.query.aggregator.MeasureAggregator;
 
 public class DummyLongAggregator extends AbstractMeasureAggregatorDummy {
   private static final long serialVersionUID = 1L;
@@ -32,8 +33,10 @@ public class DummyLongAggregator extends AbstractMeasureAggregatorDummy {
     aggVal = (Long) newVal;
   }
 
-  @Override public void agg(CarbonReadDataHolder newVal, int index) {
-    aggVal = newVal.getReadableLongValueByIndex(index);
+  @Override public void agg(MeasureColumnDataChunk dataChunk, int index) {
+    if (!dataChunk.getNullValueIndexHolder().getBitSet().get(index)) {
+      aggVal = dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(index);
+    }
   }
 
   @Override public Long getLongValue() {
@@ -46,5 +49,9 @@ public class DummyLongAggregator extends AbstractMeasureAggregatorDummy {
 
   @Override public void setNewValue(Object newValue) {
     aggVal = (Long) newValue;
+  }
+
+  @Override public MeasureAggregator getNew() {
+    return new DummyLongAggregator();
   }
 }

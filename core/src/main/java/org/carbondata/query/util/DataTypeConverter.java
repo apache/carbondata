@@ -28,6 +28,7 @@ import java.util.Date;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.SqlStatement;
+import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.CarbonProperties;
 
@@ -42,6 +43,77 @@ public final class DataTypeConverter {
       LogServiceFactory.getLogService(DataTypeConverter.class.getName());
 
   private DataTypeConverter() {
+
+  }
+
+  public static Object getDataBasedOnDataType(String data, DataType dataType) {
+
+    if (null == data) {
+      return null;
+    }
+    try {
+      switch (dataType) {
+        case INT:
+          if (data.isEmpty()) {
+            return null;
+          }
+          return Integer.parseInt(data);
+        case DOUBLE:
+          if (data.isEmpty()) {
+            return null;
+          }
+          return Double.parseDouble(data);
+        case LONG:
+          if (data.isEmpty()) {
+            return null;
+          }
+          return Long.parseLong(data);
+        case BOOLEAN:
+          if (data.isEmpty()) {
+            return null;
+          }
+          return Boolean.parseBoolean(data);
+        case TIMESTAMP:
+          if (data.isEmpty()) {
+            return null;
+          }
+          SimpleDateFormat parser = new SimpleDateFormat(CarbonProperties.getInstance()
+              .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+                  CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+          Date dateToStr;
+          try {
+            dateToStr = parser.parse(data);
+            return dateToStr.getTime() * 1000;
+          } catch (ParseException e) {
+            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
+                "Cannot convert" + TIMESTAMP.toString() + " to Time/Long type value" + e
+                    .getMessage());
+            return null;
+          }
+        case DECIMAL:
+          if (data.isEmpty()) {
+            return null;
+          }
+          java.math.BigDecimal javaDecVal = new java.math.BigDecimal(data);
+          scala.math.BigDecimal scalaDecVal = new scala.math.BigDecimal(javaDecVal);
+          org.apache.spark.sql.types.Decimal decConverter =
+              new org.apache.spark.sql.types.Decimal();
+          return decConverter.set(scalaDecVal);
+        default:
+          return data;
+      }
+    } catch (NumberFormatException ex) {
+      //            if(data.isEmpty())
+      //            {
+      //                return null;
+      //            }
+      //            else
+      //            {
+      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
+          "Problem while converting data type" + data);
+      return null;
+      //            }
+    }
 
   }
 

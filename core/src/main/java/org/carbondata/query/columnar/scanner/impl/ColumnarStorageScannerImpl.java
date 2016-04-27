@@ -48,7 +48,6 @@ public class ColumnarStorageScannerImpl extends AbstractColumnarStorageScanner {
   @Override public void scanStore() {
     while (leafIterator.hasNext()) {
       blockDataHolder.setLeafDataBlock(leafIterator.next());
-      addToQueryStats(blockDataHolder);
       blockDataHolder.reset();
       counter += this.columnarAggaregator
           .aggregateData(blockProcessor.getScannedData(blockDataHolder, noDictionaryColIndexes));

@@ -36,8 +36,6 @@ import org.carbondata.query.executer.exception.QueryExecutionException;
 import org.carbondata.query.executer.pagination.impl.QueryResult;
 import org.carbondata.query.executer.processor.ScannedResultProcessor;
 import org.carbondata.query.executer.processor.ScannedResultProcessorImpl;
-import org.carbondata.query.querystats.PartitionDetail;
-import org.carbondata.query.querystats.PartitionStatsCollector;
 import org.carbondata.query.schema.metadata.SliceExecutionInfo;
 import org.carbondata.query.util.CarbonEngineLogEvent;
 
@@ -92,15 +90,6 @@ public class ColumnarParallelSliceExecutor implements SliceExecuter {
             .getDataStoreBlock(info.getKeyGenerator().generateKey(info.getEndKey()), null, false);
         long numberOfNodesToScan = lastNode.getNodeNumber() - startNode.getNodeNumber() + 1;
 
-        //Add this information to QueryDetail
-        // queryDetail will be there only when user do <dataframe>.collect
-        //TO-DO need to check for all queries
-        PartitionStatsCollector partitionStatsCollector = PartitionStatsCollector.getInstance();
-        PartitionDetail partitionDetail =
-            partitionStatsCollector.getPartionDetail(info.getQueryId());
-        if (null != partitionDetail) {
-          partitionDetail.addNumberOfNodesScanned(numberOfNodesToScan);
-        }
         task =
             new ColumnarSliceExecuter(info, scannedResultProcessor, startNode, numberOfNodesToScan);
         execService.submit(task);

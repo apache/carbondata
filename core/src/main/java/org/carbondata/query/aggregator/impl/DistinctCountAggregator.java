@@ -31,7 +31,7 @@ import java.nio.ByteBuffer;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
+import org.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.util.CarbonEngineLogEvent;
 
@@ -57,11 +57,14 @@ public class DistinctCountAggregator implements MeasureAggregator {
    */
   private static final long serialVersionUID = 6313463368629960186L;
   /**
-   * For Spark CARBON to avoid heavy object transfer it better to flatten the Aggregators.
-   * There is no aggregation expected after setting this value.
+   * For Spark CARBON to avoid heavy object transfer it better to flatten
+   * the Aggregators. There is no aggregation expected after setting this value.
    */
   private Double computedFixedValue;
-
+  /**
+   *
+   */
+  //    private Set<Double> valueSet;
   private transient RoaringBitmap valueSet;
 
   private byte[] data;
@@ -110,8 +113,10 @@ public class DistinctCountAggregator implements MeasureAggregator {
     }
   }
 
-  @Override public void agg(CarbonReadDataHolder newVal, int index) {
-
+  @Override public void agg(MeasureColumnDataChunk dataChunk, int index) {
+    if (!dataChunk.getNullValueIndexHolder().getBitSet().get(index)) {
+      valueSet.add((int) dataChunk.getMeasureDataHolder().getReadableDoubleValueByIndex(index));
+    }
   }
 
   /**
@@ -293,6 +298,11 @@ public class DistinctCountAggregator implements MeasureAggregator {
     while (buffer.hasRemaining()) {
       agg(buffer.getInt() + currentMinValue);
     }
+  }
+
+  @Override public MeasureAggregator getNew() {
+    // TODO Auto-generated method stub
+    return new DistinctCountAggregator();
   }
 
 }

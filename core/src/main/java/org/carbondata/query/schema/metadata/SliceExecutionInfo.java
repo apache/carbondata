@@ -34,7 +34,6 @@ import org.carbondata.query.complex.querytypes.GenericQueryType;
 import org.carbondata.query.datastorage.InMemoryTable;
 import org.carbondata.query.datastorage.storeinterface.DataStoreBlock;
 import org.carbondata.query.directinterface.impl.MeasureSortModel;
-import org.carbondata.query.evaluators.FilterEvaluator;
 import org.carbondata.query.executer.impl.RestructureHolder;
 import org.carbondata.query.executer.impl.topn.TopNModel;
 import org.carbondata.query.filters.measurefilter.GroupMeasureFilterModel;
@@ -223,11 +222,6 @@ public class SliceExecutionInfo {
    * query dimension ordinal
    */
   private int[] queryDimOrdinal;
-
-  /**
-   * filterEvaluator
-   */
-  private FilterEvaluator filterEvaluatorTree;
 
   /**
    * totalNumberOfMeasuresInTable
@@ -830,14 +824,6 @@ public class SliceExecutionInfo {
 
   public void setQueryDimOrdinal(final int[] queryDimOrdinal) {
     this.queryDimOrdinal = queryDimOrdinal;
-  }
-
-  public FilterEvaluator getFilterEvaluatorTree() {
-    return filterEvaluatorTree;
-  }
-
-  public void setFilterEvaluatorTree(final FilterEvaluator filterEvaluatorTree) {
-    this.filterEvaluatorTree = filterEvaluatorTree;
   }
 
   public int getTotalNumberOfMeasuresInTable() {

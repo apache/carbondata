@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
 
-import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
+import org.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
 
 /**
  * Class Description : MeasureAggregator interface. It will be implemented by
@@ -55,7 +55,7 @@ public interface MeasureAggregator extends Serializable, Comparable<MeasureAggre
    * @param newVal
    * @param index
    */
-  void agg(CarbonReadDataHolder newVal, int index);
+  void agg(MeasureColumnDataChunk newVal, int index);
 
   /**
    * Get the Serialize byte array
@@ -133,4 +133,12 @@ public interface MeasureAggregator extends Serializable, Comparable<MeasureAggre
    * @param value
    */
   void merge(byte[] value);
+
+  /**
+   * Below method will be used to get the
+   * new instance
+   *
+   * @return new instance
+   */
+  MeasureAggregator getNew();
 }

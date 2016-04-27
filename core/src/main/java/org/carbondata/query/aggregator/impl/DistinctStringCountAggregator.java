@@ -28,8 +28,8 @@ import java.nio.charset.Charset;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.carbondata.query.aggregator.MeasureAggregator;
 
 public class DistinctStringCountAggregator implements MeasureAggregator {
@@ -127,7 +127,7 @@ public class DistinctStringCountAggregator implements MeasureAggregator {
     this.valueSetForStr.add((String) newVal);
   }
 
-  @Override public void agg(CarbonReadDataHolder newVal, int index) {
+  @Override public void agg(MeasureColumnDataChunk dataChunk, int index) {
   }
 
   @Override public byte[] getByteArray() {
@@ -143,6 +143,11 @@ public class DistinctStringCountAggregator implements MeasureAggregator {
   }
 
   @Override public void merge(byte[] value) {
+  }
+
+  @Override public MeasureAggregator getNew() {
+    // TODO Auto-generated method stub
+    return new DistinctStringCountAggregator();
   }
 
 }

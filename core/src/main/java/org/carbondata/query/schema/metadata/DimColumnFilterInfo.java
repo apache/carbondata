@@ -26,6 +26,15 @@ public class DimColumnFilterInfo {
 
   private List<Integer> filterList;
 
+  /**
+   * maintain the no dictionary filter values list.
+   */
+  private List<byte[]> noDictionaryFilterValuesList;
+
+  public List<byte[]> getNoDictionaryFilterValuesList() {
+    return noDictionaryFilterValuesList;
+  }
+
   public boolean isIncludeFilter() {
     return isIncludeFilter;
   }
@@ -40,5 +49,9 @@ public class DimColumnFilterInfo {
 
   public void setFilterList(List<Integer> filterList) {
     this.filterList = filterList;
+  }
+
+  public void setFilterListForNoDictionaryCols(List<byte[]> noDictionaryFilterValuesList) {
+    this.noDictionaryFilterValuesList = noDictionaryFilterValuesList;
   }
 }

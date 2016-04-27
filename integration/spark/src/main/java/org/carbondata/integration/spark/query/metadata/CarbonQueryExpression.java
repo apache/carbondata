@@ -48,7 +48,7 @@ public class CarbonQueryExpression implements Serializable {
   /**
    * Referred columns
    */
-  private List<CarbonColumn> columns = new ArrayList<CarbonColumn>();
+  private List<CarbonPlanColumn> columns = new ArrayList<CarbonPlanColumn>();
   /**
    * Identified and delegated from Spark Layer for UDAF in Carbon
    */
@@ -67,7 +67,7 @@ public class CarbonQueryExpression implements Serializable {
     this.usageType = usageType;
   }
 
-  public List<CarbonColumn> getColumns() {
+  public List<CarbonPlanColumn> getColumns() {
     return columns;
   }
 
@@ -85,7 +85,7 @@ public class CarbonQueryExpression implements Serializable {
     this.sortOrderType = sortOrderType;
   }
 
-  public void addColumn(CarbonColumn column) {
+  public void addColumn(CarbonPlanColumn column) {
     columns.add(column);
   }
 

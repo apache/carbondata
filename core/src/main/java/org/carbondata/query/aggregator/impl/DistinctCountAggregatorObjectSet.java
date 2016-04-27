@@ -27,8 +27,8 @@ import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.carbondata.query.aggregator.MeasureAggregator;
 
 public class DistinctCountAggregatorObjectSet implements MeasureAggregator {
@@ -67,8 +67,10 @@ public class DistinctCountAggregatorObjectSet implements MeasureAggregator {
     }
   }
 
-  @Override public void agg(CarbonReadDataHolder newVal, int index) {
-    valueSetForObj.add(newVal.getReadableDoubleValueByIndex(index));
+  @Override public void agg(MeasureColumnDataChunk dataChunk, int index) {
+    if (!dataChunk.getNullValueIndexHolder().getBitSet().get(index)) {
+      valueSetForObj.add(dataChunk.getMeasureDataHolder().getReadableDoubleValueByIndex(index));
+    }
   }
 
   /**
@@ -151,6 +153,10 @@ public class DistinctCountAggregatorObjectSet implements MeasureAggregator {
   }
 
   @Override public void merge(byte[] value) {
+  }
+
+  @Override public MeasureAggregator getNew() {
+    return new DistinctCountAggregatorObjectSet();
   }
 
 }

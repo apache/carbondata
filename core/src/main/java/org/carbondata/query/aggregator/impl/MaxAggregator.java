@@ -114,8 +114,10 @@ public class MaxAggregator extends AbstractMeasureAggregatorMaxMin {
   }
 
   @SuppressWarnings("unchecked")
-  @Override public void readData(DataInput inPut)
+  @Override
+  public void readData(DataInput inPut)
       throws IOException {
+
     ByteArrayInputStream bis = null;
     ObjectInput in = null;
     try {
@@ -159,5 +161,9 @@ public class MaxAggregator extends AbstractMeasureAggregatorMaxMin {
     } finally {
       CarbonUtil.closeStreams(bytesInputStream);
     }
+  }
+
+  @Override public MeasureAggregator getNew() {
+    return new MaxAggregator();
   }
 }

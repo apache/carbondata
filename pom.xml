@@ -51,6 +51,7 @@
         <module>format</module>
         <module>core</module>
         <module>processing</module>
+	<module>hadoop</module>
         <module>integration/spark</module>
         <module>assembly</module>
         <module>examples</module>

@@ -65,6 +65,18 @@ public final class CarbonMetadata {
   }
 
   /**
+   * Below method will be used to set the carbon table
+   * This method will be used in executor side as driver will always have
+   * updated table so from driver during query execution and data loading
+   * we just need to add the table
+   *
+   * @param carbonTable
+   */
+  public void addCarbonTable(CarbonTable carbonTable) {
+    tableInfoMap.put(carbonTable.getTableUniqueName(), carbonTable);
+  }
+
+  /**
    * method load the table
    *
    * @param tableInfo

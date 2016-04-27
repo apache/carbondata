@@ -26,7 +26,7 @@ import org.carbondata.query.carbon.executor.infos.KeyStructureInfo;
  * This class is holder of the dimension column chunk data of the fixed length
  * key size
  */
-public class FixedLengthDimensionDataChunk implements DimensionColumnDataChunk {
+public class FixedLengthDimensionDataChunk implements DimensionColumnDataChunk<byte[]> {
 
   /**
    * dimension chunk attributes
@@ -63,7 +63,7 @@ public class FixedLengthDimensionDataChunk implements DimensionColumnDataChunk {
     if (chunkAttributes.getInvertedIndexes() != null) {
       index = chunkAttributes.getInvertedIndexesReverse()[index];
     }
-    System.arraycopy(data, offset, dataChunk, index * chunkAttributes.getColumnValueSize(),
+    System.arraycopy(dataChunk, index * chunkAttributes.getColumnValueSize(), data, offset,
         chunkAttributes.getColumnValueSize());
     return chunkAttributes.getColumnValueSize();
   }
@@ -91,5 +91,15 @@ public class FixedLengthDimensionDataChunk implements DimensionColumnDataChunk {
    */
   @Override public DimensionChunkAttributes getAttributes() {
     return chunkAttributes;
+  }
+
+  /**
+   * Below method will be used to return the complete data chunk
+   * This will be required during filter query
+   *
+   * @return complete chunk
+   */
+  @Override public byte[] getCompleteDataChunk() {
+    return dataChunk;
   }
 }
