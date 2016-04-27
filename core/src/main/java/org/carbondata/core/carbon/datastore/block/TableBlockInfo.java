@@ -166,11 +166,11 @@ public class TableBlockInfo implements Serializable, Comparable<TableBlockInfo> 
     // if both the task id of the file is same then we need to compare the
     // offset of
     // the file
-    long firstTaskNo = Long.parseLong(DataFileUtil.getTaskNo(filePath));
-    long otherTaskNo = Long.parseLong(DataFileUtil.getTaskNo(filePath));
-    if (firstTaskNo < otherTaskNo) {
+    String firstTaskId = DataFileUtil.getTaskNo(filePath);
+    String otherTaskId = DataFileUtil.getTaskNo(filePath);
+    if (firstTaskId.compareTo(otherTaskId) < 1) {
       return 1;
-    } else if (firstTaskNo > otherTaskNo) {
+    } else if (firstTaskId.compareTo(otherTaskId) > 1) {
       return -1;
     }
     // offset, no sure about the current structure of the

@@ -34,6 +34,7 @@ import org.carbondata.core.carbon.datastore.block.SegmentTaskIndex;
 import org.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.carbondata.core.carbon.datastore.exception.IndexBuilderException;
 import org.carbondata.core.carbon.metadata.leafnode.DataFileFooter;
+import org.carbondata.core.carbon.path.CarbonTablePath.DataFileUtil;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonUtil;
@@ -125,7 +126,7 @@ public class SegmentTaskIndexStore {
           Entry<Integer, List<TableBlockInfo>> next = iteratorOverSegmentBlocksInfos.next();
           // group task id to table block info mapping for the segment
           Map<String, List<TableBlockInfo>> taskIdToTableBlockInfoMap =
-              new HashMap<String, List<TableBlockInfo>>();
+              mappedAndGetTaskIdToTableBlockInfo(segmentToTableBlocksInfos);
           // get the existing map of task id to table segment map
           map = tableSegmentMapTemp.get(next.getKey());
           if (map == null) {
@@ -162,6 +163,36 @@ public class SegmentTaskIndexStore {
       }
     }
     return taskIdToTableSegmentMap;
+  }
+
+  /**
+   * Below method will be used to get the task id to all the table block info belongs to
+   * that task id mapping
+   *
+   * @param segmentToTableBlocksInfos segment if to table blocks info map
+   * @return task id to table block info mapping
+   */
+  private Map<String, List<TableBlockInfo>> mappedAndGetTaskIdToTableBlockInfo(
+      Map<Integer, List<TableBlockInfo>> segmentToTableBlocksInfos) {
+    Map<String, List<TableBlockInfo>> taskIdToTableBlockInfoMap =
+        new HashMap<String, List<TableBlockInfo>>();
+    Iterator<Entry<Integer, List<TableBlockInfo>>> iterator =
+        segmentToTableBlocksInfos.entrySet().iterator();
+    while (iterator.hasNext()) {
+      Entry<Integer, List<TableBlockInfo>> next = iterator.next();
+      List<TableBlockInfo> value = next.getValue();
+      for (TableBlockInfo blockInfo : value) {
+        String taskNo = DataFileUtil.getTaskNo(blockInfo.getFilePath());
+        List<TableBlockInfo> list = taskIdToTableBlockInfoMap.get(taskNo);
+        if (null == list) {
+          list = new ArrayList<TableBlockInfo>();
+          taskIdToTableBlockInfoMap.put(taskNo, list);
+        }
+        list.add(blockInfo);
+      }
+
+    }
+    return taskIdToTableBlockInfoMap;
   }
 
   /**
