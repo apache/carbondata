@@ -22,15 +22,18 @@ import java.io.File;
 
 import org.carbondata.core.carbon.CarbonTableIdentifier;
 
+import org.apache.hadoop.fs.Path;
+
 /**
  * Helps to get Store content paths.
  */
-public class CarbonStorePath {
+public class CarbonStorePath extends Path {
 
   private String storePath;
 
-  public CarbonStorePath(String storePath) {
-    this.storePath = storePath;
+  public CarbonStorePath(String storePathString) {
+    super(storePathString);
+    this.storePath = storePathString;
   }
 
   /**

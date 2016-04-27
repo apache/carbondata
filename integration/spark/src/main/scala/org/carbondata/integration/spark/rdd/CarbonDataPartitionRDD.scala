@@ -25,13 +25,14 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.cubemodel.Partitioner
 
 import org.carbondata.common.logging.impl.StandardLogService
+import org.carbondata.hadoop.CarbonInputSplit
 import org.carbondata.integration.spark.PartitionResult
 import org.carbondata.integration.spark.partition.api.impl.CSVFilePartitioner
 import org.carbondata.integration.spark.splits.TableSplit
 import org.carbondata.integration.spark.util.CarbonQueryUtil
 
 
-class CarbonDataPartition(rddId: Int, val idx: Int, @transient val tableSplit: TableSplit)
+class CarbonSparkRawDataPartition(rddId: Int, val idx: Int, @transient val tableSplit: TableSplit)
   extends Partition {
 
   override val index: Int = idx
@@ -69,14 +70,14 @@ class CarbonDataPartitionRDD[K, V](
     //
     val result = new Array[Partition](splits.length)
     for (i <- 0 until result.length) {
-      result(i) = new CarbonDataPartition(id, i, splits(i))
+      result(i) = new CarbonSparkRawDataPartition(id, i, splits(i))
     }
     result
   }
 
   override def compute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
     new Iterator[(K, V)] {
-      val split = theSplit.asInstanceOf[CarbonDataPartition]
+      val split = theSplit.asInstanceOf[CarbonSparkRawDataPartition]
       StandardLogService
         .setThreadName(split.serializableHadoopSplit.value.getPartition().getUniqueID(), null);
       logInfo("Input split: " + split.serializableHadoopSplit.value)
@@ -106,7 +107,7 @@ class CarbonDataPartitionRDD[K, V](
   }
 
   override def getPreferredLocations(split: Partition): Seq[String] = {
-    val theSplit = split.asInstanceOf[CarbonDataPartition]
+    val theSplit = split.asInstanceOf[CarbonSparkRawDataPartition]
     val s = theSplit.serializableHadoopSplit.value.getLocations.asScala
     logInfo("Host Name : " + s(0) + s.length)
     s

@@ -36,10 +36,7 @@ import org.carbondata.query.expression.Expression;
 import org.carbondata.query.filters.measurefilter.GroupMeasureFilterModel;
 import org.carbondata.query.holders.CarbonResultHolder;
 import org.carbondata.query.queryinterface.filter.CarbonFilterInfo;
-import org.carbondata.query.querystats.PartitionDetail;
 import org.carbondata.query.scope.QueryScopeObject;
-
-import org.apache.spark.Accumulator;
 
 /**
  * Its a model object for CarbonExecutor interface
@@ -245,7 +242,6 @@ public class CarbonQueryExecutorModel implements Serializable {
    */
   private String partitionId;
 
-  private Accumulator<PartitionDetail> partitionDetails;
   private Dimension[] sortedDimensions;
   /**
    * List of all the segments
@@ -256,14 +252,6 @@ public class CarbonQueryExecutorModel implements Serializable {
    * modification time as value.
    */
   private QueryScopeObject queryScopeObject;
-
-  public Accumulator<PartitionDetail> getPartitionAccumulator() {
-    return partitionDetails;
-  }
-
-  public void setPartitionAccumulator(Accumulator<PartitionDetail> partitionDetails) {
-    this.partitionDetails = partitionDetails;
-  }
 
   public String getPartitionId() {
     return this.partitionId;
@@ -392,7 +380,7 @@ public class CarbonQueryExecutorModel implements Serializable {
   }
 
   /**
-   * @param sortOrder the sortOrder to set
+   * @param sortedDimns
    */
   public void setSortedDimensions(final Dimension[] sortedDimns) {
     this.sortedDimensions = sortedDimns;

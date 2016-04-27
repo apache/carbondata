@@ -48,6 +48,14 @@ public class CarbonColumn implements Serializable {
    */
   protected int queryOrder;
 
+  public boolean isDistinctQuery() {
+    return isDistinctQuery;
+  }
+
+  public void setDistinctQuery(boolean distinctQuery) {
+    isDistinctQuery = distinctQuery;
+  }
+
   /**
    * isQueryForDistinctCount
    */

@@ -16,36 +16,31 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package org.carbondata.hadoop;
 
-package org.carbondata.integration.spark.partition.api.impl;
+import org.carbondata.core.carbon.path.CarbonTablePath;
 
-import java.util.List;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.PathFilter;
 
-import org.carbondata.integration.spark.partition.api.Partition;
+/**
+ * Filters to accept valid carbon data Files only
+ */
+public class CarbonPathFilter implements PathFilter {
 
-public class PartitionMultiFileImpl implements Partition {
-  private static final long serialVersionUID = -4363447826181193976L;
-  private String uniqueID;
-  private List<String> folderPath;
+  // update extension which should be picked
+  private final String validUpdateTimestamp;
 
-  public PartitionMultiFileImpl(String uniqueID, List<String> folderPath) {
-    this.uniqueID = uniqueID;
-    this.folderPath = folderPath;
+  /**
+   * @param validUpdateTimestamp update extension which should be picked
+   */
+  public CarbonPathFilter(String validUpdateTimestamp) {
+    this.validUpdateTimestamp = validUpdateTimestamp;
   }
 
-  @Override public String getUniqueID() {
-    // TODO Auto-generated method stub
-    return uniqueID;
+  @Override public boolean accept(Path path) {
+    String updateTimeStamp = CarbonTablePath.DataFileUtil.getUpdateTimeStamp(path.getName());
+    if (updateTimeStamp.equals(validUpdateTimestamp)) return true;
+    else return false;
   }
-
-  @Override public String getFilePath() {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  @Override public List<String> getFilesPath() {
-    // TODO Auto-generated method stub
-    return folderPath;
-  }
-
 }

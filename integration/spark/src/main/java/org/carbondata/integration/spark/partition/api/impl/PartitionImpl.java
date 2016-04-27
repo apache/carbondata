@@ -50,25 +50,12 @@ public class PartitionImpl implements Partition {
     this.folderPath = folderPath;
   }
 
-  /**
-   * @see com.huawei.datasight.carbon.partiion.api.Partition#getUniqueID()
-   */
   @Override public String getUniqueID() {
     return uniqueID;
   }
 
-  /**
-   * @see com.huawei.datasight.carbon.partiion.api.Partition#getFilePath()
-   */
   @Override public String getFilePath() {
     return folderPath;
-  }
-
-  /**
-   * @see com.huawei.datasight.carbon.partiion.api.Partition#getPartitionDetails()
-   */
-  @Override public Map<String, CarbonDimensionLevelFilter> getPartitionDetails() {
-    return filterMap;
   }
 
   public void setPartitionDetails(String columnName, CarbonDimensionLevelFilter filter) {

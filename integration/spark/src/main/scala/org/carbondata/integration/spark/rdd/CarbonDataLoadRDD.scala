@@ -423,9 +423,9 @@ class CarbonDataLoadRDD[K, V](
         if (InMemoryTableStore.getInstance.isLevelCacheEnabled()) {
           val columnList = CarbonLoaderUtil.getColumnListFromAggTable(model)
           val details = model.getLoadMetadataDetails.asScala.toSeq.toArray
-          levelCacheKeys = CarbonQueryUtil
-            .loadRequiredLevels(CarbonQueryUtil.getListOfSlices(details),
-              model.getDatabaseName + '_' + model.getTableName, columnList).asScala.toList
+          // levelCacheKeys = CarbonQueryUtil
+          //  .loadRequiredLevels(CarbonQueryUtil.getListOfSlices(details),
+          //     model.getDatabaseName + '_' + model.getTableName, columnList).asScala.toList
         }
         loadFolders.foreach { loadFolder =>
           val restructNumber = CarbonUtil.getRestructureNumber(loadFolder, model.getTableName)

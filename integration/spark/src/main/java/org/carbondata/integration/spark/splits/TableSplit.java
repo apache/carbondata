@@ -76,7 +76,7 @@ public class TableSplit implements Serializable, Writable {
   }
 
   /**
-   * @param partitions The partitions to set.
+   * @param partition The partitions to set.
    */
   public void setPartition(Partition partition) {
     this.partition = partition;

@@ -17,35 +17,8 @@
  * under the License.
  */
 
-package org.carbondata.integration.spark.partition.api.impl;
+package org.carbondata.integration.spark.query.metadata;
 
-import java.util.List;
-
-import org.carbondata.integration.spark.partition.api.Partition;
-
-public class PartitionMultiFileImpl implements Partition {
-  private static final long serialVersionUID = -4363447826181193976L;
-  private String uniqueID;
-  private List<String> folderPath;
-
-  public PartitionMultiFileImpl(String uniqueID, List<String> folderPath) {
-    this.uniqueID = uniqueID;
-    this.folderPath = folderPath;
-  }
-
-  @Override public String getUniqueID() {
-    // TODO Auto-generated method stub
-    return uniqueID;
-  }
-
-  @Override public String getFilePath() {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  @Override public List<String> getFilesPath() {
-    // TODO Auto-generated method stub
-    return folderPath;
-  }
+public interface CarbonPlanColumn {
 
 }

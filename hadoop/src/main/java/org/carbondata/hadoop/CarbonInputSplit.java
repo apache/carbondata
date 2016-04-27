@@ -16,36 +16,32 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package org.carbondata.hadoop;
 
-package org.carbondata.integration.spark.partition.api.impl;
+import java.io.IOException;
 
-import java.util.List;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 
-import org.carbondata.integration.spark.partition.api.Partition;
+/**
+ * Carbon input split to allow distributed read of CarbonInputFormat.
+ */
+public class CarbonInputSplit extends FileSplit implements Writable {
 
-public class PartitionMultiFileImpl implements Partition {
-  private static final long serialVersionUID = -4363447826181193976L;
-  private String uniqueID;
-  private List<String> folderPath;
+  private int segmentId;
 
-  public PartitionMultiFileImpl(String uniqueID, List<String> folderPath) {
-    this.uniqueID = uniqueID;
-    this.folderPath = folderPath;
+  public CarbonInputSplit(int segmentId, Path path, long start, long length, String[] locations) {
+    super(path, start, length, locations);
+    this.segmentId = segmentId;
   }
 
-  @Override public String getUniqueID() {
-    // TODO Auto-generated method stub
-    return uniqueID;
+  public static CarbonInputSplit from(int segmentId, FileSplit split) throws IOException {
+    return new CarbonInputSplit(segmentId, split.getPath(), split.getStart(), split.getLength(),
+        split.getLocations());
   }
 
-  @Override public String getFilePath() {
-    // TODO Auto-generated method stub
-    return null;
+  public int getSegmentId() {
+    return segmentId;
   }
-
-  @Override public List<String> getFilesPath() {
-    // TODO Auto-generated method stub
-    return folderPath;
-  }
-
 }
