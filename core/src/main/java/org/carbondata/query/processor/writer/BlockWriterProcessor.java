@@ -205,9 +205,9 @@ public class BlockWriterProcessor implements DataProcessorExt {
 
         this.dataWriter.writeDataToFile(SnappyByteCompression.INSTANCE.compress(blockKeyArray),
             convertToByteArray(), entryCount, startKey, endKey);
-        this.dataWriter.writeleafMetaDataToFile();
+        this.dataWriter.writeBlockletMetaDataToFile();
       } else {
-        this.dataWriter.writeleafMetaDataToFile();
+        this.dataWriter.writeBlockletMetaDataToFile();
       }
     } catch (Exception e) {
       throw new DataProcessorException(e);

@@ -41,6 +41,7 @@ object CarbonExample {
     val sc = new SparkContext(new SparkConf()
       .setAppName("CarbonExample")
       .setMaster("local[2]"))
+    sc.setLogLevel("WARN")
 
     val cc = new CarbonContext(sc, storeLocation)
 
@@ -52,6 +53,9 @@ object CarbonExample {
     // true -> use table split partition, support multiple partition loading
     // false -> use node split partition, support data load by host partition
     CarbonProperties.getInstance().addProperty("carbon.table.split.partition.enable", "false")
+    CarbonProperties.getInstance().addProperty("carbon.timestamp.format", "yyyy/mm/dd")
+
+    cc.sql("drop cube if exists testTable")
 
     // @TODO need to change the date to date type as direct surrogate is not implemented
     // after implementation need to update the test case

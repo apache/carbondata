@@ -47,8 +47,8 @@ public class CarbonFactDataWriterImplForIntIndex extends AbstractFactDataWriter<
         keyBlockSize, isUpdateFact, null);
 
     this.numberCompressor = new NumberCompressor(Integer.parseInt(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.LEAFNODE_SIZE,
-            CarbonCommonConstants.LEAFNODE_SIZE_DEFAULT_VAL)));
+        .getProperty(CarbonCommonConstants.BLOCKLET_SIZE,
+            CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL)));
 
     LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
         "********************************Integer based will be used");
@@ -57,7 +57,7 @@ public class CarbonFactDataWriterImplForIntIndex extends AbstractFactDataWriter<
   @Override public void writeDataToFile(IndexStorage<int[]>[] keyStorageArray, byte[][] dataArray,
       int entryCount, byte[] startKey, byte[] endKey, ValueCompressionModel compressionModel)
       throws CarbonDataWriterException {
-    updateLeafNodeFileChannel();
+    updateBlockletFileChannel();
 
     // current measure length;
     int currentMsrLenght = 0;
@@ -168,7 +168,7 @@ public class CarbonFactDataWriterImplForIntIndex extends AbstractFactDataWriter<
   //TODO SIMIAN
 
   /**
-   * This method is responsible for writing leaf node to the leaf node file
+   * This method is responsible for writing blocklet to the data file
    *
    * @return file offset offset is the current position of the file
    * @throws CarbonDataWriterException if will throw CarbonDataWriterException when any thing
@@ -213,7 +213,7 @@ public class CarbonFactDataWriterImplForIntIndex extends AbstractFactDataWriter<
       // write data to file
       channel.write(byteBuffer);
     } catch (IOException exception) {
-      throw new CarbonDataWriterException("Problem in writing Leaf Node File: ", exception);
+      throw new CarbonDataWriterException("Problem in writing carbon file: ", exception);
     }
     // return the offset, this offset will be used while reading the file in
     // engine side to get from which position to start reading the file

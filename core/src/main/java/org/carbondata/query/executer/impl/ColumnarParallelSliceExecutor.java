@@ -70,8 +70,8 @@ public class ColumnarParallelSliceExecutor implements SliceExecuter {
     if (latestInfo.isDetailQuery()) {
       int numberOfRecordsInMemory = latestInfo.getNumberOfRecordsInMemory();
       numberOfCores = numberOfRecordsInMemory / Integer.parseInt(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.LEAFNODE_SIZE,
-              CarbonCommonConstants.LEAFNODE_SIZE_DEFAULT_VAL));
+          .getProperty(CarbonCommonConstants.BLOCKLET_SIZE,
+              CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL));
       if (numberOfCores < 1) {
         numberOfCores = 1;
       }

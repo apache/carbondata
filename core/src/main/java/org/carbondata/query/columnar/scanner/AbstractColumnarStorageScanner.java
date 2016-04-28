@@ -24,7 +24,7 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.query.columnar.aggregator.ColumnarScannedResultAggregator;
 import org.carbondata.query.columnar.datastoreblockprocessor.DataStoreBlockProcessor;
-import org.carbondata.query.columnar.scanner.impl.BtreeLeafNodeIterator;
+import org.carbondata.query.columnar.scanner.impl.BTreeLeafNodeIterator;
 import org.carbondata.query.datastorage.storeinterface.DataStoreBlock;
 import org.carbondata.query.evaluators.BlockDataHolder;
 import org.carbondata.query.executer.impl.RestructureHolder;
@@ -55,7 +55,7 @@ public abstract class AbstractColumnarStorageScanner implements ColumnarStorageS
   private String queryId;
 
   public AbstractColumnarStorageScanner(ColumnarStorageScannerInfo columnarStorageScannerInfo) {
-    leafIterator = new BtreeLeafNodeIterator(columnarStorageScannerInfo.getDatablock(),
+    leafIterator = new BTreeLeafNodeIterator(columnarStorageScannerInfo.getDatablock(),
         columnarStorageScannerInfo.getTotalNumberOfBlocksToScan());
     this.queryId = columnarStorageScannerInfo.getQueryId();
 

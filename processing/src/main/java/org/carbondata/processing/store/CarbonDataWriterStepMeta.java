@@ -60,14 +60,14 @@ public class CarbonDataWriterStepMeta extends BaseStepMeta implements StepMetaIn
   private String tabelName;
 
   /**
-   * leaf node size
+   * blocklet size
    */
-  private String leafNodeSize;
+  private String blockletSize;
 
   /**
-   * max leaf node size
+   * max blocklet size
    */
-  private String maxLeafNode;
+  private String maxBlocklet;
 
   /**
    * measureCount
@@ -150,8 +150,8 @@ public class CarbonDataWriterStepMeta extends BaseStepMeta implements StepMetaIn
    */
   @Override public void setDefault() {
     tabelName = "";
-    leafNodeSize = "";
-    maxLeafNode = "";
+    blockletSize = "";
+    maxBlocklet = "";
     measureCount = "";
     schemaName = "";
     cubeName = "";
@@ -178,8 +178,8 @@ public class CarbonDataWriterStepMeta extends BaseStepMeta implements StepMetaIn
   public String getXML() {
     StringBuffer retval = new StringBuffer(150);
     retval.append("    ").append(XMLHandler.addTagValue("TableName", tabelName));
-    retval.append("    ").append(XMLHandler.addTagValue("LeafNodeSize", leafNodeSize));
-    retval.append("    ").append(XMLHandler.addTagValue("MaxLeafInFile", maxLeafNode));
+    retval.append("    ").append(XMLHandler.addTagValue("BlockletSize", blockletSize));
+    retval.append("    ").append(XMLHandler.addTagValue("MaxLeafInFile", maxBlocklet));
     retval.append("    ").append(XMLHandler.addTagValue("measureCount", measureCount));
     retval.append("    ").append(XMLHandler.addTagValue("schemaName", schemaName));
     retval.append("    ").append(XMLHandler.addTagValue("cubeName", cubeName));
@@ -215,8 +215,8 @@ public class CarbonDataWriterStepMeta extends BaseStepMeta implements StepMetaIn
       Map<String, Counter> counters) throws KettleXMLException {
     try {
       tabelName = XMLHandler.getTagValue(stepnode, "TableName");
-      leafNodeSize = XMLHandler.getTagValue(stepnode, "LeafNodeSize");
-      maxLeafNode = XMLHandler.getTagValue(stepnode, "MaxLeafInFile");
+      blockletSize = XMLHandler.getTagValue(stepnode, "BlockletSize");
+      maxBlocklet = XMLHandler.getTagValue(stepnode, "MaxLeafInFile");
       measureCount = XMLHandler.getTagValue(stepnode, "measureCount");
       schemaName = XMLHandler.getTagValue(stepnode, "schemaName");
       cubeName = XMLHandler.getTagValue(stepnode, "cubeName");
@@ -267,9 +267,9 @@ public class CarbonDataWriterStepMeta extends BaseStepMeta implements StepMetaIn
       rep.saveStepAttribute(idTransformation, idStep, "schemaName", schemaName); //$NON-NLS-1$
 
       rep.saveStepAttribute(idTransformation, idStep, "cubeName", cubeName); //$NON-NLS-1$
-      rep.saveStepAttribute(idTransformation, idStep, "LeafNodeSize", leafNodeSize);
+      rep.saveStepAttribute(idTransformation, idStep, "BlockletSize", blockletSize);
       //
-      rep.saveStepAttribute(idTransformation, idStep, "MaxLeafInFile", maxLeafNode);
+      rep.saveStepAttribute(idTransformation, idStep, "MaxLeafInFile", maxBlocklet);
       rep.saveStepAttribute(idTransformation, idStep, "measureCount", measureCount);
 
       rep.saveStepAttribute(idTransformation, idStep, "isGroupByEnabled", groupByEnabled);
@@ -320,8 +320,8 @@ public class CarbonDataWriterStepMeta extends BaseStepMeta implements StepMetaIn
       cubeName = rep.getStepAttributeString(idStep, "cubeName");
       tabelName = rep.getStepAttributeString(idStep, "TableName");
 
-      leafNodeSize = rep.getStepAttributeString(idStep, "leafNodeSize");
-      maxLeafNode = rep.getStepAttributeString(idStep, "MaxLeafInFile");
+      blockletSize = rep.getStepAttributeString(idStep, "blockletSize");
+      maxBlocklet = rep.getStepAttributeString(idStep, "MaxLeafInFile");
       measureCount = rep.getStepAttributeString(idStep, "measureCount");
       groupByEnabled = rep.getStepAttributeString(idStep, "isGroupByEnabled");
       aggregatorClassString = rep.getStepAttributeString(idStep, "aggregatorClassString");
@@ -423,39 +423,39 @@ public class CarbonDataWriterStepMeta extends BaseStepMeta implements StepMetaIn
   }
 
   /**
-   * This method will return the leaf node size
+   * This method will return the blocklet size
    *
-   * @return leaf node size
+   * @return blocklet size
    */
-  public String getLeafNodeSize() {
-    return leafNodeSize;
+  public String getBlockletSize() {
+    return blockletSize;
   }
 
   /**
-   * This method will set the leaf nod size
+   * This method will set the blocklet size
    *
-   * @param leafNodeSize
+   * @param blockletSize
    */
-  public void setLeafNodeSize(String leafNodeSize) {
-    this.leafNodeSize = leafNodeSize;
+  public void setBlockletSize(String blockletSize) {
+    this.blockletSize = blockletSize;
   }
 
   /**
-   * This method will return the max leaf node in one file
+   * This method will return the max blocklet in one file
    *
-   * @return maxLeafNode
+   * @return maxBlocklet
    */
-  public String getMaxLeafNode() {
-    return maxLeafNode;
+  public String getMaxBlocklet() {
+    return maxBlocklet;
   }
 
   /**
-   * This method will set the max number of leaf node in file
+   * This method will set the max number of blocklet in file
    *
-   * @param maxLeafNode
+   * @param maxBlocklet
    */
-  public void setMaxLeafNode(String maxLeafNode) {
-    this.maxLeafNode = maxLeafNode;
+  public void setMaxBlocklet(String maxBlocklet) {
+    this.maxBlocklet = maxBlocklet;
   }
 
   /**

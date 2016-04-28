@@ -32,17 +32,17 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.metadata.datatype.ConvertedType;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
-import org.carbondata.core.carbon.metadata.leafnode.DataFileFooter;
-import org.carbondata.core.carbon.metadata.leafnode.LeafNodeInfo;
-import org.carbondata.core.carbon.metadata.leafnode.SegmentInfo;
-import org.carbondata.core.carbon.metadata.leafnode.compressor.ChunkCompressorMeta;
-import org.carbondata.core.carbon.metadata.leafnode.compressor.CompressionCodec;
-import org.carbondata.core.carbon.metadata.leafnode.datachunk.DataChunk;
-import org.carbondata.core.carbon.metadata.leafnode.datachunk.PresenceMeta;
-import org.carbondata.core.carbon.metadata.leafnode.indexes.LeafNodeBtreeIndex;
-import org.carbondata.core.carbon.metadata.leafnode.indexes.LeafNodeIndex;
-import org.carbondata.core.carbon.metadata.leafnode.indexes.LeafNodeMinMaxIndex;
-import org.carbondata.core.carbon.metadata.leafnode.sort.SortState;
+import org.carbondata.core.carbon.metadata.blocklet.BlockletInfo;
+import org.carbondata.core.carbon.metadata.blocklet.DataFileFooter;
+import org.carbondata.core.carbon.metadata.blocklet.SegmentInfo;
+import org.carbondata.core.carbon.metadata.blocklet.compressor.ChunkCompressorMeta;
+import org.carbondata.core.carbon.metadata.blocklet.compressor.CompressionCodec;
+import org.carbondata.core.carbon.metadata.blocklet.datachunk.DataChunk;
+import org.carbondata.core.carbon.metadata.blocklet.datachunk.PresenceMeta;
+import org.carbondata.core.carbon.metadata.blocklet.index.BlockletIndex;
+import org.carbondata.core.carbon.metadata.blocklet.index.BlockletBTreeIndex;
+import org.carbondata.core.carbon.metadata.blocklet.index.BlockletMinMaxIndex;
+import org.carbondata.core.carbon.metadata.blocklet.sort.SortState;
 import org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
@@ -51,8 +51,6 @@ import org.carbondata.core.reader.CarbonFooterReader;
 import org.carbondata.core.util.ByteUtil;
 import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonUtil;
-import org.carbondata.format.BlockletBTreeIndex;
-import org.carbondata.format.BlockletMinMaxIndex;
 import org.carbondata.format.FileFooter;
 
 /**
@@ -88,45 +86,45 @@ public class DataFileFooterConverter {
 
     List<org.carbondata.format.BlockletIndex> leaf_node_indices_Thrift =
         footer.getBlocklet_index_list();
-    List<LeafNodeIndex> leafNodeIndexList = new ArrayList<LeafNodeIndex>();
+    List<BlockletIndex> blockletIndexList = new ArrayList<BlockletIndex>();
     for (int i = 0; i < leaf_node_indices_Thrift.size(); i++) {
-      LeafNodeIndex leafNodeIndex = getLeafNodeIndex(leaf_node_indices_Thrift.get(i));
-      leafNodeIndexList.add(leafNodeIndex);
+      BlockletIndex blockletIndex = getBlockletIndex(leaf_node_indices_Thrift.get(i));
+      blockletIndexList.add(blockletIndex);
     }
 
     List<org.carbondata.format.BlockletInfo> leaf_node_infos_Thrift =
         footer.getBlocklet_info_list();
-    List<LeafNodeInfo> leafNodeInfoList = new ArrayList<LeafNodeInfo>();
+    List<BlockletInfo> blockletInfoList = new ArrayList<BlockletInfo>();
     for (int i = 0; i < leaf_node_infos_Thrift.size(); i++) {
-      LeafNodeInfo leafNodeInfo = getLeafNodeInfo(leaf_node_infos_Thrift.get(i));
-      leafNodeInfo.setLeafNodeIndex(leafNodeIndexList.get(i));
-      leafNodeInfoList.add(leafNodeInfo);
+      BlockletInfo blockletInfo = getBlockletInfo(leaf_node_infos_Thrift.get(i));
+      blockletInfo.setBlockletIndex(blockletIndexList.get(i));
+      blockletInfoList.add(blockletInfo);
     }
-    dataFileFooter.setLeafNodeList(leafNodeInfoList);
-    dataFileFooter.setLeafNodeIndex(getLeafNodeIndexForDataFileFooter(leafNodeIndexList));
+    dataFileFooter.setBlockletList(blockletInfoList);
+    dataFileFooter.setBlockletIndex(getBlockletIndexForDataFileFooter(blockletIndexList));
     return dataFileFooter;
   }
 
   /**
-   * Below method will be used to get leaf node index for data file meta
+   * Below method will be used to get blocklet index for data file meta
    *
-   * @param leafNodeIndexList
-   * @return leaf node index
+   * @param blockletIndexList
+   * @return blocklet index
    */
-  private LeafNodeIndex getLeafNodeIndexForDataFileFooter(List<LeafNodeIndex> leafNodeIndexList) {
-    LeafNodeIndex leafNodeIndex = new LeafNodeIndex();
-    LeafNodeBtreeIndex leafNodeBTreeIndex = new LeafNodeBtreeIndex();
-    leafNodeBTreeIndex.setStartKey(leafNodeIndexList.get(0).getBtreeIndex().getStartKey());
-    leafNodeBTreeIndex
-        .setEndKey(leafNodeIndexList.get(leafNodeIndexList.size() - 1).getBtreeIndex().getEndKey());
-    leafNodeIndex.setBtreeIndex(leafNodeBTreeIndex);
-    byte[][] currentMinValue = leafNodeIndexList.get(0).getMinMaxIndex().getMinValues().clone();
-    byte[][] currentMaxValue = leafNodeIndexList.get(0).getMinMaxIndex().getMaxValues().clone();
+  private BlockletIndex getBlockletIndexForDataFileFooter(List<BlockletIndex> blockletIndexList) {
+    BlockletIndex blockletIndex = new BlockletIndex();
+    BlockletBTreeIndex blockletBTreeIndex = new BlockletBTreeIndex();
+    blockletBTreeIndex.setStartKey(blockletIndexList.get(0).getBtreeIndex().getStartKey());
+    blockletBTreeIndex
+        .setEndKey(blockletIndexList.get(blockletIndexList.size() - 1).getBtreeIndex().getEndKey());
+    blockletIndex.setBtreeIndex(blockletBTreeIndex);
+    byte[][] currentMinValue = blockletIndexList.get(0).getMinMaxIndex().getMinValues().clone();
+    byte[][] currentMaxValue = blockletIndexList.get(0).getMinMaxIndex().getMaxValues().clone();
     byte[][] minValue = null;
     byte[][] maxValue = null;
-    for (int i = 1; i < leafNodeIndexList.size(); i++) {
-      minValue = leafNodeIndexList.get(i).getMinMaxIndex().getMinValues();
-      maxValue = leafNodeIndexList.get(i).getMinMaxIndex().getMaxValues();
+    for (int i = 1; i < blockletIndexList.size(); i++) {
+      minValue = blockletIndexList.get(i).getMinMaxIndex().getMinValues();
+      maxValue = blockletIndexList.get(i).getMinMaxIndex().getMaxValues();
       for (int j = 0; j < maxValue.length; j++) {
         if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(currentMinValue[i], minValue[i]) < 0) {
           currentMinValue[i] = minValue[i].clone();
@@ -137,11 +135,11 @@ public class DataFileFooterConverter {
       }
     }
 
-    LeafNodeMinMaxIndex minMax = new LeafNodeMinMaxIndex();
+    BlockletMinMaxIndex minMax = new BlockletMinMaxIndex();
     minMax.setMaxValues(currentMaxValue);
     minMax.setMinValues(currentMinValue);
-    leafNodeIndex.setMinMaxIndex(minMax);
-    return leafNodeIndex;
+    blockletIndex.setMinMaxIndex(minMax);
+    return blockletIndex;
   }
 
   private ColumnSchema thriftColumnSchmeaToWrapperColumnSchema(
@@ -170,18 +168,18 @@ public class DataFileFooterConverter {
   }
 
   /**
-   * Below method is to convert the leaf node info of the thrift to wrapper
-   * leaf node info
+   * Below method is to convert the blocklet info of the thrift to wrapper
+   * blocklet info
    *
-   * @param leafNodeInfoThrift leaf node info of the thrift
-   * @return leaf node info wrapper
+   * @param blockletInfoThrift blocklet info of the thrift
+   * @return blocklet info wrapper
    */
-  private LeafNodeInfo getLeafNodeInfo(org.carbondata.format.BlockletInfo leafNodeInfoThrift) {
-    LeafNodeInfo leafNodeInfo = new LeafNodeInfo();
+  private BlockletInfo getBlockletInfo(org.carbondata.format.BlockletInfo blockletInfoThrift) {
+    BlockletInfo blockletInfo = new BlockletInfo();
     List<DataChunk> dimensionColumnChunk = new ArrayList<DataChunk>();
     List<DataChunk> measureChunk = new ArrayList<DataChunk>();
     Iterator<org.carbondata.format.DataChunk> column_data_chunksIterator =
-        leafNodeInfoThrift.getColumn_data_chunksIterator();
+        blockletInfoThrift.getColumn_data_chunksIterator();
     while (column_data_chunksIterator.hasNext()) {
       org.carbondata.format.DataChunk next = column_data_chunksIterator.next();
       if (next.isRow_chunk()) {
@@ -193,10 +191,10 @@ public class DataFileFooterConverter {
         dimensionColumnChunk.add(getDataChunk(next, false));
       }
     }
-    leafNodeInfo.setDimensionColumnChunk(dimensionColumnChunk);
-    leafNodeInfo.setMeasureColumnChunk(measureChunk);
-    leafNodeInfo.setNumberOfRows(leafNodeInfoThrift.getNum_rows());
-    return leafNodeInfo;
+    blockletInfo.setDimensionColumnChunk(dimensionColumnChunk);
+    blockletInfo.setMeasureColumnChunk(measureChunk);
+    blockletInfo.setNumberOfRows(blockletInfoThrift.getNum_rows());
+    return blockletInfo;
   }
 
   /**
@@ -258,18 +256,18 @@ public class DataFileFooterConverter {
   }
 
   /**
-   * Below method will be used to convert the leaf node index of thrift to
+   * Below method will be used to convert the blocklet index of thrift to
    * wrapper
    *
-   * @param leafNodeIndexThrift
-   * @return leaf node index wrapper
+   * @param blockletIndexThrift
+   * @return blocklet index wrapper
    */
-  private LeafNodeIndex getLeafNodeIndex(org.carbondata.format.BlockletIndex leafNodeIndexThrift) {
-    BlockletBTreeIndex btreeIndex = leafNodeIndexThrift.getB_tree_index();
-    BlockletMinMaxIndex minMaxIndex = leafNodeIndexThrift.getMin_max_index();
-    return new LeafNodeIndex(
-        new LeafNodeBtreeIndex(btreeIndex.getStart_key(), btreeIndex.getEnd_key()),
-        new LeafNodeMinMaxIndex(minMaxIndex.getMin_values(), minMaxIndex.getMax_values()));
+  private BlockletIndex getBlockletIndex(org.carbondata.format.BlockletIndex blockletIndexThrift) {
+    org.carbondata.format.BlockletBTreeIndex btreeIndex = blockletIndexThrift.getB_tree_index();
+    org.carbondata.format.BlockletMinMaxIndex minMaxIndex = blockletIndexThrift.getMin_max_index();
+    return new BlockletIndex(
+        new BlockletBTreeIndex(btreeIndex.getStart_key(), btreeIndex.getEnd_key()),
+        new BlockletMinMaxIndex(minMaxIndex.getMin_values(), minMaxIndex.getMax_values()));
   }
 
   /**

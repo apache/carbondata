@@ -19,9 +19,9 @@ package org.carbondata.core.carbon.metadata.index;
 import java.io.Serializable;
 
 /**
- * Below class holds the information of max and min value of all the column in a leaf node
+ * Below class holds the information of max and min value of all the column in a blocklet
  */
-public class LeafNodeMinMaxIndex implements Serializable {
+public class BlockletMinMaxIndex implements Serializable {
 
   /**
    * serialization version
@@ -29,12 +29,12 @@ public class LeafNodeMinMaxIndex implements Serializable {
   private static final long serialVersionUID = -4311405145501302895L;
 
   /**
-   * Min value of all columns of one leaf node Bit-Packed
+   * Min value of all columns of blocklet node Bit-Packed
    */
   private byte[][] minValues;
 
   /**
-   * Max value of all columns of one leaf node Bit-Packed
+   * Max value of all columns of blocklet node Bit-Packed
    */
   private byte[][] maxValues;
 

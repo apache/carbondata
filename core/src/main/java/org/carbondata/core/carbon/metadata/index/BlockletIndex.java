@@ -17,52 +17,53 @@
 package org.carbondata.core.carbon.metadata.index;
 
 import java.io.Serializable;
+import java.util.List;
 
 /**
- * Class hold the information about start and end key of one leaf node
+ * Persist Index of all blocklet in one file
  */
-public class LeafNodeBtreeIndex implements Serializable {
+public class BlockletIndex implements Serializable {
 
   /**
    * serialization version
    */
-  private static final long serialVersionUID = 6116185464700853045L;
+  private static final long serialVersionUID = 1L;
 
   /**
-   * Bit-packed start key of one leaf node
+   * list of btree index for all blocklets
    */
-  private byte[] startKey;
+  private List<BlockletBTreeIndex> btreeIndexList;
 
   /**
-   * Bit-packed start key of one leaf node
+   * list of max and min key of blocklets
    */
-  private byte[] endKey;
+  private List<BlockletMinMaxIndex> minMaxIndexList;
 
   /**
-   * @return the startKey
+   * @return the btreeIndexList
    */
-  public byte[] getStartKey() {
-    return startKey;
+  public List<BlockletBTreeIndex> getBtreeIndexList() {
+    return btreeIndexList;
   }
 
   /**
-   * @param startKey the startKey to set
+   * @param btreeIndexList the btreeIndexList to set
    */
-  public void setStartKey(byte[] startKey) {
-    this.startKey = startKey;
+  public void setBtreeIndexList(List<BlockletBTreeIndex> btreeIndexList) {
+    this.btreeIndexList = btreeIndexList;
   }
 
   /**
-   * @return the endKey
+   * @return the minMaxIndexList
    */
-  public byte[] getEndKey() {
-    return endKey;
+  public List<BlockletMinMaxIndex> getMinMaxIndexList() {
+    return minMaxIndexList;
   }
 
   /**
-   * @param endKey the endKey to set
+   * @param minMaxIndexList the minMaxIndexList to set
    */
-  public void setEndKey(byte[] endKey) {
-    this.endKey = endKey;
+  public void setMinMaxIndexList(List<BlockletMinMaxIndex> minMaxIndexList) {
+    this.minMaxIndexList = minMaxIndexList;
   }
 }

@@ -30,8 +30,8 @@ import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.metadata.CarbonMetadata.Cube;
-import org.carbondata.core.metadata.LeafNodeInfo;
-import org.carbondata.core.metadata.LeafNodeInfoColumnar;
+import org.carbondata.core.metadata.BlockletInfo;
+import org.carbondata.core.metadata.BlockletInfoColumnar;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.vo.HybridStoreModel;
 import org.carbondata.query.datastorage.storeinterface.DataStore;
@@ -145,8 +145,8 @@ public class CSBTree implements DataStore {
 
     // TODO Need to account for page headers and other fields
     leafMaxEntry = Integer.parseInt(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.LEAFNODE_SIZE,
-            CarbonCommonConstants.LEAFNODE_SIZE_DEFAULT_VAL));
+        .getProperty(CarbonCommonConstants.BLOCKLET_SIZE,
+            CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL));
 
     this.isFileStore = isFileStore;
     this.keyBlockSize = keyBlockSize;
@@ -168,8 +168,8 @@ public class CSBTree implements DataStore {
 
     // TODO Need to account for page headers and other fields
     leafMaxEntry = Integer.parseInt(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.LEAFNODE_SIZE,
-            CarbonCommonConstants.LEAFNODE_SIZE_DEFAULT_VAL));
+        .getProperty(CarbonCommonConstants.BLOCKLET_SIZE,
+            CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL));
 
     this.isFileStore = isFileStore;
     setRangeSplitvalue();
@@ -240,26 +240,26 @@ public class CSBTree implements DataStore {
     long st = System.currentTimeMillis();
     long nodeNumber = 0;
     for (DataInputStream source : sources) {
-      List<LeafNodeInfoColumnar> leafNodeInfoList = source.getLeafNodeInfoColumnar();
-      if (null != leafNodeInfoList) {
-        if (leafNodeInfoList.size() > 0) {
-          leafNodeInfoList.get(0).getFileName();
+      List<BlockletInfoColumnar> blockletInfoList = source.getBlockletInfoColumnar();
+      if (null != blockletInfoList) {
+        if (blockletInfoList.size() > 0) {
+          blockletInfoList.get(0).getFileName();
           LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-              "Processing : " + (leafNodeInfoList.get(0).getFileName()) + " : " + (
+              "Processing : " + (blockletInfoList.get(0).getFileName()) + " : " + (
                   System.currentTimeMillis() - st));
           st = System.currentTimeMillis();
 
         }
-        for (LeafNodeInfoColumnar leafNodeInfo : leafNodeInfoList) {
-          leafNodeInfo.setAggKeyBlock(aggKeyBlock);
-          num += leafNodeInfo.getNumberOfKeys();
+        for (BlockletInfoColumnar blockletInfo : blockletInfoList) {
+          blockletInfo.setAggKeyBlock(aggKeyBlock);
+          num += blockletInfo.getNumberOfKeys();
           if (null == fileHolder) {
             fileHolder =
-                FileFactory.getFileHolder(FileFactory.getFileType(leafNodeInfo.getFileName()));
+                FileFactory.getFileHolder(FileFactory.getFileType(blockletInfo.getFileName()));
           }
           curNode =
-              new CSBTreeColumnarLeafNode(leafNodeInfo.getNumberOfKeys(), keyBlockSize, isFileStore,
-                  fileHolder, leafNodeInfo, compressionModel, nodeNumber++, metaCube,
+              new CSBTreeColumnarLeafNode(blockletInfo.getNumberOfKeys(), keyBlockSize, isFileStore,
+                  fileHolder, blockletInfo, compressionModel, nodeNumber++, metaCube,
                   hybridStoreModel);
           nLeaf++;
 
@@ -278,7 +278,7 @@ public class CSBTree implements DataStore {
             interNSKeyList.add(leafNSKeyList);
           }
           if (null != leafNSKeyList) {
-            leafNSKeyList.add(leafNodeInfo.getStartKey());
+            leafNSKeyList.add(blockletInfo.getStartKey());
           }
           if (null != currentGroup) {
             currentGroup[groupCounter] = curNode;
@@ -327,21 +327,21 @@ public class CSBTree implements DataStore {
     compressionModel = sources.get(0).getValueCompressionMode();
     long st = System.currentTimeMillis();
     for (DataInputStream source : sources) {
-      List<LeafNodeInfo> leafNodeInfoList = source.getLeafNodeInfo();
-      if (null != leafNodeInfoList) {
-        if (leafNodeInfoList.size() > 0) {
-          leafNodeInfoList.get(0).getFileName();
+      List<BlockletInfo> blockletInfoList = source.getBlockletInfo();
+      if (null != blockletInfoList) {
+        if (blockletInfoList.size() > 0) {
+          blockletInfoList.get(0).getFileName();
           LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-              "Processing : " + (leafNodeInfoList.get(0).getFileName()) + " : " + (
+              "Processing : " + (blockletInfoList.get(0).getFileName()) + " : " + (
                   System.currentTimeMillis() - st));
           st = System.currentTimeMillis();
 
         }
-        for (LeafNodeInfo leafNodeInfo : leafNodeInfoList) {
-          num += leafNodeInfo.getNumberOfKeys();
+        for (BlockletInfo blockletInfo : blockletInfoList) {
+          num += blockletInfo.getNumberOfKeys();
           curNode =
-              new CSBTreeLeafNode(leafNodeInfo.getNumberOfKeys(), keyGenerator.getKeySizeInBytes(),
-                  isFileStore, fileHolder, leafNodeInfo, compressionModel);
+              new CSBTreeLeafNode(blockletInfo.getNumberOfKeys(), keyGenerator.getKeySizeInBytes(),
+                  isFileStore, fileHolder, blockletInfo, compressionModel);
           nLeaf++;
 
           if (prevNode != null) {
@@ -359,7 +359,7 @@ public class CSBTree implements DataStore {
             interNSKeyList.add(leafNSKeyList);
           }
           if (null != leafNSKeyList) {
-            leafNSKeyList.add(leafNodeInfo.getStartKey());
+            leafNSKeyList.add(blockletInfo.getStartKey());
           }
           if (null != currGroup) {
             currGroup[groupCounter] = curNode;
@@ -870,13 +870,13 @@ public class CSBTree implements DataStore {
         new ArrayList<List<byte[]>>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
     List<byte[]> leafNSKeyList = null;
     compressionModel = source.getValueCompressionMode();
-    List<LeafNodeInfo> leafNodeInfoList = source.getLeafNodeInfo();
-    if (null != leafNodeInfoList) {
-      for (LeafNodeInfo leafNodeInfo : leafNodeInfoList) {
-        num += leafNodeInfo.getNumberOfKeys();
+    List<BlockletInfo> blockletInfoList = source.getBlockletInfo();
+    if (null != blockletInfoList) {
+      for (BlockletInfo blockletInfo : blockletInfoList) {
+        num += blockletInfo.getNumberOfKeys();
         curNode =
             new CSBTreeLeafNode(num, keyGenerator.getKeySizeInBytes(), isFileStore, fileHolder,
-                leafNodeInfo, compressionModel);
+                blockletInfo, compressionModel);
         nLeaf++;
 
         if (prevNode != null) {
@@ -894,7 +894,7 @@ public class CSBTree implements DataStore {
           interNSKeyList.add(leafNSKeyList);
         }
         if (null != leafNSKeyList) {
-          leafNSKeyList.add(leafNodeInfo.getStartKey());
+          leafNSKeyList.add(blockletInfo.getStartKey());
         }
         if (null != currentGroup) {
           currentGroup[grpCounter] = curNode;

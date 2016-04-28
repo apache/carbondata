@@ -14,7 +14,7 @@ import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
-import org.carbondata.core.metadata.LeafNodeInfoColumnar;
+import org.carbondata.core.metadata.BlockletInfoColumnar;
 import org.carbondata.core.metadata.ValueEncoderMeta;
 import org.carbondata.format.*;
 
@@ -30,14 +30,14 @@ public class CarbonMetadataUtil {
       LogServiceFactory.getLogService(CarbonMetadataUtil.class.getName());
 
   /**
-   * It converts list of LeafNodeInfoColumnar to FileFooter thrift objects
+   * It converts list of BlockletInfoColumnar to FileFooter thrift objects
    *
    * @param infoList
    * @param numCols
    * @param cardinalities
    * @return FileFooter
    */
-  public static FileFooter convertFileFooter(List<LeafNodeInfoColumnar> infoList, int numCols,
+  public static FileFooter convertFileFooter(List<BlockletInfoColumnar> infoList, int numCols,
       int[] cardinalities, List<ColumnSchema> columnSchemaList) throws IOException {
 
     SegmentInfo segmentInfo = new SegmentInfo();
@@ -47,12 +47,12 @@ public class CarbonMetadataUtil {
     FileFooter footer = new FileFooter();
     footer.setNum_rows(getTotalNumberOfRows(infoList));
     footer.setSegment_info(segmentInfo);
-    for (LeafNodeInfoColumnar info : infoList) {
-      footer.addToBlocklet_index_list(getLeafNodeIndex(info));
+    for (BlockletInfoColumnar info : infoList) {
+      footer.addToBlocklet_index_list(getBlockletIndex(info));
     }
     footer.setTable_columns(columnSchemaList);
-    for (LeafNodeInfoColumnar info : infoList) {
-      footer.addToBlocklet_info_list(getLeafNodeInfo(info));
+    for (BlockletInfoColumnar info : infoList) {
+      footer.addToBlocklet_info_list(getBlockletInfo(info));
     }
     return footer;
   }
@@ -63,46 +63,46 @@ public class CarbonMetadataUtil {
    * @param infoList
    * @return
    */
-  private static long getTotalNumberOfRows(List<LeafNodeInfoColumnar> infoList) {
+  private static long getTotalNumberOfRows(List<BlockletInfoColumnar> infoList) {
     long numberOfRows = 0;
-    for (LeafNodeInfoColumnar info : infoList) {
+    for (BlockletInfoColumnar info : infoList) {
       numberOfRows += info.getNumberOfKeys();
     }
     return numberOfRows;
   }
 
-  private static BlockletIndex getLeafNodeIndex(LeafNodeInfoColumnar info) {
+  private static BlockletIndex getBlockletIndex(BlockletInfoColumnar info) {
 
-    BlockletMinMaxIndex leafNodeMinMaxIndex = new BlockletMinMaxIndex();
+    BlockletMinMaxIndex blockletMinMaxIndex = new BlockletMinMaxIndex();
     for (byte[] max : info.getColumnMaxData()) {
-      leafNodeMinMaxIndex.addToMax_values(ByteBuffer.wrap(max));
+      blockletMinMaxIndex.addToMax_values(ByteBuffer.wrap(max));
     }
     for (byte[] min : info.getColumnMinData()) {
-      leafNodeMinMaxIndex.addToMin_values(ByteBuffer.wrap(min));
+      blockletMinMaxIndex.addToMin_values(ByteBuffer.wrap(min));
     }
-    BlockletBTreeIndex leafNodeBTreeIndex = new BlockletBTreeIndex();
-    leafNodeBTreeIndex.setStart_key(info.getStartKey());
-    leafNodeBTreeIndex.setEnd_key(info.getEndKey());
+    BlockletBTreeIndex blockletBTreeIndex = new BlockletBTreeIndex();
+    blockletBTreeIndex.setStart_key(info.getStartKey());
+    blockletBTreeIndex.setEnd_key(info.getEndKey());
 
-    BlockletIndex leafNodeIndex = new BlockletIndex();
-    leafNodeIndex.setMin_max_index(leafNodeMinMaxIndex);
-    leafNodeIndex.setB_tree_index(leafNodeBTreeIndex);
-    return leafNodeIndex;
+    BlockletIndex blockletIndex = new BlockletIndex();
+    blockletIndex.setMin_max_index(blockletMinMaxIndex);
+    blockletIndex.setB_tree_index(blockletBTreeIndex);
+    return blockletIndex;
   }
 
-  private static BlockletInfo getLeafNodeInfo(LeafNodeInfoColumnar leafNodeInfoColumnar)
+  private static BlockletInfo getBlockletInfo(BlockletInfoColumnar blockletInfoColumnar)
       throws IOException {
 
-    BlockletInfo leafNodeInfo = new BlockletInfo();
-    leafNodeInfo.setNum_rows(leafNodeInfoColumnar.getNumberOfKeys());
+    BlockletInfo blockletInfo = new BlockletInfo();
+    blockletInfo.setNum_rows(blockletInfoColumnar.getNumberOfKeys());
 
     List<DataChunk> colDataChunks = new ArrayList<DataChunk>();
-    leafNodeInfoColumnar.getKeyLengths();
+    blockletInfoColumnar.getKeyLengths();
     int j = 0;
     int aggregateIndex = 0;
-    boolean[] isSortedKeyColumn = leafNodeInfoColumnar.getIsSortedKeyColumn();
-    boolean[] aggKeyBlock = leafNodeInfoColumnar.getAggKeyBlock();
-    for (int i = 0; i < leafNodeInfoColumnar.getKeyLengths().length; i++) {
+    boolean[] isSortedKeyColumn = blockletInfoColumnar.getIsSortedKeyColumn();
+    boolean[] aggKeyBlock = blockletInfoColumnar.getAggKeyBlock();
+    for (int i = 0; i < blockletInfoColumnar.getKeyLengths().length; i++) {
       DataChunk dataChunk = new DataChunk();
       dataChunk.setChunk_meta(getChunkCompressionMeta());
       List<Encoding> encodings = new ArrayList<Encoding>();
@@ -111,11 +111,11 @@ public class CarbonMetadataUtil {
       dataChunk.setRow_chunk(false);
       //TODO : Once schema PR is merged and information needs to be passed here.
       dataChunk.setColumn_ids(new ArrayList<Integer>());
-      dataChunk.setData_page_length(leafNodeInfoColumnar.getKeyLengths()[i]);
-      dataChunk.setData_page_offset(leafNodeInfoColumnar.getKeyOffSets()[i]);
+      dataChunk.setData_page_length(blockletInfoColumnar.getKeyLengths()[i]);
+      dataChunk.setData_page_offset(blockletInfoColumnar.getKeyOffSets()[i]);
       if (aggKeyBlock[i]) {
-        dataChunk.setRle_page_offset(leafNodeInfoColumnar.getDataIndexMapOffsets()[aggregateIndex]);
-        dataChunk.setRle_page_length(leafNodeInfoColumnar.getDataIndexMapLength()[aggregateIndex]);
+        dataChunk.setRle_page_offset(blockletInfoColumnar.getDataIndexMapOffsets()[aggregateIndex]);
+        dataChunk.setRle_page_length(blockletInfoColumnar.getDataIndexMapLength()[aggregateIndex]);
         encodings.add(Encoding.RLE);
         aggregateIndex++;
       }
@@ -123,8 +123,8 @@ public class CarbonMetadataUtil {
           .setSort_state(isSortedKeyColumn[i] ? SortState.SORT_EXPLICIT : SortState.SORT_NATIVE);
 
       if (!isSortedKeyColumn[i]) {
-        dataChunk.setRowid_page_offset(leafNodeInfoColumnar.getKeyBlockIndexOffSets()[j]);
-        dataChunk.setRowid_page_length(leafNodeInfoColumnar.getKeyBlockIndexLength()[j]);
+        dataChunk.setRowid_page_offset(blockletInfoColumnar.getKeyBlockIndexOffSets()[j]);
+        dataChunk.setRowid_page_length(blockletInfoColumnar.getKeyBlockIndexLength()[j]);
         encodings.add(Encoding.INVERTED_INDEX);
         j++;
       }
@@ -135,14 +135,14 @@ public class CarbonMetadataUtil {
       colDataChunks.add(dataChunk);
     }
 
-    for (int i = 0; i < leafNodeInfoColumnar.getMeasureLength().length; i++) {
+    for (int i = 0; i < blockletInfoColumnar.getMeasureLength().length; i++) {
       DataChunk dataChunk = new DataChunk();
       dataChunk.setChunk_meta(getChunkCompressionMeta());
       dataChunk.setRow_chunk(false);
       //TODO : Once schema PR is merged and information needs to be passed here.
       dataChunk.setColumn_ids(new ArrayList<Integer>());
-      dataChunk.setData_page_length(leafNodeInfoColumnar.getMeasureLength()[i]);
-      dataChunk.setData_page_offset(leafNodeInfoColumnar.getMeasureOffset()[i]);
+      dataChunk.setData_page_length(blockletInfoColumnar.getMeasureLength()[i]);
+      dataChunk.setData_page_offset(blockletInfoColumnar.getMeasureOffset()[i]);
       //TODO : Right now the encodings are happening at runtime. change as per this encoders.
       List<Encoding> encodings = new ArrayList<Encoding>();
       encodings.add(Encoding.DELTA);
@@ -158,13 +158,13 @@ public class CarbonMetadataUtil {
       //TODO : Need to write ValueCompression meta here.
       List<ByteBuffer> encoderMetaList = new ArrayList<ByteBuffer>();
       encoderMetaList.add(ByteBuffer.wrap(serializeEncoderMeta(
-          createValueEncoderMeta(leafNodeInfoColumnar.getCompressionModel(), i))));
+          createValueEncoderMeta(blockletInfoColumnar.getCompressionModel(), i))));
       dataChunk.setEncoder_meta(encoderMetaList);
       colDataChunks.add(dataChunk);
     }
-    leafNodeInfo.setColumn_data_chunks(colDataChunks);
+    blockletInfo.setColumn_data_chunks(colDataChunks);
 
-    return leafNodeInfo;
+    return blockletInfo;
   }
 
   private static byte[] serializeEncoderMeta(ValueEncoderMeta encoderMeta) throws IOException {
@@ -200,19 +200,19 @@ public class CarbonMetadataUtil {
   }
 
   /**
-   * It converts FileFooter thrift object to list of LeafNodeInfoColumnar objects
+   * It converts FileFooter thrift object to list of BlockletInfoColumnar objects
    *
    * @param footer
    * @return
    */
-  public static List<LeafNodeInfoColumnar> convertLeafNodeInfo(FileFooter footer)
+  public static List<BlockletInfoColumnar> convertBlockletInfo(FileFooter footer)
       throws IOException {
-    List<LeafNodeInfoColumnar> listOfNodeInfo =
-        new ArrayList<LeafNodeInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-    for (BlockletInfo leafNodeInfo : footer.getBlocklet_info_list()) {
-      LeafNodeInfoColumnar leafNodeInfoColumnar = new LeafNodeInfoColumnar();
-      leafNodeInfoColumnar.setNumberOfKeys(leafNodeInfo.getNum_rows());
-      List<DataChunk> columnChunks = leafNodeInfo.getColumn_data_chunks();
+    List<BlockletInfoColumnar> listOfNodeInfo =
+        new ArrayList<BlockletInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+    for (BlockletInfo blockletInfo : footer.getBlocklet_info_list()) {
+      BlockletInfoColumnar blockletInfoColumnar = new BlockletInfoColumnar();
+      blockletInfoColumnar.setNumberOfKeys(blockletInfo.getNum_rows());
+      List<DataChunk> columnChunks = blockletInfo.getColumn_data_chunks();
       List<DataChunk> dictChunks = new ArrayList<DataChunk>();
       List<DataChunk> nonDictColChunks = new ArrayList<DataChunk>();
       for (DataChunk dataChunk : columnChunks) {
@@ -240,13 +240,13 @@ public class CarbonMetadataUtil {
         sortState[i] = dataChunk.getSort_state().equals(SortState.SORT_EXPLICIT) ? true : false;
         i++;
       }
-      leafNodeInfoColumnar.setKeyLengths(keyLengths);
-      leafNodeInfoColumnar.setKeyOffSets(keyOffSets);
-      leafNodeInfoColumnar.setKeyBlockIndexOffSets(keyBlockIndexOffsets);
-      leafNodeInfoColumnar.setKeyBlockIndexLength(keyBlockIndexLens);
-      leafNodeInfoColumnar.setDataIndexMapOffsets(indexMapOffsets);
-      leafNodeInfoColumnar.setDataIndexMapLength(indexMapLens);
-      leafNodeInfoColumnar.setIsSortedKeyColumn(sortState);
+      blockletInfoColumnar.setKeyLengths(keyLengths);
+      blockletInfoColumnar.setKeyOffSets(keyOffSets);
+      blockletInfoColumnar.setKeyBlockIndexOffSets(keyBlockIndexOffsets);
+      blockletInfoColumnar.setKeyBlockIndexLength(keyBlockIndexLens);
+      blockletInfoColumnar.setDataIndexMapOffsets(indexMapOffsets);
+      blockletInfoColumnar.setDataIndexMapLength(indexMapLens);
+      blockletInfoColumnar.setIsSortedKeyColumn(sortState);
 
       int[] msrLens = new int[nonDictColChunks.size()];
       long[] msrOffsets = new long[nonDictColChunks.size()];
@@ -258,13 +258,13 @@ public class CarbonMetadataUtil {
         encoderMetas[i] = deserializeValueEncoderMeta(msrChunk.getEncoder_meta().get(0));
         i++;
       }
-      leafNodeInfoColumnar.setMeasureLength(msrLens);
-      leafNodeInfoColumnar.setMeasureOffset(msrOffsets);
-      leafNodeInfoColumnar.setCompressionModel(getValueCompressionModel(encoderMetas));
-      listOfNodeInfo.add(leafNodeInfoColumnar);
+      blockletInfoColumnar.setMeasureLength(msrLens);
+      blockletInfoColumnar.setMeasureOffset(msrOffsets);
+      blockletInfoColumnar.setCompressionModel(getValueCompressionModel(encoderMetas));
+      listOfNodeInfo.add(blockletInfoColumnar);
     }
 
-    setLeafNodeIndex(footer, listOfNodeInfo);
+    setBlockletIndex(footer, listOfNodeInfo);
     return listOfNodeInfo;
   }
 
@@ -303,8 +303,8 @@ public class CarbonMetadataUtil {
             dataTypeSelected);
   }
 
-  private static void setLeafNodeIndex(FileFooter footer,
-      List<LeafNodeInfoColumnar> listOfNodeInfo) {
+  private static void setBlockletIndex(FileFooter footer,
+      List<BlockletInfoColumnar> listOfNodeInfo) {
     List<BlockletIndex> blockletIndexList = footer.getBlocklet_index_list();
     for (int i = 0; i < blockletIndexList.size(); i++) {
       BlockletBTreeIndex bTreeIndexList = blockletIndexList.get(i).getB_tree_index();

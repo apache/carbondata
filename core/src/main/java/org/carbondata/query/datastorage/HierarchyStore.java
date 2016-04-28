@@ -39,7 +39,7 @@ public class HierarchyStore {
    */
   private String factTableName;
 
-  private HierarchyBtreeStore btreeStore;
+  private HierarchyBTreeStore btreeStore;
 
   /**
    *
@@ -80,7 +80,7 @@ public class HierarchyStore {
    * @param factStream
    */
   public void build(KeyGenerator keyGen, DataInputStream factStream) {
-    btreeStore = new HierarchyBtreeStore(keyGen);
+    btreeStore = new HierarchyBTreeStore(keyGen);
     btreeStore.build(factStream);
   }
 

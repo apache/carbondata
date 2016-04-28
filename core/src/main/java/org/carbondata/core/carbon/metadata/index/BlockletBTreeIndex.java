@@ -14,14 +14,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.carbondata.core.carbon.metadata.leafnode.indexes;
+package org.carbondata.core.carbon.metadata.index;
 
 import java.io.Serializable;
 
 /**
- * Class hold the information about start and end key of one leaf node
+ * Class hold the information about start and end key of one blocklet
  */
-public class LeafNodeBtreeIndex implements Serializable {
+public class BlockletBTreeIndex implements Serializable {
 
   /**
    * serialization version
@@ -29,22 +29,14 @@ public class LeafNodeBtreeIndex implements Serializable {
   private static final long serialVersionUID = 6116185464700853045L;
 
   /**
-   * Bit-packed start key of one leaf node
+   * Bit-packed start key of one blocklet
    */
   private byte[] startKey;
 
   /**
-   * Bit-packed start key of one leaf node
+   * Bit-packed start key of one blocklet
    */
   private byte[] endKey;
-
-  public LeafNodeBtreeIndex() {
-  }
-
-  public LeafNodeBtreeIndex(byte[] startKey, byte[] endKey) {
-    this.startKey = startKey;
-    this.endKey = endKey;
-  }
 
   /**
    * @return the startKey

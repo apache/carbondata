@@ -32,7 +32,7 @@ import org.carbondata.core.datastorage.store.compression.SnappyCompression.Snapp
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.file.manager.composite.IFileManagerComposite;
 import org.carbondata.core.keygenerator.mdkey.NumberCompressor;
-import org.carbondata.core.metadata.LeafNodeInfoColumnar;
+import org.carbondata.core.metadata.BlockletInfoColumnar;
 import org.carbondata.core.util.CarbonMetadataUtil;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.writer.CarbonFooterWriter;
@@ -69,14 +69,14 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
         keyBlockSize, isUpdateFact, carbonDataFileAttributes);
     this.aggBlocks = aggBlocks;
     this.numberCompressor = new NumberCompressor(Integer.parseInt(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.LEAFNODE_SIZE,
-            CarbonCommonConstants.LEAFNODE_SIZE_DEFAULT_VAL)));
+        .getProperty(CarbonCommonConstants.BLOCKLET_SIZE,
+            CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL)));
   }
 
   @Override public void writeDataToFile(IndexStorage<int[]>[] keyStorageArray, byte[][] dataArray,
       int entryCount, byte[] startKey, byte[] endKey, ValueCompressionModel compressionModel)
       throws CarbonDataWriterException {
-    updateLeafNodeFileChannel();
+    updateBlockletFileChannel();
     // total measure length;
     int totalMsrArrySize = 0;
     // current measure length;
@@ -271,7 +271,7 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
   }
 
   /**
-   * This method is responsible for writing leaf node to the leaf node file
+   * This method is responsible for writing blocklet to the data file
    *
    * @return file offset offset is the current position of the file
    * @throws CarbonDataWriterException if will throw CarbonDataWriterException when any thing
@@ -323,7 +323,7 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
       // write data to file
       channel.write(byteBuffer);
     } catch (IOException exception) {
-      throw new CarbonDataWriterException("Problem in writing Leaf Node File: ", exception);
+      throw new CarbonDataWriterException("Problem in writing carbon file: ", exception);
     }
     // return the offset, this offset will be used while reading the file in
     // engine side to get from which position to start reading the file
@@ -331,13 +331,13 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
   }
 
   /**
-   * This method will be used to get the leaf node metadata
+   * This method will be used to get the blocklet metadata
    *
-   * @return LeafNodeInfo - leaf metadata
+   * @return BlockletInfo - blocklet metadata
    */
-  protected LeafNodeInfoColumnar getLeafNodeInfo(NodeHolder nodeHolder, long offset) {
+  protected BlockletInfoColumnar getBlockletInfo(NodeHolder nodeHolder, long offset) {
     // create the info object for leaf entry
-    LeafNodeInfoColumnar info = new LeafNodeInfoColumnar();
+    BlockletInfoColumnar info = new BlockletInfoColumnar();
     //add aggBlocks array
     info.setAggKeyBlock(nodeHolder.getAggBlocks());
     // add total entry count
@@ -403,7 +403,7 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
     return info;
   }
 
-  protected int calculateAndSetLeafNodeMetaSize(NodeHolder nodeHolderInfo) {
+  protected int calculateAndSetBlockletMetaSize(NodeHolder nodeHolderInfo) {
     int metaSize = 0;
     //measure offset and measure length
     metaSize += (measureCount * CarbonCommonConstants.INT_SIZE_IN_BYTE) + (measureCount
@@ -449,7 +449,7 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
    * @throws CarbonDataWriterException throw CarbonDataWriterException when problem in writing
    *                                   the meta data to file
    */
-  protected void writeleafMetaDataToFile(List<LeafNodeInfoColumnar> infoList, FileChannel channel)
+  protected void writeleafMetaDataToFile(List<BlockletInfoColumnar> infoList, FileChannel channel)
       throws CarbonDataWriterException {
     try {
       long currentPos = channel.size();
@@ -459,7 +459,7 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
           .convertFileFooter(infoList, localCardinality.length, localCardinality,
               fillColumnSchemaToMetadata), currentPos);
     } catch (IOException e) {
-      throw new CarbonDataWriterException("Problem while writing the Leaf Node File: ", e);
+      throw new CarbonDataWriterException("Problem while writing the carbon file: ", e);
     }
   }
 }

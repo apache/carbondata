@@ -27,7 +27,7 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.iterator.CarbonIterator;
-import org.carbondata.core.metadata.LeafNodeInfo;
+import org.carbondata.core.metadata.BlockletInfo;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.executer.pagination.impl.QueryResult;
 import org.carbondata.query.reader.QueryDataFileReader;
@@ -36,40 +36,34 @@ import org.carbondata.query.schema.metadata.DataProcessorInfo;
 import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
- * Project Name  : Carbon
- * Module Name   : CARBON Data Processor
- * Author    : R00903928,k00900841
- * Created Date  : 27-Aug-2015
- * FileName   : FileBasedResultIteartor.java
- * Description   : provides the iterator over the leaf node and return the query result.
- * Class Version  : 1.0
+ * provides the iterator over the blocklet and return the query result.
  */
 public class FileBasedResultIteartor implements CarbonIterator<QueryResult> {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(FileBasedResultIteartor.class.getName());
   /**
-   * leafNodeInfos
+   * blockletInfos
    */
-  private List<LeafNodeInfo> leafNodeInfos;
+  private List<BlockletInfo> blockletInfos;
   private int counter;
   private QueryDataFileReader carbonQueryDataFileReader;
   private boolean hasNext;
 
   public FileBasedResultIteartor(String path, DataProcessorInfo info) {
-    readLeafNodeInfo(path, info);
+    readBlockletInfo(path, info);
     carbonQueryDataFileReader = new QueryDataFileReader(path, info);
   }
 
-  private void readLeafNodeInfo(String path, DataProcessorInfo info) {
+  private void readBlockletInfo(String path, DataProcessorInfo info) {
     CarbonFile carbonFile = FileFactory.getCarbonFile(path, FileFactory.getFileType(path));
     try {
       if (FileFactory.isFileExist(path, FileFactory.getFileType(path))) {
-        leafNodeInfos =
-            CarbonUtil.getLeafNodeInfo(carbonFile, info.getAggType().length, info.getKeySize());
+        blockletInfos =
+            CarbonUtil.getBlockletInfo(carbonFile, info.getAggType().length, info.getKeySize());
       } else {
         LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "file doesnot exist " + path);
       }
-      if (leafNodeInfos.size() > 0) {
+      if (blockletInfos.size() > 0) {
         hasNext = true;
       }
     } catch (IOException e) {
@@ -85,12 +79,12 @@ public class FileBasedResultIteartor implements CarbonIterator<QueryResult> {
     QueryResult prepareResultFromFile = null;
     try {
       prepareResultFromFile =
-          carbonQueryDataFileReader.prepareResultFromFile(leafNodeInfos.get(counter));
+          carbonQueryDataFileReader.prepareResultFromFile(blockletInfos.get(counter));
     } catch (ResultReaderException e) {
       carbonQueryDataFileReader.close();
     }
     counter++;
-    if (counter >= leafNodeInfos.size()) {
+    if (counter >= blockletInfos.size()) {
       hasNext = false;
       carbonQueryDataFileReader.close();
     }

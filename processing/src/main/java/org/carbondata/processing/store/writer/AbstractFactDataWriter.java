@@ -48,7 +48,7 @@ import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.file.manager.composite.FileData;
 import org.carbondata.core.file.manager.composite.IFileManagerComposite;
-import org.carbondata.core.metadata.LeafNodeInfoColumnar;
+import org.carbondata.core.metadata.BlockletInfoColumnar;
 import org.carbondata.core.util.CarbonMergerUtil;
 import org.carbondata.core.util.CarbonMetadataUtil;
 import org.carbondata.core.util.CarbonProperties;
@@ -74,7 +74,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    */
   protected long currentFileSize;
   /**
-   * leaf node file channel
+   * file channel
    */
   protected FileChannel fileChannel;
   /**
@@ -86,9 +86,9 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    */
   protected List<NodeHolder> nodeHolderList;
   /**
-   * this will be used for holding leaf node metadata
+   * this will be used for holding blocklet metadata
    */
-  protected List<LeafNodeInfoColumnar> leafNodeInfoList;
+  protected List<BlockletInfoColumnar> blockletInfoList;
   /**
    * keyBlockSize
    */
@@ -99,7 +99,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    */
   protected int mdkeySize;
   /**
-   * leaf node file name
+   * file name
    */
   protected String fileName;
   /**
@@ -116,11 +116,11 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    */
   private long fileSizeInBytes;
   /**
-   * file count will be used to give sequence number to the leaf node file
+   * file count will be used to give sequence number to the data file
    */
   private int fileCount;
   /**
-   * Leaf node filename format
+   * filename format
    */
   private String fileNameFormat;
   /**
@@ -151,9 +151,8 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     this.tableName = tableName;
 
     this.storeLocation = storeLocation;
-    // create the leaf node file format
-    this.leafNodeInfoList =
-        new ArrayList<LeafNodeInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+    this.blockletInfoList =
+        new ArrayList<BlockletInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
     // get max file size;
     CarbonProperties propInstance = CarbonProperties.getInstance();
     this.fileSizeInBytes = Long.parseLong(propInstance
@@ -206,7 +205,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    *
    * @throws CarbonDataWriterException if any problem
    */
-  protected void updateLeafNodeFileChannel() throws CarbonDataWriterException {
+  protected void updateBlockletFileChannel() throws CarbonDataWriterException {
     // get the current file size exceeding the file size threshold
     if (currentFileSize >= fileSizeInBytes) {
       // set the current file size to zero
@@ -219,9 +218,9 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
         // close the current open file channel
       } else {
         // write meta data to end of the existing file
-        writeleafMetaDataToFile(leafNodeInfoList, fileChannel);
-        leafNodeInfoList =
-            new ArrayList<LeafNodeInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+        writeleafMetaDataToFile(blockletInfoList, fileChannel);
+        blockletInfoList =
+            new ArrayList<BlockletInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
         CarbonUtil.closeStreams(fileChannel);
       }
       // initialize the new channel
@@ -248,7 +247,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
         + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
     this.fileCount++;
     try {
-      // open channle for new leaf node file
+      // open channle for new data file
       this.fileChannel = new FileOutputStream(this.fileName, true).getChannel();
     } catch (FileNotFoundException fileNotFoundException) {
       throw new CarbonDataWriterException("Problem while getting the FileChannel for Leaf File",
@@ -291,20 +290,20 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    */
   private void writeData(FileChannel channel, List<NodeHolder> nodeHolderList)
       throws CarbonDataWriterException {
-    List<LeafNodeInfoColumnar> leafMetaInfos =
-        new ArrayList<LeafNodeInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+    List<BlockletInfoColumnar> blockletInfos =
+        new ArrayList<BlockletInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
     for (NodeHolder nodeHolder : nodeHolderList) {
       long offSet = writeDataToFile(nodeHolder, channel);
-      leafMetaInfos.add(getLeafNodeInfo(nodeHolder, offSet));
+      blockletInfos.add(getBlockletInfo(nodeHolder, offSet));
     }
-    writeleafMetaDataToFile(leafMetaInfos, channel);
+    writeleafMetaDataToFile(blockletInfos, channel);
     CarbonUtil.closeStreams(channel);
   }
 
   /**
    * This method will write metadata at the end of file file format in thrift format
    */
-  protected void writeleafMetaDataToFile(List<LeafNodeInfoColumnar> infoList, FileChannel channel)
+  protected void writeleafMetaDataToFile(List<BlockletInfoColumnar> infoList, FileChannel channel)
       throws CarbonDataWriterException {
     try {
       long currentPosition = channel.size();
@@ -316,7 +315,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
       writer.writeFooter(convertFileMeta, currentPosition);
 
     } catch (IOException e) {
-      throw new CarbonDataWriterException("Problem while writing the Leaf Node File: ", e);
+      throw new CarbonDataWriterException("Problem while writing the carbon file: ", e);
     }
 
   }
@@ -342,13 +341,13 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
   }
 
   /**
-   * This method will be used to get the leaf node metadata
+   * This method will be used to get the blocklet metadata
    *
-   * @return LeafNodeInfo - leaf metadata
+   * @return BlockletInfo - blocklet metadata
    */
-  protected LeafNodeInfoColumnar getLeafNodeInfo(NodeHolder nodeHolder, long offset) {
+  protected BlockletInfoColumnar getBlockletInfo(NodeHolder nodeHolder, long offset) {
     // create the info object for leaf entry
-    LeafNodeInfoColumnar infoObj = new LeafNodeInfoColumnar();
+    BlockletInfoColumnar infoObj = new BlockletInfoColumnar();
     // add total entry count
     infoObj.setNumberOfKeys(nodeHolder.getEntryCount());
 
@@ -437,9 +436,9 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    */
   public void writeleafMetaDataToFile() throws CarbonDataWriterException {
     if (!isNodeHolderRequired) {
-      writeleafMetaDataToFile(this.leafNodeInfoList, fileChannel);
-      this.leafNodeInfoList =
-          new ArrayList<LeafNodeInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+      writeleafMetaDataToFile(this.blockletInfoList, fileChannel);
+      this.blockletInfoList =
+          new ArrayList<BlockletInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
     } else {
       if (this.nodeHolderList.size() > 0) {
         List<NodeHolder> localNodeHodlerList = nodeHolderList;
@@ -458,13 +457,13 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    * @throws CarbonDataWriterException throws new CarbonDataWriterException if any problem
    */
   protected void writeDataToFile(NodeHolder nodeHolder) throws CarbonDataWriterException {
-    // write data to leaf file and get its offset
+    // write data to file and get its offset
     long offset = writeDataToFile(nodeHolder, fileChannel);
 
-    // get the leaf node info for currently added leaf node
-    LeafNodeInfoColumnar leafNodeInfo = getLeafNodeInfo(nodeHolder, offset);
-    // add leaf info to list
-    leafNodeInfoList.add(leafNodeInfo);
+    // get the blocklet info for currently added blocklet
+    BlockletInfoColumnar blockletInfo = getBlockletInfo(nodeHolder, offset);
+    // add blocklet info to list
+    blockletInfoList.add(blockletInfo);
     // calculate the current size of the file
   }
 
@@ -472,7 +471,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
       throws CarbonDataWriterException;
 
   @Override public int getLeafMetadataSize() {
-    return leafNodeInfoList.size();
+    return blockletInfoList.size();
 
   }
 

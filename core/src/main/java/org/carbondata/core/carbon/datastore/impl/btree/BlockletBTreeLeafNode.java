@@ -25,7 +25,7 @@ import org.carbondata.core.carbon.datastore.chunk.reader.DimensionColumnChunkRea
 import org.carbondata.core.carbon.datastore.chunk.reader.MeasureColumnChunkReader;
 import org.carbondata.core.carbon.datastore.chunk.reader.dimension.CompressedDimensionChunkFileBasedReader;
 import org.carbondata.core.carbon.datastore.chunk.reader.measure.CompressedMeasureChunkFileBasedReader;
-import org.carbondata.core.carbon.metadata.leafnode.indexes.LeafNodeMinMaxIndex;
+import org.carbondata.core.carbon.metadata.blocklet.index.BlockletMinMaxIndex;
 import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.util.CarbonUtil;
@@ -33,7 +33,7 @@ import org.carbondata.core.util.CarbonUtil;
 /**
  * Leaf node class of a Blocklet btree
  */
-public class BlockletBTreeLeafNode extends AbstractBtreeLeafNode {
+public class BlockletBTreeLeafNode extends AbstractBTreeLeafNode {
 
   /**
    * reader for dimension chunk
@@ -56,28 +56,28 @@ public class BlockletBTreeLeafNode extends AbstractBtreeLeafNode {
    */
   public BlockletBTreeLeafNode(BTreeBuilderInfo builderInfos, int leafIndex, long nodeNumber) {
     // get a lead node min max
-    LeafNodeMinMaxIndex minMaxIndex =
-        builderInfos.getFooterList().get(0).getLeafNodeList().get(leafIndex)
-            .getLeafNodeIndex().getMinMaxIndex();
+    BlockletMinMaxIndex minMaxIndex =
+        builderInfos.getFooterList().get(0).getBlockletList().get(leafIndex)
+            .getBlockletIndex().getMinMaxIndex();
     // max key of the columns
     maxKeyOfColumns = minMaxIndex.getMaxValues();
     // min keys of the columns
     minKeyOfColumns = minMaxIndex.getMinValues();
     // number of keys present in the leaf
-    numberOfKeys = builderInfos.getFooterList().get(0).getLeafNodeList().get(leafIndex)
+    numberOfKeys = builderInfos.getFooterList().get(0).getBlockletList().get(leafIndex)
         .getNumberOfRows();
     // create a instance of dimension chunk
     dimensionChunksReader = new CompressedDimensionChunkFileBasedReader(
-        builderInfos.getFooterList().get(0).getLeafNodeList().get(leafIndex)
+        builderInfos.getFooterList().get(0).getBlockletList().get(leafIndex)
             .getDimensionColumnChunk(), builderInfos.getDimensionColumnValueSize(),
         builderInfos.getFooterList().get(0).getTableBlockInfo().getFilePath());
     // get the value compression model which was used to compress the measure values
     ValueCompressionModel valueCompressionModel = CarbonUtil.getValueCompressionModel(
-        builderInfos.getFooterList().get(0).getLeafNodeList().get(leafIndex)
+        builderInfos.getFooterList().get(0).getBlockletList().get(leafIndex)
             .getMeasureColumnChunk());
     // create a instance of measure column chunk reader
     measureColumnChunkReader = new CompressedMeasureChunkFileBasedReader(
-        builderInfos.getFooterList().get(0).getLeafNodeList().get(leafIndex)
+        builderInfos.getFooterList().get(0).getBlockletList().get(leafIndex)
             .getMeasureColumnChunk(), valueCompressionModel,
             builderInfos.getFooterList().get(0).getTableBlockInfo().getFilePath());
     this.nodeNumber = nodeNumber;

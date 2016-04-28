@@ -54,8 +54,8 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.datastore.chunk.impl.FixedLengthDimensionDataChunk;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
-import org.carbondata.core.carbon.metadata.leafnode.DataFileFooter;
-import org.carbondata.core.carbon.metadata.leafnode.datachunk.DataChunk;
+import org.carbondata.core.carbon.metadata.blocklet.DataFileFooter;
+import org.carbondata.core.carbon.metadata.blocklet.datachunk.DataChunk;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreDataHolder;
@@ -70,9 +70,9 @@ import org.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.keygenerator.mdkey.NumberCompressor;
 import org.carbondata.core.load.LoadMetadataDetails;
+import org.carbondata.core.metadata.BlockletInfo;
+import org.carbondata.core.metadata.BlockletInfoColumnar;
 import org.carbondata.core.metadata.CarbonMetadata.Dimension;
-import org.carbondata.core.metadata.LeafNodeInfo;
-import org.carbondata.core.metadata.LeafNodeInfoColumnar;
 import org.carbondata.core.metadata.SliceMetaData;
 import org.carbondata.core.metadata.ValueEncoderMeta;
 import org.carbondata.core.reader.CarbonFooterReader;
@@ -822,15 +822,15 @@ public final class CarbonUtil {
    * @param file
    * @param measureCount
    * @param mdKeySize
-   * @return will return leaf node info which will have all the meta data
-   * related to leaf file
+   * @return will return blocklet info which will have all the meta data
+   * related to data file
    */
-  public static List<LeafNodeInfo> getLeafNodeInfo(File file, int measureCount, int mdKeySize) {
-    List<LeafNodeInfo> listOfNodeInfo =
-        new ArrayList<LeafNodeInfo>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+  public static List<BlockletInfo> getBlockletInfo(File file, int measureCount, int mdKeySize) {
+    List<BlockletInfo> listOfBlockletInfo =
+        new ArrayList<BlockletInfo>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
     String filesLocation = file.getAbsolutePath();
     long fileSize = file.length();
-    return getLeafNodeDetails(listOfNodeInfo, filesLocation, measureCount, mdKeySize, fileSize);
+    return getBlockletDetails(listOfBlockletInfo, filesLocation, measureCount, mdKeySize, fileSize);
   }
 
   /**
@@ -840,16 +840,16 @@ public final class CarbonUtil {
    * @param file
    * @param measureCount
    * @param mdKeySize
-   * @return will return leaf node info which will have all the meta data
-   * related to leaf file
+   * @return will return blocklet info which will have all the meta data
+   * related to data file
    */
-  public static List<LeafNodeInfo> getLeafNodeInfo(CarbonFile file, int measureCount,
+  public static List<BlockletInfo> getBlockletInfo(CarbonFile file, int measureCount,
       int mdKeySize) {
-    List<LeafNodeInfo> listOfNodeInfo =
-        new ArrayList<LeafNodeInfo>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+    List<BlockletInfo> listOfNodeInfo =
+        new ArrayList<BlockletInfo>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
     String filesLocation = file.getAbsolutePath();
     long fileSize = file.getSize();
-    return getLeafNodeDetails(listOfNodeInfo, filesLocation, measureCount, mdKeySize, fileSize);
+    return getBlockletDetails(listOfNodeInfo, filesLocation, measureCount, mdKeySize, fileSize);
   }
 
   /**
@@ -860,7 +860,7 @@ public final class CarbonUtil {
    * @param fileSize
    * @return
    */
-  private static List<LeafNodeInfo> getLeafNodeDetails(List<LeafNodeInfo> listOfNodeInfo,
+  private static List<BlockletInfo> getBlockletDetails(List<BlockletInfo> listOfNodeInfo,
       String filesLocation, int measureCount, int mdKeySize, long fileSize) {
     long offset = fileSize - CarbonCommonConstants.LONG_SIZE_IN_BYTE;
     FileHolder fileHolder = FileFactory.getFileHolder(FileFactory.getFileType(filesLocation));
@@ -872,7 +872,7 @@ public final class CarbonUtil {
     while (buffer.hasRemaining()) {
       int[] msrLength = new int[measureCount];
       long[] msrOffset = new long[measureCount];
-      LeafNodeInfo info = new LeafNodeInfo();
+      BlockletInfo info = new BlockletInfo();
       byte[] startKey = new byte[mdKeySize];
       byte[] endKey = new byte[mdKeySize];
       info.setFileName(filesLocation);
@@ -902,61 +902,61 @@ public final class CarbonUtil {
    * @param file
    * @param measureCount
    * @param mdKeySize
-   * @return will return leaf node info which will have all the meta data
-   * related to leaf file
+   * @return will return blocklet info which will have all the meta data
+   * related to data file
    */
-  public static List<LeafNodeInfoColumnar> getLeafNodeInfoColumnar(File file, int measureCount,
+  public static List<BlockletInfoColumnar> getBlockletInfoColumnar(File file, int measureCount,
       int mdKeySize) {
-    List<LeafNodeInfoColumnar> listOfNodeInfo =
-        new ArrayList<LeafNodeInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+    List<BlockletInfoColumnar> listOfBlockletInfo =
+        new ArrayList<BlockletInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
     String filesLocation = file.getAbsolutePath();
     long fileSize = file.length();
-    return getLeafNodeInfo(measureCount, mdKeySize, listOfNodeInfo, filesLocation, fileSize);
+    return getBlockletInfo(measureCount, mdKeySize, listOfBlockletInfo, filesLocation, fileSize);
   }
 
   /**
-   * This method will be used to read leaf meta data format of meta data will
+   * This method will be used to read blocklet meta data format of meta data will
    * be <entrycount><keylength><keyoffset><measure1length><measure1offset>
    *
    * @param file
    * @param measureCount
    * @param mdKeySize
-   * @return will return leaf node info which will have all the meta data
+   * @return will return blocklet info which will have all the meta data
    * related to leaf file
    */
-  public static List<LeafNodeInfoColumnar> getLeafNodeInfoColumnar(CarbonFile file,
+  public static List<BlockletInfoColumnar> getBlockletInfoColumnar(CarbonFile file,
       int measureCount, int mdKeySize) {
-    List<LeafNodeInfoColumnar> listOfNodeInfo =
-        new ArrayList<LeafNodeInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+    List<BlockletInfoColumnar> listOfBlockletInfo =
+        new ArrayList<BlockletInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
     String filesLocation = file.getAbsolutePath();
     long fileSize = file.getSize();
-    return getLeafNodeInfo(measureCount, mdKeySize, listOfNodeInfo, filesLocation, fileSize);
+    return getBlockletInfo(measureCount, mdKeySize, listOfBlockletInfo, filesLocation, fileSize);
   }
 
   /**
    * @param measureCount
    * @param mdKeySize
-   * @param listOfNodeInfo
+   * @param listOfBlockletInfo
    * @param filesLocation
    * @param fileSize
    * @return
    */
-  private static List<LeafNodeInfoColumnar> getLeafNodeInfo(int measureCount, int mdKeySize,
-      List<LeafNodeInfoColumnar> listOfNodeInfo, String filesLocation, long fileSize) {
+  private static List<BlockletInfoColumnar> getBlockletInfo(int measureCount, int mdKeySize,
+      List<BlockletInfoColumnar> listOfBlockletInfo, String filesLocation, long fileSize) {
     long offset = fileSize - CarbonCommonConstants.LONG_SIZE_IN_BYTE;
     FileHolder fileHolder = FileFactory.getFileHolder(FileFactory.getFileType(filesLocation));
     offset = fileHolder.readDouble(filesLocation, offset);
     CarbonFooterReader metaDataReader = new CarbonFooterReader(filesLocation, offset);
     try {
-      listOfNodeInfo = CarbonMetadataUtil.convertLeafNodeInfo(metaDataReader.readFooter());
+      listOfBlockletInfo = CarbonMetadataUtil.convertBlockletInfo(metaDataReader.readFooter());
     } catch (IOException e) {
       LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
           "Problem while reading metadata :: " + filesLocation, e);
     }
-    for (LeafNodeInfoColumnar infoColumnar : listOfNodeInfo) {
+    for (BlockletInfoColumnar infoColumnar : listOfBlockletInfo) {
       infoColumnar.setFileName(filesLocation);
     }
-    return listOfNodeInfo;
+    return listOfBlockletInfo;
   }
 
   /**
@@ -1105,23 +1105,23 @@ public final class CarbonUtil {
     return UnBlockIndexer.uncompressIndex(indexData, indexMap);
   }
 
-  public static ColumnarKeyStoreInfo getColumnarKeyStoreInfo(LeafNodeInfoColumnar leafNodeInfo,
+  public static ColumnarKeyStoreInfo getColumnarKeyStoreInfo(BlockletInfoColumnar blockletInfo,
       int[] eachBlockSize, HybridStoreModel hybridStoreMeta) {
     ColumnarKeyStoreInfo columnarKeyStoreInfo = new ColumnarKeyStoreInfo();
-    columnarKeyStoreInfo.setFilePath(leafNodeInfo.getFileName());
-    columnarKeyStoreInfo.setIsSorted(leafNodeInfo.getIsSortedKeyColumn());
-    columnarKeyStoreInfo.setKeyBlockIndexLength(leafNodeInfo.getKeyBlockIndexLength());
-    columnarKeyStoreInfo.setKeyBlockIndexOffsets(leafNodeInfo.getKeyBlockIndexOffSets());
-    columnarKeyStoreInfo.setKeyBlockLengths(leafNodeInfo.getKeyLengths());
-    columnarKeyStoreInfo.setKeyBlockOffsets(leafNodeInfo.getKeyOffSets());
-    columnarKeyStoreInfo.setNumberOfKeys(leafNodeInfo.getNumberOfKeys());
+    columnarKeyStoreInfo.setFilePath(blockletInfo.getFileName());
+    columnarKeyStoreInfo.setIsSorted(blockletInfo.getIsSortedKeyColumn());
+    columnarKeyStoreInfo.setKeyBlockIndexLength(blockletInfo.getKeyBlockIndexLength());
+    columnarKeyStoreInfo.setKeyBlockIndexOffsets(blockletInfo.getKeyBlockIndexOffSets());
+    columnarKeyStoreInfo.setKeyBlockLengths(blockletInfo.getKeyLengths());
+    columnarKeyStoreInfo.setKeyBlockOffsets(blockletInfo.getKeyOffSets());
+    columnarKeyStoreInfo.setNumberOfKeys(blockletInfo.getNumberOfKeys());
     columnarKeyStoreInfo.setSizeOfEachBlock(eachBlockSize);
     columnarKeyStoreInfo.setNumberCompressor(new NumberCompressor(Integer.parseInt(
-        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.LEAFNODE_SIZE,
-            CarbonCommonConstants.LEAFNODE_SIZE_DEFAULT_VAL))));
-    columnarKeyStoreInfo.setAggKeyBlock(leafNodeInfo.getAggKeyBlock());
-    columnarKeyStoreInfo.setDataIndexMapLength(leafNodeInfo.getDataIndexMapLength());
-    columnarKeyStoreInfo.setDataIndexMapOffsets(leafNodeInfo.getDataIndexMapOffsets());
+        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.BLOCKLET_SIZE,
+            CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL))));
+    columnarKeyStoreInfo.setAggKeyBlock(blockletInfo.getAggKeyBlock());
+    columnarKeyStoreInfo.setDataIndexMapLength(blockletInfo.getDataIndexMapLength());
+    columnarKeyStoreInfo.setDataIndexMapOffsets(blockletInfo.getDataIndexMapOffsets());
     columnarKeyStoreInfo.setHybridStoreModel(hybridStoreMeta);
     return columnarKeyStoreInfo;
   }

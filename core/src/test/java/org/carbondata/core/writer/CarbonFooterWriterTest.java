@@ -26,7 +26,7 @@ import java.util.List;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
-import org.carbondata.core.metadata.LeafNodeInfoColumnar;
+import org.carbondata.core.metadata.BlockletInfoColumnar;
 import org.carbondata.core.reader.CarbonFooterReader;
 import org.carbondata.core.util.CarbonMetadataUtil;
 import org.carbondata.format.ColumnSchema;
@@ -63,7 +63,7 @@ public class CarbonFooterWriterTest {
     createFile();
     CarbonFooterWriter writer = new CarbonFooterWriter(filePath);
 
-    List<LeafNodeInfoColumnar> infoColumnars = getLeafNodeInfoColumnars();
+    List<BlockletInfoColumnar> infoColumnars = getBlockletInfoColumnars();
 
     writer.writeFooter(CarbonMetadataUtil
         .convertFileFooter(infoColumnars, 6, new int[] { 2, 4, 5, 7 },
@@ -81,21 +81,21 @@ public class CarbonFooterWriterTest {
     createFile();
     CarbonFooterWriter writer = new CarbonFooterWriter(filePath);
 
-    List<LeafNodeInfoColumnar> infoColumnars = getLeafNodeInfoColumnars();
+    List<BlockletInfoColumnar> infoColumnars = getBlockletInfoColumnars();
 
     writer.writeFooter(CarbonMetadataUtil
         .convertFileFooter(infoColumnars, 6, new int[] { 2, 4, 5, 7 },
             new ArrayList<ColumnSchema>()), 0);
 
     CarbonFooterReader metaDataReader = new CarbonFooterReader(filePath, 0);
-    List<LeafNodeInfoColumnar> nodeInfoColumnars =
-        CarbonMetadataUtil.convertLeafNodeInfo(metaDataReader.readFooter());
+    List<BlockletInfoColumnar> nodeInfoColumnars =
+        CarbonMetadataUtil.convertBlockletInfo(metaDataReader.readFooter());
 
     assertTrue(nodeInfoColumnars.size() == infoColumnars.size());
   }
 
-  private List<LeafNodeInfoColumnar> getLeafNodeInfoColumnars() {
-    LeafNodeInfoColumnar infoColumnar = new LeafNodeInfoColumnar();
+  private List<BlockletInfoColumnar> getBlockletInfoColumnars() {
+    BlockletInfoColumnar infoColumnar = new BlockletInfoColumnar();
     infoColumnar.setStartKey(new byte[] { 1, 2, 3 });
     infoColumnar.setEndKey(new byte[] { 8, 9, 10 });
     infoColumnar.setKeyLengths(new int[] { 1, 2, 3, 4 });
@@ -122,7 +122,7 @@ public class CarbonFooterWriterTest {
     compressionModel.setUniqueValue(new Object[] { 0d, 0d });
     compressionModel.setDataTypeSelected(new byte[2]);
     infoColumnar.setCompressionModel(compressionModel);
-    List<LeafNodeInfoColumnar> infoColumnars = new ArrayList<LeafNodeInfoColumnar>();
+    List<BlockletInfoColumnar> infoColumnars = new ArrayList<BlockletInfoColumnar>();
     infoColumnars.add(infoColumnar);
     return infoColumnars;
   }

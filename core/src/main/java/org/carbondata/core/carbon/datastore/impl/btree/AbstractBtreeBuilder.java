@@ -30,7 +30,7 @@ import org.carbondata.core.util.CarbonProperties;
 /**
  * Abstract Btree based builder
  */
-public abstract class AbstractBtreeBuilder implements BtreeBuilder {
+public abstract class AbstractBTreeBuilder implements BtreeBuilder {
 
   /**
    * default Number of keys per page
@@ -52,7 +52,7 @@ public abstract class AbstractBtreeBuilder implements BtreeBuilder {
    */
   protected BTreeNode root;
 
-  public AbstractBtreeBuilder() {
+  public AbstractBTreeBuilder() {
     maxNumberOfEntriesInNonLeafNodes = Integer.parseInt(CarbonProperties.getInstance()
         .getProperty("com.huawei.datastore.internalnodesize",
             DEFAULT_NUMBER_OF_ENTRIES_NONLEAF + ""));

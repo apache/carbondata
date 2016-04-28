@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.carbondata.core.carbon.datastore.chunk.reader.DimensionColumnChunkReader;
-import org.carbondata.core.carbon.metadata.leafnode.datachunk.DataChunk;
+import org.carbondata.core.carbon.metadata.blocklet.datachunk.DataChunk;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.compression.Compressor;
 import org.carbondata.core.datastorage.store.compression.SnappyCompression;
@@ -89,10 +89,10 @@ public abstract class AbstractChunkReader implements DimensionColumnChunkReader 
     int numberOfElement = 0;
     try {
       numberOfElement = Integer.parseInt(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.LEAFNODE_SIZE,
-              CarbonCommonConstants.LEAFNODE_SIZE_DEFAULT_VAL));
+          .getProperty(CarbonCommonConstants.BLOCKLET_SIZE,
+              CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL));
     } catch (NumberFormatException exception) {
-      numberOfElement = Integer.parseInt(CarbonCommonConstants.LEAFNODE_SIZE_DEFAULT_VAL);
+      numberOfElement = Integer.parseInt(CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL);
     }
     this.numberComressor = new NumberCompressor(numberOfElement);
   }

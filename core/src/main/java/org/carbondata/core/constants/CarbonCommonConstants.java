@@ -121,15 +121,15 @@ public final class CarbonCommonConstants {
    */
   public static final String OFFLINE_MERGE_FILE_SIZE_DEFAULT_VALUE = "100";
   /**
-   * Btree leafnode size
+   * blocklet size in carbon file
    */
-  public static final String LEAFNODE_SIZE = "carbon.leaf.node.size";
+  public static final String BLOCKLET_SIZE = "carbon.blocklet.size";
   /**
-   * Hierarchy Btree leafnode size
+   * Hierarchy blocklet size
    */
-  public static final String HIERARCHY_LEAFNODE_SIZE = "carbon.hier.leaf.node.size";
+  public static final String HIERARCHY_BLOCKLET_SIZE = "carbon.hier.blocklet.size";
   /**
-   * max number of leaf nodes written in a single file
+   * TODO: max number of blocklets written in a single file?
    */
   public static final String MAX_FILE_SIZE = "carbon.max.file.size";
   /**
@@ -173,31 +173,31 @@ public final class CarbonCommonConstants {
    */
   public static final int CARDINALITY_INCREMENT_MAX_VAL = 30;
   /**
-   * default Btree leafnode size
+   * default blocklet size
    */
-  public static final String LEAFNODE_SIZE_DEFAULT_VAL = "120000";
+  public static final String BLOCKLET_SIZE_DEFAULT_VAL = "120000";
   /**
-   * min Btree leafnode size
+   * min blocklet size
    */
-  public static final int LEAFNODE_SIZE_MIN_VAL = 50;
+  public static final int BLOCKLET_SIZE_MIN_VAL = 50;
   /**
-   * max Btree leafnode size
+   * max blocklet size
    */
-  public static final int LEAFNODE_SIZE_MAX_VAL = 12000000;
+  public static final int BLOCKLET_SIZE_MAX_VAL = 12000000;
   /**
-   * max Hierarchy  Btree leafnode size
+   * max Hierarchy blocklet size
    */
-  public static final String HIERARCHY_LEAFNODE_SIZE_DEFAULT_VAL = "1024";
+  public static final String HIERARCHY_BLOCKLET_SIZE_DEFAULT_VAL = "1024";
   /**
-   * default value of max number of leaf nodes written in a single file
+   * TODO: default value of max number of blocklet written in a single file?
    */
   public static final String MAX_FILE_SIZE_DEFAULT_VAL = "100";
   /**
-   * min value of max number of leaf nodes written in a single file
+   * TODO: min value of max number of blocklets written in a single file?
    */
   public static final int MAX_FILE_SIZE_DEFAULT_VAL_MIN_VAL = 1;
   /**
-   * max value of max number of leaf nodes written in a single file
+   * TODO: max value of max number of blocklets written in a single file?
    */
   public static final int MAX_FILE_SIZE_DEFAULT_VAL_MAX_VAL = 1000;
   /**

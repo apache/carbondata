@@ -19,7 +19,7 @@
 
 package org.carbondata.core.metadata;
 
-public class LeafNodeInfo {
+public class BlockletInfo {
   /**
    * fileName.
    */

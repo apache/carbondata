@@ -86,7 +86,7 @@ public final class CarbonProperties {
           CarbonCommonConstants.KEYSTORE_TYPE_DEFAULT_VAL);
     }
 
-    validateLeafNodeSize();
+    validateBlockletSize();
     validateMaxFileSize();
     validateNumCores();
     validateBatchSize();
@@ -287,30 +287,30 @@ public final class CarbonProperties {
   }
 
   /**
-   * This method validates the Leaf node size
+   * This method validates the blocklet size
    */
-  private void validateLeafNodeSize() {
-    String leafNodeSizeStr = carbonProperties.getProperty(CarbonCommonConstants.LEAFNODE_SIZE,
-        CarbonCommonConstants.LEAFNODE_SIZE_DEFAULT_VAL);
+  private void validateBlockletSize() {
+    String blockletSizeStr = carbonProperties.getProperty(CarbonCommonConstants.BLOCKLET_SIZE,
+        CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL);
     try {
-      int leafNodeSize = Integer.parseInt(leafNodeSizeStr);
+      int blockletSize = Integer.parseInt(blockletSizeStr);
 
-      if (leafNodeSize < CarbonCommonConstants.LEAFNODE_SIZE_MIN_VAL
-          || leafNodeSize > CarbonCommonConstants.LEAFNODE_SIZE_MAX_VAL) {
+      if (blockletSize < CarbonCommonConstants.BLOCKLET_SIZE_MIN_VAL
+          || blockletSize > CarbonCommonConstants.BLOCKLET_SIZE_MAX_VAL) {
         LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-            "The lefa node size value \"" + leafNodeSizeStr
+            "The blocklet size value \"" + blockletSizeStr
                 + "\" is invalid. Using the default value \""
-                + CarbonCommonConstants.LEAFNODE_SIZE_DEFAULT_VAL);
-        carbonProperties.setProperty(CarbonCommonConstants.LEAFNODE_SIZE,
-            CarbonCommonConstants.LEAFNODE_SIZE_DEFAULT_VAL);
+                + CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL);
+        carbonProperties.setProperty(CarbonCommonConstants.BLOCKLET_SIZE,
+            CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL);
       }
     } catch (NumberFormatException e) {
       LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-          "The lefa node size value \"" + leafNodeSizeStr
+          "The blocklet size value \"" + blockletSizeStr
               + "\" is invalid. Using the default value \""
-              + CarbonCommonConstants.LEAFNODE_SIZE_DEFAULT_VAL);
-      carbonProperties.setProperty(CarbonCommonConstants.LEAFNODE_SIZE,
-          CarbonCommonConstants.LEAFNODE_SIZE_DEFAULT_VAL);
+              + CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL);
+      carbonProperties.setProperty(CarbonCommonConstants.BLOCKLET_SIZE,
+          CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL);
     }
   }
 
@@ -428,8 +428,7 @@ public final class CarbonProperties {
   }
 
   /**
-   * This method validates the maximum number of
-   * LeafNodes per file.
+   * TODO: This method validates the maximum number of blocklets per file ?
    */
   private void validateMaxFileSize() {
     String maxFileSizeStr = carbonProperties.getProperty(CarbonCommonConstants.MAX_FILE_SIZE,

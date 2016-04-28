@@ -30,8 +30,8 @@ import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStore;
 import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreDataHolder;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.datastorage.util.StoreFactory;
+import org.carbondata.core.metadata.BlockletInfoColumnar;
 import org.carbondata.core.metadata.CarbonMetadata.Cube;
-import org.carbondata.core.metadata.LeafNodeInfoColumnar;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.vo.HybridStoreModel;
 import org.carbondata.query.datastorage.storeinterface.KeyValue;
@@ -74,19 +74,19 @@ public class CSBTreeColumnarLeafNode extends CSBNode {
   private byte[][] columnMaxData;
 
   public CSBTreeColumnarLeafNode(int maxKeys, int[] eachBlockSize, boolean isFileStore,
-      FileHolder fileHolder, LeafNodeInfoColumnar leafNodeInfo,
+      FileHolder fileHolder, BlockletInfoColumnar blockletInfo,
       ValueCompressionModel compressionModel, long nodeNumber, Cube metaCube,
       HybridStoreModel hybridStoreModel) {
-    nKeys = leafNodeInfo.getNumberOfKeys();
+    nKeys = blockletInfo.getNumberOfKeys();
     keyStore = StoreFactory.createColumnarKeyStore(
-        CarbonUtil.getColumnarKeyStoreInfo(leafNodeInfo, eachBlockSize, hybridStoreModel),
+        CarbonUtil.getColumnarKeyStoreInfo(blockletInfo, eachBlockSize, hybridStoreModel),
         fileHolder, isFileStore);
     dataStore = StoreFactory
-        .createDataStore(isFileStore, compressionModel, leafNodeInfo.getMeasureOffset(),
-            leafNodeInfo.getMeasureLength(), leafNodeInfo.getFileName(), fileHolder);
+        .createDataStore(isFileStore, compressionModel, blockletInfo.getMeasureOffset(),
+            blockletInfo.getMeasureLength(), blockletInfo.getFileName(), fileHolder);
     this.nodeNumber = nodeNumber;
-    byte[][] columnMaxData = leafNodeInfo.getColumnMaxData();
-    byte[][] columnMinData = leafNodeInfo.getColumnMinData();
+    byte[][] columnMaxData = blockletInfo.getColumnMaxData();
+    byte[][] columnMinData = blockletInfo.getColumnMinData();
     assert(columnMaxData.length == columnMinData.length);
 
     this.columnMinData = new byte[columnMinData.length][];
@@ -125,7 +125,7 @@ public class CSBTreeColumnarLeafNode extends CSBNode {
       }
     }
 
-    this.factFileName = leafNodeInfo.getFileName();
+    this.factFileName = blockletInfo.getFileName();
   }
 
   /**

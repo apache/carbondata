@@ -50,13 +50,13 @@ import org.carbondata.query.util.CarbonEngineLogEvent;
  * Below class will be used to build the btree BTree will be built for all the
  * blocks of a segment
  */
-public class BlockBtreeBuilder extends AbstractBtreeBuilder {
+public class BlockBTreeBuilder extends AbstractBTreeBuilder {
 
   /**
    * Attribute for Carbon LOGGER
    */
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(BlockBtreeBuilder.class.getName());
+      LogServiceFactory.getLogService(BlockBTreeBuilder.class.getName());
 
   /**
    * Below method will be used to build the segment info bplus tree format
@@ -80,7 +80,7 @@ public class BlockBtreeBuilder extends AbstractBtreeBuilder {
     for (int metadataIndex = 0;
          metadataIndex < btreeBuilderInfo.getFooterList().size(); metadataIndex++) {
       // creating a leaf node
-      curNode = new BlockBtreeLeafNode(btreeBuilderInfo, metadataIndex, nodeNumber++);
+      curNode = new BlockBTreeLeafNode(btreeBuilderInfo, metadataIndex, nodeNumber++);
       nLeaf++;
       // setting a next node as its a b+tree
       // so all the leaf node will be chained
@@ -102,7 +102,7 @@ public class BlockBtreeBuilder extends AbstractBtreeBuilder {
       }
       if (null != leafNSKeyList) {
         leafNSKeyList.add(convertStartKeyToNodeEntry(
-            btreeBuilderInfo.getFooterList().get(metadataIndex).getLeafNodeIndex()
+            btreeBuilderInfo.getFooterList().get(metadataIndex).getBlockletIndex()
                 .getBtreeIndex().getStartKey()));
       }
       if (null != currentGroup) {

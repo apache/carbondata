@@ -14,16 +14,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.carbondata.core.carbon.metadata.leafnode.indexes;
+package org.carbondata.core.carbon.metadata.blocklet.index;
 
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.List;
 
 /**
- * Below class holds the information of max and min value of all the column in a leaf node
+ * Below class holds the information of max and min value of all the columns in a blocklet
  */
-public class LeafNodeMinMaxIndex implements Serializable {
+public class BlockletMinMaxIndex implements Serializable {
 
   /**
    * serialization version
@@ -31,19 +31,19 @@ public class LeafNodeMinMaxIndex implements Serializable {
   private static final long serialVersionUID = -4311405145501302895L;
 
   /**
-   * Min value of all columns of one leaf node Bit-Packed
+   * Min value of all columns of one blocklet Bit-Packed
    */
   private byte[][] minValues;
 
   /**
-   * Max value of all columns of one leaf node Bit-Packed
+   * Max value of all columns of one blocklet Bit-Packed
    */
   private byte[][] maxValues;
 
-  public LeafNodeMinMaxIndex() {
+  public BlockletMinMaxIndex() {
   }
 
-  public LeafNodeMinMaxIndex(List<ByteBuffer> minValues, List<ByteBuffer> maxValues) {
+  public BlockletMinMaxIndex(List<ByteBuffer> minValues, List<ByteBuffer> maxValues) {
     this.minValues = new byte[minValues.size()][];
     this.maxValues = new byte[maxValues.size()][];
     for (int i = 0; i < minValues.size(); i++) {

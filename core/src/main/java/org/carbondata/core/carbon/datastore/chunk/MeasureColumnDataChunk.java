@@ -18,7 +18,7 @@
  */
 package org.carbondata.core.carbon.datastore.chunk;
 
-import org.carbondata.core.carbon.metadata.leafnode.datachunk.PresenceMeta;
+import org.carbondata.core.carbon.metadata.blocklet.datachunk.PresenceMeta;
 import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 
 /**

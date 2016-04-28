@@ -27,7 +27,7 @@ import org.carbondata.core.datastorage.store.FileHolder;
 /**
  * Non leaf node abstract class
  */
-public abstract class AbstractBtreeLeafNode implements BTreeNode {
+public abstract class AbstractBTreeLeafNode implements BTreeNode {
 
   /**
    * number of keys in a btree

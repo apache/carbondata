@@ -103,17 +103,17 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   private IFileManagerComposite fileManager;
 
   /**
-   * total number of entries in leaf node
+   * total number of entries in blocklet
    */
   private int entryCount;
 
   /**
-   * startkey of each node
+   * startkey of each blocklet
    */
   private byte[] startKey;
 
   /**
-   * end key of each node
+   * end key of each blocklet
    */
   private byte[] endKey;
 
@@ -135,9 +135,9 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   private int mdKeyIndex;
 
   /**
-   * leaf node size
+   * blocklet size
    */
-  private int leafNodeSize;
+  private int blockletSize;
 
   /**
    * isGroupByEnabled
@@ -590,10 +590,9 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     }
     calculateMaxMinUnique(max, min, decimal, customMeasureIndex, row);
     this.entryCount++;
-    // if entry count reaches to leaf node size then we are ready to
-    // write
-    // this to leaf node file and update the intermediate files
-    if (this.entryCount == this.leafNodeSize) {
+    // if entry count reaches to blocklet size then we are ready to write
+    // this to data file and update the intermediate files
+    if (this.entryCount == this.blockletSize) {
       byte[][] byteArrayValues = keyDataHolder.getByteArrayValues().clone();
       byte[][] noDictionaryValueHolder =
           NoDictionarykeyDataHolder.getByteArrayValues();
@@ -915,13 +914,13 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    * @throws CarbonDataWriterException
    */
   private void setWritingConfiguration() throws CarbonDataWriterException {
-    // get leaf node size
-    this.leafNodeSize = Integer.parseInt(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.LEAFNODE_SIZE,
-            CarbonCommonConstants.LEAFNODE_SIZE_DEFAULT_VAL));
+    // get blocklet size
+    this.blockletSize = Integer.parseInt(CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.BLOCKLET_SIZE,
+            CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL));
 
     LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-        "************* Leaf Node Size: " + leafNodeSize);
+        "************* Blocklet Size: " + blockletSize);
 
     int dimSet =
         Integer.parseInt(CarbonCommonConstants.DIMENSION_SPLIT_VALUE_IN_COLUMNAR_DEFAULTVALUE);
@@ -952,7 +951,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     }
 
     for (int i = 0; i < keyBlockHolder.length; i++) {
-      this.keyBlockHolder[i] = new CarbonKeyBlockHolder(leafNodeSize);
+      this.keyBlockHolder[i] = new CarbonKeyBlockHolder(blockletSize);
       this.keyBlockHolder[i].resetCounter();
     }
 
@@ -983,20 +982,20 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     for (int i = 0; i < otherMeasureIndex.length; i++) {
       this.dataHolder[otherMeasureIndex[i]] = new CarbonWriteDataHolder();
       if (type[otherMeasureIndex[i]] == CarbonCommonConstants.BIG_INT_MEASURE) {
-        this.dataHolder[otherMeasureIndex[i]].initialiseLongValues(this.leafNodeSize);
+        this.dataHolder[otherMeasureIndex[i]].initialiseLongValues(this.blockletSize);
       } else {
-        this.dataHolder[otherMeasureIndex[i]].initialiseDoubleValues(this.leafNodeSize);
+        this.dataHolder[otherMeasureIndex[i]].initialiseDoubleValues(this.blockletSize);
       }
     }
     for (int i = 0; i < customMeasureIndex.length; i++) {
       this.dataHolder[customMeasureIndex[i]] = new CarbonWriteDataHolder();
-      this.dataHolder[customMeasureIndex[i]].initialiseByteArrayValues(leafNodeSize);
+      this.dataHolder[customMeasureIndex[i]].initialiseByteArrayValues(blockletSize);
     }
 
     keyDataHolder = new CarbonWriteDataHolder();
-    keyDataHolder.initialiseByteArrayValues(leafNodeSize);
+    keyDataHolder.initialiseByteArrayValues(blockletSize);
     NoDictionarykeyDataHolder = new CarbonWriteDataHolder();
-    NoDictionarykeyDataHolder.initialiseByteArrayValues(leafNodeSize);
+    NoDictionarykeyDataHolder.initialiseByteArrayValues(blockletSize);
 
     initialisedataHolder();
     setComplexMapSurrogateIndex(this.dimensionCount);
