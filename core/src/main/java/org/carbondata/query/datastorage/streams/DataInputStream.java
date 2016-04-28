@@ -22,8 +22,8 @@ package org.carbondata.query.datastorage.streams;
 import java.util.List;
 
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
-import org.carbondata.core.metadata.LeafNodeInfo;
-import org.carbondata.core.metadata.LeafNodeInfoColumnar;
+import org.carbondata.core.metadata.BlockletInfo;
+import org.carbondata.core.metadata.BlockletInfoColumnar;
 import org.carbondata.query.schema.metadata.Pair;
 
 public interface DataInputStream {
@@ -33,9 +33,9 @@ public interface DataInputStream {
 
   ValueCompressionModel getValueCompressionMode();
 
-  List<LeafNodeInfoColumnar> getLeafNodeInfoColumnar();
+  List<BlockletInfoColumnar> getBlockletInfoColumnar();
 
-  List<LeafNodeInfo> getLeafNodeInfo();
+  List<BlockletInfo> getBlockletInfo();
 
   Pair getNextHierTuple();
 

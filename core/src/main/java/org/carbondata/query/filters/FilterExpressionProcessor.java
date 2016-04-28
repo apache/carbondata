@@ -29,7 +29,7 @@ import org.carbondata.core.carbon.datastore.DataRefNode;
 import org.carbondata.core.carbon.datastore.DataRefNodeFinder;
 import org.carbondata.core.carbon.datastore.IndexKey;
 import org.carbondata.core.carbon.datastore.block.AbstractIndex;
-import org.carbondata.core.carbon.datastore.impl.btree.BtreeDataRefNodeFinder;
+import org.carbondata.core.carbon.datastore.impl.btree.BTreeDataRefNodeFinder;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.keygenerator.KeyGenerator;
@@ -98,7 +98,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
     LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
         "Successfully retrieved the start and end key");
     long startTimeInMillis = System.currentTimeMillis();
-    DataRefNodeFinder blockFinder = new BtreeDataRefNodeFinder(
+    DataRefNodeFinder blockFinder = new BTreeDataRefNodeFinder(
         tableSegment.getSegmentProperties().getDimensionColumnsValueSize());
     DataRefNode startBlock = blockFinder.findFirstDataBlock(btreeNode, searchStartKey);
     DataRefNode endBlock = blockFinder.findLastDataBlock(btreeNode, searchEndKey);

@@ -25,7 +25,7 @@ import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.datastore.DataRefNode;
 import org.carbondata.core.carbon.datastore.DataRefNodeFinder;
-import org.carbondata.core.carbon.datastore.impl.btree.BtreeDataRefNodeFinder;
+import org.carbondata.core.carbon.datastore.impl.btree.BTreeDataRefNodeFinder;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.core.util.CarbonProperties;
@@ -114,8 +114,8 @@ public class DetailQueryResultIterator implements CarbonIterator<BatchResult> {
       }
     }
     this.numberOfCores = recordSize / Integer.parseInt(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.LEAFNODE_SIZE,
-            CarbonCommonConstants.LEAFNODE_SIZE_DEFAULT_VAL));
+        .getProperty(CarbonCommonConstants.BLOCKLET_SIZE,
+            CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL));
     if (numberOfCores == 0) {
       numberOfCores++;
     }
@@ -131,7 +131,7 @@ public class DetailQueryResultIterator implements CarbonIterator<BatchResult> {
     int index = -1;
     for (BlockExecutionInfo blockInfo : blockExecutionInfos) {
       ++index;
-      DataRefNodeFinder finder = new BtreeDataRefNodeFinder(blockInfo.getEachColumnValueSize());
+      DataRefNodeFinder finder = new BTreeDataRefNodeFinder(blockInfo.getEachColumnValueSize());
       DataRefNode startDataBlock = finder
           .findFirstDataBlock(blockInfo.getDataBlock().getDataRefNode(), blockInfo.getStartKey());
       DataRefNode endDataBlock = finder

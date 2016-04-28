@@ -25,7 +25,7 @@ import java.util.List;
 
 import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
-import org.carbondata.core.metadata.LeafNodeInfo;
+import org.carbondata.core.metadata.BlockletInfo;
 import org.carbondata.query.datastorage.streams.DataInputStream;
 
 public abstract class AbstractFileDataInputStream implements DataInputStream {
@@ -83,12 +83,11 @@ public abstract class AbstractFileDataInputStream implements DataInputStream {
    * This method will be used to read leaf meta data format of meta data will be
    * <entrycount><keylength><keyoffset><measure1length><measure1offset>
    *
-   * @return will return leaf node info which will have all the meta data
-   * related to leaf file
+   * @return will return blocklet info which will have all the meta data
    */
-  public List<LeafNodeInfo> getLeafNodeInfo() {
+  public List<BlockletInfo> getBlockletInfo() {
     //
-    List<LeafNodeInfo> listOfNodeInfo = new ArrayList<LeafNodeInfo>(20);
+    List<BlockletInfo> listOfBlockletInfo = new ArrayList<BlockletInfo>(20);
     ByteBuffer buffer =
         ByteBuffer.wrap(this.fileHolder.readByteArray(filesLocation, offSet, totalMetaDataLength));
     buffer.rewind();
@@ -96,7 +95,7 @@ public abstract class AbstractFileDataInputStream implements DataInputStream {
       //
       int[] msrLength = new int[msrCount];
       long[] msrOffset = new long[msrCount];
-      LeafNodeInfo info = new LeafNodeInfo();
+      BlockletInfo info = new BlockletInfo();
       byte[] startKey = new byte[this.mdkeysize];
       byte[] endKey = new byte[this.mdkeysize];
       info.setFileName(this.filesLocation);
@@ -113,15 +112,15 @@ public abstract class AbstractFileDataInputStream implements DataInputStream {
       }
       info.setMeasureLength(msrLength);
       info.setMeasureOffset(msrOffset);
-      listOfNodeInfo.add(info);
+      listOfBlockletInfo.add(info);
     }
     // if fact file empty then list size will 0 then it will throw index out of bound exception
     // if memory is less and cube loading failed that time list will be empty so it will throw
     // out of bound exception
-    if (listOfNodeInfo.size() > 0) {
-      startKey = listOfNodeInfo.get(0).getStartKey();
+    if (listOfBlockletInfo.size() > 0) {
+      startKey = listOfBlockletInfo.get(0).getStartKey();
     }
-    return listOfNodeInfo;
+    return listOfBlockletInfo;
   }
 
 }

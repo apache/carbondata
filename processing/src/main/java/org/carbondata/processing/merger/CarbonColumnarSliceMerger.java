@@ -35,7 +35,7 @@ import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
-import org.carbondata.core.metadata.LeafNodeInfoColumnar;
+import org.carbondata.core.metadata.BlockletInfoColumnar;
 import org.carbondata.core.metadata.SliceMetaData;
 import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonMergerUtil;
@@ -220,16 +220,16 @@ public class CarbonColumnarSliceMerger implements CarbonSliceMerger {
   public void mergerSlice(List<CarbonSliceAndFiles> slicesFromHDFS, SliceMetaData sliceMetaData,
       String[] aggType, String[] aggClass, String destinationLocation, int currentRestructNumber)
       throws SliceMergerException {
-    List<List<LeafNodeInfoColumnar>> leafNodeInfoList =
-        new ArrayList<List<LeafNodeInfoColumnar>>(slicesFromHDFS.size());
-    List<LeafNodeInfoColumnar> sliceLeafNodeInfo = null;
+    List<List<BlockletInfoColumnar>> blockletInfoListOfList =
+        new ArrayList<List<BlockletInfoColumnar>>(slicesFromHDFS.size());
+    List<BlockletInfoColumnar> blockletInfoList = null;
     List<ValueCompressionModel> existingSliceCompressionModel =
         new ArrayList<ValueCompressionModel>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
     String[] sliceLocation = new String[slicesFromHDFS.size()];
     int index = 0;
     for (int i = 0; i < sliceLocation.length; i++) {
-      sliceLeafNodeInfo =
-          new ArrayList<LeafNodeInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+      blockletInfoList =
+          new ArrayList<BlockletInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
       CarbonSliceAndFiles sliceAndFiles = slicesFromHDFS.get(i);
       sliceLocation[index++] = sliceAndFiles.getPath();
       CarbonFile[] factFiles = sliceAndFiles.getSliceFactFilesList();
@@ -237,8 +237,8 @@ public class CarbonColumnarSliceMerger implements CarbonSliceMerger {
         continue;
       }
       for (int j = 0; j < factFiles.length; j++) {
-        sliceLeafNodeInfo.addAll(CarbonUtil
-            .getLeafNodeInfoColumnar(factFiles[j], sliceMetaData.getMeasures().length,
+        blockletInfoList.addAll(CarbonUtil
+            .getBlockletInfoColumnar(factFiles[j], sliceMetaData.getMeasures().length,
                 sliceMetaData.getKeyGenerator().getKeySizeInBytes()));
       }
 
@@ -247,7 +247,7 @@ public class CarbonColumnarSliceMerger implements CarbonSliceMerger {
       KeyGenerator localKeyGen = KeyGeneratorFactory.getKeyGenerator(cardinality);
       sliceAndFiles.setKeyGen(localKeyGen);
 
-      leafNodeInfoList.add(sliceLeafNodeInfo);
+      blockletInfoListOfList.add(blockletInfoList);
       existingSliceCompressionModel
           .add(getCompressionModel(sliceAndFiles.getPath(), sliceMetaData.getMeasures().length));
 

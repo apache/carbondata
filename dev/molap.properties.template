@@ -41,8 +41,8 @@ carbon.kettle.home=<SPARK_HOME>/lib/carbonplugins
 #carbon.csv.read.buffersize.byte=1048576
 ######High Cardinality value
 #high.cardinality.value =50000
-######Carbon Leaf Node size.Note:  this configuration cannot be change once store is generated
-#carbon.leaf.node.size=120000
+######Carbon blocklet size. Note: this configuration cannot be change once store is generated
+#carbon.blocklet.size=120000
 ######CARBON maximum no of threads used for sorting.
 #carbon.max.thread.for.sorting=3
 ######Maximum time allowed for one query to be executed.
@@ -71,7 +71,7 @@ carbon.kettle.home=<SPARK_HOME>/lib/carbonplugins
 #carbon.load.metadata.lock.retries=3
 ######Interval between the retries to get the lock
 #carbon.load.metadata.lock.retry.timeout.sec=5
-######Maximum number of leaf nodes written in a single file.:Min=1:Max=1000
+######Maximum number of blocklets written in a single file.:Min=1:Max=1000
 #carbon.max.file.size=100
 ######Sort buffer size:MI=5:MAX=
 #carbon.sort.buffer.size=5000

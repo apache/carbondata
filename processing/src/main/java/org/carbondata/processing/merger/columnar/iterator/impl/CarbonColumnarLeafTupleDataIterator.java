@@ -25,7 +25,7 @@ import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.util.ValueCompressionUtil;
 import org.carbondata.processing.factreader.CarbonSurrogateTupleHolder;
 import org.carbondata.processing.factreader.FactReaderInfo;
-import org.carbondata.processing.factreader.columnar.CarbonColumnarLeafNodeIterator;
+import org.carbondata.processing.factreader.columnar.CarbonColumnarBlockletIterator;
 import org.carbondata.processing.iterator.CarbonIterator;
 import org.carbondata.processing.merger.columnar.iterator.CarbonDataIterator;
 import org.carbondata.query.columnar.keyvalue.AbstractColumnarScanResult;
@@ -44,9 +44,9 @@ public class CarbonColumnarLeafTupleDataIterator
   private boolean hasNext;
 
   /**
-   * leaf node iterator
+   * blocklet iterator
    */
-  private CarbonIterator<AbstractColumnarScanResult> leafNodeIterator;
+  private CarbonIterator<AbstractColumnarScanResult> blockletIterator;
 
   /**
    * measureCount
@@ -84,8 +84,8 @@ public class CarbonColumnarLeafTupleDataIterator
     ValueCompressionModel compressionModelObj =
         getCompressionModel(sliceLocation, factItreatorInfo.getTableName(), measureCount);
     this.uniqueValue = compressionModelObj.getUniqueValue();
-    this.leafNodeIterator =
-        new CarbonColumnarLeafNodeIterator(factFiles, mdkeyLength, compressionModelObj,
+    this.blockletIterator =
+        new CarbonColumnarBlockletIterator(factFiles, mdkeyLength, compressionModelObj,
             factItreatorInfo);
     this.aggType = compressionModelObj.getType();
     initialise();
@@ -96,8 +96,8 @@ public class CarbonColumnarLeafTupleDataIterator
    * below method will be used to initialise
    */
   private void initialise() {
-    if (this.leafNodeIterator.hasNext()) {
-      keyValue = leafNodeIterator.next();
+    if (this.blockletIterator.hasNext()) {
+      keyValue = blockletIterator.next();
       this.hasNext = true;
     }
   }
@@ -148,7 +148,7 @@ public class CarbonColumnarLeafTupleDataIterator
     tuple.setMeasures(getMeasure());
     if (keyValue.hasNext()) {
       this.currentTuple = tuple;
-    } else if (!leafNodeIterator.hasNext()) {
+    } else if (!blockletIterator.hasNext()) {
       hasNext = false;
     } else {
       initialise();

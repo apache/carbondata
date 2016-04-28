@@ -22,7 +22,7 @@ package org.carbondata.processing.factreader.columnar;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
-import org.carbondata.core.metadata.LeafNodeInfoColumnar;
+import org.carbondata.core.metadata.BlockletInfoColumnar;
 import org.carbondata.core.util.ValueCompressionUtil;
 import org.carbondata.processing.factreader.CarbonSurrogateTupleHolder;
 import org.carbondata.processing.factreader.FactReaderInfo;
@@ -42,9 +42,9 @@ public class CarbonColumnarLeafTupleIterator implements CarbonIterator<CarbonSur
   private boolean hasNext;
 
   /**
-   * leaf node iterator
+   * blocklet iterator
    */
-  private CarbonIterator<AbstractColumnarScanResult> leafNodeIterator;
+  private CarbonIterator<AbstractColumnarScanResult> blockletIterator;
 
   /**
    * measureCount
@@ -78,8 +78,8 @@ public class CarbonColumnarLeafTupleIterator implements CarbonIterator<CarbonSur
     ValueCompressionModel compressionModel =
         getCompressionModel(sliceLocation, factItreatorInfo.getTableName(), measureCount);
     this.uniqueValue = compressionModel.getUniqueValue();
-    this.leafNodeIterator =
-        new CarbonColumnarLeafNodeIterator(factFiles, mdkeyLength, compressionModel,
+    this.blockletIterator =
+        new CarbonColumnarBlockletIterator(factFiles, mdkeyLength, compressionModel,
             factItreatorInfo);
     this.aggType = compressionModel.getType();
     initialise();
@@ -87,14 +87,14 @@ public class CarbonColumnarLeafTupleIterator implements CarbonIterator<CarbonSur
   }
 
   public CarbonColumnarLeafTupleIterator(String loadPath, CarbonFile[] factFiles,
-      FactReaderInfo factReaderInfo, int mdKeySize, LeafNodeInfoColumnar leafNodeInfoColumnar) {
+      FactReaderInfo factReaderInfo, int mdKeySize, BlockletInfoColumnar blockletInfoColumnar) {
     this.measureCount = factReaderInfo.getMeasureCount();
     ValueCompressionModel compressionModel =
         getCompressionModel(loadPath, factReaderInfo.getTableName(), measureCount);
     this.uniqueValue = compressionModel.getUniqueValue();
-    this.leafNodeIterator =
-        new CarbonColumnarLeafNodeIterator(factFiles, mdKeySize, compressionModel, factReaderInfo,
-            leafNodeInfoColumnar);
+    this.blockletIterator =
+        new CarbonColumnarBlockletIterator(factFiles, mdKeySize, compressionModel, factReaderInfo,
+            blockletInfoColumnar);
     this.aggType = compressionModel.getType();
     initialise();
     this.isMeasureUpdateResuired = factReaderInfo.isUpdateMeasureRequired();
@@ -105,8 +105,8 @@ public class CarbonColumnarLeafTupleIterator implements CarbonIterator<CarbonSur
    * below method will be used to initialise
    */
   private void initialise() {
-    if (this.leafNodeIterator.hasNext()) {
-      keyValue = leafNodeIterator.next();
+    if (this.blockletIterator.hasNext()) {
+      keyValue = blockletIterator.next();
       this.hasNext = true;
     }
   }
@@ -164,7 +164,7 @@ public class CarbonColumnarLeafTupleIterator implements CarbonIterator<CarbonSur
     tuple.setMeasures(getMeasure());
     if (keyValue.hasNext()) {
       return tuple;
-    } else if (!leafNodeIterator.hasNext()) {
+    } else if (!blockletIterator.hasNext()) {
       hasNext = false;
     } else {
       initialise();

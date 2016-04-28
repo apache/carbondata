@@ -42,7 +42,7 @@ public class CarbonFactDataWriterImpl extends AbstractFactDataWriter<short[]> {
   @Override public void writeDataToFile(IndexStorage<short[]>[] keyStorageArray, byte[][] dataArray,
       int entryCount, byte[] startKey, byte[] endKey, ValueCompressionModel compressionModel)
       throws CarbonDataWriterException {
-    updateLeafNodeFileChannel();
+    updateBlockletFileChannel();
     // total measure length;
     int totalMsrArraySize = 0;
     // current measure length;
@@ -147,7 +147,7 @@ public class CarbonFactDataWriterImpl extends AbstractFactDataWriter<short[]> {
   }
 
   /**
-   * This method is responsible for writing leaf node to the leaf node file
+   * This method is responsible for writing blocklet to the data file
    *
    * @return file offset offset is the current position of the file
    * @throws CarbonDataWriterException if will throw CarbonDataWriterException when any thing
@@ -197,7 +197,7 @@ public class CarbonFactDataWriterImpl extends AbstractFactDataWriter<short[]> {
       // write data to file
       channel.write(byteBuffer);
     } catch (IOException exception) {
-      throw new CarbonDataWriterException("Problem in writing Leaf Node File: ", exception);
+      throw new CarbonDataWriterException("Problem in writing carbon file: ", exception);
     }
     // return the offset, this offset will be used while reading the file in
     // engine side to get from which position to start reading the file

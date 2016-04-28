@@ -26,7 +26,7 @@ import org.carbondata.core.carbon.datastore.chunk.impl.ColumnGroupDimensionDataC
 import org.carbondata.core.carbon.datastore.chunk.impl.FixedLengthDimensionDataChunk;
 import org.carbondata.core.carbon.datastore.chunk.impl.VariableLengthDimensionDataChunk;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
-import org.carbondata.core.carbon.metadata.leafnode.datachunk.DataChunk;
+import org.carbondata.core.carbon.metadata.blocklet.datachunk.DataChunk;
 import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.core.datastorage.store.columnar.UnBlockIndexer;
 import org.carbondata.core.util.CarbonUtil;

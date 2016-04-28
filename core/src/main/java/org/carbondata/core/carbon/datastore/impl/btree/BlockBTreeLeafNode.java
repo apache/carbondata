@@ -20,15 +20,15 @@ package org.carbondata.core.carbon.datastore.impl.btree;
 
 import org.carbondata.core.carbon.datastore.BTreeBuilderInfo;
 import org.carbondata.core.carbon.datastore.block.TableBlockInfo;
-import org.carbondata.core.carbon.metadata.leafnode.DataFileFooter;
-import org.carbondata.core.carbon.metadata.leafnode.indexes.LeafNodeMinMaxIndex;
+import org.carbondata.core.carbon.metadata.blocklet.DataFileFooter;
+import org.carbondata.core.carbon.metadata.blocklet.index.BlockletMinMaxIndex;
 
 /**
  * Leaf node for btree where only min max will be store this can be used from
  * driver when only we need to find whether particular block be selected for
  * query execution
  */
-public class BlockBtreeLeafNode extends AbstractBtreeLeafNode {
+public class BlockBTreeLeafNode extends AbstractBTreeLeafNode {
 
   private TableBlockInfo blockInfo;
 
@@ -40,9 +40,9 @@ public class BlockBtreeLeafNode extends AbstractBtreeLeafNode {
    * @param leafIndex     leaf node index
    * @param metadataIndex metadata index
    */
-  public BlockBtreeLeafNode(BTreeBuilderInfo builderInfos, int metadataIndex, long nodeNumber) {
+  public BlockBTreeLeafNode(BTreeBuilderInfo builderInfos, int metadataIndex, long nodeNumber) {
     DataFileFooter footer = builderInfos.getFooterList().get(metadataIndex);
-    LeafNodeMinMaxIndex minMaxIndex = footer.getLeafNodeIndex().getMinMaxIndex();
+    BlockletMinMaxIndex minMaxIndex = footer.getBlockletIndex().getMinMaxIndex();
     maxKeyOfColumns = minMaxIndex.getMaxValues();
     minKeyOfColumns = minMaxIndex.getMinValues();
     numberOfKeys = 1;

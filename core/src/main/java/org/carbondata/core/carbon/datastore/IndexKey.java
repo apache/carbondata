@@ -19,8 +19,7 @@
 package org.carbondata.core.carbon.datastore;
 
 /**
- * Index class to store the index of the
- * segment leaf node infos
+ * Index class to store the index of the segment blocklet infos
  */
 public class IndexKey {
 

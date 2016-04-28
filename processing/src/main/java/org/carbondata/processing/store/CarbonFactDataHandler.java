@@ -69,7 +69,7 @@ public class CarbonFactDataHandler implements CarbonFactHandler {
   private IFileManagerComposite fileManager;
 
   /**
-   * total number of entries in leaf node
+   * total number of entries in blocklet
    */
   private int entryCount;
 
@@ -114,9 +114,9 @@ public class CarbonFactDataHandler implements CarbonFactHandler {
   private Object[] uniqueValue;
 
   /**
-   * leaf node size
+   * blocklet size
    */
-  private int leafNodeSize;
+  private int blockletSize;
 
   /**
    * isGroupByEnabled
@@ -360,10 +360,9 @@ public class CarbonFactDataHandler implements CarbonFactHandler {
       dataHolder[customMeasureIndex[i]].setWritableByteArrayValueByIndex(entryCount, b);
     }
     this.entryCount++;
-    // if entry count reaches to leaf node size then we are ready to
-    // write
-    // this to leaf node file and update the intermediate files
-    if (this.entryCount == this.leafNodeSize) {
+    // if entry count reaches to blocklet size then we are ready to write
+    // this to data file and update the intermediate files
+    if (this.entryCount == this.blockletSize) {
       // write data to file
       this.dataWriter.writeDataToFile(this.keyStore.getWritableKeyArray(),
           this.dataStore.getWritableMeasureDataArray(dataHolder), this.entryCount, this.startKey,
@@ -492,13 +491,13 @@ public class CarbonFactDataHandler implements CarbonFactHandler {
     this.compressionModel = ValueCompressionUtil
         .getValueCompressionModel(measureMetaDataFileLocation, this.measureCount);
     this.uniqueValue = compressionModel.getUniqueValue();
-    // get leaf node size
-    this.leafNodeSize = Integer.parseInt(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.LEAFNODE_SIZE,
-            CarbonCommonConstants.LEAFNODE_SIZE_DEFAULT_VAL));
+    // get blocklet size
+    this.blockletSize = Integer.parseInt(CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.BLOCKLET_SIZE,
+            CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL));
 
     // create key store
-    this.keyStore = StoreFactory.createKeyStore(this.leafNodeSize, mdkeySize, true);
+    this.keyStore = StoreFactory.createKeyStore(this.blockletSize, mdkeySize, true);
 
     // create data store
     this.dataStore = StoreFactory.createDataStore(compressionModel);
@@ -538,11 +537,11 @@ public class CarbonFactDataHandler implements CarbonFactHandler {
 
     for (int i = 0; i < otherMeasureIndex.length; i++) {
       this.dataHolder[otherMeasureIndex[i]] = new CarbonWriteDataHolder();
-      this.dataHolder[otherMeasureIndex[i]].initialiseDoubleValues(this.leafNodeSize);
+      this.dataHolder[otherMeasureIndex[i]].initialiseDoubleValues(this.blockletSize);
     }
     for (int i = 0; i < customMeasureIndex.length; i++) {
       this.dataHolder[customMeasureIndex[i]] = new CarbonWriteDataHolder();
-      this.dataHolder[customMeasureIndex[i]].initialiseByteArrayValues(leafNodeSize);
+      this.dataHolder[customMeasureIndex[i]].initialiseByteArrayValues(blockletSize);
     }
   }
 }

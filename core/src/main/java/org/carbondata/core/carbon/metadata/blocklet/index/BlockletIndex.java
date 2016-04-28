@@ -14,14 +14,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.carbondata.core.carbon.metadata.leafnode.indexes;
+package org.carbondata.core.carbon.metadata.blocklet.index;
 
 import java.io.Serializable;
 
 /**
- * Persist Index of all leaf nodes in one file
+ * Persist Index of all blocklets in one file
  */
-public class LeafNodeIndex implements Serializable {
+public class BlockletIndex implements Serializable {
 
   /**
    * serialization version
@@ -31,17 +31,17 @@ public class LeafNodeIndex implements Serializable {
   /**
    * list of btree index for all the leaf
    */
-  private LeafNodeBtreeIndex btreeIndex;
+  private BlockletBTreeIndex btreeIndex;
 
   /**
    * list of max and min key of all leaf
    */
-  private LeafNodeMinMaxIndex minMaxIndex;
+  private BlockletMinMaxIndex minMaxIndex;
 
-  public LeafNodeIndex() {
+  public BlockletIndex() {
   }
 
-  public LeafNodeIndex(LeafNodeBtreeIndex btree, LeafNodeMinMaxIndex minmax) {
+  public BlockletIndex(BlockletBTreeIndex btree, BlockletMinMaxIndex minmax) {
     this.btreeIndex = btree;
     this.minMaxIndex = minmax;
   }
@@ -49,28 +49,28 @@ public class LeafNodeIndex implements Serializable {
   /**
    * @return the btreeIndex
    */
-  public LeafNodeBtreeIndex getBtreeIndex() {
+  public BlockletBTreeIndex getBtreeIndex() {
     return btreeIndex;
   }
 
   /**
    * @param btreeIndex the btreeIndex to set
    */
-  public void setBtreeIndex(LeafNodeBtreeIndex btreeIndex) {
+  public void setBtreeIndex(BlockletBTreeIndex btreeIndex) {
     this.btreeIndex = btreeIndex;
   }
 
   /**
    * @return the minMaxIndex
    */
-  public LeafNodeMinMaxIndex getMinMaxIndex() {
+  public BlockletMinMaxIndex getMinMaxIndex() {
     return minMaxIndex;
   }
 
   /**
    * @param minMaxIndex the minMaxIndex to set
    */
-  public void setMinMaxIndex(LeafNodeMinMaxIndex minMaxIndex) {
+  public void setMinMaxIndex(BlockletMinMaxIndex minMaxIndex) {
     this.minMaxIndex = minMaxIndex;
   }
 

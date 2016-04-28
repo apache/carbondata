@@ -22,7 +22,7 @@ package org.carbondata.query.columnar.scanner.impl;
 import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.query.datastorage.storeinterface.DataStoreBlock;
 
-public class BtreeLeafNodeIterator implements CarbonIterator<DataStoreBlock> {
+public class BTreeLeafNodeIterator implements CarbonIterator<DataStoreBlock> {
   /**
    * data store block
    */
@@ -31,7 +31,7 @@ public class BtreeLeafNodeIterator implements CarbonIterator<DataStoreBlock> {
   private boolean hasNext = true;
   private long totalNumberOfBlocksToScan;
 
-  public BtreeLeafNodeIterator(DataStoreBlock datablock, long totalNumberOfBlocksToScan) {
+  public BTreeLeafNodeIterator(DataStoreBlock datablock, long totalNumberOfBlocksToScan) {
     this.datablock = datablock;
     this.totalNumberOfBlocksToScan = totalNumberOfBlocksToScan;
   }

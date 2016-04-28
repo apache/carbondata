@@ -38,7 +38,7 @@ import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerat
 import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.carbondata.core.load.LoadMetadataDetails;
-import org.carbondata.core.metadata.LeafNodeInfoColumnar;
+import org.carbondata.core.metadata.BlockletInfoColumnar;
 import org.carbondata.core.metadata.SliceMetaData;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.CarbonUtilException;
@@ -313,11 +313,11 @@ public class DataRetentionHandler {
     if (null != loadName) {
       loadName = loadName.substring(loadName.indexOf('_') + 1, loadName.length());
     }
-    List<LeafNodeInfoColumnar> leafNodeInfoList = null;
+    List<BlockletInfoColumnar> blockletInfoList = null;
     String fileToBeUpdated = null;
     for (int i = 0; i < factFiles.length; i++) {
 
-      leafNodeInfoList = CarbonUtil.getLeafNodeInfoColumnar(factFiles[i], measureLength, mdKeySize);
+      blockletInfoList = CarbonUtil.getBlockletInfoColumnar(factFiles[i], measureLength, mdKeySize);
 
       fileToBeUpdated = factFiles[i].getAbsolutePath();
       if (null != fileToBeUpdated) {
@@ -325,7 +325,7 @@ public class DataRetentionHandler {
           LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
               "Following load file will be marked for update: " + loadName);
           loadDetails.put(loadName, CarbonCommonConstants.MARKED_FOR_UPDATE);
-          processFactFileAsPerFileToBeUpdatedDetails(leafNodeInfoList, fileToBeUpdated, loadPath,
+          processFactFileAsPerFileToBeUpdatedDetails(blockletInfoList, fileToBeUpdated, loadPath,
               loadDetails, loadName, restrucureNum);
         } catch (CarbonDataProcessorException e) {
           throw new CarbonDataProcessorException(e.getMessage());
@@ -335,7 +335,7 @@ public class DataRetentionHandler {
   }
 
   private void processFactFileAsPerFileToBeUpdatedDetails(
-      List<LeafNodeInfoColumnar> leafNodeInfoList, String fileToBeUpdated, String loadPath,
+      List<BlockletInfoColumnar> blockletInfoList, String fileToBeUpdated, String loadPath,
       Map<String, String> loadDetails, String loadName, int restructureNumber)
       throws CarbonDataProcessorException {
 
@@ -344,8 +344,6 @@ public class DataRetentionHandler {
             + CarbonCommonConstants.MEASUREMETADATA_FILE_EXT, measureLength);
     try {
       FactReaderInfo factReaderInfo = getFactReaderInfo();
-      // Passing the leafNodeInfoColumnar which already been derived for
-      // further processing.
       CarbonColumnarLeafTupleIterator columnarLeafTupleItr =
           new CarbonColumnarLeafTupleIterator(loadPath, factFiles, factReaderInfo, mdKeySize);
       CarbonColumnarFactMergerInfo carbonColumnarFactMergerInfo =

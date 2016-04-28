@@ -39,7 +39,7 @@ import org.carbondata.query.datastorage.tree.CSBTreeLeafNode;
 import org.carbondata.query.scanner.Scanner;
 import org.carbondata.query.schema.metadata.Pair;
 
-public class HierarchyBtreeStore implements DataStore {
+public class HierarchyBTreeStore implements DataStore {
 
   /**
    *
@@ -85,7 +85,7 @@ public class HierarchyBtreeStore implements DataStore {
    */
   private long nTotalKeys;
 
-  public HierarchyBtreeStore(KeyGenerator keyGenerator) {
+  public HierarchyBTreeStore(KeyGenerator keyGenerator) {
     this.keyGenerator = keyGenerator;
     upperMaxEntry = Integer.parseInt(CarbonProperties.getInstance()
         .getProperty("com.huawei.datastore.internalnodesize", DEFAULT_PAGESIZE + ""));
@@ -93,8 +93,8 @@ public class HierarchyBtreeStore implements DataStore {
 
     // TODO Need to account for page headers and other fields
     leafMaxEntry = Integer.parseInt(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.HIERARCHY_LEAFNODE_SIZE,
-            CarbonCommonConstants.HIERARCHY_LEAFNODE_SIZE_DEFAULT_VAL));
+        .getProperty(CarbonCommonConstants.HIERARCHY_BLOCKLET_SIZE,
+            CarbonCommonConstants.HIERARCHY_BLOCKLET_SIZE_DEFAULT_VAL));
   }
 
   public void build(DataInputStream factStream) {

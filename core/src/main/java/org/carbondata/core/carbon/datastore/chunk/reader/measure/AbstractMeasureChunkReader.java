@@ -21,7 +21,7 @@ package org.carbondata.core.carbon.datastore.chunk.reader.measure;
 import java.util.List;
 
 import org.carbondata.core.carbon.datastore.chunk.reader.MeasureColumnChunkReader;
-import org.carbondata.core.carbon.metadata.leafnode.datachunk.DataChunk;
+import org.carbondata.core.carbon.metadata.blocklet.datachunk.DataChunk;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
 import org.carbondata.core.datastorage.store.compression.ValueCompressonHolder.UnCompressValue;

@@ -22,7 +22,7 @@ package org.carbondata.core.metadata;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.keygenerator.mdkey.NumberCompressor;
 
-public class LeafNodeInfoColumnar {
+public class BlockletInfoColumnar {
   /**
    * fileName.
    */
@@ -90,9 +90,9 @@ public class LeafNodeInfoColumnar {
 
   private boolean[] aggKeyBlock;
   /**
-   * leafNodeMetaSize
+   * blockletMetaSize
    */
-  private int leafNodeMetaSize;
+  private int blockletMetaSize;
 
   private NumberCompressor[] keyBlockUnCompressor;
 
@@ -287,17 +287,17 @@ public class LeafNodeInfoColumnar {
   }
 
   /**
-   * @return the leafNodeMetaSize
+   * @return the blockletMetaSize
    */
-  public int getLeafNodeMetaSize() {
-    return leafNodeMetaSize;
+  public int getBlockletMetaSize() {
+    return blockletMetaSize;
   }
 
   /**
-   * @param leafNodeMetaSize the leafNodeMetaSize to set
+   * @param blockletMetaSize the blockletMetaSize to set
    */
-  public void setLeafNodeMetaSize(int leafNodeMetaSize) {
-    this.leafNodeMetaSize = leafNodeMetaSize;
+  public void setBlockletMetaSize(int blockletMetaSize) {
+    this.blockletMetaSize = blockletMetaSize;
   }
 
   /**

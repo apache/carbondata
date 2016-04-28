@@ -16,13 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.carbondata.core.carbon.metadata.leafnode;
+package org.carbondata.core.carbon.metadata.blocklet;
 
 import java.io.Serializable;
 import java.util.List;
 
 import org.carbondata.core.carbon.datastore.block.TableBlockInfo;
-import org.carbondata.core.carbon.metadata.leafnode.indexes.LeafNodeIndex;
+import org.carbondata.core.carbon.metadata.blocklet.index.BlockletIndex;
 import org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 
 /**
@@ -53,12 +53,12 @@ public class DataFileFooter implements Serializable {
   /**
    * Information about leaf nodes of all columns in this file
    */
-  private List<LeafNodeInfo> leafNodeList;
+  private List<BlockletInfo> blockletList;
 
   /**
-   * Leaf node index of all leaf nodes in this file
+   * blocklet index of all blocklets in this file
    */
-  private LeafNodeIndex leafNodeIndex;
+  private BlockletIndex blockletIndex;
 
   /**
    * Description of columns in this file
@@ -113,31 +113,31 @@ public class DataFileFooter implements Serializable {
   }
 
   /**
-   * @return the leafNodeList
+   * @return the List of Blocklet
    */
-  public List<LeafNodeInfo> getLeafNodeList() {
-    return leafNodeList;
+  public List<BlockletInfo> getBlockletList() {
+    return blockletList;
   }
 
   /**
-   * @param leafNodeList the leafNodeList to set
+   * @param blockletList the blockletList to set
    */
-  public void setLeafNodeList(List<LeafNodeInfo> leafNodeList) {
-    this.leafNodeList = leafNodeList;
+  public void setBlockletList(List<BlockletInfo> blockletList) {
+    this.blockletList = blockletList;
   }
 
   /**
-   * @return the leafNodeIndex
+   * @return the blockletIndex
    */
-  public LeafNodeIndex getLeafNodeIndex() {
-    return leafNodeIndex;
+  public BlockletIndex getBlockletIndex() {
+    return blockletIndex;
   }
 
   /**
-   * @param leafNodeIndex the leafNodeIndex to set
+   * @param blockletIndex the blockletIndex to set
    */
-  public void setLeafNodeIndex(LeafNodeIndex leafNodeIndex) {
-    this.leafNodeIndex = leafNodeIndex;
+  public void setBlockletIndex(BlockletIndex blockletIndex) {
+    this.blockletIndex = blockletIndex;
   }
 
   /**

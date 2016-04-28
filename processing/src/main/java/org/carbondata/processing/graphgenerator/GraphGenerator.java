@@ -89,13 +89,13 @@ public class GraphGenerator {
 
   public static final HashMap<String, BlockDetails[]> blockInfo = new HashMap<>();
   /**
-   * DEFAULE_LEAF_NODE_SIZE
+   * DEFAUL_BLOCKLET_SIZE
    */
-  private static final String DEFAULE_LEAF_NODE_SIZE = "8192";
+  private static final String DEFAUL_BLOCKLET_SIZE = "8192";
   /**
-   * DEFAULE_MAX_LEAF_NODE_IN_FILE
+   * DEFAULE_MAX_BLOCKLET_IN_FILE
    */
-  private static final String DEFAULE_MAX_LEAF_NODE_IN_FILE = "100";
+  private static final String DEFAULE_MAX_BLOCKLET_IN_FILE = "100";
   /**
    * DEFAULT_NUMBER_CORES
    */
@@ -1319,8 +1319,8 @@ public class GraphGenerator {
     CarbonDataWriterStepMeta carbonDataWriter = new CarbonDataWriterStepMeta();
     carbonDataWriter.setCubeName(cubeName);
     carbonDataWriter.setSchemaName(schemaName);
-    carbonDataWriter.setLeafNodeSize(graphConfiguration.getLeafNodeSize());
-    carbonDataWriter.setMaxLeafNode(graphConfiguration.getMaxLeafInFile());
+    carbonDataWriter.setBlockletSize(graphConfiguration.getBlockletSize());
+    carbonDataWriter.setMaxBlocklet(graphConfiguration.getMaxBlockletInFile());
     carbonDataWriter.setTabelName(graphConfiguration.getTableName());
     carbonDataWriter.setMeasureCount(graphConfiguration.getMeasureCount());
     carbonDataWriter.setGroupByEnabled("true");
@@ -1710,10 +1710,10 @@ public class GraphGenerator {
 
     graphConfiguration.setStoreLocation(
         this.schemaName + '/' + carbonDataLoadSchema.getCarbonTable().getFactTableName());
-    graphConfiguration.setLeafNodeSize(
-        (instance.getProperty("com.huawei.unibi.carbon.leaf.node.size", DEFAULE_LEAF_NODE_SIZE)));
-    graphConfiguration.setMaxLeafInFile(
-        (instance.getProperty("carbon.max.leafnode.in.file", DEFAULE_MAX_LEAF_NODE_IN_FILE)));
+    graphConfiguration.setBlockletSize(
+        (instance.getProperty("com.huawei.unibi.carbon.blocklet.size", DEFAUL_BLOCKLET_SIZE)));
+    graphConfiguration.setMaxBlockletInFile(
+        (instance.getProperty("carbon.max.blocklet.in.file", DEFAULE_MAX_BLOCKLET_IN_FILE)));
     graphConfiguration.setNumberOfCores(
         (instance.getProperty(CarbonCommonConstants.NUM_CORES_LOADING, DEFAULT_NUMBER_CORES)));
 
@@ -1816,10 +1816,10 @@ public class GraphGenerator {
     graphConfiguration.setAggType(aggtable.getAggregator());
     graphConfiguration.setStoreLocation(
         this.schemaName + '/' + carbonDataLoadSchema.getCarbonTable().getFactTableName());
-    graphConfiguration.setLeafNodeSize(
-        (instance.getProperty("com.huawei.unibi.carbon.leaf.node.size", DEFAULE_LEAF_NODE_SIZE)));
-    graphConfiguration.setMaxLeafInFile(
-        (instance.getProperty("carbon.max.leafnode.in.file", DEFAULE_MAX_LEAF_NODE_IN_FILE)));
+    graphConfiguration.setBlockletSize(
+        (instance.getProperty("com.huawei.unibi.carbon.blocklet.size", DEFAUL_BLOCKLET_SIZE)));
+    graphConfiguration.setMaxBlockletInFile(
+        (instance.getProperty("carbon.max.blocklet.in.file", DEFAULE_MAX_BLOCKLET_IN_FILE)));
     graphConfiguration.setNumberOfCores(
         (instance.getProperty(CarbonCommonConstants.NUM_CORES_LOADING, DEFAULT_NUMBER_CORES)));
 

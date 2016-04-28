@@ -22,8 +22,8 @@ import java.util.List;
 
 import org.carbondata.core.carbon.datastore.BTreeBuilderInfo;
 import org.carbondata.core.carbon.datastore.BtreeBuilder;
-import org.carbondata.core.carbon.datastore.impl.btree.BlockBtreeBuilder;
-import org.carbondata.core.carbon.metadata.leafnode.DataFileFooter;
+import org.carbondata.core.carbon.datastore.impl.btree.BlockBTreeBuilder;
+import org.carbondata.core.carbon.metadata.blocklet.DataFileFooter;
 
 /**
  * Class which is responsible for loading the b+ tree block. This class will
@@ -47,7 +47,7 @@ public class SegmentTaskIndex extends AbstractIndex {
     // in case of segment create we do not need any file path and each column value size
     // as Btree will be build as per min max and start key
     BTreeBuilderInfo btreeBuilderInfo = new BTreeBuilderInfo(footerList, null);
-    BtreeBuilder blocksBuilder = new BlockBtreeBuilder();
+    BtreeBuilder blocksBuilder = new BlockBTreeBuilder();
     // load the metadata
     blocksBuilder.build(btreeBuilderInfo);
     dataRefNode = blocksBuilder.get();

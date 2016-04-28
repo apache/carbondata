@@ -26,7 +26,7 @@ import org.carbondata.core.datastorage.store.NodeMeasureDataStore;
 import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreDataHolder;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.datastorage.util.StoreFactory;
-import org.carbondata.core.metadata.LeafNodeInfo;
+import org.carbondata.core.metadata.BlockletInfo;
 import org.carbondata.query.datastorage.storeinterface.KeyValue;
 import org.carbondata.query.schema.metadata.Pair;
 
@@ -61,14 +61,14 @@ public class CSBTreeLeafNode extends CSBNode {
   }
 
   public CSBTreeLeafNode(int maxKeys, int keySizeInBytes, boolean isFileStore,
-      FileHolder fileHolder, LeafNodeInfo leafNodeInfo, ValueCompressionModel compressionModel) {
-    nKeys = leafNodeInfo.getNumberOfKeys();
+      FileHolder fileHolder, BlockletInfo blockletInfo, ValueCompressionModel compressionModel) {
+    nKeys = blockletInfo.getNumberOfKeys();
     keyStore = StoreFactory
-        .createKeyStore(maxKeys, keySizeInBytes, true, isFileStore, leafNodeInfo.getKeyOffset(),
-            leafNodeInfo.getFileName(), leafNodeInfo.getKeyLength(), fileHolder);
+        .createKeyStore(maxKeys, keySizeInBytes, true, isFileStore, blockletInfo.getKeyOffset(),
+            blockletInfo.getFileName(), blockletInfo.getKeyLength(), fileHolder);
     dataStore = StoreFactory
-        .createDataStore(isFileStore, compressionModel, leafNodeInfo.getMeasureOffset(),
-            leafNodeInfo.getMeasureLength(), leafNodeInfo.getFileName(), fileHolder);
+        .createDataStore(isFileStore, compressionModel, blockletInfo.getMeasureOffset(),
+            blockletInfo.getMeasureLength(), blockletInfo.getFileName(), fileHolder);
   }
 
   /**

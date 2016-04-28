@@ -20,7 +20,7 @@ package org.carbondata.core.carbon.datastore;
 
 import java.util.List;
 
-import org.carbondata.core.carbon.metadata.leafnode.DataFileFooter;
+import org.carbondata.core.carbon.metadata.blocklet.DataFileFooter;
 
 /**
  * below class holds the meta data requires to build the blocks

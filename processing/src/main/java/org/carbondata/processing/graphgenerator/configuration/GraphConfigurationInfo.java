@@ -32,9 +32,9 @@ public class GraphConfigurationInfo {
 
   private String tableName;
 
-  private String leafNodeSize;
+  private String blockletSize;
 
-  private String maxLeafInFile;
+  private String maxBlockletInFile;
 
   private String batchSize;
 
@@ -283,31 +283,31 @@ public class GraphConfigurationInfo {
   }
 
   /**
-   * @return the leafNodeSize
+   * @return the blockletSize
    */
-  public String getLeafNodeSize() {
-    return leafNodeSize;
+  public String getBlockletSize() {
+    return blockletSize;
   }
 
   /**
-   * @param leafNodeSize the leafNodeSize to set
+   * @param blockletSize the blockletSize to set
    */
-  public void setLeafNodeSize(String leafNodeSize) {
-    this.leafNodeSize = leafNodeSize;
+  public void setBlockletSize(String blockletSize) {
+    this.blockletSize = blockletSize;
   }
 
   /**
-   * @return the maxLeafInFile
+   * @return the maxBlockletInFile
    */
-  public String getMaxLeafInFile() {
-    return maxLeafInFile;
+  public String getMaxBlockletInFile() {
+    return maxBlockletInFile;
   }
 
   /**
-   * @param maxLeafInFile the maxLeafInFile to set
+   * @param maxBlockletInFile the maxBlockletInFile to set
    */
-  public void setMaxLeafInFile(String maxLeafInFile) {
-    this.maxLeafInFile = maxLeafInFile;
+  public void setMaxBlockletInFile(String maxBlockletInFile) {
+    this.maxBlockletInFile = maxBlockletInFile;
   }
 
   /**

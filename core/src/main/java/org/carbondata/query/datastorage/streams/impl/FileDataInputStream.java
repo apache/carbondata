@@ -32,7 +32,7 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
-import org.carbondata.core.metadata.LeafNodeInfoColumnar;
+import org.carbondata.core.metadata.BlockletInfoColumnar;
 import org.carbondata.core.reader.CarbonFooterReader;
 import org.carbondata.core.util.CarbonMetadataUtil;
 import org.carbondata.core.util.ValueCompressionUtil;
@@ -116,21 +116,21 @@ public class FileDataInputStream extends AbstractFileDataInputStream {
    * This method will be used to read leaf meta data format of meta data will be
    * <entrycount><keylength><keyoffset><measure1length><measure1offset>
    *
-   * @return will return leaf node info which will have all the meta data
-   * related to leaf file
+   * @return will return blocklet info which will have all the meta data
+   * related to data file
    */
-  public List<LeafNodeInfoColumnar> getLeafNodeInfoColumnar() {
+  public List<BlockletInfoColumnar> getBlockletInfoColumnar() {
     //
-    List<LeafNodeInfoColumnar> listOfNodeInfo =
-        new ArrayList<LeafNodeInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+    List<BlockletInfoColumnar> listOfNodeInfo =
+        new ArrayList<BlockletInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
     CarbonFooterReader metaDataReader = new CarbonFooterReader(filesLocation, offSet);
     try {
-      listOfNodeInfo = CarbonMetadataUtil.convertLeafNodeInfo(metaDataReader.readFooter());
+      listOfNodeInfo = CarbonMetadataUtil.convertBlockletInfo(metaDataReader.readFooter());
     } catch (IOException e) {
       LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
           "Problem while reading metadata :: " + filesLocation, e);
     }
-    for (LeafNodeInfoColumnar infoColumnar : listOfNodeInfo) {
+    for (BlockletInfoColumnar infoColumnar : listOfNodeInfo) {
       infoColumnar.setFileName(filesLocation);
     }
     // if fact file empty then list size will 0 then it will throw index out of bound exception

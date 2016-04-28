@@ -17,18 +17,18 @@
  * under the License.
  */
 
-package org.carbondata.core.carbon.metadata.leafnode;
+package org.carbondata.core.carbon.metadata.blocklet;
 
 import java.io.Serializable;
 import java.util.List;
 
-import org.carbondata.core.carbon.metadata.leafnode.datachunk.DataChunk;
-import org.carbondata.core.carbon.metadata.leafnode.indexes.LeafNodeIndex;
+import org.carbondata.core.carbon.metadata.blocklet.datachunk.DataChunk;
+import org.carbondata.core.carbon.metadata.blocklet.index.BlockletIndex;
 
 /**
- * Leaf node info class to store the information about the Btree leaf
+ * class to store the information about the blocklet
  */
-public class LeafNodeInfo implements Serializable {
+public class BlockletInfo implements Serializable {
 
   /**
    * serialization id
@@ -36,25 +36,24 @@ public class LeafNodeInfo implements Serializable {
   private static final long serialVersionUID = 1873135459695635381L;
 
   /**
-   * Number of rows in this leaf node
+   * Number of rows in this blocklet
    */
   private int numberOfRows;
 
   /**
-   * Information about dimension chunk of all dimensions in this leaf node
+   * Information about dimension chunk of all dimensions in this blocklet
    */
   private List<DataChunk> dimensionColumnChunk;
 
   /**
-   * Information about measure chunk of all measures in this leaf node
+   * Information about measure chunk of all measures in this blocklet
    */
   private List<DataChunk> measureColumnChunk;
 
   /**
-   * to store the index like min max and start and end key of each column
-   * of the leaf node
+   * to store the index like min max and start and end key of each column of the blocklet
    */
-  private LeafNodeIndex leafNodeIndex;
+  private BlockletIndex blockletIndex;
 
   /**
    * @return the numberOfRows
@@ -99,17 +98,17 @@ public class LeafNodeInfo implements Serializable {
   }
 
   /**
-   * @return the leafNodeIndex
+   * @return the blockletIndex
    */
-  public LeafNodeIndex getLeafNodeIndex() {
-    return leafNodeIndex;
+  public BlockletIndex getBlockletIndex() {
+    return blockletIndex;
   }
 
   /**
-   * @param leafNodeIndex the leafNodeIndex to set
+   * @param blockletIndex the blockletIndex to set
    */
-  public void setLeafNodeIndex(LeafNodeIndex leafNodeIndex) {
-    this.leafNodeIndex = leafNodeIndex;
+  public void setBlockletIndex(BlockletIndex blockletIndex) {
+    this.blockletIndex = blockletIndex;
   }
 
 }

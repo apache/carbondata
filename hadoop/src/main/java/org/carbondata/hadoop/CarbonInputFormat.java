@@ -32,7 +32,7 @@ import org.carbondata.core.carbon.datastore.SegmentTaskIndexStore;
 import org.carbondata.core.carbon.datastore.block.AbstractIndex;
 import org.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.carbondata.core.carbon.datastore.exception.IndexBuilderException;
-import org.carbondata.core.carbon.datastore.impl.btree.BlockBtreeLeafNode;
+import org.carbondata.core.carbon.datastore.impl.btree.BlockBTreeLeafNode;
 import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
@@ -184,8 +184,8 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
           getDataBlocksOfSegment(job, filterExpressionProcessor, absoluteTableIdentifier,
               filterResolver, segmentNo);
       for (DataRefNode dataRefNode : dataRefNodes) {
-        BlockBtreeLeafNode blockletLeafNode = (BlockBtreeLeafNode) dataRefNode;
-        TableBlockInfo tableBlockInfo = blockletLeafNode.getTableBlockInfo();
+        BlockBTreeLeafNode leafNode = (BlockBTreeLeafNode) dataRefNode;
+        TableBlockInfo tableBlockInfo = leafNode.getTableBlockInfo();
         result.add(new CarbonInputSplit(segmentNo, new Path(tableBlockInfo.getFilePath()),
             tableBlockInfo.getBlockOffset(), tableBlockInfo.getBlockLength(),
             tableBlockInfo.getLocations()));

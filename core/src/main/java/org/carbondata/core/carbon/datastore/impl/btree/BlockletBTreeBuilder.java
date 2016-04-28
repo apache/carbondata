@@ -31,13 +31,13 @@ import org.carbondata.query.util.CarbonEngineLogEvent;
 /**
  * Btree based builder which will build the leaf node in a b+ tree format
  */
-public class BlockletBtreeBuilder extends AbstractBtreeBuilder {
+public class BlockletBTreeBuilder extends AbstractBTreeBuilder {
 
   /**
    * Attribute for Carbon LOGGER
    */
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(BlockletBtreeBuilder.class.getName());
+      LogServiceFactory.getLogService(BlockletBTreeBuilder.class.getName());
 
   /**
    * Below method will be used to build the segment info bplus tree format
@@ -59,12 +59,12 @@ public class BlockletBtreeBuilder extends AbstractBtreeBuilder {
     List<IndexKey> leafNSKeyList = null;
     long nodeNumber = 0;
     for (int index = 0;
-         index < segmentBuilderInfos.getFooterList().get(0).getLeafNodeList()
+         index < segmentBuilderInfos.getFooterList().get(0).getBlockletList()
              .size(); index++) {
       // creating a leaf node
       curNode = new BlockletBTreeLeafNode(segmentBuilderInfos, index, nodeNumber++);
       totalNumberOfTuple +=
-          segmentBuilderInfos.getFooterList().get(0).getLeafNodeList().get(index)
+          segmentBuilderInfos.getFooterList().get(0).getBlockletList().get(index)
               .getNumberOfRows();
       nLeaf++;
       // setting a next node as its a b+tree
@@ -87,8 +87,8 @@ public class BlockletBtreeBuilder extends AbstractBtreeBuilder {
       }
       if (null != leafNSKeyList) {
         leafNSKeyList.add(convertStartKeyToNodeEntry(
-            segmentBuilderInfos.getFooterList().get(0).getLeafNodeList().get(index)
-                .getLeafNodeIndex().getBtreeIndex().getStartKey()));
+            segmentBuilderInfos.getFooterList().get(0).getBlockletList().get(index)
+                .getBlockletIndex().getBtreeIndex().getStartKey()));
       }
       if (null != currentGroup) {
         currentGroup[groupCounter] = curNode;

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.carbondata.core.carbon.metadata.leafnode.datachunk;
+package org.carbondata.core.carbon.metadata.blocklet.datachunk;
 
 import java.util.BitSet;
 

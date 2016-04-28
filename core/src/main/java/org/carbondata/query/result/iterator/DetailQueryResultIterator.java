@@ -70,8 +70,8 @@ public class DetailQueryResultIterator implements CarbonIterator<ChunkResult> {
       QueryExecuterProperties executerProperties, CarbonQueryExecutorModel queryModel) {
     this.queryResultPreparator = new QueryResultPreparator(executerProperties, queryModel);
     this.numberOfCores = infos.get(0).getNumberOfRecordsInMemory() / Integer.parseInt(
-        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.LEAFNODE_SIZE,
-            CarbonCommonConstants.LEAFNODE_SIZE_DEFAULT_VAL));
+        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.BLOCKLET_SIZE,
+            CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL));
     if (numberOfCores == 0) {
       numberOfCores++;
     }

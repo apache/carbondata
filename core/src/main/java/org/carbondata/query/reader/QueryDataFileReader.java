@@ -28,7 +28,7 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.core.datastorage.store.compression.SnappyCompression.SnappyByteCompression;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
-import org.carbondata.core.metadata.LeafNodeInfo;
+import org.carbondata.core.metadata.BlockletInfo;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.aggregator.util.AggUtil;
@@ -83,30 +83,30 @@ public class QueryDataFileReader {
   /**
    * Reading the query result from result file and also doing the snappy uncompression.
    *
-   * @param leafNodeInfo
+   * @param blockletInfo
    * @return
    * @throws ResultReaderException
    */
-  public QueryResult prepareResultFromFile(LeafNodeInfo leafNodeInfo) throws ResultReaderException {
+  public QueryResult prepareResultFromFile(BlockletInfo blockletInfo) throws ResultReaderException {
     QueryResult queryResult = new QueryResult();
     byte[] keyArray = fileHolder
-        .readByteArray(this.filePath, leafNodeInfo.getKeyOffset(), leafNodeInfo.getKeyLength());
+        .readByteArray(this.filePath, blockletInfo.getKeyOffset(), blockletInfo.getKeyLength());
     MeasureAggregator[] measureAggregators = AggUtil
         .getAggregators(info.getAggType(), false, info.getKeyGenerator(), info.getCubeUniqueName(),
             info.getMsrMinValue(), info.getNoDictionaryTypes(), info.getDataTypes());
 
-    DataInputStream[] msrStreams = new DataInputStream[leafNodeInfo.getMeasureLength().length];
+    DataInputStream[] msrStreams = new DataInputStream[blockletInfo.getMeasureLength().length];
 
     for (int j = 0; j < msrStreams.length; j++) {
       msrStreams[j] = new DataInputStream(new ByteArrayInputStream(SnappyByteCompression.INSTANCE
-          .unCompress(fileHolder.readByteArray(filePath, leafNodeInfo.getMeasureOffset()[j],
-              leafNodeInfo.getMeasureLength()[j]))));
+          .unCompress(fileHolder.readByteArray(filePath, blockletInfo.getMeasureOffset()[j],
+              blockletInfo.getMeasureLength()[j]))));
     }
 
     DataInputStream keyStream = new DataInputStream(
         new ByteArrayInputStream(SnappyByteCompression.INSTANCE.unCompress(keyArray)));
     try {
-      for (int j = 0; j < leafNodeInfo.getNumberOfKeys(); j++) {
+      for (int j = 0; j < blockletInfo.getNumberOfKeys(); j++) {
         byte[] key = new byte[info.getKeySize()];
         keyStream.readFully(key);
         for (int k = 0; k < measureAggregators.length; k++) {

@@ -22,8 +22,8 @@ import java.util.List;
 
 import org.carbondata.core.carbon.datastore.BTreeBuilderInfo;
 import org.carbondata.core.carbon.datastore.BtreeBuilder;
-import org.carbondata.core.carbon.datastore.impl.btree.BlockletBtreeBuilder;
-import org.carbondata.core.carbon.metadata.leafnode.DataFileFooter;
+import org.carbondata.core.carbon.datastore.impl.btree.BlockletBTreeBuilder;
+import org.carbondata.core.carbon.metadata.blocklet.DataFileFooter;
 
 /**
  * Class which is responsible for loading the b+ tree block. This class will
@@ -44,7 +44,7 @@ public class BlockIndex extends AbstractIndex {
     // create a segment builder info
     BTreeBuilderInfo indexBuilderInfo =
         new BTreeBuilderInfo(footerList, segmentProperties.getDimensionColumnsValueSize());
-    BtreeBuilder blocksBuilder = new BlockletBtreeBuilder();
+    BtreeBuilder blocksBuilder = new BlockletBTreeBuilder();
     // load the metadata
     blocksBuilder.build(indexBuilderInfo);
     dataRefNode = blocksBuilder.get();

@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.carbondata.core.carbon.metadata.leafnode;
+package org.carbondata.core.carbon.metadata.blocklet;
 
 import java.io.Serializable;
 
