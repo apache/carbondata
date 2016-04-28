@@ -24,10 +24,10 @@ import org.carbondata.core.util.CarbonUtil;
 import junit.framework.TestCase;
 import org.junit.Test;
 
-public class BtreeBlockFinderTest extends TestCase {
+public class BTreeBlockFinderTest extends TestCase {
 
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(BtreeBlockFinderTest.class.getName());
+      LogServiceFactory.getLogService(BTreeBlockFinderTest.class.getName());
 
   @Test public void testBtreeBuldingIsPorper() {
     BtreeBuilder builder = new BlockBTreeBuilder();
