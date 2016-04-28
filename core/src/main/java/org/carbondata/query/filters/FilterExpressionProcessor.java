@@ -29,7 +29,6 @@ import org.carbondata.core.carbon.datastore.DataRefNode;
 import org.carbondata.core.carbon.datastore.DataRefNodeFinder;
 import org.carbondata.core.carbon.datastore.IndexKey;
 import org.carbondata.core.carbon.datastore.block.AbstractIndex;
-import org.carbondata.core.carbon.datastore.impl.btree.BTreeNode;
 import org.carbondata.core.carbon.datastore.impl.btree.BtreeDataRefNodeFinder;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
@@ -83,7 +82,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
    * Step:4 The selected blocks will be send to executers for applying the filters with the help
    * of Filter executers.
    */
-  public List<DataRefNode> getFilterredBlocks(BTreeNode btreeNode,
+  public List<DataRefNode> getFilterredBlocks(DataRefNode btreeNode,
       FilterResolverIntf filterResolver, AbstractIndex tableSegment,
       AbsoluteTableIdentifier tableIdentifier) {
     // Need to get the current dimension tables
@@ -101,10 +100,8 @@ public class FilterExpressionProcessor implements FilterProcessor {
     long startTimeInMillis = System.currentTimeMillis();
     DataRefNodeFinder blockFinder = new BtreeDataRefNodeFinder(
         tableSegment.getSegmentProperties().getDimensionColumnsValueSize());
-    DataRefNode startBlock =
-        blockFinder.findFirstDataBlock(btreeNode.getNextDataRefNode(), searchStartKey);
-    DataRefNode endBlock =
-        blockFinder.findLastDataBlock(btreeNode.getNextDataRefNode(), searchEndKey);
+    DataRefNode startBlock = blockFinder.findFirstDataBlock(btreeNode, searchStartKey);
+    DataRefNode endBlock = blockFinder.findLastDataBlock(btreeNode, searchEndKey);
     while (startBlock != endBlock) {
       startBlock = startBlock.getNextDataRefNode();
       addBlockBasedOnMinMaxValue(filterResolver, listOfDataBlocksToScan, startBlock,

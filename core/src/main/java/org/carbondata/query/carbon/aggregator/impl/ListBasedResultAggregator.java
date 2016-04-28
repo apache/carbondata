@@ -170,7 +170,7 @@ public class ListBasedResultAggregator implements ScannedResultAggregator {
         // get the key
         key = listBasedResult.get(i).getKey();
         // unpack the key with table block key generator
-        data = tableBlockExecutionInfos.getDataBlockKeyGenerator()
+        data = tableBlockExecutionInfos.getBlockKeyGenerator()
             .getKeyArray(key.getDictionaryKey(), tableBlockExecutionInfos.getMaskedByteForBlock());
         // packed the key with latest block key generator
         // and generate the masked key for that key

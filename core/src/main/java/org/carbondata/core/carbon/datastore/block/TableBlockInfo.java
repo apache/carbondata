@@ -21,6 +21,7 @@ package org.carbondata.core.carbon.datastore.block;
 import java.io.Serializable;
 
 import org.carbondata.core.carbon.path.CarbonTablePath.DataFileUtil;
+import org.carbondata.core.datastorage.store.impl.FileFactory;
 
 /**
  * class will be used to pass the block detail detail will be passed form driver
@@ -60,7 +61,7 @@ public class TableBlockInfo implements Serializable, Comparable<TableBlockInfo> 
 
   public TableBlockInfo(String filePath, long blockOffset, int segmentId, String[] locations,
       long blockLength) {
-    this.filePath = filePath;
+    this.filePath = FileFactory.getUpdatedFilePath(filePath);
     this.blockOffset = blockOffset;
     this.segmentId = segmentId;
     this.locations = locations;

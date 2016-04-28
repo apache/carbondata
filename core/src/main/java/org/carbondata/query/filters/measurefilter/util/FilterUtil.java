@@ -261,7 +261,7 @@ public final class FilterUtil {
       CarbonDimension dim) throws QueryExecutionException {
     Dictionary forwardDictionary = getForwardDictionaryCache(tableIdentifier, dim);
     if (null != forwardDictionary) {
-      forwardDictionary.getSurrogateKey(value);
+      return forwardDictionary.getSurrogateKey(value);
     }
     return null;
   }

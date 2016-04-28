@@ -28,6 +28,7 @@ import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.aggregator.impl.CountAggregator;
 import org.carbondata.query.aggregator.impl.DistinctCountAggregator;
@@ -75,23 +76,6 @@ public class QueryResultPreparator {
     this.queryModel = queryModel;
   }
 
-  /**
-   * this is to avoid the enum comparison , as every time we need to check
-   * whether its a no dictionary column or dictionary column
-   *
-   * @param queryDimension
-   * @return byte array specify 0- dictionary column, 1 no dictionary column
-   */
-  private byte[] getDimensionType(List<CarbonDimension> queryDimension) {
-    byte[] type = new byte[queryDimension.size()];
-    for (int i = 0; i < queryDimension.size(); i++) {
-      if (!queryDimension.get(i).getEncoder().contains(Encoding.DICTIONARY)) {
-        type[i] = 1;
-      }
-    }
-    return type;
-  }
-
   public BatchResult getQueryResult(Result scannedResult) {
     if ((null == scannedResult || scannedResult.size() < 1)) {
       return new BatchResult();
@@ -109,7 +93,6 @@ public class QueryResultPreparator {
     int noDictionaryColumnIndex = 0;
     ByteArrayWrapper key = null;
     MeasureAggregator[] value = null;
-    byte[] dimensionType = getDimensionType(queryDimension);
     while (scannedResult.hasNext()) {
       key = scannedResult.getKey();
       value = scannedResult.getValue();
@@ -117,7 +100,7 @@ public class QueryResultPreparator {
           .getKeyArray(key.getDictionaryKey(),
               queryExecuterProperties.keyStructureInfo.getMaskedBytes());
       for (int i = 0; i < dimensionCount; i++) {
-        if (dimensionType[i] == 1) {
+        if (!CarbonUtil.hasEncoding(queryDimension.get(i).getEncoder(), Encoding.DICTIONARY)) {
           resultData[currentRow][i] = DataTypeUtil.getDataBasedOnDataType(
               new String(key.getNoDictionaryKeyByIndex(noDictionaryColumnIndex++)),
               queryDimension.get(i).getDataType());
@@ -144,11 +127,10 @@ public class QueryResultPreparator {
     if (resultData.length > 0) {
       resultData = encodeToRows(resultData);
     }
-    return getResult(queryModel, resultData, dimensionType);
+    return getResult(queryModel, resultData);
   }
 
-  private BatchResult getResult(QueryModel queryModel, Object[][] convertedResult,
-      byte[] dimensionType) {
+  private BatchResult getResult(QueryModel queryModel, Object[][] convertedResult) {
 
     List<CarbonKey> keys = new ArrayList<CarbonKey>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     List<CarbonValue> values =
@@ -173,19 +155,20 @@ public class QueryResultPreparator {
       row = new Object[dimensionCount + msrCount];
       for (int i = 0; i < dimensionCount; i++) {
         queryDimension = queryDimensions.get(i);
-        if (dimensionType[i] == 1) {
+        if (!CarbonUtil.hasEncoding(queryDimension.getEncoder(), Encoding.DICTIONARY)) {
           row[queryDimension.getQueryOrder()] = convertedResult[i][columnIndex];
         } else {
           if (queryExecuterProperties.sortDimIndexes[i] == 1) {
-            row[queryDimension.getQueryOrder()] =
+            row[queryDimension.getQueryOrder()] = DataTypeUtil.getDataBasedOnDataType(
                 queryExecuterProperties.columnToDictionayMapping.get(queryDimension.getColumnId())
-                    .getDictionaryValueFromSortedIndex((Integer) convertedResult[i][columnIndex]);
+                    .getDictionaryValueFromSortedIndex((Integer) convertedResult[i][columnIndex]),
+                queryDimension.getDataType());
           } else {
-            row[queryDimension.getQueryOrder()] =
+            row[queryDimension.getQueryOrder()] = DataTypeUtil.getDataBasedOnDataType(
                 queryExecuterProperties.columnToDictionayMapping.get(queryDimension.getColumnId())
-                    .getDictionaryValueForKey((Integer) convertedResult[i][columnIndex]);
+                    .getDictionaryValueForKey((Integer) convertedResult[i][columnIndex]),
+                queryDimension.getDataType());
           }
-
         }
       }
       MeasureAggregator[] msrAgg =
@@ -213,31 +196,31 @@ public class QueryResultPreparator {
               ((MeasureAggregator) convertedResult[dimensionCount
                   + queryExecuterProperties.aggExpressionStartIndex + i][columnIndex]).get();
         }
-      }
-
-      CarbonMeasure msr = null;
-      for (int i = 0; i < queryModel.getQueryMeasures().size(); i++) {
-        msr = queryModel.getQueryMeasures().get(i);
-        if (msrAgg[queryExecuterProperties.measureStartIndex + i].isFirstTime() && (
-            msr.getAggregateFunction().equals(CarbonCommonConstants.COUNT) || msr
-                .getAggregateFunction().equals(CarbonCommonConstants.DISTINCT_COUNT))) {
-          row[msr.getQueryOrder()] = 0.0;
-        } else if (msrAgg[queryExecuterProperties.measureStartIndex + i].isFirstTime()) {
-          row[msr.getQueryOrder()] = null;
-        } else {
-          Object msrVal;
-          switch (msr.getDataType()) {
-            case LONG:
-              msrVal = msrAgg[queryExecuterProperties.measureStartIndex + i].getLongValue();
-              break;
-            case DECIMAL:
-              msrVal = msrAgg[queryExecuterProperties.measureStartIndex + i].getBigDecimalValue();
-              break;
-            default:
-              msrVal = msrAgg[queryExecuterProperties.measureStartIndex + i].getDoubleValue();
+      } else {
+        CarbonMeasure msr = null;
+        for (int i = 0; i < queryModel.getQueryMeasures().size(); i++) {
+          msr = queryModel.getQueryMeasures().get(i);
+          if (msrAgg[queryExecuterProperties.measureStartIndex + i].isFirstTime() && (
+              msr.getAggregateFunction().equals(CarbonCommonConstants.COUNT) || msr
+                  .getAggregateFunction().equals(CarbonCommonConstants.DISTINCT_COUNT))) {
+            row[msr.getQueryOrder()] = 0.0;
+          } else if (msrAgg[queryExecuterProperties.measureStartIndex + i].isFirstTime()) {
+            row[msr.getQueryOrder()] = null;
+          } else {
+            Object msrVal;
+            switch (msr.getDataType()) {
+              case LONG:
+                msrVal = msrAgg[queryExecuterProperties.measureStartIndex + i].getLongValue();
+                break;
+              case DECIMAL:
+                msrVal = msrAgg[queryExecuterProperties.measureStartIndex + i].getBigDecimalValue();
+                break;
+              default:
+                msrVal = msrAgg[queryExecuterProperties.measureStartIndex + i].getDoubleValue();
+            }
+            row[msr.getQueryOrder()] = DataTypeUtil
+                .getMeasureDataBasedOnDataType(msrVal == null ? null : msrVal, msr.getDataType());
           }
-          row[msr.getQueryOrder()] = DataTypeUtil
-              .getMeasureDataBasedOnDataType(msrVal == null ? null : msrVal, msr.getDataType());
         }
       }
       values.add(new CarbonValue(new MeasureAggregator[0]));

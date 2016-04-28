@@ -40,6 +40,8 @@ import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.CarbonUtilException;
 
+import org.apache.hadoop.fs.Path;
+
 /**
  * Singleton Class to handle loading, unloading,clearing,storing of the table
  * blocks
@@ -82,6 +84,12 @@ public class SegmentTaskIndexStore {
    */
   public static SegmentTaskIndexStore getInstance() {
     return SEGMENTTASKINDEXSTORE;
+  }
+
+  public static void main(String[] args) {
+    Path p = new Path("file:/D:/file");
+    Path pathWithoutSchemeAndAuthority = Path.getPathWithoutSchemeAndAuthority(p);
+    System.out.println(pathWithoutSchemeAndAuthority);
   }
 
   /**

@@ -33,13 +33,16 @@ import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonUtil;
 
+import org.apache.hadoop.fs.Path;
+
 public class LocalCarbonFile implements CarbonFile {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(LocalCarbonFile.class.getName());
   private File file;
 
-  public LocalCarbonFile(String path) {
-    file = new File(path);
+  public LocalCarbonFile(String filePath) {
+    Path pathWithoutSchemeAndAuthority = Path.getPathWithoutSchemeAndAuthority(new Path(filePath));
+    file = new File(pathWithoutSchemeAndAuthority.toString());
   }
 
   public LocalCarbonFile(File file) {

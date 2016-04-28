@@ -32,7 +32,6 @@ import org.carbondata.core.carbon.datastore.SegmentTaskIndexStore;
 import org.carbondata.core.carbon.datastore.block.AbstractIndex;
 import org.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.carbondata.core.carbon.datastore.exception.IndexBuilderException;
-import org.carbondata.core.carbon.datastore.impl.btree.BTreeNode;
 import org.carbondata.core.carbon.datastore.impl.btree.BlockBtreeLeafNode;
 import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
@@ -130,7 +129,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     for (InputSplit inputSplit : splits) {
       FileSplit fileSplit = (FileSplit) inputSplit;
       int segmentId = CarbonTablePath.DataPathUtil.getSegmentId(fileSplit.getPath().toString());
-      if (INVALID_SEGMENT_ID == segmentId){
+      if (INVALID_SEGMENT_ID == segmentId) {
         continue;
       }
       carbonSplits.add(CarbonInputSplit.from(segmentId, fileSplit));
@@ -188,7 +187,8 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
         BlockBtreeLeafNode blockletLeafNode = (BlockBtreeLeafNode) dataRefNode;
         TableBlockInfo tableBlockInfo = blockletLeafNode.getTableBlockInfo();
         result.add(new CarbonInputSplit(segmentNo, new Path(tableBlockInfo.getFilePath()),
-            tableBlockInfo.getBlockOffset(), 0L, tableBlockInfo.getLocations()));
+            tableBlockInfo.getBlockOffset(), tableBlockInfo.getBlockLength(),
+            tableBlockInfo.getLocations()));
       }
     }
     return result;
@@ -255,7 +255,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     // build result
     for (AbstractIndex abstractIndex : stringTableSegmentMap.values()) {
       List<DataRefNode> filterredBlocks = filterExpressionProcessor
-          .getFilterredBlocks((BTreeNode) abstractIndex.getDataRefNode(), resolver, abstractIndex,
+          .getFilterredBlocks(abstractIndex.getDataRefNode(), resolver, abstractIndex,
               absoluteTableIdentifier);
       resultFilterredBlocks.addAll(filterredBlocks);
     }

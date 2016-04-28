@@ -70,13 +70,13 @@ public class DimColumnResolvedFilterInfo implements Serializable {
   /**
    * start index key of the block based on the keygenerator
    */
-  private IndexKey starIndexKey;
+  private transient IndexKey starIndexKey;
 
   /**
    * end index key  which is been formed considering the max surrogate values
    * from dictionary cache
    */
-  private IndexKey endIndexKey;
+  private transient IndexKey endIndexKey;
 
   /**
    * reolved filter object of a particlar filter Expression.

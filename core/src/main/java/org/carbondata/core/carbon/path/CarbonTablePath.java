@@ -20,10 +20,11 @@ package org.carbondata.core.carbon.path;
 
 import java.io.File;
 
+import org.carbondata.core.constants.CarbonCommonConstants;
+
 import static org.carbondata.core.constants.CarbonCommonConstants.INVALID_SEGMENT_ID;
 
 import org.apache.hadoop.fs.Path;
-
 
 /**
  * Helps to get Table content paths.
@@ -48,6 +49,15 @@ public class CarbonTablePath extends Path {
   public CarbonTablePath(String tablePathString) {
     super(tablePathString);
     this.tablePath = tablePathString;
+  }
+
+  /**
+   * The method returns the folder path containing the carbon file.
+   *
+   * @param carbonFilePath
+   */
+  public static String getFolderContainingFile(String carbonFilePath) {
+    return carbonFilePath.substring(0, carbonFilePath.lastIndexOf(File.separator));
   }
 
   /**
@@ -190,15 +200,6 @@ public class CarbonTablePath extends Path {
   }
 
   /**
-   * The method returns the folder path containing the carbon file.
-   *
-   * @param carbonFilePath
-   */
-  public static String getFolderContainingFile(String carbonFilePath) {
-    return carbonFilePath.substring(0, carbonFilePath.lastIndexOf(File.separator));
-  }
-
-  /**
    * To manage data file name and composition
    */
   public static class DataFileUtil {
@@ -247,9 +248,10 @@ public class CarbonTablePath extends Path {
      */
     public static int getSegmentId(String dataFileAbsolutePath) {
       // find segment id from last of data file path
-      int endIndex = dataFileAbsolutePath.lastIndexOf(File.separator);
+      int endIndex = dataFileAbsolutePath.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR);
       // + 1 for size of "/"
-      int startIndex = dataFileAbsolutePath.lastIndexOf(File.separator, endIndex - 1) + 1;
+      int startIndex =
+          dataFileAbsolutePath.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR, endIndex - 1) + 1;
       String segmentDirStr = dataFileAbsolutePath.substring(startIndex, endIndex);
       //identify id in segment_<id>
       String[] segmentDirSplits = segmentDirStr.split("_");
@@ -257,7 +259,7 @@ public class CarbonTablePath extends Path {
         if (segmentDirSplits.length == 2) {
           return Integer.parseInt(segmentDirSplits[1]);
         }
-      } catch (Exception e){
+      } catch (Exception e) {
         return INVALID_SEGMENT_ID;
       }
       return INVALID_SEGMENT_ID;

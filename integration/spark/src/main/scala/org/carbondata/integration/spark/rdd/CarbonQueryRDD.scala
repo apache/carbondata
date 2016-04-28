@@ -122,7 +122,7 @@ class CarbonSparkPartition(rddId: Int, val idx: Int,
 
         // fill table block info
         val tableBlockInfoList = new util.ArrayList[TableBlockInfo]();
-        tableBlockInfoList.add(new TableBlockInfo(carbonInputSplit.getPath.getName,
+        tableBlockInfoList.add(new TableBlockInfo(carbonInputSplit.getPath.toString,
           carbonInputSplit.getStart,
           carbonInputSplit.getSegmentId, carbonInputSplit.getLocations, carbonInputSplit.getLength
         )

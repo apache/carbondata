@@ -25,6 +25,7 @@ import org.carbondata.core.cache.dictionary.Dictionary;
 import org.carbondata.core.carbon.datastore.DataRefNode;
 import org.carbondata.core.carbon.datastore.IndexKey;
 import org.carbondata.core.carbon.datastore.block.AbstractIndex;
+import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.query.carbon.aggregator.dimension.DimensionDataAggregator;
 import org.carbondata.query.carbon.merger.ScannedResultMerger;
@@ -171,7 +172,7 @@ public class BlockExecutionInfo {
   /**
    * key generator used for generating the table block fixed length key
    */
-  private KeyGenerator tableBlockKeyGenerator;
+  private KeyGenerator blockKeyGenerator;
   /**
    * dimension aggregator list which will be used to aggregate the dimension
    * data
@@ -209,7 +210,15 @@ public class BlockExecutionInfo {
    */
   private Map<String, Dictionary> columnIdToDcitionaryMapping;
 
+  /**
+   * filter tree to execute the filter
+   */
   private FilterExecuter filterExecuterTree;
+
+  /**
+   * fileType
+   */
+  private FileType fileType;
 
   /**
    * @return the tableBlock
@@ -523,15 +532,15 @@ public class BlockExecutionInfo {
   /**
    * @return the tableBlockKeyGenerator
    */
-  public KeyGenerator getDataBlockKeyGenerator() {
-    return tableBlockKeyGenerator;
+  public KeyGenerator getBlockKeyGenerator() {
+    return blockKeyGenerator;
   }
 
   /**
    * @param tableBlockKeyGenerator the tableBlockKeyGenerator to set
    */
-  public void setDataBlockKeygenerator(KeyGenerator tableBlockKeyGenerator) {
-    this.tableBlockKeyGenerator = tableBlockKeyGenerator;
+  public void setBlockKeyGenerator(KeyGenerator tableBlockKeyGenerator) {
+    this.blockKeyGenerator = tableBlockKeyGenerator;
   }
 
   /**
@@ -659,5 +668,19 @@ public class BlockExecutionInfo {
    */
   public void setColumnIdToDcitionaryMapping(Map<String, Dictionary> columnIdToDcitionaryMapping) {
     this.columnIdToDcitionaryMapping = columnIdToDcitionaryMapping;
+  }
+
+  /**
+   * @return the fileType
+   */
+  public FileType getFileType() {
+    return fileType;
+  }
+
+  /**
+   * @param fileType the fileType to set
+   */
+  public void setFileType(FileType fileType) {
+    this.fileType = fileType;
   }
 }

@@ -429,4 +429,25 @@ public final class FileFactory {
     LOCAL, HDFS
   }
 
+  /**
+   * below method will be used to update the file path
+   * for local type
+   * it removes the file:/ from the path
+   *
+   * @param filePath
+   * @return updated file path without url for local
+   */
+  public static String getUpdatedFilePath(String filePath) {
+    FileType fileType = getFileType(filePath);
+    switch (fileType) {
+      case HDFS:
+        return filePath;
+      case LOCAL:
+      default:
+        Path pathWithoutSchemeAndAuthority =
+            Path.getPathWithoutSchemeAndAuthority(new Path(filePath));
+        return pathWithoutSchemeAndAuthority.toString();
+    }
+  }
+
 }
