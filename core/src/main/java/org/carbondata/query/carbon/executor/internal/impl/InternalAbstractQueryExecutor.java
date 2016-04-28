@@ -27,7 +27,7 @@ import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.datastore.DataRefNode;
 import org.carbondata.core.carbon.datastore.DataRefNodeFinder;
-import org.carbondata.core.carbon.datastore.impl.btree.BtreeDataRefNodeFinder;
+import org.carbondata.core.carbon.datastore.impl.btree.BTreeDataRefNodeFinder;
 import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.carbon.executor.infos.BlockExecutionInfo;
@@ -86,7 +86,7 @@ public abstract class InternalAbstractQueryExecutor implements InternalQueryExec
     }
     try {
       for (BlockExecutionInfo blockInfo : tableBlockExecutionInfosList) {
-        DataRefNodeFinder finder = new BtreeDataRefNodeFinder(blockInfo.getEachColumnValueSize());
+        DataRefNodeFinder finder = new BTreeDataRefNodeFinder(blockInfo.getEachColumnValueSize());
         DataRefNode startDataBlock = finder
             .findFirstDataBlock(blockInfo.getDataBlock().getDataRefNode(), blockInfo.getStartKey());
         DataRefNode endDataBlock = finder

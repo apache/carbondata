@@ -53,7 +53,7 @@ public class BtreeBlockFinderTest extends TestCase {
     builder.build(infos);
     DataRefNode dataBlock = builder.get();
     assertTrue(dataBlock != null);
-    DataRefNodeFinder finder = new BtreeDataRefNodeFinder(new int[] { -1 });
+    DataRefNodeFinder finder = new BTreeDataRefNodeFinder(new int[] { -1 });
     ByteBuffer buffer = ByteBuffer.allocate(4 + 2);
     buffer.rewind();
     buffer.putShort((short) 1);
@@ -73,7 +73,7 @@ public class BtreeBlockFinderTest extends TestCase {
     builder.build(infos);
     DataRefNode dataBlock = builder.get();
     assertTrue(dataBlock != null);
-    DataRefNodeFinder finder = new BtreeDataRefNodeFinder(new int[] { -1 });
+    DataRefNodeFinder finder = new BTreeDataRefNodeFinder(new int[] { -1 });
     ByteBuffer buffer = ByteBuffer.allocate(4 + 1);
     buffer.rewind();
     buffer.put((byte) 1);
@@ -94,7 +94,7 @@ public class BtreeBlockFinderTest extends TestCase {
     builder.build(infos);
     DataRefNode dataBlock = builder.get();
     assertTrue(dataBlock != null);
-    DataRefNodeFinder finder = new BtreeDataRefNodeFinder(new int[] { 2, 2 });
+    DataRefNodeFinder finder = new BTreeDataRefNodeFinder(new int[] { 2, 2 });
     int[] dimensionBitLength =
         CarbonUtil.getDimensionBitLength(new int[] { 10000, 10000 }, new int[] { 1, 1 });
     KeyGenerator multiDimKeyVarLengthGenerator =
@@ -116,7 +116,7 @@ public class BtreeBlockFinderTest extends TestCase {
     builder.build(infos);
     DataRefNode dataBlock = builder.get();
     assertTrue(dataBlock != null);
-    DataRefNodeFinder finder = new BtreeDataRefNodeFinder(new int[] { 2, 2 });
+    DataRefNodeFinder finder = new BTreeDataRefNodeFinder(new int[] { 2, 2 });
     int[] dimensionBitLength =
         CarbonUtil.getDimensionBitLength(new int[] { 10000, 10000 }, new int[] { 1, 1 });
     KeyGenerator multiDimKeyVarLengthGenerator =
@@ -145,7 +145,7 @@ public class BtreeBlockFinderTest extends TestCase {
     builder.build(infos);
     DataRefNode dataBlock = builder.get();
     assertTrue(dataBlock != null);
-    DataRefNodeFinder finder = new BtreeDataRefNodeFinder(new int[] { 2, 2 });
+    DataRefNodeFinder finder = new BTreeDataRefNodeFinder(new int[] { 2, 2 });
     int[] dimensionBitLength =
         CarbonUtil.getDimensionBitLength(new int[] { 10000, 10000 }, new int[] { 1, 1 });
     KeyGenerator multiDimKeyVarLengthGenerator =

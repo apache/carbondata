@@ -28,7 +28,7 @@ import org.carbondata.core.util.ByteUtil;
 /**
  * Below class will be used to find a block in a btree
  */
-public class BtreeDataRefNodeFinder implements DataRefNodeFinder {
+public class BTreeDataRefNodeFinder implements DataRefNodeFinder {
 
   /**
    * no dictionary column value is of variable length so in each column value
@@ -55,7 +55,7 @@ public class BtreeDataRefNodeFinder implements DataRefNodeFinder {
    */
   private int numberOfNoDictionaryColumns;
 
-  public BtreeDataRefNodeFinder(int[] eachColumnValueSize) {
+  public BTreeDataRefNodeFinder(int[] eachColumnValueSize) {
     this.eachColumnValueSize = eachColumnValueSize;
 
     for (int i = 0; i < eachColumnValueSize.length; i++) {
