@@ -29,11 +29,11 @@ import org.carbondata.core.carbon.datastore.DataRefNode;
 import org.carbondata.core.carbon.datastore.DataRefNodeFinder;
 import org.carbondata.core.carbon.datastore.IndexKey;
 import org.carbondata.core.carbon.datastore.block.AbstractIndex;
-import org.carbondata.core.carbon.datastore.impl.btree.BTreeNode;
 import org.carbondata.core.carbon.datastore.impl.btree.BtreeDataRefNodeFinder;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.keygenerator.KeyGenerator;
+import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.carbonfilterinterface.ExpressionType;
 import org.carbondata.query.expression.BinaryExpression;
 import org.carbondata.query.expression.Expression;
@@ -59,12 +59,12 @@ public class FilterExpressionProcessor implements FilterProcessor {
    * @param expressionTree  , filter expression tree
    * @param tableIdentifier ,contains carbon store informations
    * @return a filter resolver tree
+   * @throws QueryExecutionException
    */
   public FilterResolverIntf getFilterResolver(Expression expressionTree,
-      AbsoluteTableIdentifier tableIdentifier) {
+      AbsoluteTableIdentifier tableIdentifier) throws QueryExecutionException {
     if (null != expressionTree && null != tableIdentifier) {
-      getFilterResolvertree(expressionTree, tableIdentifier);
-
+      return getFilterResolvertree(expressionTree, tableIdentifier);
     }
     return null;
   }
@@ -82,7 +82,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
    * Step:4 The selected blocks will be send to executers for applying the filters with the help
    * of Filter executers.
    */
-  public List<DataRefNode> getFilterredBlocks(BTreeNode btreeNode,
+  public List<DataRefNode> getFilterredBlocks(DataRefNode btreeNode,
       FilterResolverIntf filterResolver, AbstractIndex tableSegment,
       AbsoluteTableIdentifier tableIdentifier) {
     // Need to get the current dimension tables
@@ -100,10 +100,8 @@ public class FilterExpressionProcessor implements FilterProcessor {
     long startTimeInMillis = System.currentTimeMillis();
     DataRefNodeFinder blockFinder = new BtreeDataRefNodeFinder(
         tableSegment.getSegmentProperties().getDimensionColumnsValueSize());
-    DataRefNode startBlock =
-        blockFinder.findFirstDataBlock(btreeNode.getNextDataRefNode(), searchStartKey);
-    DataRefNode endBlock =
-        blockFinder.findLastDataBlock(btreeNode.getNextDataRefNode(), searchEndKey);
+    DataRefNode startBlock = blockFinder.findFirstDataBlock(btreeNode, searchStartKey);
+    DataRefNode endBlock = blockFinder.findLastDataBlock(btreeNode, searchEndKey);
     while (startBlock != endBlock) {
       startBlock = startBlock.getNextDataRefNode();
       addBlockBasedOnMinMaxValue(filterResolver, listOfDataBlocksToScan, startBlock,
@@ -146,9 +144,10 @@ public class FilterExpressionProcessor implements FilterProcessor {
    * @param expressionTree , resolver tree which will hold the resolver tree based on
    *                       filter expression.
    * @return FilterResolverIntf type.
+   * @throws QueryExecutionException
    */
   private FilterResolverIntf getFilterResolvertree(Expression expressionTree,
-      AbsoluteTableIdentifier tableIdentifier) {
+      AbsoluteTableIdentifier tableIdentifier) throws QueryExecutionException {
     FilterResolverIntf filterEvaluatorTree =
         createFilterResolverTree(expressionTree, tableIdentifier);
     traverseAndResolveTree(filterEvaluatorTree, tableIdentifier);
@@ -163,9 +162,10 @@ public class FilterExpressionProcessor implements FilterProcessor {
    *
    * @param filterResolverTree
    * @param tableIdentifier
+   * @throws QueryExecutionException
    */
   private void traverseAndResolveTree(FilterResolverIntf filterResolverTree,
-      AbsoluteTableIdentifier tableIdentifier) {
+      AbsoluteTableIdentifier tableIdentifier) throws QueryExecutionException {
     if (null == filterResolverTree) {
       return;
     }

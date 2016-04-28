@@ -31,6 +31,7 @@ import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.FileHolder;
+import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.util.CarbonCoreLogEvent;
 
 public class FileHolderImpl implements FileHolder {
@@ -155,12 +156,13 @@ public class FileHolderImpl implements FileHolder {
    * @return channel
    */
   private FileChannel updateCache(String filePath) {
-    FileChannel fileChannel = fileNameAndStreamCache.get(filePath);
+    CarbonFile carbonFile = FileFactory.getCarbonFile(filePath, FileFactory.getFileType(filePath));
+    FileChannel fileChannel = fileNameAndStreamCache.get(carbonFile.getAbsolutePath());
     try {
       if (null == fileChannel) {
-        FileInputStream stream = new FileInputStream(filePath);
+        FileInputStream stream = new FileInputStream(carbonFile.getAbsolutePath());
         fileChannel = stream.getChannel();
-        fileNameAndStreamCache.put(filePath, fileChannel);
+        fileNameAndStreamCache.put(carbonFile.getAbsolutePath(), fileChannel);
       }
     } catch (IOException e) {
       LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e, e.getMessage());

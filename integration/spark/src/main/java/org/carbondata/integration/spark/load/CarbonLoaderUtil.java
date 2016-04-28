@@ -717,8 +717,7 @@ public final class CarbonLoaderUtil {
     //String dataLoadLocation = getLoadFolderPath(loadModel);
     dataLoadLocation =
         loadModel.getCarbonDataLoadSchema().getCarbonTable().getMetaDataFilepath() + File.separator
-            + CarbonCommonConstants.LOADMETADATA_FILENAME
-            + CarbonCommonConstants.CARBON_METADATA_EXTENSION;
+            + CarbonCommonConstants.LOADMETADATA_FILENAME;
     Gson gsonObjectToRead = new Gson();
     List<LoadMetadataDetails> listOfLoadFolderDetails = null;
     DataInputStream dataInputStream = null;
@@ -761,8 +760,8 @@ public final class CarbonLoaderUtil {
   public static void writeLoadMetadata(CarbonDataLoadSchema schema, String schemaName,
       String cubeName, List<LoadMetadataDetails> listOfLoadFolderDetails) throws IOException {
     String dataLoadLocation = schema.getCarbonTable().getMetaDataFilepath() + File.separator
-        + CarbonCommonConstants.LOADMETADATA_FILENAME
-        + CarbonCommonConstants.CARBON_METADATA_EXTENSION;
+        + CarbonCommonConstants.LOADMETADATA_FILENAME;
+
     DataOutputStream dataOutputStream;
     Gson gsonObjectToWrite = new Gson();
     BufferedWriter brWriter = null;

@@ -44,6 +44,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
   public IncludeFilterExecuterImpl(DimColumnResolvedFilterInfo dimColumnEvaluatorInfo,
       KeyGenerator blockKeyGenerator) {
     this(dimColumnEvaluatorInfo);
+    dimColumnExecuterInfo = new DimColumnExecuterFilterInfo();
     FilterUtil
         .prepareKeysFromSurrogates(dimColumnEvaluatorInfo.getFilterValues(), blockKeyGenerator,
             dimColumnEvaluatorInfo.getDimension(), dimColumnExecuterInfo);

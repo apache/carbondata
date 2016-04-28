@@ -130,8 +130,7 @@ public final class CarbonQueryUtil {
 
     List<String> listOfValidSlices = new ArrayList<String>(10);
     String dataPath = executerModel.getCube().getMetaDataFilepath() + File.separator
-        + CarbonCommonConstants.LOADMETADATA_FILENAME
-        + CarbonCommonConstants.CARBON_METADATA_EXTENSION;
+        + CarbonCommonConstants.LOADMETADATA_FILENAME;
     DataInputStream dataInputStream = null;
     Gson gsonObjectToRead = new Gson();
     AtomicFileOperations fileOperation =
@@ -215,6 +214,7 @@ public final class CarbonQueryUtil {
     //TODO : Need to find out right table as per the dims and msrs requested.
 
     String factTableName = carbonTable.getFactTableName();
+    executorModel.setAbsoluteTableIdentifier(absoluteTableIdentifier);
 
     fillExecutorModel(queryPlan, carbonTable, executorModel, factTableName);
     List<CarbonDimension> dims =
@@ -222,20 +222,23 @@ public final class CarbonQueryUtil {
 
     dims.addAll(executorModel.getQueryDimension());
 
-    String suitableTableName = factTableName;
-    if (!queryPlan.isDetailQuery() && queryPlan.getExpressions().isEmpty() && Boolean
-        .parseBoolean(CarbonProperties.getInstance().getProperty("spark.carbon.use.agg", "true"))) {
-      suitableTableName = CarbonQueryParseUtil
-          .getSuitableTable(carbonTable, dims, executorModel.getQueryMeasures());
-    }
-    if (!suitableTableName.equals(factTableName)) {
-      fillExecutorModel(queryPlan, carbonTable, executorModel, suitableTableName);
-      executorModel.setAggTable(true);
-      fillDimensionAggregator(queryPlan, carbonTable, executorModel);
-    } else {
-      fillDimensionAggregator(queryPlan, carbonTable, executorModel,
-          carbonTable.getDimensionByTableName(factTableName));
-    }
+    // TODO need to handle to select aggregate table
+    //    String suitableTableName = factTableName;
+    //    if (!queryPlan.isDetailQuery() && queryPlan.getExpressions().isEmpty() && Boolean
+    //        .parseBoolean(CarbonProperties.getInstance()
+    //          .getProperty("spark.carbon.use.agg", "true"))) {
+    //      suitableTableName = CarbonQueryParseUtil
+    //          .getSuitableTable(carbonTable, dims, executorModel.getQueryMeasures());
+    //    }
+    //    if (!suitableTableName.equals(factTableName)) {
+    //      fillExecutorModel(queryPlan, carbonTable, executorModel, suitableTableName);
+    //      executorModel.setAggTable(true);
+    //      fillDimensionAggregator(queryPlan, carbonTable, executorModel);
+    //    } else {
+    //
+    //    }
+    fillDimensionAggregator(queryPlan, carbonTable, executorModel,
+        carbonTable.getDimensionByTableName(factTableName));
     executorModel.setLimit(queryPlan.getLimit());
     executorModel.setDetailQuery(queryPlan.isDetailQuery());
     executorModel.setQueryId(queryPlan.getQueryId());
@@ -250,21 +253,46 @@ public final class CarbonQueryUtil {
     queryModel.setAbsoluteTableIdentifier(new AbsoluteTableIdentifier(currentTemp.getStorePath(),
         new CarbonTableIdentifier(queryPlan.getSchemaName(), factTableName)));
 
-    //fill dimensions
+    // fill dimensions
     List<CarbonDimension> carbonDimensions = new ArrayList<CarbonDimension>();
+    // TODO need to handle query part in different way, need to change the
+    // query model
     for (CarbonPlanDimension planDimension : queryPlan.getDimensions()) {
-      carbonDimensions.add(
-          carbonTable.getDimensionByName(factTableName, planDimension.getDimensionUniqueName()));
+
+      CarbonDimension dimensionByName =
+          carbonTable.getDimensionByName(factTableName, planDimension.getDimensionUniqueName());
+      dimensionByName.setQueryOrder(planDimension.getQueryOrder());
+      carbonDimensions.add(dimensionByName);
     }
     queryModel.setQueryDimension(carbonDimensions);
 
     fillSortInfoInModel(queryModel, queryPlan.getSortedDimemsions(), carbonTable);
 
-    List<CarbonMeasure> measures = carbonTable.getMeasureByTableName(factTableName);
+    // fill measures
+    List<CarbonMeasure> carbonMeasures = carbonTable.getMeasureByTableName(factTableName);
     queryModel.setQueryMeasures(
-        getMeasures(queryPlan.getMeasures(), carbonTable, queryModel.isDetailQuery(), queryModel));
+        getMeasures(queryPlan.getMeasures(), carbonTable, queryPlan.isDetailQuery(), queryModel));
 
+    // fill filter Column Expression
+    if (null != queryPlan.getFilterExpression()) {
+      traverseAndSetDimensionOrMsrTypeForColumnExpressions(queryPlan.getFilterExpression(),
+          carbonDimensions, carbonMeasures);
+    }
     queryModel.setCountStarQuery(queryPlan.isCountStartQuery());
+    if (queryPlan.isCountStartQuery()) {
+      // in case of count start query we are adding the first measure of the carbon table
+      // if then is not measure present in the table then, creating a dummy measure and
+      // filling in the query model
+      if (carbonMeasures.size() > 0) {
+        carbonMeasures.get(0).setAggregateFunction(CarbonCommonConstants.COUNT);
+        queryModel.setQueryMeasures(Arrays.asList(carbonMeasures.get(0)));
+      } else {
+        CarbonMeasure dummyMeasure =
+            new CarbonMeasure(carbonDimensions.get(0).getColumnSchema(), 0);
+        dummyMeasure.setAggregateFunction(CarbonCommonConstants.COUNT);
+        queryModel.setQueryMeasures(Arrays.asList(carbonMeasures.get(0)));
+      }
+    }
   }
 
   private static void fillSortInfoInModel(QueryModel executorModel,
@@ -383,12 +411,12 @@ public final class CarbonQueryUtil {
     String columnName;
     columnName = col.getColumnName();
     dim = CarbonQueryParseUtil.findDimension(dimensions, columnName);
+    col.setCarbonColumn(dim);
     col.setDimension(dim);
     col.setDimension(true);
     if (null == dim) {
       msr = getCarbonMetadataMeasure(columnName, measures);
-      // TODO: measure set as setColumn needs to be handled
-      //col.setDimension(msr);
+      col.setCarbonColumn(msr);
       col.setDimension(false);
     }
   }
@@ -505,7 +533,7 @@ public final class CarbonQueryUtil {
       CarbonTable carbonTable, boolean isDetailQuery, QueryModel executorModel) {
 
     List<CarbonMeasure> reqMsrs =
-        new ArrayList<CarbonMeasure>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+        new ArrayList<CarbonMeasure>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
     for (CarbonPlanMeasure carbonPlanMsr : carbonPlanMeasures) {
       CarbonMeasure carbonMeasure = carbonTable.getMeasureByName(
@@ -513,6 +541,11 @@ public final class CarbonQueryUtil {
           carbonPlanMsr.getMeasure());
       if (null != carbonMeasure) {
         carbonMeasure.setDistinctQuery(carbonPlanMsr.isQueryDistinctCount());
+        // TODO need to handle query part in different way, need to change the
+        // query model
+        if (!isDetailQuery) {
+          carbonMeasure.setAggregateFunction(carbonPlanMsr.getAggregatorType().toString());
+        }
         carbonMeasure.setQueryOrder(carbonPlanMsr.getQueryOrder());
       }
       reqMsrs.add(carbonMeasure);

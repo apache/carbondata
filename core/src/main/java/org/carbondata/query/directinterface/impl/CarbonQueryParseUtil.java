@@ -104,10 +104,8 @@ public final class CarbonQueryParseUtil {
   public static CarbonDimension findDimension(List<CarbonDimension> dimensions, String carbonDim) {
     CarbonDimension findDim = null;
     for (CarbonDimension dimension : dimensions) {
-      // Its just a temp work around to use level name as unique name. we
-      // need to provide a way to configure unique name
-      // to user in schema.
       if (dimension.getColName().equalsIgnoreCase(carbonDim)) {
+        findDim = dimension;
         break;
       }
     }

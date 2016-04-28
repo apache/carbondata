@@ -18,23 +18,27 @@
  */
 package org.carbondata.query.filter.resolver;
 
+import java.io.Serializable;
+
 import org.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.carbondata.core.carbon.datastore.IndexKey;
 import org.carbondata.core.carbon.datastore.block.AbstractIndex;
 import org.carbondata.core.keygenerator.KeyGenerator;
+import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.carbonfilterinterface.FilterExecuterType;
 import org.carbondata.query.evaluators.DimColumnResolvedFilterInfo;
 
-public interface FilterResolverIntf {
+
+public interface FilterResolverIntf extends Serializable {
 
   /**
    * This API will resolve the filter expression and generates the
    * dictionaries for executing/evaluating the filter expressions in the
    * executer layer.
    *
-   *
+   * @throws QueryExecutionException
    */
-  void resolve(AbsoluteTableIdentifier absoluteTableIdentifier);
+  void resolve(AbsoluteTableIdentifier absoluteTableIdentifier) throws QueryExecutionException;
 
   /**
    * This API will provide the left column filter expression

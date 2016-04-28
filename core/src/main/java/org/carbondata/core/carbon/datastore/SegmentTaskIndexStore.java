@@ -34,10 +34,13 @@ import org.carbondata.core.carbon.datastore.block.SegmentTaskIndex;
 import org.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.carbondata.core.carbon.datastore.exception.IndexBuilderException;
 import org.carbondata.core.carbon.metadata.leafnode.DataFileFooter;
+import org.carbondata.core.carbon.path.CarbonTablePath.DataFileUtil;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.CarbonUtilException;
+
+import org.apache.hadoop.fs.Path;
 
 /**
  * Singleton Class to handle loading, unloading,clearing,storing of the table
@@ -61,7 +64,7 @@ public class SegmentTaskIndexStore {
 
   /**
    * table and its lock object to this will be useful in case of concurrent
-   * query scenario when more than one query comes for same table and in that
+   * query scenario when more than one query comes for same table and in  that
    * case it will ensure that only one query will able to load the blocks
    */
   private Map<AbsoluteTableIdentifier, Object> tableLockMap;
@@ -81,6 +84,12 @@ public class SegmentTaskIndexStore {
    */
   public static SegmentTaskIndexStore getInstance() {
     return SEGMENTTASKINDEXSTORE;
+  }
+
+  public static void main(String[] args) {
+    Path p = new Path("file:/D:/file");
+    Path pathWithoutSchemeAndAuthority = Path.getPathWithoutSchemeAndAuthority(p);
+    System.out.println(pathWithoutSchemeAndAuthority);
   }
 
   /**
@@ -125,7 +134,7 @@ public class SegmentTaskIndexStore {
           Entry<Integer, List<TableBlockInfo>> next = iteratorOverSegmentBlocksInfos.next();
           // group task id to table block info mapping for the segment
           Map<String, List<TableBlockInfo>> taskIdToTableBlockInfoMap =
-              new HashMap<String, List<TableBlockInfo>>();
+              mappedAndGetTaskIdToTableBlockInfo(segmentToTableBlocksInfos);
           // get the existing map of task id to table segment map
           map = tableSegmentMapTemp.get(next.getKey());
           if (map == null) {
@@ -142,7 +151,8 @@ public class SegmentTaskIndexStore {
 
               for (TableBlockInfo tableBlockInfo : taskIdToBlockInfoIterator.getValue()) {
                 footer = CarbonUtil
-                    .readMetadatFile(tableBlockInfo.getFilePath(), tableBlockInfo.getBlockOffset());
+                    .readMetadatFile(tableBlockInfo.getFilePath(), tableBlockInfo.getBlockOffset(),
+                        tableBlockInfo.getBlockLength());
                 footer.setTableBlockInfo(tableBlockInfo);
                 footerList.add(footer);
               }
@@ -162,6 +172,36 @@ public class SegmentTaskIndexStore {
       }
     }
     return taskIdToTableSegmentMap;
+  }
+
+  /**
+   * Below method will be used to get the task id to all the table block info belongs to
+   * that task id mapping
+   *
+   * @param segmentToTableBlocksInfos segment if to table blocks info map
+   * @return task id to table block info mapping
+   */
+  private Map<String, List<TableBlockInfo>> mappedAndGetTaskIdToTableBlockInfo(
+      Map<Integer, List<TableBlockInfo>> segmentToTableBlocksInfos) {
+    Map<String, List<TableBlockInfo>> taskIdToTableBlockInfoMap =
+        new HashMap<String, List<TableBlockInfo>>();
+    Iterator<Entry<Integer, List<TableBlockInfo>>> iterator =
+        segmentToTableBlocksInfos.entrySet().iterator();
+    while (iterator.hasNext()) {
+      Entry<Integer, List<TableBlockInfo>> next = iterator.next();
+      List<TableBlockInfo> value = next.getValue();
+      for (TableBlockInfo blockInfo : value) {
+        String taskNo = DataFileUtil.getTaskNo(blockInfo.getFilePath());
+        List<TableBlockInfo> list = taskIdToTableBlockInfoMap.get(taskNo);
+        if (null == list) {
+          list = new ArrayList<TableBlockInfo>();
+          taskIdToTableBlockInfoMap.put(taskNo, list);
+        }
+        list.add(blockInfo);
+      }
+
+    }
+    return taskIdToTableBlockInfoMap;
   }
 
   /**

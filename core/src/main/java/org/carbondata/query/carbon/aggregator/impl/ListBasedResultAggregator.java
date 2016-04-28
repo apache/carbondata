@@ -111,9 +111,9 @@ public class ListBasedResultAggregator implements ScannedResultAggregator {
     ListBasedResultWrapper resultWrapper;
     while (scannedResult.hasNext() && (limit == -1 || rowCounter < limit)) {
       wrapper = new ByteArrayWrapper();
-      wrapper.setComplexTypesKeys(scannedResult.getComplexTypeKeyArray());
-      wrapper.setNoDictionaryKeys(scannedResult.getNoDictionaryKeyArray());
       wrapper.setDictionaryKey(scannedResult.getDictionaryKeyArray());
+      wrapper.setNoDictionaryKeys(scannedResult.getNoDictionaryKeyArray());
+      wrapper.setComplexTypesKeys(scannedResult.getComplexTypeKeyArray());
       resultWrapper = new ListBasedResultWrapper();
       measureAggregator=getNewAggregator();
       resultWrapper.setKey(wrapper);
@@ -170,7 +170,7 @@ public class ListBasedResultAggregator implements ScannedResultAggregator {
         // get the key
         key = listBasedResult.get(i).getKey();
         // unpack the key with table block key generator
-        data = tableBlockExecutionInfos.getDataBlockKeyGenerator()
+        data = tableBlockExecutionInfos.getBlockKeyGenerator()
             .getKeyArray(key.getDictionaryKey(), tableBlockExecutionInfos.getMaskedByteForBlock());
         // packed the key with latest block key generator
         // and generate the masked key for that key

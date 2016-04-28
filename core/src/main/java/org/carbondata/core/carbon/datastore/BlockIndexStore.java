@@ -123,8 +123,8 @@ public class BlockIndexStore {
           tableBlock = tableBlockMapTemp.get(blockInfo);
           if (null == tableBlock) {
             // getting the data file metadata of the block
-            footer =
-                CarbonUtil.readMetadatFile(blockInfo.getFilePath(), blockInfo.getBlockOffset());
+            footer = CarbonUtil.readMetadatFile(blockInfo.getFilePath(), blockInfo.getBlockOffset(),
+                blockInfo.getBlockLength());
             tableBlock = new BlockIndex();
             footer.setTableBlockInfo(blockInfo);
             // building the block

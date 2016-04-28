@@ -34,6 +34,11 @@ import org.carbondata.query.expression.conditional.ConditionalExpression;
 import org.carbondata.query.filters.measurefilter.util.FilterUtil;
 
 public class RestructureFilterResolverImpl implements FilterResolverIntf {
+  /**
+   *
+   */
+  private static final long serialVersionUID = -5399656036192814524L;
+
   protected DimColumnResolvedFilterInfo dimColumnResolvedFilterInfo;
 
   private Expression exp;
@@ -59,6 +64,7 @@ public class RestructureFilterResolverImpl implements FilterResolverIntf {
   /**
    * Method will resolve the filters and it will replace the newly added dimension with default
    * value
+   *
    * @param absoluteTableIdentifier
    */
   @Override public void resolve(AbsoluteTableIdentifier absoluteTableIdentifier) {
@@ -157,6 +163,7 @@ public class RestructureFilterResolverImpl implements FilterResolverIntf {
     // TODO Auto-generated method stub
     return null;
   }
+
   /**
    * Method will return the DimColumnResolvedFilterInfo instance which consists
    * the mapping of the respective dimension and its surrogates involved in
@@ -169,19 +176,20 @@ public class RestructureFilterResolverImpl implements FilterResolverIntf {
   }
 
   /**
-   *
    * For restructure resolver no implementation is required for getting
    * the start key since it already has default values
+   *
    * @return IndexKey.
    */
   @Override public IndexKey getstartKey(KeyGenerator keyGenerator) {
     // TODO Auto-generated method stub
     return null;
   }
+
   /**
-   *
    * For restructure resolver no implementation is required for getting
    * the end  key since it already has default values
+   *
    * @return IndexKey.
    */
   @Override public IndexKey getEndKey(AbstractIndex segmentIndexBuilder,
@@ -192,6 +200,7 @@ public class RestructureFilterResolverImpl implements FilterResolverIntf {
 
   /**
    * Method will get the executer type inorder to create filter executer tree
+   *
    * @return FilterExecuterType
    */
   @Override public FilterExecuterType getFilterExecuterType() {

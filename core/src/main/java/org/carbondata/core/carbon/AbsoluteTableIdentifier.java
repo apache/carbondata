@@ -20,6 +20,8 @@ package org.carbondata.core.carbon;
 
 import java.io.Serializable;
 
+import org.carbondata.core.datastorage.store.impl.FileFactory;
+
 /**
  * identifier which will have store path and carbon table identifier
  */
@@ -42,7 +44,8 @@ public class AbsoluteTableIdentifier implements Serializable {
   private CarbonTableIdentifier carbonTableIdentifier;
 
   public AbsoluteTableIdentifier(String storePath, CarbonTableIdentifier carbonTableIdentifier) {
-    this.storePath = storePath;
+    //TODO this should be moved to common place where path handling will be handled
+    this.storePath = FileFactory.getUpdatedFilePath(storePath);
     this.carbonTableIdentifier = carbonTableIdentifier;
   }
 

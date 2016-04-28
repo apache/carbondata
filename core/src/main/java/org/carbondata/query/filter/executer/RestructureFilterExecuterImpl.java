@@ -32,6 +32,7 @@ public class RestructureFilterExecuterImpl implements FilterExecuter {
 
   public RestructureFilterExecuterImpl(DimColumnResolvedFilterInfo dimColumnResolvedFilterInfo,
       KeyGenerator blockKeyGenerator) {
+    dimColumnExecuterInfo = new DimColumnExecuterFilterInfo();
     FilterUtil
         .prepareKeysFromSurrogates(dimColumnResolvedFilterInfo.getFilterValues(), blockKeyGenerator,
             dimColumnResolvedFilterInfo.getDimension(), dimColumnExecuterInfo);

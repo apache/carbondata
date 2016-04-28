@@ -46,12 +46,12 @@ import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.CarbonUtilException;
+import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.carbonfilterinterface.FilterExecuterType;
 import org.carbondata.query.carbonfilterinterface.RowImpl;
 import org.carbondata.query.carbonfilterinterface.RowIntf;
 import org.carbondata.query.evaluators.DimColumnExecuterFilterInfo;
 import org.carbondata.query.evaluators.DimColumnResolvedFilterInfo;
-import org.carbondata.query.executer.exception.QueryExecutionException;
 import org.carbondata.query.expression.ColumnExpression;
 import org.carbondata.query.expression.Expression;
 import org.carbondata.query.expression.ExpressionResult;
@@ -261,7 +261,7 @@ public final class FilterUtil {
       CarbonDimension dim) throws QueryExecutionException {
     Dictionary forwardDictionary = getForwardDictionaryCache(tableIdentifier, dim);
     if (null != forwardDictionary) {
-      forwardDictionary.getSurrogateKey(value);
+      return forwardDictionary.getSurrogateKey(value);
     }
     return null;
   }
@@ -540,8 +540,7 @@ public final class FilterUtil {
       endKey[i] = getMaxValue(tableIdentifier, carbonDimensions.get(i));
     }
     getEndKeyWithFilter(dimensionFilter, endKey);
-    return null;
-
+    return endKey;
   }
 
   private static List<CarbonDimension> getCarbonDimsMappedToKeyGenerator(
@@ -660,6 +659,6 @@ public final class FilterUtil {
       KeyGenerator blockKeyGenerator, CarbonDimension dimension,
       DimColumnExecuterFilterInfo dimColumnExecuterInfo) {
     byte[][] keysBasedOnFilter = getKeyArray(filterValues, dimension, blockKeyGenerator);
-    dimColumnExecuterInfo = new DimColumnExecuterFilterInfo(keysBasedOnFilter);
+    dimColumnExecuterInfo.setFilterKeys(keysBasedOnFilter);
   }
 }

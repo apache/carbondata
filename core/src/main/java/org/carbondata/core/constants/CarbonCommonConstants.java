@@ -1225,7 +1225,7 @@ public final class CarbonCommonConstants {
   /**
    * LOADMETADATA_FILENAME
    */
-  public static final String LOADMETADATA_FILENAME = "loadmetadata";
+  public static final String LOADMETADATA_FILENAME = "tablestatus";
   /**
    * LOAD_LOCK
    */
@@ -1462,6 +1462,8 @@ public final class CarbonCommonConstants {
    * table split partition default value
    */
   public static final String TABLE_SPLIT_PARTITION_DEFAULT_VALUE = "true";
+
+  public static final int INVALID_SEGMENT_ID = -1;
 
   private CarbonCommonConstants() {
 

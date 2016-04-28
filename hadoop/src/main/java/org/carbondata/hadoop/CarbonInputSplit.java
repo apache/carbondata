@@ -18,7 +18,10 @@
  */
 package org.carbondata.hadoop;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
+import java.io.Serializable;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Writable;
@@ -27,9 +30,14 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 /**
  * Carbon input split to allow distributed read of CarbonInputFormat.
  */
-public class CarbonInputSplit extends FileSplit implements Writable {
+public class CarbonInputSplit extends FileSplit implements Serializable, Writable {
 
+  private static final long serialVersionUID = 3520344046772190207L;
   private int segmentId;
+
+  public CarbonInputSplit() {
+    super(null, 0, 0, new String[0]);
+  }
 
   public CarbonInputSplit(int segmentId, Path path, long start, long length, String[] locations) {
     super(path, start, length, locations);
@@ -44,4 +52,16 @@ public class CarbonInputSplit extends FileSplit implements Writable {
   public int getSegmentId() {
     return segmentId;
   }
+
+  @Override public void readFields(DataInput in) throws IOException {
+
+    super.readFields(in);
+    this.segmentId = in.readInt();
+  }
+
+  @Override public void write(DataOutput out) throws IOException {
+    super.write(out);
+    out.writeInt(segmentId);
+  }
+
 }

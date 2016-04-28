@@ -31,6 +31,10 @@ import org.carbondata.query.expression.conditional.ConditionalExpression;
 
 public class RowLevelFilterResolverImpl extends ConditionalFilterResolverImpl {
 
+  /**
+   *
+   */
+  private static final long serialVersionUID = 176122729713729929L;
   protected Expression exp;
   protected boolean isExpressionResolve;
   protected boolean isIncludeFilter;

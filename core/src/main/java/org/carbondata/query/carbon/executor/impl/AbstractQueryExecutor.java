@@ -36,6 +36,7 @@ import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.util.CarbonCoreLogEvent;
@@ -122,23 +123,22 @@ public abstract class AbstractQueryExecutor implements QueryExecutor {
     String[] aggTypes = new String[aggTypeCount];
     DataType[] dataTypes = new DataType[aggTypeCount];
 
-    for (CarbonMeasure carbonMeasure : queryModel.getQueryMeasures()) {
-      // adding the data type and aggregation type of all the measure this
-      // can be used
-      // to select the aggregator
-      aggTypes[currentIndex] = carbonMeasure.getAggregateFunction();
-      dataTypes[currentIndex] = carbonMeasure.getDataType();
-    }
-
     if (queryModel.isDetailQuery()) {
-      Arrays.fill(aggTypes, CarbonCommonConstants.DUMMY);
-    }
-    if (!queryModel.isDetailQuery()) {
+      for (CarbonMeasure carbonMeasure : queryModel.getQueryMeasures()) {
+        // adding the data type and aggregation type of all the measure this
+        // can be used
+        // to select the aggregator
+        aggTypes[currentIndex] = CarbonCommonConstants.DUMMY;
+        dataTypes[currentIndex] = carbonMeasure.getDataType();
+        currentIndex++;
+      }
+    } else {
       // adding query dimension selected in aggregation info
       for (DimensionAggregatorInfo dimensionAggregationInfo : queryModel.getDimAggregationInfo()) {
         for (int i = 0; i < dimensionAggregationInfo.getAggList().size(); i++) {
           aggTypes[currentIndex] = dimensionAggregationInfo.getAggList().get(i);
           dataTypes[currentIndex] = dimensionAggregationInfo.getDim().getDataType();
+          currentIndex++;
         }
       }
       // filling the query expression data type and its aggregator
@@ -146,6 +146,16 @@ public abstract class AbstractQueryExecutor implements QueryExecutor {
       for (int i = 0; i < queryModel.getExpressions().size(); i++) {
         aggTypes[currentIndex] = CarbonCommonConstants.CUSTOM;
         dataTypes[currentIndex] = DataType.STRING;
+        currentIndex++;
+      }
+
+      for (CarbonMeasure carbonMeasure : queryModel.getQueryMeasures()) {
+        // adding the data type and aggregation type of all the measure this
+        // can be used
+        // to select the aggregator
+        aggTypes[currentIndex] = carbonMeasure.getAggregateFunction();
+        dataTypes[currentIndex] = carbonMeasure.getDataType();
+        currentIndex++;
       }
     }
     queryProperties.measureAggregators = MeasureAggregatorFactory
@@ -246,7 +256,7 @@ public abstract class AbstractQueryExecutor implements QueryExecutor {
     int[] maksedByte =
         QueryUtil.getMaskedByte(blockKeyGenerator.getKeySizeInBytes(), maskByteRangesForBlock);
     blockExecutionInfo.setDataBlock(blockIndex);
-    blockExecutionInfo.setDataBlockKeygenerator(blockKeyGenerator);
+    blockExecutionInfo.setBlockKeyGenerator(blockKeyGenerator);
     // adding aggregation info for query
     blockExecutionInfo.setAggregatorInfo(getAggregatorInfoForBlock(queryModel, blockIndex));
     // adding custom aggregate expression of query
@@ -276,8 +286,6 @@ public abstract class AbstractQueryExecutor implements QueryExecutor {
       startIndexKey = queryModel.getFilterExpressionResolverTree().getstartKey(blockKeyGenerator);
       endIndexKey = queryModel.getFilterExpressionResolverTree()
           .getEndKey(blockIndex, queryModel.getAbsoluteTableIdentifier());
-      FilterUtil
-          .getFilterExecuterTree(queryModel.getFilterExpressionResolverTree(), blockKeyGenerator);
     } else {
       try {
         long[] dictionarySurrogateKey =
@@ -296,6 +304,8 @@ public abstract class AbstractQueryExecutor implements QueryExecutor {
         throw new QueryExecutionException(e);
       }
     }
+    blockExecutionInfo.setFileType(
+        FileFactory.getFileType(queryModel.getAbsoluteTableIdentifier().getStorePath()));
     //setting the start index key of the block node
     blockExecutionInfo.setStartKey(startIndexKey);
     //setting the end index key of the block node

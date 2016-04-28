@@ -1535,8 +1535,7 @@ public final class CarbonUtil {
     BufferedReader buffReader = null;
     InputStreamReader inStream = null;
     String metadataFileName = cubeFolderPath + CarbonCommonConstants.FILE_SEPARATOR
-        + CarbonCommonConstants.LOADMETADATA_FILENAME
-        + CarbonCommonConstants.CARBON_METADATA_EXTENSION;
+        + CarbonCommonConstants.LOADMETADATA_FILENAME;
     LoadMetadataDetails[] listOfLoadFolderDetailsArray;
 
     AtomicFileOperations fileOperation =
@@ -1981,11 +1980,11 @@ public final class CarbonUtil {
    * @return Data file metadata instance
    * @throws CarbonUtilException
    */
-  public static DataFileFooter readMetadatFile(String filePath, long offset)
+  public static DataFileFooter readMetadatFile(String filePath, long blockOffset, long blockLength)
       throws CarbonUtilException {
     DataFileFooterConverter fileFooterConverter = new DataFileFooterConverter();
     try {
-      return fileFooterConverter.readDataFileFooter(filePath, offset);
+      return fileFooterConverter.readDataFileFooter(filePath, blockOffset, blockLength);
     } catch (IOException e) {
       throw new CarbonUtilException("Problem while reading the file metadata", e);
     }

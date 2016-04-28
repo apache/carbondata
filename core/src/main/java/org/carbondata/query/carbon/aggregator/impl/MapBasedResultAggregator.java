@@ -93,9 +93,9 @@ public class MapBasedResultAggregator implements ScannedResultAggregator {
 
     while (scannedResult.hasNext()) {
       // fill the keys
-      wrapper.setComplexTypesKeys(scannedResult.getComplexTypeKeyArray());
-      wrapper.setNoDictionaryKeys(scannedResult.getNoDictionaryKeyArray());
       wrapper.setDictionaryKey(scannedResult.getDictionaryKeyArray());
+      wrapper.setNoDictionaryKeys(scannedResult.getNoDictionaryKeyArray());
+      wrapper.setComplexTypesKeys(scannedResult.getComplexTypeKeyArray());
       MeasureAggregator[] measureAggregators = aggData.get(wrapper);
       // if null then row was not present in the map
       // so we need to create a new measure aggregator and
@@ -154,7 +154,7 @@ public class MapBasedResultAggregator implements ScannedResultAggregator {
         // get the key
         key = e.getKey();
         // unpack the key with table block key generator
-        data = tableBlockExecutionInfos.getDataBlockKeyGenerator()
+        data = tableBlockExecutionInfos.getBlockKeyGenerator()
             .getKeyArray(key.getDictionaryKey(), tableBlockExecutionInfos.getMaskedByteForBlock());
         // packed the key with latest block key generator
         // and generate the masked key for that key

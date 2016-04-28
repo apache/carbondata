@@ -44,6 +44,7 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
   public ExcludeFilterExecuterImpl(DimColumnResolvedFilterInfo dimColEvaluatorInfo,
       KeyGenerator blockKeyGenerator) {
     this(dimColEvaluatorInfo);
+    dimColumnExecuterInfo = new DimColumnExecuterFilterInfo();
     FilterUtil.prepareKeysFromSurrogates(dimColEvaluatorInfo.getFilterValues(), blockKeyGenerator,
         dimColEvaluatorInfo.getDimension(), dimColumnExecuterInfo);
   }
