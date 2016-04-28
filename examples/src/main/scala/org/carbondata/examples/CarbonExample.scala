@@ -41,6 +41,7 @@ object CarbonExample {
     val sc = new SparkContext(new SparkConf()
       .setAppName("CarbonExample")
       .setMaster("local[2]"))
+    sc.setLogLevel("WARN")
 
     val cc = new CarbonContext(sc, storeLocation)
 
@@ -52,22 +53,32 @@ object CarbonExample {
     // true -> use table split partition, support multiple partition loading
     // false -> use node split partition, support data load by host partition
     CarbonProperties.getInstance().addProperty("carbon.table.split.partition.enable", "false")
+    CarbonProperties.getInstance().addProperty("carbon.timestamp.format", "yyyy/mm/dd")
+
+    cc.sql("DROP CUBE IF EXISTS t1")
 
     // @TODO need to change the date to date type as direct surrogate is not implemented
     // after implementation need to update the test case
-    cc.sql("CREATE CUBE testTable DIMENSIONS (ID Integer, Date String, Country String, " +
-      "Name String, Phonetype String, Serialname String) " +
-      "MEASURES (Salary Integer) " +
-      "OPTIONS (PARTITIONER [PARTITION_COUNT=1])")
+    cc.sql("""
+           CREATE CUBE t1
+           DIMENSIONS (ID Integer, date String, country String,
+                       name String, phonetype String, serialname String)
+           MEASURES (salary Integer)
+           OPTIONS (PARTITIONER [PARTITION_COUNT=1])
+           """)
 
-    cc.sql(
-      s"LOAD DATA FACT FROM '$testData' INTO CUBE testTable OPTIONS(DELIMITER ',', FILEHEADER" +
-        s" '')")
+    cc.sql(s"""
+          LOAD DATA FACT FROM '$testData'
+          INTO CUBE t1 OPTIONS(DELIMITER ',')
+          """)
 
-    cc.sql("select Country,count(salary) from testTable " +
-      "where Country in ('china','france') group by Country")
-      .show()
+    cc.sql("""
+           SELECT country, count(salary) AS amount
+           FROM t1
+           WHERE country IN ('china','france')
+           GROUP BY country
+           """).show()
 
-    cc.sql("drop cube testTable")
+    cc.sql("DROP CUBE t1")
   }
 }
