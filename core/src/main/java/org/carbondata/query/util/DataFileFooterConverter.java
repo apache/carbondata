@@ -29,9 +29,6 @@ import java.util.List;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.carbon.metadata.datatype.ConvertedType;
-import org.carbondata.core.carbon.metadata.datatype.DataType;
-import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.carbon.metadata.blocklet.BlockletInfo;
 import org.carbondata.core.carbon.metadata.blocklet.DataFileFooter;
 import org.carbondata.core.carbon.metadata.blocklet.SegmentInfo;
@@ -39,10 +36,13 @@ import org.carbondata.core.carbon.metadata.blocklet.compressor.ChunkCompressorMe
 import org.carbondata.core.carbon.metadata.blocklet.compressor.CompressionCodec;
 import org.carbondata.core.carbon.metadata.blocklet.datachunk.DataChunk;
 import org.carbondata.core.carbon.metadata.blocklet.datachunk.PresenceMeta;
-import org.carbondata.core.carbon.metadata.blocklet.index.BlockletIndex;
 import org.carbondata.core.carbon.metadata.blocklet.index.BlockletBTreeIndex;
+import org.carbondata.core.carbon.metadata.blocklet.index.BlockletIndex;
 import org.carbondata.core.carbon.metadata.blocklet.index.BlockletMinMaxIndex;
 import org.carbondata.core.carbon.metadata.blocklet.sort.SortState;
+import org.carbondata.core.carbon.metadata.datatype.ConvertedType;
+import org.carbondata.core.carbon.metadata.datatype.DataType;
+import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.core.datastorage.store.impl.FileFactory;

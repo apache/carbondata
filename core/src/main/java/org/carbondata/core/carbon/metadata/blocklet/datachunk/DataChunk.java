@@ -21,9 +21,9 @@ package org.carbondata.core.carbon.metadata.blocklet.datachunk;
 import java.io.Serializable;
 import java.util.List;
 
-import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.carbon.metadata.blocklet.compressor.ChunkCompressorMeta;
 import org.carbondata.core.carbon.metadata.blocklet.sort.SortState;
+import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.metadata.ValueEncoderMeta;
 
 /**
