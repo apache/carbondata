@@ -79,6 +79,7 @@ import org.carbondata.query.queryinterface.filter.CarbonFilterInfo;
 import org.carbondata.query.scope.QueryScopeObject;
 
 import com.google.gson.Gson;
+
 import org.apache.spark.sql.SparkUnknownExpression;
 import org.apache.spark.sql.cubemodel.Partitioner;
 
@@ -276,7 +277,8 @@ public final class CarbonQueryUtil {
     // fill filter Column Expression
     if (null != queryPlan.getFilterExpression()) {
       traverseAndSetDimensionOrMsrTypeForColumnExpressions(queryPlan.getFilterExpression(),
-          carbonDimensions, carbonMeasures);
+          carbonTable.getDimensionByTableName(factTableName),
+          carbonTable.getMeasureByTableName(factTableName));
     }
     queryModel.setCountStarQuery(queryPlan.isCountStartQuery());
     if (queryPlan.isCountStartQuery()) {
