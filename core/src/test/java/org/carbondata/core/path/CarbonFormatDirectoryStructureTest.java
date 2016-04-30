@@ -54,7 +54,7 @@ public class CarbonFormatDirectoryStructureTest {
     assertTrue(carbonTablePath.getSortIndexFilePath("t1_c1")
         .equals(CARBON_STORE + "/d1/t1/Metadata/t1_c1.sortindex"));
     assertTrue(carbonTablePath.getCarbonDataFilePath("1", 2, 3, 4, "999")
-        .equals(CARBON_STORE + "/d1/t1/Fact/Part1/Segment2/part-3-4-999.carbondata"));
+        .equals(CARBON_STORE + "/d1/t1/Fact/Part1/Segment_2/part-3-4-999.carbondata"));
   }
 
   /**

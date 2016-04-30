@@ -138,20 +138,18 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
       // already read
       long requiredSize =
           carbonDictionaryColumnMetaChunk.getEnd_offset() - dictionaryInfo.getMemorySize();
-      long lastModifiedTime = getDictionaryFileLastModifiedTime(dictionaryColumnUniqueIdentifier);
       // if current file stamp and end offset greater than timestamp amd end offset
       // stored in dictionary info then only
       // read data from dictionary file
-      if (requiredSize > 0 && lastModifiedTime > dictionaryInfo.getFileTimeStamp()) {
+      if (requiredSize > 0) {
         synchronized (dictionaryInfo) {
           requiredSize =
               carbonDictionaryColumnMetaChunk.getEnd_offset() - dictionaryInfo.getMemorySize();
-          lastModifiedTime = getDictionaryFileLastModifiedTime(dictionaryColumnUniqueIdentifier);
           // Double Check :
           // if current file stamp and end offset greater than timestamp amd end offset
           // stored in dictionary info then only
           // read data from dictionary file
-          if (requiredSize > 0 && lastModifiedTime > dictionaryInfo.getFileTimeStamp()) {
+          if (requiredSize > 0) {
             boolean columnAddedToLRUCache =
                 carbonLRUCache.put(lruCacheKey, dictionaryInfo, requiredSize);
             // if column is successfully added to lru cache then only load the
@@ -163,8 +161,6 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
                   loadSortIndex);
               // increment the column access count
               incrementDictionaryAccessCount(dictionaryInfo);
-              // set ne file timestamp
-              dictionaryInfo.setFileTimeStamp(lastModifiedTime);
               // set the end offset till where file is read
               dictionaryInfo
                   .setOffsetTillFileIsRead(carbonDictionaryColumnMetaChunk.getEnd_offset());

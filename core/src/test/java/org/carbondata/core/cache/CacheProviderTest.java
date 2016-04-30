@@ -23,7 +23,10 @@ import org.carbondata.core.cache.dictionary.Dictionary;
 import org.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.carbondata.core.cache.dictionary.ForwardDictionaryCache;
 import org.carbondata.core.cache.dictionary.ReverseDictionaryCache;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.util.CarbonProperties;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertFalse;
@@ -33,6 +36,12 @@ import static org.junit.Assert.assertTrue;
  * Test class to test dictionary cache functionality
  */
 public class CacheProviderTest {
+
+  @Before public void setUp() throws Exception {
+    // enable lru cache by setting cache size
+    CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_MAX_LEVEL_CACHE_SIZE, "10");
+  }
 
   @Test public void getInstance() throws Exception {
     // get cache provider instance
