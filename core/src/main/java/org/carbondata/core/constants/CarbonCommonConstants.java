@@ -1394,7 +1394,7 @@ public final class CarbonCommonConstants {
    * ZOOKEEPER_LOCATION this is the location in zookeeper file system where locks are created.
    * mechanism of carbon
    */
-  public static final String ZOOKEEPER_LOCATION = "/Carbon/locks";
+  public static final String ZOOKEEPER_LOCATION = "/CarbonLocks";
 
   /**
    * shared directory folder name
