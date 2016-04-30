@@ -15,14 +15,13 @@
  * limitations under the License.
  */
 
-package org.carbondata.examples
+package org.carbondata.integration.spark.testsuite.filterexpr
 
 import java.io.File
 
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.CarbonContext
 
-import org.carbondata.core.util.CarbonProperties
 
 object FilterProcessor_FT {
 
@@ -52,7 +51,7 @@ object FilterProcessor_FT {
     // whether use table split partition
     // true -> use table split partition, support multiple partition loading
     // false -> use node split partition, support data load by host partition
-    CarbonProperties.getInstance().addProperty("carbon.table.split.partition.enable", "false")
+   // CarbonProperties.getInstance().addProperty("carbon.table.split.partition.enable", "false")
 
      cc.sql("drop cube if exists filtertestTable")
      cc.sql("CREATE CUBE filtertestTable DIMENSIONS (ID Integer, date Timestamp, country String, " +
