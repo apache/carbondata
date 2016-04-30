@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.carbondata.integration.spark.testsuite.sortexpr
+package org.carbondata.integration.spark.testsuite.joinquery
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.CarbonHiveContext._
@@ -25,15 +25,15 @@ import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 /**
- * Test Class for sort expression query on multiple datatypes
+ * Test Class for join query on multiple datatypes
  * @author N00902756
  *
  */
 
-class AllDataTypesTestCase extends QueryTest with BeforeAndAfterAll {
+class AllDataTypesTestCaseJoin extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
-    sql("CREATE CUBE alldatatypescube DIMENSIONS (empno Integer, empname String, designation String, doj Timestamp, workgroupcategory Integer, workgroupcategoryname String, deptno Integer, deptname String, projectcode Integer, projectjoindate Timestamp, projectenddate Timestamp) MEASURES (attendance Integer,utilization Integer,salary Integer) OPTIONS (PARTITIONER [PARTITION_COUNT=1])")
+    sql("CREATE CUBE alldatatypescubeJoin DIMENSIONS (empno Integer, empname String, designation String, doj Timestamp, workgroupcategory Integer, workgroupcategoryname String, deptno Integer, deptname String, projectcode Integer, projectjoindate Timestamp, projectenddate Timestamp) MEASURES (attendance Integer,utilization Integer,salary Integer) OPTIONS (PARTITIONER [PARTITION_COUNT=1])")
     sql("LOAD DATA fact from './src/test/resources/data.csv' INTO CUBE alldatatypescube PARTITIONDATA(DELIMITER ',', QUOTECHAR '\"')");
   }
 
@@ -44,6 +44,6 @@ class AllDataTypesTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll {
-    sql("drop cube alldatatypescube")
+    sql("drop cube alldatatypescubeJoin")
   }
 }

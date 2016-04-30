@@ -135,8 +135,7 @@ public class SortedScannedResultMerger extends AbstractScannedResultMerger {
             .getKeyArray(key.getDictionaryKey(), keyStructureInfo.getMaskedBytes());
         for (int i = 0; i < sortInfo.getSortDimension().size(); i++) {
           if (CarbonUtil
-              .hasEncoding(sortInfo.getSortDimension().get(i).getEncoder(), Encoding.DICTIONARY)
-              && sortInfo.getSortDimensionIndex()[i] == 1) {
+              .hasEncoding(sortInfo.getSortDimension().get(i).getEncoder(), Encoding.DICTIONARY)) {
             keyArray[sortInfo.getSortDimension().get(i).getKeyOrdinal()] =
                 blockExecutionInfo.getColumnIdToDcitionaryMapping()
                     .get(sortInfo.getSortDimension().get(i).getColumnId()).getSortedIndex(

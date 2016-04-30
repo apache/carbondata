@@ -43,7 +43,7 @@ public class DetailWithOrderByQueryExecutor extends AbstractQueryExecutor {
     // all the previous block data will be updated based last block and after
     // processing of all the block sorting will be applied
     blockExecutionInfoList.get(blockExecutionInfoList.size() - 1)
-        .setSortInfo(getSortInfos(queryModel.getQueryDimension(), queryModel));
+        .setSortInfo(getSortInfos(queryModel));
     InternalQueryExecutor internalQueryExecutor = new InternalDetailWithOrderQueryExecutor();
     return new ChunkRowIterator(new ChunkBasedResultIterator(
         internalQueryExecutor.executeQuery(blockExecutionInfoList, null), queryProperties,

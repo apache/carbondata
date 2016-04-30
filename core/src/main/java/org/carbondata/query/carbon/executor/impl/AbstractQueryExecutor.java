@@ -408,33 +408,32 @@ public abstract class AbstractQueryExecutor implements QueryExecutor {
 
   /**
    * Below method will be used to get the sort information which will be
-   * required during sorting
+   * required during sorting the data on dimension column
    *
-   * @param orderByDimension order by dimension
    * @param queryModel       query model
    * @return Sort infos
    * @throws QueryExecutionException if problem while
    */
-  protected SortInfo getSortInfos(List<CarbonDimension> orderByDimension, QueryModel queryModel)
-      throws QueryExecutionException {
+  protected SortInfo getSortInfos(QueryModel queryModel) throws QueryExecutionException {
 
     // get the masked by range for order by dimension
-    int[][] maskedByteRangeForSorting = QueryUtil.getMaskedByteRangeForSorting(orderByDimension,
-        queryProperties.keyStructureInfo.getKeyGenerator(),
-        queryProperties.keyStructureInfo.getMaskByteRanges());
+    int[][] maskedByteRangeForSorting = QueryUtil
+        .getMaskedByteRangeForSorting(queryModel.getSortDimension(),
+            queryProperties.keyStructureInfo.getKeyGenerator(),
+            queryProperties.keyStructureInfo.getMaskByteRanges());
     // get masked key for sorting
-    byte[][] maksedKeyForSorting = QueryUtil.getMaksedKeyForSorting(orderByDimension,
+    byte[][] maksedKeyForSorting = QueryUtil.getMaksedKeyForSorting(queryModel.getSortDimension(),
         queryProperties.keyStructureInfo.getKeyGenerator(), maskedByteRangeForSorting,
         queryProperties.keyStructureInfo.getMaskByteRanges());
     // fill sort dimension indexes
-    queryProperties.sortDimIndexes =
-        QueryUtil.getSortDimensionIndexes(orderByDimension, queryModel.getQueryDimension());
+    queryProperties.sortDimIndexes = QueryUtil
+        .getSortDimensionIndexes(queryModel.getSortDimension(), queryModel.getQueryDimension());
     SortInfo sortInfos = new SortInfo();
     sortInfos.setDimensionMaskKeyForSorting(maksedKeyForSorting);
     sortInfos.setDimensionSortOrder(queryModel.getSortOrder());
     sortInfos.setMaskedByteRangeForSorting(maskedByteRangeForSorting);
     sortInfos.setSortDimensionIndex(queryProperties.sortDimIndexes);
-    sortInfos.setSortDimension(orderByDimension);
+    sortInfos.setSortDimension(queryModel.getSortDimension());
     return sortInfos;
   }
 
