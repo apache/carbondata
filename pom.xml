@@ -70,7 +70,7 @@
                     <verbose>false</verbose>
                     <failOnViolation>true</failOnViolation>
                     <includeTestSourceDirectory>false</includeTestSourceDirectory>
-                    <sourceDirectory>${basedir}/src</sourceDirectory>
+                    <sourceDirectory>${basedir}/src/main/java</sourceDirectory>
                     <testSourceDirectory>${basedir}/src/test/java</testSourceDirectory>
                     <outputFile>${basedir}/target/checkstyle-output.xml</outputFile>
                     <inputEncoding>${project.build.sourceEncoding}</inputEncoding>
