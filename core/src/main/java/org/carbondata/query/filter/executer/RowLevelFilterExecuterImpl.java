@@ -27,8 +27,9 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.cache.dictionary.Dictionary;
 import org.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.carbondata.core.carbon.SqlStatement;
-import org.carbondata.core.carbon.SqlStatement.Type;
 import org.carbondata.core.carbon.datastore.chunk.impl.VariableLengthDimensionDataChunk;
+import org.carbondata.core.carbon.metadata.datatype.DataType;
+import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.aggregator.MeasureAggregator;
@@ -66,8 +67,8 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
 
   @Override public BitSet applyFilter(BlocksChunkHolder blockChunkHolder) {
     for (DimColumnResolvedFilterInfo dimColumnEvaluatorInfo : dimColEvaluatorInfoList) {
-      if (dimColumnEvaluatorInfo.getDims().getDataType() != Type.ARRAY
-          && dimColumnEvaluatorInfo.getDims().getDataType() != Type.STRUCT) {
+      if (dimColumnEvaluatorInfo.getDimension().getDataType() != DataType.ARRAY
+          && dimColumnEvaluatorInfo.getDimension().getDataType() != DataType.STRUCT) {
         if (null == blockChunkHolder.getDimensionDataChunk()[dimColumnEvaluatorInfo
             .getColumnIndex()]) {
           blockChunkHolder.getDimensionDataChunk()[dimColumnEvaluatorInfo.getColumnIndex()] =
@@ -133,13 +134,13 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
     Object[] record = new Object[dimColEvaluatorInfoList.size() + msrColEvalutorInfoList.size()];
     String memberString = null;
     for (DimColumnResolvedFilterInfo dimColumnEvaluatorInfo : dimColEvaluatorInfoList) {
-      if (dimColumnEvaluatorInfo.getDims().getDataType() != Type.ARRAY
-          && dimColumnEvaluatorInfo.getDims().getDataType() != Type.STRUCT) {
+      if (dimColumnEvaluatorInfo.getDimension().getDataType() != DataType.ARRAY
+          && dimColumnEvaluatorInfo.getDimension().getDataType() != DataType.STRUCT) {
         if (!dimColumnEvaluatorInfo.isDimensionExistsInCurrentSilce()) {
           record[dimColumnEvaluatorInfo.getRowIndex()] = dimColumnEvaluatorInfo.getDefaultValue();
         }
-        if (dimColumnEvaluatorInfo.getDims().isNoDictionaryDim() && blockChunkHolder
-            .getDimensionDataChunk()[dimColumnEvaluatorInfo
+        if (!dimColumnEvaluatorInfo.getDimension().hasEncoding(Encoding.DICTIONARY)
+            && blockChunkHolder.getDimensionDataChunk()[dimColumnEvaluatorInfo
             .getColumnIndex()] instanceof VariableLengthDimensionDataChunk) {
 
           VariableLengthDimensionDataChunk dimensionColumnDataChunk =
@@ -156,7 +157,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
             }
             record[dimColumnEvaluatorInfo.getRowIndex()] = DataTypeConverter
                 .getDataBasedOnDataType(memberString,
-                    dimColumnEvaluatorInfo.getDims().getDataType());
+                    dimColumnEvaluatorInfo.getDimension().getDataType());
           } else {
             continue;
           }
@@ -171,7 +172,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
           byte[] rawData =
               blockChunkHolder.getDimensionDataChunk()[dimColumnEvaluatorInfo.getColumnIndex()]
                   .getChunkData(index);
-          ByteBuffer byteBuffer = ByteBuffer.allocate(rawData.length);
+          ByteBuffer byteBuffer = ByteBuffer.allocate(CarbonCommonConstants.INT_SIZE_IN_BYTE);
           int dictionaryValue = CarbonUtil.getSurrogateKey(rawData, byteBuffer);
           memberString = forwardDictionary.getDictionaryValueForKey(dictionaryValue);
           if (null != memberString) {
@@ -180,7 +181,8 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
             }
           }
           record[dimColumnEvaluatorInfo.getRowIndex()] = DataTypeConverter
-              .getDataBasedOnDataType(memberString, dimColumnEvaluatorInfo.getDims().getDataType());
+              .getDataBasedOnDataType(memberString,
+                  dimColumnEvaluatorInfo.getDimension().getDataType());
         }
       } else {
         // TODO Handling of complex type

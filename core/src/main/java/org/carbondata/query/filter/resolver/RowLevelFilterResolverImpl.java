@@ -18,10 +18,12 @@
  */
 package org.carbondata.query.filter.resolver;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.query.carbonfilterinterface.FilterExecuterType;
 import org.carbondata.query.evaluators.DimColumnResolvedFilterInfo;
 import org.carbondata.query.evaluators.MeasureColumnResolvedFilterInfo;
@@ -35,7 +37,6 @@ public class RowLevelFilterResolverImpl extends ConditionalFilterResolverImpl {
    *
    */
   private static final long serialVersionUID = 176122729713729929L;
-  protected Expression exp;
   protected boolean isExpressionResolve;
   protected boolean isIncludeFilter;
 
@@ -46,6 +47,10 @@ public class RowLevelFilterResolverImpl extends ConditionalFilterResolverImpl {
   public RowLevelFilterResolverImpl(Expression exp, boolean isExpressionResolve,
       boolean isIncludeFilter, AbsoluteTableIdentifier tableIdentifier) {
     super(exp, isExpressionResolve, isIncludeFilter);
+    dimColEvaluatorInfoList =
+        new ArrayList<DimColumnResolvedFilterInfo>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    msrColEvalutorInfoList = new ArrayList<MeasureColumnResolvedFilterInfo>(
+        CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     this.tableIdentifier = tableIdentifier;
   }
 
@@ -63,6 +68,7 @@ public class RowLevelFilterResolverImpl extends ConditionalFilterResolverImpl {
       for (ColumnExpression columnExpression : columnList) {
         if (columnExpression.isDimension()) {
           dimColumnEvaluatorInfo = new DimColumnResolvedFilterInfo();
+          dimColumnEvaluatorInfo.setColumnIndex(columnExpression.getCarbonColumn().getOrdinal());
           dimColumnEvaluatorInfo.setRowIndex(index++);
           dimColumnEvaluatorInfo.setDimension(columnExpression.getDimension());
           dimColumnEvaluatorInfo.setDimensionExistsInCurrentSilce(false);
