@@ -40,7 +40,8 @@ object FilterProcessor_FT {
 
     val sc = new SparkContext(new SparkConf()
       .setAppName("CarbonExample")
-      .setMaster("local"))
+      .setMaster("local")
+    )
 
     val cc = new CarbonContext(sc, storeLocation)
 
@@ -53,31 +54,40 @@ object FilterProcessor_FT {
     // false -> use node split partition, support data load by host partition
     CarbonProperties.getInstance().addProperty("carbon.table.split.partition.enable", "false")
 
-      cc.sql("drop cube if exists filtertestTable")
-
-       cc.sql("CREATE CUBE filtertestTable DIMENSIONS (ID Integer, date Timestamp, country String, " +
-      "name String, phonetype String, serialname String) " +
-      "MEASURES (salary Integer) " +
-      "OPTIONS (PARTITIONER [PARTITION_COUNT=1])")
-//
+     cc.sql("drop cube if exists filtertestTable")
+     cc.sql("CREATE CUBE filtertestTable DIMENSIONS (ID Integer, date Timestamp, country String, " +
+        "name String, phonetype String, serialname String) " +
+        "MEASURES (salary Integer) " +
+        "OPTIONS (PARTITIONER [PARTITION_COUNT=1])"
+      )
     cc.sql(
-      s"LOAD DATA FACT FROM '$testData' INTO CUBE filtertestTable OPTIONS(DELIMITER ',', FILEHEADER '')")
-      
-    //Include query 
+      s"LOAD DATA FACT FROM '$testData' INTO CUBE filtertestTable OPTIONS(DELIMITER ',', " +
+        s"FILEHEADER '')"
+    )
+
+    // Include query
+
     cc.sql("select Country from filtertestTable " + "where Country ='china'").show()
-    //Exclude Query
+    // Exclude Query
+
     cc.sql("select Country from filtertestTable " + "where Country !='china'").show()
-    //In query
-      cc.sql("select Country,count(salary) from filtertestTable " +
-      "where Country in ('china','france') group by Country")
+    // In query
+
+    cc.sql("select Country,count(salary) from filtertestTable " +
+      "where Country in ('china','france') group by Country"
+    )
       .show()
-      //Is not null query
-     cc.sql("select Country from filtertestTable where Country is not null").show()
-    //Is null query which goes to Row level executer for execution
-     cc.sql("select Country from filtertestTable where Country is null").show()
-     //Filter with order by query which was failing.
+    // Is not null query
+
+    cc.sql("select Country from filtertestTable where Country is not null").show()
+    // Is null query which goes to Row level executer for execution
+
+    cc.sql("select Country from filtertestTable where Country is null").show()
+    // Filter with order by query which was failing.
+
     cc.sql("select id from filtertestTable " +
-      "where Country in ('china','france') order by id")
+      "where Country in ('china','france') order by id"
+    )
       .show()
 
   }
