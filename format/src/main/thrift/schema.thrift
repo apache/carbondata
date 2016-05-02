@@ -168,6 +168,7 @@ enum Encoding{
 	RLE = 2;		// Indetifies that a column is run length encoded
 	INVERTED_INDEX = 3; // identifies that a column is encoded using inverted index, can be used only along with dictionary encoding
 	BIT_PACKED = 4;	// identifies that a column is encoded using bit packing, can be used only along with dictionary encoding
+	DIRECT_DICTIONARY = 5; // Identifies that a column is direct dictionary encoded
 }
 
 

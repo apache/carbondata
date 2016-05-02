@@ -1637,6 +1637,15 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
   }
 
   /**
+   * returns the array of flag to identify the direct dictionary column
+   *
+   * @return
+   */
+  public boolean[] getDirectDictionary() {
+    return isDirectDictionary;
+  }
+
+  /**
    * return segmentId
    * @return
    */

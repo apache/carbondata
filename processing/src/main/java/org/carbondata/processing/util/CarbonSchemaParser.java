@@ -2311,7 +2311,7 @@ public final class CarbonSchemaParser {
     StringBuffer buff = new StringBuffer();
     int counter = 0;
     for (CarbonDimension cDimension : dimensions) {
-      if (cDimension.getDataType().equals(DataType.TIMESTAMP)) {
+      if (cDimension.getEncoder().contains(Encoding.DIRECT_DICTIONARY)) {
         buff.append(cDimension.getOrdinal());
         buff.append(CarbonCommonConstants.COLON_SPC_CHARACTER);
         buff.append(cDimension.getDataType());

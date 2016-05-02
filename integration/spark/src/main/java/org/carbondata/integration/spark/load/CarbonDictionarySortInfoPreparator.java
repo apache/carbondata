@@ -18,16 +18,15 @@
  */
 package org.carbondata.integration.spark.load;
 
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.List;
 
-import org.carbondata.core.cache.Cache;
-import org.carbondata.core.cache.CacheProvider;
-import org.carbondata.core.cache.CacheType;
 import org.carbondata.core.cache.dictionary.Dictionary;
 import org.carbondata.core.cache.dictionary.DictionaryChunksWrapper;
-import org.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
+import org.carbondata.core.carbon.metadata.datatype.DataType;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.CarbonUtilException;
 
 import org.apache.commons.lang.ArrayUtils;
@@ -57,23 +56,14 @@ public class CarbonDictionarySortInfoPreparator {
   /**
    * The method returns the column Sort Info
    *
-   * @param columnId column id
-   * @return
+   * @param dataType DataType of columns
+   * @return CarbonDictionarySortInfo returns the column Sort Info
    * @throws CarbonUtilException
    */
-  public CarbonDictionarySortInfo getDictionarySortInfo(String columnId)
-      throws CarbonUtilException {
-    CacheProvider cacheProviderInstance = CacheProvider.getInstance();
-    Cache reverseDictionaryCache =
-        cacheProviderInstance.createCache(CacheType.REVERSE_DICTIONARY, carbonStorePath);
-
-    DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
-        new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnId);
-    Dictionary dictionary =
-        (Dictionary) reverseDictionaryCache.get(dictionaryColumnUniqueIdentifier);
-    //TODO null check to be handled on dictionary
+  public CarbonDictionarySortInfo getDictionarySortInfo(Dictionary dictionary,
+      List<String> newChunks, DataType dataType) throws CarbonUtilException {
     CarbonDictionarySortModel[] dictionarySortModels =
-        prepareDictionarySortModels(dictionary.getDictionaryChunks());
+        prepareDictionarySortModels(dictionary, newChunks, dataType);
     return createColumnSortInfo(dictionarySortModels);
   }
 
@@ -122,23 +112,47 @@ public class CarbonDictionarySortInfoPreparator {
   /**
    * The method returns the array of CarbonDictionarySortModel
    *
-   * @param dictionaryChunksWrapper The wrapper wraps the list<list<bye[]>> and provide the
-   *                                iterator to retrieve the chunks members.
+   * @param dictionary The wrapper wraps the list<list<bye[]>> and provide the
+   *                   iterator to retrieve the chunks members.
+   * @param newChunks  List<String> containing new dictionary members
+   * @param dataType   DataType of columns
    * @return CarbonDictionarySortModel[] CarbonDictionarySortModel[] the model
    * CarbonDictionarySortModel contains the  member's surrogate and
    * its byte value
    */
-  private CarbonDictionarySortModel[] prepareDictionarySortModels(
-      DictionaryChunksWrapper dictionaryChunksWrapper) {
-
-    CarbonDictionarySortModel[] dictionarySortModels =
-        new CarbonDictionarySortModel[dictionaryChunksWrapper.getSize()];
-    int surrogate = 1;
-    while (dictionaryChunksWrapper.hasNext()) {
-      CarbonDictionarySortModel dictionarySortModel =
-          new CarbonDictionarySortModel(surrogate, dictionaryChunksWrapper.next());
-      dictionarySortModels[surrogate - 1] = dictionarySortModel;
-      surrogate++;
+  private CarbonDictionarySortModel[] prepareDictionarySortModels(Dictionary dictionary,
+      List<String> newChunks, DataType dataType) {
+    CarbonDictionarySortModel[] dictionarySortModels = null;
+    if (null == dictionary) {
+      dictionarySortModels = new CarbonDictionarySortModel[newChunks.size()];
+      int surrogate = 1;
+      for (int i = 0; i < newChunks.size(); i++) {
+        CarbonDictionarySortModel dictionarySortModel =
+            new CarbonDictionarySortModel(surrogate, dataType, newChunks.get(i));
+        dictionarySortModels[surrogate - 1] = dictionarySortModel;
+        surrogate++;
+      }
+    } else {
+      //The wrapper wraps the list<list<bye[]>> and provide the iterator to
+      // retrieve the chunks members.
+      DictionaryChunksWrapper dictionaryChunksWrapper = dictionary.getDictionaryChunks();
+      dictionarySortModels =
+          new CarbonDictionarySortModel[dictionaryChunksWrapper.getSize() + newChunks.size()];
+      int surrogate = 1;
+      while (dictionaryChunksWrapper.hasNext()) {
+        String memberValue = new String(dictionaryChunksWrapper.next(),
+            Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+        CarbonDictionarySortModel dictionarySortModel =
+            new CarbonDictionarySortModel(surrogate, dataType, memberValue);
+        dictionarySortModels[surrogate - 1] = dictionarySortModel;
+        surrogate++;
+      }
+      for (int i = 0; i < newChunks.size(); i++) {
+        CarbonDictionarySortModel dictionarySortModel =
+            new CarbonDictionarySortModel(surrogate, dataType, newChunks.get(i));
+        dictionarySortModels[surrogate - 1] = dictionarySortModel;
+        surrogate++;
+      }
     }
     return dictionarySortModels;
   }

@@ -259,6 +259,9 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
         new ArrayList<>(dimColumnNames.length);
     // update the member cache for dimension
     for (int i = 0; i < dimColumnNames.length; i++) {
+      if(columnsInfo.getDirectDictionary()[i]){
+        continue;
+      }
       String dimColName = dimColumnNames[i].substring(tableName.length() + 1);
       GenericDataType complexType = columnsInfo.getComplexTypesMap().get(dimColName);
       if (complexType != null) {

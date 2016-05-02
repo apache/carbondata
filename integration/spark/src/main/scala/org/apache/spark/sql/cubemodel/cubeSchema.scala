@@ -168,7 +168,6 @@ class CubeNewProcessor(cm: tableModel, sqlContext: SQLContext) {
     columnSchema.setColumnName(colName)
     columnSchema.setColumnUniqueId(UUID.randomUUID().toString())
     columnSchema.setColumnar(isCol)
-    import collection.convert.wrapAll._
     columnSchema.setEncodingList(encoders)
     columnSchema.setDimensionColumn(isDimensionCol)
     columnSchema.setColumnGroup(colGroup)
@@ -229,6 +228,9 @@ class CubeNewProcessor(cm: tableModel, sqlContext: SQLContext) {
     for (column <- allColumns) {
       if (highCardinalityDims.contains(column.getColumnName)) {
         column.getEncodingList.remove(Encoding.DICTIONARY)
+      }
+      if (column.getDataType == DataType.TIMESTAMP) {
+        column.getEncodingList.add(Encoding.DIRECT_DICTIONARY)
       }
     }
 

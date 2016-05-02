@@ -19,21 +19,19 @@ package org.carbondata.integration.spark.rdd
 
 import java.util.regex.Pattern
 
-import scala.collection.mutable.{ ArrayBuffer, HashMap, HashSet }
+import scala.collection.mutable.{ArrayBuffer, HashMap, HashSet}
 
-import org.apache.commons.lang3.{ ArrayUtils, StringUtils }
-import org.apache.spark.{ Logging, Partition, Partitioner, TaskContext }
-import org.apache.spark.annotation.DeveloperApi
+import org.apache.commons.lang3.{ArrayUtils, StringUtils}
+import org.apache.spark.{Logging, Partition, Partitioner, TaskContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Row
 
 import org.carbondata.common.logging.LogServiceFactory
-import org.carbondata.core.cache.dictionary.Dictionary
-import org.carbondata.core.cache.dictionary.ReverseDictionary
 import org.carbondata.core.carbon.CarbonTableIdentifier
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
 import org.carbondata.core.constants.CarbonCommonConstants
-import org.carbondata.integration.spark.util.{ CarbonSparkInterFaceLogEvent, GlobalDictionaryUtil }
+import org.carbondata.integration.spark.load.CarbonLoaderUtil
+import org.carbondata.integration.spark.util.{CarbonSparkInterFaceLogEvent, GlobalDictionaryUtil}
 
 /**
  * A partitioner partition by column.
@@ -54,13 +52,7 @@ trait GenericParser {
 }
 
 case class PrimitiveParser(dimension: CarbonDimension,
-                           setOpt: Option[HashSet[String]],
-                           dictOpt: Option[Dictionary]) extends GenericParser {
-  val (existsDict: Boolean, dict: Dictionary) = dictOpt match {
-    case None => (false, new ReverseDictionary(null))
-    case Some(x) => (true, x)
-  }
-
+                           setOpt: Option[HashSet[String]]) extends GenericParser {
   val (hasDictEncoding, set: HashSet[String]) = setOpt match {
     case None => (false, new HashSet[String])
     case Some(x) => (true, x)
@@ -71,13 +63,7 @@ case class PrimitiveParser(dimension: CarbonDimension,
 
   def parseString(input: String): Unit = {
     if (hasDictEncoding) {
-      if (existsDict) {
-        if (dict.getSurrogateKey(input) == CarbonCommonConstants.INVALID_SURROGATE_KEY) {
-          set.add(input)
-        }
-      } else {
-        set.add(input)
-      }
+      set.add(input)
     }
   }
 }
@@ -154,33 +140,31 @@ case class DictionaryLoadModel(table: CarbonTableIdentifier,
 class CarbonBlockDistinctValuesCombineRDD(
   prev: RDD[Row],
   model: DictionaryLoadModel)
-    extends RDD[(Int, HashSet[String])](prev) with Logging {
+    extends RDD[(Int, Array[String])](prev) with Logging {
 
   override def getPartitions: Array[Partition] = firstParent[Row].partitions
 
-  override def compute(split: Partition, context: TaskContext): Iterator[(Int, HashSet[String])] = {
+  override def compute(split: Partition, context: TaskContext): Iterator[(Int, Array[String])] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass().getName());
 
     val distinctValuesList = new ArrayBuffer[(Int, HashSet[String])]
     try {
-      // load exists dictionary to list of HashMap
-      val dictMap = GlobalDictionaryUtil.readGlobalDictionaryFromCache(model)
       // local combine set
       val dimNum = model.dimensions.length
       val primDimNum = model.primDimensions.length
-      val sets = new Array[HashSet[String]](primDimNum)
-      val mapIdWithSet = new HashMap[String, HashSet[String]]
+      val columnValues = new Array[HashSet[String]](primDimNum)
+      val mapColumnValuesWithId = new HashMap[String, HashSet[String]]
       for (i <- 0 until primDimNum) {
-        sets(i) = new HashSet[String]
-        distinctValuesList += ((i, sets(i)))
-        mapIdWithSet.put(model.primDimensions(i).getColumnId, sets(i))
+        columnValues(i) = new HashSet[String]
+        distinctValuesList += ((i, columnValues(i)))
+        mapColumnValuesWithId.put(model.primDimensions(i).getColumnId, columnValues(i))
       }
       val dimensionParsers = new Array[GenericParser](dimNum)
       for (j <- 0 until dimNum) {
         dimensionParsers(j) = GlobalDictionaryUtil.generateParserForDimension(
           Some(model.dimensions(j)),
           GlobalDictionaryUtil.createDataFormat(model.delimiters),
-          mapIdWithSet, dictMap).get
+          mapColumnValuesWithId).get
       }
       var row: Row = null
       var value: String = null
@@ -198,7 +182,11 @@ class CarbonBlockDistinctValuesCombineRDD(
       case ex: Exception =>
         LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, ex)
     }
-    distinctValuesList.toIterator
+    distinctValuesList.map { iter =>
+      val valueList = iter._2.toArray
+      java.util.Arrays.sort(valueList, Ordering[String])
+      (iter._1, valueList)
+    }.iterator
   }
 }
 
@@ -210,11 +198,11 @@ class CarbonBlockDistinctValuesCombineRDD(
  * @param model a model package load info
  */
 class CarbonGlobalDictionaryGenerateRDD(
-  prev: RDD[(Int, HashSet[String])],
+  prev: RDD[(Int, Array[String])],
   model: DictionaryLoadModel)
     extends RDD[(String, String)](prev) with Logging {
 
-  override def getPartitions: Array[Partition] = firstParent[(Int, HashSet[String])].partitions
+  override def getPartitions: Array[Partition] = firstParent[(Int, Array[String])].partitions
 
   override def compute(split: Partition, context: TaskContext): Iterator[(String, String)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass().getName());
@@ -222,16 +210,47 @@ class CarbonGlobalDictionaryGenerateRDD(
     val iter = new Iterator[(String, String)] {
       // generate distinct value list
       try {
-        val distinctValues = new HashSet[String]
-        val rddIter = firstParent[(Int, HashSet[String])].iterator(split, context)
-        while (rddIter.hasNext) {
-          distinctValues ++= rddIter.next()._2
+        val t1 = System.currentTimeMillis
+        val dictionary = if (model.dictFileExists(split.index)) {
+          CarbonLoaderUtil.getDictionary(model.table,
+            model.primDimensions(split.index).getColumnId,
+            model.hdfsLocation
+          )
+        } else {
+          null
         }
+        val t2 = System.currentTimeMillis
+        val valuesBuffer = new ArrayBuffer[String]
+        val rddIter = firstParent[(Int, Array[String])].iterator(split, context)
+        while (rddIter.hasNext) {
+          valuesBuffer ++= rddIter.next()._2
+        }
+        val t3 = System.currentTimeMillis
+        val newDictinctValues = GlobalDictionaryUtil.generateNewDistinctValueList(
+          valuesBuffer, dictionary, model, split.index
+        )
+        val t4 = System.currentTimeMillis
         // write to file
-        if (!model.dictFileExists(split.index) || distinctValues.size > 0) {
+        if (!model.dictFileExists(split.index) || newDictinctValues.size > 0) {
           GlobalDictionaryUtil.writeGlobalDictionaryToFile(model,
-            split.index, distinctValues.toIterator)
-          GlobalDictionaryUtil.writeGlobalDictionaryColumnSortInfo(model, split.index);
+            split.index, newDictinctValues.iterator
+          )
+          val t5 = System.currentTimeMillis
+          GlobalDictionaryUtil.writeGlobalDictionaryColumnSortInfo(model, split.index, dictionary,
+            newDictinctValues
+          );
+          val t6 = System.currentTimeMillis
+
+          LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
+            "\n columnName:" + model.primDimensions(split.index).getColName +
+              "\n columnId:" + model.primDimensions(split.index).getColumnId +
+              "\n new distcint values count:" + newDictinctValues.size +
+              "\n create dictionary cache:" + (t2 - t1) +
+              "\n combine lists:" + (t3 - t2) +
+              "\n sort list and dictinct:" + (t4 - t3) +
+              "\n write dictionary file:" + (t5 - t4) +
+              "\n write sort info:" + (t6 - t5)
+          )
         }
       } catch {
         case ex: Exception =>

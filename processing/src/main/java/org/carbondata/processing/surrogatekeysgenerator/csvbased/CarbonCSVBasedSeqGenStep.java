@@ -412,6 +412,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
           columnsInfo.setMeasureColumns(meta.measureColumn);
           columnsInfo.setComplexTypesMap(meta.getComplexTypes());
           columnsInfo.setDimensionColumnIds(meta.getDimensionColumnIds());
+          columnsInfo.setDirectDictionary(meta.getDirectDictionary());
           updateBagLogFileName();
           String key = meta.getSchemaName() + '/' + meta.getCubeName() + '_' + meta.getTableName();
           badRecordslogger = new BadRecordslogger(key, csvFilepath,
@@ -1359,12 +1360,19 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
               isGenerated = false;
               generatedSurrogate = -1;
             } else {
-              if (meta.isDirectDictionary(j)) {
+              int m = j;
+              if (isPresentInSchema) {
+                m = presentColumnMapIndex[j];
+              }
+              if (meta.isDirectDictionary(m)) {
                 DirectDictionaryGenerator directDictionaryGenerator1 =
                     DirectDictionaryKeyGeneratorFactory
-                        .getDirectDictionaryGenerator(meta.getColumnDataType()[j]);
+                        .getDirectDictionaryGenerator(meta.getColumnDataType()[m]);
                 surrogateKeyForHrrchy[0] =
                     directDictionaryGenerator1.generateDirectSurrogateKey(((String) r[j]));
+                if (surrogateKeyGen.max[m] < surrogateKeyForHrrchy[0]) {
+                  surrogateKeyGen.max[m] = surrogateKeyForHrrchy[0];
+                }
               } else {
                 surrogateKeyForHrrchy[0] =
                     surrogateKeyGen.generateSurrogateKeys(((String) r[j]), foreignKeyColumnName);

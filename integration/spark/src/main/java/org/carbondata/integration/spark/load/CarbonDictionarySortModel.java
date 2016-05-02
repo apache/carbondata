@@ -18,6 +18,10 @@
  */
 package org.carbondata.integration.spark.load;
 
+import java.nio.charset.Charset;
+
+import org.carbondata.core.carbon.metadata.datatype.DataType;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.ByteUtil;
 
 /**
@@ -26,6 +30,11 @@ import org.carbondata.core.util.ByteUtil;
 public class CarbonDictionarySortModel implements Comparable<CarbonDictionarySortModel> {
 
   /**
+   * Charset const
+   */
+  public static final Charset CHARSET_CONST =
+      Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET);
+  /**
    * Surrogate key
    */
   private int key;
@@ -33,25 +42,53 @@ public class CarbonDictionarySortModel implements Comparable<CarbonDictionarySor
   /**
    * member value in bytes
    */
-  private byte[] memberBytes;
+  private String memberValue;
 
   /**
-   * CarbonDictionarySortModel
+   * member dataType
+   */
+  private DataType dataType;
+
+  /**
+   * Constructor to init the dictionary sort model
    *
    * @param key
-   * @param memberBytes
+   * @param dataType
+   * @param memberValue
    */
-  public CarbonDictionarySortModel(int key, byte[] memberBytes) {
+  public CarbonDictionarySortModel(int key, DataType dataType, String memberValue) {
     this.key = key;
-    this.memberBytes = memberBytes;
+    this.dataType = dataType;
+    this.memberValue = memberValue;
   }
 
   /**
    * Compare
    */
   @Override public int compareTo(CarbonDictionarySortModel o) {
-
-    return ByteUtil.UnsafeComparer.INSTANCE.compareTo(this.memberBytes, o.memberBytes);
+    switch (dataType) {
+      case INT:
+      case LONG:
+      case DOUBLE:
+      case DECIMAL:
+        Double d1 = null;
+        Double d2 = null;
+        try {
+          d1 = new Double(memberValue);
+        } catch (NumberFormatException e) {
+          return -1;
+        }
+        try {
+          d2 = new Double(o.memberValue);
+        } catch (NumberFormatException e) {
+          return 1;
+        }
+        return d1.compareTo(d2);
+      case STRING:
+      default:
+        return ByteUtil.UnsafeComparer.INSTANCE.compareTo(this.memberValue.getBytes(CHARSET_CONST),
+            o.memberValue.getBytes(CHARSET_CONST));
+    }
   }
 
   /**
@@ -59,7 +96,7 @@ public class CarbonDictionarySortModel implements Comparable<CarbonDictionarySor
    */
   @Override public int hashCode() {
     int result = 1;
-    result = result + ((memberBytes == null) ? 0 : memberBytes.hashCode());
+    result = result + ((memberValue == null) ? 0 : memberValue.hashCode());
     return result;
   }
 
@@ -72,11 +109,12 @@ public class CarbonDictionarySortModel implements Comparable<CarbonDictionarySor
         return true;
       }
       CarbonDictionarySortModel other = (CarbonDictionarySortModel) obj;
-      if (memberBytes == null) {
-        if (other.memberBytes != null) {
+      if (memberValue == null) {
+        if (other.memberValue != null) {
           return false;
         }
-      } else if (!ByteUtil.UnsafeComparer.INSTANCE.equals(this.memberBytes, other.memberBytes)) {
+      } else if (!ByteUtil.UnsafeComparer.INSTANCE.equals(this.memberValue.getBytes(CHARSET_CONST),
+          other.memberValue.getBytes(CHARSET_CONST))) {
         return false;
       }
       return true;
@@ -99,7 +137,8 @@ public class CarbonDictionarySortModel implements Comparable<CarbonDictionarySor
    *
    * @return
    */
-  public byte[] getMemberBytes() {
-    return memberBytes;
+  public String getMemberValue() {
+    return memberValue;
   }
+
 }

@@ -149,6 +149,11 @@ public class ColumnsInfo {
    */
   private String[] dimensionColumnIds;
 
+  /**
+   * array of boolean values to identify the direct dictionary column
+   */
+  private boolean[] directDictionary;
+
   public Map<String, GenericDataType> getComplexTypesMap() {
     return complexTypesMap;
   }
@@ -486,5 +491,21 @@ public class ColumnsInfo {
    */
   public void setDimensionColumnIds(String[] dimensionColumnIds) {
     this.dimensionColumnIds = dimensionColumnIds;
+  }
+
+  /**
+   * The method returns the array boolean to identify the direct dictionary
+   * @return
+   */
+  public boolean[] getDirectDictionary() {
+    return directDictionary;
+  }
+
+  /**
+   * the method sets the array boolean to identify the direct dictionary
+   * @param directDictionary
+   */
+  public void setDirectDictionary(boolean[] directDictionary) {
+    this.directDictionary = directDictionary;
   }
 }
