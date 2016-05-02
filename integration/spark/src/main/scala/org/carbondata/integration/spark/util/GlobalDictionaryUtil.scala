@@ -352,7 +352,7 @@ object GlobalDictionaryUtil extends Logging {
    */
   private def loadDataFrame(sqlContext: SQLContext,
                             carbonLoadModel: CarbonLoadModel): DataFrame = {
-    val df = new SQLContext(sqlContext.sparkContext).read
+    val df = sqlContext.read
       .format("com.databricks.spark.csv")
       .option("header",
         {if (StringUtils.isEmpty(carbonLoadModel.getCsvHeader)) "true"
@@ -402,7 +402,6 @@ object GlobalDictionaryUtil extends Logging {
         throw new IOException("Failed to created dictionary folder");
       }
       // load data by using dataSource com.databricks.spark.csv
-      // need new SQLContext to use spark-csv
       var df = loadDataFrame(sqlContext, carbonLoadModel)
       // columns which need to generate global dictionary file
       val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
