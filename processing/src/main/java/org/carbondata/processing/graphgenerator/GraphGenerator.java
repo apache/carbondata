@@ -1173,7 +1173,7 @@ public class GraphGenerator {
             graphConfiguration.getDimensions()));
 
     carbonMdKey.setMeasureCount(graphConfiguration.getMeasureCount() + "");
-    carbonMdKey.setDimensionsStoreTypeString(graphConfiguration.getDimensionStoreTypeString());
+    carbonMdKey.setColumnGroupsString(graphConfiguration.getColumnGroupsString());
     carbonMdKey.setDimensionCount(graphConfiguration.getActualDims().length + "");
     carbonMdKey.setComplexDimsCount(graphConfiguration.getComplexTypeString().isEmpty() ?
         "0" :
@@ -1677,7 +1677,7 @@ public class GraphGenerator {
         CarbonSchemaParser.getHeirAndCardinalityString(dimensions, carbonDataLoadSchema));
     //setting dimension store types
     graphConfiguration
-        .setDimensionStoreTypeString(CarbonSchemaParser.getDimensionsStoreType(dimensions));
+        .setColumnGroupsString(CarbonSchemaParser.getColumnGroups(dimensions));
     graphConfiguration.setPrimaryKeyString(
         CarbonSchemaParser.getPrimaryKeyString(dimensions, carbonDataLoadSchema));
     graphConfiguration

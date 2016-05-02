@@ -27,7 +27,7 @@ import org.carbondata.core.carbon.SqlStatement;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.metadata.CarbonMetadata.Dimension;
 import org.carbondata.core.metadata.CarbonMetadata.Measure;
-import org.carbondata.core.vo.HybridStoreModel;
+import org.carbondata.core.vo.ColumnGroupModel;
 import org.carbondata.query.complex.querytypes.GenericQueryType;
 import org.carbondata.query.datastorage.InMemoryTable;
 
@@ -152,7 +152,7 @@ public class QueryExecuterProperties {
   /**
    * Hybrid store model, it will have detail about columnar and row stores
    */
-  protected HybridStoreModel hybridStoreModel;
+  protected ColumnGroupModel hybridStoreModel;
 
   /**
    * array of sql datatypes of mesaures and dimensions

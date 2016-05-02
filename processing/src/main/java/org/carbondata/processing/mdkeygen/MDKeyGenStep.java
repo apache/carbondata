@@ -44,7 +44,7 @@ import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.CarbonUtilException;
 import org.carbondata.core.util.DataTypeUtil;
-import org.carbondata.core.vo.HybridStoreModel;
+import org.carbondata.core.vo.ColumnGroupModel;
 import org.carbondata.processing.datatypes.GenericDataType;
 import org.carbondata.processing.store.CarbonDataFileAttributes;
 import org.carbondata.processing.store.CarbonFactDataHandlerColumnar;
@@ -123,7 +123,7 @@ public class MDKeyGenStep extends BaseStep {
 
   private int[] dimLens;
 
-  private HybridStoreModel hybridStoreModel;
+  private ColumnGroupModel colGrpStoreModel;
 
   /**
    * CarbonMDKeyGenStep
@@ -284,18 +284,22 @@ public class MDKeyGenStep extends BaseStep {
       simpleDimsLen[i] = dimLens[i];
     }
 
-    String[] dimStoreType = meta.getDimensionsStoreType().split(",");
-    boolean[] dimensionStoreType = new boolean[simpleDimsLen.length];
-    for (int i = 0; i < dimensionStoreType.length; i++) {
-      dimensionStoreType[i] = Boolean.parseBoolean(dimStoreType[i]);
+    String[] colStore = meta.getColumnGroupsString().split(",");
+    int[][] colGroups = new int[colStore.length][];
+    for(int i=0;i<colGroups.length;i++){
+      String[] group=colStore[i].split("~");
+      colGroups[i]=new int[group.length];
+      for(int j=0;j<colGroups[i].length;j++){
+        colGroups[i][j]=Integer.parseInt(group[j]);
+      }
     }
     //Actual primitive dimension used to generate start & end key
 
     //data.generator[dimLens.length] = KeyGeneratorFactory.getKeyGenerator(simpleDimsLen);
-    this.hybridStoreModel = CarbonUtil.getHybridStoreMeta(simpleDimsLen, dimensionStoreType, null);
+    this.colGrpStoreModel = CarbonUtil.getColGroupModel(simpleDimsLen, colGroups);
     data.generator = KeyGeneratorFactory
-        .getKeyGenerator(hybridStoreModel.getHybridCardinality(),
-            hybridStoreModel.getDimensionPartitioner());
+        .getKeyGenerator(colGrpStoreModel.getColumnGroupCardinality(),
+            colGrpStoreModel.getColumnSplit());
 
     //To Set MDKey Index of each primitive type in complex type
     int surrIndex = simpleDimsCount;
@@ -356,13 +360,13 @@ public class MDKeyGenStep extends BaseStep {
           this.tableName, false, measureCount, data.generator.getKeySizeInBytes(),
           measureCount + 1, null, null, storeLocation, dimLens, false, false, dimLens, null, null,
           true, meta.getCurrentRestructNumber(), meta.getNoDictionaryCount(), dimensionCount,
-          complexIndexMap, simpleDimsLen, this.hybridStoreModel, aggType, carbonDataFileAttributes);
+          complexIndexMap, simpleDimsLen, this.colGrpStoreModel, aggType, carbonDataFileAttributes);
     } else {
       dataHandler = new CarbonFactDataHandlerColumnar(meta.getSchemaName(), meta.getCubeName(),
           this.tableName, false, measureCount, data.generator.getKeySizeInBytes(),
           measureCount, null, null, storeLocation, dimLens, false, false, dimLens, null, null, true,
           meta.getCurrentRestructNumber(), meta.getNoDictionaryCount(), dimensionCount,
-          complexIndexMap, simpleDimsLen, this.hybridStoreModel, aggType, carbonDataFileAttributes);
+          complexIndexMap, simpleDimsLen, this.colGrpStoreModel, aggType, carbonDataFileAttributes);
     }
   }
 
@@ -428,27 +432,13 @@ public class MDKeyGenStep extends BaseStep {
     }
     outputRow[l] = RemoveDictionaryUtil.getByteArrayForNoDictionaryCols(row);
 
-    //copy all columnar dimension to key array
-    int[] columnarStoreOrdinals = hybridStoreModel.getColumnStoreOrdinals();
-    int[] columnarDataKeys = new int[columnarStoreOrdinals.length];
-    for (int i = 0; i < columnarStoreOrdinals.length; i++) {
-      Object key = RemoveDictionaryUtil.getDimension(columnarStoreOrdinals[i], row);
-      columnarDataKeys[i] = (Integer) key;
-    }
-    //copy all row dimension in row key array
-    int[] rowStoreOrdinals = hybridStoreModel.getRowStoreOrdinals();
-    int[] rowDataKeys = new int[rowStoreOrdinals.length];
-    for (int i = 0; i < rowStoreOrdinals.length; i++) {
-      Object key = RemoveDictionaryUtil.getDimension(rowStoreOrdinals[i], row);
-      rowDataKeys[i] = (Integer) key;
+    int[] highCardExcludedRows = new int[colGrpStoreModel.getColumnGroupCardinality().length];
+    for (int i = 0; i < highCardExcludedRows.length; i++) {
+      Object key = RemoveDictionaryUtil.getDimension(i, row);
+      highCardExcludedRows[i] = (Integer) key;
     }
     try {
-      int[] completeKeys = new int[columnarDataKeys.length + rowDataKeys.length];
-      System.arraycopy(rowDataKeys, 0, completeKeys, 0, rowDataKeys.length);
-      System.arraycopy(columnarDataKeys, 0, completeKeys, rowDataKeys.length,
-          columnarDataKeys.length);
-      outputRow[outputRow.length - 1] =
-          data.generator.generateKey(completeKeys);
+      outputRow[outputRow.length - 1] = data.generator.generateKey(highCardExcludedRows);
     } catch (KeyGenException e) {
       throw new KettleException("Unbale to generate the mdkey", e);
     }

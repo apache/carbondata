@@ -33,7 +33,7 @@ import org.carbondata.core.datastorage.util.StoreFactory;
 import org.carbondata.core.metadata.BlockletInfoColumnar;
 import org.carbondata.core.metadata.CarbonMetadata.Cube;
 import org.carbondata.core.util.CarbonUtil;
-import org.carbondata.core.vo.HybridStoreModel;
+import org.carbondata.core.vo.ColumnGroupModel;
 import org.carbondata.query.datastorage.storeinterface.KeyValue;
 import org.carbondata.query.schema.metadata.Pair;
 
@@ -76,7 +76,7 @@ public class CSBTreeColumnarLeafNode extends CSBNode {
   public CSBTreeColumnarLeafNode(int maxKeys, int[] eachBlockSize, boolean isFileStore,
       FileHolder fileHolder, BlockletInfoColumnar blockletInfo,
       ValueCompressionModel compressionModel, long nodeNumber, Cube metaCube,
-      HybridStoreModel hybridStoreModel) {
+      ColumnGroupModel hybridStoreModel) {
     nKeys = blockletInfo.getNumberOfKeys();
     keyStore = StoreFactory.createColumnarKeyStore(
         CarbonUtil.getColumnarKeyStoreInfo(blockletInfo, eachBlockSize, hybridStoreModel),

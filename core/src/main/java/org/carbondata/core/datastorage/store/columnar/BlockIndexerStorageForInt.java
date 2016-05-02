@@ -40,17 +40,11 @@ public class BlockIndexerStorageForInt implements IndexStorage<int[]> {
   private int totalSize;
 
   public BlockIndexerStorageForInt(byte[][] keyBlock) {
-    this(keyBlock, false, false, false);
+    this(keyBlock, false, false);
   }
 
-  public BlockIndexerStorageForInt(byte[][] keyBlock, boolean compressData, boolean isSortRequired,
-      boolean isRowBlock) {
-    //in case of row block sort is not required
-    if (isRowBlock) {
-      this.keyBlock = keyBlock;
-      this.alreadySorted = true;
-      return;
-    }
+  public BlockIndexerStorageForInt(byte[][] keyBlock, boolean compressData,
+      boolean isSortRequired) {
     ColumnWithIntIndex[] columnWithIndexs = createColumnWithIndexArray(keyBlock, false);
     if (isSortRequired) {
       Arrays.sort(columnWithIndexs);
@@ -62,13 +56,7 @@ public class BlockIndexerStorageForInt implements IndexStorage<int[]> {
   }
 
   public BlockIndexerStorageForInt(byte[][] keyBlock, boolean compressData, boolean isNoDictionary,
-      boolean isSortRequired, boolean isRowBlock) {
-    //in case of row block sort is not required
-    if (isRowBlock) {
-      this.keyBlock = keyBlock;
-      this.alreadySorted = true;
-      return;
-    }
+      boolean isSortRequired) {
     ColumnWithIntIndex[] columnWithIndexs = createColumnWithIndexArray(keyBlock, isNoDictionary);
     if (isSortRequired) {
       Arrays.sort(columnWithIndexs);
@@ -242,5 +230,13 @@ public class BlockIndexerStorageForInt implements IndexStorage<int[]> {
 
   @Override public int getTotalSize() {
     return totalSize;
+  }
+
+  @Override public byte[] getMin() {
+    return keyBlock[0];
+  }
+
+  @Override public byte[] getMax() {
+    return keyBlock[keyBlock.length - 1];
   }
 }

@@ -46,7 +46,7 @@ import org.carbondata.core.metadata.CarbonMetadata.Dimension;
 import org.carbondata.core.metadata.CarbonMetadata.Measure;
 import org.carbondata.core.metadata.SliceMetaData;
 import org.carbondata.core.util.CarbonUtil;
-import org.carbondata.core.vo.HybridStoreModel;
+import org.carbondata.core.vo.ColumnGroupModel;
 import org.carbondata.query.aggregator.dimension.DimensionAggregatorInfo;
 import org.carbondata.query.cache.QueryExecutorUtil;
 import org.carbondata.query.complex.querytypes.ArrayQueryType;
@@ -321,7 +321,7 @@ public final class QueryExecutorUtility {
   }
 
   public static int[][] getMaskedByteRangeForSorting(Dimension[] queryDimensions,
-      KeyGenerator generator, int[] maskedRanges, HybridStoreModel hybridStoreModel) {
+      KeyGenerator generator, int[] maskedRanges, ColumnGroupModel hybridStoreModel) {
 
     int[][] dimensionCompareIndex = new int[queryDimensions.length][];
     int index = 0;
@@ -332,7 +332,7 @@ public final class QueryExecutorUtility {
       Set<Integer> integers = new TreeSet<Integer>();
 
       int[] range = generator
-          .getKeyByteOffsets(hybridStoreModel.getMdKeyOrdinal(queryDimensions[i].getOrdinal()));
+          .getKeyByteOffsets(queryDimensions[i].getOrdinal());
 
       for (int j = range[0]; j <= range[1]; j++) {
         integers.add(j);
@@ -529,22 +529,20 @@ public final class QueryExecutorUtility {
    * @return
    */
   public static int[] getSelectedDimensionStoreIndex(Dimension[] queryDims,
-      HybridStoreModel hybridStoreModel) {
+      ColumnGroupModel hybridStoreModel) {
     // It can be possible that multiple queryDim will be part of row store and hence.
     // If row store index is already added then its not required to add again.
     Set<Integer> selectedDimensionList = new HashSet<Integer>(queryDims.length);
-    int NoDictionaryStartIndex = hybridStoreModel.getColumnStoreOrdinals().length;
+    int NoDictionaryStartIndex = hybridStoreModel.getNoOfColumnStore();
     for (Dimension dimension : queryDims) {
       if (dimension.isNoDictionaryDim()) {
         selectedDimensionList.add(NoDictionaryStartIndex++);
       } else {
-        int storeIndex = hybridStoreModel.getStoreIndex(dimension.getOrdinal());
-        selectedDimensionList.add(storeIndex);
+        selectedDimensionList.add(dimension.getOrdinal());
       }
     }
     for (int i = 0; i < queryDims.length; i++) {
-      int storeIndex = hybridStoreModel.getStoreIndex(queryDims[i].getOrdinal());
-      selectedDimensionList.add(storeIndex);
+      selectedDimensionList.add(queryDims[i].getOrdinal());
     }
     int[] selectedDimsIndex = QueryExecutorUtil.convertIntegerListToIntArray(selectedDimensionList);
     Arrays.sort(selectedDimsIndex);
@@ -619,21 +617,21 @@ public final class QueryExecutorUtility {
 
   public static int[] getAllSelectedDiemnsionStoreIndex(Dimension[] queryDims,
       List<DimensionAggregatorInfo> dimAggInfo, List<Dimension> fromCustomExps,
-      HybridStoreModel hybridStoreModel) {
+      ColumnGroupModel hybridStoreModel) {
     Set<Integer> allQueryDimension =
         new HashSet<Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     for (int i = 0; i < queryDims.length; i++) {
-      allQueryDimension.add(hybridStoreModel.getStoreIndex(queryDims[i].getOrdinal()));
+      allQueryDimension.add(queryDims[i].getOrdinal());
     }
     for (int i = 0; i < dimAggInfo.size(); i++) {
       if (dimAggInfo.get(i).isDimensionPresentInCurrentSlice()) {
         allQueryDimension
-            .add(hybridStoreModel.getStoreIndex(dimAggInfo.get(i).getDim().getOrdinal()));
+            .add(dimAggInfo.get(i).getDim().getOrdinal());
       }
     }
 
     for (int i = 0; i < fromCustomExps.size(); i++) {
-      allQueryDimension.add(hybridStoreModel.getStoreIndex(fromCustomExps.get(i).getOrdinal()));
+      allQueryDimension.add(fromCustomExps.get(i).getOrdinal());
     }
     return convertIntegerArrayToInt(
         allQueryDimension.toArray(new Integer[allQueryDimension.size()]));

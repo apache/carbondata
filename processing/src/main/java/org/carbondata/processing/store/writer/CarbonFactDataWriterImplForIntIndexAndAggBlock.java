@@ -47,7 +47,6 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
   protected boolean[] aggBlocks;
   private NumberCompressor numberCompressor;
   private boolean[] isComplexType;
-  private int NoDictionaryCount;
 
   public CarbonFactDataWriterImplForIntIndexAndAggBlock(String storeLocation, int measureCount,
       int mdKeyLength, String tableName, boolean isNodeHolder, IFileManagerComposite fileManager,
@@ -57,7 +56,6 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
     this(storeLocation, measureCount, mdKeyLength, tableName, isNodeHolder, fileManager,
         keyBlockSize, aggBlocks, isUpdateFact, carbonDataFileAttributes);
     this.isComplexType = isComplexType;
-    this.NoDictionaryCount = NoDictionaryCount;
     this.databaseName = databaseName;
   }
 
@@ -105,9 +103,8 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
       }
       totalKeySize += keyLengths[i];
 
-      allMinValue[i] = keyStorageArray[i].getKeyBlock()[0];
-      allMaxValue[i] =
-          keyStorageArray[i].getKeyBlock()[keyStorageArray[i].getKeyBlock().length - 1];
+      allMinValue[i] = keyStorageArray[i].getMin();
+      allMaxValue[i] = keyStorageArray[i].getMax();
     }
     int[] keyBlockIdxLengths = new int[keyBlockSize];
     byte[][] dataAfterCompression = new byte[keyBlockSize][];

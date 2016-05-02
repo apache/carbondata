@@ -42,9 +42,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -76,7 +74,7 @@ import org.carbondata.core.metadata.CarbonMetadata.Dimension;
 import org.carbondata.core.metadata.SliceMetaData;
 import org.carbondata.core.metadata.ValueEncoderMeta;
 import org.carbondata.core.reader.CarbonFooterReader;
-import org.carbondata.core.vo.HybridStoreModel;
+import org.carbondata.core.vo.ColumnGroupModel;
 import org.carbondata.query.util.DataFileFooterConverter;
 
 import com.google.gson.Gson;
@@ -405,129 +403,27 @@ public final class CarbonUtil {
   }
 
   /**
-   * @param dimCardinality                : dimension cardinality
-   * @param dimensionStoreType            : dimension store type: true->columnar, false->row
-   * @param NoDictionaryDimOrdinals
-   * @param columnarStoreColumns->columns for columnar store
-   * @param rowStoreColumns               -> columns for row store
-   * @return
+   * return ColumnGroupModel. check ColumnGroupModel for detail
+   * @param dimLens : dimension cardinality
+   * @param columnGroups : column groups
+   * @return ColumnGroupModel  model
    */
-  public static HybridStoreModel getHybridStoreMeta(int[] dimCardinality,
-      boolean[] dimensionStoreType, List<Integer> noDictionaryDimOrdinals) {
-    //get dimension store type
-    HybridStoreModel hybridStoreMeta = new HybridStoreModel();
+  public static ColumnGroupModel getColGroupModel(int[] dimLens, int[][] columnGroups) {
+    int[] columnSplit = new int[columnGroups.length];
+    int noOfColumnStore = columnSplit.length;
+    boolean[] columnarStore = new boolean[noOfColumnStore];
 
-    List<Integer> columnarStoreOrdinalsList = new ArrayList<Integer>(dimensionStoreType.length);
-    List<Integer> columnarDimcardinalityList = new ArrayList<Integer>(dimensionStoreType.length);
-    List<Integer> rowStoreOrdinalsList = new ArrayList<Integer>(dimensionStoreType.length);
-    List<Integer> rowDimCardinalityList = new ArrayList<Integer>(dimensionStoreType.length);
-    boolean isHybridStore = false;
-    for (int i = 0; i < dimensionStoreType.length; i++) {
-      if (dimensionStoreType[i]) {
-        columnarStoreOrdinalsList.add(i);
-        columnarDimcardinalityList.add(dimCardinality[i]);
-
-      } else {
-        rowStoreOrdinalsList.add(i);
-        rowDimCardinalityList.add(dimCardinality[i]);
-
-      }
+    for (int i = 0; i < columnGroups.length; i++) {
+      columnSplit[i] = columnGroups[i].length;
+      columnarStore[i] = columnGroups[i].length > 1 ? false : true;
     }
-    if (rowStoreOrdinalsList.size() > 0) {
-      isHybridStore = true;
-    }
-    int[] columnarStoreOrdinal = convertToIntArray(columnarStoreOrdinalsList);
-    int[] columnarDimcardinality = convertToIntArray(columnarDimcardinalityList);
-
-    int[] rowStoreOrdinal = convertToIntArray(rowStoreOrdinalsList);
-    int[] rowDimCardinality = convertToIntArray(rowDimCardinalityList);
-
-    Map<Integer, Integer> dimOrdinalMDKeymapping = new HashMap<Integer, Integer>();
-    Map<Integer, Integer> dimOrdinalStoreIndexMapping = new HashMap<Integer, Integer>();
-    int dimCount = 0;
-    int storeIndex = 0;
-    for (int i = 0; i < rowStoreOrdinal.length; i++) {
-      //dimOrdinalMDKeymapping.put(dimCount++, rowStoreOrdinal[i]);
-      dimOrdinalMDKeymapping.put(rowStoreOrdinal[i], dimCount++);
-      //row stores will be stored at 0th inex
-      dimOrdinalStoreIndexMapping.put(rowStoreOrdinal[i], storeIndex);
-    }
-    if (rowStoreOrdinal.length > 0) {
-      storeIndex++;
-    }
-    for (int i = 0; i < columnarStoreOrdinal.length; i++) {
-      //dimOrdinalMDKeymapping.put(dimCount++,columnarStoreOrdinal[i] );
-      dimOrdinalMDKeymapping.put(columnarStoreOrdinal[i], dimCount++);
-      dimOrdinalStoreIndexMapping.put(columnarStoreOrdinal[i], storeIndex++);
-    }
-
-    //updating with highcardinality dimension store detail
-    if (null != noDictionaryDimOrdinals) {
-      for (Integer noDictionaryDimOrdinal : noDictionaryDimOrdinals) {
-        dimOrdinalStoreIndexMapping.put(noDictionaryDimOrdinal, storeIndex++);
-      }
-    }
-
-    //This split is used while splitting mdkey's into columns
-    //1,1,1,3 -> it means first 3 dimension will be alone and next
-    //3 dimension will be in single column
-
-    //here in index +1 means total no of split will be all
-    //dimension,part of columnar store, and one column which
-    //will have all dimension in single column as row
-    int[] mdKeyPartioner = null;
-    int[][] dimensionPartitioner = null;
-    // no of dimension stored as column.. this inculdes one complete set of row store
-    int noOfColumnsStore = columnarStoreOrdinal.length;
-    if (isHybridStore) {
-      noOfColumnsStore++;
-      mdKeyPartioner = new int[columnarStoreOrdinal.length + 1];
-      dimensionPartitioner = new int[columnarDimcardinality.length + 1][];
-
-      //row
-      mdKeyPartioner[0] = rowDimCardinality.length;
-      dimensionPartitioner[0] = new int[rowDimCardinality.length];
-      for (int i = 0; i < rowDimCardinality.length; i++) {
-        dimensionPartitioner[0][i] = rowDimCardinality[i];
-
-      }
-      //columnar
-      //dimensionPartitioner[1]=new int[columnarDimcardinality.length];
-      for (int i = 0; i < columnarDimcardinality.length; i++) {
-        dimensionPartitioner[i + 1] = new int[] { columnarDimcardinality[i] };
-        mdKeyPartioner[i + 1] = 1;
-      }
-    } else {
-      mdKeyPartioner = new int[columnarStoreOrdinal.length];
-      dimensionPartitioner = new int[columnarDimcardinality.length][];
-      //columnar
-      dimensionPartitioner[0] = new int[columnarDimcardinality.length];
-      for (int i = 0; i < columnarDimcardinality.length; i++) {
-        dimensionPartitioner[i] = new int[] { columnarDimcardinality[i] };
-        mdKeyPartioner[i] = 1;
-      }
-    }
-
-    hybridStoreMeta.setNoOfColumnStore(noOfColumnsStore);
-    hybridStoreMeta.setDimOrdinalMDKeyMapping(dimOrdinalMDKeymapping);
-    hybridStoreMeta.setColumnStoreOrdinals(columnarStoreOrdinal);
-    hybridStoreMeta.setRowStoreOrdinals(rowStoreOrdinal);
-    hybridStoreMeta.setDimensionPartitioner(dimensionPartitioner);
-    hybridStoreMeta.setColumnSplit(mdKeyPartioner);
-    hybridStoreMeta.setDimOrdinalStoreIndexMapping(dimOrdinalStoreIndexMapping);
-    //this is no
-
-    //get Key generator for each columnar and row store
-    int[] completeCardinality = new int[rowDimCardinality.length + columnarDimcardinality.length];
-    System.arraycopy(rowDimCardinality, 0, completeCardinality, 0, rowDimCardinality.length);
-    System.arraycopy(columnarDimcardinality, 0, completeCardinality, rowDimCardinality.length,
-        columnarDimcardinality.length);
-
-    hybridStoreMeta.setHybridCardinality(completeCardinality);
-
-    hybridStoreMeta.setHybridStore(isHybridStore);
-
-    return hybridStoreMeta;
+    ColumnGroupModel colGroupModel = new ColumnGroupModel();
+    colGroupModel.setNoOfColumnStore(noOfColumnStore);
+    colGroupModel.setColumnSplit(columnSplit);
+    colGroupModel.setColumnGroupCardinality(dimLens);
+    colGroupModel.setColumnarStore(columnarStore);
+    colGroupModel.setColumnGroup(columnGroups);
+    return colGroupModel;
   }
 
   /**
@@ -571,7 +467,7 @@ public final class CarbonUtil {
   /**
    * This method will return bit length required for each dimension based on splits
    *
-   * @param dimension
+   * @param dimCardinality
    * @param dimPartitioner : this will partition few dimension to be stored
    *                       at row level. If it is row level than data is store in bits
    * @return
@@ -1106,7 +1002,7 @@ public final class CarbonUtil {
   }
 
   public static ColumnarKeyStoreInfo getColumnarKeyStoreInfo(BlockletInfoColumnar blockletInfo,
-      int[] eachBlockSize, HybridStoreModel hybridStoreMeta) {
+      int[] eachBlockSize, ColumnGroupModel colGrpModel) {
     ColumnarKeyStoreInfo columnarKeyStoreInfo = new ColumnarKeyStoreInfo();
     columnarKeyStoreInfo.setFilePath(blockletInfo.getFileName());
     columnarKeyStoreInfo.setIsSorted(blockletInfo.getIsSortedKeyColumn());
@@ -1122,7 +1018,7 @@ public final class CarbonUtil {
     columnarKeyStoreInfo.setAggKeyBlock(blockletInfo.getAggKeyBlock());
     columnarKeyStoreInfo.setDataIndexMapLength(blockletInfo.getDataIndexMapLength());
     columnarKeyStoreInfo.setDataIndexMapOffsets(blockletInfo.getDataIndexMapOffsets());
-    columnarKeyStoreInfo.setHybridStoreModel(hybridStoreMeta);
+    columnarKeyStoreInfo.setHybridStoreModel(colGrpModel);
     return columnarKeyStoreInfo;
   }
 

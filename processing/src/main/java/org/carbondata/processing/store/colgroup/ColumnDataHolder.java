@@ -16,29 +16,25 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package org.carbondata.processing.store.colgroup;
 
-package org.carbondata.core.datastorage.store.columnar;
+/**
+ * Store mdkey data for each column block
+ */
+public class ColumnDataHolder implements DataHolder {
 
-public interface IndexStorage<T> {
-  boolean isAlreadySorted();
+  private byte[][] data;
 
-  T getDataAfterComp();
+  public ColumnDataHolder(int noOfRow) {
+    data = new byte[noOfRow][];
+  }
 
-  T getIndexMap();
+  @Override public void addData(byte[] rowRecord, int rowIndex) {
+    data[rowIndex] = rowRecord;
+  }
 
-  byte[][] getKeyBlock();
+  @Override public byte[][] getData() {
+    return data;
+  }
 
-  T getDataIndexMap();
-
-  int getTotalSize();
-
-  /**
-   * @return min value of block
-   */
-  byte[] getMin();
-
-  /**
-   * @return max value of block
-   */
-  byte[] getMax();
 }

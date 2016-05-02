@@ -20,7 +20,7 @@
 package org.carbondata.core.datastorage.store.columnar;
 
 import org.carbondata.core.keygenerator.mdkey.NumberCompressor;
-import org.carbondata.core.vo.HybridStoreModel;
+import org.carbondata.core.vo.ColumnGroupModel;
 
 public class ColumnarKeyStoreInfo {
   private int numberOfKeys;
@@ -45,7 +45,7 @@ public class ColumnarKeyStoreInfo {
 
   private NumberCompressor[] keyBlockUnCompressor;
 
-  private HybridStoreModel hybridStoreModel;
+  private ColumnGroupModel hybridStoreModel;
 
   /**
    * dataIndexMap
@@ -252,11 +252,11 @@ public class ColumnarKeyStoreInfo {
     this.cardinality = cardinality;
   }
 
-  public HybridStoreModel getHybridStoreModel() {
+  public ColumnGroupModel getHybridStoreModel() {
     return hybridStoreModel;
   }
 
-  public void setHybridStoreModel(HybridStoreModel hybridStoreModel) {
+  public void setHybridStoreModel(ColumnGroupModel hybridStoreModel) {
     this.hybridStoreModel = hybridStoreModel;
   }
 

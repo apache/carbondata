@@ -32,6 +32,7 @@ import org.apache.spark.sql.catalyst.trees.CurrentOrigin
 import org.apache.spark.sql.cubemodel.{DimensionRelation, _}
 import org.apache.spark.sql.execution.datasources.DescribeCommand
 import org.apache.spark.sql.hive.HiveQlWrapper
+import scala.collection.mutable.LinkedHashSet
 
 
 /**
@@ -510,7 +511,7 @@ class CarbonSqlDDLParser()
   protected def extractDimColsAndNoDictionaryFields(fields: Seq[Field],
                                                     tableProperties: Map[String, String]):
                                                     (Seq[Field], Seq[String]) = {
-    var dimFields: Set[Field] = Set[Field]()
+    var dimFields: LinkedHashSet[Field] = LinkedHashSet[Field]()
     var splittedCols: Array[String] = Array[String]()
     var noDictionaryDims: Seq[String] = Seq[String]()
 

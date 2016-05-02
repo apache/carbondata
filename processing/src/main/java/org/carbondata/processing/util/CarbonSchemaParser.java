@@ -1112,30 +1112,31 @@ public final class CarbonSchemaParser {
   }
 
   /**
-   * This method will give dimensions store type i.e either its columnar or row based
-   * e.g dimname!@#true
-   * it means dimension dimname is columnar store type
-   *
-   * @param cube
-   * @param schema
+   * It will return all column groups in below format
+   * 0,1~2~3,4,5,6~7~8,9
+   * groups are
+   * ,-> all ordinal with different group id
+   * ~-> all ordinal with same group id
+   * @param dimensions
    * @return
    */
-  public static String getDimensionsStoreType(List<CarbonDimension> dimensions) {
-    StringBuffer buffer = new StringBuffer();
-    int dimCounter = 0;
-    for (CarbonDimension cDimension : dimensions) {
-      if(cDimension.getNumberOfChild() > 0) {
-        buffer.append(getDimensionsStoreType(cDimension.getListOfChildDimensions()));
+  public static String getColumnGroups(List<CarbonDimension> dimensions) {
+    StringBuffer columnGroups = new StringBuffer();
+    for (int i = 0; i < dimensions.size(); i++) {
+      CarbonDimension dimension = dimensions.get(i);
+      columnGroups.append(dimension.getOrdinal());
+      if (i < dimensions.size() - 1) {
+        int currGroupOrdinal = dimension.columnGroupId();
+        int nextGroupOrdinal = dimensions.get(i + 1).columnGroupId();
+        if (currGroupOrdinal == nextGroupOrdinal) {
+          columnGroups.append("~");
+        } else {
+          columnGroups.append(",");
+        }
       }
-      else {
-        buffer.append(cDimension.isColumnar());
-      }
-      if (dimCounter < dimensions.size() - 1) {
-        buffer.append(",");
-      }
-      dimCounter++;
+
     }
-    return buffer.toString();
+    return columnGroups.toString();
   }
 
   /**

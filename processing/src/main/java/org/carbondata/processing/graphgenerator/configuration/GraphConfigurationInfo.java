@@ -171,11 +171,6 @@ public class GraphConfigurationInfo {
   private String measureDataTypeInfo;
 
   /**
-   * true represent columnar store
-   * false represent row store
-   */
-  private String dimensionStoreType;
-  /**
    * columnAndTableName_ColumnMapForAgg
    */
   private String columnAndTableNameColumnMapForAgg;
@@ -196,13 +191,14 @@ public class GraphConfigurationInfo {
    */
   private String directDictionaryColumnString;
 
-  public String getDimensionStoreTypeString() {
-    return dimensionStoreType;
-  }
-
-  public void setDimensionStoreTypeString(String dimensionStoreType) {
-    this.dimensionStoreType = dimensionStoreType;
-  }
+  /**
+   * It is column groups in below format
+   * 0,1~2~3,4,5,6~7~8,9
+   * groups are
+   * ,-> all ordinal with different group id
+   * ~-> all ordinal with same group id
+   */
+  private String columnGroupsString;
 
   /**
    * @return the connectionName
@@ -980,5 +976,16 @@ public class GraphConfigurationInfo {
    */
   public String getDirectDictionaryColumnString() {
     return directDictionaryColumnString;
+  }
+
+  public void setColumnGroupsString(String columnGroups) {
+    this.columnGroupsString = columnGroups;
+  }
+
+  /**
+   * @return columngroups
+   */
+  public String getColumnGroupsString() {
+    return columnGroupsString;
   }
 }

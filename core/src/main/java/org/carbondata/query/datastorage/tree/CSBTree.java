@@ -33,7 +33,7 @@ import org.carbondata.core.metadata.BlockletInfo;
 import org.carbondata.core.metadata.BlockletInfoColumnar;
 import org.carbondata.core.metadata.CarbonMetadata.Cube;
 import org.carbondata.core.util.CarbonProperties;
-import org.carbondata.core.vo.HybridStoreModel;
+import org.carbondata.core.vo.ColumnGroupModel;
 import org.carbondata.query.datastorage.storeinterface.DataStore;
 import org.carbondata.query.datastorage.storeinterface.DataStoreBlock;
 import org.carbondata.query.datastorage.storeinterface.KeyValue;
@@ -127,10 +127,10 @@ public class CSBTree implements DataStore {
   private boolean[] aggKeyBlock;
 
   // private String dataFolderLoc;
-  private HybridStoreModel hybridStoreModel;
+  private ColumnGroupModel hybridStoreModel;
 
   // Constructor
-  public CSBTree(HybridStoreModel hybridStoreModel, KeyGenerator keyGenerator, int valueCount,
+  public CSBTree(ColumnGroupModel hybridStoreModel, KeyGenerator keyGenerator, int valueCount,
       String tableName, boolean isFileStore, int[] keyBlockSize, boolean[] aggKeyBlock) {
     super();
 

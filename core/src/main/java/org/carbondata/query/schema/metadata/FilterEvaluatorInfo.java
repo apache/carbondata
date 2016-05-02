@@ -24,7 +24,7 @@ import java.util.Map;
 
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.metadata.CarbonMetadata.Dimension;
-import org.carbondata.core.vo.HybridStoreModel;
+import org.carbondata.core.vo.ColumnGroupModel;
 import org.carbondata.query.complex.querytypes.GenericQueryType;
 import org.carbondata.query.datastorage.InMemoryTable;
 import org.carbondata.query.executer.impl.QueryFilterInfo;
@@ -54,7 +54,7 @@ public class FilterEvaluatorInfo {
 
   private Map<Integer, GenericQueryType> complexTypesWithBlockStartIndex;
 
-  private HybridStoreModel hybridStoreModel;
+  private ColumnGroupModel hybridStoreModel;
 
   public Dimension[] getDimensions() {
     return dimensions;
@@ -153,11 +153,11 @@ public class FilterEvaluatorInfo {
     this.newDimensionDefaultValue = newDimensionDefaultValue;
   }
 
-  public HybridStoreModel getHybridStoreModel() {
+  public ColumnGroupModel getHybridStoreModel() {
     return this.hybridStoreModel;
   }
 
-  public void setHybridStoreModel(HybridStoreModel hybridStoreModel) {
+  public void setHybridStoreModel(ColumnGroupModel hybridStoreModel) {
     this.hybridStoreModel = hybridStoreModel;
 
   }

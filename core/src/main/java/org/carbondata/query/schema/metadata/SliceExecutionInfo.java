@@ -27,7 +27,7 @@ import org.carbondata.core.carbon.SqlStatement;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.keygenerator.columnar.ColumnarSplitter;
 import org.carbondata.core.metadata.CarbonMetadata.Dimension;
-import org.carbondata.core.vo.HybridStoreModel;
+import org.carbondata.core.vo.ColumnGroupModel;
 import org.carbondata.query.aggregator.CustomCarbonAggregateExpression;
 import org.carbondata.query.aggregator.dimension.DimensionAggregatorInfo;
 import org.carbondata.query.complex.querytypes.GenericQueryType;
@@ -315,7 +315,7 @@ public class SliceExecutionInfo {
 
   private boolean[] noDictionaryTypes;
 
-  private HybridStoreModel hybridStoreMeta;
+  private ColumnGroupModel hybridStoreMeta;
   private HashMap<Integer, Integer> measureOrdinalMap;
 
   private SqlStatement.Type[] dataTypes;
@@ -1001,11 +1001,11 @@ public class SliceExecutionInfo {
     this.isFileBasedQuery = isFileBasedQuery;
   }
 
-  public HybridStoreModel getHybridStoreMeta() {
+  public ColumnGroupModel getHybridStoreMeta() {
     return this.hybridStoreMeta;
   }
 
-  public void setHybridStoreMeta(HybridStoreModel hybridStoreMeta) {
+  public void setHybridStoreMeta(ColumnGroupModel hybridStoreMeta) {
     this.hybridStoreMeta = hybridStoreMeta;
 
   }

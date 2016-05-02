@@ -224,4 +224,12 @@ public class BlockIndexerStorage implements IndexStorage<short[]> {
   @Override public int getTotalSize() {
     return totalSize;
   }
+
+  @Override public byte[] getMin() {
+    return keyBlock[0];
+  }
+
+  @Override public byte[] getMax() {
+    return keyBlock[keyBlock.length - 1];
+  }
 }

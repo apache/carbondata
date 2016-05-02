@@ -38,13 +38,15 @@ import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.keygenerator.KeyGenerator;
+import org.carbondata.core.keygenerator.columnar.impl.MultiDimKeyVarLengthEquiSplitGenerator;
+import org.carbondata.core.keygenerator.columnar.impl.MultiDimKeyVarLengthVariableSplitGenerator;
 import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.carbondata.core.metadata.CarbonMetadata.Cube;
 import org.carbondata.core.metadata.CarbonMetadata.Dimension;
 import org.carbondata.core.metadata.CarbonSchemaReader;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.CarbonUtilException;
-import org.carbondata.core.vo.HybridStoreModel;
+import org.carbondata.core.vo.ColumnGroupModel;
 import org.carbondata.query.datastorage.cache.LevelInfo;
 import org.carbondata.query.util.CacheUtil;
 import org.carbondata.query.util.CarbonEngineLogEvent;
@@ -126,7 +128,7 @@ public class InMemoryTable implements Comparable<InMemoryTable> {
   private String tableName;
   private CarbonLRUCache levelCache;
   private Cube metaCube;
-  private HybridStoreModel hybridStoreModel;
+  private ColumnGroupModel hybridStoreModel;
   /**
    * segment modification time
    */
@@ -135,6 +137,10 @@ public class InMemoryTable implements Comparable<InMemoryTable> {
    * File store path
    */
   private String fileStore;
+  /**
+   * size of dimension blocks
+   */
+  private int[] keyBlockSize;
 
   public InMemoryTable(CarbonDef.Schema schema, CarbonDef.Cube cube, Cube metaCube,
       String tableName, String fileStore, long modificationTime) {
@@ -222,28 +228,35 @@ public class InMemoryTable implements Comparable<InMemoryTable> {
     ExecutorService executorService = Executors.newFixedThreadPool(1);
     String cubeUniqueName = schemaName + '_' + cubeName;
     CarbonFile file = FileFactory.getCarbonFile(fileStore, FileFactory.getFileType(fileStore));
+    List<Integer> NoDictionaryDimOrdinals=new ArrayList<Integer>();
     if (file.isDirectory()) {
       getDimensionCardinality(file, tableName);
       List<Dimension> dimensions = metaCube.getDimensions(tableName);
-
-      boolean[] dimensionStoreType = new boolean[dimensionCardinality.length];
-      List<Integer> NoDictionaryDimOrdinals = new ArrayList<Integer>();
-      for (Dimension dimension : dimensions) {
-        if (dimension.isNoDictionaryDim()) {
-          NoDictionaryDimOrdinals.add(dimension.getOrdinal());
-          continue;
-        }
-        if (dimension.isColumnar()) {
-          dimensionStoreType[dimension.getOrdinal()] = dimension.isColumnar();
+      List<Integer> complexDimOrdinals=new ArrayList<Integer>();
+      int[][] columnGroups=new int[dimensions.size()][];
+      for(int i=0;i<dimensionCardinality.length;i++)
+      {
+        if (!dimensions.get(i).isNoDictionaryDim()) {
+          if (dimensionCardinality[dimensions.get(i).getOrdinal()] == 0) {
+            for (int j = i; j < dimensionCardinality.length; j++) {
+              complexDimOrdinals.add(j);
+            }
+            break;
+          }
+          columnGroups[dimensions.get(i).getOrdinal()] =
+              new int[] { dimensions.get(i).getOrdinal() };
+        } else {
+          NoDictionaryDimOrdinals.add(dimensions.get(i).getOrdinal());
         }
       }
-      hybridStoreModel = CarbonUtil
-          .getHybridStoreMeta(findRequiredDimensionForStartAndEndKey(), dimensionStoreType,
-              NoDictionaryDimOrdinals);
-      keyGenerator = KeyGeneratorFactory.getKeyGenerator(hybridStoreModel.getHybridCardinality(),
-          hybridStoreModel.getDimensionPartitioner());
+      hybridStoreModel =
+          CarbonUtil.getColGroupModel(findRequiredDimensionForStartAndEndKey(), columnGroups);
+      keyGenerator = KeyGeneratorFactory
+          .getKeyGenerator(hybridStoreModel.getColumnGroupCardinality(),
+              hybridStoreModel.getColumnSplit());
       int startAndEndKeySizeWithPrimitives = keyGenerator.getKeySizeInBytes();
       keyGenerator.setStartAndEndKeySizeWithOnlyPrimitives(startAndEndKeySizeWithPrimitives);
+      setKeyBlockSize(complexDimOrdinals.size());
     }
     // Process fact and aggregate data cache
     if (!loadOnlyLevelFiles) {
@@ -256,7 +269,8 @@ public class InMemoryTable implements Comparable<InMemoryTable> {
                 dimensionCardinality, hybridStoreModel);
         //add start and end key size with only primitives
         if (dataCache
-            .loadDataFromFile(fileStore, keyGenerator.getStartAndEndKeySizeWithOnlyPrimitives())) {
+            .loadDataFromFile(fileStore, keyGenerator.getStartAndEndKeySizeWithOnlyPrimitives(),
+                keyBlockSize, NoDictionaryDimOrdinals.size())) {
           dataCacheMap.put(table, dataCache);
         }
       }
@@ -299,6 +313,20 @@ public class InMemoryTable implements Comparable<InMemoryTable> {
     }
   }
 
+  private void setKeyBlockSize(int size) {
+    int dimSet =
+        Integer.parseInt(CarbonCommonConstants.DIMENSION_SPLIT_VALUE_IN_COLUMNAR_DEFAULTVALUE);
+    int[] mdKeyBlockSize;
+    mdKeyBlockSize = new MultiDimKeyVarLengthVariableSplitGenerator(CarbonUtil
+        .getDimensionBitLength(this.hybridStoreModel.getColumnSplit(),
+            this.hybridStoreModel.getColumnGroupCardinality()),
+        this.hybridStoreModel.getColumnSplit()).getBlockKeySize();
+    int[] blockKeySize = new MultiDimKeyVarLengthEquiSplitGenerator(
+        CarbonUtil.getIncrementedCardinalityFullyFilled(dimensionCardinality), (byte) dimSet)
+        .getBlockKeySize();
+    keyBlockSize = mdKeyBlockSize;
+
+  }
   private int[] findRequiredDimensionForStartAndEndKey() {
     List<Integer> dimCardinalities = new ArrayList<Integer>();
     for (int dimCard : dimensionCardinality) {
@@ -548,7 +576,7 @@ public class InMemoryTable implements Comparable<InMemoryTable> {
     return false;
   }
 
-  public HybridStoreModel getHybridStoreModel() {
+  public ColumnGroupModel getHybridStoreModel() {
     return this.hybridStoreModel;
   }
 

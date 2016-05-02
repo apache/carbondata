@@ -32,7 +32,7 @@ import org.carbondata.core.carbon.SqlStatement;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.metadata.CarbonMetadata.Dimension;
-import org.carbondata.core.vo.HybridStoreModel;
+import org.carbondata.core.vo.ColumnGroupModel;
 
 /**
  * Util class
@@ -175,7 +175,7 @@ public final class QueryExecutorUtil {
    * @return
    */
   public static int[] getMaskedByte(Dimension[] queryDimensions, KeyGenerator generator,
-      HybridStoreModel hm) {
+      ColumnGroupModel hm) {
 
     Set<Integer> integers = new TreeSet<Integer>();
     boolean isRowAdded = false;
@@ -191,31 +191,9 @@ public final class QueryExecutorUtil {
       } else if (queryDimensions[i].getParentName() != null) {
         continue;
       }
-      //if querydimension is row store based, than add all row store ordinal in mask, because
-      //row store ordinal rangesare overalapped
-      //for e.g its possible
-      //dimension1 range: 0-1
-      //dimension2 range: 1-2
-      //hence to read only dimension2, you have to mask dimension1 also
-      else if (!queryDimensions[i].isColumnar()) {
-        // if all row store ordinal is already added in range than no need to consider
-        // it again
-        if (!isRowAdded) {
-          isRowAdded = true;
-          int[] rowOrdinals = hm.getRowStoreOrdinals();
-          for (int r = 0; r < rowOrdinals.length; r++) {
-            int[] range = generator.getKeyByteOffsets(hm.getMdKeyOrdinal(rowOrdinals[r]));
-            for (int j = range[0]; j <= range[1]; j++) {
-              integers.add(j);
-            }
-
-          }
-        }
-        continue;
-
-      } else {
+      else {
         int[] range =
-            generator.getKeyByteOffsets(hm.getMdKeyOrdinal(queryDimensions[i].getOrdinal()));
+            generator.getKeyByteOffsets(queryDimensions[i].getOrdinal());
         for (int j = range[0]; j <= range[1]; j++) {
           integers.add(j);
         }

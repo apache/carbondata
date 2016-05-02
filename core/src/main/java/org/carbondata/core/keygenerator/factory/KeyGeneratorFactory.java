@@ -30,7 +30,7 @@ public final class KeyGeneratorFactory {
   }
 
   public static KeyGenerator getKeyGenerator(int[] dimesion) {
-    int[] incrementedCardinality = null;
+    int[] incrementedCardinality;
     boolean isFullyFilled =
         Boolean.parseBoolean(CarbonCommonConstants.IS_FULLY_FILLED_BITS_DEFAULT_VALUE);
     if (!isFullyFilled) {
@@ -41,8 +41,14 @@ public final class KeyGeneratorFactory {
     return new MultiDimKeyVarLengthGenerator(incrementedCardinality);
   }
 
-  public static KeyGenerator getKeyGenerator(int[] dimCardinality, int[][] splits) {
-    int[] dimsBitLens = CarbonUtil.getDimensionBitLength(dimCardinality, splits);
+  /**
+   *
+   * @param dimCardinality : dimension cardinality
+   * @param columnSplits : No of column in each block
+   * @return keygenerator
+   */
+  public static KeyGenerator getKeyGenerator(int[] dimCardinality, int[] columnSplits) {
+    int[] dimsBitLens = CarbonUtil.getDimensionBitLength(dimCardinality, columnSplits);
 
     return new MultiDimKeyVarLengthGenerator(dimsBitLens);
   }

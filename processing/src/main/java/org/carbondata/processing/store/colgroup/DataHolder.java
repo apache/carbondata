@@ -16,29 +16,25 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package org.carbondata.processing.store.colgroup;
 
-package org.carbondata.core.datastorage.store.columnar;
-
-public interface IndexStorage<T> {
-  boolean isAlreadySorted();
-
-  T getDataAfterComp();
-
-  T getIndexMap();
-
-  byte[][] getKeyBlock();
-
-  T getDataIndexMap();
-
-  int getTotalSize();
+/**
+ * Hold complete data for a leaf node
+ */
+public interface DataHolder {
 
   /**
-   * @return min value of block
+   * add row to holder
+   *
+   * @param rowRecord: row data
+   * @param rowIndex   : row number
    */
-  byte[] getMin();
+  public void addData(byte[] rowRecord, int rowIndex);
 
   /**
-   * @return max value of block
+   * return the data when required
+   *
+   * @return all data
    */
-  byte[] getMax();
+  public byte[][] getData();
 }

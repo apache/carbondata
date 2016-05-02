@@ -154,10 +154,8 @@ public final class FilterUtil {
     byte[] maskkey = new byte[ranges.length];
 
     for (int i = 0; i < maskkey.length; i++) {
-      // CHECKSTYLE:OFF Approval No:Approval-V1R2C10_001
       maskkey[i] = key[ranges[i]];
     }
-    // CHECKSTYLE:ON
     return maskkey;
   }
 
