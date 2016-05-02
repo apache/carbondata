@@ -57,6 +57,11 @@ public abstract class AbstractColumnDictionaryInfo implements DictionaryInfo {
   protected long offsetTillFileIsRead;
 
   /**
+   * length of dictionary metadata file
+   */
+  private long dictionaryMetaFileLength;
+
+  /**
    * This method will return the timestamp of file based on which decision
    * the decision will be taken whether to read that file or not
    *
@@ -151,6 +156,26 @@ public abstract class AbstractColumnDictionaryInfo implements DictionaryInfo {
    */
   @Override public int getSortedIndex(int surrogateKey) {
     return 0;
+  }
+
+  /**
+   * dictionary metadata file length which will be set whenever we reload dictionary
+   * data from disk
+   *
+   * @param dictionaryMetaFileLength length of dictionary metadata file
+   */
+  @Override public void setDictionaryMetaFileLength(long dictionaryMetaFileLength) {
+    this.dictionaryMetaFileLength = dictionaryMetaFileLength;
+  }
+
+  /**
+   * Dictionary meta file offset which will be read to check whether length of dictionary
+   * meta file has been modified
+   *
+   * @return
+   */
+  @Override public long getDictionaryMetaFileLength() {
+    return dictionaryMetaFileLength;
   }
 
   /**

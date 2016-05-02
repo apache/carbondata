@@ -206,6 +206,21 @@ public class LocalCarbonFile implements CarbonFile {
     return fileTruncatedSuccessfully;
   }
 
+  /**
+   * This method will be used to check whether a file has been modified or not
+   *
+   * @param fileTimeStamp time to be compared with latest timestamp of file
+   * @param endOffset     file length to be compared with current length of file
+   * @return
+   */
+  @Override public boolean isFileModified(long fileTimeStamp, long endOffset) {
+    boolean isFileModified = false;
+    if (getLastModifiedTime() > fileTimeStamp || getSize() > endOffset) {
+      isFileModified = true;
+    }
+    return isFileModified;
+  }
+
   @Override public boolean renameForce(String changetoName) {
     File destFile = new File(changetoName);
     if (destFile.exists()) {

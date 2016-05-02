@@ -56,4 +56,13 @@ public interface CarbonFile {
   boolean setLastModifiedTime(long timestamp);
 
   boolean truncate(String fileName, long validDataEndOffset);
+
+  /**
+   * This method will be used to check whether a file has been modified or not
+   *
+   * @param fileTimeStamp time to be compared with latest timestamp of file
+   * @param endOffset     file length to be compared with current length of file
+   * @return
+   */
+  boolean isFileModified(long fileTimeStamp, long endOffset);
 }

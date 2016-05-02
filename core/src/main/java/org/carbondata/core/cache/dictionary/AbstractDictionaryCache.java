@@ -99,20 +99,33 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
   }
 
   /**
-   * This method will return the last modified time for a given file
+   * This method will validate dictionary metadata file for any modification
+   *
+   * @param carbonFile
+   * @param fileTimeStamp
+   * @param endOffset
+   * @return
+   */
+  private boolean isDictionaryMetaFileModified(CarbonFile carbonFile, long fileTimeStamp,
+      long endOffset) {
+    return carbonFile.isFileModified(fileTimeStamp, endOffset);
+  }
+
+  /**
+   * This method will return the carbon file objetc based on its type (local, HDFS)
    *
    * @param dictionaryColumnUniqueIdentifier
    * @return
    */
-  protected long getDictionaryFileLastModifiedTime(
+  private CarbonFile getDictionaryMetaCarbonFile(
       DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
     CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonStorePath,
         dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier());
     String dictionaryFilePath = carbonTablePath
-        .getDictionaryFilePath(dictionaryColumnUniqueIdentifier.getColumnIdentifier());
+        .getDictionaryMetaFilePath(dictionaryColumnUniqueIdentifier.getColumnIdentifier());
     FileFactory.FileType fileType = FileFactory.getFileType(dictionaryFilePath);
     CarbonFile carbonFile = FileFactory.getCarbonFile(dictionaryFilePath, fileType);
-    return carbonFile.getLastModifiedTime();
+    return carbonFile;
   }
 
   /**
@@ -132,41 +145,49 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
       throws CarbonUtilException {
     try {
       // read last segment dictionary meta chunk entry to get the end offset of file
-      CarbonDictionaryColumnMetaChunk carbonDictionaryColumnMetaChunk =
-          readLastChunkFromDictionaryMetadataFile(dictionaryColumnUniqueIdentifier);
-      // required size will be size total size of file - offset till file is
-      // already read
-      long requiredSize =
-          carbonDictionaryColumnMetaChunk.getEnd_offset() - dictionaryInfo.getMemorySize();
-      // if current file stamp and end offset greater than timestamp amd end offset
-      // stored in dictionary info then only
-      // read data from dictionary file
-      if (requiredSize > 0) {
+      CarbonFile carbonFile = getDictionaryMetaCarbonFile(dictionaryColumnUniqueIdentifier);
+      boolean dictionaryMetaFileModified =
+          isDictionaryMetaFileModified(carbonFile, dictionaryInfo.getFileTimeStamp(),
+              dictionaryInfo.getDictionaryMetaFileLength());
+      // if dictionary metadata file is modified then only read the last entry from dictionary
+      // meta file
+      if (dictionaryMetaFileModified) {
         synchronized (dictionaryInfo) {
-          requiredSize =
-              carbonDictionaryColumnMetaChunk.getEnd_offset() - dictionaryInfo.getMemorySize();
+          carbonFile = getDictionaryMetaCarbonFile(dictionaryColumnUniqueIdentifier);
+          dictionaryMetaFileModified =
+              isDictionaryMetaFileModified(carbonFile, dictionaryInfo.getFileTimeStamp(),
+                  dictionaryInfo.getDictionaryMetaFileLength());
           // Double Check :
-          // if current file stamp and end offset greater than timestamp amd end offset
-          // stored in dictionary info then only
-          // read data from dictionary file
-          if (requiredSize > 0) {
-            boolean columnAddedToLRUCache =
-                carbonLRUCache.put(lruCacheKey, dictionaryInfo, requiredSize);
-            // if column is successfully added to lru cache then only load the
-            // dictionary data
-            if (columnAddedToLRUCache) {
-              // load dictionary data
-              loadDictionaryData(dictionaryInfo, dictionaryColumnUniqueIdentifier,
-                  dictionaryInfo.getMemorySize(), carbonDictionaryColumnMetaChunk.getEnd_offset(),
-                  loadSortIndex);
-              // increment the column access count
-              incrementDictionaryAccessCount(dictionaryInfo);
-              // set the end offset till where file is read
-              dictionaryInfo
-                  .setOffsetTillFileIsRead(carbonDictionaryColumnMetaChunk.getEnd_offset());
-            } else {
-              throw new CarbonUtilException(
-                  "Cannot load dictionary into memory. Not enough memory available");
+          // if dictionary metadata file is modified then only read the last entry from dictionary
+          // meta file
+          if (dictionaryMetaFileModified) {
+            CarbonDictionaryColumnMetaChunk carbonDictionaryColumnMetaChunk =
+                readLastChunkFromDictionaryMetadataFile(dictionaryColumnUniqueIdentifier);
+            // required size will be size total size of file - offset till file is
+            // already read
+            long requiredSize =
+                carbonDictionaryColumnMetaChunk.getEnd_offset() - dictionaryInfo.getMemorySize();
+            if (requiredSize > 0) {
+              boolean columnAddedToLRUCache =
+                  carbonLRUCache.put(lruCacheKey, dictionaryInfo, requiredSize);
+              // if column is successfully added to lru cache then only load the
+              // dictionary data
+              if (columnAddedToLRUCache) {
+                // load dictionary data
+                loadDictionaryData(dictionaryInfo, dictionaryColumnUniqueIdentifier,
+                    dictionaryInfo.getMemorySize(), carbonDictionaryColumnMetaChunk.getEnd_offset(),
+                    loadSortIndex);
+                // increment the column access count
+                incrementDictionaryAccessCount(dictionaryInfo);
+                // set the end offset till where file is read
+                dictionaryInfo
+                    .setOffsetTillFileIsRead(carbonDictionaryColumnMetaChunk.getEnd_offset());
+                dictionaryInfo.setFileTimeStamp(carbonFile.getLastModifiedTime());
+                dictionaryInfo.setDictionaryMetaFileLength(carbonFile.getSize());
+              } else {
+                throw new CarbonUtilException(
+                    "Cannot load dictionary into memory. Not enough memory available");
+              }
             }
           }
         }

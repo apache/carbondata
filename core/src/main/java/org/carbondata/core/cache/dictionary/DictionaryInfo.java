@@ -72,4 +72,20 @@ public interface DictionaryInfo extends Cacheable, Dictionary {
    * @param sortReverseOrderIndex
    */
   void setSortReverseOrderIndex(List<Integer> sortReverseOrderIndex);
+
+  /**
+   * dictionary metadata file length which will be set whenever we reload dictionary
+   * data from disk
+   *
+   * @param dictionaryMetaFileLength length of dictionary metadata file
+   */
+  void setDictionaryMetaFileLength(long dictionaryMetaFileLength);
+
+  /**
+   * Dictionary meta file offset which will be read to check whether length of dictionary
+   * meta file has been modified
+   *
+   * @return
+   */
+  long getDictionaryMetaFileLength();
 }
