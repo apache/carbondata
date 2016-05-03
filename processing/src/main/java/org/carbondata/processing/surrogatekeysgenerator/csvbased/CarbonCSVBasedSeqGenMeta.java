@@ -1020,30 +1020,8 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     Map<String, String[]> columnPropsMap =
         new HashMap<String, String[]>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     for (int i = 0; i < metaHier.length; i++) {
-      //
       HierarchiesInfo hierarichiesVo = new HierarchiesInfo();
       String[] isTimeDim = metaHier[i].split(CarbonCommonConstants.HASH_SPC_CHARACTER);
-
-      String[] timeDimCols = isTimeDim[1].split(CarbonCommonConstants.SEMICOLON_SPC_CHARACTER);
-
-      if (null != timeDimCols && "true".equalsIgnoreCase(timeDimCols[0])) {
-        Map<String, String> levelTypeColumnMap =
-            new HashMap<String, String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-
-        if (timeDimCols.length > 1 && !timeDimCols[1].isEmpty()) {
-          String[] levelTypeColumns =
-              timeDimCols[1].split(CarbonCommonConstants.STAR_SPC_CHARACTER);
-
-          for (String levelsColumns : levelTypeColumns) {
-            String[] split = levelsColumns.split(CarbonCommonConstants.COMA_SPC_CHARACTER);
-            levelTypeColumnMap.put(split[0], split[1]);
-          }
-
-        }
-        hierarichiesVo.setLevelTypeColumnMap(levelTypeColumnMap);
-        hierarichiesVo.setTimeDimension(true);
-      }
-
       String[] split = isTimeDim[0].split(CarbonCommonConstants.COLON_SPC_CHARACTER);
       String[] columnNames = new String[split.length - 1];
       int[] columnIndex = new int[split.length - 1];
@@ -1053,7 +1031,6 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
       }
       int index = 0;
       for (int j = 1; j < split.length; j++) {
-        //
         String[] columnAndPropertyNames = split[j].split(
             CarbonCommonConstants.COMA_SPC_CHARACTER);//CHECKSTYLE:OFF    Approval No:Approval-323
         columnNames[index] = columnAndPropertyNames[0];//CHECKSTYLE:ON
