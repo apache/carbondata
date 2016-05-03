@@ -1152,7 +1152,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
     for (int j = 0; j < inputColumnsSize; j++) {
       String columnName = metaColumnNames[j];
       String foreignKeyColumnName = foreignKeyMappingColumns[j];
-
+      r[j] = ((String)r[j]).trim();
       // TODO check if it is ignore dictionary dimension or not . if yes directly write byte buffer
 
       if (null != meta.NoDictionaryCols && isDimensionNoDictionary(meta.NoDictionaryCols,
@@ -1264,7 +1264,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
             // getting this scenerio we will log it
             // in bad records
             if (null == surrogateKeyForHierarchy) {
-              addCardinalityExcededEntry(r, inputColumnsSize, j, columnName);
+              addEntryToBadRecords(r, inputColumnsSize, j, columnName);
               return null;
 
             }
@@ -1339,7 +1339,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
             // so while joining with fact table if we are getting this scenerio we will log it
             // in bad records
             if (null == surrogateKeyForHrrchy) {
-              addCardinalityExcededEntry(r, inputColumnsSize, j, columnName);
+              addEntryToBadRecords(r, inputColumnsSize, j, columnName);
               return null;
 
             }
@@ -1379,7 +1379,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
               }
             }
             if (surrogateKeyForHrrchy[0] == CarbonCommonConstants.INVALID_SURROGATE_KEY) {
-              addCardinalityExcededEntry(r, inputColumnsSize, j, columnName);
+              addEntryToBadRecords(r, inputColumnsSize, j, columnName);
               return null;
             }
           }
@@ -1408,10 +1408,10 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
     return newArray;
   }
 
-  private void addCardinalityExcededEntry(Object[] r, int inputRowSize, int j, String columnName) {
+  private void addEntryToBadRecords(Object[] r, int inputRowSize, int j, String columnName) {
     badRecordslogger.addBadRecordsToBilder(r, inputRowSize,
-        "For Coulmn " + columnName + " \"" + r[j] + "\"" + " members hierarchy not loaded as the "
-            + "cardinality exceeded while loading dimension table.", valueToCheckAgainst);
+        "Surrogate key for value " + " \"" + r[j] + "\"" + " with column name " + columnName
+            + " not found in dictionary cache", valueToCheckAgainst);
   }
 
   private void addMemberNotExistEntry(Object[] r, int inputRowSize, int j, String columnName) {

@@ -1970,11 +1970,14 @@ private[sql] case class LoadCube(
           sys.error("Dataload failure. Please check the logs")
       }
       finally {
-        // Once the data load is successfule delete the unwanted partition files
+        // Once the data load is successful delete the unwanted partition files
         try {
-          val file = FileFactory
-            .getCarbonFile(partitionLocation, FileFactory.getFileType(partitionLocation))
-          CarbonUtil.deleteFoldersAndFiles(file)
+          val fileType = FileFactory.getFileType(partitionLocation)
+          if(FileFactory.isFileExist(partitionLocation, fileType)) {
+            val file = FileFactory
+              .getCarbonFile(partitionLocation, fileType)
+            CarbonUtil.deleteFoldersAndFiles(file)
+          }
         } catch {
           case ex: Exception =>
             LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, ex)
