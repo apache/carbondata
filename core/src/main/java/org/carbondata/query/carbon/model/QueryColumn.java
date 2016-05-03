@@ -20,6 +20,8 @@ package org.carbondata.query.carbon.model;
 
 import java.io.Serializable;
 
+import org.carbondata.core.constants.CarbonCommonConstants;
+
 /**
  * query column  which will have information about column
  */
@@ -49,7 +51,7 @@ public class QueryColumn implements Serializable {
    * aggregation function applied on column
    */
 
-  private String aggregationFunction;
+  private String aggregationFunction=CarbonCommonConstants.DUMMY;
 
   public QueryColumn(String columnName) {
     this.columnName = columnName;

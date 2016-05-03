@@ -63,7 +63,6 @@ import org.carbondata.query.carbon.model.QueryMeasure;
 import org.carbondata.query.carbon.model.QueryModel;
 
 import org.apache.commons.lang3.ArrayUtils;
-
 /**
  * Utility class for query execution
  */
@@ -80,7 +79,7 @@ public class QueryUtil {
    */
   public static int[] getMaskedByteRange(List<QueryDimension> queryDimensions,
       KeyGenerator keyGenerator) {
-    Set<Integer> byteRangeSet = new HashSet<Integer>();
+    Set<Integer> byteRangeSet = new TreeSet<Integer>();
     int[] byteRange = null;
     for (int i = 0; i < queryDimensions.size(); i++) {
 
@@ -110,7 +109,7 @@ public class QueryUtil {
 
   public static int[] getMaskedByteRangeBasedOrdinal(List<Integer> ordinals,
       KeyGenerator keyGenerator) {
-    Set<Integer> byteRangeSet = new HashSet<Integer>();
+    Set<Integer> byteRangeSet = new TreeSet<Integer>();
     int[] byteRange = null;
     for (int i = 0; i < ordinals.size(); i++) {
 
