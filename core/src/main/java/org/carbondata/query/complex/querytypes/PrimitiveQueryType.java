@@ -29,8 +29,8 @@ import org.carbondata.core.carbon.SqlStatement;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreDataHolder;
 import org.carbondata.core.metadata.CarbonMetadata.Dimension;
+import org.carbondata.query.carbon.processor.BlocksChunkHolder;
 import org.carbondata.query.datastorage.InMemoryTable;
-import org.carbondata.query.evaluators.BlockDataHolder;
 import org.carbondata.query.util.DataTypeConverter;
 import org.carbondata.query.util.QueryExecutorUtility;
 
@@ -43,7 +43,7 @@ import org.apache.spark.sql.types.StringType;
 import org.apache.spark.sql.types.TimestampType;
 import org.apache.spark.unsafe.types.UTF8String;
 
-public class PrimitiveQueryType implements GenericQueryType {
+public class PrimitiveQueryType extends ComplexQueryType implements GenericQueryType {
 
   private int index;
 
@@ -58,9 +58,7 @@ public class PrimitiveQueryType implements GenericQueryType {
 
   public PrimitiveQueryType(String name, String parentname, int blockIndex,
       SqlStatement.Type dataType) {
-    this.name = name;
-    this.parentname = parentname;
-    this.blockIndex = blockIndex;
+    super(name, parentname, blockIndex);
     this.dataType = dataType;
   }
 
@@ -115,18 +113,7 @@ public class PrimitiveQueryType implements GenericQueryType {
     byte[] currentVal =
         new byte[columnarKeyStoreDataHolder[blockIndex].getColumnarKeyStoreMetadata()
             .getEachRowSize()];
-    if (!columnarKeyStoreDataHolder[blockIndex].getColumnarKeyStoreMetadata().isSorted()) {
-      System.arraycopy(columnarKeyStoreDataHolder[blockIndex].getKeyBlockData(),
-          columnarKeyStoreDataHolder[blockIndex].getColumnarKeyStoreMetadata()
-              .getColumnReverseIndex()[rowNumber] * columnarKeyStoreDataHolder[blockIndex]
-              .getColumnarKeyStoreMetadata().getEachRowSize(), currentVal, 0,
-          columnarKeyStoreDataHolder[blockIndex].getColumnarKeyStoreMetadata().getEachRowSize());
-    } else {
-      System.arraycopy(columnarKeyStoreDataHolder[blockIndex].getKeyBlockData(),
-          rowNumber * columnarKeyStoreDataHolder[blockIndex].getColumnarKeyStoreMetadata()
-              .getEachRowSize(), currentVal, 0,
-          columnarKeyStoreDataHolder[blockIndex].getColumnarKeyStoreMetadata().getEachRowSize());
-    }
+    copyBlockDataChunk(columnarKeyStoreDataHolder, rowNumber, currentVal);
     dataOutputStream.write(currentVal);
   }
 
@@ -189,15 +176,7 @@ public class PrimitiveQueryType implements GenericQueryType {
   @Override public void setKeyOrdinalForQuery(int keyOrdinalForQuery) {
   }
 
-  @Override public void fillRequiredBlockData(BlockDataHolder blockDataHolder) {
-    if (null == blockDataHolder.getColumnarKeyStore()[blockIndex]) {
-      blockDataHolder.getColumnarKeyStore()[blockIndex] = blockDataHolder.getLeafDataBlock()
-          .getColumnarKeyStore(blockDataHolder.getFileHolder(), blockIndex, false, null);
-    } else {
-      if (!blockDataHolder.getColumnarKeyStore()[blockIndex].getColumnarKeyStoreMetadata()
-          .isUnCompressed()) {
-        blockDataHolder.getColumnarKeyStore()[blockIndex].unCompress();
-      }
-    }
+  @Override public void fillRequiredBlockData(BlocksChunkHolder blockChunkHolder) {
+    readBlockDataChunk(blockChunkHolder);
   }
 }

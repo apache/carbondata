@@ -277,20 +277,19 @@ public abstract class AbstractQueryExecutor implements QueryExecutor {
       startIndexKey = queryModel.getFilterExpressionResolverTree().getstartKey(blockKeyGenerator);
       endIndexKey = queryModel.getFilterExpressionResolverTree()
           .getEndKey(blockIndex, queryModel.getAbsoluteTableIdentifier());
+      if (null == startIndexKey && null == endIndexKey) {
+        try {
+          startIndexKey = FilterUtil.prepareDefaultStartKey(segmentProperties);
+          endIndexKey = FilterUtil.prepareDefaultEndKey(segmentProperties);
+        } catch (KeyGenException e) {
+          throw new QueryExecutionException(e);
+        }
+
+      }
     } else {
       try {
-        long[] dictionarySurrogateKey =
-            new long[segmentProperties.getDimensions().size() - segmentProperties
-                .getNumberOfNoDictionaryDimension()];
-        byte[] dictionaryStartMdkey =
-            segmentProperties.getDimensionKeyGenerator().generateKey(dictionarySurrogateKey);
-        // TODO need to handle for no dictionary dimensions
-        startIndexKey = new IndexKey(dictionaryStartMdkey, null);
-        Arrays.fill(dictionarySurrogateKey, Long.MAX_VALUE);
-        byte[] dictionaryendMdkey =
-            segmentProperties.getDimensionKeyGenerator().generateKey(dictionarySurrogateKey);
-        // TODO need to handle for no dictionary dimensions
-        endIndexKey = new IndexKey(dictionaryendMdkey, null);
+        startIndexKey = FilterUtil.prepareDefaultStartKey(segmentProperties);
+        endIndexKey = FilterUtil.prepareDefaultEndKey(segmentProperties);
       } catch (KeyGenException e) {
         throw new QueryExecutionException(e);
       }

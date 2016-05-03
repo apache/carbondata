@@ -39,6 +39,7 @@ import org.carbondata.core.cache.dictionary.DictionaryChunksWrapper;
 import org.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.carbondata.core.carbon.datastore.IndexKey;
+import org.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.carbondata.core.constants.CarbonCommonConstants;
@@ -658,5 +659,48 @@ public final class FilterUtil {
       DimColumnExecuterFilterInfo dimColumnExecuterInfo) {
     byte[][] keysBasedOnFilter = getKeyArray(filterValues, dimension, blockKeyGenerator);
     dimColumnExecuterInfo.setFilterKeys(keysBasedOnFilter);
+  }
+
+  /**
+   * method will create a default end key in case of no end key is been derived using existing
+   * filter or in case of non filter queries.
+   *
+   * @param segmentProperties
+   * @return
+   * @throws KeyGenException
+   */
+  public static IndexKey prepareDefaultEndKey(SegmentProperties segmentProperties)
+      throws KeyGenException {
+    long[] dictionarySurrogateKey =
+        new long[segmentProperties.getDimensions().size() - segmentProperties
+            .getNumberOfNoDictionaryDimension()];
+    Arrays.fill(dictionarySurrogateKey, Long.MAX_VALUE);
+    IndexKey endIndexKey;
+    byte[] dictionaryendMdkey =
+        segmentProperties.getDimensionKeyGenerator().generateKey(dictionarySurrogateKey);
+    // TODO need to handle for no dictionary dimensions
+    endIndexKey = new IndexKey(dictionaryendMdkey, null);
+    return endIndexKey;
+  }
+
+  /**
+   * method will create a default end key in case of no end key is been
+   * derived using existing filter or in case of non filter queries.
+   *
+   * @param segmentProperties
+   * @return
+   * @throws KeyGenException
+   */
+  public static IndexKey prepareDefaultStartKey(SegmentProperties segmentProperties)
+      throws KeyGenException {
+    IndexKey startIndexKey;
+    long[] dictionarySurrogateKey =
+        new long[segmentProperties.getDimensions().size() - segmentProperties
+            .getNumberOfNoDictionaryDimension()];
+    byte[] dictionaryStartMdkey =
+        segmentProperties.getDimensionKeyGenerator().generateKey(dictionarySurrogateKey);
+    // TODO need to handle for no dictionary dimensions
+    startIndexKey = new IndexKey(dictionaryStartMdkey, null);
+    return startIndexKey;
   }
 }

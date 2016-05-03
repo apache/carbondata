@@ -78,8 +78,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
       } else {
         GenericQueryType complexType = dimColumnEvaluatorInfo.getComplexTypesWithBlockStartIndex()
             .get(dimColumnEvaluatorInfo.getColumnIndex());
-        //@TODO need to handle complex type block
-        //complexType.fillRequiredBlockData(blockDataHolder);
+        complexType.fillRequiredBlockData(blockChunkHolder);
       }
     }
 

@@ -23,6 +23,7 @@ import java.util.List;
 import org.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.carbondata.core.carbon.datastore.IndexKey;
 import org.carbondata.core.carbon.datastore.block.AbstractIndex;
+import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.carbonfilterinterface.FilterExecuterType;
@@ -123,7 +124,8 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
       ConditionalExpression conditionalExpression = (ConditionalExpression) exp;
       List<ColumnExpression> columnList = conditionalExpression.getColumnList();
       dimColResolvedFilterInfo.setColumnIndex(columnList.get(0).getDimension().getOrdinal());
-      if (columnList.get(0).getDimension().getEncoder().isEmpty()) {
+      dimColResolvedFilterInfo.setDimension(columnList.get(0).getDimension());
+      if (!columnList.get(0).getDimension().hasEncoding(Encoding.DICTIONARY)) {
         try {
           dimColResolvedFilterInfo.setFilterValues(FilterUtil
               .getFilterList(absoluteTableIdentifier, exp, columnList.get(0), isIncludeFilter));

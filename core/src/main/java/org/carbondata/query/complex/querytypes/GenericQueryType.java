@@ -26,8 +26,8 @@ import java.util.List;
 
 import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreDataHolder;
 import org.carbondata.core.metadata.CarbonMetadata.Dimension;
+import org.carbondata.query.carbon.processor.BlocksChunkHolder;
 import org.carbondata.query.datastorage.InMemoryTable;
-import org.carbondata.query.evaluators.BlockDataHolder;
 
 import org.apache.spark.sql.types.DataType;
 
@@ -73,6 +73,6 @@ public interface GenericQueryType {
   void parseAndGetResultBytes(ByteBuffer complexData, DataOutputStream dataOutput)
       throws IOException;
 
-  void fillRequiredBlockData(BlockDataHolder blockDataHolder);
+  void fillRequiredBlockData(BlocksChunkHolder blockChunkHolder);
 
 }

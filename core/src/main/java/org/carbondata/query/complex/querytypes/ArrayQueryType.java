@@ -26,29 +26,20 @@ import java.util.List;
 
 import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreDataHolder;
 import org.carbondata.core.metadata.CarbonMetadata.Dimension;
+import org.carbondata.query.carbon.processor.BlocksChunkHolder;
 import org.carbondata.query.datastorage.InMemoryTable;
-import org.carbondata.query.evaluators.BlockDataHolder;
 
 import org.apache.spark.sql.types.ArrayType;
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.GenericArrayData;
 
-public class ArrayQueryType implements GenericQueryType {
+public class ArrayQueryType extends ComplexQueryType implements GenericQueryType {
 
   private GenericQueryType children;
-
-  private String name;
-
-  private String parentname;
-
-  private int blockIndex;
-
   private int keyOrdinalForQuery;
 
   public ArrayQueryType(String name, String parentname, int blockIndex) {
-    this.name = name;
-    this.parentname = parentname;
-    this.blockIndex = blockIndex;
+    super(name, parentname, blockIndex);
   }
 
   @Override public void addChildren(GenericQueryType children) {
@@ -84,6 +75,26 @@ public class ArrayQueryType implements GenericQueryType {
     }
   }
 
+  public void parseBlocksAndReturnComplexColumnByteArray(
+      ColumnarKeyStoreDataHolder[] columnarKeyStoreDataHolder, int rowNumber,
+      DataOutputStream dataOutputStream) throws IOException {
+    byte[] input = new byte[8];
+    copyBlockDataChunk(columnarKeyStoreDataHolder, rowNumber, input);
+    ByteBuffer byteArray = ByteBuffer.wrap(input);
+    int dataLength = byteArray.getInt();
+    dataOutputStream.writeInt(dataLength);
+    if (dataLength == 0) {
+      // b.putInt(0);
+    } else {
+      int columnIndex = byteArray.getInt();
+      for (int i = 0; i < dataLength; i++) {
+        children
+            .parseBlocksAndReturnComplexColumnByteArray(columnarKeyStoreDataHolder, columnIndex++,
+                dataOutputStream);
+      }
+    }
+  }
+
   @Override public int getSurrogateIndex() {
     return 0;
   }
@@ -102,39 +113,6 @@ public class ArrayQueryType implements GenericQueryType {
 
   @Override public int getColsCount() {
     return children.getColsCount() + 1;
-  }
-
-  @Override public void parseBlocksAndReturnComplexColumnByteArray(
-      ColumnarKeyStoreDataHolder[] columnarKeyStoreDataHolder, int rowNumber,
-      DataOutputStream dataOutputStream) throws IOException {
-    byte[] input = new byte[8];
-    if (!columnarKeyStoreDataHolder[blockIndex].getColumnarKeyStoreMetadata().isSorted()) {
-      System.arraycopy(columnarKeyStoreDataHolder[blockIndex].getKeyBlockData(),
-          columnarKeyStoreDataHolder[blockIndex].getColumnarKeyStoreMetadata()
-              .getColumnReverseIndex()[rowNumber] * columnarKeyStoreDataHolder[blockIndex]
-              .getColumnarKeyStoreMetadata().getEachRowSize(), input, 0,
-          columnarKeyStoreDataHolder[blockIndex].getColumnarKeyStoreMetadata().getEachRowSize());
-    } else {
-
-      System.arraycopy(columnarKeyStoreDataHolder[blockIndex].getKeyBlockData(),
-          rowNumber * columnarKeyStoreDataHolder[blockIndex].getColumnarKeyStoreMetadata()
-              .getEachRowSize(), input, 0,
-          columnarKeyStoreDataHolder[blockIndex].getColumnarKeyStoreMetadata().getEachRowSize());
-    }
-
-    ByteBuffer byteArray = ByteBuffer.wrap(input);
-    int dataLength = byteArray.getInt();
-    dataOutputStream.writeInt(dataLength);
-    if (dataLength == 0) {
-      //            b.putInt(0);
-    } else {
-      int columnIndex = byteArray.getInt();
-      for (int i = 0; i < dataLength; i++) {
-        children
-            .parseBlocksAndReturnComplexColumnByteArray(columnarKeyStoreDataHolder, columnIndex++,
-                dataOutputStream);
-      }
-    }
   }
 
   @Override public void parseAndGetResultBytes(ByteBuffer complexData, DataOutputStream dataOutput)
@@ -175,18 +153,9 @@ public class ArrayQueryType implements GenericQueryType {
     this.keyOrdinalForQuery = keyOrdinalForQuery;
   }
 
-  @Override public void fillRequiredBlockData(BlockDataHolder blockDataHolder) {
-    if (null == blockDataHolder.getColumnarKeyStore()[blockIndex]) {
-      blockDataHolder.getColumnarKeyStore()[blockIndex] = blockDataHolder.getLeafDataBlock()
-          .getColumnarKeyStore(blockDataHolder.getFileHolder(), blockIndex, false, null);
-    } else {
-      if (!blockDataHolder.getColumnarKeyStore()[blockIndex].getColumnarKeyStoreMetadata()
-          .isUnCompressed()) {
-        blockDataHolder.getColumnarKeyStore()[blockIndex].unCompress();
-      }
-    }
-
-    children.fillRequiredBlockData(blockDataHolder);
+  @Override public void fillRequiredBlockData(BlocksChunkHolder blockChunkHolder) {
+    readBlockDataChunk(blockChunkHolder);
+    children.fillRequiredBlockData(blockChunkHolder);
   }
 
 }
