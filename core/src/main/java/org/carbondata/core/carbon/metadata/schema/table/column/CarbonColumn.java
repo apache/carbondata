@@ -44,23 +44,6 @@ public class CarbonColumn implements Serializable {
   protected int ordinal;
 
   /**
-   * queryOrder
-   */
-  protected int queryOrder;
-
-  public boolean isDistinctQuery() {
-    return isDistinctQuery;
-  }
-
-  public void setDistinctQuery(boolean distinctQuery) {
-    isDistinctQuery = distinctQuery;
-  }
-
-  /**
-   * isQueryForDistinctCount
-   */
-  protected boolean isDistinctQuery;
-  /**
    * default value for in case of restructuring will be used when older
    * segment does not have particular column
    */
@@ -162,20 +145,6 @@ public class CarbonColumn implements Serializable {
    */
   public Boolean isDimesion() {
     return columnSchema.isDimensionColumn();
-  }
-
-  /**
-   * @return the queryOrder
-   */
-  public int getQueryOrder() {
-    return queryOrder;
-  }
-
-  /**
-   * @param queryOrder the queryOrder to set
-   */
-  public void setQueryOrder(int queryOrder) {
-    this.queryOrder = queryOrder;
   }
 
   public ColumnSchema getColumnSchema() {

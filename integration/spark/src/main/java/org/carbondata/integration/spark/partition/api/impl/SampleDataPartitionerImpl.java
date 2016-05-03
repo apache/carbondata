@@ -33,6 +33,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
@@ -40,7 +41,6 @@ import org.carbondata.integration.spark.partition.api.DataPartitioner;
 import org.carbondata.integration.spark.partition.api.Partition;
 import org.carbondata.integration.spark.query.CarbonQueryPlan;
 import org.carbondata.integration.spark.query.metadata.CarbonDimensionFilter;
-import org.carbondata.integration.spark.query.metadata.CarbonPlanDimension;
 import org.carbondata.integration.spark.util.CarbonSparkInterFaceLogEvent;
 import org.carbondata.query.queryinterface.query.metadata.CarbonDimensionLevelFilter;
 
@@ -132,15 +132,6 @@ public class SampleDataPartitionerImpl implements DataPartitioner {
    */
   public List<Partition> getPartitions(CarbonQueryPlan queryPlan) {
     CarbonDimensionFilter msisdnFilter = null;
-
-    Map<CarbonPlanDimension, CarbonDimensionFilter> filterMap = queryPlan.getDimensionFilters();
-    for (Map.Entry<CarbonPlanDimension, CarbonDimensionFilter> entry : filterMap.entrySet()) {
-      CarbonPlanDimension carbonPlanDimension = entry.getKey();
-      if (partitionColumn.equalsIgnoreCase(carbonPlanDimension.getDimensionUniqueName())) {
-        msisdnFilter = entry.getValue();
-        break;
-      }
-    }
 
     if (msisdnFilter == null || msisdnFilter.getIncludeFilters().size() == 0) {
       return allPartitions;

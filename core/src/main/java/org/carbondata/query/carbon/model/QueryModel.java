@@ -25,9 +25,6 @@ import java.util.List;
 
 import org.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.carbondata.core.carbon.datastore.block.TableBlockInfo;
-import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
-import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
-import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.query.filter.resolver.FilterResolverIntf;
 
 /**
@@ -45,17 +42,17 @@ public class QueryModel implements Serializable {
   /**
    * list of dimension selected for in query
    */
-  private List<CarbonDimension> queryDimension;
+  private List<QueryDimension> queryDimension;
 
   /**
    * list of dimension in which sorting is applied
    */
-  private List<CarbonDimension> sortDimension;
+  private List<QueryDimension> sortDimension;
 
   /**
    * list of measure selected in query
    */
-  private List<CarbonMeasure> queryMeasures;
+  private List<QueryMeasure> queryMeasures;
 
   /**
    * query id
@@ -124,44 +121,44 @@ public class QueryModel implements Serializable {
   private List<String> paritionColumns;
 
   public QueryModel() {
-    tableBlockInfos = new ArrayList<TableBlockInfo>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    tableBlockInfos = new ArrayList<TableBlockInfo>();
     dimAggregationInfo =
-        new ArrayList<DimensionAggregatorInfo>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+        new ArrayList<DimensionAggregatorInfo>();
     expressions =
-        new ArrayList<CustomAggregateExpression>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    queryDimension = new ArrayList<CarbonDimension>();
-    queryMeasures = new ArrayList<CarbonMeasure>();
-    sortDimension = new ArrayList<CarbonDimension>();
+        new ArrayList<CustomAggregateExpression>();
+    queryDimension = new ArrayList<QueryDimension>();
+    queryMeasures = new ArrayList<QueryMeasure>();
+    sortDimension = new ArrayList<QueryDimension>();
     sortOrder = new byte[0];
-    paritionColumns = new ArrayList<String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    paritionColumns = new ArrayList<String>();
 
   }
 
   /**
    * @return the queryDimension
    */
-  public List<CarbonDimension> getQueryDimension() {
+  public List<QueryDimension> getQueryDimension() {
     return queryDimension;
   }
 
   /**
    * @param queryDimension the queryDimension to set
    */
-  public void setQueryDimension(List<CarbonDimension> queryDimension) {
+  public void setQueryDimension(List<QueryDimension> queryDimension) {
     this.queryDimension = queryDimension;
   }
 
   /**
    * @return the queryMeasures
    */
-  public List<CarbonMeasure> getQueryMeasures() {
+  public List<QueryMeasure> getQueryMeasures() {
     return queryMeasures;
   }
 
   /**
    * @param queryMeasures the queryMeasures to set
    */
-  public void setQueryMeasures(List<CarbonMeasure> queryMeasures) {
+  public void setQueryMeasures(List<QueryMeasure> queryMeasures) {
     this.queryMeasures = queryMeasures;
   }
 
@@ -308,14 +305,14 @@ public class QueryModel implements Serializable {
   /**
    * @return the sortDimension
    */
-  public List<CarbonDimension> getSortDimension() {
+  public List<QueryDimension> getSortDimension() {
     return sortDimension;
   }
 
   /**
    * @param sortDimension the sortDimension to set
    */
-  public void setSortDimension(List<CarbonDimension> sortDimension) {
+  public void setSortDimension(List<QueryDimension> sortDimension) {
     this.sortDimension = sortDimension;
   }
 

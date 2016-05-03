@@ -57,10 +57,6 @@ public class CarbonQueryExpression implements Serializable {
    * queryOrder
    */
   private int queryOrder;
-  /**
-   * sort order type. default is no order.
-   */
-  private SortOrderType sortOrderType = SortOrderType.NONE;
 
   public CarbonQueryExpression(String expression, UsageType usageType) {
     this.expression = expression;
@@ -69,20 +65,6 @@ public class CarbonQueryExpression implements Serializable {
 
   public List<CarbonPlanColumn> getColumns() {
     return columns;
-  }
-
-  /**
-   * @return the sortOrderType
-   */
-  public SortOrderType getSortOrderType() {
-    return sortOrderType;
-  }
-
-  /**
-   * @param sortOrderType the sortOrderType to set
-   */
-  public void setSortOrderType(SortOrderType sortOrderType) {
-    this.sortOrderType = sortOrderType;
   }
 
   public void addColumn(CarbonPlanColumn column) {

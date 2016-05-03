@@ -20,7 +20,7 @@ package org.carbondata.query.carbon.executor.infos;
 
 import java.util.List;
 
-import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
+import org.carbondata.query.carbon.model.QueryDimension;
 
 /**
  * Below class holds the order by information about the query
@@ -51,7 +51,7 @@ public class SortInfo {
   /**
    * sortDimension
    */
-  private List<CarbonDimension> sortDimension;
+  private List<QueryDimension> sortDimension;
 
   /**
    * @return the dimensionSortOrder
@@ -112,14 +112,14 @@ public class SortInfo {
   /**
    * @return the sortDimension
    */
-  public List<CarbonDimension> getSortDimension() {
+  public List<QueryDimension> getSortDimension() {
     return sortDimension;
   }
 
   /**
    * @param sortDimension the sortDimension to set
    */
-  public void setSortDimension(List<CarbonDimension> sortDimension) {
+  public void setSortDimension(List<QueryDimension> sortDimension) {
     this.sortDimension = sortDimension;
   }
 }

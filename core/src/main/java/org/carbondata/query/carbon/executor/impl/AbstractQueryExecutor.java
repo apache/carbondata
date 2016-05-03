@@ -51,6 +51,8 @@ import org.carbondata.query.carbon.executor.infos.SortInfo;
 import org.carbondata.query.carbon.executor.util.QueryUtil;
 import org.carbondata.query.carbon.executor.util.RestructureUtil;
 import org.carbondata.query.carbon.model.DimensionAggregatorInfo;
+import org.carbondata.query.carbon.model.QueryDimension;
+import org.carbondata.query.carbon.model.QueryMeasure;
 import org.carbondata.query.carbon.model.QueryModel;
 import org.carbondata.query.filters.measurefilter.util.FilterUtil;
 import org.carbondata.query.util.CarbonEngineLogEvent;
@@ -89,6 +91,8 @@ public abstract class AbstractQueryExecutor implements QueryExecutor {
     LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
         "Query will be executed on table: " + queryModel.getAbsoluteTableIdentifier()
             .getCarbonTableIdentifier().getTableName());
+
+    QueryUtil.resolveQueryModel(queryModel);
     /**
      * setting the table unique name
      */
@@ -123,40 +127,29 @@ public abstract class AbstractQueryExecutor implements QueryExecutor {
     String[] aggTypes = new String[aggTypeCount];
     DataType[] dataTypes = new DataType[aggTypeCount];
 
-    if (queryModel.isDetailQuery()) {
-      for (CarbonMeasure carbonMeasure : queryModel.getQueryMeasures()) {
-        // adding the data type and aggregation type of all the measure this
-        // can be used
-        // to select the aggregator
-        aggTypes[currentIndex] = CarbonCommonConstants.DUMMY;
-        dataTypes[currentIndex] = carbonMeasure.getDataType();
+    // adding query dimension selected in aggregation info
+    for (DimensionAggregatorInfo dimensionAggregationInfo : queryModel.getDimAggregationInfo()) {
+      for (int i = 0; i < dimensionAggregationInfo.getAggList().size(); i++) {
+        aggTypes[currentIndex] = dimensionAggregationInfo.getAggList().get(i);
+        dataTypes[currentIndex] = dimensionAggregationInfo.getDim().getDataType();
         currentIndex++;
       }
-    } else {
-      // adding query dimension selected in aggregation info
-      for (DimensionAggregatorInfo dimensionAggregationInfo : queryModel.getDimAggregationInfo()) {
-        for (int i = 0; i < dimensionAggregationInfo.getAggList().size(); i++) {
-          aggTypes[currentIndex] = dimensionAggregationInfo.getAggList().get(i);
-          dataTypes[currentIndex] = dimensionAggregationInfo.getDim().getDataType();
-          currentIndex++;
-        }
-      }
-      // filling the query expression data type and its aggregator
-      // in this case both will be custom
-      for (int i = 0; i < queryModel.getExpressions().size(); i++) {
-        aggTypes[currentIndex] = CarbonCommonConstants.CUSTOM;
-        dataTypes[currentIndex] = DataType.STRING;
-        currentIndex++;
-      }
+    }
+    // filling the query expression data type and its aggregator
+    // in this case both will be custom
+    for (int i = 0; i < queryModel.getExpressions().size(); i++) {
+      aggTypes[currentIndex] = CarbonCommonConstants.CUSTOM;
+      dataTypes[currentIndex] = DataType.STRING;
+      currentIndex++;
+    }
 
-      for (CarbonMeasure carbonMeasure : queryModel.getQueryMeasures()) {
-        // adding the data type and aggregation type of all the measure this
-        // can be used
-        // to select the aggregator
-        aggTypes[currentIndex] = carbonMeasure.getAggregateFunction();
-        dataTypes[currentIndex] = carbonMeasure.getDataType();
-        currentIndex++;
-      }
+    for (QueryMeasure carbonMeasure : queryModel.getQueryMeasures()) {
+      // adding the data type and aggregation type of all the measure this
+      // can be used
+      // to select the aggregator
+      aggTypes[currentIndex] = carbonMeasure.getAggregateFunction();
+      dataTypes[currentIndex] = carbonMeasure.getMeasure().getDataType();
+      currentIndex++;
     }
     queryProperties.measureAggregators = MeasureAggregatorFactory
         .getMeassureAggregator(aggTypes, dataTypes, queryModel.getExpressions());
@@ -246,11 +239,9 @@ public abstract class AbstractQueryExecutor implements QueryExecutor {
 
     // below is to get only those dimension in query which is present in the
     // table block
-    List<CarbonDimension> updatedQueryDimension = RestructureUtil
+    List<QueryDimension> updatedQueryDimension = RestructureUtil
         .getUpdatedQueryDimension(queryModel.getQueryDimension(), tableBlockDimensions);
-    // add complex dimension children
-    updatedQueryDimension = RestructureUtil
-        .addChildrenForComplexTypeDimension(updatedQueryDimension, tableBlockDimensions);
+    // TODO add complex dimension children
     int[] maskByteRangesForBlock =
         QueryUtil.getMaskedByteRange(updatedQueryDimension, blockKeyGenerator);
     int[] maksedByte =
@@ -380,20 +371,19 @@ public abstract class AbstractQueryExecutor implements QueryExecutor {
    * @param blockMetadataInfo block metadata info
    * @return key size
    */
-  private int getKeySize(List<CarbonDimension> queryDimension,
-      SegmentProperties blockMetadataInfo) {
+  private int getKeySize(List<QueryDimension> queryDimension, SegmentProperties blockMetadataInfo) {
     List<Integer> fixedLengthDimensionOrdinal =
         new ArrayList<Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     int counter = 0;
     while (counter < queryDimension.size()) {
-      if (queryDimension.get(counter).numberOfChild() > 0) {
-        counter += queryDimension.get(counter).numberOfChild();
+      if (queryDimension.get(counter).getDimension().numberOfChild() > 0) {
+        counter += queryDimension.get(counter).getDimension().numberOfChild();
         continue;
-      } else if (!CarbonUtil
-          .hasEncoding(queryDimension.get(counter).getEncoder(), Encoding.DICTIONARY)) {
+      } else if (!CarbonUtil.hasEncoding(queryDimension.get(counter).getDimension().getEncoder(),
+          Encoding.DICTIONARY)) {
         counter++;
       } else {
-        fixedLengthDimensionOrdinal.add(queryDimension.get(counter).getKeyOrdinal());
+        fixedLengthDimensionOrdinal.add(queryDimension.get(counter).getDimension().getKeyOrdinal());
         counter++;
       }
     }
@@ -410,7 +400,7 @@ public abstract class AbstractQueryExecutor implements QueryExecutor {
    * Below method will be used to get the sort information which will be
    * required during sorting the data on dimension column
    *
-   * @param queryModel       query model
+   * @param queryModel query model
    * @return Sort infos
    * @throws QueryExecutionException if problem while
    */

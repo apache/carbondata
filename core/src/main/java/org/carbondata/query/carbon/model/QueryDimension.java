@@ -16,44 +16,42 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package org.carbondata.query.carbon.model;
+
+import java.io.Serializable;
+
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 
 /**
- *
+ * query plan dimension which will holds the information about the query plan dimension
+ * this is done to avoid heavy object serialization
  */
-package org.carbondata.integration.spark.query.metadata;
-
-/**
- * Type of sort order like asc,dsc or none
- */
-public enum SortOrderType {
-  /**
-   * Ascending order
-   */
-  ASC(0),
-  /**
-   * Descending order.
-   */
-  DSC(1),
-  /**
-   * No order mentioned
-   */
-  NONE(-1);
+public class QueryDimension extends QueryColumn implements Serializable {
 
   /**
-   * Order type in numeric
+   * serialVersionUID
    */
-  private int orderType;
+  private static final long serialVersionUID = -8492704093776645651L;
+  /**
+   * actual dimension column
+   */
+  private transient CarbonDimension dimension;
 
-  SortOrderType(int orderType) {
-    this.orderType = orderType;
+  public QueryDimension(String columName) {
+    super(columName);
   }
 
   /**
-   * Order type in number
-   *
-   * @return orderType int
+   * @return the dimension
    */
-  public int getOrderType() {
-    return orderType;
+  public CarbonDimension getDimension() {
+    return dimension;
+  }
+
+  /**
+   * @param dimension the dimension to set
+   */
+  public void setDimension(CarbonDimension dimension) {
+    this.dimension = dimension;
   }
 }

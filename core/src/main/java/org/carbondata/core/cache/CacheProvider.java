@@ -143,4 +143,12 @@ public class CacheProvider {
   private boolean dictionaryCacheAlreadyExists(CacheType cacheType) {
     return null != cacheTypeToCacheMap.get(cacheType);
   }
+
+  /**
+   * Below method will be used to clear the cache
+   */
+  public void dropAllCache() {
+    cacheTypeToLRUCacheMap.clear();
+    cacheTypeToCacheMap.clear();
+  }
 }

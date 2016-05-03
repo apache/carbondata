@@ -23,6 +23,10 @@ import java.util.List;
 
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 
+/**
+ * Dimension aggregation info which will be used to
+ * holds the information about dimension and aggregation applied in the dimension
+ */
 public class DimensionAggregatorInfo implements Serializable {
 
   /**
@@ -38,7 +42,7 @@ public class DimensionAggregatorInfo implements Serializable {
   /**
    * dimension in which aggregation is applied
    */
-  private CarbonDimension dim;
+  private transient CarbonDimension dim;
 
   /**
    * list if aggregate function applied in the dimension

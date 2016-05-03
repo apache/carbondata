@@ -75,10 +75,10 @@ public class SortedScannedResultMerger extends AbstractScannedResultMerger {
     int length = sortInfo.getSortDimension().size();
     int noDictionaryIndex = 0;
     for (int i = 0; i < length; i++) {
-      if (!CarbonUtil
-          .hasEncoding(sortInfo.getSortDimension().get(i).getEncoder(), Encoding.DICTIONARY)) {
+      if (!CarbonUtil.hasEncoding(sortInfo.getSortDimension().get(i).getDimension().getEncoder(),
+          Encoding.DICTIONARY)) {
         compratorList.add(new VariableLengthKeyResultComparator(sortInfo.getDimensionSortOrder()[i],
-            noDictionaryIndex++, sortInfo.getSortDimension().get(i).getDataType()));
+            noDictionaryIndex++, sortInfo.getSortDimension().get(i).getDimension().getDataType()));
       } else {
         compratorList.add(
             new FixedLengthKeyResultComparator(sortInfo.getMaskedByteRangeForSorting()[i],
@@ -134,12 +134,13 @@ public class SortedScannedResultMerger extends AbstractScannedResultMerger {
         keyArray = keyStructureInfo.getKeyGenerator()
             .getKeyArray(key.getDictionaryKey(), keyStructureInfo.getMaskedBytes());
         for (int i = 0; i < sortInfo.getSortDimension().size(); i++) {
-          if (CarbonUtil
-              .hasEncoding(sortInfo.getSortDimension().get(i).getEncoder(), Encoding.DICTIONARY)) {
-            keyArray[sortInfo.getSortDimension().get(i).getKeyOrdinal()] =
+          if (CarbonUtil.hasEncoding(sortInfo.getSortDimension().get(i).getDimension().getEncoder(),
+              Encoding.DICTIONARY)) {
+            keyArray[sortInfo.getSortDimension().get(i).getDimension().getKeyOrdinal()] =
                 blockExecutionInfo.getColumnIdToDcitionaryMapping()
-                    .get(sortInfo.getSortDimension().get(i).getColumnId()).getSortedIndex(
-                    (int) keyArray[sortInfo.getSortDimension().get(i).getKeyOrdinal()]);
+                    .get(sortInfo.getSortDimension().get(i).getDimension().getColumnId())
+                    .getSortedIndex((int) keyArray[sortInfo.getSortDimension().get(i).getDimension()
+                        .getKeyOrdinal()]);
           }
         }
         key.setDictionaryKey(getMaskedKey(keyStructureInfo.getKeyGenerator().generateKey(keyArray),

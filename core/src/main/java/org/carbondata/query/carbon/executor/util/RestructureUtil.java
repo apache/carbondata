@@ -25,6 +25,8 @@ import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.query.carbon.executor.infos.AggregatorInfo;
+import org.carbondata.query.carbon.model.QueryDimension;
+import org.carbondata.query.carbon.model.QueryMeasure;
 
 /**
  * Utility class for restructuring
@@ -41,14 +43,14 @@ public class RestructureUtil {
    * @param tableBlockDimensions
    * @return list of query dimension which is present in the table block
    */
-  public static List<CarbonDimension> getUpdatedQueryDimension(
-      List<CarbonDimension> queryDimensions, List<CarbonDimension> tableBlockDimensions) {
-    List<CarbonDimension> presentDimension =
-        new ArrayList<CarbonDimension>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+  public static List<QueryDimension> getUpdatedQueryDimension(
+      List<QueryDimension> queryDimensions, List<CarbonDimension> tableBlockDimensions) {
+    List<QueryDimension> presentDimension =
+        new ArrayList<QueryDimension>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     // selecting only those dimension which is present in the query
-    for (CarbonDimension queryDimimension : queryDimensions) {
+    for (QueryDimension queryDimimension : queryDimensions) {
       for (CarbonDimension tableDimension : tableBlockDimensions) {
-        if (tableDimension.equals(queryDimimension)) {
+        if (tableDimension.equals(queryDimimension.getDimension())) {
           presentDimension.add(queryDimimension);
         }
       }
@@ -98,7 +100,7 @@ public class RestructureUtil {
    * @param currentBlockMeasures current block measures
    * @return aggregator info
    */
-  public static AggregatorInfo getAggregatorInfos(List<CarbonMeasure> queryMeasures,
+  public static AggregatorInfo getAggregatorInfos(List<QueryMeasure> queryMeasures,
       List<CarbonMeasure> currentBlockMeasures) {
     AggregatorInfo aggregatorInfos = new AggregatorInfo();
     int numberOfMeasureInQuery = queryMeasures.size();
@@ -106,15 +108,15 @@ public class RestructureUtil {
     Object[] defaultValues = new Object[numberOfMeasureInQuery];
     boolean[] measureExistsInCurrentBlock = new boolean[numberOfMeasureInQuery];
     int index = 0;
-    for (CarbonMeasure queryMeasure : queryMeasures) {
-      measureOrdinals[index] = queryMeasure.getOrdinal();
+    for (QueryMeasure queryMeasure : queryMeasures) {
+      measureOrdinals[index] = queryMeasure.getMeasure().getOrdinal();
       // if query measure exists in current dimension measures
       // then setting measure exists is true
       // otherwise adding a default value of a measure
-      if (currentBlockMeasures.contains(queryMeasure)) {
+      if (currentBlockMeasures.contains(queryMeasure.getMeasure())) {
         measureExistsInCurrentBlock[index] = true;
       } else {
-        defaultValues[index] = queryMeasure.getDefaultValue();
+        defaultValues[index] = queryMeasure.getMeasure().getDefaultValue();
       }
       index++;
     }
