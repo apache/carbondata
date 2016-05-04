@@ -67,41 +67,48 @@ public class DataFileFooterConverter {
    */
   public DataFileFooter readDataFileFooter(String filePath, long blockOffset, long blockLength)
       throws IOException {
-    long completeBlockLength = blockOffset + blockLength;
-    long footerPointer = completeBlockLength - 8;
-    FileHolder fileReader = FileFactory.getFileHolder(FileFactory.getFileType(filePath));
-    long actualFooterOffset = fileReader.readLong(filePath, footerPointer);
-    CarbonFooterReader reader = new CarbonFooterReader(filePath, actualFooterOffset);
-    FileFooter footer = reader.readFooter();
     DataFileFooter dataFileFooter = new DataFileFooter();
-    dataFileFooter.setVersionId(footer.getVersion());
-    dataFileFooter.setNumberOfRows(footer.getNum_rows());
-    dataFileFooter.setSegmentInfo(getSegmentInfo(footer.getSegment_info()));
-    List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
-    List<org.carbondata.format.ColumnSchema> table_columns = footer.getTable_columns();
-    for (int i = 0; i < table_columns.size(); i++) {
-      columnSchemaList.add(thriftColumnSchmeaToWrapperColumnSchema(table_columns.get(i)));
-    }
-    dataFileFooter.setColumnInTable(columnSchemaList);
+    FileHolder fileReader = null;
+    try {
+      long completeBlockLength = blockOffset + blockLength;
+      long footerPointer = completeBlockLength - 8;
+      fileReader = FileFactory.getFileHolder(FileFactory.getFileType(filePath));
+      long actualFooterOffset = fileReader.readLong(filePath, footerPointer);
+      CarbonFooterReader reader = new CarbonFooterReader(filePath, actualFooterOffset);
+      FileFooter footer = reader.readFooter();
+      dataFileFooter.setVersionId(footer.getVersion());
+      dataFileFooter.setNumberOfRows(footer.getNum_rows());
+      dataFileFooter.setSegmentInfo(getSegmentInfo(footer.getSegment_info()));
+      List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
+      List<org.carbondata.format.ColumnSchema> table_columns = footer.getTable_columns();
+      for (int i = 0; i < table_columns.size(); i++) {
+        columnSchemaList.add(thriftColumnSchmeaToWrapperColumnSchema(table_columns.get(i)));
+      }
+      dataFileFooter.setColumnInTable(columnSchemaList);
 
-    List<org.carbondata.format.BlockletIndex> leaf_node_indices_Thrift =
-        footer.getBlocklet_index_list();
-    List<BlockletIndex> blockletIndexList = new ArrayList<BlockletIndex>();
-    for (int i = 0; i < leaf_node_indices_Thrift.size(); i++) {
-      BlockletIndex blockletIndex = getBlockletIndex(leaf_node_indices_Thrift.get(i));
-      blockletIndexList.add(blockletIndex);
-    }
+      List<org.carbondata.format.BlockletIndex> leaf_node_indices_Thrift =
+          footer.getBlocklet_index_list();
+      List<BlockletIndex> blockletIndexList = new ArrayList<BlockletIndex>();
+      for (int i = 0; i < leaf_node_indices_Thrift.size(); i++) {
+        BlockletIndex blockletIndex = getBlockletIndex(leaf_node_indices_Thrift.get(i));
+        blockletIndexList.add(blockletIndex);
+      }
 
-    List<org.carbondata.format.BlockletInfo> leaf_node_infos_Thrift =
-        footer.getBlocklet_info_list();
-    List<BlockletInfo> blockletInfoList = new ArrayList<BlockletInfo>();
-    for (int i = 0; i < leaf_node_infos_Thrift.size(); i++) {
-      BlockletInfo blockletInfo = getBlockletInfo(leaf_node_infos_Thrift.get(i));
-      blockletInfo.setBlockletIndex(blockletIndexList.get(i));
-      blockletInfoList.add(blockletInfo);
+      List<org.carbondata.format.BlockletInfo> leaf_node_infos_Thrift =
+          footer.getBlocklet_info_list();
+      List<BlockletInfo> blockletInfoList = new ArrayList<BlockletInfo>();
+      for (int i = 0; i < leaf_node_infos_Thrift.size(); i++) {
+        BlockletInfo blockletInfo = getBlockletInfo(leaf_node_infos_Thrift.get(i));
+        blockletInfo.setBlockletIndex(blockletIndexList.get(i));
+        blockletInfoList.add(blockletInfo);
+      }
+      dataFileFooter.setBlockletList(blockletInfoList);
+      dataFileFooter.setBlockletIndex(getBlockletIndexForDataFileFooter(blockletIndexList));
+    } finally {
+      if (null != fileReader) {
+        fileReader.finish();
+      }
     }
-    dataFileFooter.setBlockletList(blockletInfoList);
-    dataFileFooter.setBlockletIndex(getBlockletIndexForDataFileFooter(blockletIndexList));
     return dataFileFooter;
   }
 

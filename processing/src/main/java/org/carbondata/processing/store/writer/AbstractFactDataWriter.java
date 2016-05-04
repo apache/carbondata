@@ -220,18 +220,18 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    */
   protected void updateBlockletFileChannel(int blockletDataSize) throws CarbonDataWriterException {
     // get the current file size exceeding the file size threshold
-    if ((currentFileSize + blockletDataSize) >= dataBlockSize) {
+    if ((currentFileSize + blockletDataSize) >= dataBlockSize && currentFileSize!=0) {
       // set the current file size to zero
       this.currentFileSize = 0;
       if (this.isNodeHolderRequired) {
         FileChannel channel = fileChannel;
         List<NodeHolder> localNodeHolderList = this.nodeHolderList;
-        executorService.submit(new WriterThread(channel, localNodeHolderList));
+        executorService.submit(new WriterThread(fileName, channel, localNodeHolderList));
         this.nodeHolderList = new CopyOnWriteArrayList<NodeHolder>();
         // close the current open file channel
       } else {
         // write meta data to end of the existing file
-        writeleafMetaDataToFile(blockletInfoList, fileChannel);
+        writeleafMetaDataToFile(blockletInfoList, fileChannel, fileName);
         blockletInfoList =
             new ArrayList<BlockletInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
         CarbonUtil.closeStreams(fileChannel);
@@ -302,7 +302,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    * @param nodeHolderList
    * @throws CarbonDataWriterException
    */
-  private void writeData(FileChannel channel, List<NodeHolder> nodeHolderList)
+  private void writeData(FileChannel channel, List<NodeHolder> nodeHolderList, String filePath)
       throws CarbonDataWriterException {
     List<BlockletInfoColumnar> blockletInfos =
         new ArrayList<BlockletInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
@@ -310,18 +310,18 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
       long offSet = writeDataToFile(nodeHolder, channel);
       blockletInfos.add(getBlockletInfo(nodeHolder, offSet));
     }
-    writeleafMetaDataToFile(blockletInfos, channel);
+    writeleafMetaDataToFile(blockletInfos, channel, filePath);
     CarbonUtil.closeStreams(channel);
   }
 
   /**
    * This method will write metadata at the end of file file format in thrift format
    */
-  protected void writeleafMetaDataToFile(List<BlockletInfoColumnar> infoList, FileChannel channel)
-      throws CarbonDataWriterException {
+  protected void writeleafMetaDataToFile(List<BlockletInfoColumnar> infoList, FileChannel channel,
+      String filePath) throws CarbonDataWriterException {
     try {
       long currentPosition = channel.size();
-      CarbonFooterWriter writer = new CarbonFooterWriter(this.fileName);
+      CarbonFooterWriter writer = new CarbonFooterWriter(filePath);
       List<org.carbondata.format.ColumnSchema> fillColumnSchemaToMetadata = getColumnSchemaList();
       FileFooter convertFileMeta = CarbonMetadataUtil
           .convertFileFooter(infoList, localCardinality.length, localCardinality,
@@ -450,13 +450,13 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    */
   public void writeleafMetaDataToFile() throws CarbonDataWriterException {
     if (!isNodeHolderRequired) {
-      writeleafMetaDataToFile(this.blockletInfoList, fileChannel);
+      writeleafMetaDataToFile(this.blockletInfoList, fileChannel, fileName);
       this.blockletInfoList =
           new ArrayList<BlockletInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
     } else {
       if (this.nodeHolderList.size() > 0) {
         List<NodeHolder> localNodeHodlerList = nodeHolderList;
-        writeData(fileChannel, localNodeHodlerList);
+        writeData(fileChannel, localNodeHodlerList, fileName);
         nodeHolderList = new CopyOnWriteArrayList<NodeHolder>();
       }
     }
@@ -503,13 +503,16 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
 
     private FileChannel channel;
 
-    private WriterThread(FileChannel channel, List<NodeHolder> nodeHolderList) {
+    private String filePath;
+
+    private WriterThread(String filePath, FileChannel channel, List<NodeHolder> nodeHolderList) {
       this.channel = channel;
       this.nodeHolderList = nodeHolderList;
+      this.filePath = filePath;
     }
 
     @Override public Void call() throws Exception {
-      writeData(channel, nodeHolderList);
+      writeData(channel, nodeHolderList, filePath);
       return null;
     }
   }
