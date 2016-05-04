@@ -34,6 +34,7 @@
         <snappy.version>1.1.1.7</snappy.version>
         <hadoop.version>2.2.0</hadoop.version>
         <scala.version>2.10.4</scala.version>
+        <kettle.version>4.4.0-stable</kettle.version>
         <hadoop.deps.scope>compile</hadoop.deps.scope>
         <spark.deps.scope>compile</spark.deps.scope>
         <scala.deps.scope>compile</scala.deps.scope>

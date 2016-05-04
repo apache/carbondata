@@ -55,7 +55,6 @@ import org.carbondata.processing.aggregatesurrogategenerator.step.CarbonAggregat
 import org.carbondata.processing.api.dataloader.DataLoadModel;
 import org.carbondata.processing.api.dataloader.SchemaInfo;
 import org.carbondata.processing.autoaggregategraphgenerator.step.CarbonAutoAGGGraphGeneratorMeta;
-import org.carbondata.processing.csvreader.CsvReaderMeta;
 import org.carbondata.processing.csvreaderstep.CsvInputMeta;
 import org.carbondata.processing.factreader.step.CarbonFactReaderMeta;
 import org.carbondata.processing.graphgenerator.configuration.GraphConfigurationInfo;
@@ -597,14 +596,10 @@ public class GraphGenerator {
 
     // get all step
     if (isCSV) {
-      if (CheckPointHanlder.IS_CHECK_POINT_NEEDED) {
-        inputStep = getCsvReaderStep(configurationInfo);
+      if (isHDFSReadMode) {
+        inputStep = getHadoopInputStep(configurationInfo);
       } else {
-        if (isHDFSReadMode) {
-          inputStep = getHadoopInputStep(configurationInfo);
-        } else {
-          inputStep = getCSVInputStep(configurationInfo);
-        }
+        inputStep = getCSVInputStep(configurationInfo);
       }
     } else {
       inputStep = getTableInputStep(configurationInfo);
@@ -719,39 +714,6 @@ public class GraphGenerator {
     //        if (copies > 1) {
     //            csvDataStep.setCopies(copies);
     //        }
-    csvDataStep.setDraw(true);
-    csvDataStep.setDescription("Read raw data from " + GraphGeneratorConstants.CSV_INPUT);
-
-    return csvDataStep;
-  }
-
-  private StepMeta getCsvReaderStep(GraphConfigurationInfo graphConfiguration)
-      throws GraphGeneratorException {
-    CsvReaderMeta csvReaderMeta = new CsvReaderMeta();
-    csvReaderMeta.setDefault();
-    // Init the Filename...
-    csvReaderMeta.setFilename("${csvInputFilePath}");
-    csvReaderMeta.setDefault();
-    csvReaderMeta.setEncoding("UTF-8");
-    csvReaderMeta.setEnclosure("\"");
-    csvReaderMeta.setHeaderPresent(true);
-    StepMeta csvDataStep =
-        new StepMeta(GraphGeneratorConstants.CSV_INPUT, (StepMetaInterface) csvReaderMeta);
-    csvDataStep.setLocation(100, 100);
-    csvReaderMeta.setFilenameField("filename");
-    csvReaderMeta.setLazyConversionActive(false);
-    csvReaderMeta.setBufferSize(instance.getProperty(CarbonCommonConstants.CSV_READ_BUFFER_SIZE,
-        CarbonCommonConstants.CSV_READ_BUFFER_SIZE_DEFAULT));
-    int copies = Integer.parseInt(instance.getProperty(CarbonCommonConstants.NUM_CORES_LOADING,
-        CarbonCommonConstants.DEFAULT_NUMBER_CORES));
-    if (copies > 1) {
-      csvDataStep.setCopies(copies);
-    }
-    if (CheckPointHanlder.IS_CHECK_POINT_NEEDED) {
-      csvReaderMeta.setIncludingFilename(true);
-      csvReaderMeta.setRowNumField("rownum");
-    }
-    csvDataStep.setStepID("CarbonCSVReaderStep");
     csvDataStep.setDraw(true);
     csvDataStep.setDescription("Read raw data from " + GraphGeneratorConstants.CSV_INPUT);
 

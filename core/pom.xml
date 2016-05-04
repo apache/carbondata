@@ -47,19 +47,19 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>unibi</groupId>
-            <artifactId>com.kettlecore</artifactId>
-            <version>4.2.1-GA</version>
+            <groupId>pentaho-kettle</groupId>
+            <artifactId>kettle-engine</artifactId>
+            <version>${kettle.version}</version>
         </dependency>
         <dependency>
-            <groupId>unibi</groupId>
-            <artifactId>com.kettleengine</artifactId>
-            <version>4.2.1-GA</version>
+            <groupId>pentaho-kettle</groupId>
+            <artifactId>kettle-core</artifactId>
+            <version>${kettle.version}</version>
         </dependency>
         <dependency>
-            <groupId>unibi</groupId>
-            <artifactId>com.kettledb</artifactId>
-            <version>4.2.1-GA</version>
+            <groupId>pentaho-kettle</groupId>
+            <artifactId>kettle-db</artifactId>
+            <version>${kettle.version}</version>
         </dependency>
         <dependency>
             <groupId>eigenbase</groupId>
