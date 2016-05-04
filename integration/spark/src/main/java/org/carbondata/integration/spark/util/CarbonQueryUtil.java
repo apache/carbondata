@@ -329,7 +329,10 @@ public final class CarbonQueryUtil {
         getAllFiles(fileNames[i].getPath(), partitionsFiles, fileType);
       }
     } else {
-      partitionsFiles.add(file.getPath());
+      // add only csv files
+      if (file.getName().endsWith("csv")) {
+        partitionsFiles.add(file.getPath());
+      }
     }
   }
 

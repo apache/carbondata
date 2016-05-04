@@ -22,45 +22,79 @@ import java.util.LinkedHashSet
 import scala.collection.JavaConverters._
 import scala.language.implicitConversions
 
+import org.apache.hadoop.fs.Path
 import org.apache.spark.Logging
 import org.apache.spark.sql.catalyst.analysis.MultiInstanceRelation
 import org.apache.spark.sql.catalyst.expressions.AttributeReference
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.hive.{CarbonMetaData, CarbonMetastoreTypes, TableMeta}
-import org.apache.spark.sql.sources.{BaseRelation, RelationProvider}
+import org.apache.spark.sql.sources.{BaseRelation, CreatableRelationProvider, RelationProvider}
 import org.apache.spark.sql.types.{DataType, StructType}
 
+import org.carbondata.integration.spark.{CarbonOption, _}
 
 /**
  * Carbon relation provider compliant to data source api.
  * Creates carbon relations
  */
-class CarbonSource extends RelationProvider {
+class CarbonSource extends RelationProvider with CreatableRelationProvider{
+
   /**
    * Returns a new base relation with the given parameters.
    * Note: the parameters' keywords are case insensitive and this insensitivity is enforced
    * by the Map that is passed to the function.
    */
-  override def createRelation(sqlContext: SQLContext,
-                              parameters: Map[String, String]): BaseRelation = {
+  override def createRelation(
+    sqlContext: SQLContext,
+    parameters: Map[String, String]): BaseRelation = {
+    val options = new CarbonOption(parameters)
+    val tableIdentifier = options.tableIdentifier.split("""\.""").toSeq
+    CarbonDatasourceRelation(tableIdentifier, None)(sqlContext)
+  }
 
-    // On Spark SQL option keys are case insensitive, so use lower case to check
-    val optSet = Set("cubename")
-    val keySet = parameters.keySet.map(_.toLowerCase)
+  override def createRelation(
+    sqlContext: SQLContext,
+    mode: SaveMode,
+    parameters: Map[String, String],
+    data: SchemaRDD): BaseRelation = {
 
-    if (!(optSet.intersect(keySet).size == 1)) {
-      throw new Exception(
-        s"""There are invalid on options, usages:
-           |CREATE TABLE table_name
-           |USING org.apache.spark.sql.CarbonSource
-           |OPTIONS(
-           | CubeName "schema_name.cube_name"
-           |)""".stripMargin
-      )
+    // To avoid derby problem, dataframe need to be writen and read using CarbonContext
+    require(sqlContext.isInstanceOf[CarbonContext], "Error in saving dataframe to carbon file, " +
+        "must use CarbonContext to save dataframe")
+
+    // User should not specify path since only one store is supported in carbon currently,
+    // after we support multi-store, we can remove this limitation
+    require(!parameters.contains("path"), "'path' should not be specified, " +
+        "the path to store carbon file is the 'storePath' specified when creating CarbonContext")
+
+    val options = new CarbonOption(parameters)
+    val storePath = CarbonContext.getInstance(sqlContext.sparkContext).storePath
+    val tablePath = new Path(storePath + "/" + options.dbName + "/" + options.tableName)
+    val isExists = tablePath.getFileSystem(sqlContext.sparkContext.hadoopConfiguration)
+        .exists(tablePath)
+    val (doSave, doAppend) = (mode, isExists) match {
+      case (SaveMode.ErrorIfExists, true) =>
+        sys.error(s"ErrorIfExists mode, path $storePath already exists.")
+      case (SaveMode.Overwrite, true) =>
+        val cc = CarbonContext.getInstance(sqlContext.sparkContext)
+        cc.sql(s"DROP CUBE IF EXISTS ${options.dbName}.${options.tableName}")
+        (true, false)
+      case (SaveMode.Overwrite, false) | (SaveMode.ErrorIfExists, false) =>
+        (true, false)
+      case (SaveMode.Append, _) =>
+        (false, true)
+      case (SaveMode.Ignore, exists) =>
+        (!exists, false)
     }
 
-    val tableIdentifier = parameters.get("cubename").get.split( """\.""").toSeq
-    CarbonDatasourceRelation(tableIdentifier, None)(sqlContext)
+    if (doSave) {
+      // Only save data when the save mode is Overwrite.
+      data.saveAsCarbonFile(parameters)
+    } else if (doAppend) {
+      data.appendToCarbonFile(parameters)
+    }
+
+    createRelation(sqlContext, parameters)
   }
 }
 

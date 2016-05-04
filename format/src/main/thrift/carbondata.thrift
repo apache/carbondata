@@ -23,6 +23,7 @@
 namespace java org.carbondata.format
 
 include "schema.thrift"
+include "dictionary.thrift"
 
 /**
 * Information about a segment, that represents one data load
@@ -131,6 +132,7 @@ struct FileFooter{
     4: required SegmentInfo segment_info;	// Segment info (will be same/repeated for all files in this segment)
     5: required list<BlockletIndex> blocklet_index_list;	// blocklet index of all blocklets in this file
     6: required list<BlockletInfo> blocklet_info_list;	// Information about blocklets of all columns in this file
+    7: optional dictionary.ColumnDictionaryChunk dictionary; // blocklet local dictionary
 }
 
 /**
@@ -142,10 +144,20 @@ struct FileHeader{
 }
 
 /**
+ * Mutation type
+ */
+enum MutationType {
+    INSERT = 0; // used for inserting data
+    DELETE = 1; // used for deleting data
+}
+
+/**
  * Header for one blocklet in appendable carbon file
- **/
+ */
 struct BlockletHeader{
 	1: required i32 blocklet_length; // length of blocklet data
-	2: required BlockletIndex index;  // index for the following blocklet
-	3: required BlockletInfo blocklet_info;  // blocklet info for the following blocklet
+	2: required MutationType mutation; // mutation type of this blocklet
+	3: required BlockletIndex blocklet_index;  // index for the following blocklet
+	4: required BlockletInfo blocklet_info;  // info for the following blocklet
+	5: optional dictionary.ColumnDictionaryChunk dictionary; // blocklet local dictionary
 }

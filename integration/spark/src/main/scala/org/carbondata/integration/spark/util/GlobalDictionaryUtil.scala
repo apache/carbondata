@@ -310,40 +310,6 @@ object GlobalDictionaryUtil extends Logging {
   }
 
   /**
-   * append all file path to a String, file path separated by comma
-   */
-  def getPathsFromCarbonFile(carbonFile: CarbonFile): String = {
-    if (carbonFile.isDirectory()) {
-      val files = carbonFile.listFiles()
-      val stringbuild = new StringBuilder()
-      for (j <- 0 until files.size) {
-        stringbuild.append(getPathsFromCarbonFile(files(j))).append(",")
-      }
-      stringbuild.substring(0, stringbuild.size - 1)
-    } else {
-      carbonFile.getPath
-    }
-  }
-
-  /**
-   * append all file path to a String, inputPath path separated by comma
-   */
-  def getPaths(inputPath: String): String = {
-    if (inputPath == null || inputPath.isEmpty) {
-      inputPath
-    } else {
-      val stringbuild = new StringBuilder()
-      val filePaths = inputPath.split(",")
-      for (i <- 0 until filePaths.size) {
-        val fileType = FileFactory.getFileType(filePaths(i))
-        val carbonFile = FileFactory.getCarbonFile(filePaths(i), fileType)
-        stringbuild.append(getPathsFromCarbonFile(carbonFile)).append(",")
-      }
-      stringbuild.substring(0, stringbuild.size - 1)
-    }
-  }
-
-  /**
    * load CSV files to DataFrame by using datasource "com.databricks.spark.csv"
    *
    * @param sqlContext SQLContext
@@ -361,7 +327,7 @@ object GlobalDictionaryUtil extends Logging {
         {if (StringUtils.isEmpty(carbonLoadModel.getCsvDelimiter))"" + CSVWriter.DEFAULT_SEPARATOR
           else carbonLoadModel.getCsvDelimiter})
       .option("parserLib", "univocity")
-      .load(getPaths(carbonLoadModel.getFactFilePath))
+      .load(carbonLoadModel.getFactFilePath)
     df
   }
 

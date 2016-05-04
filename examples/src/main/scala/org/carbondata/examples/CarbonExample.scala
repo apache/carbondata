@@ -53,7 +53,6 @@ object CarbonExample {
     // true -> use table split partition, support multiple partition loading
     // false -> use node split partition, support data load by host partition
     CarbonProperties.getInstance().addProperty("carbon.table.split.partition.enable", "false")
-    CarbonProperties.getInstance().addProperty("carbon.timestamp.format", "yyyy/mm/dd")
 
     cc.sql("DROP CUBE IF EXISTS t1")
 

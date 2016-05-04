@@ -31,13 +31,14 @@ object FileUtils {
   def getPathsFromCarbonFile(carbonFile: CarbonFile): String = {
     if (carbonFile.isDirectory()) {
       val files = carbonFile.listFiles()
-      val stringbuild = new StringBuilder()
+      val stringBuilder = new StringBuilder()
       for (j <- 0 until files.size) {
         if (files(j).getName().endsWith(".csv")) {
-          stringbuild.append(getPathsFromCarbonFile(files(j))).append(",")
+          stringBuilder.append(getPathsFromCarbonFile(files(j))).append(",")
         }
       }
-      stringbuild.substring(0, stringbuild.size - 1)
+      stringBuilder.substring(0,
+        if (stringBuilder.nonEmpty) stringBuilder.size - 1 else 0)
     } else {
       carbonFile.getPath.replace('\\', '/')
     }

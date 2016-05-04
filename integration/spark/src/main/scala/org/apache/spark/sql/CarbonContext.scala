@@ -17,80 +17,35 @@
 
 package org.apache.spark.sql
 
-import java.sql.{DriverManager, ResultSet}
-
 import scala.language.implicitConversions
 
 import org.apache.spark.SparkContext
-import org.apache.spark.annotation.DeveloperApi
-import org.apache.spark.rdd.{JdbcRDDExt, RDD}
-import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.analysis.{Analyzer, OverrideCatalog, UnresolvedAttribute}
-import org.apache.spark.sql.catalyst.expressions.AttributeReference
+import org.apache.spark.sql.catalyst.analysis.{Analyzer, OverrideCatalog}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.cubemodel.{LoadCubeAPI, MergeCube, PartitionData}
-import org.apache.spark.sql.execution.LogicalRDD
+import org.apache.spark.sql.cubemodel.PartitionData
 import org.apache.spark.sql.hive._
-import org.apache.spark.sql.jdbc.JdbcResultSetRDD
-import org.apache.spark.sql.types.StructType
 
 import org.carbondata.common.logging.LogServiceFactory
 import org.carbondata.core.util.CarbonProperties
-import org.carbondata.integration.spark.agg.FlattenExpr
 import org.carbondata.integration.spark.rdd.CarbonDataFrameRDD
 import org.carbondata.integration.spark.util.CarbonSparkInterFaceLogEvent
-import org.carbondata.query.aggregator.MeasureAggregator
 
-class CarbonContext(val sc: SparkContext, metadataPath: String) extends HiveContext(sc) {
+class CarbonContext(val sc: SparkContext, val storePath: String) extends HiveContext(sc) {
   self =>
+  CarbonContext.addInstance(sc, this)
 
   var lastSchemaUpdatedTime = System.currentTimeMillis()
 
   @transient
-  override lazy val catalog = new
-      CarbonMetastoreCatalog(this, metadataPath, metadataHive) with OverrideCatalog
+  override lazy val catalog =
+    new CarbonMetastoreCatalog(this, storePath, metadataHive) with OverrideCatalog
 
   @transient
-  override protected[sql] lazy val analyzer =
-    new Analyzer(catalog, functionRegistry, conf)
+  override protected[sql] lazy val analyzer = new Analyzer(catalog, functionRegistry, conf)
 
   override protected[sql] def dialectClassName = classOf[CarbonSQLDialect].getCanonicalName
 
   experimental.extraStrategies = CarbonStrategy.getStrategy(self) :: Nil
-
-  def updateSchema(schemaPath: String, encrypted: Boolean = true, aggTablesGen: Boolean = false) {
-    CarbonEnv.getInstance(this).carbonCatalog.updateCube(schemaPath, encrypted, aggTablesGen)(this)
-  }
-
-  def cubeExists(schemaName: String, cubeName: String): Boolean = {
-    CarbonEnv.getInstance(this).carbonCatalog.cubeExists(Seq(schemaName, cubeName))(this)
-  }
-
-  def loadData(schemaName: String = null, cubeName: String, dataPath: String,
-               dimFilesPath: String = null) {
-    var schemaNameLocal = schemaName
-    if (schemaNameLocal == null) {
-      schemaNameLocal = "default"
-    }
-    var dimFilesPathLocal = dimFilesPath
-    if (dimFilesPath == null) {
-      dimFilesPathLocal = dataPath
-    }
-    CarbonContext.updateCarbonPorpertiesPath(this)
-    LoadCubeAPI(schemaNameLocal, cubeName, dataPath, dimFilesPathLocal, null).run(this)
-  }
-
-  def mergeData(schemaName: String = null, cubeName: String, tableName: String) {
-    var schemaNameLocal = schemaName
-    if (schemaNameLocal == null) {
-      schemaNameLocal = cubeName
-    }
-    MergeCube(schemaNameLocal, cubeName, tableName).run(this)
-  }
-
-  @DeveloperApi
-  implicit def toAggregates(aggregate: MeasureAggregator): Double = aggregate.getDoubleValue()
-
 
   override def sql(sql: String): SchemaRDD = {
     // queryId will be unique for each query, creting query detail holder
@@ -110,81 +65,6 @@ class CarbonContext(val sc: SparkContext, metadataPath: String) extends HiveCont
     // generates the RDD lineage for DML queries, but do not perform any execution.
     result
   }
-
-  /**
-   * All the measure objects inside SchemaRDD will be flattened
-   */
-
-  def flattenRDD(rdd: SchemaRDD): SchemaRDD = {
-    val fields = rdd.schema.fields.map { f =>
-      new Column(FlattenExpr(UnresolvedAttribute(f.name)))
-    }
-    rdd.as(Symbol("carbon_flatten")).select(fields: _*)
-  }
-
-  /** Caches the specified table in-memory. */
-  override def cacheTable(tableName: String): Unit = {
-    // todo:
-  }
-
-  /**
-   * Loads from JDBC, returning the ResultSet as a [[SchemaRDD]].
-   * It gets MetaData from ResultSet of PreparedStatement to determine the schema.
-   *
-   * @group userf
-   */
-  def jdbcResultSet(
-                     connectString: String,
-                     sql: String): SchemaRDD = {
-    jdbcResultSet(connectString, "", "", sql, 0, 0, 1)
-  }
-
-  def jdbcResultSet(
-                     connectString: String,
-                     username: String,
-                     password: String,
-                     sql: String): SchemaRDD = {
-    jdbcResultSet(connectString, username, password, sql, 0, 0, 1)
-  }
-
-  def jdbcResultSet(
-                     connectString: String,
-                     sql: String,
-                     lowerBound: Long,
-                     upperBound: Long,
-                     numPartitions: Int): SchemaRDD = {
-    jdbcResultSet(connectString, "", "", sql, lowerBound, upperBound, numPartitions)
-  }
-
-  def jdbcResultSet(
-                     connectString: String,
-                     username: String,
-                     password: String,
-                     sql: String,
-                     lowerBound: Long,
-                     upperBound: Long,
-                     numPartitions: Int): SchemaRDD = {
-    val resultSetRDD = new JdbcRDDExt(
-      sparkContext,
-      () => {
-        DriverManager.getConnection(connectString, username, password)
-      },
-      sql, lowerBound, upperBound, numPartitions,
-      (r: ResultSet) => r
-    )
-    val appliedSchema = JdbcResultSetRDD.inferSchema(resultSetRDD)
-    val rowRDD = JdbcResultSetRDD.jdbcResultSetToRow(resultSetRDD, appliedSchema)
-    applySchema1(rowRDD, appliedSchema)
-  }
-
-  def applySchema1(rowRDD: RDD[InternalRow], schema: StructType): DataFrame = {
-    // TODO: use MutableProjection when rowRDD is another SchemaRDD and the applied
-    // schema differs from the existing schema on any field data type.
-    val attributes = schema.fields.map(f => AttributeReference(f.name, f.dataType, f.nullable)())
-    val logicalPlan = LogicalRDD(attributes, rowRDD)(this)
-    new DataFrame(this, logicalPlan)
-  }
-
 
 }
 
@@ -243,4 +123,17 @@ object CarbonContext {
 
   }
 
+  // this cache is used to avoid creating multiple CarbonContext from same SparkContext,
+  // to avoid the derby problem for metastore
+  private val cache = collection.mutable.Map[SparkContext, CarbonContext]()
+
+  def getInstance(sc: SparkContext): CarbonContext = {
+    cache(sc)
+  }
+
+  def addInstance(sc: SparkContext, cc: CarbonContext): Unit = {
+    if (cache.contains(sc)) sys.error("creating multiple instances of CarbonContext is not " +
+        "allowed using the same SparkContext instance")
+    cache(sc) = cc
+  }
 }

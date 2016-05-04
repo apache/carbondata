@@ -25,6 +25,7 @@ import java.io.IOException;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.util.CarbonUtil;
 
+import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
@@ -104,5 +105,14 @@ public class ThriftWriter {
    */
   public void close() {
     CarbonUtil.closeStreams(dataOutputStream);
+  }
+
+  /**
+   * Flush data to HDFS file
+   */
+  public void sync() throws IOException {
+    if (dataOutputStream instanceof FSDataOutputStream) {
+      ((FSDataOutputStream) dataOutputStream).hsync();
+    }
   }
 }
