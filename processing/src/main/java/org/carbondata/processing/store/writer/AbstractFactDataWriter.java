@@ -140,6 +140,14 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    */
   private CarbonDataFileAttributes carbonDataFileAttributes;
   private CarbonTablePath carbonTablePath;
+  /**
+   * data block size for one carbon data file
+   */
+  private long dataBlockSize;
+  /**
+   * size reserved in one file for writing block meta data. It will be in percentage
+   */
+  private int spaceReservedForBlockMetaSize;
 
   public AbstractFactDataWriter(String storeLocation, int measureCount, int mdKeyLength,
       String tableName, boolean isNodeHolder, IFileManagerComposite fileManager, int[] keyBlockSize,
@@ -160,6 +168,11 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
             CarbonCommonConstants.MAX_FILE_SIZE_DEFAULT_VAL))
         * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
         * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR * 1L;
+    this.spaceReservedForBlockMetaSize = Integer.parseInt(propInstance
+        .getProperty(CarbonCommonConstants.CARBON_BLOCK_META_RESERVED_SPACE,
+            CarbonCommonConstants.CARBON_BLOCK_META_RESERVED_SPACE_DEFAULT));
+    this.dataBlockSize =
+        fileSizeInBytes - (fileSizeInBytes * spaceReservedForBlockMetaSize) / 100;
     this.isNodeHolderRequired =
         Boolean.valueOf(CarbonCommonConstants.WRITE_ALL_NODE_IN_SINGLE_TIME_DEFAULT_VALUE);
     this.fileManager = fileManager;
@@ -205,9 +218,9 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    *
    * @throws CarbonDataWriterException if any problem
    */
-  protected void updateBlockletFileChannel() throws CarbonDataWriterException {
+  protected void updateBlockletFileChannel(int blockletDataSize) throws CarbonDataWriterException {
     // get the current file size exceeding the file size threshold
-    if (currentFileSize >= fileSizeInBytes) {
+    if ((currentFileSize + blockletDataSize) >= dataBlockSize) {
       // set the current file size to zero
       this.currentFileSize = 0;
       if (this.isNodeHolderRequired) {
@@ -226,6 +239,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
       // initialize the new channel
       initializeWriter();
     }
+    currentFileSize += blockletDataSize;
   }
 
   /**

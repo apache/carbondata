@@ -74,7 +74,6 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
   @Override public void writeDataToFile(IndexStorage<int[]>[] keyStorageArray, byte[][] dataArray,
       int entryCount, byte[] startKey, byte[] endKey, ValueCompressionModel compressionModel)
       throws CarbonDataWriterException {
-    updateBlockletFileChannel();
     // total measure length;
     int totalMsrArrySize = 0;
     // current measure length;
@@ -173,7 +172,8 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
       startPosition += msrLength[i];
     }
     // current file size;
-    this.currentFileSize += writableKeyArray.length + writableDataArray.length;
+    int blockletDataSize = writableKeyArray.length + writableDataArray.length;
+    updateBlockletFileChannel(blockletDataSize);
 
     NodeHolder holder = new NodeHolder();
     holder.setDataArray(writableDataArray);

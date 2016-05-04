@@ -1465,6 +1465,17 @@ public final class CarbonCommonConstants {
 
   public static final int INVALID_SEGMENT_ID = -1;
 
+  /**
+   * space reserved for writing block meta data in carbon data file
+   */
+  public static final String CARBON_BLOCK_META_RESERVED_SPACE =
+      "carbon.block.meta.size.reserved.percentage";
+
+  /**
+   * default value for space reserved for writing block meta data in carbon data file
+   */
+  public static final String CARBON_BLOCK_META_RESERVED_SPACE_DEFAULT = "10";
+
   private CarbonCommonConstants() {
 
   }
