@@ -39,6 +39,7 @@ import org.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.carbon.datastore.block.SegmentProperties;
+import org.carbondata.core.carbon.metadata.CarbonMetadata;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonColumn;
@@ -763,6 +764,7 @@ public class QueryUtil {
    * @param queryModel query model
    */
   public static void resolveQueryModel(QueryModel queryModel) {
+    CarbonMetadata.getInstance().addCarbonTable(queryModel.getTable());
     // TODO need to load the table from table identifier
     CarbonTable carbonTable = queryModel.getTable();
     // in case of counter star query we need to
