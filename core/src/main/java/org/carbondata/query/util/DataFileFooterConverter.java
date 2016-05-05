@@ -133,7 +133,7 @@ public class DataFileFooterConverter {
       minValue = blockletIndexList.get(i).getMinMaxIndex().getMinValues();
       maxValue = blockletIndexList.get(i).getMinMaxIndex().getMaxValues();
       for (int j = 0; j < maxValue.length; j++) {
-        if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(currentMinValue[j], minValue[j]) < 0) {
+        if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(currentMinValue[j], minValue[j]) > 0) {
           currentMinValue[j] = minValue[j].clone();
         }
         if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(currentMaxValue[j], maxValue[j]) < 0) {

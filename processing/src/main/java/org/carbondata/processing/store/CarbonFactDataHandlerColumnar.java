@@ -456,7 +456,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     }
     LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
         "Initializing writer executers");
-    writerExecutorService = Executors.newFixedThreadPool(3);
+    writerExecutorService = Executors.newFixedThreadPool(1);
   }
 
   private void setComplexMapSurrogateIndex(int dimensionCount) {
@@ -765,6 +765,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     // / still some data is present in stores if entryCount is more
     // than 0
     if (this.entryCount > 0) {
+      closeWriterExecutionServiceService();
       byte[][] data = keyDataHolder.getByteArrayValues();
       calculateUniqueValue(min, uniqueValue);
       ValueCompressionModel compressionModel = ValueCompressionUtil
@@ -777,7 +778,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
           "*******************************************Number Of records processed: "
               + processedDataCount);
-      closeWriterExecutionServiceService();
       this.dataWriter.writeleafMetaDataToFile();
     } else if (null != this.dataWriter) {
       closeWriterExecutionServiceService();

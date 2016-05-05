@@ -767,49 +767,40 @@ public class QueryUtil {
     CarbonMetadata.getInstance().addCarbonTable(queryModel.getTable());
     // TODO need to load the table from table identifier
     CarbonTable carbonTable = queryModel.getTable();
-    // in case of counter star query we need to
-    // set the one measure
-    if (queryModel.isCountStarQuery()) {
-      // if measure is present on the table then add the first measure
-      if (carbonTable.getMeasureByTableName(
-          queryModel.getAbsoluteTableIdentifier().getCarbonTableIdentifier().getTableName()).size()
-          > 0) {
-        queryModel.getQueryMeasures().get(0).setMeasure(carbonTable.getMeasureByTableName(
-            queryModel.getAbsoluteTableIdentifier().getCarbonTableIdentifier().getTableName())
-            .get(0));
-      } else {
-        // create a dummy measure and add
-        queryModel.getQueryMeasures().get(0).setMeasure(new CarbonMeasure(carbonTable
-            .getDimensionByTableName(
-                queryModel.getAbsoluteTableIdentifier().getCarbonTableIdentifier().getTableName())
-            .get(0).getColumnSchema(), 0));
-      }
-      return;
-    }
+    String tableName =
+        queryModel.getAbsoluteTableIdentifier().getCarbonTableIdentifier().getTableName();
     // resolve query dimension
     for (QueryDimension queryDimension : queryModel.getQueryDimension()) {
-      queryDimension.setDimension(carbonTable.getDimensionByName(
-          queryModel.getAbsoluteTableIdentifier().getCarbonTableIdentifier().getTableName(),
-          queryDimension.getColumnName()));
+      queryDimension
+          .setDimension(carbonTable.getDimensionByName(tableName, queryDimension.getColumnName()));
     }
     // resolve sort dimension
     for (QueryDimension sortDimension : queryModel.getSortDimension()) {
-      sortDimension.setDimension(carbonTable.getDimensionByName(
-          queryModel.getAbsoluteTableIdentifier().getCarbonTableIdentifier().getTableName(),
-          sortDimension.getColumnName()));
+      sortDimension
+          .setDimension(carbonTable.getDimensionByName(tableName, sortDimension.getColumnName()));
     }
     // resolve query measure
     for (QueryMeasure queryMeasure : queryModel.getQueryMeasures()) {
-      queryMeasure.setMeasure(carbonTable.getMeasureByName(
-          queryModel.getAbsoluteTableIdentifier().getCarbonTableIdentifier().getTableName(),
-          queryMeasure.getColumnName()));
+      // in case of count start column name will  be count * so
+      // for count start add first measure if measure is not present
+      // than add first dimension as a measure
+      if (queryMeasure.getColumnName().equals("count(*)")) {
+        if (carbonTable.getMeasureByTableName(tableName).size() > 0) {
+          queryMeasure.setMeasure(carbonTable.getMeasureByTableName(tableName).get(0));
+        } else {
+          CarbonMeasure dummyMeasure = new CarbonMeasure(
+              carbonTable.getDimensionByTableName(tableName).get(0).getColumnSchema(), 0);
+          queryMeasure.setMeasure(dummyMeasure);
+        }
+      } else {
+        queryMeasure
+            .setMeasure(carbonTable.getMeasureByName(tableName, queryMeasure.getColumnName()));
+      }
     }
     // resolve dimension aggregation info
     for (DimensionAggregatorInfo dimAggInfo : queryModel.getDimAggregationInfo()) {
-      dimAggInfo.setDim(carbonTable.getDimensionByName(
-          queryModel.getAbsoluteTableIdentifier().getCarbonTableIdentifier().getTableName(),
-          dimAggInfo.getColumnName()));
+      dimAggInfo.setDim(carbonTable.getDimensionByName(tableName, dimAggInfo.getColumnName()));
     }
-    //TODO need to hadle expression
+    //TODO need to handle expression
   }
 }
