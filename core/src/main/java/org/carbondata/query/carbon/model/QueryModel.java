@@ -25,6 +25,7 @@ import java.util.List;
 
 import org.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.carbondata.core.carbon.datastore.block.TableBlockInfo;
+import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.carbondata.query.filter.resolver.FilterResolverIntf;
 
 /**
@@ -119,6 +120,13 @@ public class QueryModel implements Serializable {
    * paritition column list
    */
   private List<String> paritionColumns;
+
+  /**
+   * table on which query will be executed
+   * TODO need to remove this ad pass only the path
+   * and carbon metadata will load the table from metadata file
+   */
+  private CarbonTable table;
 
   public QueryModel() {
     tableBlockInfos = new ArrayList<TableBlockInfo>();
@@ -356,6 +364,20 @@ public class QueryModel implements Serializable {
    */
   public void setParitionColumns(List<String> paritionColumns) {
     this.paritionColumns = paritionColumns;
+  }
+
+  /**
+   * @return the table
+   */
+  public CarbonTable getTable() {
+    return table;
+  }
+
+  /**
+   * @param table the table to set
+   */
+  public void setTable(CarbonTable table) {
+    this.table = table;
   }
 
 }

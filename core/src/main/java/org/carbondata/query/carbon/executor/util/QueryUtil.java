@@ -39,7 +39,6 @@ import org.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.carbon.datastore.block.SegmentProperties;
-import org.carbondata.core.carbon.metadata.CarbonMetadata;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonColumn;
@@ -63,6 +62,7 @@ import org.carbondata.query.carbon.model.QueryMeasure;
 import org.carbondata.query.carbon.model.QueryModel;
 
 import org.apache.commons.lang3.ArrayUtils;
+
 /**
  * Utility class for query execution
  */
@@ -758,9 +758,8 @@ public class QueryUtil {
    * @param queryModel query model
    */
   public static void resolveQueryModel(QueryModel queryModel) {
-    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(
-        queryModel.getAbsoluteTableIdentifier().getCarbonTableIdentifier().getDatabaseName() + '_'
-            + queryModel.getAbsoluteTableIdentifier().getCarbonTableIdentifier().getTableName());
+    // TODO need to load the table from table identifier
+    CarbonTable carbonTable = queryModel.getTable();
     // in case of counter star query we need to
     // set the one measure
     if (queryModel.isCountStarQuery()) {
