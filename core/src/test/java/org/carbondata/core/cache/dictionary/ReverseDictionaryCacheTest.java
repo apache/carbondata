@@ -19,8 +19,13 @@
 
 package org.carbondata.core.cache.dictionary;
 
+import static org.junit.Assert.assertTrue;
+
 import java.util.ArrayList;
 import java.util.List;
+
+import mockit.Mock;
+import mockit.MockUp;
 
 import org.carbondata.core.cache.Cache;
 import org.carbondata.core.cache.CacheProvider;
@@ -30,14 +35,9 @@ import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.reader.CarbonDictionaryColumnMetaChunk;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtilException;
-
-import mockit.Mock;
-import mockit.MockUp;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.junit.Assert.assertTrue;
 
 /**
  * Test class to test the functionality of reverse dictionary cache
@@ -262,4 +262,10 @@ public class ReverseDictionaryCacheTest extends AbstractDictionaryCacheTest {
       assertTrue(surrogateKey == reverseDictionary.getSurrogateKey(data.get(i)));
     }
   }
+  protected DictionaryColumnUniqueIdentifier createDictionaryColumnUniqueIdentifier(
+	      String columnIdentifier) {
+	    DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
+	        new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnIdentifier);
+	    return dictionaryColumnUniqueIdentifier;
+	  }
 }

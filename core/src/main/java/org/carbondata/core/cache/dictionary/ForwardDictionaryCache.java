@@ -40,7 +40,7 @@ import org.carbondata.core.util.CarbonUtilException;
  * dictionary chunks for look up of surrogate keys and values
  */
 public class ForwardDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
-    V extends Dictionary>
+                                    V extends Dictionary>
     extends AbstractDictionaryCache<K, V> {
 
   /**
@@ -197,7 +197,8 @@ public class ForwardDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
         columnDictionaryInfo = (ColumnDictionaryInfo) carbonLRUCache
             .get(getLruCacheKey(columnIdentifier, CacheType.FORWARD_DICTIONARY));
         if (null == columnDictionaryInfo) {
-          columnDictionaryInfo = new ColumnDictionaryInfo();
+          columnDictionaryInfo =
+              new ColumnDictionaryInfo(dictionaryColumnUniqueIdentifier.getDataType());
         }
       }
     }

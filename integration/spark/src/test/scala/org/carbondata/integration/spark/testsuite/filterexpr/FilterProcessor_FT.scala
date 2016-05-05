@@ -19,10 +19,11 @@
 
 package org.carbondata.integration.spark.testsuite.filterexpr
 
-import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.Row
 import org.scalatest.BeforeAndAfterAll
+import java.sql.Timestamp
 
 /**
   * Test Class for filter expression query on String datatypes
@@ -34,6 +35,7 @@ class FilterProcessor_FT extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     sql("drop cube if exists filtertestTables")
+    sql("drop cube if exists filtertestTablesWithDecimal")
     sql("CREATE CUBE filtertestTables DIMENSIONS (ID Integer, date Timestamp, country String, " +
       "name String, phonetype String, serialname String) " +
       "MEASURES (salary Integer) " +
@@ -44,8 +46,47 @@ class FilterProcessor_FT extends QueryTest with BeforeAndAfterAll {
         s"OPTIONS(DELIMITER ',', " +
         s"FILEHEADER '')"
     )
+    sql(
+      "CREATE CUBE filtertestTablesWithDecimal DIMENSIONS (ID decimal, date Timestamp, country " +
+        "String, " +
+        "name String, phonetype String, serialname String) " +
+        "MEASURES (salary Integer) " +
+        "OPTIONS (PARTITIONER [PARTITION_COUNT=1])"
+    )
+    sql(
+      s"LOAD DATA FACT FROM './src/test/resources/dataDiff.csv' INTO CUBE " +
+        s"filtertestTablesWithDecimal " +
+        s"OPTIONS(DELIMITER ',', " +
+        s"FILEHEADER '')"
+    )
   }
 
+  test("Greater Than Filter") {
+    checkAnswer(
+      sql("select id from filtertestTables " + "where id >999"),
+      Seq(Row(1000))
+    )
+  }
+  test("Greater Than Filter with decimal") {
+    checkAnswer(
+      sql("select id from filtertestTablesWithDecimal " + "where id >999"),
+      Seq(Row(1000))
+    )
+  }
+
+  test("Greater Than equal to Filter") {
+    checkAnswer(
+      sql("select id from filtertestTables " + "where id >=999"),
+      Seq(Row(999), Row(1000))
+    )
+  }
+
+  test("Greater Than equal to Filter with decimal") {
+    checkAnswer(
+      sql("select id from filtertestTables " + "where id >=999"),
+      Seq(Row(999), Row(1000))
+    )
+  }
   test("Include Filter") {
     checkAnswer(
       sql("select id from filtertestTables " + "where id =999"),

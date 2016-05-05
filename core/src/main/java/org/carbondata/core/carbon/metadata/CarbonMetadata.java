@@ -18,11 +18,13 @@
  */
 package org.carbondata.core.carbon.metadata;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.carbondata.core.carbon.metadata.schema.table.TableInfo;
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 
 /**
  * Class which persist the information about the tables present the carbon schemas
@@ -106,5 +108,25 @@ public final class CarbonMetadata {
    */
   public int getNumberOfTables() {
     return tableInfoMap.size();
+  }
+
+  /**
+   * method will return dimension instance based on the column identifier
+   * and table instance passed to it.
+   *
+   * @param carbonTable
+   * @param columnIdentifier
+   * @return CarbonDimension instance
+   */
+  public CarbonDimension getCarbonDimensionBasedOnColIdentifier(CarbonTable carbonTable,
+      String columnIdentifier) {
+    List<CarbonDimension> listOfCarbonDims =
+        carbonTable.getDimensionByTableName(carbonTable.getFactTableName());
+    for (CarbonDimension dimension : listOfCarbonDims) {
+      if (dimension.getColumnId().equals(columnIdentifier)) {
+        return dimension;
+      }
+    }
+    return null;
   }
 }

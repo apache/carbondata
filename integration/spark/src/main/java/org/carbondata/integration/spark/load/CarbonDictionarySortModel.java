@@ -19,10 +19,14 @@
 package org.carbondata.integration.spark.load;
 
 import java.nio.charset.Charset;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.ByteUtil;
+import org.carbondata.core.util.CarbonProperties;
 
 /**
  * Dictionary sort model class holds the member byte value and corresponding key value.
@@ -70,20 +74,51 @@ public class CarbonDictionarySortModel implements Comparable<CarbonDictionarySor
       case INT:
       case LONG:
       case DOUBLE:
-      case DECIMAL:
+
         Double d1 = null;
         Double d2 = null;
         try {
           d1 = new Double(memberValue);
         } catch (NumberFormatException e) {
-          return -1;
+          return 1;
         }
         try {
           d2 = new Double(o.memberValue);
         } catch (NumberFormatException e) {
-          return 1;
+          return -1;
         }
         return d1.compareTo(d2);
+      case DECIMAL:
+        java.math.BigDecimal val1 = null;
+        java.math.BigDecimal val2 = null;
+        try {
+          val1 = new java.math.BigDecimal(memberValue);
+        } catch (NumberFormatException e) {
+          return 1;
+        }
+        try {
+          val2 = new java.math.BigDecimal(o.memberValue);
+        } catch (NumberFormatException e) {
+          return -1;
+        }
+        return val1.compareTo(val2);
+      case TIMESTAMP:
+        SimpleDateFormat parser = new SimpleDateFormat(CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+                CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+        Date date1 = null;
+        Date date2 = null;
+        try {
+          date1 = parser.parse(memberValue);
+        } catch (ParseException e) {
+          return 1;
+        }
+        try {
+          date2 = parser.parse(o.memberValue);
+        } catch (ParseException e) {
+          return -1;
+        }
+        return date1.compareTo(date2);
       case STRING:
       default:
         return ByteUtil.UnsafeComparer.INSTANCE.compareTo(this.memberValue.getBytes(CHARSET_CONST),

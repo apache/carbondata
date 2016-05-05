@@ -40,6 +40,7 @@ import org.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.carbondata.core.carbon.datastore.IndexKey;
 import org.carbondata.core.carbon.datastore.block.SegmentProperties;
+import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.carbondata.core.constants.CarbonCommonConstants;
@@ -591,6 +592,9 @@ public final class FilterUtil {
    */
   private static long getMaxValue(AbsoluteTableIdentifier tableIdentifier,
       CarbonDimension carbonDimension) throws QueryExecutionException {
+    if (DataType.TIMESTAMP == carbonDimension.getDataType()) {
+      return Integer.MAX_VALUE;
+    }
     Dictionary forwardDictionary = getForwardDictionaryCache(tableIdentifier, carbonDimension);
     if (null == forwardDictionary) {
       return -1;
@@ -609,7 +613,7 @@ public final class FilterUtil {
       CarbonDimension carbonDimension) throws QueryExecutionException {
     DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
         new DictionaryColumnUniqueIdentifier(tableIdentifier.getCarbonTableIdentifier(),
-            String.valueOf(carbonDimension.getColumnId()));
+            String.valueOf(carbonDimension.getColumnId()), carbonDimension.getDataType());
     CacheProvider cacheProvider = CacheProvider.getInstance();
     Cache forwardDictionaryCache =
         cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, tableIdentifier.getStorePath());
@@ -657,8 +661,10 @@ public final class FilterUtil {
   public static void prepareKeysFromSurrogates(DimColumnFilterInfo filterValues,
       KeyGenerator blockKeyGenerator, CarbonDimension dimension,
       DimColumnExecuterFilterInfo dimColumnExecuterInfo) {
-    byte[][] keysBasedOnFilter = getKeyArray(filterValues, dimension, blockKeyGenerator);
-    dimColumnExecuterInfo.setFilterKeys(keysBasedOnFilter);
+    if (dimension.getDataType() != DataType.TIMESTAMP) {
+      byte[][] keysBasedOnFilter = getKeyArray(filterValues, dimension, blockKeyGenerator);
+      dimColumnExecuterInfo.setFilterKeys(keysBasedOnFilter);
+    }
   }
 
   /**

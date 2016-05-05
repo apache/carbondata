@@ -344,11 +344,16 @@ public class QueryUtil {
    */
   private static List<DictionaryColumnUniqueIdentifier> getDictionaryColumnUniqueIdentifierList(
       List<String> dictionaryColumnIdList, CarbonTableIdentifier carbonTableIdentifier) {
+    CarbonTable carbonTable =
+        CarbonMetadata.getInstance().getCarbonTable(carbonTableIdentifier.getTableUniqueName());
     List<DictionaryColumnUniqueIdentifier> dictionaryColumnUniqueIdentifiers =
         new ArrayList<>(dictionaryColumnIdList.size());
     for (String columnIdentifier : dictionaryColumnIdList) {
+      CarbonDimension dimension = CarbonMetadata.getInstance()
+          .getCarbonDimensionBasedOnColIdentifier(carbonTable, columnIdentifier);
       DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
-          new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnIdentifier);
+          new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnIdentifier,
+              dimension.getDataType());
       dictionaryColumnUniqueIdentifiers.add(dictionaryColumnUniqueIdentifier);
     }
     return dictionaryColumnUniqueIdentifiers;

@@ -14,6 +14,7 @@ import java.util.Properties;
 
 import org.carbondata.core.cache.Cache;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
+import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
@@ -45,6 +46,24 @@ public class AbstractDictionaryCacheTest {
   protected String[] columnIdentifiers;
 
   /**
+   * this method will delete the folders recursively
+   *
+   * @param f
+   */
+  protected static void deleteRecursiveSilent(CarbonFile f) {
+    if (f.isDirectory()) {
+      if (f.listFiles() != null) {
+        for (CarbonFile c : f.listFiles()) {
+          deleteRecursiveSilent(c);
+        }
+      }
+    }
+    if (f.exists() && !f.delete()) {
+      return;
+    }
+  }
+
+  /**
    * prepare the dataset required for running test cases
    */
   protected void prepareDataSet() {
@@ -67,7 +86,8 @@ public class AbstractDictionaryCacheTest {
   protected DictionaryColumnUniqueIdentifier createDictionaryColumnUniqueIdentifier(
       String columnIdentifier) {
     DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
-        new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnIdentifier);
+        new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnIdentifier,
+            DataType.STRING);
     return dictionaryColumnUniqueIdentifier;
   }
 
@@ -78,24 +98,6 @@ public class AbstractDictionaryCacheTest {
     FileFactory.FileType fileType = FileFactory.getFileType(this.carbonStorePath);
     CarbonFile carbonFile = FileFactory.getCarbonFile(this.carbonStorePath, fileType);
     deleteRecursiveSilent(carbonFile);
-  }
-
-  /**
-   * this method will delete the folders recursively
-   *
-   * @param f
-   */
-  protected static void deleteRecursiveSilent(CarbonFile f) {
-    if (f.isDirectory()) {
-      if (f.listFiles() != null) {
-        for (CarbonFile c : f.listFiles()) {
-          deleteRecursiveSilent(c);
-        }
-      }
-    }
-    if (f.exists() && !f.delete()) {
-      return;
-    }
   }
 
   /**
