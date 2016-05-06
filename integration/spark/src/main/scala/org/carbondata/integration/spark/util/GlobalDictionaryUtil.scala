@@ -321,12 +321,19 @@ object GlobalDictionaryUtil extends Logging {
       val files = carbonFile.listFiles()
       val stringbuild = new StringBuilder()
       for (j <- 0 until files.size) {
-        stringbuild.append(getCsvRecursivePathsFromCarbonFile(files(j))).append(",")
+        val filePath = getCsvRecursivePathsFromCarbonFile(files(j))
+        if (!filePath.isEmpty()) {
+          stringbuild.append(filePath).append(",")
+        }
       }
-      stringbuild.substring(0, stringbuild.size - 1)
+      if (!stringbuild.isEmpty) {
+        stringbuild.substring(0, stringbuild.size - 1)
+      } else {
+        stringbuild.toString()
+      }
     } else {
       val path = carbonFile.getPath
-      if ("csv".equalsIgnoreCase(path.substring(path.length - 3))) path else ""
+      if (path.toLowerCase().endsWith(".csv")) path else ""
     }
   }
 
@@ -342,9 +349,16 @@ object GlobalDictionaryUtil extends Logging {
       for (i <- 0 until filePaths.size) {
         val fileType = FileFactory.getFileType(filePaths(i))
         val carbonFile = FileFactory.getCarbonFile(filePaths(i), fileType)
-        stringbuild.append(getCsvRecursivePathsFromCarbonFile(carbonFile)).append(",")
+        val filePath = getCsvRecursivePathsFromCarbonFile(carbonFile)
+        if (!filePath.isEmpty()) {
+          stringbuild.append(filePath).append(",")
+        }
       }
-      stringbuild.substring(0, stringbuild.size - 1)
+      if (!stringbuild.isEmpty) {
+        stringbuild.substring(0, stringbuild.size - 1)
+      } else {
+        stringbuild.toString()
+      }
     }
   }
 
