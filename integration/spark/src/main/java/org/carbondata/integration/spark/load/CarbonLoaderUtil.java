@@ -51,6 +51,7 @@ import org.carbondata.core.carbon.CarbonDef.AggTable;
 import org.carbondata.core.carbon.CarbonDef.CubeDimension;
 import org.carbondata.core.carbon.CarbonDef.Schema;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
+import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
@@ -1045,9 +1046,11 @@ public final class CarbonLoaderUtil {
   }
 
   public static Dictionary getDictionary(CarbonTableIdentifier tableIdentifier,
-          String columnIdentifier, String carbonStorePath) throws CarbonUtilException {
-    return getDictionary(new DictionaryColumnUniqueIdentifier(tableIdentifier,
-            columnIdentifier), carbonStorePath);
+      String columnIdentifier, String carbonStorePath, DataType dataType)
+      throws CarbonUtilException {
+    return getDictionary(
+        new DictionaryColumnUniqueIdentifier(tableIdentifier, columnIdentifier, dataType),
+        carbonStorePath);
   }
 
 }

@@ -214,7 +214,8 @@ class CarbonGlobalDictionaryGenerateRDD(
         val dictionary = if (model.dictFileExists(split.index)) {
           CarbonLoaderUtil.getDictionary(model.table,
             model.primDimensions(split.index).getColumnId,
-            model.hdfsLocation
+            model.hdfsLocation,
+            model.primDimensions(split.index).getDataType
           )
         } else {
           null
@@ -226,30 +227,32 @@ class CarbonGlobalDictionaryGenerateRDD(
           valuesBuffer ++= rddIter.next()._2
         }
         val t3 = System.currentTimeMillis
-        val newDictinctValues = GlobalDictionaryUtil.generateNewDistinctValueList(
+        val distinctValueCount = GlobalDictionaryUtil.generateAndWriteNewDistinctValueList(
           valuesBuffer, dictionary, model, split.index
         )
+        // clear the value buffer after writing dictionary data
+        valuesBuffer.clear
+
         val t4 = System.currentTimeMillis
-        // write to file
-        if (!model.dictFileExists(split.index) || newDictinctValues.size > 0) {
-          GlobalDictionaryUtil.writeGlobalDictionaryToFile(model,
-            split.index, newDictinctValues.iterator
+
+        if (distinctValueCount > 0) {
+          val columnDictionary = CarbonLoaderUtil.getDictionary(model.table,
+            model.primDimensions(split.index).getColumnId,
+            model.hdfsLocation,
+            model.primDimensions(split.index).getDataType)
+          GlobalDictionaryUtil.writeGlobalDictionaryColumnSortInfo(model, split.index,
+            columnDictionary
           )
           val t5 = System.currentTimeMillis
-          GlobalDictionaryUtil.writeGlobalDictionaryColumnSortInfo(model, split.index, dictionary,
-            newDictinctValues
-          );
-          val t6 = System.currentTimeMillis
 
           LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
             "\n columnName:" + model.primDimensions(split.index).getColName +
               "\n columnId:" + model.primDimensions(split.index).getColumnId +
-              "\n new distcint values count:" + newDictinctValues.size +
+              "\n new distinct values count:" + distinctValueCount +
               "\n create dictionary cache:" + (t2 - t1) +
               "\n combine lists:" + (t3 - t2) +
-              "\n sort list and dictinct:" + (t4 - t3) +
-              "\n write dictionary file:" + (t5 - t4) +
-              "\n write sort info:" + (t6 - t5)
+              "\n sort list, distinct and write:" + (t4 - t3) +
+              "\n write sort info:" + (t5 - t4)
           )
         }
       } catch {

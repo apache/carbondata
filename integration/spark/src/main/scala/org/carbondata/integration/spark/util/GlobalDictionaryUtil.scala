@@ -159,11 +159,11 @@ object GlobalDictionaryUtil extends Logging {
    * @param index
    */
   def writeGlobalDictionaryColumnSortInfo(model: DictionaryLoadModel, index: Int,
-    dictionary: Dictionary, newDistinctValues: ArrayBuffer[String]): Unit = {
+    dictionary: Dictionary): Unit = {
     val preparator: CarbonDictionarySortInfoPreparator =
       new CarbonDictionarySortInfoPreparator(model.hdfsLocation, model.table)
     val dictionarySortInfo: CarbonDictionarySortInfo =
-      preparator.getDictionarySortInfo(dictionary, newDistinctValues.asJava,
+      preparator.getDictionarySortInfo(dictionary,
         model.primDimensions(index).getDataType)
     val carbonDictionaryWriter: CarbonDictionarySortIndexWriter =
       new CarbonDictionarySortIndexWriterImpl(model.table,
@@ -185,7 +185,8 @@ object GlobalDictionaryUtil extends Logging {
     for (i <- 0 until model.primDimensions.length) {
       if (model.dictFileExists(i)) {
         val dict = CarbonLoaderUtil.getDictionary(model.table,
-          model.primDimensions(i).getColumnId, model.hdfsLocation
+          model.primDimensions(i).getColumnId, model.hdfsLocation,
+          model.primDimensions(i).getDataType
         )
         dictMap.put(model.primDimensions(i).getColumnId, dict)
       }
@@ -423,42 +424,55 @@ object GlobalDictionaryUtil extends Logging {
     }
   }
 
-  def generateNewDistinctValueList(valuesBuffer: ArrayBuffer[String], dictionary: Dictionary,
-    model: DictionaryLoadModel, columnIndex: Int) : ArrayBuffer[String] = {
+  def generateAndWriteNewDistinctValueList(valuesBuffer: ArrayBuffer[String],
+    dictionary: Dictionary,
+    model: DictionaryLoadModel, columnIndex: Int): Int = {
     val values = valuesBuffer.toArray
-    val newDistinctValueList = new ArrayBuffer[String]
     java.util.Arrays.sort(values, Ordering[String])
+    var distinctValueCount: Int = 0
+    val writer: CarbonDictionaryWriter = new CarbonDictionaryWriterImpl(
+      model.hdfsLocation, model.table,
+      model.primDimensions(columnIndex).getColumnId)
+    try {
+      if (!model.dictFileExists(columnIndex)) {
+        writer.write(CarbonCommonConstants.MEMBER_DEFAULT_VAL)
+        distinctValueCount += 1
+      }
 
-    if (!model.dictFileExists(columnIndex)) {
-      newDistinctValueList += CarbonCommonConstants.MEMBER_DEFAULT_VAL
-    }
+      if (values.length >= 1) {
+        var preValue = values(0)
+        if (model.dictFileExists(columnIndex)) {
+          if (dictionary.getSurrogateKey(values(0)) == CarbonCommonConstants
+            .INVALID_SURROGATE_KEY) {
+            writer.write(values(0))
+            distinctValueCount += 1
+          }
+          for (i <- 1 until values.length) {
+            if (values(i) != preValue) {
+              if (dictionary.getSurrogateKey(values(i)) ==
+                CarbonCommonConstants.INVALID_SURROGATE_KEY) {
+                writer.write(values(i))
+                preValue = values(i)
+                distinctValueCount += 1
+              }
+            }
+          }
 
-    if (values.length >= 1) {
-      var preValue = values(0)
-      if (model.dictFileExists(columnIndex)) {
-        if (dictionary.getSurrogateKey(values(0)) == CarbonCommonConstants.INVALID_SURROGATE_KEY) {
-          newDistinctValueList += values(0)
-        }
-        for (i <- 1 until values.length) {
-          if (values(i) != preValue) {
-            if (dictionary.getSurrogateKey(values(i)) ==
-              CarbonCommonConstants.INVALID_SURROGATE_KEY) {
-              newDistinctValueList += values(i)
+        } else {
+          writer.write(values(0))
+          distinctValueCount += 1
+          for (i <- 1 until values.length) {
+            if (values(i) != preValue) {
+              writer.write(values(i))
               preValue = values(i)
+              distinctValueCount += 1
             }
           }
         }
-
-      } else {
-        newDistinctValueList += values(0)
-        for (i <- 1 until values.length) {
-          if (values(i) != preValue) {
-            newDistinctValueList += values(i)
-            preValue = values(i)
-          }
-        }
       }
+    } finally {
+      writer.close
     }
-    newDistinctValueList
+    distinctValueCount
   }
 }
