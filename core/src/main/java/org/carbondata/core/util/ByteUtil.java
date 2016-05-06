@@ -20,6 +20,7 @@
 package org.carbondata.core.util;
 
 import java.lang.reflect.Field;
+import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -292,6 +293,78 @@ public final class ByteUtil {
       }
       return true;
     }
+
+    /**
+     * Comparing the 2 byte buffers. This is used in case of data load sorting step.
+     *
+     * @param byteBuffer1
+     * @param byteBuffer2
+     * @return
+     */
+    public int compareTo(ByteBuffer byteBuffer1, ByteBuffer byteBuffer2) {
+
+      // Short circuit equal case
+      if (byteBuffer1 == byteBuffer2) {
+        return 0;
+      }
+      int len1 = byteBuffer1.remaining();
+      int len2 = byteBuffer2.remaining();
+      int minLength = (len1 <= len2) ? len1 : len2;
+      int minWords = 0;
+
+      /*
+       * Compare 8 bytes at a time. Benchmarking shows comparing 8 bytes
+       * at a time is no slower than comparing 4 bytes at a time even on
+       * 32-bit. On the other hand, it is substantially faster on 64-bit.
+       */
+      if (minLength > 7) {
+        minWords = minLength / SIZEOF_LONG;
+        for (int i = 0; i < minWords * SIZEOF_LONG; i += SIZEOF_LONG) {
+
+          long lw = byteBuffer1.getLong();
+          long rw = byteBuffer2.getLong();
+
+          long diff = lw ^ rw;
+
+          if (diff != 0) {
+            if (!LITTLEENDIAN) {
+              return lessThanUnsigned(lw, rw) ? -1 : 1;
+            }
+
+            // Use binary search
+            int k = 0;
+            int y;
+            int x = (int) diff;
+            if (x == 0) {
+              x = (int) (diff >>> 32);
+              k = 32;
+            }
+            y = x << 16;
+            if (y == 0) {
+              k += 16;
+            } else {
+              x = y;
+            }
+
+            y = x << 8;
+            if (y == 0) {
+              k += 8;
+            }
+            return (int) (((lw >>> k) & 0xFFL) - ((rw >>> k) & 0xFFL));
+          }
+        }
+      }
+      // The epilogue to cover the last (minLength % 8) elements.
+      for (int i = minWords * SIZEOF_LONG; i < minLength; i++) {
+        int a = (byteBuffer1.get() & 0xff);
+        int b = (byteBuffer2.get() & 0xff);
+        if (a != b) {
+          return a - b;
+        }
+      }
+      return len1 - len2;
+    }
+
   }
 
 }

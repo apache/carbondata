@@ -19,23 +19,31 @@
 
 package org.carbondata.processing.sortandgroupby.sortdata;
 
+import java.nio.ByteBuffer;
 import java.util.Comparator;
 
+import org.carbondata.core.constants.IgnoreDictionary;
+import org.carbondata.core.util.ByteUtil.UnsafeComparer;
 import org.carbondata.processing.util.RemoveDictionaryUtil;
 
 public class RowComparator implements Comparator<Object[]> {
   /**
-   * dimension count
+   * noDictionaryCount represent number of no dictionary cols
    */
-  private int dimensionCount;
+  private int noDictionaryCount;
 
   /**
-   * CarbonRowComparator Constructor
-   *
-   * @param dimensionCount
+   * noDictionaryColMaping mapping of dictionary dimensions and no dictionary dimensions.
    */
-  public RowComparator(int dimensionCount) {
-    this.dimensionCount = dimensionCount;
+  private Boolean[] noDictionaryColMaping;
+
+  /**
+   * @param noDictionaryColMaping
+   * @param noDictionaryCount
+   */
+  public RowComparator(Boolean[] noDictionaryColMaping, int noDictionaryCount) {
+    this.noDictionaryCount = noDictionaryCount;
+    this.noDictionaryColMaping = noDictionaryColMaping;
   }
 
   /**
@@ -44,16 +52,45 @@ public class RowComparator implements Comparator<Object[]> {
   public int compare(Object[] rowA, Object[] rowB) {
     int diff = 0;
 
-    for (int i = 0; i < dimensionCount; i++) {
+    int normalIndex = 0;
+    int noDictionaryindex = 0;
 
-      int dimFieldA = RemoveDictionaryUtil.getDimension(i, rowA);
-      int dimFieldB = RemoveDictionaryUtil.getDimension(i, rowB);
+    for (boolean isNoDictionary : noDictionaryColMaping) {
 
-      diff = dimFieldA - dimFieldB;
-      if (diff != 0) {
-        return diff;
+      if (isNoDictionary) {
+        byte[] byteArr1 = (byte[]) rowA[IgnoreDictionary.BYTE_ARRAY_INDEX_IN_ROW.getIndex()];
+
+        ByteBuffer buff1 = ByteBuffer.wrap(byteArr1);
+
+        // extract a high card dims from complete byte[].
+        RemoveDictionaryUtil
+            .extractSingleHighCardDims(byteArr1, noDictionaryindex, noDictionaryCount, buff1);
+
+        byte[] byteArr2 = (byte[]) rowB[IgnoreDictionary.BYTE_ARRAY_INDEX_IN_ROW.getIndex()];
+
+        ByteBuffer buff2 = ByteBuffer.wrap(byteArr2);
+
+        // extract a high card dims from complete byte[].
+        RemoveDictionaryUtil
+            .extractSingleHighCardDims(byteArr2, noDictionaryindex, noDictionaryCount, buff2);
+
+        int difference = UnsafeComparer.INSTANCE.compareTo(buff1, buff2);
+        if (difference != 0) {
+          return difference;
+        }
+        noDictionaryindex++;
+      } else {
+        int dimFieldA = RemoveDictionaryUtil.getDimension(normalIndex, rowA);
+        int dimFieldB = RemoveDictionaryUtil.getDimension(normalIndex, rowB);
+        diff = dimFieldA - dimFieldB;
+        if (diff != 0) {
+          return diff;
+        }
+        normalIndex++;
       }
+
     }
+
     return diff;
   }
 }

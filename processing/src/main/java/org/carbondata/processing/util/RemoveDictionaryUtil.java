@@ -318,4 +318,85 @@ public class RemoveDictionaryUtil {
     return RemoveDictionaryUtil.packByteBufferIntoSingleByteArray(buffArr);
 
   }
+
+  /**
+   * This method will convert boolean [] to String with comma separated.
+   * This needs to be done as sort step meta only supports string types.
+   *
+   * @param noDictionaryDimsMapping boolean arr to represent which dims is no dictionary
+   * @return
+   */
+  public static String convertBooleanArrToString(Boolean[] noDictionaryDimsMapping) {
+    String str = "";
+    int index = 0;
+    for (; index < noDictionaryDimsMapping.length - 1; index++) {
+      str += noDictionaryDimsMapping[index] + CarbonCommonConstants.COMA_SPC_CHARACTER;
+    }
+    str += noDictionaryDimsMapping[index];
+    return str;
+  }
+
+  /**
+   * This will convert string to boolean[].
+   *
+   * @param noDictionaryColMapping String representation of the boolean [].
+   * @return
+   */
+  public static Boolean[] convertStringToBooleanArr(String noDictionaryColMapping) {
+
+    String[] splittedValue = noDictionaryColMapping.split(CarbonCommonConstants.COMA_SPC_CHARACTER);
+
+    // convert string[] to boolean []
+
+    Boolean[] noDictionaryMapping = new Boolean[splittedValue.length];
+    int index = 0;
+    for (String str : splittedValue) {
+      noDictionaryMapping[index++] = Boolean.parseBoolean(str);
+    }
+
+    return noDictionaryMapping;
+  }
+
+  /**
+   * This method will extract the single dimension from the complete high card dims byte[].+     *
+   * The format of the byte [] will be,  Totallength,CompleteStartOffsets,Dat
+   *
+   * @param highCardArr
+   * @param index
+   * @param highCardinalityCount
+   * @param outBuffer
+   */
+  public static void extractSingleHighCardDims(byte[] highCardArr, int index,
+      int highCardinalityCount, ByteBuffer outBuffer) {
+    ByteBuffer buff = null;
+    short secIndex = 0;
+    short firstIndex = 0;
+    int length;
+    // if the requested index is a last one then we need to calculate length
+    // based on byte[] length.
+    if (index == highCardinalityCount - 1) {
+      // need to read 2 bytes(1 short) to determine starting offset and
+      // length can be calculated by array length.
+      buff = ByteBuffer.wrap(highCardArr, (index * 2) + 2, 2);
+    } else {
+      // need to read 4 bytes(2 short) to determine starting offset and
+      // length.
+      buff = ByteBuffer.wrap(highCardArr, (index * 2) + 2, 4);
+    }
+
+    firstIndex = buff.getShort();
+    // if it is a last dimension in high card then this will be last
+    // offset.so calculate length from total length
+    if (index == highCardinalityCount - 1) {
+      secIndex = (short) highCardArr.length;
+    } else {
+      secIndex = buff.getShort();
+    }
+
+    length = secIndex - firstIndex;
+
+    outBuffer.position(firstIndex);
+    outBuffer.limit(outBuffer.position() + length);
+
+  }
 }

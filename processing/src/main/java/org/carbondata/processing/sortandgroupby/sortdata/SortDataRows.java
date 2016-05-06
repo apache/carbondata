@@ -172,9 +172,14 @@ public class SortDataRows {
    */
   private String taskNo;
 
+  /**
+   * This will tell whether dimension is dictionary or not.
+   */
+  private Boolean[] noDictionaryColMaping;
+
   public SortDataRows(String tableName, int dimColCount, int complexDimColCount,
       int measureColCount, SortObserver observer, int noDictionaryCount, String[] measureDatatype,
-      String partitionID, int segmentId, String taskNo) {
+      String partitionID, int segmentId, String taskNo, Boolean[] noDictionaryColMaping) {
     // set table name
     this.tableName = tableName;
     this.partitionID = partitionID;
@@ -187,6 +192,7 @@ public class SortDataRows {
 
     this.noDictionaryCount = noDictionaryCount;
     this.complexDimColCount = complexDimColCount;
+    this.noDictionaryColMaping = noDictionaryColMaping;
 
     // processed file list
     this.procFiles = new ArrayList<File>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
@@ -342,7 +348,12 @@ public class SortDataRows {
       toSort = new Object[entryCount][];
       System.arraycopy(recordHolderList, 0, toSort, 0, entryCount);
 
-      Arrays.sort(toSort, new RowComparator(this.dimColCount));
+      if (noDictionaryCount > 0) {
+        Arrays.sort(toSort, new RowComparator(noDictionaryColMaping, noDictionaryCount));
+      } else {
+
+        Arrays.sort(toSort, new RowComparatorForNormalDims(this.dimColCount));
+      }
       recordHolderList = toSort;
 
       // create new file
@@ -372,7 +383,13 @@ public class SortDataRows {
         File finalFile = null;
         try {
           // sort the record holder list
-          Arrays.sort(recordHolderListLocal, new RowComparator(dimColCount));
+          if (noDictionaryCount > 0) {
+            Arrays.sort(recordHolderListLocal,
+                new RowComparator(noDictionaryColMaping, noDictionaryCount));
+          } else {
+            // sort the record holder list
+            Arrays.sort(recordHolderListLocal, new RowComparatorForNormalDims(dimColCount));
+          }
 
           // write data to file
           writeDataTofile(recordHolderListLocal, entryCountLocal, destFile);

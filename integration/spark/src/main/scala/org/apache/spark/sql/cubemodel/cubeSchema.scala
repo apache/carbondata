@@ -240,7 +240,7 @@ class CubeNewProcessor(cm: tableModel, sqlContext: SQLContext) {
     val measures = scala.collection.mutable.ListBuffer[ColumnSchema]()
     for (column <- allColumns) {
       if (highCardinalityDims.contains(column.getColumnName)) {
-        highCardDims += (column)
+        newOrderedDims += (column)
       }
       else if (column.isComplex) {
         complexDims += (column)
@@ -264,7 +264,7 @@ class CubeNewProcessor(cm: tableModel, sqlContext: SQLContext) {
       measures += (measureColumn)
     }
 
-    newOrderedDims = newOrderedDims ++ highCardDims ++ complexDims ++ measures
+    newOrderedDims = newOrderedDims ++ complexDims ++ measures
 
     val partitioner = cm.partitioner match {
       case Some(part: Partitioner) =>

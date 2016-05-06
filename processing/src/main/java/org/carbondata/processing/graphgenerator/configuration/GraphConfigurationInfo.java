@@ -186,6 +186,8 @@ public class GraphConfigurationInfo {
   private int currentRestructNumber;
   private String levelAnddataType;
 
+  private Boolean[] isNoDictionaryDimMapping;
+
   /**
    * String of direct dictionary columns and index separated by COLON_SPC_CHARACTER
    */
@@ -987,5 +989,13 @@ public class GraphConfigurationInfo {
    */
   public String getColumnGroupsString() {
     return columnGroupsString;
+  }
+
+  public Boolean[] getIsNoDictionaryDimMapping() {
+    return isNoDictionaryDimMapping;
+  }
+
+  public void setIsNoDictionaryDimMapping(Boolean[] isNoDictionaryDimMapping) {
+    this.isNoDictionaryDimMapping = isNoDictionaryDimMapping;
   }
 }
