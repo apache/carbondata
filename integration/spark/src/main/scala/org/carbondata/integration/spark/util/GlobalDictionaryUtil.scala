@@ -18,6 +18,7 @@
 package org.carbondata.integration.spark.util
 
 import java.io.IOException
+import java.util.ArrayList
 import java.util.regex.Pattern
 
 import scala.collection.JavaConverters._
@@ -40,6 +41,7 @@ import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile
 import org.carbondata.core.datastorage.store.impl.FileFactory
 import org.carbondata.core.reader.{CarbonDictionaryReader, CarbonDictionaryReaderImpl}
+import org.carbondata.core.util.ByteUtil.UnsafeComparer
 import org.carbondata.core.util.CarbonUtil
 import org.carbondata.core.writer.{CarbonDictionaryWriter, CarbonDictionaryWriterImpl}
 import org.carbondata.core.writer.sortindex.{CarbonDictionarySortIndexWriter, CarbonDictionarySortIndexWriterImpl}
@@ -221,7 +223,8 @@ object GlobalDictionaryUtil extends Logging {
 
   def generateParserForChildrenDimension(dim: CarbonDimension,
                                          format: DataFormat,
-                                         mapColumnValuesWithId: HashMap[String, HashSet[String]],
+                                         mapColumnValuesWithId:
+                                           HashMap[String, HashSet[Array[Byte]]],
                                          generic: GenericParser): Unit = {
     val children = dim.getListOfChildDimensions.asScala
     for (i <- 0 until children.length) {
@@ -236,7 +239,7 @@ object GlobalDictionaryUtil extends Logging {
 
   def generateParserForDimension(dimension: Option[CarbonDimension],
                                  format: DataFormat,
-                                 mapColumnValuesWithId: HashMap[String, HashSet[String]]
+                                 mapColumnValuesWithId: HashMap[String, HashSet[Array[Byte]]]
   ): Option[GenericParser] = {
     dimension match {
       case None =>
@@ -311,6 +314,41 @@ object GlobalDictionaryUtil extends Logging {
   }
 
   /**
+   * append all file path to a String, file path separated by comma
+   */
+  def getCsvRecursivePathsFromCarbonFile(carbonFile: CarbonFile): String = {
+    if (carbonFile.isDirectory()) {
+      val files = carbonFile.listFiles()
+      val stringbuild = new StringBuilder()
+      for (j <- 0 until files.size) {
+        stringbuild.append(getCsvRecursivePathsFromCarbonFile(files(j))).append(",")
+      }
+      stringbuild.substring(0, stringbuild.size - 1)
+    } else {
+      val path = carbonFile.getPath
+      if ("csv".equalsIgnoreCase(path.substring(path.length - 3))) path else ""
+    }
+  }
+
+  /**
+   * append all file path to a String, inputPath path separated by comma
+   */
+  def getCsvRecursivePaths(inputPath: String): String = {
+    if (inputPath == null || inputPath.isEmpty) {
+      inputPath
+    } else {
+      val stringbuild = new StringBuilder()
+      val filePaths = inputPath.split(",")
+      for (i <- 0 until filePaths.size) {
+        val fileType = FileFactory.getFileType(filePaths(i))
+        val carbonFile = FileFactory.getCarbonFile(filePaths(i), fileType)
+        stringbuild.append(getCsvRecursivePathsFromCarbonFile(carbonFile)).append(",")
+      }
+      stringbuild.substring(0, stringbuild.size - 1)
+    }
+  }
+
+  /**
    * load CSV files to DataFrame by using datasource "com.databricks.spark.csv"
    *
    * @param sqlContext SQLContext
@@ -328,7 +366,7 @@ object GlobalDictionaryUtil extends Logging {
         {if (StringUtils.isEmpty(carbonLoadModel.getCsvDelimiter))"" + CSVWriter.DEFAULT_SEPARATOR
           else carbonLoadModel.getCsvDelimiter})
       .option("parserLib", "univocity")
-      .load(carbonLoadModel.getFactFilePath)
+      .load(getCsvRecursivePaths(carbonLoadModel.getFactFilePath))
     df
   }
 
@@ -424,11 +462,11 @@ object GlobalDictionaryUtil extends Logging {
     }
   }
 
-  def generateAndWriteNewDistinctValueList(valuesBuffer: ArrayBuffer[String],
+  def generateAndWriteNewDistinctValueList(valuesBuffer: ArrayBuffer[Array[Byte]],
     dictionary: Dictionary,
     model: DictionaryLoadModel, columnIndex: Int): Int = {
     val values = valuesBuffer.toArray
-    java.util.Arrays.sort(values, Ordering[String])
+    java.util.Arrays.sort(values, new ByteArrayComparator)
     var distinctValueCount: Int = 0
     val writer: CarbonDictionaryWriter = new CarbonDictionaryWriterImpl(
       model.hdfsLocation, model.table,
@@ -448,7 +486,7 @@ object GlobalDictionaryUtil extends Logging {
             distinctValueCount += 1
           }
           for (i <- 1 until values.length) {
-            if (values(i) != preValue) {
+            if (UnsafeComparer.INSTANCE.compareTo(values(i), preValue) != 0) {
               if (dictionary.getSurrogateKey(values(i)) ==
                 CarbonCommonConstants.INVALID_SURROGATE_KEY) {
                 writer.write(values(i))
@@ -462,7 +500,7 @@ object GlobalDictionaryUtil extends Logging {
           writer.write(values(0))
           distinctValueCount += 1
           for (i <- 1 until values.length) {
-            if (values(i) != preValue) {
+            if (UnsafeComparer.INSTANCE.compareTo(values(i), preValue) != 0) {
               writer.write(values(i))
               preValue = values(i)
               distinctValueCount += 1

@@ -124,6 +124,9 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
    */
   private boolean isFirstTime;
 
+  private static final Charset defaultCharset = Charset.forName(
+      CarbonCommonConstants.DEFAULT_CHARSET);
+
   /**
    * Constructor
    *
@@ -148,14 +151,25 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
    * @throws IOException if an I/O error occurs
    */
   @Override public void write(String value) throws IOException {
+    write(value.getBytes(defaultCharset));
+  }
+
+  /**
+   * This method will write the data in thrift format to disk. This method will be guided by
+   * parameter dictionary_one_chunk_size and data will be divided into chunks
+   * based on this parameter
+   *
+   * @param value unique dictionary value
+   * @throws IOException if an I/O error occurs
+   */
+  @Override public void write(byte[] value) throws IOException {
     if (isFirstTime) {
       init();
       isFirstTime = false;
     }
     // if one chunk size is equal to list size then write the data to file
     checkAndWriteDictionaryChunkToFile();
-    oneDictionaryChunkList.add(
-        ByteBuffer.wrap(value.getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET))));
+    oneDictionaryChunkList.add(ByteBuffer.wrap(value));
     totalRecordCount++;
   }
 

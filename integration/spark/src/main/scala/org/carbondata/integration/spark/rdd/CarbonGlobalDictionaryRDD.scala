@@ -17,7 +17,9 @@
 
 package org.carbondata.integration.spark.rdd
 
+import java.nio.charset.Charset
 import java.util.regex.Pattern
+import java.util.Comparator
 
 import scala.collection.mutable.{ArrayBuffer, HashMap, HashSet}
 
@@ -30,6 +32,7 @@ import org.carbondata.common.logging.LogServiceFactory
 import org.carbondata.core.carbon.CarbonTableIdentifier
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
 import org.carbondata.core.constants.CarbonCommonConstants
+import org.carbondata.core.util.ByteUtil.UnsafeComparer
 import org.carbondata.integration.spark.load.CarbonLoaderUtil
 import org.carbondata.integration.spark.util.{CarbonSparkInterFaceLogEvent, GlobalDictionaryUtil}
 
@@ -52,9 +55,11 @@ trait GenericParser {
 }
 
 case class PrimitiveParser(dimension: CarbonDimension,
-                           setOpt: Option[HashSet[String]]) extends GenericParser {
-  val (hasDictEncoding, set: HashSet[String]) = setOpt match {
-    case None => (false, new HashSet[String])
+                           setOpt: Option[HashSet[Array[Byte]]]) extends GenericParser {
+  val charset = Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)
+
+  val (hasDictEncoding, set: HashSet[Array[Byte]]) = setOpt match {
+    case None => (false, new HashSet[Array[Byte]])
     case Some(x) => (true, x)
   }
 
@@ -63,7 +68,7 @@ case class PrimitiveParser(dimension: CarbonDimension,
 
   def parseString(input: String): Unit = {
     if (hasDictEncoding) {
-      set.add(input)
+      set.add(input.getBytes(charset))
     }
   }
 }
@@ -118,6 +123,18 @@ case class DataFormat(delimiters: Array[String],
   }
 }
 
+class ByteArrayComparator extends Comparator[Array[Byte]]{
+
+  def compare(o1: Array[Byte], o2: Array[Byte]): Int = {
+    UnsafeComparer.INSTANCE.compareTo(o1, o2)
+  }
+
+  override def equals(obj: Any): Boolean = {
+    false
+  }
+
+}
+
 /**
  * a case class to package some attributes
  */
@@ -140,22 +157,23 @@ case class DictionaryLoadModel(table: CarbonTableIdentifier,
 class CarbonBlockDistinctValuesCombineRDD(
   prev: RDD[Row],
   model: DictionaryLoadModel)
-    extends RDD[(Int, Array[String])](prev) with Logging {
+    extends RDD[(Int, Array[Array[Byte]])](prev) with Logging {
 
   override def getPartitions: Array[Partition] = firstParent[Row].partitions
 
-  override def compute(split: Partition, context: TaskContext): Iterator[(Int, Array[String])] = {
+  override def compute(split: Partition, context: TaskContext
+      ): Iterator[(Int, Array[Array[Byte]])] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass().getName());
 
-    val distinctValuesList = new ArrayBuffer[(Int, HashSet[String])]
+    val distinctValuesList = new ArrayBuffer[(Int, HashSet[Array[Byte]])]
     try {
       // local combine set
       val dimNum = model.dimensions.length
       val primDimNum = model.primDimensions.length
-      val columnValues = new Array[HashSet[String]](primDimNum)
-      val mapColumnValuesWithId = new HashMap[String, HashSet[String]]
+      val columnValues = new Array[HashSet[Array[Byte]]](primDimNum)
+      val mapColumnValuesWithId = new HashMap[String, HashSet[Array[Byte]]]
       for (i <- 0 until primDimNum) {
-        columnValues(i) = new HashSet[String]
+        columnValues(i) = new HashSet[Array[Byte]]
         distinctValuesList += ((i, columnValues(i)))
         mapColumnValuesWithId.put(model.primDimensions(i).getColumnId, columnValues(i))
       }
@@ -184,7 +202,7 @@ class CarbonBlockDistinctValuesCombineRDD(
     }
     distinctValuesList.map { iter =>
       val valueList = iter._2.toArray
-      java.util.Arrays.sort(valueList, Ordering[String])
+      java.util.Arrays.sort(valueList, new ByteArrayComparator)
       (iter._1, valueList)
     }.iterator
   }
@@ -198,11 +216,11 @@ class CarbonBlockDistinctValuesCombineRDD(
  * @param model a model package load info
  */
 class CarbonGlobalDictionaryGenerateRDD(
-  prev: RDD[(Int, Array[String])],
+  prev: RDD[(Int, Array[Array[Byte]])],
   model: DictionaryLoadModel)
     extends RDD[(String, String)](prev) with Logging {
 
-  override def getPartitions: Array[Partition] = firstParent[(Int, Array[String])].partitions
+  override def getPartitions: Array[Partition] = firstParent[(Int, Array[Array[Byte]])].partitions
 
   override def compute(split: Partition, context: TaskContext): Iterator[(String, String)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass().getName());
@@ -221,8 +239,8 @@ class CarbonGlobalDictionaryGenerateRDD(
           null
         }
         val t2 = System.currentTimeMillis
-        val valuesBuffer = new ArrayBuffer[String]
-        val rddIter = firstParent[(Int, Array[String])].iterator(split, context)
+        val valuesBuffer = new ArrayBuffer[Array[Byte]]
+        val rddIter = firstParent[(Int, Array[Array[Byte]])].iterator(split, context)
         while (rddIter.hasNext) {
           valuesBuffer ++= rddIter.next()._2
         }
