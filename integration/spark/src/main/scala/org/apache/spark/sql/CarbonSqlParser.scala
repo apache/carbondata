@@ -158,12 +158,26 @@ class CarbonSqlDDLParser()
 
   }
 
+  override def parse(input: String): LogicalPlan = synchronized {
+    // Initialize the Keywords.
+    initLexical
+    phrase(start)(new lexical.Scanner(input)) match {
+      case Success(plan, _) => plan match {
+        case x: LoadCube =>
+          x.inputSqlString = input
+          x
+        case logicalPlan => logicalPlan
+      }
+      case failureOrError => sys.error(failureOrError.toString)
+    }
+  }
+
   override protected lazy val start: Parser[LogicalPlan] =
     createCube | showCreateCube | loadManagement | createAggregateTable | describeTable |
       showCube | showLoads | alterCube | showAllCubes | createTable
 
   protected lazy val loadManagement: Parser[LogicalPlan] = loadData | dropCubeOrTable |
-    deleteLoadsByID | deleteLoadsByDate | cleanFiles
+    deleteLoadsByID | deleteLoadsByDate | cleanFiles | loadDataNew
 
   protected lazy val createAggregateTable: Parser[LogicalPlan] =
     CREATE ~> AGGREGATETABLE ~>
@@ -753,8 +767,21 @@ class CarbonSqlDDLParser()
 
         }
         val patitionOptionsMap = partionDataOptions.toMap
-        LoadCube(schema, cubename, filePath, dimFolderPath.getOrElse(Seq()), patitionOptionsMap)
+        LoadCube(schema, cubename, filePath, dimFolderPath.getOrElse(Seq()),
+            patitionOptionsMap, false)
     }
+
+  protected lazy val loadDataNew: Parser[LogicalPlan] =
+    LOAD ~> DATA ~> opt(LOCAL) ~> INPATH ~> stringLit ~ opt(OVERWRITE) ~
+      (INTO ~> TABLE ~> (ident <~ ".").? ~ ident) ~
+      (OPTIONS ~> "(" ~> repsep(loadOptions, ",") <~ ")").? <~ opt(";") ^^ {
+        case filePath ~ isOverwrite ~ cube ~ partionDataOptions =>
+          val (schema, cubename) = cube match {
+            case schemaName ~ cubeName => (schemaName, cubeName)
+          }
+          val patitionOptionsMap = partionDataOptions.getOrElse(List.empty[(String, String)]).toMap
+          LoadCube(schema, cubename, filePath, Seq(), patitionOptionsMap, isOverwrite.isDefined)
+      }
 
   protected lazy val dbTableIdentifier: Parser[Seq[String]] =
     (ident <~ ".").? ~ (ident) ^^ {
@@ -776,6 +803,12 @@ class CarbonSqlDDLParser()
       (ESCAPECHAR ~ stringLit) | (MULTILINE ~ stringLit) |
       (COMPLEX_DELIMITER_LEVEL_1 ~ stringLit) | (COMPLEX_DELIMITER_LEVEL_2 ~ stringLit)) ^^ {
       case opt ~ optvalue => (opt, optvalue)
+      case _ => ("", "")
+    }
+
+  protected lazy val loadOptions: Parser[(String, String)] =
+    (stringLit <~ "=") ~ stringLit ^^ {
+      case opt ~ optvalue => (opt.toLowerCase(), optvalue)
       case _ => ("", "")
     }
 

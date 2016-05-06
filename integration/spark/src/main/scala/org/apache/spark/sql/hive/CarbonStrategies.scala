@@ -30,7 +30,7 @@ import org.apache.spark.sql.cubemodel._
 import org.apache.spark.sql.execution.{DescribeCommand => RunnableDescribeCommand, ExecutedCommand, Filter, Project, SparkPlan}
 import org.apache.spark.sql.execution.datasources.{DescribeCommand => LogicalDescribeCommand, LogicalRelation}
 import org.apache.spark.sql.execution.joins.{BuildLeft, BuildRight, FilterPushJoin}
-import org.apache.spark.sql.hive.execution.DescribeHiveTableCommand
+import org.apache.spark.sql.hive.execution.{DescribeHiveTableCommand, HiveNativeCommand}
 import org.apache.spark.sql.types.{IntegerType, LongType}
 
 import org.carbondata.common.logging.LogServiceFactory
@@ -166,6 +166,16 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
         ExecutedCommand(ShowAggregateTables(schemaName, plan.output)) :: Nil
       case ShowLoadsCommand(schemaName, cube, limit) =>
         ExecutedCommand(ShowLoads(schemaName, cube, limit, plan.output)) :: Nil
+      case LoadCube(schemaNameOp, cubeName, factPathFromUser, dimFilesPath,
+        partionValues, isOverwriteExist, inputSqlString) =>
+        val isCarbonTable = CarbonEnv.getInstance(sqlContext).carbonCatalog
+          .cubeExists(schemaNameOp, cubeName)(sqlContext);
+        if (isCarbonTable) {
+          ExecutedCommand(LoadCube(schemaNameOp, cubeName, factPathFromUser,
+            dimFilesPath, partionValues, isOverwriteExist, inputSqlString)) :: Nil
+        } else {
+          ExecutedCommand(HiveNativeCommand(inputSqlString)) :: Nil
+        }
       case DescribeFormattedCommand(sql, tblIdentifier) =>
         val isCube = CarbonEnv.getInstance(sqlContext).carbonCatalog
           .cubeExists(tblIdentifier)(sqlContext);

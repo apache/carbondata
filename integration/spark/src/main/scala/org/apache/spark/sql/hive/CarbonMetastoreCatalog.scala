@@ -202,10 +202,9 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
   }
 
   def cubeExists(db: Option[String], tableName: String)(sqlContext: SQLContext): Boolean = {
-    if (db.get == null || db.get == "") {
+    if (db.isEmpty || db.get == null || db.get == "") {
       cubeExists(Seq(tableName))(sqlContext)
-    }
-    else {
+    } else {
       cubeExists(Seq(db.get, tableName))(sqlContext)
     }
   }

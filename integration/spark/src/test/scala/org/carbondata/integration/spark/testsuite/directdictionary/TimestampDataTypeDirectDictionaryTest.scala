@@ -19,14 +19,13 @@
 
 package org.carbondata.integration.spark.testsuite.detailquery
 
-import java.io.File
 import java.sql.Timestamp
-
+import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.{CarbonContext, Row}
 import org.apache.spark.sql.common.util.QueryTest
 import org.apache.spark.sql.hive.HiveContext
-
+import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.util.CarbonProperties
 import org.carbondata.core.keygenerator.directdictionary.timestamp.TimeStampGranularityConstants
 import org.scalatest.BeforeAndAfterAll
@@ -42,29 +41,23 @@ class TimestampDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfte
   var oc: HiveContext = _
 
   override def beforeAll {
-    val file: File = new File("")
-    val rootPath: String = file.getAbsolutePath
-    val hdfsCarbonBasePath = rootPath + "/../integration/spark/target/metastore"
-    val sc = new SparkContext(new SparkConf()
-      .setAppName("CarbonSpark")
-      .setMaster("local[2]"))
-    oc = new CarbonContext(sc, hdfsCarbonBasePath)
-    oc.setConf("carbon.kettle.home", rootPath + "/../processing/carbonplugins/")
-
-    CarbonProperties.getInstance().addProperty(TimeStampGranularityConstants.CARBON_CUTOFF_TIMESTAMP, "2000-12-13 02:10.00.0")
-    CarbonProperties.getInstance().addProperty(TimeStampGranularityConstants.CARBON_TIME_GRANULARITY, TimeStampGranularityConstants.TIME_GRAN_SEC.toString)
-
-
-    oc.sql("CREATE CUBE directDictionaryCube DIMENSIONS (empno Integer,doj Timestamp) MEASURES (salary Integer) " +
-      "OPTIONS (PARTITIONER [PARTITION_COUNT=1])")
-
-    val dataFile :String = rootPath + "/../integration/spark/src/test/resources/datasample.csv"
-    oc.sql("LOAD DATA fact from "+"'"+ dataFile +"'"+" INTO CUBE directDictionaryCube PARTITIONDATA(DELIMITER ',', QUOTECHAR '\"')");
+    try {
+      CarbonProperties.getInstance().addProperty(TimeStampGranularityConstants.CARBON_CUTOFF_TIMESTAMP, "2000-12-13 02:10.00.0")
+      CarbonProperties.getInstance().addProperty(TimeStampGranularityConstants.CARBON_TIME_GRANULARITY, TimeStampGranularityConstants.TIME_GRAN_SEC.toString)
+      CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy-MM-dd HH:mm:ss")
+  
+      sql("CREATE CUBE directDictionaryCube DIMENSIONS (empno Integer,doj Timestamp) MEASURES (salary Integer) " +
+        "OPTIONS (PARTITIONER [PARTITION_COUNT=1])")
+  
+      sql("LOAD DATA fact from './src/test/resources/datasample.csv' INTO CUBE directDictionaryCube PARTITIONDATA(DELIMITER ',', QUOTECHAR '\"')");
+    } catch {
+      case x: Throwable => CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+    }
   }
 
   test("select doj from directDictionaryCube") {
     checkAnswer(
-      oc.sql("select doj from directDictionaryCube"),
+      sql("select doj from directDictionaryCube"),
       Seq(Row(Timestamp.valueOf("2016-03-14 15:00:09.0")),
         Row(Timestamp.valueOf("2016-04-14 15:00:09.0"))
         ))
@@ -72,6 +65,7 @@ class TimestampDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfte
   }
 
   override def afterAll {
-    oc.sql("drop cube directDictionaryCube")
+    sql("drop cube directDictionaryCube")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
   }
 }

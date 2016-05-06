@@ -1826,11 +1826,13 @@ private[sql] case class LoadCubeAPI(schemaName: String, cubeName: String, factPa
 }
 
 private[sql] case class LoadCube(
-    schemaNameOp: Option[String],
-    cubeName: String,
-    factPathFromUser: String,
-    dimFilesPath: Seq[DataLoadTableFileMapping],
-    partionValues: Map[String, String]) extends RunnableCommand {
+                                  schemaNameOp: Option[String],
+                                  cubeName: String,
+                                  factPathFromUser: String,
+                                  dimFilesPath: Seq[DataLoadTableFileMapping],
+                                  partionValues: Map[String, String],
+                                  isOverwriteExist: Boolean = false,
+                                  var inputSqlString: String = null) extends RunnableCommand {
 
   val LOGGER = LogServiceFactory.getLogService("org.apache.spark.sql.cubemodel.cubeSchema")
 
@@ -1838,6 +1840,9 @@ private[sql] case class LoadCube(
   def run(sqlContext: SQLContext): Seq[Row] = {
 
     val schemaName = getDB.getDatabaseName(schemaNameOp, sqlContext)
+    if(isOverwriteExist) {
+      sys.error("Overwrite is not supported for carbon table with " + schemaName + "." + cubeName)
+    }
     if (null == org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
         .getCarbonTable(schemaName + "_" + cubeName)) {
       logError("Data loading failed. cube not found: " + schemaName + "_" + cubeName)
@@ -1897,8 +1902,8 @@ private[sql] case class LoadCube(
       }
       if (kettleHomePath == null) sys.error(s"carbon.kettle.home is not set")
 
-      val delimiter = partionValues.getOrElse("delimiter", "")
-      val quoteChar = partionValues.getOrElse("quotechar", "")
+      val delimiter = partionValues.getOrElse("delimiter", ",")
+      val quoteChar = partionValues.getOrElse("quotechar", "\"")
       val fileHeader = partionValues.getOrElse("fileheader", "")
       val escapeChar = partionValues.getOrElse("escapechar", "")
       val multiLine = partionValues.getOrElse("multiline", false)
