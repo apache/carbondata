@@ -43,7 +43,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -55,6 +57,7 @@ import org.carbondata.core.carbon.metadata.blocklet.DataFileFooter;
 import org.carbondata.core.carbon.metadata.blocklet.datachunk.DataChunk;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreDataHolder;
@@ -1980,6 +1983,33 @@ public final class CarbonUtil {
       return firstSliceNumber - secondSliceNumber;
     }
 
+  }
+
+  /**
+   * Below method will be used to get the dimension
+   *
+   * @param tableDimensionList table dimension list
+   * @return boolean array specifying true if dimension is dictionary
+   * and false if dimension is not a dictionary column
+   */
+  public static boolean[] identifyDimensionType(List<CarbonDimension> tableDimensionList) {
+    List<Boolean> isDictionaryDimensions = new ArrayList<Boolean>();
+    Set<Integer> processedColumnGroup = new HashSet<Integer>();
+    for (CarbonDimension carbonDimension : tableDimensionList) {
+      if (carbonDimension.isColumnar() && hasEncoding(carbonDimension.getEncoder(),
+          Encoding.DICTIONARY)) {
+        isDictionaryDimensions.add(true);
+      } else if (!carbonDimension.isColumnar()) {
+        if (processedColumnGroup.add(carbonDimension.columnGroupId())) {
+          isDictionaryDimensions.add(true);
+        }
+      } else {
+        isDictionaryDimensions.add(false);
+      }
+    }
+    boolean[] primitive = ArrayUtils
+        .toPrimitive(isDictionaryDimensions.toArray(new Boolean[isDictionaryDimensions.size()]));
+    return primitive;
   }
 
 }

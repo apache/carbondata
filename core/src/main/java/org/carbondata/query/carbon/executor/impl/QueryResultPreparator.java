@@ -106,9 +106,10 @@ public class QueryResultPreparator {
           resultData[currentRow][i] = DataTypeUtil.getDataBasedOnDataType(
               new String(key.getNoDictionaryKeyByIndex(noDictionaryColumnIndex++)),
               queryDimension.get(i).getDimension().getDataType());
+        } else {
+          resultData[currentRow][i] =
+              (int) surrogateResult[queryDimension.get(i).getDimension().getKeyOrdinal()];
         }
-        resultData[currentRow][i] =
-            (int) surrogateResult[queryDimension.get(i).getDimension().getKeyOrdinal()];
       }
 
       // @TODO need to check why it was handled like this
@@ -129,6 +130,7 @@ public class QueryResultPreparator {
         resultData[currentRow][dimensionCount + i] = value[i];
       }
       currentRow++;
+      noDictionaryColumnIndex = 0;
     }
     if (resultData.length > 0) {
       resultData = encodeToRows(resultData);

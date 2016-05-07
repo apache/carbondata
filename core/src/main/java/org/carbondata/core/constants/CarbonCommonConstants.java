@@ -45,6 +45,10 @@ public final class CarbonCommonConstants {
    */
   public static final int INT_SIZE_IN_BYTE = 4;
   /**
+   * short size in bytes
+   */
+  public static final int SHORT_SIZE_IN_BYTE = 2;
+  /**
    * char size in bytes
    */
   public static final int CHAR_SIZE_IN_BYTE = 2;

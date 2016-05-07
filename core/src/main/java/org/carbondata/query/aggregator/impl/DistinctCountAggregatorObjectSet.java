@@ -23,7 +23,6 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -54,17 +53,7 @@ public class DistinctCountAggregatorObjectSet implements MeasureAggregator {
    * @param newVal new value
    */
   @Override public void agg(Object newVal) {
-    // Object include double
-    if (newVal instanceof Double) {
-      agg((double) newVal);
-      return;
-    }
-    byte[] values = (byte[]) newVal;
-    ByteBuffer buffer = ByteBuffer.wrap(values);
-    buffer.rewind();
-    while (buffer.hasRemaining()) {
-      valueSetForObj.add(buffer.getDouble());
-    }
+    valueSetForObj.add(newVal);
   }
 
   @Override public void agg(MeasureColumnDataChunk dataChunk, int index) {

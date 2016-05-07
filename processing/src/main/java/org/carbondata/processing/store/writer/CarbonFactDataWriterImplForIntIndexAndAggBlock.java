@@ -26,6 +26,7 @@ import java.util.List;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.columnar.IndexStorage;
 import org.carbondata.core.datastorage.store.compression.SnappyCompression.SnappyByteCompression;
@@ -36,7 +37,7 @@ import org.carbondata.core.metadata.BlockletInfoColumnar;
 import org.carbondata.core.util.CarbonMetadataUtil;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.writer.CarbonFooterWriter;
-import org.carbondata.format.ColumnSchema;
+import org.carbondata.format.FileFooter;
 import org.carbondata.processing.store.CarbonDataFileAttributes;
 import org.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
@@ -47,24 +48,27 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
   protected boolean[] aggBlocks;
   private NumberCompressor numberCompressor;
   private boolean[] isComplexType;
+  private int numberOfNoDictionaryColumn;
 
   public CarbonFactDataWriterImplForIntIndexAndAggBlock(String storeLocation, int measureCount,
       int mdKeyLength, String tableName, boolean isNodeHolder, IFileManagerComposite fileManager,
       int[] keyBlockSize, boolean[] aggBlocks, boolean isUpdateFact, boolean[] isComplexType,
-      int NoDictionaryCount, CarbonDataFileAttributes carbonDataFileAttributes,
-      String databaseName) {
+      int NoDictionaryCount, CarbonDataFileAttributes carbonDataFileAttributes, String databaseName,
+      List<ColumnSchema> wrapperColumnSchemaList, int numberOfNoDictionaryColumn) {
     this(storeLocation, measureCount, mdKeyLength, tableName, isNodeHolder, fileManager,
-        keyBlockSize, aggBlocks, isUpdateFact, carbonDataFileAttributes);
+        keyBlockSize, aggBlocks, isUpdateFact, carbonDataFileAttributes, wrapperColumnSchemaList);
     this.isComplexType = isComplexType;
     this.databaseName = databaseName;
+    this.numberOfNoDictionaryColumn = numberOfNoDictionaryColumn;
   }
 
   public CarbonFactDataWriterImplForIntIndexAndAggBlock(String storeLocation, int measureCount,
       int mdKeyLength, String tableName, boolean isNodeHolder, IFileManagerComposite fileManager,
       int[] keyBlockSize, boolean[] aggBlocks, boolean isUpdateFact,
-      CarbonDataFileAttributes carbonDataFileAttributes) {
+      CarbonDataFileAttributes carbonDataFileAttributes,
+      List<ColumnSchema> wrapperColumnSchemaList) {
     super(storeLocation, measureCount, mdKeyLength, tableName, isNodeHolder, fileManager,
-        keyBlockSize, isUpdateFact, carbonDataFileAttributes);
+        keyBlockSize, isUpdateFact, carbonDataFileAttributes, wrapperColumnSchemaList);
     this.aggBlocks = aggBlocks;
     this.numberCompressor = new NumberCompressor(Integer.parseInt(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.BLOCKLET_SIZE,
@@ -72,8 +76,14 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
   }
 
   @Override public void writeDataToFile(IndexStorage<int[]>[] keyStorageArray, byte[][] dataArray,
-      int entryCount, byte[] startKey, byte[] endKey, ValueCompressionModel compressionModel)
-      throws CarbonDataWriterException {
+      int entryCount, byte[] startKey, byte[] endKey, ValueCompressionModel compressionModel,
+      byte[] noDictionaryStartKey, byte[] noDictionaryEndKey) throws CarbonDataWriterException {
+    // if there are no NO-Dictionary column present in the table then
+    // set the empty byte array
+    if (null == noDictionaryEndKey && null == noDictionaryStartKey) {
+      noDictionaryStartKey = new byte[0];
+      noDictionaryEndKey = new byte[0];
+    }
     // total measure length;
     int totalMsrArrySize = 0;
     // current measure length;
@@ -180,23 +190,27 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
     holder.setKeyArray(writableKeyArray);
     // end key format will be <length of dictionary key><length of no
     // dictionary key><DictionaryKey><No Dictionary key>
+    byte[] updatedNoDictionaryEndKey = updateNoDictionaryStartAndEndKey(noDictionaryEndKey);
     ByteBuffer buffer = ByteBuffer.allocate(
         CarbonCommonConstants.INT_SIZE_IN_BYTE + CarbonCommonConstants.INT_SIZE_IN_BYTE
-            + endKey.length);
+            + endKey.length + updatedNoDictionaryEndKey.length);
     buffer.putInt(endKey.length);
-    buffer.putInt(0);
+    buffer.putInt(updatedNoDictionaryEndKey.length);
     buffer.put(endKey);
+    buffer.put(updatedNoDictionaryEndKey);
     buffer.rewind();
     holder.setEndKey(buffer.array());
     holder.setMeasureLenght(msrLength);
+    byte[] updatedNoDictionaryStartKey = updateNoDictionaryStartAndEndKey(noDictionaryStartKey);
     // start key format will be <length of dictionary key><length of no
     // dictionary key><DictionaryKey><No Dictionary key>
     buffer = ByteBuffer.allocate(
         CarbonCommonConstants.INT_SIZE_IN_BYTE + CarbonCommonConstants.INT_SIZE_IN_BYTE
-            + endKey.length);
+            + startKey.length + updatedNoDictionaryStartKey.length);
     buffer.putInt(startKey.length);
-    buffer.putInt(0);
+    buffer.putInt(updatedNoDictionaryStartKey.length);
     buffer.put(startKey);
+    buffer.put(updatedNoDictionaryStartKey);
     buffer.rewind();
     holder.setStartKey(buffer.array());
     holder.setEntryCount(entryCount);
@@ -217,6 +231,34 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
     } else {
       nodeHolderList.add(holder);
     }
+  }
+
+  /**
+   * Below method will be used to update the no dictionary start and end key
+   *
+   * @param key key to be updated
+   * @return return no dictionary key
+   */
+  private byte[] updateNoDictionaryStartAndEndKey(byte[] key) {
+    if (key.length == 0) {
+      return key;
+    }
+    // add key to byte buffer remove the length part of the data
+    ByteBuffer buffer = ByteBuffer.wrap(key, 2, key.length - 2);
+    // create a output buffer without length
+    ByteBuffer output = ByteBuffer.allocate(key.length - 2);
+    short numberOfByteToStorLength = 2;
+    // as length part is removed, so each no dictionary value index
+    // needs to be reshuffled by 2 bytes
+    for (int i = 0; i < numberOfNoDictionaryColumn; i++) {
+      output.putShort((short) (buffer.getShort() - numberOfByteToStorLength));
+    }
+    // copy the data part
+    while (buffer.hasRemaining()) {
+      output.put(buffer.get());
+    }
+    output.rewind();
+    return output.array();
   }
 
   protected byte[][] fillAndCompressedKeyBlockData(IndexStorage<int[]>[] keyStorageArray,
@@ -451,10 +493,10 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
     try {
       long currentPos = channel.size();
       CarbonFooterWriter writer = new CarbonFooterWriter(this.fileName);
-      List<ColumnSchema> fillColumnSchemaToMetadata = getColumnSchemaList();
-      writer.writeFooter(CarbonMetadataUtil
+      FileFooter convertFileMeta = CarbonMetadataUtil
           .convertFileFooter(infoList, localCardinality.length, localCardinality,
-              fillColumnSchemaToMetadata), currentPos);
+              thriftColumnSchemaList);
+      writer.writeFooter(convertFileMeta, currentPos);
     } catch (IOException e) {
       throw new CarbonDataWriterException("Problem while writing the carbon file: ", e);
     }

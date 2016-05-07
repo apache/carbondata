@@ -131,7 +131,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
   /**
    *
    */
-  protected String[] NoDictionaryCols;
+  protected String[] noDictionaryCols;
   /**
    * measureColumn
    */
@@ -1205,7 +1205,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     dimColNames = list.toArray(new String[list.size()]);
 
     // get high cardinality dimension Array
-    NoDictionaryCols = RemoveDictionaryUtil.extractNoDictionaryDimsArr(noDictionaryDims);
+    noDictionaryCols = RemoveDictionaryUtil.extractNoDictionaryDimsArr(noDictionaryDims);
 
     String[] sm = msr.split(CarbonCommonConstants.COMA_SPC_CHARACTER);
     int[] m = new int[sm.length];

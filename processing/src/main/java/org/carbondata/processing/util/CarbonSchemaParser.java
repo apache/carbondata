@@ -876,6 +876,7 @@ public final class CarbonSchemaParser {
 
   /**
    * this method will return table columns
+   *
    * @param dimensions
    * @param carbonDataLoadSchema
    * @return
@@ -895,9 +896,11 @@ public final class CarbonSchemaParser {
     fields = list.toArray(fields);
     return fields;
   }
+
   /**
    * This method will extract dimension table name,
    * By default, fact table name will be returned.
+   *
    * @param dimensionColName
    * @param carbonDataLoadSchema
    * @return
@@ -1117,6 +1120,7 @@ public final class CarbonSchemaParser {
    * groups are
    * ,-> all ordinal with different group id
    * ~-> all ordinal with same group id
+   *
    * @param dimensions
    * @return
    */
@@ -1124,6 +1128,9 @@ public final class CarbonSchemaParser {
     StringBuffer columnGroups = new StringBuffer();
     for (int i = 0; i < dimensions.size(); i++) {
       CarbonDimension dimension = dimensions.get(i);
+      if (!dimension.hasEncoding(Encoding.DICTIONARY)) {
+        continue;
+      }
       columnGroups.append(dimension.getOrdinal());
       if (i < dimensions.size() - 1) {
         int currGroupOrdinal = dimension.columnGroupId();
@@ -1652,6 +1659,9 @@ public final class CarbonSchemaParser {
   public static String getColumnIdString(List<CarbonDimension> dimensions) {
     StringBuffer stringBuffer = new StringBuffer();
     for (CarbonDimension cDimension : dimensions) {
+      if (!cDimension.hasEncoding(Encoding.DICTIONARY)) {
+        continue;
+      }
       stringBuffer.append(cDimension.getColumnId());
       stringBuffer.append(CarbonCommonConstants.AMPERSAND_SPC_CHARACTER);
     }
@@ -2259,27 +2269,31 @@ public final class CarbonSchemaParser {
     }
     return dimString.toString();
   }
+
   /**
    * This method will return all the child dimensions under complex dimension
+   *
    * @param dimension
    * @param dimString
    * @param parent
    */
   private static void addAllComplexTypeChildren(CarbonDimension dimension, StringBuilder dimString,
       String parent) {
-    dimString.append(dimension.getColName() + CarbonCommonConstants.COLON_SPC_CHARACTER
-        + dimension.getDataType() + CarbonCommonConstants.COLON_SPC_CHARACTER + parent
-        + CarbonCommonConstants.COLON_SPC_CHARACTER + dimension.getColumnId()
-        + CarbonCommonConstants.HASH_SPC_CHARACTER);
+    dimString.append(
+        dimension.getColName() + CarbonCommonConstants.COLON_SPC_CHARACTER + dimension.getDataType()
+            + CarbonCommonConstants.COLON_SPC_CHARACTER + parent
+            + CarbonCommonConstants.COLON_SPC_CHARACTER + dimension.getColumnId()
+            + CarbonCommonConstants.HASH_SPC_CHARACTER);
     for (int i = 0; i < dimension.getNumberOfChild(); i++) {
       CarbonDimension childDim = dimension.getListOfChildDimensions().get(i);
       if (childDim.getNumberOfChild() > 0) {
         addAllComplexTypeChildren(childDim, dimString, dimension.getColName());
       } else {
-        dimString.append(childDim.getColName() + CarbonCommonConstants.COLON_SPC_CHARACTER
-            + childDim.getDataType() + CarbonCommonConstants.COLON_SPC_CHARACTER
-            + dimension.getColName() + CarbonCommonConstants.COLON_SPC_CHARACTER
-            + childDim.getColumnId() + CarbonCommonConstants.HASH_SPC_CHARACTER);
+        dimString.append(
+            childDim.getColName() + CarbonCommonConstants.COLON_SPC_CHARACTER + childDim
+                .getDataType() + CarbonCommonConstants.COLON_SPC_CHARACTER + dimension.getColName()
+                + CarbonCommonConstants.COLON_SPC_CHARACTER + childDim.getColumnId()
+                + CarbonCommonConstants.HASH_SPC_CHARACTER);
       }
     }
   }

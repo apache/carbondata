@@ -278,7 +278,7 @@ public class MDKeyGenStep extends BaseStep {
     this.dimensionCount = meta.getDimensionCount();
 
     int simpleDimsCount =
-        this.dimensionCount - meta.getComplexDimsCount() - meta.getNoDictionaryCount();
+        this.dimensionCount - meta.getComplexDimsCount();
     int[] simpleDimsLen = new int[simpleDimsCount];
     for (int i = 0; i < simpleDimsCount; i++) {
       simpleDimsLen[i] = dimLens[i];
@@ -293,9 +293,8 @@ public class MDKeyGenStep extends BaseStep {
         colGroups[i][j]=Integer.parseInt(group[j]);
       }
     }
-    //Actual primitive dimension used to generate start & end key
+    // Actual primitive dimension used to generate start & end key
 
-    //data.generator[dimLens.length] = KeyGeneratorFactory.getKeyGenerator(simpleDimsLen);
     this.colGrpStoreModel = CarbonUtil.getColGroupModel(simpleDimsLen, colGroups);
     data.generator = KeyGeneratorFactory
         .getKeyGenerator(colGrpStoreModel.getColumnGroupCardinality(),

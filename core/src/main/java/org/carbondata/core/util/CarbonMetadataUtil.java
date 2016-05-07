@@ -41,7 +41,7 @@ public class CarbonMetadataUtil {
       int[] cardinalities, List<ColumnSchema> columnSchemaList) throws IOException {
 
     SegmentInfo segmentInfo = new SegmentInfo();
-    segmentInfo.setNum_cols(numCols);
+    segmentInfo.setNum_cols(columnSchemaList.size());
     segmentInfo.setColumn_cardinalities(CarbonUtil.convertToIntegerList(cardinalities));
 
     FileFooter footer = new FileFooter();
@@ -52,7 +52,7 @@ public class CarbonMetadataUtil {
     }
     footer.setTable_columns(columnSchemaList);
     for (BlockletInfoColumnar info : infoList) {
-      footer.addToBlocklet_info_list(getBlockletInfo(info));
+      footer.addToBlocklet_info_list(getBlockletInfo(info, columnSchemaList));
     }
     return footer;
   }
@@ -90,8 +90,8 @@ public class CarbonMetadataUtil {
     return blockletIndex;
   }
 
-  private static BlockletInfo getBlockletInfo(BlockletInfoColumnar blockletInfoColumnar)
-      throws IOException {
+  private static BlockletInfo getBlockletInfo(BlockletInfoColumnar blockletInfoColumnar,
+      List<ColumnSchema> columnSchenma) throws IOException {
 
     BlockletInfo blockletInfo = new BlockletInfo();
     blockletInfo.setNum_rows(blockletInfoColumnar.getNumberOfKeys());
@@ -106,7 +106,9 @@ public class CarbonMetadataUtil {
       DataChunk dataChunk = new DataChunk();
       dataChunk.setChunk_meta(getChunkCompressionMeta());
       List<Encoding> encodings = new ArrayList<Encoding>();
-      encodings.add(Encoding.DICTIONARY);
+      if (columnSchenma.get(i).encoders.contains(Encoding.DICTIONARY)) {
+        encodings.add(Encoding.DICTIONARY);
+      }
       //TODO : Need to find how to set it.
       dataChunk.setRow_chunk(false);
       //TODO : Once schema PR is merged and information needs to be passed here.

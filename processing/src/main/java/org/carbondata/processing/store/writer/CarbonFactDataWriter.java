@@ -30,16 +30,18 @@ public interface CarbonFactDataWriter<T> {
    * file format
    * <key><measure1><measure2>....
    *
-   * @param dataArray  measure array
-   * @param entryCount number of entries
-   * @param startKey   start key of leaf
-   * @param endKey     end key of leaf
+   * @param dataArray            measure array
+   * @param entryCount           number of entries
+   * @param startKey             start key of leaf
+   * @param endKey               end key of leaf
+   * @param noDictionaryEndKey
+   * @param noDictionaryStartKey
    * @throws CarbonDataWriterException throws new CarbonDataWriterException if any problem
    */
 
   void writeDataToFile(IndexStorage<T>[] keyStorageArray, byte[][] dataArray, int entryCount,
-      byte[] startKey, byte[] endKey, ValueCompressionModel compressionModel)
-      throws CarbonDataWriterException;
+      byte[] startKey, byte[] endKey, ValueCompressionModel compressionModel,
+      byte[] noDictionaryStartKey, byte[] noDictionaryEndKey) throws CarbonDataWriterException;
 
   /**
    * Below method will be used to write the leaf meta data to file

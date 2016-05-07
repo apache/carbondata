@@ -28,8 +28,7 @@ import org.carbondata.query.aggregator.impl.AvgBigDecimalAggregator;
 import org.carbondata.query.aggregator.impl.AvgDoubleAggregator;
 import org.carbondata.query.aggregator.impl.AvgLongAggregator;
 import org.carbondata.query.aggregator.impl.CountAggregator;
-import org.carbondata.query.aggregator.impl.DistinctCountAggregator;
-import org.carbondata.query.aggregator.impl.DistinctStringCountAggregator;
+import org.carbondata.query.aggregator.impl.DistinctCountAggregatorObjectSet;
 import org.carbondata.query.aggregator.impl.DummyBigDecimalAggregator;
 import org.carbondata.query.aggregator.impl.DummyDoubleAggregator;
 import org.carbondata.query.aggregator.impl.DummyLongAggregator;
@@ -55,7 +54,7 @@ public class MeasureAggregatorFactory {
    * @param aggTypes                      Aggregation for the column
    * @param dataTypes                     data type for the column
    * @param customAggregateExpressionList custom aggregation list to get the
-   * custom aggregation aggregator
+   *                                      custom aggregation aggregator
    * @return measure agregator for all the column
    */
   public static MeasureAggregator[] getMeassureAggregator(String[] aggTypes, DataType[] dataTypes,
@@ -111,12 +110,7 @@ public class MeasureAggregatorFactory {
     }
     //
     else if (CarbonCommonConstants.DISTINCT_COUNT.equalsIgnoreCase(aggregatorType)) {
-      switch (dataType) {
-        case INT:
-          return new DistinctCountAggregator();
-        default:
-          return new DistinctStringCountAggregator();
-      }
+      return new DistinctCountAggregatorObjectSet();
 
     } else if (CarbonCommonConstants.SUM.equalsIgnoreCase(aggregatorType)) {
       switch (dataType) {

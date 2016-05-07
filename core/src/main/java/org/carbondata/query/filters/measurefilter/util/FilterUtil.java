@@ -19,6 +19,7 @@
 
 package org.carbondata.query.filters.measurefilter.util;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -684,8 +685,30 @@ public final class FilterUtil {
     IndexKey endIndexKey;
     byte[] dictionaryendMdkey =
         segmentProperties.getDimensionKeyGenerator().generateKey(dictionarySurrogateKey);
-    // TODO need to handle for no dictionary dimensions
-    endIndexKey = new IndexKey(dictionaryendMdkey, null);
+    // in case of non filter query when no dictionary columns are present we
+    // need to set the default end key, as for non filter query
+    // we need to get the last
+    // block of the btree so we are setting the max byte value in the end key
+    ByteBuffer noDictionaryEndKeyBuffer = ByteBuffer.allocate(
+        (segmentProperties.getNumberOfNoDictionaryDimension()
+            * CarbonCommonConstants.SHORT_SIZE_IN_BYTE) + segmentProperties
+            .getNumberOfNoDictionaryDimension());
+    // end key structure will be
+    //<Offset of first No Dictionary key in 2 Bytes><Offset of second No Dictionary key in 2 Bytes>
+    //<Offset of n No Dictionary key in 2 Bytes><first no dictionary column value>
+    // <second no dictionary column value> <N no dictionary column value>
+    //example if we have 2 no dictionary column
+    //<[0,4,0,5,127,127]>
+    short startPoint = (short) (segmentProperties.getNumberOfNoDictionaryDimension()
+        * CarbonCommonConstants.SHORT_SIZE_IN_BYTE);
+    for (int i = 0; i < segmentProperties.getNumberOfNoDictionaryDimension(); i++) {
+      noDictionaryEndKeyBuffer.putShort((startPoint));
+      startPoint++;
+    }
+    for (int i = 0; i < segmentProperties.getNumberOfNoDictionaryDimension(); i++) {
+      noDictionaryEndKeyBuffer.put((byte) 127);
+    }
+    endIndexKey = new IndexKey(dictionaryendMdkey, noDictionaryEndKeyBuffer.array());
     return endIndexKey;
   }
 
@@ -705,7 +728,29 @@ public final class FilterUtil {
             .getNumberOfNoDictionaryDimension()];
     byte[] dictionaryStartMdkey =
         segmentProperties.getDimensionKeyGenerator().generateKey(dictionarySurrogateKey);
-    // TODO need to handle for no dictionary dimensions
+    // in case of non filter query when no dictionary columns are present we
+    // need to set the default start key, as for non filter query we need to get the first
+    // block of the btree so we are setting the least byte value in the start key
+    ByteBuffer noDictionaryEndKeyBuffer = ByteBuffer.allocate(
+        (segmentProperties.getNumberOfNoDictionaryDimension()
+            * CarbonCommonConstants.SHORT_SIZE_IN_BYTE) + segmentProperties
+            .getNumberOfNoDictionaryDimension());
+    // end key structure will be
+    //<Offset of first No Dictionary key in 2 Bytes><Offset of second No Dictionary key in 2 Bytes>
+    //<Offset of n No Dictionary key in 2 Bytes><first no dictionary column value>
+    // <second no dictionary column value> <N no dictionary column value>
+    //example if we have 2 no dictionary column
+    //<[0,4,0,5,0,0]>
+    short startPoint = (short) (segmentProperties.getNumberOfNoDictionaryDimension()
+        * CarbonCommonConstants.SHORT_SIZE_IN_BYTE);
+    for (int i = 0; i < segmentProperties.getNumberOfNoDictionaryDimension(); i++) {
+      noDictionaryEndKeyBuffer.putShort((startPoint));
+      startPoint++;
+    }
+    for (int i = 0; i < segmentProperties.getNumberOfNoDictionaryDimension(); i++) {
+      noDictionaryEndKeyBuffer.put((byte) 1);
+    }
+
     startIndexKey = new IndexKey(dictionaryStartMdkey, null);
     return startIndexKey;
   }

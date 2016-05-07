@@ -766,10 +766,9 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
     CarbonTablePath carbonTablePath =
         CarbonStorePath.getCarbonTablePath(baseStorePath, carbonTableIdentifier);
     String partitionId = meta.getPartitionID();
-    String carbonDataDirectoryPath = carbonTablePath.getCarbonDataDirectoryPath(partitionId,
-        meta.getSegmentId());
-    carbonDataDirectoryPath =
-        carbonDataDirectoryPath + File.separator+ meta.getTaskNo();
+    String carbonDataDirectoryPath =
+        carbonTablePath.getCarbonDataDirectoryPath(partitionId, meta.getSegmentId());
+    carbonDataDirectoryPath = carbonDataDirectoryPath + File.separator + meta.getTaskNo();
     loadFolderLoc = carbonDataDirectoryPath + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
   }
 
@@ -856,8 +855,8 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
   private String[] getUpdatedDims(String[] dims, String[] NoDictionaryCols, boolean[] presentDims) {
     int k = 0;
     String[] normDims = null;
-    if (null != meta.NoDictionaryCols) {
-      normDims = new String[meta.normLength + meta.NoDictionaryCols.length];
+    if (null != meta.noDictionaryCols) {
+      normDims = new String[meta.normLength + meta.noDictionaryCols.length];
     } else {
       normDims = new String[meta.normLength];
     }
@@ -1132,15 +1131,15 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
 
     Map<String, Dictionary> dictionaryCaches = surrogateKeyGen.getDictionaryCaches();
     Object[] out =
-        new Object[meta.normLength + meta.msrs.length - meta.complexTypes.size()
-            + checkPoint.getCheckPointInfoFieldCount()];
+        new Object[meta.normLength + meta.msrs.length - meta.complexTypes.size() + checkPoint
+            .getCheckPointInfoFieldCount()];
     int dimLen = meta.dims.length;
 
     Object[] newArray = new Object[CarbonCommonConstants.ARRAYSIZE];
 
     ByteBuffer[] byteBufferArr = null;
-    if (null != meta.NoDictionaryCols) {
-      byteBufferArr = new ByteBuffer[meta.NoDictionaryCols.length + meta.complexTypes.size()];
+    if (null != meta.noDictionaryCols) {
+      byteBufferArr = new ByteBuffer[meta.noDictionaryCols.length + meta.complexTypes.size()];
     }
     int i = 0;
     int n = 0;
@@ -1148,16 +1147,16 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
     int l = 0;
     int msrCount = 0;
     boolean isNull = false;
-    int complexIndex = meta.NoDictionaryCols.length;
+    int complexIndex = meta.noDictionaryCols.length;
     for (int j = 0; j < inputColumnsSize; j++) {
       String columnName = metaColumnNames[j];
       String foreignKeyColumnName = foreignKeyMappingColumns[j];
-      r[j] = ((String)r[j]).trim();
+      r[j] = ((String) r[j]).trim();
       // TODO check if it is ignore dictionary dimension or not . if yes directly write byte buffer
 
-      if (null != meta.NoDictionaryCols && isDimensionNoDictionary(meta.NoDictionaryCols,
+      if (null != meta.noDictionaryCols && isDimensionNoDictionary(meta.noDictionaryCols,
           columnName) && !measurePresentMapping[j]) {
-        processnoDictionaryDim(getIndexOfNoDictionaryDims(meta.NoDictionaryCols, columnName),
+        processnoDictionaryDim(getIndexOfNoDictionaryDims(meta.noDictionaryCols, columnName),
             (String) r[j], byteBufferArr);
         continue;
       }
@@ -1191,8 +1190,10 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
         } else {
           try {
             out[memberMapping[dimLen - meta.complexTypes.size() + index]] =
-                (isNull || msr == null || msr.length() == 0) ? null : DataTypeUtil
-                    .getMeasureValueBasedOnDataType(msr, msrDataType[meta.msrMapping[msrCount]]);
+                (isNull || msr == null || msr.length() == 0) ?
+                    null :
+                    DataTypeUtil.getMeasureValueBasedOnDataType(msr,
+                        msrDataType[meta.msrMapping[msrCount]]);
           } catch (NumberFormatException e) {
             try {
               msr = msr.replaceAll(",", "");
@@ -1918,7 +1919,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
         }
         boolean isNoDictionary = false;
         for (int i = 0; i < a.length; i++) {
-          if (null != meta.NoDictionaryCols && isDimensionNoDictionary(meta.NoDictionaryCols,
+          if (null != meta.noDictionaryCols && isDimensionNoDictionary(meta.noDictionaryCols,
               columns[i])) {
             isNoDictionary = true;
             break;

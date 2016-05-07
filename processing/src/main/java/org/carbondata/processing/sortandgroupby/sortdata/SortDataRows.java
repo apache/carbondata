@@ -59,16 +59,6 @@ public class SortDataRows {
    */
   private final Object lockObject = new Object();
   /**
-   * maxMinLock
-   */
-  private final Object maxMinLock = new Object();
-  /**
-   * decimalPointers
-   */
-  private final byte decimalPointers = Byte.parseByte(CarbonProperties.getInstance()
-      .getProperty(CarbonCommonConstants.CARBON_DECIMAL_POINTERS,
-          CarbonCommonConstants.CARBON_DECIMAL_POINTERS_DEFAULT));
-  /**
    * tempFileLocation
    */
   private String tempFileLocation;

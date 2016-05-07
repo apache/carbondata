@@ -19,10 +19,15 @@
 
 package org.carbondata.core.writer;
 
+import static org.junit.Assert.assertTrue;
+
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
@@ -30,12 +35,9 @@ import org.carbondata.core.metadata.BlockletInfoColumnar;
 import org.carbondata.core.reader.CarbonFooterReader;
 import org.carbondata.core.util.CarbonMetadataUtil;
 import org.carbondata.format.ColumnSchema;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.junit.Assert.assertTrue;
 
 /**
  * This class will test the functionality writing and
@@ -65,13 +67,35 @@ public class CarbonFooterWriterTest {
 
     List<BlockletInfoColumnar> infoColumnars = getBlockletInfoColumnars();
 
-    writer.writeFooter(CarbonMetadataUtil
-        .convertFileFooter(infoColumnars, 6, new int[] { 2, 4, 5, 7 },
-            new ArrayList<ColumnSchema>()), 0);
+		writer.writeFooter(CarbonMetadataUtil.convertFileFooter(
+				infoColumnars,
+				6,
+				new int[] { 2, 4, 5, 7 },
+				Arrays.asList(new ColumnSchema[]{getDimensionColumn("IMEI1"),
+						getDimensionColumn("IMEI2"),
+						getDimensionColumn("IMEI3"),
+						getDimensionColumn("IMEI4"),
+						getDimensionColumn("IMEI5"),
+						getDimensionColumn("IMEI6")})), 0);
 
     CarbonFooterReader metaDataReader = new CarbonFooterReader(filePath, 0);
     assertTrue(metaDataReader.readFooter() != null);
   }
+  
+  public static ColumnSchema getDimensionColumn(String columnName) {
+	    ColumnSchema dimColumn = new ColumnSchema();
+	    dimColumn.setColumnar(true);
+	    dimColumn.setColumn_name(columnName);
+	    dimColumn.setColumn_id(UUID.randomUUID().toString());
+	    dimColumn.setData_type(org.carbondata.format.DataType.STRING);
+	    dimColumn.setDimension(true);
+	    List<org.carbondata.format.Encoding> encodeList =
+		        new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+	    encodeList.add(org.carbondata.format.Encoding.DICTIONARY);
+	    dimColumn.setEncoders(encodeList);
+	    dimColumn.setNum_child(0);
+	    return dimColumn;
+	  }
 
   /**
    * test writing fact metadata.
@@ -80,12 +104,15 @@ public class CarbonFooterWriterTest {
     deleteFile();
     createFile();
     CarbonFooterWriter writer = new CarbonFooterWriter(filePath);
-
     List<BlockletInfoColumnar> infoColumnars = getBlockletInfoColumnars();
-
     writer.writeFooter(CarbonMetadataUtil
         .convertFileFooter(infoColumnars, 6, new int[] { 2, 4, 5, 7 },
-            new ArrayList<ColumnSchema>()), 0);
+        		Arrays.asList(new ColumnSchema[]{getDimensionColumn("IMEI1"),
+						getDimensionColumn("IMEI2"),
+						getDimensionColumn("IMEI3"),
+						getDimensionColumn("IMEI4"),
+						getDimensionColumn("IMEI5"),
+						getDimensionColumn("IMEI6")})), 0);
 
     CarbonFooterReader metaDataReader = new CarbonFooterReader(filePath, 0);
     List<BlockletInfoColumnar> nodeInfoColumnars =

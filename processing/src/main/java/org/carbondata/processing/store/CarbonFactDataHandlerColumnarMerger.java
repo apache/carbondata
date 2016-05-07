@@ -53,10 +53,7 @@ import org.carbondata.processing.groupby.CarbonAutoAggGroupByExtended;
 import org.carbondata.processing.groupby.exception.CarbonGroupByException;
 import org.carbondata.processing.schema.metadata.CarbonColumnarFactMergerInfo;
 import org.carbondata.processing.store.writer.CarbonFactDataWriter;
-import org.carbondata.processing.store.writer.CarbonFactDataWriterImpl;
-import org.carbondata.processing.store.writer.CarbonFactDataWriterImplForIntIndex;
 import org.carbondata.processing.store.writer.CarbonFactDataWriterImplForIntIndexAndAggBlock;
-import org.carbondata.processing.store.writer.CarbonFactDataWriterImplForIntIndexAndAggBlockCompressed;
 import org.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 
@@ -355,7 +352,7 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
     }
     synchronized (lock) {
       this.dataWriter.writeDataToFile(blockStorage, dataHolderLocal, entryCountLocal, startkeyLocal,
-          endKeyLocal, compressionModel);
+          endKeyLocal, compressionModel, null, null);
     }
   }
 
@@ -432,7 +429,7 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
           .getValueCompressionModel(max, min, decimal, uniqueValue, type, new byte[max.length]);
       this.dataWriter.writeDataToFile(blockStorage,
           StoreFactory.createDataStore(compressionModel).getWritableMeasureDataArray(dataHolder),
-          this.entryCount, this.startKey, this.endKey, compressionModel);
+          this.entryCount, this.startKey, this.endKey, compressionModel, null, null);
 
       processedDataCount += entryCount;
       LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
@@ -626,30 +623,9 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
   private CarbonFactDataWriter<?> getFactDataWriter(String storeLocation, int measureCount,
       int mdKeyLength, String tableName, boolean isNodeHolder, IFileManagerComposite fileManager,
       int[] keyBlockSize, boolean isUpdateFact) {
-
-    if (isCompressedKeyBlock && isIntBasedIndexer && isAggKeyBlock) {
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "**************************Compressed key block and aggregated and int");
-      return new CarbonFactDataWriterImplForIntIndexAndAggBlockCompressed(storeLocation,
-          measureCount, mdKeyLength, tableName, isNodeHolder, fileManager, keyBlockSize,
-          aggKeyBlock, carbonFactDataMergerInfo.getDimLens(), isUpdateFact);
-    } else if (isIntBasedIndexer && isAggKeyBlock) {
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "*************************************aggregated and int");
-      return new CarbonFactDataWriterImplForIntIndexAndAggBlock(storeLocation, measureCount,
-          mdKeyLength, tableName, isNodeHolder, fileManager, keyBlockSize, aggKeyBlock,
-          isUpdateFact, null);
-    } else if (isIntBasedIndexer) {
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "************************************************int");
-      return new CarbonFactDataWriterImplForIntIndex(storeLocation, measureCount, mdKeyLength,
-          tableName, isNodeHolder, fileManager, keyBlockSize, isUpdateFact);
-    } else {
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "************************************************short");
-      return new CarbonFactDataWriterImpl(storeLocation, measureCount, mdKeyLength, tableName,
-          isNodeHolder, fileManager, keyBlockSize, isUpdateFact);
-    }
+    return new CarbonFactDataWriterImplForIntIndexAndAggBlock(storeLocation, measureCount,
+        mdKeyLength, tableName, isNodeHolder, fileManager, keyBlockSize, aggKeyBlock, isUpdateFact,
+        null, null);
   }
 
   public void copyToHDFS(String loadPath) throws CarbonDataWriterException {

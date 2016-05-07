@@ -37,12 +37,9 @@ import java.util.concurrent.TimeUnit;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
-import org.carbondata.core.carbon.metadata.CarbonMetadata;
 import org.carbondata.core.carbon.metadata.converter.SchemaConverter;
 import org.carbondata.core.carbon.metadata.converter.ThriftWrapperSchemaConverterImpl;
-import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
-import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
-import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
+import org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
@@ -58,6 +55,8 @@ import org.carbondata.format.FileFooter;
 import org.carbondata.processing.store.CarbonDataFileAttributes;
 import org.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
+
+import org.apache.commons.lang3.ArrayUtils;
 
 public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<T>
 
@@ -108,6 +107,10 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
   protected int[] localCardinality;
   protected String databaseName;
   /**
+   * thrift column schema
+   */
+  protected List<org.carbondata.format.ColumnSchema> thriftColumnSchemaList;
+  /**
    * tabel name
    */
   private String tableName;
@@ -151,7 +154,8 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
 
   public AbstractFactDataWriter(String storeLocation, int measureCount, int mdKeyLength,
       String tableName, boolean isNodeHolder, IFileManagerComposite fileManager, int[] keyBlockSize,
-      boolean isUpdateFact, CarbonDataFileAttributes carbonDataFileAttributes) {
+      boolean isUpdateFact, CarbonDataFileAttributes carbonDataFileAttributes,
+      List<ColumnSchema> columnSchema) {
 
     // measure count
     this.measureCount = measureCount;
@@ -171,8 +175,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     this.spaceReservedForBlockMetaSize = Integer.parseInt(propInstance
         .getProperty(CarbonCommonConstants.CARBON_BLOCK_META_RESERVED_SPACE,
             CarbonCommonConstants.CARBON_BLOCK_META_RESERVED_SPACE_DEFAULT));
-    this.dataBlockSize =
-        fileSizeInBytes - (fileSizeInBytes * spaceReservedForBlockMetaSize) / 100;
+    this.dataBlockSize = fileSizeInBytes - (fileSizeInBytes * spaceReservedForBlockMetaSize) / 100;
     this.isNodeHolderRequired =
         Boolean.valueOf(CarbonCommonConstants.WRITE_ALL_NODE_IN_SINGLE_TIME_DEFAULT_VALUE);
     this.fileManager = fileManager;
@@ -199,6 +202,11 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     this.carbonDataFileAttributes = carbonDataFileAttributes;
     CarbonTableIdentifier tableIdentifier = new CarbonTableIdentifier(databaseName, tableName);
     carbonTablePath = CarbonStorePath.getCarbonTablePath(storeLocation, tableIdentifier);
+    List<Integer> cardinalityList = new ArrayList<Integer>();
+    thriftColumnSchemaList =
+        getColumnSchemaListAndCardinality(cardinalityList, localCardinality, columnSchema);
+    localCardinality =
+        ArrayUtils.toPrimitive(cardinalityList.toArray(new Integer[cardinalityList.size()]));
   }
 
   /**
@@ -220,7 +228,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    */
   protected void updateBlockletFileChannel(int blockletDataSize) throws CarbonDataWriterException {
     // get the current file size exceeding the file size threshold
-    if ((currentFileSize + blockletDataSize) >= dataBlockSize && currentFileSize!=0) {
+    if ((currentFileSize + blockletDataSize) >= dataBlockSize && currentFileSize != 0) {
       // set the current file size to zero
       this.currentFileSize = 0;
       if (this.isNodeHolderRequired) {
@@ -322,34 +330,36 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     try {
       long currentPosition = channel.size();
       CarbonFooterWriter writer = new CarbonFooterWriter(filePath);
-      List<org.carbondata.format.ColumnSchema> fillColumnSchemaToMetadata = getColumnSchemaList();
       FileFooter convertFileMeta = CarbonMetadataUtil
           .convertFileFooter(infoList, localCardinality.length, localCardinality,
-              fillColumnSchemaToMetadata);
+              thriftColumnSchemaList);
       writer.writeFooter(convertFileMeta, currentPosition);
-
     } catch (IOException e) {
       throw new CarbonDataWriterException("Problem while writing the carbon file: ", e);
     }
 
   }
 
-  protected List<org.carbondata.format.ColumnSchema> getColumnSchemaList() {
-    CarbonTable carbonTable =
-        CarbonMetadata.getInstance().getCarbonTable(databaseName + '_' + tableName);
-    List<CarbonDimension> dimensionByTableName = carbonTable.getDimensionByTableName(tableName);
-    List<CarbonMeasure> measureByTableName = carbonTable.getMeasureByTableName(tableName);
+  protected List<org.carbondata.format.ColumnSchema> getColumnSchemaListAndCardinality(
+      List<Integer> cardinality, int[] dictionaryColumnCardinality,
+      List<ColumnSchema> wrapperColumnSchemaList) {
     List<org.carbondata.format.ColumnSchema> columnSchemaList =
         new ArrayList<org.carbondata.format.ColumnSchema>(
             CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
-    for (int i = 0; i < dimensionByTableName.size(); i++) {
-      columnSchemaList.add(schemaConverter
-          .fromWrapperToExternalColumnSchema(dimensionByTableName.get(i).getColumnSchema()));
-    }
-    for (int i = 0; i < measureByTableName.size(); i++) {
-      columnSchemaList.add(schemaConverter
-          .fromWrapperToExternalColumnSchema(measureByTableName.get(i).getColumnSchema()));
+    int counter = 0;
+    for (int i = 0; i < wrapperColumnSchemaList.size(); i++) {
+      columnSchemaList
+          .add(schemaConverter.fromWrapperToExternalColumnSchema(wrapperColumnSchemaList.get(i)));
+      if (CarbonUtil.hasEncoding(wrapperColumnSchemaList.get(i).getEncodingList(),
+          org.carbondata.core.carbon.metadata.encoder.Encoding.DICTIONARY)) {
+        cardinality.add(dictionaryColumnCardinality[counter]);
+        counter++;
+      } else if (!wrapperColumnSchemaList.get(i).isDimensionColumn()) {
+        continue;
+      } else {
+        cardinality.add(-1);
+      }
     }
     return columnSchemaList;
   }
