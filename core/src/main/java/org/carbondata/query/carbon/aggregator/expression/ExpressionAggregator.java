@@ -57,7 +57,8 @@ public class ExpressionAggregator {
 
   public ExpressionAggregator(BlockExecutionInfo blockExecutionInfo) {
     buffer = ByteBuffer.allocate(CarbonCommonConstants.INT_SIZE_IN_BYTE);
-    this.expressionStartIndex = blockExecutionInfo.getExpressionStartIndex();
+    this.expressionStartIndex =
+        blockExecutionInfo.getAggregatorInfo().getExpressionAggregatorStartIndex();
     this.blockExecutionInfo = blockExecutionInfo;
   }
 

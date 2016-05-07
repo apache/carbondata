@@ -200,8 +200,15 @@ public class TableBlockInfo implements Serializable, Comparable<TableBlockInfo> 
     } else if (firstTaskId.compareTo(otherTaskId) > 1) {
       return -1;
     }
-    // offset, no sure about the current structure of the
-    // file name
+    // compare the part no of both block info
+    int firstPartNo = Integer.parseInt(DataFileUtil.getPartNo(filePath));
+    int SecondPartNo = Integer.parseInt(DataFileUtil.getPartNo(other.filePath));
+    compareResult = firstPartNo - SecondPartNo;
+    //compare result is not 0 then return
+    if (compareResult != 0) {
+      return compareResult;
+    }
+    // if part no is also same then compare the offset and length of the block
     if (blockOffset + blockLength < other.blockOffset + other.blockLength) {
       return 1;
     } else if (blockOffset + blockLength > other.blockOffset + other.blockLength) {

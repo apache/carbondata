@@ -185,6 +185,7 @@ public class HDFSFileHolderImpl implements FileHolder {
     FSDataInputStream fileChannel = updateCache(filePath);
     long i = -1;
     try {
+      fileChannel.seek(offset);
       i = fileChannel.readLong();
     } catch (IOException e) {
       LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e, e.getMessage());

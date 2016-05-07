@@ -52,13 +52,14 @@ public class FactTableAggregator extends MeasureDataAggregator {
    * as measure column will be aggregated at last so this index will be used
    * to get the aggergator
    */
-  private short measureColumnStartIndex;
+  private int measureColumnStartIndex;
 
   public FactTableAggregator(BlockExecutionInfo tableBlockExecutionInfos) {
     super(tableBlockExecutionInfos);
     isMeasureExistsInCurrentBlock = tableBlockExecutionInfos.getAggregatorInfo().getMeasureExists();
     measureDefaultValue = tableBlockExecutionInfos.getAggregatorInfo().getDefaultValues();
-    measureColumnStartIndex = tableBlockExecutionInfos.getMeasureColumnStartIndex();
+    measureColumnStartIndex =
+        tableBlockExecutionInfos.getAggregatorInfo().getMeasureAggregatorStartIndex();
   }
 
   /**

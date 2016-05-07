@@ -195,16 +195,6 @@ public class BlockExecutionInfo {
   private Map<Integer, KeyStructureInfo> columnGroupToKeyStructureInfo;
 
   /**
-   * start index of the measure column in aggregators
-   */
-  private short measureColumnStartIndex;
-
-  /**
-   * start index of the expression in aggregators
-   */
-  private int expressionStartIndex;
-
-  /**
    * mapping of dictionary dimension to its dictionary mapping which will be
    * used to get the actual data from dictionary for aggregation, sorting
    */
@@ -611,34 +601,6 @@ public class BlockExecutionInfo {
    */
   public void setNoDictionaryBlockIndexes(int[] noDictionaryBlockIndexes) {
     this.noDictionaryBlockIndexes = noDictionaryBlockIndexes;
-  }
-
-  /**
-   * @return the measureColumnStartIndex
-   */
-  public short getMeasureColumnStartIndex() {
-    return measureColumnStartIndex;
-  }
-
-  /**
-   * @param measureColumnStartIndex the measureColumnStartIndex to set
-   */
-  public void setMeasureColumnStartIndex(short measureColumnStartIndex) {
-    this.measureColumnStartIndex = measureColumnStartIndex;
-  }
-
-  /**
-   * @return the expressionStartIndex
-   */
-  public int getExpressionStartIndex() {
-    return expressionStartIndex;
-  }
-
-  /**
-   * @param expressionStartIndex the expressionStartIndex to set
-   */
-  public void setExpressionStartIndex(int expressionStartIndex) {
-    this.expressionStartIndex = expressionStartIndex;
   }
 
   /**
