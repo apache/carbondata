@@ -20,8 +20,10 @@
 package org.carbondata.core.cache.dictionary;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.constants.CarbonCommonConstants;
@@ -36,12 +38,14 @@ public class ColumnDictionaryInfo extends AbstractColumnDictionaryInfo {
   /**
    * index after members are sorted
    */
-  private List<Integer> sortOrderIndex;
+  private AtomicReference<List<Integer>> sortOrderReference =
+      new AtomicReference<List<Integer>>(new ArrayList<Integer>());
 
   /**
    * inverted index to retrieve the member
    */
-  private List<Integer> sortReverseOrderIndex;
+  private AtomicReference<List<Integer>> sortReverseOrderReference =
+      new AtomicReference<List<Integer>>(new ArrayList<Integer>());
 
   private DataType dataType;
 
@@ -72,13 +76,14 @@ public class ColumnDictionaryInfo extends AbstractColumnDictionaryInfo {
    * @return if found returns key else 0
    */
   @Override public int getSortedIndex(int surrogateKey) {
-    if (surrogateKey > sortReverseOrderIndex.size() || surrogateKey < MINIMUM_SURROGATE_KEY) {
+    if (surrogateKey > sortReverseOrderReference.get().size()
+        || surrogateKey < MINIMUM_SURROGATE_KEY) {
       return -1;
     }
     // decrement surrogate key as surrogate key basically means the index in array list
     // because surrogate key starts from 1 and index of list from 0, so it needs to be
     // decremented by 1
-    return sortReverseOrderIndex.get(surrogateKey - 1);
+    return sortReverseOrderReference.get().get(surrogateKey - 1);
   }
 
   /**
@@ -92,13 +97,14 @@ public class ColumnDictionaryInfo extends AbstractColumnDictionaryInfo {
    * @return value if found else null
    */
   @Override public String getDictionaryValueFromSortedIndex(int sortedIndex) {
-    if (sortedIndex > sortReverseOrderIndex.size() || sortedIndex < MINIMUM_SURROGATE_KEY) {
+    if (sortedIndex > sortReverseOrderReference.get().size()
+        || sortedIndex < MINIMUM_SURROGATE_KEY) {
       return null;
     }
     // decrement surrogate key as surrogate key basically means the index in array list
     // because surrogate key starts from 1, sort index will start form 1 and index
     // of list from 0, so it needs to be decremented by 1
-    int surrogateKey = sortOrderIndex.get(sortedIndex - 1);
+    int surrogateKey = sortOrderReference.get().get(sortedIndex - 1);
     return getDictionaryValueForKey(surrogateKey);
   }
 
@@ -118,7 +124,7 @@ public class ColumnDictionaryInfo extends AbstractColumnDictionaryInfo {
    * @param sortOrderIndex
    */
   @Override public void setSortOrderIndex(List<Integer> sortOrderIndex) {
-    this.sortOrderIndex = convertSortIndexChunkArrayListToCopyOnWriteArrayList(sortOrderIndex);
+    sortOrderReference.set(sortOrderIndex);
   }
 
   /**
@@ -128,8 +134,7 @@ public class ColumnDictionaryInfo extends AbstractColumnDictionaryInfo {
    * @param sortReverseOrderIndex
    */
   @Override public void setSortReverseOrderIndex(List<Integer> sortReverseOrderIndex) {
-    this.sortReverseOrderIndex =
-        convertSortIndexChunkArrayListToCopyOnWriteArrayList(sortReverseOrderIndex);
+    sortReverseOrderReference.set(sortReverseOrderIndex);
   }
 
   /**
@@ -142,10 +147,11 @@ public class ColumnDictionaryInfo extends AbstractColumnDictionaryInfo {
   private int getSurrogateKeyFromDictionaryValue(byte[] key) {
     String filterKey = new String(key);
     int low = 0;
-    int high = sortOrderIndex.size() - 1;
+    List<Integer> sortedSurrogates = sortOrderReference.get();
+    int high = sortedSurrogates.size() - 1;
     while (low <= high) {
       int mid = (low + high) >>> 1;
-      int surrogateKey = sortOrderIndex.get(mid);
+      int surrogateKey = sortedSurrogates.get(mid);
       byte[] dictionaryValue = getDictionaryBytesFromSurrogate(surrogateKey);
       int cmp = -1;
       if (this.getDataType() != DataType.STRING) {

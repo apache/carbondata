@@ -221,7 +221,7 @@ public abstract class AbstractColumnDictionaryInfo implements DictionaryInfo {
    */
   @Override public String getDictionaryValueForKey(int surrogateKey) {
     String dictionaryValue = null;
-    if(surrogateKey < MINIMUM_SURROGATE_KEY) {
+    if (surrogateKey < MINIMUM_SURROGATE_KEY) {
       return dictionaryValue;
     }
     byte[] dictionaryValueInBytes = getDictionaryBytesFromSurrogate(surrogateKey);
@@ -275,32 +275,5 @@ public abstract class AbstractColumnDictionaryInfo implements DictionaryInfo {
     byte[] keyData = value.getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
     return getSurrogateKey(keyData);
   }
-
-  /**
-   * This method will convert array list of dictionary chunk to
-   * copy on write array list
-   *
-   * @param dictionaryChunk
-   * @return
-   */
-  protected List<byte[]> convertDictionaryChunkArrayListToCopyOnWriteArrayList(
-      List<byte[]> dictionaryChunk) {
-    List<byte[]> copyOnWriteList = new CopyOnWriteArrayList<>();
-    copyOnWriteList.addAll(dictionaryChunk);
-    return copyOnWriteList;
-  }
-
-  /**
-   * This method will convert array list of sort index chunk to
-   * copy on write array list
-   *
-   * @param sortIndexChunk
-   * @return
-   */
-  protected List<Integer> convertSortIndexChunkArrayListToCopyOnWriteArrayList(
-      List<Integer> sortIndexChunk) {
-    List<Integer> copyOnWriteList = new CopyOnWriteArrayList<>();
-    copyOnWriteList.addAll(sortIndexChunk);
-    return copyOnWriteList;
-  }
 }
+

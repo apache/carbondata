@@ -18,7 +18,6 @@
 package org.carbondata.integration.spark.util
 
 import java.io.IOException
-import java.util.ArrayList
 import java.util.regex.Pattern
 
 import scala.collection.JavaConverters._
@@ -41,7 +40,6 @@ import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile
 import org.carbondata.core.datastorage.store.impl.FileFactory
 import org.carbondata.core.reader.{CarbonDictionaryReader, CarbonDictionaryReaderImpl}
-import org.carbondata.core.util.ByteUtil.UnsafeComparer
 import org.carbondata.core.util.CarbonUtil
 import org.carbondata.core.writer.{CarbonDictionaryWriter, CarbonDictionaryWriterImpl}
 import org.carbondata.core.writer.sortindex.{CarbonDictionarySortIndexWriter, CarbonDictionarySortIndexWriterImpl}
@@ -224,7 +222,7 @@ object GlobalDictionaryUtil extends Logging {
   def generateParserForChildrenDimension(dim: CarbonDimension,
                                          format: DataFormat,
                                          mapColumnValuesWithId:
-                                           HashMap[String, HashSet[Array[Byte]]],
+                                           HashMap[String, HashSet[String]],
                                          generic: GenericParser): Unit = {
     val children = dim.getListOfChildDimensions.asScala
     for (i <- 0 until children.length) {
@@ -239,7 +237,7 @@ object GlobalDictionaryUtil extends Logging {
 
   def generateParserForDimension(dimension: Option[CarbonDimension],
                                  format: DataFormat,
-                                 mapColumnValuesWithId: HashMap[String, HashSet[Array[Byte]]]
+                                 mapColumnValuesWithId: HashMap[String, HashSet[String]]
   ): Option[GenericParser] = {
     dimension match {
       case None =>
@@ -476,11 +474,11 @@ object GlobalDictionaryUtil extends Logging {
     }
   }
 
-  def generateAndWriteNewDistinctValueList(valuesBuffer: ArrayBuffer[Array[Byte]],
+  def generateAndWriteNewDistinctValueList(valuesBuffer: ArrayBuffer[String],
     dictionary: Dictionary,
     model: DictionaryLoadModel, columnIndex: Int): Int = {
     val values = valuesBuffer.toArray
-    java.util.Arrays.sort(values, new ByteArrayComparator)
+    java.util.Arrays.sort(values, Ordering[String])
     var distinctValueCount: Int = 0
     val writer: CarbonDictionaryWriter = new CarbonDictionaryWriterImpl(
       model.hdfsLocation, model.table,
@@ -500,7 +498,7 @@ object GlobalDictionaryUtil extends Logging {
             distinctValueCount += 1
           }
           for (i <- 1 until values.length) {
-            if (UnsafeComparer.INSTANCE.compareTo(values(i), preValue) != 0) {
+            if (preValue != values(i)) {
               if (dictionary.getSurrogateKey(values(i)) ==
                 CarbonCommonConstants.INVALID_SURROGATE_KEY) {
                 writer.write(values(i))
@@ -514,7 +512,7 @@ object GlobalDictionaryUtil extends Logging {
           writer.write(values(0))
           distinctValueCount += 1
           for (i <- 1 until values.length) {
-            if (UnsafeComparer.INSTANCE.compareTo(values(i), preValue) != 0) {
+            if (preValue != values(i)) {
               writer.write(values(i))
               preValue = values(i)
               distinctValueCount += 1

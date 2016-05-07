@@ -83,7 +83,7 @@ public class ColumnReverseDictionaryInfo extends AbstractColumnDictionaryInfo {
    * @param dictionaryChunk
    */
   @Override public void addDictionaryChunk(List<byte[]> dictionaryChunk) {
-    dictionaryChunks.add(convertDictionaryChunkArrayListToCopyOnWriteArrayList(dictionaryChunk));
+    dictionaryChunks.add(dictionaryChunk);
     if (null == dictionaryByteArrayToSurrogateKeyMap) {
       createDictionaryByteArrayToSurrogateKeyMap(dictionaryChunk.size());
     }
