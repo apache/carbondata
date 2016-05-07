@@ -18,14 +18,12 @@
  */
 package org.carbondata.integration.spark.load;
 
-import java.nio.charset.Charset;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.util.ByteUtil;
 import org.carbondata.core.util.CarbonProperties;
 
 /**
@@ -33,11 +31,6 @@ import org.carbondata.core.util.CarbonProperties;
  */
 public class CarbonDictionarySortModel implements Comparable<CarbonDictionarySortModel> {
 
-  /**
-   * Charset const
-   */
-  public static final Charset CHARSET_CONST =
-      Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET);
   /**
    * Surrogate key
    */
@@ -121,8 +114,7 @@ public class CarbonDictionarySortModel implements Comparable<CarbonDictionarySor
         return date1.compareTo(date2);
       case STRING:
       default:
-        return ByteUtil.UnsafeComparer.INSTANCE.compareTo(this.memberValue.getBytes(CHARSET_CONST),
-            o.memberValue.getBytes(CHARSET_CONST));
+        return this.memberValue.compareTo(o.memberValue);
     }
   }
 
@@ -130,8 +122,7 @@ public class CarbonDictionarySortModel implements Comparable<CarbonDictionarySor
    * @see Object#hashCode()
    */
   @Override public int hashCode() {
-    int result = 1;
-    result = result + ((memberValue == null) ? 0 : memberValue.hashCode());
+    int result = ((memberValue == null) ? 0 : memberValue.hashCode());
     return result;
   }
 
@@ -148,8 +139,7 @@ public class CarbonDictionarySortModel implements Comparable<CarbonDictionarySor
         if (other.memberValue != null) {
           return false;
         }
-      } else if (!ByteUtil.UnsafeComparer.INSTANCE.equals(this.memberValue.getBytes(CHARSET_CONST),
-          other.memberValue.getBytes(CHARSET_CONST))) {
+      } else if (!this.memberValue.equals(other.memberValue)) {
         return false;
       }
       return true;
