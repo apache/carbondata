@@ -37,7 +37,6 @@ import org.carbondata.query.columnar.aggregator.ColumnarAggregatorInfo;
 import org.carbondata.query.columnar.aggregator.impl.dimension.DimensionDataAggreagtor;
 import org.carbondata.query.columnar.keyvalue.AbstractColumnarScanResult;
 import org.carbondata.query.complex.querytypes.GenericQueryType;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 import org.carbondata.query.util.DataTypeConverter;
 import org.carbondata.query.util.QueryExecutorUtility;
 
@@ -107,7 +106,7 @@ public class ExpressionAggregator {
                       this.columnaraggreagtorInfo.getDimensions());
               byteStream.close();
             } catch (IOException e) {
-              LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
+              LOGGER.error(e);
             }
           }
         }

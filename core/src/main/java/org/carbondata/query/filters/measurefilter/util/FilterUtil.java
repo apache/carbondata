@@ -69,7 +69,6 @@ import org.carbondata.query.filter.executer.RowLevelFilterExecuterImpl;
 import org.carbondata.query.filter.resolver.FilterResolverIntf;
 import org.carbondata.query.filter.resolver.RowLevelFilterResolverImpl;
 import org.carbondata.query.schema.metadata.DimColumnFilterInfo;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 import org.carbondata.query.util.DataTypeConverter;
 
 public final class FilterUtil {
@@ -462,7 +461,7 @@ public final class FilterUtil {
         filterValuesList
             .add(getMaskedKey(rangesForMaskedByte, blockLevelKeyGenerator.generateKey(keys)));
       } catch (KeyGenException e) {
-        LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e.getMessage());
+        LOGGER.error(e.getMessage());
       }
     }
     return filterValuesList.toArray(new byte[filterValuesList.size()][]);
@@ -634,7 +633,7 @@ public final class FilterUtil {
     try {
       indexKey = new IndexKey(keyGenerator.generateKey(startKey), null);
     } catch (KeyGenException e) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e.getMessage());
+      LOGGER.error(e.getMessage());
     }
     return indexKey;
   }

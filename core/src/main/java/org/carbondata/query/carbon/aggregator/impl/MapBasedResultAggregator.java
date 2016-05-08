@@ -35,7 +35,6 @@ import org.carbondata.query.carbon.result.AbstractScannedResult;
 import org.carbondata.query.carbon.result.Result;
 import org.carbondata.query.carbon.result.impl.MapBasedResult;
 import org.carbondata.query.carbon.wrappers.ByteArrayWrapper;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
  * Scanned result aggregator for aggregated query This will use hash map to
@@ -165,7 +164,7 @@ public class MapBasedResultAggregator implements ScannedResultAggregator {
         aggData.put(key, e.getValue());
       }
     } catch (KeyGenException e) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
+      LOGGER.error(e);
     }
   }
 

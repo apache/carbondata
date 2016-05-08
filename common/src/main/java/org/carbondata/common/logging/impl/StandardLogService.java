@@ -21,13 +21,8 @@ package org.carbondata.common.logging.impl;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.text.MessageFormat;
 import java.util.Properties;
 
-import org.carbondata.common.logging.AuditLevel;
-import org.carbondata.common.logging.Level;
-import org.carbondata.common.logging.LocaleLogMessageFinder;
-import org.carbondata.common.logging.LogEvent;
 import org.carbondata.common.logging.LogService;
 
 import org.apache.log4j.Logger;
@@ -37,10 +32,7 @@ import org.apache.log4j.MDC;
  * Default Implementation of the <code>LogService</code>
  */
 public final class StandardLogService implements LogService {
-  /**
-   * for Resource Bundleing
-   */
-  private static final LocaleLogMessageFinder MESSAGE_RESOLVER = new ResourceBundleMessageFinder();
+
   private static final String QUERY_ID = "queryID:";
   private static final String PARTITION_ID = "[partitionID:";
   private static final String CARBON_AUDIT_LOG_PATH = "carbon.auditlog.file.path";
@@ -92,11 +84,11 @@ public final class StandardLogService implements LogService {
     props.setProperty("log4j.appender.stdout.layout.ConversionPattern", "%d %-5p [%c] %m%n");
     props.setProperty("log4j.appender.stdout.layout", "org.apache.log4j.PatternLayout");
     props.setProperty("log4j.appender.AUDL",
-        "org.carbondata.common.logging.AuditExtendedRollingFileAppender");
+        "org.carbondata.common.logging.impl.AuditExtendedRollingFileAppender");
 
     props.setProperty("log4j.appender.AUDL.File", auditLogPath);
     props.setProperty("log4j.appender.AUDL.threshold",
-        "AUDIT#org.carbondata.common.logging.AuditLevel");
+        "AUDIT#org.carbondata.common.logging.impl.AuditLevel");
     props.setProperty("log4j.appender.AUDL.layout.ConversionPattern",
         "%d{yy/MM/dd HH:mm:ss} %p %c{1}: %m%n");
     props.setProperty("log4j.appender.AUDL.layout", "org.apache.log4j.PatternLayout");
@@ -166,61 +158,36 @@ public final class StandardLogService implements LogService {
     return logger.isEnabledFor(org.apache.log4j.Level.WARN);
   }
 
-  public void audit(LogEvent event, Object... inserts) {
-    logMessage(Level.AUDIT, event, null, inserts);
-  }
-
-  public void debug(LogEvent event, Object... inserts) {
+  public void debug(String message) {
     if (logger.isDebugEnabled()) {
-      logMessage(Level.DEBUG, event, null, inserts);
+      logMessage(Level.DEBUG, null, message);
     }
   }
 
-  public void debug(LogEvent event, Throwable throwable, Object... inserts) {
-
-    if (logger.isDebugEnabled()) {
-      logMessage(Level.DEBUG, event, throwable, inserts);
-    }
+  public void error(String message) {
+    logMessage(Level.ERROR, null, message);
   }
 
-  public void error(LogEvent event, Object... inserts) {
-    logMessage(Level.ERROR, event, null, inserts);
+  public void error(Throwable throwable, String message) {
+    logMessage(Level.ERROR, throwable, message);
   }
 
-  public void error(LogEvent event, Throwable throwable, Object... inserts) {
-    logMessage(Level.ERROR, event, throwable, inserts);
+  public void error(Throwable throwable) {
+    logMessage(Level.ERROR, throwable, "");
   }
 
-  public void info(LogEvent event, Object... inserts) {
+  public void info(String message) {
     if (logger.isInfoEnabled()) {
-      logMessage(Level.INFO, event, null, inserts);
-    }
-  }
-
-  public void info(LogEvent event, Throwable throwable, Object... inserts) {
-    if (logger.isInfoEnabled()) {
-      logMessage(Level.INFO, event, null, inserts);
+      logMessage(Level.INFO, null, message);
     }
   }
 
   /**
    * Utility Method to log the the Message.
-   *
-   * @param logLevel  level for which logging is required.
-   * @param event     Logevent of this Log
-   * @param throwable
-   * @param inserts
    */
-  private void logMessage(Level logLevel, LogEvent event, Throwable throwable, Object... inserts) {
+  private void logMessage(Level logLevel, Throwable throwable, String message) {
     if (StandardLogService.doLog) {
       try {
-        String message = getMessage(event);
-        if (null == message) {
-          message = createMessageForMissingEntry(event, inserts);
-        } else {
-          message = String.format(message, inserts);
-          message = MessageFormat.format(message, inserts);
-        }
         //Append the partition id and query id if exist
         StringBuffer buff = new StringBuffer(Thread.currentThread().getName());
         buff.append(" ");
@@ -280,38 +247,13 @@ public final class StandardLogService implements LogService {
     }
   }
 
-  private String getMessage(LogEvent event) {
-    String message = MESSAGE_RESOLVER.findLogEventMessage(event);
-    return message;
-  }
-
-  private String createMessageForMissingEntry(LogEvent event, Object... inserts) {
-    StringBuilder messageBuilder = new StringBuilder();
-    messageBuilder.append("A message for key ");
-    messageBuilder.append(event.getEventCode());
-    messageBuilder.append(" could not be found.");
-
-    if (inserts != null && inserts.length > 0) {
-      messageBuilder.append(" The supplied inserts were: ");
-
-      for (int i = 0; i < inserts.length; i++) {
-        messageBuilder.append(inserts[i]);
-
-        if (i < inserts.length - 1) {
-          messageBuilder.append(", ");
-        }
-      }
-    }
-    return messageBuilder.toString();
-  }
-
   public boolean isInfoEnabled() {
     return logger.isInfoEnabled();
   }
 
-  public void warn(LogEvent event, Object... inserts) {
+  public void warn(String message) {
     if (isWarnEnabled()) {
-      logMessage(Level.WARN, event, null, inserts);
+      logMessage(Level.WARN, null, message);
     }
   }
 
@@ -334,6 +276,43 @@ public final class StandardLogService implements LogService {
     }
 
     logger.log(AuditLevel.AUDIT, "[" + hostName + "]" + msg);
+  }
+
+  /**
+   * Specifies the logging level.
+   */
+  enum Level {
+
+    NONE(0),
+    DEBUG(1),
+    INFO(2),
+    ERROR(3),
+    AUDIT(4),
+    WARN(5);
+
+    /**
+     * Constructor.
+     *
+     * @param level
+     */
+    Level(final int level) {
+
+    }
+
+    /**
+     * Returns an Instance for the specified type.
+     *
+     * @param name instance type needed.
+     * @return {@link Level}
+     */
+    public static Level getInstance(String name) {
+      for (Level logLevel : Level.values()) {
+        if (logLevel.name().equalsIgnoreCase(name)) {
+          return logLevel;
+        }
+      }
+      return null;
+    }
   }
 
 }

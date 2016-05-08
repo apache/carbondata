@@ -49,7 +49,6 @@ import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.carbondata.processing.util.CarbonSchemaParser;
 
 import org.apache.commons.codec.binary.Base64;
@@ -112,7 +111,7 @@ public class LevelGlobalSurrogateGeneratorThread implements Callable<Void> {
       }
 
     } catch (Exception e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e, e.getMessage());
+      LOGGER.error(e, e.getMessage());
       CarbonUtil.closeStreams(inputStream);
     } finally {
       CarbonUtil.closeStreams(inputStream);
@@ -151,16 +150,14 @@ public class LevelGlobalSurrogateGeneratorThread implements Callable<Void> {
 
       int partitionLength = partitionLocation[i].length;
       if (partitionLength == 0) {
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-            "partition length is 0");
+        LOGGER.info("partition length is 0");
         continue;
       }
       String path = partitionLocation[i][partitionLength - 1] + '/' + levelFileName + ".level";
 
       FileType fileType = FileFactory.getFileType(path);
       if (!FileFactory.isFileExist(path, fileType)) {
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-            "File does not exist at path :: " + path);
+        LOGGER.info("File does not exist at path :: " + path);
         continue;
       }
       CarbonFile carbonFile = FileFactory.getCarbonFile(path, fileType);
@@ -184,8 +181,7 @@ public class LevelGlobalSurrogateGeneratorThread implements Callable<Void> {
       index++;
     }
 
-    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-        "Time Taken to read surrogate for Level: " + levelFileName + " : " + (
+    LOGGER.info("Time Taken to read surrogate for Level: " + levelFileName + " : " + (
             System.currentTimeMillis() - currentTimeMillis));
 
     currentTimeMillis = System.currentTimeMillis();
@@ -222,8 +218,7 @@ public class LevelGlobalSurrogateGeneratorThread implements Callable<Void> {
 
       localKey = key;
       localValue = value;
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Time Taken to generate global surrogate for Level: " + levelFileName + " : " + (
+      LOGGER.info("Time Taken to generate global surrogate for Level: " + levelFileName + " : " + (
               System.currentTimeMillis() - currentTimeMillis));
 
       currentTimeMillis = System.currentTimeMillis();
@@ -251,17 +246,15 @@ public class LevelGlobalSurrogateGeneratorThread implements Callable<Void> {
 
         localKey = key;
         localValue = value;
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-            "Time Taken to generate global surrogate for Level: " + levelFileName + " : " + (
-                System.currentTimeMillis() - currentTimeMillis));
+        LOGGER.info("Time Taken to generate global surrogate for Level: " + levelFileName + " : "
+            + (System.currentTimeMillis() - currentTimeMillis));
         currentTimeMillis = System.currentTimeMillis();
         ex.submit(new WriterThread(localKey, localValue, partitionMemberVoList.get(i).getPath(),
             levelFileName + ".globallevel", maxSeqenceKey, minSeqenceKey));
       }
     }
 
-    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-        "Time Taken to write global surrogate for Level: " + levelFileName + " : " + (
+    LOGGER.info("Time Taken to write global surrogate for Level: " + levelFileName + " : " + (
             System.currentTimeMillis() - currentTimeMillis1));
 
     ex.shutdown();
@@ -315,8 +308,7 @@ public class LevelGlobalSurrogateGeneratorThread implements Callable<Void> {
       localValue = value;
       ex.submit(new WriterThread(localKey, localValue, partitionMemberVoList.get(i).getPath(),
           levelFileName + ".globallevel", maxSeqenceKey, minSeqenceKey));
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Time Taken to generate global surrogate for Level: " + levelFileName + " : " + (
+      LOGGER.info("Time Taken to generate global surrogate for Level: " + levelFileName + " : " + (
               System.currentTimeMillis() - currentTimeMillis));
 
       currentTimeMillis = System.currentTimeMillis();
@@ -353,9 +345,9 @@ public class LevelGlobalSurrogateGeneratorThread implements Callable<Void> {
       return inputStream.readInt();
 
     } catch (FileNotFoundException e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e, e.getMessage());
+      LOGGER.error(e, e.getMessage());
     } catch (IOException e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e, e.getMessage());
+      LOGGER.error(e, e.getMessage());
     } finally {
       CarbonUtil.closeStreams(inputStream);
     }
@@ -378,9 +370,9 @@ public class LevelGlobalSurrogateGeneratorThread implements Callable<Void> {
         stream.writeInt(value[i]);
       }
     } catch (FileNotFoundException e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e, e.getMessage());
+      LOGGER.error(e, e.getMessage());
     } catch (IOException e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e, e.getMessage());
+      LOGGER.error(e, e.getMessage());
     } finally {
       CarbonUtil.closeStreams(stream);
     }

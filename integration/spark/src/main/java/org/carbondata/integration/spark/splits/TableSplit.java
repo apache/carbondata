@@ -38,7 +38,6 @@ import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.integration.spark.partition.api.Partition;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 
 import org.apache.hadoop.io.Writable;
 
@@ -98,7 +97,7 @@ public class TableSplit implements Serializable, Writable {
     try {
       partition = (Partition) ois.readObject();
     } catch (ClassNotFoundException e) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e, e.getMessage());
+      LOGGER.error(e, e.getMessage());
     }
     ois.close();
   }

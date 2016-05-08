@@ -93,8 +93,7 @@ public final class CacheUtil {
    */
   public static Member[][] getMembersList(String filesLocaton, byte nameColumnIndex,
       String dataType) {
-    LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-        "Reading members data from location: " + filesLocaton);
+    LOGGER.debug("Reading members data from location: " + filesLocaton);
     //        File decryptedFile = decryptEncyptedFile(filesLocaton);
     Member[][] members = processMemberFile(filesLocaton, dataType);
     return members;
@@ -115,7 +114,7 @@ public final class CacheUtil {
       return fileChannel.readInt();
     } catch (IOException e) {
       //            e.printStackTrace();
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e, e.getMessage());
+      LOGGER.error(e, e.getMessage());
     } finally {
       CarbonUtil.closeStreams(fileChannel);
     }
@@ -137,7 +136,7 @@ public final class CacheUtil {
 
     } catch (IOException e) {
       //            e.printStackTrace();
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e, e.getMessage());
+      LOGGER.error(e, e.getMessage());
     } finally {
       CarbonUtil.closeStreams(fileChannel);
     }
@@ -164,13 +163,13 @@ public final class CacheUtil {
         actualSkipSize += fileChannel.skip(skipSize);
         skipSize = skipSize - actualSkipSize;
       }
-      LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "Bytes skipped " + skipSize);
+      LOGGER.debug("Bytes skipped " + skipSize);
       int maxVal = fileChannel.readInt();
       return maxVal;
 
     } catch (IOException e) {
       //            e.printStackTrace();
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e, e.getMessage());
+      LOGGER.error(e, e.getMessage());
     } finally {
       CarbonUtil.closeStreams(fileChannel);
     }
@@ -202,7 +201,7 @@ public final class CacheUtil {
       }
     } catch (IOException e) {
       //            e.printStackTrace();
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e, e.getMessage());
+      LOGGER.error(e, e.getMessage());
     } finally {
       CarbonUtil.closeStreams(fileChannel);
     }
@@ -231,7 +230,7 @@ public final class CacheUtil {
       }
     } catch (IOException e) {
       //            e.printStackTrace();
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e, e.getMessage());
+      LOGGER.error(e, e.getMessage());
     } finally {
       CarbonUtil.closeStreams(fileChannel);
     }
@@ -313,17 +312,14 @@ public final class CacheUtil {
       CarbonFile memberFile = FileFactory.getCarbonFile(filename, fileType);
       members = populateMemberCache(fileChannel, memberFile, filename, dataType);
     } catch (FileNotFoundException f) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-          "@@@@@@  Member file is missing @@@@@@ : " + filename);
+      LOGGER.error("@@@@@@  Member file is missing @@@@@@ : " + filename);
     } catch (IOException e) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-          "@@@@@@  Error while reading Member the file @@@@@@ : " + filename);
+      LOGGER.error("@@@@@@  Error while reading Member the file @@@@@@ : " + filename);
     } finally {
       CarbonUtil.closeStreams(fileChannel);
     }
 
-    LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-        "Time taken to process file " + filename + " is : " + (System.currentTimeMillis()
+    LOGGER.debug("Time taken to process file " + filename + " is : " + (System.currentTimeMillis()
             - startTime));
     return members;
   }
@@ -354,17 +350,14 @@ public final class CacheUtil {
       fileChannel = FileFactory.getDataInputStream(filename, FileFactory.getFileType(filename));
       populateMemberCache(fileChannel, memberFile, filename, dataType);
     } catch (FileNotFoundException f) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-          "@@@@@@  Member file is missing @@@@@@ : " + filename);
+      LOGGER.error("@@@@@@  Member file is missing @@@@@@ : " + filename);
     } catch (IOException e) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-          "@@@@@@  Error while reading Member the file @@@@@@ : " + filename);
+      LOGGER.error("@@@@@@  Error while reading Member the file @@@@@@ : " + filename);
     } finally {
       CarbonUtil.closeStreams(fileChannel);
     }
 
-    LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-        "Time taken to process file " + filename + " is : " + (System.currentTimeMillis()
+    LOGGER.debug("Time taken to process file " + filename + " is : " + (System.currentTimeMillis()
             - startTime));
 
   }
@@ -484,7 +477,7 @@ public final class CacheUtil {
       sortIndexAndReverseIndexArray.add(getIndexArray(buffer));
       sortIndexAndReverseIndexArray.add(getIndexArray(buffer));
     } catch (IOException e) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
+      LOGGER.error(e);
       throw e;
     } finally {
       CarbonUtil.closeStreams(dataInputStream);
@@ -542,8 +535,7 @@ public final class CacheUtil {
    */
   public static List<long[]> getHierarchiesList(String filesLocaton, int keyLength,
       KeyGenerator keyGen) {
-    LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-        "Reading hierarchies from location: " + filesLocaton);
+    LOGGER.debug("Reading hierarchies from location: " + filesLocaton);
 
     // hierarchies list , this will hold hierarchy surrogate key
     List<long[]> hierarchies = new ArrayList<long[]>(LIST_INTIAL_CAPECITY);
@@ -561,16 +553,14 @@ public final class CacheUtil {
         wrapHiers.add(new ArrayWrapper(keyGen.getKeyArray(line)));
       }
     } catch (IOException e) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-          "Error while reading the file: " + filesLocaton);
+      LOGGER.error("Error while reading the file: " + filesLocaton);
     } finally {
       try {
         if (reader != null) {
           reader.close();
         }
       } catch (IOException e) {
-        LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-            "Error while closing the file stream for file " + filesLocaton);
+        LOGGER.error("Error while closing the file stream for file " + filesLocaton);
       }
     }
 
@@ -662,8 +652,7 @@ public final class CacheUtil {
         return true;
       }
     } catch (IOException e) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-          "@@@@@@  Member file not found for size to be calculated @@@@@@ : " + fileName);
+      LOGGER.error("@@@@@@  Member file not found for size to be calculated @@@@@@ : " + fileName);
     }
     return false;
   }

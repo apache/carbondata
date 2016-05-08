@@ -46,7 +46,6 @@ import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.writer.ByteArrayHolder;
 import org.carbondata.processing.merger.exeception.SliceMergerException;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 
 public final class CarbonSliceMergerUtil {
   /**
@@ -176,8 +175,7 @@ public final class CarbonSliceMergerUtil {
           writeIntoHierarchyFile(arrayHolder.getMdKey(), arrayHolder.getPrimaryKey(),
               outPutFileChannel);
         } catch (SliceMergerException e) {
-          LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-              "Unable to write hierarchy file");
+          LOGGER.error("Unable to write hierarchy file");
           throw new IOException(e);
         }
 

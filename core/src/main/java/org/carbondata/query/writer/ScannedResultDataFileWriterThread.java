@@ -34,7 +34,6 @@ import org.carbondata.query.executer.exception.QueryExecutionException;
 import org.carbondata.query.executer.pagination.impl.DataFileWriter;
 import org.carbondata.query.result.Result;
 import org.carbondata.query.schema.metadata.DataProcessorInfo;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 import org.carbondata.query.util.ScannedResultProcessorUtil;
 
 /**
@@ -98,10 +97,10 @@ public class ScannedResultDataFileWriterThread extends ResultWriter {
       try {
         if (null != carbonFile && !carbonFile.renameTo(destPath)) {
           LOGGER
-              .info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "Problem while renaming the file");
+              .info("Problem while renaming the file");
         }
       } catch (Exception e) {
-        LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e,
+        LOGGER.error(e,
             "Problem while renaming the file");
       }
     }

@@ -139,7 +139,7 @@ public class LevelSortIndexWriterThread implements Callable<Void> {
       }
       maxSurrogate = fileChannel.readInt();
     } catch (IOException e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
+      LOGGER.error(e,
           "problem while reading the level file");
       throw e;
     } finally {
@@ -155,7 +155,7 @@ public class LevelSortIndexWriterThread implements Callable<Void> {
       fileChannel.readFully(buffer.array());
       buffer.rewind();
     } catch (IOException e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
+      LOGGER.error(e,
           "problem while reading the level file");
       throw e;
     } finally {
@@ -216,7 +216,7 @@ public class LevelSortIndexWriterThread implements Callable<Void> {
         dataOutputStream.writeInt(sortReverseOrderIndex[i]);
       }
     } catch (IOException e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
+      LOGGER.error(e,
           "problem while writing the level sort index file");
       throw e;
     } finally {

@@ -34,7 +34,6 @@ import org.carbondata.query.processor.exception.DataProcessorException;
 import org.carbondata.query.reader.ResultTempFileReader;
 import org.carbondata.query.reader.exception.ResultReaderException;
 import org.carbondata.query.schema.metadata.DataProcessorInfo;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 
 //import org.carbondata.core.engine.executer.calcexp.CarbonCalcFunction;
 
@@ -114,7 +113,7 @@ public class UnSortedResultMerger implements Callable<Void> {
       // iterate through list and for each file process the each row of data.
       writeRecordToFile();
     } catch (ResultReaderException e) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
+      LOGGER.error(e);
       throw new ResultMergerException(e);
     } finally {
       dataProcessor.finish();

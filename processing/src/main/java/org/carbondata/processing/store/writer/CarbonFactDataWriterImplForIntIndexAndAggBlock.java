@@ -40,7 +40,6 @@ import org.carbondata.core.writer.CarbonFooterWriter;
 import org.carbondata.format.FileFooter;
 import org.carbondata.processing.store.CarbonDataFileAttributes;
 import org.carbondata.processing.store.writer.exception.CarbonDataWriterException;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 
 public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFactDataWriter<int[]> {
   private static final LogService LOGGER = LogServiceFactory
@@ -151,7 +150,7 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
           dataIndexMapLength[idx] = compressedDataIndex[idx].length;
           idx++;
         } catch (Exception e) {
-          LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
+          LOGGER.error(e);
         }
       }
     }

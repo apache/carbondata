@@ -34,7 +34,6 @@ import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.carbondata.query.datastorage.streams.DataInputStream;
 import org.carbondata.query.util.CacheUtil;
 import org.carbondata.query.util.CarbonDataInputStreamFactory;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 
 public final class DimensionCacheLoader {
   /**
@@ -144,7 +143,7 @@ public final class DimensionCacheLoader {
           }
         }
       } catch (IOException e) {
-        LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
+        LOGGER.error(e);
       }
     }
 

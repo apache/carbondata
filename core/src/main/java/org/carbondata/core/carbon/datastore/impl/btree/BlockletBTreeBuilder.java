@@ -26,7 +26,6 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.datastore.BTreeBuilderInfo;
 import org.carbondata.core.carbon.datastore.IndexKey;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
  * Btree based builder which will build the leaf node in a b+ tree format
@@ -100,9 +99,7 @@ public class BlockletBTreeBuilder extends AbstractBTreeBuilder {
     }
     // adding a intermediate node
     addIntermediateNode(curNode, nodeGroups, currentGroup, interNSKeyList, nInternal);
-    LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-        "**********************************************" + "***********Total Number Rows In BTREE: "
-            + totalNumberOfTuple);
+    LOGGER.info("****************************Total Number Rows In BTREE: " + totalNumberOfTuple);
   }
 
 }

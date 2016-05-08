@@ -38,7 +38,6 @@ import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.CarbonUtilException;
 import org.carbondata.core.util.DataTypeUtil;
 import org.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.carbondata.processing.util.RemoveDictionaryUtil;
 
 public class IntermediateFileMerger implements Callable<Void> {
@@ -120,7 +119,7 @@ public class IntermediateFileMerger implements Callable<Void> {
         }
       }
     } catch (Exception e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
+      LOGGER.error(e,
           "Problem while intermediate merging");
       isFailed = true;
     } finally {
@@ -133,13 +132,12 @@ public class IntermediateFileMerger implements Callable<Void> {
         try {
           finish();
         } catch (CarbonSortKeyAndGroupByException e) {
-          LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
+          LOGGER.error(e,
               "Problem while deleting the merge file");
         }
       } else {
         if (mergerParameters.getOutFile().delete()) {
-          LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-              "Problem while deleting the merge file");
+          LOGGER.error("Problem while deleting the merge file");
         }
       }
     }
@@ -230,15 +228,13 @@ public class IntermediateFileMerger implements Callable<Void> {
    * @throws CarbonSortKeyAndGroupByException
    */
   private void startSorting() throws CarbonSortKeyAndGroupByException {
-    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-        "Number of temp file: " + this.fileCounter);
+    LOGGER.info("Number of temp file: " + this.fileCounter);
 
     // create record holder heap
     createRecordHolderQueue(mergerParameters.getIntermediateFiles());
 
     // iterate over file list and create chunk holder and add to heap
-    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-        "Started adding first record from each file");
+    LOGGER.info("Started adding first record from each file");
 
     SortTempFileChunkHolder sortTempFileChunkHolder = null;
 
@@ -259,8 +255,7 @@ public class IntermediateFileMerger implements Callable<Void> {
       this.recordHolderHeap.add(sortTempFileChunkHolder);
     }
 
-    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-        "Heap Size" + this.recordHolderHeap.size());
+    LOGGER.info("Heap Size" + this.recordHolderHeap.size());
   }
 
   /**

@@ -28,7 +28,6 @@ import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.datastorage.store.compression.SnappyCompression.SnappyByteCompression;
 import org.carbondata.core.util.CarbonUtil;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 
 public class CarbonCompressedSortTempFileReader extends AbstractSortTempFileReader {
   /**
@@ -121,8 +120,7 @@ public class CarbonCompressedSortTempFileReader extends AbstractSortTempFileRead
             byteArraySize = measureBuffer[j].readInt();
             mdkey = new byte[byteArraySize];
             if (measureBuffer[j].read(mdkey) < 0) {
-              LOGGER.debug(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-                  "Problme while reading from stream");
+              LOGGER.debug("Problme while reading from stream");
             }
             record[index++] = mdkey;
           }
@@ -140,8 +138,7 @@ public class CarbonCompressedSortTempFileReader extends AbstractSortTempFileRead
         records[i] = record;
       }
     } catch (IOException e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Problem while preparing output record ", e);
+      LOGGER.error("Problem while preparing output record ");
     }
     return records;
   }

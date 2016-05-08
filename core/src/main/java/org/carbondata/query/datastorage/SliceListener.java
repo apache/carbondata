@@ -25,7 +25,6 @@ import java.util.Set;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
  * Maintains a list of queries on which are working on the given slice. Once all
@@ -71,8 +70,7 @@ public class SliceListener {
   }
 
   public void fireQueryFinish(Long queryId) {
-    LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-        "SliceListener: query finished " + queryId);
+    LOGGER.info("SliceListener: query finished " + queryId);
     //System.out.println("SliceListener: query finished " + queryId);
     //Don't remove till some one makes it as in active
     if (!slice.isActive()) {
@@ -81,8 +79,7 @@ public class SliceListener {
 
     if (queries.size() == 0) {
 
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-          "SliceListener: Unregistering slice " + slice.getID());
+      LOGGER.error("SliceListener: Unregistering slice " + slice.getID());
 
       //Yes this slice is ready to clear
       InMemoryTableStore.getInstance().unRegisterSlice(slice.getCubeUniqueName(), slice);

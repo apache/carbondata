@@ -38,7 +38,6 @@ import org.carbondata.query.executer.impl.QueryResultPreparator;
 import org.carbondata.query.executer.pagination.impl.QueryResult;
 import org.carbondata.query.result.ChunkResult;
 import org.carbondata.query.schema.metadata.SliceExecutionInfo;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 
 public class DetailQueryResultIterator implements CarbonIterator<ChunkResult> {
 
@@ -102,7 +101,7 @@ public class DetailQueryResultIterator implements CarbonIterator<ChunkResult> {
         info.setStartNode(startNode);
         info.setNumberOfNodeToScan(1);
       } catch (KeyGenException e) {
-        LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e, e.getMessage());
+        LOGGER.error(e, e.getMessage());
       }
     }
 
@@ -118,7 +117,7 @@ public class DetailQueryResultIterator implements CarbonIterator<ChunkResult> {
     try {
       executeSlices = executor.executeSlices(infos, sliceIndexToBeExecuted);
     } catch (QueryExecutionException e) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e, e.getMessage());
+      LOGGER.error(e, e.getMessage());
     }
     for (int i = 0; i < sliceIndexToBeExecuted.length; i++) {
       if (sliceIndexToBeExecuted[i] != -1) {

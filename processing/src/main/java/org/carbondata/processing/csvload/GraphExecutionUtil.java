@@ -48,7 +48,6 @@ import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.processing.etl.DataLoadingException;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.carbondata.processing.util.CarbonSchemaParser;
 
 import org.pentaho.di.trans.steps.textfileinput.TextFileInputField;
@@ -123,11 +122,11 @@ public final class GraphExecutionUtil {
           new BufferedReader(new InputStreamReader(fileReader, Charset.defaultCharset()));
       readLine = bufferedReader.readLine();
     } catch (FileNotFoundException e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
+      LOGGER.error(e,
           "CSV Input File not found  " + e.getMessage());
       throw new DataLoadingException("CSV Input File not found ", e);
     } catch (IOException e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
+      LOGGER.error(e,
           "Not able to read CSV input File  " + e.getMessage());
       throw new DataLoadingException("Not able to read CSV input File ", e);
     } finally {
@@ -194,7 +193,7 @@ public final class GraphExecutionUtil {
         return carbonFile.isDirectory();
       }
     } catch (IOException e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
+      LOGGER.error(e,
           "Not able check path exists or not  " + e.getMessage() + "path: " + csvFilePath);
     }
 
@@ -304,10 +303,10 @@ public final class GraphExecutionUtil {
       readLine = bufferedReader.readLine();
 
     } catch (FileNotFoundException e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
+      LOGGER.error(e,
           "CSV Input File not found  " + e.getMessage());
     } catch (IOException e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
+      LOGGER.error(e,
           "Not able to read CSV input File  " + e.getMessage());
     } finally {
       CarbonUtil.closeStreams(fileReader, bufferedReader);

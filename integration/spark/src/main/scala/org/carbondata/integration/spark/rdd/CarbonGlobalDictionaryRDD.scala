@@ -31,7 +31,7 @@ import org.carbondata.core.carbon.CarbonTableIdentifier
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.integration.spark.load.CarbonLoaderUtil
-import org.carbondata.integration.spark.util.{CarbonSparkInterFaceLogEvent, GlobalDictionaryUtil}
+import org.carbondata.integration.spark.util.GlobalDictionaryUtil
 
 /**
  * A partitioner partition by column.
@@ -181,7 +181,7 @@ class CarbonBlockDistinctValuesCombineRDD(
       }
     } catch {
       case ex: Exception =>
-        LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, ex)
+        LOGGER.error(ex)
     }
     distinctValuesList.map { iter =>
       val valueList = iter._2.toArray
@@ -245,20 +245,18 @@ class CarbonGlobalDictionaryGenerateRDD(
           )
           val t5 = System.currentTimeMillis
 
-          LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-            "\n columnName:" + model.primDimensions(split.index).getColName +
-              "\n columnId:" + model.primDimensions(split.index).getColumnId +
-              "\n new distinct values count:" + distinctValueCount +
-              "\n create dictionary cache:" + (t2 - t1) +
-              "\n combine lists:" + (t3 - t2) +
-              "\n sort list, distinct and write:" + (t4 - t3) +
-              "\n write sort info:" + (t5 - t4)
-          )
+          LOGGER.info("\n columnName:" + model.primDimensions(split.index).getColName +
+                        "\n columnId:" + model.primDimensions(split.index).getColumnId +
+                        "\n new distinct values count:" + distinctValueCount +
+                        "\n create dictionary cache:" + (t2 - t1) +
+                        "\n combine lists:" + (t3 - t2) +
+                        "\n sort list, distinct and write:" + (t4 - t3) +
+                        "\n write sort info:" + (t5 - t4))
         }
       } catch {
         case ex: Exception =>
           status = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
-          LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, ex)
+          LOGGER.error(ex)
       }
       var finished = false
 

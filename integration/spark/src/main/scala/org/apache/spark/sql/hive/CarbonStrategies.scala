@@ -34,7 +34,6 @@ import org.apache.spark.sql.hive.execution.{DescribeHiveTableCommand, HiveNative
 import org.apache.spark.sql.types.{IntegerType, LongType}
 
 import org.carbondata.common.logging.LogServiceFactory
-import org.carbondata.integration.spark.util.CarbonSparkInterFaceLogEvent
 
 class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
 
@@ -122,8 +121,7 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
       PhysicalOperation(projectList, predicates,
       l@LogicalRelation(carbonRelation: CarbonDatasourceRelation, _)), right)
         if (canPushDownJoin(right, condition)) =>
-        LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-          s"pushing down for ExtractEquiJoinKeys:right")
+        LOGGER.info(s"pushing down for ExtractEquiJoinKeys:right")
         val carbon = carbonScan(projectList, predicates, carbonRelation.carbonRelation, None, None,
           None, false, true)
         val pushedDownJoin = FilterPushJoin(
@@ -140,8 +138,7 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
       PhysicalOperation(projectList, predicates,
       l@LogicalRelation(carbonRelation: CarbonDatasourceRelation, _)))
         if (canPushDownJoin(left, condition)) =>
-        LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-          s"pushing down for ExtractEquiJoinKeys:left")
+        LOGGER.info(s"pushing down for ExtractEquiJoinKeys:left")
         val carbon = carbonScan(projectList, predicates, carbonRelation.carbonRelation, None, None,
           None, false, true)
 
@@ -296,8 +293,7 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
         case BroadcastHint(p) => true
         case p if sqlContext.conf.autoBroadcastJoinThreshold > 0 &&
           p.statistics.sizeInBytes <= sqlContext.conf.autoBroadcastJoinThreshold => {
-          LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-            "canPushDownJoin statistics:" + p.statistics.sizeInBytes)
+          LOGGER.info("canPushDownJoin statistics:" + p.statistics.sizeInBytes)
           true
         }
         case _ => false

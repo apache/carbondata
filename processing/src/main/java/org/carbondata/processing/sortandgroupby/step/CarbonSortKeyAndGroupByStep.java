@@ -44,7 +44,6 @@ import org.carbondata.processing.exception.CarbonDataProcessorException;
 import org.carbondata.processing.schema.metadata.SortObserver;
 import org.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 import org.carbondata.processing.sortandgroupby.sortkey.CarbonSortKeys;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.carbondata.processing.util.CarbonDataProcessorUtil;
 import org.carbondata.query.aggregator.MeasureAggregator;
 
@@ -206,12 +205,10 @@ public class CarbonSortKeyAndGroupByStep extends BaseStep {
       // get all fields
       this.meta.getFields(data.getOutputRowMeta(), getStepname(), null, null, this);
 
-      SORTKEYSTEPLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Record Procerssed For table: " + meta.getTabelName());
-      SORTKEYSTEPLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Record Form Previous Step was null");
+      SORTKEYSTEPLOGGER.info("Record Procerssed For table: " + meta.getTabelName());
+      SORTKEYSTEPLOGGER.info("Record Form Previous Step was null");
       String logMessage = "Summary: Carbon Sort Key Step: Read: " + 1 + ": Write: " + 1;
-      SORTKEYSTEPLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, logMessage);
+      SORTKEYSTEPLOGGER.info(logMessage);
       putRow(data.getOutputRowMeta(), outRow);
       setOutputDone();
       return false;
@@ -257,10 +254,9 @@ public class CarbonSortKeyAndGroupByStep extends BaseStep {
     }
     readCounter++;
     if (readCounter % logCounter == 0) {
-      SORTKEYSTEPLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Record Procerssed For table: " + meta.getTabelName());
+      SORTKEYSTEPLOGGER.info("Record Procerssed For table: " + meta.getTabelName());
       String logMessage = "Carbon Sort Key Step: Record Read: " + readCounter;
-      SORTKEYSTEPLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, logMessage);
+      SORTKEYSTEPLOGGER.info(logMessage);
     }
     try {
       //check for minimum value
@@ -268,7 +264,7 @@ public class CarbonSortKeyAndGroupByStep extends BaseStep {
       // add row
       this.carbonSortKeys.addRow(row);
     } catch (Throwable e) {
-      SORTKEYSTEPLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
+      SORTKEYSTEPLOGGER.error(e);
       throw new KettleException(e);
     }
 
@@ -317,12 +313,10 @@ public class CarbonSortKeyAndGroupByStep extends BaseStep {
     }
     if (null == this.carbonSortKeys) {
 
-      SORTKEYSTEPLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Record Procerssed For table: " + meta.getTabelName());
-      SORTKEYSTEPLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Number of Records was Zero");
+      SORTKEYSTEPLOGGER.info("Record Procerssed For table: " + meta.getTabelName());
+      SORTKEYSTEPLOGGER.info("Number of Records was Zero");
       String logMessage = "Summary: Carbon Sort Key Step: Read: " + 0 + ": Write: " + 0;
-      SORTKEYSTEPLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, logMessage);
+      SORTKEYSTEPLOGGER.info(logMessage);
       putRow(data.getOutputRowMeta(), new Object[0]);
       setOutputDone();
       return false;
@@ -332,11 +326,10 @@ public class CarbonSortKeyAndGroupByStep extends BaseStep {
       this.carbonSortKeys.startSorting();
       writeMeasureMetadataFile();
       // check any more rows are present
-      SORTKEYSTEPLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Record Procerssed For table: " + meta.getTabelName());
+      SORTKEYSTEPLOGGER.info("Record Procerssed For table: " + meta.getTabelName());
       String logMessage =
           "Summary: Carbon Sort Key Step: Read: " + readCounter + ": Write: " + writeCounter;
-      SORTKEYSTEPLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, logMessage);
+      SORTKEYSTEPLOGGER.info(logMessage);
       putRow(data.getOutputRowMeta(), new Object[0]);
       setOutputDone();
       return false;
@@ -547,7 +540,7 @@ public class CarbonSortKeyAndGroupByStep extends BaseStep {
           .writeMeasureMetaDataToFile(maxValue, minValue, decimalLength, uniqueValue, aggType,
               new byte[minValue.length], measureMetaDataFileLocation);
     } catch (CarbonDataProcessorException e) {
-      SORTKEYSTEPLOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
+      SORTKEYSTEPLOGGER.error(e);
     }
   }
 

@@ -46,9 +46,7 @@ import org.carbondata.core.load.LoadMetadataDetails;
 import org.carbondata.core.locks.CarbonLockFactory;
 import org.carbondata.core.locks.ICarbonLock;
 import org.carbondata.core.locks.LockUsage;
-import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonUtil;
-import org.carbondata.integration.spark.util.CarbonSparkInterFaceLogEvent;
 
 import com.google.gson.Gson;
 
@@ -68,8 +66,7 @@ public final class DeleteLoadFromMetadata {
     List<String> invalidLoadIds = new ArrayList<String>(0);
     try {
       if (carbonLock.lockWithRetries()) {
-        LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-            "Metadata lock has been successfully acquired");
+        LOGGER.info("Metadata lock has been successfully acquired");
 
         String dataLoadLocation = cubeFolderPath + CarbonCommonConstants.FILE_SEPARATOR
             + CarbonCommonConstants.LOADMETADATA_FILENAME;
@@ -81,7 +78,7 @@ public final class DeleteLoadFromMetadata {
         if (!FileFactory.isFileExist(dataLoadLocation, FileFactory.getFileType(dataLoadLocation))) {
           // log error.
           LOGGER
-              .error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "Load metadata file is not present.");
+              .error("Load metadata file is not present.");
           return loadIds;
         }
         // read existing metadata details in load metadata.
@@ -89,8 +86,7 @@ public final class DeleteLoadFromMetadata {
         if (listOfLoadFolderDetailsArray != null && listOfLoadFolderDetailsArray.length != 0) {
           updateDeletionStatusInDetails(loadIds, listOfLoadFolderDetailsArray, invalidLoadIds);
           if (!invalidLoadIds.isEmpty()) {
-            LOGGER.warn(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-                "Load doesnt exist or it is already deleted , LoadSeqId-" + invalidLoadIds);
+            LOGGER.warn("Load doesnt exist or it is already deleted , LoadSeqId-" + invalidLoadIds);
           }
 
           AtomicFileOperations fileWrite = new AtomicFileOperationsImpl(dataLoadLocation,
@@ -115,17 +111,16 @@ public final class DeleteLoadFromMetadata {
           fileWrite.close();
 
         } else {
-          LOGGER.warn(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-              "Load doesnt exist or it is already deleted , LoadSeqId-" + loadIds);
+          LOGGER.warn("Load doesnt exist or it is already deleted , LoadSeqId-" + loadIds);
           return loadIds;
         }
 
       } else {
         LOGGER
-            .error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "Unable to acquire the metadata lock");
+            .error("Unable to acquire the metadata lock");
       }
     } catch (IOException e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "IOException" + e.getMessage());
+      LOGGER.error("IOException" + e.getMessage());
     } finally {
       fileUnlock(carbonLock);
     }
@@ -135,11 +130,10 @@ public final class DeleteLoadFromMetadata {
 
   public static void fileUnlock(ICarbonLock carbonLock) {
     if (carbonLock.unlock()) {
-      LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-          "Metadata lock has been successfully released");
+      LOGGER.info("Metadata lock has been successfully released");
     } else {
       LOGGER
-          .error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "Not able to release the metadata lock");
+          .error("Not able to release the metadata lock");
     }
   }
 
@@ -157,8 +151,7 @@ public final class DeleteLoadFromMetadata {
           if (!CarbonCommonConstants.MARKED_FOR_DELETE.equals(loadMetadata.getLoadStatus())) {
             loadMetadata.setLoadStatus(CarbonCommonConstants.MARKED_FOR_DELETE);
             loadMetadata.setModificationOrdeletionTimesStamp(CarbonLoaderUtil.readCurrentTime());
-            LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-                "LoadId " + loadId + " Marked for Delete");
+            LOGGER.info("LoadId " + loadId + " Marked for Delete");
           } else {
             // it is already deleted . can not delete it again.
             invalidLoadIds.add(loadId);

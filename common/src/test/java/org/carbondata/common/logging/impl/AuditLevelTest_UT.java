@@ -17,41 +17,34 @@
  * under the License.
  */
 
-package org.carbondata.common.logging;
+package org.carbondata.common.logging.impl;
 
-/**
- * Specifies the logging level.
- */
-public enum Level {
+import org.carbondata.common.logging.impl.AuditLevel;
 
-  NONE(0),
-  DEBUG(1),
-  INFO(2),
-  ERROR(3),
-  AUDIT(4),
-  WARN(5);
+import junit.framework.TestCase;
+import org.apache.log4j.Level;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
-  /**
-   * Constructor.
-   *
-   * @param level
-   */
-  Level(final int level) {
+public class AuditLevelTest_UT extends TestCase {
 
+  @Before public void setUp() throws Exception {
   }
 
-  /**
-   * Returns an Instance for the specified type.
-   *
-   * @param name instance type needed.
-   * @return {@link Level}
-   */
-  public static Level getInstance(String name) {
-    for (Level logLevel : Level.values()) {
-      if (logLevel.name().equalsIgnoreCase(name)) {
-        return logLevel;
-      }
-    }
-    return null;
+  @After public void tearDown() throws Exception {
   }
+
+  @Test public void testAuditLevel() {
+    assertEquals(AuditLevel.AUDIT.toInt(), 55000);
+  }
+
+  @Test public void testToLevelIntLevel() {
+    assertSame(AuditLevel.AUDIT, AuditLevel.toLevel(55000, Level.DEBUG));
+  }
+
+  @Test public void testToLevelStringLevel() {
+    assertSame(AuditLevel.AUDIT, AuditLevel.toLevel("AUDIT", Level.DEBUG));
+  }
+
 }

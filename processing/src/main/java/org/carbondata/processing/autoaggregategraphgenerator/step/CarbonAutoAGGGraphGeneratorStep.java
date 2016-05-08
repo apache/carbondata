@@ -43,7 +43,6 @@ import org.carbondata.processing.graphgenerator.AggregateTableSelecter;
 import org.carbondata.processing.graphgenerator.AutoAggregateTableSelecter;
 import org.carbondata.processing.graphgenerator.GraphGenerator;
 import org.carbondata.processing.schema.metadata.AggregateTable;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.carbondata.processing.util.CarbonSchemaParser;
 
 import org.eigenbase.xom.Parser;
@@ -137,15 +136,13 @@ public class CarbonAutoAGGGraphGeneratorStep extends BaseStep implements StepInt
             .generateGraph(meta.getFactTableName(), meta.getFactStoreLocation(),
                 generator.getAllAggTables(), true, meta.getAggTables());
 
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-            "Loaded From Table: " + poll.factTableName + " : " + meta.getAggTables());
+        LOGGER.info("Loaded From Table: " + poll.factTableName + " : " + meta.getAggTables());
         executeAggregateGeneration(generateGraph);
 
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-            "Record Procerssed For Auto Aggregate Table: ");
+        LOGGER.info("Record Procerssed For Auto Aggregate Table: ");
         String logMessage =
             "Summary: Carbon Fact Reader Step: Read: " + 1 + ": Write: " + writeCounter;
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, logMessage);
+        LOGGER.info(logMessage);
         putRow(data.outputRowMeta, new Object[0]);
         setOutputDone();
         return false;

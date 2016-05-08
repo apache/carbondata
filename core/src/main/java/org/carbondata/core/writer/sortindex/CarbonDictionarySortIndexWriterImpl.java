@@ -26,7 +26,6 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
-import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.writer.ThriftWriter;
 import org.carbondata.format.ColumnSortInfo;
@@ -124,8 +123,7 @@ public class CarbonDictionarySortIndexWriterImpl implements CarbonDictionarySort
       String folderContainingFile = CarbonTablePath.getFolderContainingFile(this.sortIndexFilePath);
       boolean created = CarbonUtil.checkAndCreateFolder(folderContainingFile);
       if (!created) {
-        LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-            "Database metadata folder creation status :: " + created);
+        LOGGER.error("Database metadata folder creation status :: " + created);
         throw new IOException("Failed to created database metadata folder");
       }
       try {
@@ -134,7 +132,7 @@ public class CarbonDictionarySortIndexWriterImpl implements CarbonDictionarySort
         this.sortIndexThriftWriter.open();
         sortIndexThriftWriter.write(columnSortInfo);
       } catch (IOException ie) {
-        LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, ie,
+        LOGGER.error(ie,
             "problem while writing the dictionary sort index file.");
         throw new IOException("problem while writing the dictionary sort index file.", ie);
       } finally {

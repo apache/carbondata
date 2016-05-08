@@ -35,7 +35,6 @@ import org.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.carbondata.core.carbon.datastore.exception.IndexBuilderException;
 import org.carbondata.core.carbon.metadata.blocklet.DataFileFooter;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.CarbonUtilException;
 
@@ -134,7 +133,7 @@ public class BlockIndexStore {
           loadedBlocksList.add(tableBlock);
         }
       } catch (CarbonUtilException e) {
-        LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "Problem while loading the block");
+        LOGGER.error("Problem while loading the block");
         throw new IndexBuilderException(e);
       }
     }

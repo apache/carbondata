@@ -37,7 +37,6 @@ import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 
 public class CarbonSortTempFileChunkHolder {
 
@@ -208,8 +207,7 @@ public class CarbonSortTempFileChunkHolder {
         .getProperty(CarbonCommonConstants.IS_SORT_TEMP_FILE_COMPRESSION_ENABLED,
             CarbonCommonConstants.IS_SORT_TEMP_FILE_COMPRESSION_ENABLED_DEFAULTVALUE));
     if (this.isSortTempFileCompressionEnabled) {
-      CARBONCHUNKHOLDERLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Compression was used while writing the sortTempFile");
+      CARBONCHUNKHOLDERLOGGER.info("Compression was used while writing the sortTempFile");
     }
     bufferSize = CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE;
 
@@ -218,8 +216,7 @@ public class CarbonSortTempFileChunkHolder {
           .getProperty(CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION,
               CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE));
       if (this.sortTempFileNoOFRecordsInCompression < 1) {
-        CARBONCHUNKHOLDERLOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-            "Invalid value of: "
+        CARBONCHUNKHOLDERLOGGER.error("Invalid value of: "
                 + CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION
                 + ": Only Positive Integer value(greater than zero) is allowed.Default value will"
                 + " be used");
@@ -228,10 +225,10 @@ public class CarbonSortTempFileChunkHolder {
             CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE);
       }
     } catch (NumberFormatException ex) {
-      CARBONCHUNKHOLDERLOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Invalid value of: " + CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION
-              + ": Only Positive Integer value(greater than zero) is allowed.Default value will "
-              + "be used");
+      CARBONCHUNKHOLDERLOGGER.error("Invalid value of: "
+          + CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION
+          + ": Only Positive Integer value(greater than zero) is allowed.Default value will "
+          + "be used");
       this.sortTempFileNoOFRecordsInCompression = Integer
           .parseInt(CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE);
     }
@@ -274,13 +271,13 @@ public class CarbonSortTempFileChunkHolder {
         this.entryCount = stream.readInt();
       }
     } catch (FileNotFoundException fe) {
-      CARBONCHUNKHOLDERLOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, fe);
+      CARBONCHUNKHOLDERLOGGER.error(fe);
       throw new CarbonSortKeyAndGroupByException(tempFile + " No Found", fe);
     } catch (IOException e) {
-      CARBONCHUNKHOLDERLOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
+      CARBONCHUNKHOLDERLOGGER.error(e);
       throw new CarbonSortKeyAndGroupByException(tempFile + " No Found", e);
     } catch (Exception e) {
-      CARBONCHUNKHOLDERLOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
+      CARBONCHUNKHOLDERLOGGER.error(e);
       throw new CarbonSortKeyAndGroupByException(tempFile + " Problem while reading", e);
     }
   }
@@ -302,7 +299,7 @@ public class CarbonSortTempFileChunkHolder {
           bufferRowCounter = 0;
         } catch (Exception e) {
           CARBONCHUNKHOLDERLOGGER
-              .error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
+              .error(e);
           throw new CarbonSortKeyAndGroupByException(tempFile + " Problem while reading", e);
         }
 
@@ -339,7 +336,7 @@ public class CarbonSortTempFileChunkHolder {
           submit.get();
         } catch (Exception e) {
           CARBONCHUNKHOLDERLOGGER
-              .error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
+              .error(e);
         }
         bufferRowCounter = 0;
         currentBuffer = backupBuffer;
@@ -402,15 +399,13 @@ public class CarbonSortTempFileChunkHolder {
       byteArray = new byte[mdKeyLength];
       // read mdkey
       if (stream.read(byteArray) < 0) {
-        CARBONCHUNKHOLDERLOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-            "Problme while reading the mdkey fom sort temp file");
+        CARBONCHUNKHOLDERLOGGER.error("Problme while reading the mdkey fom sort temp file");
       }
       holder[measureCount + 1] = byteArray;
       if (isFactMdkeyInInputRow) {
         byteArray = new byte[this.factMdkeyLength];
         if (stream.read(byteArray) < 0) {
-          CARBONCHUNKHOLDERLOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-              "Problme while reading the fact mdkey fom sort temp file");
+          CARBONCHUNKHOLDERLOGGER.error("Problme while reading the fact mdkey fom sort temp file");
         }
         holder[holder.length - 1] = byteArray;
       }
@@ -419,8 +414,7 @@ public class CarbonSortTempFileChunkHolder {
       this.numberOfObjectRead++;
       // return out row
     } catch (IOException ex) {
-      CARBONCHUNKHOLDERLOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Problme while reading the madkey fom sort temp file", ex);
+      CARBONCHUNKHOLDERLOGGER.error("Problme while reading the madkey fom sort temp file");
       throw new CarbonSortKeyAndGroupByException("Problem while reading the sort temp file ", ex);
     }
     return holder;
@@ -489,7 +483,7 @@ public class CarbonSortTempFileChunkHolder {
           currentBuffer = reader.getRow();
         }
       } catch (Exception e) {
-        CARBONCHUNKHOLDERLOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
+        CARBONCHUNKHOLDERLOGGER.error(e);
       }
       return null;
     }

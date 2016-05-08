@@ -26,7 +26,6 @@ import org.carbondata.query.carbon.executor.impl.DetailQueryExecutor;
 import org.carbondata.query.carbon.executor.impl.DetailWithOrderByQueryExecutor;
 import org.carbondata.query.carbon.executor.impl.FunctionQueryExecutor;
 import org.carbondata.query.carbon.model.QueryModel;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
  * Factory class to get the query executor from RDD
@@ -46,7 +45,7 @@ public class QueryExecutorFactory {
         && queryModel.getQueryDimension().size() < 1 && queryModel.getQueryMeasures().size() < 2
         && queryModel.getDimAggregationInfo().size() < 1
         && queryModel.getExpressions().size() == 0) {
-      LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "Count(*) query: ");
+      LOGGER.info("Count(*) query: ");
       return new CountStarQueryExecutor();
     }
     // if all the query property is empty then is a function query like
@@ -57,21 +56,21 @@ public class QueryExecutorFactory {
         && queryModel.getQueryDimension().size() == 0 && queryModel.getQueryMeasures().size() == 0
         && queryModel.getDimAggregationInfo().size() == 0
         && queryModel.getExpressions().size() == 0) {
-      LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "Function query: ");
+      LOGGER.info("Function query: ");
       return new FunctionQueryExecutor();
     }
     // if not a detail query then it is a aggregation query
     else if (!queryModel.isDetailQuery()) {
-      LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "Aggergation query: ");
+      LOGGER.info("Aggergation query: ");
       return new AggregationQueryExecutor();
     }
     // to handle detail with order by query
     else if (queryModel.isDetailQuery() && queryModel.getSortDimension().size() > 0) {
-      LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "Detail with order by query: ");
+      LOGGER.info("Detail with order by query: ");
       return new DetailWithOrderByQueryExecutor();
     } else {
       // detail query
-      LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "Detail query: ");
+      LOGGER.info("Detail query: ");
       return new DetailQueryExecutor();
     }
   }

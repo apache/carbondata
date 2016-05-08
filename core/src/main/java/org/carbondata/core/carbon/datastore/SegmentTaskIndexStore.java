@@ -36,7 +36,6 @@ import org.carbondata.core.carbon.datastore.exception.IndexBuilderException;
 import org.carbondata.core.carbon.metadata.blocklet.DataFileFooter;
 import org.carbondata.core.carbon.path.CarbonTablePath.DataFileUtil;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.CarbonUtilException;
 
@@ -167,7 +166,7 @@ public class SegmentTaskIndexStore {
           taskIdToTableSegmentMap.putAll(map);
         }
       } catch (CarbonUtilException e) {
-        LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "Problem while loading the segment");
+        LOGGER.error("Problem while loading the segment");
         throw new IndexBuilderException(e);
       }
     }

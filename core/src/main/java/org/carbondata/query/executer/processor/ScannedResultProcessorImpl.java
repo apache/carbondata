@@ -51,7 +51,6 @@ import org.carbondata.query.result.impl.ListBasedResult;
 import org.carbondata.query.result.impl.MapBasedResult;
 import org.carbondata.query.schema.metadata.DataProcessorInfo;
 import org.carbondata.query.schema.metadata.SliceExecutionInfo;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 import org.carbondata.query.util.ScannedResultProcessorUtil;
 import org.carbondata.query.writer.WriterExecutor;
 import org.carbondata.query.writer.exception.ResultWriterException;
@@ -143,7 +142,7 @@ public class ScannedResultProcessorImpl implements ScannedResultProcessor {
   private void mergeScannedResultsAndWriteToFile(List<Result> scannedResult)
       throws QueryExecutionException {
     long start = System.currentTimeMillis();
-    LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "Started a slice result merging");
+    LOGGER.debug("Started a slice result merging");
 
     for (int i = 0; i < scannedResult.size(); i++) {
       mergedScannedResult.merge(scannedResult.get(i));
@@ -161,8 +160,7 @@ public class ScannedResultProcessorImpl implements ScannedResultProcessor {
       isFileBased = true;
     }
 
-    LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-        "Finished current slice result merging in time (MS) " + (System.currentTimeMillis()
+    LOGGER.debug("Finished current slice result merging in time (MS) " + (System.currentTimeMillis()
             - start));
   }
 
@@ -175,8 +173,7 @@ public class ScannedResultProcessorImpl implements ScannedResultProcessor {
           throw new QueryExecutionException("Problem while creating Spill Over Directory");
         }
       }
-      LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-          "********************************File based query execution");
+      LOGGER.info("********************************File based query execution");
     } catch (IOException e) {
       throw new QueryExecutionException(e);
     }
@@ -188,8 +185,7 @@ public class ScannedResultProcessorImpl implements ScannedResultProcessor {
     try {
       execService.awaitTermination(1, TimeUnit.DAYS);
     } catch (InterruptedException e1) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-          "Problem in thread termination" + e1.getMessage());
+      LOGGER.error("Problem in thread termination" + e1.getMessage());
     }
 
     if (scannedResultList.size() > 0) {
@@ -197,8 +193,7 @@ public class ScannedResultProcessorImpl implements ScannedResultProcessor {
       scannedResultList = null;
     }
 
-    LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-        "Finished result merging from all slices");
+    LOGGER.debug("Finished result merging from all slices");
 
     DataProcessorExt processor = getProcessor();
     if (!isFileBased) {
@@ -271,14 +266,12 @@ public class ScannedResultProcessorImpl implements ScannedResultProcessor {
     try {
       writerExecutor.closeWriter();
     } catch (ResultWriterException e) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-          "Problem while closing stream" + e.getMessage());
+      LOGGER.error("Problem while closing stream" + e.getMessage());
     }
     try {
       mergerExecutor.closeMerger();
     } catch (ResultWriterException e) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-          "Problem while closing stream" + e.getMessage());
+      LOGGER.error("Problem while closing stream" + e.getMessage());
     }
   }
 

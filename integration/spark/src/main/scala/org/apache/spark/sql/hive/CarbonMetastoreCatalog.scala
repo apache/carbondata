@@ -54,7 +54,6 @@ import org.carbondata.format.{SchemaEvolutionEntry, TableInfo}
 import org.carbondata.integration.spark.load.CarbonLoaderUtil
 import org.carbondata.integration.spark.util.CarbonScalaUtil.CarbonSparkUtil
 import org.carbondata.processing.util.CarbonDataProcessorUtil
-import org.carbondata.query.util.CarbonEngineLogEvent
 
 case class MetaData(var cubesMeta: ArrayBuffer[TableMeta])
 
@@ -397,8 +396,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
 
     metadata.cubesMeta += cubeMeta
     logInfo(s"Cube $tableName for schema $dbName created successfully.")
-    LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-      "Cube " + tableName + " for schema " + dbName + " created successfully.")
+    LOGGER.info("Cube " + tableName + " for schema " + dbName + " created successfully.")
     updateSchemasUpdatedTime(dbName, tableName)
     schemaMetadataPath
   }
@@ -760,8 +758,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
     org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
       .removeTable(schemaName + "_" + cubeName)
     logInfo(s"Cube $cubeName of $schemaName schema dropped syccessfully.")
-    LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-      "Cube " + cubeName + " of " + schemaName + " schema dropped syccessfully.");
+    LOGGER.info("Cube " + cubeName + " of " + schemaName + " schema dropped syccessfully.");
 
   }
 

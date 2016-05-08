@@ -42,9 +42,7 @@ import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.load.LoadMetadataDetails;
-import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonProperties;
-import org.carbondata.integration.spark.util.CarbonSparkInterFaceLogEvent;
 import org.carbondata.integration.spark.util.LoadMetadataUtil;
 
 public final class DeleteLoadFolders {
@@ -108,8 +106,7 @@ public final class DeleteLoadFolders {
             isDeleted = true;
             oneLoad.setVisibility("false");
             deletedLoads.add(oneLoad);
-            LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-                " Deleted the load " + oneLoad.getLoadName());
+            LOGGER.info(" Deleted the load " + oneLoad.getLoadName());
           }
         }
       }
@@ -142,8 +139,8 @@ public final class DeleteLoadFolders {
       if (files != null) {
         for (CarbonFile eachFile : files) {
           if (!eachFile.delete()) {
-            LOGGER.warn(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-                "Unable to delete the file as per delete command " + loadFolder.getAbsolutePath());
+            LOGGER.warn("Unable to delete the file as per delete command "
+                + loadFolder.getAbsolutePath());
           }
         }
       }
@@ -174,8 +171,8 @@ public final class DeleteLoadFolders {
 
           for (CarbonFile eachFile : filesToBeDeleted) {
             if (!eachFile.delete()) {
-              LOGGER.warn(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-                  "Unable to delete the file as per delete command " + eachFile.getAbsolutePath());
+              LOGGER.warn("Unable to delete the file as per delete command "
+                  + eachFile.getAbsolutePath());
               status = false;
             } else {
               status = true;
@@ -186,8 +183,7 @@ public final class DeleteLoadFolders {
         status = false;
       }
     } catch (IOException e) {
-      LOGGER.warn(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-          "Unable to delete the file as per delete command " + path);
+      LOGGER.warn("Unable to delete the file as per delete command " + path);
     }
 
     return status;
@@ -251,14 +247,13 @@ public final class DeleteLoadFolders {
         for (CarbonFile file : listFiles) {
           if (!file.renameTo(file.getName().substring(0,
               file.getName().length() - CarbonCommonConstants.FACT_FILE_UPDATED.length()))) {
-            LOGGER.warn(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-                "could not rename the updated fact file.");
+            LOGGER.warn("could not rename the updated fact file.");
           }
         }
 
       }
     } catch (IOException e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "exception" + e.getMessage());
+      LOGGER.error("exception" + e.getMessage());
     }
 
   }
@@ -278,14 +273,13 @@ public final class DeleteLoadFolders {
 
         for (CarbonFile file : listFiles) {
           if (!file.delete()) {
-            LOGGER.warn(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-                "could not delete the marked fact file.");
+            LOGGER.warn("could not delete the marked fact file.");
           }
         }
 
       }
     } catch (IOException e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "exception" + e.getMessage());
+      LOGGER.error("exception" + e.getMessage());
     }
   }
 

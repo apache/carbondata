@@ -50,7 +50,6 @@ import org.carbondata.processing.factreader.columnar.CarbonColumnarLeafTupleIter
 import org.carbondata.processing.schema.metadata.CarbonColumnarFactMergerInfo;
 import org.carbondata.processing.store.CarbonFactDataHandlerColumnarMerger;
 import org.carbondata.processing.store.writer.exception.CarbonDataWriterException;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 
 //import java.util.Iterator;
 
@@ -139,9 +138,8 @@ public class DataRetentionHandler {
       if (null == loadFiles) {
         continue;
       }
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "System is going Data retention policy based on member" + columnValue + " For column:"
-              + columnName);
+      LOGGER.info("System is going Data retention policy based on member"
+          + columnValue + " For column:" + columnName);
 
       String sliceMetadataLocation =
           CarbonUtil.getRSPath(schemaName, cubeName, tableName, hdsfStoreLocation, restrucureNum);
@@ -164,8 +162,7 @@ public class DataRetentionHandler {
             continue;
           }
         } catch (CarbonUtilException e) {
-          LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-              "Failed to apply retention policy.", e);
+          LOGGER.error("Failed to apply retention policy.");
         }
 
         applyRetentionDetailsBasedOnRetentionMember();
@@ -184,8 +181,7 @@ public class DataRetentionHandler {
 
           }
         } catch (CarbonDataProcessorException e) {
-          LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-              "Failed to apply retention policy.", e);
+          LOGGER.error("Failed to apply retention policy.");
         }
       }
 
@@ -322,8 +318,7 @@ public class DataRetentionHandler {
       fileToBeUpdated = factFiles[i].getAbsolutePath();
       if (null != fileToBeUpdated) {
         try {
-          LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-              "Following load file will be marked for update: " + loadName);
+          LOGGER.info("Following load file will be marked for update: " + loadName);
           loadDetails.put(loadName, CarbonCommonConstants.MARKED_FOR_UPDATE);
           processFactFileAsPerFileToBeUpdatedDetails(blockletInfoList, fileToBeUpdated, loadPath,
               loadDetails, loadName, restrucureNum);
@@ -385,8 +380,8 @@ public class DataRetentionHandler {
               res = 0;
             }
           } catch (Exception e) {
-            LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-                "Member needs to be added in updated fact file surrogate key is : " + surrKey);
+            LOGGER.info("Member needs to be added in updated fact file surrogate key is: "
+                + surrKey);
           }
           if (res == -1) {
             row[row.length - 1] = mdKeyFromStore;

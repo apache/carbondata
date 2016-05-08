@@ -19,7 +19,7 @@
 
 package org.carbondata.common.logging.impl;
 
-import org.carbondata.common.logging.LogEvent;
+import org.carbondata.common.logging.impl.StandardLogService;
 
 import junit.framework.TestCase;
 import mockit.Mock;
@@ -32,8 +32,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class StandardLogServiceTest_UT extends TestCase {
-
-  private LogEvent event = null;
 
   private StandardLogService logService = null;
 
@@ -56,16 +54,6 @@ public class StandardLogServiceTest_UT extends TestCase {
       @SuppressWarnings("unused")
       @Mock public boolean isInfoEnabled() {
         return true;
-      }
-    };
-
-    event = new LogEvent() {
-      @Override public String getModuleName() {
-        return "TEST";
-      }
-
-      @Override public String getEventCode() {
-        return "TEST";
       }
     };
 
@@ -101,49 +89,39 @@ public class StandardLogServiceTest_UT extends TestCase {
   }
 
   @Test public void testAuditLogEventObjectArray() {
-    logService.audit(event, "testing", "testing");
+    logService.audit("testing");
     Assert.assertTrue(true);
   }
 
   @Test public void testDebugLogEventObjectArray() {
-    logService.debug(event, "testing", "testing");
-    Assert.assertTrue(true);
-  }
-
-  @Test public void testDebugLogEventThrowableObjectArray() {
-    logService.debug(event, new Exception("test"), "testing", "testing");
+    logService.debug("testing");
     Assert.assertTrue(true);
   }
 
   @Test public void testErrorLogEventObjectArray() {
-    logService.error(event, "testing", "testing");
+    logService.error("testing");
     Assert.assertTrue(true);
   }
 
   @Test public void testErrorLogEventThrowableObjectArray() {
     Exception exception = new Exception("test");
-    logService.error(event, exception, "testing", "testing");
+    logService.error(exception);
+    Assert.assertTrue(true);
+  }
+
+  @Test public void testErrorLogEventThrowableMessage() {
+    Exception exception = new Exception("test");
+    logService.error(exception, "additional message");
     Assert.assertTrue(true);
   }
 
   @Test public void testInfoLogEventObjectArray() {
-    logService.info(event, "testing", "testing");
-    Assert.assertTrue(true);
-  }
-
-  @Test public void testInfoLogEventThrowableObjectArray() {
-    logService.info(event, new Exception("test"), "testing", "testing");
+    logService.info("testing");
     Assert.assertTrue(true);
   }
 
   @Test public void testIsInfoEnabled() {
     Assert.assertEquals(true, logService.isInfoEnabled());
-  }
-
-  @Test public void testWarn() {
-    logService.warn(event, new Exception("test"), "testing", "testing");
-    Assert.assertTrue(true);
-
   }
 
   @Test public void testDeleteLogs() {

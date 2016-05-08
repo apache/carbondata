@@ -38,7 +38,6 @@ import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.file.manager.composite.FileData;
 import org.carbondata.core.file.manager.composite.IFileManagerComposite;
 import org.carbondata.core.metadata.BlockletInfo;
-import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.writer.exception.CarbonDataWriterException;
@@ -188,8 +187,7 @@ public class CarbonDataWriter {
     CarbonFile carbonFile = FileFactory.getCarbonFile(fileName, FileFactory.getFileType(fileName));
 
     if (!carbonFile.renameTo(fileName.substring(0, this.fileName.lastIndexOf('.')))) {
-      LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-          "file renaming failed from _0.querymerged to _0");
+      LOGGER.info("file renaming failed from _0.querymerged to _0");
     }
 
     return carbonFile;

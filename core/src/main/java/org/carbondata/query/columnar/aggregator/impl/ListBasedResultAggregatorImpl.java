@@ -35,7 +35,6 @@ import org.carbondata.query.columnar.keyvalue.AbstractColumnarScanResult;
 import org.carbondata.query.executer.impl.RestructureHolder;
 import org.carbondata.query.result.Result;
 import org.carbondata.query.result.impl.ListBasedResult;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 import org.carbondata.query.util.QueryExecutorUtility;
 import org.carbondata.query.wrappers.ByteArrayWrapper;
 
@@ -155,7 +154,7 @@ public class ListBasedResultAggregatorImpl implements ColumnarScannedResultAggre
         finalValues.add(values.get(i));
       }
     } catch (KeyGenException e) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
+      LOGGER.error(e);
     }
   }
 }

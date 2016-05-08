@@ -30,7 +30,6 @@ import org.carbondata.query.evaluators.BlockDataHolder;
 import org.carbondata.query.executer.impl.RestructureHolder;
 import org.carbondata.query.executer.processor.ScannedResultProcessor;
 import org.carbondata.query.schema.metadata.ColumnarStorageScannerInfo;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 
 public abstract class AbstractColumnarStorageScanner implements ColumnarStorageScanner {
 
@@ -71,7 +70,7 @@ public abstract class AbstractColumnarStorageScanner implements ColumnarStorageS
     try {
       this.scannedResultProcessor.addScannedResult(columnarAggaregator.getResult(restructurHolder));
     } catch (Exception e) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
+      LOGGER.error(e);
     }
   }
 }

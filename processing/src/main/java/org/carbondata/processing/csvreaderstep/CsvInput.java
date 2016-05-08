@@ -35,7 +35,6 @@ import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.load.BlockDetails;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.processing.graphgenerator.GraphGenerator;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
@@ -91,7 +90,7 @@ public class CsvInput extends BaseStep implements StepInterface {
   public CsvInput(StepMeta stepMeta, StepDataInterface stepDataInterface, int copyNr,
       TransMeta transMeta, Trans trans) {
     super(stepMeta, stepDataInterface, copyNr, transMeta, trans);
-    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, "** Using csv file **");
+    LOGGER.info("** Using csv file **");
     //System.out.println("****************** Using my csv file");
   }
 
@@ -391,7 +390,7 @@ public class CsvInput extends BaseStep implements StepInterface {
         try {
           doProcess();
         } catch (Throwable e) {
-          LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
+          LOGGER.error(e,
               "Thread is terminated due to error");
         }
         return null;

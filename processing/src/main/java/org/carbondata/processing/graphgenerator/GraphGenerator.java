@@ -66,7 +66,6 @@ import org.carbondata.processing.sortandgroupby.sortdatastep.SortKeyStepMeta;
 import org.carbondata.processing.sortandgroupby.step.CarbonSortKeyAndGroupByStepMeta;
 import org.carbondata.processing.store.CarbonDataWriterStepMeta;
 import org.carbondata.processing.surrogatekeysgenerator.csvbased.CarbonCSVBasedSeqGenMeta;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.carbondata.processing.util.CarbonDataProcessorUtil;
 import org.carbondata.processing.util.CarbonSchemaParser;
 import org.carbondata.processing.util.RemoveDictionaryUtil;
@@ -253,8 +252,7 @@ public class GraphGenerator {
     this.factTimeStamp = dataLoadModel.getFactTimeStamp();
     this.segmentId = segmentId;
     initialise();
-    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-        "************* Is Columnar Storage" + isColumnar);
+    LOGGER.info("************* Is Columnar Storage" + isColumnar);
   }
 
   /**
@@ -358,8 +356,8 @@ public class GraphGenerator {
       isDirCreated = file.mkdirs();
 
       if (!isDirCreated) {
-        LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-            "Unable to create directory or Directory already exist" + file.getAbsolutePath());
+        LOGGER.error("Unable to create directory or directory already exist"
+            + file.getAbsolutePath());
         throw new GraphGeneratorException("INTERNAL_SYSTEM_ERROR");
       }
     }
@@ -371,9 +369,8 @@ public class GraphGenerator {
           KettleEnvironment.init();
           kettleIntialized = false;
         } catch (KettleException kettlExp) {
-          LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-              "Invalid kettle path :: " + kettlExp.getMessage());
-          LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, kettlExp);
+          LOGGER.error("Invalid kettle path :: " + kettlExp.getMessage());
+          LOGGER.error(kettlExp);
           throw new GraphGeneratorException("Error While Initializing the Kettel Engine ",
               kettlExp);
         }
@@ -1816,8 +1813,7 @@ public class GraphGenerator {
     String type = DRIVERS.get(driverCls);
 
     if (null == type) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Driver : \"" + driverCls + " \"Not Supported.");
+      LOGGER.error("Driver : \"" + driverCls + " \"Not Supported.");
       throw new GraphGeneratorException("Driver : \"" + driverCls + " \"Not Supported.");
     }
 
@@ -1836,8 +1832,7 @@ public class GraphGenerator {
     String type = DRIVERS.get(driverClass);
 
     if (null == type) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Driver : \"" + driverClass + " \"Not Supported.");
+      LOGGER.error("Driver : \"" + driverClass + " \"Not Supported.");
       throw new GraphGeneratorException("Driver : \"" + driverClass + " \"Not Supported.");
     }
 

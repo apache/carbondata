@@ -30,7 +30,6 @@ import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.CarbonProperties;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 
 public class FileSizeBasedLRU {
 
@@ -71,15 +70,12 @@ public class FileSizeBasedLRU {
                 size -= eldest.getKey().getSize();
                 boolean delete = new File(eldest.getKey().getPath()).delete();
                 if (!delete) {
-                  LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-                      "Lru cache removal is failed for the query entry " + eldest.getKey()
+                  LOGGER.info("Lru cache removal is failed for the query entry " + eldest.getKey()
                           .getPath());
                   return false;
                 } else {
-                  LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-                      "Lru cache removes the query entry " + eldest.getKey().getPath());
-                  LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-                      "Lru cache current size " + getCurrentSize() + "MB");
+                  LOGGER.info("Lru cache removes the query entry " + eldest.getKey().getPath());
+                  LOGGER.info("Lru cache current size " + getCurrentSize() + "MB");
                   return true;
                 }
               }
@@ -129,15 +125,13 @@ public class FileSizeBasedLRU {
       } catch (NumberFormatException e) {
         mem = CarbonCommonConstants.PAGINATED_CACHE_DISK_SIZE_DEFAULT;
         LOGGER
-            .error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "Exception while parsing property",
-                e);
+            .error("Exception while parsing property");
       }
       mem = CarbonProperties.getInstance()
           .validate(mem, CarbonCommonConstants.PAGINATED_CACHE_DISK_SIZE_MAX,
               CarbonCommonConstants.PAGINATED_CACHE_DISK_SIZE_MIN,
               CarbonCommonConstants.PAGINATED_CACHE_DISK_SIZE_DEFAULT);
-      LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-          "Query Lru Cache has been intilaized with limit " + mem + " MB");
+      LOGGER.info("Query Lru Cache has been intilaized with limit " + mem + " MB");
       lru = new FileSizeBasedLRU(3000, mem * 1024 * 1024);
     }
     return lru;

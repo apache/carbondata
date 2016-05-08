@@ -36,7 +36,6 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 
 import org.apache.commons.codec.binary.Base64;
 
@@ -127,7 +126,7 @@ public class CustomAggregatorHelper {
       }
     } catch (IOException e) {
       LOGGER
-          .error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "Problem while populating the cache");
+          .error("Problem while populating the cache");
     }
   }
 

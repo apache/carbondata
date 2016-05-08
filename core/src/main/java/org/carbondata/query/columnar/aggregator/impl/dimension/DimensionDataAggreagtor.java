@@ -39,7 +39,6 @@ import org.carbondata.query.columnar.aggregator.ColumnarAggregatorInfo;
 import org.carbondata.query.columnar.keyvalue.AbstractColumnarScanResult;
 import org.carbondata.query.complex.querytypes.GenericQueryType;
 import org.carbondata.query.datastorage.Member;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 import org.carbondata.query.util.DataTypeConverter;
 import org.carbondata.query.util.QueryExecutorUtility;
 import org.carbondata.query.wrappers.ByteArrayWrapper;
@@ -147,7 +146,7 @@ public class DimensionDataAggreagtor {
             complexSurrogates = byteStream.toByteArray();
             byteStream.close();
           } catch (IOException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
+            LOGGER.error(e);
           }
         }
         for (int j = 0; j < dimCountAndDistinctCountAGGIndex[i].length; j++) {

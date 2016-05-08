@@ -42,7 +42,6 @@ import org.carbondata.query.carbon.util.DataTypeUtil;
 import org.carbondata.query.carbon.wrappers.ByteArrayWrapper;
 import org.carbondata.query.scanner.impl.CarbonKey;
 import org.carbondata.query.scanner.impl.CarbonValue;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
  * Below class will be used to get the result by converting to actual data
@@ -238,8 +237,7 @@ public class QueryResultPreparator {
       values.add(new CarbonValue(new MeasureAggregator[0]));
       keys.add(new CarbonKey(row));
     }
-    LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-        "###########################################------ Total Number of records"
+    LOGGER.info("###########################################------ Total Number of records"
             + resultDataA[0].length);
     BatchResult chunkResult = new BatchResult();
     chunkResult.setKeys(keys);

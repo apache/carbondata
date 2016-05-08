@@ -38,7 +38,6 @@ import org.carbondata.core.carbon.datastore.block.TableBlockInfo
 import org.carbondata.core.iterator.CarbonIterator
 import org.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit}
 import org.carbondata.integration.spark.KeyVal
-import org.carbondata.integration.spark.util.CarbonSparkInterFaceLogEvent
 import org.carbondata.lcm.status.SegmentStatusManager
 import org.carbondata.query.carbon.executor.QueryExecutorFactory
 import org.carbondata.query.carbon.model.QueryModel
@@ -142,7 +141,7 @@ class CarbonSparkPartition(rddId: Int, val idx: Int,
         // TODO: CarbonQueryUtil.isQuickFilter quick filter from dictionary needs to support
       } catch {
         case e: Exception =>
-          LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, e)
+          LOGGER.error(e)
           // updateCubeAndLevelCacheStatus(levelCacheKeys)
           if (null != e.getMessage) {
             sys.error("Exception occurred in query execution :: " + e.getMessage)

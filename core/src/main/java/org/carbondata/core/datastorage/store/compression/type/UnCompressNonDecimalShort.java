@@ -27,7 +27,6 @@ import org.carbondata.core.datastorage.store.compression.Compressor;
 import org.carbondata.core.datastorage.store.compression.SnappyCompression;
 import org.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
 import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
-import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.ValueCompressionUtil;
 
 public class UnCompressNonDecimalShort implements ValueCompressonHolder.UnCompressValue<short[]> {
@@ -59,7 +58,7 @@ public class UnCompressNonDecimalShort implements ValueCompressonHolder.UnCompre
     try {
       return (ValueCompressonHolder.UnCompressValue) clone();
     } catch (CloneNotSupportedException exception1) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, exception1, exception1.getMessage());
+      LOGGER.error(exception1, exception1.getMessage());
     }
     return null;
   }

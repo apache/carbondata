@@ -31,7 +31,6 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.processing.sortandgroupby.sortkey.CarbonSortKeyException;
 import org.carbondata.processing.threadbasedmerger.container.Container;
 import org.carbondata.processing.threadbasedmerger.iterator.RecordIterator;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 
 public class ConsumerThread implements Callable<Void> {
   /**
@@ -112,14 +111,14 @@ public class ConsumerThread implements Callable<Void> {
     try {
       initialiseHeap(iterators);
     } catch (CarbonSortKeyException e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
+      LOGGER.error(e,
           "Problem while initialising the heap");
     }
     try {
       fillBuffer(false);
       isCurrentFilled = true;
     } catch (CarbonSortKeyException e1) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e1,
+      LOGGER.error(e1,
           "Problem while Filling the buffer");
     }
     try {
@@ -139,12 +138,11 @@ public class ConsumerThread implements Callable<Void> {
         }
       }
     } catch (InterruptedException e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
+      LOGGER.error(e);
     } catch (Exception e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
+      LOGGER.error(e);
     }
-    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-        "Consumer Thread: " + this.counter + ": Done");
+    LOGGER.info("Consumer Thread: " + this.counter + ": Done");
     this.container.setDone(true);
     return null;
   }

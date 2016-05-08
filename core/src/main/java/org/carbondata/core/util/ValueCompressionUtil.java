@@ -730,13 +730,9 @@ public final class ValueCompressionUtil {
         allocate = ByteBuffer.wrap(metaBytes);
       }
     } catch (FileNotFoundException f) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "@@@ msrMetadata File is missing @@@ ",
-          f.getMessage());
-      LOGGER.debug(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, f, f.getMessage());
+      LOGGER.error("@@@ msrMetadata File is missing @@@ ");
     } catch (IOException exception) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-          "@@@ Error while reading msrMetadata File is missing @@@ ", exception.getMessage());
-      LOGGER.debug(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, exception, exception.getMessage());
+      LOGGER.error("@@@ Error while reading msrMetadata File is missing @@@ ");
     } finally {
       CarbonUtil.closeStreams(stream);
     }

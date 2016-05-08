@@ -32,7 +32,6 @@ import org.carbondata.processing.sortandgroupby.sortkey.CarbonSortKeyException;
 import org.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 import org.carbondata.processing.threadbasedmerger.container.Container;
 import org.carbondata.processing.threadbasedmerger.iterator.RecordIterator;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 
 public class ProducerCosumerFinalMergerThread implements Callable<Void> {
   /**
@@ -123,7 +122,7 @@ public class ProducerCosumerFinalMergerThread implements Callable<Void> {
           iterators[1].next();
           counter++;
         }
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
+        LOGGER.info(
             "************************************************ Total number of records processed"
                 + counter);
       } else if (producerCounter == 1) {
@@ -132,7 +131,7 @@ public class ProducerCosumerFinalMergerThread implements Callable<Void> {
           iterators[0].next();
           counter++;
         }
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
+        LOGGER.info(
             "************************************************ Total number of records processed"
                 + counter);
       } else {
@@ -141,7 +140,7 @@ public class ProducerCosumerFinalMergerThread implements Callable<Void> {
         fillBuffer();
       }
     } catch (Exception e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
+      LOGGER.error(e);
       throw new CarbonDataWriterException(e.getMessage(), e);
     }
 
@@ -197,8 +196,7 @@ public class ProducerCosumerFinalMergerThread implements Callable<Void> {
       this.recordHolderHeap.add(poll);
     }
 
-    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-        "************************************************ Total number of records processed"
+    LOGGER.info("************************************************ Total number of records processed"
             + counter);
   }
 

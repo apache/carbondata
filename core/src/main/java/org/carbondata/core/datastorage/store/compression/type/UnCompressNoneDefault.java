@@ -27,7 +27,6 @@ import org.carbondata.core.datastorage.store.compression.Compressor;
 import org.carbondata.core.datastorage.store.compression.SnappyCompression;
 import org.carbondata.core.datastorage.store.compression.ValueCompressonHolder.UnCompressValue;
 import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
-import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.ValueCompressionUtil;
 import org.carbondata.core.util.ValueCompressionUtil.DataType;
 
@@ -56,7 +55,7 @@ public class UnCompressNoneDefault implements UnCompressValue<double[]> {
     try {
       return (UnCompressValue) clone();
     } catch (CloneNotSupportedException exception1) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, exception1, exception1.getMessage());
+      LOGGER.error(exception1, exception1.getMessage());
     }
     return null;
   }

@@ -26,7 +26,6 @@ import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.processing.schema.metadata.SortObserver;
 import org.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 import org.carbondata.processing.sortandgroupby.sortdata.SortDataRows;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.carbondata.processing.util.RemoveDictionaryUtil;
 
 import org.pentaho.di.core.exception.KettleException;
@@ -142,12 +141,10 @@ public class SortKeyStep extends BaseStep {
       // get all fields
       this.meta.getFields(data.getOutputRowMeta(), getStepname(), null, null, this);
 
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Record Procerssed For table: " + meta.getTabelName());
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Record Form Previous Step was null");
+      LOGGER.info("Record Procerssed For table: " + meta.getTabelName());
+      LOGGER.info("Record Form Previous Step was null");
       String logMessage = "Summary: Carbon Sort Key Step: Read: " + 1 + ": Write: " + 1;
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, logMessage);
+      LOGGER.info(logMessage);
 
       putRow(data.getOutputRowMeta(), outRow);
       setOutputDone();
@@ -196,10 +193,9 @@ public class SortKeyStep extends BaseStep {
 
     readCounter++;
     if (readCounter % logCounter == 0) {
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Record Procerssed For table: " + meta.getTabelName());
+      LOGGER.info("Record Procerssed For table: " + meta.getTabelName());
       String logMessage = "Carbon Sort Key Step: Record Read: " + readCounter;
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, logMessage);
+      LOGGER.info(logMessage);
     }
 
     try {
@@ -207,7 +203,7 @@ public class SortKeyStep extends BaseStep {
       this.sortDataRows.addRow(row);
       writeCounter++;
     } catch (Throwable e) {
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
+      LOGGER.error(e);
       throw new KettleException(e);
     }
 
@@ -222,12 +218,10 @@ public class SortKeyStep extends BaseStep {
    */
   private boolean processRowToNextStep() throws KettleException {
     if (null == this.sortDataRows) {
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Record Processed For table: " + meta.getTabelName());
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Number of Records was Zero");
+      LOGGER.info("Record Processed For table: " + meta.getTabelName());
+      LOGGER.info("Number of Records was Zero");
       String logMessage = "Summary: Carbon Sort Key Step: Read: " + 0 + ": Write: " + 0;
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, logMessage);
+      LOGGER.info(logMessage);
       putRow(data.getOutputRowMeta(), new Object[0]);
       setOutputDone();
       return false;
@@ -238,11 +232,10 @@ public class SortKeyStep extends BaseStep {
       this.sortDataRows.startSorting();
 
       // check any more rows are present
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Record Processed For table: " + meta.getTabelName());
+      LOGGER.info("Record Processed For table: " + meta.getTabelName());
       String logMessage =
           "Summary: Carbon Sort Key Step: Read: " + readCounter + ": Write: " + writeCounter;
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, logMessage);
+      LOGGER.info(logMessage);
       putRow(data.getOutputRowMeta(), new Object[0]);
       setOutputDone();
       return false;

@@ -39,7 +39,6 @@ import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.CarbonUtil;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 
 public class RealTimeDataPropertyReader {
   /**
@@ -111,15 +110,9 @@ public class RealTimeDataPropertyReader {
 
       propFile.load(fileInputStream);
     } catch (FileNotFoundException e) {
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-            "RealtimeData file not found.");
-      }
+      LOGGER.error("RealtimeData file not found.");
     } catch (IOException e) {
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-            "Unable to read RealtimeData file.");
-      }
+      LOGGER.error("Unable to read RealtimeData file.");
     } finally {
       CarbonUtil.closeStreams(fileInputStream);
     }
@@ -208,15 +201,9 @@ public class RealTimeDataPropertyReader {
       }
 
     } catch (FileNotFoundException e) {
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-            "RealtimeData file not found.");
-      }
+      LOGGER.error("RealtimeData file not found.");
     } catch (IOException e) {
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-            "Unable to read  RealtimeData file.");
-      }
+      LOGGER.error("Unable to read  RealtimeData file.");
     } finally {
       CarbonUtil.closeStreams(bufferedReader, inputStreamReader);
 

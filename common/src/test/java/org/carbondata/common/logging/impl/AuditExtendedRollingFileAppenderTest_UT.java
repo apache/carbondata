@@ -17,7 +17,10 @@
  * under the License.
  */
 
-package org.carbondata.common.logging;
+package org.carbondata.common.logging.impl;
+
+import org.carbondata.common.logging.impl.AuditExtendedRollingFileAppender;
+import org.carbondata.common.logging.impl.AuditLevel;
 
 import junit.framework.Assert;
 import mockit.Deencapsulation;

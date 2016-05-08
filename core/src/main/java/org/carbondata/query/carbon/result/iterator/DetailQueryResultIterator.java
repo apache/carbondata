@@ -37,7 +37,6 @@ import org.carbondata.query.carbon.executor.internal.InternalQueryExecutor;
 import org.carbondata.query.carbon.model.QueryModel;
 import org.carbondata.query.carbon.result.BatchResult;
 import org.carbondata.query.carbon.result.Result;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
  * In case of detail query we cannot keep all the records in memory so for
@@ -108,8 +107,7 @@ public class DetailQueryResultIterator implements CarbonIterator<BatchResult> {
       try {
         recordSize = Integer.parseInt(defaultInMemoryRecordsSize);
       } catch (NumberFormatException ne) {
-        LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-            "Invalid inmemory records size. Using default value");
+        LOGGER.error("Invalid inmemory records size. Using default value");
         recordSize = CarbonCommonConstants.INMEMORY_REOCRD_SIZE_DEFAULT;
       }
     }
@@ -156,7 +154,7 @@ public class DetailQueryResultIterator implements CarbonIterator<BatchResult> {
     try {
       result = executor.executeQuery(blockExecutionInfos, blockIndexToBeExecuted);
     } catch (QueryExecutionException e) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e, e.getMessage());
+      LOGGER.error(e, e.getMessage());
     }
     for (int i = 0; i < blockIndexToBeExecuted.length; i++) {
       if (blockIndexToBeExecuted[i] != -1) {

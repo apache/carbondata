@@ -133,8 +133,7 @@ public final class CarbonUtil {
           try {
             stream.close();
           } catch (IOException e) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-                "Error while closing stream" + stream);
+            LOGGER.error("Error while closing stream" + stream);
           }
         }
       }
@@ -148,7 +147,7 @@ public final class CarbonUtil {
           return o1.getName().compareTo(o2.getName());
         } catch (Exception e) {
 
-          LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e, "Error while getSortedFile");
+          LOGGER.error(e, "Error while getSortedFile");
           return 0;
         }
       }
@@ -322,11 +321,11 @@ public final class CarbonUtil {
       }
 
     } catch (FileNotFoundException e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e);
+      LOGGER.error(e);
       throw new CarbonUtilException(
           "Proble while copying the file from: " + sourceFile + ": To" + fileDestination, e);
     } catch (IOException e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e);
+      LOGGER.error(e);
       throw new CarbonUtilException(
           "Proble while copying the file from: " + sourceFile + ": To" + fileDestination, e);
     } finally {
@@ -666,8 +665,7 @@ public final class CarbonUtil {
           CarbonFile file = FileFactory.getCarbonFile(fullPath, fileType);
           boolean isRenameSuccessfull = file.renameTo(newFilePath);
           if (!isRenameSuccessfull) {
-            LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-                "Problem renaming the cube :: " + fullPath);
+            LOGGER.error("Problem renaming the cube :: " + fullPath);
             c = new DeleteCube(file);
             executorService.submit(c);
           } else {
@@ -676,8 +674,7 @@ public final class CarbonUtil {
           }
         }
       } catch (IOException e) {
-        LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-            "Problem renaming the cube :: " + fullPath);
+        LOGGER.error("Problem renaming the cube :: " + fullPath);
       }
     }
     executorService.shutdown();
@@ -850,8 +847,7 @@ public final class CarbonUtil {
     try {
       listOfBlockletInfo = CarbonMetadataUtil.convertBlockletInfo(metaDataReader.readFooter());
     } catch (IOException e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-          "Problem while reading metadata :: " + filesLocation, e);
+      LOGGER.error("Problem while reading metadata :: " + filesLocation);
     }
     for (BlockletInfoColumnar infoColumnar : listOfBlockletInfo) {
       infoColumnar.setFileName(filesLocation);
@@ -896,8 +892,7 @@ public final class CarbonUtil {
     OutputStream stream = null;
     ObjectOutputStream objectOutputStream = null;
     try {
-      LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-          "Slice Metadata file Path: " + path + '/' + CarbonUtil
+      LOGGER.info("Slice Metadata file Path: " + path + '/' + CarbonUtil
               .getSliceMetaDataFileName(nextRestructFolder));
       stream = FileFactory
           .getDataOutputStream(path + File.separator + getSliceMetaDataFileName(nextRestructFolder),
@@ -905,7 +900,7 @@ public final class CarbonUtil {
       objectOutputStream = new ObjectOutputStream(stream);
       objectOutputStream.writeObject(sliceMetaData);
     } catch (IOException e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e.getMessage());
+      LOGGER.error(e.getMessage());
     } finally {
       closeStreams(objectOutputStream, stream);
     }
@@ -1216,8 +1211,7 @@ public final class CarbonUtil {
       buffer.get(indexData);
       buffer.get(indexMap);
     } catch (Exception e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "Error while compressColumn Index ", e,
-          e.getMessage());
+      LOGGER.error("Error while compressColumn Index ");
     }
     return UnBlockIndexer.uncompressIndex(numberCompressor.unCompress(indexData),
         numberCompressor.unCompress(indexMap));
@@ -1260,7 +1254,7 @@ public final class CarbonUtil {
         return new String[0];
       }
     } catch (IOException e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "Error occurred :: " + e.getMessage());
+      LOGGER.error("Error occurred :: " + e.getMessage());
     }
     CarbonFile file = FileFactory.getCarbonFile(storeLocation, fileType);
     CarbonFile[] listFiles = listFiles(file);
@@ -1467,8 +1461,7 @@ public final class CarbonUtil {
     try {
       return FileFactory.createNewFile(fullFileName, fileType);
     } catch (IOException e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-          "Error while writing RS meta file : " + fullFileName + e.getMessage());
+      LOGGER.error("Error while writing RS meta file : " + fullFileName + e.getMessage());
       return false;
     }
   }
@@ -1503,11 +1496,9 @@ public final class CarbonUtil {
       channel.write(buffer);
       buffer.clear();
 
-      LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-          "Level cardinality file written to : " + levelCardinalityFilePath);
+      LOGGER.info("Level cardinality file written to : " + levelCardinalityFilePath);
     } catch (IOException e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-          "Error while writing level cardinality file : " + levelCardinalityFilePath + e
+      LOGGER.error("Error while writing level cardinality file : " + levelCardinalityFilePath + e
               .getMessage());
       throw new KettleException("Not able to write level cardinality file", e);
     } finally {
@@ -1525,13 +1516,11 @@ public final class CarbonUtil {
       objectInputStream = new ObjectInputStream(stream);
       readObject = (SliceMetaData) objectInputStream.readObject();
     } catch (ClassNotFoundException e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e);
+      LOGGER.error(e);
     } catch (FileNotFoundException e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-          "@@@@@ SliceMetaData File is missing @@@@@ :" + path);
+      LOGGER.error("@@@@@ SliceMetaData File is missing @@@@@ :" + path);
     } catch (IOException e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-          "@@@@@ Error while reading SliceMetaData File @@@@@ :" + path);
+      LOGGER.error("@@@@@ Error while reading SliceMetaData File @@@@@ :" + path);
     } finally {
       closeStreams(objectInputStream, stream);
     }
@@ -1701,8 +1690,7 @@ public final class CarbonUtil {
         return true;
       }
     } catch (IOException e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-          "@@@@@@  File not found at a given location @@@@@@ : " + fileName);
+      LOGGER.error("@@@@@@  File not found at a given location @@@@@@ : " + fileName);
     }
     return false;
   }
@@ -1720,7 +1708,7 @@ public final class CarbonUtil {
         created = FileFactory.mkdirs(path, fileType);
       }
     } catch (IOException e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e.getMessage());
+      LOGGER.error(e.getMessage());
     }
     return created;
   }

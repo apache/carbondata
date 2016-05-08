@@ -24,7 +24,6 @@ import java.util.Date;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 
 import org.apache.spark.sql.columnar.TIMESTAMP;
 
@@ -85,8 +84,8 @@ public class CarbonDataFileAttributes {
       dateToStr = parser.parse(factTimeStamp);
       return Long.toString(dateToStr.getTime());
     } catch (ParseException e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Cannot convert" + TIMESTAMP.toString() + " to Time/Long type value" + e.getMessage());
+      LOGGER.error("Cannot convert" + TIMESTAMP.toString()
+          + " to Time/Long type value" + e.getMessage());
       return null;
     }
   }

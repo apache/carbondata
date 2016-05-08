@@ -51,7 +51,6 @@ import org.carbondata.processing.store.CarbonFactDataHandlerColumnar;
 import org.carbondata.processing.store.CarbonFactHandler;
 import org.carbondata.processing.store.SingleThreadFinalSortFilesMerger;
 import org.carbondata.processing.store.writer.exception.CarbonDataWriterException;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.carbondata.processing.util.RemoveDictionaryUtil;
 
 import org.pentaho.di.core.exception.KettleException;
@@ -188,22 +187,20 @@ public class MDKeyGenStep extends BaseStep {
         writeCounter++;
       }
     } catch (CarbonDataWriterException e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
+      LOGGER.error(e,
           "Failed for: " + this.tableName);
       throw new KettleException("Error while initializing data handler : " + e.getMessage());
     } finally {
       try {
         dataHandler.finish();
       } catch (CarbonDataWriterException e) {
-        LOGGER.debug(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-            "Error in  closing data handler ");
+        LOGGER.debug("Error in  closing data handler ");
       }
     }
-    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-        "Record Procerssed For table: " + this.tableName);
+    LOGGER.info("Record Procerssed For table: " + this.tableName);
     String logMessage =
         "Finished Carbon Mdkey Generation Step: Read: " + readCounter + ": Write: " + writeCounter;
-    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, logMessage);
+    LOGGER.info(logMessage);
     processingComplete();
     return false;
   }
@@ -243,8 +240,7 @@ public class MDKeyGenStep extends BaseStep {
         + CarbonCommonConstants.FILE_INPROGRESS_STATUS);
 
     if (!(new File(storeLocation).exists())) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Load Folder Not Present for writing measure metadata  : " + storeLocation);
+      LOGGER.error("Load Folder Not Present for writing measure metadata  : " + storeLocation);
       return false;
     }
 
@@ -258,8 +254,7 @@ public class MDKeyGenStep extends BaseStep {
     try {
       dimLensWithComplex = CarbonUtil.getCardinalityFromLevelMetadataFile(levelCardinalityFilePath);
     } catch (CarbonUtilException e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Level cardinality file :: " + e.getMessage());
+      LOGGER.error("Level cardinality file :: " + e.getMessage());
       return false;
     }
     if (null == dimLensWithComplex) {

@@ -68,11 +68,9 @@ import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
 import org.carbondata.core.load.LoadMetadataDetails;
 import org.carbondata.core.metadata.CarbonMetadata;
 import org.carbondata.core.metadata.CarbonMetadata.Cube;
-import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.CarbonUtilException;
-import org.carbondata.integration.spark.util.CarbonSparkInterFaceLogEvent;
 import org.carbondata.processing.api.dataloader.DataLoadModel;
 import org.carbondata.processing.api.dataloader.SchemaInfo;
 import org.carbondata.processing.csvload.DataGraphExecuter;
@@ -129,8 +127,7 @@ public final class CarbonLoaderUtil {
       String hdfsStoreLocation, String kettleHomePath, int currentRestructNumber) throws Exception {
     System.setProperty("KETTLE_HOME", kettleHomePath);
     if (!new File(storeLocation).mkdirs()) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-          "Error while new File(storeLocation).mkdirs() ");
+      LOGGER.error("Error while new File(storeLocation).mkdirs() ");
     }
     String outPutLoc = storeLocation + "/etl";
     String databaseName = loadModel.getDatabaseName();
@@ -240,8 +237,7 @@ public final class CarbonLoaderUtil {
           return aggStorepath;
         }
       } catch (IOException e) {
-        LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-            "Problem checking file existence :: " + e.getMessage());
+        LOGGER.error("Problem checking file existence :: " + e.getMessage());
       }
     }
     return null;
@@ -342,11 +338,9 @@ public final class CarbonLoaderUtil {
         CarbonUtil.deleteFoldersAndFiles(carbonFile);
       }
     } catch (IOException e) {
-      LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-          "Unable to delete the given path :: " + e.getMessage());
+      LOGGER.error("Unable to delete the given path :: " + e.getMessage());
     } catch (CarbonUtilException e) {
-      LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-          "Unable to delete the given path :: " + e.getMessage());
+      LOGGER.error("Unable to delete the given path :: " + e.getMessage());
     }
   }
 
@@ -362,8 +356,7 @@ public final class CarbonLoaderUtil {
           return true;
         }
       } catch (IOException e) {
-        LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-            "Problem checking file existence :: " + e.getMessage());
+        LOGGER.error("Problem checking file existence :: " + e.getMessage());
       }
     }
     return false;
@@ -489,11 +482,10 @@ public final class CarbonLoaderUtil {
     try {
       FileFactory.mkdirs(aggLoadFolderLocation, fileType);
     } catch (IOException e) {
-      LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-          "Problem creating empty folder created for aggregation table :: " + e.getMessage());
+      LOGGER.error("Problem creating empty folder created for aggregation table: "
+          + e.getMessage());
     }
-    LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-        "Empty folder created for aggregation table");
+    LOGGER.info("Empty folder created for aggregation table");
   }
 
   /**
@@ -574,8 +566,7 @@ public final class CarbonLoaderUtil {
       if (isUpdate) {
         renameFactFile(localStoreLocation);
       }
-      LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-          "Copying " + localStoreLocation + " --> " + carbonStoreLocation);
+      LOGGER.info("Copying " + localStoreLocation + " --> " + carbonStoreLocation);
       CarbonUtil.checkAndCreateFolder(carbonStoreLocation);
       Path carbonStorePath = new Path(carbonStoreLocation);
       FileSystem fs = carbonStorePath.getFileSystem(FileFactory.getConfiguration());
@@ -593,11 +584,9 @@ public final class CarbonLoaderUtil {
         fs.copyFromLocalFile(true, true, new Path(listFiles[i].getCanonicalPath()),
             carbonStorePath);
       }
-      LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-          "Total copy time (ms):  " + (System.currentTimeMillis() - copyStartTime));
+      LOGGER.info("Total copy time (ms):  " + (System.currentTimeMillis() - copyStartTime));
     } else {
-      LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-          "Separate carbon.storelocation.hdfs is not configured for carbon store path");
+      LOGGER.info("Separate carbon.storelocation.hdfs is not configured for carbon store path");
     }
   }
 
@@ -636,8 +625,7 @@ public final class CarbonLoaderUtil {
         }
       }
     } catch (IOException e) {
-      LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-          "Inside renameFactFile. Problem checking file existence :: " + e.getMessage());
+      LOGGER.error("Inside renameFactFile. Problem checking file existence :: " + e.getMessage());
     }
   }
 
@@ -784,8 +772,7 @@ public final class CarbonLoaderUtil {
           brWriter.flush();
         }
       } catch (Exception e) {
-        LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-            "error in  flushing ", e, e.getMessage());
+        LOGGER.error("error in  flushing ");
 
       }
       CarbonUtil.closeStreams(brWriter);
@@ -948,8 +935,7 @@ public final class CarbonLoaderUtil {
         CarbonUtil.deleteFoldersAndFiles(new File[] {
             new File(localStore + File.separator + schemaName + File.separator + cubeName) });
       } catch (CarbonUtilException e) {
-        LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-            "Error while CarbonUtil.deleteFoldersAndFiles ", e, e.getMessage());
+        LOGGER.error("Error while CarbonUtil.deleteFoldersAndFiles ");
       }
     }
   }
@@ -969,8 +955,7 @@ public final class CarbonLoaderUtil {
         int rsCounter = currentRestructNumber;
 
         if (rsCounter == -1) {
-          LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-              "Unable to find the local store details (RS_-1) " + currentloadedStore);
+          LOGGER.info("Unable to find the local store details (RS_-1) " + currentloadedStore);
           return;
         }
         String localLoadedTable =
@@ -982,8 +967,7 @@ public final class CarbonLoaderUtil {
         int loadCounter = CarbonUtil.checkAndReturnCurrentLoadFolderNumber(localLoadedTable);
 
         if (loadCounter == -1) {
-          LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-              "Unable to find the local store details (Load_-1) " + currentloadedStore);
+          LOGGER.info("Unable to find the local store details (Load_-1) " + currentloadedStore);
 
           return;
         }
@@ -992,8 +976,7 @@ public final class CarbonLoaderUtil {
         String localLoadFolder =
             localLoadedTable + File.separator + CarbonCommonConstants.LOAD_FOLDER + mergedLoadName;
 
-        LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-            "Local data loaded folder ... = " + localLoadFolder);
+        LOGGER.info("Local data loaded folder ... = " + localLoadFolder);
 
         //Identify the Load_X folder in the HDFS store
         String hdfsStoreLocation = hdfsLocation;
@@ -1013,12 +996,10 @@ public final class CarbonLoaderUtil {
 
         String hdfsStoreLoadFolder = hdfsLoadedTable + File.separator + localLoadName;
 
-        LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-            "HDFS data load folder ... = " + hdfsStoreLoadFolder);
+        LOGGER.info("HDFS data load folder ... = " + hdfsStoreLoadFolder);
 
         // Copy the data created through latest ETL run, to the HDFS store
-        LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-            "Copying " + localLoadFolder + " --> " + hdfsStoreLoadFolder);
+        LOGGER.info("Copying " + localLoadFolder + " --> " + hdfsStoreLoadFolder);
 
         hdfsStoreLoadFolder = hdfsStoreLoadFolder.replace("\\", "/");
         Path path = new Path(hdfsStoreLocation);
@@ -1026,15 +1007,13 @@ public final class CarbonLoaderUtil {
         FileSystem fs = path.getFileSystem(FileFactory.getConfiguration());
         fs.copyFromLocalFile(true, true, new Path(localLoadFolder), new Path(hdfsStoreLoadFolder));
 
-        LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-            "Copying sliceMetaData from " + localLoadedTable + " --> " + hdfsLoadedTable);
+        LOGGER.info("Copying sliceMetaData from " + localLoadedTable + " --> " + hdfsLoadedTable);
 
       } else {
-        LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-            "Separate carbon.storelocation.hdfs is not configured for hdfs store path");
+        LOGGER.info("Separate carbon.storelocation.hdfs is not configured for hdfs store path");
       }
     } catch (Exception e) {
-      LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e.getMessage());
+      LOGGER.info(e.getMessage());
     }
   }
 

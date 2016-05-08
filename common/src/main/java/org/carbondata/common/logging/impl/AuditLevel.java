@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.carbondata.common.logging;
+package org.carbondata.common.logging.impl;
 
 import org.apache.log4j.Level;
 

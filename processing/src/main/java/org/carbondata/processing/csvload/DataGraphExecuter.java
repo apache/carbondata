@@ -45,7 +45,6 @@ import org.carbondata.processing.csvreaderstep.CsvInputMeta;
 import org.carbondata.processing.dataprocessor.IDataProcessStatus;
 import org.carbondata.processing.etl.DataLoadingException;
 import org.carbondata.processing.surrogatekeysgenerator.csvbased.BadRecordslogger;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 
 import org.apache.commons.vfs.FileSystemException;
 import org.apache.commons.vfs.FileSystemManager;
@@ -145,7 +144,7 @@ public class DataGraphExecuter {
     String[] columnNames = getColumnNames(schemaInfo, tableName, partitionId, schema);
 
     if (!checkCSVAndRequestedTableColumns(columnNames, f.getAbsolutePath(), delimiter)) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
+      LOGGER.error(
           "CSV File provided is not proper. Column names in schema and csv header are not same. "
               + "CSVFile Name : "
               + f.getName());
@@ -156,8 +155,7 @@ public class DataGraphExecuter {
     }
 
     if (!checkHeaderExist(columnNames, f.getAbsolutePath(), delimiter)) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Header Columns are not present in the provided CSV File :" + f.getName());
+      LOGGER.error("Header Columns are not present in the provided CSV File :" + f.getName());
       throw new DataLoadingException(DataProcessorConstants.CSV_VALIDATION_ERRROR_CODE,
           "Header Columns are not present in the provided CSV File:" + f.getName());
 
@@ -207,7 +205,7 @@ public class DataGraphExecuter {
             }
           } catch (FileSystemException e) {
             if (!e.getMessage().contains("Multiple providers registered for URL scheme")) {
-              LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
+              LOGGER.error(e,
                   e.getMessage());
             }
           }
@@ -234,22 +232,20 @@ public class DataGraphExecuter {
       }
       setGraphLogLevel();
       trans.execute(null);
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Graph execution is started " + graphFilePath);
+      LOGGER.info("Graph execution is started " + graphFilePath);
       trans.waitUntilFinished();
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Graph execution is finished.");
+      LOGGER.info("Graph execution is finished.");
     } catch (KettleXMLException e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
+      LOGGER.error(e,
           "Unable to start execution of graph " + e.getMessage());
       throw new DataLoadingException("Unable to start execution of graph ", e);
 
     } catch (KettleException e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
+      LOGGER.error(e,
           "Unable to start execution of graph " + e.getMessage());
       throw new DataLoadingException("Unable to start execution of graph ", e);
     } catch (Throwable e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
+      LOGGER.error(e,
           "Unable to start execution of graph " + e.getMessage());
       throw new DataLoadingException("Unable to start execution of graph ", e);
     }
@@ -258,17 +254,14 @@ public class DataGraphExecuter {
     String key = model.getSchemaName() + '/' + model.getCubeName() + '_' + model.getTableName();
 
     if (trans.getErrors() > 0) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Graph Execution had errors");
+      LOGGER.error("Graph Execution had errors");
       throw new DataLoadingException("Internal Errors");
     } else if (null != BadRecordslogger.hasBadRecord(key)) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Graph Execution is partcially success");
+      LOGGER.error("Graph Execution is partcially success");
       throw new DataLoadingException(DataProcessorConstants.BAD_REC_FOUND,
           "Graph Execution is partcially success");
     } else {
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Graph execution task is over with No error.");
+      LOGGER.info("Graph execution task is over with No error.");
     }
     LoggingRegistry instance = LoggingRegistry.getInstance();
     Map<String, LoggingObjectInterface> map = instance.getMap();
@@ -451,11 +444,9 @@ public class DataGraphExecuter {
   private void initKettleEnv() {
     try {
       KettleEnvironment.init(false);
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Kettle environment initialized");
+      LOGGER.info("Kettle environment initialized");
     } catch (KettleException ke) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Unable to initialize Kettle Environment " + ke.getMessage());
+      LOGGER.error("Unable to initialize Kettle Environment " + ke.getMessage());
     }
   }
 
@@ -511,7 +502,7 @@ public class DataGraphExecuter {
     }
 
     if (count != columnNames.length) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
+      LOGGER.error(
           "CSV File provided is not proper. Column names in schema and CSV header are not same.");
       throw new DataLoadingException(DataProcessorConstants.CSV_VALIDATION_ERRROR_CODE,
           "CSV File provided is not proper. Column names in schema and csv header are not same.");
@@ -554,8 +545,7 @@ public class DataGraphExecuter {
           if (!(csvFilePath.endsWith(CarbonCommonConstants.CSV_FILE_EXTENSION) || csvFilePath
               .endsWith(CarbonCommonConstants.CSV_FILE_EXTENSION
                   + CarbonCommonConstants.FILE_INPROGRESS_STATUS))) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-                "File provided is not proper, Only csv files are allowed." + csvFilePath);
+            LOGGER.error("File provided is not proper, Only csv files are allowed." + csvFilePath);
             throw new DataLoadingException(
                 "File provided is not proper, Only csv files are allowed." + csvFilePath);
           }
@@ -572,7 +562,7 @@ public class DataGraphExecuter {
         }
 
       } catch (IOException e) {
-        LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
+        LOGGER.error(e,
             "Error while checking file exists" + csvFilePath);
       }
     } else if (model.isDirectLoad()) {
@@ -588,7 +578,7 @@ public class DataGraphExecuter {
                   model.getCsvDelimiter());
             }
           } catch (IOException e) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
+            LOGGER.error(e,
                 "Error while checking file exists" + file);
           }
         }
@@ -621,7 +611,7 @@ public class DataGraphExecuter {
                 validateDimensionCSV(schemaInfo, model.getTableName(), dimTableName, dimCsvFile,
                     partitionId, schema, ",");
               } else {
-                LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
+                LOGGER.error(
                     "Dimension table file provided to load Dimension tables is not a CSV file : "
                         + dimCSVFileLoc);
                 throw new DataLoadingException(DataProcessorConstants.CSV_VALIDATION_ERRROR_CODE,
@@ -629,7 +619,7 @@ public class DataGraphExecuter {
                         + dimCSVFileLoc);
               }
             } else {
-              LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
+              LOGGER.error(
                   "Dimension table csv file not present in the path provided to load Dimension "
                       + "tables : "
                       + dimCSVFileLoc);
@@ -640,7 +630,7 @@ public class DataGraphExecuter {
             }
           }
         } catch (IOException e) {
-          LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
+          LOGGER.error(
               "Dimension table csv file not present in the path provided to load Dimension tables"
                   + " : "
                   + dimCSVFileLoc);
@@ -672,7 +662,7 @@ public class DataGraphExecuter {
       return;
     }
     if (!checkAllColumnsPresent(columnNames, dimFile.getAbsolutePath(), delimiter)) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
+      LOGGER.error(
           "CSV File provided is not proper. Column names in schema and csv header are not same. "
               + "CSVFile Name : "
               + dimFile.getName());
@@ -683,7 +673,7 @@ public class DataGraphExecuter {
     }
 
     if (!checkDimHeaderExist(columnNames, dimFile.getAbsolutePath(), delimiter)) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
+      LOGGER.error(
           "Header Columns are not present in the provided CSV File For Dimension Table Load :"
               + dimFile.getName());
       throw new DataLoadingException(DataProcessorConstants.CSV_VALIDATION_ERRROR_CODE,
@@ -716,12 +706,10 @@ public class DataGraphExecuter {
    * Interrupts all child threads run by kettle to execute the graph
    */
   public void interruptGraphExecution() {
-    LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-        "Graph Execution is interrupted");
+    LOGGER.error("Graph Execution is interrupted");
     if (null != trans) {
       trans.killAll();
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Graph execution steps are killed.");
+      LOGGER.info("Graph execution steps are killed.");
     }
   }
 

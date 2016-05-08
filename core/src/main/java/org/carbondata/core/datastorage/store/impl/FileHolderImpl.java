@@ -32,7 +32,6 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
-import org.carbondata.core.util.CarbonCoreLogEvent;
 
 public class FileHolderImpl implements FileHolder {
   /**
@@ -100,7 +99,7 @@ public class FileHolderImpl implements FileHolder {
           channel.close();
         }
       } catch (IOException exception) {
-        LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, exception, exception.getMessage());
+        LOGGER.error(exception, exception.getMessage());
       }
     }
 
@@ -165,7 +164,7 @@ public class FileHolderImpl implements FileHolder {
         fileNameAndStreamCache.put(carbonFile.getAbsolutePath(), fileChannel);
       }
     } catch (IOException e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e, e.getMessage());
+      LOGGER.error(e, e.getMessage());
     }
     return fileChannel;
   }
@@ -184,7 +183,7 @@ public class FileHolderImpl implements FileHolder {
       channel.position(offset);
       channel.read(byteBffer);
     } catch (Exception e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e, e.getMessage());
+      LOGGER.error(e, e.getMessage());
     }
     byteBffer.rewind();
     return byteBffer;
@@ -202,7 +201,7 @@ public class FileHolderImpl implements FileHolder {
     try {
       channel.read(byteBffer);
     } catch (Exception e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e, e.getMessage());
+      LOGGER.error(e, e.getMessage());
     }
     byteBffer.rewind();
     return byteBffer;
@@ -218,7 +217,7 @@ public class FileHolderImpl implements FileHolder {
       FileChannel fileChannel = updateCache(filePath);
       size = fileChannel.size();
     } catch (IOException e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e, e.getMessage());
+      LOGGER.error(e, e.getMessage());
     }
     return size;
   }

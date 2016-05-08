@@ -27,7 +27,6 @@ import org.carbondata.core.datastorage.store.compression.Compressor;
 import org.carbondata.core.datastorage.store.compression.SnappyCompression;
 import org.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
 import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
-import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.ValueCompressionUtil;
 import org.carbondata.core.util.ValueCompressionUtil.DataType;
 
@@ -64,7 +63,7 @@ public class UnCompressMaxMinShort implements ValueCompressonHolder.UnCompressVa
     try {
       return (ValueCompressonHolder.UnCompressValue) clone();
     } catch (CloneNotSupportedException ex3) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, ex3, ex3.getMessage());
+      LOGGER.error(ex3, ex3.getMessage());
     }
     return null;
   }

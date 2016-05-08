@@ -41,7 +41,6 @@ import org.carbondata.integration.spark.partition.api.DataPartitioner;
 import org.carbondata.integration.spark.partition.api.Partition;
 import org.carbondata.integration.spark.query.CarbonQueryPlan;
 import org.carbondata.integration.spark.query.metadata.CarbonDimensionFilter;
-import org.carbondata.integration.spark.util.CarbonSparkInterFaceLogEvent;
 import org.carbondata.query.queryinterface.query.metadata.CarbonDimensionLevelFilter;
 
 import org.apache.spark.sql.cubemodel.Partitioner;
@@ -70,16 +69,11 @@ public class SampleDataPartitionerImpl implements DataPartitioner {
     numberOfPartitions = partitioner.partitionCount();
 
     partitionColumn = partitioner.partitionColumn()[0];
-    LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-        "SampleDataPartitionerImpl initializing with following properties.");
-    LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-        "partitionCount: " + numberOfPartitions);
-    LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-        "partitionColumn: " + partitionColumn);
-    LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-        "basePath: " + basePath);
-    LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-        "columns: " + Arrays.toString(columns));
+    LOGGER.info("SampleDataPartitionerImpl initializing with following properties.");
+    LOGGER.info("partitionCount: " + numberOfPartitions);
+    LOGGER.info("partitionColumn: " + partitionColumn);
+    LOGGER.info("basePath: " + basePath);
+    LOGGER.info("columns: " + Arrays.toString(columns));
 
     this.baseLocation = basePath;
     allPartitions = new ArrayList<Partition>(CarbonCommonConstants.CONSTANT_SIZE_TEN);

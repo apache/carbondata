@@ -55,7 +55,6 @@ import org.carbondata.processing.schema.metadata.CarbonColumnarFactMergerInfo;
 import org.carbondata.processing.store.writer.CarbonFactDataWriter;
 import org.carbondata.processing.store.writer.CarbonFactDataWriterImplForIntIndexAndAggBlock;
 import org.carbondata.processing.store.writer.exception.CarbonDataWriterException;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -187,8 +186,7 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
     isCompressedKeyBlock =
         Boolean.parseBoolean(CarbonCommonConstants.IS_COMPRESSED_KEYBLOCK_DEFAULTVALUE);
 
-    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-        "Initializing writer executers");
+    LOGGER.info("Initializing writer executers");
     writerExecutorService = Executors.newFixedThreadPool(3);
     createAggType(carbonFactDataMergerInfo);
   }
@@ -307,8 +305,7 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
               startKeyLocal, endKeyLocal, compressionModel));
       // set the entry count to zero
       processedDataCount += entryCount;
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "*******************************************Number Of records processed: "
+      LOGGER.info("*******************************************Number Of records processed: "
               + processedDataCount);
       this.entryCount = 0;
       resetKeyBlockHolder();
@@ -336,8 +333,7 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
     try {
       executorService.awaitTermination(1, TimeUnit.DAYS);
     } catch (InterruptedException e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "error in executorService/awaitTermination ", e, e.getMessage());
+      LOGGER.error("error in executorService/awaitTermination ");
 
     }
     IndexStorage[] blockStorage = new IndexStorage[numberOfColumns];
@@ -346,8 +342,7 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
         blockStorage[i] = submit.get(i).get();
       }
     } catch (Exception e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "error in  populating  blockstorage array ", e, e.getMessage());
+      LOGGER.error("error in  populating  blockstorage array ");
 
     }
     synchronized (lock) {
@@ -378,8 +373,7 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
         try {
           this.groupBy.finish();
         } catch (CarbonGroupByException e) {
-          LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-              "Problem in group by finish");
+          LOGGER.error("Problem in group by finish");
         }
       }
     }
@@ -403,8 +397,7 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
       try {
         executorService.awaitTermination(1, TimeUnit.DAYS);
       } catch (InterruptedException e) {
-        LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-            "error in  executorService.awaitTermination ", e, e.getMessage());
+        LOGGER.error("error in  executorService.awaitTermination ");
 
       }
       IndexStorage[] blockStorage = new IndexStorage[numberOfColumns];
@@ -413,8 +406,7 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
           blockStorage[i] = submit.get(i).get();
         }
       } catch (Exception e) {
-        LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-            "error while populating blockStorage array ", e, e.getMessage());
+        LOGGER.error("error while populating blockStorage array ");
 
       }
 
@@ -422,8 +414,7 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
       try {
         writerExecutorService.awaitTermination(1, TimeUnit.DAYS);
       } catch (InterruptedException e) {
-        LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-            "error in  writerexecutorService/awaitTermination ", e, e.getMessage());
+        LOGGER.error("error in  writerexecutorService/awaitTermination ");
       }
       ValueCompressionModel compressionModel = ValueCompressionUtil
           .getValueCompressionModel(max, min, decimal, uniqueValue, type, new byte[max.length]);
@@ -432,8 +423,7 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
           this.entryCount, this.startKey, this.endKey, compressionModel, null, null);
 
       processedDataCount += entryCount;
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "*******************************************Number Of records processed: "
+      LOGGER.info("*******************************************Number Of records processed: "
               + processedDataCount);
       this.dataWriter.writeleafMetaDataToFile();
     } else if (null != this.dataWriter && this.dataWriter.getLeafMetadataSize() > 0) {
@@ -473,8 +463,7 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
         }
 
         if (!currentFile.renameTo(destFile)) {
-          LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-              "Problem while renaming the file");
+          LOGGER.info("Problem while renaming the file");
         }
 
         fileData.setName(changedFileName);
@@ -484,8 +473,7 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
       try {
         this.groupBy.finish();
       } catch (CarbonGroupByException exception) {
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-            "Problem while closing the groupby file");
+        LOGGER.info("Problem while closing the groupby file");
       }
     }
     this.keyBlockHolder = null;
@@ -507,8 +495,7 @@ public class CarbonFactDataHandlerColumnarMerger implements CarbonFactHandler {
         .getProperty(CarbonCommonConstants.BLOCKLET_SIZE,
             CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL));
 
-    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-        "************* Blocklet Size: " + blockletize);
+    LOGGER.info("************* Blocklet Size: " + blockletize);
 
     int dimSet =
         Integer.parseInt(CarbonCommonConstants.DIMENSION_SPLIT_VALUE_IN_COLUMNAR_DEFAULTVALUE);

@@ -31,7 +31,6 @@ import org.carbondata.query.executer.AbstractCarbonExecutor;
 import org.carbondata.query.executer.CarbonQueryExecutorModel;
 import org.carbondata.query.holders.CarbonResultHolder;
 import org.carbondata.query.queryinterface.filter.CarbonFilterInfo;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 
 //import mondrian.carbon.SqlStatement;
 //import mondrian.carbon.SqlStatement.Type;
@@ -51,58 +50,58 @@ public class InMemoryQueryExecutor extends AbstractCarbonExecutor implements Row
 
   @Override public void execute(CarbonQueryExecutorModel queryModel)
       throws IOException, KeyGenException {
-    LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "UNSUPPORT Operation");
+    LOGGER.error("UNSUPPORT Operation");
   }
 
   @Override
   public void executeHierarichies(String hName, final int[] dims, List<Dimension> dimNames,
       Map<Dimension, CarbonFilterInfo> constraints, CarbonResultHolder hIterator)
       throws IOException, KeyGenException {
-    LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "UNSUPPORT Operation");
+    LOGGER.error("UNSUPPORT Operation");
 
   }
 
   @Override public void executeDimensionCount(Dimension dimension, CarbonResultHolder hIterator)
       throws IOException {
-    LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "UNSUPPORT Operation");
+    LOGGER.error("UNSUPPORT Operation");
 
   }
 
   @Override public void executeAggTableCount(String table, CarbonResultHolder hIterator)
       throws IOException {
-    LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "UNSUPPORT Operation");
+    LOGGER.error("UNSUPPORT Operation");
 
   }
 
   @Override public long executeTableCount(String table) throws IOException {
-    LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "UNSUPPORT Operation");
+    LOGGER.error("UNSUPPORT Operation");
     return 0;
   }
 
   @Override public void executeDimension(String hName, Dimension dim, final int[] dims,
       Map<Dimension, CarbonFilterInfo> constraints, CarbonResultHolder hIterator)
       throws IOException {
-    LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "UNSUPPORT Operation");
+    LOGGER.error("UNSUPPORT Operation");
 
   }
 
   @Override public void interruptExecutor() {
-    LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "UNSUPPORT Operation");
+    LOGGER.error("UNSUPPORT Operation");
 
   }
 
   @Override public void rowLimitExceeded() throws Exception {
-    LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "UNSUPPORT Operation");
+    LOGGER.error("UNSUPPORT Operation");
 
   }
 
   @Override protected Long getMaxValue(Dimension dim) throws IOException {
-    LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "UNSUPPORT Operation");
+    LOGGER.error("UNSUPPORT Operation");
     return 0L;
   }
 
   @Override public long[] getSurrogates(List<String> dimMem, Dimension dimName) throws IOException {
-    LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "UNSUPPORT Operation");
+    LOGGER.error("UNSUPPORT Operation");
     return new long[0];
   }
 }

@@ -44,7 +44,6 @@ import org.carbondata.query.evaluators.MeasureColumnResolvedFilterInfo;
 import org.carbondata.query.expression.Expression;
 import org.carbondata.query.expression.exception.FilterUnsupportedException;
 import org.carbondata.query.filters.measurefilter.util.FilterUtil;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 import org.carbondata.query.util.DataTypeConverter;
 
 public class RowLevelFilterExecuterImpl implements FilterExecuter {
@@ -111,7 +110,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
           set.set(index);
         }
       } catch (FilterUnsupportedException e) {
-        LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e, e.getMessage());
+        LOGGER.error(e, e.getMessage());
       }
     }
     // CHECKSTYLE:ON

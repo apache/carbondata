@@ -33,7 +33,6 @@ import org.carbondata.core.reader.CarbonFooterReader;
 import org.carbondata.core.util.CarbonMetadataUtil;
 import org.carbondata.core.util.ValueCompressionUtil;
 import org.carbondata.query.schema.metadata.Pair;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -74,7 +73,7 @@ public class HDFSFileDataInputStream extends AbstractFileDataInputStream {
     //
     try {
       LOGGER
-          .info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "Reading from file: " + filesLocation);
+          .info("Reading from file: " + filesLocation);
       Path pt = new Path(filesLocation);
       FileSystem fs = pt.getFileSystem(new Configuration());
       fsChannel = fs.open(pt);
@@ -90,11 +89,9 @@ public class HDFSFileDataInputStream extends AbstractFileDataInputStream {
         this.totalMetaDataLength = (int) (fileSize - offSet);
       }
     } catch (FileNotFoundException fe) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-          "@@@@ Hirarchy file is missing @@@@ : " + filesLocation);
+      LOGGER.error("@@@@ Hirarchy file is missing @@@@ : " + filesLocation);
     } catch (IOException ex) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-          "@@@@ Error while reading hirarchy @@@@ : " + filesLocation);
+      LOGGER.error("@@@@ Error while reading hirarchy @@@@ : " + filesLocation);
     }
   }
 
@@ -104,7 +101,7 @@ public class HDFSFileDataInputStream extends AbstractFileDataInputStream {
       try {
         fsChannel.close();
       } catch (IOException ex) {
-        LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, ex,
+        LOGGER.error(ex,
             "Could not close input stream for location : " + filesLocation);
       }
     }
@@ -128,8 +125,7 @@ public class HDFSFileDataInputStream extends AbstractFileDataInputStream {
     try {
       listOfNodeInfo = CarbonMetadataUtil.convertBlockletInfo(metaDataReader.readFooter());
     } catch (IOException e) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-          "Problem while reading metadata :: " + filesLocation, e);
+      LOGGER.error("Problem while reading metadata :: " + filesLocation);
     }
     for (BlockletInfoColumnar infoColumnar : listOfNodeInfo) {
       infoColumnar.setFileName(filesLocation);
@@ -163,7 +159,7 @@ public class HDFSFileDataInputStream extends AbstractFileDataInputStream {
       }
 
     } catch (IOException exception) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, exception,
+      LOGGER.error(exception,
           "Problem While Reading the Hier File : ");
     }
     return null;

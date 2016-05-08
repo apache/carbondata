@@ -37,7 +37,6 @@ import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.carbondata.processing.util.RemoveDictionaryUtil;
 
 public class SortTempFileChunkHolder {
@@ -177,8 +176,7 @@ public class SortTempFileChunkHolder {
         .getProperty(CarbonCommonConstants.IS_SORT_TEMP_FILE_COMPRESSION_ENABLED,
             CarbonCommonConstants.IS_SORT_TEMP_FILE_COMPRESSION_ENABLED_DEFAULTVALUE));
     if (this.isSortTempFileCompressionEnabled) {
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Compression was used while writing the sortTempFile");
+      LOGGER.info("Compression was used while writing the sortTempFile");
     }
 
     try {
@@ -186,8 +184,7 @@ public class SortTempFileChunkHolder {
           .getProperty(CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION,
               CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE));
       if (this.sortTempFileNoOFRecordsInCompression < 1) {
-        LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-            "Invalid value for: "
+        LOGGER.error("Invalid value for: "
                 + CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION
                 + ": Only Positive Integer value(greater than zero) is allowed.Default value will"
                 + " be used");
@@ -196,10 +193,9 @@ public class SortTempFileChunkHolder {
             CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE);
       }
     } catch (NumberFormatException e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Invalid value for: " + CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION
-              + ": Only Positive Integer value(greater than zero) is allowed.Default value will "
-              + "be used");
+      LOGGER.error("Invalid value for: "
+          + CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION
+          + ", only Positive Integer value is allowed.Default value will be used");
       this.sortTempFileNoOFRecordsInCompression = Integer
           .parseInt(CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE);
     }
@@ -236,13 +232,13 @@ public class SortTempFileChunkHolder {
       }
 
     } catch (FileNotFoundException e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
+      LOGGER.error(e);
       throw new CarbonSortKeyAndGroupByException(tempFile + " No Found", e);
     } catch (IOException e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
+      LOGGER.error(e);
       throw new CarbonSortKeyAndGroupByException(tempFile + " No Found", e);
     } catch (Exception e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
+      LOGGER.error(e);
       throw new CarbonSortKeyAndGroupByException(tempFile + " Problem while reading", e);
     }
   }
@@ -261,7 +257,7 @@ public class SortTempFileChunkHolder {
           new DataFetcher(false).call();
           bufferRowCounter = 0;
         } catch (Exception e) {
-          LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
+          LOGGER.error(e);
           throw new CarbonSortKeyAndGroupByException(tempFile + " Problem while reading", e);
         }
 
@@ -288,7 +284,7 @@ public class SortTempFileChunkHolder {
         try {
           submit.get();
         } catch (Exception e) {
-          LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
+          LOGGER.error(e);
         }
         bufferRowCounter = 0;
         currentBuffer = backupBuffer;
@@ -359,8 +355,7 @@ public class SortTempFileChunkHolder {
       // increment number if record read
       this.numberOfObjectRead++;
     } catch (IOException e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Problme while reading the madkey fom sort temp file", e);
+      LOGGER.error("Problme while reading the madkey fom sort temp file");
       throw new CarbonSortKeyAndGroupByException("Problem while reading the sort temp file ", e);
     }
 
@@ -440,7 +435,7 @@ public class SortTempFileChunkHolder {
           currentBuffer = reader.getRow();
         }
       } catch (Exception e) {
-        LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
+        LOGGER.error(e);
       }
       return null;
     }

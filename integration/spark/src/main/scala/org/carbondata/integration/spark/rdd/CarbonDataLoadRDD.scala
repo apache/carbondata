@@ -35,7 +35,7 @@ import org.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.carbondata.integration.spark.Result
 import org.carbondata.integration.spark.load._
 import org.carbondata.integration.spark.splits.TableSplit
-import org.carbondata.integration.spark.util.{CarbonQueryUtil, CarbonSparkInterFaceLogEvent}
+import org.carbondata.integration.spark.util.CarbonQueryUtil
 import org.carbondata.processing.constants.DataProcessorConstants
 import org.carbondata.processing.etl.DataLoadingException
 import org.carbondata.processing.graphgenerator.GraphGenerator
@@ -201,11 +201,11 @@ class CarbonDataLoadRDD[K, V](
               logInfo("Bad Record Found")
             } else {
               dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
-              LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, e)
+              LOGGER.error(e)
             }
             case e: Exception =>
               dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
-              LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, e)
+              LOGGER.error(e)
           } finally {
             if (!CarbonCommonConstants.STORE_LOADSTATUS_FAILURE.equals(dataloadStatus)) {
               val newSlice = CarbonCommonConstants.LOAD_FOLDER + loadCount
@@ -216,7 +216,7 @@ class CarbonDataLoadRDD[K, V](
                 case e: Exception =>
                   isCopyFailed = true
                   dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
-                  LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, e)
+                  LOGGER.error(e)
               }
               if (!isCopyFailed) {
                 dataloadStatus = checkAndLoadAggregationTable
@@ -288,6 +288,7 @@ class CarbonDataLoadRDD[K, V](
 
       /**
        * generate blocks id
+       *
        * @return
        */
       def gernerateBlocksID(): String = {
@@ -442,8 +443,7 @@ class CarbonDataLoadRDD[K, V](
             }
           } catch {
             case e: Exception =>
-              LogServiceFactory.getLogService
-                .error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, e)
+              LogServiceFactory.getLogService.error(e)
               dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
           } finally {
             updateLevelCacheStatus(levelCacheKeys)
@@ -455,7 +455,7 @@ class CarbonDataLoadRDD[K, V](
               }
               catch {
                 case e: Exception =>
-                  LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, e)
+                  LOGGER.error(e)
                   return CarbonCommonConstants.STORE_LOADSTATUS_FAILURE;
               }
             } else {

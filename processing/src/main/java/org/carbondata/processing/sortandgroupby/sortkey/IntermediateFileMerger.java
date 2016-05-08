@@ -36,7 +36,6 @@ import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.CarbonUtilException;
 import org.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.carbondata.processing.util.CarbonDataProcessorUtil;
 import org.carbondata.query.aggregator.MeasureAggregator;
 
@@ -225,7 +224,7 @@ public class IntermediateFileMerger implements Callable<Void> {
         }
       }
     } catch (Exception ex) {
-      FILEMERGERLOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, ex,
+      FILEMERGERLOGGER.error(ex,
           "Problem while intermediate merging");
       isFailed = true;
     } finally {
@@ -238,13 +237,12 @@ public class IntermediateFileMerger implements Callable<Void> {
         try {
           finish();
         } catch (CarbonSortKeyAndGroupByException e) {
-          FILEMERGERLOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
+          FILEMERGERLOGGER.error(e,
               "Problem while deleting the merge file");
         }
       } else {
         if (this.outFile.delete()) {
-          FILEMERGERLOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-              "Problem while deleting the merge file");
+          FILEMERGERLOGGER.error("Problem while deleting the merge file");
         }
       }
 
@@ -255,8 +253,7 @@ public class IntermediateFileMerger implements Callable<Void> {
       String[] split = destFileName.split(CarbonCommonConstants.BAK_EXT);
       File renamed = new File(split[0]);
       if (!this.outFile.renameTo(renamed)) {
-        FILEMERGERLOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-            "Problem while renaming the checkpoint file");
+        FILEMERGERLOGGER.error("Problem while renaming the checkpoint file");
       }
     }
     return null;
@@ -334,13 +331,11 @@ public class IntermediateFileMerger implements Callable<Void> {
    * @throws CarbonSortKeyAndGroupByException
    */
   private void startSorting() throws CarbonSortKeyAndGroupByException {
-    FILEMERGERLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-        "Number of temp file: " + this.fileCounter);
+    FILEMERGERLOGGER.info("Number of temp file: " + this.fileCounter);
     // create record holder heap
     createRecordHolderQueue(this.intermediateFiles);
     // iterate over file list and create chunk holder and add to heap
-    FILEMERGERLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-        "Started adding first record from each file");
+    FILEMERGERLOGGER.info("Started adding first record from each file");
     CarbonSortTempFileChunkHolder carbonSortTempFileChunkHolder = null;
     for (File tempFile : this.intermediateFiles) {
       // create chunk holder
@@ -355,8 +350,7 @@ public class IntermediateFileMerger implements Callable<Void> {
       // add to heap
       this.recordHolderHeap.add(carbonSortTempFileChunkHolder);
     }
-    FILEMERGERLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-        "Heap Size" + this.recordHolderHeap.size());
+    FILEMERGERLOGGER.info("Heap Size" + this.recordHolderHeap.size());
   }
 
   /**

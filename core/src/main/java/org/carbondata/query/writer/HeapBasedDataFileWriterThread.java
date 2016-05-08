@@ -33,7 +33,6 @@ import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.executer.Tuple;
 import org.carbondata.query.schema.metadata.DataProcessorInfo;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 
 public class HeapBasedDataFileWriterThread extends ResultWriter {
 
@@ -82,8 +81,7 @@ public class HeapBasedDataFileWriterThread extends ResultWriter {
     DataOutputStream dataOutput = null;
     try {
       if (!new File(this.outLocation).mkdirs()) {
-        LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-            "Problem while creating the pagination directory");
+        LOGGER.info("Problem while creating the pagination directory");
       }
 
       File tempFile = new File(this.outLocation + File.separator + System.nanoTime() + ".tmp");
@@ -102,7 +100,7 @@ public class HeapBasedDataFileWriterThread extends ResultWriter {
       File dest = new File(this.outLocation + File.separator + System.nanoTime()
           + CarbonCommonConstants.QUERY_OUT_FILE_EXT);
       if (!tempFile.renameTo(dest)) {
-        LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "Problem while renaming the file");
+        LOGGER.info("Problem while renaming the file");
       }
     } finally {
       CarbonUtil.closeStreams(dataOutput);

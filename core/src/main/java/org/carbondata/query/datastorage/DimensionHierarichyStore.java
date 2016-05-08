@@ -32,7 +32,6 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.CarbonDef;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.metadata.CarbonSchemaReader;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 
 public class DimensionHierarichyStore {
   /**
@@ -141,7 +140,7 @@ public class DimensionHierarichyStore {
         }
       }
     } catch (IOException e) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
+      LOGGER.error(e);
       return false;
     }
 

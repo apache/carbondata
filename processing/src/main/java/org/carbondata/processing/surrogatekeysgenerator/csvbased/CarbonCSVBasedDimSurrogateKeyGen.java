@@ -40,7 +40,6 @@ import org.carbondata.core.writer.HierarchyValueWriterForCSV;
 import org.carbondata.processing.datatypes.GenericDataType;
 import org.carbondata.processing.schema.metadata.ArrayWrapper;
 import org.carbondata.processing.schema.metadata.ColumnsInfo;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -157,8 +156,7 @@ public abstract class CarbonCSVBasedDimSurrogateKeyGen {
         if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(tuple)) {
           tuple = null;
         }
-        LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-            "Invalid cardinality. Key size exceeded cardinality for: " + columnsInfo
+        LOGGER.error("Invalid cardinality. Key size exceeded cardinality for: " + columnsInfo
                 .getDimColNames()[index] + ": MemberValue: " + tuple);
         return -1;
       }

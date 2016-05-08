@@ -30,7 +30,6 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 import org.carbondata.processing.sortandgroupby.sortkey.CarbonSortTempFileChunkHolder;
 import org.carbondata.processing.threadbasedmerger.container.Container;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 
 public class ProducerThread implements Callable<Void> {
   /**
@@ -141,7 +140,7 @@ public class ProducerThread implements Callable<Void> {
       isCurrentFilled = true;
 
     } catch (CarbonSortKeyAndGroupByException e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
+      LOGGER.error(e,
           "Proble while creating the heap");
     }
   }
@@ -168,13 +167,12 @@ public class ProducerThread implements Callable<Void> {
       }
 
     } catch (InterruptedException ex) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, ex);
+      LOGGER.error(ex);
     } catch (Exception e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
+      LOGGER.error(e);
       throw e;
     }
-    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-        "Producer Thread: " + this.counter + ": Done");
+    LOGGER.info("Producer Thread: " + this.counter + ": Done");
     this.container.setDone(true);
     return null;
   }
@@ -189,7 +187,7 @@ public class ProducerThread implements Callable<Void> {
     try {
       buffer = getBuffer();
     } catch (CarbonSortKeyAndGroupByException e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
+      LOGGER.error(e);
     }
     if (isForBackupFilling) {
       backUpBuffer = buffer;

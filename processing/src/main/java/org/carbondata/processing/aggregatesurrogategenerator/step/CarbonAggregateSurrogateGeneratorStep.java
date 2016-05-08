@@ -25,7 +25,6 @@ import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.processing.aggregatesurrogategenerator.AggregateSurrogateGenerator;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowMetaInterface;
@@ -145,12 +144,11 @@ public class CarbonAggregateSurrogateGeneratorStep extends BaseStep implements S
             Integer.parseInt(CarbonCommonConstants.DATA_LOAD_LOG_COUNTER_DEFAULT_COUNTER);
       }
       if (null == factTuple) {
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-            "Record Procerssed For table: " + meta.getTableName());
+        LOGGER.info("Record Procerssed For table: " + meta.getTableName());
         String logMessage =
             "Summary: Carbon Auto Aggregate Generator Step: Read: " + readCounter + ": Write: "
                 + writeCounter;
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, logMessage);
+        LOGGER.info(logMessage);
         setOutputDone();
         return false;
       }
@@ -158,15 +156,14 @@ public class CarbonAggregateSurrogateGeneratorStep extends BaseStep implements S
       putRow(data.outputRowMeta, this.aggregateRecordIterator.generateSurrogate(factTuple));
       writeCounter++;
       if (readCounter % logCounter == 0) {
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-            "Record Procerssed For table: " + meta.getTableName());
+        LOGGER.info("Record Procerssed For table: " + meta.getTableName());
         String logMessage =
             "Carbon Auto Aggregate Generator Step: Read: " + readCounter + ": Write: "
                 + writeCounter;
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, logMessage);
+        LOGGER.info(logMessage);
       }
     } catch (Exception ex) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, ex);
+      LOGGER.error(ex);
       throw new RuntimeException(ex);
     }
     return true;

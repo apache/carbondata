@@ -27,7 +27,6 @@ import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
-import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonUtil;
 
 import org.apache.hadoop.fs.FileStatus;
@@ -52,7 +51,7 @@ public class HDFSCarbonFile implements CarbonFile {
       fs = path.getFileSystem(FileFactory.getConfiguration());
       fileStatus = fs.getFileStatus(path);
     } catch (IOException e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "Exception occured" + e.getMessage());
+      LOGGER.error("Exception occured" + e.getMessage());
     }
   }
 
@@ -61,7 +60,7 @@ public class HDFSCarbonFile implements CarbonFile {
       fs = path.getFileSystem(FileFactory.getConfiguration());
       fileStatus = fs.getFileStatus(path);
     } catch (IOException e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "Exception occured" + e.getMessage());
+      LOGGER.error("Exception occured" + e.getMessage());
     }
   }
 
@@ -100,7 +99,7 @@ public class HDFSCarbonFile implements CarbonFile {
         return null;
       }
     } catch (IOException e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "Exception occured" + e.getMessage());
+      LOGGER.error("Exception occured" + e.getMessage());
       return new CarbonFile[0];
     }
 
@@ -122,7 +121,7 @@ public class HDFSCarbonFile implements CarbonFile {
         return fs.exists(fileStatus.getPath());
       }
     } catch (IOException e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "Exception occured" + e.getMessage());
+      LOGGER.error("Exception occured" + e.getMessage());
     }
     return false;
   }
@@ -149,7 +148,7 @@ public class HDFSCarbonFile implements CarbonFile {
       fs = fileStatus.getPath().getFileSystem(FileFactory.getConfiguration());
       return fs.rename(fileStatus.getPath(), new Path(changetoName));
     } catch (IOException e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "Exception occured" + e.getMessage());
+      LOGGER.error("Exception occured" + e.getMessage());
       return false;
     }
   }
@@ -160,7 +159,7 @@ public class HDFSCarbonFile implements CarbonFile {
       fs = fileStatus.getPath().getFileSystem(FileFactory.getConfiguration());
       return fs.delete(fileStatus.getPath(), true);
     } catch (IOException e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "Exception occured" + e.getMessage());
+      LOGGER.error("Exception occured" + e.getMessage());
       return false;
     }
   }
@@ -176,7 +175,7 @@ public class HDFSCarbonFile implements CarbonFile {
         return null;
       }
     } catch (IOException ex) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "Exception occured" + ex.getMessage());
+      LOGGER.error("Exception occured" + ex.getMessage());
       return new CarbonFile[0];
     }
 
@@ -269,8 +268,7 @@ public class HDFSCarbonFile implements CarbonFile {
       tempFile.renameForce(fileName);
       fileTruncatedSuccessfully = true;
     } catch (IOException e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-          "Exception occured while truncating the file " + e.getMessage());
+      LOGGER.error("Exception occured while truncating the file " + e.getMessage());
     } finally {
       CarbonUtil.closeStreams(dataOutputStream, dataInputStream);
     }
@@ -304,7 +302,7 @@ public class HDFSCarbonFile implements CarbonFile {
         return false;
       }
     } catch (IOException e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "Exception occured" + e.getMessage());
+      LOGGER.error("Exception occured" + e.getMessage());
       return false;
     }
   }

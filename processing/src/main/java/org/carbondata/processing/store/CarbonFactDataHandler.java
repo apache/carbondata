@@ -46,7 +46,6 @@ import org.carbondata.processing.groupby.CarbonAutoAggGroupByExtended;
 import org.carbondata.processing.groupby.exception.CarbonGroupByException;
 import org.carbondata.processing.store.writer.CarbonDataWriter;
 import org.carbondata.processing.store.writer.exception.CarbonDataWriterException;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.carbondata.processing.util.CarbonDataProcessorUtil;
 import org.carbondata.query.cache.QueryExecutorUtil;
 
@@ -399,8 +398,7 @@ public class CarbonFactDataHandler implements CarbonFactHandler {
         try {
           this.groupBy.finish();
         } catch (CarbonGroupByException e) {
-          LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-              "Problem in group by finish");
+          LOGGER.error("Problem in group by finish");
         }
       }
     }
@@ -456,8 +454,7 @@ public class CarbonFactDataHandler implements CarbonFactHandler {
         currentFile = new File(storePath + File.separator + inProgFileName);
         destFile = new File(storePath + File.separator + changedFileName);
         if (!currentFile.renameTo(destFile)) {
-          LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-              "Problem while renaming the file");
+          LOGGER.info("Problem while renaming the file");
         }
         fileData.setName(changedFileName);
       }
@@ -466,8 +463,7 @@ public class CarbonFactDataHandler implements CarbonFactHandler {
       try {
         this.groupBy.finish();
       } catch (CarbonGroupByException e) {
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-            "Problem while closing the groupby file");
+        LOGGER.info("Problem while closing the groupby file");
       }
     }
     this.keyStore = null;

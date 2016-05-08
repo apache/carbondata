@@ -42,7 +42,6 @@ import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.CarbonUtilException;
 import org.carbondata.processing.dataprocessor.manager.CarbonDataProcessorManager;
 import org.carbondata.processing.groupby.exception.CarbonGroupByException;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.carbondata.processing.util.CarbonDataProcessorUtil;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.aggregator.impl.AbstractMeasureAggregator;
@@ -274,16 +273,14 @@ public class CarbonAutoAggGroupBy {
     this.storeLocation =
         baseLocation + File.separator + schemaName + File.separator + cubeName + File.separator
             + CarbonCommonConstants.GROUP_BY_TEMP_FILE_LOCATION + File.separator + this.tableName;
-    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-        "temp file location" + this.storeLocation);
+    LOGGER.info("temp file location" + this.storeLocation);
 
     // if check point is not enabled then delete if any older file exists in
     // sort temp folder
     deleteGroupByTempLocationIfExists();
     // create new sort temp directory
     if (!new File(this.storeLocation).mkdirs()) {
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Sort Temp Location Already Exists");
+      LOGGER.info("Sort Temp Location Already Exists");
     }
   }
 
@@ -300,7 +297,7 @@ public class CarbonAutoAggGroupBy {
       try {
         CarbonUtil.deleteFoldersAndFiles(file);
       } catch (CarbonUtilException e) {
-        LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
+        LOGGER.error(e);
         throw new CarbonGroupByException(e);
       }
     }
@@ -483,8 +480,7 @@ public class CarbonAutoAggGroupBy {
           buffer.putInt(readInt);
           byteArray = new byte[readInt];
           if (readingStream.read(byteArray) < 0) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-                "Problme while reading the Custom Measure.");
+            LOGGER.error("Problme while reading the Custom Measure.");
           }
           buffer.put(byteArray);
           buffer.rewind();
@@ -497,8 +493,7 @@ public class CarbonAutoAggGroupBy {
       byteArray = new byte[mdKeyLength];
 
       if (readingStream.read(byteArray) < 0) {
-        LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-            "Problme while reading the Mdkey.");
+        LOGGER.error("Problme while reading the Mdkey.");
       }
       // setting the mdkey
       outRow[this.aggType.length] = byteArray;

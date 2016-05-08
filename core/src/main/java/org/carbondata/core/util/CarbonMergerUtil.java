@@ -51,7 +51,7 @@ public class CarbonMergerUtil {
         return new ArrayList<CarbonSliceAndFiles>(0);
       }
     } catch (IOException e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "Error occurred :: " + e.getMessage());
+      LOGGER.error("Error occurred :: " + e.getMessage());
     }
     CarbonFile file = FileFactory.getCarbonFile(storeLocation, fileType);
 
@@ -91,7 +91,7 @@ public class CarbonMergerUtil {
                 + ".metadata");
       } catch (CarbonUtilException e) {
         LOGGER
-            .error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "Error occurred :: " + e.getMessage());
+            .error("Error occurred :: " + e.getMessage());
       }
     }
     int[] MaxCardinality = new int[cardinalityOfLoads[0].length];
@@ -103,7 +103,7 @@ public class CarbonMergerUtil {
     try {
       CarbonUtil.writeLevelCardinalityFile(destinationLocation, tableName, MaxCardinality);
     } catch (KettleException e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "Error occurred :: " + e.getMessage());
+      LOGGER.error("Error occurred :: " + e.getMessage());
     }
 
     return MaxCardinality;
@@ -115,7 +115,7 @@ public class CarbonMergerUtil {
       localCardinality = CarbonUtil.getCardinalityFromLevelMetadataFile(
           path + '/' + CarbonCommonConstants.LEVEL_METADATA_FILE + tableName + ".metadata");
     } catch (CarbonUtilException e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "Error occurred :: " + e.getMessage());
+      LOGGER.error("Error occurred :: " + e.getMessage());
     }
 
     return localCardinality;

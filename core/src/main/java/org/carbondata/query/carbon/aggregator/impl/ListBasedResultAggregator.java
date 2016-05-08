@@ -35,7 +35,6 @@ import org.carbondata.query.carbon.result.ListBasedResultWrapper;
 import org.carbondata.query.carbon.result.Result;
 import org.carbondata.query.carbon.result.impl.ListBasedResult;
 import org.carbondata.query.carbon.wrappers.ByteArrayWrapper;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
  * It is not a aggregator it is just a scanned result holder.
@@ -181,7 +180,7 @@ public class ListBasedResultAggregator implements ScannedResultAggregator {
         listBasedResult.get(i).setKey(key);
       }
     } catch (KeyGenException e) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
+      LOGGER.error(e);
     }
   }
 

@@ -27,7 +27,6 @@ import java.util.List;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.util.CarbonCoreLogEvent;
 
 public class Bits implements Serializable {
 
@@ -307,7 +306,7 @@ public class Bits implements Serializable {
       long mask = LONG_MAX >> (MAX_LENGTH - lens[i]);
       mask <<= pos;
       list.add(mask);
-      LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "mask1 : " + Long.toBinaryString(mask));
+      LOGGER.info("mask1 : " + Long.toBinaryString(mask));
       ll += lens[i];
 
       int nextIndex = ll >> 6;

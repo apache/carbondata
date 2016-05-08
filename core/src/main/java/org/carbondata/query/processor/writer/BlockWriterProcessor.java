@@ -39,7 +39,6 @@ import org.carbondata.query.processor.DataProcessorExt;
 import org.carbondata.query.processor.exception.DataProcessorException;
 import org.carbondata.query.result.iterator.FileBasedResultIteartor;
 import org.carbondata.query.schema.metadata.DataProcessorInfo;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 import org.carbondata.query.wrappers.ByteArrayWrapper;
 
 /**
@@ -182,7 +181,7 @@ public class BlockWriterProcessor implements DataProcessorExt {
         msrDataOutStreams[i].close();
       }
     } catch (IOException e) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
+      LOGGER.error(e);
     }
   }
 
@@ -214,8 +213,7 @@ public class BlockWriterProcessor implements DataProcessorExt {
     } finally {
       close();
       this.dataWriter.closeChannle();
-      LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-          "Total row count for query " + queryId + " : " + rowCount);
+      LOGGER.info("Total row count for query " + queryId + " : " + rowCount);
     }
   }
 

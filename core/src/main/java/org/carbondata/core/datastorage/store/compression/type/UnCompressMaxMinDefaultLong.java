@@ -6,7 +6,6 @@ import org.carbondata.core.datastorage.store.compression.Compressor;
 import org.carbondata.core.datastorage.store.compression.SnappyCompression;
 import org.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
 import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
-import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.ValueCompressionUtil;
 
 public class UnCompressMaxMinDefaultLong extends UnCompressMaxMinLong {
@@ -20,7 +19,7 @@ public class UnCompressMaxMinDefaultLong extends UnCompressMaxMinLong {
     try {
       return (ValueCompressonHolder.UnCompressValue) clone();
     } catch (CloneNotSupportedException ex5) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, ex5, ex5.getMessage());
+      LOGGER.error(ex5, ex5.getMessage());
     }
     return null;
   }

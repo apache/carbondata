@@ -34,7 +34,6 @@ import org.carbondata.query.carbon.executor.internal.InternalQueryExecutor;
 import org.carbondata.query.carbon.merger.ScannedResultMerger;
 import org.carbondata.query.carbon.merger.impl.UnSortedScannedResultMerger;
 import org.carbondata.query.carbon.result.Result;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
  * Below Class will be used to execute the detail query
@@ -64,8 +63,7 @@ public class InternalDetailQueryExecutor implements InternalQueryExecutor {
       try {
         recordSize = Integer.parseInt(defaultInMemoryRecordsSize);
       } catch (NumberFormatException ne) {
-        LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-            "Invalid inmemory records size. Using default value");
+        LOGGER.error("Invalid inmemory records size. Using default value");
         recordSize = CarbonCommonConstants.INMEMORY_REOCRD_SIZE_DEFAULT;
       }
     }
@@ -105,14 +103,13 @@ public class InternalDetailQueryExecutor implements InternalQueryExecutor {
       }
       execService.shutdown();
       execService.awaitTermination(2, TimeUnit.DAYS);
-      LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-          "Total time taken for scan " + (System.currentTimeMillis() - startTime));
+      LOGGER.info("Total time taken for scan " + (System.currentTimeMillis() - startTime));
       return scannedResultProcessor.getQueryResultIterator();
     } catch (QueryExecutionException exception) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, exception, exception.getMessage());
+      LOGGER.error(exception, exception.getMessage());
       throw new QueryExecutionException(exception);
     } catch (InterruptedException e) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e, e.getMessage());
+      LOGGER.error(e, e.getMessage());
       throw new QueryExecutionException(e);
     } finally {
       execService = null;

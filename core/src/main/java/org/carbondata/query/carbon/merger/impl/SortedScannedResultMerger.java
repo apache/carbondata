@@ -42,7 +42,6 @@ import org.carbondata.query.carbon.result.comparator.FixedLengthKeyResultCompara
 import org.carbondata.query.carbon.result.comparator.VariableLengthKeyResultComparator;
 import org.carbondata.query.carbon.result.iterator.MemoryBasedResultIterator;
 import org.carbondata.query.carbon.wrappers.ByteArrayWrapper;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 
 import org.apache.commons.collections.comparators.ComparatorChain;
 
@@ -99,15 +98,13 @@ public class SortedScannedResultMerger extends AbstractScannedResultMerger {
     try {
       execService.awaitTermination(1, TimeUnit.DAYS);
     } catch (InterruptedException e1) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-          "Problem in thread termination" + e1.getMessage());
+      LOGGER.error("Problem in thread termination" + e1.getMessage());
     }
     if (scannedResultList.size() > 0) {
       mergeScannedResults(scannedResultList);
       scannedResultList = null;
     }
-    LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-        "Finished result merging from all slices");
+    LOGGER.debug("Finished result merging from all slices");
     sortResult();
     return new MemoryBasedResultIterator(mergedScannedResult);
   }

@@ -52,7 +52,6 @@ import org.carbondata.query.datastorage.streams.DataInputStream;
 import org.carbondata.query.datastorage.tree.CSBTree;
 import org.carbondata.query.scanner.Scanner;
 import org.carbondata.query.util.CarbonDataInputStreamFactory;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 
 public class TableDataStore {
 
@@ -226,8 +225,7 @@ public class TableDataStore {
     if (isForcedInMemoryCube) {
       isFileStore = false;
     }
-    LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-        "Mode set for cube " + schemaName + ':' + cubeName + "as mode=" + (isFileStore ?
+    LOGGER.info("Mode set for cube " + schemaName + ':' + cubeName + "as mode=" + (isFileStore ?
             "file" :
             "In-Memory"));
     if (isColumnar) {
@@ -258,8 +256,7 @@ public class TableDataStore {
       CarbonFile[] files = getCarbonFactFilesList(file);
 
       if (files.length == 0) {
-        LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-            "@@@@ Fact file is missing for the table :" + tableName + " @@@@");
+        LOGGER.error("@@@@ Fact file is missing for the table :" + tableName + " @@@@");
         return false;
       }
       files = removeFactFileWithDeleteStatus(files);
@@ -298,10 +295,9 @@ public class TableDataStore {
       }
       //            }
 
-      LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-          "Fact increamental load build time is: " + (System.currentTimeMillis() - t1));
+      LOGGER.debug("Fact increamental load build time is: " + (System.currentTimeMillis() - t1));
     } catch (Exception e) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e, e.getMessage());
+      LOGGER.error(e, e.getMessage());
     }
 
     // Close the readers
@@ -381,7 +377,7 @@ public class TableDataStore {
           int f2 = Integer.parseInt(o2.getName().substring(tableName.length() + 1).split("\\.")[0]);
           return (f1 < f2) ? -1 : (f1 == f2 ? 0 : 1);
         } catch (Exception e) {
-          LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e.getMessage());
+          LOGGER.error(e.getMessage());
           return o1.getName().compareTo(o2.getName());
         }
       }

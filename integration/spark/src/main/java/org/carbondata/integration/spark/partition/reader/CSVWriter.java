@@ -43,7 +43,6 @@ import java.util.List;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.util.CarbonCoreLogEvent;
 
 /**
  * A very simple CSV writer released under a commercial-friendly license.
@@ -391,7 +390,7 @@ public class CSVWriter implements Closeable, Flushable {
     try {
       flush();
     } catch (IOException e) {
-      LOGGER.debug(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "Error while flushing");
+      LOGGER.debug("Error while flushing");
     }
   }
 }

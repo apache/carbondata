@@ -37,7 +37,6 @@ import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.carbondata.core.metadata.BlockletInfoColumnar;
 import org.carbondata.core.metadata.SliceMetaData;
-import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonMergerUtil;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonSliceAndFiles;
@@ -47,7 +46,6 @@ import org.carbondata.processing.merger.columnar.ColumnarFactFileMerger;
 import org.carbondata.processing.merger.columnar.impl.NonTimeBasedMergerColumnar;
 import org.carbondata.processing.merger.exeception.SliceMergerException;
 import org.carbondata.processing.schema.metadata.CarbonColumnarFactMergerInfo;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.carbondata.processing.util.CarbonSchemaParser;
 
 public class CarbonColumnarSliceMerger implements CarbonSliceMerger {
@@ -99,8 +97,7 @@ public class CarbonColumnarSliceMerger implements CarbonSliceMerger {
         CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION_HDFS) + '/'
             + schema.name + '/' + cube.name;
 
-    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-        "HDFS Location: " + hdfsLocation);
+    LOGGER.info("HDFS Location: " + hdfsLocation);
     String localStore = CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.STORE_LOCATION,
             CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL) + '/' + schema.name + '/' + cube.name;
@@ -118,7 +115,7 @@ public class CarbonColumnarSliceMerger implements CarbonSliceMerger {
         return false;
       }
     } catch (IOException e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "Error occurred :: " + e.getMessage());
+      LOGGER.error("Error occurred :: " + e.getMessage());
     }
 
     List<CarbonSliceAndFiles> slicesFromHDFS = CarbonMergerUtil
@@ -253,8 +250,7 @@ public class CarbonColumnarSliceMerger implements CarbonSliceMerger {
 
     }
     for (int i = 0; i < sliceLocation.length; i++) {
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Slice Merger Start Merging for slice: " + sliceLocation[i]);
+      LOGGER.info("Slice Merger Start Merging for slice: " + sliceLocation[i]);
     }
     double[] uniqueValue = new double[sliceMetaData.getMeasures().length];
     double[] maxValue = new double[sliceMetaData.getMeasures().length];
@@ -286,8 +282,7 @@ public class CarbonColumnarSliceMerger implements CarbonSliceMerger {
       factMerger = new NonTimeBasedMergerColumnar(
           getCarbonColumnarFactMergerInfo(slicesFromHDFS, aggType, aggClass, sliceMetaData,
               destinationLocation, globalKeyGen), currentRestructNumber);
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Starting fact file merging: ");
+      LOGGER.info("Starting fact file merging: ");
       factMerger.mergerSlice();
     }
   }

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.carbondata.common.logging;
+package org.carbondata.common.logging.impl;
 
 import java.io.File;
 import java.io.FileFilter;

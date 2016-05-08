@@ -25,7 +25,6 @@ import org.carbondata.core.datastorage.store.compression.Compressor;
 import org.carbondata.core.datastorage.store.compression.SnappyCompression;
 import org.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
 import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
-import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.ValueCompressionUtil;
 import org.carbondata.core.util.ValueCompressionUtil.DataType;
 
@@ -50,7 +49,7 @@ public class UnCompressNonDecimalMaxMinByte
     try {
       return (ValueCompressonHolder.UnCompressValue) clone();
     } catch (CloneNotSupportedException cloneNotSupportedException) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, cloneNotSupportedException,
+      LOGGER.error(cloneNotSupportedException,
           cloneNotSupportedException.getMessage());
     }
     return null;

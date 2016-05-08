@@ -33,7 +33,6 @@ import org.carbondata.query.executer.pagination.impl.QueryResult;
 import org.carbondata.query.reader.QueryDataFileReader;
 import org.carbondata.query.reader.exception.ResultReaderException;
 import org.carbondata.query.schema.metadata.DataProcessorInfo;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
  * provides the iterator over the blocklet and return the query result.
@@ -61,13 +60,13 @@ public class FileBasedResultIteartor implements CarbonIterator<QueryResult> {
         blockletInfos =
             CarbonUtil.getBlockletInfo(carbonFile, info.getAggType().length, info.getKeySize());
       } else {
-        LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "file doesnot exist " + path);
+        LOGGER.info("file doesnot exist " + path);
       }
       if (blockletInfos.size() > 0) {
         hasNext = true;
       }
     } catch (IOException e) {
-      LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e.getMessage());
+      LOGGER.info(e.getMessage());
     }
   }
 

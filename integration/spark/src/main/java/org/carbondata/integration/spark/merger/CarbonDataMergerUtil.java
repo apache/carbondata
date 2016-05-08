@@ -34,7 +34,6 @@ import org.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
 import org.carbondata.core.load.LoadMetadataDetails;
-import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.integration.spark.load.CarbonLoadModel;
@@ -88,7 +87,7 @@ public final class CarbonDataMergerUtil {
         return null;
       }
     } catch (IOException e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "Error occurred :: " + e.getMessage());
+      LOGGER.error("Error occurred :: " + e.getMessage());
     }
 
     int toLoadMergeMaxSize;
@@ -372,7 +371,7 @@ public final class CarbonDataMergerUtil {
           carbonLoadModel.getDatabaseName(), carbonLoadModel.getTableName(),
           Arrays.asList(loadDetails));
     } catch (IOException e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "Error while writing metadata", e);
+      LOGGER.error("Error while writing metadata");
     }
 
   }
@@ -419,8 +418,7 @@ public final class CarbonDataMergerUtil {
           if (files != null) {
             for (CarbonFile eachFile : files) {
               if (!eachFile.delete()) {
-                LOGGER.warn(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-                    "Unable to delete the file." + loadFolder.getAbsolutePath());
+                LOGGER.warn("Unable to delete the file." + loadFolder.getAbsolutePath());
               }
             }
 

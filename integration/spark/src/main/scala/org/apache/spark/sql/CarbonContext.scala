@@ -28,7 +28,6 @@ import org.apache.spark.sql.hive._
 import org.carbondata.common.logging.LogServiceFactory
 import org.carbondata.core.util.CarbonProperties
 import org.carbondata.integration.spark.rdd.CarbonDataFrameRDD
-import org.carbondata.integration.spark.util.CarbonSparkInterFaceLogEvent
 
 class CarbonContext(val sc: SparkContext, val storePath: String) extends HiveContext(sc) {
   self =>
@@ -56,7 +55,7 @@ class CarbonContext(val sc: SparkContext, val storePath: String) extends HiveCon
     val sqlString = sql.toUpperCase
     val LOGGER = LogServiceFactory.getLogService(CarbonContext.getClass().getName())
     LOGGER
-      .info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, s"Query [$sqlString]")
+          .info(s"Query [$sqlString]")
     val logicPlan: LogicalPlan = parseSql(sql)
     val result = new CarbonDataFrameRDD(sql: String, this, logicPlan)
 

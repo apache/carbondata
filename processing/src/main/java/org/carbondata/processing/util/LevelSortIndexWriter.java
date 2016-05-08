@@ -76,7 +76,7 @@ public class LevelSortIndexWriter {
     try {
       executor.awaitTermination(1, TimeUnit.DAYS);
     } catch (InterruptedException e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e, e.getMessage());
+      LOGGER.error(e, e.getMessage());
     }
 
   }

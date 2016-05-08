@@ -34,7 +34,6 @@ import java.util.List;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
 
@@ -146,11 +145,9 @@ public class HierarchyValueWriterForCSV {
             // Need to skip because the case can come in which server went down while files were
             // merging and the other hierarchy files were not deleted, and the current file
             // status is inrogress. so again we will merge the files and rename to normal file
-            LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-                "Need to skip as this can be case in which hierarchy file already renamed.");
+            LOGGER.info("Need to skip as this can be case in which hierarchy file already renamed");
             if (hierFile.delete()) {
-              LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-                  "Deleted the Inprogress hierarchy Files.");
+              LOGGER.info("Deleted the Inprogress hierarchy Files.");
             }
           } else {
             // levelfileName0.level file not exist that means files is merged and other
@@ -161,7 +158,7 @@ public class HierarchyValueWriterForCSV {
             File changetoName = new File(storeFolder + File.separator + hierFileName);
 
             if (inprogressFile.renameTo(changetoName)) {
-              LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
+              LOGGER.info(
                   "Renaming the level Files while creating the new instance on server startup.");
             }
 
@@ -186,8 +183,7 @@ public class HierarchyValueWriterForCSV {
     try {
       parsedVal = Integer.parseInt(val);
     } catch (NumberFormatException nfe) {
-      LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-          "Hierarchy File is already renamed so there will not be"
+      LOGGER.info("Hierarchy File is already renamed so there will not be"
               + "any need to keep the counter");
     }
     return parsedVal;
@@ -277,16 +273,14 @@ public class HierarchyValueWriterForCSV {
     File orgFinalName = new File(this.storeFolderLocation + File.separator + changedFileName);
 
     if (!inProgressFile.renameTo(orgFinalName)) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-          "Not able to rename file : " + inprogressFileName);
+      LOGGER.error("Not able to rename file : " + inprogressFileName);
     }
 
     //create the new outputStream
     try {
       intialize();
     } catch (KettleException e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-          "Not able to create the output stream for File :" + hierarchyName + (counter - 1));
+      LOGGER.error("Not able to create output stream for file:" + hierarchyName + (counter - 1));
     }
 
     //clear the byte array holder also.
@@ -300,7 +294,7 @@ public class HierarchyValueWriterForCSV {
         try {
           stream.close();
         } catch (IOException e) {
-          LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e, "unable to close the stream ");
+          LOGGER.error(e, "unable to close the stream ");
         }
 
       }
@@ -309,8 +303,7 @@ public class HierarchyValueWriterForCSV {
     // delete the file
     isDeleted = f.delete();
     if (!isDeleted) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-          "Unable to delete the file " + f.getAbsolutePath());
+      LOGGER.error("Unable to delete the file " + f.getAbsolutePath());
     }
 
   }

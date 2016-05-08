@@ -33,7 +33,6 @@ import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
 import org.carbondata.query.aggregator.MeasureAggregator;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 
 import org.roaringbitmap.IntIterator;
 import org.roaringbitmap.RoaringBitmap;
@@ -236,7 +235,7 @@ public class DistinctCountAggregator implements MeasureAggregator {
         outputStream.close();
         data = null;
       } catch (IOException e) {
-        LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e, e.getMessage());
+        LOGGER.error(e, e.getMessage());
       }
     }
   }
@@ -265,7 +264,7 @@ public class DistinctCountAggregator implements MeasureAggregator {
     try {
       writeData(outputStream);
     } catch (IOException ex) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, ex, ex.getMessage());
+      LOGGER.error(ex, ex.getMessage());
     }
     data = byteStream.toByteArray();
     valueSet = null;

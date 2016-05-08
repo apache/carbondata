@@ -41,7 +41,6 @@ import org.carbondata.core.load.LoadMetadataDetails;
 import org.carbondata.core.util.CarbonFileFolderComparator;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 
 import org.apache.commons.codec.binary.Base64;
 
@@ -71,7 +70,7 @@ public final class CarbonDataRetentionUtil {
     try {
       columnValDateMember = convertToDateObjectFromStringVal(columnValue, format, true);
     } catch (ParseException e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
+      LOGGER.error(e,
           "Not able to get surrogate key for value : " + columnValue);
       return mapOfSurrKeyAndAvailStatus;
     }
@@ -107,7 +106,7 @@ public final class CarbonDataRetentionUtil {
           storeDateMember = convertToDateObjectFromStringVal(memberName, format, false);
 
         } catch (Exception e) {
-          LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
+          LOGGER.error(e,
               "Not able to get surrogate key for value : " + memberName);
           continue;
         }
@@ -121,7 +120,7 @@ public final class CarbonDataRetentionUtil {
       }
 
     } catch (IOException e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
+      LOGGER.error(e,
           "Not able to read level file for Populating Cache : " + memberFile.getName());
 
     } finally {

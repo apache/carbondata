@@ -27,7 +27,6 @@ import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.reader.ThriftReader;
-import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.format.ColumnSortInfo;
 
 import org.apache.thrift.TBase;
@@ -112,7 +111,7 @@ public class CarbonDictionarySortIndexReaderImpl implements CarbonDictionarySort
     try {
       columnSortInfo = (ColumnSortInfo) dictionarySortIndexThriftReader.read();
     } catch (IOException ie) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, ie,
+      LOGGER.error(ie,
           "problem while reading the column sort info.");
       throw new IOException("problem while reading the column sort info.", ie);
     } finally {

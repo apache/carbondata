@@ -49,7 +49,6 @@ import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.metadata.ValueEncoderMeta;
 import org.carbondata.core.reader.CarbonFooterReader;
 import org.carbondata.core.util.ByteUtil;
-import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.format.FileFooter;
 
@@ -471,7 +470,7 @@ public class DataFileFooterConverter {
       objStream = new ObjectInputStream(aos);
       meta = (ValueEncoderMeta) objStream.readObject();
     } catch (ClassNotFoundException e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e);
+      LOGGER.error(e);
     } catch (IOException e) {
       CarbonUtil.closeStreams(objStream);
     }

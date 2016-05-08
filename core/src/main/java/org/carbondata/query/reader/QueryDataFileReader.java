@@ -35,7 +35,6 @@ import org.carbondata.query.aggregator.util.AggUtil;
 import org.carbondata.query.executer.pagination.impl.QueryResult;
 import org.carbondata.query.reader.exception.ResultReaderException;
 import org.carbondata.query.schema.metadata.DataProcessorInfo;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 import org.carbondata.query.wrappers.ByteArrayWrapper;
 
 //import org.carbondata.core.engine.executer.calcexp.CarbonCalcFunction;
@@ -121,7 +120,7 @@ public class QueryDataFileReader {
                 info.getDataTypes());
       }
     } catch (IOException e) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e,
+      LOGGER.error(e,
           "Problem while reading the query out file");
       throw new ResultReaderException(e);
     } finally {
@@ -138,8 +137,7 @@ public class QueryDataFileReader {
     if (null != fileHolder) {
       fileHolder.finish();
       if (!(FileFactory.getCarbonFile(filePath, FileFactory.getFileType(filePath)).delete())) {
-        LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-            "Problem while deleting the pagination temp file" + filePath);
+        LOGGER.error("Problem while deleting the pagination temp file" + filePath);
       }
     }
   }

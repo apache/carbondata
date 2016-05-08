@@ -56,7 +56,6 @@ import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.processing.schema.metadata.ColumnsInfo;
 import org.carbondata.processing.schema.metadata.HierarchiesInfo;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.carbondata.processing.util.CarbonDataProcessorUtil;
 
 import org.pentaho.di.core.Const;
@@ -173,12 +172,11 @@ public class CarbonSeqGenStep extends BaseStep implements StepInterface {
       Object[] r = getRow();  // get row, blocks when needed!
       // no more input to be expected...
       if (r == null) {
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-            "Record Procerssed For table: " + meta.getTableName());
+        LOGGER.info("Record Procerssed For table: " + meta.getTableName());
         String logMessage =
             "Summary: Carbon DB Based Seq Gen Step: Read: " + readCounter + ": Write: "
                 + writeCounter;
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, logMessage);
+        LOGGER.info(logMessage);
         setOutputDone();
         return false;
       }
@@ -273,12 +271,11 @@ public class CarbonSeqGenStep extends BaseStep implements StepInterface {
         closeNormalizedHierFiles();
       }
       setOutputDone();
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Record Procerssed For table: " + meta.getTableName());
+      LOGGER.info("Record Procerssed For table: " + meta.getTableName());
       String logMessage =
           "Summary: Carbon DB Based Seq Gen Step: Read: " + readCounter + ": Write: "
               + writeCounter;
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, logMessage);
+      LOGGER.info(logMessage);
     } catch (Exception ex) {
       throw new RuntimeException(ex);
     }
@@ -508,10 +505,9 @@ public class CarbonSeqGenStep extends BaseStep implements StepInterface {
       Object[] r = null;
       synchronized (getRowLock) {
         if (readCounter % logCounter == 0) {
-          LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-              "Record Procerssed For table: " + meta.getTableName());
+          LOGGER.info("Record Procerssed For table: " + meta.getTableName());
           String logMessage = "Carbon Csv Based Seq Gen Step: Record Read: " + readCounter;
-          LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, logMessage);
+          LOGGER.info(logMessage);
         }
         r = getRow();
         readCounter++;
@@ -668,8 +664,7 @@ public class CarbonSeqGenStep extends BaseStep implements StepInterface {
       File destFile = new File(storePath + File.separator + changedFileName);
 
       if (!currentFile.renameTo(destFile)) {
-        LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-            "Problem while renaming the file");
+        LOGGER.error("Problem while renaming the file");
       }
     }
 
@@ -887,7 +882,7 @@ public class CarbonSeqGenStep extends BaseStep implements StepInterface {
       data.getSurrogateKeyGen().close();
 
     } catch (Exception e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
+      LOGGER.error(e);
     }
     surrogateKeyGen.hierCache = null;
     surrogateKeyGen.dictionaryCaches = null;

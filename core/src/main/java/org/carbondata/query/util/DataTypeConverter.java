@@ -85,8 +85,7 @@ public final class DataTypeConverter {
             dateToStr = parser.parse(data);
             return dateToStr.getTime() * 1000;
           } catch (ParseException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-                "Cannot convert" + TIMESTAMP.toString() + " to Time/Long type value" + e
+            LOGGER.error("Cannot convert" + TIMESTAMP.toString() + " to Time/Long type value" + e
                     .getMessage());
             return null;
           }
@@ -109,8 +108,7 @@ public final class DataTypeConverter {
       //            }
       //            else
       //            {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-          "Problem while converting data type" + data);
+      LOGGER.error("Problem while converting data type" + data);
       return null;
       //            }
     }
@@ -156,8 +154,7 @@ public final class DataTypeConverter {
             dateToStr = parser.parse(data);
             return dateToStr.getTime() * 1000;
           } catch (ParseException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-                "Cannot convert" + TIMESTAMP.toString() + " to Time/Long type value" + e
+            LOGGER.error("Cannot convert" + TIMESTAMP.toString() + " to Time/Long type value" + e
                     .getMessage());
             return null;
           }
@@ -180,8 +177,7 @@ public final class DataTypeConverter {
       //            }
       //            else
       //            {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-          "Problem while converting data type" + data);
+      LOGGER.error("Problem while converting data type" + data);
       return null;
       //            }
     }
@@ -214,8 +210,7 @@ public final class DataTypeConverter {
           return data;
       }
     } catch (NumberFormatException ex) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-          "Problem while converting data type" + data);
+      LOGGER.error("Problem while converting data type" + data);
       return null;
     }
 

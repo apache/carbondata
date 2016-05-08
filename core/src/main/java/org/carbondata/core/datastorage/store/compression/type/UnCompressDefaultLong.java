@@ -4,7 +4,6 @@ import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
 import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
-import org.carbondata.core.util.CarbonCoreLogEvent;
 
 public class UnCompressDefaultLong extends UnCompressNoneLong {
 
@@ -15,7 +14,7 @@ public class UnCompressDefaultLong extends UnCompressNoneLong {
     try {
       return (ValueCompressonHolder.UnCompressValue) clone();
     } catch (CloneNotSupportedException clnNotSupportedExc) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, clnNotSupportedExc,
+      LOGGER.error(clnNotSupportedExc,
           clnNotSupportedExc.getMessage());
     }
     return null;

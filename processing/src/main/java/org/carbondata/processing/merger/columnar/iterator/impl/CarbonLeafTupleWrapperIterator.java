@@ -23,7 +23,6 @@ import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.KeyGenerator;
-import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.processing.factreader.CarbonSurrogateTupleHolder;
 import org.carbondata.processing.merger.columnar.iterator.CarbonDataIterator;
 
@@ -65,7 +64,7 @@ public class CarbonLeafTupleWrapperIterator
     try {
       generateKey = globalKeyGen.generateKey(keyArray);
     } catch (KeyGenException e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "Error occurred :: " + e.getMessage());
+      LOGGER.error("Error occurred :: " + e.getMessage());
     }
     nextData.setSurrogateKey(generateKey);
     return nextData;

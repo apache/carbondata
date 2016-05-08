@@ -46,7 +46,6 @@ import org.carbondata.query.filter.resolver.FilterResolverIntf;
 import org.carbondata.query.filter.resolver.LogicalFilterResolverImpl;
 import org.carbondata.query.filter.resolver.RowLevelFilterResolverImpl;
 import org.carbondata.query.filters.measurefilter.util.FilterUtil;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 
 public class FilterExpressionProcessor implements FilterProcessor {
 
@@ -90,8 +89,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
     List<DataRefNode> listOfDataBlocksToScan = new ArrayList<DataRefNode>();
     // getting the start and end index key based on filter for hitting the
     // selected block reference nodes based on filter resolver tree.
-    LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-        "preparing the start and end key for finding"
+    LOGGER.info("preparing the start and end key for finding"
             + "start and end block as per filter resolver");
     IndexKey searchStartKey =
         filterResolver.getstartKey(tableSegment.getSegmentProperties().getDimensionKeyGenerator());
@@ -107,8 +105,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
       }
     }
 
-    LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-        "Successfully retrieved the start and end key");
+    LOGGER.info("Successfully retrieved the start and end key");
     long startTimeInMillis = System.currentTimeMillis();
     DataRefNodeFinder blockFinder = new BTreeDataRefNodeFinder(
         tableSegment.getSegmentProperties().getDimensionColumnsValueSize());
@@ -121,8 +118,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
     }
     addBlockBasedOnMinMaxValue(filterResolver, listOfDataBlocksToScan, endBlock,
         tableSegment.getSegmentProperties().getDimensionKeyGenerator());
-    LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-        "Total Time in retrieving the data reference node" + "after scanning the btree " + (
+    LOGGER.info("Total Time in retrieving the data reference node" + "after scanning the btree " + (
             System.currentTimeMillis() - startTimeInMillis)
             + " Total number of data reference node for executing filter(s) "
             + listOfDataBlocksToScan.size());

@@ -59,7 +59,6 @@ import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.load.LoadMetadataDetails;
 import org.carbondata.core.metadata.SliceMetaData;
-import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.CarbonUtilException;
@@ -516,19 +515,15 @@ public final class CarbonDataProcessorUtil {
       Object value = declaredMethod.invoke(newInstance, schemaName, cubeName);
       return ((Boolean) value).booleanValue();
     } catch (ClassNotFoundException classNotFoundException) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-          "Error while clearing the cache " + classNotFoundException);
+      LOGGER.error("Error while clearing the cache " + classNotFoundException);
     } catch (NoSuchMethodException noSuchMethodException) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-          "Error while clearing the cache " + noSuchMethodException);
+      LOGGER.error("Error while clearing the cache " + noSuchMethodException);
     } catch (IllegalAccessException illegalAccessException) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-          "Error while clearing the cache " + illegalAccessException);
+      LOGGER.error("Error while clearing the cache " + illegalAccessException);
     } catch (InvocationTargetException invocationTargetException) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-          "Error while clearing the cache " + invocationTargetException);
+      LOGGER.error("Error while clearing the cache " + invocationTargetException);
     } catch (InstantiationException e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "Error while clearing the cache " + e);
+      LOGGER.error("Error while clearing the cache " + e);
     }
     return false;
   }
@@ -604,7 +599,7 @@ public final class CarbonDataProcessorUtil {
 
       }
     } catch (Exception e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
+      LOGGER.error(e,
           "recordFilesNeedsToDeleted");
     } finally {
       CarbonUtil.closeStreams(writer);
@@ -648,8 +643,7 @@ public final class CarbonDataProcessorUtil {
         fileTobeDeleted = new File(sCurrentLine);
         if (fileTobeDeleted.exists()) {
           if (!fileTobeDeleted.delete()) {
-            LOGGER.debug(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-                "Could not delete the file : " + fileTobeDeleted.getAbsolutePath());
+            LOGGER.debug("Could not delete the file : " + fileTobeDeleted.getAbsolutePath());
           }
         }
 
@@ -908,8 +902,7 @@ public final class CarbonDataProcessorUtil {
         return;
       }
     } catch (IOException e1) {
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "bad record folder does not exist");
+      LOGGER.info("bad record folder does not exist");
     }
     CarbonFile carbonFile = null;
     if (fileType.equals(FileFactory.FileType.HDFS)) {
@@ -941,8 +934,7 @@ public final class CarbonDataProcessorUtil {
 
       if (badFiles.exists()) {
         if (!badFiles.delete()) {
-          LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-              "Unable to delete File : " + badFiles.getName());
+          LOGGER.error("Unable to delete File : " + badFiles.getName());
         }
       }
     }// CHECKSTYLE:ON
@@ -1040,7 +1032,7 @@ public final class CarbonDataProcessorUtil {
       try {
         CarbonUtil.deleteFoldersAndFiles(file);
       } catch (CarbonUtilException e) {
-        LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
+        LOGGER.error(e);
       }
     }
   }

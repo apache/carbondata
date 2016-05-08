@@ -35,7 +35,6 @@ import org.carbondata.core.metadata.CarbonMetadata;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.executer.pagination.exception.CarbonPaginationException;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 import org.carbondata.query.wrappers.ByteArrayWrapper;
 
 public class DataFileChunkHolder {
@@ -147,8 +146,7 @@ public class DataFileChunkHolder {
     try {
       byte[] mdKey = new byte[this.keySize];
       if (this.stream.read(mdKey) < 0) {
-        LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-            "Problem while reading mdkey from pagination temp file");
+        LOGGER.error("Problem while reading mdkey from pagination temp file");
       }
       this.byteArrayWrapper.setMaskedKey(mdKey);
       for (int i = 0; i < this.measureAggregator.length; i++) {

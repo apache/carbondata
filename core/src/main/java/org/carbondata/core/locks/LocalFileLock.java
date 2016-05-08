@@ -29,7 +29,6 @@ import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
-import org.carbondata.core.util.CarbonCoreLogEvent;
 
 /**
  * This class handles the file locking in the local file system.
@@ -156,7 +155,7 @@ public class LocalFileLock extends AbstractCarbonLock {
         try {
           fileOutputStream.close();
         } catch (IOException e) {
-          LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e.getMessage());
+          LOGGER.error(e.getMessage());
         }
       }
     }

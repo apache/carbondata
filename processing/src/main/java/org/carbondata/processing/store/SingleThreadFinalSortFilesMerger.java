@@ -36,7 +36,6 @@ import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 import org.carbondata.processing.sortandgroupby.sortdata.SortTempFileChunkHolder;
 import org.carbondata.processing.store.writer.exception.CarbonDataWriterException;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.carbondata.processing.util.CarbonDataProcessorUtil;
 import org.carbondata.processing.util.RemoveDictionaryUtil;
 
@@ -146,18 +145,15 @@ public class SingleThreadFinalSortFilesMerger {
         .getFileBufferSize(this.fileCounter, CarbonProperties.getInstance(),
             CarbonCommonConstants.CONSTANT_SIZE_TEN);
 
-    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-        "Number of temp file: " + this.fileCounter);
+    LOGGER.info("Number of temp file: " + this.fileCounter);
 
-    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-        "File Buffer Size: " + this.fileBufferSize);
+    LOGGER.info("File Buffer Size: " + this.fileBufferSize);
 
     // create record holder heap
     createRecordHolderQueue(files);
 
     // iterate over file list and create chunk holder and add to heap
-    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-        "Started adding first record from each file");
+    LOGGER.info("Started adding first record from each file");
     int maxThreadForSorting = 0;
     try {
       maxThreadForSorting = Integer.parseInt(CarbonProperties.getInstance()
@@ -200,8 +196,7 @@ public class SingleThreadFinalSortFilesMerger {
       throw new CarbonDataWriterException(e.getMessage(), e);
     }
 
-    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-        "Heap Size" + this.recordHolderHeapLocal.size());
+    LOGGER.info("Heap Size" + this.recordHolderHeapLocal.size());
   }
 
   /**

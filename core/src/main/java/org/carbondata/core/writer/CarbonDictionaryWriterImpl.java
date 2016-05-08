@@ -35,7 +35,6 @@ import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.reader.CarbonDictionaryColumnMetaChunk;
 import org.carbondata.core.reader.CarbonDictionaryMetadataReaderImpl;
-import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.format.ColumnDictionaryChunk;
@@ -260,8 +259,7 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
     } catch (NumberFormatException e) {
       dictionary_one_chunk_size =
           Integer.parseInt(CarbonCommonConstants.DICTIONARY_ONE_CHUNK_SIZE_DEFAULT);
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-          "Dictionary chunk size not configured properly. Taking default size "
+      LOGGER.error("Dictionary chunk size not configured properly. Taking default size "
               + dictionary_one_chunk_size);
     }
   }
@@ -288,16 +286,14 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
     int bytesToTruncate =
         (int) (chunk_start_offset - chunkMetaObjectForLastSegmentEntry.getEnd_offset());
     if (bytesToTruncate > 0) {
-      LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-          "some inconsistency in dictionary file for column " + this.columnIdentifier);
+      LOGGER.info("some inconsistency in dictionary file for column " + this.columnIdentifier);
       // truncate the dictionary data till chunk meta end offset
       FileFactory.FileType fileType = FileFactory.getFileType(this.dictionaryFilePath);
       CarbonFile carbonFile = FileFactory.getCarbonFile(this.dictionaryFilePath, fileType);
       boolean truncateSuccess = carbonFile
           .truncate(this.dictionaryFilePath, chunkMetaObjectForLastSegmentEntry.getEnd_offset());
       if (!truncateSuccess) {
-        LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-            "Diction file not truncated successfully for column " + this.columnIdentifier);
+        LOGGER.info("Diction file not truncated successfully for column " + this.columnIdentifier);
       }
     }
   }
@@ -340,8 +336,7 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
     // write dictionary metadata file
     writeThriftObject(dictionaryChunkMeta);
     closeThriftWriter();
-    LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-        "Dictionary metadata file written successfully for column " + this.columnIdentifier
+    LOGGER.info("Dictionary metadata file written successfully for column " + this.columnIdentifier
             + " at path " + this.dictionaryMetaFilePath);
   }
 

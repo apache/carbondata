@@ -36,7 +36,6 @@ import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 import org.carbondata.processing.sortandgroupby.sortkey.CarbonSortTempFileChunkHolder;
 import org.carbondata.processing.store.writer.exception.CarbonDataWriterException;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.carbondata.processing.util.CarbonDataProcessorUtil;
 
 public class SingleThreadFinalMerger {
@@ -162,16 +161,13 @@ public class SingleThreadFinalMerger {
     this.fileCounter = files.length;
     this.fileBufferSize = CarbonDataProcessorUtil
         .getFileBufferSize(this.fileCounter, CarbonProperties.getInstance(), CONSTANT_SIZE_TEN);
-    SINGLETHREADLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-        "Number of temp file: " + this.fileCounter);
+    SINGLETHREADLOGGER.info("Number of temp file: " + this.fileCounter);
 
-    SINGLETHREADLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-        "File Buffer Size: " + this.fileBufferSize);
+    SINGLETHREADLOGGER.info("File Buffer Size: " + this.fileBufferSize);
     // create record holder heap
     createRecordHolderQueue(files);
     // iterate over file list and create chunk holder and add to heap
-    SINGLETHREADLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-        "Started adding first record from each file");
+    SINGLETHREADLOGGER.info("Started adding first record from each file");
     int maxThreadForSorting = 0;
     try {
       maxThreadForSorting = Integer.parseInt(CarbonProperties.getInstance()
@@ -209,8 +205,7 @@ public class SingleThreadFinalMerger {
     } catch (Exception ex) {
       throw new CarbonDataWriterException(ex.getMessage(), ex);
     }
-    SINGLETHREADLOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-        "Heap Size" + this.recordHolderHeapLocal.size());
+    SINGLETHREADLOGGER.info("Heap Size" + this.recordHolderHeapLocal.size());
   }
 
   /**

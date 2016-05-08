@@ -26,9 +26,7 @@ import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
-import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonProperties;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 
 import static org.carbondata.core.keygenerator.directdictionary.timestamp.TimeStampGranularityConstants.TIME_GRAN_DAY;
 import static org.carbondata.core.keygenerator.directdictionary.timestamp.TimeStampGranularityConstants.TIME_GRAN_HOUR;
@@ -94,8 +92,8 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
         Date dateToStr = timeParser.parse(cutOffTimeStampString);
         cutOffTimeStamp = dateToStr.getTime();
       } catch (ParseException e) {
-        LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-            "Cannot convert" + TIMESTAMP.toString() + " to Time/Long type value" + e.getMessage());
+        LOGGER.error("Cannot convert" + TIMESTAMP.toString() + " to Time/Long type value"
+            + e.getMessage());
         cutOffTimeStamp = -1;
       }
     }
@@ -116,8 +114,8 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
     try {
       dateToStr = timeParser.parse(memberStr);
     } catch (ParseException e) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-          "Cannot convert" + TIMESTAMP.toString() + " to Time/Long type value" + e.getMessage());
+      LOGGER.error("Cannot convert" + TIMESTAMP.toString() + " to Time/Long type value"
+          + e.getMessage());
     }
     if (null == dateToStr) {
       return 1;

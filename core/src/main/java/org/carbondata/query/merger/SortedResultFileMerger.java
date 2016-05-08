@@ -34,7 +34,6 @@ import org.carbondata.query.processor.exception.DataProcessorException;
 import org.carbondata.query.reader.ResultTempFileReader;
 import org.carbondata.query.reader.exception.ResultReaderException;
 import org.carbondata.query.schema.metadata.DataProcessorInfo;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
  * Project Name  : Carbon
@@ -113,7 +112,7 @@ public class SortedResultFileMerger implements Callable<Void> {
         writeSortedRecordToFile();
       }
     } catch (ResultReaderException e) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
+      LOGGER.error(e);
       throw e;
     } finally {
       dataProcessor.finish();

@@ -33,7 +33,6 @@ import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.aggregator.MeasureAggregator;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
  * Class Description : It will return min of values
@@ -71,7 +70,7 @@ public class MinAggregator extends AbstractMeasureAggregatorMaxMin {
       out.writeObject(aggVal);
       objectBytes = bos.toByteArray();
     } catch (IOException e) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e,
+      LOGGER.error(e,
           "Problem while getting byte array in minaggregator: " + e.getMessage());
     } finally {
       CarbonUtil.closeStreams(bos);
@@ -103,7 +102,7 @@ public class MinAggregator extends AbstractMeasureAggregatorMaxMin {
       dataOutputVal1.write(objectBytes, 0, objectBytes.length);
     } catch (Exception e) {
 
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e,
+      LOGGER.error(e,
           "Problem while getting byte array in minaggregator: " + e.getMessage());
     } finally {
       CarbonUtil.closeStreams(bos);
@@ -124,7 +123,7 @@ public class MinAggregator extends AbstractMeasureAggregatorMaxMin {
       in = new ObjectInputStream(bis);
       aggVal = (Comparable<Object>) in.readObject();
     } catch (Exception e) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e,
+      LOGGER.error(e,
           "Problem while getting byte array in minaggregator: " + e.getMessage());
     } finally {
       CarbonUtil.closeStreams(bis);
@@ -151,7 +150,7 @@ public class MinAggregator extends AbstractMeasureAggregatorMaxMin {
       internalAgg(newVal);
       firstTime = false;
     } catch (Exception e) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e,
+      LOGGER.error(e,
           "Problem while merging byte array in minaggregator: " + e.getMessage());
     } finally {
       CarbonUtil.closeStreams(bis);

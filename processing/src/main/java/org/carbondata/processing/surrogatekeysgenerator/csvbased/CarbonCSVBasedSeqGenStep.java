@@ -72,7 +72,6 @@ import org.carbondata.processing.dataprocessor.record.holder.DataProcessorRecord
 import org.carbondata.processing.datatypes.GenericDataType;
 import org.carbondata.processing.schema.metadata.ColumnsInfo;
 import org.carbondata.processing.schema.metadata.HierarchiesInfo;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.carbondata.processing.util.RemoveDictionaryUtil;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -523,15 +522,14 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
       if (writeCounter == 0) {
         putRow(data.getOutputRowMeta(), new Object[outSize]);
       }
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Record Procerssed For table: " + meta.getTableName());
+      LOGGER.info("Record Procerssed For table: " + meta.getTableName());
       String logMessage =
           "Summary: Carbon CSV Based Seq Gen Step : " + readCounter + ": Write: " + writeCounter;
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, logMessage);
+      LOGGER.info(logMessage);
       setOutputDone();
 
     } catch (Exception ex) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, ex);
+      LOGGER.error(ex);
       throw new RuntimeException(ex);
     }
 
@@ -586,22 +584,20 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
     // in data surrogatekeygen will not be initialized so it can throw NPE.
     if (data.getSurrogateKeyGen() == null) {
       setOutputDone();
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Record Procerssed For table: " + meta.getTableName());
+      LOGGER.info("Record Procerssed For table: " + meta.getTableName());
       String logMessage =
           "Summary: Carbon CSV Based Seq Gen Step:  Read: " + readCounter + ": Write: "
               + writeCounter;
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, logMessage);
+      LOGGER.info(logMessage);
       return false;
     }
 
     setOutputDone();
-    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-        "Record Processed For table: " + meta.getTableName());
+    LOGGER.info("Record Processed For table: " + meta.getTableName());
     String logMessage =
         "Summary: Carbon CSV Based Seq Gen Step:  Read: " + readCounter + ": Write: "
             + writeCounter;
-    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, logMessage);
+    LOGGER.info(logMessage);
     return false;
   }
 
@@ -745,8 +741,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
         boolean renameTo = currentFile.renameTo(destFile);
 
         if (!renameTo) {
-          LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-              "Not Able to Rename File : " + currentFile.getName());
+          LOGGER.info("Not Able to Rename File : " + currentFile.getName());
         }
       }
 
@@ -804,7 +799,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
             doProcess();
           }
         } catch (Throwable e) {
-          LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
+          LOGGER.error(e,
               "Thread is terminated due to error");
           threadStatusObserver.notifyFailed(e);
         }
@@ -935,10 +930,9 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
 
   private void processRecord() {
     if (readCounter % logCounter == 0) {
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Record Procerssed For table: " + meta.getTableName());
+      LOGGER.info("Record Procerssed For table: " + meta.getTableName());
       String logMessage = "Carbon Csv Based Seq Gen Step: Record Read : " + readCounter;
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, logMessage);
+      LOGGER.info(logMessage);
     }
   }
 
@@ -983,16 +977,13 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
 
       }
     } catch (RuntimeException e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Exception happened while processing rows in Do Process", e);
+      LOGGER.error("Exception happened while processing rows in Do Process");
       throw e;
     } catch (Exception e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Exception happened while processing rows in Do Process", e);
+      LOGGER.error("Exception happened while processing rows in Do Process");
       throw new RuntimeException(e);
     } catch (Throwable t) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Exception happened while processing rows in Do Process", t);
+      LOGGER.error("Exception happened while processing rows in Do Process");
       throw new RuntimeException(t);
     }
 
@@ -1047,8 +1038,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
           }
 
         } catch (Throwable t) {
-          LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-              "Not able to process rows to next step");
+          LOGGER.error("Not able to process rows to next step");
           throw new KettleException(t);
         }
         return null;
@@ -2012,7 +2002,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
         surKeyGen.close();
       }
     } catch (Exception e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
+      LOGGER.error(e);
     }
     nrmlizedHierWriterMap = null;
     data.clean();
@@ -2092,7 +2082,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
      */
     public void notifyFailed(Throwable exception) throws RuntimeException {
       exec.shutdownNow();
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, exception);
+      LOGGER.error(exception);
       throw new RuntimeException(exception);
     }
   }

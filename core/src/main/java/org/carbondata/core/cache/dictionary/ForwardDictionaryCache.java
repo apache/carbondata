@@ -32,7 +32,6 @@ import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.cache.CacheType;
 import org.carbondata.core.cache.CarbonLRUCache;
-import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonUtilException;
 
 /**
@@ -100,17 +99,16 @@ public class ForwardDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
       executorService.shutdown();
       executorService.awaitTermination(2, TimeUnit.HOURS);
     } catch (InterruptedException e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-          "Error loading the dictionary: " + e.getMessage());
+      LOGGER.error("Error loading the dictionary: " + e.getMessage());
     }
     for (int i = 0; i < taskSubmitList.size(); i++) {
       try {
         forwardDictionaryObjectList.add(taskSubmitList.get(i).get());
       } catch (InterruptedException e) {
-        LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e.getMessage());
+        LOGGER.error(e.getMessage());
         throw new CarbonUtilException(e.getMessage());
       } catch (ExecutionException e) {
-        LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e.getMessage());
+        LOGGER.error(e.getMessage());
         throw new CarbonUtilException(e.getMessage());
       }
     }

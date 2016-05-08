@@ -31,7 +31,6 @@ import org.carbondata.core.carbon.CarbonDef.Schema;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.util.CarbonUtil;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.carbondata.processing.util.CarbonSchemaParser;
 
 public class GlobalSurrogateGenerator {
@@ -56,8 +55,7 @@ public class GlobalSurrogateGenerator {
 
   public void generateGlobalSurrogates(int currentRestructNumber) {
     String hdfsLocation = generatorInfo.getStoreLocation();
-    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-        "HDFS Location: " + hdfsLocation);
+    LOGGER.info("HDFS Location: " + hdfsLocation);
     int numberOfPartition = generatorInfo.getNumberOfPartition();
     String[][] partitionLocation = new String[numberOfPartition][];
     for (int i = 0; i < numberOfPartition; i++) {
@@ -99,7 +97,7 @@ public class GlobalSurrogateGenerator {
     try {
       writerExecutorService.awaitTermination(2, TimeUnit.DAYS);
     } catch (InterruptedException e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e, e.getMessage());
+      LOGGER.error(e, e.getMessage());
     }
   }
 }

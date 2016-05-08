@@ -24,7 +24,6 @@ import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.CarbonProperties;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
  * Below class will be used to execute the detail query with order by
@@ -59,8 +58,7 @@ public class InternalDetailWithOrderQueryExecutor extends InternalAbstractQueryE
       try {
         recordSize = Integer.parseInt(defaultInMemoryRecordsSize);
       } catch (NumberFormatException ne) {
-        LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-            "Invalid inmemory records size. Using default value");
+        LOGGER.error("Invalid inmemory records size. Using default value");
         recordSize = CarbonCommonConstants.INMEMORY_REOCRD_SIZE_DEFAULT;
       }
     }

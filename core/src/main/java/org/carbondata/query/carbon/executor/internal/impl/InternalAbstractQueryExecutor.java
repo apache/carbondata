@@ -36,7 +36,6 @@ import org.carbondata.query.carbon.merger.ScannedResultMerger;
 import org.carbondata.query.carbon.merger.impl.SortedScannedResultMerger;
 import org.carbondata.query.carbon.merger.impl.UnSortedScannedResultMerger;
 import org.carbondata.query.carbon.result.Result;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
  * Query executor class which will have common implementation
@@ -99,14 +98,13 @@ public abstract class InternalAbstractQueryExecutor implements InternalQueryExec
       }
       execService.shutdown();
       execService.awaitTermination(2, TimeUnit.DAYS);
-      LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-          "Total time taken for scan " + (System.currentTimeMillis() - startTime));
+      LOGGER.info("Total time taken for scan " + (System.currentTimeMillis() - startTime));
       return scannedResultProcessor.getQueryResultIterator();
     } catch (QueryExecutionException e) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e, e.getMessage());
+      LOGGER.error(e, e.getMessage());
       throw new QueryExecutionException(e);
     } catch (InterruptedException e) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e, e.getMessage());
+      LOGGER.error(e, e.getMessage());
       throw new QueryExecutionException(e);
     } finally {
       execService = null;

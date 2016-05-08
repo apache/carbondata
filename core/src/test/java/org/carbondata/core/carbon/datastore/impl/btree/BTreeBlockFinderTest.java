@@ -18,7 +18,6 @@ import org.carbondata.core.carbon.metadata.blocklet.index.BlockletMinMaxIndex;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.keygenerator.mdkey.MultiDimKeyVarLengthGenerator;
-import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonUtil;
 
 import junit.framework.TestCase;
@@ -190,7 +189,7 @@ public class BTreeBlockFinderTest extends TestCase {
         i = i + 10;
       }
     } catch (Exception e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e);
+      LOGGER.error(e);
     }
     return list;
   }
@@ -226,7 +225,7 @@ public class BTreeBlockFinderTest extends TestCase {
         i = i + 10;
       }
     } catch (Exception e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e);
+      LOGGER.error(e);
     }
     return list;
   }
@@ -262,7 +261,7 @@ public class BTreeBlockFinderTest extends TestCase {
         i = i + 10;
       }
     } catch (Exception e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e);
+      LOGGER.error(e);
     }
     return list;
   }

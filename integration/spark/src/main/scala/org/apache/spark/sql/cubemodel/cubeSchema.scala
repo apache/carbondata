@@ -48,7 +48,7 @@ import org.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.carbondata.integration.spark.load._
 import org.carbondata.integration.spark.partition.api.impl.QueryPartitionHelper
 import org.carbondata.integration.spark.rdd.CarbonDataRDDFactory
-import org.carbondata.integration.spark.util.{CarbonScalaUtil, CarbonSparkInterFaceLogEvent, GlobalDictionaryUtil}
+import org.carbondata.integration.spark.util.{CarbonScalaUtil, GlobalDictionaryUtil}
 
 case class tableModel(
     ifNotExistsSet: Boolean,
@@ -211,8 +211,7 @@ class CubeNewProcessor(cm: tableModel, sqlContext: SQLContext) {
     // Its based on the dimension name and measure name
     allColumns.groupBy(_.getColumnName).foreach(f => if (f._2.size > 1) {
       val name = f._1
-      LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-        s"Duplicate column found with name : $name")
+      LOGGER.error(s"Duplicate column found with name : $name")
       LOGGER.audit(
         s"Validation failed for Create/Alter Cube Operation - " +
             s"Duplicate column found with name : $name")
@@ -296,8 +295,7 @@ class CubeNewProcessor(cm: tableModel, sqlContext: SQLContext) {
         }
         else if (definedpartCols.size > 0) {
           val msg = definedpartCols.mkString(", ")
-          LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-            s"partition columns specified are not part of Dimension columns : $msg")
+          LOGGER.error(s"partition columns specified are not part of Dimension columns : $msg")
           LOGGER.audit(
             s"Validation failed for Create/Alter Cube Operation - " +
                 s"partition columns specified are not part of Dimension columns : $msg")
@@ -495,8 +493,7 @@ class CubeProcessor(cm: tableModel, sqlContext: SQLContext) {
     // Its based on the dimension name and measure name
     levels.groupBy(_.name).foreach(f => if (f._2.size > 1) {
       val name = f._1
-      LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-        s"Duplicate dimensions found with name : $name")
+      LOGGER.error(s"Duplicate dimensions found with name : $name")
       LOGGER.audit(
         s"Validation failed for Create/Alter Cube Operation - " +
             s"Duplicate dimensions found with name : $name")
@@ -505,8 +502,7 @@ class CubeProcessor(cm: tableModel, sqlContext: SQLContext) {
 
     levels.groupBy(_.column).foreach(f => if (f._2.size > 1) {
       val name = f._1
-      LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-        s"Duplicate dimensions found with column name : $name")
+      LOGGER.error(s"Duplicate dimensions found with column name : $name")
       LOGGER.audit(
         s"Validation failed for Create/Alter Cube Operation - " +
             s"Duplicate dimensions found with column name : $name")
@@ -515,8 +511,7 @@ class CubeProcessor(cm: tableModel, sqlContext: SQLContext) {
 
     measures.groupBy(_.name).foreach(f => if (f._2.size > 1) {
       val name = f._1
-      LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-        s"Duplicate measures found with name : $name")
+      LOGGER.error(s"Duplicate measures found with name : $name")
       LOGGER.audit(
         s"Validation failed for Create/Alter Cube Operation - " +
             s"Duplicate measures found with name : $name")
@@ -525,8 +520,7 @@ class CubeProcessor(cm: tableModel, sqlContext: SQLContext) {
 
     measures.groupBy(_.column).foreach(f => if (f._2.size > 1) {
       val name = f._1
-      LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-        s"Duplicate measures found with column name : $name")
+      LOGGER.error(s"Duplicate measures found with column name : $name")
       LOGGER.audit(
         s"Validation failed for Create/Alter Cube Operation - " +
             s"Duplicate measures found with column name : $name")
@@ -539,8 +533,7 @@ class CubeProcessor(cm: tableModel, sqlContext: SQLContext) {
     cm.aggregation.foreach(a => {
       if (levelsArray.contains(a.msrName)) {
         val fault = a.msrName
-        LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-          s"Aggregator should not be defined for dimension fields [$fault]")
+        LOGGER.error(s"Aggregator should not be defined for dimension fields [$fault]")
         LOGGER.audit(
           s"Validation failed for Create/Alter Cube Operation - " +
               s"Aggregator should not be defined for dimension fields [$fault]")
@@ -550,8 +543,7 @@ class CubeProcessor(cm: tableModel, sqlContext: SQLContext) {
 
     levelsNdMesures.groupBy(x => x).foreach(f => if (f._2.size > 1) {
       val name = f._1
-      LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-        s"Dimension and Measure defined with same name : $name")
+      LOGGER.error(s"Dimension and Measure defined with same name : $name")
       LOGGER.audit(
         s"Validation failed for Create/Alter Cube Operation - " +
             s"Dimension and Measure defined with same name : $name")
@@ -645,8 +637,7 @@ class CubeProcessor(cm: tableModel, sqlContext: SQLContext) {
         }
         else if (definedpartCols.size > 0) {
           val msg = definedpartCols.mkString(", ")
-          LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-            s"partition columns specified are not part of Dimension columns : $msg")
+          LOGGER.error(s"partition columns specified are not part of Dimension columns : $msg")
           LOGGER.audit(
             s"Validation failed for Create/Alter Cube Operation - " +
                 s"partition columns specified are not part of Dimension columns : $msg")
@@ -767,8 +758,7 @@ private[sql] case class ShowCreateCube(cm: tableModel, override val output: Seq[
       val columns = rawColumns
           .filter(c => !c._2.equalsIgnoreCase(CarbonCommonConstants.BINARY_TYPE))
       if (rawColumns.size > columns.size) LOGGER
-          .info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-            "BinaryType is not supported. Ignoring all the Binary fields.")
+                .info("BinaryType is not supported. Ignoring all the Binary fields.")
 
       val (numericColArray, nonNumericColArray) = columns
           .partition(p => numericTypes.map(x => x.toLowerCase()).contains(p._2.toLowerCase()))
@@ -838,9 +828,8 @@ private[sql] case class ShowCreateCube(cm: tableModel, override val output: Seq[
 
           if (!right) {
             val rcl = relationEntry.relation.rightColumn
-            LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-              s"Dimension field defined in the relation [$rcl] " +
-                  s"is not present in the Dimension source")
+            LOGGER.error(s"Dimension field defined in the relation [$rcl] " +
+                              s"is not present in the Dimension source")
             sys.error(
               s"Dimension field defined in the relation [$rcl] " +
                   s"is not present in the Dimension source")
@@ -856,8 +845,7 @@ private[sql] case class ShowCreateCube(cm: tableModel, override val output: Seq[
           val relColumns = rawRelColumns
               .filter(c => !c._2.equalsIgnoreCase(CarbonCommonConstants.BINARY_TYPE))
           if (rawRelColumns.size > relColumns.size) LOGGER
-              .info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-                "BinaryType is not supported. Ignoring all the Binary fields.")
+                        .info("BinaryType is not supported. Ignoring all the Binary fields.")
 
           // Remove the relation column from fact table as it
           // is already considered in dimension table
@@ -916,9 +904,8 @@ private[sql] case class ShowCreateCube(cm: tableModel, override val output: Seq[
           if (dimFileLevels.filter(l => l.name.equalsIgnoreCase(relationEntry.relation.rightColumn))
               .length <= 0) {
             val rcl = relationEntry.relation.rightColumn
-            LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-              s"Dimension field defined in the relation [$rcl] " +
-                  s"is not present in the Dimension source")
+            LOGGER.error(s"Dimension field defined in the relation [$rcl] " +
+                              s"is not present in the Dimension source")
             sys.error(
               s"Dimension field defined in the relation [$rcl] " +
                   s"is not present in the Dimension source")
@@ -946,15 +933,13 @@ private[sql] case class ShowCreateCube(cm: tableModel, override val output: Seq[
     // Its based on the dimension name and measure name
     levelsToCheckDuplicate.groupBy(_.name).foreach(f => if (f._2.size > 1) {
       val name = f._1
-      LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-        s"Duplicate dimensions found with name : $name")
+      LOGGER.error(s"Duplicate dimensions found with name : $name")
       sys.error(s"Duplicate dimensions found with name : $name")
     })
 
     measures.groupBy(_.name).foreach(f => if (f._2.size > 1) {
       val name = f._1
-      LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-        s"Duplicate measures found with name : $name")
+      LOGGER.error(s"Duplicate measures found with name : $name")
       sys.error(s"Duplicate measures found with name : $name")
     })
 
@@ -964,16 +949,14 @@ private[sql] case class ShowCreateCube(cm: tableModel, override val output: Seq[
     cm.aggregation.foreach(a => {
       if (levelsArray.contains(a.msrName)) {
         val fault = a.msrName
-        LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-          s"Aggregator should not be defined for dimension fields [$fault]")
+        LOGGER.error(s"Aggregator should not be defined for dimension fields [$fault]")
         sys.error(s"Aggregator should not be defined for dimension fields [$fault]")
       }
     })
 
     levelsNdMesures.groupBy(x => x).foreach(f => if (f._2.size > 1) {
       val name = f._1
-      LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-        s"Dimension and Measure defined with same name : $name")
+      LOGGER.error(s"Dimension and Measure defined with same name : $name")
       sys.error(s"Dimension and Measure defined with same name : $name")
     })
 
@@ -1045,8 +1028,7 @@ private[sql] case class ShowCreateCube(cm: tableModel, override val output: Seq[
 
         if (definedpartCols.size > 0) {
           val msg = definedpartCols.mkString(", ")
-          LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-            s"partition columns specified are not part of Dimension columns : $msg")
+          LOGGER.error(s"partition columns specified are not part of Dimension columns : $msg")
           sys.error(s"partition columns specified are not part of Dimension columns : $msg")
         }
 
@@ -1070,8 +1052,7 @@ private[sql] case class ShowCreateCube(cm: tableModel, override val output: Seq[
           Map("path" -> factFile, "header" -> "true", "inferSchema" -> "true"))
       }
       else {
-        LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-          s"Input source file $factFile does not exists")
+        LOGGER.error(s"Input source file $factFile does not exists")
         sys.error(s"Input source file $factFile does not exists")
       }
     }
@@ -1091,8 +1072,7 @@ private[sql] case class ShowCreateCube(cm: tableModel, override val output: Seq[
         }
       }
       else {
-        LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-          s"Input source table $tableName does not exists")
+        LOGGER.error(s"Input source table $tableName does not exists")
         sys.error(s"Input source table $tableName does not exists")
       }
     }
@@ -1144,8 +1124,7 @@ private[sql] case class AlterCube(
       LOGGER.audit(
         s"Altering cube with Schema name [$schemaName] and cube name [$cubeName] failed. " +
             s"Cube $schemaName.$cubeName does not exist")
-      LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-        s"Cube $schemaName.$cubeName does not exist")
+      LOGGER.error(s"Cube $schemaName.$cubeName does not exist")
       sys.error(s"Cube $schemaName.$cubeName does not exist")
     }
 
@@ -1168,8 +1147,7 @@ private[sql] case class AlterCube(
       if (null == relation) {
         LOGGER
             .audit(s"Altering cube with Schema name [$schemaName] and cube name [$cubeName] failed")
-        LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-          s"Cube $schemaName.$cubeName does not exist")
+        LOGGER.error(s"Cube $schemaName.$cubeName does not exist")
         sys.error(s"Cube $schemaName.$cubeName does not exist")
       }
       val foundDropColsList = new ArrayBuffer[String]
@@ -1213,11 +1191,11 @@ private[sql] case class AlterCube(
         var notFoundString: String = buffer.toString()
         // trim the last ,
         notFoundString = notFoundString.substring(0, notFoundString.length() - 1)
-        LOGGER
-            .audit(s"Altering cube with Schema name [$schemaName] and cube name [$cubeName] Failed")
-        LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-          s"Altering cube with Schema name [$schemaName] and cube name [$cubeName] Failed." +
-              s"The following dimensions/measures are not present in the cube : [$notFoundString]")
+        LOGGER.audit(s"Altering cube with Schema name [$schemaName] and cube name [$cubeName] " +
+            s"failed")
+        LOGGER.error(s"Altering cube with Schema name [$schemaName] and cube name [$cubeName] " +
+            s"failed. The following dimensions/measures are not present in the cube: " +
+            s"[$notFoundString]")
         sys.error(
           s"Altering cube with Schema name [$schemaName] and cube name [$cubeName] Failed." +
               s"The following dimensions/measures are not present in the cube : [$notFoundString]")
@@ -1232,8 +1210,7 @@ private[sql] case class AlterCube(
       if (duplicatesFound) {
         LOGGER
             .audit(s"Altering cube with Schema name [$schemaName] and cube name [$cubeName] failed")
-        LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-          s"Cube already contains the dimensions/measures being added")
+        LOGGER.error(s"Cube already contains the dimensions/measures being added")
         sys.error(s"Cube already contains the dimensions/measures being added.")
       }
 
@@ -1242,14 +1219,12 @@ private[sql] case class AlterCube(
         if (!validateDimRelations(carbonDefSchema.cubes(0), cubeXML)) {
           LOGGER.audit(s"Altering cube with Schema name [$schemaName] and " +
               s"cube name [$cubeName] failed")
-          LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-            s"There is an error in the relation defined. Dimension field defined in the relation " +
-                s"is not included in the Dimension source Or the existing relation " +
-                s"is not present in the Cube")
-          sys.error(
-            s"There is an error in the relation defined. Dimension field defined in the relation " +
-                s"is not included in the Dimension source Or the existing relation " +
-                s"is not present in the Cube.")
+          LOGGER.error(s"There is an error in the relation defined. Dimension field defined " +
+              s"in the relation is not included in the Dimension source Or the existing relation " +
+              s"is not present in the Cube")
+          sys.error(s"There is an error in the relation defined. Dimension field defined " +
+              s"in the relation is not included in the Dimension source Or the existing relation " +
+              s"is not present in the Cube.")
         }
       }
 
@@ -1293,8 +1268,8 @@ private[sql] case class AlterCube(
       else {
         LOGGER
             .audit(s"Altering cube with Schema name [$schemaName] and cube name [$cubeName] Failed")
-        LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-          s"Altering cube with Schema name [$schemaName] and cube name [$cubeName] Failed")
+        LOGGER
+            .error(s"Altering cube with Schema name [$schemaName] and cube name [$cubeName] Failed")
         sys.error(s"Altering cube with Schema name [$schemaName] and cube name [$cubeName] Failed")
       }
     } finally {
@@ -1374,9 +1349,8 @@ private[sql] case class AlterCube(
           if (dimLevels.filter(l => l.name.equalsIgnoreCase(eachDimRelation.relation.rightColumn))
               .length <= 0) {
             val rcl = eachDimRelation.relation.rightColumn
-            LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-              s"Dimension field defined in the relation [$rcl] is not " +
-                  s"included in the Dimension source")
+            LOGGER.error(s"Dimension field defined in the relation [$rcl] is not " +
+                              s"included in the Dimension source")
             matchResult = false
           }
         })
@@ -1931,9 +1905,8 @@ private[sql] case class LoadCube(
         // First system has to partition the data first and then call the load data
         if (null == relation.cubeMeta.partitioner.partitionColumn ||
             relation.cubeMeta.partitioner.partitionColumn(0).isEmpty) {
-          LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-            "Initiating Direct Load for the Cube : (" +
-                schemaName + "." + cubeName + ")")
+          LOGGER.info("Initiating Direct Load for the Cube : (" +
+                          schemaName + "." + cubeName + ")")
           carbonLoadModel.setFactFilePath(factPath)
           carbonLoadModel.setCsvDelimiter(CarbonUtil.unescapeChar(delimiter))
           carbonLoadModel.setCsvHeader(fileHeader)
@@ -1947,9 +1920,8 @@ private[sql] case class LoadCube(
           }
           partitionLocation += System.currentTimeMillis()
           FileFactory.mkdirs(partitionLocation, fileType)
-          LOGGER.info(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-            "Initiating Data Partitioning for the Cube : (" +
-                schemaName + "." + cubeName + ")")
+          LOGGER.info("Initiating Data Partitioning for the Cube : (" +
+                          schemaName + "." + cubeName + ")")
           carbonLoadModel.setFactFilePath(partitionLocation)
           partitionStatus = CarbonContext.partitionData(
             schemaName,
@@ -1970,7 +1942,7 @@ private[sql] case class LoadCube(
       }
       catch {
         case ex: Exception =>
-          LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, ex)
+          LOGGER.error(ex)
           LOGGER.audit("Dataload failure. Please check the logs")
           sys.error("Dataload failure. Please check the logs")
       }
@@ -1985,7 +1957,7 @@ private[sql] case class LoadCube(
           }
         } catch {
           case ex: Exception =>
-            LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG, ex)
+            LOGGER.error(ex)
             LOGGER.audit("Dataload failure. Problem deleting the partition folder")
             sys.error("Problem deleting the partition folder")
         }
@@ -2222,8 +2194,7 @@ private[sql] case class DropCubeCommand(ifExistsSet: Boolean, schemaNameOp: Opti
       if (!ifExistsSet) {
         LOGGER
             .audit(s"Dropping cube with Schema name [$schemaName] and cube name [$cubeName] failed")
-        LOGGER.error(CarbonSparkInterFaceLogEvent.UNIBI_CARBON_SPARK_INTERFACE_MSG,
-          s"Cube $schemaName.$cubeName does not exist")
+        LOGGER.error(s"Cube $schemaName.$cubeName does not exist")
         sys.error(s"Cube $schemaName.$cubeName does not exist")
       }
     }

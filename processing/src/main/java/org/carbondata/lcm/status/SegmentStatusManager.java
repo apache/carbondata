@@ -34,7 +34,6 @@ import org.carbondata.core.datastorage.store.fileperations.AtomicFileOperations;
 import org.carbondata.core.datastorage.store.fileperations.AtomicFileOperationsImpl;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.load.LoadMetadataDetails;
-import org.carbondata.core.util.CarbonCoreLogEvent;
 
 import com.google.gson.Gson;
 import org.apache.commons.logging.Log;
@@ -130,7 +129,7 @@ public class SegmentStatusManager {
         loadFolderDetailsArray = new LoadMetadataDetails[0];
       }
     } catch (IOException e) {
-      LOG.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e);
+      LOG.error(e);
       throw e;
     } finally {
       try {
@@ -139,7 +138,7 @@ public class SegmentStatusManager {
           dataInputStream.close();
         }
       } catch (Exception e) {
-        LOG.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e);
+        LOG.error(e);
         throw e;
       }
 

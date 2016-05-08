@@ -27,7 +27,6 @@ import java.util.Map;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
  * 1) Maintains the information about which MDX query is being executed by which
@@ -119,16 +118,14 @@ public final class QueryMapper {
       // Register the thread for query
       cubeMap.put(threadId, queryID);
 
-      LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-          "QueryMapper :: Thread " + threadId + " is executing query " + queryID + " on cube "
-              + cubeUniqueName);
+      LOGGER.info("QueryMapper :: Thread " + threadId + " is executing query "
+          + queryID + " on cube " + cubeUniqueName);
 
       // Register available cube slices for query (Thread)
       if (InMemoryTableStore.getInstance().findCache(cubeUniqueName)) {
         List<Long> slices = InMemoryTableStore.getInstance().getActiveSliceIds(cubeUniqueName);
         executionToSlicesMap.put(threadId, slices);
-        LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-            "QueryMapper :: Available slices : " + slices);
+        LOGGER.info("QueryMapper :: Available slices : " + slices);
         //System.out.println("QueryMapper :: Available slices : " + slices);
       }
     }

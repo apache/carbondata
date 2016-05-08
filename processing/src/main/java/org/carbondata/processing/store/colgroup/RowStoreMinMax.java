@@ -31,7 +31,6 @@ import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.keygenerator.columnar.ColumnarSplitter;
 import org.carbondata.core.util.ByteUtil;
 import org.carbondata.core.vo.ColumnGroupModel;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 
 /**
  * This will store give min max of rows data
@@ -114,7 +113,7 @@ public class RowStoreMinMax {
         maxKeys[i] = keyGenerator.generateKey(maxKey);
       }
     } catch (KeyGenException e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
+      LOGGER.error(e,
           "Key generation failed while evaulating row block min max");
     }
 
@@ -186,7 +185,7 @@ public class RowStoreMinMax {
       }
 
     } catch (KeyGenException e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
+      LOGGER.error(e,
           "Key generation failed while evaulating row block min max");
     }
   }

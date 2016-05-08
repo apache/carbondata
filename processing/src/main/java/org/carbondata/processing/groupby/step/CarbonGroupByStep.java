@@ -25,7 +25,6 @@ import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.processing.groupby.CarbonGroupBy;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowMetaInterface;
@@ -117,7 +116,7 @@ public class CarbonGroupByStep extends BaseStep implements StepInterface {
       return false;
     }
     if (first) {
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, "Start group by");
+      LOGGER.info("Start group by");
       first = false;
       this.data.setOutputRowMeta((RowMetaInterface) getInputRowMeta().clone());
       this.meta.getFields(data.getOutputRowMeta(), getStepname(), null, null, this);

@@ -42,7 +42,6 @@ import org.carbondata.processing.store.writer.exception.CarbonDataWriterExceptio
 import org.carbondata.processing.threadbasedmerger.consumer.ConsumerThread;
 import org.carbondata.processing.threadbasedmerger.container.Container;
 import org.carbondata.processing.threadbasedmerger.producer.ProducerThread;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.carbondata.processing.util.CarbonDataProcessorUtil;
 
 import org.pentaho.di.core.exception.KettleException;
@@ -196,7 +195,7 @@ public class CarbonDataWriterStep extends BaseStep implements StepInterface {
       // if row is null then there is no more incoming data
 
     } catch (Exception ex) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, ex);
+      LOGGER.error(ex);
       throw new RuntimeException(ex);
     }
     putRow(data.outputRowMeta, new Object[0]);
@@ -218,7 +217,7 @@ public class CarbonDataWriterStep extends BaseStep implements StepInterface {
       }
       this.dataHandler.finish();
     } catch (CarbonDataWriterException e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
+      LOGGER.error(e);
       throw e;
     } finally {
       this.dataHandler.closeHandler();
@@ -353,7 +352,7 @@ public class CarbonDataWriterStep extends BaseStep implements StepInterface {
         }
       }
     } catch (CarbonUtilException e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
+      LOGGER.error(e,
           "Problem while deleting the temp files");
     }
     this.meta = null;
@@ -373,8 +372,7 @@ public class CarbonDataWriterStep extends BaseStep implements StepInterface {
     this.tempFileLocation =
         baseLocation + File.separator + schemaName + File.separator + cubeName + File.separator
             + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION + File.separator + this.tableName;
-    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-        "temp file location" + this.tempFileLocation);
+    LOGGER.info("temp file location" + this.tempFileLocation);
   }
 
   /**
@@ -393,8 +391,7 @@ public class CarbonDataWriterStep extends BaseStep implements StepInterface {
       dataHandler.addDataToStore(finalMergerThread.next());
       recordCounter++;
     }
-    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-        "************************************************ Total number of records processed"
+    LOGGER.info("************************************************ Total number of records processed"
             + recordCounter);
     finalMergerThread.clear();
   }
@@ -436,8 +433,7 @@ public class CarbonDataWriterStep extends BaseStep implements StepInterface {
     int totalNumberOfThreads =
         (numberOfConsumerThreads * numberOfProducerThreads) + numberOfConsumerThreads + 1;
 
-    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-        "******************************************************Total Number of Threads: "
+    LOGGER.info("******************************************************Total Number of Threads: "
             + totalNumberOfThreads);
 
     executorService = Executors.newFixedThreadPool(totalNumberOfThreads);
@@ -477,8 +473,7 @@ public class CarbonDataWriterStep extends BaseStep implements StepInterface {
     }
 
     for (int i = 0; i < filesPerEachThread.length; i++) {
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "********************************************Number of Files for Producer: "
+      LOGGER.info("********************************************Number of Files for Producer: "
               + filesPerEachThread[i].length);
     }
 
@@ -508,8 +503,7 @@ public class CarbonDataWriterStep extends BaseStep implements StepInterface {
           consumerContainerList.get(i), i, this.mdKeyIndex);
       List<Container> list1 = producerContainersList.get(i);
       for (int j = 0; j < numberOfProducerThreads; j++) {
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-            "*******************************************Submitted Producer Thread " + j);
+        LOGGER.info("*******************************************Submitted Producer Thread " + j);
         executorService.submit(
             new ProducerThread(filesPerEachThread[index], fileBufferSize, bufferSize,
                 this.measureCount, this.mdkeyLength, list1.get(j), index,
@@ -517,21 +511,19 @@ public class CarbonDataWriterStep extends BaseStep implements StepInterface {
         index++;
       }
 
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "*******************************************Submitted consumer thread");
+      LOGGER.info("************************************ Submitted consumer thread");
       executorService.submit(c);
     }
     ProducerCosumerFinalMergerThread finalMergerThread =
         new ProducerCosumerFinalMergerThread(dataHandler, this.measureCount, this.mdKeyIndex,
             consumerContainerList);
     executorService.submit(finalMergerThread);
-    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-        "********************************************** Submitted all the task to executer");
+    LOGGER.info("************************************** Submitted all the task to executer");
     executorService.shutdown();
     try {
       executorService.awaitTermination(3, TimeUnit.HOURS);
     } catch (InterruptedException e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e);
+      LOGGER.error(e);
     }
   }
 

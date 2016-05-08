@@ -35,7 +35,6 @@ import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.CarbonUtilException;
 import org.carbondata.processing.merger.exeception.SliceMergerException;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.carbondata.processing.util.CarbonDataProcessorUtil;
 
 import org.pentaho.di.core.exception.KettleException;
@@ -119,11 +118,10 @@ public class CarbonSliceMergerStep extends BaseStep {
           renameFolders();
         }
 
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-            "Record Procerssed For table: " + meta.getTabelName());
+        LOGGER.info("Record Procerssed For table: " + meta.getTabelName());
         String logMessage =
             "Summary: Carbon Slice Merger Step: Read: " + readCounter + ": Write: " + writeCounter;
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, logMessage);
+        LOGGER.info(logMessage);
         //Delete the checkpoint and msrmetadata files from the sort
         //tmp folder as the processing is finished.
         if (CheckPointHanlder.IS_CHECK_POINT_NEEDED && !meta.isGroupByEnabled()) {
@@ -146,7 +144,7 @@ public class CarbonSliceMergerStep extends BaseStep {
       }
       readCounter++;
     } catch (Exception ex) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, ex);
+      LOGGER.error(ex);
       throw new RuntimeException(ex);
     }
     return true;
@@ -201,8 +199,8 @@ public class CarbonSliceMergerStep extends BaseStep {
     try {
       CarbonUtil.deleteFiles(filesToDelete);
     } catch (CarbonUtilException e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Unable to delete the checkpoints related files : " + Arrays.toString(filesToDelete));
+      LOGGER.error("Unable to delete the checkpoints related files: "
+          + Arrays.toString(filesToDelete));
     }
 
   }
@@ -233,8 +231,7 @@ public class CarbonSliceMergerStep extends BaseStep {
     if (!currentFolder.renameTo(destFolder)) {
       throw new SliceMergerException("Problem while renaming inprogress folder to actual");
     }
-    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-        "Folder renamed successfully to :: " + destFolder.getAbsolutePath());
+    LOGGER.info("Folder renamed successfully to :: " + destFolder.getAbsolutePath());
     return true;
   }
 

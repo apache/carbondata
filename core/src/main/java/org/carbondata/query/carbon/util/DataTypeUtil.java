@@ -28,7 +28,6 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.CarbonProperties;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
  * Utility for data type
@@ -83,8 +82,7 @@ public class DataTypeUtil {
             dateToStr = parser.parse(data);
             return dateToStr.getTime() * 1000;
           } catch (ParseException e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-                "Cannot convert" + data.toString() + " to Time/Long type value" + e.getMessage());
+            LOGGER.error("Cannot convert" + data + " to Time/Long type value" + e.getMessage());
             return null;
           }
         case DECIMAL:
@@ -100,8 +98,7 @@ public class DataTypeUtil {
           return data;
       }
     } catch (NumberFormatException ex) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-          "Problem while converting data type" + data);
+      LOGGER.error("Problem while converting data type" + data);
       return null;
     }
 
@@ -133,8 +130,7 @@ public class DataTypeUtil {
           return data;
       }
     } catch (NumberFormatException ex) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-          "Problem while converting data type" + data);
+      LOGGER.error("Problem while converting data type" + data);
       return null;
     }
 

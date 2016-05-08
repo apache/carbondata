@@ -27,7 +27,6 @@ import org.carbondata.core.datastorage.store.compression.Compressor;
 import org.carbondata.core.datastorage.store.compression.SnappyCompression;
 import org.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
 import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
-import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.ValueCompressionUtil;
 import org.carbondata.core.util.ValueCompressionUtil.DataType;
 
@@ -52,7 +51,7 @@ public class UnCompressNonDecimalDefault
     try {
       return (ValueCompressonHolder.UnCompressValue) clone();
     } catch (CloneNotSupportedException cnse1) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, cnse1, cnse1.getMessage());
+      LOGGER.error(cnse1, cnse1.getMessage());
     }
     return null;
   }

@@ -30,7 +30,6 @@ import java.util.List;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 
 import org.pentaho.di.core.exception.KettleException;
 
@@ -130,7 +129,7 @@ public class HierarchyValueWriter {
         try {
           stream.close();
         } catch (IOException e) {
-          LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e,
+          LOGGER.error(e,
               "unable to close the stream ");
         }
 
@@ -140,8 +139,7 @@ public class HierarchyValueWriter {
     // delete the file
     isDeleted = f.delete();
     if (!isDeleted) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Unable to delete the file " + f.getAbsolutePath());
+      LOGGER.error("Unable to delete the file " + f.getAbsolutePath());
     }
 
   }

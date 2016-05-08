@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.carbondata.common.logging;
+package org.carbondata.common.logging.impl;
 
 import org.apache.log4j.spi.LoggingEvent;
 
@@ -27,7 +27,7 @@ import org.apache.log4j.spi.LoggingEvent;
  */
 public class AuditExtendedRollingFileAppender extends ExtendedRollingFileAppender {
 
-  /**
+  /**g
    * Call RollingFileAppender method to append the log...
    *
    * @see org.apache.log4j.RollingFileAppender#subAppend(LoggingEvent)

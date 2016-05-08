@@ -28,7 +28,6 @@ import java.util.Map.Entry;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.query.datastorage.InMemoryTableStore;
 
@@ -72,13 +71,11 @@ public final class CarbonLRUCache {
     }
     initCache();
     if (lruCacheMemorySize >= 0) {
-      LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-          "Configured level cahce size is " + lruCacheMemorySize + " MB");
+      LOGGER.info("Configured level cahce size is " + lruCacheMemorySize + " MB");
       // convert in bytes
       lruCacheMemorySize = lruCacheMemorySize * BYTE_CONVERSION_CONSTANT;
     } else {
-      LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-          "Level cache size not configured. Therefore default behavior will be "
+      LOGGER.info("Level cache size not configured. Therefore default behavior will be "
               + "considered and all levels files will be loaded in memory");
     }
   }
@@ -150,8 +147,7 @@ public final class CarbonLRUCache {
   public void remove(String key) {
     synchronized (lruCacheMap) {
       removeKey(key);
-      LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-          "Removed level entry from InMemory level lru cache :: " + key);
+      LOGGER.info("Removed level entry from InMemory level lru cache :: " + key);
     }
   }
 
@@ -185,13 +181,11 @@ public final class CarbonLRUCache {
         }
         columnKeyAddedSuccessfully = true;
       }
-      LOGGER.debug(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-          "Added level entry to InMemory level lru cache :: " + columnIdentifier);
+      LOGGER.debug("Added level entry to InMemory level lru cache :: " + columnIdentifier);
     } else {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-          "Size not available. Column cannot be added to level lru cache :: " + columnIdentifier
-              + " .Required Size = " + requiredSize + " Size available " + (lruCacheMemorySize
-              - currentSize));
+      LOGGER.error("Size not available. Column cannot be added to level lru cache :: "
+          + columnIdentifier + " .Required Size = " + requiredSize + " Size available "
+          + (lruCacheMemorySize - currentSize));
     }
     return columnKeyAddedSuccessfully;
   }

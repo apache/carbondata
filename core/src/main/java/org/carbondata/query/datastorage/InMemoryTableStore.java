@@ -58,7 +58,6 @@ import org.carbondata.core.metadata.SliceMetaData;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.datastorage.cache.LevelInfo;
 import org.carbondata.query.scope.QueryScopeObject;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 
 @Deprecated
 public final class InMemoryTableStore {
@@ -174,8 +173,7 @@ public final class InMemoryTableStore {
    * @param cubeKey
    */
   public void clearCache(String cubeKey) {
-    LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-        "Removed cube from InMemory : " + cubeKey);
+    LOGGER.info("Removed cube from InMemory : " + cubeKey);
     cubeSliceMap.remove(cubeKey);
     queryExecuteStatusMap.remove(cubeKey);
     cubeNameAndCubeMap.remove(cubeKey);
@@ -194,7 +192,7 @@ public final class InMemoryTableStore {
    * @throws Exception
    */
   public void flushCache() {
-    LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "Removed all cubes from cache : ");
+    LOGGER.info("Removed all cubes from cache : ");
     cubeSliceMap.clear();
     queryExecuteStatusMap.clear();
     cubeNameAndCubeMap.clear();
@@ -222,8 +220,7 @@ public final class InMemoryTableStore {
           .getListOfFoldersToBeLoaded(listLoadFolders, loadNameAndStatusMapping,
               restructureStoreList, factTableName, loadMetadataDetails);
       if (listOfFoldersToBeLoaded.isEmpty()) {
-        LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-            "cube already loaded : " + cubeUniqueName);
+        LOGGER.debug("cube already loaded : " + cubeUniqueName);
       } else {
         loadBtreeAndLevelFiles(schema, metadataCube, listLoadFolders, factTableName, basePath,
             currentRestructNumber, cubeCreationTime, cube, cubeName, cubeUniqueName,
@@ -267,8 +264,7 @@ public final class InMemoryTableStore {
           .getListOfFoldersToBeLoaded(listLoadFolders, loadNameAndStatusMapping, slices,
               factTableName, loadMetadataDetails);
       if (listOfFolderToBeLoaded.isEmpty()) {
-        LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-            "Cube already loaded :" + cubeUniqueName);
+        LOGGER.debug("Cube already loaded :" + cubeUniqueName);
       }
       InMemoryLoadTableUtil.checkAndDeleteStaleSlices(slices, factTableName);
       basePath = basePath + File.separator + schema.name + File.separator + cubeName;
@@ -300,8 +296,7 @@ public final class InMemoryTableStore {
           });
         }
       } catch (IOException e) {
-        LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-            "File does not exist :: " + e.getMessage());
+        LOGGER.info("File does not exist :: " + e.getMessage());
       }
       if (null != file && file.exists() && null != list && list.length != 0) {
         if (null == slices) {
@@ -381,8 +376,7 @@ public final class InMemoryTableStore {
           getSortedFolderListList(basePath, RS_FOLDER_NAME, currentRestructNumber, true);
 
       if (null == files) {
-        LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-            " files are null so return empty array");
+        LOGGER.info(" files are null so return empty array");
         return slices;
       }
 
@@ -452,7 +446,7 @@ public final class InMemoryTableStore {
               executorService.shutdown();
               executorService.awaitTermination(2, TimeUnit.DAYS);
             } catch (InterruptedException e) {
-              LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
+              LOGGER.error(e);
             }
           }
           //sort the loads based on the load id since multiple threads are handling
@@ -536,8 +530,7 @@ public final class InMemoryTableStore {
     try {
       Thread.sleep(milliSeconds);
     } catch (InterruptedException e) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-          "Interruped exception occurred :: " + e.getMessage());
+      LOGGER.error("Interruped exception occurred :: " + e.getMessage());
     }
   }
 
@@ -547,13 +540,10 @@ public final class InMemoryTableStore {
   private void checkAndInvalidateCompleteCubeCache(long cubeCreationTime, String cubeUniqueName,
       Cube metadataCube) {
     Long cubeCreationTimeInMap = cubeNameAndCreationTime.get(cubeUniqueName);
-    LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-        "cube creation time in map :: " + cubeCreationTimeInMap);
-    LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-        "cube creation time sent from driver :: " + cubeCreationTime);
+    LOGGER.info("cube creation time in map :: " + cubeCreationTimeInMap);
+    LOGGER.info("cube creation time sent from driver :: " + cubeCreationTime);
     if (null != cubeCreationTimeInMap) {
-      LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-          "*******clearing cache as time are different*******");
+      LOGGER.info("*******clearing cache as time are different*******");
       performCubeCacheCleanUp(cubeUniqueName, metadataCube);
       cubeNameAndCreationTime.put(cubeUniqueName, cubeCreationTime);
     }
@@ -581,8 +571,7 @@ public final class InMemoryTableStore {
       if (levelInfo.getAccessCount() > 0) {
         levelInfo.decrementAccessCount();
       }
-      LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-          "*****level access count updated for level " + levelCacheUniqueId
+      LOGGER.debug("*****level access count updated for level " + levelCacheUniqueId
               + " in level LRU cache to :: " + levelInfo.getAccessCount());
     }
   }
@@ -721,7 +710,7 @@ public final class InMemoryTableStore {
       executorService.shutdown();
       executorService.awaitTermination(1, TimeUnit.DAYS);
     } catch (InterruptedException e) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
+      LOGGER.error(e);
     }
   }
 
@@ -791,13 +780,11 @@ public final class InMemoryTableStore {
       objectInputStream = new ObjectInputStream(stream);
       readObject = (SliceMetaData) objectInputStream.readObject();
     } catch (ClassNotFoundException e) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
+      LOGGER.error(e);
     } catch (FileNotFoundException e) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-          "@@@@@ SliceMetaData File is missing @@@@@ :" + path);
+      LOGGER.error("@@@@@ SliceMetaData File is missing @@@@@ :" + path);
     } catch (IOException e) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-          "@@@@@ Error while reading SliceMetaData File @@@@@ :" + path);
+      LOGGER.error("@@@@@ Error while reading SliceMetaData File @@@@@ :" + path);
     } finally {
       CarbonUtil.closeStreams(objectInputStream, stream);
     }
@@ -884,7 +871,7 @@ public final class InMemoryTableStore {
             }
             return (f1 < f2) ? -1 : (f1 == f2 ? 0 : 1);
           } catch (Exception e) {
-            LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
+            LOGGER.error(e);
             return o1.getName().compareTo(o2.getName());
           }
         }
@@ -900,8 +887,7 @@ public final class InMemoryTableStore {
    */
   public void registerSlice(InMemoryTable deltaCube, RestructureStore rsStore) {
     String cubeUniqueName = deltaCube.getCubeUniqueName();
-    LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-        "Adding new slice " + deltaCube.getID() + "For cube " + cubeUniqueName);
+    LOGGER.debug("Adding new slice " + deltaCube.getID() + "For cube " + cubeUniqueName);
     if (null == cubeSliceMap.get(cubeUniqueName)) {
       List<RestructureStore> inMemoryCube =
           new ArrayList<RestructureStore>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
@@ -940,8 +926,7 @@ public final class InMemoryTableStore {
   public void unRegisterSlice(String cubeUniqueName, InMemoryTable deltaCube) {
     if (cubeUniqueName != null && deltaCube != null) {
       cubeSliceMap.get(cubeUniqueName).remove(deltaCube);
-      LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-          "Removed slice " + deltaCube.getID() + "For cube " + cubeUniqueName);
+      LOGGER.debug("Removed slice " + deltaCube.getID() + "For cube " + cubeUniqueName);
     }
   }
 

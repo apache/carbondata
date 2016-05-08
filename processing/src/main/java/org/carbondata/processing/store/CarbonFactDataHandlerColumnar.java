@@ -73,7 +73,6 @@ import org.carbondata.processing.store.colgroup.RowStoreDataHolder;
 import org.carbondata.processing.store.writer.CarbonFactDataWriter;
 import org.carbondata.processing.store.writer.CarbonFactDataWriterImplForIntIndexAndAggBlock;
 import org.carbondata.processing.store.writer.exception.CarbonDataWriterException;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 import org.carbondata.processing.util.CarbonDataProcessorUtil;
 import org.carbondata.processing.util.RemoveDictionaryUtil;
 import org.carbondata.query.cache.QueryExecutorUtil;
@@ -405,8 +404,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       this.maskedByte = new int[factKeyGenerator.getKeySizeInBytes()];
       QueryExecutorUtil.updateMaskedKeyRanges(maskedByte, maskedByteRanges);
     }
-    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-        "Initializing writer executers");
+    LOGGER.info("Initializing writer executers");
     writerExecutorService = Executors.newFixedThreadPool(1);
     //TODO need to pass carbon table identifier to metadata
     CarbonTable carbonTable =
@@ -584,8 +582,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
               noDictEndKey));
       // set the entry count to zero
       processedDataCount += entryCount;
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "*******************************************Number Of records processed: "
+      LOGGER.info("*******************************************Number Of records processed: "
               + processedDataCount);
       this.entryCount = 0;
       resetKeyBlockHolder();
@@ -691,7 +688,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     try {
       executorService.awaitTermination(1, TimeUnit.DAYS);
     } catch (InterruptedException e) {
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e, e.getMessage());
+      LOGGER.error(e, e.getMessage());
     }
     IndexStorage[] blockStorage =
         new IndexStorage[colGrpModel.getNoOfColumnStore() + noDictionaryCount + complexColCount];
@@ -700,7 +697,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         blockStorage[k] = submit.get(k).get();
       }
     } catch (Exception e) {
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e, e.getMessage());
+      LOGGER.error(e, e.getMessage());
     }
     synchronized (lock) {
       this.dataWriter.writeDataToFile(blockStorage, dataHolderLocal, entryCountLocal, startkeyLocal,
@@ -748,8 +745,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
           compressionModel, NoDictionarykeyDataHolder.getByteArrayValues(), this.noDictStartKey,
           this.noDictEndKey);
       processedDataCount += entryCount;
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "*******************************************Number Of records processed: "
+      LOGGER.info("*******************************************Number Of records processed: "
               + processedDataCount);
       this.dataWriter.writeleafMetaDataToFile();
     } else if (null != this.dataWriter) {
@@ -767,7 +763,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     try {
       writerExecutorService.awaitTermination(1, TimeUnit.DAYS);
     } catch (InterruptedException e) {
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, e, e.getMessage());
+      LOGGER.error(e, e.getMessage());
     }
   }
 
@@ -832,8 +828,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         currntFile = new File(storePath + File.separator + inProgFileName);
         destFile = new File(storePath + File.separator + changedFileName);
         if (!currntFile.renameTo(destFile)) {
-          LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-              "Problem while renaming the file");
+          LOGGER.info("Problem while renaming the file");
         }
         fileData.setName(changedFileName);
       }
@@ -842,8 +837,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       try {
         this.groupBy.finish();
       } catch (CarbonGroupByException ex) {
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-            "Problem while closing the groupby file");
+        LOGGER.info("Problem while closing the groupby file");
       }
     }
     this.dataWriter = null;
@@ -914,8 +908,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         .getProperty(CarbonCommonConstants.BLOCKLET_SIZE,
             CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL));
 
-    LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-        "************* Blocklet Size: " + blockletSize);
+    LOGGER.info("************* Blocklet Size: " + blockletSize);
 
     int dimSet =
         Integer.parseInt(CarbonCommonConstants.DIMENSION_SPLIT_VALUE_IN_COLUMNAR_DEFAULTVALUE);

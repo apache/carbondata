@@ -40,7 +40,6 @@ import org.carbondata.core.carbon.CarbonDef;
 import org.carbondata.core.carbon.LevelType;
 import org.carbondata.core.carbon.SqlStatement;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonUtil;
 
 import org.eigenbase.xom.NodeDef;
@@ -310,8 +309,7 @@ public final class CarbonMetadata {
     for (String columnName : columnNames) {
       Dimension factDimension = cube.getDimension(columnName);
       if (null == factDimension) {
-        LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-            "factDimension is null for coulmn" + columnName);
+        LOGGER.error("factDimension is null for coulmn" + columnName);
         continue;
       }
       if (metadataColumns.contains(columnName) && !measureNames.contains(columnName)) {
@@ -401,8 +399,7 @@ public final class CarbonMetadata {
 
         Dimension factDimension = cube.getDimension(columnName);
         if (null == factDimension) {
-          LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-              "factDimension is null for coulmn" + columnName);
+          LOGGER.error("factDimension is null for coulmn" + columnName);
           continue;
         }
         Dimension aggDimension = factDimension.getDimCopy();

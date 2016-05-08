@@ -39,7 +39,6 @@ import org.carbondata.query.datastorage.storeinterface.DataStoreBlock;
 import org.carbondata.query.datastorage.storeinterface.KeyValue;
 import org.carbondata.query.datastorage.streams.DataInputStream;
 import org.carbondata.query.scanner.Scanner;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
  * Cache Sensitive B+-Tree to implement a search structure that is stored
@@ -203,8 +202,7 @@ public class CSBTree implements DataStore {
       rangeSplitValue = 6000000L;
     }
 
-    LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-        "Range Split value for parallel execution of a tree : " + rangeSplitValue);
+    LOGGER.info("Range Split value for parallel execution of a tree : " + rangeSplitValue);
 
     try {
       cpuUsagePercentage = Integer.parseInt(CarbonProperties.getInstance()
@@ -213,8 +211,7 @@ public class CSBTree implements DataStore {
     } catch (NumberFormatException e) {
       cpuUsagePercentage = 2;
     }
-    LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-        "Range Split value for parallel execution of a tree : " + rangeSplitValue);
+    LOGGER.info("Range Split value for parallel execution of a tree : " + rangeSplitValue);
   }
 
   // return number of key-value pairs in the CSB-tree
@@ -244,8 +241,7 @@ public class CSBTree implements DataStore {
       if (null != blockletInfoList) {
         if (blockletInfoList.size() > 0) {
           blockletInfoList.get(0).getFileName();
-          LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-              "Processing : " + (blockletInfoList.get(0).getFileName()) + " : " + (
+          LOGGER.info("Processing : " + (blockletInfoList.get(0).getFileName()) + " : " + (
                   System.currentTimeMillis() - st));
           st = System.currentTimeMillis();
 
@@ -296,7 +292,7 @@ public class CSBTree implements DataStore {
     }
     findCurrentNode(nInternal, curNode, nodeGroups, currentGroup, interNSKeyList);
     nTotalKeys = num;
-    LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
+    LOGGER.info(
         "*********************************************************Total Number Rows In BTREE: "
             + nTotalKeys);
     this.rangeValues =
@@ -306,8 +302,7 @@ public class CSBTree implements DataStore {
     if (null != fileHolder) {
       fileHolder.finish();
     }
-    LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-        "Compress Time:" + (compressionEnd - compressionStart) + "ms");
+    LOGGER.info("Compress Time:" + (compressionEnd - compressionStart) + "ms");
   }
 
   public void build(List<DataInputStream> sources, boolean hasFactCount) {
@@ -331,8 +326,7 @@ public class CSBTree implements DataStore {
       if (null != blockletInfoList) {
         if (blockletInfoList.size() > 0) {
           blockletInfoList.get(0).getFileName();
-          LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-              "Processing : " + (blockletInfoList.get(0).getFileName()) + " : " + (
+          LOGGER.info("Processing : " + (blockletInfoList.get(0).getFileName()) + " : " + (
                   System.currentTimeMillis() - st));
           st = System.currentTimeMillis();
 
@@ -376,16 +370,13 @@ public class CSBTree implements DataStore {
     }
     findCurrentNode(nInternal, curNode, nodeGroups, currGroup, interNSKeyList);
     nTotalKeys = num;
-    LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-        "*********************************************************Total Number Rows In " + tableName
-            + " : " + nTotalKeys);
+    LOGGER.info("*************************Total Number Rows In " + tableName + " : " + nTotalKeys);
     this.rangeValues =
         (rangeVals.size() == 0) ? null : rangeVals.toArray(new long[rangeVals.size()][]);
     long compressionStart = System.currentTimeMillis();
     long compressionEnd = System.currentTimeMillis();
     fileHolder.finish();
-    LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-        "Compress Time:" + (compressionEnd - compressionStart) + "ms");
+    LOGGER.info("Compress Time:" + (compressionEnd - compressionStart) + "ms");
   }
 
   /**
@@ -473,8 +464,7 @@ public class CSBTree implements DataStore {
       List<long[]> rangeVals, FileHolder fileHolder) {
     //
     rangeSplitValue = num / cpuUsagePercentage;
-    LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-        "New Range Split Value: " + rangeSplitValue);
+    LOGGER.info("New Range Split Value: " + rangeSplitValue);
 
     if (rangeSplitValue > 0) {
       CSBTreePart fullPart = new CSBTreePart();
@@ -984,8 +974,7 @@ public class CSBTree implements DataStore {
     long compressionStart = System.currentTimeMillis();
     long compressionEnd = System.currentTimeMillis();
     fileHolder.finish();
-    LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-        "Compress Time:" + (compressionEnd - compressionStart) + "ms");
+    LOGGER.info("Compress Time:" + (compressionEnd - compressionStart) + "ms");
   }
 
   @Override public DataStoreBlock getBlock(byte[] key, FileHolder fileHolder, boolean isFirst) {

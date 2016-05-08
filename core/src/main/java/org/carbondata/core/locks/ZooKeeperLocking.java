@@ -25,7 +25,6 @@ import java.util.List;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonProperties;
 
 import org.apache.zookeeper.CreateMode;
@@ -88,16 +87,16 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
                     CreateMode.PERSISTENT);
               }
             } catch (KeeperException | InterruptedException e) {
-              LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e.getMessage());
+              LOGGER.error(e.getMessage());
             }
-            LOGGER.info(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "zoo keeper client connected.");
+            LOGGER.info("zoo keeper client connected.");
           }
 
         }
       });
 
     } catch (IOException e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e.getMessage());
+      LOGGER.error(e.getMessage());
     }
   }
 
@@ -118,7 +117,7 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
           zk.create(this.lockTypeFolder, new byte[1], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
         }
       } catch (KeeperException | InterruptedException e) {
-        LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e.getMessage());
+        LOGGER.error(e.getMessage());
       }
     }
   }
@@ -156,7 +155,7 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
         return false;
       }
     } catch (KeeperException | InterruptedException e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e.getMessage());
+      LOGGER.error(e.getMessage());
       return false;
     }
   }
@@ -172,7 +171,7 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
         lockPath = null;
       }
     } catch (KeeperException | InterruptedException e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e.getMessage());
+      LOGGER.error(e.getMessage());
       return false;
     }
     return true;

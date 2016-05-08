@@ -37,7 +37,6 @@ import org.carbondata.core.reader.CarbonFooterReader;
 import org.carbondata.core.util.CarbonMetadataUtil;
 import org.carbondata.core.util.ValueCompressionUtil;
 import org.carbondata.query.schema.metadata.Pair;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 
 public class FileDataInputStream extends AbstractFileDataInputStream {
 
@@ -88,7 +87,7 @@ public class FileDataInputStream extends AbstractFileDataInputStream {
     //
     try {
       LOGGER
-          .info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "Reading from file: " + filesLocation);
+          .info("Reading from file: " + filesLocation);
       FileInputStream fileInputStream = new FileInputStream(filesLocation);
       channel = fileInputStream.getChannel();
       in = new BufferedInputStream(new FileInputStream(filesLocation));
@@ -104,11 +103,9 @@ public class FileDataInputStream extends AbstractFileDataInputStream {
         this.totalMetaDataLength = (int) (fileSize - offSet);
       }
     } catch (FileNotFoundException f) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-          "@@@@ Hirarchy file is missing @@@@ : " + filesLocation);
+      LOGGER.error("@@@@ Hirarchy file is missing @@@@ : " + filesLocation);
     } catch (IOException e) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-          "@@@@ Error while reading hirarchy @@@@ : " + filesLocation);
+      LOGGER.error("@@@@ Error while reading hirarchy @@@@ : " + filesLocation);
     }
   }
 
@@ -127,8 +124,7 @@ public class FileDataInputStream extends AbstractFileDataInputStream {
     try {
       listOfNodeInfo = CarbonMetadataUtil.convertBlockletInfo(metaDataReader.readFooter());
     } catch (IOException e) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-          "Problem while reading metadata :: " + filesLocation, e);
+      LOGGER.error("Problem while reading metadata :: " + filesLocation);
     }
     for (BlockletInfoColumnar infoColumnar : listOfNodeInfo) {
       infoColumnar.setFileName(filesLocation);
@@ -148,7 +144,7 @@ public class FileDataInputStream extends AbstractFileDataInputStream {
       try {
         channel.close();
       } catch (IOException e) {
-        LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e,
+        LOGGER.error(e,
             "Could not close input stream for location : " + filesLocation);
       }
     }
@@ -159,7 +155,7 @@ public class FileDataInputStream extends AbstractFileDataInputStream {
       try {
         in.close();
       } catch (IOException e) {
-        LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e,
+        LOGGER.error(e,
             "Could not close input stream for location : " + filesLocation);
       }
     }
@@ -184,7 +180,7 @@ public class FileDataInputStream extends AbstractFileDataInputStream {
       }
 
     } catch (IOException e) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e,
+      LOGGER.error(e,
           "Problem While Reading the Hier File : ");
     }
     return null;

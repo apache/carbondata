@@ -30,7 +30,6 @@ import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
-import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonUtil;
 
 import org.apache.hadoop.fs.Path;
@@ -95,7 +94,7 @@ public class LocalCarbonFile implements CarbonFile {
       return file.getCanonicalPath();
     } catch (IOException e) {
       LOGGER
-          .error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e, "Exception occured" + e.getMessage());
+          .error(e, "Exception occured" + e.getMessage());
     }
     return null;
   }
@@ -198,8 +197,7 @@ public class LocalCarbonFile implements CarbonFile {
       tempFile.renameForce(fileName);
       fileTruncatedSuccessfully = true;
     } catch (IOException e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG,
-          "Exception occured while truncating the file " + e.getMessage());
+      LOGGER.error("Exception occured while truncating the file " + e.getMessage());
     } finally {
       CarbonUtil.closeStreams(source, destination);
     }

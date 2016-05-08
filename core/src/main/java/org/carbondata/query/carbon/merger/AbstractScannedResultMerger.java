@@ -35,7 +35,6 @@ import org.carbondata.query.carbon.result.Result;
 import org.carbondata.query.carbon.result.impl.ListBasedResult;
 import org.carbondata.query.carbon.result.impl.MapBasedResult;
 import org.carbondata.query.carbon.result.iterator.MemoryBasedResultIterator;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 
 /**
  * Class which processed the scanned result
@@ -127,13 +126,12 @@ public abstract class AbstractScannedResultMerger implements ScannedResultMerger
    */
   protected void mergeScannedResults(List<Result> scannedResultList) {
     long start = System.currentTimeMillis();
-    LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, "Started a slice result merging");
+    LOGGER.debug("Started a slice result merging");
 
     for (int i = 0; i < scannedResultList.size(); i++) {
       mergedScannedResult.merge(scannedResultList.get(i));
     }
-    LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-        "Finished current slice result merging in time (MS) " + (System.currentTimeMillis()
+    LOGGER.debug("Finished current slice result merging in time (MS) " + (System.currentTimeMillis()
             - start));
   }
 
@@ -148,15 +146,13 @@ public abstract class AbstractScannedResultMerger implements ScannedResultMerger
     try {
       execService.awaitTermination(1, TimeUnit.DAYS);
     } catch (InterruptedException e1) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-          "Problem in thread termination" + e1.getMessage());
+      LOGGER.error("Problem in thread termination" + e1.getMessage());
     }
     if (scannedResultList.size() > 0) {
       mergeScannedResults(scannedResultList);
       scannedResultList = null;
     }
-    LOGGER.debug(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-        "Finished result merging from all slices");
+    LOGGER.debug("Finished result merging from all slices");
     return new MemoryBasedResultIterator(mergedScannedResult);
   }
 

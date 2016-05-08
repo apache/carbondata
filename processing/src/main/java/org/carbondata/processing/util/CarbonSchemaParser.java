@@ -174,8 +174,7 @@ public final class CarbonSchemaParser {
       if (aggregateTable.length > 0) {
         for (int i = 0; i < aggregateTable.length; i++) {
           if (tableNames.contains(aggregateTable[i].getAggregateTableName())) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-                "Invalid Schema: Two aggregate table having same name");
+            LOGGER.error("Invalid Schema: Two aggregate table having same name");
             return false;
           }
         }
@@ -184,8 +183,7 @@ public final class CarbonSchemaParser {
           aggregator = aggregateTable[i].getAggregator();
           for (int j = 0; j < aggregator.length; j++) {
             if (null == aggregator[j]) {
-              LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-                  "Invalid Schema: Invalid measure name in aggreagte table ");
+              LOGGER.error("Invalid Schema: Invalid measure name in aggreagte table ");
               return false;
             }
           }
@@ -193,14 +191,14 @@ public final class CarbonSchemaParser {
         for (int i = 0; i < aggregateTable.length; i++) {
           if (null == aggregateTable[i].getAggLevels()
               || aggregateTable[i].getAggLevels().length < 1) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
+            LOGGER.error(
                 "Invalid Schema: Invalid aggreagte table as levels are not present in aggregate "
                     + "table: " + aggregateTable[i].getAggregateTableName());
             return false;
           }
           if (null == aggregateTable[i].getAggMeasure()
               || aggregateTable[i].getAggMeasure().length < 1) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
+            LOGGER.error(
                 "Invalid Schema: Invalid aggreagte table as measure are present in aggregate "
                     + "table: " + aggregateTable[i].getAggregateTableName());
             return false;
@@ -232,8 +230,7 @@ public final class CarbonSchemaParser {
       for (Hierarchy hierarchy : hierarchies) {
         if (isNormalizedCheck) {
           if (hierarchy.normalized) {
-            LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-                "Nomalized Hierarchy is No Supported in Case of Auto Aggrgetaion : "
+            LOGGER.error("Nomalized Hierarchy is No Supported in Case of Auto Aggrgetaion : "
                     + hierarchy.name);
             return false;
           }
@@ -243,23 +240,19 @@ public final class CarbonSchemaParser {
         boolean primaryKeyPresent =
             hierarchy.primaryKey != null && hierarchy.primaryKey.length() > 0;
         if (!tablePresent && primaryKeyPresent) {
-          LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-              "Table is not present for the hierarchy : " + hierarchy.name
+          LOGGER.error("Table is not present for the hierarchy : " + hierarchy.name
                   + " but primary key is present");
           return false;
         } else if (tablePresent && !primaryKeyPresent) {
-          LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-              "Table is present for the hierarchy : " + hierarchy.name
+          LOGGER.error("Table is present for the hierarchy : " + hierarchy.name
                   + " but primary key is not present");
           return false;
         } else if (!foreignKeyPresent && tablePresent && primaryKeyPresent) {
-          LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-              "Table and primary key are present for the hierarchy : " + hierarchy.name
+          LOGGER.error("Table and primary key are present for the hierarchy : " + hierarchy.name
                   + " but foreign key is missing for dimension");
           return false;
         } else if (foreignKeyPresent && !tablePresent) {
-          LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-              "Table is not present for the hierarchy : " + hierarchy.name
+          LOGGER.error("Table is not present for the hierarchy : " + hierarchy.name
                   + " but foreign key is present");
           return false;
         }

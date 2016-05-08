@@ -48,7 +48,6 @@ import org.carbondata.processing.dimension.load.info.DimensionLoadInfo;
 import org.carbondata.processing.merger.util.CarbonSliceMergerUtil;
 import org.carbondata.processing.surrogatekeysgenerator.csvbased.CarbonCSVBasedDimSurrogateKeyGen;
 import org.carbondata.processing.surrogatekeysgenerator.csvbased.RealTimeDataPropertyReader;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 
@@ -308,8 +307,7 @@ public final class DimenionLoadCommandHelper {
     try {
       CarbonUtil.deleteFiles(fileToMerge.toArray(new File[fileToMerge.size()]));
     } catch (CarbonUtilException e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Not able to delete the files" + fileToMerge.toString());
+      LOGGER.error("Not able to delete the files" + fileToMerge.toString());
       throw new IOException(e);
     }
   }
@@ -336,8 +334,7 @@ public final class DimenionLoadCommandHelper {
       File destFile = new File(storePath + File.separator + changedFileName);
 
       if (!currentFile.renameTo(destFile)) {
-        LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-            "Not able to rename the level Files to normal format");
+        LOGGER.error("Not able to rename the level Files to normal format");
         throw new IOException("Not able to rename the level Files to normal format");
       }
     }

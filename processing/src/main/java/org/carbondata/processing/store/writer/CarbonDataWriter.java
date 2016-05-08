@@ -45,7 +45,6 @@ import org.carbondata.core.metadata.BlockletInfo;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.processing.store.writer.exception.CarbonDataWriterException;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 
 public class CarbonDataWriter {
   private static final LogService LOGGER =
@@ -212,7 +211,7 @@ public class CarbonDataWriter {
       try {
         this.executorService.awaitTermination(2, TimeUnit.HOURS);
       } catch (InterruptedException ie) {
-        LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG, ie);
+        LOGGER.error(ie);
       }
       CarbonUtil.closeStreams(this.fileChannel);
       this.nodeHolderList = null;
@@ -221,14 +220,12 @@ public class CarbonDataWriter {
     File originalCarbonFile = new File(this.fileName.substring(0, this.fileName.lastIndexOf('.')));
     File currFile = new File(this.fileName);
     if (!currFile.renameTo(originalCarbonFile)) {
-      LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Problem while renaming the file");
+      LOGGER.info("Problem while renaming the file");
     }
 
     if (originalCarbonFile.length() < 1) {
       if (!originalCarbonFile.delete()) {
-        LOGGER.info(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-            "Problem while deleting the empty fact file");
+        LOGGER.info("Problem while deleting the empty fact file");
       }
     }
   }

@@ -23,7 +23,6 @@ import java.io.IOException;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.util.CarbonCoreLogEvent;
 
 import org.xerial.snappy.Snappy;
 
@@ -50,7 +49,7 @@ public class SnappyCompression {
       try {
         return Snappy.rawCompress(unCompInput, unCompInput.length);
       } catch (IOException e) {
-        LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e, e.getMessage());
+        LOGGER.error(e, e.getMessage());
         return null;
       }
     }
@@ -64,7 +63,7 @@ public class SnappyCompression {
       try {
         return Snappy.uncompress(compInput);
       } catch (IOException e) {
-        LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e, e.getMessage());
+        LOGGER.error(e, e.getMessage());
       }
       return compInput;
     }
@@ -86,7 +85,7 @@ public class SnappyCompression {
       try {
         return Snappy.compress(unCompInput);
       } catch (IOException e) {
-        LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e, e.getMessage());
+        LOGGER.error(e, e.getMessage());
         return null;
       }
     }
@@ -101,7 +100,7 @@ public class SnappyCompression {
       try {
         return Snappy.uncompressDoubleArray(compInput);
       } catch (IOException e) {
-        LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e, e.getMessage());
+        LOGGER.error(e, e.getMessage());
       }
       return null;
     }
@@ -129,7 +128,7 @@ public class SnappyCompression {
       try {
         return Snappy.compress(unCompInput);
       } catch (IOException e) {
-        LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e, e.getMessage());
+        LOGGER.error(e, e.getMessage());
         return null;
       }
     }
@@ -144,7 +143,7 @@ public class SnappyCompression {
       try {
         return Snappy.uncompressShortArray(compInput);
       } catch (IOException e) {
-        LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e, e.getMessage());
+        LOGGER.error(e, e.getMessage());
       }
       return null;
     }
@@ -169,7 +168,7 @@ public class SnappyCompression {
       try {
         return Snappy.compress(unCompInput);
       } catch (IOException e) {
-        LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e, e.getMessage());
+        LOGGER.error(e, e.getMessage());
         return null;
       }
     }
@@ -184,7 +183,7 @@ public class SnappyCompression {
       try {
         return Snappy.uncompressIntArray(compInput);
       } catch (IOException e) {
-        LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e, e.getMessage());
+        LOGGER.error(e, e.getMessage());
       }
       return null;
     }
@@ -209,7 +208,7 @@ public class SnappyCompression {
       try {
         return Snappy.compress(unCompInput);
       } catch (IOException e) {
-        LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e, e.getMessage());
+        LOGGER.error(e, e.getMessage());
         return null;
       }
     }
@@ -224,7 +223,7 @@ public class SnappyCompression {
       try {
         return Snappy.uncompressLongArray(compInput);
       } catch (IOException e) {
-        LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e, e.getMessage());
+        LOGGER.error(e, e.getMessage());
       }
       return null;
     }
@@ -250,7 +249,7 @@ public class SnappyCompression {
       try {
         return Snappy.compress(unCompInput);
       } catch (IOException e) {
-        LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e, e.getMessage());
+        LOGGER.error(e, e.getMessage());
         return null;
       }
     }
@@ -265,7 +264,7 @@ public class SnappyCompression {
       try {
         return Snappy.uncompressFloatArray(compInput);
       } catch (IOException e) {
-        LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e, e.getMessage());
+        LOGGER.error(e, e.getMessage());
       }
       return null;
     }

@@ -23,7 +23,6 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.datastore.DataRefNode;
 import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.core.iterator.CarbonIterator;
-import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.query.carbon.aggregator.DataAggregator;
 import org.carbondata.query.carbon.aggregator.ScannedResultAggregator;
 import org.carbondata.query.carbon.aggregator.impl.ListBasedResultAggregator;
@@ -101,7 +100,7 @@ public abstract class AbstractDataBlockProcessor implements BlockProcessor {
       this.blockExecutionInfo.getScannedResultProcessor()
           .addScannedResult(scannerResultAggregator.getAggregatedResult());
     } catch (QueryExecutionException e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e,
+      LOGGER.error(e,
           "Problem while adding the result to Scanned Result Processor");
     }
   }

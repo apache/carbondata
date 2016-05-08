@@ -49,7 +49,6 @@ import org.carbondata.core.util.CarbonUtilException;
 import org.carbondata.core.vo.ColumnGroupModel;
 import org.carbondata.query.datastorage.cache.LevelInfo;
 import org.carbondata.query.util.CacheUtil;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 
 public class InMemoryTable implements Comparable<InMemoryTable> {
   /**
@@ -309,7 +308,7 @@ public class InMemoryTable implements Comparable<InMemoryTable> {
       executorService.shutdown();
       executorService.awaitTermination(2, TimeUnit.DAYS);
     } catch (InterruptedException e) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
+      LOGGER.error(e);
     }
   }
 
@@ -355,8 +354,7 @@ public class InMemoryTable implements Comparable<InMemoryTable> {
     });
 
     if (files.length <= 0) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-          "Level Cardinality file not found in path : " + file.getAbsolutePath());
+      LOGGER.error("Level Cardinality file not found in path : " + file.getAbsolutePath());
       return dimensionCardinality;
     }
 
@@ -364,7 +362,7 @@ public class InMemoryTable implements Comparable<InMemoryTable> {
       dimensionCardinality =
           CarbonUtil.getCardinalityFromLevelMetadataFile(files[0].getAbsolutePath());
     } catch (CarbonUtilException e) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
+      LOGGER.error(e);
     }
     return dimensionCardinality;
   }
@@ -504,7 +502,7 @@ public class InMemoryTable implements Comparable<InMemoryTable> {
         loadNumber = Integer.parseInt(loadName.substring(lastIndexOf + 5));
       }
     } catch (NumberFormatException e) {
-      LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e,
+      LOGGER.error(e,
           "Problem while getting the load number");
     }
     return loadNumber;

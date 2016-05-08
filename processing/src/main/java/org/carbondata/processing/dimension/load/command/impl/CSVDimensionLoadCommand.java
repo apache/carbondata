@@ -41,7 +41,6 @@ import org.carbondata.processing.dimension.load.info.DimensionLoadInfo;
 import org.carbondata.processing.schema.metadata.HierarchiesInfo;
 import org.carbondata.processing.surrogatekeysgenerator.csvbased.CarbonCSVBasedDimSurrogateKeyGen;
 import org.carbondata.processing.surrogatekeysgenerator.csvbased.CarbonCSVBasedSeqGenMeta;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 
 import org.pentaho.di.core.exception.KettleException;
 
@@ -205,8 +204,7 @@ public class CSVDimensionLoadCommand implements DimensionLoadCommand {
       String dimCsvFile = fileMaps.get(tblName);
 
       if (null == dimCsvFile) {
-        LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-            "For Dimension table : \"" + tblName + " \" CSV file path is NULL.");
+        LOGGER.error("For Dimension table : \"" + tblName + " \" CSV file path is NULL.");
         throw new RuntimeException(
             "For Dimension table : \"" + dimCsvFile + " \" , CSV file path is NULL.");
       }
@@ -214,8 +212,7 @@ public class CSVDimensionLoadCommand implements DimensionLoadCommand {
       FileType fileType = FileFactory.getFileType(dimCsvFile);
 
       if (!FileFactory.isFileExist(dimCsvFile, fileType)) {
-        LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-            "For Dimension table : \"" + tblName + " \" CSV file not presnt.");
+        LOGGER.error("For Dimension table : \"" + tblName + " \" CSV file not presnt.");
         throw new RuntimeException(
             "For Dimension table : \"" + dimCsvFile + " \" ,CSV file not presnt.");
       }

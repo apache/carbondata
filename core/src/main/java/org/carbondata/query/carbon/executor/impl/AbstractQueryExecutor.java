@@ -39,7 +39,6 @@ import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.KeyGenerator;
-import org.carbondata.core.util.CarbonCoreLogEvent;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.aggregator.util.MeasureAggregatorFactory;
 import org.carbondata.query.carbon.executor.QueryExecutor;
@@ -55,7 +54,6 @@ import org.carbondata.query.carbon.model.QueryDimension;
 import org.carbondata.query.carbon.model.QueryMeasure;
 import org.carbondata.query.carbon.model.QueryModel;
 import org.carbondata.query.filters.measurefilter.util.FilterUtil;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -88,8 +86,7 @@ public abstract class AbstractQueryExecutor implements QueryExecutor {
     StandardLogService.setThreadName(StandardLogService.getPartitionID(
         queryModel.getAbsoluteTableIdentifier().getCarbonTableIdentifier().getTableName()),
         queryModel.getQueryId());
-    LOGGER.info(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG,
-        "Query will be executed on table: " + queryModel.getAbsoluteTableIdentifier()
+    LOGGER.info("Query will be executed on table: " + queryModel.getAbsoluteTableIdentifier()
             .getCarbonTableIdentifier().getTableName());
 
     QueryUtil.resolveQueryModel(queryModel);
@@ -196,7 +193,7 @@ public abstract class AbstractQueryExecutor implements QueryExecutor {
       // masked key
       maxKey = QueryUtil.getMaxKeyBasedOnDimensions(queryModel.getQueryDimension(), keyGenerator);
     } catch (KeyGenException e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, e, "problem while getting the max key");
+      LOGGER.error(e, "problem while getting the max key");
     }
 
     KeyStructureInfo restructureInfos = new KeyStructureInfo();

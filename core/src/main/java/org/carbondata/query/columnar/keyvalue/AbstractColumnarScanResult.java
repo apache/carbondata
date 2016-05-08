@@ -34,7 +34,6 @@ import org.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.carbondata.core.metadata.CarbonMetadata.Dimension;
 import org.carbondata.core.util.ByteUtil;
 import org.carbondata.query.complex.querytypes.GenericQueryType;
-import org.carbondata.query.util.CarbonEngineLogEvent;
 import org.carbondata.query.wrappers.ByteArrayWrapper;
 
 public abstract class AbstractColumnarScanResult {
@@ -230,7 +229,7 @@ public abstract class AbstractColumnarScanResult {
           //                    keyArrayLength += byteStream.toByteArray().length;
           byteStream.close();
         } catch (IOException e) {
-          LOGGER.error(CarbonEngineLogEvent.UNIBI_CARBONENGINE_MSG, e);
+          LOGGER.error(e);
         }
         i += (complexType.getColsCount() - 1);
       }

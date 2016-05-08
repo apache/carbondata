@@ -278,8 +278,7 @@ public class CarbonMetadataUtil {
     try {
       encoderMeta = (ValueEncoderMeta) objStream.readObject();
     } catch (ClassNotFoundException e) {
-      LOGGER.error(CarbonCoreLogEvent.UNIBI_CARBONCORE_MSG, "Error while reading ValueEncoderMeta",
-          e);
+      LOGGER.error("Error while reading ValueEncoderMeta");
     }
     return encoderMeta;
 

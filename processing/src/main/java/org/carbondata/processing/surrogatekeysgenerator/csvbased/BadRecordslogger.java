@@ -35,7 +35,6 @@ import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
 import org.carbondata.core.util.CarbonUtil;
-import org.carbondata.processing.util.CarbonDataProcessorLogEvent;
 
 public class BadRecordslogger {
 
@@ -148,11 +147,9 @@ public class BadRecordslogger {
       bufferedWriter.write(logStrings.toString());
       bufferedWriter.newLine();
     } catch (FileNotFoundException e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Bad Log Files not found");
+      LOGGER.error("Bad Log Files not found");
     } catch (IOException e) {
-      LOGGER.error(CarbonDataProcessorLogEvent.UNIBI_CARBONDATAPROCESSOR_MSG,
-          "Error While writing bad log File");
+      LOGGER.error("Error While writing bad log File");
     } finally {
       // if the Bad record file is created means it partially success
       // if any entry present with key that means its have bad record for
