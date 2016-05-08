@@ -34,13 +34,16 @@ class NO_DICTIONARY_COL_TestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     //For the Hive table creation and data loading
-    sql("create table NO_DICTIONARY_HIVE_6(empno int,empname string,designation string,doj Timestamp,workgroupcategory int, workgroupcategoryname string,deptno int, deptname string, projectcode int, projectjoindate Timestamp,projectenddate Timestamp,attendance int,utilization int,salary int) row format delimited fields terminated by ',' collection items terminated by '$' map keys terminated by ':'")
-    sql("load data local inpath './src/test/resources/data.csv' into table NO_DICTIONARY_HIVE_6");
+    sql("create table NO_DICTIONARY_HIVE_6(empno int,empname string,designation string,doj Timestamp,workgroupcategory int, "+
+        "workgroupcategoryname string,deptno int, deptname string, projectcode int, projectjoindate Timestamp,projectenddate Timestamp,attendance int, "
+        +"utilization int,salary int) row format delimited fields terminated by ',' tblproperties(\"skip.header.line.count\"=\"1\") "+
+        "")
+    sql("load data local inpath './src/test/resources/datawithoutheader.csv' into table NO_DICTIONARY_HIVE_6");
     //For Carbon cube creation.
-    sql("CREATE CUBE NO_DICTIONARY_CARBON_6 DIMENSIONS ("+
-      "doj Timestamp, workgroupcategory Integer, workgroupcategoryname String, " +
+    sql("CREATE CUBE NO_DICTIONARY_CARBON_6 DIMENSIONS (empno Integer, "+
+      "doj Timestamp, workgroupcategory Integer, empname String,workgroupcategoryname String, " +
       "deptno Integer, deptname String, projectcode Integer, projectjoindate Timestamp, " +
-      "projectenddate Timestamp, empno Integer, empname String,designation String) MEASURES (attendance Integer,utilization Integer,salary Integer) " + "OPTIONS (NO_DICTIONARY(empno,empname,designation) PARTITIONER [PARTITION_COUNT=1])").show()
+      "projectenddate Timestamp, designation String) MEASURES (attendance Integer,utilization Integer,salary Integer) " + "OPTIONS (NO_DICTIONARY(empno,empname,designation) PARTITIONER [PARTITION_COUNT=1])").show()
     sql("LOAD DATA fact from './src/test/resources/data.csv' INTO CUBE NO_DICTIONARY_CARBON_6 PARTITIONDATA(DELIMITER ',', QUOTECHAR '\"')");
 
   }
@@ -54,19 +57,20 @@ class NO_DICTIONARY_COL_TestCase extends QueryTest with BeforeAndAfterAll {
      
   }
   
-   test("Filter Query with NO_DICTIONARY_COLUMN Compare With HIVE RESULT") {
+   test("ORDER Query with NO_DICTIONARY_COLUMN Compare With HIVE RESULT") {
     
      checkAnswer(
-      sql("select empno from NO_DICTIONARY_HIVE_6 where empno=15"),
-      sql("select empno from NO_DICTIONARY_CARBON_6 where empno=15"))
+      sql("select empno from NO_DICTIONARY_HIVE_6 order by empno"),
+      sql("select empno from NO_DICTIONARY_CARBON_6 order by empno"))
    }
-   
-    test("Filter Query with NO_DICTIONARY_COLUMN and DICTIONARY_COLUMN Compare With HIVE RESULT") {
-    
-     checkAnswer(
-      sql("select empno from NO_DICTIONARY_HIVE_6 where empno=15 and deptno=12"),
-      sql("select empno from NO_DICTIONARY_CARBON_6 where empno=15 and deptno=12"))
-   }
+   //TODO need to add filter test cases for no dictionary columns
+//   
+//    test("Filter Query with NO_DICTIONARY_COLUMN and DICTIONARY_COLUMN Compare With HIVE RESULT") {
+//    
+//     checkAnswer(
+//      sql("select empno from NO_DICTIONARY_HIVE_6 where empno=15 and deptno=12"),
+//      sql("select empno from NO_DICTIONARY_CARBON_6 where empno=15 and deptno=12"))
+//   }
     
     test("Distinct Query with NO_DICTIONARY_COLUMN  Compare With HIVE RESULT") {
     
@@ -76,9 +80,19 @@ class NO_DICTIONARY_COL_TestCase extends QueryTest with BeforeAndAfterAll {
    }
     
      
+    test("Multiple column  group Query with NO_DICTIONARY_COLUMN  Compare With HIVE RESULT") {
     
+     checkAnswer(
+      sql("select empno,empname,workgroupcategory from NO_DICTIONARY_HIVE_6 group by empno,empname,workgroupcategory"),
+      sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_6 group by empno,empname,workgroupcategory"))
+   }
     
-
+ test("Multiple column  Detail Query with NO_DICTIONARY_COLUMN  Compare With HIVE RESULT") {
+    
+     checkAnswer(
+      sql("select empno,empname,workgroupcategory from NO_DICTIONARY_HIVE_6"),
+      sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_6 "))
+   }
   override def afterAll {
    //sql("drop cube NO_DICTIONARY_HIVE_1")
    //sql("drop cube NO_DICTIONARY_CARBON_1")

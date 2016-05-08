@@ -48,17 +48,20 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
   private NumberCompressor numberCompressor;
   private boolean[] isComplexType;
   private int numberOfNoDictionaryColumn;
+  private boolean[] dimensionType;
 
   public CarbonFactDataWriterImplForIntIndexAndAggBlock(String storeLocation, int measureCount,
       int mdKeyLength, String tableName, boolean isNodeHolder, IFileManagerComposite fileManager,
       int[] keyBlockSize, boolean[] aggBlocks, boolean isUpdateFact, boolean[] isComplexType,
       int NoDictionaryCount, CarbonDataFileAttributes carbonDataFileAttributes, String databaseName,
-      List<ColumnSchema> wrapperColumnSchemaList, int numberOfNoDictionaryColumn) {
+      List<ColumnSchema> wrapperColumnSchemaList, int numberOfNoDictionaryColumn,
+      boolean[] dimensionType) {
     this(storeLocation, measureCount, mdKeyLength, tableName, isNodeHolder, fileManager,
         keyBlockSize, aggBlocks, isUpdateFact, carbonDataFileAttributes, wrapperColumnSchemaList);
     this.isComplexType = isComplexType;
     this.databaseName = databaseName;
     this.numberOfNoDictionaryColumn = numberOfNoDictionaryColumn;
+    this.dimensionType = dimensionType;
   }
 
   public CarbonFactDataWriterImplForIntIndexAndAggBlock(String storeLocation, int measureCount,
@@ -264,10 +267,11 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
       int entryCount) {
     byte[][] keyBlockData = new byte[keyStorageArray.length][];
     int destPos = 0;
+    int keyBlockSizePosition = -1;
     for (int i = 0; i < keyStorageArray.length; i++) {
       destPos = 0;
       //handling for high card dims
-      if (i >= keyBlockSize.length && !isComplexType[i]) {
+      if (!this.dimensionType[i] && !isComplexType[i]) {
         int totalLength = 0;
         // calc size of the total bytes in all the colmns.
         for (int k = 0; k < keyStorageArray[i].getKeyBlock().length; k++) {
@@ -291,15 +295,17 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
             destPos += keyStorageArray[i].getKeyBlock()[j].length;
           }
         } else {
+          keyBlockSizePosition++;
           if (isComplexType[i]) {
-            keyBlockData[i] = new byte[keyStorageArray[i].getKeyBlock().length * keyBlockSize[i]];
+            keyBlockData[i] = new byte[keyStorageArray[i].getKeyBlock().length
+                * keyBlockSize[keyBlockSizePosition]];
           } else {
-            keyBlockData[i] = new byte[entryCount * keyBlockSize[i]];
+            keyBlockData[i] = new byte[entryCount * keyBlockSize[keyBlockSizePosition]];
           }
           for (int j = 0; j < keyStorageArray[i].getKeyBlock().length; j++) {
             System.arraycopy(keyStorageArray[i].getKeyBlock()[j], 0, keyBlockData[i], destPos,
-                keyBlockSize[i]);
-            destPos += keyBlockSize[i];
+                keyBlockSize[keyBlockSizePosition]);
+            destPos += keyBlockSize[keyBlockSizePosition];
           }
         }
       }

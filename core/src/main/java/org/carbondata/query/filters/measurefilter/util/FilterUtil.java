@@ -707,6 +707,7 @@ public final class FilterUtil {
     for (int i = 0; i < segmentProperties.getNumberOfNoDictionaryDimension(); i++) {
       noDictionaryEndKeyBuffer.put((byte) 127);
     }
+    noDictionaryEndKeyBuffer.rewind();
     endIndexKey = new IndexKey(dictionaryendMdkey, noDictionaryEndKeyBuffer.array());
     return endIndexKey;
   }
@@ -730,7 +731,7 @@ public final class FilterUtil {
     // in case of non filter query when no dictionary columns are present we
     // need to set the default start key, as for non filter query we need to get the first
     // block of the btree so we are setting the least byte value in the start key
-    ByteBuffer noDictionaryEndKeyBuffer = ByteBuffer.allocate(
+    ByteBuffer noDictionaryStartKeyBuffer = ByteBuffer.allocate(
         (segmentProperties.getNumberOfNoDictionaryDimension()
             * CarbonCommonConstants.SHORT_SIZE_IN_BYTE) + segmentProperties
             .getNumberOfNoDictionaryDimension());
@@ -743,14 +744,14 @@ public final class FilterUtil {
     short startPoint = (short) (segmentProperties.getNumberOfNoDictionaryDimension()
         * CarbonCommonConstants.SHORT_SIZE_IN_BYTE);
     for (int i = 0; i < segmentProperties.getNumberOfNoDictionaryDimension(); i++) {
-      noDictionaryEndKeyBuffer.putShort((startPoint));
+      noDictionaryStartKeyBuffer.putShort((startPoint));
       startPoint++;
     }
     for (int i = 0; i < segmentProperties.getNumberOfNoDictionaryDimension(); i++) {
-      noDictionaryEndKeyBuffer.put((byte) 1);
+      noDictionaryStartKeyBuffer.put((byte) -128);
     }
-
-    startIndexKey = new IndexKey(dictionaryStartMdkey, null);
+    noDictionaryStartKeyBuffer.rewind();
+    startIndexKey = new IndexKey(dictionaryStartMdkey, noDictionaryStartKeyBuffer.array());
     return startIndexKey;
   }
 }

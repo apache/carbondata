@@ -356,7 +356,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
           this.aggKeyBlock[i] = aggKeyBlockWithComplex.get(i);
         }
       }
-
+      aggKeyBlock = arrangeUniqueBlockType(aggKeyBlock);
     }
   }
 
@@ -413,6 +413,19 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         carbonTable.getMeasureByTableName(tableName));
     dimensionType =
         CarbonUtil.identifyDimensionType(carbonTable.getDimensionByTableName(tableName));
+  }
+
+  private boolean[] arrangeUniqueBlockType(boolean[] aggKeyBlock) {
+    int counter = 0;
+    boolean[] uniqueBlock = new boolean[aggKeyBlock.length];
+    for (int i = 0; i < dimensionType.length; i++) {
+      if (dimensionType[i]) {
+        uniqueBlock[i] = aggKeyBlock[counter++];
+      } else {
+        uniqueBlock[i] = false;
+      }
+    }
+    return uniqueBlock;
   }
 
   private void fillColumnSchemaList(List<CarbonDimension> carbonDimensionsList,
@@ -669,16 +682,23 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     List<Future<IndexStorage>> submit = new ArrayList<Future<IndexStorage>>(
         primitiveDimLens.length + noDictionaryCount + complexColCount);
     int i = 0;
-    for (i = 0; i < noOfColumn; i++) {
-      if (colGrpModel.isColumnar(i)) {
-        submit.add(executorService.submit(new BlockSortThread(i, dataHolders[i].getData(), true)));
+    int dictionaryColumnCount = -1;
+    int noDictionaryColumnCount = -1;
+    for (i = 0; i < dimensionType.length; i++) {
+      if (dimensionType[i]) {
+        dictionaryColumnCount++;
+        if (colGrpModel.isColumnar(dictionaryColumnCount)) {
+          submit.add(executorService
+              .submit(new BlockSortThread(i, dataHolders[dictionaryColumnCount].getData(), true)));
+        } else {
+          submit
+              .add(executorService.submit(new RowBlockStorage(dataHolders[dictionaryColumnCount])));
+        }
       } else {
-        submit.add(executorService.submit(new RowBlockStorage(dataHolders[i])));
+        submit.add(executorService.submit(
+            new BlockSortThread(i, noDictionaryColumnsData[++noDictionaryColumnCount], false, true,
+                true)));
       }
-    }
-    for (int j = 0; j < noDictionaryCount; j++) {
-      submit.add(executorService
-          .submit(new BlockSortThread(i++, noDictionaryColumnsData[j], false, true, true)));
     }
     for (int k = 0; k < complexColCount; k++) {
       submit.add(executorService.submit(new BlockSortThread(i++,
@@ -699,6 +719,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     } catch (Exception e) {
       LOGGER.error(e, e.getMessage());
     }
+    //    blockStorage=arrangeDimensionColumnsData(blockStorage);
     synchronized (lock) {
       this.dataWriter.writeDataToFile(blockStorage, dataHolderLocal, entryCountLocal, startkeyLocal,
           endKeyLocal, compressionModel, noDictionaryStartKey, noDictionaryEndKey);
@@ -1085,7 +1106,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     return new CarbonFactDataWriterImplForIntIndexAndAggBlock(storeLocation, measureCount,
         mdKeyLength, tableName, isNodeHolder, fileManager, keyBlockSize, aggKeyBlock, false,
         isComplexTypes(), noDictionaryCount, carbonDataFileAttributes, schemaName,
-        wrapperColumnSchemaList, noDictionaryCount);
+        wrapperColumnSchemaList, noDictionaryCount, dimensionType);
   }
 
   private boolean[] isComplexTypes() {
