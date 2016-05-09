@@ -88,6 +88,7 @@ import org.carbondata.query.datastorage.InMemoryTableStore;
 import com.google.gson.Gson;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IOUtils;
 
 public final class CarbonLoaderUtil {
 
@@ -568,8 +569,8 @@ public final class CarbonLoaderUtil {
       }
       LOGGER.info("Copying " + localStoreLocation + " --> " + carbonStoreLocation);
       CarbonUtil.checkAndCreateFolder(carbonStoreLocation);
-      Path carbonStorePath = new Path(carbonStoreLocation);
-      FileSystem fs = carbonStorePath.getFileSystem(FileFactory.getConfiguration());
+      long blockSize = getBlockSize();
+      int bufferSize = CarbonCommonConstants.BYTEBUFFER_SIZE;
       CarbonFile carbonFile = FileFactory
           .getCarbonFile(localStoreLocation, FileFactory.getFileType(localStoreLocation));
       CarbonFile[] listFiles = carbonFile.listFiles(new CarbonFileFilter() {
@@ -579,14 +580,54 @@ public final class CarbonLoaderUtil {
         }
       });
       for (int i = 0; i < listFiles.length; i++) {
-        // delete src file, overwrite source file, create new path for a file and
-        // carbon store location
-        fs.copyFromLocalFile(true, true, new Path(listFiles[i].getCanonicalPath()),
-            carbonStorePath);
+        String localFilePath = listFiles[i].getCanonicalPath();
+        String carbonFilePath = carbonStoreLocation + localFilePath
+            .substring(localFilePath.lastIndexOf(File.separator));
+        copyLocalFileToHDFS(carbonFilePath, localFilePath, bufferSize,
+            blockSize);
       }
       LOGGER.info("Total copy time (ms):  " + (System.currentTimeMillis() - copyStartTime));
     } else {
       LOGGER.info("Separate carbon.storelocation.hdfs is not configured for carbon store path");
+    }
+  }
+
+  /**
+   * This method will return the block size for file to be copied in HDFS
+   * @return
+   */
+  private static long getBlockSize() {
+    CarbonProperties carbonProperties = CarbonProperties.getInstance();
+    long blockSizeInBytes = Long.parseLong(carbonProperties
+        .getProperty(CarbonCommonConstants.MAX_FILE_SIZE,
+            CarbonCommonConstants.MAX_FILE_SIZE_DEFAULT_VAL))
+        * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
+        * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR * 1L;
+    return blockSizeInBytes;
+  }
+
+  /**
+   * This method will read the local carbon data file and write to carbon data file in HDFS
+   *
+   * @param carbonStoreFilePath
+   * @param localFilePath
+   * @param bufferSize
+   * @param blockSize
+   * @throws IOException
+   */
+  private static void copyLocalFileToHDFS(String carbonStoreFilePath, String localFilePath,
+      int bufferSize, long blockSize) throws IOException {
+    DataOutputStream dataOutputStream = null;
+    DataInputStream dataInputStream = null;
+    try {
+      dataOutputStream = FileFactory
+          .getDataOutputStream(carbonStoreFilePath, FileFactory.getFileType(carbonStoreFilePath),
+              bufferSize, blockSize);
+      dataInputStream = FileFactory
+          .getDataInputStream(localFilePath, FileFactory.getFileType(localFilePath), bufferSize);
+      IOUtils.copyBytes(dataInputStream, dataOutputStream, bufferSize);
+    } finally {
+      CarbonUtil.closeStreams(dataInputStream, dataOutputStream);
     }
   }
 
