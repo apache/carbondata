@@ -249,10 +249,7 @@ public class ExpressionResult {
             throw new FilterUnsupportedException(
                 "Cannot convert" + this.getDataType().name() + " to Time/Long type value");
           }
-
         case IntegerType:
-        // Handler: Need to check timestamp is in seconds or millisecs.
-        // This cast makes sense if its in seconds
         case LongType:
           return (Long) value;
         case DoubleType:
@@ -380,5 +377,4 @@ public class ExpressionResult {
   public boolean isNull() {
     return value == null;
   }
-
 }

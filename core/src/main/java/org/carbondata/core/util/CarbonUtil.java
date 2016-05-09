@@ -407,7 +407,8 @@ public final class CarbonUtil {
 
   /**
    * return ColumnGroupModel. check ColumnGroupModel for detail
-   * @param dimLens : dimension cardinality
+   *
+   * @param dimLens      : dimension cardinality
    * @param columnGroups : column groups
    * @return ColumnGroupModel  model
    */
@@ -893,7 +894,7 @@ public final class CarbonUtil {
     ObjectOutputStream objectOutputStream = null;
     try {
       LOGGER.info("Slice Metadata file Path: " + path + '/' + CarbonUtil
-              .getSliceMetaDataFileName(nextRestructFolder));
+          .getSliceMetaDataFileName(nextRestructFolder));
       stream = FileFactory
           .getDataOutputStream(path + File.separator + getSliceMetaDataFileName(nextRestructFolder),
               FileFactory.getFileType(path));
@@ -1499,7 +1500,7 @@ public final class CarbonUtil {
       LOGGER.info("Level cardinality file written to : " + levelCardinalityFilePath);
     } catch (IOException e) {
       LOGGER.error("Error while writing level cardinality file : " + levelCardinalityFilePath + e
-              .getMessage());
+          .getMessage());
       throw new KettleException("Not able to write level cardinality file", e);
     } finally {
       closeStreams(channel, fileOutputStream);
@@ -1998,6 +1999,60 @@ public final class CarbonUtil {
     boolean[] primitive = ArrayUtils
         .toPrimitive(isDictionaryDimensions.toArray(new Boolean[isDictionaryDimensions.size()]));
     return primitive;
+  }
+
+  /**
+   * This method will form one single byte [] for all the high card dims.
+   * First it will add all the indexes of variable length byte[] and then the
+   * actual value
+   *
+   * @param byteBufferArr
+   * @return byte[] key.
+   */
+  public static byte[] packByteBufferIntoSingleByteArray(ByteBuffer[] byteBufferArr) {
+    // for empty array means there is no data to remove dictionary.
+    if (null == byteBufferArr || byteBufferArr.length == 0) {
+      return null;
+    }
+    int noOfCol = byteBufferArr.length;
+    short offsetLen = (short) (noOfCol * 2);
+    int totalBytes = calculateTotalBytes(byteBufferArr) + offsetLen;
+    ByteBuffer buffer = ByteBuffer.allocate(totalBytes);
+    // writing the offset of the first element.
+    buffer.putShort(offsetLen);
+
+    // prepare index for byte []
+    for (int index = 0; index < byteBufferArr.length - 1; index++) {
+      ByteBuffer individualCol = byteBufferArr[index];
+      int noOfBytes = individualCol.capacity();
+      buffer.putShort((short) (offsetLen + noOfBytes));
+      offsetLen += noOfBytes;
+      individualCol.rewind();
+    }
+
+    // put actual data.
+    for (int index = 0; index < byteBufferArr.length; index++) {
+      ByteBuffer individualCol = byteBufferArr[index];
+      buffer.put(individualCol.array());
+    }
+
+    buffer.rewind();
+    return buffer.array();
+
+  }
+
+  /**
+   * To calculate the total bytes in byte Buffer[].
+   *
+   * @param byteBufferArr
+   * @return
+   */
+  private static int calculateTotalBytes(ByteBuffer[] byteBufferArr) {
+    int total = 0;
+    for (int index = 0; index < byteBufferArr.length; index++) {
+      total += byteBufferArr[index].capacity();
+    }
+    return total;
   }
 
 }

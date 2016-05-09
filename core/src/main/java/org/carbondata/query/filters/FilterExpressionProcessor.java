@@ -90,16 +90,17 @@ public class FilterExpressionProcessor implements FilterProcessor {
     // getting the start and end index key based on filter for hitting the
     // selected block reference nodes based on filter resolver tree.
     LOGGER.info("preparing the start and end key for finding"
-            + "start and end block as per filter resolver");
-    IndexKey searchStartKey =
-        filterResolver.getstartKey(tableSegment.getSegmentProperties().getDimensionKeyGenerator());
-    IndexKey searchEndKey = filterResolver.getEndKey(tableSegment, tableIdentifier);
+        + "start and end block as per filter resolver");
+    IndexKey searchStartKey = filterResolver.getstartKey(tableSegment.getSegmentProperties());
+    IndexKey searchEndKey = filterResolver.getEndKey(tableSegment.getSegmentProperties(),
+        tableIdentifier);
     if (null == searchStartKey && null == searchEndKey) {
       try {
         // TODO need to handle for no dictionary dimensions
-        searchStartKey = FilterUtil.prepareDefaultStartKey(tableSegment.getSegmentProperties());
+        searchStartKey =
+            FilterUtil.prepareDefaultStartIndexKey(tableSegment.getSegmentProperties());
         // TODO need to handle for no dictionary dimensions
-        searchEndKey = FilterUtil.prepareDefaultEndKey(tableSegment.getSegmentProperties());
+        searchEndKey = FilterUtil.prepareDefaultEndIndexKey(tableSegment.getSegmentProperties());
       } catch (KeyGenException e) {
         return listOfDataBlocksToScan;
       }
@@ -116,12 +117,17 @@ public class FilterExpressionProcessor implements FilterProcessor {
       addBlockBasedOnMinMaxValue(filterResolver, listOfDataBlocksToScan, startBlock,
           tableSegment.getSegmentProperties().getDimensionKeyGenerator());
     }
+
     addBlockBasedOnMinMaxValue(filterResolver, listOfDataBlocksToScan, endBlock,
         tableSegment.getSegmentProperties().getDimensionKeyGenerator());
+    if (listOfDataBlocksToScan.isEmpty()) {
+      //Pass the first block itself for applying filters.
+      listOfDataBlocksToScan.add(startBlock);
+    }
     LOGGER.info("Total Time in retrieving the data reference node" + "after scanning the btree " + (
-            System.currentTimeMillis() - startTimeInMillis)
-            + " Total number of data reference node for executing filter(s) "
-            + listOfDataBlocksToScan.size());
+        System.currentTimeMillis() - startTimeInMillis)
+        + " Total number of data reference node for executing filter(s) " + listOfDataBlocksToScan
+        .size());
 
     return listOfDataBlocksToScan;
   }
@@ -249,7 +255,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
           if (!currentCondExpression.getColumnList().get(0).getCarbonColumn()
               .hasEncoding(Encoding.DICTIONARY)) {
             if (FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getLeft())
-                || FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getRight())) {
+                && FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getRight())) {
               return new RowLevelFilterResolverImpl(expression, isExpressionResolve, true,
                   tableIdentifier);
             }
