@@ -48,6 +48,7 @@ import org.carbondata.core.vo.ColumnGroupModel;
 import org.carbondata.processing.datatypes.GenericDataType;
 import org.carbondata.processing.store.CarbonDataFileAttributes;
 import org.carbondata.processing.store.CarbonFactDataHandlerColumnar;
+import org.carbondata.processing.store.CarbonFactDataHandlerModel;
 import org.carbondata.processing.store.CarbonFactHandler;
 import org.carbondata.processing.store.SingleThreadFinalSortFilesMerger;
 import org.carbondata.processing.store.writer.exception.CarbonDataWriterException;
@@ -187,8 +188,7 @@ public class MDKeyGenStep extends BaseStep {
         writeCounter++;
       }
     } catch (CarbonDataWriterException e) {
-      LOGGER.error(e,
-          "Failed for: " + this.tableName);
+      LOGGER.error(e, "Failed for: " + this.tableName);
       throw new KettleException("Error while initializing data handler : " + e.getMessage());
     } finally {
       try {
@@ -229,14 +229,13 @@ public class MDKeyGenStep extends BaseStep {
     CarbonTablePath carbonTablePath =
         CarbonStorePath.getCarbonTablePath(baseStorePath, carbonTableIdentifier);
     String partitionId = meta.getPartitionID();
-    String carbonDataDirectoryPath = carbonTablePath.getCarbonDataDirectoryPath(partitionId,
-        meta.getSegmentId());
+    String carbonDataDirectoryPath =
+        carbonTablePath.getCarbonDataDirectoryPath(partitionId, meta.getSegmentId());
     carbonDataDirectoryPath = carbonDataDirectoryPath + File.separator + meta.getTaskNo();
     storeLocation = carbonDataDirectoryPath + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
 
     fileManager = new LoadFolderData();
-    fileManager.setName(CarbonCommonConstants.LOAD_FOLDER
-        + meta.getSegmentId()
+    fileManager.setName(CarbonCommonConstants.LOAD_FOLDER + meta.getSegmentId()
         + CarbonCommonConstants.FILE_INPROGRESS_STATUS);
 
     if (!(new File(storeLocation).exists())) {
@@ -272,8 +271,7 @@ public class MDKeyGenStep extends BaseStep {
     //      this.dimensionCount = dimLens.length;
     this.dimensionCount = meta.getDimensionCount();
 
-    int simpleDimsCount =
-        this.dimensionCount - meta.getComplexDimsCount();
+    int simpleDimsCount = this.dimensionCount - meta.getComplexDimsCount();
     int[] simpleDimsLen = new int[simpleDimsCount];
     for (int i = 0; i < simpleDimsCount; i++) {
       simpleDimsLen[i] = dimLens[i];
@@ -281,11 +279,11 @@ public class MDKeyGenStep extends BaseStep {
 
     String[] colStore = meta.getColumnGroupsString().split(",");
     int[][] colGroups = new int[colStore.length][];
-    for(int i=0;i<colGroups.length;i++){
-      String[] group=colStore[i].split("~");
-      colGroups[i]=new int[group.length];
-      for(int j=0;j<colGroups[i].length;j++){
-        colGroups[i][j]=Integer.parseInt(group[j]);
+    for (int i = 0; i < colGroups.length; i++) {
+      String[] group = colStore[i].split("~");
+      colGroups[i] = new int[group.length];
+      for (int j = 0; j < colGroups[i].length; j++) {
+        colGroups[i][j] = Integer.parseInt(group[j]);
       }
     }
     // Actual primitive dimension used to generate start & end key
@@ -344,24 +342,42 @@ public class MDKeyGenStep extends BaseStep {
     }
     CarbonDataFileAttributes carbonDataFileAttributes =
         new CarbonDataFileAttributes(meta.getTaskNo(), meta.getFactTimeStamp());
-    //aggType = valueCompressionModel.getType();
     initAggType(msrdataTypes);
     finalMerger = new SingleThreadFinalSortFilesMerger(dataFolderLocation, tableName,
         dimensionCount - meta.getComplexDimsCount(), meta.getComplexDimsCount(), measureCount,
         meta.getNoDictionaryCount(), aggType);
+    CarbonFactDataHandlerModel carbonFactDataHandlerModel = getCarbonFactDataHandlerModel();
+    carbonFactDataHandlerModel.setPrimitiveDimLens(simpleDimsLen);
+    carbonFactDataHandlerModel.setCarbonDataFileAttributes(carbonDataFileAttributes);
     if (meta.getNoDictionaryCount() > 0 || meta.getComplexDimsCount() > 0) {
-      dataHandler = new CarbonFactDataHandlerColumnar(meta.getSchemaName(), meta.getCubeName(),
-          this.tableName, false, measureCount, data.generator.getKeySizeInBytes(),
-          measureCount + 1, null, null, storeLocation, dimLens, false, false, dimLens, null, null,
-          true, meta.getCurrentRestructNumber(), meta.getNoDictionaryCount(), dimensionCount,
-          complexIndexMap, simpleDimsLen, this.colGrpStoreModel, aggType, carbonDataFileAttributes);
+      carbonFactDataHandlerModel.setMdKeyIndex(measureCount + 1);
     } else {
-      dataHandler = new CarbonFactDataHandlerColumnar(meta.getSchemaName(), meta.getCubeName(),
-          this.tableName, false, measureCount, data.generator.getKeySizeInBytes(),
-          measureCount, null, null, storeLocation, dimLens, false, false, dimLens, null, null, true,
-          meta.getCurrentRestructNumber(), meta.getNoDictionaryCount(), dimensionCount,
-          complexIndexMap, simpleDimsLen, this.colGrpStoreModel, aggType, carbonDataFileAttributes);
+      carbonFactDataHandlerModel.setMdKeyIndex(measureCount);
     }
+    dataHandler = new CarbonFactDataHandlerColumnar(carbonFactDataHandlerModel);
+  }
+
+  /**
+   * This method will create a model object for carbon fact data handler
+   *
+   * @return
+   */
+  private CarbonFactDataHandlerModel getCarbonFactDataHandlerModel() {
+    CarbonFactDataHandlerModel carbonFactDataHandlerModel = new CarbonFactDataHandlerModel();
+    carbonFactDataHandlerModel.setDatabaseName(meta.getSchemaName());
+    carbonFactDataHandlerModel.setTableName(tableName);
+    carbonFactDataHandlerModel.setMeasureCount(measureCount);
+    carbonFactDataHandlerModel.setMdKeyLength(data.generator.getKeySizeInBytes());
+    carbonFactDataHandlerModel.setStoreLocation(storeLocation);
+    carbonFactDataHandlerModel.setDimLens(dimLens);
+    carbonFactDataHandlerModel.setNoDictionaryCount(meta.getNoDictionaryCount());
+    carbonFactDataHandlerModel.setDimensionCount(dimensionCount);
+    carbonFactDataHandlerModel.setComplexIndexMap(complexIndexMap);
+    carbonFactDataHandlerModel.setColGrpModel(colGrpStoreModel);
+    carbonFactDataHandlerModel.setDataWritingRequest(true);
+    carbonFactDataHandlerModel.setAggType(aggType);
+    carbonFactDataHandlerModel.setFactDimLens(dimLens);
+    return carbonFactDataHandlerModel;
   }
 
   private void initAggType(String[] msrdataTypes) {
@@ -434,7 +450,7 @@ public class MDKeyGenStep extends BaseStep {
     try {
       outputRow[outputRow.length - 1] = data.generator.generateKey(highCardExcludedRows);
     } catch (KeyGenException e) {
-      throw new KettleException("Unbale to generate the mdkey", e);
+      throw new KettleException("unable to generate the mdkey", e);
     }
 
     return outputRow;
