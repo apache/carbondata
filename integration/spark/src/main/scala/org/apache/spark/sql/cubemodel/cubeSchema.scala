@@ -2193,20 +2193,32 @@ private[sql] case class DropCubeCommand(ifExistsSet: Boolean, schemaNameOp: Opti
     if (null == tmpCube) {
       if (!ifExistsSet) {
         LOGGER
-            .audit(s"Dropping cube with Schema name [$schemaName] and cube name [$cubeName] failed")
-        LOGGER.error(s"Cube $schemaName.$cubeName does not exist")
-        sys.error(s"Cube $schemaName.$cubeName does not exist")
+          .audit(s"Dropping carbon table with Schema name [$schemaName] and cube name" +
+            "[$cubeName] failed")
+        LOGGER.error(s"Carbon Table $schemaName.$cubeName metadata does not exist")
       }
-    }
-    else {
+      if (sqlContext.tableNames(schemaName).map(x => x.toLowerCase())
+        .contains(cubeName.toLowerCase())) {
+        try {
+          sqlContext.asInstanceOf[HiveContext].catalog.client.
+            runSqlHive(s"DROP TABLE IF EXISTS $schemaName.$cubeName")
+        } catch {
+          case e: RuntimeException =>
+            LOGGER.audit(
+              s"Error While deleting the table $schemaName.$cubeName during drop carbon table" +
+                e.getMessage)
+        }
+      } else if (!ifExistsSet) {
+        sys.error(s"Carbon Table $schemaName.$cubeName does not exist")
+      }
+    } else {
       CarbonProperties.getInstance().addProperty("zookeeper.enable.lock", "false")
       val carbonLock = CarbonLockFactory
           .getCarbonLockObj(tmpCube.getMetaDataFilepath(), LockUsage.METADATA_LOCK)
       try {
         if (carbonLock.lockWithRetries()) {
           logInfo("Successfully able to get the cube metadata file lock")
-        }
-        else {
+        } else {
           LOGGER.audit(
             s"Dropping cube with Schema name [$schemaName] and cube name [$cubeName] " +
                 s"failed as the Cube is locked")
