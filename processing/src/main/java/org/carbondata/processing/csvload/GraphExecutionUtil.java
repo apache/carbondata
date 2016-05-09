@@ -325,7 +325,7 @@ public final class GraphExecutionUtil {
     String readLine = readCSVFile(csvFilePath);
 
     if (null != readLine) {
-      String[] columnFromCSV = readLine.split(delimiter);
+      String[] columnFromCSV = readLine.toLowerCase().split(delimiter);
 
       List<String> csvColumnsList = new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
 
@@ -336,7 +336,7 @@ public final class GraphExecutionUtil {
       int count = 0;
 
       for (String columns : columnNames) {
-        if (csvColumnsList.contains(columns)) {
+        if (csvColumnsList.contains(columns.toLowerCase())) {
           count++;
         }
       }
