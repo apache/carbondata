@@ -135,4 +135,6 @@ object CarbonContext {
         "allowed using the same SparkContext instance")
     cache(sc) = cc
   }
+
+  def datasourceName: String = "org.apache.carbondata.format"
 }

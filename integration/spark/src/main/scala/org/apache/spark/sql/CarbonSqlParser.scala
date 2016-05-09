@@ -38,7 +38,7 @@ import scala.collection.mutable.LinkedHashSet
 /**
  * Parser for All Carbon DDL, DML cases in Unified context
  */
-class CarbonSqlDDLParser()
+class CarbonSqlParser()
   extends AbstractSparkSQLParser with Logging {
 
   protected val AGGREGATE = Keyword("AGGREGATE")
@@ -356,7 +356,6 @@ class CarbonSqlDDLParser()
             cols.asScala.map { col =>
               val columnName = col.getName()
               val dataType = Option(col.getType)
-              val comment = col.getComment
               val name = Option(col.getName())
               val f: Field = new Field(columnName, dataType, name, None, null, Some("columnar"))
               fields ++= Seq(f)
@@ -397,8 +396,9 @@ class CarbonSqlDDLParser()
         case _ => // Unsupport features
       }
 
-      if (!("org.apache.carbondata.format".equalsIgnoreCase(storedBy))) {
-        sys.error("Not a carbon Format request")
+      if (!storedBy.equals(CarbonContext.datasourceName)) {
+        // TODO: should execute by Hive instead of error
+        sys.error("Not a carbon format request")
       }
 
       // prepare table model of the collected tokens

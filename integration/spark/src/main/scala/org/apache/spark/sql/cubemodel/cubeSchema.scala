@@ -447,7 +447,6 @@ class CubeProcessor(cm: tableModel, sqlContext: SQLContext) {
     val LOGGER = LogServiceFactory.getLogService(CubeProcessor.getClass().getName())
 
     // Create Cube DDL with Schema defination
-    //    levels =
     cm.dimCols.map(field => {
       if (field.parent != null) {
         levels ++= Seq(Level(field.name.getOrElse(field.column), field.column, Int.MaxValue,
@@ -578,13 +577,10 @@ class CubeProcessor(cm: tableModel, sqlContext: SQLContext) {
     val complexDims = scala.collection.mutable.ListBuffer[Dimension]()
     for (dimension <- dimensions) {
       if (highCardinalityDims.contains(dimension.name)) {
-        // dimension.highCardinality=true
         highCardDims += (dimension)
-      }
-      else if (dimension.hierarchies(0).levels.length > 1) {
+      } else if (dimension.hierarchies(0).levels.length > 1) {
         complexDims += (dimension)
-      }
-      else {
+      } else {
         newOrderedDims += (dimension)
       }
 
@@ -1253,7 +1249,6 @@ private[sql] case class AlterCube(
         curTime,
         defaultValsMap,
         relation.cubeMeta.partitioner)
-      //   }
 
       if (status) {
 
