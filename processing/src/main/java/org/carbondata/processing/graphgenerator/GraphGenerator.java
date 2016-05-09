@@ -117,9 +117,9 @@ public class GraphGenerator {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(GraphGenerator.class.getName());
   /**
-   * kettleIntialized
+   * kettleInitialized
    */
-  private static boolean kettleIntialized;
+  private static boolean kettleInitialized = false;
 
   static {
 
@@ -362,14 +362,15 @@ public class GraphGenerator {
       }
     }
 
-    if (!kettleIntialized) {
+    if (!kettleInitialized) {
       synchronized (DRIVERS) {
         try {
-          EnvUtil.environmentInit();
-          KettleEnvironment.init();
-          kettleIntialized = false;
+          if (!kettleInitialized) {
+            EnvUtil.environmentInit();
+            KettleEnvironment.init();
+            kettleInitialized = true;
+          }
         } catch (KettleException kettlExp) {
-          LOGGER.error("Invalid kettle path :: " + kettlExp.getMessage());
           LOGGER.error(kettlExp);
           throw new GraphGeneratorException("Error While Initializing the Kettel Engine ",
               kettlExp);
