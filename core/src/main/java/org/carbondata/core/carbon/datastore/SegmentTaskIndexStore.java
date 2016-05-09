@@ -85,12 +85,6 @@ public class SegmentTaskIndexStore {
     return SEGMENTTASKINDEXSTORE;
   }
 
-  public static void main(String[] args) {
-    Path p = new Path("file:/D:/file");
-    Path pathWithoutSchemeAndAuthority = Path.getPathWithoutSchemeAndAuthority(p);
-    System.out.println(pathWithoutSchemeAndAuthority);
-  }
-
   /**
    * Below method will be used to load the segment of segments
    * One segment may have multiple task , so  table segment will be loaded
