@@ -23,6 +23,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions._
@@ -33,14 +34,17 @@ import org.apache.spark.unsafe.types.UTF8String
 import org.carbondata.core.carbon.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.util.CarbonProperties
+import org.carbondata.hadoop.CarbonInputFormat
 import org.carbondata.integration.spark.{KeyVal, KeyValImpl}
 import org.carbondata.integration.spark.agg._
 import org.carbondata.integration.spark.query.CarbonQueryPlan
 import org.carbondata.integration.spark.rdd.CarbonQueryRDD
-import org.carbondata.integration.spark.util.{CarbonQueryUtil, CarbonScalaUtil}
+import org.carbondata.integration.spark.util.{CarbonQueryUtil, CarbonScalaUtil, QueryPlanUtil}
+import org.carbondata.query.aggregator.impl.CountAggregator
 import org.carbondata.query.carbon.model.QueryDimension
 import org.carbondata.query.carbon.model.QueryMeasure
 import org.carbondata.query.carbon.model.SortOrderType
+import org.carbondata.query.carbon.result.RowResult
 import org.carbondata.query.expression.{ColumnExpression => CarbonColumnExpression}
 import org.carbondata.query.expression.{Expression => CarbonExpression}
 import org.carbondata.query.expression.{LiteralExpression => CarbonLiteralExpression}
@@ -48,8 +52,6 @@ import org.carbondata.query.expression.arithmetic.{AddExpression, DivideExpressi
 import org.carbondata.query.expression.conditional._
 import org.carbondata.query.expression.logical.{AndExpression, OrExpression}
 import org.carbondata.query.scanner.impl.{CarbonKey, CarbonValue}
-
-
 
 case class CarbonCubeScan(
                            var attributes: Seq[Attribute],
@@ -506,11 +508,27 @@ case class CarbonCubeScan(
       case s: String => UTF8String.fromString(s)
       case _ => obj
     }
-
-    inputRdd.map { row =>
-      val dims = row._1.getKey.map(toType).toArray
-      val values = dims
-      new GenericMutableRow(values.asInstanceOf[Array[Any]])
+    // count(*) query executed in driver by querying from Btree
+    if (buildCarbonPlan.isCountStarQuery) {
+      val absoluteTableIdentifier = new AbsoluteTableIdentifier(carbonCatalog.storePath,
+        new CarbonTableIdentifier(carbonTable.getDatabaseName, carbonTable.getFactTableName)
+      )
+      val (carbonInputFormat: CarbonInputFormat[RowResult], job: Job) =
+        QueryPlanUtil.createCarbonInputFormat(absoluteTableIdentifier)
+      // get row count
+      val rowCount = carbonInputFormat.getRowCount(job)
+      val countAgg = new CountAggregator()
+      countAgg.setNewValue(rowCount)
+      sparkContext.parallelize(
+        Seq(new GenericMutableRow(Seq(countAgg).toArray.asInstanceOf[Array[Any]]))
+      )
+    } else {
+      // all the other queries are sent to executor
+      inputRdd.map { row =>
+        val dims = row._1.getKey.map(toType).toArray
+        val values = dims
+        new GenericMutableRow(values.asInstanceOf[Array[Any]])
+      }
     }
   }
 

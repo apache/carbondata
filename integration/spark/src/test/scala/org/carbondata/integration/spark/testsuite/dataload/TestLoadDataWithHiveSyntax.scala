@@ -51,18 +51,22 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
     sql("drop cube testcube")
     sql("drop table testhivetable")
   }
-  
+
+  /**
+   * TODO: temporarily changing cube names to different names,
+    * however deletion and creation of cube with same name
+   */
   test("test data loading with different case file header and validate query output") {
     //Create test cube and hive table
-    sql("CREATE CUBE testcube DIMENSIONS (empno Integer, empname String, designation String, doj String, workgroupcategory Integer, workgroupcategoryname String, deptno Integer, deptname String, projectcode Integer, projectjoindate String, projectenddate String) MEASURES (attendance Integer,utilization Integer,salary Integer) OPTIONS (PARTITIONER [PARTITION_COUNT=1])")
-    sql("create table testhivetable(empno int, empname String, designation string, doj String, workgroupcategory int, workgroupcategoryname String,deptno int, deptname String, projectcode int, projectjoindate String,projectenddate String, attendance double,utilization double,salary double)row format delimited fields terminated by ','")
+    sql("CREATE CUBE testcube1 DIMENSIONS (empno Integer, empname String, designation String, doj String, workgroupcategory Integer, workgroupcategoryname String, deptno Integer, deptname String, projectcode Integer, projectjoindate String, projectenddate String) MEASURES (attendance Integer,utilization Integer,salary Integer) OPTIONS (PARTITIONER [PARTITION_COUNT=1])")
+    sql("create table testhivetable1(empno int, empname String, designation string, doj String, workgroupcategory int, workgroupcategoryname String,deptno int, deptname String, projectcode int, projectjoindate String,projectenddate String, attendance double,utilization double,salary double)row format delimited fields terminated by ','")
     //load data into test cube and hive table and validate query result
-    sql("LOAD DATA local inpath './src/test/resources/datawithoutheader.csv' INTO table testcube options('DELIMITER'=',', 'QUOTECHAR'='\"', 'FILEHEADER'='EMPno,empname,designation,doj,workgroupcategory,workgroupcategoryname,deptno,deptname,projectcode,projectjoindate,projectenddate,attendance,utilization,SALARY')")
-    sql("LOAD DATA local inpath './src/test/resources/datawithoutheader.csv' overwrite INTO table testhivetable")
-    checkAnswer(sql("select * from testcube"), sql("select * from testhivetable"))
+    sql("LOAD DATA local inpath './src/test/resources/datawithoutheader.csv' INTO table testcube1 options('DELIMITER'=',', 'QUOTECHAR'='\"', 'FILEHEADER'='EMPno,empname,designation,doj,workgroupcategory,workgroupcategoryname,deptno,deptname,projectcode,projectjoindate,projectenddate,attendance,utilization,SALARY')")
+    sql("LOAD DATA local inpath './src/test/resources/datawithoutheader.csv' overwrite INTO table testhivetable1")
+    checkAnswer(sql("select * from testcube1"), sql("select * from testhivetable1"))
     //drop test cube and table
-    sql("drop cube testcube")
-    sql("drop table testhivetable")
+    sql("drop cube testcube1")
+    sql("drop table testhivetable1")
   }
   
   test("test hive table data loading") {

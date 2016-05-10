@@ -28,17 +28,23 @@ import java.util.Map;
 import org.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.carbon.datastore.DataRefNode;
+import org.carbondata.core.carbon.datastore.DataRefNodeFinder;
+import org.carbondata.core.carbon.datastore.IndexKey;
 import org.carbondata.core.carbon.datastore.SegmentTaskIndexStore;
 import org.carbondata.core.carbon.datastore.block.AbstractIndex;
+import org.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.carbondata.core.carbon.datastore.exception.IndexBuilderException;
+import org.carbondata.core.carbon.datastore.impl.btree.BTreeDataRefNodeFinder;
 import org.carbondata.core.carbon.datastore.impl.btree.BlockBTreeLeafNode;
 import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
+import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.expression.Expression;
 import org.carbondata.query.filter.resolver.FilterResolverIntf;
 import org.carbondata.query.filters.FilterExpressionProcessor;
+import org.carbondata.query.filters.measurefilter.util.FilterUtil;
 
 import static org.carbondata.core.constants.CarbonCommonConstants.INVALID_SEGMENT_ID;
 
@@ -195,6 +201,30 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   }
 
   /**
+   * get total number of rows. Same as count(*)
+   * @throws IOException
+   * @throws IndexBuilderException
+   */
+  public long getRowCount(JobContext job) throws IOException, IndexBuilderException {
+
+    long rowCount = 0;
+    AbsoluteTableIdentifier absoluteTableIdentifier =
+        new AbsoluteTableIdentifier(getStorePathString(job), getTableToAccess(job));
+
+    //for each segment fetch blocks matching filter in Driver BTree
+    for (int segmentNo : getValidSegments(job)) {
+      Map<String, AbstractIndex> segmentIndexMap =
+          getSegmentAbstractIndexs(job, absoluteTableIdentifier, segmentNo);
+
+      // sum number of rows of each task
+      for (AbstractIndex abstractIndex : segmentIndexMap.values()) {
+        rowCount += abstractIndex.getTotalNumberOfRows();
+      }
+    }
+    return rowCount;
+  }
+
+  /**
    * {@inheritDoc}
    * Configurations FileInputFormat.INPUT_DIR, CarbonInputFormat.INPUT_SEGMENT_NUMBERS
    * are used to get table path to read.
@@ -220,11 +250,37 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       AbsoluteTableIdentifier absoluteTableIdentifier, FilterResolverIntf resolver, int segmentId)
       throws IndexBuilderException, IOException {
 
-    Map<String, AbstractIndex> stringTableSegmentMap = SegmentTaskIndexStore.getInstance()
+    Map<String, AbstractIndex> segmentIndexMap =
+        getSegmentAbstractIndexs(job, absoluteTableIdentifier, segmentId);
+
+    List<DataRefNode> resultFilterredBlocks = new LinkedList<DataRefNode>();
+
+    // build result
+    for (AbstractIndex abstractIndex : segmentIndexMap.values()) {
+
+      List<DataRefNode> filterredBlocks = null;
+      // if no filter is given get all blocks from Btree Index
+      if(null == resolver){
+        filterredBlocks = getDataBlocksOfIndex(abstractIndex);
+      } else {
+        // apply filter and get matching blocks
+        filterredBlocks = filterExpressionProcessor
+            .getFilterredBlocks(abstractIndex.getDataRefNode(), resolver, abstractIndex,
+                absoluteTableIdentifier);
+      }
+      resultFilterredBlocks.addAll(filterredBlocks);
+    }
+    return resultFilterredBlocks;
+  }
+
+  private Map<String, AbstractIndex> getSegmentAbstractIndexs(JobContext job,
+      AbsoluteTableIdentifier absoluteTableIdentifier, int segmentId)
+      throws IOException, IndexBuilderException {
+    Map<String, AbstractIndex> segmentIndexMap = SegmentTaskIndexStore.getInstance()
         .getSegmentBTreeIfExists(absoluteTableIdentifier, segmentId);
 
     // if segment tree is not loaded, load the segment tree
-    if (stringTableSegmentMap == null) {
+    if (segmentIndexMap == null) {
       // List<FileStatus> fileStatusList = new LinkedList<FileStatus>();
       List<TableBlockInfo> tableBlockInfoList = new LinkedList<TableBlockInfo>();
       // getFileStatusOfSegments(job, new int[]{ segmentId }, fileStatusList);
@@ -246,20 +302,41 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       segmentToTableBlocksInfos.put(segmentId, tableBlockInfoList);
 
       // get Btree blocks for given segment
-      stringTableSegmentMap = SegmentTaskIndexStore.getInstance()
+      segmentIndexMap = SegmentTaskIndexStore.getInstance()
           .loadAndGetTaskIdToSegmentsMap(segmentToTableBlocksInfos, absoluteTableIdentifier);
 
     }
+    return segmentIndexMap;
+  }
 
-    List<DataRefNode> resultFilterredBlocks = new LinkedList<DataRefNode>();
-    // build result
-    for (AbstractIndex abstractIndex : stringTableSegmentMap.values()) {
-      List<DataRefNode> filterredBlocks = filterExpressionProcessor
-          .getFilterredBlocks(abstractIndex.getDataRefNode(), resolver, abstractIndex,
-              absoluteTableIdentifier);
-      resultFilterredBlocks.addAll(filterredBlocks);
+  /**
+   * get data blocks of given btree
+   */
+  private List<DataRefNode> getDataBlocksOfIndex(AbstractIndex abstractIndex) {
+    List<DataRefNode> blocks = new LinkedList<DataRefNode>();
+    SegmentProperties segmentProperties = abstractIndex.getSegmentProperties();
+
+    try {
+      IndexKey startIndexKey = FilterUtil.prepareDefaultStartIndexKey(segmentProperties);
+      IndexKey endIndexKey = FilterUtil.prepareDefaultEndIndexKey(segmentProperties);
+
+      // Add all blocks of btree into result
+      DataRefNodeFinder blockFinder = new BTreeDataRefNodeFinder(
+          segmentProperties.getDimensionColumnsValueSize());
+      DataRefNode startBlock =
+          blockFinder.findFirstDataBlock(abstractIndex.getDataRefNode(), startIndexKey);
+      DataRefNode endBlock =
+          blockFinder.findLastDataBlock(abstractIndex.getDataRefNode(), endIndexKey);
+      while (startBlock != endBlock) {
+        blocks.add(startBlock);
+        startBlock = startBlock.getNextDataRefNode();
+      }
+      blocks.add(endBlock);
+
+    } catch (KeyGenException e) {
+      LOG.error("Could not generate start key", e);
     }
-    return resultFilterredBlocks;
+    return blocks;
   }
 
   @Override public RecordReader<Void, T> createRecordReader(InputSplit inputSplit,
@@ -373,8 +450,13 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
    * @return updateExtension
    */
   private int[] getValidSegments(JobContext job) throws IOException {
-    //TODO: required to get from core and validate with INPUT_SEGMENT
-    String[] segments = job.getConfiguration().get(INPUT_SEGMENT_NUMBERS, "").split(",");
+    String segmentString = job.getConfiguration().get(INPUT_SEGMENT_NUMBERS, "");
+    // if no segments
+    if(segmentString.trim().isEmpty()){
+      return new int[0];
+    }
+
+    String[] segments = segmentString.split(",");
     int[] segmentIds = new int[segments.length];
     int i = 0;
     try {
@@ -396,5 +478,4 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     //TODO: has to Identify partitions by partition pruning
     return new String[] { "0" };
   }
-
 }
