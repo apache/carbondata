@@ -188,7 +188,15 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
       startPosition += msrLength[i];
     }
     // current file size;
-    int blockletDataSize = writableKeyArray.length + writableDataArray.length;
+    int indexBlockSize = 0;
+    for (int i = 0; i < keyBlockIdxLengths.length; i++) {
+      indexBlockSize += keyBlockIdxLengths[i] + CarbonCommonConstants.INT_SIZE_IN_BYTE;
+    }
+
+    for (int i = 0; i < dataIndexMapLength.length; i++) {
+      indexBlockSize += dataIndexMapLength[i];
+    }
+    long blockletDataSize = writableKeyArray.length + writableDataArray.length + indexBlockSize;
     updateBlockletFileChannel(blockletDataSize);
 
     NodeHolder holder = new NodeHolder();

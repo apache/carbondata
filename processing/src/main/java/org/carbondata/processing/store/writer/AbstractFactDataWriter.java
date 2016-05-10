@@ -226,7 +226,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    *
    * @throws CarbonDataWriterException if any problem
    */
-  protected void updateBlockletFileChannel(int blockletDataSize) throws CarbonDataWriterException {
+  protected void updateBlockletFileChannel(long blockletDataSize) throws CarbonDataWriterException {
     // get the current file size exceeding the file size threshold
     if ((currentFileSize + blockletDataSize) >= dataBlockSize && currentFileSize != 0) {
       // set the current file size to zero
