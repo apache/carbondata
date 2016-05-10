@@ -504,7 +504,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       if (type[otherMeasureIndex[k]] == CarbonCommonConstants.BIG_INT_MEASURE) {
         if (null == row[otherMeasureIndex[k]]) {
           //TODO: Not handling unique key as it will be handled in presence data
-          dataHolder[otherMeasureIndex[k]].setWritableLongValueByIndex(entryCount, Long.MIN_VALUE);
+          dataHolder[otherMeasureIndex[k]].setWritableLongValueByIndex(entryCount, 0);
         } else {
           dataHolder[otherMeasureIndex[k]]
               .setWritableLongValueByIndex(entryCount, row[otherMeasureIndex[k]]);
@@ -513,7 +513,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         if (null == row[otherMeasureIndex[k]]) {
           //TODO: Not handling unique key as it will be handled in presence data
           dataHolder[otherMeasureIndex[k]]
-              .setWritableDoubleValueByIndex(entryCount, Double.MIN_VALUE);
+              .setWritableDoubleValueByIndex(entryCount, 0);
         } else {
           dataHolder[otherMeasureIndex[k]]
               .setWritableDoubleValueByIndex(entryCount, row[otherMeasureIndex[k]]);
@@ -525,7 +525,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       if (null == row[customMeasureIndex[i]]
           && type[customMeasureIndex[i]] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
         //TODO: Not handling unique key as it will be handled in presence data
-        BigDecimal val = BigDecimal.valueOf(Long.MIN_VALUE);
+        BigDecimal val = BigDecimal.valueOf(0);
         b = DataTypeUtil.bigDecimalToByte(val);
       } else {
         b = (byte[]) row[customMeasureIndex[i]];
