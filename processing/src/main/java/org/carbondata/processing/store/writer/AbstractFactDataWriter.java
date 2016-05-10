@@ -175,6 +175,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
         .getProperty(CarbonCommonConstants.CARBON_BLOCK_META_RESERVED_SPACE,
             CarbonCommonConstants.CARBON_BLOCK_META_RESERVED_SPACE_DEFAULT));
     this.dataBlockSize = fileSizeInBytes - (fileSizeInBytes * spaceReservedForBlockMetaSize) / 100;
+    LOGGER.info("Total file size: " + fileSizeInBytes + " and dataBlock Size: " + dataBlockSize);
     this.isNodeHolderRequired =
         Boolean.valueOf(CarbonCommonConstants.WRITE_ALL_NODE_IN_SINGLE_TIME_DEFAULT_VALUE);
     this.fileManager = fileManager;
@@ -229,6 +230,8 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     // get the current file size exceeding the file size threshold
     if ((currentFileSize + blockletDataSize) >= dataBlockSize && currentFileSize != 0) {
       // set the current file size to zero
+      LOGGER.info("Writing data to file as max file size reached for file: " + fileName
+          + " .Data block size: " + currentFileSize);
       this.currentFileSize = 0;
       if (this.isNodeHolderRequired) {
         FileChannel channel = fileChannel;

@@ -95,6 +95,13 @@ public final class CarbonLoaderUtil {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(CarbonLoaderUtil.class.getName());
 
+  /**
+   * dfs.bytes-per-checksum
+   * HDFS checksum length, block size for a file should be exactly divisible
+   * by this value
+   */
+  private static final int HDFS_CHECKSUM_LENGTH = 512;
+
   private CarbonLoaderUtil() {
 
   }
@@ -581,15 +588,38 @@ public final class CarbonLoaderUtil {
       });
       for (int i = 0; i < listFiles.length; i++) {
         String localFilePath = listFiles[i].getCanonicalPath();
+        CarbonFile localCarbonFile =
+            FileFactory.getCarbonFile(localFilePath, FileFactory.getFileType(localFilePath));
         String carbonFilePath = carbonStoreLocation + localFilePath
             .substring(localFilePath.lastIndexOf(File.separator));
         copyLocalFileToHDFS(carbonFilePath, localFilePath, bufferSize,
-            blockSize);
+            getMaxOfBlockAndFileSize(blockSize, localCarbonFile.getSize()));
       }
       LOGGER.info("Total copy time (ms):  " + (System.currentTimeMillis() - copyStartTime));
     } else {
       LOGGER.info("Separate carbon.storelocation.hdfs is not configured for carbon store path");
     }
+  }
+
+  /**
+   * This method will return max of block size and file size
+   *
+   * @param blockSize
+   * @param fileSize
+   * @return
+   */
+  private static long getMaxOfBlockAndFileSize(long blockSize, long fileSize) {
+    long maxSize = blockSize;
+    if (fileSize > blockSize) {
+      maxSize = fileSize;
+    }
+    // block size should be exactly divisible by 512 which is  maintained by HDFS as bytes
+    // per checksum, dfs.bytes-per-checksum=512 must divide block size
+    long remainder = maxSize % HDFS_CHECKSUM_LENGTH;
+    if (remainder > 0) {
+      maxSize = maxSize + HDFS_CHECKSUM_LENGTH - remainder;
+    }
+    return maxSize;
   }
 
   /**
@@ -620,6 +650,8 @@ public final class CarbonLoaderUtil {
     DataOutputStream dataOutputStream = null;
     DataInputStream dataInputStream = null;
     try {
+      LOGGER.debug(
+          "HDFS file block size for file: " + carbonStoreFilePath + " is " + blockSize + " (bytes");
       dataOutputStream = FileFactory
           .getDataOutputStream(carbonStoreFilePath, FileFactory.getFileType(carbonStoreFilePath),
               bufferSize, blockSize);
