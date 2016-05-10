@@ -1459,7 +1459,6 @@ public final class CarbonCommonConstants {
 
   /**
    * table split partition
-   *
    */
   public static final String TABLE_SPLIT_PARTITION = "carbon.table.split.partition.enable";
 
@@ -1480,6 +1479,16 @@ public final class CarbonCommonConstants {
    * default value for space reserved for writing block meta data in carbon data file
    */
   public static final String CARBON_BLOCK_META_RESERVED_SPACE_DEFAULT = "10";
+
+  /**
+   * property to enable min max during filter query
+   */
+  public static final String CARBON_QUERY_MIN_MAX_ENABLED = "carbon.enableMinMax";
+
+  /**
+   * default value to enable min or max during filter query execution
+   */
+  public static final String MIN_MAX_DEFAULT_VALUE = "true";
 
   private CarbonCommonConstants() {
 

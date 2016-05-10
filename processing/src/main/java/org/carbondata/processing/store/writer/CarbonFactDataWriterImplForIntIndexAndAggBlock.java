@@ -48,20 +48,20 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
   private NumberCompressor numberCompressor;
   private boolean[] isComplexType;
   private int numberOfNoDictionaryColumn;
-  private boolean[] dimensionType;
+  private boolean[] isDictionaryColumn;
 
   public CarbonFactDataWriterImplForIntIndexAndAggBlock(String storeLocation, int measureCount,
       int mdKeyLength, String tableName, boolean isNodeHolder, IFileManagerComposite fileManager,
       int[] keyBlockSize, boolean[] aggBlocks, boolean isUpdateFact, boolean[] isComplexType,
       int NoDictionaryCount, CarbonDataFileAttributes carbonDataFileAttributes, String databaseName,
       List<ColumnSchema> wrapperColumnSchemaList, int numberOfNoDictionaryColumn,
-      boolean[] dimensionType) {
+      boolean[] isDictionaryColumn) {
     this(storeLocation, measureCount, mdKeyLength, tableName, isNodeHolder, fileManager,
         keyBlockSize, aggBlocks, isUpdateFact, carbonDataFileAttributes, wrapperColumnSchemaList);
     this.isComplexType = isComplexType;
     this.databaseName = databaseName;
     this.numberOfNoDictionaryColumn = numberOfNoDictionaryColumn;
-    this.dimensionType = dimensionType;
+    this.isDictionaryColumn = isDictionaryColumn;
   }
 
   public CarbonFactDataWriterImplForIntIndexAndAggBlock(String storeLocation, int measureCount,
@@ -113,9 +113,13 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
 
       }
       totalKeySize += keyLengths[i];
-
-      allMinValue[i] = keyStorageArray[i].getMin();
-      allMaxValue[i] = keyStorageArray[i].getMax();
+      if (isDictionaryColumn[i]) {
+        allMinValue[i] = keyStorageArray[i].getMin();
+        allMaxValue[i] = keyStorageArray[i].getMax();
+      } else {
+        allMinValue[i] = updateMinMaxForNoDictionary(keyStorageArray[i].getMin());
+        allMaxValue[i] = updateMinMaxForNoDictionary(keyStorageArray[i].getMax());
+      }
     }
     int[] keyBlockIdxLengths = new int[keyBlockSize];
     byte[][] dataAfterCompression = new byte[keyBlockSize][];
@@ -236,6 +240,20 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
   }
 
   /**
+   * Below method will be used to update the min or max value
+   * by removing the length from it
+   *
+   * @param value
+   * @return min max value without length
+   */
+  private byte[] updateMinMaxForNoDictionary(byte[] valueWithLength) {
+    ByteBuffer buffer = ByteBuffer.wrap(valueWithLength);
+    byte[] actualValue = new byte[buffer.getShort()];
+    buffer.get(actualValue);
+    return actualValue;
+  }
+
+  /**
    * Below method will be used to update the no dictionary start and end key
    *
    * @param key key to be updated
@@ -271,7 +289,7 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
     for (int i = 0; i < keyStorageArray.length; i++) {
       destPos = 0;
       //handling for high card dims
-      if (!this.dimensionType[i] && !isComplexType[i]) {
+      if (!this.isDictionaryColumn[i] && !isComplexType[i]) {
         int totalLength = 0;
         // calc size of the total bytes in all the colmns.
         for (int k = 0; k < keyStorageArray[i].getKeyBlock().length; k++) {

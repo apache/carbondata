@@ -21,11 +21,17 @@ package org.carbondata.core.load;
 
 import java.io.Serializable;
 
+import org.carbondata.core.datastorage.store.impl.FileFactory;
+
 /**
  * blocks info
  */
 public class BlockDetails implements Serializable {
 
+  /**
+   * serialization version
+   */
+  private static final long serialVersionUID = 2293906691860002339L;
   //block offset
   private long blockOffset;
   //block length
@@ -50,7 +56,7 @@ public class BlockDetails implements Serializable {
   }
 
   public String getFilePath() {
-    return filePath;
+    return FileFactory.getUpdatedFilePath(filePath);
   }
 
   public void setFilePath(String filePath) {
