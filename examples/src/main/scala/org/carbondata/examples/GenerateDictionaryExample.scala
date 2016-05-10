@@ -17,10 +17,14 @@
 
 package org.carbondata.examples
 
-import java.io.File
+import java.io._
 
 import org.apache.spark.{SparkConf, SparkContext}
-import org.apache.spark.sql.CarbonContext
+import org.apache.spark.sql.{CarbonContext, CarbonEnv, CarbonRelation}
+
+import org.carbondata.core.carbon.CarbonTableIdentifier
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
+import org.carbondata.core.carbon.path.CarbonStorePath
 
 /**
  * example for global dictionary generation
@@ -35,26 +39,59 @@ object GenerateDictionaryExample {
       .setMaster("local[2]"))
 
     val pwd = new File(this.getClass.getResource("/").getPath + "/../../").getCanonicalPath
-      .replace('\\', '/')
     val storeLocation = pwd + "/target/store"
     val factFilePath = pwd + "/src/main/resources/factSample.csv"
-    val dimTableFilePath = pwd + "/src/main/resources/dimSample.csv"
     val kettleHome = new File(pwd + "/../processing/carbonplugins").getCanonicalPath
     val hiveMetaPath = pwd + "/target/hivemetadata"
-    val hiveMetaStoreDB = pwd + "/target/metastore_db"
+    val carbonTablePath = CarbonStorePath.getCarbonTablePath(storeLocation,
+      new CarbonTableIdentifier("default", "dictSample"))
+    val dictFolderPath = carbonTablePath.getMetadataDirectoryPath
 
     val cc = new CarbonContext(sc, storeLocation)
     cc.setConf("carbon.kettle.home", kettleHome)
     cc.setConf("hive.metastore.warehouse.dir", hiveMetaPath)
-    cc.setConf("javax.jdo.option.ConnectionURL", s"jdbc:derby:;" +
-      s"databaseName=$hiveMetaStoreDB;create=true")
 
-    // When you execute the second time, need to enable it
-    // cc.sql("DROP CUBE dictSample")
+    // execute sql statement
+    cc.sql("DROP CUBE IF EXISTS dictSample")
     cc.sql("CREATE CUBE dictSample DIMENSIONS (id INTEGER, name STRING, city STRING) " +
       "MEASURES (salary INTEGER) OPTIONS (PARTITIONER [PARTITION_COUNT=1])")
     cc.sql(s"LOAD DATA FACT FROM '$factFilePath' INTO CUBE dictSample " +
-      s"OPTIONS(DELIMITER ',', FILEHEADER '')")
+      s"OPTIONS(DELIMITER ',')")
+
+    // check generated dictionary
+    val tableIdentifier = new CarbonTableIdentifier("default", "dictSample")
+    printDictionary(cc, tableIdentifier, dictFolderPath)
+  }
+
+  def printDictionary(carbonContext: CarbonContext, carbonTableIdentifier: CarbonTableIdentifier,
+                      dictFolderPath: String) {
+    val dataBaseName = carbonTableIdentifier.getDatabaseName
+    val tableName = carbonTableIdentifier.getTableName
+    val catalog = CarbonEnv.getInstance(carbonContext).carbonCatalog
+    val carbonRelation = catalog.lookupRelation1(Option(dataBaseName),
+      tableName, None)(carbonContext)
+      .asInstanceOf[CarbonRelation]
+    val table = carbonRelation.cubeMeta.carbonTable
+    val dimensions = table.getDimensionByTableName(tableName)
+      .toArray.map(_.asInstanceOf[CarbonDimension])
+    // scalastyle:off println
+    // print dictionary information
+    println("**********************************************************************************")
+    println(s"Dictionary of table:$tableName in " +
+      s"database:$dataBaseName")
+    for (dimension <- dimensions) {
+      val inputStream = new FileInputStream(new File(dictFolderPath + "/" +
+        dimension.getColumnId + ".dict").getCanonicalPath)
+      val bufferReader = new BufferedReader(new InputStreamReader(inputStream))
+      println(s"column name: ${dimension.getColName}")
+      var lineData = bufferReader.readLine
+      while (lineData != null) {
+        println(lineData)
+        lineData = bufferReader.readLine
+      }
+    }
+    println("**********************************************************************************")
+    // scalastyle:on println
   }
 
 }
