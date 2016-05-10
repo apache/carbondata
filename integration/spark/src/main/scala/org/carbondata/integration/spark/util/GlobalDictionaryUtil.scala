@@ -21,6 +21,7 @@ import java.io.IOException
 import java.util.regex.Pattern
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, HashMap, HashSet}
 import scala.language.implicitConversions
 import scala.util.control.Breaks.{break, breakable}
@@ -474,7 +475,7 @@ object GlobalDictionaryUtil extends Logging {
     }
   }
 
-  def generateAndWriteNewDistinctValueList(valuesBuffer: ArrayBuffer[String],
+  def generateAndWriteNewDistinctValueList(valuesBuffer: mutable.HashSet[String],
     dictionary: Dictionary,
     model: DictionaryLoadModel, columnIndex: Int): Int = {
     val values = valuesBuffer.toArray
