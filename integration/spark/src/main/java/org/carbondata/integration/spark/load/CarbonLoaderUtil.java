@@ -29,10 +29,14 @@ import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.carbondata.common.logging.LogService;
@@ -51,6 +55,7 @@ import org.carbondata.core.carbon.CarbonDef.AggTable;
 import org.carbondata.core.carbon.CarbonDef.CubeDimension;
 import org.carbondata.core.carbon.CarbonDef.Schema;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
+import org.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
@@ -71,6 +76,7 @@ import org.carbondata.core.metadata.CarbonMetadata.Cube;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.CarbonUtilException;
+import org.carbondata.integration.spark.merger.NodeBlockRelation;
 import org.carbondata.processing.api.dataloader.DataLoadModel;
 import org.carbondata.processing.api.dataloader.SchemaInfo;
 import org.carbondata.processing.csvload.DataGraphExecuter;
@@ -371,7 +377,8 @@ public final class CarbonLoaderUtil {
   }
 
   public static List<String> getListOfValidSlices(LoadMetadataDetails[] details) {
-    List<String> activeSlices = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    List<String> activeSlices =
+        new ArrayList<String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     for (LoadMetadataDetails oneLoad : details) {
       if (CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS.equals(oneLoad.getLoadStatus())
           || CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS.equals(oneLoad.getLoadStatus())
@@ -389,7 +396,8 @@ public final class CarbonLoaderUtil {
   }
 
   public static List<String> getListOfUpdatedSlices(LoadMetadataDetails[] details) {
-    List<String> updatedSlices = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    List<String> updatedSlices =
+        new ArrayList<String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     for (LoadMetadataDetails oneLoad : details) {
       if (CarbonCommonConstants.MARKED_FOR_UPDATE.equals(oneLoad.getLoadStatus())) {
         if (null != oneLoad.getMergedLoadName()) {
@@ -969,10 +977,10 @@ public final class CarbonLoaderUtil {
         .getCarbonTable(model.getDatabaseName() + '_' + model.getTableName());
     List<CarbonDimension> dimensions = carbonTable.getDimensionByTableName(model.getAggTableName());
     List<CarbonMeasure> measures = carbonTable.getMeasureByTableName(model.getAggTableName());
-    for(CarbonDimension carbonDimension : dimensions){
+    for (CarbonDimension carbonDimension : dimensions) {
       columnList.add(carbonDimension.getColName());
     }
-    for(CarbonMeasure carbonMeasure : measures){
+    for (CarbonMeasure carbonMeasure : measures) {
       columnList.add(carbonMeasure.getColName());
     }
     return columnList;
@@ -1103,6 +1111,165 @@ public final class CarbonLoaderUtil {
     return getDictionary(
         new DictionaryColumnUniqueIdentifier(tableIdentifier, columnIdentifier, dataType),
         carbonStorePath);
+  }
+
+  /**
+   * This method will divide the blocks among the nodes as per the data locality
+   *
+   * @param blockNodes
+   * @param numberOfBlocks
+   * @param numberOfNodes
+   * @return
+   */
+  public static Map<String, List<TableBlockInfo>> nodeBlockMapping(
+      Map<TableBlockInfo, List<String>> blockNodes, int numberOfBlocks, int numberOfNodes) {
+
+    Map<String, List<TableBlockInfo>> outputMap =
+        new HashMap<String, List<TableBlockInfo>>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+
+    int blocksPerNode = numberOfBlocks / numberOfNodes;
+
+    List<NodeBlockRelation> flattenedList =
+        new ArrayList<NodeBlockRelation>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+
+    Set<TableBlockInfo> uniqueBlocks =
+        new HashSet<TableBlockInfo>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+
+    createFlattenedListFromMap(blockNodes, flattenedList, uniqueBlocks);
+    // sort the flattened data.
+    Collections.sort(flattenedList);
+
+    Map<String, List<TableBlockInfo>> nodeAndBlockMapping =
+        new LinkedHashMap<String, List<TableBlockInfo>>(
+            CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+
+    // from the flattened list create a mapping of node vs Data blocks.
+    createNodeVsBlockMapping(flattenedList, nodeAndBlockMapping);
+
+    // so now we have a map of node vs blocks. allocate the block as per the order
+    createOutputMap(outputMap, blocksPerNode, uniqueBlocks, nodeAndBlockMapping);
+
+    // if any blocks remain then assign them to nodes in round robin.
+    assignLeftOverBlocks(outputMap, uniqueBlocks);
+
+    return outputMap;
+  }
+
+  /**
+   * If any left over data blocks are present then assign those to nodes in round robin way.
+   *
+   * @param outputMap
+   * @param uniqueBlocks
+   */
+  private static void assignLeftOverBlocks(Map<String, List<TableBlockInfo>> outputMap,
+      Set<TableBlockInfo> uniqueBlocks) {
+    for (Map.Entry<String, List<TableBlockInfo>> entry : outputMap.entrySet()) {
+
+      Iterator<TableBlockInfo> blocks = uniqueBlocks.iterator();
+
+      if (blocks.hasNext()) {
+        TableBlockInfo block = blocks.next();
+        List<TableBlockInfo> blockLst = entry.getValue();
+        blockLst.add(block);
+        blocks.remove();
+
+      }
+    }
+  }
+
+  /**
+   * To create the final output of the Node and Data blocks
+   *
+   * @param outputMap
+   * @param blocksPerNode
+   * @param uniqueBlocks
+   * @param nodeAndBlockMapping
+   */
+  private static void createOutputMap(Map<String, List<TableBlockInfo>> outputMap,
+      int blocksPerNode, Set<TableBlockInfo> uniqueBlocks,
+      Map<String, List<TableBlockInfo>> nodeAndBlockMapping) {
+    for (Map.Entry<String, List<TableBlockInfo>> entry : nodeAndBlockMapping.entrySet()) {
+
+      // this loop will be for each NODE
+      int nodeCapacity = 0;
+
+      List<TableBlockInfo> blocksInEachNode = entry.getValue();
+
+      // loop thru blocks of each Node
+      for (TableBlockInfo block : blocksInEachNode) {
+
+        // check if this is already assigned.
+        if (uniqueBlocks.contains(block)) {
+
+          // assign this block to this node if node has capacity left
+          if (nodeCapacity < blocksPerNode) {
+
+            List<TableBlockInfo> list;
+            if (null == outputMap.get(entry.getKey())) {
+
+              list = new ArrayList<TableBlockInfo>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+              list.add(block);
+              outputMap.put(entry.getKey(), list);
+
+            } else {
+              list = outputMap.get(entry.getKey());
+              list.add(block);
+
+            }
+            nodeCapacity++;
+            uniqueBlocks.remove(block);
+          } else {
+            // No need to continue loop as node is full
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Create the Node and its related blocks Mapping and put in a Map
+   *
+   * @param flattenedList
+   * @param nodeAndBlockMapping
+   */
+  private static void createNodeVsBlockMapping(List<NodeBlockRelation> flattenedList,
+      Map<String, List<TableBlockInfo>> nodeAndBlockMapping) {
+    for (NodeBlockRelation nbr : flattenedList) {
+      String node = nbr.getNode();
+      List<TableBlockInfo> list;
+
+      if (null == nodeAndBlockMapping.get(node)) {
+        list = new ArrayList<TableBlockInfo>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+        list.add(nbr.getBlock());
+        Collections.sort(list);
+        nodeAndBlockMapping.put(node, list);
+      } else {
+        list = nodeAndBlockMapping.get(node);
+        list.add(nbr.getBlock());
+        Collections.sort(list);
+      }
+    }
+  }
+
+  /**
+   * Create the flat List i.e flattening of the Map.
+   *
+   * @param blockNodes
+   * @param flattenedList
+   * @param uniqueBlocks
+   */
+  private static void createFlattenedListFromMap(Map<TableBlockInfo, List<String>> blockNodes,
+      List<NodeBlockRelation> flattenedList, Set<TableBlockInfo> uniqueBlocks) {
+    for (Map.Entry<TableBlockInfo, List<String>> eachEntry : blockNodes.entrySet()) {
+      // put the blocks in the set
+      uniqueBlocks.add(eachEntry.getKey());
+
+      for (String eachNode : eachEntry.getValue()) {
+        NodeBlockRelation nbr = new NodeBlockRelation(eachEntry.getKey(), eachNode);
+        flattenedList.add(nbr);
+      }
+    }
   }
 
 }
