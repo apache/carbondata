@@ -180,16 +180,14 @@ class CubeNewProcessor(cm: tableModel, sqlContext: SQLContext) {
   def process(): TableInfo = {
     val LOGGER = LogServiceFactory.getLogService(CubeNewProcessor.getClass().getName())
     var allColumns = Seq[ColumnSchema]()
-    var rowGrp = 0
     var index = 0
     cm.dimCols.map(field => {
       var encoders = new java.util.ArrayList[Encoding]()
       encoders.add(Encoding.DICTIONARY)
       val columnSchema: ColumnSchema = getColumnSchema(normalizeType(field.dataType.getOrElse("")),
-        field.name.getOrElse(field.column), index, true, encoders, true, rowGrp)
+        field.name.getOrElse(field.column), index, true, encoders, true, -1)
       allColumns ++= Seq(columnSchema)
       index = index + 1
-      rowGrp = rowGrp + 1
       if (None != field.children && field.children.get != null) {
         columnSchema.setNumberOfChild(field.children.get.size)
         allColumns ++= getAllChildren(field.children)
@@ -199,12 +197,11 @@ class CubeNewProcessor(cm: tableModel, sqlContext: SQLContext) {
     cm.msrCols.map(field => {
       var encoders = new java.util.ArrayList[Encoding]()
       val coloumnSchema: ColumnSchema = getColumnSchema(normalizeType(field.dataType.getOrElse("")),
-        field.name.getOrElse(field.column), index, true, encoders, false, rowGrp)
+        field.name.getOrElse(field.column), index, true, encoders, false, -1)
       val measureCol = coloumnSchema
 
       allColumns ++= Seq(measureCol)
       index = index + 1
-      rowGrp = rowGrp + 1
     })
 
     // Check if there is any duplicate measures or dimensions.
@@ -258,7 +255,7 @@ class CubeNewProcessor(cm: tableModel, sqlContext: SQLContext) {
       val encoders = new java.util.ArrayList[Encoding]()
       encoders.add(Encoding.DICTIONARY)
       val coloumnSchema: ColumnSchema = getColumnSchema(DataType.DOUBLE,
-        CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE, index, true, encoders, false, rowGrp)
+        CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE, index, true, encoders, false, -1)
       val measureColumn = coloumnSchema
       measures += (measureColumn)
     }
@@ -358,18 +355,17 @@ class CubeNewProcessor(cm: tableModel, sqlContext: SQLContext) {
     if (null != colGrps) {
       colGrps.foreach(columngroup => {
         var rowCols = columngroup.split(",")
-        var rowGroupId = -1
         rowCols.foreach(colForGrouping => {
           var found: Boolean = false
           // check for dimensions + measures
           allCols.foreach(eachCol => {
-            if (eachCol.getColumnName.equalsIgnoreCase(colForGrouping)) {
+            if (eachCol.getColumnName.equalsIgnoreCase(colForGrouping.trim())) {
               found = true
             }
           })
           // check for No Dicitonary dimensions
           highCardCols.foreach(noDicCol => {
-            if (colForGrouping.equalsIgnoreCase(noDicCol)) {
+            if (colForGrouping.trim.equalsIgnoreCase(noDicCol)) {
               found = true
             }
           })
@@ -385,20 +381,17 @@ class CubeNewProcessor(cm: tableModel, sqlContext: SQLContext) {
   // For updating the col group details for fields.
   private def updateColumnGroupsInFields(colGrps: Seq[String], allCols: Seq[ColumnSchema]): Unit = {
     if (null != colGrps) {
+      var colGroupId = -1
       colGrps.foreach(columngroup => {
+        colGroupId += 1
         var rowCols = columngroup.split(",")
-        var colGroupId = -1
         rowCols.foreach(row => {
 
           allCols.map(eachCol => {
 
-            if (eachCol.getColumnName.equalsIgnoreCase(row)) {
-              if (-1 != colGroupId) {
+            if (eachCol.getColumnName.equalsIgnoreCase(row.trim)) {
                 eachCol.setColumnGroup(colGroupId)
-              }
-              else {
-                colGroupId = eachCol.getColumnGroupId()
-              }
+                eachCol.setColumnar(false)
             }
           })
         })

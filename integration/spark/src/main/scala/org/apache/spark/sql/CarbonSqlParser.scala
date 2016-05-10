@@ -528,11 +528,15 @@ class CarbonSqlParser()
     var dimFields: LinkedHashSet[Field] = LinkedHashSet[Field]()
     var splittedCols: Array[String] = Array[String]()
     var noDictionaryDims: Seq[String] = Seq[String]()
+    var dictIncludeCols: Seq[String] = Seq[String]()
 
     // check any column need to be excluded
     if (None != tableProperties.get("DICTIONARY_EXCLUDE")) {
       val dicExcludeCols: String = tableProperties.get("DICTIONARY_EXCLUDE").get
       splittedCols = dicExcludeCols.split(',')
+    }
+    if(None != tableProperties.get("DICTIONARY_INCLUDE")) {
+      dictIncludeCols = tableProperties.get("DICTIONARY_INCLUDE").get.split(",")
     }
 
     // by default consider all String cols as dims and if any dictionary exclude is present then
@@ -552,23 +556,29 @@ class CarbonSqlParser()
           dimFields += (field)
         }
       }
+      else {
+        // include the other columns into dims
+        fillNonStringDimension(dictIncludeCols, field, dimFields)
+      }
     })
 
-
-    // include the other columns into dims
-    if (None != tableProperties.get("DICTIONARY_INCLUDE")) {
-      val dicIncludeCols: String = tableProperties.get("DICTIONARY_INCLUDE").get
-      val splittedCols = dicIncludeCols.split(',')
-      fields.foreach(field => {
-        splittedCols.foreach(col => {
-          if (field.column.equalsIgnoreCase(col)) {
-            dimFields += field
-          }
-        })
-      })
-    }
-
     (dimFields.toSeq, noDictionaryDims)
+  }
+  /**
+   * It fills non string dimensions in dimFields
+   */
+  def fillNonStringDimension(dictIncludeCols: Seq[String],
+    field: Field, dimFields: LinkedHashSet[Field]) {
+    var dictInclude = false
+    if (!dictIncludeCols.isEmpty) {
+      dictIncludeCols.foreach(dictIncludeCol =>
+        if (field.column.equalsIgnoreCase(dictIncludeCol)) {
+          dictInclude = true
+        })
+    }
+    if (dictInclude) {
+      dimFields += (field)
+    }
   }
 
 
