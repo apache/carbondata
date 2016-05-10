@@ -113,9 +113,9 @@ public class FilterExpressionProcessor implements FilterProcessor {
     DataRefNode startBlock = blockFinder.findFirstDataBlock(btreeNode, searchStartKey);
     DataRefNode endBlock = blockFinder.findLastDataBlock(btreeNode, searchEndKey);
     while (startBlock != endBlock) {
-      startBlock = startBlock.getNextDataRefNode();
       addBlockBasedOnMinMaxValue(filterResolver, listOfDataBlocksToScan, startBlock,
           tableSegment.getSegmentProperties().getDimensionKeyGenerator());
+      startBlock = startBlock.getNextDataRefNode();
     }
 
     addBlockBasedOnMinMaxValue(filterResolver, listOfDataBlocksToScan, endBlock,
