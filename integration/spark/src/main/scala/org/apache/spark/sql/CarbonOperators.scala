@@ -31,14 +31,12 @@ import org.apache.spark.sql.execution.LeafNode
 import org.apache.spark.sql.hive.CarbonMetastoreCatalog
 import org.apache.spark.unsafe.types.UTF8String
 
-import org.carbondata.common.logging.LogServiceFactory
 import org.carbondata.core.carbon.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.util.CarbonProperties
 import org.carbondata.hadoop.CarbonInputFormat
+import org.carbondata.integration.spark.{KeyVal, KeyValImpl}
 import org.carbondata.integration.spark.agg._
-import org.carbondata.integration.spark.KeyVal
-import org.carbondata.integration.spark.KeyValImpl
 import org.carbondata.integration.spark.query.CarbonQueryPlan
 import org.carbondata.integration.spark.rdd.CarbonQueryRDD
 import org.carbondata.integration.spark.util.{CarbonQueryUtil, CarbonScalaUtil, QueryPlanUtil}
@@ -47,7 +45,9 @@ import org.carbondata.query.carbon.model.QueryDimension
 import org.carbondata.query.carbon.model.QueryMeasure
 import org.carbondata.query.carbon.model.SortOrderType
 import org.carbondata.query.carbon.result.RowResult
-import org.carbondata.query.expression.{ColumnExpression => CarbonColumnExpression, Expression => CarbonExpression, LiteralExpression => CarbonLiteralExpression}
+import org.carbondata.query.expression.{ColumnExpression => CarbonColumnExpression}
+import org.carbondata.query.expression.{Expression => CarbonExpression}
+import org.carbondata.query.expression.{LiteralExpression => CarbonLiteralExpression}
 import org.carbondata.query.expression.arithmetic.{AddExpression, DivideExpression, MultiplyExpression, SubstractExpression}
 import org.carbondata.query.expression.conditional._
 import org.carbondata.query.expression.logical.{AndExpression, OrExpression}
@@ -460,7 +460,6 @@ case class CarbonCubeScan(
   }
 
   def inputRdd: CarbonQueryRDD[CarbonKey, CarbonValue] = {
-    val LOG = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     // Update the FilterExpressions with extra conditions added through join pushdown
     if (!extraPreds.isEmpty) {
       val exps = preProcessExpressions(extraPreds.toSeq)
@@ -482,9 +481,12 @@ case class CarbonCubeScan(
     val kv: KeyVal[CarbonKey, CarbonValue] = new KeyValImpl()
     // setting queryid
     buildCarbonPlan.setQueryId(oc.getConf("queryId", System.nanoTime() + ""))
-
-    LOG.info("Selected Table to Query ****** "
-        + model.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableName)
+    // CarbonQueryUtil.updateCarbonExecuterModelWithLoadMetadata(model)
+    // CarbonQueryUtil.setPartitionColumn(model, relation.cubeMeta.partitioner.partitionColumn)
+    // scalastyle:off println
+    println("Selected Table to Query ****** "
+      + model.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableName())
+    // scalastyle:on println
 
     val cubeCreationTime = carbonCatalog.getCubeCreationTime(relation.schemaName, cubeName)
     val schemaLastUpdatedTime =

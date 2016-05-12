@@ -21,7 +21,6 @@ import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.CarbonContext
 import org.apache.spark.sql.hive.thriftserver.HiveThriftServer2
 
-import org.carbondata.common.logging.LogServiceFactory
 import org.carbondata.core.util.CarbonProperties
 
 object CarbonThriftServer {
@@ -35,15 +34,16 @@ object CarbonThriftServer {
       System.setProperty("carbon.properties.filepath",
         sparkHome + '/' + "conf" + '/' + "carbon.properties")
     }
-    val sc = new SparkContext(conf)
+    val sc = new SparkContext(conf);
     val warmUpTime = CarbonProperties.getInstance().getProperty("carbon.spark.warmUpTime", "5000");
     try {
-      Thread.sleep(Integer.parseInt(warmUpTime))
+      Thread.sleep(Integer.parseInt(warmUpTime));
     } catch {
       case _ =>
-        val LOG = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-        LOG.error("Wrong value for carbon.spark.warmUpTime " + warmUpTime +
-          "Using default Value and proceeding")
+        // scalastyle:off
+        println("Wrong value for carbon.spark.warmUpTime " + warmUpTime +
+          "Using default Value and proceeding");
+        // scalastyle:on
         Thread.sleep(30000);
     }
 
