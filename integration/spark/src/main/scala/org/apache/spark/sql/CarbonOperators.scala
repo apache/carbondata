@@ -35,11 +35,10 @@ import org.carbondata.common.logging.LogServiceFactory
 import org.carbondata.core.carbon.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.util.CarbonProperties
-
 import org.carbondata.hadoop.CarbonInputFormat
-import org.carbondata.integration.spark.{KeyVal, KeyValImpl}
 import org.carbondata.integration.spark.agg._
-import org.carbondata.integration.spark.{KeyVal, KeyValImpl}
+import org.carbondata.integration.spark.KeyVal
+import org.carbondata.integration.spark.KeyValImpl
 import org.carbondata.integration.spark.query.CarbonQueryPlan
 import org.carbondata.integration.spark.rdd.CarbonQueryRDD
 import org.carbondata.integration.spark.util.{CarbonQueryUtil, CarbonScalaUtil, QueryPlanUtil}
@@ -48,8 +47,8 @@ import org.carbondata.query.carbon.model.QueryDimension
 import org.carbondata.query.carbon.model.QueryMeasure
 import org.carbondata.query.carbon.model.SortOrderType
 import org.carbondata.query.carbon.result.RowResult
-import org.carbondata.query.expression.arithmetic.{AddExpression, DivideExpression, MultiplyExpression, SubstractExpression}
 import org.carbondata.query.expression.{ColumnExpression => CarbonColumnExpression, Expression => CarbonExpression, LiteralExpression => CarbonLiteralExpression}
+import org.carbondata.query.expression.arithmetic.{AddExpression, DivideExpression, MultiplyExpression, SubstractExpression}
 import org.carbondata.query.expression.conditional._
 import org.carbondata.query.expression.logical.{AndExpression, OrExpression}
 import org.carbondata.query.scanner.impl.{CarbonKey, CarbonValue}
