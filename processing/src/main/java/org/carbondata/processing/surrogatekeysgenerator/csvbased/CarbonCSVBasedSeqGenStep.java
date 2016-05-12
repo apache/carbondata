@@ -1494,8 +1494,11 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
     boolean[] measurePresentMapping = new boolean[size];
     for (int j = 0; j < size; j++) {
       String columnName = getInputRowMeta().getValueMeta(j).getName();
-      if (measureCol.contains(columnName)) {
-        measurePresentMapping[j] = true;
+      for(String measure : measureCol) {
+        if(measure.equalsIgnoreCase(columnName)) {
+          measurePresentMapping[j] = true;
+          break;
+        }
       }
     }
     return measurePresentMapping;

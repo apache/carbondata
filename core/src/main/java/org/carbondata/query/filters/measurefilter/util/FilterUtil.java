@@ -20,9 +20,12 @@
 package org.carbondata.query.filters.measurefilter.util;
 
 import java.nio.ByteBuffer;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +50,8 @@ import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.KeyGenerator;
+import org.carbondata.core.util.ByteUtil;
+import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.CarbonUtilException;
 import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
@@ -202,6 +207,16 @@ public final class FilterUtil {
     for (String result : evaluateResultListFinal) {
       filterValuesList.add(result.getBytes());
     }
+
+    Comparator<byte[]> filterNoDictValueComaparator = new Comparator<byte[]>() {
+
+      @Override public int compare(byte[] filterMember1, byte[] filterMember2) {
+        // TODO Auto-generated method stub
+        return ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterMember1, filterMember2);
+      }
+
+    };
+    Collections.sort(filterValuesList, filterNoDictValueComaparator);
     DimColumnFilterInfo columnFilterInfo = null;
     if (filterValuesList.size() > 0) {
       columnFilterInfo = new DimColumnFilterInfo();
@@ -335,6 +350,7 @@ public final class FilterUtil {
         }
         evaluateResultListFinal.add(result.getString());
       }
+
       if (null != columnExpression.getCarbonColumn() && !columnExpression.getCarbonColumn()
           .hasEncoding(Encoding.DICTIONARY)) {
         resolvedFilterObject =
@@ -450,14 +466,18 @@ public final class FilterUtil {
 
   public static byte[][] getKeyArray(DimColumnFilterInfo dimColumnFilterInfo,
       CarbonDimension carbonDimension, KeyGenerator blockLevelKeyGenerator) {
+    if (!carbonDimension.hasEncoding(Encoding.DICTIONARY)) {
+      return dimColumnFilterInfo.getNoDictionaryFilterValuesList()
+          .toArray((new byte[dimColumnFilterInfo.getNoDictionaryFilterValuesList().size()][]));
+    }
     int[] keys = new int[blockLevelKeyGenerator.getDimCount()];
     List<byte[]> filterValuesList = new ArrayList<byte[]>(20);
     Arrays.fill(keys, 0);
     int[] rangesForMaskedByte =
-        getRangesForMaskedByte((carbonDimension.getOrdinal()), blockLevelKeyGenerator);
+        getRangesForMaskedByte((carbonDimension.getKeyOrdinal()), blockLevelKeyGenerator);
     for (Integer surrogate : dimColumnFilterInfo.getFilterList()) {
       try {
-        keys[carbonDimension.getOrdinal()] = surrogate;
+        keys[carbonDimension.getKeyOrdinal()] = surrogate;
         filterValuesList
             .add(getMaskedKey(rangesForMaskedByte, blockLevelKeyGenerator.generateKey(keys)));
       } catch (KeyGenException e) {
@@ -473,17 +493,17 @@ public final class FilterUtil {
    * filter resolved instance.
    *
    * @param dimColResolvedFilterInfo
-   * @param keyGen
+   * @param segmentProperties
    * @return long[] start key
    */
   public static long[] getStartKey(DimColumnResolvedFilterInfo dimColResolvedFilterInfo,
-      KeyGenerator keyGen) {
-    long[] startKey = new long[keyGen.getDimCount()];
+      SegmentProperties segmentProperties) {
+    long[] startKey = new long[segmentProperties.getDimensionKeyGenerator().getDimCount()];
     Map<CarbonDimension, List<DimColumnFilterInfo>> dimensionFilter =
         dimColResolvedFilterInfo.getDimensionResolvedFilterInstance();
     for (Entry<CarbonDimension, List<DimColumnFilterInfo>> entry : dimensionFilter.entrySet()) {
       List<DimColumnFilterInfo> values = entry.getValue();
-      if (null == values) {
+      if (null == values || !entry.getKey().hasEncoding(Encoding.DICTIONARY)) {
         continue;
       }
       boolean isExcludePresent = false;
@@ -498,6 +518,142 @@ public final class FilterUtil {
       getStartKeyBasedOnFilterResoverInfo(dimensionFilter, startKey);
     }
     return startKey;
+  }
+
+  /**
+   * Algorithm for getting the start key for a filter
+   * step 1: Iterate through each dimension and verify whether its not an exclude filter.
+   * step 2: Intialize start key with the first filter member value present in each filter model
+   * for the respective dimensions.
+   * step 3: since its a no dictionary start key there will only actual value so compare
+   * the first filter model value with respect to the dimension data type.
+   * step 4: The least value will be considered as the start key of dimension by comparing all
+   * its filter model.
+   * step 5: create a byte array of start key which comprises of least filter member value of
+   * all dimension and the indexes which will help to read the respective filter value.
+   *
+   * @param dimColResolvedFilterInfo
+   * @param segmentProperties
+   * @return
+   */
+  public static byte[] getStartKeyForNoDictionaryDimension(
+      DimColumnResolvedFilterInfo dimColResolvedFilterInfo, SegmentProperties segmentProperties) {
+    Map<CarbonDimension, List<DimColumnFilterInfo>> dimensionFilter =
+        dimColResolvedFilterInfo.getDimensionResolvedFilterInstance();
+    List<byte[]> listOfstartKeyByteArray =
+        new ArrayList<byte[]>(segmentProperties.getNumberOfNoDictionaryDimension());
+    byte[] startNoDictionaryKey = null;
+    //step 1
+    for (Entry<CarbonDimension, List<DimColumnFilterInfo>> entry : dimensionFilter.entrySet()) {
+      if (!entry.getKey().hasEncoding(Encoding.DICTIONARY)) {
+        List<DimColumnFilterInfo> values = entry.getValue();
+        if (null == values) {
+          continue;
+        }
+        boolean isExcludePresent = false;
+        for (DimColumnFilterInfo info : values) {
+          if (!info.isIncludeFilter()) {
+            isExcludePresent = true;
+          }
+        }
+        if (isExcludePresent) {
+          continue;
+        }
+        //step 2
+        byte[] noDictionaryStartKey = values.get(0).getNoDictionaryFilterValuesList().get(0);
+        // Adding the no dictionary start key data which is the smallest in the filters.
+        // step 4
+        listOfstartKeyByteArray.add(noDictionaryStartKey);
+      }
+    }
+    // get the default start key for no dictionary with intial byte value
+    if (listOfstartKeyByteArray.isEmpty()) {
+      startNoDictionaryKey = getNoDictionaryDefaultStartKey(segmentProperties);
+      return startNoDictionaryKey;
+    } else {
+      //step 5
+      return getKeyWithIndexesAndValues(listOfstartKeyByteArray);
+    }
+  }
+
+  /**
+   * Algorithm for getting the end key for a filter
+   * step 1: Iterate through each dimension and verify whether its not an exclude filter.
+   * step 2: Initialize end key with the last filter member value present in each filter model
+   * for the respective dimensions.(Already filter models are sorted)
+   * step 3: since its a no dictionary end key there will only actual value so compare
+   * the last filter model value with respect to the dimension data type.
+   * step 4: The highest value will be considered as the end key of dimension by comparing all
+   * its filter model.
+   * step 5: create a byte array of end key which comprises of highest filter member value of
+   * all dimension and the indexes which will help to read the respective filter value.
+   *
+   * @param dimColResolvedFilterInfo
+   * @param segmentProperties
+   * @return end key array
+   */
+  public static byte[] getEndKeyForNoDictionaryDimension(
+      DimColumnResolvedFilterInfo dimColResolvedFilterInfo, SegmentProperties segmentProperties) {
+    Map<CarbonDimension, List<DimColumnFilterInfo>> dimensionFilter =
+        dimColResolvedFilterInfo.getDimensionResolvedFilterInstance();
+    List<byte[]> listOfEndKeyByteArrayForEachDims =
+        new ArrayList<byte[]>(segmentProperties.getNumberOfNoDictionaryDimension());
+    byte[] endNoDictionaryKey = null;
+    //step 1
+    for (Entry<CarbonDimension, List<DimColumnFilterInfo>> entry : dimensionFilter.entrySet()) {
+      List<DimColumnFilterInfo> listOfDimColFilterInfo = entry.getValue();
+      if (null == listOfDimColFilterInfo) {
+        continue;
+      }
+      if (!entry.getKey().hasEncoding(Encoding.DICTIONARY)) {
+        boolean isExcludePresent = false;
+        for (DimColumnFilterInfo info : listOfDimColFilterInfo) {
+          if (!info.isIncludeFilter()) {
+            isExcludePresent = true;
+          }
+        }
+        if (isExcludePresent) {
+          continue;
+        }
+        //step 2
+        byte[] noDictionaryEndKey = listOfDimColFilterInfo.get(0).getNoDictionaryFilterValuesList()
+            .get(listOfDimColFilterInfo.get(0).getNoDictionaryFilterValuesList().size() - 1);
+        // step 4
+        // Adding the no dictionary end key data which is the smallest in the filters.
+        listOfEndKeyByteArrayForEachDims.add(noDictionaryEndKey);
+      }
+    }
+    // get the default end key for no dictionary with max byte value
+    if (listOfEndKeyByteArrayForEachDims.isEmpty()) {
+      endNoDictionaryKey = getNoDictionaryDefaultEndKey(segmentProperties);
+      return endNoDictionaryKey;
+    } else {
+      // return the end key which is made of all the dimension
+      //indexes and the all the actual values.
+      //step 5
+      return getKeyWithIndexesAndValues(listOfEndKeyByteArrayForEachDims);
+    }
+  }
+
+  /**
+   * Method will pack all the byte[] to a single byte[] value by appending the
+   * indexes of the byte[] value which needs to be read. this method will be mailny used
+   * in case of no dictionary dimension processing for filters.
+   *
+   * @param noDictionaryValKeyList
+   * @return packed key with its indexes added in starting and its actual values.
+   */
+  public static byte[] getKeyWithIndexesAndValues(List<byte[]> noDictionaryValKeyList) {
+    ByteBuffer[] buffArr = new ByteBuffer[noDictionaryValKeyList.size()];
+    int index = 0;
+    for (byte[] singleColVal : noDictionaryValKeyList) {
+      buffArr[index] = ByteBuffer.allocate(singleColVal.length);
+      buffArr[index].put(singleColVal);
+      buffArr[index++].rewind();
+    }
+    //byteBufer.
+    return CarbonUtil.packByteBufferIntoSingleByteArray(buffArr);
+
   }
 
   /**
@@ -524,8 +680,8 @@ public final class FilterUtil {
         continue;
       }
       for (DimColumnFilterInfo info : values) {
-        if (startKey[entry.getKey().getOrdinal()] < info.getFilterList().get(0)) {
-          startKey[entry.getKey().getOrdinal()] = info.getFilterList().get(0);
+        if (startKey[entry.getKey().getKeyOrdinal()] < info.getFilterList().get(0)) {
+          startKey[entry.getKey().getKeyOrdinal()] = info.getFilterList().get(0);
         }
       }
     }
@@ -560,7 +716,7 @@ public final class FilterUtil {
       Map<CarbonDimension, List<DimColumnFilterInfo>> dimensionFilter, long[] endKey) {
     for (Entry<CarbonDimension, List<DimColumnFilterInfo>> entry : dimensionFilter.entrySet()) {
       List<DimColumnFilterInfo> values = entry.getValue();
-      if (null == values) {
+      if (null == values || !entry.getKey().hasEncoding(Encoding.DICTIONARY)) {
         continue;
       }
       boolean isExcludeFilterPresent = false;
@@ -574,9 +730,9 @@ public final class FilterUtil {
       }
 
       for (DimColumnFilterInfo info : values) {
-        if (endKey[entry.getKey().getOrdinal()] > info.getFilterList()
+        if (endKey[entry.getKey().getKeyOrdinal()] > info.getFilterList()
             .get(info.getFilterList().size() - 1)) {
-          endKey[entry.getKey().getOrdinal()] =
+          endKey[entry.getKey().getKeyOrdinal()] =
               info.getFilterList().get(info.getFilterList().size() - 1);
         }
       }
@@ -627,11 +783,12 @@ public final class FilterUtil {
     return forwardDictionary;
   }
 
-  public static IndexKey createIndexKeyFromResolvedFilterVal(long[] startKey,
-      KeyGenerator keyGenerator) {
+  public static IndexKey createIndexKeyFromResolvedFilterVal(long[] startOrEndKey,
+      KeyGenerator keyGenerator, byte[] startOrEndKeyForNoDictDimension) {
     IndexKey indexKey = null;
     try {
-      indexKey = new IndexKey(keyGenerator.generateKey(startKey), null);
+      indexKey =
+          new IndexKey(keyGenerator.generateKey(startOrEndKey), startOrEndKeyForNoDictDimension);
     } catch (KeyGenException e) {
       LOGGER.error(e.getMessage());
     }
@@ -675,7 +832,7 @@ public final class FilterUtil {
    * @return
    * @throws KeyGenException
    */
-  public static IndexKey prepareDefaultEndKey(SegmentProperties segmentProperties)
+  public static IndexKey prepareDefaultEndIndexKey(SegmentProperties segmentProperties)
       throws KeyGenException {
     long[] dictionarySurrogateKey =
         new long[segmentProperties.getDimensions().size() - segmentProperties
@@ -684,6 +841,12 @@ public final class FilterUtil {
     IndexKey endIndexKey;
     byte[] dictionaryendMdkey =
         segmentProperties.getDimensionKeyGenerator().generateKey(dictionarySurrogateKey);
+    byte[] noDictionaryEndKeyBuffer = getNoDictionaryDefaultEndKey(segmentProperties);
+    endIndexKey = new IndexKey(dictionaryendMdkey, noDictionaryEndKeyBuffer);
+    return endIndexKey;
+  }
+
+  private static byte[] getNoDictionaryDefaultEndKey(SegmentProperties segmentProperties) {
     // in case of non filter query when no dictionary columns are present we
     // need to set the default end key, as for non filter query
     // we need to get the last
@@ -707,9 +870,7 @@ public final class FilterUtil {
     for (int i = 0; i < segmentProperties.getNumberOfNoDictionaryDimension(); i++) {
       noDictionaryEndKeyBuffer.put((byte) 127);
     }
-    noDictionaryEndKeyBuffer.rewind();
-    endIndexKey = new IndexKey(dictionaryendMdkey, noDictionaryEndKeyBuffer.array());
-    return endIndexKey;
+    return noDictionaryEndKeyBuffer.array();
   }
 
   /**
@@ -720,7 +881,7 @@ public final class FilterUtil {
    * @return
    * @throws KeyGenException
    */
-  public static IndexKey prepareDefaultStartKey(SegmentProperties segmentProperties)
+  public static IndexKey prepareDefaultStartIndexKey(SegmentProperties segmentProperties)
       throws KeyGenException {
     IndexKey startIndexKey;
     long[] dictionarySurrogateKey =
@@ -728,6 +889,13 @@ public final class FilterUtil {
             .getNumberOfNoDictionaryDimension()];
     byte[] dictionaryStartMdkey =
         segmentProperties.getDimensionKeyGenerator().generateKey(dictionarySurrogateKey);
+    byte[] noDictionaryStartKeyArray = getNoDictionaryDefaultStartKey(segmentProperties);
+
+    startIndexKey = new IndexKey(dictionaryStartMdkey, noDictionaryStartKeyArray);
+    return startIndexKey;
+  }
+
+  private static byte[] getNoDictionaryDefaultStartKey(SegmentProperties segmentProperties) {
     // in case of non filter query when no dictionary columns are present we
     // need to set the default start key, as for non filter query we need to get the first
     // block of the btree so we are setting the least byte value in the start key
@@ -750,8 +918,44 @@ public final class FilterUtil {
     for (int i = 0; i < segmentProperties.getNumberOfNoDictionaryDimension(); i++) {
       noDictionaryStartKeyBuffer.put((byte) -128);
     }
-    noDictionaryStartKeyBuffer.rewind();
-    startIndexKey = new IndexKey(dictionaryStartMdkey, noDictionaryStartKeyBuffer.array());
-    return startIndexKey;
+    return noDictionaryStartKeyBuffer.array();
   }
+
+  public static int compareFilterKeyBasedOnDataType(String dictionaryVal, String memberVal,
+      DataType dataType) {
+    try {
+      switch (dataType) {
+        case INT:
+
+          return Integer.compare((Integer.parseInt(dictionaryVal)), (Integer.parseInt(memberVal)));
+        case DOUBLE:
+          return Double
+              .compare((Double.parseDouble(dictionaryVal)), (Double.parseDouble(memberVal)));
+        case LONG:
+          return Long.compare((Long.parseLong(dictionaryVal)), (Long.parseLong(memberVal)));
+        case BOOLEAN:
+          return Boolean
+              .compare((Boolean.parseBoolean(dictionaryVal)), (Boolean.parseBoolean(memberVal)));
+        case TIMESTAMP:
+          SimpleDateFormat parser = new SimpleDateFormat(CarbonProperties.getInstance()
+              .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+                  CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+          Date dateToStr;
+          Date dictionaryDate;
+          dateToStr = parser.parse(memberVal);
+          dictionaryDate = parser.parse(dictionaryVal);
+          return dictionaryDate.compareTo(dateToStr);
+
+        case DECIMAL:
+          java.math.BigDecimal javaDecValForDictVal = new java.math.BigDecimal(dictionaryVal);
+          java.math.BigDecimal javaDecValForMemberVal = new java.math.BigDecimal(memberVal);
+          return javaDecValForDictVal.compareTo(javaDecValForMemberVal);
+        default:
+          return -1;
+      }
+    } catch (Exception e) {
+      return -1;
+    }
+  }
+
 }

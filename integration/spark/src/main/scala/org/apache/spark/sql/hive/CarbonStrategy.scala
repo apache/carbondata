@@ -17,7 +17,7 @@
 
 package org.apache.spark.sql.hive
 
-import org.apache.spark.sql.{CarbonSqlDDLParser, SQLContext, Strategy}
+import org.apache.spark.sql.{CarbonSqlParser, SQLContext, Strategy}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 
 private[sql] object CarbonStrategy {
@@ -29,7 +29,7 @@ private[sql] object CarbonStrategy {
 private[spark] class CarbonSQLDialect extends HiveQLDialect {
 
   @transient
-  protected val sqlParser = new CarbonSqlDDLParser
+  protected val sqlParser = new CarbonSqlParser
 
   override def parse(sqlText: String): LogicalPlan = {
 

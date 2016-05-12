@@ -3,7 +3,7 @@ CarbonData is a fully indexed columnar and hadoop native datastore designed for 
 
 ### Why CarbonData
 The CaronData file format provides a highly efficient way to store structured data,it was designed to overcome limitations of the other Hadoop file formats. 
-* CarbonData stores data along with index,the index is not stored separately but the carbondata itself is the index.Indexing helps to accelerate query performance and reduces the I/O scans to the mininum and reduces the CPU required for computation on the data.
+* CarbonData stores data along with index,the index is not stored separately but the carbondata itself is the index.Indexing helps to accelerate query performance and reduces the I/O scans to the minimum and reduces the CPU required for computation on the data.
 * CarbonData is designed to support very efficient compression and global encoding schemes,CarbonData can support actionable compression across data files for query engines to perform all processing on compressed/encoded data without having to convert the data. This improves the processing speed, especially for analytical queries. The data can be converted back to the user readable format just before returning the results to the user.
 * CarbonData is designed with various types of usecases in mind and provides flexible storage options. Data can be stored in completely columnar or row based formats or even in a mix of columnar and row based hybrid format.
 * CarbonData is designed to integrate into big data ecosystem, leverages Apache Hadoop,Apache Spark etc. for distributed query processing.

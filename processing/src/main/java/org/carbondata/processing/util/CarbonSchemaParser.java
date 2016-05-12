@@ -1128,7 +1128,7 @@ public final class CarbonSchemaParser {
       if (i < dimensions.size() - 1) {
         int currGroupOrdinal = dimension.columnGroupId();
         int nextGroupOrdinal = dimensions.get(i + 1).columnGroupId();
-        if (currGroupOrdinal == nextGroupOrdinal) {
+        if (currGroupOrdinal == nextGroupOrdinal && currGroupOrdinal != -1) {
           columnGroups.append("~");
         } else {
           columnGroups.append(",");

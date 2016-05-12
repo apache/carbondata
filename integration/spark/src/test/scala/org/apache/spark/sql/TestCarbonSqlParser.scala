@@ -6,7 +6,7 @@ import org.apache.spark.sql.cubemodel.Field
 /**
   * Stub class for calling the CarbonSqlParser
   */
-private class TestCarbonSqlParserStub extends CarbonSqlDDLParser {
+private class TestCarbonSqlParserStub extends CarbonSqlParser {
 
   //val parser:CarbonSqlDDLParser = new CarbonSqlDDLParser()
 

@@ -87,7 +87,7 @@ public abstract class AbstractQueryExecutor implements QueryExecutor {
         queryModel.getAbsoluteTableIdentifier().getCarbonTableIdentifier().getTableName()),
         queryModel.getQueryId());
     LOGGER.info("Query will be executed on table: " + queryModel.getAbsoluteTableIdentifier()
-            .getCarbonTableIdentifier().getTableName());
+        .getCarbonTableIdentifier().getTableName());
 
     QueryUtil.resolveQueryModel(queryModel);
     /**
@@ -271,13 +271,14 @@ public abstract class AbstractQueryExecutor implements QueryExecutor {
       // loading the filter executer tree for filter evaluation
       blockExecutionInfo.setFilterExecuterTree(FilterUtil
           .getFilterExecuterTree(queryModel.getFilterExpressionResolverTree(), blockKeyGenerator));
-      startIndexKey = queryModel.getFilterExpressionResolverTree().getstartKey(blockKeyGenerator);
+      startIndexKey = queryModel.getFilterExpressionResolverTree()
+          .getstartKey(blockIndex.getSegmentProperties());
       endIndexKey = queryModel.getFilterExpressionResolverTree()
-          .getEndKey(blockIndex, queryModel.getAbsoluteTableIdentifier());
+          .getEndKey(blockIndex.getSegmentProperties(), queryModel.getAbsoluteTableIdentifier());
       if (null == startIndexKey && null == endIndexKey) {
         try {
-          startIndexKey = FilterUtil.prepareDefaultStartKey(segmentProperties);
-          endIndexKey = FilterUtil.prepareDefaultEndKey(segmentProperties);
+          startIndexKey = FilterUtil.prepareDefaultStartIndexKey(segmentProperties);
+          endIndexKey = FilterUtil.prepareDefaultEndIndexKey(segmentProperties);
         } catch (KeyGenException e) {
           throw new QueryExecutionException(e);
         }
@@ -285,8 +286,8 @@ public abstract class AbstractQueryExecutor implements QueryExecutor {
       }
     } else {
       try {
-        startIndexKey = FilterUtil.prepareDefaultStartKey(segmentProperties);
-        endIndexKey = FilterUtil.prepareDefaultEndKey(segmentProperties);
+        startIndexKey = FilterUtil.prepareDefaultStartIndexKey(segmentProperties);
+        endIndexKey = FilterUtil.prepareDefaultEndIndexKey(segmentProperties);
       } catch (KeyGenException e) {
         throw new QueryExecutionException(e);
       }

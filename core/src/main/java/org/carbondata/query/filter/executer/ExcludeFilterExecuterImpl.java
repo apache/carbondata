@@ -109,6 +109,16 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
               bitSet.flip(index);
             }
           }
+        } else {
+          for (int index = 0;
+               index < listOfColumnarKeyBlockDataForNoDictionaryVal.size(); index++) {
+            if (ByteUtil.UnsafeComparer.INSTANCE
+                .compareTo(filterVal, listOfColumnarKeyBlockDataForNoDictionaryVal.get(index))
+                == 0) {
+              bitSet.flip(index);
+            }
+          }
+
         }
 
       }

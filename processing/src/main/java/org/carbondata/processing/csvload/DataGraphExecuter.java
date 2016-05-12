@@ -485,7 +485,7 @@ public class DataGraphExecuter {
   private void validateHeader(SchemaInfo schemaInfo, String partitionId,
       CarbonDataLoadSchema schema) throws DataLoadingException {
     String[] columnNames = getColumnNames(schemaInfo, model.getTableName(), partitionId, schema);
-    String[] csvHeader = model.getCsvHeader().split(",");
+    String[] csvHeader = model.getCsvHeader().toLowerCase().split(",");
 
     List<String> csvColumnsList = new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
 
@@ -496,7 +496,7 @@ public class DataGraphExecuter {
     int count = 0;
 
     for (String columns : columnNames) {
-      if (csvColumnsList.contains(columns)) {
+      if (csvColumnsList.contains(columns.toLowerCase())) {
         count++;
       }
     }

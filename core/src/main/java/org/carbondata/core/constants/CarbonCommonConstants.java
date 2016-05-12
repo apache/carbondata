@@ -201,9 +201,10 @@ public final class CarbonCommonConstants {
    */
   public static final int MAX_FILE_SIZE_DEFAULT_VAL_MIN_VAL = 1;
   /**
-   * TODO: max value of max number of blocklets written in a single file?
+   * max allowed block size for a file. If block size is greater than this value
+   * then the value is reset to default block size for a file
    */
-  public static final int MAX_FILE_SIZE_DEFAULT_VAL_MAX_VAL = 1000;
+  public static final int MAX_FILE_SIZE_DEFAULT_VAL_MAX_VAL = 2048;
   /**
    * default value of number of cores to be used
    */
@@ -1458,7 +1459,6 @@ public final class CarbonCommonConstants {
 
   /**
    * table split partition
-   *
    */
   public static final String TABLE_SPLIT_PARTITION = "carbon.table.split.partition.enable";
 
@@ -1479,6 +1479,16 @@ public final class CarbonCommonConstants {
    * default value for space reserved for writing block meta data in carbon data file
    */
   public static final String CARBON_BLOCK_META_RESERVED_SPACE_DEFAULT = "10";
+
+  /**
+   * property to enable min max during filter query
+   */
+  public static final String CARBON_QUERY_MIN_MAX_ENABLED = "carbon.enableMinMax";
+
+  /**
+   * default value to enable min or max during filter query execution
+   */
+  public static final String MIN_MAX_DEFAULT_VALUE = "true";
 
   private CarbonCommonConstants() {
 

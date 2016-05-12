@@ -145,7 +145,7 @@ public final class CarbonQueryUtil {
           carbonTable.getDimensionByTableName(factTableName),
           carbonTable.getMeasureByTableName(factTableName));
     }
-    queryModel.setCountStarQuery(queryPlan.isCountStartQuery());
+    queryModel.setCountStarQuery(queryPlan.isCountStarQuery());
     //TODO need to remove this code, and executor will load the table
     // from file metadata
     queryModel.setTable(carbonTable);

@@ -22,6 +22,7 @@ import java.util.BitSet;
 
 import org.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
 import org.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.query.carbon.executor.infos.BlockExecutionInfo;
@@ -58,7 +59,9 @@ public class FilterScanner extends AbstractBlockletScanner {
     super(blockExecutionInfo);
     scannedResult = new FilterQueryScannedResult(blockExecutionInfo);
     // to check whether min max is enabled or not
-    String minMaxEnableValue = CarbonProperties.getInstance().getProperty("carbon.enableMinMax");
+    String minMaxEnableValue = CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.CARBON_QUERY_MIN_MAX_ENABLED,
+            CarbonCommonConstants.MIN_MAX_DEFAULT_VALUE);
     if (null != minMaxEnableValue) {
       isMinMaxEnabled = Boolean.parseBoolean(minMaxEnableValue);
     }
@@ -93,6 +96,7 @@ public class FilterScanner extends AbstractBlockletScanner {
    */
   private void fillScannedResult(BlocksChunkHolder blocksChunkHolder) {
 
+    scannedResult.reset();
     // apply min max
     if (isMinMaxEnabled) {
       BitSet bitSet = this.filterExecuter
@@ -106,7 +110,7 @@ public class FilterScanner extends AbstractBlockletScanner {
     }
     BitSet bitSet = new BitSet();
     // apply filter on actual data
-    bitSet=this.filterExecuter.applyFilter(blocksChunkHolder);
+    bitSet = this.filterExecuter.applyFilter(blocksChunkHolder);
     // if indexes is empty then return with empty result
     if (bitSet.isEmpty()) {
       scannedResult.setNumberOfRows(0);

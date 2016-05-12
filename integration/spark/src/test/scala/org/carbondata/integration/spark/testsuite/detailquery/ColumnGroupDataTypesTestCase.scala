@@ -26,17 +26,17 @@ import org.scalatest.BeforeAndAfterAll
 
 /**
  * Test Class for aggregate query on multiple datatypes
- * @author N00902756
  *
  */
 class ColumnGroupDataTypesTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     sql("create table colgrp (column1 string,column2 string,column3 string,column4 string,column5 string,column6 string,column7 string,column8 string,column9 string,column10 string,measure1 int,measure2 int,measure3 int,measure4 int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES (\"COLUMN_GROUPS\"=\"(column2,column3,column4),(column7,column8,column9)\")")
-    sql("LOAD DATA FACT FROM './src/test/resources/10dim_4msr.csv' INTO Cube colgrp partitionData(DELIMITER ',' ,QUOTECHAR '\"', FILEHEADER 'column1,column2,column3,column4,column5,column6,column7,column8,column9,column10,measure1,measure2,measure3,measure4')");
   }
 
-  
+  test("column group data loading") {
+    sql("LOAD DATA FACT FROM './src/test/resources/10dim_4msr.csv' INTO Cube colgrp partitionData(DELIMITER ',' ,QUOTECHAR '\"', FILEHEADER 'column1,column2,column3,column4,column5,column6,column7,column8,column9,column10,measure1,measure2,measure3,measure4')");
+  }
 
   override def afterAll {
     sql("drop cube colgrp")

@@ -155,17 +155,13 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    */
   private String storeLocation;
   /**
-   * schemaName
+   * databaseName
    */
-  private String schemaName;
+  private String databaseName;
   /**
    * tableName
    */
   private String tableName;
-  /**
-   * cubeName
-   */
-  private String cubeName;
   /**
    * aggregators
    */
@@ -238,7 +234,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   private Object lock = new Object();
   private CarbonWriteDataHolder keyDataHolder;
   private CarbonWriteDataHolder NoDictionarykeyDataHolder;
-  private int currentRestructNumber;
   private int noDictionaryCount;
   private ColumnGroupModel colGrpModel;
   private int[] primitiveDimLens;
@@ -275,47 +270,26 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   private boolean[] dimensionType;
 
   /**
-   * CarbonFactDataHandler cosntructor
-   *
-   * @param schemaName
-   * @param cubeName
-   * @param tableName
-   * @param isGroupByEnabled
-   * @param measureCount
-   * @param mdkeyLength
-   * @param mdKeyIndex
-   * @param aggregators
-   * @param aggregatorClass
-   * @param NoDictionaryCount
+   * CarbonFactDataHandler constructor
    */
-  public CarbonFactDataHandlerColumnar(String schemaName, String cubeName, String tableName,
-      boolean isGroupByEnabled, int measureCount, int mdkeyLength, int mdKeyIndex,
-      String[] aggregators, String[] aggregatorClass, String storeLocation, int[] factDimLens,
-      boolean isMergingRequestForCustomAgg, boolean isUpdateMemberRequest, int[] dimLens,
-      String[] factLevels, String[] aggLevels, boolean isDataWritingRequest, int currentRestructNum,
-      int NoDictionaryCount, int dimensionCount, Map<Integer, GenericDataType> complexIndexMap,
-      int[] primitiveDimLens, ColumnGroupModel colGrpModel, char[] aggType,
-      CarbonDataFileAttributes carbonDataFileAttributes) {
-    this(schemaName, cubeName, tableName, isGroupByEnabled, measureCount, mdkeyLength, mdKeyIndex,
-        aggregators, aggregatorClass, storeLocation, factDimLens, isMergingRequestForCustomAgg,
-        isUpdateMemberRequest, dimLens, factLevels, aggLevels, isDataWritingRequest,
-        currentRestructNum, NoDictionaryCount, colGrpModel, aggType, carbonDataFileAttributes);
-    this.dimensionCount = dimensionCount;
-    this.complexIndexMap = complexIndexMap;
-    this.primitiveDimLens = primitiveDimLens;
+  public CarbonFactDataHandlerColumnar(CarbonFactDataHandlerModel carbonFactDataHandlerModel) {
+    initParameters(carbonFactDataHandlerModel);
+    this.dimensionCount = carbonFactDataHandlerModel.getDimensionCount();
+    this.complexIndexMap = carbonFactDataHandlerModel.getComplexIndexMap();
+    this.primitiveDimLens = carbonFactDataHandlerModel.getPrimitiveDimLens();
     this.isAggKeyBlock = Boolean.parseBoolean(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.AGGREAGATE_COLUMNAR_KEY_BLOCK,
             CarbonCommonConstants.AGGREAGATE_COLUMNAR_KEY_BLOCK_DEFAULTVALUE));
 
     this.complexColCount = getComplexColsCount();
     this.columnStoreCount =
-        this.colGrpModel.getNoOfColumnStore() + NoDictionaryCount + complexColCount;
+        this.colGrpModel.getNoOfColumnStore() + noDictionaryCount + complexColCount;
 
     this.aggKeyBlock = new boolean[columnStoreCount];
     this.isNoDictionary = new boolean[columnStoreCount];
     int noDictStartIndex = this.colGrpModel.getNoOfColumnStore();
     // setting true value for dims of high card
-    for (int i = 0; i < NoDictionaryCount; i++) {
+    for (int i = 0; i < noDictionaryCount; i++) {
       this.isNoDictionary[noDictStartIndex + i] = true;
     }
 
@@ -360,38 +334,33 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     }
   }
 
-  public CarbonFactDataHandlerColumnar(String schemaName, String cubeName, String tableName,
-      boolean isGroupByEnabled, int measureCount, int mdkeyLength, int mdKeyIndex,
-      String[] aggregators, String[] aggregatorClass, String storeLocation, int[] factDimLens,
-      boolean isMergingRequestForCustomAgg, boolean isUpdateMemberRequest, int[] dimLens,
-      String[] factLevels, String[] aggLevels, boolean isDataWritingRequest, int currentRestructNum,
-      int NoDictionaryCount, ColumnGroupModel colGrpModel, char[] aggType,
-      CarbonDataFileAttributes carbonDataFileAttributes) {
-    this.schemaName = schemaName;
-    this.cubeName = cubeName;
-    this.tableName = tableName;
-    this.storeLocation = storeLocation;
-    this.isGroupByEnabled = isGroupByEnabled;
-    this.measureCount = measureCount;
-    this.mdkeyLength = mdkeyLength;
-    this.mdKeyIndex = mdKeyIndex;
-    this.aggregators = aggregators;
-    this.aggregatorClass = aggregatorClass;
-    this.factDimLens = factDimLens;
-    this.noDictionaryCount = NoDictionaryCount;
-    this.isMergingRequestForCustomAgg = isMergingRequestForCustomAgg;
-    this.colGrpModel = colGrpModel;
-    this.completeDimLens = dimLens;
+  private void initParameters(CarbonFactDataHandlerModel carbonFactDataHandlerModel) {
+    this.databaseName = carbonFactDataHandlerModel.getDatabaseName();
+    this.tableName = carbonFactDataHandlerModel.getTableName();
+    this.storeLocation = carbonFactDataHandlerModel.getStoreLocation();
+    this.isGroupByEnabled = carbonFactDataHandlerModel.isGroupByEnabled();
+    this.measureCount = carbonFactDataHandlerModel.getMeasureCount();
+    this.mdkeyLength = carbonFactDataHandlerModel.getMdKeyLength();
+    this.mdKeyIndex = carbonFactDataHandlerModel.getMdKeyIndex();
+    this.aggregators = carbonFactDataHandlerModel.getAggregators();
+    this.aggregatorClass = carbonFactDataHandlerModel.getAggregatorClass();
+    this.factDimLens = carbonFactDataHandlerModel.getFactDimLens();
+    this.noDictionaryCount = carbonFactDataHandlerModel.getNoDictionaryCount();
+    this.isMergingRequestForCustomAgg = carbonFactDataHandlerModel.isMergingRequestForCustomAgg();
+    this.colGrpModel = carbonFactDataHandlerModel.getColGrpModel();
+    this.completeDimLens = carbonFactDataHandlerModel.getDimLens();
     this.dimLens = colGrpModel.getColumnGroupCardinality();
-    this.carbonDataFileAttributes = carbonDataFileAttributes;
-    this.currentRestructNumber = currentRestructNum;
-    this.type = aggType;
-    if (this.isGroupByEnabled && isDataWritingRequest && !isUpdateMemberRequest) {
-      surrogateIndex = new int[aggLevels.length - NoDictionaryCount];
+    this.carbonDataFileAttributes = carbonFactDataHandlerModel.getCarbonDataFileAttributes();
+    this.type = carbonFactDataHandlerModel.getAggType();
+    if (this.isGroupByEnabled && carbonFactDataHandlerModel.isDataWritingRequest()
+        && !carbonFactDataHandlerModel.isUpdateMemberRequest()) {
+      surrogateIndex =
+          new int[carbonFactDataHandlerModel.getAggLevels().length - noDictionaryCount];
       Arrays.fill(surrogateIndex, -1);
-      for (int k = 0; k < aggLevels.length; k++) {
-        for (int j = 0; j < factLevels.length; j++) {
-          if (aggLevels[k].equals(factLevels[j])) {
+      for (int k = 0; k < carbonFactDataHandlerModel.getAggLevels().length; k++) {
+        for (int j = 0; j < carbonFactDataHandlerModel.getFactLevels().length; j++) {
+          if (carbonFactDataHandlerModel.getAggLevels()[k]
+              .equals(carbonFactDataHandlerModel.getFactLevels()[j])) {
             surrogateIndex[k] = j;
             break;
           }
@@ -408,7 +377,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     writerExecutorService = Executors.newFixedThreadPool(1);
     //TODO need to pass carbon table identifier to metadata
     CarbonTable carbonTable =
-        CarbonMetadata.getInstance().getCarbonTable(schemaName + '_' + tableName);
+        CarbonMetadata.getInstance().getCarbonTable(databaseName + '_' + tableName);
     fillColumnSchemaList(carbonTable.getDimensionByTableName(tableName),
         carbonTable.getMeasureByTableName(tableName));
     dimensionType =
@@ -470,15 +439,14 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       setWritingConfiguration();
     } else {
       if (!isMergingRequestForCustomAgg) {
-        this.groupBy =
-            new CarbonAutoAggGroupBy(aggregators, aggregatorClass, this.schemaName, this.cubeName,
-                this.tableName, this.factDimLens, CarbonCommonConstants.FILE_INPROGRESS_STATUS,
-                currentRestructNumber);
+        this.groupBy = new CarbonAutoAggGroupBy(aggregators, aggregatorClass, this.databaseName,
+            this.tableName, this.tableName, this.factDimLens,
+            CarbonCommonConstants.FILE_INPROGRESS_STATUS, 0);
       } else {
         this.groupBy =
-            new CarbonAutoAggGroupByExtended(aggregators, aggregatorClass, this.schemaName,
-                this.cubeName, this.tableName, this.factDimLens,
-                CarbonCommonConstants.FILE_INPROGRESS_STATUS, currentRestructNumber);
+            new CarbonAutoAggGroupByExtended(aggregators, aggregatorClass, this.databaseName,
+                this.tableName, this.tableName, this.factDimLens,
+                CarbonCommonConstants.FILE_INPROGRESS_STATUS, 0);
       }
     }
 
@@ -536,7 +504,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       if (type[otherMeasureIndex[k]] == CarbonCommonConstants.BIG_INT_MEASURE) {
         if (null == row[otherMeasureIndex[k]]) {
           //TODO: Not handling unique key as it will be handled in presence data
-          dataHolder[otherMeasureIndex[k]].setWritableLongValueByIndex(entryCount, Long.MIN_VALUE);
+          dataHolder[otherMeasureIndex[k]].setWritableLongValueByIndex(entryCount, 0);
         } else {
           dataHolder[otherMeasureIndex[k]]
               .setWritableLongValueByIndex(entryCount, row[otherMeasureIndex[k]]);
@@ -545,7 +513,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         if (null == row[otherMeasureIndex[k]]) {
           //TODO: Not handling unique key as it will be handled in presence data
           dataHolder[otherMeasureIndex[k]]
-              .setWritableDoubleValueByIndex(entryCount, Double.MIN_VALUE);
+              .setWritableDoubleValueByIndex(entryCount, 0);
         } else {
           dataHolder[otherMeasureIndex[k]]
               .setWritableDoubleValueByIndex(entryCount, row[otherMeasureIndex[k]]);
@@ -557,7 +525,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       if (null == row[customMeasureIndex[i]]
           && type[customMeasureIndex[i]] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
         //TODO: Not handling unique key as it will be handled in presence data
-        BigDecimal val = BigDecimal.valueOf(Long.MIN_VALUE);
+        BigDecimal val = BigDecimal.valueOf(0);
         b = DataTypeUtil.bigDecimalToByte(val);
       } else {
         b = (byte[]) row[customMeasureIndex[i]];
@@ -596,7 +564,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       // set the entry count to zero
       processedDataCount += entryCount;
       LOGGER.info("*******************************************Number Of records processed: "
-              + processedDataCount);
+          + processedDataCount);
       this.entryCount = 0;
       resetKeyBlockHolder();
       initialisedataHolder();
@@ -767,7 +735,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
           this.noDictEndKey);
       processedDataCount += entryCount;
       LOGGER.info("*******************************************Number Of records processed: "
-              + processedDataCount);
+          + processedDataCount);
       this.dataWriter.writeleafMetaDataToFile();
     } else if (null != this.dataWriter) {
       closeWriterExecutionServiceService();
@@ -1105,7 +1073,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       int[] keyBlockSize) {
     return new CarbonFactDataWriterImplForIntIndexAndAggBlock(storeLocation, measureCount,
         mdKeyLength, tableName, isNodeHolder, fileManager, keyBlockSize, aggKeyBlock, false,
-        isComplexTypes(), noDictionaryCount, carbonDataFileAttributes, schemaName,
+        isComplexTypes(), noDictionaryCount, carbonDataFileAttributes, databaseName,
         wrapperColumnSchemaList, noDictionaryCount, dimensionType);
   }
 

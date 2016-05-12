@@ -352,8 +352,7 @@ public class CarbonDataWriterStep extends BaseStep implements StepInterface {
         }
       }
     } catch (CarbonUtilException e) {
-      LOGGER.error(e,
-          "Problem while deleting the temp files");
+      LOGGER.error(e, "Problem while deleting the temp files");
     }
     this.meta = null;
     this.data = null;
@@ -392,7 +391,7 @@ public class CarbonDataWriterStep extends BaseStep implements StepInterface {
       recordCounter++;
     }
     LOGGER.info("************************************************ Total number of records processed"
-            + recordCounter);
+        + recordCounter);
     finalMergerThread.clear();
   }
 
@@ -434,7 +433,7 @@ public class CarbonDataWriterStep extends BaseStep implements StepInterface {
         (numberOfConsumerThreads * numberOfProducerThreads) + numberOfConsumerThreads + 1;
 
     LOGGER.info("******************************************************Total Number of Threads: "
-            + totalNumberOfThreads);
+        + totalNumberOfThreads);
 
     executorService = Executors.newFixedThreadPool(totalNumberOfThreads);
 
@@ -474,7 +473,7 @@ public class CarbonDataWriterStep extends BaseStep implements StepInterface {
 
     for (int i = 0; i < filesPerEachThread.length; i++) {
       LOGGER.info("********************************************Number of Files for Producer: "
-              + filesPerEachThread[i].length);
+          + filesPerEachThread[i].length);
     }
 
     startPAndC(executorService, fileBufferSize, filesPerEachThread);
@@ -540,23 +539,32 @@ public class CarbonDataWriterStep extends BaseStep implements StepInterface {
         this.type[i] = 'c';
       }
     }
-    if (isColumnar) {
-      dataHandler = new CarbonFactDataHandlerColumnar(meta.getSchemaName(), meta.getCubeName(),
-          this.tableName, meta.isGroupByEnabled(), measureCount, mdkeyLength, mdKeyIndex, aggType,
-          meta.getAggregatorClass(), storeLocation,
-          CarbonDataProcessorUtil.getDimLens(meta.getFactDimLensString()), isByteArrayInMeasure,
-          meta.isUpdateMemberRequest(), dimLens, meta.getFactLevels(), meta.getAggregateLevels(),
-          true, meta.getCurrentRestructNumber(), this.meta.getNoDictionaryCount(), null, type,
-          null);
-    } else {
-      dataHandler =
-          new CarbonFactDataHandler(meta.getSchemaName(), meta.getCubeName(), this.tableName,
-              meta.isGroupByEnabled(), measureCount, mdkeyLength, mdKeyIndex, aggType,
-              meta.getAggregatorClass(), storeLocation,
-              CarbonDataProcessorUtil.getDimLens(meta.getFactDimLensString()), isByteArrayInMeasure,
-              meta.isUpdateMemberRequest(), dimLens, meta.getFactLevels(),
-              meta.getAggregateLevels(), true, meta.getCurrentRestructNumber());
-    }
+    CarbonFactDataHandlerModel carbonFactDataHandlerModel = getCarbonFactDataHandlerModel();
+    carbonFactDataHandlerModel.setStoreLocation(storeLocation);
+    carbonFactDataHandlerModel.setAggType(type);
+    carbonFactDataHandlerModel.setDimLens(dimLens);
+    carbonFactDataHandlerModel.setMergingRequestForCustomAgg(isByteArrayInMeasure);
+    dataHandler = new CarbonFactDataHandlerColumnar(carbonFactDataHandlerModel);
+  }
 
+  /**
+   * This method will create a model object for carbon fact data handler
+   *
+   * @return
+   */
+  private CarbonFactDataHandlerModel getCarbonFactDataHandlerModel() {
+    CarbonFactDataHandlerModel carbonFactDataHandlerModel = new CarbonFactDataHandlerModel();
+    carbonFactDataHandlerModel.setDatabaseName(meta.getSchemaName());
+    carbonFactDataHandlerModel.setTableName(tableName);
+    carbonFactDataHandlerModel.setMeasureCount(measureCount);
+    carbonFactDataHandlerModel.setMdKeyIndex(mdKeyIndex);
+    carbonFactDataHandlerModel.setMdKeyLength(mdkeyLength);
+    carbonFactDataHandlerModel.setNoDictionaryCount(meta.getNoDictionaryCount());
+    carbonFactDataHandlerModel.setDataWritingRequest(true);
+    carbonFactDataHandlerModel.setAggLevels(meta.getAggregateLevels());
+    carbonFactDataHandlerModel.setFactLevels(meta.getFactLevels());
+    carbonFactDataHandlerModel
+        .setFactDimLens(CarbonDataProcessorUtil.getDimLens(meta.getFactDimLensString()));
+    return carbonFactDataHandlerModel;
   }
 }

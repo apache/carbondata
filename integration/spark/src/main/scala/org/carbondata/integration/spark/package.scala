@@ -19,7 +19,9 @@ package org.carbondata.integration
 
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql._
-import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.types._
+
+import org.carbondata.core.carbon.metadata.datatype.{DataType => CarbonType}
 
 package object spark {
 
@@ -74,30 +76,37 @@ package object spark {
 
     private def csvPackage: String = "com.databricks.spark.csv"
 
+    private def convertToCarbonType(sparkType: DataType): String = {
+      sparkType match {
+        case StringType => CarbonType.STRING.name
+        case IntegerType => CarbonType.INT.name
+        case ByteType => CarbonType.INT.name
+        case ShortType => CarbonType.INT.name
+        case LongType => CarbonType.LONG.name
+        case FloatType => CarbonType.DOUBLE.name
+        case DoubleType => CarbonType.DOUBLE.name
+        case BooleanType => CarbonType.DOUBLE.name
+        case TimestampType => CarbonType.TIMESTAMP.name
+        case other => sys.error(s"unsupported type: $other")
+      }
+    }
+
     private def makeCreateTableString(schema: StructType, option: CarbonOption): String = {
       val tableName = option.tableName
-      val dim = schema
-          .filter(_.dataType.typeName.equalsIgnoreCase("string"))
-          .map { field => s"${field.name} String" }
-      val msr = schema
-          .filterNot(_.dataType.typeName.equalsIgnoreCase("string"))
-          .map { field => s"${field.name} ${field.dataType.typeName}" }
-      val dimString = if (dim.isEmpty) "" else s"DIMENSIONS (${dim.mkString(",")})"
-      val msrString = if (msr.isEmpty) "" else s"MEASURES (${msr.mkString(",")})"
-
+      val carbonSchema = schema.map { field =>
+            s"${field.name} ${convertToCarbonType(field.dataType)}"
+          }
       s"""
-          CREATE CUBE IF NOT EXISTS $tableName
-          $dimString
-          $msrString
-          OPTIONS(PARTITIONER[PARTITION_COUNT = ${option.partitionCount}])
+          CREATE TABLE IF NOT EXISTS $tableName
+          (${carbonSchema.mkString(", ")})
+          STORED BY '${CarbonContext.datasourceName}'
       """
     }
 
     private def makeLoadString(tableName: String, csvFolder: String): String = {
       s"""
-          LOAD DATA FACT FROM '$csvFolder'
-          INTO CUBE $tableName
-          OPTIONS(DELIMITER ',')
+          LOAD DATA INPATH '$csvFolder'
+          INTO TABLE $tableName
       """
     }
 

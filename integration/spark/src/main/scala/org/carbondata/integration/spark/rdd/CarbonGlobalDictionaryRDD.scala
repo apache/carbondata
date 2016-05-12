@@ -19,6 +19,7 @@ package org.carbondata.integration.spark.rdd
 
 import java.util.regex.Pattern
 
+import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, HashMap, HashSet}
 
 import org.apache.commons.lang3.{ArrayUtils, StringUtils}
@@ -221,7 +222,7 @@ class CarbonGlobalDictionaryGenerateRDD(
           null
         }
         val t2 = System.currentTimeMillis
-        val valuesBuffer = new ArrayBuffer[String]
+        val valuesBuffer = new mutable.HashSet[String]
         val rddIter = firstParent[(Int, Array[String])].iterator(split, context)
         while (rddIter.hasNext) {
           valuesBuffer ++= rddIter.next()._2

@@ -108,6 +108,18 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
                 bitSet.set(index);
               }
             }
+          } else {
+
+            for (int index = 0;
+                 index < listOfColumnarKeyBlockDataForNoDictionaryVals.size(); index++) {
+              if (ByteUtil.UnsafeComparer.INSTANCE
+                  .compareTo(filterVal, listOfColumnarKeyBlockDataForNoDictionaryVals.get(index))
+                  == 0) {
+                bitSet.set(index);
+              }
+
+            }
+
           }
         }
 

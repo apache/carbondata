@@ -110,4 +110,19 @@
             </plugin>
         </plugins>
     </build>
+  <profiles>
+    <profile>
+      <id>hadoop-2.2.0</id>
+      <!-- default -->
+      <properties>
+        <hadoop.version>2.2.0</hadoop.version>
+      </properties>
+    </profile>
+    <profile>
+      <id>hadoop-2.7.2</id>
+      <properties>
+        <hadoop.version>2.7.2</hadoop.version>
+      </properties>
+    </profile>
+  </profiles>
 </project>

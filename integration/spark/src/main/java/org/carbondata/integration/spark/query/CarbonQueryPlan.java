@@ -116,7 +116,7 @@ public class CarbonQueryPlan implements Serializable {
       new LinkedHashMap<String, DimensionAggregatorInfo>();
 
   /**
-   * isCountStartQuery
+   * isCountStarQuery
    */
   private boolean isCountStartQuery;
 
@@ -244,7 +244,7 @@ public class CarbonQueryPlan implements Serializable {
     }
   }
 
-  public boolean isCountStartQuery() {
+  public boolean isCountStarQuery() {
     return isCountStartQuery;
   }
 

@@ -22,12 +22,10 @@ import java.io.Serializable;
 
 import org.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.carbondata.core.carbon.datastore.IndexKey;
-import org.carbondata.core.carbon.datastore.block.AbstractIndex;
-import org.carbondata.core.keygenerator.KeyGenerator;
+import org.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.carbonfilterinterface.FilterExecuterType;
 import org.carbondata.query.evaluators.DimColumnResolvedFilterInfo;
-
 
 public interface FilterResolverIntf extends Serializable {
 
@@ -70,7 +68,7 @@ public interface FilterResolverIntf extends Serializable {
    *
    * @return long[], array of start keys.
    */
-  IndexKey getstartKey(KeyGenerator keyGenerator);
+  IndexKey getstartKey(SegmentProperties segmentProperties);
 
   /**
    * API will read the end key based on the max surrogate of
@@ -78,7 +76,7 @@ public interface FilterResolverIntf extends Serializable {
    *
    * @return
    */
-  IndexKey getEndKey(AbstractIndex segmentIndexBuilder, AbsoluteTableIdentifier tableIdentifier);
+  IndexKey getEndKey(SegmentProperties segmentProperties, AbsoluteTableIdentifier tableIdentifier);
 
   /**
    * API will return the filter executer type which will be used to evaluate

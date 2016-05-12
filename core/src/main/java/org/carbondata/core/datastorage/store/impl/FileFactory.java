@@ -241,6 +241,25 @@ public final class FileFactory {
     }
   }
 
+  public static DataOutputStream getDataOutputStream(String path, FileType fileType, int bufferSize,
+      long blockSize) throws IOException {
+    path = path.replace("\\", "/");
+    switch (fileType) {
+      case LOCAL:
+        return new DataOutputStream(
+            new BufferedOutputStream(new FileOutputStream(path), bufferSize));
+      case HDFS:
+        Path pt = new Path(path);
+        FileSystem fs = pt.getFileSystem(configuration);
+        FSDataOutputStream stream =
+            fs.create(pt, true, bufferSize, fs.getDefaultReplication(pt), blockSize);
+        return stream;
+      default:
+        return new DataOutputStream(
+            new BufferedOutputStream(new FileOutputStream(path), bufferSize));
+    }
+  }
+
   public static List<String> getFileNames(final String extn, String folderPath, FileType fileType)
       throws IOException {
     folderPath = folderPath.replace("\\", "/");

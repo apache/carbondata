@@ -25,24 +25,21 @@ import java.util.Date
 import scala.collection.JavaConverters._
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.Path
-import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.Job
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.spark.{Logging, Partition, SerializableWritable, SparkContext, TaskContext}
 import org.apache.spark.rdd.RDD
 
 import org.carbondata.common.logging.LogServiceFactory
-import org.carbondata.core.carbon.AbsoluteTableIdentifier
 import org.carbondata.core.carbon.datastore.block.TableBlockInfo
 import org.carbondata.core.iterator.CarbonIterator
 import org.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit}
 import org.carbondata.integration.spark.KeyVal
-import org.carbondata.lcm.status.SegmentStatusManager
+import org.carbondata.integration.spark.util.QueryPlanUtil
 import org.carbondata.query.carbon.executor.QueryExecutorFactory
 import org.carbondata.query.carbon.model.QueryModel
 import org.carbondata.query.carbon.result.RowResult
 import org.carbondata.query.expression.Expression
+import org.carbondata.query.filter.resolver.FilterResolverIntf
 
 
 
@@ -77,30 +74,18 @@ class CarbonSparkPartition(rddId: Int, val idx: Int,
   }
 
   override def getPartitions: Array[Partition] = {
-    val carbonInputFormat = new CarbonInputFormat[RowResult]();
-    val jobConf: JobConf = new JobConf(new Configuration)
-    val job: Job = new Job(jobConf)
-    val absoluteTableIdentifier: AbsoluteTableIdentifier = queryModel.getAbsoluteTableIdentifier()
-    FileInputFormat.addInputPath(job, new Path(absoluteTableIdentifier.getStorePath))
-    CarbonInputFormat.setTableToAccess(job, absoluteTableIdentifier.getCarbonTableIdentifier)
 
-    val validSegments = new SegmentStatusManager(absoluteTableIdentifier).getValidSegments;
-    val validSegmentNos =
-      validSegments.listOfValidSegments.asScala.map(x => new Integer(Integer.parseInt(x)))
-    CarbonInputFormat.setSegmentsToAccess(job, validSegmentNos.asJava)
+    val (carbonInputFormat: CarbonInputFormat[RowResult], job: Job) =
+      QueryPlanUtil.createCarbonInputFormat(queryModel.getAbsoluteTableIdentifier)
 
-    val splits =
-      if (filterExpression != null) {
+    var filterResolver: FilterResolverIntf = null
+    if (filterExpression != null) {
         // set filter resolver tree
-        val filterResolver = carbonInputFormat.getResolvedFilter(job, filterExpression)
+        filterResolver = carbonInputFormat.getResolvedFilter(job, filterExpression)
         queryModel.setFilterExpressionResolverTree(filterResolver)
-        // get splits considering filter
-        carbonInputFormat.getSplits(job, filterResolver)
-      } else {
-        // get splits
-        carbonInputFormat.getSplits(job)
       }
-
+    // get splits
+    val splits = carbonInputFormat.getSplits(job, filterResolver);
     val carbonInputSplits = splits.asScala.map(_.asInstanceOf[CarbonInputSplit])
 
     val result = new Array[Partition](splits.size)
@@ -110,7 +95,8 @@ class CarbonSparkPartition(rddId: Int, val idx: Int,
     result
   }
 
-  override def compute(thepartition: Partition, context: TaskContext): Iterator[(K, V)] = {
+
+   override def compute(thepartition: Partition, context: TaskContext): Iterator[(K, V)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass().getName());
     val iter = new Iterator[(K, V)] {
       var rowIterator: CarbonIterator[RowResult] = _
@@ -181,6 +167,7 @@ class CarbonSparkPartition(rddId: Int, val idx: Int,
     }
     iter
   }
+
 
    /**
     * Get the preferred locations where to launch this task.
