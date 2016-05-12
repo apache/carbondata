@@ -27,19 +27,7 @@ object CarbonThriftServer {
 
   def main(args: Array[String]): Unit = {
     var conf = new SparkConf()
-      .setMaster(args(0))
-      .set("spark.executor.memory", args(1))
-      .set("spark.cores.max", args(2))
-      .set("spark.eventLog.enabled", "false")
       .setAppName("Carbon Thrift Server")
-      .set("spark.hadoop.dfs.client.domain.socket.data.traffic", "false")
-      .set("spark.hadoop.dfs.client.read.shortcircuit", "true")
-      .set("spark.hadoop.dfs.domain.socket.path", "/var/lib/hadoop-hdfs/dn_socket")
-      .set("spark.hadoop.dfs.block.local-path-access.user", "root,hadoop")
-      .set("spark.hadoop.fs.hdfs.impl", "org.apache.hadoop.hdfs.DistributedFileSystem")
-      .set("spark.kryo.registrator", "com.huawei.datasight.spark.MyRegistrator")
-      .set("spark.sql.useSerializer2", "false")
-      .set("spark.kryoserializer.buffer", "100k")
     val sparkHome = System.getenv.get("SPARK_HOME")
     if (null != sparkHome) {
       conf.set("carbon.properties.filepath", sparkHome + '/' + "conf" + '/' + "carbon.properties")
@@ -59,8 +47,7 @@ object CarbonThriftServer {
         Thread.sleep(30000);
     }
 
-    val carbonContext = new CarbonContext(sc, args(3))
-    carbonContext.setConf("spark.sql.shuffle.partitions", "40")
+    val carbonContext = new CarbonContext(sc, args(0))
 
     HiveThriftServer2.startWithContext(carbonContext)
   }
