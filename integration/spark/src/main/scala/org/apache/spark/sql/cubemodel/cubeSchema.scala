@@ -337,7 +337,6 @@ class CubeNewProcessor(cm: tableModel, sqlContext: SQLContext) {
   private def normalizeType(dataType: String): DataType = {
     dataType match {
       case "String" => DataType.STRING
-      case "int" => DataType.INT
       case "Integer" => DataType.INT
       case "Long" => DataType.LONG
       case "Double" => DataType.DOUBLE
@@ -345,7 +344,7 @@ class CubeNewProcessor(cm: tableModel, sqlContext: SQLContext) {
       case "Timestamp" => DataType.TIMESTAMP
       case "Array" => DataType.ARRAY
       case "Struct" => DataType.STRUCT
-      case _ => sys.error("Unsupported data type : " + dataType)
+      case _ => DataType.STRING
     }
   }
 
