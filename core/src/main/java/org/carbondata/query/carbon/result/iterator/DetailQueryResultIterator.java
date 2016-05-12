@@ -136,7 +136,7 @@ public class DetailQueryResultIterator implements CarbonIterator<BatchResult> {
           .findLastDataBlock(blockInfo.getDataBlock().getDataRefNode(), blockInfo.getEndKey());
 
       this.totalNumberBlockletPerSlice[index] =
-          startDataBlock.nodeNumber() - endDataBlock.nodeNumber() + 1;
+          endDataBlock.nodeNumber() - startDataBlock.nodeNumber() + 1;
       totalNumberOfNode += this.totalNumberBlockletPerSlice[index];
       blockInfo.setFirstDataBlock(startDataBlock);
       blockInfo.setNumberOfBlockToScan(1);

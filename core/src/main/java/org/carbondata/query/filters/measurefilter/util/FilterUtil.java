@@ -916,7 +916,7 @@ public final class FilterUtil {
       startPoint++;
     }
     for (int i = 0; i < segmentProperties.getNumberOfNoDictionaryDimension(); i++) {
-      noDictionaryStartKeyBuffer.put((byte) -128);
+      noDictionaryStartKeyBuffer.put((byte) 0);
     }
     return noDictionaryStartKeyBuffer.array();
   }

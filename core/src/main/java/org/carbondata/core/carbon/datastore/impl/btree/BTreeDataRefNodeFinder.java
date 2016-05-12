@@ -122,7 +122,7 @@ public class BTreeDataRefNodeFinder implements DataRefNodeFinder {
       if (compareRes < 0) {
         high = mid - 1;
       } else if (compareRes > 0) {
-        low = low + 1;
+        low = mid + 1;
       } else {
         // if key is matched then get the first entry
         int currentPos = mid;
@@ -172,7 +172,7 @@ public class BTreeDataRefNodeFinder implements DataRefNodeFinder {
       if (compareRes < 0) {
         high = mid - 1;
       } else if (compareRes > 0) {
-        low = low + 1;
+        low = mid + 1;
       } else {
         int currentPos = mid;
         // if key is matched then get the first entry
