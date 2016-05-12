@@ -358,7 +358,7 @@ class CarbonSqlParser()
               val dataType = Option(col.getType)
               val name = Option(col.getName())
               val f: Field = new Field(columnName, dataType, name, None, null, Some("columnar"))
-              fields ++= Seq(f)
+              fields ++= Seq(normalizeType(f))
             }
           }
 
