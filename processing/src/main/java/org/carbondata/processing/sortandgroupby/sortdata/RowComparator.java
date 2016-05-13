@@ -35,13 +35,13 @@ public class RowComparator implements Comparator<Object[]> {
   /**
    * noDictionaryColMaping mapping of dictionary dimensions and no dictionary dimensions.
    */
-  private Boolean[] noDictionaryColMaping;
+  private boolean[] noDictionaryColMaping;
 
   /**
    * @param noDictionaryColMaping
    * @param noDictionaryCount
    */
-  public RowComparator(Boolean[] noDictionaryColMaping, int noDictionaryCount) {
+  public RowComparator(boolean[] noDictionaryColMaping, int noDictionaryCount) {
     this.noDictionaryCount = noDictionaryCount;
     this.noDictionaryColMaping = noDictionaryColMaping;
   }

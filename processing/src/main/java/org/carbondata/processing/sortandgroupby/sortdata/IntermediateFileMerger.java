@@ -27,7 +27,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.AbstractQueue;
-import java.util.Comparator;
 import java.util.PriorityQueue;
 import java.util.concurrent.Callable;
 
@@ -119,8 +118,7 @@ public class IntermediateFileMerger implements Callable<Void> {
         }
       }
     } catch (Exception e) {
-      LOGGER.error(e,
-          "Problem while intermediate merging");
+      LOGGER.error(e, "Problem while intermediate merging");
       isFailed = true;
     } finally {
       records = null;
@@ -132,8 +130,7 @@ public class IntermediateFileMerger implements Callable<Void> {
         try {
           finish();
         } catch (CarbonSortKeyAndGroupByException e) {
-          LOGGER.error(e,
-              "Problem while deleting the merge file");
+          LOGGER.error(e, "Problem while deleting the merge file");
         }
       } else {
         if (mergerParameters.getOutFile().delete()) {
@@ -244,7 +241,7 @@ public class IntermediateFileMerger implements Callable<Void> {
           new SortTempFileChunkHolder(tempFile, mergerParameters.getDimColCount(),
               mergerParameters.getComplexDimColCount(), mergerParameters.getMeasureColCount(),
               mergerParameters.getFileReadBufferSize(), mergerParameters.getNoDictionaryCount(),
-              mergerParameters.getAggType());
+              mergerParameters.getAggType(), mergerParameters.getIsNoDictionaryDimensionColumn());
 
       // initialize
       sortTempFileChunkHolder.initialize();
@@ -266,25 +263,7 @@ public class IntermediateFileMerger implements Callable<Void> {
    */
   private void createRecordHolderQueue(File[] listFiles) {
     // creating record holder heap
-    this.recordHolderHeap = new PriorityQueue<SortTempFileChunkHolder>(listFiles.length,
-        new Comparator<SortTempFileChunkHolder>() {
-          public int compare(SortTempFileChunkHolder holderA, SortTempFileChunkHolder holderB) {
-            Object[] rowA = holderA.getRow();
-            Object[] rowB = holderB.getRow();
-            int diff = 0;
-
-            for (int i = 0; i < mergerParameters.getDimColCount(); i++) {
-              int dimFieldA = (Integer) RemoveDictionaryUtil.getDimension(i, rowA);
-              int dimFieldB = (Integer) RemoveDictionaryUtil.getDimension(i, rowB);
-
-              diff = dimFieldA - dimFieldB;
-              if (diff != 0) {
-                return diff;
-              }
-            }
-            return diff;
-          }
-        });
+    this.recordHolderHeap = new PriorityQueue<SortTempFileChunkHolder>(listFiles.length);
   }
 
   /**

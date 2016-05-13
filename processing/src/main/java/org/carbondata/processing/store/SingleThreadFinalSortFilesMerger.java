@@ -22,7 +22,6 @@ package org.carbondata.processing.store;
 import java.io.File;
 import java.io.FileFilter;
 import java.util.AbstractQueue;
-import java.util.Comparator;
 import java.util.PriorityQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -37,7 +36,6 @@ import org.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupB
 import org.carbondata.processing.sortandgroupby.sortdata.SortTempFileChunkHolder;
 import org.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 import org.carbondata.processing.util.CarbonDataProcessorUtil;
-import org.carbondata.processing.util.RemoveDictionaryUtil;
 
 public class SingleThreadFinalSortFilesMerger {
   /**
@@ -98,9 +96,15 @@ public class SingleThreadFinalSortFilesMerger {
 
   private char[] aggType;
 
+  /**
+   * below code is to check whether dimension
+   * is of no dictionary type or not
+   */
+  private boolean[] isNoDictionaryColumn;
+
   public SingleThreadFinalSortFilesMerger(String tempFileLocation, String tableName,
       int dimensionCount, int complexDimensionCount, int measureCount, int noDictionaryCount,
-      char[] aggType) {
+      char[] aggType, boolean[] isNoDictionaryColumn) {
     this.tempFileLocation = tempFileLocation;
     this.tableName = tableName;
     this.dimensionCount = dimensionCount;
@@ -108,6 +112,7 @@ public class SingleThreadFinalSortFilesMerger {
     this.measureCount = measureCount;
     this.aggType = aggType;
     this.noDictionaryCount = noDictionaryCount;
+    this.isNoDictionaryColumn = isNoDictionaryColumn;
   }
 
   /**
@@ -172,7 +177,7 @@ public class SingleThreadFinalSortFilesMerger {
           // create chunk holder
           SortTempFileChunkHolder sortTempFileChunkHolder =
               new SortTempFileChunkHolder(tempFile, dimensionCount, complexDimensionCount,
-                  measureCount, fileBufferSize, noDictionaryCount, aggType);
+                  measureCount, fileBufferSize, noDictionaryCount, aggType, isNoDictionaryColumn);
 
           // initialize
           sortTempFileChunkHolder.initialize();
@@ -207,25 +212,7 @@ public class SingleThreadFinalSortFilesMerger {
    */
   private void createRecordHolderQueue(File[] listFiles) {
     // creating record holder heap
-    this.recordHolderHeapLocal = new PriorityQueue<SortTempFileChunkHolder>(listFiles.length,
-        new Comparator<SortTempFileChunkHolder>() {
-          public int compare(SortTempFileChunkHolder holderA, SortTempFileChunkHolder holderB) {
-            Object[] rowA = holderA.getRow();
-            Object[] rowB = holderB.getRow();
-            int diff = 0;
-
-            for (int i = 0; i < dimensionCount; i++) {
-              int dimFieldA = (Integer) RemoveDictionaryUtil.getDimension(i, rowA);
-              int dimFieldB = (Integer) RemoveDictionaryUtil.getDimension(i, rowB);
-
-              diff = dimFieldA - dimFieldB;
-              if (diff != 0) {
-                return diff;
-              }
-            }
-            return diff;
-          }
-        });
+    this.recordHolderHeapLocal = new PriorityQueue<SortTempFileChunkHolder>(listFiles.length);
   }
 
   /**

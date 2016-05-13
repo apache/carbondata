@@ -124,6 +124,11 @@ public class MDKeyGenStep extends BaseStep {
   private int[] dimLens;
 
   private ColumnGroupModel colGrpStoreModel;
+  /**
+   * to check whether dimension is of dictionary type
+   * or not
+   */
+  private boolean[] isNoDictionaryDimension;
 
   /**
    * CarbonMDKeyGenStep
@@ -220,7 +225,6 @@ public class MDKeyGenStep extends BaseStep {
    */
   private boolean setStepConfiguration() {
     this.tableName = meta.getTableName();
-    CarbonProperties instance = CarbonProperties.getInstance();
     String tempLocationKey = meta.getSchemaName() + '_' + meta.getCubeName();
     String baseStorePath = CarbonProperties.getInstance()
         .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
@@ -233,7 +237,8 @@ public class MDKeyGenStep extends BaseStep {
         carbonTablePath.getCarbonDataDirectoryPath(partitionId, meta.getSegmentId());
     carbonDataDirectoryPath = carbonDataDirectoryPath + File.separator + meta.getTaskNo();
     storeLocation = carbonDataDirectoryPath + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
-
+    isNoDictionaryDimension =
+        RemoveDictionaryUtil.convertStringToBooleanArr(meta.getNoDictionaryDimsMapping());
     fileManager = new LoadFolderData();
     fileManager.setName(CarbonCommonConstants.LOAD_FOLDER + meta.getSegmentId()
         + CarbonCommonConstants.FILE_INPROGRESS_STATUS);
@@ -345,7 +350,7 @@ public class MDKeyGenStep extends BaseStep {
     initAggType(msrdataTypes);
     finalMerger = new SingleThreadFinalSortFilesMerger(dataFolderLocation, tableName,
         dimensionCount - meta.getComplexDimsCount(), meta.getComplexDimsCount(), measureCount,
-        meta.getNoDictionaryCount(), aggType);
+        meta.getNoDictionaryCount(), aggType, isNoDictionaryDimension);
     CarbonFactDataHandlerModel carbonFactDataHandlerModel = getCarbonFactDataHandlerModel();
     carbonFactDataHandlerModel.setPrimitiveDimLens(simpleDimsLen);
     carbonFactDataHandlerModel.setCarbonDataFileAttributes(carbonDataFileAttributes);

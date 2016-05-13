@@ -34,12 +34,14 @@ import java.util.concurrent.Future;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.constants.IgnoreDictionary;
+import org.carbondata.core.util.ByteUtil.UnsafeComparer;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 import org.carbondata.processing.util.RemoveDictionaryUtil;
 
-public class SortTempFileChunkHolder {
+public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHolder> {
 
   /**
    * LOGGER
@@ -111,11 +113,6 @@ public class SortTempFileChunkHolder {
   private int prefetchRecordsProceesed;
 
   /**
-   * outRecSize
-   */
-  private int outRecSize;
-
-  /**
    * sortTempFileNoOFRecordsInCompression
    */
   private int sortTempFileNoOFRecordsInCompression;
@@ -140,13 +137,25 @@ public class SortTempFileChunkHolder {
   private char[] aggType;
 
   /**
-   * CarbonSortTempFileChunkHolder Constructor
+   * to store whether dimension is of dictionary type or not
+   */
+  private boolean[] isNoDictionaryDimensionColumn;
+
+  /**
+   * Constructor to initialize
    *
-   * @param tempFile     temp file
-   * @param measureCount measure count
+   * @param tempFile
+   * @param dimensionCount
+   * @param complexDimensionCount
+   * @param measureCount
+   * @param fileBufferSize
+   * @param noDictionaryCount
+   * @param aggType
+   * @param isNoDictionaryDimension
    */
   public SortTempFileChunkHolder(File tempFile, int dimensionCount, int complexDimensionCount,
-      int measureCount, int fileBufferSize, int noDictionaryCount, char[] aggType) {
+      int measureCount, int fileBufferSize, int noDictionaryCount, char[] aggType,
+      boolean[] isNoDictionaryDimensionColumn) {
     // set temp file
     this.tempFile = tempFile;
 
@@ -159,9 +168,8 @@ public class SortTempFileChunkHolder {
     // set mdkey length
     this.fileBufferSize = fileBufferSize;
     this.executorService = Executors.newFixedThreadPool(1);
-    this.outRecSize =
-        this.measureCount + dimensionCount + this.noDictionaryCount + complexDimensionCount;
     this.aggType = aggType;
+    this.isNoDictionaryDimensionColumn = isNoDictionaryDimensionColumn;
   }
 
   /**
@@ -185,17 +193,17 @@ public class SortTempFileChunkHolder {
               CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE));
       if (this.sortTempFileNoOFRecordsInCompression < 1) {
         LOGGER.error("Invalid value for: "
-                + CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION
-                + ": Only Positive Integer value(greater than zero) is allowed.Default value will"
-                + " be used");
+            + CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION
+            + ": Only Positive Integer value(greater than zero) is allowed.Default value will"
+            + " be used");
 
         this.sortTempFileNoOFRecordsInCompression = Integer.parseInt(
             CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE);
       }
     } catch (NumberFormatException e) {
-      LOGGER.error("Invalid value for: "
-          + CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION
-          + ", only Positive Integer value is allowed.Default value will be used");
+      LOGGER.error(
+          "Invalid value for: " + CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION
+              + ", only Positive Integer value is allowed.Default value will be used");
       this.sortTempFileNoOFRecordsInCompression = Integer
           .parseInt(CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE);
     }
@@ -417,6 +425,52 @@ public class SortTempFileChunkHolder {
    */
   public void setTempFile(File tempFile) {
     this.tempFile = tempFile;
+  }
+
+  @Override public int compareTo(SortTempFileChunkHolder other) {
+
+    int diff = 0;
+
+    int normalIndex = 0;
+    int noDictionaryindex = 0;
+
+    for (boolean isNoDictionary : isNoDictionaryDimensionColumn) {
+
+      if (isNoDictionary) {
+        byte[] byteArr1 = (byte[]) returnRow[IgnoreDictionary.BYTE_ARRAY_INDEX_IN_ROW.getIndex()];
+
+        ByteBuffer buff1 = ByteBuffer.wrap(byteArr1);
+
+        // extract a high card dims from complete byte[].
+        RemoveDictionaryUtil
+            .extractSingleHighCardDims(byteArr1, noDictionaryindex, noDictionaryCount, buff1);
+
+        byte[] byteArr2 =
+            (byte[]) other.returnRow[IgnoreDictionary.BYTE_ARRAY_INDEX_IN_ROW.getIndex()];
+
+        ByteBuffer buff2 = ByteBuffer.wrap(byteArr2);
+
+        // extract a high card dims from complete byte[].
+        RemoveDictionaryUtil
+            .extractSingleHighCardDims(byteArr2, noDictionaryindex, noDictionaryCount, buff2);
+
+        int difference = UnsafeComparer.INSTANCE.compareTo(buff1, buff2);
+        if (difference != 0) {
+          return difference;
+        }
+        noDictionaryindex++;
+      } else {
+        int dimFieldA = RemoveDictionaryUtil.getDimension(normalIndex, returnRow);
+        int dimFieldB = RemoveDictionaryUtil.getDimension(normalIndex, other.returnRow);
+        diff = dimFieldA - dimFieldB;
+        if (diff != 0) {
+          return diff;
+        }
+        normalIndex++;
+      }
+
+    }
+    return diff;
   }
 
   private final class DataFetcher implements Callable<Void> {

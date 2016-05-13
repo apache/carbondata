@@ -136,6 +136,10 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
    * Id of the load folder
    */
   private String segmentId;
+  /**
+   * To determine the column whether is dictionary or not.
+   */
+  private String noDictionaryDimsMapping;
 
   /**
    * Constructor
@@ -158,6 +162,7 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
     factTimeStamp = "";
     partitionID = "";
     segmentId = "";
+    noDictionaryDimsMapping = "";
   }
 
   public String getXML() {
@@ -170,8 +175,7 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
     retval.append("    ").append(XMLHandler.addTagValue("schemaName", schemaName));
     retval.append("    ").append(XMLHandler.addTagValue("noDictionaryDims", noDictionaryDims));
     retval.append("    ").append(XMLHandler.addTagValue("measureCount", measureCount));
-    retval.append("    ")
-        .append(XMLHandler.addTagValue("dimensionsStoreType", columnGroupsString));
+    retval.append("    ").append(XMLHandler.addTagValue("dimensionsStoreType", columnGroupsString));
     retval.append("    ").append(XMLHandler.addTagValue("dimensionCount", dimensionCount));
     retval.append("    ").append(XMLHandler.addTagValue("complexDimsCount", complexDimsCount));
     retval.append("    ").append(XMLHandler.addTagValue("complexTypeString", complexTypeString));
@@ -183,6 +187,8 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
     retval.append("    ").append(XMLHandler.addTagValue("factTimeStamp", factTimeStamp));
     retval.append("    ").append(XMLHandler.addTagValue("partitionID", partitionID));
     retval.append("    ").append(XMLHandler.addTagValue("segmentId", segmentId));
+    retval.append("    ")
+        .append(XMLHandler.addTagValue("noDictionaryDimsMapping", noDictionaryDimsMapping));
     return retval.toString();
   }
 
@@ -208,6 +214,7 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
       factTimeStamp = XMLHandler.getTagValue(stepnode, "factTimeStamp");
       partitionID = XMLHandler.getTagValue(stepnode, "partitionID");
       segmentId = XMLHandler.getTagValue(stepnode, "segmentId");
+      noDictionaryDimsMapping = XMLHandler.getTagValue(stepnode, "noDictionaryDimsMapping");
     } catch (Exception e) {
       throw new KettleXMLException("Unable to read step info from XML node", e);
     }
@@ -234,6 +241,8 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
       rep.saveStepAttribute(idTransformation, idStep, "factTimeStamp", factTimeStamp);
       rep.saveStepAttribute(idTransformation, idStep, "partitionID", partitionID);
       rep.saveStepAttribute(idTransformation, idStep, "segmentId", segmentId);
+      rep.saveStepAttribute(idTransformation, idStep, "noDictionaryDimsMapping",
+          noDictionaryDimsMapping);
     } catch (Exception e) {
       throw new KettleException(
           BaseMessages.getString(pkg, "TemplateStep.Exception.UnableToSaveStepInfoToRepository")
@@ -262,6 +271,7 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
       factTimeStamp = rep.getStepAttributeString(idStep, "factTimeStamp");
       partitionID = rep.getStepAttributeString(idStep, "partitionID");
       segmentId = rep.getStepAttributeString(idStep, "segmentId");
+      noDictionaryDimsMapping = rep.getStepAttributeString(idStep, "noDictionaryDimsMapping");
     } catch (Exception e) {
       throw new KettleException(BaseMessages
           .getString(pkg, "CarbonMDKeyStepMeta.Exception.UnexpectedErrorInReadingStepInfo"), e);
@@ -442,13 +452,13 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
     this.noDictionaryCount = noDictionaryCount;
   }
 
+  public String getColumnGroupsString() {
+    return this.columnGroupsString;
+  }
+
   public void setColumnGroupsString(String columnGroups) {
     this.columnGroupsString = columnGroups;
 
-  }
-
-  public String getColumnGroupsString() {
-    return this.columnGroupsString;
   }
 
   public void initialize() {
@@ -494,6 +504,13 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
   }
 
   /**
+   * @return
+   */
+  public int getTaskNo() {
+    return Integer.parseInt(taskNo);
+  }
+
+  /**
    * @param taskNo
    */
   public void setTaskNo(String taskNo) {
@@ -503,8 +520,8 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
   /**
    * @return
    */
-  public int getTaskNo() {
-    return Integer.parseInt(taskNo);
+  public String getFactTimeStamp() {
+    return factTimeStamp;
   }
 
   /**
@@ -512,13 +529,6 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
    */
   public void setFactTimeStamp(String factTimeStamp) {
     this.factTimeStamp = factTimeStamp;
-  }
-
-  /**
-   * @return
-   */
-  public String getFactTimeStamp() {
-    return factTimeStamp;
   }
 
   /**
@@ -537,6 +547,7 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
 
   /**
    * return segmentId
+   *
    * @return
    */
   public int getSegmentId() {
@@ -545,9 +556,24 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
 
   /**
    * set segment Id
+   *
    * @param segmentId
    */
   public void setSegmentId(String segmentId) {
     this.segmentId = segmentId;
+  }
+
+  /**
+   * @return the noDictionaryDimsMapping
+   */
+  public String getNoDictionaryDimsMapping() {
+    return noDictionaryDimsMapping;
+  }
+
+  /**
+   * @param noDictionaryDimsMapping the noDictionaryDimsMapping to set
+   */
+  public void setNoDictionaryDimsMapping(String noDictionaryDimsMapping) {
+    this.noDictionaryDimsMapping = noDictionaryDimsMapping;
   }
 }

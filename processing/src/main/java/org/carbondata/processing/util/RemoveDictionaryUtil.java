@@ -342,13 +342,13 @@ public class RemoveDictionaryUtil {
    * @param noDictionaryColMapping String representation of the boolean [].
    * @return
    */
-  public static Boolean[] convertStringToBooleanArr(String noDictionaryColMapping) {
+  public static boolean[] convertStringToBooleanArr(String noDictionaryColMapping) {
 
     String[] splittedValue = noDictionaryColMapping.split(CarbonCommonConstants.COMA_SPC_CHARACTER);
 
     // convert string[] to boolean []
 
-    Boolean[] noDictionaryMapping = new Boolean[splittedValue.length];
+    boolean[] noDictionaryMapping = new boolean[splittedValue.length];
     int index = 0;
     for (String str : splittedValue) {
       noDictionaryMapping[index++] = Boolean.parseBoolean(str);

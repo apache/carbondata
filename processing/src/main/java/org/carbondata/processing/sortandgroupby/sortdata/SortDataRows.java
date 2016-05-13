@@ -164,11 +164,11 @@ public class SortDataRows {
   /**
    * This will tell whether dimension is dictionary or not.
    */
-  private Boolean[] noDictionaryColMaping;
+  private boolean[] noDictionaryDimnesionColumn;
 
   public SortDataRows(String tableName, int dimColCount, int complexDimColCount,
       int measureColCount, SortObserver observer, int noDictionaryCount, String[] measureDatatype,
-      String partitionID, int segmentId, String taskNo, Boolean[] noDictionaryColMaping) {
+      String partitionID, int segmentId, String taskNo, boolean[] noDictionaryColMaping) {
     // set table name
     this.tableName = tableName;
     this.partitionID = partitionID;
@@ -181,7 +181,7 @@ public class SortDataRows {
 
     this.noDictionaryCount = noDictionaryCount;
     this.complexDimColCount = complexDimColCount;
-    this.noDictionaryColMaping = noDictionaryColMaping;
+    this.noDictionaryDimnesionColumn = noDictionaryColMaping;
 
     // processed file list
     this.procFiles = new ArrayList<File>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
@@ -237,17 +237,17 @@ public class SortDataRows {
               CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE));
       if (this.sortTempFileNoOFRecordsInCompression < 1) {
         LOGGER.error("Invalid value for: "
-                + CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION
-                + ":Only Positive Integer value(greater than zero) is allowed.Default value will "
-                + "be used");
+            + CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION
+            + ":Only Positive Integer value(greater than zero) is allowed.Default value will "
+            + "be used");
 
         this.sortTempFileNoOFRecordsInCompression = Integer.parseInt(
             CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE);
       }
     } catch (NumberFormatException e) {
-      LOGGER.error("Invalid value for: "
-          + CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION
-          + ", only Positive Integer value is allowed. Default value will be used");
+      LOGGER.error(
+          "Invalid value for: " + CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION
+              + ", only Positive Integer value is allowed. Default value will be used");
 
       this.sortTempFileNoOFRecordsInCompression = Integer
           .parseInt(CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE);
@@ -329,7 +329,7 @@ public class SortDataRows {
       System.arraycopy(recordHolderList, 0, toSort, 0, entryCount);
 
       if (noDictionaryCount > 0) {
-        Arrays.sort(toSort, new RowComparator(noDictionaryColMaping, noDictionaryCount));
+        Arrays.sort(toSort, new RowComparator(noDictionaryDimnesionColumn, noDictionaryCount));
       } else {
 
         Arrays.sort(toSort, new RowComparatorForNormalDims(this.dimColCount));
@@ -365,7 +365,7 @@ public class SortDataRows {
           // sort the record holder list
           if (noDictionaryCount > 0) {
             Arrays.sort(recordHolderListLocal,
-                new RowComparator(noDictionaryColMaping, noDictionaryCount));
+                new RowComparator(noDictionaryDimnesionColumn, noDictionaryCount));
           } else {
             // sort the record holder list
             Arrays.sort(recordHolderListLocal, new RowComparatorForNormalDims(dimColCount));
@@ -412,8 +412,7 @@ public class SortDataRows {
       writer.initiaize(file, entryCountLocal);
       writer.writeSortTempFile(recordHolderList);
     } catch (CarbonSortKeyAndGroupByException e) {
-      LOGGER.error(e,
-          "Problem while writing the sort temp file");
+      LOGGER.error(e, "Problem while writing the sort temp file");
       throw e;
     } finally {
       writer.finish();
@@ -514,7 +513,7 @@ public class SortDataRows {
         + CarbonCommonConstants.MERGERD_EXTENSION);
 
     FileMergerParameters parameters = new FileMergerParameters();
-
+    parameters.setIsNoDictionaryDimensionColumn(noDictionaryDimnesionColumn);
     parameters.setDimColCount(dimColCount);
     parameters.setComplexDimColCount(complexDimColCount);
     parameters.setMeasureColCount(measureColCount);
@@ -542,16 +541,14 @@ public class SortDataRows {
     // get sort buffer size
     this.sortBufferSize = Integer.parseInt(instance
         .getProperty(CarbonCommonConstants.SORT_SIZE, CarbonCommonConstants.SORT_SIZE_DEFAULT_VAL));
-
     LOGGER.info("Sort size for cube: " + this.sortBufferSize);
-
     // set number of intermedaite file to merge
     this.numberOfIntermediateFileToBeMerged = Integer.parseInt(instance
         .getProperty(CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT,
             CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT_DEFAULT_VALUE));
 
-    LOGGER.info("Number of intermediate file to be merged: "
-        + this.numberOfIntermediateFileToBeMerged);
+    LOGGER.info(
+        "Number of intermediate file to be merged: " + this.numberOfIntermediateFileToBeMerged);
 
     // get file buffer size
     this.fileBufferSize = CarbonDataProcessorUtil

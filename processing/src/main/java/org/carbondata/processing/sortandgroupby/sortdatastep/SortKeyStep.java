@@ -83,7 +83,7 @@ public class SortKeyStep extends BaseStep {
   /**
    * To determine whether the column is dictionary or not.
    */
-  private Boolean[] noDictionaryColMaping;
+  private boolean[] noDictionaryColMaping;
 
   /**
    * CarbonSortKeyAndGroupByStep Constructor

@@ -1132,7 +1132,8 @@ public class GraphGenerator {
     carbonMdKey.setAggregateLevels(CarbonDataProcessorUtil
         .getLevelCardinalitiesString(graphConfiguration.getDimCardinalities(),
             graphConfiguration.getDimensions()));
-
+    carbonMdKey.setNoDictionaryDimsMapping(RemoveDictionaryUtil
+            .convertBooleanArrToString(graphConfiguration.getIsNoDictionaryDimMapping()));
     carbonMdKey.setMeasureCount(graphConfiguration.getMeasureCount() + "");
     carbonMdKey.setColumnGroupsString(graphConfiguration.getColumnGroupsString());
     carbonMdKey.setDimensionCount(graphConfiguration.getActualDims().length + "");

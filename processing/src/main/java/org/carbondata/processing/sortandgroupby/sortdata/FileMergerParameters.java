@@ -80,6 +80,12 @@ public class FileMergerParameters {
   private char[] aggType;
 
   /**
+   * to check whether dimension is of dictionary
+   * type or not
+   */
+  private boolean[] isNoDictionaryDimensionColumn;
+
+  /**
    * prefetchBufferSize
    */
   private int prefetchBufferSize;
@@ -192,5 +198,19 @@ public class FileMergerParameters {
    */
   public void setNoDictionaryCount(int noDictionaryCount) {
     this.noDictionaryCount = noDictionaryCount;
+  }
+
+  /**
+   * @return the isNoDictionaryDimensionColumn
+   */
+  public boolean[] getIsNoDictionaryDimensionColumn() {
+    return isNoDictionaryDimensionColumn;
+  }
+
+  /**
+   * @param isNoDictionaryDimensionColumn the isNoDictionaryDimensionColumn to set
+   */
+  public void setIsNoDictionaryDimensionColumn(boolean[] isNoDictionaryDimensionColumn) {
+    this.isNoDictionaryDimensionColumn = isNoDictionaryDimensionColumn;
   }
 }
