@@ -233,7 +233,18 @@ public final class FileFactory {
       case HDFS:
         Path pt = new Path(path);
         FileSystem fs = pt.getFileSystem(configuration);
-        FSDataOutputStream stream = fs.create(pt, append, bufferSize);
+        FSDataOutputStream stream = null;
+        if (append) {
+          // append to a file only if file already exists else file not found
+          // exception will be thrown by hdfs
+          if (CarbonUtil.isFileExists(path)) {
+            stream = fs.append(pt, bufferSize);
+          } else {
+            stream = fs.create(pt, true, bufferSize);
+          }
+        } else {
+          stream = fs.create(pt, true, bufferSize);
+        }
         return stream;
       default:
         return new DataOutputStream(
