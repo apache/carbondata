@@ -1114,28 +1114,67 @@ public final class CarbonLoaderUtil {
   }
 
   /**
+   * This method will divide the blocks among the tasks of the nodes as per the data locality
+   *
+   * @param blockInfos
+   * @param noOfNodesInput   -1 if number of nodes has to be decided
+   *                         based on block location information
+   * @param parallelism total no of tasks to execute in parallel
+   * @return
+   */
+  public static Map<String, List<List<TableBlockInfo>>> nodeBlockTaskMapping(
+      List<TableBlockInfo> blockInfos, int noOfNodesInput, int parallelism) {
+
+    Map<String, List<TableBlockInfo>> mapOfNodes = CarbonLoaderUtil.nodeBlockMapping(
+        blockInfos, noOfNodesInput);
+    int noOfTasksPerNode = parallelism/mapOfNodes.size();
+    // divide the blocks of a node among the tasks of the node.
+    return assignBlocksToTasksPerNode(mapOfNodes, noOfTasksPerNode);
+  }
+
+  /**
    * This method will divide the blocks among the nodes as per the data locality
    *
-   * @param blockNodes
-   * @param numberOfBlocks
-   * @param numberOfNodes
+   * @param blockInfos
+   * @return
+   *
+   */
+  public static Map<String, List<TableBlockInfo>> nodeBlockMapping(
+      List<TableBlockInfo> blockInfos) {
+    // -1 if number of nodes has to be decided based on block location information
+    return nodeBlockMapping(blockInfos, -1);
+  }
+
+  /**
+   * This method will divide the blocks among the nodes as per the data locality
+   *
+   * @param blockInfos
+   * @param noOfNodesInput -1 if number of nodes has to be decided
+   *                       based on block location information
    * @return
    */
   public static Map<String, List<TableBlockInfo>> nodeBlockMapping(
-      Map<TableBlockInfo, List<String>> blockNodes, int numberOfBlocks, int numberOfNodes) {
+      List<TableBlockInfo> blockInfos, int noOfNodesInput) {
 
-    Map<String, List<TableBlockInfo>> outputMap =
+    Map<String, List<TableBlockInfo>> nodeBlocksMap =
         new HashMap<String, List<TableBlockInfo>>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-    int blocksPerNode = numberOfBlocks / numberOfNodes;
+    Map<String, List<List<TableBlockInfo>>> outputMap =
+        new HashMap<String, List<List<TableBlockInfo>>>(
+            CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
     List<NodeBlockRelation> flattenedList =
         new ArrayList<NodeBlockRelation>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
     Set<TableBlockInfo> uniqueBlocks =
         new HashSet<TableBlockInfo>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    Set<String> nodes = new HashSet<String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-    createFlattenedListFromMap(blockNodes, flattenedList, uniqueBlocks);
+    createFlattenedListFromMap(blockInfos, flattenedList, uniqueBlocks, nodes);
+
+    int noofNodes = (-1 == noOfNodesInput) ? nodes.size() : noOfNodesInput;
+    int blocksPerNode = blockInfos.size() / noofNodes;
+
     // sort the flattened data.
     Collections.sort(flattenedList);
 
@@ -1147,12 +1186,79 @@ public final class CarbonLoaderUtil {
     createNodeVsBlockMapping(flattenedList, nodeAndBlockMapping);
 
     // so now we have a map of node vs blocks. allocate the block as per the order
-    createOutputMap(outputMap, blocksPerNode, uniqueBlocks, nodeAndBlockMapping);
+    createOutputMap(nodeBlocksMap, blocksPerNode, uniqueBlocks, nodeAndBlockMapping);
 
     // if any blocks remain then assign them to nodes in round robin.
-    assignLeftOverBlocks(outputMap, uniqueBlocks);
+    assignLeftOverBlocks(nodeBlocksMap, uniqueBlocks);
+
+    return nodeBlocksMap;
+  }
+
+  /**
+   *  Assigning the blocks of a node to tasks.
+   * @param nodeBlocksMap
+   * @param outputMap
+   * @param noOfTasksPerNode
+   * @return
+   */
+  private static Map<String, List<List<TableBlockInfo>>> assignBlocksToTasksPerNode(
+      Map<String, List<TableBlockInfo>> nodeBlocksMap, int noOfTasksPerNode) {
+    Map<String, List<List<TableBlockInfo>>> outputMap = new HashMap
+        <String, List<List<TableBlockInfo>>>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+
+    // for each node
+    for(Map.Entry<String,List<TableBlockInfo>> eachNode : nodeBlocksMap.entrySet()){
+
+      List<TableBlockInfo> blockOfEachNode = eachNode.getValue();
+
+      // create the task list for each node.
+      createTaskListForNode(outputMap,noOfTasksPerNode,eachNode.getKey());
+
+      // take all the block of node and divide it among the tasks of a node.
+      divideBlockToTasks(outputMap,eachNode.getKey(),blockOfEachNode);
+    }
 
     return outputMap;
+  }
+
+  /**
+   * This will divide the blocks of a node to tasks of the node.
+   * @param outputMap
+   * @param key
+   * @param blockOfEachNode
+   */
+  private static void divideBlockToTasks(Map<String, List<List<TableBlockInfo>>> outputMap,
+      String key, List<TableBlockInfo> blockOfEachNode) {
+
+    List<List<TableBlockInfo>> taskLists = outputMap.get(key);
+    int tasksOfNode = taskLists.size();
+    int i = 0;
+    for(TableBlockInfo block : blockOfEachNode){
+
+      taskLists.get(i%tasksOfNode).add(block);
+      i++;
+    }
+
+  }
+
+  /**
+   * This will create the empty list for each task of a node.
+   * @param outputMap
+   * @param noOfTasksPerNode
+   * @param key
+   */
+  private static void createTaskListForNode(Map<String, List<List<TableBlockInfo>>> outputMap,
+      int noOfTasksPerNode, String key) {
+    List<List<TableBlockInfo>> nodeTaskList =
+        new ArrayList<List<TableBlockInfo>>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    for(int i = 0 ; i < noOfTasksPerNode; i++){
+      List<TableBlockInfo> eachTask = new ArrayList<TableBlockInfo>(
+          CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+      nodeTaskList.add(eachTask);
+
+    }
+    outputMap.put(key,nodeTaskList);
+
   }
 
   /**
@@ -1254,20 +1360,21 @@ public final class CarbonLoaderUtil {
 
   /**
    * Create the flat List i.e flattening of the Map.
-   *
-   * @param blockNodes
+   *  @param blockInfos
    * @param flattenedList
    * @param uniqueBlocks
    */
-  private static void createFlattenedListFromMap(Map<TableBlockInfo, List<String>> blockNodes,
-      List<NodeBlockRelation> flattenedList, Set<TableBlockInfo> uniqueBlocks) {
-    for (Map.Entry<TableBlockInfo, List<String>> eachEntry : blockNodes.entrySet()) {
+  private static void createFlattenedListFromMap(List<TableBlockInfo> blockInfos,
+      List<NodeBlockRelation> flattenedList, Set<TableBlockInfo> uniqueBlocks,
+      Set<String> nodeList) {
+    for (TableBlockInfo blockInfo : blockInfos) {
       // put the blocks in the set
-      uniqueBlocks.add(eachEntry.getKey());
+      uniqueBlocks.add(blockInfo);
 
-      for (String eachNode : eachEntry.getValue()) {
-        NodeBlockRelation nbr = new NodeBlockRelation(eachEntry.getKey(), eachNode);
+      for (String eachNode : blockInfo.getLocations()) {
+        NodeBlockRelation nbr = new NodeBlockRelation(blockInfo, eachNode);
         flattenedList.add(nbr);
+        nodeList.add(eachNode);
       }
     }
   }
