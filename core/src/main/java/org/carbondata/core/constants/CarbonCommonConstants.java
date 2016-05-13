@@ -1465,7 +1465,7 @@ public final class CarbonCommonConstants {
   /**
    * table split partition default value
    */
-  public static final String TABLE_SPLIT_PARTITION_DEFAULT_VALUE = "true";
+  public static final String TABLE_SPLIT_PARTITION_DEFAULT_VALUE = "false";
 
   public static final int INVALID_SEGMENT_ID = -1;
 

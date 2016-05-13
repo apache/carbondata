@@ -315,9 +315,10 @@ object CarbonDataRDDFactory extends Logging {
         .getSchemaLastUpdatedTime(carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName)
 
       // get partition way from configuration
-      val isTableSplitPartition = CarbonProperties.getInstance().getProperty(
-        CarbonCommonConstants.TABLE_SPLIT_PARTITION,
-        CarbonCommonConstants.TABLE_SPLIT_PARTITION_DEFAULT_VALUE).toBoolean
+      // val isTableSplitPartition = CarbonProperties.getInstance().getProperty(
+      // CarbonCommonConstants.TABLE_SPLIT_PARTITION,
+      // CarbonCommonConstants.TABLE_SPLIT_PARTITION_DEFAULT_VALUE).toBoolean
+      val isTableSplitPartition = false
       var blocksGroupBy: Array[(String, Array[BlockDetails])] = null
       isTableSplitPartition match {
         case true =>
