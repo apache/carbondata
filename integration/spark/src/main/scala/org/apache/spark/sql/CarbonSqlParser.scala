@@ -357,8 +357,14 @@ class CarbonSqlParser()
               val columnName = col.getName()
               val dataType = Option(col.getType)
               val name = Option(col.getName())
-              val f: Field = new Field(columnName, dataType, name, None, null, Some("columnar"))
-              fields ++= Seq(normalizeType(f))
+              // This is to parse complex data types
+              val f: Field = anyFieldDef(new lexical.Scanner(col.getName + ' ' + col.getType))
+                match {
+                case Success(field, _) => field
+                case failureOrError => new Field(columnName, dataType, name, None, null,
+                  Some("columnar"))
+              }
+              fields ++= Seq(f)
             }
           }
 
@@ -439,8 +445,9 @@ class CarbonSqlParser()
     val partitioner: Option[Partitioner] = getPartitionerObject(partitionCols, tableProperties)
 
     tableModel(ifNotExistPresent,
-      dbName.getOrElse("default"), dbName, tableName, dims,
-      msrs, "", null, "",
+      dbName.getOrElse("default"), dbName, tableName,
+      dims.map(f => normalizeType(f)).map(f => addParent(f)),
+      msrs.map(f => normalizeType(f)), "", null, "",
       None, Seq(), null, Option(noDictionaryDims), null, partitioner, groupCols)
   }
 
@@ -542,7 +549,9 @@ class CarbonSqlParser()
     // by default consider all String cols as dims and if any dictionary exclude is present then
     // add it to nodictionarydims list.
     fields.foreach(field => {
-      if (field.dataType.get.equalsIgnoreCase("string")) {
+      if (field.dataType.get.equalsIgnoreCase("string") ||
+        field.dataType.get.equalsIgnoreCase("array") ||
+        field.dataType.get.equalsIgnoreCase("struct")) {
         var isNoDictionary = false
         if (!splittedCols.isEmpty) {
           splittedCols.foreach(excludedCol =>
@@ -602,7 +611,9 @@ class CarbonSqlParser()
 
     // by default consider all non string cols as msrs.
     fields.foreach(field => {
-      if (!field.dataType.get.equalsIgnoreCase("string")) {
+      if (!field.dataType.get.equalsIgnoreCase("string") &&
+        !field.dataType.get.equalsIgnoreCase("array") &&
+        !field.dataType.get.equalsIgnoreCase("struct")) {
         if (!splittedCols.isEmpty) {
           splittedCols.foreach(dicIncludedCols =>
             if (!field.column.equalsIgnoreCase(dicIncludedCols)) {
