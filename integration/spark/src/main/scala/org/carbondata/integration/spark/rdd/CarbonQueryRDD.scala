@@ -81,43 +81,60 @@ class CarbonSparkPartition(rddId: Int, val idx: Int,
     val (carbonInputFormat: CarbonInputFormat[RowResult], job: Job) =
       QueryPlanUtil.createCarbonInputFormat(queryModel.getAbsoluteTableIdentifier)
 
-    var filterResolver: FilterResolverIntf = null
-    if (filterExpression != null) {
+    val result = new util.ArrayList[Partition](defaultParallelism)
+    val validSegments = job.getConfiguration.get(CarbonInputFormat.INPUT_SEGMENT_NUMBERS)
+    if(!validSegments.isEmpty) {
+      var filterResolver: FilterResolverIntf = null
+      if (filterExpression != null) {
         // set filter resolver tree
         filterResolver = carbonInputFormat.getResolvedFilter(job, filterExpression)
         queryModel.setFilterExpressionResolverTree(filterResolver)
       }
-    // get splits
-    val splits = carbonInputFormat.getSplits(job, filterResolver);
-    val carbonInputSplits = splits.asScala.map(_.asInstanceOf[CarbonInputSplit])
+      // get splits
+      val splits = carbonInputFormat.getSplits(job, filterResolver);
+      val carbonInputSplits = splits.asScala.map(_.asInstanceOf[CarbonInputSplit])
 
-    val blockList = carbonInputSplits.map(inputSplit =>
-      new TableBlockInfo(inputSplit.getPath.toString,
-        inputSplit.getStart, inputSplit.getSegmentId,
-        inputSplit.getLocations, inputSplit.getLength))
+      val blockList = carbonInputSplits.map(inputSplit =>
+        new TableBlockInfo(inputSplit.getPath.toString,
+          inputSplit.getStart, inputSplit.getSegmentId,
+          inputSplit.getLocations, inputSplit.getLength
+        )
+      )
+      if(!blockList.isEmpty) {
+        // group blocks to nodes, tasks
+        val nodeBlockMapping =
+          CarbonLoaderUtil.nodeBlockTaskMapping(blockList.asJava, -1, defaultParallelism)
 
-    // group blocks to nodes, tasks
-    val nodeBlockMapping =
-      CarbonLoaderUtil.nodeBlockTaskMapping(blockList.asJava, -1, defaultParallelism)
-
-    val result = new util.ArrayList[Partition](defaultParallelism)
-    var i = 0
-    // Create Spark Partition for each task and assign blocks
-    nodeBlockMapping.asScala.foreach { entry =>
-      entry._2.asScala.foreach { blocksPerTask =>
-        if (blocksPerTask.size() != 0) {
-          result.add(new CarbonSparkPartition(id, i, Seq(entry._1).toArray, blocksPerTask))
-          i += 1;
+        var i = 0
+        // Create Spark Partition for each task and assign blocks
+        nodeBlockMapping.asScala.foreach { entry =>
+          entry._2.asScala.foreach { blocksPerTask =>
+            if (blocksPerTask.size() != 0) {
+              result.add(new CarbonSparkPartition(id, i, Seq(entry._1).toArray, blocksPerTask))
+              i += 1;
+            }
+          }
         }
+        val noOfBlocks = blockList.size
+        val noOfNodes = nodeBlockMapping.size
+        val noOfTasks = result.size()
+        logInfo(s"Identified  no.of.Blocks: $noOfBlocks,"
+          + s"parallelism: $defaultParallelism , no.of.nodes: $noOfNodes, no.of.tasks: $noOfTasks"
+        )
+        logInfo("Time taken to identify Blocks to scan : " + (System
+          .currentTimeMillis() - startTime)
+        )
+      } else {
+        logInfo("No blocks identified to scan")
+        val nodesPerBlock = new util.ArrayList[TableBlockInfo]()
+        result.add(new CarbonSparkPartition(id, 0, Seq("").toArray, nodesPerBlock))
       }
     }
-    val noOfBlocks = blockList.size
-    val noOfNodes = nodeBlockMapping.size
-    val noOfTasks = result.size()
-    logInfo(s"Identified  no.of.Blocks: $noOfBlocks,"
-    + s"parallelism: $defaultParallelism , no.of.nodes: $noOfNodes, no.of.tasks: $noOfTasks")
-    logInfo("Time taken to identify Blocks to scan : " + (System.currentTimeMillis() - startTime) )
-
+    else {
+      logInfo("No valid segments found to scan")
+      val nodesPerBlock = new util.ArrayList[TableBlockInfo]()
+      result.add(new CarbonSparkPartition(id, 0, Seq("").toArray, nodesPerBlock))
+    }
     result.toArray(new Array[Partition](result.size()))
   }
 
@@ -129,21 +146,22 @@ class CarbonSparkPartition(rddId: Int, val idx: Int,
       var queryStartTime: Long = 0
       try {
         val carbonSparkPartition = thepartition.asInstanceOf[CarbonSparkPartition]
+        if(!carbonSparkPartition.tableBlockInfos.isEmpty) {
+          queryModel.setQueryId(queryModel.getQueryId() + "_" + carbonSparkPartition.idx)
+          // fill table block info
+          queryModel.setTableBlockInfos(carbonSparkPartition.tableBlockInfos)
+          queryStartTime = System.currentTimeMillis
 
-        queryModel.setQueryId(queryModel.getQueryId() + "_" + carbonSparkPartition.idx)
-        // fill table block info
-        queryModel.setTableBlockInfos(carbonSparkPartition.tableBlockInfos)
-        queryStartTime = System.currentTimeMillis
-
-        val carbonPropertiesFilePath = System.getProperty("carbon.properties.filepath", null)
-        logInfo("*************************" + carbonPropertiesFilePath)
-        if (null == carbonPropertiesFilePath) {
-          System.setProperty("carbon.properties.filepath", System.getProperty("user.dir")
-            + '/' + "conf" + '/' + "carbon.properties"
-          );
+          val carbonPropertiesFilePath = System.getProperty("carbon.properties.filepath", null)
+          logInfo("*************************" + carbonPropertiesFilePath)
+          if (null == carbonPropertiesFilePath) {
+            System.setProperty("carbon.properties.filepath", System.getProperty("user.dir")
+              + '/' + "conf" + '/' + "carbon.properties"
+            );
+          }
+          // execute query
+          rowIterator = QueryExecutorFactory.getQueryExecutor(queryModel).execute(queryModel)
         }
-        // execute query
-        rowIterator = QueryExecutorFactory.getQueryExecutor(queryModel).execute(queryModel)
         // TODO
         // : CarbonQueryUtil.isQuickFilter quick filter from dictionary needs to support
       } catch {
@@ -162,7 +180,7 @@ class CarbonSparkPartition(rddId: Int, val idx: Int,
 
       override def hasNext: Boolean = {
         if (!finished && !havePair) {
-          finished = !rowIterator.hasNext()
+          finished = (null == rowIterator) || (!rowIterator.hasNext())
           havePair = !finished
         }
         if (finished) {

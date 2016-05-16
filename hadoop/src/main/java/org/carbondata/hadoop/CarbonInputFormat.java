@@ -80,7 +80,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   private static final String DATABASE_NAME = "mapreduce.input.carboninputformat.databasename";
   private static final String TABLE_NAME = "mapreduce.input.carboninputformat.tablename";
   //comma separated list of input segment numbers
-  private static final String INPUT_SEGMENT_NUMBERS =
+  public static final String INPUT_SEGMENT_NUMBERS =
       "mapreduce.input.carboninputformat.segmentnumbers";
 
   public static void setTableToAccess(Job job, CarbonTableIdentifier tableIdentifier) {
