@@ -1189,7 +1189,7 @@ public final class CarbonLoaderUtil {
     createOutputMap(nodeBlocksMap, blocksPerNode, uniqueBlocks, nodeAndBlockMapping);
 
     // if any blocks remain then assign them to nodes in round robin.
-    assignLeftOverBlocks(nodeBlocksMap, uniqueBlocks);
+    assignLeftOverBlocks(nodeBlocksMap, uniqueBlocks, blocksPerNode);
 
     return nodeBlocksMap;
   }
@@ -1268,17 +1268,29 @@ public final class CarbonLoaderUtil {
    * @param uniqueBlocks
    */
   private static void assignLeftOverBlocks(Map<String, List<TableBlockInfo>> outputMap,
-      Set<TableBlockInfo> uniqueBlocks) {
+      Set<TableBlockInfo> uniqueBlocks, int noOfBlocksPerNode) {
+
+
     for (Map.Entry<String, List<TableBlockInfo>> entry : outputMap.entrySet()) {
-
       Iterator<TableBlockInfo> blocks = uniqueBlocks.iterator();
+      List<TableBlockInfo> blockLst = entry.getValue();
+      while (blocks.hasNext()) {
+        TableBlockInfo block = blocks.next();
+        blockLst.add(block);
+        blocks.remove();
+        if(blockLst.size() >= noOfBlocksPerNode){
+          break;
+        }
+      }
+    }
 
+    for (Map.Entry<String, List<TableBlockInfo>> entry : outputMap.entrySet()) {
+      Iterator<TableBlockInfo> blocks = uniqueBlocks.iterator();
       if (blocks.hasNext()) {
         TableBlockInfo block = blocks.next();
         List<TableBlockInfo> blockLst = entry.getValue();
         blockLst.add(block);
         blocks.remove();
-
       }
     }
   }

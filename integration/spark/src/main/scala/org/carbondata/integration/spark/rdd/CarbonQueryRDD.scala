@@ -124,6 +124,12 @@ class CarbonSparkPartition(rddId: Int, val idx: Int,
         logInfo("Time taken to identify Blocks to scan : " + (System
           .currentTimeMillis() - startTime)
         )
+        for (j <- 0 to result.size()-1)
+        {
+          val cp = result.get(j).asInstanceOf[CarbonSparkPartition]
+          logInfo(s"Node : " + cp.locations.toSeq.mkString(",")
+            + ", No.Of Blocks : " + cp.tableBlockInfos.size())
+        }
       } else {
         logInfo("No blocks identified to scan")
         val nodesPerBlock = new util.ArrayList[TableBlockInfo]()

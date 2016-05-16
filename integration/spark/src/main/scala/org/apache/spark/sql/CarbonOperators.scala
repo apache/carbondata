@@ -353,11 +353,11 @@ case class CarbonCubeScan(
     plan.setSortedDimemsions(orderList)
 
     // limit can be pushed down only if sort is not present or all sort expressions are pushed
-    if (allSortExprPushed) limitExpr match {
+    if (sortExprs.isEmpty && forceDetailedQuery) limitExpr match {
       case Some(IntegerLiteral(limit)) =>
-        if (plan.getMeasures.size() == 0 && plan.getDimAggregatorInfos.size() == 0) {
-          plan.setLimit(limit)
-        }
+        // if (plan.getMeasures.size() == 0 && plan.getDimAggregatorInfos.size() == 0) {
+        plan.setLimit(limit)
+        // }
       case _ =>
     }
     plan.setDetailQuery(forceDetailedQuery);
@@ -507,7 +507,7 @@ case class CarbonCubeScan(
       case _ => obj
     }
     // count(*) query executed in driver by querying from Btree
-    if (buildCarbonPlan.isCountStarQuery) {
+    if (buildCarbonPlan.isCountStarQuery && null == buildCarbonPlan.getFilterExpression) {
       val absoluteTableIdentifier = new AbsoluteTableIdentifier(carbonCatalog.storePath,
         new CarbonTableIdentifier(carbonTable.getDatabaseName, carbonTable.getFactTableName)
       )
