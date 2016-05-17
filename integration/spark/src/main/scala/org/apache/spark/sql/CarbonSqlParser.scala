@@ -21,6 +21,7 @@ import java.util.regex.{Matcher, Pattern}
 
 import scala.collection.JavaConverters._
 import scala.language.implicitConversions
+import scala.util.control.Breaks.{break, breakable}
 
 import org.apache.hadoop.hive.ql.lib.Node
 import org.apache.hadoop.hive.ql.parse._
@@ -323,7 +324,9 @@ class CarbonSqlParser()
           // processing the AST tree
           nodeToPlan(node)
         } catch {
-          case e: Exception => sys.error("Parsing error") // no need to do anything.
+          case e: Exception =>
+            logError(e.getMessage)
+            sys.error("Parsing error") // no need to do anything.
         }
     }
 
@@ -531,7 +534,7 @@ class CarbonSqlParser()
    */
   protected def extractDimColsAndNoDictionaryFields(fields: Seq[Field],
                                                     tableProperties: Map[String, String]):
-                                                    (Seq[Field], Seq[String]) = {
+  (Seq[Field], Seq[String]) = {
     var dimFields: LinkedHashSet[Field] = LinkedHashSet[Field]()
     var splittedCols: Array[String] = Array[String]()
     var noDictionaryDims: Seq[String] = Seq[String]()
@@ -541,17 +544,35 @@ class CarbonSqlParser()
     if (None != tableProperties.get("DICTIONARY_EXCLUDE")) {
       val dicExcludeCols: String = tableProperties.get("DICTIONARY_EXCLUDE").get
       splittedCols = dicExcludeCols.split(',')
+      splittedCols.foreach { splittedCol =>
+        if (!fields.exists(x => x.column.equalsIgnoreCase(splittedCol))) {
+          sys.error("DICTIONARY_EXCLUDE column(s) is no exist in table. " +
+            "Please check create table statement.")
+        }
+      }
     }
-    if(None != tableProperties.get("DICTIONARY_INCLUDE")) {
+
+    if (None != tableProperties.get("DICTIONARY_INCLUDE")) {
       dictIncludeCols = tableProperties.get("DICTIONARY_INCLUDE").get.split(",")
+      dictIncludeCols.foreach { distIncludeCol =>
+        if (!fields.exists(x => x.column.equalsIgnoreCase(distIncludeCol))) {
+          sys.error("DICTIONARY_INCLUDE column(s) is no exist in table. " +
+            "Please check create table statement.")
+        }
+      }
+    }
+
+    splittedCols.foreach { dicExcludeCol =>
+      if (dictIncludeCols.exists(x => x.equalsIgnoreCase(dicExcludeCol))) {
+        sys.error("DICTIONARY_EXCLUDE can not contain the same column with DICTIONARY_INCLUDE. " +
+          "Please check create table statement.")
+      }
     }
 
     // by default consider all String cols as dims and if any dictionary exclude is present then
     // add it to nodictionarydims list.
     fields.foreach(field => {
-      if (field.dataType.get.equalsIgnoreCase("string") ||
-        field.dataType.get.equalsIgnoreCase("array") ||
-        field.dataType.get.equalsIgnoreCase("struct")) {
+      if (isDetectAsDimentionDatatype(field.dataType.get)) {
         var isNoDictionary = false
         if (!splittedCols.isEmpty) {
           splittedCols.foreach(excludedCol =>
@@ -590,6 +611,15 @@ class CarbonSqlParser()
     }
   }
 
+  /**
+   * detect dimention data type
+   *
+   * @param dimensionDatatype
+   */
+  def isDetectAsDimentionDatatype(dimensionDatatype: String): Boolean = {
+    val dimensionType = Array("string", "array", "struct", "timestamp")
+    dimensionType.exists(x => x.equalsIgnoreCase(dimensionDatatype))
+  }
 
   /**
    * Extract the Measure Cols fields. By default all non string cols will be measures.
@@ -611,17 +641,12 @@ class CarbonSqlParser()
 
     // by default consider all non string cols as msrs.
     fields.foreach(field => {
-      if (!field.dataType.get.equalsIgnoreCase("string") &&
-        !field.dataType.get.equalsIgnoreCase("array") &&
-        !field.dataType.get.equalsIgnoreCase("struct")) {
+      if (!isDetectAsDimentionDatatype(field.dataType.get)) {
         if (!splittedCols.isEmpty) {
-          splittedCols.foreach(dicIncludedCols =>
-            if (!field.column.equalsIgnoreCase(dicIncludedCols)) {
-              msrFields :+= field
-            }
-          )
-        }
-        else {
+          if (!splittedCols.exists(x => x.equalsIgnoreCase(field.column))) {
+            msrFields :+= field
+          }
+        } else {
           msrFields :+= field
         }
       }

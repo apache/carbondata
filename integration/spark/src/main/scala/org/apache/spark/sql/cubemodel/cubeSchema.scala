@@ -1617,7 +1617,7 @@ private[sql] case class CreateCube(cm: tableModel) extends RunnableCommand {
     val tableInfo: TableInfo = CubeNewProcessor(cm, sqlContext)
 
     if (tableInfo.getFactTable.getListOfColumns.size <= 0) {
-      sys.error("No Dimensions found. Cube should have atleast one dimesnion !")
+      sys.error("No Dimensions found. Cube should have at least one dimesnion !")
     }
 
     val cubeName = cm.cubeName
@@ -1627,7 +1627,7 @@ private[sql] case class CreateCube(cm: tableModel) extends RunnableCommand {
         .contains(cm.cubeName.toLowerCase())) {
       if (!cm.ifNotExistsSet) {
         LOGGER.audit(
-          s"Cube ceation with Schema name [$dbName] and cube name [$cubeName] failed. " +
+          s"Cube creation with Schema name [$dbName] and cube name [$cubeName] failed. " +
               s"Table [$cubeName] already exists under database [$dbName]")
         sys.error(s"Table [$cubeName] already exists under database [$dbName]")
       }
