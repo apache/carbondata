@@ -30,7 +30,7 @@ import org.apache.spark.sql.cubemodel._
 import org.apache.spark.sql.execution.{DescribeCommand => RunnableDescribeCommand, ExecutedCommand, Filter, Project, SparkPlan}
 import org.apache.spark.sql.execution.datasources.{DescribeCommand => LogicalDescribeCommand, LogicalRelation}
 import org.apache.spark.sql.execution.joins.{BuildLeft, BuildRight, FilterPushJoin}
-import org.apache.spark.sql.hive.execution.{DescribeHiveTableCommand, HiveNativeCommand}
+import org.apache.spark.sql.hive.execution.{DescribeHiveTableCommand, DropTable, HiveNativeCommand}
 import org.apache.spark.sql.types.{IntegerType, LongType}
 
 import org.carbondata.common.logging.LogServiceFactory
@@ -159,6 +159,10 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
         ExecutedCommand(ShowCreateCube(cm, plan.output)) :: Nil
       case ShowTablesDetailedCommand(schemaName) =>
         ExecutedCommand(ShowAllTablesDetail(schemaName, plan.output)) :: Nil
+      case DropTable(tableName, ifNotExists)
+        if (CarbonEnv.getInstance(sqlContext).carbonCatalog.cubeExists(Seq(tableName))
+        (sqlContext)) =>
+        ExecutedCommand(DropCubeCommand(ifNotExists, None, tableName)) :: Nil
       case ShowAggregateTablesCommand(schemaName) =>
         ExecutedCommand(ShowAggregateTables(schemaName, plan.output)) :: Nil
       case ShowLoadsCommand(schemaName, cube, limit) =>
