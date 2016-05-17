@@ -116,18 +116,18 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
   
   
   //Test-33
-  test("select channelsId, count(channelsId+ 10) Total from Carbon_automation_test group by  channelsId order by Total") {
+  test("select channelsId, count(channelsId+ 10) Total from Carbon_automation_test group by  channelsId order by channelsId") {
     checkAnswer(
-      sql("select channelsId, count(channelsId+ 10) Total from Carbon_automation_test group by  channelsId order by Total"),
-      Seq(Row("2", 10), Row("1", 12), Row("4", 12), Row("5", 12), Row("3", 16), Row("7", 18), Row("6", 19)))
+      sql("select channelsId, count(channelsId+ 10) Total from Carbon_automation_test group by  channelsId order by channelsId"),
+      Seq(Row("1", 12), Row("2", 10), Row("3", 16), Row("4", 12), Row("5", 12), Row("6", 19), Row("7", 18)))
 
   }
 
   //Test-34
-  test("select channelsId, count(channelsId+channelsId)  Total from Carbon_automation_test group by  channelsId order by Total") {
+  test("select channelsId, count(channelsId+channelsId)  Total from Carbon_automation_test group by  channelsId order by channelsId") {
     checkAnswer(
-      sql("select channelsId, count(channelsId+channelsId)  Total from Carbon_automation_test group by  channelsId order by Total"),
-      Seq(Row("2", 10), Row("1", 12), Row("4", 12), Row("5", 12), Row("3", 16), Row("7", 18), Row("6", 19)))
+      sql("select channelsId, count(channelsId+channelsId)  Total from Carbon_automation_test group by  channelsId order by channelsId"),
+      Seq(Row("1", 12), Row("2", 10), Row("3", 16), Row("4", 12), Row("5", 12), Row("6", 19), Row("7", 18)))
 
   }
 
