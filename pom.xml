@@ -40,13 +40,6 @@
         <scala.deps.scope>compile</scala.deps.scope>
     </properties>
 
-    <repositories>
-        <repository>
-            <id>lib</id>
-            <url>file://${basedir}/../lib</url>
-        </repository>
-    </repositories>
-
     <modules>
         <module>common</module>
         <module>format</module>
