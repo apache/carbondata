@@ -32,22 +32,20 @@ import org.carbondata.examples.PerfTest._
 // scalastyle:off println
 
 /**
- * represent one test case
+ * represent one query
  */
 class Query(val queryType: String, val queryNo: Int, val sqlString: String) {
 
   /**
-   * run the test case in a batch and calculate average time
+   * run the query in a batch and calculate average time
    *
-   * @param sqlContext context to run the test case
+   * @param sqlContext context to run the query
    * @param runs run how many time
    * @param datasource datasource to run
    */
   def run(sqlContext: SQLContext, runs: Int, datasource: String): QueryResult = {
     // run repeated and calculate average time elapsed
     require(runs >= 1)
-    println(s"running $queryType query No.$queryNo against $datasource...")
-
     val sqlToRun = makeSQLString(datasource)
 
     val firstTime = withTime {
@@ -63,7 +61,6 @@ class Query(val queryType: String, val queryNo: Int, val sqlString: String) {
     }
 
     val avgTime = totalTime / (runs - 1)
-    println(s"$datasource completed in {${firstTime/1000000}ms, ${avgTime/1000000}ms}")
     QueryResult(datasource, result, avgTime, firstTime)
   }
 
@@ -74,19 +71,20 @@ class Query(val queryType: String, val queryNo: Int, val sqlString: String) {
 }
 
 /**
- * records performance of a testcase
+ * query performance result
  */
 case class QueryResult(datasource: String, result: Array[Row], avgTime: Long, firstTime: Long)
 
 class QueryRunner(sqlContext: SQLContext, dataFrame: DataFrame, datasources: Seq[String]) {
 
   /**
-   * run a testcase on each datasource
+   * run a query on each datasource
    */
-  def run(testCase: Query, runs: Int): Seq[QueryResult] = {
+  def run(query: Query, runs: Int): Seq[QueryResult] = {
     var results = Seq[QueryResult]()
     datasources.foreach { datasource =>
-      results :+= testCase.run(sqlContext, runs, datasource)
+      val result = query.run(sqlContext, runs, datasource)
+      results :+= result
     }
     checkResult(results)
     results
@@ -94,10 +92,10 @@ class QueryRunner(sqlContext: SQLContext, dataFrame: DataFrame, datasources: Seq
 
   private def checkResult(results: Seq[QueryResult]): Unit = {
     results.foldLeft(results.head) { (last, cur) =>
-      if (last.result.sameElements(cur.result)) cur
+      if (last.result.sortBy(_.toString()).sameElements(cur.result.sortBy(_.toString()))) cur
       else sys.error(s"result is not the same between " +
-          s"${last.datasource}(${last.result.mkString(", ")}) and " +
-          s"${cur.datasource}(${cur.result.mkString(", ")})")
+          s"${last.datasource} and " +
+          s"${cur.datasource}")
     }
   }
 
@@ -204,44 +202,71 @@ class TableGenerator(sqlContext: SQLContext) {
       }
       Row.fromSeq(dimSeq ++ msrSeq)
     }
-    sqlContext.createDataFrame(data, schema)
+    val df = sqlContext.createDataFrame(data, schema)
+    df.write.mode(SaveMode.Overwrite).parquet(PerfTest.savePath("temp"))
+    sqlContext.parquetFile(PerfTest.savePath("temp"))
   }
 }
 
 object PerfTest {
 
   private val olap: Seq[String] = Seq(
-    """select c3, c4, count(distinct c8) from tableName where c1 = 'P1_23' and c2 = 'P2_43'
-       group by c3, c4""",
+    """select c3, c4, sum(c8) from tableName
+      |where c1 = 'P1_23' and c2 = 'P2_43'
+      |group by c3, c4""".stripMargin,
 
-    """select c2, count(distinct c1), sum(c3) from tableName where c4 = 'P4_3' and c5 = 'P5_2' """,
+    """select c2, c3, sum(c9) from tableName
+      |where c1 = 'P1_432' and c4 = 'P4_3' and c5 = 'P5_2'
+      |group by c2, c3 """.stripMargin,
 
-    """Select phone_type, count(distinct user_id), sum(traffic) from tableName where
-      title="manager" and country="UK" and income>50000 and brand="SK" group by phone_type" """,
+    """Select c2, count(distinct c1), sum(c8) from tableName
+      |where c3="P3_4" and c5="P5_4"
+      |group by c2 """.stripMargin,
 
-    """Select sex, color, count(distinct user_id) from tableName where title="manager" and
-       country="UK" and income>50000 and phone_type="P9" group by sex, color""",
-
-    """Select subquery + case when tgo show the age grouping of customers"""
+    """Select c2, c5, count(distinct c1), sum(c7) from tableName
+      |where c4="P4_4" and c5="P5_7" and c8>4
+      |group by c2, c5 """.stripMargin
   )
 
-  private val join: Seq[String] = Seq(
-    """Select brand, phone_type, color, count(user_id) from tableName, vip join on
-      t1.user_id=vip.user_id group by brand, phone_type, color""",
+  private val point: Seq[String] = Seq(
+    """Select c4 from tableName
+      |where c1="P1_43" """.stripMargin,
 
-    """Select brand, phone_type, color, count(user_id) as count from tableName, vip join on
-      t1.user_id=vip.user_id group by brand, phone_type, color order by count desc limit 100 """
+    """Select c3 from tableName
+      |where c1="P1_542" and c2="P2_23" """.stripMargin,
+
+    """Select c3, c5 from tableName
+      |where c1="P1_52" and c7=4""".stripMargin,
+
+    """Select c4, c9 from tableName
+      |where c1="P1_43" and c8<3""".stripMargin
   )
 
   private val filter: Seq[String] = Seq(
-    """Select * from tableName where city="AUSTIN" and connect_status="failure" and
-      time between xxx and xxxx""",
+    """Select * from tableName
+      |where c2="P2_43" """.stripMargin,
 
-    """Select c1,c3,c5,c7,c50-c120 from tableName where city="AUSTIN" and
-      connect_status="failure" and time between xxx and xxxx""",
+    """Select * from tableName
+      |where c3="P3_3"  """.stripMargin,
 
-    """Select * from tableName where userid="134333223" and city="AUSTIN" and
-      time between xxx and xxxx"""
+    """Select * from tableName
+      |where c2="P2_32" and c3="P3_23" """.stripMargin,
+
+    """Select * from tableName
+      |where c3="P3_28" and c4="P4_3" """.stripMargin
+  )
+
+  private val scan: Seq[String] = Seq(
+    """Select sum(c7), sum(c8), avg(c9), max(c10) from tableName """.stripMargin,
+
+    """Select sum(c7) from tableName
+      |where c2="P2_32" """.stripMargin,
+
+    """Select sum(c7), sum(c8), sum(9), sum(c10) from tableName
+      |where c4="P4_4" """.stripMargin,
+
+    """Select sum(c7), sum(c8), sum(9), sum(c10) from tableName
+      |where c2="P2_75" and c6<5 """.stripMargin
   )
 
   def main(args: Array[String]) {
@@ -253,36 +278,44 @@ object PerfTest {
 
     // prepare performance queries
     var workload = Seq[Query]()
-    workload :+= new Query("olap", 0, olap.head)
-    //    olap.zipWithIndex.foreach(x => workload :+= new TestCase("olap", x._2, x._1))
-    //    join.zipWithIndex.foreach(x => workload :+= new TestCase("join", x._2, x._1))
-    //    filter.zipWithIndex.foreach(x => workload :+= new TestCase("filter", x._2, x._1))
+    olap.zipWithIndex.foreach(x => workload :+= new Query("OLAP Query", x._2, x._1))
+    point.zipWithIndex.foreach(x => workload :+= new Query("Point Query", x._2, x._1))
+    filter.zipWithIndex.foreach(x => workload :+= new Query("Filter Query", x._2, x._1))
+    scan.zipWithIndex.foreach(x => workload :+= new Query("Scan Query", x._2, x._1))
 
     // prepare data
-    val rows = 1000 * 1000
-    // val dimension = Seq((1, 1000*1000), (9, 100*1000), (20, 1000), (120, 100))
+    val rows = 3 * 1000 * 1000
     val dimension = Seq((1, 1 * 1000), (1, 100), (1, 50), (2, 10)) // cardinality for each column
     val measure = 5 // number of measure
     val template = TableTemplate(dimension, measure)
     val df = new TableGenerator(cc).genDataFrame(template, rows)
-
-    // materialize the dataframe and save it to hive table, and load it from all data sources
-    df.write.mode(SaveMode.Overwrite).saveAsTable("PerfTestGeneratedTable")
     println("generate data completed")
 
     // run all queries against all data sources
     val datasource = Seq("parquet", "orc", "carbon")
-    val runner = new QueryRunner(cc, cc.table("PerfTestGeneratedTable"), datasource)
+    val runner = new QueryRunner(cc, df, datasource)
 
     val results = runner.loadData
-    println(formatLoadResult(results))
+    println(s"load performance: ${results.map(_.avgTime / 1000000L).mkString(", ")}")
 
-    workload.foreach { testcase =>
+    var parquetTime: Double = 0
+    var orcTime: Double = 0
+    var carbonTime: Double = 0
+
+    println(s"query id: ${datasource.mkString(", ")}, result in millisecond")
+    workload.foreach { query =>
       // run 4 times each round, will print performance of first run and avg time of last 3 runs
-      val results = runner.run(testcase, 4)
-      println(formatQueryResult(testcase, results))
+      print(s"${query.queryType} ${query.queryNo}: ")
+      val results = runner.run(query, 4)
+      print(s"${results.map(_.avgTime / 1000000L).mkString(", ")} ")
+      println(s"[sql: ${query.sqlString.replace('\n', ' ')}]")
+      parquetTime += results(0).avgTime
+      orcTime += results(1).avgTime
+      carbonTime += results(2).avgTime
     }
 
+    println(s"Total time: ${parquetTime / 1000000}, ${orcTime / 1000000}, " +
+        s"${carbonTime / 1000000} = 1 : ${parquetTime / orcTime} : ${parquetTime / carbonTime}")
     runner.shutDown()
   }
 
@@ -297,23 +330,6 @@ object PerfTest {
     cc.setConf(HiveConf.ConfVars.HIVECHECKFILEFORMAT.varname, "false")
     CarbonProperties.getInstance().addProperty("carbon.table.split.partition.enable", "false")
     cc
-  }
-
-  private def formatLoadResult(results: Seq[QueryResult]): String = {
-    s"load, 0, ${formatResults(results)}"
-  }
-
-  private def formatQueryResult(testCase: Query, results: Seq[QueryResult]): String = {
-    s"${testCase.queryType}, ${testCase.queryNo}, ${formatResults(results)}"
-  }
-
-  private def formatResults(results: Seq[QueryResult]): String = {
-    val builder = new StringBuilder
-    results.foreach { result =>
-      builder.append(s"${result.datasource}{${result.firstTime.toDouble / 1000000}ms, " +
-          s"${result.avgTime.toDouble / 1000000}ms}, ")
-    }
-    builder.toString
   }
 
   def makeTableName(datasource: String): String = {
