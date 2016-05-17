@@ -35,6 +35,16 @@ import org.apache.spark.sql.types.{IntegerType, LongType}
 
 import org.carbondata.common.logging.LogServiceFactory
 
+object CarbonHiveSyntax {
+
+  @transient
+  protected val sqlParser = new CarbonSqlParser
+
+  def parse(sqlText: String): LogicalPlan = {
+      sqlParser.parse(sqlText)
+  }
+}
+
 class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
 
   override def strategies: Seq[Strategy] = getStrategies
@@ -176,6 +186,13 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
             dimFilesPath, partionValues, isOverwriteExist, inputSqlString)) :: Nil
         } else {
           ExecutedCommand(HiveNativeCommand(inputSqlString)) :: Nil
+        }
+      case d: HiveNativeCommand =>
+        try {
+          val resolvedTable = sqlContext.executePlan(CarbonHiveSyntax.parse(d.sql)).analyzed
+          planLater(resolvedTable) :: Nil
+        } catch {
+          case _ => ExecutedCommand(d) :: Nil
         }
       case DescribeFormattedCommand(sql, tblIdentifier) =>
         val isCube = CarbonEnv.getInstance(sqlContext).carbonCatalog
