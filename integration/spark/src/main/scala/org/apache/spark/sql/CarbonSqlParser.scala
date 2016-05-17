@@ -573,18 +573,12 @@ class CarbonSqlParser()
     // add it to nodictionarydims list.
     fields.foreach(field => {
       if (isDetectAsDimentionDatatype(field.dataType.get)) {
-        var isNoDictionary = false
         if (!splittedCols.isEmpty) {
-          splittedCols.foreach(excludedCol =>
-            if (field.column.equalsIgnoreCase(excludedCol)) {
-              noDictionaryDims :+= field.column
-              isNoDictionary = true
-            }
-          )
+           if (splittedCols.toSeq.exists(x => x.equalsIgnoreCase(field.column))) {
+            noDictionaryDims :+= field.column
+          }
         }
-        if (!isNoDictionary) {
-          dimFields += (field)
-        }
+        dimFields += (field)
       }
       else {
         // include the other columns into dims

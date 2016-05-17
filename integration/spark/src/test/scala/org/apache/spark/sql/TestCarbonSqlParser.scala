@@ -75,10 +75,12 @@ class TestCarbonSqlParser extends QueryTest {
 
     // testing col
 
-    assert(dimCols.lift(0).get.column.equalsIgnoreCase("col3"))
+    //All dimension fields should be available in dimensions list
+    assert(dimCols.lift(0).get.column.equalsIgnoreCase("col2"))
+    assert(dimCols.lift(1).get.column.equalsIgnoreCase("col3"))
+    assert(dimCols.lift(2).get.column.equalsIgnoreCase("col4"))
 
-    assert(dimCols.lift(1).get.column.equalsIgnoreCase("col4"))
-
+    //No dictionary column names will be available in noDictionary list
     assert(noDictionary.lift(0).get.equalsIgnoreCase("col2"))
   }
 
