@@ -29,6 +29,7 @@ import scala.util.parsing.combinator.RegexParsers
 
 import org.apache.spark
 import org.apache.spark.sql._
+import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.cubemodel.{AggregateTableAttributes, Partitioner}
 import org.apache.spark.sql.hive.client.ClientInterface
@@ -180,7 +181,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
             CarbonSparkUtil.createSparkMeta(cubes.head.carbonTable), cubes.head, alias)(sqlContext)
         } else {
           LOGGER.audit(s"Table Not Found: $schemaName $cubeName")
-          sys.error(s"Table Not Found: $schemaName $cubeName")
+          throw new NoSuchTableException
         }
       case Seq(cubeName) =>
         val currentDatabase = getDB.getDatabaseName(None, sqlContext)
@@ -192,11 +193,11 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
             CarbonSparkUtil.createSparkMeta(cubes.head.carbonTable), cubes.head, alias)(sqlContext)
         } else {
           LOGGER.audit(s"Table Not Found: $cubeName")
-          sys.error(s"Table Not Found: $cubeName")
+          throw new NoSuchTableException
         }
       case _ =>
         LOGGER.audit(s"Table Not Found: $tableIdentifier")
-        sys.error(s"Table Not Found: $tableIdentifier")
+        throw new NoSuchTableException
     }
   }
 
