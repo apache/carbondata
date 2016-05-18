@@ -54,22 +54,18 @@ object CarbonExample {
     // false -> use node split partition, support data load by host partition
     CarbonProperties.getInstance().addProperty("carbon.table.split.partition.enable", "false")
 
-    cc.sql("DROP CUBE IF EXISTS t3")
+    cc.sql("DROP TABLE IF EXISTS t3")
 
-    // @TODO need to change the date to date type as direct surrogate is not implemented
-    // after implementation need to update the test case
     cc.sql("""
-           CREATE CUBE t3
-           DIMENSIONS (ID Integer, date String, country String,
-                       name String, phonetype String, serialname String)
-           MEASURES (salary Integer)
-           OPTIONS (PARTITIONER [PARTITION_COUNT=1])
+           CREATE TABLE IF NOT EXISTS t3
+           (ID Int, date Timestamp, country String,
+           name String, phonetype String, serialname String, salary Int)
+           STORED BY 'org.apache.carbondata.format'
            """)
 
     cc.sql(s"""
-          LOAD DATA FACT FROM '$testData'
-          INTO CUBE t3 OPTIONS(DELIMITER ',')
-          """)
+           LOAD DATA LOCAL INPATH '$testData' into table t3
+           """)
 
     cc.sql("""
            SELECT country, count(salary) AS amount
@@ -78,6 +74,6 @@ object CarbonExample {
            GROUP BY country
            """).show()
 
-    cc.sql("DROP CUBE t3")
+    cc.sql("DROP TABLE t3")
   }
 }

@@ -128,7 +128,7 @@ class QueryRunner(sqlContext: SQLContext, dataFrame: DataFrame, datasources: Seq
             dataFrame.sqlContext.sparkContext.hadoopConfiguration.set("orc.compress", "SNAPPY")
             loadToNative(datasource)
           case "carbon" =>
-            sqlContext.sql(s"drop cube if exists ${PerfTest.makeTableName(datasource)}")
+            sqlContext.sql(s"drop table if exists ${PerfTest.makeTableName(datasource)}")
             println(s"loading data into $datasource, path: " +
                 s"${dataFrame.sqlContext.asInstanceOf[CarbonContext].storePath}")
             dataFrame.write
@@ -153,7 +153,7 @@ class QueryRunner(sqlContext: SQLContext, dataFrame: DataFrame, datasources: Seq
           val f = new File(PerfTest.savePath(datasource))
           if (f.exists()) f.delete()
         case "carbon" =>
-          sqlContext.sql(s"drop cube if exists ${PerfTest.makeTableName("carbon")}")
+          sqlContext.sql(s"drop table if exists ${PerfTest.makeTableName("carbon")}")
         case _ => sys.error("unsupported data source")
       }
     }

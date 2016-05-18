@@ -52,11 +52,15 @@ object GenerateDictionaryExample {
     cc.setConf("hive.metastore.warehouse.dir", hiveMetaPath)
 
     // execute sql statement
-    cc.sql("DROP CUBE IF EXISTS dictSample")
-    cc.sql("CREATE CUBE dictSample DIMENSIONS (id INTEGER, name STRING, city STRING) " +
-      "MEASURES (salary INTEGER) OPTIONS (PARTITIONER [PARTITION_COUNT=1])")
-    cc.sql(s"LOAD DATA FACT FROM '$factFilePath' INTO CUBE dictSample " +
-      s"OPTIONS(DELIMITER ',')")
+    cc.sql("DROP TABLE IF EXISTS dictSample")
+    cc.sql("""
+           CREATE TABLE IF NOT EXISTS dictSample(id Int, name String, city String, salary Int)
+           STORED BY 'org.apache.carbondata.format'
+           """)
+
+    cc.sql(s"""
+           LOAD DATA LOCAL INPATH '$factFilePath' INTO TABLE dictSample
+           """)
 
     // check generated dictionary
     val tableIdentifier = new CarbonTableIdentifier("default", "dictSample")
