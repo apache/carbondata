@@ -229,12 +229,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
   def loadMetadata(metadataPath: String): MetaData = {
     if (metadataPath == null) return null
     val fileType = FileFactory.getFileType(metadataPath)
-
-
-    CarbonProperties.getInstance().addProperty("carbon.storelocation", metadataPath);
-
     val metaDataBuffer = new ArrayBuffer[TableMeta]
-
     if (useUniquePath) {
       if (FileFactory.isFileExist(metadataPath, fileType)) {
         val file = FileFactory.getCarbonFile(metadataPath, fileType)

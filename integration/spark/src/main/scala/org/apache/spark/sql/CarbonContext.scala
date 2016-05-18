@@ -36,8 +36,10 @@ class CarbonContext(val sc: SparkContext, val storePath: String) extends HiveCon
   var lastSchemaUpdatedTime = System.currentTimeMillis()
 
   @transient
-  override lazy val catalog =
+  override lazy val catalog = {
+    CarbonProperties.getInstance().addProperty("carbon.storelocation", storePath);
     new CarbonMetastoreCatalog(this, storePath, metadataHive) with OverrideCatalog
+  }
 
   @transient
   override protected[sql] lazy val analyzer = new Analyzer(catalog, functionRegistry, conf)

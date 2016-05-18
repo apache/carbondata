@@ -1319,21 +1319,15 @@ public final class CarbonLoaderUtil {
         // check if this is already assigned.
         if (uniqueBlocks.contains(block)) {
 
+          if (null == outputMap.get(entry.getKey())) {
+            List<TableBlockInfo> list =
+                new ArrayList<TableBlockInfo>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+            outputMap.put(entry.getKey(), list);
+          }
           // assign this block to this node if node has capacity left
           if (nodeCapacity < blocksPerNode) {
-
-            List<TableBlockInfo> list;
-            if (null == outputMap.get(entry.getKey())) {
-
-              list = new ArrayList<TableBlockInfo>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-              list.add(block);
-              outputMap.put(entry.getKey(), list);
-
-            } else {
-              list = outputMap.get(entry.getKey());
-              list.add(block);
-
-            }
+            List<TableBlockInfo> infos = outputMap.get(entry.getKey());
+            infos.add(block);
             nodeCapacity++;
             uniqueBlocks.remove(block);
           } else {

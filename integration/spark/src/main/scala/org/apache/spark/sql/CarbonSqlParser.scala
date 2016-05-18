@@ -921,7 +921,8 @@ class CarbonSqlParser()
 
   protected lazy val dimCol: Parser[Field] = anyFieldDef
 
-  protected lazy val primitiveTypes = STRING | INTEGER | TIMESTAMP | NUMERIC | BIGINT | DECIMAL
+  protected lazy val primitiveTypes =
+    STRING | INTEGER | TIMESTAMP | NUMERIC | BIGINT | DECIMAL | INT
   protected lazy val nestedType: Parser[Field] = structFieldType | arrayFieldType |
     primitiveFieldType
 
@@ -1044,8 +1045,8 @@ class CarbonSqlParser()
     field.dataType.getOrElse("NIL") match {
       case "string" => Field(field.column, Some("String"), field.name, Some(null), field.parent,
         field.storeType)
-      case "integer" => Field(field.column, Some("Integer"), field.name, Some(null), field.parent,
-        field.storeType)
+      case "integer" | "int" => Field(field.column, Some("Integer"), field.name, Some(null),
+        field.parent, field.storeType)
       case "long" => Field(field.column, Some("Long"), field.name, Some(null), field.parent,
         field.storeType)
       case "double" => Field(field.column, Some("Double"), field.name, Some(null), field.parent,
